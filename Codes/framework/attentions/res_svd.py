@@ -17,6 +17,7 @@ Supports:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -29,6 +30,8 @@ from framework.core.attention_mask import apply_attention_mask, get_token_valid_
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -116,9 +119,14 @@ class ResSVDAttention(BaseAttention):
         self.factorize_base = factorize_base
         self.freeze_base = freeze_base
 
-        is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
-        if kwargs.get("is_causal", False):
-            is_dec = True
+        is_dec = (
+            getattr(config, "is_decoder", False)
+            or getattr(config, "is_causal", False)
+            or str(getattr(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama")
+            or (pretrained_attn is not None and hasattr(pretrained_attn, "c_attn"))
+            or kwargs.get("is_causal", False)
+            or kwargs.get("is_decoder", False)
+        )
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
@@ -162,9 +170,29 @@ class ResSVDAttention(BaseAttention):
             bias=True,
         )
 
-        self.q_proj = self.query
-        self.k_proj = self.key
-        self.v_proj = self.value
+    @property
+    def q_proj(self) -> ResSVDLinear:
+        return self.query
+
+    @property
+    def k_proj(self) -> ResSVDLinear:
+        return self.key
+
+    @property
+    def v_proj(self) -> ResSVDLinear:
+        return self.value
+
+    @property
+    def q_lin(self) -> ResSVDLinear:
+        return self.query
+
+    @property
+    def k_lin(self) -> ResSVDLinear:
+        return self.key
+
+    @property
+    def v_lin(self) -> ResSVDLinear:
+        return self.value
 
         dropout_p = (
             dropout
@@ -216,7 +244,9 @@ class ResSVDAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                p_c_cls = getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
+                p_base_cls = getattr(base_c, "__class__", type(base_c)).__name__
+                if ("Conv1D" in p_c_cls) or ("Conv1D" in p_base_cls) or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -231,7 +261,9 @@ class ResSVDAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    p_proj_cls = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
+                    p_base_o_cls = getattr(base_o, "__class__", type(base_o)).__name__
+                    if ("Conv1D" in p_proj_cls) or ("Conv1D" in p_base_o_cls) or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
@@ -273,8 +305,7 @@ class ResSVDAttention(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -291,23 +322,23 @@ class ResSVDAttention(BaseAttention):
 
         with torch.no_grad():
             for proj_key, target in target_map.items():
+                if proj_key == "o" and self.is_nested_encoder:
+                    temp_linear = nn.Linear(target.in_features, target.out_features, bias=False)
+                    nn.init.eye_(temp_linear.weight)
+                    new_layer = ResSVDLinear.from_linear(
+                        temp_linear,
+                        base_rank=self.base_rank,
+                        residual_rank=self.residual_rank,
+                        scaling=self.scaling,
+                        factorize_base=self.factorize_base,
+                        freeze_base=self.freeze_base,
+                    )
+                    target.load_state_dict(new_layer.state_dict())
+                    continue
+
                 w, b = extracted[proj_key]
                 if w is None:
-                    if proj_key == "o" and self.is_nested_encoder:
-                        temp_linear = nn.Linear(target.in_features, target.out_features, bias=False)
-                        nn.init.eye_(temp_linear.weight)
-                        new_layer = ResSVDLinear.from_linear(
-                            temp_linear,
-                            base_rank=self.base_rank,
-                            residual_rank=self.residual_rank,
-                            scaling=self.scaling,
-                            factorize_base=self.factorize_base,
-                            freeze_base=self.freeze_base,
-                        )
-                        target.load_state_dict(new_layer.state_dict())
-                        continue
-                    else:
-                        raise RuntimeError(f"Missing required weights for {proj_key}")
+                    raise RuntimeError(f"Missing required weights for {proj_key}")
 
                 if w.shape != (target.out_features, target.in_features):
                     if w.t().shape == (target.out_features, target.in_features):
@@ -367,6 +398,9 @@ class ResSVDAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        if encoder_hidden_states is not None:
+            raise NotImplementedError("Cross-attention with encoder_hidden_states is not supported in ResSVDAttention")
+
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
 
@@ -391,7 +425,7 @@ class ResSVDAttention(BaseAttention):
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 
         # Causal masking
-        is_causal = self.is_decoder or kwargs.get("is_causal", False)
+        is_causal = (self.is_decoder or getattr(self, "is_causal", False) or kwargs.get("is_causal", False)) and (encoder_hidden_states is None)
         if is_causal:
             causal_mask = torch.triu(torch.full((N, N), -1e4, device=scores.device), diagonal=1)
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
@@ -422,16 +456,50 @@ class ResSVDAttention(BaseAttention):
         return output, (attn_weights if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("res_svd_inject")
+@ATTENTION_REGISTRY.register("inject_res_svd")
+@ATTENTION_REGISTRY.register("inject_res_svd_attention")
 def inject_res_svd(
     model: Optional[nn.Module] = None,
     target_layer_idx: Optional[int] = None,
     layer: Optional[nn.Module] = None,
     model_config: Optional[Any] = None,
     old_attn: Optional[nn.Module] = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
     **kwargs: Any,
-) -> Optional[nn.Module]:
+) -> Optional[Any]:
     """Safely replace attention in model or layer with ResSVDAttention."""
+    target_obj = layer if layer is not None else model
     try:
+        if target_obj is not None and (
+            hasattr(target_obj, "transformer")
+            or hasattr(target_obj, "distilbert")
+            or hasattr(target_obj, "roberta")
+            or hasattr(target_obj, "bert")
+        ):
+            layers = None
+            if hasattr(target_obj, "roberta") and hasattr(target_obj.roberta, "encoder"):
+                layers = target_obj.roberta.encoder.layer
+            elif hasattr(target_obj, "bert") and hasattr(target_obj.bert, "encoder"):
+                layers = target_obj.bert.encoder.layer
+            elif hasattr(target_obj, "distilbert") and hasattr(target_obj.distilbert, "transformer"):
+                layers = target_obj.distilbert.transformer.layer
+            elif hasattr(target_obj, "transformer") and hasattr(target_obj.transformer, "h"):
+                layers = target_obj.transformer.h
+            if layers is not None:
+                for idx, lyr in enumerate(layers):
+                    if target_layer_idx is not None and idx != target_layer_idx:
+                        continue
+                    inject_res_svd(
+                        layer=lyr,
+                        model_config=model_config or getattr(target_obj, "config", None),
+                        layer_idx=idx,
+                        total_layers=len(layers),
+                        **kwargs,
+                    )
+                return target_obj
+
         if layer is not None:
             config = model_config or getattr(layer, "config", None)
             target = old_attn
@@ -450,18 +518,24 @@ def inject_res_svd(
                 pretrained_attn=target if target is not layer else None,
                 **kwargs,
             )
-            for attr in ("self_attn", "attn", "self"):
-                if hasattr(layer, attr):
-                    setattr(layer, attr, new_attn)
-                    return layer
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
                     layer.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
+                    return layer
                 else:
                     layer.attention = new_attn
+                    return layer
+            for attr in ("self_attn", "attn"):
+                if hasattr(layer, attr):
+                    setattr(layer, attr, new_attn)
+                    return layer
+            if hasattr(layer, "self"):
+                layer.self = new_attn
+                new_attn.is_nested_encoder = True
                 return layer
-            layer.attention = new_attn
-            return layer
+
+            return new_attn
 
         if model is None:
             return None
@@ -482,13 +556,16 @@ def inject_res_svd(
                     pretrained_attn=module,
                     **kwargs,
                 )
+                if child_name == "self" or "self" in parent_name:
+                    new_attn.is_nested_encoder = True
                 setattr(parent, child_name, new_attn)
                 replaced += 1
                 if target_layer_idx is not None and replaced > target_layer_idx:
                     break
         return model if replaced > 0 else None
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error("inject_res_svd failed at layer %d: %s", layer_idx, e)
+        return None
 
 
 inject_res_svd_attention = inject_res_svd

@@ -762,15 +762,19 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                 total_comp_decomp_params += orig_params
                 continue
 
-            # If wrapped in LoRALinear, replace the base_layer or the whole module
-            if hasattr(module, "base_layer") and hasattr(module, "lora_A"):
+            # If wrapped in LoRALinear, replace the inner base_layer or linear
+            has_base_layer = hasattr(module, "base_layer") or (hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r")))
+            if hasattr(module, "base_layer"):
                 module.base_layer = factorized_layer
-                if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
-                    module.lora_A.weight.requires_grad = True
-                if hasattr(module.lora_B, "weight") and module.lora_B.weight is not None:
-                    module.lora_B.weight.requires_grad = True
+            elif hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r")):
+                module.linear = factorized_layer
             else:
                 replace_module(self.model, name, factorized_layer)
+
+            if has_base_layer:
+                for p_name, p in module.named_parameters():
+                    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+                        p.requires_grad = True
 
             self.compressed_layers.append(name)
             total_comp_decomp_params += (rank * (in_f + out_f))
@@ -820,53 +824,101 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-# Register under both canonical and alias names
-@COMPRESSOR_REGISTRY.register("dynamic_entropy_svd")
-@COMPRESSOR_REGISTRY.register("dynamic_rank")
-@COMPRESSOR_REGISTRY.register("dynamic_entropy")
+# Register classes under *_class to avoid collision with factory functions
+@COMPRESSOR_REGISTRY.register("dynamic_entropy_svd_class")
+@COMPRESSOR_REGISTRY.register("dynamic_rank_class")
+@COMPRESSOR_REGISTRY.register("dynamic_entropy_class")
 class DynamicEntropySVDCompressorRegistered(DynamicEntropySVDCompressor):
     pass
 
 
-@COMPRESSOR_REGISTRY.register("entropy_rank_allocator")
+@COMPRESSOR_REGISTRY.register("entropy_rank_allocator_class")
 class EntropyRankAllocatorRegistered(DynamicEntropySVDCompressor):
     pass
 
 
+@COMPRESSOR_REGISTRY.register("dynamic_entropy")
+@COMPRESSOR_REGISTRY.register("dynamic_entropy_svd")
+@COMPRESSOR_REGISTRY.register("dynamic_rank")
+@COMPRESSOR_REGISTRY.register("dynamic_entropy_factory")
+@COMPRESSOR_REGISTRY.register("dynamic_entropy_svd_factory")
+@COMPRESSOR_REGISTRY.register("dynamic_rank_factory")
+@COMPRESSOR_REGISTRY.register("dynamic_entropy_compressor")
+@COMPRESSOR_REGISTRY.register("dynamic_entropy_svd_compressor")
+@COMPRESSOR_REGISTRY.register("dynamic_rank_compressor")
+@COMPRESSOR_REGISTRY.register("entropy_rank_allocator")
 def dynamic_entropy_svd_factory(
     model: Any, comp_config: Any = None, **kwargs: Any
 ) -> Any:
     """Dynamic Entropy SVD factory function."""
-    min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "dynamic_min_rank", _cfg_get(comp_config, "min_rank", 16)))
-    max_rank = kwargs.pop("max_rank", _cfg_get(comp_config, "dynamic_max_rank", _cfg_get(comp_config, "max_rank", 128)))
-    target_rank = kwargs.pop("rank", _cfg_get(comp_config, "dynamic_rank", _cfg_get(comp_config, "rank", None)))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "dynamic_max_error", _cfg_get(comp_config, "max_error", 0.35)))
-    target_attention_only = kwargs.pop(
-        "target_attention_only",
-        _cfg_get(comp_config, "dynamic_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
-    )
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "dynamic_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
-    target_param_ratio = kwargs.pop("target_param_ratio", _cfg_get(comp_config, "target_param_ratio", None))
-    total_rank_budget = kwargs.pop("total_rank_budget", _cfg_get(comp_config, "total_rank_budget", None))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
+    try:
+        min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "dynamic_min_rank", _cfg_get(comp_config, "min_rank", 16)))
+        max_rank = kwargs.pop("max_rank", _cfg_get(comp_config, "dynamic_max_rank", _cfg_get(comp_config, "max_rank", 128)))
+        target_rank = kwargs.pop("rank", _cfg_get(comp_config, "dynamic_rank", _cfg_get(comp_config, "rank", None)))
+        max_error = kwargs.pop("max_error", _cfg_get(comp_config, "dynamic_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+        target_attention_only = kwargs.pop(
+            "target_attention_only",
+            _cfg_get(comp_config, "dynamic_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+        )
+        fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "dynamic_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
+        target_param_ratio = kwargs.pop("target_param_ratio", _cfg_get(comp_config, "target_param_ratio", None))
+        total_rank_budget = kwargs.pop("total_rank_budget", _cfg_get(comp_config, "total_rank_budget", None))
 
-    compressor = DynamicEntropySVDCompressor(
-        model,
-        min_rank=min_rank,
-        max_rank=max_rank,
-        target_rank=target_rank,
-        max_error=max_error,
-        target_attention_only=target_attention_only,
-        fallback_to_original=fallback,
-        target_param_ratio=target_param_ratio,
-        total_rank_budget=total_rank_budget,
-        cfg=comp_config,
-        **kwargs,
-    )
-    compressed_model, stats = compressor.compress()
-    if return_stats:
-        return compressed_model, stats
-    return compressed_model
+        compressor = DynamicEntropySVDCompressor(
+            model,
+            min_rank=min_rank,
+            max_rank=max_rank,
+            target_rank=target_rank,
+            max_error=max_error,
+            target_attention_only=target_attention_only,
+            fallback_to_original=fallback,
+            target_param_ratio=target_param_ratio,
+            total_rank_budget=total_rank_budget,
+            cfg=comp_config,
+            **kwargs,
+        )
+        compressed_model, stats = compressor.compress()
+        if return_stats:
+            return compressed_model, stats
+        return compressed_model
+    except Exception as e:
+        logger.error("dynamic_entropy_svd_factory failed: %s", e, exc_info=True)
+        return (model, {}) if return_stats else model
+
+
+@COMPRESSOR_REGISTRY.register("inject_dynamic_entropy")
+@COMPRESSOR_REGISTRY.register("dynamic_entropy_inject")
+def inject_dynamic_entropy(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
+    """Safe injection hook for dynamic_entropy. Returns None on failure."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+    try:
+        res = dynamic_entropy_svd_factory(target, **kwargs)
+        if isinstance(res, tuple):
+            return res[0]
+        return res
+    except Exception as e:
+        logger.error("inject_dynamic_entropy failed: %s", e, exc_info=True)
+        return None
+
+
+def dynamic_entropy_inject(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
+    """Safe injection hook alias."""
+    return inject_dynamic_entropy(model, layer, **kwargs)
+
+
+@COMPRESSOR_REGISTRY.register("inject_dynamic_rank")
+@COMPRESSOR_REGISTRY.register("dynamic_rank_inject")
+def inject_dynamic_rank(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
+    """Safe injection hook alias for dynamic_rank."""
+    return inject_dynamic_entropy(model, layer, **kwargs)
+
+
+def dynamic_rank_inject(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
+    """Safe injection hook alias for dynamic_rank."""
+    return inject_dynamic_entropy(model, layer, **kwargs)
 
 
 dynamic_rank_factory = dynamic_entropy_svd_factory
@@ -880,4 +932,8 @@ __all__ = [
     "dynamic_entropy_svd_factory",
     "dynamic_rank_factory",
     "entropy_rank_allocator_factory",
+    "inject_dynamic_entropy",
+    "dynamic_entropy_inject",
+    "inject_dynamic_rank",
+    "dynamic_rank_inject",
 ]
