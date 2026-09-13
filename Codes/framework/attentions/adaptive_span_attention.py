@@ -148,11 +148,11 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("adaptive_span", supports_causal=True, supports_bidirectional=False, supports_gqa=True)
-@ATTENTION_REGISTRY.register("adaptive_span_attention", supports_causal=True, supports_bidirectional=False, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_span", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("adaptive_span_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class AdaptiveSpanAttention(BaseAttention):
     supports_causal: bool = True
-    supports_bidirectional: bool = False
+    supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
 
@@ -250,8 +250,8 @@ class AdaptiveSpanAttention(BaseAttention):
         self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        # Initialize to 5.0 so span starts fully open (sigmoid(5.0) ~ 0.993) preserving full context
-        self.span_logits = nn.Parameter(torch.full((self.num_heads,), 5.0, dtype=torch.float32))
+        # Initialize to 2.0 so span starts reasonably wide but not stuck (sigmoid(2.0) ~ 0.88)
+        self.span_logits = nn.Parameter(torch.full((self.num_heads,), 2.0, dtype=torch.float32))
 
         dropout_p = getattr(
             config,
@@ -276,7 +276,7 @@ class AdaptiveSpanAttention(BaseAttention):
 
     def get_span_loss(self) -> torch.Tensor:
         """L1 regularization penalty on the span to encourage context pruning as in Sukhbaatar et al. (2019)."""
-        return torch.sigmoid(self.span_logits).mean()
+        return self.current_span.sum()
 
     def _relative_position_bucket(
         self, relative_position: torch.Tensor, bidirectional: bool = True, num_buckets: int = 32, max_distance: int = 128
@@ -557,28 +557,32 @@ class AdaptiveSpanAttention(BaseAttention):
             causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(~causal_tril, -10000.0)
 
-        # Compute softmax in float32 for numerical stability
-        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0)
+        # Compute softmax in float32 for numerical stability, then cast back
+        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(scores.dtype)
 
         # Differentiable Adaptive Span Soft Ramp (Sukhbaatar et al., 2019)
         # Continuous piecewise-linear masking: g_z(d) = clamp((R + z - d) / R, 0.0, 1.0)
         # Avoids [H, N, N] boolean allocation and provides non-zero gradients to self.span_logits
         if not is_cross_attention and N_q == N_k:
             span = torch.sigmoid(self.span_logits) * self.max_span   # [H]
-            pos_q = torch.arange(N_q, device=device, dtype=torch.float32).unsqueeze(1)  # [N_q, 1]
-            pos_k = torch.arange(N_k, device=device, dtype=torch.float32).unsqueeze(0)  # [1, N_k]
-            if is_decoder:
-                dist = (pos_q - pos_k).clamp(min=0.0)  # [N_q, N_k]
-            else:
-                dist = (pos_q - pos_k).abs()           # [N_q, N_k]
+            
+            # Fast path: skip ramp tensor allocation if all spans are wide enough to cover the context
+            # A span covers the full sequence if span >= N_k - ramp_size
+            if not (span >= N_k - self.ramp_size).all():
+                pos_q = torch.arange(N_q, device=device, dtype=scores.dtype).unsqueeze(1)  # [N_q, 1]
+                pos_k = torch.arange(N_k, device=device, dtype=scores.dtype).unsqueeze(0)  # [1, N_k]
+                if is_decoder:
+                    dist = (pos_q - pos_k).clamp(min=0.0)  # [N_q, N_k]
+                else:
+                    dist = (pos_q - pos_k).abs()           # [N_q, N_k]
 
-            span_h = span.view(1, H, 1, 1)
-            dist_mat = dist.view(1, 1, N_q, N_k)
-            ramp = torch.clamp((self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0)
+                span_h = span.view(1, H, 1, 1).to(scores.dtype)
+                dist_mat = dist.view(1, 1, N_q, N_k)
+                ramp = torch.clamp((self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0)
 
-            attn = attn * ramp
-            attn = attn / (attn.sum(dim=-1, keepdim=True) + 1e-8)
-            attn = torch.nan_to_num(attn, nan=0.0)
+                attn = attn * ramp
+                attn = attn / (attn.sum(dim=-1, keepdim=True) + 1e-8)
+                attn = torch.nan_to_num(attn, nan=0.0)
 
         attn = attn.to(dtype)
         attn = self.dropout(attn)
@@ -675,6 +679,12 @@ def inject_adaptive_span(
 
     if src_attn is None and cfg is None:
         return None
+
+    # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+    if src_attn is not None:
+        c_name = src_attn.__class__.__name__
+        if "DeltaNet" in c_name or "LinearAttention" in c_name:
+            return None
 
     hidden_size = (
         getattr(src_attn, 'hidden_size', None) or
