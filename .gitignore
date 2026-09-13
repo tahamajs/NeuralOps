@@ -236,3 +236,5 @@ temp_modules_docs/
 
 
 results/*.log
+
+*.pdf
