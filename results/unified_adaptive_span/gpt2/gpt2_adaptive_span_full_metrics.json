@@ -1,14 +1,14 @@
 {
     "model": "gpt2_adaptive_span",
     "performance": {
-        "accuracy_pct": 60.21,
-        "f1_score": 0.5342,
-        "f1_macro": 0.5934,
-        "precision": 0.616,
-        "recall": 0.6049,
-        "val_loss": 0.677,
+        "accuracy_pct": 88.07,
+        "f1_score": 0.8813,
+        "f1_macro": 0.8807,
+        "precision": 0.8809,
+        "recall": 0.8809,
+        "val_loss": 0.3037,
         "status": "PASS",
-        "elapsed_s": 26.99
+        "elapsed_s": 29.85
     },
     "efficiency": {
         "total_params_before": 126800640,
@@ -25,23 +25,23 @@
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
         "per_layer_ranks": {
-            "transformer.h.0.attn": 64,
-            "transformer.h.1.attn": 64,
-            "transformer.h.2.attn": 64,
-            "transformer.h.3.attn": 64,
-            "transformer.h.4.attn": 64,
-            "transformer.h.5.attn": 64,
-            "transformer.h.6.attn": 64,
-            "transformer.h.7.attn": 64,
-            "transformer.h.8.attn": 64,
-            "transformer.h.9.attn": 64,
-            "transformer.h.10.attn": 64,
-            "transformer.h.11.attn": 64
+            "transformer.h.0.attn": 32,
+            "transformer.h.1.attn": 32,
+            "transformer.h.2.attn": 32,
+            "transformer.h.3.attn": 32,
+            "transformer.h.4.attn": 32,
+            "transformer.h.5.attn": 32,
+            "transformer.h.6.attn": 32,
+            "transformer.h.7.attn": 32,
+            "transformer.h.8.attn": 32,
+            "transformer.h.9.attn": 32,
+            "transformer.h.10.attn": 32,
+            "transformer.h.11.attn": 32
         }
     },
     "hardware": {
-        "peak_vram_mb": 332.41,
-        "tokens_per_sec": 10416.92
+        "peak_vram_mb": 332.28,
+        "tokens_per_sec": 9668.11
     },
     "architecture": {
         "span_distribution": {
@@ -218,10 +218,10 @@
         "sparsity_ratio_percent": 1.8
     },
     "scalability": {
-        "L_128_vram_mb": 292.66,
-        "L_256_vram_mb": 299.11,
-        "L_512_vram_mb": 329.06,
+        "L_128_vram_mb": 292.03,
+        "L_256_vram_mb": 298.34,
+        "L_512_vram_mb": 328.94,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-14T02:16:43.998469"
+    "timestamp": "2026-09-14T02:32:23.636915"
 }
