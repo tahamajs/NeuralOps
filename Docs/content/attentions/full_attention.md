@@ -239,6 +239,7 @@ To eliminate intermediate $N \times N$ score materialization, hardware-accelerat
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **gpt2** | sst2 | `PASS` | N/A | **59.29%** | N/A | 0.6179 | 1.00x | 0 | N/A | 2026-09-10 |
 | **roberta-base** | sst2 | `PASS` | N/A | **75.00%** | N/A | 0.7578 | 1.00x | 0 | N/A | 2026-09-10 |
+| **qwen2.5-0.5b-instruct** | sst2 | `PASS` | N/A | **76.61%** | N/A | 0.7939 | 1.00x | 0 | N/A | 2026-09-14 |
 
 
 The empirical evaluation of `full_attention` across standard sequence lengths and language modeling benchmarks ($B=2, d=64, H=4$) demonstrates the following performance characteristics:
@@ -825,4 +826,3 @@ The `FullAttention` architecture incorporates telemetry hooks for tracking singu
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
