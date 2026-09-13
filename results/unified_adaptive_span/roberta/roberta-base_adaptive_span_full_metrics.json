@@ -1,26 +1,26 @@
 {
     "model": "roberta-base_adaptive_span",
     "performance": {
-        "accuracy_pct": 82.34,
-        "f1_score": 0.8493,
-        "f1_macro": 0.818,
-        "precision": 0.8584,
-        "recall": 0.8205,
-        "val_loss": 0.6067,
-        "status": "PASS",
-        "elapsed_s": 29.76
+        "accuracy_pct": 51.26,
+        "f1_score": 0.6763,
+        "f1_macro": 0.3451,
+        "precision": 0.7555,
+        "recall": 0.5035,
+        "val_loss": 0.691,
+        "status": "PASS_LOW",
+        "elapsed_s": 25.59
     },
     "efficiency": {
-        "total_params_before": 127325954,
-        "total_params_after": 163941266,
-        "trainable_recovery_params": 4450706,
-        "compression_rate": 0.7767,
-        "compression_ratio_pct": -28.76,
+        "total_params_before": 124647170,
+        "total_params_after": 161262482,
+        "trainable_recovery_params": 1771922,
+        "compression_rate": 0.7729,
+        "compression_ratio_pct": -29.38,
         "flops_reduction_pct": 0.0,
         "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 24,
-        "lora_params": 3858432,
+        "lora_params": 1179648,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -52,8 +52,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 414.86,
-        "tokens_per_sec": 10456.72
+        "peak_vram_mb": 684.56,
+        "tokens_per_sec": 11676.49
     },
     "architecture": {
         "span_distribution": {
@@ -398,10 +398,10 @@
         "sparsity_ratio_percent": 0.67
     },
     "scalability": {
-        "L_128_vram_mb": 384.53,
-        "L_256_vram_mb": 391.53,
-        "L_512_vram_mb": 419.2,
+        "L_128_vram_mb": 662.19,
+        "L_256_vram_mb": 669.2,
+        "L_512_vram_mb": 703.86,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-07T17:08:33.870060"
+    "timestamp": "2026-09-13T23:20:10.365206"
 }
