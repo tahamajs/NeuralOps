@@ -29,3 +29,4 @@ print("msk type:", type(msk))
 if isinstance(msk, torch.Tensor):
     print("msk shape:", msk.shape, "dtype:", msk.dtype, "min:", msk.min().item(), "max:", msk.max().item())
     print("msk unique values:", torch.unique(msk[:1, 0, 0, :20]).tolist())
+    print("msk row 0 (tokens 0..10):", msk[0, 0, 0, :10].tolist())
