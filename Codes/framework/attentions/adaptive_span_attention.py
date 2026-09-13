@@ -230,12 +230,13 @@ class AdaptiveSpanAttention(BaseAttention):
 
         # Detect nested encoder architecture early
         source_cls = source_attn.__class__.__name__ if source_attn is not None else ""
+        cfg_model_type = getattr(config, "model_type", "").lower() if config else ""
         is_nested = (
             source_cls in ("BertSelfAttention", "RobertaSelfAttention")
-            or (source_cls.endswith(("SelfAttention", "SelfAttn")) and "distil" not in source_cls.lower())
+            or cfg_model_type in ("roberta", "bert")
+            or (source_cls.endswith(("SelfAttention", "SelfAttn")) and "distil" not in source_cls.lower() and "gpt" not in source_cls.lower() and "qwen" not in source_cls.lower())
         )
-        has_out = any(hasattr(source_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")) if source_attn is not None else False
-        self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", (is_nested and not has_out)))
+        self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", is_nested))
 
         self.has_relative_attention_bias: bool = False
         self.relative_attention_bias: Optional[nn.Embedding] = None
@@ -426,12 +427,13 @@ class AdaptiveSpanAttention(BaseAttention):
 
         # Detect nested encoder architecture
         cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        cfg_type = getattr(self.config, "model_type", "").lower() if self.config else ""
         if not self.is_nested_encoder:
-            self.is_nested_encoder = bool((
+            self.is_nested_encoder = bool(
                 cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out_proj)
-            ) and not has_out_proj)
+                or cfg_type in ("roberta", "bert")
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and "gpt" not in cls_name.lower() and "qwen" not in cls_name.lower())
+            )
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
