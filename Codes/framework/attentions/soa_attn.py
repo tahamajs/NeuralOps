@@ -249,9 +249,18 @@ class SOAAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and src_attn is not None:
+            target_dtype = next(src_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
         # 3. Pretrained weight transfer
         if src_attn is not None:
             self.copy_weights(src_attn)
+
+        if target_dtype is not None:
+            self.to(target_dtype)
 
     @property
     def q_proj(self) -> FactorizedLinear:
@@ -542,62 +551,115 @@ class SOAAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("soa_module_inject")
 @ATTENTION_REGISTRY.register("inject_soa_attn")
 @ATTENTION_REGISTRY.register("inject_soa")
+@ATTENTION_REGISTRY.register("soa_attn_inject")
+@ATTENTION_REGISTRY.register("soa_inject")
+@ATTENTION_REGISTRY.register("soa_module_inject")
+@ATTENTION_REGISTRY.register("inject_soa_attn")
+@ATTENTION_REGISTRY.register("inject_soa")
 @ATTENTION_REGISTRY.register("inject_soa_module")
 def inject_soa_attn(
-    layer: Any = None,
-    model: Any = None,
+    model: Optional[nn.Module] = None,
+    layer: Optional[nn.Module] = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Any = None,
     **kwargs: Any,
-) -> Optional[SOAAttention]:
-    """Safely replace attention module with hardened SOAAttention."""
+) -> Optional[Union[SOAAttention, nn.Module]]:
+    """Safely replace attention module with hardened SOAAttention across diverse transformer architectures."""
     target = layer if layer is not None else model
-    try:
-        if target is not None and (
-            hasattr(target, "transformer")
-            or hasattr(target, "distilbert")
-            or hasattr(target, "roberta")
-            or hasattr(target, "bert")
-        ):
-            layers = None
-            if hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
-                layers = target.roberta.encoder.layer
-            elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
-                layers = target.bert.encoder.layer
-            elif hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
-                layers = target.distilbert.transformer.layer
-            elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
-                layers = target.transformer.h
-            if layers is not None:
-                for idx, lyr in enumerate(layers):
-                    inject_soa_attn(
-                        layer=lyr,
-                        model_config=model_config or getattr(target, "config", None),
-                        comp_config=comp_config,
-                        layer_idx=idx,
-                        total_layers=len(layers),
-                        **kwargs,
-                    )
-                return target
+    if target is None:
+        return None
 
-        src = old_attn
-        if src is None and target is not None:
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_soa_attn(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    try:
+        src_attn = old_attn
+        if src_attn is None and target is not None:
             for attr in ("attention", "self_attn", "attn", "self"):
                 if hasattr(target, attr):
                     cand = getattr(target, attr)
-                    if hasattr(cand, "query") or hasattr(cand, "q_lin") or hasattr(cand, "q_proj") or hasattr(cand, "c_attn"):
-                        src = cand
-                        break
-            if src is None:
-                for attr in ("attention", "self_attn", "attn", "self"):
-                    if hasattr(target, attr):
-                        src = getattr(target, attr)
-                        break
+                    if hasattr(cand, "self"):
+                        src_attn = cand.self
+                    else:
+                        src_attn = cand
+                    break
 
-        cfg = model_config or getattr(target, "config", None)
+        if src_attn is None and target is not None and hasattr(target, "forward"):
+            src_attn = target
+
+        if src_attn is None:
+            return None
+
+        # Double-injection guard
+        if src_attn is not None:
+            if isinstance(src_attn, SOAAttention):
+                return None
+            if "SOA" in src_attn.__class__.__name__:
+                return None
+            if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), SOAAttention):
+                return None
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), SOAAttention):
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, SOAAttention):
+                    return None
+                if "SOA" in cand.__class__.__name__:
+                    return None
+                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), SOAAttention):
+                    return None
+                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), SOAAttention):
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src_attn is not None:
+            c_name = src_attn.__class__.__name__
+            if "DeltaNet" in c_name or "LinearAttention" in c_name:
+                return None
+
+        if cfg is None and hasattr(src_attn, "config"):
+            cfg = src_attn.config
+
         k_rank = getattr(comp_config, "soa_rank", getattr(comp_config, "rank", kwargs.get("k_rank", 64)))
         dropout = getattr(comp_config, "dropout", kwargs.get("dropout", 0.1))
 
@@ -605,7 +667,7 @@ def inject_soa_attn(
             config=cfg,
             k_rank=k_rank,
             dropout=dropout,
-            pretrained_attn=src,
+            pretrained_attn=src_attn,
             **kwargs,
         )
 
@@ -614,19 +676,15 @@ def inject_soa_attn(
                 if hasattr(target.attention, "self"):
                     target.attention.self = new_attn
                     new_attn.is_nested_encoder = True
-                    return new_attn
                 else:
                     target.attention = new_attn
-                    return new_attn
-            for attr in ("self_attn", "attn"):
+                return new_attn
+            for attr in ("self_attn", "attn", "self"):
                 if hasattr(target, attr):
                     setattr(target, attr, new_attn)
                     return new_attn
-            if hasattr(target, "self"):
-                target.self = new_attn
-                new_attn.is_nested_encoder = True
-                return new_attn
-
+            target.attention = new_attn
+            return new_attn
         return new_attn
     except Exception as e:
         logger.error("inject_soa_attn failed at layer %d: %s", layer_idx, e)
