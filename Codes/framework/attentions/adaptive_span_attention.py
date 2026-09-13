@@ -218,15 +218,12 @@ class AdaptiveSpanAttention(BaseAttention):
         if config is not None:
             self.max_span = int(getattr(config, "max_span", max_span))
             self.ramp_size = float(getattr(config, "ramp_size", kwargs.get("ramp_size", 32.0)))
-            print(f">>> DEBUG max_span logic: config.max_span = {getattr(config, 'max_span', 'missing')}, arg max_span = {max_span}, final self.max_span = {self.max_span}")
         elif comp_config is not None:
             self.max_span = int(getattr(comp_config, "max_span", max_span))
             self.ramp_size = float(getattr(comp_config, "ramp_size", kwargs.get("ramp_size", 32.0)))
-            print(f">>> DEBUG max_span logic: comp_config.max_span = {getattr(comp_config, 'max_span', 'missing')}, arg max_span = {max_span}, final self.max_span = {self.max_span}")
         else:
             self.max_span = int(max_span)
             self.ramp_size = float(kwargs.get("ramp_size", 32.0))
-            print(f">>> DEBUG max_span logic: kwargs max_span = {max_span}, final self.max_span = {self.max_span}")
 
         model_type = getattr(config, "model_type", "").lower() if config else ""
 
