@@ -570,24 +570,24 @@ class AdaptiveSpanAttention(BaseAttention):
             causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(~causal_tril, -10000.0)
 
-        # Softmax computation with chunked fallback for very long sequences
-        if scores.dtype in (torch.float16, torch.bfloat16) and N_k > 1024:
+        # Softmax computation: always chunk FP16/BF16 to keep FP32 temporary memory bounded
+        if scores.dtype in (torch.float16, torch.bfloat16):
+            c_sz = 256
             attn = torch.empty_like(scores)
-            c_sz = 512
             for s_idx in range(0, N_q, c_sz):
                 e_idx = min(s_idx + c_sz, N_q)
                 attn[:, :, s_idx:e_idx, :] = torch.nan_to_num(
                     F.softmax(scores[:, :, s_idx:e_idx, :].float(), dim=-1), nan=0.0
                 ).to(scores.dtype)
         else:
-            attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(scores.dtype)
+            attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0)
 
         # Differentiable Adaptive Span Soft Ramp (Sukhbaatar et al., 2019)
         # Continuous piecewise-linear masking: g_z(d) = clamp((R + z - d) / R, 0.0, 1.0)
         # Avoids [H, N, N] boolean allocation and provides non-zero gradients to self.span_logits
         if not is_cross_attention and N_q == N_k:
-            # Fast path: If maximum possible span covers the sequence length, ramp is a no-op
-            if self.max_span < N_k:
+            # Stronger fast-path: only allocate ramp when it can actually affect attention
+            if self.max_span < (N_k - self.ramp_size):
                 span = torch.sigmoid(self.span_logits) * self.max_span   # [H]
                 # If per-head (span + ramp_size) >= N_k for all heads, ramp has no effect
                 if not ((span + self.ramp_size) >= N_k).all():
