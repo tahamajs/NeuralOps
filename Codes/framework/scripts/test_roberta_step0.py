@@ -27,4 +27,11 @@ print(f"Pre-inject baseline accuracy: {perf_base['accuracy_pct']:.2f}%")
 inject_attention(model, "adaptive_span", rank=32)
 model.to(device)
 perf_step0 = evaluate_comprehensive(model, tokenizer, val_ds, "sst2", 128, 8, device, fp16=True, precomputed_batches=batches)
-print(f"Post-inject Step 0 accuracy: {perf_step0['accuracy_pct']:.2f}%")
+print(f"Post-inject Step 0 accuracy (max_span=96): {perf_step0['accuracy_pct']:.2f}%")
+
+for m in model.modules():
+    if hasattr(m, "max_span"):
+        m.max_span = 10000
+
+perf_no_ramp = evaluate_comprehensive(model, tokenizer, val_ds, "sst2", 128, 8, device, fp16=True, precomputed_batches=batches)
+print(f"Post-inject Step 0 accuracy (NO ramp): {perf_no_ramp['accuracy_pct']:.2f}%")
