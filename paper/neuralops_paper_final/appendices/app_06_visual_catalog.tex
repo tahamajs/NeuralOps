@@ -186,12 +186,24 @@ The module \texttt{adaptive\_sparse\_attention} is natively integrated into the 
 \subsubsection*{3.8 Architectural Characterization Diagram}
 Figure~\ref{fig:module_adaptive_sparse_attention} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
 
-\begin{figure}[htbp]
+\begin{figure*}[htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_adaptive_sparse_attention.pdf}
-    \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for AdaptiveSparseAttention (\texttt{adaptive\_sparse\_attention})}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Theoretical Scaling Profile against Quadratic Baselines.}
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/arch_adaptive_sparse_attention.jpeg}
+        \caption{High-Resolution Architecture Diagram}
+        \label{fig:module_adaptive_sparse_attention_arch}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/comparison/adaptive_sparse_attention_comparison.png}
+        \caption{Empirical Benchmark Comparison}
+        \label{fig:module_adaptive_sparse_attention_comp}
+    \end{subfigure}
+    \caption{\textbf{Comprehensive Architectural and Empirical Characterization for AdaptiveSparseAttention (\texttt{adaptive\_sparse\_attention})}. (a) High-resolution architectural dataflow and structural connectivity; (b) Empirical hardware benchmark comparison against baseline implementations.}
     \label{fig:module_adaptive_sparse_attention}
-\end{figure}
+\end{figure*}
 
 \vspace{1.0em}
 \hrule
@@ -2793,12 +2805,24 @@ The module \texttt{fusion\_attn} is natively integrated into the NeuralOps regis
 \subsubsection*{3.8 Architectural Characterization Diagram}
 Figure~\ref{fig:module_fusion_attn} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
 
-\begin{figure}[htbp]
+\begin{figure*}[htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_fusion_attn.pdf}
-    \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for FUSIONATTN (\texttt{fusion\_attn})}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Theoretical Scaling Profile against Quadratic Baselines.}
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/Fussion_Attn_new.png}
+        \caption{High-Resolution Architecture Diagram}
+        \label{fig:module_fusion_attn_arch}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/comparison/fusion_attn_comparison.png}
+        \caption{Empirical Benchmark Comparison}
+        \label{fig:module_fusion_attn_comp}
+    \end{subfigure}
+    \caption{\textbf{Comprehensive Architectural and Empirical Characterization for FUSIONATTN (\texttt{fusion\_attn})}. (a) High-resolution architectural dataflow and structural connectivity; (b) Empirical hardware benchmark comparison against baseline implementations.}
     \label{fig:module_fusion_attn}
-\end{figure}
+\end{figure*}
 
 \vspace{1.0em}
 \hrule
@@ -3333,12 +3357,24 @@ The module \texttt{gqa\_attention} is natively integrated into the NeuralOps reg
 \subsubsection*{3.8 Architectural Characterization Diagram}
 Figure~\ref{fig:module_gqa_attention} provides the complete 3-panel architectural visualization detailing: (a) Computational Dataflow Graph; (b) Structural Dynamics and Matrix Pattern; and (c) Complexity Scaling Profile against Quadratic Baselines.
 
-\begin{figure}[htbp]
+\begin{figure*}[htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{figures/catalog_visuals/module_gqa_attention.pdf}
-    \caption{\textbf{Comprehensive 3-Panel Architectural Characterization for GroupedQueryAttention (\texttt{gqa\_attention})}. (a) Computational Dataflow Graph and Operator Connectivity; (b) Structural Dynamics, Spectral Decay, and Heatmap; (c) Theoretical Scaling Profile against Quadratic Baselines.}
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/gqa_attn_new.png}
+        \caption{High-Resolution Architecture Diagram}
+        \label{fig:module_gqa_attention_arch}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/comparison/gqa_attention_comparison.png}
+        \caption{Empirical Benchmark Comparison}
+        \label{fig:module_gqa_attention_comp}
+    \end{subfigure}
+    \caption{\textbf{Comprehensive Architectural and Empirical Characterization for GroupedQueryAttention (\texttt{gqa\_attention})}. (a) High-resolution architectural dataflow and structural connectivity; (b) Empirical hardware benchmark comparison against baseline implementations.}
     \label{fig:module_gqa_attention}
-\end{figure}
+\end{figure*}
 
 \vspace{1.0em}
 \hrule
