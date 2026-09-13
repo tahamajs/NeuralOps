@@ -11,11 +11,11 @@ model = AutoModelForSequenceClassification.from_pretrained("models/roberta-base"
 ckpt_path = "results/unified_asvd/roberta/finetuned_model.pt"
 ckpt = torch.load(ckpt_path, map_location=device)
 if "model_state_dict" in ckpt:
-    model.load_state_dict(ckpt["model_state_dict"])
+    model.load_state_dict(ckpt["model_state_dict"], strict=False)
 elif "state_dict" in ckpt:
-    model.load_state_dict(ckpt["state_dict"])
+    model.load_state_dict(ckpt["state_dict"], strict=False)
 else:
-    model.load_state_dict(ckpt)
+    model.load_state_dict(ckpt, strict=False)
 
 tokenizer = AutoTokenizer.from_pretrained("models/roberta-base")
 val_ds = load_from_disk("Codes/framework/data/glue_data/sst2")["validation"]
