@@ -69,14 +69,17 @@ def test_adaptive_sparse_bidirectional_and_causal_shapes():
 
 def test_adaptive_sparse_topk_masking():
     p = AdaptiveSparseAttention(d_model=64, num_heads=4, sparsity_ratio=0.5)
+    p.eval()
     x = torch.randn(2, 12, 64)
     out, attn = p(x, output_attentions=True)
     assert out.shape == (2, 12, 64)
     assert torch.isfinite(out).all()
     if attn is not None:
-        # Check that approximately 50% elements in each row are zero (masked)
-        zero_frac = (attn == 0.0).float().mean().item()
-        assert zero_frac > 0.2
+        # Check that approximately 50% elements in each row are heavily suppressed
+        suppressed_frac = (attn < 0.05).float().mean().item()
+        assert suppressed_frac > 0.3
+        # Check that attention distribution sums to 1 across keys
+        assert torch.allclose(attn.sum(dim=-1), torch.ones_like(attn.sum(dim=-1)), atol=1e-5)
 
 def test_adaptive_sparse_frobenius_norm_verification():
     class ZeroAttn(nn.Module):
@@ -185,3 +188,65 @@ def test_adaptive_sparse_injection_all_4_architectures():
     res_q = inject_adaptive_sparse(model=q_model, lora_rank=8)
     assert res_q is not None
     assert isinstance(q_model.model.layers[0].self_attn, AdaptiveSparseAttention)
+
+def test_adaptive_sparse_differentiability():
+    p = AdaptiveSparseAttention(d_model=64, num_heads=4, sparsity_ratio=0.5, lora_rank=8)
+    x = torch.randn(2, 12, 64, requires_grad=True)
+    out, _ = p(x)
+    loss = out.sum() + p.get_sparsity_loss()
+    loss.backward()
+    assert x.grad is not None
+    assert torch.isfinite(x.grad).all()
+    assert (x.grad != 0).any()
+    assert p.sparsity_logits.grad is not None
+    assert torch.isfinite(p.sparsity_logits.grad).all()
+
+def test_adaptive_sparse_cross_attention_bypass():
+    p = AdaptiveSparseAttention(d_model=64, num_heads=4, sparsity_ratio=0.8)
+    p.eval()
+    x = torch.randn(2, 8, 64)
+    kv = torch.randn(2, 16, 64)
+    out, attn = p(x, encoder_hidden_states=kv, output_attentions=True)
+    assert out.shape == (2, 8, 64)
+    assert attn is not None
+    assert (attn > 0.0).all()
+
+def test_adaptive_sparse_nested_encoder_outer_dense_wrap():
+    class MockDense(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.weight = nn.Parameter(torch.randn(64, 64))
+            self.bias = nn.Parameter(torch.zeros(64))
+            self.in_features = 64
+            self.out_features = 64
+        def forward(self, x):
+            return x
+
+    class MockSelf(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.query = nn.Linear(64, 64)
+            self.key = nn.Linear(64, 64)
+            self.value = nn.Linear(64, 64)
+
+    class MockLayer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.attention = nn.Module()
+            self.attention.self = MockSelf()
+            self.attention.output = nn.Module()
+            self.attention.output.dense = MockDense()
+
+    lyr = MockLayer()
+    res = inject_adaptive_sparse(layer=lyr, lora_rank=8)
+    assert res is not None
+    assert isinstance(lyr.attention.output.dense, LoRALinear)
+    assert lyr.attention.output.dense.lora_A is not None
+    assert lyr.attention.output.dense.lora_A.requires_grad
+
+def test_lora_linear_no_output_scale_double_application():
+    layer = LoRALinear(64, 64, lora_rank=8)
+    assert not hasattr(layer, "output_scale")
+    x = torch.randn(2, 64)
+    out = layer(x)
+    assert out.shape == (2, 64)
