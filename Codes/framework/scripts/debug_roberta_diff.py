@@ -6,7 +6,6 @@ import torch
 from datasets import load_from_disk
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from framework.core.attention_utils import inject_attention
-from framework.attentions.adaptive_span_attention import AdaptiveSpanAttention
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", device)
@@ -25,94 +24,63 @@ m2.load_state_dict(ckpt, strict=False)
 inject_attention(m2, "adaptive_span", rank=16)
 m2.eval()
 
-# Sample 2 sentences
 enc = tok(val[:2]["sentence"], padding="max_length", max_length=128, truncation=True, return_tensors="pt").to(device)
 input_ids = enc["input_ids"]
 attention_mask = enc["attention_mask"]
-
-print("attention_mask sum per sequence:", attention_mask.sum(dim=-1).tolist())
 
 emb1 = m1.roberta.embeddings(input_ids)
 ext_mask = m1.roberta.get_extended_attention_mask(attention_mask, input_ids.shape)
 
 l1 = m1.roberta.encoder.layer[0]
 l2 = m2.roberta.encoder.layer[0]
-
 s1 = l1.attention.self
 s2 = l2.attention.self
 w2 = s2._wrapped_attention
 
-# 1. Check Q, K, V
-q1 = s1.query(emb1)
-q2 = w2.q_proj(emb1)
-print("q diff:", (q1 - q2).abs().max().item())
-
-k1 = s1.key(emb1)
-k2 = w2.k_proj(emb1)
-print("k diff:", (k1 - k2).abs().max().item())
-
-v1 = s1.value(emb1)
-v2 = w2.v_proj(emb1)
-print("v diff:", (v1 - v2).abs().max().item())
-
-# 2. Check attention output of s1 vs w2 directly
 with torch.no_grad():
     out_s1 = s1(emb1, attention_mask=ext_mask)[0]
     out_w2 = w2(emb1, attention_mask=ext_mask)[0]
-    out_s2 = s2(emb1, attention_mask=ext_mask)[0]
 
-print("out_s1 vs out_w2 diff:", (out_s1 - out_w2).abs().max().item())
-print("out_s1 vs out_s2 diff:", (out_s1 - out_s2).abs().max().item())
-print("out_s1 norm:", out_s1.norm().item())
-print("out_w2 norm:", out_w2.norm().item())
+print("Seq 0 length (valid tokens):", attention_mask[0].sum().item())
+print("Valid tokens [0, :13] diff:", (out_s1[0, :13] - out_w2[0, :13]).abs().max().item())
+print("Padded tokens [0, 13:] diff:", (out_s1[0, 13:] - out_w2[0, 13:]).abs().max().item())
+print("out_s1[0, 13, :5]:", out_s1[0, 13, :5])
+print("out_w2[0, 13, :5]:", out_w2[0, 13, :5])
 
-# Check token 0 (CLS) diff
-print("out_s1 token 0 vs out_w2 token 0 diff:", (out_s1[:, 0] - out_w2[:, 0]).abs().max().item())
+# Now check what RobertaAttention (self + output) does:
+a1 = l1.attention
+a2 = l2.attention
+with torch.no_grad():
+    out_a1 = a1(emb1, attention_mask=ext_mask)[0]
+    out_a2 = a2(emb1, attention_mask=ext_mask)[0]
 
-# Let's inspect w2 internals:
-# Manually run the scores and softmax inside w2
-B, N_q, D = emb1.shape
-H, d = w2.num_heads, w2.head_dim
-Q = q2.view(B, N_q, H, d).transpose(1, 2)
-K = k2.view(B, N_q, H, d).transpose(1, 2)
-V = v2.view(B, N_q, H, d).transpose(1, 2)
-scores = torch.matmul(Q, K.transpose(-2, -1)) * (d ** -0.5)
+print("Attention 0 valid tokens diff:", (out_a1[0, :13] - out_a2[0, :13]).abs().max().item())
+print("Attention 0 padded tokens diff:", (out_a1[0, 13:] - out_a2[0, 13:]).abs().max().item())
 
-print("scores diff vs s1 scores:")
-s1_Q = s1.transpose_for_scores(q1)
-s1_K = s1.transpose_for_scores(k1)
-s1_scores = torch.matmul(s1_Q, s1_K.transpose(-1, -2)) / (d ** 0.5)
-print("  raw scores diff:", (scores - s1_scores).abs().max().item())
+# Now check Layer 0 (attention + intermediate + output)
+with torch.no_grad():
+    out_l1 = l1(emb1, attention_mask=ext_mask)[0]
+    out_l2 = l2(emb1, attention_mask=ext_mask)[0]
 
-scores_masked = scores + ext_mask.to(scores.dtype)
-s1_scores_masked = s1_scores + ext_mask
-print("  masked scores diff:", (scores_masked - s1_scores_masked).abs().max().item())
+print("Layer 0 valid tokens diff:", (out_l1[0, :13] - out_l2[0, :13]).abs().max().item())
+print("Layer 0 padded tokens diff:", (out_l1[0, 13:] - out_l2[0, 13:]).abs().max().item())
 
-attn_prob = torch.softmax(scores_masked, dim=-1)
-s1_prob = torch.softmax(s1_scores_masked, dim=-1)
-print("  attn_prob diff:", (attn_prob - s1_prob).abs().max().item())
+# Now check through all 12 layers:
+x1 = emb1
+x2 = emb1
+for i in range(12):
+    layer1 = m1.roberta.encoder.layer[i]
+    layer2 = m2.roberta.encoder.layer[i]
+    with torch.no_grad():
+        x1 = layer1(x1, attention_mask=ext_mask)[0]
+        x2 = layer2(x2, attention_mask=ext_mask)[0]
+    print(f"Layer {i:2d} valid tokens max diff: {(x1[0, :13] - x2[0, :13]).abs().max().item():.6e} | padded max diff: {(x1[0, 13:] - x2[0, 13:]).abs().max().item():.6e}")
 
-# Now check ramp!
-span = torch.sigmoid(w2.span_logits) * w2.max_span
-print("w2.max_span:", w2.max_span, "N_k:", N_q, "span:", span[0].item())
-pos_q = torch.arange(N_q, device=device, dtype=scores.dtype).unsqueeze(1)
-pos_k = torch.arange(N_q, device=device, dtype=scores.dtype).unsqueeze(0)
-dist = (pos_q - pos_k).abs()
-span_h = span.view(1, H, 1, 1).to(scores.dtype)
-dist_mat = dist.view(1, 1, N_q, N_q)
-ramp = torch.clamp((w2.ramp_size + span_h - dist_mat) / w2.ramp_size, 0.0, 1.0)
-print("ramp min:", ramp.min().item(), "ramp max:", ramp.max().item())
-print("ramp at [0, 0, 0, :10]:", ramp[0, 0, 0, :10].tolist())
-print("ramp at [0, 0, 0, 90:100]:", ramp[0, 0, 0, 90:100].tolist())
-print("ramp at [0, 0, 0, 120:]: ", ramp[0, 0, 0, 120:].tolist())
+# Check pooled output & classifier:
+with torch.no_grad():
+    logits1 = m1.classifier(x1)
+    logits2 = m2.classifier(x2)
 
-# Now with ramp applied:
-attn_ramped = attn_prob * ramp
-attn_sum = attn_ramped.sum(dim=-1, keepdim=True).clamp(min=1e-4)
-attn_renorm = attn_ramped / attn_sum
-print("attn_renorm diff vs s1_prob:", (attn_renorm - s1_prob).abs().max().item())
-
-ctx_orig = torch.matmul(s1_prob, s1.transpose_for_scores(v1)).transpose(1, 2).contiguous().view(B, N_q, D)
-ctx_ramped = torch.matmul(attn_renorm, V).transpose(1, 2).contiguous().view(B, N_q, D)
-print("ctx_orig vs ctx_ramped diff:", (ctx_orig - ctx_ramped).abs().max().item())
-print("ctx_orig token 0 vs ctx_ramped token 0 diff:", (ctx_orig[:, 0] - ctx_ramped[:, 0]).abs().max().item())
+print("logits1:", logits1[0])
+print("logits2:", logits2[0])
+print("logits diff:", (logits1 - logits2).abs().max().item())
