@@ -6,7 +6,7 @@ Zero-dependency deployment options for the 3D Neural Architecture Atlas.
 
 ## Option 1: One-Click Instant Local Launch (Easiest)
 
-We built an automatic launcher script [`serve.py`](file:///Users/tahamajs/Documents/uni/Project/Docs/visualizer/serve.py) that starts a clean local server and opens your browser:
+We built an automatic launcher script [`serve.py`](serve.py) that starts a clean local server and opens your browser:
 
 ```bash
 python3 Docs/visualizer/serve.py
@@ -16,7 +16,7 @@ python3 Docs/visualizer/serve.py
 
 ## Option 2: 100% Offline Standalone File (No Server Needed!)
 
-We compiled a standalone single-file distribution: [`standalone.html`](file:///Users/tahamajs/Documents/uni/Project/Docs/visualizer/standalone.html).
+We compiled a standalone single-file distribution: [`standalone.html`](standalone.html).
 - All CSS, model spatial data, and Three.js visualizer code are bundled inside.
 - **You can double-click `standalone.html` directly in your file manager** or run:
   ```bash

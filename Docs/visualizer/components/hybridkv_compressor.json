@@ -1,0 +1,104 @@
+{
+  "id": "hybridkv_compressor",
+  "name": "Hybridkv Compressor",
+  "file": "Codes/framework/compression_engine/hybridkv_compressor.py",
+  "type": "Compression Engine",
+  "category": "Latent & KV-Cache Compression",
+  "paradigm": "mla",
+  "icon": "\ud83e\udde0",
+  "description": "HybridKV: Hybrid KV Cache Compression for Multimodal & Long-Context LLMs. Classifies attention heads into static/dynamic types and applies distinct compression strategies per type under a hierarchical budget strictly to dynamic KV caches.",
+  "classes": [
+    "HybridKVCache",
+    "HybridKVCompressor"
+  ],
+  "methods_count": 9,
+  "math_latex": "\\sigma_i^2 = \\text{Var}_j(W_{i, j}) = \\frac{1}{D_{\\text{in}}} \\sum_{j=1}^{D_{\\text{in}}} \\left( W_{i, j} - \\mu_i \\right)^2 \\quad \\text{for } i \\in \\{1, \\dots, D_{\\text{out}}\\}",
+  "components": [
+    {
+      "id": "kv_compress",
+      "name": "Latent KV Down-Projection",
+      "role": "Slashing KV Cache by 8x",
+      "shape_transform": "[d_c \u00d7 d_in]",
+      "color": "#38bdf8"
+    },
+    {
+      "id": "q_lora_a",
+      "name": "Query LoRA Compression",
+      "role": "Decoupled Attention Projections",
+      "shape_transform": "[r_q \u00d7 d_in]",
+      "color": "#0ea5e9"
+    },
+    {
+      "id": "q_lora_b",
+      "name": "Query LoRA Expansion + RoPE",
+      "role": "Rotary Positional Embedding Integration",
+      "shape_transform": "[d_out \u00d7 r_q]",
+      "color": "#0284c7"
+    },
+    {
+      "id": "out_proj",
+      "name": "Multi-Head Output Projection",
+      "role": "Final Attention Representation Map",
+      "shape_transform": "[d_out \u00d7 d_out]",
+      "color": "#0369a1"
+    }
+  ],
+  "model_projections": {
+    "distilbert": {
+      "model_name": "DistilBERT-Base",
+      "family": "Encoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 6,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 5750784,
+      "total_baseline_params": 66301440,
+      "total_compressed_params": 58338816,
+      "savings_ratio": 1.23,
+      "storage_saved_bytes": 15925248,
+      "storage_saved_formatted": "15.2 MB"
+    },
+    "roberta": {
+      "model_name": "RoBERTa-Base",
+      "family": "Encoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 12,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 5750784,
+      "total_baseline_params": 123933696,
+      "total_compressed_params": 108008448,
+      "savings_ratio": 1.23,
+      "storage_saved_bytes": 31850496,
+      "storage_saved_formatted": "30.4 MB"
+    },
+    "gpt2": {
+      "model_name": "GPT-2-Small",
+      "family": "Causal Decoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 12,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 5750784,
+      "total_baseline_params": 124318464,
+      "total_compressed_params": 108393216,
+      "savings_ratio": 1.23,
+      "storage_saved_bytes": 31850496,
+      "storage_saved_formatted": "30.4 MB"
+    },
+    "qwen": {
+      "model_name": "Qwen2.5-0.5B",
+      "family": "GQA Decoder (SLM)",
+      "hidden_size": 896,
+      "intermediate_size": 4864,
+      "num_layers": 24,
+      "baseline_layer_params": 14909440,
+      "compressed_layer_p": 14479360,
+      "total_baseline_params": 493961216,
+      "total_compressed_params": 483639296,
+      "savings_ratio": 1.03,
+      "storage_saved_bytes": 20643840,
+      "storage_saved_formatted": "19.7 MB"
+    }
+  }
+}

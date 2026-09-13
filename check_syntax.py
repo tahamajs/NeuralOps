@@ -1,19 +1,27 @@
-import glob
+import os
+import re
 
-issues = 0
-for f in glob.glob('thesis_final/attentions_latex/individual_modules/*.tex'):
-    c = open(f).read()
-    lines = c.split('\n')
-    for line_idx, line in enumerate(lines, 1):
-        if r'\lr{' in line:
-            parts = line.split(r'\lr{')
-            for part in parts[1:]:
-                inside = part.split('}')[0]
-                if '%' in inside and r'\%' not in inside:
-                    print(f'Raw % in {f}:{line_idx} -> {inside}')
-                    issues += 1
-                if '_' in inside and r'\_' not in inside:
-                    print(f'Raw _ in {f}:{line_idx} -> {inside}')
-                    issues += 1
+MOD_DIR = '/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/individual_modules'
+with open('/Users/tahamajs/Documents/uni/Project/thesis_final/chapter_attentions.tex', 'r', encoding='utf-8') as f:
+    inputs = [l.strip() for l in f if l.strip().startswith(r'\input{')]
+modules = [l.split('{')[1].split('}')[0].split('/')[-1].replace('.tex', '') for l in inputs]
 
-print(f'Total issues found: {issues}')
+errors = []
+for m in modules:
+    p = os.path.join(MOD_DIR, f'{m}.tex')
+    with open(p, 'r', encoding='utf-8') as f:
+        txt = f.read()
+    
+    open_b = txt.count('{')
+    close_b = txt.count('}')
+    if open_b != close_b:
+        errors.append(f'{m}: Brace mismatch ({open_b} open vs {close_b} close)')
+        
+    begins = re.findall(r'\\begin\{([a-zA-Z0-9_\*]+)\}', txt)
+    ends = re.findall(r'\\end\{([a-zA-Z0-9_\*]+)\}', txt)
+    if sorted(begins) != sorted(ends):
+        errors.append(f'{m}: Environment mismatch: begins={sorted(begins)} ends={sorted(ends)}')
+
+print(f'Total syntax errors found: {len(errors)}')
+for e in errors:
+    print('  ', e)

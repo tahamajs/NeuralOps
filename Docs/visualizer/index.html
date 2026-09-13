@@ -3,8 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>3D Neural Architecture Visualizer · Multi-Model Atlas</title>
+    <title>Attention Lab · 3D Neural Architecture Atlas</title>
     <link rel="stylesheet" href="style.css">
+    <!-- KaTeX Math Typesetting -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <!-- Import map for Vanilla Three.js + Addons -->
     <script type="importmap">
       {
@@ -15,93 +18,207 @@
       }
     </script>
 </head>
-<body>
-    <!-- Top Navigation Header -->
+<body class="app">
+    <!-- Scene Wrap with WebGL Canvas and SVG Leader Guides -->
+    <section id="scene-wrap" class="scene-wrap" aria-label="Spatial architecture comparison">
+        <canvas id="webgl-canvas" aria-label="Interactive 3D architecture" data-engine="three.js"></canvas>
+        
+        <!-- Screen-space Dynamic Leader Guides & Callout Labels -->
+        <div id="labels" class="labels-container">
+            <svg id="label-guides" class="label-guides" aria-hidden="true"></svg>
+            <div id="callout-badges" class="callout-badges"></div>
+        </div>
+    </section>
+
+    <!-- Top Navigation Header (Polymetis / Attention Lab Style) -->
     <header class="topbar">
-        <div class="brand">
-            <span class="brand-glyph"></span>
-            <strong>NEURALOPS</strong>
-            <small>3D ARCHITECTURE ATLAS</small>
+        <div>
+            <div class="eyebrow">NEURAL ARCHITECTURE ATLAS · 241 RESEARCH MODULES</div>
+            <h1>Attention Lab <span>/ Transformer Visualizer</span></h1>
         </div>
 
-        <div class="topbar-metrics">
-            <div class="metric-pill">
-                <span>PARADIGM</span>
-                <b id="active-mode-label">DISTILBERT · Dense vs SVD</b>
+        <div class="top-actions">
+            <!-- 3D / 2D View Switcher -->
+            <div class="view-toggle" role="tablist" aria-label="View Mode">
+                <button id="btn-view-3d" class="active" role="tab" aria-selected="true" title="3D Spatial Perspective">3D</button>
+                <button id="btn-view-2d" role="tab" aria-selected="false" title="2D Front Orthographic View">2D</button>
             </div>
-            <div class="metric-pill">
-                <span>TOKENS</span>
-                <b id="active-tokens-count">360 Flowing</b>
-            </div>
-        </div>
 
-        <div class="topbar-actions">
-            <button id="btn-play-pause" class="btn-primary" title="Toggle Particle Flow">
-                <span class="btn-icon">⏸</span> Pause Flow
+            <!-- Engine Status Dot -->
+            <div class="status ready" id="status-pill" title="Engine Status">
+                <i></i>
+                <span id="status-text">Ready</span>
+            </div>
+
+            <!-- Quick Module Selector -->
+            <div class="quick-select-box">
+                <select id="quick-module-select" class="quick-module-select" title="Instantly select any of the 241 research attention & compression modules">
+                    <option value="" disabled selected>⚡ Quick Pick (241 Modules)...</option>
+                </select>
+            </div>
+
+            <!-- Module Library Modal Trigger -->
+            <button id="btn-open-catalog" class="round-button btn-catalog" title="Browse all 241 research modules">
+                📚 Library (241)
             </button>
-            <button id="btn-reset-cam" class="btn-secondary" title="Auto-Fit Camera to Current Model">
-                Auto-Fit
+
+            <!-- Deep Inspector Toggle -->
+            <button id="btn-toggle-inspector" class="round-button" title="Toggle Deep Architecture Inspector">
+                🔬 Inspector
             </button>
         </div>
     </header>
 
-    <!-- Model Selector Pills at Top-Center -->
-    <nav id="model-selector" class="model-selector" role="tablist" aria-label="Transformer Family Selection">
-        <button class="model-tab" data-model="distilbert" data-active="true" role="tab" aria-selected="true">DistilBERT</button>
-        <button class="model-tab" data-model="roberta" data-active="false" role="tab" aria-selected="false">RoBERTa</button>
-        <button class="model-tab" data-model="gpt2" data-active="false" role="tab" aria-selected="false">GPT-2</button>
-        <button class="model-tab" data-model="qwen" data-active="false" role="tab" aria-selected="false">Qwen3.5</button>
+    <!-- Floating Top Mechanism Navigation Bar -->
+    <nav class="mechanism-nav" id="mechanism-nav" role="tablist" aria-label="Architecture Paradigm Navigation">
+        <button class="mechanism-button active" data-model="distilbert" data-module="svd" role="tab" aria-selected="true">
+            <b>DistilBERT</b>
+            <small>Dense vs SVD · 66M</small>
+        </button>
+        <button class="mechanism-button" data-model="roberta" data-module="svd" role="tab" aria-selected="false">
+            <b>RoBERTa</b>
+            <small>Dense vs SVD · 125M</small>
+        </button>
+        <button class="mechanism-button" data-model="gpt2" data-module="svd" role="tab" aria-selected="false">
+            <b>GPT-2</b>
+            <small>Dense vs SVD · 124M</small>
+        </button>
+        <button class="mechanism-button" data-model="qwen" data-module="svd" role="tab" aria-selected="false">
+            <b>Qwen3.5</b>
+            <small>Dense vs SVD · 0.5B</small>
+        </button>
+        <button class="mechanism-button" data-model="distilbert" data-module="moe" role="tab" aria-selected="false">
+            <b>ToMoE Experts</b>
+            <small>Mixture-of-Experts</small>
+        </button>
+        <button class="mechanism-button" data-model="distilbert" data-module="slicegpt" role="tab" aria-selected="false">
+            <b>SliceGPT</b>
+            <small>Channel Pruning</small>
+        </button>
     </nav>
 
-    <!-- Educational Bottom Control Bar -->
-    <div class="edu-controls">
-        <div class="control-group">
-            <label>SPEED</label>
-            <div class="speed-buttons">
-                <button class="btn-speed" data-speed="0.3">0.3x</button>
-                <button class="btn-speed active" data-speed="1.0">1.0x</button>
-                <button class="btn-speed" data-speed="2.0">2.0x</button>
+    <!-- Floating Left Stage Detail Card -->
+    <div class="detail-card" id="detail-card" aria-label="Selected Stage Details">
+        <div class="detail-kicker" id="detail-kicker">STAGE 01 · INPUT EMBEDDINGS</div>
+        <h2 id="detail-title">Input Embeddings</h2>
+        <p id="detail-desc">Token sequences enter the network and project into continuous latent representations through the embedding lookup table.</p>
+        <div class="fact-grid">
+            <div class="fact">
+                <small>LOGICAL SHAPE</small>
+                <strong id="fact-shape">[30522 × 768]</strong>
+            </div>
+            <div class="fact">
+                <small>PARAM COUNT</small>
+                <strong id="fact-params">23.44M</strong>
+            </div>
+            <div class="fact">
+                <small>SUBSPACE / RANK</small>
+                <strong id="fact-subspace">d=768</strong>
+            </div>
+            <div class="fact">
+                <small>DELTA / STORAGE</small>
+                <strong id="fact-delta" style="color: var(--cyan);">93.8 MB</strong>
             </div>
         </div>
-        <div class="control-group">
-            <label class="toggle-label">
-                <input type="checkbox" id="toggle-pulse" checked>
-                <span>Activation Pulses</span>
-            </label>
+        <button id="btn-detail-inspect" class="detail-inspect-btn" title="Open complete telemetry and mathematical formulation">
+            Inspect Full Breakdown &amp; Formulas ↗
+        </button>
+    </div>
+
+    <!-- Floating Right Head-to-Head Comparison Card -->
+    <div class="compare-card" id="compare-card" aria-label="Head-to-head comparison">
+        <div class="compare-head">HEAD-TO-HEAD COMPARISON</div>
+        <div class="compare-row">
+            <span>Model:</span>
+            <strong id="cmp-model-name">DistilBERT</strong>
+        </div>
+        <div class="compare-row">
+            <span>Dense Base:</span>
+            <strong id="cmp-baseline-params">66.36M</strong>
+        </div>
+        <div class="compare-row">
+            <span>Compressed:</span>
+            <strong id="cmp-compressed-params" style="color: var(--cyan);">29.20M</strong>
+        </div>
+        <div class="compare-row">
+            <span>Savings:</span>
+            <strong id="cmp-ratio" style="color: var(--green);">2.27x (-56.0%)</strong>
+        </div>
+        <div class="compare-row">
+            <span>Memory Saved:</span>
+            <strong id="cmp-storage" style="color: var(--amber);">148.6 MB</strong>
+        </div>
+        <div class="compare-row">
+            <span>Active Node:</span>
+            <strong id="cmp-selected-node">input_embeddings</strong>
         </div>
     </div>
 
-    <!-- Split-Screen Viewport Labels & Legend Overlays -->
-    <div class="viewport-overlay">
-        <!-- Left Side: Baseline Dense -->
-        <div class="view-panel left-panel">
-            <div class="panel-tag">BASELINE ARCHITECTURE</div>
-            <h2 id="left-panel-title" class="panel-title">Dense Baseline</h2>
-            <div class="legend-items">
-                <span class="legend-badge dense"><i class="badge-dot"></i> Full-Rank Dense Projections ($O(N^2)$)</span>
-            </div>
+    <!-- Floating Bottom Control Dock -->
+    <div class="control-dock" role="toolbar" aria-label="Playback and timeline controls">
+        <button id="btn-play-pause" class="primary" title="Toggle particle flow">Pause</button>
+        <select id="select-speed" class="speed" title="Particle flow speed">
+            <option value="0.3">0.3x</option>
+            <option value="0.5">0.5x</option>
+            <option value="1.0" selected>1.0x</option>
+            <option value="2.0">2.0x</option>
+        </select>
+        <div class="timeline">
+            <span class="timecode" id="timeline-step">Step 1/7</span>
+            <input type="range" id="timeline-scrubber" min="0" max="6" step="1" value="0" title="Scrub through token lifecycle">
+            <span class="timecode" id="timeline-label">Input Embeddings</span>
         </div>
+        <button id="btn-reset-cam" class="secondary" title="Auto-Fit Camera to Active Model">Auto-Fit</button>
+    </div>
 
-        <!-- Center Divider -->
-        <div class="center-divider">
-            <div class="divider-line"></div>
-            <div class="divider-badge">VS</div>
-        </div>
-
-        <!-- Right Side: Compressed -->
-        <div class="view-panel right-panel">
-            <div class="panel-tag">COMPRESSION ENGINE</div>
-            <h2 id="right-panel-title" class="panel-title">SVD Compressed Model</h2>
-            <div class="legend-items">
-                <span class="legend-badge svd"><i class="badge-dot"></i> SVD Low-Rank Bottleneck ($U \times V$)</span>
-            </div>
-        </div>
+    <!-- Viewport Split-Screen Legends -->
+    <div class="legend">
+        <span><i style="background: #3c5d73;"></i> Dense Baseline ($O(N^2)$)</span>
+        <span><i style="background: #22d5f7;"></i> Compressed ($U \times V$, MoE, MLA)</span>
+        <span><i style="background: #10b981;"></i> Residual Skip Highway (+)</span>
     </div>
 
     <!-- Interactive Tooltip Overlay -->
     <div id="tooltip" class="tooltip hidden" role="tooltip" aria-hidden="true"></div>
 
-    <!-- Inspector Drawer Panel -->
+    <!-- Hidden compatibility elements to ensure existing listeners don't break -->
+    <div style="display: none;" aria-hidden="true">
+        <nav id="model-selector">
+            <button class="model-tab" data-model="distilbert" data-active="true"></button>
+            <button class="model-tab" data-model="roberta" data-active="false"></button>
+            <button class="model-tab" data-model="gpt2" data-active="false"></button>
+            <button class="model-tab" data-model="qwen" data-active="false"></button>
+        </nav>
+        <nav id="compression-selector">
+            <button class="comp-tab active" data-module="svd"></button>
+            <button class="comp-tab" data-module="moe"></button>
+            <button class="comp-tab" data-module="mla"></button>
+            <button class="comp-tab" data-module="slicegpt"></button>
+            <button id="btn-browse-all-modules" class="comp-tab"></button>
+        </nav>
+        <span id="active-mode-label"></span>
+        <span id="active-tokens-count"></span>
+        <span id="left-panel-title"></span>
+        <span id="right-panel-title"></span>
+        <button class="btn-speed" data-speed="0.3"></button>
+        <button class="btn-speed active" data-speed="1.0"></button>
+        <button class="btn-speed" data-speed="2.0"></button>
+        <input type="checkbox" id="toggle-pulse" checked>
+        <button class="btn-lod" data-lod="macro"></button>
+        <button class="btn-lod active" data-lod="mid"></button>
+        <button class="btn-lod" data-lod="micro"></button>
+        <button id="btn-zoom-out"></button>
+        <button id="btn-zoom-in"></button>
+        <div id="comparison-hud">
+            <span id="hud-model-name"></span>
+            <span id="hud-base-params"></span>
+            <span id="hud-comp-params"></span>
+            <span id="hud-ratio"></span>
+            <span id="hud-saved"></span>
+        </div>
+    </div>
+
+    <!-- Full Deep Inspector Drawer (slides out on request) -->
     <aside id="inspector" class="inspector-drawer hidden">
         <div class="drawer-header">
             <div>
@@ -111,33 +228,42 @@
             <button id="btn-close-insp" class="btn-icon-only" aria-label="Close details">✕</button>
         </div>
         <div class="drawer-body">
-            <!-- Interactive Layer Explorer Selector -->
-            <div class="drawer-section" style="margin-bottom: 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <h4>SELECT LAYER TO INSPECT</h4>
-                    <span id="insp-layer-count" style="font-size: 10px; color: var(--text-faint); font-family: var(--font-mono);">0 layers</span>
-                </div>
-                <select id="layer-select-dropdown" class="layer-dropdown" aria-label="Select layer to inspect">
-                    <option value="">-- Choose a layer or click in 3D --</option>
-                </select>
-            </div>
-
             <div class="stat-grid">
                 <div class="stat-cell">
                     <small>LOGICAL SHAPE</small>
-                    <strong id="insp-shape">[768, 768]</strong>
+                    <strong id="insp-shape">—</strong>
                 </div>
                 <div class="stat-cell">
                     <small>PARAMETERS</small>
-                    <strong id="insp-params">0.59M</strong>
+                    <strong id="insp-params">—</strong>
                 </div>
                 <div class="stat-cell">
                     <small>EST. STORAGE</small>
-                    <strong id="insp-storage">2.36 MB</strong>
+                    <strong id="insp-storage">—</strong>
                 </div>
                 <div class="stat-cell">
                     <small>COMPRESSION RATIO</small>
-                    <strong id="insp-efficiency" style="color: var(--col-svd);">1.0x Baseline</strong>
+                    <strong id="insp-efficiency" style="color: var(--col-svd);">—</strong>
+                </div>
+            </div>
+
+            <!-- Deep Dimensional & Volumetric Telemetry -->
+            <div class="stat-grid" style="margin-top: -6px;">
+                <div class="stat-cell">
+                    <small>MATRIX DIMENSIONS</small>
+                    <strong id="insp-tensor-dims" style="color: #38bdf8;">[— × —]</strong>
+                </div>
+                <div class="stat-cell">
+                    <small>ASPECT RATIO</small>
+                    <strong id="insp-aspect-ratio">—</strong>
+                </div>
+                <div class="stat-cell">
+                    <small>3D TENSOR VOLUME</small>
+                    <strong id="insp-spatial-vol" style="color: #f6be68;">—</strong>
+                </div>
+                <div class="stat-cell">
+                    <small>HEAD / RANK ARCH</small>
+                    <strong id="insp-heads-info">—</strong>
                 </div>
             </div>
 
@@ -149,26 +275,127 @@
                 </div>
                 <div class="comp-row">
                     <span class="comp-label">Dense Baseline:</span>
-                    <span id="insp-comp-baseline" class="comp-val">--</span>
+                    <span id="insp-comp-baseline" class="comp-val">—</span>
                 </div>
                 <div class="comp-row">
                     <span class="comp-label">SVD Low-Rank:</span>
-                    <span id="insp-comp-compressed" class="comp-val">--</span>
+                    <span id="insp-comp-compressed" class="comp-val">—</span>
                 </div>
             </div>
 
+            <!-- Structural Transformation (Before vs After) Explainer -->
+            <div class="transformation-card" id="transformation-card">
+                <div class="transformation-header">
+                    <span class="tf-title">STRUCTURAL TRANSFORMATION (BEFORE vs AFTER)</span>
+                    <span id="tf-paradigm-badge" class="badge">DECOMPOSITION</span>
+                </div>
+                <div class="tf-diagram" id="tf-diagram-body"></div>
+                <table class="tf-comparison-table">
+                    <thead>
+                        <tr>
+                            <th>ATTRIBUTE</th>
+                            <th>BASELINE</th>
+                            <th>COMPRESSED</th>
+                            <th>DELTA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tf-table-body"></tbody>
+                </table>
+                <div class="tf-explanation" id="tf-explanation-text"></div>
+            </div>
+
+            <!-- 4-Model Cross-Benchmark Matrix Dashboard -->
+            <div class="models-matrix-section" id="models-matrix-section">
+                <div class="matrix-title-row">
+                    <h4>4-MODEL ARCHITECTURE MATRIX</h4>
+                    <span class="matrix-subtitle">Click to switch 3D model</span>
+                </div>
+                <div class="models-matrix-grid" id="models-matrix-grid">
+                    <!-- Dynamically populated 4 Model benchmark cards -->
+                </div>
+            </div>
+
+            <!-- Token State Lifecycle & Step-by-Step Additions Tracker -->
+            <div class="token-lifecycle-section" id="token-lifecycle-section">
+                <div class="matrix-title-row">
+                    <h4>TOKEN LIFECYCLE &amp; DATAFLOW</h4>
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">7-STAGE FLOW</span>
+                </div>
+                <div class="lifecycle-subtitle">Tracks what enters, what gets added (+), and what exits at each transformer stage:</div>
+                <div id="lifecycle-steps-list" class="lifecycle-steps-list"></div>
+            </div>
+
+            <!-- Architectural Component Flow & Sublayer Breakdown -->
+            <div class="component-pipeline-section" id="component-pipeline-section">
+                <div class="matrix-title-row">
+                    <h4>ARCHITECTURAL COMPONENT PIPELINE</h4>
+                    <span id="component-count-badge" class="badge">0 BLOCKS</span>
+                </div>
+                <div id="component-pipeline-list" class="component-pipeline-list"></div>
+            </div>
+
+            <!-- High-Definition LaTeX Mathematical Formulation -->
+            <div class="latex-formula-card" id="latex-formula-card">
+                <div class="formula-header">
+                    <span>MATHEMATICAL FORMULATION</span>
+                </div>
+                <div id="formula-latex-body" class="formula-latex-body"></div>
+            </div>
+
             <div class="drawer-section" style="margin-top: 12px;">
-                <h4>Mathematical Formulation</h4>
-                <p id="insp-desc">Click any 3D node or choose from the dropdown above to inspect rank decomposition, storage memory, and tensor dimensions.</p>
+                <h4>Module Description &amp; Implementation</h4>
+                <p id="insp-desc">Click any 3D node or choose from the tree above to inspect rank decomposition, storage memory, and tensor dimensions.</p>
             </div>
             <div class="educational-callout" id="insp-edu-note">
                 💡 <em>Token Funneling:</em> In SVD layers, watch how tokens squeeze horizontally through rank dimension $r=64$ in Factor $V$ before expanding back to full output dimension in Factor $U$.
             </div>
+
+            <!-- Interactive Hierarchical Layer Explorer -->
+            <div class="drawer-section" style="margin-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <h4>HIERARCHICAL LAYER EXPLORER</h4>
+                    <span id="insp-layer-count" style="font-size: 10px; color: var(--text-faint); font-family: var(--font-mono);">0 modules</span>
+                </div>
+                <div class="tree-search-wrapper">
+                    <input type="text" id="tree-search-input" class="tree-search-input" placeholder="Search modules (e.g. q_proj, layer 0)..." autocomplete="off" spellcheck="false">
+                    <button id="btn-tree-clear" class="btn-clear-search" title="Clear filter">✕</button>
+                </div>
+                <div id="layer-tree-container" class="layer-tree-container" role="tree" aria-label="Layer Architecture Tree"></div>
+            </div>
         </div>
     </aside>
 
-    <!-- Main WebGL Canvas -->
-    <canvas id="webgl-canvas"></canvas>
+    <!-- Module Library Modal (241 Modules) -->
+    <div id="module-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div>
+                    <span class="hud-badge" style="background:#0284c7; color:#fff;">RESEARCH REPOSITORY</span>
+                    <h2 id="modal-title">Neural Architecture &amp; Compression Modules (<span id="modal-module-count">241</span>)</h2>
+                    <p class="modal-subtitle">Choose from 241 state-of-the-art attention and compression engines developed in this framework to apply to the active 3D model.</p>
+                </div>
+                <button id="btn-close-modal" class="btn-icon-only modal-close" aria-label="Close modal">✕</button>
+            </div>
+
+            <div class="modal-search-row">
+                <input type="text" id="modal-search-input" class="modal-search-input" placeholder="Search 241 modules by name, algorithm, keyword (e.g. Mamba, CUR, AASVD, EAT, ToMoE)..." autocomplete="off">
+                <div id="modal-category-pills" class="modal-category-pills">
+                    <button class="cat-pill active" data-cat="all">All (241)</button>
+                    <button class="cat-pill" data-cat="Low-Rank SVD &amp; Factorization">⚡ SVD &amp; Low-Rank</button>
+                    <button class="cat-pill" data-cat="Mixture of Experts &amp; Routing">🔀 Mixture-of-Experts</button>
+                    <button class="cat-pill" data-cat="Linear Attention &amp; State-Space (SSM)">🐍 Linear &amp; SSM</button>
+                    <button class="cat-pill" data-cat="Latent &amp; KV-Cache Compression">🧠 Latent &amp; KV-Cache</button>
+                    <button class="cat-pill" data-cat="Structured Pruning &amp; Channel Slicing">✂️ Pruning &amp; Slicing</button>
+                    <button class="cat-pill" data-cat="Dynamic &amp; Efficient Attention">🌟 Dynamic Attention</button>
+                    <button class="cat-pill" data-cat="Quantization &amp; Mixed Precision">💎 Quantization</button>
+                </div>
+            </div>
+
+            <div id="modal-module-grid" class="modal-module-grid">
+                <!-- Dynamically populated 241 module cards -->
+            </div>
+        </div>
+    </div>
 
     <!-- Visualizer Logic -->
     <script type="module" src="app.js"></script>
