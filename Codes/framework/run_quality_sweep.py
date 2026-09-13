@@ -192,12 +192,14 @@ def compute_compression_metrics(
     comp_stats = getattr(model, "compression_stats", {}) or {}
 
     num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer"))
-    num_injected_attention = sum(
-        1 for m in model.modules()
-        if ("attention" in m.__class__.__name__.lower() and "universal" in m.__class__.__name__.lower())
-        or hasattr(m, "is_custom_attention")
-        or hasattr(m, "span_logits")
-    )
+    univ_count = sum(1 for m in model.modules() if "attention" in m.__class__.__name__.lower() and "universal" in m.__class__.__name__.lower())
+    if univ_count > 0:
+        num_injected_attention = univ_count
+    else:
+        num_injected_attention = sum(
+            1 for m in model.modules()
+            if hasattr(m, "is_custom_attention") or hasattr(m, "span_logits")
+        )
     lora_params = sum(p.numel() for n, p in model.named_parameters() if "lora_" in n.lower())
 
     is_compression = (
@@ -221,6 +223,8 @@ def compute_compression_metrics(
     layer_errors = dict(comp_stats.get("layer_errors", {}))
 
     for mod_name, mod in model.named_modules():
+        if mod_name.endswith(".inner") or mod_name.endswith("._wrapped_attention"):
+            continue
         if hasattr(mod, "rank") and mod_name not in layer_ranks:
             try:
                 layer_ranks[mod_name] = int(getattr(mod, "rank"))
@@ -341,6 +345,8 @@ def collect_and_export_full_metrics(
     span_data = {}
     total_span, total_heads = 0.0, 0
     for mod_name, mod in model.named_modules():
+        if mod_name.endswith(".inner") or mod_name.endswith("._wrapped_attention"):
+            continue
         if hasattr(mod, "span_logits"):
             max_s = getattr(mod, "max_span", seq_len)
             spans = (torch.sigmoid(mod.span_logits.detach().cpu()) * max_s).tolist()
