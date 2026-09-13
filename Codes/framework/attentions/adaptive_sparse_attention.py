@@ -87,8 +87,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -147,7 +145,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("adaptive_sparse", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -219,7 +217,15 @@ class AdaptiveSparseAttention(BaseAttention):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
-        self.is_nested_encoder: bool = False
+
+        # Detect nested encoder architecture early
+        source_cls = source_attn.__class__.__name__ if source_attn is not None else ""
+        is_nested = (
+            source_cls in ("BertSelfAttention", "RobertaSelfAttention")
+            or (source_cls.endswith(("SelfAttention", "SelfAttn")) and "distil" not in source_cls.lower())
+        )
+        has_out = any(hasattr(source_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")) if source_attn is not None else False
+        self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", (is_nested and not has_out)))
 
         # Head dim fallback from source_attn if head_dim <= 0 or not resolved properly
         if source_attn is not None and getattr(source_attn, "head_dim", 0):
@@ -268,7 +274,8 @@ class AdaptiveSparseAttention(BaseAttention):
         self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        out_lora_rank = 0 if self.is_nested_encoder else self.lora_rank
+        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=out_lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         # Aliases
         self.q_lin = self.q_proj
@@ -276,9 +283,9 @@ class AdaptiveSparseAttention(BaseAttention):
         self.v_lin = self.v_proj
         self.out_lin = self.out_proj
 
-        # Explicitly frozen per-head sparsity logit initialized to target sparsity
+        # Per-head learnable sparsity logit initialized to target sparsity
         init_logit = math.log(max(1e-4, min(0.9999, effective_sparsity)) / (1.0 - max(1e-4, min(0.9999, effective_sparsity))))
-        self.sparsity_logits = nn.Parameter(torch.full((self.num_heads,), fill_value=init_logit), requires_grad=False)
+        self.sparsity_logits = nn.Parameter(torch.full((self.num_heads,), fill_value=init_logit), requires_grad=True)
         self.output_scale = nn.Parameter(torch.ones(1))
 
         dropout_p = getattr(
@@ -509,6 +516,10 @@ class AdaptiveSparseAttention(BaseAttention):
         if self.lora_rank > 0 or self.freeze_base:
             self.freeze_base_weights()
 
+    def get_sparsity_loss(self) -> torch.Tensor:
+        r"""Regularization loss encouraging head sparsity."""
+        return torch.sigmoid(self.sparsity_logits).mean()
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -558,22 +569,22 @@ class AdaptiveSparseAttention(BaseAttention):
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("RoPE embedding failed on (probe_t, pos_ids): %s", e)
                 try:
                     res = rotary_mod(probe_t, seq_len=N_k)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("RoPE embedding failed on (probe_t, seq_len): %s", e)
                 try:
                     res = rotary_mod(probe_t)
                     if isinstance(res, (tuple, list)) and len(res) >= 2:
                         cos, sin = res[0], res[1]
                         break
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("RoPE embedding failed on (probe_t): %s", e)
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 
@@ -634,11 +645,14 @@ class AdaptiveSparseAttention(BaseAttention):
                 causal_chunk = k_idx <= q_idx
                 scores_chunk = scores_chunk.masked_fill(~causal_chunk, -10000.0)
 
-            # Vectorized Top-K Thresholding on chunk
-            sorted_scores, _ = torch.sort(scores_chunk, dim=-1, descending=True)
-            k_indices = k_indices_base.expand(B, H, C_q, 1)
-            topk_thresh = torch.gather(sorted_scores, dim=-1, index=k_indices)
-            scores_chunk = scores_chunk.masked_fill(scores_chunk < topk_thresh, -10000.0)
+            # Vectorized Top-K Thresholding on chunk with differentiable soft sigmoid threshold
+            if not is_cross_attention:
+                sorted_scores, _ = torch.sort(scores_chunk, dim=-1, descending=True)
+                k_indices = k_indices_base.expand(B, H, C_q, 1)
+                topk_thresh = torch.gather(sorted_scores, dim=-1, index=k_indices)
+                temperature = 0.1
+                soft_mask = torch.sigmoid((scores_chunk - topk_thresh) / temperature)
+                scores_chunk = scores_chunk + torch.log(soft_mask + 1e-8)
 
             attn_chunk = torch.nan_to_num(F.softmax(scores_chunk.float(), dim=-1), nan=0.0).to(dtype)
             attn_chunk = self.dropout(attn_chunk)
@@ -792,6 +806,22 @@ def inject_adaptive_sparse(
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_block
+                # Outer dense wrapping for nested encoder
+                if hasattr(target.attention, "output") and hasattr(target.attention.output, "dense"):
+                    outer_dense = target.attention.output.dense
+                    if not isinstance(outer_dense, LoRALinear):
+                        wrapped_dense = LoRALinear(
+                            outer_dense.in_features,
+                            outer_dense.out_features,
+                            bias=(outer_dense.bias is not None),
+                            lora_rank=new_block.lora_rank,
+                            lora_alpha=new_block.lora_alpha,
+                            freeze_base=True,
+                        )
+                        wrapped_dense.weight.data.copy_(outer_dense.weight.data)
+                        if outer_dense.bias is not None and wrapped_dense.bias is not None:
+                            wrapped_dense.bias.data.copy_(outer_dense.bias.data)
+                        target.attention.output.dense = wrapped_dense
             else:
                 target.attention = new_block
         elif hasattr(target, "self"):
