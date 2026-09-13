@@ -109,7 +109,7 @@ models = [
             "--output_dir", r"results\unified_adaptive_span\qwen3_5",
             "--parent_checkpoint", r"results\unified_asvd\qwen3_5\finetuned_model.pt",
             "--modules", "full,adaptive_span",
-            "--batch_size", "8",
+            "--batch_size", "4",
             "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
