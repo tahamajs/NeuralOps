@@ -1,0 +1,194 @@
+Total modules evaluated: 169
+Critical Fails / Non-PASS: 31
+Low Accuracy (PASS_LOW): 125
+
+================ CRITICAL FAILS / NON-PASS ================
+- adaptive_sparse_attention: status=FAILED_LOW, exit_code=0
+  Accuracies: {}
+- aegis_spectron_fp8: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 50.92]}
+- aegis_v6: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 52.87], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 50.46]}
+- cluster: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 50.92]}
+- compressed_mha: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 50.92]}
+- dobi: status=FAILED_LOW, exit_code=0
+  Accuracies: {}
+- dynamic_entropy: status=FAILED_LOW, exit_code=0
+  Accuracies: {}
+- full: status=FAILED_LOW, exit_code=0
+  Accuracies: {'distilbert': ['FAIL', 0.0], 'roberta': ['FAIL', 0.0], 'gpt2': ['FAIL', 0.0]}
+- galerkin: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 51.26]}
+- galerkin_attention: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 51.26]}
+- gated_delta_net: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 49.54]}
+- gated_deltanet_block: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 51.49]}
+- gated_linear_attention: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 50.92]}
+- goldfinch_ahn: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 50.92]}
+- hgrn2: status=FAILED_LOW, exit_code=0
+  Accuracies: {}
+- hgrn2_gated_deltanet: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 53.56], 'roberta': ['PASS_LOW', 52.98], 'gpt2': ['PASS_LOW', 51.03]}
+- hgrn2_layer: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 53.67], 'roberta': ['PASS_LOW', 50.46], 'gpt2': ['PASS_LOW', 49.66]}
+- hgrn2_outer: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 43.81], 'roberta': ['PASS_LOW', 50.34], 'gpt2': ['PASS_LOW', 48.62]}
+- hla: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 49.08], 'roberta': ['PASS_LOW', 49.08], 'gpt2': ['PASS_LOW', 49.08]}
+- hla_attention: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 49.08], 'roberta': ['PASS_LOW', 49.08], 'gpt2': ['PASS_LOW', 49.08]}
+- hybrid_svd_layer: status=FAILED_LOW, exit_code=0
+  Accuracies: {'distilbert': ['FAIL', 0.0], 'roberta': ['FAIL', 0.0], 'gpt2': ['FAIL', 0.0]}
+- leka_v1: status=TIMEOUT, exit_code=-999
+  Accuracies: {'distilbert': ['PASS_LOW', 51.03], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['FAIL', 0.0]}
+- linformer: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 50.92]}
+- mamba: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 51.03]}
+- mamba_inject: status=FAILED_LOW, exit_code=0
+  Accuracies: {'distilbert': ['FAIL', 0.0], 'roberta': ['FAIL', 0.0], 'gpt2': ['FAIL', 0.0]}
+- mamba_svd_flash: status=TIMEOUT, exit_code=-999
+  Accuracies: {'distilbert': ['PASS', 84.17], 'roberta': ['FAIL', 0.0], 'gpt2': ['FAIL', 0.0]}
+- nexus: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 50.92], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 51.61]}
+- orion: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 55.5], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 50.92]}
+- orion_module: status=PASS_LOW, exit_code=0
+  Accuracies: {'distilbert': ['PASS_LOW', 55.5], 'roberta': ['PASS_LOW', 50.92], 'gpt2': ['PASS_LOW', 50.92]}
+- samba_m3: status=FAILED_LOW, exit_code=0
+  Accuracies: {}
+- samba_moe: status=FAILED_LOW, exit_code=0
+  Accuracies: {}
+
+================ LOW ACCURACY MODULES (<60% or PASS_LOW) ================
+- aasvd: gpt2=50.92% (PASS_LOW)
+- adaptive_compressor: gpt2=52.75% (PASS_LOW)
+- adaptive_sparse: roberta=58.14% (PASS)
+- adaptive_svd_attention: roberta=50.92% (PASS_LOW), gpt2=51.15% (PASS_LOW)
+- adaptive_svd_attn: roberta=50.92% (PASS_LOW), gpt2=51.15% (PASS_LOW)
+- aegis_hybrid: roberta=50.92% (PASS_LOW), gpt2=51.03% (PASS_LOW)
+- aegis_v1: roberta=50.92% (PASS_LOW), gpt2=53.56% (PASS_LOW)
+- aegis_v1_module: roberta=50.92% (PASS_LOW), gpt2=53.56% (PASS_LOW)
+- aegis_v2: roberta=50.92% (PASS_LOW), gpt2=51.03% (PASS_LOW)
+- aegis_v3: roberta=50.92% (PASS_LOW), gpt2=56.31% (PASS)
+- aegis_v3_module: roberta=50.92% (PASS_LOW), gpt2=56.31% (PASS)
+- aegis_v4: roberta=50.92% (PASS_LOW), gpt2=56.31% (PASS)
+- aegis_v4_module: roberta=50.92% (PASS_LOW), gpt2=56.31% (PASS)
+- aegis_v5: roberta=50.92% (PASS_LOW), gpt2=56.31% (PASS)
+- aegis_v5_module: roberta=50.92% (PASS_LOW), gpt2=56.31% (PASS)
+- asvd: gpt2=55.85% (PASS_LOW)
+- block_transformer_hiba: gpt2=59.98% (PASS)
+- compressed_attention: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- compressed_attention_layer: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- cosformer: roberta=56.77% (PASS), gpt2=50.92% (PASS_LOW)
+- cur_moe: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- decay_linear_attention: distilbert=50.92% (PASS_LOW), roberta=50.92% (PASS_LOW)
+- delta_kv: gpt2=55.96% (PASS_LOW)
+- factorised_matrix_state: roberta=54.36% (PASS_LOW)
+- fms: roberta=54.36% (PASS_LOW)
+- fused_svd_kernel: distilbert=0.0% (FAIL), gpt2=0.0% (FAIL)
+- granite_hybrid: roberta=53.33% (PASS_LOW), gpt2=51.72% (PASS_LOW)
+- griffin_ssd: roberta=54.7% (PASS_LOW), gpt2=54.47% (PASS_LOW)
+- hamming: roberta=50.92% (PASS_LOW), gpt2=55.5% (PASS_LOW)
+- huffman_coder: gpt2=50.92% (PASS_LOW)
+- hymba_transx: distilbert=0.0% (FAIL), roberta=51.15% (PASS_LOW), gpt2=57.57% (PASS)
+- infini: roberta=56.54% (PASS), gpt2=51.26% (PASS_LOW)
+- infini_attention: roberta=56.54% (PASS), gpt2=51.26% (PASS_LOW)
+- jamba: roberta=51.03% (PASS_LOW), gpt2=51.26% (PASS_LOW)
+- jamba_info: roberta=52.98% (PASS_LOW), gpt2=50.8% (PASS_LOW)
+- kda: roberta=52.87% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- kronecker_linear: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- kronecker_tt_lora: gpt2=55.16% (PASS_LOW)
+- kvtc: roberta=50.92% (PASS_LOW), gpt2=52.75% (PASS_LOW)
+- leka_v2: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- leka_v3: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- lola_attention: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- lola_attn: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- lora_attention: roberta=58.03% (PASS), gpt2=51.26% (PASS_LOW)
+- lora_attn: roberta=59.52% (PASS), gpt2=51.26% (PASS_LOW)
+- lsh: roberta=49.54% (PASS_LOW), gpt2=51.61% (PASS_LOW)
+- lsh_attention: roberta=49.54% (PASS_LOW), gpt2=51.61% (PASS_LOW)
+- minimal_aurora: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- minimal_nova: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- minimal_prism: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- minimal_svd: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- minimal_svd_v2: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- mixattention_moska: gpt2=51.61% (PASS_LOW)
+- mla: distilbert=50.92% (PASS_LOW), roberta=50.92% (PASS_LOW), gpt2=57.22% (PASS)
+- moba: gpt2=50.92% (PASS_LOW)
+- moe_deltakv_paged: roberta=59.75% (PASS), gpt2=50.92% (PASS_LOW)
+- nasc: gpt2=50.92% (PASS_LOW)
+- nasc_attention: gpt2=50.92% (PASS_LOW)
+- nha: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- nha_compressor: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- nli_softmax: roberta=0.0% (FAIL)
+- nmf: roberta=49.08% (PASS_LOW), gpt2=58.03% (PASS)
+- nsa: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- nsa_attention: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- nystrom: roberta=52.18% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- oats: roberta=59.06% (PASS), gpt2=0.0% (FAIL)
+- oha: roberta=55.39% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- optimal_subspace_projection: gpt2=0.0% (FAIL)
+- optimized_hybrid_attention: roberta=55.39% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- padre: gpt2=50.92% (PASS_LOW)
+- performer: gpt2=49.08% (PASS_LOW)
+- phantom: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- progressive_token_pruning: gpt2=50.92% (PASS_LOW)
+- projection_factorized_attn: roberta=59.29% (PASS), gpt2=52.75% (PASS_LOW)
+- proxsparse: roberta=50.92% (PASS_LOW), gpt2=54.01% (PASS_LOW)
+- proxsparse_pruner: roberta=50.92% (PASS_LOW), gpt2=54.01% (PASS_LOW)
+- qcqa: roberta=51.03% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- rala: roberta=50.8% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- rala_compressor: roberta=50.8% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- reap_moe: roberta=50.92% (PASS_LOW), gpt2=52.41% (PASS_LOW)
+- regla: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- replaceme: gpt2=56.77% (PASS)
+- res_svd: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- roast: gpt2=56.54% (PASS)
+- roast_hashed_linear: gpt2=51.72% (PASS_LOW)
+- routing: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- rpc: gpt2=57.34% (PASS)
+- saes_svd_compressor: gpt2=50.92% (PASS_LOW)
+- saes_svd_v2: gpt2=56.88% (PASS)
+- salr: gpt2=58.94% (PASS)
+- salt: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- salt_attention: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- sambam3: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- sambamoe: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- sdrm: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- slicegpt: roberta=50.92% (PASS_LOW), gpt2=59.06% (PASS)
+- slim: roberta=50.92% (PASS_LOW), gpt2=52.41% (PASS_LOW)
+- smart_weighted_ensemble: roberta=0.0% (FAIL)
+- soa_attn: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- soa_fused_module: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- soa_module: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- soafusedattention: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- span_expanded: gpt2=59.98% (PASS)
+- sparsegpt: roberta=50.92% (PASS_LOW), gpt2=53.33% (PASS_LOW)
+- spectra_v2: gpt2=59.98% (PASS)
+- spectraformer: roberta=57.8% (PASS), gpt2=50.92% (PASS_LOW)
+- spectraformer_attention: roberta=57.45% (PASS), gpt2=50.92% (PASS_LOW)
+- squeezing_heads: roberta=51.49% (PASS_LOW), gpt2=51.61% (PASS_LOW)
+- squeezing_heads_distill: roberta=51.49% (PASS_LOW), gpt2=51.61% (PASS_LOW)
+- squeezing_heads_distiller: roberta=51.49% (PASS_LOW), gpt2=51.61% (PASS_LOW)
+- subspace_projection: gpt2=59.52% (PASS)
+- svd_compressed: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- svd_linear: roberta=54.01% (PASS_LOW), gpt2=57.22% (PASS)
+- svd_linear_attn: roberta=59.29% (PASS), gpt2=52.75% (PASS_LOW)
+- svd_llm_v2: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- svd_proj: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- svd_proj_attn: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- svd_projection: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- swift_svd: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- template_attention: roberta=58.37% (PASS), gpt2=51.26% (PASS_LOW)
+- tomoe: roberta=50.92% (PASS_LOW), gpt2=54.24% (PASS_LOW)
+- tomoe_compressor: roberta=50.92% (PASS_LOW), gpt2=54.24% (PASS_LOW)
+- tt: roberta=50.92% (PASS_LOW), gpt2=50.92% (PASS_LOW)
+- weighted_ensemble: roberta=0.0% (FAIL)
+- zerokv_neo: roberta=50.92% (PASS_LOW), gpt2=56.77% (PASS)
