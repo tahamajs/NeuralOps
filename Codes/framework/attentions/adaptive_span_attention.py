@@ -226,10 +226,6 @@ class AdaptiveSpanAttention(BaseAttention):
             self.ramp_size = float(kwargs.get("ramp_size", 32.0))
 
         model_type = getattr(config, "model_type", "").lower() if config else ""
-        if "qwen" in model_type or "gpt" in model_type:
-            self.max_span = min(self.max_span, 64)
-        elif "roberta" in model_type or "bert" in model_type:
-            self.max_span = min(self.max_span, 96)
 
         is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
         if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
@@ -597,25 +593,24 @@ class AdaptiveSpanAttention(BaseAttention):
         # Avoids [H, N, N] boolean allocation and provides non-zero gradients to self.span_logits
         if not is_cross_attention and N_q == N_k:
             # Stronger fast-path: only allocate ramp when it can actually affect attention
-            if self.max_span < N_k:
-                span = torch.sigmoid(self.span_logits) * self.max_span   # [H]
-                # If per-head (span + ramp_size) >= N_k for all heads, ramp has no effect
-                if not ((span + self.ramp_size) >= N_k).all():
-                    pos_q = torch.arange(N_q, device=device, dtype=scores.dtype).unsqueeze(1)  # [N_q, 1]
-                    pos_k = torch.arange(N_k, device=device, dtype=scores.dtype).unsqueeze(0)  # [1, N_k]
-                    if is_decoder:
-                        dist = (pos_q - pos_k).clamp(min=0.0)  # [N_q, N_k]
-                    else:
-                        dist = (pos_q - pos_k).abs()           # [N_q, N_k]
+            span = torch.sigmoid(self.span_logits) * self.max_span   # [H]
+            # If per-head (span + ramp_size) >= N_k for all heads, ramp has no effect
+            if not ((span + self.ramp_size) >= N_k).all():
+                pos_q = torch.arange(N_q, device=device, dtype=scores.dtype).unsqueeze(1)  # [N_q, 1]
+                pos_k = torch.arange(N_k, device=device, dtype=scores.dtype).unsqueeze(0)  # [1, N_k]
+                if is_decoder:
+                    dist = (pos_q - pos_k).clamp(min=0.0)  # [N_q, N_k]
+                else:
+                    dist = (pos_q - pos_k).abs()           # [N_q, N_k]
 
-                    span_h = span.view(1, H, 1, 1).to(scores.dtype)
-                    dist_mat = dist.view(1, 1, N_q, N_k)
-                    ramp = torch.clamp((self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0)
+                span_h = span.view(1, H, 1, 1).to(scores.dtype)
+                dist_mat = dist.view(1, 1, N_q, N_k)
+                ramp = torch.clamp((self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0)
 
-                    attn = attn * ramp
-                    attn_sum = attn.sum(dim=-1, keepdim=True).clamp(min=1e-4)
-                    attn = attn / attn_sum
-                    attn = torch.nan_to_num(attn, nan=0.0)
+                attn = attn * ramp
+                attn_sum = attn.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+                attn = attn / attn_sum
+                attn = torch.nan_to_num(attn, nan=0.0)
 
         attn = self.dropout(attn)
 
