@@ -313,17 +313,26 @@ class ORIONAttention(BaseAttention):
         self.lora_alpha = getattr(cfg, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if cfg else 32.0
         self.freeze_base = (self.lora_rank > 0)
 
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and source_attn is not None:
+            target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
         # Projections
-        self.q_proj = FactorisedLinear(hidden_size, self.all_head_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = FactorisedLinear(hidden_size, self.all_kv_head_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = FactorisedLinear(hidden_size, self.all_kv_head_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = FactorisedLinear(self.all_head_size, hidden_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = FactorisedLinear(hidden_size, self.all_head_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.k_proj = FactorisedLinear(hidden_size, self.all_kv_head_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.v_proj = FactorisedLinear(hidden_size, self.all_kv_head_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.out_proj = FactorisedLinear(self.all_head_size, hidden_size, bias=True, energy=orion_cfg.svd_energy, min_rank=orion_cfg.svd_min_rank, max_rank=orion_cfg.svd_max_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
 
         self.register_buffer("rff_proj", torch.randn(max(1, self.num_kernel_heads), self.head_dim, orion_cfg.rff_features) * (1.0 / math.sqrt(self.head_dim)), persistent=False)
         self.dropout = nn.Dropout(orion_cfg.dropout)
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+        if target_dtype is not None:
+            self.to(target_dtype)
 
     @property
     def query(self) -> FactorisedLinear:
@@ -624,39 +633,129 @@ class ORIONAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("orion_inject")
 def inject_orion(
     layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[ORIONAttention]:
-    src_attn = old_attn
-    if src_attn is None and layer is not None:
-        src_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
+) -> Optional[Union[ORIONAttention, nn.Module]]:
+    """Safe injection hook for ORIONAttention across diverse transformer architectures."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
 
-    hidden_size = (
-        kwargs.get("hidden_size") or
-        getattr(src_attn, 'hidden_size', None) or
-        getattr(src_attn, 'embed_dim', None) or
-        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-        (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
-        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
-        (layer.in_features if hasattr(layer, 'in_features') else None) or
-        getattr(model_config, 'hidden_size', None) or
-        getattr(model_config, 'd_model', 64)
-    )
-    num_heads = (
-        kwargs.get("num_heads") or
-        kwargs.get("num_attention_heads") or
-        getattr(src_attn, 'num_heads', None) or
-        getattr(src_attn, 'num_attention_heads', None) or
-        getattr(model_config, 'num_attention_heads', None) or
-        getattr(model_config, 'num_heads', 4)
-    )
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_orion(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
     try:
+        src_attn = old_attn
+        if src_attn is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "self"):
+                        src_attn = cand.self
+                    else:
+                        src_attn = cand
+                    break
+
+        if src_attn is None and target is not None and hasattr(target, "forward"):
+            src_attn = target
+
+        if src_attn is None:
+            return None
+
+        # Double-injection guard
+        if src_attn is not None:
+            if isinstance(src_attn, ORIONAttention):
+                return None
+            if "ORION" in src_attn.__class__.__name__:
+                return None
+            if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), ORIONAttention):
+                return None
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), ORIONAttention):
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, ORIONAttention):
+                    return None
+                if "ORION" in cand.__class__.__name__:
+                    return None
+                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), ORIONAttention):
+                    return None
+                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), ORIONAttention):
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src_attn is not None:
+            c_name = src_attn.__class__.__name__
+            if "DeltaNet" in c_name or "LinearAttention" in c_name:
+                return None
+
+        if cfg is None and hasattr(src_attn, "config"):
+            cfg = src_attn.config
+
+        hidden_size = (
+            kwargs.get("hidden_size") or
+            getattr(src_attn, 'hidden_size', None) or
+            getattr(src_attn, 'embed_dim', None) or
+            (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+            (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
+            (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
+            (target.in_features if hasattr(target, 'in_features') else None) or
+            getattr(cfg, 'hidden_size', None) or
+            getattr(cfg, 'd_model', 64)
+        )
+        num_heads = (
+            kwargs.get("num_heads") or
+            kwargs.get("num_attention_heads") or
+            getattr(src_attn, 'num_heads', None) or
+            getattr(src_attn, 'num_attention_heads', None) or
+            getattr(cfg, 'num_attention_heads', None) or
+            getattr(cfg, 'num_heads', 4)
+        )
+
         new_attn = ORIONAttention(
-            config=model_config,
+            config=cfg,
             comp_config=comp_config,
             hidden_size=hidden_size,
             num_heads=num_heads,
@@ -666,18 +765,21 @@ def inject_orion(
         )
         if src_attn is not None:
             new_attn.copy_weights(src_attn)
-        if layer is not None:
-            if hasattr(layer, "attention"):
-                if hasattr(layer.attention, "self"):
-                    layer.attention.self = new_attn
+
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
                 else:
-                    layer.attention = new_attn
-            elif hasattr(layer, "self_attn"):
-                layer.self_attn = new_attn
-            elif hasattr(layer, "self"):
-                layer.self = new_attn
-            elif hasattr(layer, "attn"):
-                layer.attn = new_attn
+                    target.attention = new_attn
+                return new_attn
+            for attr in ("self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_attn)
+                    return new_attn
+            target.attention = new_attn
+            return new_attn
         return new_attn
     except Exception as e:
         logger.error("inject_orion failed: %s", e)
