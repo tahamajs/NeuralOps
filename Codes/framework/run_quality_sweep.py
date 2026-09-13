@@ -1436,6 +1436,9 @@ def main():
         model = None
         gc.collect()
         torch.cuda.empty_cache()
+        torch.manual_seed(args.seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(args.seed)
         try:
             model = copy.deepcopy(base).to(device)
         except torch.cuda.OutOfMemoryError:
