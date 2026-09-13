@@ -1,14 +1,14 @@
 {
     "model": "gpt2_adaptive_span",
     "performance": {
-        "accuracy_pct": 51.03,
-        "f1_score": 0.6753,
-        "f1_macro": 0.34,
-        "precision": 0.7549,
-        "recall": 0.5012,
-        "val_loss": 0.6688,
+        "accuracy_pct": 50.92,
+        "f1_score": 0.6748,
+        "f1_macro": 0.3374,
+        "precision": 0.2546,
+        "recall": 0.5,
+        "val_loss": 0.6921,
         "status": "PASS_LOW",
-        "elapsed_s": 29.15
+        "elapsed_s": 27.74
     },
     "efficiency": {
         "total_params_before": 124441344,
@@ -41,7 +41,7 @@
     },
     "hardware": {
         "peak_vram_mb": 567.67,
-        "tokens_per_sec": 10340.67
+        "tokens_per_sec": 10407.3
     },
     "architecture": {
         "span_distribution": {
@@ -223,5 +223,5 @@
         "L_512_vram_mb": 563.54,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-14T01:38:18.178056"
+    "timestamp": "2026-09-14T01:46:16.985892"
 }
