@@ -16,74 +16,74 @@
 
 ماژول \lr{res\_svd} با هدف انحلال این تقابل ساختاری طراحی شده است. ایده محوری این معماری، فاکتورسازی پروجکشن‌های خطی لایه توجه به دو مؤلفه اساسی و هم‌افزا است:
 \begin{enumerate}
-    \item \textbf{مؤلفه پایه کم‌مرتبه و یخ‌زده \lr{(Frozen Base Low-Rank Factors)}:} نگاشت $W_{\text{base}} = U_{\text{base}} V_{\text{base}}$ با رتبه $r_{\text{base}}$ که بیش از ۹۲ درصد از انرژی واریانس طیفی ماتریس وزن آموزش‌دیده را در بر می‌گیرد و در طول فاز تطبیق، گرادیان آن مسدود می‌گردد \lr{(requires\_grad=False)}.
-    \item \textbf{آداپتورهای پسماند طیفی آموزش‌پذیر \lr{(Trainable Spectral Residual Adapters)}:} نگاشت $W_{\text{adapter}} = \alpha \cdot B A$ با رتبه $r_{\text{res}}$ که نه به صورت تصادفی یا صفر (مشابه \lr{LoRA} کلاسیک)، بلکه مستقیماً از مؤلفه‌های اصلی ماتریس خطای پسماند $E = W - W_{\text{base}}$ مقداردهی اولیه می‌شوند.
+    \item \textbf{مؤلفه پایه کم‌مرتبه و یخ‌زده \lr{(Frozen Base Low-Rank Factors)}:} نگاشت $W_{\text{\lr{base}}} = U_{\text{\lr{base}}} V_{\text{\lr{base}}}$ با رتبه $r_{\text{\lr{base}}}$ که بیش از ۹۲ درصد از انرژی واریانس طیفی ماتریس وزن آموزش‌دیده را در بر می‌گیرد و در طول فاز تطبیق، گرادیان آن مسدود می‌گردد \lr{(requires\_grad=False)}.
+    \item \textbf{آداپتورهای پسماند طیفی آموزش‌پذیر \lr{(Trainable Spectral Residual Adapters)}:} نگاشت $W_{\text{\lr{adapter}}} = \alpha \cdot B A$ با رتبه $r_{\text{\lr{res}}}$ که نه به صورت تصادفی یا صفر (مشابه \lr{LoRA} کلاسیک)، بلکه مستقیماً از مؤلفه‌های اصلی ماتریس خطای پسماند $E = W - W_{\text{\lr{base}}}$ مقداردهی اولیه می‌شوند.
 \end{enumerate}
 
-با این استراتژی، در لحظه صفر استقرار \lr{(Zero-shot Initialization)}، بازنمایی لایه دقیقاً منطبق بر تقریب رتبه $(r_{\text{base}} + r_{\text{res}})$ قضیه اکارت-یانگ-میرسکی \lr{(Eckart-Young-Mirsky Theorem)} بوده و خطای بازسازی به حداقل مطلق ریاضی می‌رسد. در خلال فرآیند ریزتنظیم، آداپتورهای $A$ و $B$ ظرفیت انطباق‌پذیری پویایی در امتداد جهت‌های پرخطا فراهم می‌آورند و در پایان آموزش نیز می‌توان وزن‌های آداپتور را با وزن‌های پایه ادغام نمود \lr{(Weight Merging)} تا بدون هیچ‌گونه سربار محاسباتی یا ساختاری، استنتاجی با سرعت بسیار بالا بر روی سخت‌افزارهای مدرن حاصل گردد.
+با این استراتژی، در لحظه صفر استقرار \lr{(Zero-shot Initialization)}، بازنمایی لایه دقیقاً منطبق بر تقریب رتبه $(r_{\text{\lr{base}}} + r_{\text{\lr{res}}})$ قضیه اکارت-یانگ-میرسکی \lr{(Eckart-Young-Mirsky Theorem)} بوده و خطای بازسازی به حداقل مطلق ریاضی می‌رسد. در خلال فرآیند ریزتنظیم، آداپتورهای $A$ و $B$ ظرفیت انطباق‌پذیری پویایی در امتداد جهت‌های پرخطا فراهم می‌آورند و در پایان آموزش نیز می‌توان وزن‌های آداپتور را با وزن‌های پایه ادغام نمود \lr{(Weight Merging)} تا بدون هیچ‌گونه سربار محاسباتی یا ساختاری، استنتاجی با سرعت بسیار بالا بر روی سخت‌افزارهای مدرن حاصل گردد.
 
 \subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
 تانسور ورودی لایه توجه را با $X \in \mathbb{R}^{B \times N \times D}$ نشان می‌دهیم که در آن $B$ اندازه دسته \lr{(Batch Size)}، $N$ طول توالی \lr{(Sequence Length)} و $D$ بعد پنهان مدل \lr{(Hidden Dimension)} است. فرض کنید $H$ تعداد سرهای توجه، $H_{kv}$ تعداد سرهای کلید/مقدار و $d = D/H$ بعد هر سر توجه باشد.
 
 \subsubsection*{۲.۱. تجزیه طیفی مقادیر منفرد و خطای تقریب بهینه}
-برای ماتریس پروجکشن متراکم اولیه $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با رتبه کامل $R = \min(d_{\text{out}}, d_{\text{in}})$، تجزیه مقادیر منفرد به صورت زیر تعریف می‌شود:
+برای ماتریس پروجکشن متراکم اولیه $W \in \mathbb{R}^{d_{\text{\lr{out}}} \times d_{\text{\lr{in}}}}$ با رتبه کامل $R = \min(d_{\text{\lr{out}}}, d_{\text{\lr{in}}})$، تجزیه مقادیر منفرد به صورت زیر تعریف می‌شود:
 \begin{equation}
 W = U \Sigma V^\top = \sum_{i=1}^R \sigma_i u_i v_i^\top
 \end{equation}
-که در آن $U \in \mathbb{R}^{d_{\text{out}} \times R}$ و $V \in \mathbb{R}^{d_{\text{in}} \times R}$ ماتریس‌های متعامد یکانی ($U^\top U = I, V^\top V = I$) و $\Sigma = \operatorname{diag}(\sigma_1, \sigma_2, \dots, \sigma_R)$ ماتریس قطری با مقادیر منفرد مرتب‌شده نزولی ($\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_R \ge 0$) است.
+که در آن $U \in \mathbb{R}^{d_{\text{\lr{out}}} \times R}$ و $V \in \mathbb{R}^{d_{\text{\lr{in}}} \times R}$ ماتریس‌های متعامد یکانی ($U^\top U = I, V^\top V = I$) و $\Sigma = \operatorname{diag}(\sigma_1, \sigma_2, \dots, \sigma_R)$ ماتریس قطری با مقادیر منفرد مرتب‌شده نزولی ($\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_R \ge 0$) است.
 
-بر اساس قضیه اکارت-یانگ-میرسکی، بهترین تقریب رتبه-$r_{\text{base}}$ از منظر نُرم فروبنیوس و نُرم طیفی برابر است با:
+بر اساس قضیه اکارت-یانگ-میرسکی، بهترین تقریب رتبه-$r_{\text{\lr{base}}}$ از منظر نُرم فروبنیوس و نُرم طیفی برابر است با:
 \begin{equation}
-W_{\text{base}} = \sum_{i=1}^{r_{\text{base}}} \sigma_i u_i v_i^\top, \quad \min_{\operatorname{rank}(\hat{W}) \le r_{\text{base}}} \|W - \hat{W}\|_F = \|W - W_{\text{base}}\|_F = \sqrt{\sum_{j=r_{\text{base}}+1}^R \sigma_j^2}
+W_{\text{\lr{base}}} = \sum_{i=1}^{r_{\text{\lr{base}}}} \sigma_i u_i v_i^\top, \quad \min_{\operatorname{rank}(\hat{W}) \le r_{\text{\lr{base}}}} \|W - \hat{W}\|_F = \|W - W_{\text{\lr{base}}}\|_F = \sqrt{\sum_{j=r_{\text{\lr{base}}}+1}^R \sigma_j^2}
 \end{equation}
-ماتریس خطای پسماند $E \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ منحصراً از زیرفضای مکمل تشکیل می‌شود:
+ماتریس خطای پسماند $E \in \mathbb{R}^{d_{\text{\lr{out}}} \times d_{\text{\lr{in}}}}$ منحصراً از زیرفضای مکمل تشکیل می‌شود:
 \begin{equation}
-E = W - W_{\text{base}} = \sum_{j=r_{\text{base}}+1}^R \sigma_j u_j v_j^\top
+E = W - W_{\text{\lr{base}}} = \sum_{j=r_{\text{\lr{base}}}+1}^R \sigma_j u_j v_j^\top
 \end{equation}
 
 \subsubsection*{۲.۲. مقداردهی اولیه آداپتور پسماند طیفی \lr{(Spectral Residual Initialization)}}
-در معماری \lr{res\_svd}، پارامترهای آداپتور $A \in \mathbb{R}^{r_{\text{res}} \times d_{\text{in}}}$ و $B \in \mathbb{R}^{d_{\text{out}} \times r_{\text{res}}}$ به جای مقداردهی گوسی تصادفی، مستقیماً از $r_{\text{res}}$ بردار ویژه برتر خطای پسماند استخراج می‌گردند:
+در معماری \lr{res\_svd}، پارامترهای آداپتور $A \in \mathbb{R}^{r_{\text{\lr{res}}} \times d_{\text{\lr{in}}}}$ و $B \in \mathbb{R}^{d_{\text{\lr{out}}} \times r_{\text{\lr{res}}}}$ به جای مقداردهی گوسی تصادفی، مستقیماً از $r_{\text{\lr{res}}}$ بردار ویژه برتر خطای پسماند استخراج می‌گردند:
 \begin{equation}
-U_{\text{tail}} = U[:, r_{\text{base}}+1 : r_{\text{base}}+r_{\text{res}}], \quad \Sigma_{\text{tail}} = \operatorname{diag}(\sigma_{r_{\text{base}}+1}, \dots, \sigma_{r_{\text{base}}+r_{\text{res}}}), \quad V_{\text{tail}} = V[:, r_{\text{base}}+1 : r_{\text{base}}+r_{\text{res}}]
+U_{\text{\lr{tail}}} = U[:, r_{\text{\lr{base}}}+1 : r_{\text{\lr{base}}}+r_{\text{\lr{res}}}], \quad \Sigma_{\text{\lr{tail}}} = \operatorname{diag}(\sigma_{r_{\text{\lr{base}}}+1}, \dots, \sigma_{r_{\text{\lr{base}}}+r_{\text{\lr{res}}}}), \quad V_{\text{\lr{tail}}} = V[:, r_{\text{\lr{base}}}+1 : r_{\text{\lr{base}}}+r_{\text{\lr{res}}}]
 \end{equation}
 با در نظر گرفتن ضریب مقیاس آداپتور $\alpha > 0$، پارامترها به صورت متقارن مقداردهی می‌شوند:
 \begin{equation}
-A = \sqrt{\frac{\Sigma_{\text{tail}}}{\alpha}} V_{\text{tail}}^\top, \qquad B = U_{\text{tail}} \sqrt{\frac{\Sigma_{\text{tail}}}{\alpha}}
+A = \sqrt{\frac{\Sigma_{\text{\lr{tail}}}}{\alpha}} V_{\text{\lr{tail}}}^\top, \qquad B = U_{\text{\lr{tail}}} \sqrt{\frac{\Sigma_{\text{\lr{tail}}}}{\alpha}}
 \end{equation}
 در نتیجه در بدو آموزش ($t = 0$)، بازنمایی مؤثر به صورت تحلیلی برابر است با:
 \begin{equation}
-W_{\text{eff}}^{(0)} = W_{\text{base}} + \alpha B A = \sum_{i=1}^{r_{\text{base}}} \sigma_i u_i v_i^\top + \sum_{j=r_{\text{base}}+1}^{r_{\text{base}}+r_{\text{res}}} \sigma_j u_j v_j^\top = W_{r_{\text{base}}+r_{\text{res}}}
+W_{\text{\lr{eff}}}^{(0)} = W_{\text{\lr{base}}} + \alpha B A = \sum_{i=1}^{r_{\text{\lr{base}}}} \sigma_i u_i v_i^\top + \sum_{j=r_{\text{\lr{base}}}+1}^{r_{\text{\lr{base}}}+r_{\text{\lr{res}}}} \sigma_j u_j v_j^\top = W_{r_{\text{\lr{base}}}+r_{\text{\lr{res}}}}
 \end{equation}
-این برابری تضمین می‌نماید که خطای مدل در گام صفر، دقیقاً برابر با کمینه نظری خطای رتبه $(r_{\text{base}}+r_{\text{res}})$ است.
+این برابری تضمین می‌نماید که خطای مدل در گام صفر، دقیقاً برابر با کمینه نظری خطای رتبه $(r_{\text{\lr{base}}}+r_{\text{\lr{res}}})$ است.
 
 \subsubsection*{۲.۳. اثبات پایداری توزیع متقارن $\sqrt{\Sigma}$ در دقت ممیز شناور نیم‌پایدار \lr{(FP16/BF16)}}
-هنگام فاکتورسازی $W_{\text{base}}$ به دو ماتریس $U_{\text{base}} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{base}}}$ و $V_{\text{base}} \in \mathbb{R}^{r_{\text{base}} \times d_{\text{in}}}$، توزیع انرژی را با پارامتر $\gamma \in [0, 1]$ به صورت $U_{\text{base}} = U_r \Sigma_r^{1-\gamma}$ و $V_{\text{base}} = \Sigma_r^\gamma V_r^\top$ در نظر می‌گیریم.
+هنگام فاکتورسازی $W_{\text{\lr{base}}}$ به دو ماتریس $U_{\text{\lr{base}}} \in \mathbb{R}^{d_{\text{\lr{out}}} \times r_{\text{\lr{base}}}}$ و $V_{\text{\lr{base}}} \in \mathbb{R}^{r_{\text{\lr{base}}} \times d_{\text{\lr{in}}}}$، توزیع انرژی را با پارامتر $\gamma \in [0, 1]$ به صورت $U_{\text{\lr{base}}} = U_r \Sigma_r^{1-\gamma}$ و $V_{\text{\lr{base}}} = \Sigma_r^\gamma V_r^\top$ در نظر می‌گیریم.
 \begin{itemize}
-    \item \textbf{حالت نامتقارن ($\gamma = 0$ یا $\gamma = 1$):} اگر $\gamma = 0$ باشد، $\|U_{\text{base}}\|_2 = \sigma_1$ و $\|V_{\text{base}}\|_2 = 1$ خواهد بود. در محاسبات پس‌انتشار، گرادیان تابع هزینه $\mathcal{L}$ نسبت به پارامترها دارای نسبت بزرگی برابر است با:
+    \item \textbf{حالت نامتقارن ($\gamma = 0$ یا $\gamma = 1$):} اگر $\gamma = 0$ باشد، $\|U_{\text{\lr{base}}}\|_2 = \sigma_1$ و $\|V_{\text{\lr{base}}}\|_2 = 1$ خواهد بود. در محاسبات پس‌انتشار، گرادیان تابع هزینه $\mathcal{L}$ نسبت به پارامترها دارای نسبت بزرگی برابر است با:
     \begin{equation}
-    \frac{\|\nabla_{V_{\text{base}}} \mathcal{L}\|_2}{\|\nabla_{U_{\text{base}}} \mathcal{L}\|_2} = \sigma_1
+    \frac{\|\nabla_{V_{\text{\lr{base}}}} \mathcal{L}\|_2}{\|\nabla_{U_{\text{\lr{base}}}} \mathcal{L}\|_2} = \sigma_1
     \end{equation}
     در مدل‌های پیش‌آموزش‌دیده بزرگ، $\sigma_1 \sim 10^2 - 10^3$ است. در فرمت ممیز شناور نیم‌پایدار \lr{FP16}، با اعمال به‌روزرسانی‌های بهینه‌ساز \lr{Adam} ($\nabla^2 \sim \sigma_1^2 \sim 10^6$)، کران عددی $65504$ پشت سر گذاشته شده و پدیده انفجار عددی \lr{(Numerical Overflow / NaN)} رخ می‌دهد؛ هم‌زمان گرادیان مؤلفه مقابل به مرزهای ریزمقدار \lr{(Subnormal)} سقوط کرده و محو می‌شود.
-    \item \textbf{حالت متقارن ($\gamma = 0.5$):} با انتخاب $U_{\text{base}} = U_r \sqrt{\Sigma_r}$ و $V_{\text{base}} = \sqrt{\Sigma_r} V_r^\top$، نُرم هر دو ماتریس به $\|U_{\text{base}}\|_2 = \|V_{\text{base}}\|_2 = \sqrt{\sigma_1}$ متعادل شده، عدد وضعیت ماتریس‌ها به $\kappa(U_{\text{base}}) = \kappa(V_{\text{base}}) = \sqrt{\sigma_1 / \sigma_r} \ll \kappa(W)$ تقلیل یافته و نسبت گرادیان‌ها در سطح پایدار $1.0$ تثبیت می‌گردد.
+    \item \textbf{حالت متقارن ($\gamma = 0.5$):} با انتخاب $U_{\text{\lr{base}}} = U_r \sqrt{\Sigma_r}$ و $V_{\text{\lr{base}}} = \sqrt{\Sigma_r} V_r^\top$، نُرم هر دو ماتریس به $\|U_{\text{\lr{base}}}\|_2 = \|V_{\text{\lr{base}}}\|_2 = \sqrt{\sigma_1}$ متعادل شده، عدد وضعیت ماتریس‌ها به $\kappa(U_{\text{\lr{base}}}) = \kappa(V_{\text{\lr{base}}}) = \sqrt{\sigma_1 / \sigma_r} \ll \kappa(W)$ تقلیل یافته و نسبت گرادیان‌ها در سطح پایدار $1.0$ تثبیت می‌گردد.
 \end{itemize}
 
 \subsubsection*{۲.۴. آستانه‌گذاری انباشتی انرژی طیفی \lr{(Cumulative Energy Thresholding)}}
-رتبه پایه $r_{\text{base}}$ بر اساس نسبت انرژی مقادیر منفرد به کل انرژی فروبنیوس تعیین می‌شود:
+رتبه پایه $r_{\text{\lr{base}}}$ بر اساس نسبت انرژی مقادیر منفرد به کل انرژی فروبنیوس تعیین می‌شود:
 \begin{equation}
-\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_j^2} \ge \tau \quad (\tau = 0.92)
+\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{\lr{out}}}, d_{\text{\lr{in}}})} \sigma_j^2} \ge \tau \quad (\tau = 0.92)
 \end{equation}
-به دلیل زوال توانی مقادیر منفرد در لایه‌های ترنسفورمر ($\sigma_i \propto i^{-\beta}$ با $\beta \approx 0.85 - 1.15$)، با انتخاب رتبه اندک ($r_{\text{base}} \approx 64 - 128$) می‌توان بیش از ۹۲ درصد اطلاعات هندسی لایه را بازیابی نمود.
+به دلیل زوال توانی مقادیر منفرد در لایه‌های ترنسفورمر ($\sigma_i \propto i^{-\beta}$ با $\beta \approx 0.85 - 1.15$)، با انتخاب رتبه اندک ($r_{\text{\lr{base}}} \approx 64 - 128$) می‌توان بیش از ۹۲ درصد اطلاعات هندسی لایه را بازیابی نمود.
 
 \subsubsection*{۲.۵. تحلیل پیچیدگی محاسباتی و مکانی}
 برای تبدیل بردار ورودی $x \in \mathbb{R}^{D}$ در لایه پروجکشن خطی متراکم:
 \begin{itemize}
     \item \textbf{پیچیدگی محاسباتی زمانی لایه پروجکشن:} اجرای نگاشت متراکم نیازمند $2 D^2$ عملیات نقطه شناور \lr{(FLOPs)} است. در ماژول \lr{res\_svd}، به دلیل شکستن عملگر به دو ضرب متوالی برای پایه و دو ضرب متوالی برای آداپتور:
     \begin{equation}
-    \text{FLOPs}_{\text{proj}} = 2 D (r_{\text{base}} + r_{\text{res}}) + 2 (r_{\text{base}} + r_{\text{res}}) D = 4 D (r_{\text{base}} + r_{\text{res}})
+    \text{\lr{FLOPs}}_{\text{\lr{proj}}} = 2 D (r_{\text{\lr{base}}} + r_{\text{\lr{res}}}) + 2 (r_{\text{\lr{base}}} + r_{\text{\lr{res}}}) D = 4 D (r_{\text{\lr{base}}} + r_{\text{\lr{res}}})
     \end{equation}
-    با توجه به اینکه $r_{\text{base}} + r_{\text{res}} \ll D$ (مثلاً $128 \ll 768$)، حجم محاسبات پروجکشن به ضریب $\frac{D}{2(r_{\text{base}} + r_{\text{res}})} \approx 3.0\times$ تقلیل می‌یابد.
-    \item \textbf{پیچیدگی لایه توجه:} پیچیدگی توجه چندسره برابر $\mathcal{O}(B \cdot H \cdot N^2 \cdot d)$ باقی مانده و پیچیدگی کلی زمانی لایه $\mathcal{O}(B \cdot N \cdot D \cdot (r_{\text{base}} + r_{\text{res}}) + B \cdot H \cdot N^2 \cdot d)$ خواهد بود.
-    \item \textbf{پیچیدگی حافظه پارامتری:} پارامترهای فعال پروجکشن از $D^2$ به $2 D (r_{\text{base}} + r_{\text{res}})$ کاهش می‌یابد؛ به عنوان نمونه برای $D = 768$، رتبه پایه $64$ و رتبه آداپتور $8$، تعداد پارامترها از $589,824$ به $110,592$ کاهش یافته که معادل فشرده‌سازی $5.33\times$ است.
+    با توجه به اینکه $r_{\text{\lr{base}}} + r_{\text{\lr{res}}} \ll D$ (مثلاً $128 \ll 768$)، حجم محاسبات پروجکشن به ضریب $\frac{D}{2(r_{\text{\lr{base}}} + r_{\text{\lr{res}}})} \approx 3.0\times$ تقلیل می‌یابد.
+    \item \textbf{پیچیدگی لایه توجه:} پیچیدگی توجه چندسره برابر $\mathcal{O}(B \cdot H \cdot N^2 \cdot d)$ باقی مانده و پیچیدگی کلی زمانی لایه $\mathcal{O}(B \cdot N \cdot D \cdot (r_{\text{\lr{base}}} + r_{\text{\lr{res}}}) + B \cdot H \cdot N^2 \cdot d)$ خواهد بود.
+    \item \textbf{پیچیدگی حافظه پارامتری:} پارامترهای فعال پروجکشن از $D^2$ به $2 D (r_{\text{\lr{base}}} + r_{\text{\lr{res}}})$ کاهش می‌یابد؛ به عنوان نمونه برای $D = 768$، رتبه پایه $64$ و رتبه آداپتور $8$، تعداد پارامترها از $589,824$ به $110,592$ کاهش یافته که معادل فشرده‌سازی $5.33\times$ است.
 \end{itemize}
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
@@ -92,17 +92,17 @@ W_{\text{eff}}^{(0)} = W_{\text{base}} + \alpha B A = \sum_{i=1}^{r_{\text{base}
 \subsubsection*{۳.۱. ساختار کلاس \lr{ResSVDLinear} و متد فوروارد}
 در کلاس \lr{ResSVDLinear}، وزن‌های لایه به پارامترهای زیر تفکیک شده‌اند:
 \begin{itemize}
-    \item \lr{base\_V} با بعد $[r_{\text{base}}, d_{\text{in}}]$ و وضعیت گرادیان مسدود \lr{requires\_grad=False}.
-    \item \lr{base\_U} با بعد $[d_{\text{out}}, r_{\text{base}}]$ و وضعیت گرادیان مسدود \lr{requires\_grad=False}.
-    \item \lr{lora\_A} با بعد $[r_{\text{res}}, d_{\text{in}}]$ و وضعیت آموزش‌پذیر \lr{requires\_grad=True}.
-    \item \lr{lora\_B} با بعد $[d_{\text{out}}, r_{\text{res}}]$ و وضعیت آموزش‌پذیر \lr{requires\_grad=True}.
+    \item \lr{base\_V} با بعد $[r_{\text{\lr{base}}}, d_{\text{\lr{in}}}]$ و وضعیت گرادیان مسدود \lr{requires\_grad=False}.
+    \item \lr{base\_U} با بعد $[d_{\text{\lr{out}}}, r_{\text{\lr{base}}}]$ و وضعیت گرادیان مسدود \lr{requires\_grad=False}.
+    \item \lr{lora\_A} با بعد $[r_{\text{\lr{res}}}, d_{\text{\lr{in}}}]$ و وضعیت آموزش‌پذیر \lr{requires\_grad=True}.
+    \item \lr{lora\_B} با بعد $[d_{\text{\lr{out}}}, r_{\text{\lr{res}}}]$ و وضعیت آموزش‌پذیر \lr{requires\_grad=True}.
     \item \lr{output\_scale} به عنوان ضریب مقیاس پارامتریک برای تنظیم پویای دامنه سیگنال خروجی.
 \end{itemize}
 مسیر اجرای پیشرو در متد \lr{forward} این لایه به صورت زیر است:
 \begin{equation}
-y = \left( \left(x V_{\text{base}}^\top\right) U_{\text{base}}^\top + \alpha \left(x A^\top\right) B^\top + b \right) \odot \text{scale}
+y = \left( \left(x V_{\text{\lr{base}}}^\top\right) U_{\text{\lr{base}}}^\top + \alpha \left(x A^\top\right) B^\top + b \right) \odot \text{\lr{scale}}
 \end{equation}
-برای سناریوهای استقرار نهایی، متد \lr{merge\_weights()} تعبیه شده است که ماتریس نهایی $W_{\text{merged}} = U_{\text{base}} V_{\text{base}} + \alpha B A$ را به یک شیء استاندارد \lr{nn.Linear} تبدیل نموده و هرگونه سربار ناشی از انشعاب محاسباتی را در زمان استنتاج حذف می‌کند.
+برای سناریوهای استقرار نهایی، متد \lr{merge\_weights()} تعبیه شده است که ماتریس نهایی $W_{\text{\lr{merged}}} = U_{\text{\lr{base}}} V_{\text{\lr{base}}} + \alpha B A$ را به یک شیء استاندارد \lr{nn.Linear} تبدیل نموده و هرگونه سربار ناشی از انشعاب محاسباتی را در زمان استنتاج حذف می‌کند.
 
 \subsubsection*{۳.۲. ردگیری گام‌به‌گام تانسورها در لایه \lr{ResSVDAttention}}
 لایه \lr{ResSVDAttention} از چهار ماژول \lr{ResSVDLinear} برای پروجکشن‌های پرس‌وجو \lr{(query)}، کلید \lr{(key)}، مقدار \lr{(value)} و پروجکشن نهایی \lr{(out\_proj)} استفاده می‌نماید. مسیر حرکت تانسورها در متد پیشرو به شرح زیر است:
@@ -110,11 +110,11 @@ y = \left( \left(x V_{\text{base}}^\top\right) U_{\text{base}}^\top + \alpha \le
     \item \textbf{ورودی لایه:} تانسور بازنمایی $X \in \mathbb{R}^{B \times N \times D}$ با نوع داده \lr{torch.float16} یا \lr{torch.float32}.
     \item \textbf{محاسبه پروجکشن‌ها:}
     \begin{align}
-    Q &= \text{self.query}(X) \in \mathbb{R}^{B \times N \times (H \cdot d)} \xrightarrow{\text{view \& permute}} [B, H, N, d] \\
-    K &= \text{self.key}(X) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)} \xrightarrow{\text{view \& permute}} [B, H_{kv}, N, d] \\
-    V &= \text{self.value}(X) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)} \xrightarrow{\text{view \& permute}} [B, H_{kv}, N, d]
+    Q &= \text{\lr{self.query}}(X) \in \mathbb{R}^{B \times N \times (H \cdot d)} \xrightarrow{\text{\lr{view \& permute}}} [B, H, N, d] \\
+    K &= \text{\lr{self.key}}(X) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)} \xrightarrow{\text{\lr{view \& permute}}} [B, H_{kv}, N, d] \\
+    V &= \text{\lr{self.value}}(X) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)} \xrightarrow{\text{\lr{view \& permute}}} [B, H_{kv}, N, d]
     \end{align}
-    \item \textbf{اعمال امبدینگ‌های چرخشی مکانی \lr{(RoPE)}:} تابع کمکی \lr{apply\_rotary\_pos\_emb} ماتریس‌های $Q$ و $K$ را با تبدیل چرخشی $\left(Q \odot \cos\right) + \left(\text{rotate\_half}(Q) \odot \sin\right)$ شیفت فازی می‌دهد.
+    \item \textbf{اعمال امبدینگ‌های چرخشی مکانی \lr{(RoPE)}:} تابع کمکی \lr{apply\_rotary\_pos\_emb} ماتریس‌های $Q$ و $K$ را با تبدیل چرخشی $\left(Q \odot \cos\right) + \left(\text{\lr{rotate\_half}}(Q) \odot \sin\right)$ شیفت فازی می‌دهد.
     \item \textbf{تطابق با توجه با سرهای گروه‌بندی‌شده \lr{(GQA)}:} در صورتی که $H \ne H_{kv}$ باشد، متد کمکی \lr{repeat\_kv} سرهای کلید و مقدار را به میزان $H / H_{kv}$ در امتداد بعد سرها تکرار می‌کند تا با ابعاد پرس‌وجو همگام گردند.
     \item \textbf{محاسبه ماتریس امتیاز توجه و ماسک‌گذاری:}
     \begin{equation}
@@ -128,7 +128,7 @@ y = \left( \left(x V_{\text{base}}^\top\right) U_{\text{base}}^\top + \alpha \le
     برای جلوگیری از انتشار خطاهای عددی در رژیم ممیز شناور، از دستور \lr{torch.nan\_to\_num(A, nan=0.0)} و لایه \lr{Dropout} استفاده می‌شود.
     \item \textbf{تجمیع مقادیر و ساخت بستر متنی:}
     \begin{equation}
-    \text{Context} = A V \in \mathbb{R}^{B \times H \times N \times d} \xrightarrow{\text{permute \& contiguous}} [B, N, H \cdot d]
+    \text{\lr{Context}} = A V \in \mathbb{R}^{B \times H \times N \times d} \xrightarrow{\text{\lr{permute \& contiguous}}} [B, N, H \cdot d]
     \end{equation}
     \item \textbf{مدیریت انکودرهای تودرتو \lr{(Nested Encoders Bypass)}:} در مدل‌هایی نظیر \lr{RoBERTa} و \lr{BERT} که بلوک توجه شامل دو سطح \lr{attention.self} و \lr{attention.output.dense} است، در صورت فعال بودن پرچم \lr{is\_nested\_encoder}، تانسور \lr{Context} مستقیماً بازگردانده می‌شود تا پروجکشن خروجی متراکم لایه والد اجرا گردد. در غیر این صورت، تانسور از ماژول \lr{out\_proj} عبور کرده و به بعد نهایی $[B, N, D]$ نگاشت می‌شود.
 \end{enumerate}
@@ -136,7 +136,7 @@ y = \left( \left(x V_{\text{base}}^\top\right) U_{\text{base}}^\top + \alpha \le
 \subsubsection*{۳.۳. اعتبارسنجی کپی وزن‌ها و آزمون نُرم فروبنیوس}
 در متد \lr{copy\_weights}، نگاشت وزن‌های متراکم مبدأ به ماتریس‌های \lr{ResSVDLinear} با تفکیک ساختار مدل‌های \lr{GPT-2} (مبتنی بر ادغام \lr{c\_attn} با ترانهاده \lr{Conv1D})، انکودرهای تودرتوی \lr{RoBERTa/BERT} و ماژول‌های مسطح \lr{(q\_lin, k\_lin, v\_lin, out\_lin)} انجام می‌شود. پس از تجزیه مقادیر منفرد و انتساب ماتریس‌ها، یک آزمون اعتبارسنجی با تانسور همانی نمونه $I \in \mathbb{R}^{64 \times D}$ اجرا می‌گردد:
 \begin{equation}
-\|Y\|_F = \|\text{target}(I)\|_F
+\|Y\|_F = \|\text{\lr{target}}(I)\|_F
 \end{equation}
 اگر نُرم فروبنیوس خروجی کمتر از $10^{-4}$ باشد، سامانه خطای ساختاری اعلام می‌نماید تا از عدم وقوع تخریب گرادیان و صفر شدن پروجکشن اطمینان حاصل شود.
 
@@ -154,13 +154,13 @@ y = \left( \left(x V_{\text{base}}^\top\right) U_{\text{base}}^\top + \alpha \le
 \midrule
 تعداد چندپردازنده‌های جریانی \lr{(SM Count)} & ۳۶ \\
 تعداد هسته‌های محاسباتی تانسوری \lr{(4th Gen Tensor Cores)} & ۱۴۴ \\
-توان پردازش ممیز شناور نیم‌پایدار \lr{(FP16 / BF16 Peak Compute)} & $78.3 \text{ TFLOPS}$ \\
-ظرفیت حافظه گرافیکی اختصاصی \lr{(VRAM Capacity)} & $8192 \text{ MB GDDR6}$ \\
-پهنای گذرگاه حافظه \lr{(Memory Bus Width)} & $128\text{-bit}$ \\
-پهنای باند دسترسی به حافظه سراسری \lr{(Theoretical Bandwidth)} & $256.0 \text{ GB/s}$ \\
-ظرفیت حافظه نهان سطح دوم \lr{(L2 Cache Size)} & $32 \text{ MB}$ \\
-حافظه اشتراکی و ثبات‌ها به ازای هر \lr{SM} & $128 \text{ KB SRAM}$ \\
-نقطه تعادل مدل سقف کارایی \lr{(Roofline Operational Intensity)} & $305.86 \text{ FLOP/Byte}$ \\
+توان پردازش ممیز شناور نیم‌پایدار \lr{(FP16 / BF16 Peak Compute)} & $78.3 \text{\lr{ TFLOPS}}$ \\
+ظرفیت حافظه گرافیکی اختصاصی \lr{(VRAM Capacity)} & $8192 \text{\lr{ MB GDDR6}}$ \\
+پهنای گذرگاه حافظه \lr{(Memory Bus Width)} & $128\text{\lr{-bit}}$ \\
+پهنای باند دسترسی به حافظه سراسری \lr{(Theoretical Bandwidth)} & $256.0 \text{\lr{ GB/s}}$ \\
+ظرفیت حافظه نهان سطح دوم \lr{(L2 Cache Size)} & $32 \text{\lr{ MB}}$ \\
+حافظه اشتراکی و ثبات‌ها به ازای هر \lr{SM} & $128 \text{\lr{ KB SRAM}}$ \\
+نقطه تعادل مدل سقف کارایی \lr{(Roofline Operational Intensity)} & $305.86 \text{\lr{ FLOP/Byte}}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -168,29 +168,29 @@ y = \left( \left(x V_{\text{base}}^\top\right) U_{\text{base}}^\top + \alpha \le
 \subsubsection*{۴.۱. تحلیل شدت محاسباتی و انتقال از رژیم حافظه‌محور به محاسبات‌محور}
 شدت محاسباتی \lr{(Arithmetic Intensity)} یک عملیات بر حسب تعداد محاسبات نقطه شناور تقسیم بر حجم بایت تبادل‌شده با حافظه سراسری \lr{(DRAM)} محاسبه می‌شود:
 \begin{equation}
-I = \frac{\text{FLOPs}}{\text{Bytes Transferred from VRAM}}
+I = \frac{\text{\lr{FLOPs}}}{\text{\lr{Bytes Transferred from VRAM}}}
 \end{equation}
 در یک لایه خطی متراکم استاندارد با ابعاد $D \times D$ در طول استنتاج با اندازه دسته کوچک ($M = B \cdot N \approx 512$):
 \begin{itemize}
-    \item حجم خواندن وزن‌های ماتریس: $2 \times D^2 = 2 \times 768^2 \approx 1.18 \text{ MB}$ به ازای هر پروجکشن.
-    \item برای مدل ۱۲ لایه با ۴ پروجکشن در هر لایه، کل حافظه وزن‌ها بالغ بر $56.6 \text{ MB}$ است. چون این مقدار از ظرفیت کش سطح دوم ($32 \text{ MB}$) فراتر می‌رود، در هر فراخوانی لایه‌ها، وزن‌ها باید مجدداً از حافظه فرعی \lr{GDDR6} با پهنای باند محدود $256 \text{ GB/s}$ فراخوانی شوند. شدت محاسباتی در این حالت $I \approx M / 2 \approx 256 \text{ FLOP/Byte}$ است که در رژیم شدیداً محدودشده با گذرگاه حافظه \lr{(Memory-Bound Regime)} قرار می‌گیرد.
+    \item حجم خواندن وزن‌های ماتریس: $2 \times D^2 = 2 \times 768^2 \approx 1.18 \text{\lr{ MB}}$ به ازای هر پروجکشن.
+    \item برای مدل ۱۲ لایه با ۴ پروجکشن در هر لایه، کل حافظه وزن‌ها بالغ بر $56.6 \text{\lr{ MB}}$ است. چون این مقدار از ظرفیت کش سطح دوم ($32 \text{\lr{ MB}}$) فراتر می‌رود، در هر فراخوانی لایه‌ها، وزن‌ها باید مجدداً از حافظه فرعی \lr{GDDR6} با پهنای باند محدود $256 \text{\lr{ GB/s}}$ فراخوانی شوند. شدت محاسباتی در این حالت $I \approx M / 2 \approx 256 \text{\lr{ FLOP/Byte}}$ است که در رژیم شدیداً محدودشده با گذرگاه حافظه \lr{(Memory-Bound Regime)} قرار می‌گیرد.
 \end{itemize}
 
 در معماری فاکتورسازی‌شده \lr{res\_svd}:
 \begin{itemize}
-    \item وزن‌های هر پروجکشن به $2 \times 2 D (r_{\text{base}} + r_{\text{res}}) = 4 \times 768 \times (128 + 16) \approx 0.44 \text{ MB}$ کاهش می‌یابد.
-    \item در مدل ۶ لایه \lr{DistilBERT}، کل وزن‌های فاکتورسازی‌شده توجه در محدوده $10.6 \text{ MB}$ قرار می‌گیرند.
-    \item این حجم کوچک به طور کامل در حافظه نهان فوق‌سریع سطح دوم \lr{(L2 Cache)} با پهنای باند موثر بیش از $1.2 \text{ TB/s}$ جای می‌گیرد \lr{(Cache Resident)}. در نتیجه، ترافیک تبادل داده با حافظه اصلی گرافیکی \lr{(HBM / GDDR6)} حذف شده و عملیات به درون سقف محاسباتی هسته‌های تانسوری \lr{Ada Lovelace} سوق داده می‌شود.
+    \item وزن‌های هر پروجکشن به $2 \times 2 D (r_{\text{\lr{base}}} + r_{\text{\lr{res}}}) = 4 \times 768 \times (128 + 16) \approx 0.44 \text{\lr{ MB}}$ کاهش می‌یابد.
+    \item در مدل ۶ لایه \lr{DistilBERT}، کل وزن‌های فاکتورسازی‌شده توجه در محدوده $10.6 \text{\lr{ MB}}$ قرار می‌گیرند.
+    \item این حجم کوچک به طور کامل در حافظه نهان فوق‌سریع سطح دوم \lr{(L2 Cache)} با پهنای باند موثر بیش از $1.2 \text{\lr{ TB/s}}$ جای می‌گیرد \lr{(Cache Resident)}. در نتیجه، ترافیک تبادل داده با حافظه اصلی گرافیکی \lr{(HBM / GDDR6)} حذف شده و عملیات به درون سقف محاسباتی هسته‌های تانسوری \lr{Ada Lovelace} سوق داده می‌شود.
 \end{itemize}
 
 \subsubsection*{۴.۲. کالبدشکافی ردپای حافظه گرافیکی \lr{(VRAM Footprint Decomposition)}}
-بر اساس داده‌های ارزیابی تجربی ماژول \lr{res\_svd} بر روی مدل \lr{DistilBERT}، اوج مصرف حافظه گرافیکی در سطح بسیار پایین $329.4 \text{ MB}$ ثبت شده است. تفکیک ساختاری این حافظه به شرح زیر است:
+بر اساس داده‌های ارزیابی تجربی ماژول \lr{res\_svd} بر روی مدل \lr{DistilBERT}، اوج مصرف حافظه گرافیکی در سطح بسیار پایین $329.4 \text{\lr{ MB}}$ ثبت شده است. تفکیک ساختاری این حافظه به شرح زیر است:
 \begin{itemize}
-    \item \textbf{وزن‌های مدل پس از فشرده‌سازی:} $\approx 117.4 \text{ MB}$ (شامل ۵۸.۶۹ میلیون پارامتر در فرمت \lr{FP16}).
-    \item \textbf{بافرهای موقت فعال‌سازی لایه‌ها و ماتریس‌های ضرب داخلی:} $\approx 135.0 \text{ MB}$ (حاصل ضرب‌های $Q K^\top$ و بافرهای آداپتور).
-    \item \textbf{سربار بستر اجرای پایتورچ و کانتکست هسته‌های \lr{CUDA}:} $\approx 77.0 \text{ MB}$.
+    \item \textbf{وزن‌های مدل پس از فشرده‌سازی:} $\approx 117.4 \text{\lr{ MB}}$ (شامل ۵۸.۶۹ میلیون پارامتر در فرمت \lr{FP16}).
+    \item \textbf{بافرهای موقت فعال‌سازی لایه‌ها و ماتریس‌های ضرب داخلی:} $\approx 135.0 \text{\lr{ MB}}$ (حاصل ضرب‌های $Q K^\top$ و بافرهای آداپتور).
+    \item \textbf{سربار بستر اجرای پایتورچ و کانتکست هسته‌های \lr{CUDA}:} $\approx 77.0 \text{\lr{ MB}}$.
 \end{itemize}
-این ردپای فشرده در مقایسه با مصرف فراتر از $4200 \text{ MB}$ در مدل‌های پایه پرپارامتر، کاهشی بالغ بر ۸۵ درصد را نشان می‌دهد و امکان اجرای هم‌زمان چندین رشته پردازشی را بر روی یک پردازنده مصرف‌کننده \lr{RTX 4070 Laptop} فراهم می‌سازد.
+این ردپای فشرده در مقایسه با مصرف فراتر از $4200 \text{\lr{ MB}}$ در مدل‌های پایه پرپارامتر، کاهشی بالغ بر ۸۵ درصد را نشان می‌دهد و امکان اجرای هم‌زمان چندین رشته پردازشی را بر روی یک پردازنده مصرف‌کننده \lr{RTX 4070 Laptop} فراهم می‌سازد.
 
 \subsection*{بخش ۵: کارنامه تجربی و ارزیابی آزمایشگاهی \lr{(Empirical Results \& Benchmark)}}
 ارزیابی تجربی ماژول \lr{res\_svd} بر روی مجموعه داده استاندارد \lr{GLUE SST-2} با طول دنباله ورودی $N = 512$ و با استفاده از دقت ترکیبی \lr{FP16} بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} انجام شده است. مقادیر تجربی استخراج‌شده از فایل حقیقت‌مبنای مرجع \lr{(master\_verified\_results.json)} و پرونده‌های جزئیات عملکردی در جدول \ref{tab:res_svd_master_benchmark} خلاصه گردیده است.
@@ -245,9 +245,9 @@ I = \frac{\text{FLOPs}}{\text{Bytes Transferred from VRAM}}
 \toprule
 \textbf{طول دنباله \lr{(Sequence Length)}} & \lr{DistilBERT} & \lr{RoBERTa-base} & \lr{GPT-2} \\
 \midrule
-$L = 128$ & $298.28 \text{ MB}$ & $395.37 \text{ MB}$ & $519.28 \text{ MB}$ \\
-$L = 256$ & $302.75 \text{ MB}$ & $401.99 \text{ MB}$ & $524.35 \text{ MB}$ \\
-$L = 512$ & $329.40 \text{ MB}$ & $428.75 \text{ MB}$ & $559.13 \text{ MB}$ \\
+$L = 128$ & $298.28 \text{\lr{ MB}}$ & $395.37 \text{\lr{ MB}}$ & $519.28 \text{\lr{ MB}}$ \\
+$L = 256$ & $302.75 \text{\lr{ MB}}$ & $401.99 \text{\lr{ MB}}$ & $524.35 \text{\lr{ MB}}$ \\
+$L = 512$ & $329.40 \text{\lr{ MB}}$ & $428.75 \text{\lr{ MB}}$ & $559.13 \text{\lr{ MB}}$ \\
 $L = 1024$ & نامعتبر (فراتر از طول آموزش ۵۱۲) & نامعتبر (فراتر از ۵۱۴) & نامعتبر (فراتر از ۱۰۲۴) \\
 \bottomrule
 \end{tabular}
@@ -269,7 +269,7 @@ $L = 1024$ & نامعتبر (فراتر از طول آموزش ۵۱۲) & نام�
     \item مقدار بازخوانی \lr{(Recall)} دقیقاً برابر با $0.5000$ و مقدار دقت مثبت \lr{(Precision)} دقیقاً برابر با $0.2546$ است.
     \item در وظیفه دسته‌بندی دوتایی \lr{SST-2}، نسبت نمونه‌های کلاس مثبت به کل نمونه‌ها دقیقاً $50.92\%$ است. در صورتی که یک طبقه‌بند تمامی داده‌های ورودی را صرفاً به عنوان کلاس مثبت برچسب‌گذاری کند، شاخص‌ها به صورت تحلیلی به شرح زیر خواهند بود:
     \begin{equation}
-    \text{Accuracy} = 0.5092, \quad \text{Precision} = 0.5092, \quad \text{Recall} = 1.0 \implies F_1 = \frac{2 \times 0.5092 \times 1.0}{0.5092 + 1.0} = 0.6748
+    \text{\lr{Accuracy}} = 0.5092, \quad \text{\lr{Precision}} = 0.5092, \quad \text{\lr{Recall}} = 1.0 \implies F_1 = \frac{2 \times 0.5092 \times 1.0}{0.5092 + 1.0} = 0.6748
     \end{equation}
     این محاسبه دقیقاً تطابق کامل با خروجی آزمایشگاهی دارد و اثبات می‌کند که مدل‌های مذکور به ورطه پیش‌بینی کلاس اکثریت \lr{(Majority Class Collapse)} سقوط کرده‌اند.
 \end{itemize}
@@ -286,7 +286,7 @@ $L = 1024$ & نامعتبر (فراتر از طول آموزش ۵۱۲) & نام�
 \begin{itemize}
     \item \textbf{کمینه‌سازی بهینه خطای اولیه:} بهره‌گیری مستقیم از بردارهای ویژه باقیمانده برای مقداردهی اولیه آداپتور بر اساس قضیه اکارت-یانگ-میرسکی، خطای صفر-شات را به حداقل نظری می‌رساند.
     \item \textbf{پایداری محاسباتی در ممیز شناور نیم‌پایدار:} توزیع متقارن توان مقادیر منفرد ($\sqrt{\Sigma}$) عدد وضعیت ماتریس‌ها را کاهش داده و مانع از پدیده سرریز گرادیان در فرمت \lr{FP16} می‌گردد.
-    \item \textbf{توان عملیاتی خارق‌العاده:} ثبت توان عملیاتی $76,476.96 \text{ tok/s}$ بر روی \lr{DistilBERT} به دلیل استقرار کامل پارامترهای وزن در حافظه نهان سطح دوم ($32 \text{ MB}$) پردازنده گرافیکی \lr{RTX 4070 Laptop}.
+    \item \textbf{توان عملیاتی خارق‌العاده:} ثبت توان عملیاتی $76,476.96 \text{\lr{ tok/s}}$ بر روی \lr{DistilBERT} به دلیل استقرار کامل پارامترهای وزن در حافظه نهان سطح دوم ($32 \text{\lr{ MB}}$) پردازنده گرافیکی \lr{RTX 4070 Laptop}.
     \item \textbf{قابلیت ادغام بی‌درنگ وزن‌ها:} امکان ترکیب پارامترهای آداپتور با پایه پس از آموزش و حذف کامل هرگونه سربار انشعاب در فاز استقرار واقعی.
 \end{itemize}
 
@@ -298,7 +298,7 @@ $L = 1024$ & نامعتبر (فراتر از طول آموزش ۵۱۲) & نام�
 
 \subsubsection*{۷.۳. پیشنهادات توسعه و افق‌های پژوهشی \lr{(Future Scope)}}
 \begin{itemize}
-    \item \textbf{تخصیص پویای رتبه در لایه‌های مختلف \lr{(Dynamic Layer-Wise Rank Allocation)}:} تعیین رتبه پایه $r_{\text{base}}^{(l)}$ و رتبه آداپتور $r_{\text{res}}^{(l)}$ متناسب با شیب زوال مقادیر منفرد $\beta_l$ در لایه‌های مختلف ترنسفورمر.
+    \item \textbf{تخصیص پویای رتبه در لایه‌های مختلف \lr{(Dynamic Layer-Wise Rank Allocation)}:} تعیین رتبه پایه $r_{\text{\lr{base}}}^{(l)}$ و رتبه آداپتور $r_{\text{\lr{res}}}^{(l)}$ متناسب با شیب زوال مقادیر منفرد $\beta_l$ در لایه‌های مختلف ترنسفورمر.
     \item \textbf{توسعه کرنل‌های همجوش \lr{Triton} برای لایه فاکتورسازی‌شده:} ادغام عملگرهای ضرب ماتریسی دو مرحله‌ای $x V^\top U^\top + \alpha x A^\top B^\top$ در یک کرنل منفرد جهت به صفر رساندن تبادلات بافر موقت در حافظه اشتراکی.
     \item \textbf{بسط فاکتورسازی پسماند طیفی به لایه‌های پیش‌خور \lr{(FFN / MLP)}:} تعمیم رویکرد \lr{res\_svd} به ماتریس‌های با بعد گسترده لایه‌های پرسپترون چندلایه به منظور ارتقای نرخ فشرده‌سازی کل مدل به بیش از ۵۰ درصد.
 \end{itemize}

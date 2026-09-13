@@ -15,13 +15,13 @@
 \begin{equation}
 \mathcal{I}(x_0) = 10^9
 \end{equation}
-سپس مجموعه‌ای از اندیس‌های بهینه $S$ با اندازه $K = \lfloor L \times \text{keep\_ratio} \rfloor$ از طریق عملگر \lr{Top-K} استخراج و به صورت صعودی مرتب می‌شوند:
+سپس مجموعه‌ای از اندیس‌های بهینه $S$ با اندازه $K = \lfloor L \times \text{\lr{keep\_ratio}} \rfloor$ از طریق عملگر \lr{Top-K} استخراج و به صورت صعودی مرتب می‌شوند:
 \begin{equation}
-S = \text{Sort}(\text{TopK}(\mathcal{I}, K))
+S = \text{\lr{Sort}}(\text{\lr{TopK}}(\mathcal{I}, K))
 \end{equation}
-توکن‌های کلید و ارزش بر اساس مجموعه $S$ فیلتر شده و ماتریس‌های هرس‌شده $\mathbf{K}_{\text{pruned}}$ و $\mathbf{V}_{\text{pruned}}$ را تشکیل می‌دهند. خروجی نهایی توجه تنک عبارت است از:
+توکن‌های کلید و ارزش بر اساس مجموعه $S$ فیلتر شده و ماتریس‌های هرس‌شده $\mathbf{K}_{\text{\lr{pruned}}}$ و $\mathbf{V}_{\text{\lr{pruned}}}$ را تشکیل می‌دهند. خروجی نهایی توجه تنک عبارت است از:
 \begin{equation}
-\mathbf{O} = \operatorname{Softmax}\left( \frac{\mathbf{Q} \mathbf{K}_{\text{pruned}}^\top}{\sqrt{D_h}} \right) \mathbf{V}_{\text{pruned}}
+\mathbf{O} = \operatorname{Softmax}\left( \frac{\mathbf{Q} \mathbf{K}_{\text{\lr{pruned}}}^\top}{\sqrt{D_h}} \right) \mathbf{V}_{\text{\lr{pruned}}}
 \end{equation}
 پیچیدگی زمانی این روش به جای $\mathcal{O}(B \cdot H \cdot L^2 \cdot D_h)$ به $\mathcal{O}(B \cdot H \cdot L \cdot K \cdot D_h + B \cdot L \log K)$ کاهش می‌یابد که در طول‌های بلند به شدت بهینه است.
 

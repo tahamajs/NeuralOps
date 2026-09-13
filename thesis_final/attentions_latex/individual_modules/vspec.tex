@@ -15,23 +15,23 @@
 \subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
 در این ماژول، پردازش در چندین لایه ریاضی صورت می‌پذیرد. در گام اول، استخراج توکن‌های مهم توسط یک شبکه امتیازدهی محلی صورت می‌گیرد:
 \begin{equation}
-s = \sigma\left(\mathbf{W}_s \mathbf{X} + b_s\right), \quad \mathcal{I} = \text{TopK}(s, K)
+s = \sigma\left(\mathbf{W}_s \mathbf{X} + b_s\right), \quad \mathcal{I} = \text{\lr{TopK}}(s, K)
 \end{equation}
-که در آن $\mathcal{I}$ اندیس توکن‌های منتخب است و $\mathbf{X}_{\text{routed}} = \mathbf{X}[:, \mathcal{I}, :]$ تشکیل می‌شود. 
+که در آن $\mathcal{I}$ اندیس توکن‌های منتخب است و $\mathbf{X}_{\text{\lr{routed}}} = \mathbf{X}[:, \mathcal{I}, :]$ تشکیل می‌شود. 
 سپس برای هر هدایتگر خطی، گیت تغییراتی $g$ از روی میانگین دنباله ورودی نمونه‌برداری می‌شود:
 \begin{equation}
-\mu, \log \sigma = \text{MLP}\left(\frac{1}{N} \sum_{i=1}^N \mathbf{X}_i\right)
+\mu, \log \sigma = \text{\lr{MLP}}\left(\frac{1}{N} \sum_{i=1}^N \mathbf{X}_i\right)
 \end{equation}
 \begin{equation}
 z = \mu + \epsilon \odot \exp(\log \sigma), \quad \epsilon \sim \mathcal{N}(0, I), \quad g = \sigma(z)
 \end{equation}
 پروجکشن‌های خطی ترکیبی از \lr{SVD} گیت‌شده و \lr{LoRA} هستند:
 \begin{equation}
-\mathbf{P}(\mathbf{X}_{\text{routed}}) = \left( \mathbf{X}_{\text{routed}} \mathbf{V} \right) \odot \mathbf{S} \odot g \mathbf{U}^T + \alpha \mathbf{X}_{\text{routed}} \mathbf{A} \mathbf{B}
+\mathbf{P}(\mathbf{X}_{\text{\lr{routed}}}) = \left( \mathbf{X}_{\text{\lr{routed}}} \mathbf{V} \right) \odot \mathbf{S} \odot g \mathbf{U}^T + \alpha \mathbf{X}_{\text{\lr{routed}}} \mathbf{A} \mathbf{B}
 \end{equation}
-در نهایت، ماتریس توجه با استفاده از گیت‌های سطح سر \lr{(Head Gates)} $h = \sigma(\text{MLP}(\mathbf{X}))$ تعدیل می‌شود:
+در نهایت، ماتریس توجه با استفاده از گیت‌های سطح سر \lr{(Head Gates)} $h = \sigma(\text{\lr{MLP}}(\mathbf{X}))$ تعدیل می‌شود:
 \begin{equation}
-\mathbf{A} = \text{Softmax}\left( \frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}} \right) \odot h
+\mathbf{A} = \text{\lr{Softmax}}\left( \frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}} \right) \odot h
 \end{equation}
 پیچیدگی زمانی این رویکرد به دلیل مسیریابی توکن‌ها به $\mathcal{O}(B K D + B K^2 H)$ کاهش می‌یابد که در آن $K \ll N$ است و فضای حافظه نیز به واسطه کاهش طول دنباله و نمایش کم‌رتبه به شدت تقلیل می‌یابد.
 

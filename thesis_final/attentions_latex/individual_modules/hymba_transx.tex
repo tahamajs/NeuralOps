@@ -16,19 +16,19 @@
 در این ساختار، تانسور ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ به طور موازی به هر دو شاخه توجه تفاضلی و فضای حالت خورانده می‌شود. 
 برای شاخه توجه، دو مجموعه پرس‌وجو و کلید تولید می‌گردد:
 \begin{align*}
-\mathbf{Q}_1, \mathbf{K}_1 &= \text{RoPE}(\mathbf{X}\mathbf{W}_{Q1}, \mathbf{X}\mathbf{W}_{K1}) \\
-\mathbf{Q}_2, \mathbf{K}_2 &= \text{RoPE}(\mathbf{X}\mathbf{W}_{Q2}, \mathbf{X}\mathbf{W}_{K2}) \\
+\mathbf{Q}_1, \mathbf{K}_1 &= \text{\lr{RoPE}}(\mathbf{X}\mathbf{W}_{Q1}, \mathbf{X}\mathbf{W}_{K1}) \\
+\mathbf{Q}_2, \mathbf{K}_2 &= \text{\lr{RoPE}}(\mathbf{X}\mathbf{W}_{Q2}, \mathbf{X}\mathbf{W}_{K2}) \\
 \mathbf{V} &= \mathbf{X}\mathbf{W}_V
 \end{align*}
 در اینجا ماتریس‌های وزن پروجکشن با استفاده از آداپتورهای \lr{LoRA} فرمول‌بندی شده‌اند تا در طول آموزش‌های ثانویه از هزینه‌های محاسباتی کاسته شود. پس از نگاشت به ابعاد $[B, H, N, d]$ و اعمال کدگذاری مکانی چرخشی \lr{(RoPE)}، امتیازات توجه محاسبه می‌شود:
 \begin{align*}
 \mathbf{S}_1 &= \frac{\mathbf{Q}_1\mathbf{K}_1^\top}{\sqrt{d}}, \quad \mathbf{S}_2 = \frac{\mathbf{Q}_2\mathbf{K}_2^\top}{\sqrt{d}} \\
-\mathbf{A}_{\text{diff}} &= \text{ReLU}\big(\text{Softmax}(\mathbf{S}_1) - \lambda \cdot \text{Softmax}(\mathbf{S}_2)\big)
+\mathbf{A}_{\text{\lr{diff}}} &= \text{\lr{ReLU}}\big(\text{\lr{Softmax}}(\mathbf{S}_1) - \lambda \cdot \text{\lr{Softmax}}(\mathbf{S}_2)\big)
 \end{align*}
-در این پیاده‌سازی، ضریب $\lambda = 0.2$ به عنوان ضریب تعدیل در نظر گرفته شده است. خروجی توجه به صورت $\mathbf{O}_{\text{attn}} = \bar{\mathbf{A}}_{\text{diff}} \mathbf{V}$ محاسبه می‌گردد (که در آن $\bar{\mathbf{A}}_{\text{diff}}$ نمایانگر ماتریس پس از نرمال‌سازی مجموع در راستای سطرهاست).
-در موازات، شاخه فضای حالت خروجی $\mathbf{O}_{\text{ssm}} = \text{SSM}(\mathbf{X})$ را تولید می‌کند و ترکیب نهایی به کمک یک پارامتر آموختنی $\alpha$ صورت می‌پذیرد:
+در این پیاده‌سازی، ضریب $\lambda = 0.2$ به عنوان ضریب تعدیل در نظر گرفته شده است. خروجی توجه به صورت $\mathbf{O}_{\text{\lr{attn}}} = \bar{\mathbf{A}}_{\text{\lr{diff}}} \mathbf{V}$ محاسبه می‌گردد (که در آن $\bar{\mathbf{A}}_{\text{\lr{diff}}}$ نمایانگر ماتریس پس از نرمال‌سازی مجموع در راستای سطرهاست).
+در موازات، شاخه فضای حالت خروجی $\mathbf{O}_{\text{\lr{ssm}}} = \text{\lr{SSM}}(\mathbf{X})$ را تولید می‌کند و ترکیب نهایی به کمک یک پارامتر آموختنی $\alpha$ صورت می‌پذیرد:
 \begin{equation}
-\mathbf{O} = \big(\sigma(\alpha) \mathbf{O}_{\text{attn}} + (1 - \sigma(\alpha)) \mathbf{O}_{\text{ssm}}\big) \mathbf{W}_O
+\mathbf{O} = \big(\sigma(\alpha) \mathbf{O}_{\text{\lr{attn}}} + (1 - \sigma(\alpha)) \mathbf{O}_{\text{\lr{ssm}}}\big) \mathbf{W}_O
 \end{equation}
 پیچیدگی زمانی این رویکرد برابر $\mathcal{O}(N^2 d + N d)$ بوده و ترکیب خطی \lr{SSM} از بار سنگین حافظه برای زمینه‌های بسیار طولانی می‌کاهد.
 

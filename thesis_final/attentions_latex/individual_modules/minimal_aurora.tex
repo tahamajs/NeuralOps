@@ -14,37 +14,37 @@
 
 روش‌های سنتی کاهش پارامتر نظیر انطباق رتبه-پایین استاتیک \lr{(Static LoRA)}، معمولاً یک رتبه فشرده‌سازی ثابت و یکنواخت $r$ را به تمامی لایه‌ها و تمامی ماتریس‌های پروجکشن تحمیل می‌نمایند؛ رویکردی که توزیع نامتقارن و ناهمگون مقادیر منفرد \lr{(Singular Values)} در لایه‌های مختلف و نقش‌های عملکردی متفاوت پروجکشن‌ها را نادیده می‌گیرد. در نقطه مقابل، معماری \lr{minimal\_aurora} یک رهیافت فاکتورسازی طیفی کم‌مرتبه مبتنی بر تجزیه مقادیر منفرد \lr{(Singular Value Decomposition - SVD)} با معیار حفظ انرژی تجمعی فروبنیوس \lr{(Cumulative Frobenius Energy Preservation)} را به همراه شاخه بازیابی باقیمانده \lr{LoRA} معرفی می‌نماید. ایده محوری این ماژول بر دو پایه استوار است:
 \begin{enumerate}
-    \item \textbf{برش وفقی طیف مقادیر منفرد بر پایه آستانه انرژی:} با محاسبه تجزیه کامل مقادیر منفرد ماتریس‌های وزن پیش‌آموزش‌دیده، رتبه گلوگاه $r$ برای هر لایه و هر پروجکشن به صورت پویا به‌گونه‌ای انتخاب می‌شود که کسر مشخصی از کل انرژی کواریانس طیفی (به‌طور پیش‌فرض $\eta_{\text{energy}} = 0.95$) حفظ گردد. این امر از تخصیص رتبه بیش از حد به فضاهای با انتروپی پایین و فشرده‌سازی مفرط در لایه‌های حساس جلوگیری می‌کند.
+    \item \textbf{برش وفقی طیف مقادیر منفرد بر پایه آستانه انرژی:} با محاسبه تجزیه کامل مقادیر منفرد ماتریس‌های وزن پیش‌آموزش‌دیده، رتبه گلوگاه $r$ برای هر لایه و هر پروجکشن به صورت پویا به‌گونه‌ای انتخاب می‌شود که کسر مشخصی از کل انرژی کواریانس طیفی (به‌طور پیش‌فرض $\eta_{\text{\lr{energy}}} = 0.95$) حفظ گردد. این امر از تخصیص رتبه بیش از حد به فضاهای با انتروپی پایین و فشرده‌سازی مفرط در لایه‌های حساس جلوگیری می‌کند.
     \item \textbf{معماری دومسیره ترکیبی \lr{(Hybrid SVD-LoRA Projections)}:} ماتریس‌های پروجکشن پایه به دو نگاشت کاهنده \lr{(Down-Projection)} و افزاینده \lr{(Up-Projection)} با رتبه پایین تجزیه شده و به صورت کاملاً فریز شده \lr{(Frozen)} در حافظه مستقر می‌شوند. برای جبران خطای باقیمانده ناشی از هرس مقادیر منفرد ضعیف و انطباق روان با توزیع داده‌های پایین‌دستی، یک شاخه آداپتور موازی و کم‌حجم \lr{LoRA} به صورت همگام در فرآیند پیشرو عمل نموده و قابلیت بازآموزی هدفمند را با کسری ناچیز از پارامترهای فعال فراهم می‌آورد.
 \end{enumerate}
 
 \subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-فرض کنید تانسور فعال‌سازی ورودی لایه توجه $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ باشد که در آن $B$ اندازه دسته، $N$ طول دنباله و $D$ بعد پنهان مدل است. برای هر ماتریس پروجکشن خطی پیش‌آموزش‌دیده $\mathbf{W}_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$، تجزیه کامل مقادیر منفرد \lr{(SVD)} به صورت زیر تعریف می‌شود:
+فرض کنید تانسور فعال‌سازی ورودی لایه توجه $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ باشد که در آن $B$ اندازه دسته، $N$ طول دنباله و $D$ بعد پنهان مدل است. برای هر ماتریس پروجکشن خطی پیش‌آموزش‌دیده $\mathbf{W}_0 \in \mathbb{R}^{d_{\text{\lr{out}}} \times d_{\text{\lr{in}}}}$، تجزیه کامل مقادیر منفرد \lr{(SVD)} به صورت زیر تعریف می‌شود:
 \begin{equation}
 \mathbf{W}_0 = \mathbf{U} \mathbf{\Sigma} \mathbf{V}^\top = \sum_{i=1}^{p} \sigma_i \mathbf{u}_i \mathbf{v}_i^\top
 \end{equation}
-که در آن $p = \min(d_{\text{out}}, d_{\text{in}})$ رتبه کامل ماتریس، $\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times p}$ و $\mathbf{V} \in \mathbb{R}^{d_{\text{in}} \times p}$ ماتریس‌های متعامد ستونی و $\mathbf{\Sigma} = \operatorname{diag}(\sigma_1, \sigma_2, \dots, \sigma_p)$ ماتریس قطری شامل مقادیر منفرد مرتب‌شده نزولی ($\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_p \ge 0$) هستند.
+که در آن $p = \min(d_{\text{\lr{out}}}, d_{\text{\lr{in}}})$ رتبه کامل ماتریس، $\mathbf{U} \in \mathbb{R}^{d_{\text{\lr{out}}} \times p}$ و $\mathbf{V} \in \mathbb{R}^{d_{\text{\lr{in}}} \times p}$ ماتریس‌های متعامد ستونی و $\mathbf{\Sigma} = \operatorname{diag}(\sigma_1, \sigma_2, \dots, \sigma_p)$ ماتریس قطری شامل مقادیر منفرد مرتب‌شده نزولی ($\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_p \ge 0$) هستند.
 
 رتبه بهینه تقریب $r$ بر اساس شرط حفظ انرژی تجمعی فروبنیوس تعیین می‌گردد:
 \begin{equation}
-r = \min \left\{ k \in \{1, \dots, p\} \;\middle|\; \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{j=1}^p \sigma_j^2} \ge \eta_{\text{energy}} \right\}, \quad \text{subject to } r \le r_{\max}
+r = \min \left\{ k \in \{1, \dots, p\} \;\middle|\; \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{j=1}^p \sigma_j^2} \ge \eta_{\text{\lr{energy}}} \right\}, \quad \text{\lr{subject to }} r \le r_{\max}
 \end{equation}
 بر مبنای قضیه اکارت-یانگ-میرسکی \lr{(Eckart-Young-Mirsky Theorem)}، تقریب رتبه-$r$ حاصل از قطع مقادیر منفرد، نزدیک‌ترین ماتریس به $\mathbf{W}_0$ در نُرم‌های فروبنیوس و طیفی است:
 \begin{equation}
-\min_{\operatorname{rank}(\mathbf{B}) \le r} \|\mathbf{W}_0 - \mathbf{B}\|_F^2 = \|\mathbf{W}_0 - \mathbf{W}_{\text{base}}\|_F^2 = \sum_{i=r+1}^p \sigma_i^2 \le (1 - \eta_{\text{energy}}) \|\mathbf{W}_0\|_F^2
+\min_{\operatorname{rank}(\mathbf{B}) \le r} \|\mathbf{W}_0 - \mathbf{B}\|_F^2 = \|\mathbf{W}_0 - \mathbf{W}_{\text{\lr{base}}}\|_F^2 = \sum_{i=r+1}^p \sigma_i^2 \le (1 - \eta_{\text{\lr{energy}}}) \|\mathbf{W}_0\|_F^2
 \end{equation}
 در کلاس \lr{FactorisedLinear}، فاکتورسازی متقارن وزن پایه از طریق تخصیص ریشه دوم مقادیر منفرد به ماتریس‌های بالا و پایین اعمال می‌شود:
 \begin{equation}
-\mathbf{W}_{\text{down}} = \operatorname{diag}(\sqrt{\sigma_1}, \dots, \sqrt{\sigma_r}) \mathbf{V}_{:, :r}^\top \in \mathbb{R}^{r \times d_{\text{in}}}
+\mathbf{W}_{\text{\lr{down}}} = \operatorname{diag}(\sqrt{\sigma_1}, \dots, \sqrt{\sigma_r}) \mathbf{V}_{:, :r}^\top \in \mathbb{R}^{r \times d_{\text{\lr{in}}}}
 \end{equation}
 \begin{equation}
-\mathbf{W}_{\text{up}} = \mathbf{U}_{:, :r} \operatorname{diag}(\sqrt{\sigma_1}, \dots, \sqrt{\sigma_r}) \in \mathbb{R}^{d_{\text{out}} \times r}
+\mathbf{W}_{\text{\lr{up}}} = \mathbf{U}_{:, :r} \operatorname{diag}(\sqrt{\sigma_1}, \dots, \sqrt{\sigma_r}) \in \mathbb{R}^{d_{\text{\lr{out}}} \times r}
 \end{equation}
-به منظور جبران خطای باقیمانده تقریب و فعال‌سازی قابلیت یادگیری، شاخه آداپتور \lr{LoRA} با رتبه $r_{\text{lora}}$ و ضریب مقیاس $\alpha$ به صورت موازی اضافه می‌شود:
+به منظور جبران خطای باقیمانده تقریب و فعال‌سازی قابلیت یادگیری، شاخه آداپتور \lr{LoRA} با رتبه $r_{\text{\lr{lora}}}$ و ضریب مقیاس $\alpha$ به صورت موازی اضافه می‌شود:
 \begin{equation}
-\mathbf{Y} = \operatorname{FactorisedLinear}(\mathbf{X}) = \left( \mathbf{X} \mathbf{W}_{\text{down}}^\top \right) \mathbf{W}_{\text{up}}^\top + \mathbf{b} + \frac{\alpha}{r_{\text{lora}}} \left( \mathbf{X} \mathbf{A}_{\text{lora}}^\top \right) \mathbf{B}_{\text{lora}}^\top
+\mathbf{Y} = \operatorname{FactorisedLinear}(\mathbf{X}) = \left( \mathbf{X} \mathbf{W}_{\text{\lr{down}}}^\top \right) \mathbf{W}_{\text{\lr{up}}}^\top + \mathbf{b} + \frac{\alpha}{r_{\text{\lr{lora}}}} \left( \mathbf{X} \mathbf{A}_{\text{\lr{lora}}}^\top \right) \mathbf{B}_{\text{\lr{lora}}}^\top
 \end{equation}
-که در آن $\mathbf{A}_{\text{lora}} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ با توزیع یکنواخت کایمینگ و $\mathbf{B}_{\text{lora}} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$ با مقادیر صفر مقداردهی اولیه می‌شوند تا در لحظه مقداردهی اولیه، خروجی ماژول دقیقاً معادل تقریب \lr{SVD} باشد.
+که در آن $\mathbf{A}_{\text{\lr{lora}}} \in \mathbb{R}^{r_{\text{\lr{lora}}} \times d_{\text{\lr{in}}}}$ با توزیع یکنواخت کایمینگ و $\mathbf{B}_{\text{\lr{lora}}} \in \mathbb{R}^{d_{\text{\lr{out}}} \times r_{\text{\lr{lora}}}}$ با مقادیر صفر مقداردهی اولیه می‌شوند تا در لحظه مقداردهی اولیه، خروجی ماژول دقیقاً معادل تقریب \lr{SVD} باشد.
 
 پروجکشن‌های پرس‌وجو، کلید و مقدار با بهره‌گیری از این تبدیل فاکتورگیری‌شده ساخته می‌شوند:
 \begin{equation}
@@ -52,24 +52,24 @@ r = \min \left\{ k \in \{1, \dots, p\} \;\middle|\; \frac{\sum_{i=1}^k \sigma_i^
 \end{equation}
 پس از بازآرایی به ابعاد چندسره و اعمال کدگذاری مکانی چرخشی \lr{(RoPE)} و همگام‌سازی سرهای کلید/مقدار در معماری پرسمان گروهی \lr{(GQA)} از طریق عملگر $\operatorname{repeat\_kv}$، ماتریس امتیازات توجه و خروجی نهایی به صورت زیر محاسبه می‌گردند:
 \begin{equation}
-\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}_{\text{rep}}^\top}{\sqrt{d}} + \mathbf{M}_{\text{causal}} + \mathbf{M}_{\text{pad}}
+\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}_{\text{\lr{rep}}}^\top}{\sqrt{d}} + \mathbf{M}_{\text{\lr{causal}}} + \mathbf{M}_{\text{\lr{pad}}}
 \end{equation}
 \begin{equation}
-\mathbf{A} = \operatorname{Dropout}\left( \operatorname{Softmax}\left( \operatorname{nan\_to\_num}(\mathbf{S}) \right) \right), \quad \mathbf{C} = \mathbf{A} \mathbf{V}_{\text{rep}} \in \mathbb{R}^{B \times H \times N \times d}
+\mathbf{A} = \operatorname{Dropout}\left( \operatorname{Softmax}\left( \operatorname{nan\_to\_num}(\mathbf{S}) \right) \right), \quad \mathbf{C} = \mathbf{A} \mathbf{V}_{\text{\lr{rep}}} \in \mathbb{R}^{B \times H \times N \times d}
 \end{equation}
 \begin{equation}
-\mathbf{O} = \gamma_{\text{scale}} \cdot \operatorname{Reshape}(\mathbf{C}) \in \mathbb{R}^{B \times N \times D}, \quad \mathbf{Y}_{\text{out}} = \begin{cases} \mathbf{O} & \text{در انکودرهای تودرتو} \\ \operatorname{FactorisedLinear}_O(\mathbf{O}) & \text{در سایر معماری‌ها} \end{cases}
+\mathbf{O} = \gamma_{\text{\lr{scale}}} \cdot \operatorname{Reshape}(\mathbf{C}) \in \mathbb{R}^{B \times N \times D}, \quad \mathbf{Y}_{\text{\lr{out}}} = \begin{cases} \mathbf{O} & \text{در انکودرهای تودرتو} \\ \operatorname{FactorisedLinear}_O(\mathbf{O}) & \text{در سایر معماری‌ها} \end{cases}
 \end{equation}
-که در آن $\gamma_{\text{scale}}$ یک پارامتر اسکالر کالیبراسیون یادگیری‌پذیر برای تنظیم بهینه دامنه تانسور پیش از خروج است.
+که در آن $\gamma_{\text{\lr{scale}}}$ یک پارامتر اسکالر کالیبراسیون یادگیری‌پذیر برای تنظیم بهینه دامنه تانسور پیش از خروج است.
 
 \textbf{تحلیل پیچیدگی محاسباتی و حافظه:}
 \begin{itemize}
-    \item \textbf{پیچیدگی محاسباتی (عملیات ممیز شناور - \lr{FLOPs}):} برای هر پروجکشن، فاکتورسازی متوالی نیاز به $2BN \cdot D \cdot r + 2BN \cdot r \cdot D = 4BN D r$ عملیات دارد. با احتساب شاخه \lr{LoRA}، پیچیدگی پروجکشن برابر با $4BN D (r + r_{\text{lora}})$ خواهد بود. در نتیجه برای ۴ پروجکشن کامل، پیچیدگی به صورت زیر است:
+    \item \textbf{پیچیدگی محاسباتی (عملیات ممیز شناور - \lr{FLOPs}):} برای هر پروجکشن، فاکتورسازی متوالی نیاز به $2BN \cdot D \cdot r + 2BN \cdot r \cdot D = 4BN D r$ عملیات دارد. با احتساب شاخه \lr{LoRA}، پیچیدگی پروجکشن برابر با $4BN D (r + r_{\text{\lr{lora}}})$ خواهد بود. در نتیجه برای ۴ پروجکشن کامل، پیچیدگی به صورت زیر است:
     \[
-    \mathcal{O}\left( B \cdot N \cdot D \cdot (r + r_{\text{lora}}) + B \cdot H \cdot N^2 \cdot d \right)
+    \mathcal{O}\left( B \cdot N \cdot D \cdot (r + r_{\text{\lr{lora}}}) + B \cdot H \cdot N^2 \cdot d \right)
     \]
-    با توجه به اینکه $r + r_{\text{lora}} \ll D$ (به‌عنوان مثال $128 + 16 \ll 768$)، حجم محاسبات ماتریسی پروجکشن‌ها بیش از \lr{80\%} کاهش می‌یابد.
-    \item \textbf{پیچیدگی ردپای پارامترها و حافظه:} حجم پارامترهای هر تبدیل از $D^2$ به $2D(r + r_{\text{lora}})$ تنزل می‌یابد. در ابعاد پنهان $D = 768$ و $r = 128$، پارامترهای ماتریسی از \lr{589,824} به \lr{196,608} تقلیل یافته و صرفه‌جویی چشمگیری در حافظه ذخیره‌سازی اوزان ایجاد می‌کند.
+    با توجه به اینکه $r + r_{\text{\lr{lora}}} \ll D$ (به‌عنوان مثال $128 + 16 \ll 768$)، حجم محاسبات ماتریسی پروجکشن‌ها بیش از \lr{80\%} کاهش می‌یابد.
+    \item \textbf{پیچیدگی ردپای پارامترها و حافظه:} حجم پارامترهای هر تبدیل از $D^2$ به $2D(r + r_{\text{\lr{lora}}})$ تنزل می‌یابد. در ابعاد پنهان $D = 768$ و $r = 128$، پارامترهای ماتریسی از \lr{589,824} به \lr{196,608} تقلیل یافته و صرفه‌جویی چشمگیری در حافظه ذخیره‌سازی اوزان ایجاد می‌کند.
 \end{itemize}
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
@@ -99,11 +99,11 @@ r = \min \left\{ k \in \{1, \dots, p\} \;\middle|\; \frac{\sum_{i=1}^k \sigma_i^
     \item تانسور ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ دریافت می‌گردد.
     \item پروجکشن‌های $\mathbf{Q}, \mathbf{K}, \mathbf{V}$ محاسبه می‌شوند:
     \[
-    \mathbf{X} \xrightarrow{\mathbf{W}_{\text{down}}} [B, N, r] \xrightarrow{\mathbf{W}_{\text{up}}} [B, N, H \cdot d]
+    \mathbf{X} \xrightarrow{\mathbf{W}_{\text{\lr{down}}}} [B, N, r] \xrightarrow{\mathbf{W}_{\text{\lr{up}}}} [B, N, H \cdot d]
     \]
     همزمان شاخه آداپتور اجرا شده و خروجی‌ها جمع می‌گردند:
     \[
-    \mathbf{X} \xrightarrow{\mathbf{A}_{\text{lora}}} [B, N, r_{\text{lora}}] \xrightarrow{\mathbf{B}_{\text{lora}}} [B, N, H \cdot d]
+    \mathbf{X} \xrightarrow{\mathbf{A}_{\text{\lr{lora}}}} [B, N, r_{\text{\lr{lora}}}] \xrightarrow{\mathbf{B}_{\text{\lr{lora}}}} [B, N, H \cdot d]
     \]
     \item تانسورها به فرمت چندسره بازآرایی می‌شوند: $\mathbf{Q} \in [B, H, N, d]$ و $\mathbf{K}, \mathbf{V} \in [B, H_{kv}, N_{kv}, d]$.
     \item در صورت ارسال تانسورهای موقعیت، تابع \lr{apply\_rotary\_pos\_emb} به صورت برخط ماتریس دوران فرکانسی را بر بخش متناظر ابعاد سر اعمال می‌نماید.

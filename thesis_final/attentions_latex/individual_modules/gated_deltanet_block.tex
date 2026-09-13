@@ -16,9 +16,9 @@
 \subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
 از منظر ریاضی، خروجی این بلوک به صورت شرطی بر اساس پارامتر \lr{use\_full\_attention} تعریف می‌شود:
 \begin{equation}
-\text{Output} = \begin{cases}
-\text{LayerNorm}\big(\mathbf{X} + \text{MHA}(\mathbf{X}, \mathbf{X}, \mathbf{X})\big), & \text{if } \text{use\_full\_attention} \\
-\text{LayerNorm}\big(\mathbf{X} + \text{GatedDeltaNet}(\mathbf{X})\big), & \text{otherwise}
+\text{\lr{Output}} = \begin{cases}
+\text{\lr{LayerNorm}}\big(\mathbf{X} + \text{\lr{MHA}}(\mathbf{X}, \mathbf{X}, \mathbf{X})\big), & \text{\lr{if }} \text{\lr{use\_full\_attention}} \\
+\text{\lr{LayerNorm}}\big(\mathbf{X} + \text{\lr{GatedDeltaNet}}(\mathbf{X})\big), & \text{\lr{otherwise}}
 \end{cases}
 \end{equation}
 که در آن $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی است.

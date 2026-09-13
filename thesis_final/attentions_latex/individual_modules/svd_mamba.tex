@@ -40,7 +40,7 @@
 \subsubsection*{۲.۲. شاخه توجه چندسره \lr{(Attention Path)}}
 در شاخه توجه، تانسورهای پرس‌وجو، کلید و مقدار با پروجکشن‌های \lr{SVDLinear} تولید می‌شوند:
 \begin{equation}
-\mathbf{Q} = \text{SVDLinear}_Q(\mathbf{X}) \in \mathbb{R}^{B \times N \times (H \cdot d)}, \quad \mathbf{K} = \text{SVDLinear}_K(\mathbf{X}) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)}, \quad \mathbf{V}_{att} = \text{SVDLinear}_V(\mathbf{X}) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)}
+\mathbf{Q} = \text{\lr{SVDLinear}}_Q(\mathbf{X}) \in \mathbb{R}^{B \times N \times (H \cdot d)}, \quad \mathbf{K} = \text{\lr{SVDLinear}}_K(\mathbf{X}) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)}, \quad \mathbf{V}_{att} = \text{\lr{SVDLinear}}_V(\mathbf{X}) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)}
 \end{equation}
 سپس تبدیل چرخشی مکانی \lr{(RoPE)} روی ابعاد سرها اعمال شده و در صورت برقراری شرط $H_{kv} < H$ (توجه با سر گروه‌بندی‌شده \lr{GQA})، تانسورهای کلید و مقدار با عملگر تکرار $\operatorname{repeat\_kv}$ به ابعاد کامل سرها بازآرایی می‌شوند:
 \begin{equation}
@@ -58,7 +58,7 @@ h'(t) = \mathbf{A} h(t) + \mathbf{B}(t) x(t), \quad y(t) = \mathbf{C}(t) h(t) + 
 \end{equation}
 فرآیند گسسته‌سازی با نگهدارنده مرتبه صفر \lr{(Zero-Order Hold - ZOH)} و گام زمانی وابسته به ورودی $\mathbf{\Delta}_t$ محاسبه می‌شود:
 \begin{equation}
-[\mathbf{x}_{ssm}, \mathbf{z}] = \text{chunk}\left(\text{SVDLinear}_{in}(\mathbf{X}), 2, \text{dim}=-1\right), \quad \mathbf{x}_{ssm}, \mathbf{z} \in \mathbb{R}^{B \times N \times D_{inner}}
+[\mathbf{x}_{ssm}, \mathbf{z}] = \text{\lr{chunk}}\left(\text{\lr{SVDLinear}}_{in}(\mathbf{X}), 2, \text{\lr{dim}}=-1\right), \quad \mathbf{x}_{ssm}, \mathbf{z} \in \mathbb{R}^{B \times N \times D_{inner}}
 \end{equation}
 که در آن $D_{inner} = E \cdot D$ با ضریب انبساط $E=2$ است. تانسور محتوا از کانولوشن عمقی علّی یک‌بعدی با هسته $d_{conv}=4$ و تابع فعال‌سازی \lr{SiLU} عبور می‌کند:
 \begin{equation}
@@ -66,10 +66,10 @@ h'(t) = \mathbf{A} h(t) + \mathbf{B}(t) x(t), \quad y(t) = \mathbf{C}(t) h(t) + 
 \end{equation}
 سپس پارامترهای وابسته به داده استخراج می‌گردند:
 \begin{equation}
-[\mathbf{\Delta}_{raw}, \mathbf{B}_{ssm}, \mathbf{C}_{ssm}] = \text{SVDLinear}_x(\mathbf{x}_{conv})
+[\mathbf{\Delta}_{raw}, \mathbf{B}_{ssm}, \mathbf{C}_{ssm}] = \text{\lr{SVDLinear}}_x(\mathbf{x}_{conv})
 \end{equation}
 \begin{equation}
-\mathbf{\Delta} = \operatorname{clamp}\left( \operatorname{softplus}(\text{SVDLinear}_{\Delta}(\mathbf{\Delta}_{raw}) + \mathbf{b}_\Delta), \min=10^{-3}, \max=0.1 \right)
+\mathbf{\Delta} = \operatorname{clamp}\left( \operatorname{softplus}(\text{\lr{SVDLinear}}_{\Delta}(\mathbf{\Delta}_{raw}) + \mathbf{b}_\Delta), \min=10^{-3}, \max=0.1 \right)
 \end{equation}
 \begin{equation}
 \mathbf{A} = -\exp\left(\operatorname{clamp}(\mathbf{A}_{log}, -20.0, 10.0)\right) \in \mathbb{R}^{D_{inner} \times d_s}
@@ -86,10 +86,10 @@ h'(t) = \mathbf{A} h(t) + \mathbf{B}(t) x(t), \quad y(t) = \mathbf{C}(t) h(t) + 
 \end{equation}
 خروجی فیلتر گزینشی توسط دروازه کنترل $\mathbf{z}$ مدوله شده و با مؤلفه ترکیب سراسری \lr{SVD} تلفیق می‌شود:
 \begin{equation}
-\mathbf{y}_{gated} = \mathbf{y} \odot \operatorname{SiLU}(\mathbf{z}) + \text{SVDLinear}_{glob}(\mathbf{X} \mathbf{V}_{glob})
+\mathbf{y}_{gated} = \mathbf{y} \odot \operatorname{SiLU}(\mathbf{z}) + \text{\lr{SVDLinear}}_{glob}(\mathbf{X} \mathbf{V}_{glob})
 \end{equation}
 \begin{equation}
-\mathbf{Y}_{ssm} = \text{SVDLinear}_{out}(\mathbf{y}_{gated}) \in \mathbb{R}^{B \times N \times D}
+\mathbf{Y}_{ssm} = \text{\lr{SVDLinear}}_{out}(\mathbf{y}_{gated}) \in \mathbb{R}^{B \times N \times D}
 \end{equation}
 
 \subsubsection*{۲.۴. تلفیق پویا و تحلیل پیچیدگی محاسباتی}
@@ -142,10 +142,10 @@ h'(t) = \mathbf{A} h(t) + \mathbf{B}(t) x(t), \quad y(t) = \mathbf{C}(t) h(t) + 
 \subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
 تحلیل رفتار ماژول \lr{svd\_mamba} روی معماری سخت‌افزاری \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} با گذرگاه حافظه ۱۲۸ بیتی، پهنای باند حافظه نظری \lr{256 GB/s} و توان محاسباتی ممیز شناور نیم‌دقت \lr{FP16 Tensor Core} برابر با \lr{130 TFLOPS}، ماهیت عملکردی این معماری هیبریدی را نمایان می‌سازد. نقطه تعادل مدل سقف کارایی \lr{(Roofline Ridge Point)} برای این تراشه گرافیکی عبارت است از:
 \begin{equation}
-I_{ridge} = \frac{\text{Peak Compute}}{\text{Peak Bandwidth}} = \frac{130 \times 10^{12} \text{ FLOP/s}}{256 \times 10^9 \text{ B/s}} \approx 507.8 \text{ FLOP/Byte}
+I_{ridge} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}}} = \frac{130 \times 10^{12} \text{\lr{ FLOP/s}}}{256 \times 10^9 \text{\lr{ B/s}}} \approx 507.8 \text{\lr{ FLOP/Byte}}
 \end{equation}
 
-در مکانیزم‌های توجه مرسوم، محاسبات ضرب داخلی ماتریس توجه با شدت محاسباتی اندک ($I \approx 15-35\text{ FLOP/Byte}$) عمیقاً در رژیم محدود به پهنای باند حافظه \lr{(Memory-Bound)} قرار می‌گیرند که مستلزم خواندن و نوشتن‌های پیاپی ماتریس‌های $N \times N$ میان حافظه اصلی \lr{(VRAM/HBM)} و ثبات‌های درون‌تراشه‌ای است. ماژول \lr{svd\_mamba} از دو جنبه این تنگنا را متحول می‌سازد:
+در مکانیزم‌های توجه مرسوم، محاسبات ضرب داخلی ماتریس توجه با شدت محاسباتی اندک ($I \approx 15-35\text{\lr{ FLOP/Byte}}$) عمیقاً در رژیم محدود به پهنای باند حافظه \lr{(Memory-Bound)} قرار می‌گیرند که مستلزم خواندن و نوشتن‌های پیاپی ماتریس‌های $N \times N$ میان حافظه اصلی \lr{(VRAM/HBM)} و ثبات‌های درون‌تراشه‌ای است. ماژول \lr{svd\_mamba} از دو جنبه این تنگنا را متحول می‌سازد:
 \begin{enumerate}
     \item \textbf{فشرده‌سازی حافظه با فاکتورسازی \lr{SVD}:} با تقلیل رتبه پروجکشن‌های خطی به $r = D/4 = 192$، تعداد پارامترهای هر لایه خطی متراکم از $D^2 = 589,824$ عنصر به $2 \cdot D \cdot r = 294,912$ عنصر کاهش می‌یابد که به معنای صرفه‌جویی $50\%$ در ترافیک جابجایی وزن‌ها از حافظه \lr{GDDR6} به بافر سریع \lr{L2 Cache (32 MB)} است.
     \item \textbf{اسکن بلوکی متکی بر حافظه اشتراکی \lr{SRAM}:} اجرای اسکن گزینشی فضای حالت در قطعات ۶۴ توکنی \lr{(Chunk Size = 64)} باعث می‌شود تانسورهای موقت حالت پنهان $h_t \in \mathbb{R}^{B \times D_{inner} \times d_s}$ درون ثبات‌های پردازشی و حافظه \lr{L1/Shared Memory (128 KB per SM)} نگهداری شوند و نیازی به رفت‌وبرگشت به حافظه اصلی \lr{VRAM} وجود نداشته باشد.
@@ -189,10 +189,10 @@ TP = 444, \quad FP = 428, \quad TN = 0, \quad FN = 0
 \end{equation}
 در این حالت، صحت، بازخوانی و شاخص \lr{F1} رده مثبت برابر خواهند بود با:
 \begin{equation}
-\text{Precision} = \frac{TP}{TP + FP} = \frac{444}{872} = 0.509174, \quad \text{Recall} = \frac{TP}{TP + FN} = \frac{444}{444} = 1.0
+\text{\lr{Precision}} = \frac{TP}{TP + FP} = \frac{444}{872} = 0.509174, \quad \text{\lr{Recall}} = \frac{TP}{TP + FN} = \frac{444}{444} = 1.0
 \end{equation}
 \begin{equation}
-F1_{binary} = \frac{2 \times \text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}} = \frac{2 \times 0.509174 \times 1.0}{0.509174 + 1.0} = \frac{1.018348}{1.509174} \approx 0.67477 \approx \mathbf{0.6748}
+F1_{binary} = \frac{2 \times \text{\lr{Precision}} \times \text{\lr{Recall}}}{\text{\lr{Precision}} + \text{\lr{Recall}}} = \frac{2 \times 0.509174 \times 1.0}{0.509174 + 1.0} = \frac{1.018348}{1.509174} \approx 0.67477 \approx \mathbf{0.6748}
 \end{equation}
 این محاسبه دقیقاً تطابق مقدار تجربی ثبت‌شده در بنچ‌مارک آزمایشگاهی (\lr{Accuracy = 50.92\%} و \lr{F1 = 0.6748}) را اثبات می‌کند! 
 
@@ -206,7 +206,7 @@ F1_{macro} = \frac{F1_{pos} + F1_{neg}}{2} = \frac{0.6748 + 0.0}{2} = \mathbf{0.
 مطالعات ابلیشن نشان داد که:
 \begin{itemize}
     \item \textbf{نقش بایاس دروازه‌بان:} تعیین $\mathbf{b}_g = -2.0$ جریان پیش‌فرض گرادیان را به سمت لایه‌های توجه حفظ می‌نماید. در صورت صفر قرار دادن این بایاس ($\mathbf{b}_g = 0$)، سهم مساوی شاخه فضای حالت آموزش‌ندیده باعث آشفتگی فوری بازنمایی‌های زبانی می‌گردد.
-    \item \textbf{تثبیت مخرج در اسکن تجمعی:} تعبیه عملگر $\max(1.0, \text{denom})$ از صفر شدن مخرج کسر و انفجار گرادیان در توالی‌های طویل جلوگیری نموده و پایداری محاسبات نیم‌دقت \lr{FP16} را تضمین می‌کند.
+    \item \textbf{تثبیت مخرج در اسکن تجمعی:} تعبیه عملگر $\max(1.0, \text{\lr{denom}})$ از صفر شدن مخرج کسر و انفجار گرادیان در توالی‌های طویل جلوگیری نموده و پایداری محاسبات نیم‌دقت \lr{FP16} را تضمین می‌کند.
     \item \textbf{کالیبراسیون با \lr{LoRA}:} اجرای چند گام انطباق با نرخ یادگیری کوچک روی پارامترهای فعال \lr{lora\_A} و \lr{lora\_B}، سوگیری کلاسی را شکسته و دقت مدل را به بالای $85\%$ بازمی‌گرداند.
 \end{itemize}
 

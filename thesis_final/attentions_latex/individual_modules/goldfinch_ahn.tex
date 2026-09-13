@@ -16,7 +16,7 @@
 \begin{enumerate}
     \item \textbf{شاخه بازگشتی بلندمدت دلتانت گیت‌شده \lr{(Gated DeltaNet Long-Term Memory)}:} این شاخه با بهره‌گیری از «قانون یادگیری دلتا» \lr{(Delta Learning Rule / Widrow-Hoff Rule)}، به‌روزرسانی ماتریس حالت را بر پایه سیگنال خطای بازخوانی انجام می‌دهد. در صورتی که کلید ورودی پیش‌تر در حافظه ذخیره شده باشد، مقدار متناظر پیشین با مقدار جدید تصحیح و بازنویسی می‌گردد، که این امر پایداری ظرفیت تداعی‌گر را در دنباله‌های بسیار طولانی تضمین می‌نماید.
     \item \textbf{شاخه توجه موضعی با پنجره لغزان \lr{(Sliding Window Short-Term Attention)}:} برای استخراج ساختارهای نحوی فرکانس بالا، روابط گرامری موضعی و تعاملات غیرخطی دقیق میان کلمات مجاور، یک مکانیزم توجه چندسره دقیق اما با پنجره محدود $w$ ($w \ll N$) به موازات شاخه دلتانت عمل می‌کند.
-    \item \textbf{مکانیزم گیتینگ انطباقی و دروازه حفظ بازنمایی \lr{(Adaptive Gating \& Preservation Gate)}:} ادغام خروجی این دو شاخه توسط یک گیت محتوا-محور $\mathbf{g}_t = \sigma(\mathbf{X}_t \mathbf{W}_g + b_g)$ با بایاس اولیه مثبت ($b_g = +1.8$) مدیریت می‌شود. این بایاس بالا سبب می‌شود که در فاز آغازین انطباق، مدل بر خروجی پایدار شاخه توجه موضعی متکی بوده ($\sigma(1.8) \approx 0.86$) و از ایجاد اغتشاش گرادیانی ناشی از شاخه بازگشتی آموزش‌ندیده ممانعت به عمل آورد. علاوه بر آن، یک دروازه خروجی اسکلار $\alpha = \sigma(\theta_{\text{gate}})$ با مقدار اولیه $\theta_{\text{gate}} = 2.0$ بازنمایی لایه را با هویت ورودی ترکیب نموده و پیوند بدون شوک ساختاری \lr{(Cold-Start Stability)} را امکان‌پذیر می‌سازد.
+    \item \textbf{مکانیزم گیتینگ انطباقی و دروازه حفظ بازنمایی \lr{(Adaptive Gating \& Preservation Gate)}:} ادغام خروجی این دو شاخه توسط یک گیت محتوا-محور $\mathbf{g}_t = \sigma(\mathbf{X}_t \mathbf{W}_g + b_g)$ با بایاس اولیه مثبت ($b_g = +1.8$) مدیریت می‌شود. این بایاس بالا سبب می‌شود که در فاز آغازین انطباق، مدل بر خروجی پایدار شاخه توجه موضعی متکی بوده ($\sigma(1.8) \approx 0.86$) و از ایجاد اغتشاش گرادیانی ناشی از شاخه بازگشتی آموزش‌ندیده ممانعت به عمل آورد. علاوه بر آن، یک دروازه خروجی اسکلار $\alpha = \sigma(\theta_{\text{\lr{gate}}})$ با مقدار اولیه $\theta_{\text{\lr{gate}}} = 2.0$ بازنمایی لایه را با هویت ورودی ترکیب نموده و پیوند بدون شوک ساختاری \lr{(Cold-Start Stability)} را امکان‌پذیر می‌سازد.
 \end{enumerate}
 
 \subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
@@ -32,13 +32,13 @@
 \textbf{۲. مکانیزم توجه موضعی با پنجره لغزان \lr{(Sliding-Window Attention)}:}
 ماتریس شباهت نرمال‌شده به ازای هر سر $h \in \{1, \dots, H\}$ بر روی توکن‌های درون شعاع پنجره لغزان $w$ محاسبه می‌شود:
 \begin{equation}
-S_{h, i, j}^{\text{short}} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sqrt{d}} + M_{i, j}^{\text{window}}, \quad M_{i, j}^{\text{window}} = \begin{cases} 0 & |i - j| \le w \quad (\text{و } i \ge j \text{ در حالت علّی}) \\ -\infty & |i - j| > w \end{cases}
+S_{h, i, j}^{\text{\lr{short}}} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sqrt{d}} + M_{i, j}^{\text{\lr{window}}}, \quad M_{i, j}^{\text{\lr{window}}} = \begin{cases} 0 & |i - j| \le w \quad (\text{و } i \ge j \text{ در حالت علّی}) \\ -\infty & |i - j| > w \end{cases}
 \end{equation}
 توزیع وزن‌های توجه و تجمیع مقادیر محلی به صورت زیر به دست می‌آید:
 \begin{equation}
-\mathbf{A}_h^{\text{short}} = \operatorname{Softmax}\left( \mathbf{S}_h^{\text{short}} \right), \quad \mathbf{O}_{h, i}^{\text{short}} = \sum_{j=\max(0, i-w)}^{\min(N-1, i+w)} A_{h, i, j}^{\text{short}} \mathbf{v}_{h, j}
+\mathbf{A}_h^{\text{\lr{short}}} = \operatorname{Softmax}\left( \mathbf{S}_h^{\text{\lr{short}}} \right), \quad \mathbf{O}_{h, i}^{\text{\lr{short}}} = \sum_{j=\max(0, i-w)}^{\min(N-1, i+w)} A_{h, i, j}^{\text{\lr{short}}} \mathbf{v}_{h, j}
 \end{equation}
-خروجی حاصل از تمام سرها در بعد کانال پیوند خورده و تانسور کوتاه‌مدت $\mathbf{O}^{\text{short}} \in \mathbb{R}^{B \times N \times D}$ را تشکیل می‌دهند.
+خروجی حاصل از تمام سرها در بعد کانال پیوند خورده و تانسور کوتاه‌مدت $\mathbf{O}^{\text{\lr{short}}} \in \mathbb{R}^{B \times N \times D}$ را تشکیل می‌دهند.
 
 \textbf{۳. مبانی تئوریک شاخه حافظه دلتانت و قضیه انقباض لیاپانوف \lr{(Lyapunov Contraction)}:}
 در شاخه بازگشتی، حافظه تداعی‌گر از طریق ماتریس حالت $\mathbf{S}_t \in \mathbb{R}^{d \times d}$ مدیریت می‌شود. اگر نرخ زوال با $\alpha_t \in (0, 1)$ و نرخ یادگیری خطای دلتا با $\beta_t > 0$ مشخص شوند، معادله پویایی حالت در زمان $t$ عبارت است از:
@@ -55,7 +55,7 @@ S_{h, i, j}^{\text{short}} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sq
 \begin{equation}
 \|\mathbf{T}_t\|_2 = \max\left( |\alpha_t|, |\alpha_t - \beta_t| \right) < 1 \iff 0 < \beta_t < 2\alpha_t \quad (\text{با فرض } 0 < \alpha_t < 1)
 \end{equation}
-تحت این شرط، عملگر بازگشتی یک نگاشت انقباضی اکید \lr{(Strict Contraction Mapping)} تشکیل داده و بر اساس قضیه نقطه ثابت باناخ، حالت حافظه در برابر انباشت نامتناهی ورودی‌ها به صورت مجانبی کران‌دار باقی می‌ماند ($\|\mathbf{S}_t\|_F \le M < \infty$). بازخوانی حافظه بلندمدت با نگاشت پرس‌وجو انجام می‌شود: $\mathbf{O}_t^{\text{long}} = \mathbf{S}_t \mathbf{q}_t$ (که در پیاده‌سازی سورس‌کد از طریق لایه خطی بازنمایی پارامتری $\mathbf{O}^{\text{long}} = \operatorname{DeltaNet}(\mathbf{X}) \in \mathbb{R}^{B \times N \times D}$ محقق گردیده است).
+تحت این شرط، عملگر بازگشتی یک نگاشت انقباضی اکید \lr{(Strict Contraction Mapping)} تشکیل داده و بر اساس قضیه نقطه ثابت باناخ، حالت حافظه در برابر انباشت نامتناهی ورودی‌ها به صورت مجانبی کران‌دار باقی می‌ماند ($\|\mathbf{S}_t\|_F \le M < \infty$). بازخوانی حافظه بلندمدت با نگاشت پرس‌وجو انجام می‌شود: $\mathbf{O}_t^{\text{\lr{long}}} = \mathbf{S}_t \mathbf{q}_t$ (که در پیاده‌سازی سورس‌کد از طریق لایه خطی بازنمایی پارامتری $\mathbf{O}^{\text{\lr{long}}} = \operatorname{DeltaNet}(\mathbf{X}) \in \mathbb{R}^{B \times N \times D}$ محقق گردیده است).
 
 \textbf{۴. همجوشی انطباقی و دروازه صیانت از بازنمایی \lr{(Adaptive Fusion \& Output Calibration)}:}
 ضرایب گیتینگ به صورت برداری محاسبه شده و میانگین سرهای آن بر روی خروجی‌ها اعمال می‌شود:
@@ -63,14 +63,14 @@ S_{h, i, j}^{\text{short}} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sq
 \mathbf{g} = \sigma\left( \mathbf{X} \mathbf{W}_g + b_g \right) \in \mathbb{R}^{B \times N \times H}, \quad \bar{\mathbf{g}} = \frac{1}{H}\sum_{h=1}^H \mathbf{g}_{*, *, h} \in \mathbb{R}^{B \times N \times 1}
 \end{equation}
 \begin{equation}
-\mathbf{O}^{\text{fused}} = \bar{\mathbf{g}} \odot \mathbf{O}^{\text{short}} + (1 - \bar{\mathbf{g}}) \odot \mathbf{O}^{\text{long}}
+\mathbf{O}^{\text{\lr{fused}}} = \bar{\mathbf{g}} \odot \mathbf{O}^{\text{\lr{short}}} + (1 - \bar{\mathbf{g}}) \odot \mathbf{O}^{\text{\lr{long}}}
 \end{equation}
-سپس پروجکشن خروجی با مقیاس‌گذاری آموخته‌شده $s_{\text{out}}$ و ترکیب محدب با ورودی هویت لایه اعمال می‌گردد:
+سپس پروجکشن خروجی با مقیاس‌گذاری آموخته‌شده $s_{\text{\lr{out}}}$ و ترکیب محدب با ورودی هویت لایه اعمال می‌گردد:
 \begin{equation}
-\mathbf{O}^{\text{proj}} = \left( \mathbf{O}^{\text{fused}} \mathbf{W}_O + \mathbf{b}_O \right) \cdot s_{\text{out}}
+\mathbf{O}^{\text{\lr{proj}}} = \left( \mathbf{O}^{\text{\lr{fused}}} \mathbf{W}_O + \mathbf{b}_O \right) \cdot s_{\text{\lr{out}}}
 \end{equation}
 \begin{equation}
-\mathbf{Y} = \sigma(\theta_{\text{gate}}) \mathbf{O}^{\text{proj}} + \left(1 - \sigma(\theta_{\text{gate}})\right) \mathbf{X}
+\mathbf{Y} = \sigma(\theta_{\text{\lr{gate}}}) \mathbf{O}^{\text{\lr{proj}}} + \left(1 - \sigma(\theta_{\text{\lr{gate}}})\right) \mathbf{X}
 \end{equation}
 
 \textbf{تحلیل پیچیدگی محاسباتی و حافظه:}
@@ -84,7 +84,7 @@ S_{h, i, j}^{\text{short}} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sq
 
 \textbf{۱. ساختار ماژولار و پارامترها:}
 \begin{itemize}
-    \item \textbf{لایه‌های پروجکشن با آداپتورهای لورا \lr{(LoRALinear)}:} ماتریس‌های پروجکشن ورودی و خروجی \lr{(W\_q, W\_k, W\_v, out\_proj)} از کلاس اختصاصی \lr{LoRALinear} بهره می‌برند. این کلاس وزن‌های پایه لایه را در حالت منجمد \lr{(freeze\_base = True)} نگهداری کرده و ماتریس‌های تطبیق کم‌مرتبه $\mathbf{A} \in \mathbb{R}^{r \times D_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{D_{\text{out}} \times r}$ را با رتبه $r_{\text{LoRA}} = 16$ (یا ۳۲) و ضریب مقیاس $\frac{\alpha}{r} = \frac{32}{16} = 2.0$ آموزش‌پذیر می‌سازد.
+    \item \textbf{لایه‌های پروجکشن با آداپتورهای لورا \lr{(LoRALinear)}:} ماتریس‌های پروجکشن ورودی و خروجی \lr{(W\_q, W\_k, W\_v, out\_proj)} از کلاس اختصاصی \lr{LoRALinear} بهره می‌برند. این کلاس وزن‌های پایه لایه را در حالت منجمد \lr{(freeze\_base = True)} نگهداری کرده و ماتریس‌های تطبیق کم‌مرتبه $\mathbf{A} \in \mathbb{R}^{r \times D_{\text{\lr{in}}}}$ و $\mathbf{B} \in \mathbb{R}^{D_{\text{\lr{out}}} \times r}$ را با رتبه $r_{\text{\lr{LoRA}}} = 16$ (یا ۳۲) و ضریب مقیاس $\frac{\alpha}{r} = \frac{32}{16} = 2.0$ آموزش‌پذیر می‌سازد.
     \item \textbf{شاخه حافظه \lr{GatedDeltaNetLayer}:} این ماژول نماینده نگاشت حالت فضا و قانون دلتا است که با استفاده از نگاشت خطی و مقیدسازی طیفی \lr{(Spectral Normalization)} مقداردهی می‌گردد.
     \item \textbf{گیت‌های کالیبراسیون و انطباق:} لایه خطی \lr{self.gate} با بعد ورودی $D$ و بعد خروجی $H$، دارای بردار بایاس اولیه پرشده با مقدار $1.8$ است \lr{(gate\_init\_bias = 1.8)}. پارامترهای اسکلار آموخته‌شده \lr{self.output\_scale} با مقدار اولیه $1.0$ و \lr{self.output\_gate} با مقدار اولیه $2.0$ تضمین‌کننده گذار هموار وزن‌ها هستند.
 \end{itemize}
@@ -95,14 +95,14 @@ S_{h, i, j}^{\text{short}} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sq
     \item \textbf{ورودی:} تانسور $\mathbf{X}$ با ابعاد اولیه $[B, N, D]$ وارد متد شده و وضعیت پیوستگی حافظه \lr{.is\_contiguous()} آن بررسی می‌شود.
     \item \textbf{تولید پرس‌وجو، کلید و مقدار:}
     \begin{align*}
-        \mathbf{Q} &= \mathbf{W}_q(\mathbf{X}) \to [B, N, H \cdot d] \xrightarrow{\text{view \& transpose}} [B, H, N, d] \\
-        \mathbf{K} &= \mathbf{W}_k(\mathbf{X}) \to [B, N, H_{kv} \cdot d] \xrightarrow{\text{view \& transpose}} [B, H_{kv}, N, d] \\
-        \mathbf{V} &= \mathbf{W}_v(\mathbf{X}) \to [B, N, H_{kv} \cdot d] \xrightarrow{\text{view \& transpose}} [B, H_{kv}, N, d]
+        \mathbf{Q} &= \mathbf{W}_q(\mathbf{X}) \to [B, N, H \cdot d] \xrightarrow{\text{\lr{view \& transpose}}} [B, H, N, d] \\
+        \mathbf{K} &= \mathbf{W}_k(\mathbf{X}) \to [B, N, H_{kv} \cdot d] \xrightarrow{\text{\lr{view \& transpose}}} [B, H_{kv}, N, d] \\
+        \mathbf{V} &= \mathbf{W}_v(\mathbf{X}) \to [B, N, H_{kv} \cdot d] \xrightarrow{\text{\lr{view \& transpose}}} [B, H_{kv}, N, d]
     \end{align*}
-    \item \textbf{کدگذاری مکانی چرخشی \lr{(RoPE)}:} تابع کمکی \lr{apply\_rotary\_pos\_emb} زوایای $\cos, \sin$ را با چرخش نیمه ابعاد بر روی بردارها اعمال می‌نماید: $\mathbf{q}_{\text{rot}} = (\mathbf{q} \odot \cos) + (\operatorname{rotate\_half}(\mathbf{q}) \odot \sin)$.
+    \item \textbf{کدگذاری مکانی چرخشی \lr{(RoPE)}:} تابع کمکی \lr{apply\_rotary\_pos\_emb} زوایای $\cos, \sin$ را با چرخش نیمه ابعاد بر روی بردارها اعمال می‌نماید: $\mathbf{q}_{\text{\lr{rot}}} = (\mathbf{q} \odot \cos) + (\operatorname{rotate\_half}(\mathbf{q}) \odot \sin)$.
     \item \textbf{تکرار کلید-مقدار در \lr{GQA}:} در صورت کمتر بودن تعداد سرهای کلید نسبت به پرس‌وجو ($H_{kv} < H$)، متد \lr{repeat\_kv} با ضریب $\frac{H}{H_{kv}}$ تانسورهای کلید و مقدار را به ابعاد هماهنگ $[B, H, N, d]$ تکثیر می‌نماید.
     \item \textbf{ماسک‌گذاری پنجره لغزان و نرم‌افزار ماسک علّی:} تانسور فواصل $\mathbf{\Delta}_{i, j} = |i - j|$ به صورت دوبعدی در کارت گرافیک ساخته شده و ماسک بولی $|i - j| \le w$ با مقادیر $-10000.0$ بر روی ماتریس ضرب داخلی اعمال می‌گردد. پس از محاسبه \lr{F.softmax} و اعمال \lr{torch.nan\_to\_num} برای حذف هرگونه سرریز ممیز شناور، ضرب ماتریسی در $\mathbf{V}$ صورت گرفته و به ابعاد $[B, N, D]$ تغییر شکل می‌یابد \lr{(short\_out)}.
-    \item \textbf{استخراج حافظه دلتانت و همجوشی گیت‌شده:} تانسور \lr{long\_out} با ابعاد $[B, N, D]$ از لایه دلتا استخراج شده و با ضریب گیت $\bar{\mathbf{g}} \in [B, N, 1]$ ترکیب می‌گردد: $\mathbf{O}^{\text{fused}} \in [B, N, D]$.
+    \item \textbf{استخراج حافظه دلتانت و همجوشی گیت‌شده:} تانسور \lr{long\_out} با ابعاد $[B, N, D]$ از لایه دلتا استخراج شده و با ضریب گیت $\bar{\mathbf{g}} \in [B, N, 1]$ ترکیب می‌گردد: $\mathbf{O}^{\text{\lr{fused}}} \in [B, N, D]$.
     \item \textbf{پروژکشن خروجی و انشعاب انکودرهای تودرتو \lr{(Nested Encoders)}:} در مدل‌هایی مانند \lr{RoBERTa} که ساختار ماژول به صورت درونی درون \lr{attention.self} قرار گرفته و لایه \lr{output.dense} در سطح بالاتر تعبیه شده است، متغیر بولی \lr{is\_nested\_encoder = True} فعال شده و تانسور ترکیب‌شده مستقیماً بدون اعمال مجدد \lr{out\_proj} بازگردانده می‌شود تا از اعوجاج مضاعف جلوگیری شود. در سایر مدل‌ها \lr{(DistilBERT, GPT-2)}، نگاشت خروجی و ترکیب محدب با دروازه صیانت $\alpha$ اجرا می‌گردد.
 \end{enumerate}
 
@@ -124,13 +124,13 @@ S_{h, i, j}^{\text{short}} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sq
 \textbf{۱. کالبدشکافی پدیده «فروپاشی به کلاس اکثریت» \lr{(Majority Class Collapse)}:}
 بررسی ارقام تجربی نشان می‌دهد که دقت در هر سه مدل دقیقاً بر روی تراز \lr{50.92\%} با شاخص \lr{F1} معادل \lr{0.6748} و بازخوانی \lr{0.5000} قفل شده است. از منظر علم آمار و یادگیری ماشین، این رفتار نمایانگر وقوع پدیده شناخته‌شده «فروپاشی به کلاس اکثریت» \lr{(Majority Class Collapse)} است. در مجموعه داده ارزیابی \lr{SST-2}، نسبت نمونه‌های کلاس مثبت به کل داده‌ها دقیقاً برابر با \lr{50.92\%} است. زمانی که یک طبقه‌بند تمامی ورودی‌ها را بدون تمایز به عنوان کلاس مثبت برچسب‌گذاری کند:
 \begin{equation}
-\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} = \frac{TP}{TP + FP} = 50.92\%
+\text{\lr{Accuracy}} = \frac{TP + TN}{TP + TN + FP + FN} = \frac{TP}{TP + FP} = 50.92\%
 \end{equation}
 \begin{equation}
-\text{Recall} = \frac{TP}{TP + FN} = 1.0 \quad (\text{برای کلاس اکثریت}) \implies \text{Recall}_{\text{macro}} = \frac{1.0 + 0.0}{2} = 0.5000
+\text{\lr{Recall}} = \frac{TP}{TP + FN} = 1.0 \quad (\text{برای کلاس اکثریت}) \implies \text{\lr{Recall}}_{\text{\lr{macro}}} = \frac{1.0 + 0.0}{2} = 0.5000
 \end{equation}
 \begin{equation}
-\text{F1}_{\text{binary}} = \frac{2 \cdot P \cdot R}{P + R} = \frac{2 \cdot 0.5092 \cdot 1.0}{0.5092 + 1.0} \approx 0.6748
+\text{\lr{F1}}_{\text{\lr{binary}}} = \frac{2 \cdot P \cdot R}{P + R} = \frac{2 \cdot 0.5092 \cdot 1.0}{0.5092 + 1.0} \approx 0.6748
 \end{equation}
 این برابری دقیق ریاضی اثبات می‌کند که مدل‌ها در پروتکل تیونینگ سبک‌وزن بدون آموزش کامل لایه‌های بالادستی، مرز تصمیم‌گیری \lr{(Decision Boundary)} را به سمت توزیع پیشین داده‌ها \lr{(Prior Distribution)} شیفت داده‌اند.
 

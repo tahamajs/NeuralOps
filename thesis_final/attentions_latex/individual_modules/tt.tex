@@ -10,22 +10,22 @@
 \subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
 مکانیسم انتخاب توکن‌های برجسته، ترکیبی از نرم اقلیدسی (انرژی ذاتی) و یک شبکه امتیازدهی آموزش‌پذیر است. برای توکن $x_i \in \mathbb{R}^D$:
 \begin{equation}
-\text{energy}_i = \|x_i\|_2, \quad \text{score}_i = \text{ScoreNet}(x_i)
+\text{\lr{energy}}_i = \|x_i\|_2, \quad \text{\lr{score}}_i = \text{\lr{ScoreNet}}(x_i)
 \end{equation}
 \begin{equation}
-s_i = \text{energy}_i + \text{score}_i, \quad s_0 = 10^4 \; (\text{Forced } [\text{CLS}])
+s_i = \text{\lr{energy}}_i + \text{\lr{score}}_i, \quad s_0 = 10^4 \; (\text{\lr{Forced }} [\text{\lr{CLS}}])
 \end{equation}
-بر اساس نرخ فشرده‌سازی $r_{\text{comp}}$، تعداد توکن‌های باقیمانده برابر $k_{\text{keep}} = \max(1, \lceil L \cdot r_{\text{comp}} \rceil)$ است. نمایه‌های بهینه انتخاب و سپس به صورت یکنواخت مرتب می‌شوند تا ترتیب زمانی و موقعیتی حفظ گردد:
+بر اساس نرخ فشرده‌سازی $r_{\text{\lr{comp}}}$، تعداد توکن‌های باقیمانده برابر $k_{\text{\lr{keep}}} = \max(1, \lceil L \cdot r_{\text{\lr{comp}}} \rceil)$ است. نمایه‌های بهینه انتخاب و سپس به صورت یکنواخت مرتب می‌شوند تا ترتیب زمانی و موقعیتی حفظ گردد:
 \begin{equation}
-\mathcal{I}_{\text{top-}k} = \text{Top-}k(\{s_i\}_{i=0}^{L-1}), \quad \mathcal{I} = \text{sort}(\mathcal{I}_{\text{top-}k})
+\mathcal{I}_{\text{\lr{top-}}k} = \text{\lr{Top-}}k(\{s_i\}_{i=0}^{L-1}), \quad \mathcal{I} = \text{\lr{sort}}(\mathcal{I}_{\text{\lr{top-}}k})
 \end{equation}
 پروجکشن‌های کلید و مقدار صرفاً برای این نمایه‌ها استخراج می‌شوند:
 \begin{equation}
-K_{\text{comp}} = K_{:, :, \mathcal{I}, :}, \quad V_{\text{comp}} = V_{:, :, \mathcal{I}, :}
+K_{\text{\lr{comp}}} = K_{:, :, \mathcal{I}, :}, \quad V_{\text{\lr{comp}}} = V_{:, :, \mathcal{I}, :}
 \end{equation}
 در نهایت، امتیاز توجه با در نظر گرفتن ماسک عِلی (برای دیکدرها) محاسبه می‌گردد که در آن توکن $i$ تنها می‌تواند به کلیدهایی توجه کند که در دنباله اصلی $\mathcal{I}_j \le i$ باشند:
 \begin{equation}
-S = \frac{Q K_{\text{comp}}^\top}{\sqrt{d_k}} \in \mathbb{R}^{B \times H \times L \times k_{\text{keep}}}, \quad O = \text{Softmax}(S + M_{\text{causal}} + M_{\text{comp}}) V_{\text{comp}}
+S = \frac{Q K_{\text{\lr{comp}}}^\top}{\sqrt{d_k}} \in \mathbb{R}^{B \times H \times L \times k_{\text{\lr{keep}}}}, \quad O = \text{\lr{Softmax}}(S + M_{\text{\lr{causal}}} + M_{\text{\lr{comp}}}) V_{\text{\lr{comp}}}
 \end{equation}
 
 \subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
@@ -34,15 +34,15 @@ S = \frac{Q K_{\text{comp}}^\top}{\sqrt{d_k}} \in \mathbb{R}^{B \times H \times 
     \item \textbf{پروجکشن و تزریق رتبه‌پایین \lr{(LoRA)}:} تانسور ورودی $\mathbf{X}$ با ابعاد $[B, L, D]$ وارد پروجکشن‌های خطی $Q, K, V$ می‌شود. به منظور کاهش هزینه تنظیم دقیق، وزن‌های پایه منجمد شده و آداپتورهای \lr{LoRA} تغییرات را مدیریت می‌کنند.
     \item \textbf{کدگذاری موقعیت چرخشی \lr{(RoPE)}:} در صورت پشتیبانی مدل پایه (مانند \lr{Qwen} یا \lr{LLaMA})، کدگذاری موقعیتی چرخشی به صورت جزئی بر روی توکن‌های استخراج‌شده اعمال می‌شود.
     \item \textbf{ارزیابی و هرس توکن‌ها:} شبکه \lr{ScoreNet} (شامل یک لایه پنهان ۶۴ بعدی و فعال‌ساز \lr{GELU}) امتیازات هر توکن را محاسبه می‌کند. با اختصاص مقدار $10^4$ به نمایه صفر و منفی‌نهایت به پدینگ‌ها، عملگر \lr{torch.topk} نمایه‌های حیاتی را استخراج کرده و سپس این نمایه‌ها مرتب می‌شوند.
-    \item \textbf{عملیات تجميع داده \lr{(Gather)}:} با استفاده از \lr{torch.gather}، تانسورهای $K$ و $V$ در امتداد طول دنباله به ابعاد $[B, H_{kv}, k_{\text{keep}}, d_h]$ تقلیل می‌یابند.
+    \item \textbf{عملیات تجميع داده \lr{(Gather)}:} با استفاده از \lr{torch.gather}، تانسورهای $K$ و $V$ در امتداد طول دنباله به ابعاد $[B, H_{kv}, k_{\text{\lr{keep}}}, d_h]$ تقلیل می‌یابند.
     \item \textbf{توجه و سنتز زمینه:} ضرب ماتریسی پرس‌وجوی کامل در کلیدهای فشرده انجام شده و پس از اعمال ماسک‌ها، ماتریس زمینه‌ای شکل می‌گیرد که با عبور از پروجکشن خروجی نهایتاً به ابعاد اصلی $[B, L, D]$ بازمی‌گردد.
 \end{enumerate}
 
 \subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
 با پیاده‌سازی مکانیزم هرس پیش از ضرب ماتریسی \lr{(Q-K MatMul)}، ترافیک حافظه \lr{HBM} در پردازنده‌های گرافیکی نظیر \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} به شدت کاهش می‌یابد. 
 \begin{itemize}
-    \item \textbf{کاهش پیچیدگی حافظه:} ابعاد ماتریس توجه از $\mathcal{O}(L^2)$ به $\mathcal{O}(L \cdot k_{\text{keep}})$ تقلیل می‌یابد. این امر از سرریز حافظه \lr{(OOM)} در طول دنباله‌های بسیار بلند جلوگیری می‌کند.
-    \item \textbf{بهینه‌سازی \lr{KV-Cache}:} از آنجا که تنها کسری از توکن‌ها در فاز استنتاج خودبازگشتی حفظ می‌شوند، اندازه بافر کلید/مقدار مستقیماً ضریب $r_{\text{comp}}$ را به خود می‌گیرد، که اجازه می‌دهد دسته‌های پردازشی بزرگ‌تری \lr{(Larger Batch Sizes)} روی حافظه ۸ گیگابایتی بارگذاری شوند.
+    \item \textbf{کاهش پیچیدگی حافظه:} ابعاد ماتریس توجه از $\mathcal{O}(L^2)$ به $\mathcal{O}(L \cdot k_{\text{\lr{keep}}})$ تقلیل می‌یابد. این امر از سرریز حافظه \lr{(OOM)} در طول دنباله‌های بسیار بلند جلوگیری می‌کند.
+    \item \textbf{بهینه‌سازی \lr{KV-Cache}:} از آنجا که تنها کسری از توکن‌ها در فاز استنتاج خودبازگشتی حفظ می‌شوند، اندازه بافر کلید/مقدار مستقیماً ضریب $r_{\text{\lr{comp}}}$ را به خود می‌گیرد، که اجازه می‌دهد دسته‌های پردازشی بزرگ‌تری \lr{(Larger Batch Sizes)} روی حافظه ۸ گیگابایتی بارگذاری شوند.
 \end{itemize}
 
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}

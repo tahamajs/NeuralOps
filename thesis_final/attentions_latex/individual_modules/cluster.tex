@@ -26,9 +26,9 @@
 \subsubsection*{بخش ۳: مبانی نظری \lr{(Theoretical Foundations)}}
 مبانی نظری این ماژول بر نظریه کوانتایزاسیون برداری گریفیس و لم اعوجاج جانسون-لیندن‌استراوس \lr{(Johnson-Lindenstrauss Distortion Lemma)} استوار است. با نگاشت توکن‌های فضا به نزدیک‌ترین سنتروید $\boldsymbol{\mu}_k \in \mathcal{S}^{d-1}$، خطای تقریب نرم فروبنیوس ماتریس توجه توسط فاصله زاویه‌ای درون خوشه‌ها کران‌دار می‌گردد:
 \begin{equation}
-\|\mathbf{Q}\mathbf{K}^\top - \widetilde{\mathbf{Q}}_{\text{cluster}}\mathbf{K}^\top\|_F \le \max_{k} \max_{i \in C_k} \|\mathbf{q}_i - \boldsymbol{\mu}_k\|_2 \cdot \|\mathbf{K}\|_F
+\|\mathbf{Q}\mathbf{K}^\top - \widetilde{\mathbf{Q}}_{\text{\lr{cluster}}}\mathbf{K}^\top\|_F \le \max_{k} \max_{i \in C_k} \|\mathbf{q}_i - \boldsymbol{\mu}_k\|_2 \cdot \|\mathbf{K}\|_F
 \end{equation}
-به دلیل همگرایی الگوریتم $k$-میانگین کروی با نرخ $\mathcal{O}(1/\sqrt{T_{\text{iter}}})$، انجام ۳ تکرار بهینه‌سازی موقعیت سنترویدها، بیش از \lr{90\%} خطای زاویه‌ای را مستهلک می‌سازد.
+به دلیل همگرایی الگوریتم $k$-میانگین کروی با نرخ $\mathcal{O}(1/\sqrt{T_{\text{\lr{iter}}}})$، انجام ۳ تکرار بهینه‌سازی موقعیت سنترویدها، بیش از \lr{90\%} خطای زاویه‌ای را مستهلک می‌سازد.
 
 همچنین، بر اساس قضیه انقباض متریک، چنانچه توزیع توکن‌ها در لایه‌های میانی ترنسفورمر دارای بعد فرکتالی متمرکز باشد، خطای بازسازی زمینه خروجی به صورت نمایی نسبت به افزایش تعداد سنترویدها $K$ افت می‌کند.
 
@@ -39,7 +39,7 @@
 \begin{itemize}
     \item $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$: تانسور ورودی مرتبه سه لایه،
     \item $\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times N \times d}$: تانسورهای پرسمان، کلید و مقدار با $H$ سر و بعد سر $d=D/H$،
-    \item $K$: تعداد مراکز خوشه‌ها و $T_{\text{iter}}$: تعداد گام‌های همگرایی سنترویدها.
+    \item $K$: تعداد مراکز خوشه‌ها و $T_{\text{\lr{iter}}}$: تعداد گام‌های همگرایی سنترویدها.
 \end{itemize}
 
 فرمول خوشه‌بندی توکن‌های پرسمان در هر سر توجه:
@@ -53,17 +53,17 @@ c(i) = \arg\max_{k \in \{1, \dots, K\}} \left( \frac{\mathbf{q}_i}{\|\mathbf{q}_
 فرآیند توجه دومرحله‌ای:
 گام اول: تعامل سنترویدها با کلیدهای توالی با اعمال ماسک پدینگ:
 \begin{equation}
-\mathbf{S}_{\text{cent}} = \frac{\boldsymbol{\mu} \mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}_{\text{pad}} \in \mathbb{R}^{B \times H \times K \times N}
+\mathbf{S}_{\text{\lr{cent}}} = \frac{\boldsymbol{\mu} \mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}_{\text{\lr{pad}}} \in \mathbb{R}^{B \times H \times K \times N}
 \end{equation}
 \begin{equation}
-\mathbf{A}_{\text{cent}} = \operatorname{Softmax}(\mathbf{S}_{\text{cent}}), \quad \mathbf{C}_{\text{ctx}} = \mathbf{A}_{\text{cent}} \mathbf{V} \in \mathbb{R}^{B \times H \times K \times d}
+\mathbf{A}_{\text{\lr{cent}}} = \operatorname{Softmax}(\mathbf{S}_{\text{\lr{cent}}}), \quad \mathbf{C}_{\text{\lr{ctx}}} = \mathbf{A}_{\text{\lr{cent}}} \mathbf{V} \in \mathbb{R}^{B \times H \times K \times d}
 \end{equation}
 گام دوم: انتشار بردار زمینه سنتروید به تمامی اعضای متناظر در توالی:
 \begin{equation}
-\mathbf{O}_i = \mathbf{C}_{\text{ctx}}[c(i)] \mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
+\mathbf{O}_i = \mathbf{C}_{\text{\lr{ctx}}}[c(i)] \mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
 \end{equation}
 
-پیچیدگی محاسباتی زمانی با جایگزینی گام ضرب مربعی با گام‌های خوشه‌بندی، به تراز خطی $\mathcal{O}(T_{\text{iter}} N K d + K N d)$ تنزل می‌یابد.
+پیچیدگی محاسباتی زمانی با جایگزینی گام ضرب مربعی با گام‌های خوشه‌بندی، به تراز خطی $\mathcal{O}(T_{\text{\lr{iter}}} N K d + K N d)$ تنزل می‌یابد.
 
 \subsubsection*{بخش ۵: معماری و پیاده‌سازی \lr{(Architecture \& Implementation)}}
 کلاس پایتونی \lr{ClusterAttention} به عنوان بدنه اجرایی این نام در فایل \lr{cluster\_attention.py} قرار دارد. در متد راه‌انداز، هایپرپارامترهای اساسی نظیر \lr{num\_clusters=16}، \lr{n\_iters=3} و \lr{lora\_rank=16} همراه با ساختار پروجکشن‌های اصلی مقداردهی می‌گردند.

@@ -23,7 +23,7 @@
 \subsection*{بخش ۳: مبانی نظری \lr{(Theoretical Foundations)}}
 مبانی تئوریک این ماژول بر پایه نظریه تقطیر دانش هینتون و قضیه کران خطای تقریب واگرایی کولبک-لایبلر در تقطیر ماتریس حالت استوار است. تابع هدف کلی تقطیر به صورت ترکیب خطی خطای تسک و خطای تقطیر تعریف می‌شود:
 \begin{equation}
-\mathcal{L} = (1 - \alpha)\mathcal{L}_{\text{task}} + \alpha \tau^2 D_{\text{KL}}\left(\mathbf{p}_{\text{teacher}}^\tau \parallel \mathbf{p}_{\text{student}}^\tau\right) + \beta \|\mathbf{A}_{\text{teacher}} - \mathbf{A}_{\text{NHA}}\|_F^2
+\mathcal{L} = (1 - \alpha)\mathcal{L}_{\text{\lr{task}}} + \alpha \tau^2 D_{\text{\lr{KL}}}\left(\mathbf{p}_{\text{\lr{teacher}}}^\tau \parallel \mathbf{p}_{\text{\lr{student}}}^\tau\right) + \beta \|\mathbf{A}_{\text{\lr{teacher}}} - \mathbf{A}_{\text{\lr{NHA}}}\|_F^2
 \end{equation}
 بر اساس قضیه انقباض فضای زیرین در تقطیر ساختاریافته، خطای تقریب بردارهای ویژگی شاگرد $\mathbf{H}_S$ نسبت به معلم $\mathbf{H}_T$ با بعد پنهان $D$ و رتبه فشرده $r$ تحت نامساوی زیر تحدید می‌گردد:
 \begin{equation}
@@ -35,19 +35,19 @@
 معادلات ریاضی کامل موتور فشرده‌سازی \lr{nha\_compressor}:
 پروجکشن با گلوگاه فشرده کم‌مرتبه:
 \begin{equation}
-\mathbf{W}_P \approx \mathbf{W}_{P, \text{down}} \mathbf{W}_{P, \text{up}}, \quad \mathbf{W}_{P, \text{down}} \in \mathbb{R}^{D \times r}, \quad \mathbf{W}_{P, \text{up}} \in \mathbb{R}^{r \times D}, \quad P \in \{Q, K, V\}
+\mathbf{W}_P \approx \mathbf{W}_{P, \text{\lr{down}}} \mathbf{W}_{P, \text{\lr{up}}}, \quad \mathbf{W}_{P, \text{\lr{down}}} \in \mathbb{R}^{D \times r}, \quad \mathbf{W}_{P, \text{\lr{up}}} \in \mathbb{R}^{r \times D}, \quad P \in \{Q, K, V\}
 \end{equation}
 شاخه بازگشتی خطی با زوال تقطیرشده:
 \begin{equation}
-\mathbf{S}_t = \lambda \mathbf{S}_{t-1} + \mathbf{k}_t \mathbf{v}_t^\top, \quad \mathbf{O}_{\text{rec}, t} = \mathbf{S}_t \mathbf{q}_t
+\mathbf{S}_t = \lambda \mathbf{S}_{t-1} + \mathbf{k}_t \mathbf{v}_t^\top, \quad \mathbf{O}_{\text{\lr{rec}}, t} = \mathbf{S}_t \mathbf{q}_t
 \end{equation}
 شاخه موضعی پنجره لغزان:
 \begin{equation}
-\mathbf{O}_{\text{win}} = \operatorname{Softmax}\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}_{\text{win}}\right)\mathbf{V}
+\mathbf{O}_{\text{\lr{win}}} = \operatorname{Softmax}\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}_{\text{\lr{win}}}\right)\mathbf{V}
 \end{equation}
 تلفیق گیت‌شده و اعمال آداپتور خطای باقیمانده:
 \begin{equation}
-\mathbf{O} = \left(\mathbf{g} \odot \mathbf{O}_{\text{rec}} + (1 - \mathbf{g}) \odot \mathbf{O}_{\text{win}}\right)\mathbf{W}_O + \frac{\gamma}{r}(\mathbf{X}\mathbf{A}_{\text{lora}})\mathbf{B}_{\text{lora}} \in \mathbb{R}^{B \times N \times D}
+\mathbf{O} = \left(\mathbf{g} \odot \mathbf{O}_{\text{\lr{rec}}} + (1 - \mathbf{g}) \odot \mathbf{O}_{\text{\lr{win}}}\right)\mathbf{W}_O + \frac{\gamma}{r}(\mathbf{X}\mathbf{A}_{\text{\lr{lora}}})\mathbf{B}_{\text{\lr{lora}}} \in \mathbb{R}^{B \times N \times D}
 \end{equation}
 
 \subsection*{بخش ۵: معماری و پیاده‌سازی \lr{(Architecture \& Implementation)}}
@@ -142,7 +142,7 @@
     \node [inb] (input) {ورودی $\mathbf{X}$};
     \node [teach, above right=0.5cm and 1.0cm of input] (teacher) {مدل معلم متراکم};
     \node [stud, below right=0.5cm and 1.0cm of input] (student) {مدل شاگرد هیبریدی NHA};
-    \node [loss, right=1.5cm of input] (distill) {تقطیر دانش $\mathcal{L}_{\text{KD}}$};
+    \node [loss, right=1.5cm of input] (distill) {تقطیر دانش $\mathcal{L}_{\text{\lr{KD}}}$};
     \node [outb, right=1.2cm of distill] (out) {خروجی فشرده $\mathbf{O}$};
     \draw [->, thick, draw=blue!80] (input) |- (teacher);
     \draw [->, thick, draw=blue!80] (input) |- (student);

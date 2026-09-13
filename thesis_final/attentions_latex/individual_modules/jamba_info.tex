@@ -15,24 +15,24 @@
 \end{align}
 سپس، دو ماتریس امتیاز توجه محاسبه شده و تفاضل آن‌ها با یک ضریب مقیاس‌دهی ($\lambda = 0.2$) و تابع \lr{ReLU} به عنوان فیلتر نویز، ترکیب می‌شود:
 \begin{align}
-    S_1 &= \text{Softmax}\left(\frac{Q_1 K_1^T}{\sqrt{d}}\right), \quad S_2 = \text{Softmax}\left(\frac{Q_2 K_2^T}{\sqrt{d}}\right) \\
-    S_{\text{diff}} &= \frac{\text{ReLU}(S_1 - 0.2 \cdot S_2)}{\sum \text{ReLU}(S_1 - 0.2 \cdot S_2) + \epsilon} \\
-    O_{\text{attn}} &= S_{\text{diff}} V
+    S_1 &= \text{\lr{Softmax}}\left(\frac{Q_1 K_1^T}{\sqrt{d}}\right), \quad S_2 = \text{\lr{Softmax}}\left(\frac{Q_2 K_2^T}{\sqrt{d}}\right) \\
+    S_{\text{\lr{diff}}} &= \frac{\text{\lr{ReLU}}(S_1 - 0.2 \cdot S_2)}{\sum \text{\lr{ReLU}}(S_1 - 0.2 \cdot S_2) + \epsilon} \\
+    O_{\text{\lr{attn}}} &= S_{\text{\lr{diff}}} V
 \end{align}
 
 \textbf{۲. شاخه مدل فضای حالت با تنگنای اطلاعاتی:}
 تنسور ورودی از یک لایه تنگنا \lr{(Bottleneck)} عبور کرده و سپس به \lr{SSM} وارد می‌گردد:
 \begin{align}
-    B(X) &= W_{\text{up}}(\text{GELU}(W_{\text{down}}(X))) \\
-    O_{\text{ssm}} &= \text{SSM}(B(X))
+    B(X) &= W_{\text{\lr{up}}}(\text{\lr{GELU}}(W_{\text{\lr{down}}}(X))) \\
+    O_{\text{\lr{ssm}}} &= \text{\lr{SSM}}(B(X))
 \end{align}
 
 \textbf{ترکیب نهایی:}
 خروجی نهایی از ترکیب خطی دو شاخه با ضریب یادگیری‌پذیر $\alpha$ و سپس پروجکشن نهایی به دست می‌آید:
 \begin{equation}
-    O = (O_{\text{attn}} + \alpha \cdot O_{\text{ssm}}) W_O \cdot s_{\text{out}}
+    O = (O_{\text{\lr{attn}}} + \alpha \cdot O_{\text{\lr{ssm}}}) W_O \cdot s_{\text{\lr{out}}}
 \end{equation}
-پیچیدگی زمانی شاخه توجه برابر با $\mathcal{O}(L^2 D)$ است اما پیچیدگی شاخه \lr{SSM} به $\mathcal{O}(L \cdot d_{\text{bottleneck}})$ کاهش می‌یابد.
+پیچیدگی زمانی شاخه توجه برابر با $\mathcal{O}(L^2 D)$ است اما پیچیدگی شاخه \lr{SSM} به $\mathcal{O}(L \cdot d_{\text{\lr{bottleneck}}})$ کاهش می‌یابد.
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
 در پیاده‌سازی کلاس \code{JambaInfoBlock} (فرزند \code{BaseAttention}):
@@ -40,7 +40,7 @@
     \item \textbf{ورودی:} تانسور \code{hidden\_states} با ابعاد \lr{[B, L, D]}.
     \item \textbf{پروجکشن با \lr{LoRA}:} تمامی وزن‌های $W_{Q1, K1, Q2, K2, V, O}$ توسط کلاس \code{LoRALinear} کنترل می‌شوند که پایه‌های آن‌ها \lr{(Base Weights)} منجمد شده و ماتریس‌های کم‌رتبه $A$ با ابعاد \lr{[r, D]} و $B$ با ابعاد \lr{[D, r]} تحت آموزش قرار می‌گیرند.
     \item \textbf{تعبیه موقعیت و \lr{GQA}:} تانسورهای $Q_1, Q_2, K_1, K_2$ به ابعاد \lr{[B, H, L, d]} تغییر شکل داده و توابع \code{apply\_rotary\_pos\_emb} \lr{(RoPE)} و \code{repeat\_kv} روی آن‌ها اعمال می‌گردد.
-    \item \textbf{محاسبه تفاضلی:} \code{F.relu(attn1 - 0.2 * attn2)} پیاده‌سازی دقیق ماتریس $S_{\text{diff}}$ را نشان می‌دهد.
+    \item \textbf{محاسبه تفاضلی:} \code{F.relu(attn1 - 0.2 * attn2)} پیاده‌سازی دقیق ماتریس $S_{\text{\lr{diff}}}$ را نشان می‌دهد.
     \item \textbf{شاخه \lr{SSM}:} خروجی تابع \code{InfoMambaConceptBottleneck(self.dim)} به \code{SimpleSSM} خورانده می‌شود که در نهایت با خروجی توجه جمع زده می‌شود: \code{attn\_out + self.alpha * ssm\_branch}.
 \end{itemize}
 

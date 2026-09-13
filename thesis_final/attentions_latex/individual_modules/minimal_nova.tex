@@ -5,19 +5,19 @@
 مکانیزم توجه چندسره استاندارد \lr{(Standard Multi-Head Attention)} در ترنسفورمرها به دلیل نیاز به ماتریس‌های ضرب داخلی $N \times N$ و وزن‌های تصویر متراکم $D \times D$، دارای بار محاسباتی و حافظه‌ای بسیار سنگین است. ماژول \lr{minimal\_nova} بر پایه تئوری تقریب ماتریسی کم‌مرتبه اکارت-یانگ-میرسکی \lr{(Eckart-Young-Mirsky Theorem)} و تجزیه مقادیر منفرد \lr{(SVD)} توسعه یافته است. در این دیدگاه، ماتریس‌های نگاشت تصویر وزن‌های پیش‌آموزش‌دیده \lr{(Pre-trained Projections)} دارای طیف مقادیر ویژه به شدت متمرکزی هستند؛ به نحوی که بخش عمده‌ای از انرژی ساختاری (بیش از ۹۵ درصد انرژی نرم فروبنیوس) در تعداد اندکی از مؤلفه‌های برتر متمرکز است. ماژول \lr{minimal\_nova} با برش پویا و تطبیقی مقادیر منفرد ناچیز، به طور خودکار رتبه فشرده‌سازی گلوگاه را تعیین کرده و ماتریس‌های متراکم را به دو تصویر پایین‌سو و بالاسو تبدیل می‌کند که در نتیجه آن ترافیک پهنای باند حافظه \lr{HBM} به حداقل می‌رسد.
 
 \subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-ماتریس وزن اولیه $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ از طریق تجزیه مقادیر منفرد به فرم زیر بسط می‌یابد:
+ماتریس وزن اولیه $W_0 \in \mathbb{R}^{d_{\text{\lr{out}}} \times d_{\text{\lr{in}}}}$ از طریق تجزیه مقادیر منفرد به فرم زیر بسط می‌یابد:
 \begin{equation}
-W_0 = U \Sigma V^\top = \sum_{i=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i u_i v_i^\top
+W_0 = U \Sigma V^\top = \sum_{i=1}^{\min(d_{\text{\lr{out}}}, d_{\text{\lr{in}}})} \sigma_i u_i v_i^\top
 \end{equation}
 با تعیین آستانه انرژی فروبنیوس $\eta = 0.95$، رتبه بهینه برش $r$ به صورت صریح استخراج می‌گردد:
 \begin{equation}
-r = \arg\min_k \left\{ \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_j^2} \ge \eta \right\}
+r = \arg\min_k \left\{ \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{\lr{out}}}, d_{\text{\lr{in}}})} \sigma_j^2} \ge \eta \right\}
 \end{equation}
-ماتریس‌های فاکتورسازی شده به صورت $W_{\text{down}} = V_{:, :r}^\top \in \mathbb{R}^{r \times d_{\text{in}}}$ و $W_{\text{up}} = U_{:, :r} \operatorname{diag}(\sigma_1, \dots, \sigma_r) \in \mathbb{R}^{d_{\text{out}} \times r}$ بازتعریف می‌شوند. نگاشت پیشرو برای تانسور ورودی $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ عبارت است از:
+ماتریس‌های فاکتورسازی شده به صورت $W_{\text{\lr{down}}} = V_{:, :r}^\top \in \mathbb{R}^{r \times d_{\text{\lr{in}}}}$ و $W_{\text{\lr{up}}} = U_{:, :r} \operatorname{diag}(\sigma_1, \dots, \sigma_r) \in \mathbb{R}^{d_{\text{\lr{out}}} \times r}$ بازتعریف می‌شوند. نگاشت پیشرو برای تانسور ورودی $X \in \mathbb{R}^{B \times N \times d_{\text{\lr{in}}}}$ عبارت است از:
 \begin{equation}
-Y = (X W_{\text{down}}^\top) W_{\text{up}}^\top + b
+Y = (X W_{\text{\lr{down}}}^\top) W_{\text{\lr{up}}}^\top + b
 \end{equation}
-پیچیدگی محاسباتی هر لایه تصویرسازی از $\mathcal{O}(N \cdot d_{\text{in}} \cdot d_{\text{out}})$ به $\mathcal{O}(N \cdot r \cdot (d_{\text{in}} + d_{\text{out}}))$ تنزل می‌یابد که با توجه به $r \ll \min(d_{\text{in}}, d_{\text{out}})$، کاهشی چشمگیر را محقق می‌سازد.
+پیچیدگی محاسباتی هر لایه تصویرسازی از $\mathcal{O}(N \cdot d_{\text{\lr{in}}} \cdot d_{\text{\lr{out}}})$ به $\mathcal{O}(N \cdot r \cdot (d_{\text{\lr{in}}} + d_{\text{\lr{out}}}))$ تنزل می‌یابد که با توجه به $r \ll \min(d_{\text{\lr{in}}}, d_{\text{\lr{out}}})$، کاهشی چشمگیر را محقق می‌سازد.
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
 پیاده‌سازی این ماژول در کلاس \lr{MinimalNOVAAttention} با ارث‌بری از \lr{BaseAttention} سازمان‌دهی شده است:

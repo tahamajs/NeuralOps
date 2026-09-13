@@ -27,27 +27,27 @@
 \mathbf{W}_V &\in \mathbb{R}^{(H_{KV} \cdot d) \times D}, & \mathbf{b}_V &\in \mathbb{R}^{H_{KV} \cdot d} \\
 \mathbf{W}_O &\in \mathbb{R}^{D \times (H_S \cdot d)}, & \mathbf{b}_O &\in \mathbb{R}^{D}
 \end{align}
-به ازای هر لایه پروجکشن با ابعاد ورودی $d_{\text{in}}$ و ابعاد خروجی $d_{\text{out}}$، عملگر خطی با تفکیک وزن پایه منجمد $\mathbf{W}_{\text{base}} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ و ماتریس‌های تطبیق‌پذیر کم‌مرتبه $\mathbf{A}_{\text{lora}} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B}_{\text{lora}} \in \mathbb{R}^{d_{\text{out}} \times r}$ با رتبه $r \ll \min(d_{\text{in}}, d_{\text{out}})$ و ضریب مقیاس $\alpha / r$ تعریف می‌گردد:
+به ازای هر لایه پروجکشن با ابعاد ورودی $d_{\text{\lr{in}}}$ و ابعاد خروجی $d_{\text{\lr{out}}}$، عملگر خطی با تفکیک وزن پایه منجمد $\mathbf{W}_{\text{\lr{base}}} \in \mathbb{R}^{d_{\text{\lr{out}}} \times d_{\text{\lr{in}}}}$ و ماتریس‌های تطبیق‌پذیر کم‌مرتبه $\mathbf{A}_{\text{\lr{lora}}} \in \mathbb{R}^{r \times d_{\text{\lr{in}}}}$ و $\mathbf{B}_{\text{\lr{lora}}} \in \mathbb{R}^{d_{\text{\lr{out}}} \times r}$ با رتبه $r \ll \min(d_{\text{\lr{in}}}, d_{\text{\lr{out}}})$ و ضریب مقیاس $\alpha / r$ تعریف می‌گردد:
 \begin{equation}
-\mathbf{Y}_{\text{proj}} = \left( \mathbf{X} \mathbf{W}_{\text{base}}^\top + \mathbf{b} + \frac{\alpha}{r} \mathbf{X} \mathbf{A}_{\text{lora}}^\top \mathbf{B}_{\text{lora}}^\top \right) \odot \gamma_{\text{scale}}
+\mathbf{Y}_{\text{\lr{proj}}} = \left( \mathbf{X} \mathbf{W}_{\text{\lr{base}}}^\top + \mathbf{b} + \frac{\alpha}{r} \mathbf{X} \mathbf{A}_{\text{\lr{lora}}}^\top \mathbf{B}_{\text{\lr{lora}}}^\top \right) \odot \gamma_{\text{\lr{scale}}}
 \end{equation}
-که در آن $\gamma_{\text{scale}} \in \mathbb{R}$ یک پارامتر اسکالر قابل یادگیری برای تنظیم خودکار دامنه خروجی است.
+که در آن $\gamma_{\text{\lr{scale}}} \in \mathbb{R}$ یک پارامتر اسکالر قابل یادگیری برای تنظیم خودکار دامنه خروجی است.
 
 \subsubsection*{۲. تبدیل ابعادی و کدگذاری موقعیت نسبی چرخشی \lr{(RoPE)}}
 تانسورهای پروجکشن پس از تبدیل خطی به فرمت چندسره بازآرایی می‌شوند:
 \begin{align}
-\mathbf{Q} &= \operatorname{view}\left(\mathbf{X} \mathbf{W}_{Q,\text{eff}}^\top + \mathbf{b}_Q, \ [B, N, H_S, d]\right).\operatorname{transpose}(1, 2) \in \mathbb{R}^{B \times H_S \times N \times d} \\
-\mathbf{K} &= \operatorname{view}\left(\mathbf{X}_{kv} \mathbf{W}_{K,\text{eff}}^\top + \mathbf{b}_K, \ [B, N_k, H_{KV}, d]\right).\operatorname{transpose}(1, 2) \in \mathbb{R}^{B \times H_{KV} \times N_k \times d} \\
-\mathbf{V} &= \operatorname{view}\left(\mathbf{X}_{kv} \mathbf{W}_{V,\text{eff}}^\top + \mathbf{b}_V, \ [B, N_k, H_{KV}, d]\right).\operatorname{transpose}(1, 2) \in \mathbb{R}^{B \times H_{KV} \times N_k \times d}
+\mathbf{Q} &= \operatorname{view}\left(\mathbf{X} \mathbf{W}_{Q,\text{\lr{eff}}}^\top + \mathbf{b}_Q, \ [B, N, H_S, d]\right).\operatorname{transpose}(1, 2) \in \mathbb{R}^{B \times H_S \times N \times d} \\
+\mathbf{K} &= \operatorname{view}\left(\mathbf{X}_{kv} \mathbf{W}_{K,\text{\lr{eff}}}^\top + \mathbf{b}_K, \ [B, N_k, H_{KV}, d]\right).\operatorname{transpose}(1, 2) \in \mathbb{R}^{B \times H_{KV} \times N_k \times d} \\
+\mathbf{V} &= \operatorname{view}\left(\mathbf{X}_{kv} \mathbf{W}_{V,\text{\lr{eff}}}^\top + \mathbf{b}_V, \ [B, N_k, H_{KV}, d]\right).\operatorname{transpose}(1, 2) \in \mathbb{R}^{B \times H_{KV} \times N_k \times d}
 \end{align}
-در صورت ارائه ماتریس‌های فرکانسی کسینوس و سینوس موقعیت $(\cos, \sin)$، تبدیل چرخشی دو‌بعدی بر روی ابعاد زوج و فرد تا بعد موثر چرخشی $d_{\text{rot}} = 2 \lfloor \min(\dim(\cos), d) / 2 \rfloor$ اعمال می‌گردد:
+در صورت ارائه ماتریس‌های فرکانسی کسینوس و سینوس موقعیت $(\cos, \sin)$، تبدیل چرخشی دو‌بعدی بر روی ابعاد زوج و فرد تا بعد موثر چرخشی $d_{\text{\lr{rot}}} = 2 \lfloor \min(\dim(\cos), d) / 2 \rfloor$ اعمال می‌گردد:
 \begin{align}
-\mathbf{Q}_{b, h, m, :d_{\text{rot}}} &\leftarrow \left( \mathbf{Q}_{b, h, m, :d_{\text{rot}}} \odot \cos_m \right) + \left( \mathcal{R}\left( \mathbf{Q}_{b, h, m, :d_{\text{rot}}} \right) \odot \sin_m \right) \\
-\mathbf{K}_{b, g, n, :d_{\text{rot}}} &\leftarrow \left( \mathbf{K}_{b, g, n, :d_{\text{rot}}} \odot \cos_n \right) + \left( \mathcal{R}\left( \mathbf{K}_{b, g, n, :d_{\text{rot}}} \right) \odot \sin_n \right)
+\mathbf{Q}_{b, h, m, :d_{\text{\lr{rot}}}} &\leftarrow \left( \mathbf{Q}_{b, h, m, :d_{\text{\lr{rot}}}} \odot \cos_m \right) + \left( \mathcal{R}\left( \mathbf{Q}_{b, h, m, :d_{\text{\lr{rot}}}} \right) \odot \sin_m \right) \\
+\mathbf{K}_{b, g, n, :d_{\text{\lr{rot}}}} &\leftarrow \left( \mathbf{K}_{b, g, n, :d_{\text{\lr{rot}}}} \odot \cos_n \right) + \left( \mathcal{R}\left( \mathbf{K}_{b, g, n, :d_{\text{\lr{rot}}}} \right) \odot \sin_n \right)
 \end{align}
 که در آن عملگر دوران نیم‌بعد $\mathcal{R}(\mathbf{x})$ به صورت زیر تعریف می‌شود:
 \begin{equation}
-\mathcal{R}\left( [\mathbf{x}_1, \mathbf{x}_2] \right) = [-\mathbf{x}_2, \mathbf{x}_1], \quad \mathbf{x}_1, \mathbf{x}_2 \in \mathbb{R}^{d_{\text{rot}}/2}
+\mathcal{R}\left( [\mathbf{x}_1, \mathbf{x}_2] \right) = [-\mathbf{x}_2, \mathbf{x}_1], \quad \mathbf{x}_1, \mathbf{x}_2 \in \mathbb{R}^{d_{\text{\lr{rot}}}/2}
 \end{equation}
 
 \subsubsection*{۳. بسط گروهی کلید و مقدار و ماتریس توجه}
@@ -59,13 +59,13 @@
 \begin{equation}
 \mathbf{S}_{b, h, i, j} = \frac{1}{\sqrt{d}} \sum_{m=1}^d \mathbf{Q}_{b, h, i, m} \tilde{\mathbf{K}}_{b, h, j, m} = \frac{1}{\sqrt{d}} \left( \mathbf{Q}_{b, h, i, :} \right) \left( \tilde{\mathbf{K}}_{b, h, j, :} \right)^\top
 \end{equation}
-با اعمال ماسک علّی $\mathbf{M}_{\text{causal}} \in \mathbb{R}^{1 \times 1 \times N \times N_k}$ در مدل‌های دیکودر اتورگرسیو:
+با اعمال ماسک علّی $\mathbf{M}_{\text{\lr{causal}}} \in \mathbb{R}^{1 \times 1 \times N \times N_k}$ در مدل‌های دیکودر اتورگرسیو:
 \begin{equation}
-\mathbf{M}_{\text{causal}}(i, j) = \begin{cases} 0 & j \le i \\ -\infty & j > i \end{cases}
+\mathbf{M}_{\text{\lr{causal}}}(i, j) = \begin{cases} 0 & j \le i \\ -\infty & j > i \end{cases}
 \end{equation}
-و ماسک پرکننده ورودی $\mathbf{M}_{\text{pad}}$، ماتریس امتیازدهی اصلاح‌شده با فیلتر عددی $\operatorname{nan\_to\_num}$ ایمن‌سازی می‌شود:
+و ماسک پرکننده ورودی $\mathbf{M}_{\text{\lr{pad}}}$، ماتریس امتیازدهی اصلاح‌شده با فیلتر عددی $\operatorname{nan\_to\_num}$ ایمن‌سازی می‌شود:
 \begin{equation}
-\widehat{\mathbf{S}} = \operatorname{nan\_to\_num}\left( \mathbf{S} + \mathbf{M}_{\text{causal}} + \mathbf{M}_{\text{pad}}, \ \text{nan}=-10^4, \ +\infty=10^4, \ -\infty=-10^4 \right)
+\widehat{\mathbf{S}} = \operatorname{nan\_to\_num}\left( \mathbf{S} + \mathbf{M}_{\text{\lr{causal}}} + \mathbf{M}_{\text{\lr{pad}}}, \ \text{\lr{nan}}=-10^4, \ +\infty=10^4, \ -\infty=-10^4 \right)
 \end{equation}
 توزیع احتمالاتی توجه و تجمیع مقادیر به صورت زیر حاصل می‌گردد:
 \begin{equation}
@@ -78,60 +78,60 @@
 \subsubsection*{۴. پروجکشن خروجی و مدیریت انکودرهای تودرتو}
 بردارهای زمینه سرها به صورت پیوسته در حافظه چیده شده و الحاق می‌گردند:
 \begin{equation}
-\mathbf{C}_{\text{concat}} = \operatorname{view}\left( \mathbf{C}.\operatorname{transpose}(1, 2).\operatorname{contiguous}(), \ [B, N, H_S \cdot d] \right)
+\mathbf{C}_{\text{\lr{concat}}} = \operatorname{view}\left( \mathbf{C}.\operatorname{transpose}(1, 2).\operatorname{contiguous}(), \ [B, N, H_S \cdot d] \right)
 \end{equation}
 در معماری‌های با انکودر تودرتو \lr{(Nested Encoders)} نظیر \lr{RoBERTa} و \lr{BERT}، لایه پروجکشن خروجی \lr{out\_proj} دور زده شده و بردار زمینه مستقیماً به لایه متراکم بیرونی \lr{(output.dense)} ارسال می‌گردد:
 \begin{equation}
-\mathbf{O} = \begin{cases} \mathbf{C}_{\text{concat}} & \text{اگر } \text{is\_nested\_encoder} = \text{True} \\ \mathbf{C}_{\text{concat}} \mathbf{W}_{O,\text{eff}}^\top + \mathbf{b}_O & \text{در غیر این صورت} \end{cases}
+\mathbf{O} = \begin{cases} \mathbf{C}_{\text{\lr{concat}}} & \text{اگر } \text{\lr{is\_nested\_encoder}} = \text{\lr{True}} \\ \mathbf{C}_{\text{\lr{concat}}} \mathbf{W}_{O,\text{\lr{eff}}}^\top + \mathbf{b}_O & \text{در غیر این صورت} \end{cases}
 \end{equation}
 در صورت بروز هرگونه عدم تطابق ابعادی میان بعد خروجی $\mathbf{O}$ و بعد ورودی $\mathbf{X}$، عملگر پرکننده متقارن $\operatorname{pad}$ یا برش ابعادی اعمال می‌گردد.
 
 \subsubsection*{۵. فرمول‌بندی تابع زیان تقطیر دانش سرهای توجه \lr{(Distillation Loss Function)}}
 فرآیند تقطیر دانش از مدل معلم اولیه با $H_T$ سر به مدل شاگرد فشرده‌شده با $H_S$ سر ($H_S < H_T$) با تابع زیان چندهدفه زیر هدایت می‌شود:
 \begin{equation}
-\mathcal{L}_{\text{total}} = \alpha \mathcal{L}_{\text{task}} + (1 - \alpha) \mathcal{L}_{\text{attn-distill}} + \beta \mathcal{L}_{\text{feat-distill}}
+\mathcal{L}_{\text{\lr{total}}} = \alpha \mathcal{L}_{\text{\lr{task}}} + (1 - \alpha) \mathcal{L}_{\text{\lr{attn-distill}}} + \beta \mathcal{L}_{\text{\lr{feat-distill}}}
 \end{equation}
 که در آن زیان تطابق توزیع توجه با دمای تقطیر $\tau > 0$ از طریق واگرایی کولبک-لایبلر میان سرهای متناظر تعریف می‌گردد:
 \begin{equation}
-\mathcal{L}_{\text{attn-distill}} = \tau^2 \sum_{t=1}^{H_T} D_{\text{KL}}\left( \mathbf{A}_t^{\text{teacher}, \tau} \parallel \sum_{s=1}^{H_S} \Pi_{t, s} \mathbf{A}_s^{\text{student}, \tau} \right)
+\mathcal{L}_{\text{\lr{attn-distill}}} = \tau^2 \sum_{t=1}^{H_T} D_{\text{\lr{KL}}}\left( \mathbf{A}_t^{\text{\lr{teacher}}, \tau} \parallel \sum_{s=1}^{H_S} \Pi_{t, s} \mathbf{A}_s^{\text{\lr{student}}, \tau} \right)
 \end{equation}
 که در آن $\mathbf{A}^\tau = \operatorname{Softmax}(\widehat{\mathbf{S}} / \tau)$ ماتریس‌های هموارشده توجه بوده و $\Pi \in \mathbb{R}^{H_T \times H_S}$ نمایانگر ماتریس نگاشت پروجکشن سرها یا ضریب ادغام گراسمانیان است.
 زیان بازسازی ویژگی‌های زمینه پسا-توجه با نرم فروبنیوس به صورت زیر محاسبه می‌شود:
 \begin{equation}
-\mathcal{L}_{\text{feat-distill}} = \frac{1}{B N D} \left\| \mathbf{O}^{\text{teacher}} - \mathbf{O}^{\text{student}} \right\|_F^2
+\mathcal{L}_{\text{\lr{feat-distill}}} = \frac{1}{B N D} \left\| \mathbf{O}^{\text{\lr{teacher}}} - \mathbf{O}^{\text{\lr{student}}} \right\|_F^2
 \end{equation}
 
 \subsubsection*{۶. کران خطای تقریب در منیفلد گراسمانیان \lr{(Grassmannian Bound)}}
 بر اساس قضیه تقریب زیرفضاها در منیفلد گراسمانیان $\operatorname{Gr}(d, D)$، اگر زیرفضای توجه سر معلم با $\mathcal{W}_T$ و زیرفضای سر شاگرد با $\mathcal{W}_S$ نمایش داده شود، خطای بردار بازنمایی زمینه با فاصله گراسمانیان میان زیرفضاها مقید است:
 \begin{equation}
-\left\| \mathbf{O}^{\text{teacher}} - \mathbf{O}^{\text{student}} \right\|_F \le \frac{\|\mathbf{X}\|_2^2}{\sqrt{d}} \cdot \delta_{\text{Gr}}(\mathcal{W}_T, \mathcal{W}_S) + \mathcal{O}\left( \tau^{-1} \right)
+\left\| \mathbf{O}^{\text{\lr{teacher}}} - \mathbf{O}^{\text{\lr{student}}} \right\|_F \le \frac{\|\mathbf{X}\|_2^2}{\sqrt{d}} \cdot \delta_{\text{\lr{Gr}}}(\mathcal{W}_T, \mathcal{W}_S) + \mathcal{O}\left( \tau^{-1} \right)
 \end{equation}
-که در آن $\delta_{\text{Gr}}(\mathcal{W}_T, \mathcal{W}_S) = \sqrt{\sum_{k=1}^d \sin^2 \theta_k}$ و $\theta_k$ زوایای اصلی میان دو زیرفضا هستند. تابع زیان تقطیر دانش تضمین می‌کند که فاصله گراسمانیان میان زیرفضاهای فشرده شاگرد و زیرفضاهای معلم کمینه گردد.
+که در آن $\delta_{\text{\lr{Gr}}}(\mathcal{W}_T, \mathcal{W}_S) = \sqrt{\sum_{k=1}^d \sin^2 \theta_k}$ و $\theta_k$ زوایای اصلی میان دو زیرفضا هستند. تابع زیان تقطیر دانش تضمین می‌کند که فاصله گراسمانیان میان زیرفضاهای فشرده شاگرد و زیرفضاهای معلم کمینه گردد.
 
 \subsubsection*{۷. تحلیل پیچیدگی محاسباتی و حافظه \lr{(Computational Complexity \& Memory Profiling)}}
 \begin{itemize}
     \item \textbf{پیچیدگی محاسباتی \lr{(FLOPs)}:}
     حجم محاسبات پروجکشن‌های خطی:
     \begin{equation}
-    \text{FLOPs}_{\text{Proj}} = 2 B N D^2 \left( \frac{H_S}{H_T} + \frac{H_{KV}}{H_T} \right) + 2 B N D^2 = \mathcal{O}\left( B N D^2 \left( 1 + \frac{H_S}{H_T} \right) \right)
+    \text{\lr{FLOPs}}_{\text{\lr{Proj}}} = 2 B N D^2 \left( \frac{H_S}{H_T} + \frac{H_{KV}}{H_T} \right) + 2 B N D^2 = \mathcal{O}\left( B N D^2 \left( 1 + \frac{H_S}{H_T} \right) \right)
     \end{equation}
     حجم محاسبات هسته توجه (ضرب داخلی پرس‌وجو-کلید و تجمیع مقادیر):
     \begin{equation}
-    \text{FLOPs}_{\text{Core}} = 2 \left( 2 B H_S N^2 d \right) = 4 B N^2 D \left( \frac{H_S}{H_T} \right) = \mathcal{O}\left( B N^2 D \cdot \frac{H_S}{H_T} \right)
+    \text{\lr{FLOPs}}_{\text{\lr{Core}}} = 2 \left( 2 B H_S N^2 d \right) = 4 B N^2 D \left( \frac{H_S}{H_T} \right) = \mathcal{O}\left( B N^2 D \cdot \frac{H_S}{H_T} \right)
     \end{equation}
     در نتیجه پیچیدگی کل به تناسب ضریب انقباض سرها $\frac{H_S}{H_T}$ در بخش مربعی کاهش می‌یابد:
     \begin{equation}
-    \text{Total FLOPs} = \mathcal{O}\left( B N D^2 + B N^2 D \cdot \frac{H_S}{H_T} \right)
+    \text{\lr{Total FLOPs}} = \mathcal{O}\left( B N D^2 + B N^2 D \cdot \frac{H_S}{H_T} \right)
     \end{equation}
     \item \textbf{پیچیدگی ردپای حافظه \lr{(Memory Complexity)}:}
     حافظه بافر ذخیره‌سازی ماتریس توجه در حین عبور مستقیم برابر است با:
     \begin{equation}
-    \text{Mem}_{\text{Attn}} = B \times H_S \times N^2 \times 4 \text{ بایت}
+    \text{\lr{Mem}}_{\text{\lr{Attn}}} = B \times H_S \times N^2 \times 4 \text{ بایت}
     \end{equation}
     که کاهشی دقیقاً معادل با نسبت $1 - \frac{H_S}{H_T}$ نسبت به مدل معلم اولیه ارائه می‌دهد.
     حافظه بافر کی‌وی‌کش \lr{(KV-Cache)} در استنتاج اتورگرسیو:
     \begin{equation}
-    \text{Mem}_{\text{KV-Cache}} = 2 \times B \times H_{KV} \times L \times d \times 2 \text{ بایت} = \frac{4 B L D}{R} \text{ بایت}
+    \text{\lr{Mem}}_{\text{\lr{KV-Cache}}} = 2 \times B \times H_{KV} \times L \times d \times 2 \text{ بایت} = \frac{4 B L D}{R} \text{ بایت}
     \end{equation}
 \end{itemize}
 
@@ -149,11 +149,11 @@
     outb/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.9cm, font=\bfseries}
 ]
     \node [inb] (input) {ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$};
-    \node [qkv, right=1.2cm of input] (proj) {پروجکشن با وزن منجمد \\ $\mathbf{W}_{\text{base}} \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$};
+    \node [qkv, right=1.2cm of input] (proj) {پروجکشن با وزن منجمد \\ $\mathbf{W}_{\text{\lr{base}}} \in \mathbb{R}^{D_{\text{\lr{out}}} \times D_{\text{\lr{in}}}}$};
     \node [lora, above=0.35cm of proj] (lorabox) {آداپتور کم‌مرتبه $\frac{\alpha}{r}\mathbf{A}^\top \mathbf{B}^\top$ \\ \lr{LoRA Rank = 16}};
     \node [sqz, right=1.2cm of proj] (sqnode) {انقباض سرها \\ $H_T \to H_S$};
     \node [attncore, right=1.2cm of sqnode] (attn) {محاسبه توجه فشرده \\ $\operatorname{Softmax}(\mathbf{Q}_s \mathbf{K}_s^\top / \sqrt{d})\mathbf{V}_s$};
-    \node [distill, above=0.9cm of attn] (distillnode) {نظارت تقطیر دانش معلم \\ $\mathcal{L}_{\text{KL}} + \beta \|\mathbf{O}_t - \mathbf{O}_s\|_F^2$};
+    \node [distill, above=0.9cm of attn] (distillnode) {نظارت تقطیر دانش معلم \\ $\mathcal{L}_{\text{\lr{KL}}} + \beta \|\mathbf{O}_t - \mathbf{O}_s\|_F^2$};
     \node [outb, right=1.2cm of attn] (out) {خروجی نهایی $\mathbf{O}$ \\ $[B, N, D]$};
 
     \draw [->, thick, draw=blue!80] (input) -- (proj);
@@ -171,7 +171,7 @@
 ماژول پایتونی \lr{SqueezingHeadsDistiller} در فایل منبع چارچوب پروژه به آدرس \nolinkurl{Codes/framework/attentions/squeezing_heads_distill.py} پیاده‌سازی شده و از طریق فایل شیم \nolinkurl{Codes/framework/attentions/squeezing_heads_distiller.py} بازصادر گردیده است. این کلاس از \lr{BaseAttention} ارث‌بری کرده و تحت شناسه‌های \lr{'squeezing\_heads\_distiller'}، \lr{'squeezing\_heads\_distill'} و \lr{'squeezing\_heads'} در سیستم رجیستری مرکزی چارچوب \lr{(ATTENTION\_REGISTRY)} ثبت شده است. قابلیت‌های ثبت‌شده شامل پشتیبانی بومی از توجه علّی \lr{(supports\_causal=True)} و توجه گروه‌بندی‌شده \lr{(supports\_gqa=True)} می‌باشد.
 
 \subsubsection*{۱. ساختار لایه پروجکشن کم‌مرتبه \lr{LoRALinear}}
-در این کلاس اختصاصی، وزن‌های اصلی مدل در متغیر \lr{self.weight} ذخیره شده و با فلگ \lr{freeze\_base=True} گرادیان آنها مسدود می‌گردد \lr{(requires\_grad = False)}. دو ماتریس کم‌مرتبه \lr{lora\_A} با ابعاد $[r, d_{\text{in}}]$ (اولیه شده با توزیع یکنواخت کایمینگ) و \lr{lora\_B} با ابعاد $[d_{\text{out}}, r]$ (اولیه شده با مقادیر صفر) تعبیه شده‌اند. خروجی لایه بر اساس رابطه زیر محاسبه می‌گردد:
+در این کلاس اختصاصی، وزن‌های اصلی مدل در متغیر \lr{self.weight} ذخیره شده و با فلگ \lr{freeze\_base=True} گرادیان آنها مسدود می‌گردد \lr{(requires\_grad = False)}. دو ماتریس کم‌مرتبه \lr{lora\_A} با ابعاد $[r, d_{\text{\lr{in}}}]$ (اولیه شده با توزیع یکنواخت کایمینگ) و \lr{lora\_B} با ابعاد $[d_{\text{\lr{out}}}, r]$ (اولیه شده با مقادیر صفر) تعبیه شده‌اند. خروجی لایه بر اساس رابطه زیر محاسبه می‌گردد:
 \begin{lstlisting}[language=Python]
 def forward(self, x: torch.Tensor) -> torch.Tensor:
     out = F.linear(x, self.weight, self.bias)
@@ -197,7 +197,7 @@ def forward(self, x: torch.Tensor) -> torch.Tensor:
         \item \textbf{مدل \lr{GPT-2}:} تشخیص لایه‌های کانولوشن یک‌بعدی \lr{Conv1D} در ماژول \lr{c\_attn} و ترانهاده کردن ماتریس وزن به ابعاد $[3D, D]$ و تفکیک آن به سه بخش مساوی برای پرس‌وجو، کلید و مقدار.
         \item \textbf{مدل‌های \lr{Qwen / LLaMA}:} نگاشت مستقیم ماتریس‌های پروجکشن چهارگانه \lr{q\_proj}، \lr{k\_proj}، \lr{v\_proj} و \lr{o\_proj}.
     \end{enumerate}
-    \item \textbf{میانگین‌گیری استخری \lr{GQA Pooling}:} در صورتی که تعداد سرهای کلید و مقدار کمتر از سرهای پرس‌وجو باشد ($w_k\text{.shape}[0] > \text{self.kv\_head\_size}$)، وزن‌ها از طریق میانگین‌گیری بلوکی ادغام می‌شوند:
+    \item \textbf{میانگین‌گیری استخری \lr{GQA Pooling}:} در صورتی که تعداد سرهای کلید و مقدار کمتر از سرهای پرس‌وجو باشد ($w_k\text{\lr{.shape}}[0] > \text{\lr{self.kv\_head\_size}}$)، وزن‌ها از طریق میانگین‌گیری بلوکی ادغام می‌شوند:
     \begin{lstlisting}[language=Python]
 w_k_pooled = (
     w_k[:, :self.hidden_size].view(self.num_kv_heads, rep, self.head_dim, -1)
@@ -213,21 +213,21 @@ self.k_proj.weight.copy_(w_k_pooled)
     \item دریافت ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ و تعیین ورودی کلید-مقدار $\mathbf{X}_{kv}$ با ابعاد $[B, N_k, D]$.
     \item اجرای پروجکشن‌های خطی آراسته به \lr{LoRA}:
     \begin{align}
-    \mathbf{Q} &= \text{self.q\_proj}(\mathbf{X}).\text{view}(B, N, H_S, d).\text{transpose}(1, 2) \implies [B, H_S, N, d] \\
-    \mathbf{K} &= \text{self.k\_proj}(\mathbf{X}_{kv}).\text{view}(B, N_k, H_{KV}, d).\text{transpose}(1, 2) \implies [B, H_{KV}, N_k, d] \\
-    \mathbf{V} &= \text{self.v\_proj}(\mathbf{X}_{kv}).\text{view}(B, N_k, H_{KV}, d).\text{transpose}(1, 2) \implies [B, H_{KV}, N_k, d]
+    \mathbf{Q} &= \text{\lr{self.q\_proj}}(\mathbf{X}).\text{\lr{view}}(B, N, H_S, d).\text{\lr{transpose}}(1, 2) \implies [B, H_S, N, d] \\
+    \mathbf{K} &= \text{\lr{self.k\_proj}}(\mathbf{X}_{kv}).\text{\lr{view}}(B, N_k, H_{KV}, d).\text{\lr{transpose}}(1, 2) \implies [B, H_{KV}, N_k, d] \\
+    \mathbf{V} &= \text{\lr{self.v\_proj}}(\mathbf{X}_{kv}).\text{\lr{view}}(B, N_k, H_{KV}, d).\text{\lr{transpose}}(1, 2) \implies [B, H_{KV}, N_k, d]
     \end{align}
     \item اعمال دوران مکانی با تابع کمکی \lr{apply\_rotary\_pos\_emb} بر روی بخش زوج ابعاد سرها در صورت ارائه \lr{position\_embeddings}.
     \item اجرای بسط گروهی با فراخوانی \lr{repeat\_kv} بر روی تانسورهای $\mathbf{K}$ و $\mathbf{V}$ در صورت برقراری $H_{KV} < H_S$ جهت تطابق ابعاد سر با $H_S$.
     \item محاسبه ضرب ماتریسی در ممیز شناور ۳۲ بیتی \lr{(FP32)} با مقیاس‌گذاری $1/\sqrt{d}$:
     \begin{equation}
-    \mathbf{S} = \left( \mathbf{Q}.\text{float}() \mathbin{@} \mathbf{K}.\text{float}().\text{transpose}(-2, -1) \right) \times \frac{1}{\sqrt{d}} \implies [B, H_S, N, N_k]
+    \mathbf{S} = \left( \mathbf{Q}.\text{\lr{float}}() \mathbin{@} \mathbf{K}.\text{\lr{float}}().\text{\lr{transpose}}(-2, -1) \right) \times \frac{1}{\sqrt{d}} \implies [B, H_S, N, N_k]
     \end{equation}
     \item ادغام ماسک علّی مثلثی بالا \lr{(Upper Triangular Mask)} با مقدار $-\infty$ در صورت فعال بودن پرچم \lr{self.is\_decoder} و ماسک ورودی، همراه با مهار عددی مقادیر غیرمجاز توسط \lr{torch.nan\_to\_num}.
     \item محاسبه توزیع احتمالاتی نرمال‌شده \lr{F.softmax} و اعمال دراپ‌اوت.
     \item تجمیع بردارهای مقدار و بازچینی ابعادی با تضمین پیوستگی حافظه فیزیکی:
     \begin{equation}
-    \mathbf{C} = (\mathbf{A} \mathbin{@} \mathbf{V}).\text{transpose}(1, 2).\text{contiguous}().\text{view}(B, N, H_S \cdot d)
+    \mathbf{C} = (\mathbf{A} \mathbin{@} \mathbf{V}).\text{\lr{transpose}}(1, 2).\text{\lr{contiguous}}().\text{\lr{view}}(B, N, H_S \cdot d)
     \end{equation}
     \item عبور از پروجکشن خروجی \lr{out\_proj}؛ در صورت فعال بودن حالت \lr{is\_nested\_encoder}، بردار $\mathbf{C}$ مستقیماً به عنوان خروجی بازگردانده می‌شود.
 \end{enumerate}
@@ -247,21 +247,21 @@ self.k_proj.weight.copy_(w_k_pooled)
 \subsubsection*{نقطه زانویی سقف کارایی \lr{(Roofline Knee Point)}}
 نقطه تعادل محاسباتی-حافظه‌ای \lr{(Knee Point)} برای این پردازنده گرافیکی به صورت زیر تعیین می‌شود:
 \begin{equation}
-I_{\text{knee}} = \frac{\text{Peak Compute}}{\text{Peak Bandwidth}} = \frac{121.5 \times 10^{12} \text{ FLOP/s}}{256 \times 10^9 \text{ Byte/s}} \approx 474.6 \text{ FLOP/Byte}
+I_{\text{\lr{knee}}} = \frac{\text{\lr{Peak Compute}}}{\text{\lr{Peak Bandwidth}}} = \frac{121.5 \times 10^{12} \text{\lr{ FLOP/s}}}{256 \times 10^9 \text{\lr{ Byte/s}}} \approx 474.6 \text{\lr{ FLOP/Byte}}
 \end{equation}
 هرگاه شدت محاسباتی \lr{(Arithmetic Intensity)} یک عملیات از این مقدار کمتر باشد، اجرای آن در رژیم گلوگاه پهنای باند حافظه \lr{(Memory-Bound)} قرار داشته و توان پردازشی تانسورکورها به دلیل تاخیر انتقال داده از حافظه اصلی \lr{GDDR6} هرز می‌رود.
 
 \subsubsection*{رفتار ماژول در مدل سقف کارایی}
 در مکانیزم توجه سنتی با ۱۲ سر، ماتریس توجه با ابعاد $[B, 12, N, N]$ در طول فرآیند سافت‌مکس و تجمیع مقادیر، ترافیک حافظه‌ای سنگینی ایجاد می‌نماید:
 \begin{equation}
-\text{Traffic}_{\text{MHA}} = 3 \times B \times 12 \times N^2 \times 4 \text{ بایت}
+\text{\lr{Traffic}}_{\text{\lr{MHA}}} = 3 \times B \times 12 \times N^2 \times 4 \text{ بایت}
 \end{equation}
 در نقطه مقابل، ماژول \lr{squeezing\_heads\_distiller} با انقباض سرها و خلاصه نمودن محاسبات در زیرفضای فشرده، ترافیک تبادل داده با حافظه اصلی را به طور مستقیم به نسبت ضریب $H_S / H_T$ کاهش می‌دهد.
 
 \subsubsection*{اقامت در حافظه نهان سطح دوم \lr{(L2 Cache Residency)}}
 وجود حافظه نهان \lr{32 MB L2 Cache} در معماری ادا لاولیس، یک مزیت تعیین‌کننده برای ماژول \lr{squeezing\_heads\_distiller} فراهم می‌آورد. در طول ارزیابی با طول دنباله $N = 512$ و اندازه دسته $B = 32$ بر روی مدل \lr{DistilBERT}، ردپای تانسورهای میانی ضرب ماتریسی در ابعاد فشرده‌شده به گونه‌ای است که کل بافر فعال‌سازی در فضای ۳۲ مگابایتی حافظه پنهان \lr{L2} جای می‌گیرد:
 \begin{equation}
-\text{Size}_{\text{Activation}} = B \times H_S \times N \times d \times 2 \approx 32 \times 6 \times 512 \times 64 \times 2 \approx 12.58 \text{ MB} < 32 \text{ MB}
+\text{\lr{Size}}_{\text{\lr{Activation}}} = B \times H_S \times N \times d \times 2 \approx 32 \times 6 \times 512 \times 64 \times 2 \approx 12.58 \text{\lr{ MB}} < 32 \text{\lr{ MB}}
 \end{equation}
 این اقامت کامل در حافظه پنهان مانع از دور زدن داده‌ها به حافظه \lr{GDDR6} با پهنای باند محدودتر گردیده و زمان تاخیر دسترسی به داده را از حدود ۲۰۰ تا ۳۰۰ سیکل کلاک به کمتر از ۳۵ سیکل کلاک تقلیل می‌دهد.
 

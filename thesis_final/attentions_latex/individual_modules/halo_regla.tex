@@ -23,46 +23,46 @@
 تانسور نمایش پنهان ورودی به صورت $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تعریف می‌گردد که در آن $B$ اندازه دسته، $N$ طول توالی، و $D$ بعد پنهان مدل است. با فرض $H$ سر توجه و بعد هر سر $d = D/H$، نگاشت‌های خطی با استفاده از لایه‌های آداپتور رتبه-پایین \lr{(LoRA)} با رتبه فشرده‌سازی $r$ به صورت زیر شکل می‌گیرند:
 \begin{align}
     \mathbf{Q} &= \mathbf{X}\mathbf{W}_Q + \frac{\alpha}{r} (\mathbf{X}\mathbf{A}_Q)\mathbf{B}_Q \in \mathbb{R}^{B \times N \times D} \\
-    \mathbf{K} &= \mathbf{X}\mathbf{W}_K + \frac{\alpha}{r} (\mathbf{X}\mathbf{A}_K)\mathbf{B}_K \in \mathbb{R}^{B \times N \times D_{\text{kv}}} \\
-    \mathbf{V} &= \mathbf{X}\mathbf{W}_V + \frac{\alpha}{r} (\mathbf{X}\mathbf{A}_V)\mathbf{B}_V \in \mathbb{R}^{B \times N \times D_{\text{kv}}}
+    \mathbf{K} &= \mathbf{X}\mathbf{W}_K + \frac{\alpha}{r} (\mathbf{X}\mathbf{A}_K)\mathbf{B}_K \in \mathbb{R}^{B \times N \times D_{\text{\lr{kv}}}} \\
+    \mathbf{V} &= \mathbf{X}\mathbf{W}_V + \frac{\alpha}{r} (\mathbf{X}\mathbf{A}_V)\mathbf{B}_V \in \mathbb{R}^{B \times N \times D_{\text{\lr{kv}}}}
 \end{align}
-که در آن $\mathbf{W}_* \in \mathbb{R}^{D \times D}$ ماتریس‌های وزن منجمد پایه، $\mathbf{A}_* \in \mathbb{R}^{D \times r}$ و $\mathbf{B}_* \in \mathbb{R}^{r \times D}$ ماتریس‌های سازگارکننده آموزش‌پذیر، و $\alpha$ ضریب مقیاس‌گذاری آداپتور است. در ساختارهای مبتنی بر توجه پرس‌وجوی گروه‌بندی‌شده \lr{(GQA)}، تعداد سرهای کلید و مقدار $H_{\text{kv}}$ کمتر از $H$ بوده و با عملگر تکرار به ابعاد پرس‌وجو گسترش می‌یابند.
+که در آن $\mathbf{W}_* \in \mathbb{R}^{D \times D}$ ماتریس‌های وزن منجمد پایه، $\mathbf{A}_* \in \mathbb{R}^{D \times r}$ و $\mathbf{B}_* \in \mathbb{R}^{r \times D}$ ماتریس‌های سازگارکننده آموزش‌پذیر، و $\alpha$ ضریب مقیاس‌گذاری آداپتور است. در ساختارهای مبتنی بر توجه پرس‌وجوی گروه‌بندی‌شده \lr{(GQA)}، تعداد سرهای کلید و مقدار $H_{\text{\lr{kv}}}$ کمتر از $H$ بوده و با عملگر تکرار به ابعاد پرس‌وجو گسترش می‌یابند.
 
 پس از تبدیل ابعاد تانسورها به فرمت چندسره $[B, H, N, d]$، عملگر چرخش فاز موقعیتی \lr{(RoPE)} بر روی هر توکن در موقعیت زمانی $t$ اعمال می‌شود:
 \begin{equation}
-    \mathbf{q}_{b, h, t}^{\text{rope}} = (\mathbf{q}_{b, h, t} \odot \cos\mathbf{\Theta}_t) + (\operatorname{rotate\_half}(\mathbf{q}_{b, h, t}) \odot \sin\mathbf{\Theta}_t)
+    \mathbf{q}_{b, h, t}^{\text{\lr{rope}}} = (\mathbf{q}_{b, h, t} \odot \cos\mathbf{\Theta}_t) + (\operatorname{rotate\_half}(\mathbf{q}_{b, h, t}) \odot \sin\mathbf{\Theta}_t)
 \end{equation}
 \begin{equation}
-    \mathbf{k}_{b, h, t}^{\text{rope}} = (\mathbf{k}_{b, h, t} \odot \cos\mathbf{\Theta}_t) + (\operatorname{rotate\_half}(\mathbf{k}_{b, h, t}) \odot \sin\mathbf{\Theta}_t)
+    \mathbf{k}_{b, h, t}^{\text{\lr{rope}}} = (\mathbf{k}_{b, h, t} \odot \cos\mathbf{\Theta}_t) + (\operatorname{rotate\_half}(\mathbf{k}_{b, h, t}) \odot \sin\mathbf{\Theta}_t)
 \end{equation}
 که در آن $\operatorname{rotate\_half}(\mathbf{x}) = [-\mathbf{x}_{d/2:d}, \mathbf{x}_{0:d/2}]$ و $\mathbf{\Theta}_t = t \cdot \theta_i$ فرکانس‌های پایه زاویه‌ای هستند.
 
 \subsubsection*{جریان اول: توجه غیرخطی چگال \lr{(Dense Softmax Stream)}}
 ماتریس شباهت اولیه از ضرب داخلی مقیاس‌شده به دست می‌آید:
 \begin{equation}
-    \mathbf{S} = \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}_{\text{causal}} + \mathbf{M}_{\text{pad}} \in \mathbb{R}^{B \times H \times N \times N}
+    \mathbf{S} = \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}} + \mathbf{M}_{\text{\lr{causal}}} + \mathbf{M}_{\text{\lr{pad}}} \in \mathbb{R}^{B \times H \times N \times N}
 \end{equation}
 \begin{equation}
-    \mathbf{A}^{\text{dense}} = \operatorname{Softmax}(\mathbf{S}, \text{dim}=-1), \quad \mathbf{O}^{\text{dense}} = \mathbf{A}^{\text{dense}} \mathbf{V} \in \mathbb{R}^{B \times H \times N \times d}
+    \mathbf{A}^{\text{\lr{dense}}} = \operatorname{Softmax}(\mathbf{S}, \text{\lr{dim}}=-1), \quad \mathbf{O}^{\text{\lr{dense}}} = \mathbf{A}^{\text{\lr{dense}}} \mathbf{V} \in \mathbb{R}^{B \times H \times N \times d}
 \end{equation}
 به منظور جلوگیری از خطاهای ممیز شناور در نیم‌دقت \lr{(FP16/BF16)}، مقادیر تعریف‌نشده با عملگر $\operatorname{nan\_to\_num}$ خنثی می‌گردند.
 
 \subsubsection*{جریان دوم: توجه اپتیک خطی کرنلی \lr{(Linear Optics Kernel Stream)}}
 نگاشت ویژگی غیرخطی با تابع یکنوا و مشتق‌پذیر $\phi(x) = \operatorname{ELU}(x) + 1.0$ تعریف می‌گردد:
 \begin{equation}
-    \tilde{\mathbf{Q}} = \phi(\mathbf{Q}^{\text{rope}}), \quad \tilde{\mathbf{K}} = \phi(\mathbf{K}^{\text{rope}}) \odot \mathbf{M}_{\text{valid}}
+    \tilde{\mathbf{Q}} = \phi(\mathbf{Q}^{\text{\lr{rope}}}), \quad \tilde{\mathbf{K}} = \phi(\mathbf{K}^{\text{\lr{rope}}}) \odot \mathbf{M}_{\text{\lr{valid}}}
 \end{equation}
 \begin{itemize}
     \item \textbf{در حالت غیرعلّی دوطرفه \lr{(Bidirectional Encoder Mode)}:}
     محاسبه از طریق شرکت‌پذیری ضرب ماتریسی بدون تشکیل ماتریس $N \times N$ انجام می‌پذیرد:
     \begin{equation}
-        \mathbf{M}_{\text{state}} = \tilde{\mathbf{K}}^\top \mathbf{V} = \sum_{j=1}^N \tilde{\mathbf{k}}_j \mathbf{v}_j^\top \in \mathbb{R}^{B \times H \times d \times d}
+        \mathbf{M}_{\text{\lr{state}}} = \tilde{\mathbf{K}}^\top \mathbf{V} = \sum_{j=1}^N \tilde{\mathbf{k}}_j \mathbf{v}_j^\top \in \mathbb{R}^{B \times H \times d \times d}
     \end{equation}
     \begin{equation}
         \mathbf{z} = \sum_{j=1}^N \tilde{\mathbf{k}}_j \in \mathbb{R}^{B \times H \times 1 \times d}
     \end{equation}
     \begin{equation}
-        \mathbf{O}^{\text{linear}} = \frac{\tilde{\mathbf{Q}} \mathbf{M}_{\text{state}}}{\tilde{\mathbf{Q}} \mathbf{z}^\top + \epsilon} \in \mathbb{R}^{B \times H \times N \times d}
+        \mathbf{O}^{\text{\lr{linear}}} = \frac{\tilde{\mathbf{Q}} \mathbf{M}_{\text{\lr{state}}}}{\tilde{\mathbf{Q}} \mathbf{z}^\top + \epsilon} \in \mathbb{R}^{B \times H \times N \times d}
     \end{equation}
     \item \textbf{در حالت علّی بازگشتی \lr{(Causal Autoregressive Mode)}:}
     به‌روزرسانی پیوسته حافظه تداعی‌گر از طریق مجموع تجمعی پیشوندی \lr{(Prefix Sum Scan)} صورت می‌پذیرد:
@@ -70,21 +70,21 @@
         \mathbf{S}_t = \mathbf{S}_{t-1} + \tilde{\mathbf{k}}_t \mathbf{v}_t^\top, \quad \mathbf{z}_t = \mathbf{z}_{t-1} + \tilde{\mathbf{k}}_t
     \end{equation}
     \begin{equation}
-        \mathbf{O}_t^{\text{linear}} = \frac{\tilde{\mathbf{q}}_t \mathbf{S}_t}{\tilde{\mathbf{q}}_t^\top \mathbf{z}_t + \epsilon}
+        \mathbf{O}_t^{\text{\lr{linear}}} = \frac{\tilde{\mathbf{q}}_t \mathbf{S}_t}{\tilde{\mathbf{q}}_t^\top \mathbf{z}_t + \epsilon}
     \end{equation}
 \end{itemize}
 
 \subsubsection*{جریان سوم: تلفیق گیت‌شده تصحیح‌شده \lr{(Adaptive Gated Blending)}}
 ترکیب خروجی دو جریان با بردار گیتینگ وابسته به محتوا انجام می‌شود:
 \begin{equation}
-    \mathbf{g} = \sigma(\mathbf{X}\mathbf{W}_{\text{gate}} + \mathbf{b}_{\text{gate}}) \in \mathbb{R}^{B \times N \times H} \xrightarrow{\text{permute}} \mathbb{R}^{B \times H \times N \times 1}
+    \mathbf{g} = \sigma(\mathbf{X}\mathbf{W}_{\text{\lr{gate}}} + \mathbf{b}_{\text{\lr{gate}}}) \in \mathbb{R}^{B \times N \times H} \xrightarrow{\text{\lr{permute}}} \mathbb{R}^{B \times H \times N \times 1}
 \end{equation}
 \begin{equation}
-    \mathbf{O}^{\text{fused}} = \mathbf{g} \odot \mathbf{O}^{\text{dense}} + (1 - \mathbf{g}) \odot \mathbf{O}^{\text{linear}} \in \mathbb{R}^{B \times H \times N \times d}
+    \mathbf{O}^{\text{\lr{fused}}} = \mathbf{g} \odot \mathbf{O}^{\text{\lr{dense}}} + (1 - \mathbf{g}) \odot \mathbf{O}^{\text{\lr{linear}}} \in \mathbb{R}^{B \times H \times N \times d}
 \end{equation}
 در نهایت، تانسورها در بعد سرها ادغام شده و از پروجکشن خروجی عبور داده می‌شوند:
 \begin{equation}
-    \mathbf{O} = \operatorname{Concat}(\mathbf{O}_1^{\text{fused}}, \dots, \mathbf{O}_H^{\text{fused}}) \in \mathbb{R}^{B \times N \times D}, \quad \mathbf{Y} = \mathbf{O}\mathbf{W}_O + \frac{\alpha}{r}(\mathbf{O}\mathbf{A}_O)\mathbf{B}_O
+    \mathbf{O} = \operatorname{Concat}(\mathbf{O}_1^{\text{\lr{fused}}}, \dots, \mathbf{O}_H^{\text{\lr{fused}}}) \in \mathbb{R}^{B \times N \times D}, \quad \mathbf{Y} = \mathbf{O}\mathbf{W}_O + \frac{\alpha}{r}(\mathbf{O}\mathbf{A}_O)\mathbf{B}_O
 \end{equation}
 پیچیدگی محاسباتی زمانی جریان خطی $\mathcal{O}(B \cdot H \cdot N \cdot d^2)$ و پیچیدگی حافظه آن $\mathcal{O}(B \cdot H \cdot d^2)$ است که در مقایسه با مؤلفه مرتبه دوم چگال $\mathcal{O}(B \cdot H \cdot N^2 \cdot d)$، در توالی‌های طویل صرفه‌جویی مجانبی چشمگیری فراهم می‌آورد.
 
@@ -110,11 +110,11 @@
 \midrule
 ورودی لایه & \lr{hidden\_states} & $[B, N, D]$ & تانسور ورودی فضای پنهان \\
 پروجکشن پرس‌وجو & \lr{q} & $[B, H, N, d]$ & پس از \lr{q\_proj} و تبدیل بعد \\
-پروجکشن کلید و مقدار & \lr{k, v} & $[B, H_{\text{kv}}, N, d]$ & پس از \lr{k\_proj} و \lr{v\_proj} \\
+پروجکشن کلید و مقدار & \lr{k, v} & $[B, H_{\text{\lr{kv}}}, N, d]$ & پس از \lr{k\_proj} و \lr{v\_proj} \\
 تطبیق گروه‌بندی \lr{GQA} & \lr{k, v} & $[B, H, N, d]$ & بسط سرها با \lr{repeat\_kv} \\
 اعمال چرخش فاز & \lr{q, k} & $[B, H, N, d]$ & تزریق \lr{RoPE} روی ابعاد زوج \\
 ماتریس توجه چگال & \lr{dense\_attn} & $[B, H, N, N]$ & نرمال‌سازی \lr{Softmax} با ماسک علّی \\
-خروجی جریان چگال & \lr{dense\_out} & $[B, H, N, d]$ & ضرب تانسوری $\mathbf{A}^{\text{dense}}\mathbf{V}$ \\
+خروجی جریان چگال & \lr{dense\_out} & $[B, H, N, d]$ & ضرب تانسوری $\mathbf{A}^{\text{\lr{dense}}}\mathbf{V}$ \\
 نگاشت کرنلی خطی & \lr{q\_lin, k\_lin} & $[B, H, N, d]$ & اعمال نگاشت غیرخطی $\operatorname{ELU}+1$ \\
 ضرب خارجی فشرده & \lr{kv} & $[B, H, d, d]$ & تجمیع تداعی‌گر $\tilde{\mathbf{K}}^\top \mathbf{V}$ \\
 خروجی جریان خطی & \lr{linear\_out} & $[B, H, N, d]$ & بازخوانی تداعی‌گر نرمال‌شده \\
@@ -131,9 +131,9 @@
 \subsubsection*{تحلیل شدت محاسباتی در مدل سقف کارایی \lr{(Roofline Model)}}
 در لایه توجه سنتی، تشکیل ماتریس توجه به ابعاد $N \times N$ موجب جابجایی حجیم داده‌ها بین حافظه موقت پردازنده \lr{(SRAM)} و حافظه اصلی کارت گرافیک \lr{(HBM/VRAM)} می‌گردد. از آنجا که به ازای خوانش و نگارش هر عنصر ماتریس توجه، تنها چند عملیات محدود ضرب و جمع صورت می‌پذیرد، شدت محاسباتی \lr{(Arithmetic Intensity)} به شدت پایین بوده و کرنل در ناحیه مقید به پهنای باند حافظه \lr{(Memory-Bound)} به گلوگاه برخورد می‌کند.
 
-در ماژول \lr{halo\_regla}، با جابجایی ترتیب ضرب ماتریسی در شاخه خطی، ماتریس تداعی‌گر $\mathbf{M}_{\text{state}}$ دارای ابعاد ثابت $d \times d$ است. با فرض بعد سر $d = 64$، حجم این ماتریس به ازای هر سر معادل:
+در ماژول \lr{halo\_regla}، با جابجایی ترتیب ضرب ماتریسی در شاخه خطی، ماتریس تداعی‌گر $\mathbf{M}_{\text{\lr{state}}}$ دارای ابعاد ثابت $d \times d$ است. با فرض بعد سر $d = 64$، حجم این ماتریس به ازای هر سر معادل:
 \begin{equation}
-    64 \times 64 \times 4 \text{ Bytes} = 16 \text{ KB}
+    64 \times 64 \times 4 \text{\lr{ Bytes}} = 16 \text{\lr{ KB}}
 \end{equation}
 می‌باشد. از آنجا که ظرفیت کش سطح دوم \lr{(L2 Cache)} در پردازنده \lr{RTX 4070} بالغ بر \lr{32 MB} و حافظه اشتراکی \lr{SRAM} هر چندپردازنده جریانی \lr{(SM)} حدود \lr{128 KB} است، ماتریس حالت تمامی سرها به صورت کامل در حافظه کش سریع روی تراشه مستقر می‌گردد. بدین ترتیب ترافیک گذرگاه \lr{PCIe/GDDR6} تا چندین برابر کاهش یافته و شدت محاسباتی به سمت ناحیه بهینه محاسبات تانسوری \lr{(Compute-Bound)} شیفت پیدا می‌کند.
 
@@ -199,7 +199,7 @@
     \begin{itemize}
         \item پیاده‌سازی کرنل‌های مجتمع سخت‌افزاری با \lr{Triton} جهت ادغام گیتینگ و پویش تداعی‌گر درون حافظه سریع \lr{SRAM}.
         \item بازپخت تدریجی ضریب گیت \lr{(Gate Annealing)} حین آموزش به گونه‌ای که با گذشت زمان $g \to 0$ میل نموده و در زمان استقرار، مدل به یک معماری کاملاً خطی با حافظه ثابت تبدیل گردد.
-        \item اعمال کوانتایزاسیون ممیز شناور ۸ بیتی \lr{(FP8)} بر روی ماتریس حالت $\mathbf{M}_{\text{state}}$ جهت افزایش دوبرابری تراکم کش در کارت‌های نسل جدید.
+        \item اعمال کوانتایزاسیون ممیز شناور ۸ بیتی \lr{(FP8)} بر روی ماتریس حالت $\mathbf{M}_{\text{\lr{state}}}$ جهت افزایش دوبرابری تراکم کش در کارت‌های نسل جدید.
     \end{itemize}
 \end{itemize}
 

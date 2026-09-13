@@ -7,8 +7,8 @@
 \subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
 برای تانسور ورودی $X \in \mathbb{R}^{B \times N \times D}$، خروجی‌های دو مسیر محاسباتی به صورت موازی تشکیل می‌شوند:
 \begin{align}
-Y_{\text{local}} &= \operatorname{Softmax}\left(\frac{Q_{\text{local}} K_{\text{local}}^\top}{\sqrt{d}} + M_{\text{band}}\right) V_{\text{local}} \\
-Y_{\text{global}} &= (X W_{\text{down}}) W_{\text{up}}^\top \in \mathbb{R}^{B \times N \times D}
+Y_{\text{\lr{local}}} &= \operatorname{Softmax}\left(\frac{Q_{\text{\lr{local}}} K_{\text{\lr{local}}}^\top}{\sqrt{d}} + M_{\text{\lr{band}}}\right) V_{\text{\lr{local}}} \\
+Y_{\text{\lr{global}}} &= (X W_{\text{\lr{down}}}) W_{\text{\lr{up}}}^\top \in \mathbb{R}^{B \times N \times D}
 \end{align}
 شبکه درگاه‌ساز با بردار وزن $W_g$ ضریب تخصیص پویای هر نشانه را تعیین می‌کند:
 \begin{equation}
@@ -16,7 +16,7 @@ g = \sigma(X W_g + b_g) \in [0, 1]^{B \times N \times 1}
 \end{equation}
 خروجی نهایی ترکیب محدب دو جریان پردازشی است:
 \begin{equation}
-Y = g \odot Y_{\text{local}} + (1 - g) \odot Y_{\text{global}}
+Y = g \odot Y_{\text{\lr{local}}} + (1 - g) \odot Y_{\text{\lr{global}}}
 \end{equation}
 پیچیدگی کل فرآیند از مرتبه $\mathcal{O}(N \cdot w \cdot d + N \cdot r \cdot D)$ است که برای پنجره محلی کوچک $w$ و رتبه $r \ll D$، رفتاری کاملاً خطی با طول دنباله را عرضه می‌دارد.
 

@@ -9,9 +9,9 @@
 \subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
 در این روش، بردارهای خروجی بلوک گزینشی مامبا با پروجکشن توجه ادغام می‌گردند:
 \begin{align}
-\mathbf{h}_{\text{ssm}} &= \operatorname{SelectiveSSM}(\mathbf{X}) \\
-\mathbf{X}_{\text{mod}} &= \mathbf{X} + \sigma(\mathbf{W}_{\text{gate}} \mathbf{h}_{\text{ssm}}) \odot (\mathbf{W}_m \mathbf{h}_{\text{ssm}}) \\
-\mathbf{Y} &= \operatorname{MultiHeadAttention}(\mathbf{X}_{\text{mod}}) + \mathbf{X}
+\mathbf{h}_{\text{\lr{ssm}}} &= \operatorname{SelectiveSSM}(\mathbf{X}) \\
+\mathbf{X}_{\text{\lr{mod}}} &= \mathbf{X} + \sigma(\mathbf{W}_{\text{\lr{gate}}} \mathbf{h}_{\text{\lr{ssm}}}) \odot (\mathbf{W}_m \mathbf{h}_{\text{\lr{ssm}}}) \\
+\mathbf{Y} &= \operatorname{MultiHeadAttention}(\mathbf{X}_{\text{\lr{mod}}}) + \mathbf{X}
 \end{align}
 این تلفیق تزریقی امکان انتقال وابستگی‌های بی‌نهایت بلندمدت را از مسیر فضای حالت به لایه‌های بعد هموار می‌کند.
 

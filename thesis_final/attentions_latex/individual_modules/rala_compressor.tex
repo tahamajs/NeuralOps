@@ -9,11 +9,11 @@
 \subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
 تانسورهای توجه به فرم بازگشتی تبدیل شده و عملگر خطای تقریب با تجزیه مقادیر تکین مانده بهینه می‌شود:
 \begin{equation}
-\mathbf{E} = \mathbf{W}_{\text{attn}} - \mathbf{W}_{\text{linear}}, \quad \mathbf{E} \approx \sum_{k=1}^r \mathbf{u}_k \mathbf{v}_k^\top
+\mathbf{E} = \mathbf{W}_{\text{\lr{attn}}} - \mathbf{W}_{\text{\lr{linear}}}, \quad \mathbf{E} \approx \sum_{k=1}^r \mathbf{u}_k \mathbf{v}_k^\top
 \end{equation}
 با بهینه‌سازی توأم پارامترها در فاز تنظیم دقیق، خطای بازسازی به حداقل می‌رسد:
 \begin{equation}
-\mathcal{L}_{\text{distill}} = \|\mathbf{Y}_{\text{orig}} - (\mathbf{Y}_{\text{linear}} + \mathbf{U}_r \mathbf{V}_r^\top \mathbf{X})\|_2^2
+\mathcal{L}_{\text{\lr{distill}}} = \|\mathbf{Y}_{\text{\lr{orig}}} - (\mathbf{Y}_{\text{\lr{linear}}} + \mathbf{U}_r \mathbf{V}_r^\top \mathbf{X})\|_2^2
 \end{equation}
 بدین شکل وزن‌های متراکم بدون افت حافظه جایگزین می‌گردند.
 

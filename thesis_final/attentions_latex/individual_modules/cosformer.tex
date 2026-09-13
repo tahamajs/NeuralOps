@@ -18,7 +18,7 @@
 \begin{equation}
 \cos\left(\frac{\pi (i - j)}{2 M}\right) = \cos\left(\frac{\pi i}{2 M}\right)\cos\left(\frac{\pi j}{2 M}\right) + \sin\left(\frac{\pi i}{2 M}\right)\sin\left(\frac{\pi j}{2 M}\right)
 \end{equation}
-که در آن $M$ حداکثر طول دنباله است. سپس بردارهای پرس‌وجو $Q$ و کلید $K$ توسط تابع فعال‌ساز نامنفی $\phi(x) = \max(x, 0)$ یا $\phi(x) = \text{ELU}(x) + 1$ نگاشت می‌شوند. با ترکیب این دو، خروجی به صورت زیر بازنویسی می‌شود:
+که در آن $M$ حداکثر طول دنباله است. سپس بردارهای پرس‌وجو $Q$ و کلید $K$ توسط تابع فعال‌ساز نامنفی $\phi(x) = \max(x, 0)$ یا $\phi(x) = \text{\lr{ELU}}(x) + 1$ نگاشت می‌شوند. با ترکیب این دو، خروجی به صورت زیر بازنویسی می‌شود:
 \begin{equation}
 \mathbf{Y}_i = \frac{\sum_{j} \left( Q_i^{\cos} K_j^{\cos \top} + Q_i^{\sin} K_j^{\sin \top} \right) V_j}{\sum_{j} \left( Q_i^{\cos} K_j^{\cos \top} + Q_i^{\sin} K_j^{\sin \top} \right)}
 \end{equation}

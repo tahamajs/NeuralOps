@@ -25,7 +25,7 @@
 \begin{equation}
 |A_{i,j}| \le C \cdot \exp(-\gamma |i - j|), \quad \gamma > 0
 \end{equation}
-آنگاه خطای برش در بازه افق $S = \text{span}$ تحت نرم فروبنیوس به صورت تحلیلی کران‌دار می‌گردد:
+آنگاه خطای برش در بازه افق $S = \text{\lr{span}}$ تحت نرم فروبنیوس به صورت تحلیلی کران‌دار می‌گردد:
 \begin{equation}
 \|\mathbf{A} - \mathbf{A}_S\|_F^2 = \sum_{|i-j| > S} |A_{i,j}|^2 \le \frac{2 C^2 N}{\gamma} \exp(-2\gamma S)
 \end{equation}
@@ -46,21 +46,21 @@
 
 در صورت نابرابری تعداد سرهای کلید/مقدار ($H_{kv}$) با سرهای کوئری ($H$)، عملگر گسترش تانسور \lr{repeat\_kv} اعمال می‌گردد:
 \begin{equation}
-\mathbf{K}_{\text{exp}} = \text{repeat\_kv}(\mathbf{K}, \text{repeats}=H / H_{kv})
+\mathbf{K}_{\text{\lr{exp}}} = \text{\lr{repeat\_kv}}(\mathbf{K}, \text{\lr{repeats}}=H / H_{kv})
 \end{equation}
 
 امتیازهای شباهت خام در دقت محاسباتی ممیز شناور \lr{FP32} محاسبه می‌شوند:
 \begin{equation}
-\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}_{\text{exp}}^\top}{\sqrt{d_h}} + \mathbf{M}_{\text{causal}} + \mathbf{M}_{\text{pad}}
+\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}_{\text{\lr{exp}}}^\top}{\sqrt{d_h}} + \mathbf{M}_{\text{\lr{causal}}} + \mathbf{M}_{\text{\lr{pad}}}
 \end{equation}
 که در آن ماسک علّی به صورت ماتریس بالا-مثلثی با درایه‌های $-10000.0$ در موقعیت‌های غیرمجاز تعریف می‌شود:
 \begin{equation}
-M_{\text{causal}}(i, j) = \begin{cases} 0 & j \le i \\ -10^4 & j > i \end{cases}
+M_{\text{\lr{causal}}}(i, j) = \begin{cases} 0 & j \le i \\ -10^4 & j > i \end{cases}
 \end{equation}
 
 ماتریس نهایی توجه و بازتولید بردار کانتکست:
 \begin{equation}
-\mathbf{A} = \operatorname{softmax}(\operatorname{nan\_to\_num}(\mathbf{S}, \text{nan}=0.0)), \quad \mathbf{O} = (\mathbf{A} \mathbf{V}_{\text{exp}}) \mathbf{W}_O + \frac{\alpha}{r} ((\mathbf{A} \mathbf{V}_{\text{exp}}) \mathbf{A}_O) \mathbf{B}_O
+\mathbf{A} = \operatorname{softmax}(\operatorname{nan\_to\_num}(\mathbf{S}, \text{\lr{nan}}=0.0)), \quad \mathbf{O} = (\mathbf{A} \mathbf{V}_{\text{\lr{exp}}}) \mathbf{W}_O + \frac{\alpha}{r} ((\mathbf{A} \mathbf{V}_{\text{\lr{exp}}}) \mathbf{A}_O) \mathbf{B}_O
 \end{equation}
 پیچیدگی محاسباتی زمانی برابر با $\mathcal{O}(B \cdot H \cdot L \cdot S)$ و پیچیدگی حافظه معادل $\mathcal{O}(B \cdot H \cdot L \cdot d_h)$ است.
 

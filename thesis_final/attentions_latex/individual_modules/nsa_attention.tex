@@ -21,17 +21,17 @@
 شواهد تجربی به دست آمده از ارزیابی این ماژول نشان می‌دهد که مصرف حافظه فعال کارت گرافیک از ۴۲۰۰ مگابایت به کمتر از \lr{340 MB} سقوط کرده (کاهش بیش از ۹۱ درصد) در حالی که دقت مدل در سطح بالای \lr{90.83\%} و شاخص F1 در تراز ممتاز \lr{91.19\%} تثبیت گردیده است.
 
 \subsection*{بخش ۳: مبانی نظری \lr{(Theoretical Foundations)}}
-مبانی تئوریک این معماری بر قضیه تجزیه چندمقیاسی سیگنال‌ها در آنالیز چندوضوحی \lr{(Multiresolution Analysis - MRA)} و کران تقریب برآمدگی زیرفضاها استوار است. فرض کنید دنباله ورودی به دو مولفه فرکانس بالا (موضعی $\mathbf{X}_{\text{fine}}$) و فرکانس پایین (سراسری فشرده $\mathbf{X}_{\text{coarse}}$) تفکیک گردد:
+مبانی تئوریک این معماری بر قضیه تجزیه چندمقیاسی سیگنال‌ها در آنالیز چندوضوحی \lr{(Multiresolution Analysis - MRA)} و کران تقریب برآمدگی زیرفضاها استوار است. فرض کنید دنباله ورودی به دو مولفه فرکانس بالا (موضعی $\mathbf{X}_{\text{\lr{fine}}}$) و فرکانس پایین (سراسری فشرده $\mathbf{X}_{\text{\lr{coarse}}}$) تفکیک گردد:
 \begin{equation}
-\mathbf{X} = \mathbf{X}_{\text{fine}} + \mathbf{X}_{\text{coarse}}
+\mathbf{X} = \mathbf{X}_{\text{\lr{fine}}} + \mathbf{X}_{\text{\lr{coarse}}}
 \end{equation}
 بر اساس قضیه نمونه‌برداری نایکویست در فضاهای بازنمایی، مؤلفه‌های سراسری دارای طیف مقادیر ویژه به شدت متمرکز بوده و نمونه‌برداری با گام $S_c$ خطای بازسازی کران‌دار به همراه دارد:
 \begin{equation}
 \|\mathbf{X} - \operatorname{Interp}(\operatorname{Pool}(\mathbf{X}, S_c))\|_2^2 \le \sum_{k > \pi/S_c} |\hat{\mathbf{X}}(k)|^2
 \end{equation}
-علاوه بر این، با استناد به لم تقریب تنک وفقی، با افزودن $k_{\text{sel}}$ نشانه با بیشترین اهمیت به مسیر فشرده، خطای اعوجاج تانسور توجه با نرخ نمایی تحدید می‌گردد:
+علاوه بر این، با استناد به لم تقریب تنک وفقی، با افزودن $k_{\text{\lr{sel}}}$ نشانه با بیشترین اهمیت به مسیر فشرده، خطای اعوجاج تانسور توجه با نرخ نمایی تحدید می‌گردد:
 \begin{equation}
-\|\mathbf{A}_{\text{exact}} - \mathbf{A}_{\text{NSA}}\|_F \le C_1 \exp(-C_2 \cdot k_{\text{sel}}) + \mathcal{O}(S_c^{-1})
+\|\mathbf{A}_{\text{\lr{exact}}} - \mathbf{A}_{\text{\lr{NSA}}}\|_F \le C_1 \exp(-C_2 \cdot k_{\text{\lr{sel}}}) + \mathcal{O}(S_c^{-1})
 \end{equation}
 این تضمین ریاضی علت حفظ درخشان دقت و F1 را در این ماژول به روشنی توجیه می‌نماید.
 
@@ -43,22 +43,22 @@
 \end{equation}
 ۱) شاخه موضعی ریزدانه با پهنای پنجره $w$:
 \begin{equation}
-\mathbf{A}_{\text{local}, ij} = \operatorname{Softmax}\left(\frac{\mathbf{q}_i \mathbf{k}_j^\top}{\sqrt{d}}\right), \quad |i - j| \le w, \quad \mathbf{O}_{\text{local}} = \mathbf{A}_{\text{local}}\mathbf{V}
+\mathbf{A}_{\text{\lr{local}}, ij} = \operatorname{Softmax}\left(\frac{\mathbf{q}_i \mathbf{k}_j^\top}{\sqrt{d}}\right), \quad |i - j| \le w, \quad \mathbf{O}_{\text{\lr{local}}} = \mathbf{A}_{\text{\lr{local}}}\mathbf{V}
 \end{equation}
 ۲) شاخه فشرده‌سازی درشت‌دانه با گام $S_c$:
 \begin{equation}
-\mathbf{K}_c = \operatorname{AvgPool1D}(\mathbf{K}, \text{stride}=S_c), \quad \mathbf{V}_c = \operatorname{AvgPool1D}(\mathbf{V}, \text{stride}=S_c)
+\mathbf{K}_c = \operatorname{AvgPool1D}(\mathbf{K}, \text{\lr{stride}}=S_c), \quad \mathbf{V}_c = \operatorname{AvgPool1D}(\mathbf{V}, \text{\lr{stride}}=S_c)
 \end{equation}
 \begin{equation}
-\mathbf{O}_{\text{coarse}} = \operatorname{Softmax}\left(\frac{\mathbf{Q}\mathbf{K}_c^\top}{\sqrt{d}}\right)\mathbf{V}_c
+\mathbf{O}_{\text{\lr{coarse}}} = \operatorname{Softmax}\left(\frac{\mathbf{Q}\mathbf{K}_c^\top}{\sqrt{d}}\right)\mathbf{V}_c
 \end{equation}
-۳) شاخه تنک گزینشی از بلوک‌های برگزیده $\Omega_{\text{sparse}}$:
+۳) شاخه تنک گزینشی از بلوک‌های برگزیده $\Omega_{\text{\lr{sparse}}}$:
 \begin{equation}
-\mathbf{O}_{\text{sparse}} = \operatorname{Softmax}\left(\frac{\mathbf{Q}\mathbf{K}_{\Omega}^\top}{\sqrt{d}}\right)\mathbf{V}_{\Omega}
+\mathbf{O}_{\text{\lr{sparse}}} = \operatorname{Softmax}\left(\frac{\mathbf{Q}\mathbf{K}_{\Omega}^\top}{\sqrt{d}}\right)\mathbf{V}_{\Omega}
 \end{equation}
 تجمیع خطی خروجی‌های سه‌گانه و پروجکشن پایانی:
 \begin{equation}
-\mathbf{O} = \left(\mathbf{O}_{\text{local}} + \mathbf{O}_{\text{coarse}} + \mathbf{O}_{\text{sparse}}\right)\mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
+\mathbf{O} = \left(\mathbf{O}_{\text{\lr{local}}} + \mathbf{O}_{\text{\lr{coarse}}} + \mathbf{O}_{\text{\lr{sparse}}}\right)\mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
 \end{equation}
 
 \subsection*{بخش ۵: معماری و پیاده‌سازی \lr{(Architecture \& Implementation)}}

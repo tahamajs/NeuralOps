@@ -24,13 +24,13 @@
 \begin{equation}
 s_i = \sigma\left( \mathbf{W}_2 \operatorname{GELU}\left(\mathbf{W}_1 \mathbf{x}_i + \mathbf{b}_1\right) + b_2 \right) \in (0, 1), \quad \forall i \in \{0, 1, \dots, N-1\}
 \end{equation}
-که در آن $\mathbf{W}_1 \in \mathbb{R}^{d_{\text{mlp}} \times D}$، $\mathbf{b}_1 \in \mathbb{R}^{d_{\text{mlp}}}$، $\mathbf{W}_2 \in \mathbb{R}^{1 \times d_{\text{mlp}}}$ و $b_2 \in \mathbb{R}$ پارامترهای شبکه امتیازدهی با بعد میانی $d_{\text{mlp}} = 64$ هستند.
+که در آن $\mathbf{W}_1 \in \mathbb{R}^{d_{\text{\lr{mlp}}} \times D}$، $\mathbf{b}_1 \in \mathbb{R}^{d_{\text{\lr{mlp}}}}$، $\mathbf{W}_2 \in \mathbb{R}^{1 \times d_{\text{\lr{mlp}}}}$ و $b_2 \in \mathbb{R}$ پارامترهای شبکه امتیازدهی با بعد میانی $d_{\text{\lr{mlp}}} = 64$ هستند.
 
 \textbf{۲. اعمال شرایط مرزی و تضمین مصونیت نشانه مرجع:}
 به منظور تضمین ریاضی مصونیت نشانه طبقه‌بندی \lr{[CLS]} و مهار توکن‌های لایه‌نشانی \lr{(Padding)}، بردار امتیازات $\mathbf{s} \in \mathbb{R}^N$ به صورت زیر اصلاح می‌گردد:
 \begin{equation}
 \tilde{s}_i = \begin{cases}
-+10^4 & i = 0 \quad \text{(نشانه مرجع [CLS])} \\
++10^4 & i = 0 \quad \text{\lr{(نشانه مرجع [CLS])}} \\
 -10^4 & m_i = 0 \quad (\text{نشانه‌های نامعتبر یا لایه‌نشانی}) \\
 s_i & \text{سایر نشانه‌ها}
 \end{cases}
@@ -44,46 +44,46 @@ k = \max\left(1, \min\left(N, \lceil \rho \cdot N \rceil\right)\right)
 \end{equation}
 مجموعه شاخص‌های نشانه‌های برگزیده به صورت زیر انتخاب و مرتب‌سازی زمانی می‌شوند:
 \begin{equation}
-\Omega = \operatorname{TopK}\left(\{\tilde{s}_i\}_{i=0}^{N-1}, k\right), \quad \Omega_{\text{sorted}} = \operatorname{Sort}(\Omega) = \{i_1, i_2, \dots, i_k\}, \quad i_1 = 0 < i_2 < \dots < i_k
+\Omega = \operatorname{TopK}\left(\{\tilde{s}_i\}_{i=0}^{N-1}, k\right), \quad \Omega_{\text{\lr{sorted}}} = \operatorname{Sort}(\Omega) = \{i_1, i_2, \dots, i_k\}, \quad i_1 = 0 < i_2 < \dots < i_k
 \end{equation}
 
 \textbf{۴. پروجکشن با ساختار پارامتریک کم‌مرتبه \lr{(LoRA)} و نگاشت چندسره:}
 پروجکشن‌های پرس‌وجو، کلید و مقدار توسط نگاشت‌های سازگار با آداپتورهای کم‌مرتبه تولید می‌شوند:
 \begin{align}
-\mathbf{Q} &= \left(\mathbf{X} \mathbf{W}_Q^{\text{base}} + \frac{\alpha}{r_{\text{LoRA}}} \mathbf{X} \mathbf{A}_Q \mathbf{B}_Q\right) \in \mathbb{R}^{B \times N \times (H \cdot d)} \\
-\mathbf{K}_{\text{raw}} &= \left(\mathbf{X} \mathbf{W}_K^{\text{base}} + \frac{\alpha}{r_{\text{LoRA}}} \mathbf{X} \mathbf{A}_K \mathbf{B}_K\right) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)} \\
-\mathbf{V}_{\text{raw}} &= \left(\mathbf{X} \mathbf{W}_V^{\text{base}} + \frac{\alpha}{r_{\text{LoRA}}} \mathbf{X} \mathbf{A}_V \mathbf{B}_V\right) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)}
+\mathbf{Q} &= \left(\mathbf{X} \mathbf{W}_Q^{\text{\lr{base}}} + \frac{\alpha}{r_{\text{\lr{LoRA}}}} \mathbf{X} \mathbf{A}_Q \mathbf{B}_Q\right) \in \mathbb{R}^{B \times N \times (H \cdot d)} \\
+\mathbf{K}_{\text{\lr{raw}}} &= \left(\mathbf{X} \mathbf{W}_K^{\text{\lr{base}}} + \frac{\alpha}{r_{\text{\lr{LoRA}}}} \mathbf{X} \mathbf{A}_K \mathbf{B}_K\right) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)} \\
+\mathbf{V}_{\text{\lr{raw}}} &= \left(\mathbf{X} \mathbf{W}_V^{\text{\lr{base}}} + \frac{\alpha}{r_{\text{\lr{LoRA}}}} \mathbf{X} \mathbf{A}_V \mathbf{B}_V\right) \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d)}
 \end{align}
 که در آن $H$ تعداد سرهای پرس‌وجو، $H_{kv}$ تعداد سرهای کلید/مقدار و $d = D/H$ بعد هر سر است. در صورت فعال بودن کدگذاری موقعیت نسبی چرخشی \lr{(RoPE)}:
 \begin{equation}
-\mathbf{Q} \leftarrow \operatorname{RoPE}(\mathbf{Q}), \quad \mathbf{K}_{\text{raw}} \leftarrow \operatorname{RoPE}(\mathbf{K}_{\text{raw}})
+\mathbf{Q} \leftarrow \operatorname{RoPE}(\mathbf{Q}), \quad \mathbf{K}_{\text{\lr{raw}}} \leftarrow \operatorname{RoPE}(\mathbf{K}_{\text{\lr{raw}}})
 \end{equation}
 و در صورت استفاده از توجه با سرهای گروه‌بندی‌شده \lr{(GQA)} به ازای $H \neq H_{kv}$، تکرار سرها اعمال می‌شود:
 \begin{equation}
-\mathbf{K}_{\text{full}} = \operatorname{RepeatKV}(\mathbf{K}_{\text{raw}}, H/H_{kv}) \in \mathbb{R}^{B \times H \times N \times d}, \quad \mathbf{V}_{\text{full}} = \operatorname{RepeatKV}(\mathbf{V}_{\text{raw}}, H/H_{kv})
+\mathbf{K}_{\text{\lr{full}}} = \operatorname{RepeatKV}(\mathbf{K}_{\text{\lr{raw}}}, H/H_{kv}) \in \mathbb{R}^{B \times H \times N \times d}, \quad \mathbf{V}_{\text{\lr{full}}} = \operatorname{RepeatKV}(\mathbf{V}_{\text{\lr{raw}}}, H/H_{kv})
 \end{equation}
 
 \textbf{۵. گزینش تانسوری و توجه نامتقارن:}
 با استفاده از عملگر گردآوری \lr{(Gather)}، تانسورهای کلید و مقدار به زیرفضای نشانه‌های فشرده محدود می‌گردند:
 \begin{align}
-\mathbf{K}_{\text{pruned}} &= \operatorname{Gather}\left(\mathbf{K}_{\text{full}}, \text{dim}=2, \Omega_{\text{sorted}}\right) \in \mathbb{R}^{B \times H \times k \times d} \\
-\mathbf{V}_{\text{pruned}} &= \operatorname{Gather}\left(\mathbf{V}_{\text{full}}, \text{dim}=2, \Omega_{\text{sorted}}\right) \in \mathbb{R}^{B \times H \times k \times d}
+\mathbf{K}_{\text{\lr{pruned}}} &= \operatorname{Gather}\left(\mathbf{K}_{\text{\lr{full}}}, \text{\lr{dim}}=2, \Omega_{\text{\lr{sorted}}}\right) \in \mathbb{R}^{B \times H \times k \times d} \\
+\mathbf{V}_{\text{\lr{pruned}}} &= \operatorname{Gather}\left(\mathbf{V}_{\text{\lr{full}}}, \text{\lr{dim}}=2, \Omega_{\text{\lr{sorted}}}\right) \in \mathbb{R}^{B \times H \times k \times d}
 \end{align}
 ماتریس شباهت و وزن‌های توجه نامتقارن به صورت زیر محاسبه می‌شوند:
 \begin{equation}
-\mathbf{A}_{\text{scores}} = \frac{\mathbf{Q} \mathbf{K}_{\text{pruned}}^\top}{\sqrt{d}} + \mathbf{M}_{\text{causal}} + \mathbf{M}_{\text{valid}} \in \mathbb{R}^{B \times H \times N \times k}
+\mathbf{A}_{\text{\lr{scores}}} = \frac{\mathbf{Q} \mathbf{K}_{\text{\lr{pruned}}}^\top}{\sqrt{d}} + \mathbf{M}_{\text{\lr{causal}}} + \mathbf{M}_{\text{\lr{valid}}} \in \mathbb{R}^{B \times H \times N \times k}
 \end{equation}
 در مدل‌های خودبازگشتی، ماسک علّی از تعامل پرس‌وجوی موقعیت $p_q$ با کلید برگزیده‌ای که موقعیت اولیه آن $p_k > p_q$ بوده ممانعت به عمل می‌آورد. توزیع احتمالاتی توجه پس از پایدارسازی عددی \lr{FP16} حاصل می‌شود:
 \begin{equation}
-\mathbf{P} = \operatorname{Softmax}\left(\mathbf{A}_{\text{scores}}, \text{dim}=-1\right) \in \mathbb{R}^{B \times H \times N \times k}
+\mathbf{P} = \operatorname{Softmax}\left(\mathbf{A}_{\text{\lr{scores}}}, \text{\lr{dim}}=-1\right) \in \mathbb{R}^{B \times H \times N \times k}
 \end{equation}
 \begin{equation}
-\mathbf{O}_{\text{attn}} = \mathbf{P} \mathbf{V}_{\text{pruned}} \in \mathbb{R}^{B \times H \times N \times d} \xrightarrow{\text{Reshape}} \mathbb{R}^{B \times N \times D}, \quad \mathbf{Y} = \mathbf{O}_{\text{attn}} \mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
+\mathbf{O}_{\text{\lr{attn}}} = \mathbf{P} \mathbf{V}_{\text{\lr{pruned}}} \in \mathbb{R}^{B \times H \times N \times d} \xrightarrow{\text{\lr{Reshape}}} \mathbb{R}^{B \times N \times D}, \quad \mathbf{Y} = \mathbf{O}_{\text{\lr{attn}}} \mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
 \end{equation}
 
 \textbf{۶. تحلیل پیچیدگی محاسباتی و حافظه:}
 \begin{itemize}
-    \item \textbf{پیچیدگی زمانی لایه:} $\mathcal{O}\left(B \cdot H \cdot N \cdot k \cdot d + B \cdot N \cdot D^2 + B \cdot N \cdot d_{\text{mlp}}\right) = \mathcal{O}\left(\rho \cdot B \cdot H \cdot N^2 \cdot d + B \cdot N \cdot D^2\right)$ در برابر $\mathcal{O}(B \cdot H \cdot N^2 \cdot d)$ در توجه استاندارد.
+    \item \textbf{پیچیدگی زمانی لایه:} $\mathcal{O}\left(B \cdot H \cdot N \cdot k \cdot d + B \cdot N \cdot D^2 + B \cdot N \cdot d_{\text{\lr{mlp}}}\right) = \mathcal{O}\left(\rho \cdot B \cdot H \cdot N^2 \cdot d + B \cdot N \cdot D^2\right)$ در برابر $\mathcal{O}(B \cdot H \cdot N^2 \cdot d)$ در توجه استاندارد.
     \item \textbf{پیچیدگی مکانی فعال‌سازی‌ها:} حافظه نگهداری ماتریس توجه از $\mathcal{O}(B \cdot H \cdot N^2)$ به $\mathcal{O}(\rho \cdot B \cdot H \cdot N^2)$ کاهش می‌یابد که صرفه‌جویی خطی مستقیمی در ابعاد حافظه ایجاد می‌نماید.
 \end{itemize}
 
@@ -92,7 +92,7 @@ k = \max\left(1, \min\left(N, \lceil \rho \cdot N \rceil\right)\right)
 
 سلسله‌مراتب و اجزای کالبدی ماژول به شرح زیر معماری شده‌اند:
 \begin{enumerate}
-    \item \textbf{کلاس \lr{LoRALinear}:} این بلوک دو مسیر موازی را مدیریت می‌کند: یک ماتریس پایه $\mathbf{W}_{\text{base}}$ که وزن‌های آن در حالت پیش‌آموزش فریز شده‌اند ($\nabla \mathbf{W} = 0$)، و یک مسیر کم‌مرتبه با پارامترهای $\mathbf{A}_{\text{LoRA}} \in \mathbb{R}^{r \times D_{\text{in}}}$ (مقداردهی کایمینگ) و $\mathbf{B}_{\text{LoRA}} \in \mathbb{R}^{D_{\text{out}} \times r}$ (مقداردهی اولیه صفر). ضریب مقیاس‌گذاری $\alpha / r_{\text{LoRA}}$ همگرایی سریع فاز بازیابی را تضمین می‌کند.
+    \item \textbf{کلاس \lr{LoRALinear}:} این بلوک دو مسیر موازی را مدیریت می‌کند: یک ماتریس پایه $\mathbf{W}_{\text{\lr{base}}}$ که وزن‌های آن در حالت پیش‌آموزش فریز شده‌اند ($\nabla \mathbf{W} = 0$)، و یک مسیر کم‌مرتبه با پارامترهای $\mathbf{A}_{\text{\lr{LoRA}}} \in \mathbb{R}^{r \times D_{\text{\lr{in}}}}$ (مقداردهی کایمینگ) و $\mathbf{B}_{\text{\lr{LoRA}}} \in \mathbb{R}^{D_{\text{\lr{out}}} \times r}$ (مقداردهی اولیه صفر). ضریب مقیاس‌گذاری $\alpha / r_{\text{\lr{LoRA}}}$ همگرایی سریع فاز بازیابی را تضمین می‌کند.
     \item \textbf{زیرشبکه ارزیابی اهمیت \lr{score\_network}:} یک ساختار پرسپترون دولایه شامل \lr{Linear(D, 64)}، لایه فعال‌ساز \lr{GELU} و \lr{Linear(64, 1)} است که بردار ویژگی هر توکن را به یک عدد اسکالر نگاشت می‌دهد.
     \item \textbf{متد \lr{forward} و ردگیری جریان تانسورها:}
     \begin{itemize}
@@ -100,9 +100,9 @@ k = \max\left(1, \min\left(N, \lceil \rho \cdot N \rceil\right)\right)
         \item \textbf{امتیازدهی و محافظت از \lr{[CLS]}:} امتیازات خام با ابعاد $[B, N]$ تولید می‌شوند. دستور صریح \lr{scores[:, 0] = 1e4} نشانه نخست را در صدر جدول رتبه‌بندی قرار داده و توکن‌های پدینگ با مقدار $-10^4$ به انتهای صف رانده می‌شوند.
         \item \textbf{گزینش شاخص‌ها با \lr{torch.topk}:} تعداد $k = \lceil \rho \cdot N \rceil$ شاخص برتر انتخاب شده و توسط \lr{torch.sort(dim=-1)} مرتب می‌شوند تا ترتیب زمانی دنباله برای هماهنگی با ماسک علّی حفظ شود.
         \item \textbf{پروجکشن و تفکیک سرها:} تانسور $\mathbf{X}$ به تانسور پرس‌وجو با ابعاد $[B, H, N, d]$ و تانسورهای خام کلید و مقدار با ابعاد $[B, H_{kv}, N, d]$ پروجکت می‌شود. در صورت فعال بودن \lr{RoPE}، تابع کمکی \lr{apply\_rotary\_pos\_emb} چرخش فرکانسی را بر ابعاد بردارها اعمال می‌نماید.
-        \item \textbf{گردآوری فشرده کلیدها و مقادیر:} با بهره‌گیری از \lr{torch.gather} بر روی بعد توالی، تانسورهای فشرده‌شده $\mathbf{K}_{\text{pruned}}$ و $\mathbf{V}_{\text{pruned}}$ با ابعاد منقبض‌شده $[B, H, k, d]$ بازآرایی می‌گردند.
-        \item \textbf{محاسبه ضرب تانسوری نامتقارن:} حاصل‌ضرب $\mathbf{Q} \mathbf{K}_{\text{pruned}}^\top$ ماتریس توجه با ابعاد $[B, H, N, k]$ را می‌سازد. تابع \lr{torch.nan\_to\_num} از وقوع خطای سرریز/زیرریز در دقت \lr{FP16} جلوگیری می‌کند.
-        \item \textbf{سنتز خروجی و ادغام:} ضرب وزن‌های نرمال‌شده در $\mathbf{V}_{\text{pruned}}$ تانسوری با شکل $[B, H, N, d]$ ایجاد کرده که با دستور \lr{.contiguous().view(B, N, D)} یکپارچه‌سازی شده و از لایه پروجکشن پایانی \lr{out\_lin} عبور می‌کند. در صورتی که ماژول به عنوان یک انکودر تودرتو \lr{(Nested Encoder)} در مدل‌هایی چون \lr{RoBERTa} به کار گرفته شود، پروجکشن دوم به صورت خودکار کنار گذاشته می‌شود تا از تکرار لایه متراکم جلوگیری به عمل آید.
+        \item \textbf{گردآوری فشرده کلیدها و مقادیر:} با بهره‌گیری از \lr{torch.gather} بر روی بعد توالی، تانسورهای فشرده‌شده $\mathbf{K}_{\text{\lr{pruned}}}$ و $\mathbf{V}_{\text{\lr{pruned}}}$ با ابعاد منقبض‌شده $[B, H, k, d]$ بازآرایی می‌گردند.
+        \item \textbf{محاسبه ضرب تانسوری نامتقارن:} حاصل‌ضرب $\mathbf{Q} \mathbf{K}_{\text{\lr{pruned}}}^\top$ ماتریس توجه با ابعاد $[B, H, N, k]$ را می‌سازد. تابع \lr{torch.nan\_to\_num} از وقوع خطای سرریز/زیرریز در دقت \lr{FP16} جلوگیری می‌کند.
+        \item \textbf{سنتز خروجی و ادغام:} ضرب وزن‌های نرمال‌شده در $\mathbf{V}_{\text{\lr{pruned}}}$ تانسوری با شکل $[B, H, N, d]$ ایجاد کرده که با دستور \lr{.contiguous().view(B, N, D)} یکپارچه‌سازی شده و از لایه پروجکشن پایانی \lr{out\_lin} عبور می‌کند. در صورتی که ماژول به عنوان یک انکودر تودرتو \lr{(Nested Encoder)} در مدل‌هایی چون \lr{RoBERTa} به کار گرفته شود، پروجکشن دوم به صورت خودکار کنار گذاشته می‌شود تا از تکرار لایه متراکم جلوگیری به عمل آید.
     \end{itemize}
     \item \textbf{موتور انتقال وزن \lr{copy\_weights}:} وزن‌های لایه‌های پیش‌آموخته از مدل‌های مختلف (\lr{DistilBERT}، \lr{RoBERTa}، \lr{GPT-2} و \lr{LLaMA/Qwen}) استخراج شده و با شرط فروبنیوس $\|\mathbf{W}\|_F \ge 10^{-4}$ اعتبارسنجی می‌شوند.
 \end{enumerate}
@@ -112,14 +112,14 @@ k = \max\left(1, \min\left(N, \lceil \rho \cdot N \rceil\right)\right)
 
 نقطه زانویی مدل سقف کارایی \lr{(Roofline Ridge Point)} برای این سخت‌افزار برابر است با:
 \begin{equation}
-I_{\text{ridge}} = \frac{\text{Peak FLOPS}}{\text{Peak Memory Bandwidth}} = \frac{121 \times 10^{12} \text{ FLOP/s}}{256 \times 10^9 \text{ Byte/s}} \approx 472.65 \text{ FLOP/Byte}
+I_{\text{\lr{ridge}}} = \frac{\text{\lr{Peak FLOPS}}}{\text{\lr{Peak Memory Bandwidth}}} = \frac{121 \times 10^{12} \text{\lr{ FLOP/s}}}{256 \times 10^9 \text{\lr{ Byte/s}}} \approx 472.65 \text{\lr{ FLOP/Byte}}
 \end{equation}
 
 در مکانیزم توجه استاندارد، شدت محاسباتی \lr{(Arithmetic Intensity)} به دلیل نیاز به بازخوانی و نگارش مداوم ماتریس کامل $N \times N$ از حافظه سراسری، بسیار پایین و در محدوده ۳۰ تا ۵۰ عملیات به ازای هر بایت قرار دارد. این مقدار فاصله بسیار زیادی با نقطه زانویی داشته و الگوریتم را در قلمرو عمیقاً محدود به پهنای باند حافظه \lr{(Memory-Bound)} گرفتار می‌سازد.
 
 ماژول \lr{progressive\_token\_pruning} با کاهش بعد کلیدها و مقادیر به $k = \rho N$، تغییرات شگرفی در ترافیک سلسله‌مراتب حافظه ایجاد می‌کند:
 \begin{itemize}
-    \item \textbf{حبس فعال‌سازی‌ها در حافظه نهان سطح دو \lr{(L2 Cache)}:} با تنظیم $\rho = 0.8$ و طول دنباله ۵۱۲، تانسورهای هرس‌شده $\mathbf{K}_{\text{pruned}}$ و $\mathbf{V}_{\text{pruned}}$ دارای ابعاد فشرده‌ای هستند که به همراه ماتریس توجه مستطیلی $N \times k$ به سادگی درون حافظه نهان ۳۲ مگابایتی \lr{L2} و حافظه‌های اشتراکی \lr{L1/Shared Memory} ثبات‌های پردازشی \lr{(SMs)} جای می‌گیرند.
+    \item \textbf{حبس فعال‌سازی‌ها در حافظه نهان سطح دو \lr{(L2 Cache)}:} با تنظیم $\rho = 0.8$ و طول دنباله ۵۱۲، تانسورهای هرس‌شده $\mathbf{K}_{\text{\lr{pruned}}}$ و $\mathbf{V}_{\text{\lr{pruned}}}$ دارای ابعاد فشرده‌ای هستند که به همراه ماتریس توجه مستطیلی $N \times k$ به سادگی درون حافظه نهان ۳۲ مگابایتی \lr{L2} و حافظه‌های اشتراکی \lr{L1/Shared Memory} ثبات‌های پردازشی \lr{(SMs)} جای می‌گیرند.
     \item \textbf{سقوط ترافیک تبادل با حافظه کند جهانی \lr{(DRAM/VRAM)}:} عدم نیاز به ذخیره و بازخوانی ماتریس‌های مربعی عظیم، ترافیک گذرگاه حافظه را به شدت کاهش داده و اتلاف سیکل‌های پردازشی را به حداقل می‌رساند.
     \item \textbf{تحلیل ردپای حافظه گرافیکی ثبت‌شده \lr{(331.85 MB)}:}
     \begin{itemize}

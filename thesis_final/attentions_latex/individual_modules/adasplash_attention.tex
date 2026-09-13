@@ -27,7 +27,7 @@
 \end{equation}
 تحلیل رفتاری این فرمولاسیون نشان می‌دهد که در حد $\alpha \to 1$، با اعمال قاعده هوپیتال تابع به انتروپی شانون و در نتیجه به سافت‌مکس چگال کلاسیک همگرا می‌شود:
 \begin{equation}
-\lim_{\alpha \to 1} \mathcal{H}_\alpha(\mathbf{p}) = -\sum_{i=1}^L p_i \log p_i = \mathcal{H}_{\text{Shannon}}(\mathbf{p}) \implies \operatorname{entmax}_1(\mathbf{s}) = \operatorname{Softmax}(\mathbf{s})
+\lim_{\alpha \to 1} \mathcal{H}_\alpha(\mathbf{p}) = -\sum_{i=1}^L p_i \log p_i = \mathcal{H}_{\text{\lr{Shannon}}}(\mathbf{p}) \implies \operatorname{entmax}_1(\mathbf{s}) = \operatorname{Softmax}(\mathbf{s})
 \end{equation}
 در نقطه $\alpha = 2$، تابع اسپارس‌مکس \lr{(Sparsemax)} بازیابی می‌گردد که تصویری کاملاً خطی-تکه‌ای بر روی سیمپلکس است. مقدار بهینه $\alpha = 1.5$ نقطه‌ای طلایی فراهم می‌آورد که در آن هم تنک بودن کامل بردارهای وزن محقق می‌شود و هم مشتق‌پذیری هموار با شرط پیوستگی لیپ‌شیتس \lr{(Lipschitz Differentiability)} حفظ می‌گردد.
 
@@ -43,7 +43,7 @@ g(\tau) \triangleq \sum_{i=1}^L \left[ \frac{s_i - \tau}{2} \right]_+^2 = 1
 
 \textbf{اثبات:} مساله بهینه‌سازی مقید محدب زیر را در نظر بگیرید:
 \begin{equation}
-\min_{\mathbf{p} \in \mathbb{R}^L} \left\{ -\mathbf{p}^\top \mathbf{s} - \frac{1}{\alpha(\alpha-1)} \sum_{i=1}^L (p_i - p_i^\alpha) \right\} \quad \text{subject to} \quad \sum_{i=1}^L p_i = 1, \quad p_i \ge 0 \; (\forall i)
+\min_{\mathbf{p} \in \mathbb{R}^L} \left\{ -\mathbf{p}^\top \mathbf{s} - \frac{1}{\alpha(\alpha-1)} \sum_{i=1}^L (p_i - p_i^\alpha) \right\} \quad \text{\lr{subject to}} \quad \sum_{i=1}^L p_i = 1, \quad p_i \ge 0 \; (\forall i)
 \end{equation}
 تابع لاگرانژین $\mathcal{L}(\mathbf{p}, \tau, \boldsymbol{\lambda})$ را با ضرایب لاگرانژ $\tau \in \mathbb{R}$ و $\lambda_i \ge 0$ تشکیل می‌دهیم:
 \begin{equation}
@@ -64,7 +64,7 @@ s_i - \tau + \lambda_i = 2 \sqrt{p_i} \implies p_i = \left( \frac{s_i - \tau + \
 \begin{equation}
 g'(\tau) = -\sum_{i \in \mathcal{S}(\tau)} \frac{s_i - \tau}{2} < 0
 \end{equation}
-از آنجا که کران‌های بازه جستجو به صورت $\tau_{\text{lo}} = \min_i s_i - 2$ با $g(\tau_{\text{lo}}) \ge 1$ و $\tau_{\text{hi}} = \max_i s_i$ با $g(\tau_{\text{hi}}) = 0$ تعیین می‌گردند، بر اساس قضیه بولزانو-وایراشتراس، ریشه $\tau^*$ در این بازه یکتاست. با اجرای الگوریتم دوبخشی در $N_{\text{iter}} = 25$ تکرار، خطای مطلق ریشه بر اساس کران نمایی زیر محدود می‌شود:
+از آنجا که کران‌های بازه جستجو به صورت $\tau_{\text{\lr{lo}}} = \min_i s_i - 2$ با $g(\tau_{\text{\lr{lo}}}) \ge 1$ و $\tau_{\text{\lr{hi}}} = \max_i s_i$ با $g(\tau_{\text{\lr{hi}}}) = 0$ تعیین می‌گردند، بر اساس قضیه بولزانو-وایراشتراس، ریشه $\tau^*$ در این بازه یکتاست. با اجرای الگوریتم دوبخشی در $N_{\text{\lr{iter}}} = 25$ تکرار، خطای مطلق ریشه بر اساس کران نمایی زیر محدود می‌شود:
 \begin{equation}
 |\tau_{25} - \tau^*| \le \frac{\max_i s_i - \min_i s_i + 2}{2^{25}} < 3 \times 10^{-8} \cdot (\Delta s + 2)
 \end{equation}
@@ -82,7 +82,7 @@ j \notin \mathcal{S} \implies \frac{\partial \mathcal{L}}{\partial s_j} \equiv 0
 این ویژگی منحصر‌به‌فرد از تزریق نویزهای تصادفی توکن‌های پس‌زمینه به گرادیان وزن‌های پروجکشن جلوگیری نموده و پایداری بهینه‌سازی را ارتقا می‌بخشد.
 
 \subsubsection*{پیچیدگی محاسباتی زمانی و مکانی}
-پیچیدگی زمانی ضرب نقطه‌ای پایه‌ای $\mathcal{O}(B \cdot H \cdot L_q \cdot L_k \cdot d_h)$ است. الگوریتم دوبخشی با پیچیدگی $\mathcal{O}(N_{\text{iter}} \cdot B \cdot H \cdot L_q \cdot L_k)$ اجرا می‌شود. در شرایط رمزگشای اسپلش با پنجره $W = 32$، تعداد کل عناصر غیرصفر ماتریس توجه به ازای هر پرس‌وجو به $W + 4$ تقلیل یافته و هزینه ضرب نهایی در تانسور مقادیر به $\mathcal{O}(B \cdot H \cdot L_q \cdot (W + 4) \cdot d_h)$ کاهش می‌یابد. پیچیدگی حافظه موقت نیز با سازمان‌دهی نواری در سطح $\mathcal{O}(B \cdot H \cdot L_q \cdot W)$ مهار می‌گردد.
+پیچیدگی زمانی ضرب نقطه‌ای پایه‌ای $\mathcal{O}(B \cdot H \cdot L_q \cdot L_k \cdot d_h)$ است. الگوریتم دوبخشی با پیچیدگی $\mathcal{O}(N_{\text{\lr{iter}}} \cdot B \cdot H \cdot L_q \cdot L_k)$ اجرا می‌شود. در شرایط رمزگشای اسپلش با پنجره $W = 32$، تعداد کل عناصر غیرصفر ماتریس توجه به ازای هر پرس‌وجو به $W + 4$ تقلیل یافته و هزینه ضرب نهایی در تانسور مقادیر به $\mathcal{O}(B \cdot H \cdot L_q \cdot (W + 4) \cdot d_h)$ کاهش می‌یابد. پیچیدگی حافظه موقت نیز با سازمان‌دهی نواری در سطح $\mathcal{O}(B \cdot H \cdot L_q \cdot W)$ مهار می‌گردد.
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
 کالبدشکافی دقیق پیاده‌سازی ماژول در فایل \lr{adasplash\_attention.py} ساختار چندلایه زیر را آشکار می‌سازد:
@@ -90,11 +90,11 @@ j \notin \mathcal{S} \implies \frac{\partial \mathcal{L}}{\partial s_j} \equiv 0
 \subsubsection*{سلسله‌مراتب کلاسی و ساختار پارامتری}
 ماژول از کلاس والد \lr{BaseAttention} ارث‌بری نموده و با دکوراتور \lr{@ATTENTION\_REGISTRY.register} به ثبت رسیده است.
 \begin{itemize}
-    \item \textbf{کلاس \lr{AdaSplashLinear}:} این کلاس لایه‌های خطی پروجکشن ($Q, K, V, O$) را بسته‌بندی می‌کند. وزن‌های پایه از پیش‌آموخته $\mathbf{W}_{\text{base}} \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ و بایاس $\mathbf{b}$ دارای پرچم \lr{requires\_grad=False} هستند تا ساختار بازنمایی تثبیت گردد. در کنار آن، آداپتورهای کم‌رتبه $\mathbf{W}_{\text{lora\_A}} \in \mathbb{R}^{r \times D_{\text{in}}}$ با مقداردهی یکنواخت کایمینگ و $\mathbf{W}_{\text{lora\_B}} \in \mathbb{R}^{D_{\text{out}} \times r}$ با مقداردهی صفر مطلق تعبیه شده‌اند ($r=16$). خروجی لایه با رابطه زیر تولید می‌گردد:
+    \item \textbf{کلاس \lr{AdaSplashLinear}:} این کلاس لایه‌های خطی پروجکشن ($Q, K, V, O$) را بسته‌بندی می‌کند. وزن‌های پایه از پیش‌آموخته $\mathbf{W}_{\text{\lr{base}}} \in \mathbb{R}^{D_{\text{\lr{out}}} \times D_{\text{\lr{in}}}}$ و بایاس $\mathbf{b}$ دارای پرچم \lr{requires\_grad=False} هستند تا ساختار بازنمایی تثبیت گردد. در کنار آن، آداپتورهای کم‌رتبه $\mathbf{W}_{\text{\lr{lora\_A}}} \in \mathbb{R}^{r \times D_{\text{\lr{in}}}}$ با مقداردهی یکنواخت کایمینگ و $\mathbf{W}_{\text{\lr{lora\_B}}} \in \mathbb{R}^{D_{\text{\lr{out}}} \times r}$ با مقداردهی صفر مطلق تعبیه شده‌اند ($r=16$). خروجی لایه با رابطه زیر تولید می‌گردد:
     \begin{equation}
-    \mathbf{y} = \left(\mathbf{x} \mathbf{W}_{\text{base}}^\top + \mathbf{b} + \mathbf{x} \mathbf{W}_{\text{lora\_A}}^\top \mathbf{W}_{\text{lora\_B}}^\top \right) \cdot \gamma_{\text{scale}}
+    \mathbf{y} = \left(\mathbf{x} \mathbf{W}_{\text{\lr{base}}}^\top + \mathbf{b} + \mathbf{x} \mathbf{W}_{\text{\lr{lora\_A}}}^\top \mathbf{W}_{\text{\lr{lora\_B}}}^\top \right) \cdot \gamma_{\text{\lr{scale}}}
     \end{equation}
-    به دلیل مقداردهی صفر $\mathbf{W}_{\text{lora\_B}}$ در آغاز، پسماند لورا صفر بوده و مدل در لحظه بارگذاری اولیه ۱۰۰٪ معادل مدل پایه است.
+    به دلیل مقداردهی صفر $\mathbf{W}_{\text{\lr{lora\_B}}}$ در آغاز، پسماند لورا صفر بوده و مدل در لحظه بارگذاری اولیه ۱۰۰٪ معادل مدل پایه است.
     \item \textbf{متد استخراج اوزان \lr{copy\_weights}:} این تابع وظیفه استخراج مقاوم وزن‌ها از تمامی سرشاخه‌های معروف (\lr{RoBERTa/BERT SelfAttention} تودرتو، مدل‌های \lr{DistilBERT} با ساختار \lr{q\_lin/k\_lin/v\_lin/out\_lin}، مدل‌های \lr{GPT-2} با لایه‌های همجوش \lr{c\_attn} بر پایه \lr{Conv1D} و خانواده‌های مدرن \lr{Qwen/LLaMA}) را بر عهده دارد. پس از استخراج، با محاسبه نرم فروبنیوس $\|\mathbf{W}\|_F \ge 10^{-4}$ از بارگذاری ماتریس‌های تهی جلوگیری می‌کند.
 \end{itemize}
 
@@ -104,13 +104,13 @@ j \notin \mathcal{S} \implies \frac{\partial \mathcal{L}}{\partial s_j} \equiv 0
     \item \textbf{تانسورهای فعال‌سازی ورودی:} ورودی وضعیت‌های پنهان $\mathbf{X} \in \mathbb{R}^{B \times L_q \times D}$ و ورودی کلید/مقدار $\mathbf{X}_{kv} \in \mathbb{R}^{B \times L_k \times D}$ (در توجه متقاطع یا خودتوجهی).
     \item \textbf{تصویرسازی چندسره \lr{(Projections)}:}
     \begin{align}
-    \mathbf{Q} &= \text{q\_proj}(\mathbf{X}) \in \mathbb{R}^{B \times L_q \times (H \cdot d_h)} \xrightarrow{\text{view \& transpose}} [B, H, L_q, d_h] \\
-    \mathbf{K} &= \text{k\_proj}(\mathbf{X}_{kv}) \in \mathbb{R}^{B \times L_k \times (H_{kv} \cdot d_h)} \xrightarrow{\text{view \& transpose}} [B, H_{kv}, L_k, d_h] \\
-    \mathbf{V} &= \text{v\_proj}(\mathbf{X}_{kv}) \in \mathbb{R}^{B \times L_k \times (H_{kv} \cdot d_h)} \xrightarrow{\text{view \& transpose}} [B, H_{kv}, L_k, d_h]
+    \mathbf{Q} &= \text{\lr{q\_proj}}(\mathbf{X}) \in \mathbb{R}^{B \times L_q \times (H \cdot d_h)} \xrightarrow{\text{\lr{view \& transpose}}} [B, H, L_q, d_h] \\
+    \mathbf{K} &= \text{\lr{k\_proj}}(\mathbf{X}_{kv}) \in \mathbb{R}^{B \times L_k \times (H_{kv} \cdot d_h)} \xrightarrow{\text{\lr{view \& transpose}}} [B, H_{kv}, L_k, d_h] \\
+    \mathbf{V} &= \text{\lr{v\_proj}}(\mathbf{X}_{kv}) \in \mathbb{R}^{B \times L_k \times (H_{kv} \cdot d_h)} \xrightarrow{\text{\lr{view \& transpose}}} [B, H_{kv}, L_k, d_h]
     \end{align}
     \item \textbf{کدگذاری موقعیت چرخشی \lr{(RoPE)}:} در مدل‌های مدرن نظیر \lr{Qwen3.5}، تانسورهای زوایا $(\cos, \sin)$ بر روی ابعاد اولیه چرخانده می‌شوند:
     \begin{equation}
-    \mathbf{Q}_{\text{rot}} = (\mathbf{Q} \odot \cos) + (\text{rotate\_half}(\mathbf{Q}) \odot \sin)
+    \mathbf{Q}_{\text{\lr{rot}}} = (\mathbf{Q} \odot \cos) + (\text{\lr{rotate\_half}}(\mathbf{Q}) \odot \sin)
     \end{equation}
     \item \textbf{پشتیبانی از توجه با سرهای گروه‌بندی‌شده \lr{(GQA)}:} در صورتی که $H > H_{kv}$ باشد (مثلاً نسبت ۴ به ۱ در \lr{Qwen3.5})، تابع \lr{repeat\_kv} سرهای کلید و مقدار را در امتداد بعد سرها تکرار می‌کند تا به بعد $[B, H, L_k, d_h]$ برسند.
     \item \textbf{محاسبه ماتریس لاجیت و اعمال بایاس موقعیت نسبی:}
@@ -121,13 +121,13 @@ j \notin \mathcal{S} \implies \frac{\partial \mathcal{L}}{\partial s_j} \equiv 0
     \item \textbf{ماسک‌گذاری ساختاری و اسپلش تطبیقی:}
     اگر مدل دکودر باشد \lr{(is\_decoder=True)}، ماسک علّی پایین‌مثلثی به همراه ماسک فاصله اسپلش اعمال می‌گردد:
     \begin{equation}
-    \mathcal{M}_{i, j}^{\text{splash}} = \left( (i - j \ge 0) \land (i - j \le W) \right) \lor (j < 4)
+    \mathcal{M}_{i, j}^{\text{\lr{splash}}} = \left( (i - j \ge 0) \land (i - j \le W) \right) \lor (j < 4)
     \end{equation}
     عناصر خارج از ماسک با مقدار نمادین $-10000.0$ پر می‌شوند. در مدل‌های انکودر (\lr{DistilBERT} و \lr{RoBERTa})، ماسک اسپلش به طور خودکار غیرفعال شده تا دید سراسری حفظ گردد.
     \item \textbf{هسته تنک‌ساز \lr{entmax\_bisect}:} لاجیت‌ها با تفریق ماکسیمم پایدارسازی شده و طی ۲۵ تکرار، ضریب $\tau^*$ استخراج می‌شود. در صورت بروز هرگونه ناپایداری یا خالی بودن تکیه‌گاه، مکانیزم پشتیبان \lr{(Fallback Guard)} بلافاصله سافت‌مکس نرمال را فعال می‌سازد.
     \item \textbf{تجمیع بافت و خروجی نهایی:}
     \begin{equation}
-    \mathbf{O}_{\text{heads}} = \mathbf{A} \mathbf{V} \in \mathbb{R}^{B \times H \times L_q \times d_h} \xrightarrow{\text{transpose \& view}} [B, L_q, H \cdot d_h]
+    \mathbf{O}_{\text{\lr{heads}}} = \mathbf{A} \mathbf{V} \in \mathbb{R}^{B \times H \times L_q \times d_h} \xrightarrow{\text{\lr{transpose \& view}}} [B, L_q, H \cdot d_h]
     \end{equation}
     در انکودرهای تودرتو \lr{(RoBERTa/BERT SelfAttention)}، خروجی به شکل مستقیم پاس داده می‌شود زیرا لایه بیرونی \lr{output.dense} اعمال خواهد شد. در سایر مدل‌ها، لایه \lr{out\_proj} با آداپتور لورا بر روی آن اجرا شده و خروجی با ابعاد $[B, L_q, D]$ تولید می‌گردد.
 \end{enumerate}
@@ -138,9 +138,9 @@ j \notin \mathcal{S} \implies \frac{\partial \mathcal{L}}{\partial s_j} \equiv 0
 \subsubsection*{شدت حسابی و رژیم‌های محاسباتی در مدل سقف کارایی \lr{(Roofline Model)}}
 شدت حسابی \lr{(Arithmetic Intensity)} به عنوان نسبت عملیات ممیز شناور بر حجم بایت‌های تبادل‌شده با حافظه با پهنای باند بالا \lr{(HBM)} تعریف می‌گردد:
 \begin{equation}
-I = \frac{\text{FLOPs}}{\text{Bytes Transferred from/to HBM}}
+I = \frac{\text{\lr{FLOPs}}}{\text{\lr{Bytes Transferred from/to HBM}}}
 \end{equation}
-در الگوریتم سنتی سافت‌مکس، کل ماتریس توجه $L \times L$ باید در حافظه \lr{HBM} نوشته شده و مجدداً خوانده شود که شدت حسابی را به محدوده بسیار پایین ($I \approx 2 \sim 4 \text{ FLOPs/Byte}$) تنزل داده و پردازش را در رژیم شدیداً مقید به حافظه \lr{(Memory-Bound Regime)} قفل می‌کند.
+در الگوریتم سنتی سافت‌مکس، کل ماتریس توجه $L \times L$ باید در حافظه \lr{HBM} نوشته شده و مجدداً خوانده شود که شدت حسابی را به محدوده بسیار پایین ($I \approx 2 \sim 4 \text{\lr{ FLOPs/Byte}}$) تنزل داده و پردازش را در رژیم شدیداً مقید به حافظه \lr{(Memory-Bound Regime)} قفل می‌کند.
 
 در ماژول \lr{adasplash\_attention}:
 \begin{enumerate}

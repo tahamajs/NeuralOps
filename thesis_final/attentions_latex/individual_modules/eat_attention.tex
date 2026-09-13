@@ -29,7 +29,7 @@ s_i = \frac{1}{H \cdot N} \sum_{h=1}^H \sum_{j=1}^N \mathbf{A}_{h, j, i}
 \end{equation}
 اگر توکن‌ها بر اساس امتیاز $s_i$ به صورت نزولی مرتب شوند، قضیه فشرده‌سازی اطلاعات هرس تضمین می‌کند که با حفظ $K = \lceil \rho \cdot N \rceil$ توکن برتر (که در آن $\rho \in (0, 1]$ نرخ نگه‌داشت است)، خطای اعوجاج بازنمایی کل لایه دارای کران بالای نمایی زیر خواهد بود:
 \begin{equation}
-\mathbb{E}\left[ \left\| \mathbf{Y}_{\text{full}} - \mathbf{Y}_{\text{pruned}} \right\|_F \right] \le \mathcal{O}\left( \sum_{i \notin \operatorname{TopK}(s, K)} s_i \cdot \|\mathbf{V}_i\|_2 \right)
+\mathbb{E}\left[ \left\| \mathbf{Y}_{\text{\lr{full}}} - \mathbf{Y}_{\text{\lr{pruned}}} \right\|_F \right] \le \mathcal{O}\left( \sum_{i \notin \operatorname{TopK}(s, K)} s_i \cdot \|\mathbf{V}_i\|_2 \right)
 \end{equation}
 این نامساوی اثبات می‌کند که با هرس توکن‌های دارای امتیاز ناچیز، خطای تحمیل‌شده به کل گراف محاسباتی مدل در حدنصاب خطای مجاز تقریب باقی خواهد ماند.
 
@@ -48,11 +48,11 @@ s_i = \frac{1}{H \cdot N} \sum_{h=1}^H \sum_{j=1}^N \mathbf{A}_{h, j, i}
 \end{equation}
 ماسک باینری انتخاب توکن‌ها با گزینش $K$ موقعیت برتر تولید می‌شود:
 \begin{equation}
-\mathcal{I}_{\text{keep}} = \operatorname{TopK}(\mathbf{s}, K), \quad \mathcal{M}_i = \mathbb{I}(i \in \mathcal{I}_{\text{keep}})
+\mathcal{I}_{\text{\lr{keep}}} = \operatorname{TopK}(\mathbf{s}, K), \quad \mathcal{M}_i = \mathbb{I}(i \in \mathcal{I}_{\text{\lr{keep}}})
 \end{equation}
 در نهایت، تانسور خروجی توجه به کمک عملگر گزینش \lr{(Gather)} بر روی توکن‌های برگزیده متراکم می‌گردد:
 \begin{equation}
-\mathbf{O} = \mathbf{A} \mathbf{V}, \quad \mathbf{X}_{\text{pruned}} = \operatorname{Gather}(\mathbf{O}\mathbf{W}_O, \mathcal{I}_{\text{keep}}) \in \mathbb{R}^{B \times K \times D}
+\mathbf{O} = \mathbf{A} \mathbf{V}, \quad \mathbf{X}_{\text{\lr{pruned}}} = \operatorname{Gather}(\mathbf{O}\mathbf{W}_O, \mathcal{I}_{\text{\lr{keep}}}) \in \mathbb{R}^{B \times K \times D}
 \end{equation}
 
 \subsubsection*{بخش ۵: معماری و پیاده‌سازی \lr{(Architecture \& Implementation)}}

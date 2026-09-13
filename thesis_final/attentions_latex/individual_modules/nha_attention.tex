@@ -41,15 +41,15 @@
 \end{equation}
 امتیاز توجه خام بین توکن‌های $i$ و $j$ با مقیاس‌بندی استاندارد محاسبه می‌شود:
 \begin{equation}
-S_{ij}^{(h)} = \frac{\mathbf{q}_i^{(h)} (\mathbf{k}_j^{(h)})^\top}{\sqrt{d}} + M_{\text{band}}(i, j) + M_{\text{pad}}(j)
+S_{ij}^{(h)} = \frac{\mathbf{q}_i^{(h)} (\mathbf{k}_j^{(h)})^\top}{\sqrt{d}} + M_{\text{\lr{band}}}(i, j) + M_{\text{\lr{pad}}}(j)
 \end{equation}
-که در آن ماسک نواری $M_{\text{band}}(i, j)$ در صورتی که $j \notin \mathcal{N}_w(i)$ باشد برابر $-\infty$ و در غیر این صورت صفر است. توزیع احتمالاتی سافت‌مکس موضعی:
+که در آن ماسک نواری $M_{\text{\lr{band}}}(i, j)$ در صورتی که $j \notin \mathcal{N}_w(i)$ باشد برابر $-\infty$ و در غیر این صورت صفر است. توزیع احتمالاتی سافت‌مکس موضعی:
 \begin{equation}
-A_{\text{local}, ij}^{(h)} = \frac{\exp(S_{ij}^{(h)})}{\sum_{l \in \mathcal{N}_w(i)} \exp(S_{il}^{(h)})}
+A_{\text{\lr{local}}, ij}^{(h)} = \frac{\exp(S_{ij}^{(h)})}{\sum_{l \in \mathcal{N}_w(i)} \exp(S_{il}^{(h)})}
 \end{equation}
 خروجی شاخه محلی به صورت ترکیب محدب بردارهای مقدار در پنجره $w$ تولید می‌شود:
 \begin{equation}
-\mathbf{O}_{\text{local}, i}^{(h)} = \sum_{j \in \mathcal{N}_w(i)} A_{\text{local}, ij}^{(h)} \mathbf{v}_j^{(h)} \in \mathbb{R}^d
+\mathbf{O}_{\text{\lr{local}}, i}^{(h)} = \sum_{j \in \mathcal{N}_w(i)} A_{\text{\lr{local}}, ij}^{(h)} \mathbf{v}_j^{(h)} \in \mathbb{R}^d
 \end{equation}
 در پیاده‌سازی بهینه نرم‌افزاری، این عملیات در بلوک‌های با طول ثابت $C=64$ انجام می‌گیرد تا بافرسازی موقت به حداقل برسد.
 
@@ -72,7 +72,7 @@ A_{\text{local}, ij}^{(h)} = \frac{\exp(S_{ij}^{(h)})}{\sum_{l \in \mathcal{N}_w
 \end{equation}
 خروجی شاخه سراسری بدون تشکیل صریح ماتریس $N \times N$ به دست می‌آید:
 \begin{equation}
-\mathbf{O}_{\text{global}, i}^{(h)} = \frac{\boldsymbol{\phi}_{Q, i}^{(h)} \mathbf{M}_{KV}^{(h)}}{\max\left( \boldsymbol{\phi}_{Q, i}^{(h)} (\mathbf{z}^{(h)})^\top, 1.0 \right)} \in \mathbb{R}^d
+\mathbf{O}_{\text{\lr{global}}, i}^{(h)} = \frac{\boldsymbol{\phi}_{Q, i}^{(h)} \mathbf{M}_{KV}^{(h)}}{\max\left( \boldsymbol{\phi}_{Q, i}^{(h)} (\mathbf{z}^{(h)})^\top, 1.0 \right)} \in \mathbb{R}^d
 \end{equation}
 در رژیم‌های تولید علّی خودبازگشتی \lr{(Causal Decoders)}، این رابطه با استفاده از الگوریتم پویش پیشوندی تکه‌ای \lr{(Chunked Prefix Scan)} پیاده‌سازی می‌شود که در آن ماتریس وضعیت به صورت بازگشتی در طول تکه‌ها به‌روزرسانی می‌گردد.
 
@@ -83,11 +83,11 @@ g_i = \sigma(\mathbf{x}_i \mathbf{W}_g + b_g) \in (0, 1), \quad \mathbf{W}_g \in
 \end{equation}
 تلفیق نهایی دو شاخه محلی و سراسری با اعمال بردار گیت به فرمت تانسوری $[B, 1, N, 1]$ صورت می‌پذیرد:
 \begin{equation}
-\mathbf{O}_{\text{fused}, i}^{(h)} = g_i \mathbf{O}_{\text{local}, i}^{(h)} + (1 - g_i) \mathbf{O}_{\text{global}, i}^{(h)} \in \mathbb{R}^d
+\mathbf{O}_{\text{\lr{fused}}, i}^{(h)} = g_i \mathbf{O}_{\text{\lr{local}}, i}^{(h)} + (1 - g_i) \mathbf{O}_{\text{\lr{global}}, i}^{(h)} \in \mathbb{R}^d
 \end{equation}
-سپس، تمامی سرهای پردازشی ادغام شده و خروجی پس از اعمال ضریب تنظیم‌پذیر مقیاس $\gamma_{\text{scale}} \in \mathbb{R}$ وارد پروجکشن خروجی نهایی می‌گردد:
+سپس، تمامی سرهای پردازشی ادغام شده و خروجی پس از اعمال ضریب تنظیم‌پذیر مقیاس $\gamma_{\text{\lr{scale}}} \in \mathbb{R}$ وارد پروجکشن خروجی نهایی می‌گردد:
 \begin{equation}
-\mathbf{U} = \operatorname{Concat}(\mathbf{O}_{\text{fused}}^{(1)}, \dots, \mathbf{O}_{\text{fused}}^{(H)}) \in \mathbb{R}^{B \times N \times D}, \quad \mathbf{Y} = (\gamma_{\text{scale}} \odot \mathbf{U})\mathbf{W}_O + \mathbf{b}_O \in \mathbb{R}^{B \times N \times D}
+\mathbf{U} = \operatorname{Concat}(\mathbf{O}_{\text{\lr{fused}}}^{(1)}, \dots, \mathbf{O}_{\text{\lr{fused}}}^{(H)}) \in \mathbb{R}^{B \times N \times D}, \quad \mathbf{Y} = (\gamma_{\text{\lr{scale}}} \odot \mathbf{U})\mathbf{W}_O + \mathbf{b}_O \in \mathbb{R}^{B \times N \times D}
 \end{equation}
 
 \subsubsection*{۴. تحلیل پیچیدگی محاسباتی و مکانی}
@@ -101,7 +101,7 @@ g_i = \sigma(\mathbf{x}_i \mathbf{W}_g + b_g) \in (0, 1), \quad \mathbf{W}_g \in
 
 \subsubsection*{سلسله‌مراتب اجزا و تعریف پارامترها}
 \begin{itemize}
-    \item \textbf{لایه‌های خطی پروجکشن \lr{(LoRALinear)}:} تمام نگاشت‌های ورودی و خروجی (\lr{q\_proj}, \lr{k\_proj}, \lr{v\_proj}, \lr{out\_proj}) از کلاس اختصاصی \lr{LoRALinear} بهره می‌برند که وزن‌های ماتریس پایه $\mathbf{W}_{\text{base}}$ را در حالت فریز نگه داشته و انطباق را از طریق دو ماتریس کم‌رتبه $\mathbf{A} \in \mathbb{R}^{r \times D_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{D_{\text{out}} \times r}$ با رتبه $r=16$ و ضریب مقیاس $\alpha=32.0$ آموزش می‌دهد.
+    \item \textbf{لایه‌های خطی پروجکشن \lr{(LoRALinear)}:} تمام نگاشت‌های ورودی و خروجی (\lr{q\_proj}, \lr{k\_proj}, \lr{v\_proj}, \lr{out\_proj}) از کلاس اختصاصی \lr{LoRALinear} بهره می‌برند که وزن‌های ماتریس پایه $\mathbf{W}_{\text{\lr{base}}}$ را در حالت فریز نگه داشته و انطباق را از طریق دو ماتریس کم‌رتبه $\mathbf{A} \in \mathbb{R}^{r \times D_{\text{\lr{in}}}}$ و $\mathbf{B} \in \mathbb{R}^{D_{\text{\lr{out}}} \times r}$ با رتبه $r=16$ و ضریب مقیاس $\alpha=32.0$ آموزش می‌دهد.
     \item \textbf{بافر تصویرسازی تصادفی \lr{(rff\_proj)}:} ماتریس تعامدی $\boldsymbol{\Omega}$ به ابعاد $[d, m]$ با متد \lr{\_build\_orthogonal\_matrix} بر پایه تجزیه \lr{torch.linalg.qr} ساخته شده و به عنوان بافر مداوم در حافظه ثبت می‌گردد.
     \item \textbf{لایه گیتینگ \lr{(gate)}:} لایه خطی \lr{nn.Linear(dim, 1)} با وزن‌های مقداردهی شده با صفر و بایاس اولیه ثابت $3.0$ که تضمین‌کننده خروجی سیگموئید $\approx 0.952$ در شروع بهینه‌سازی است.
     \item \textbf{پارامتر کالیبراسیون خروجی \lr{(output\_scale)}:} یک پارامتر اسکالر یادگیرنده \lr{nn.Parameter(torch.ones(1))} جهت بازتنظیم شدت گرادیان‌های انتقالی.
@@ -114,17 +114,17 @@ g_i = \sigma(\mathbf{x}_i \mathbf{W}_g + b_g) \in (0, 1), \quad \mathbf{W}_g \in
     \item \textbf{استخراج ماسک معتبر توکن‌ها:} تبدیل ماسک به تانسور بولی $[B, N]$ با فراخوانی متد \lr{get\_token\_valid\_mask}.
     \item \textbf{پروجکشن چندسره:}
     \begin{align*}
-        \mathbf{Q} &= \text{q\_proj}(\mathbf{X})\text{.view}(B, N, H, d)\text{.permute}(0, 2, 1, 3) \to [B, H, N, d] \\
-        \mathbf{K} &= \text{k\_proj}(\mathbf{X})\text{.view}(B, N, H_{kv}, d)\text{.permute}(0, 2, 1, 3) \to [B, H_{kv}, N, d] \\
-        \mathbf{V} &= \text{v\_proj}(\mathbf{X})\text{.view}(B, N, H_{kv}, d)\text{.permute}(0, 2, 1, 3) \to [B, H_{kv}, N, d]
+        \mathbf{Q} &= \text{\lr{q\_proj}}(\mathbf{X})\text{\lr{.view}}(B, N, H, d)\text{\lr{.permute}}(0, 2, 1, 3) \to [B, H, N, d] \\
+        \mathbf{K} &= \text{\lr{k\_proj}}(\mathbf{X})\text{\lr{.view}}(B, N, H_{kv}, d)\text{\lr{.permute}}(0, 2, 1, 3) \to [B, H_{kv}, N, d] \\
+        \mathbf{V} &= \text{\lr{v\_proj}}(\mathbf{X})\text{\lr{.view}}(B, N, H_{kv}, d)\text{\lr{.permute}}(0, 2, 1, 3) \to [B, H_{kv}, N, d]
     \end{align*}
     \item \textbf{اعمال کدگذاری موقعیت چرخشی \lr{(RoPE)}:} در صورت وجود تعبیه مکانی، تابع \lr{apply\_rotary\_pos\_emb} فرکانس‌های چرخشی کسینوسی و سینوسی را روی نیمه ابعاد تانسورهای $\mathbf{Q}$ و $\mathbf{K}$ اعمال می‌نماید.
     \item \textbf{هم‌راستاسازی \lr{GQA}:} اگر $H \ne H_{kv}$ باشد، تابع کمکی \lr{repeat\_kv} تانسورهای کلید و مقدار را در امتداد بعد سر تکرار نموده تا ابعاد آنها به $[B, H, N, d]$ ارتقا یابد.
-    \item \textbf{اجرای شاخه محلی \lr{(\_local\_window\_attention)}:} محاسبه در بلوک‌های $\text{chunk}=64$. ماتریس شباهت در پنجره محلی $[B, H, 64, 64 + 2w]$ تشکیل شده، با ماسک‌های نواری و پدینگ تلفیق گردیده و پس از سافت‌مکس در $\mathbf{V}$ ضرب می‌شود تا خروجی موضعی $\mathbf{O}_{\text{local}} \in [B, H, N, d]$ تولید گردد.
-    \item \textbf{اجرای شاخه سراسری \lr{(\_global\_rff\_attention)}:} ضرب پرس‌وجو و کلید مقیاس‌شده در \lr{rff\_proj} برای ساخت $\boldsymbol{\phi}_Q, \boldsymbol{\phi}_K \in [B, H, N, m]$. در حالت دوطرفه، انقباض تانسوری $\mathbf{KV} = \boldsymbol{\phi}_K^\top \mathbf{V} \in [B, H, m, d]$ و بردار جمع $\mathbf{Z} \in [B, H, 1, m]$ تشکیل شده و خروجی سراسری $\mathbf{O}_{\text{global}} \in [B, H, N, d]$ از طریق نرمال‌سازی کسری استخراج می‌گردد.
-    \item \textbf{تلفیق گیتینگ:} تانسور گیت از رابطه $\text{gate} = \sigma(\text{self.gate}(\mathbf{X}))\text{.unsqueeze}(1) \to [B, 1, N, 1]$ به دست آمده و خروجی یکپارچه با ترکیب خطی وزن‌دار محاسبه می‌شود:
+    \item \textbf{اجرای شاخه محلی \lr{(\_local\_window\_attention)}:} محاسبه در بلوک‌های $\text{\lr{chunk}}=64$. ماتریس شباهت در پنجره محلی $[B, H, 64, 64 + 2w]$ تشکیل شده، با ماسک‌های نواری و پدینگ تلفیق گردیده و پس از سافت‌مکس در $\mathbf{V}$ ضرب می‌شود تا خروجی موضعی $\mathbf{O}_{\text{\lr{local}}} \in [B, H, N, d]$ تولید گردد.
+    \item \textbf{اجرای شاخه سراسری \lr{(\_global\_rff\_attention)}:} ضرب پرس‌وجو و کلید مقیاس‌شده در \lr{rff\_proj} برای ساخت $\boldsymbol{\phi}_Q, \boldsymbol{\phi}_K \in [B, H, N, m]$. در حالت دوطرفه، انقباض تانسوری $\mathbf{KV} = \boldsymbol{\phi}_K^\top \mathbf{V} \in [B, H, m, d]$ و بردار جمع $\mathbf{Z} \in [B, H, 1, m]$ تشکیل شده و خروجی سراسری $\mathbf{O}_{\text{\lr{global}}} \in [B, H, N, d]$ از طریق نرمال‌سازی کسری استخراج می‌گردد.
+    \item \textbf{تلفیق گیتینگ:} تانسور گیت از رابطه $\text{\lr{gate}} = \sigma(\text{\lr{self.gate}}(\mathbf{X}))\text{\lr{.unsqueeze}}(1) \to [B, 1, N, 1]$ به دست آمده و خروجی یکپارچه با ترکیب خطی وزن‌دار محاسبه می‌شود:
     \begin{equation}
-    \mathbf{O} = \text{gate} \odot \mathbf{O}_{\text{local}} + (1.0 - \text{gate}) \odot \mathbf{O}_{\text{global}} \in [B, H, N, d]
+    \mathbf{O} = \text{\lr{gate}} \odot \mathbf{O}_{\text{\lr{local}}} + (1.0 - \text{\lr{gate}}) \odot \mathbf{O}_{\text{\lr{global}}} \in [B, H, N, d]
     \end{equation}
     \item \textbf{بازآرایی و پروجکشن خروجی:} تانسور با فراخوانی \lr{.permute(0, 2, 1, 3).contiguous().view(B, N, H*d)} به فضای $[B, N, D]$ بازگشته، در \lr{output\_scale} ضرب شده و توسط \lr{out\_proj} پردازش نهایی می‌گردد.
 \end{enumerate}
@@ -145,11 +145,11 @@ g_i = \sigma(\mathbf{x}_i \mathbf{W}_g + b_g) \in (0, 1), \quad \mathbf{W}_g \in
 
 نقطه بازگشت سقف کارایی \lr{(Ridge Point)} برای این پردازنده گرافیکی به صورت زیر تعیین می‌شود:
 \begin{equation}
-I_{\text{ridge}} = \frac{\text{Peak FLOPS}}{\text{Memory Bandwidth}} = \frac{80 \times 10^{12} \text{ FLOPs/s}}{256 \times 10^9 \text{ Bytes/s}} \approx 312.5 \text{ FLOPs/Byte}
+I_{\text{\lr{ridge}}} = \frac{\text{\lr{Peak FLOPS}}}{\text{\lr{Memory Bandwidth}}} = \frac{80 \times 10^{12} \text{\lr{ FLOPs/s}}}{256 \times 10^9 \text{\lr{ Bytes/s}}} \approx 312.5 \text{\lr{ FLOPs/Byte}}
 \end{equation}
 
 \subsubsection*{تحلیل عبور از دیواره حافظه \lr{(Memory Wall Breakthrough)}}
-در مکانیزم توجه استاندارد، ماتریس $N \times N$ برای طول دنباله $N=512$ و تعداد ۱۲ سر توجه، شامل بیش از ۳.۱ میلیون درایه ممیز شناور است که در هر لایه نیازمند نوشتن و خواندن مکرر از حافظه سراسری \lr{GDDR6} می‌باشد. شدت محاسباتی در این حالت در محدوده پایین $I \approx 25\text{--}40 \text{ FLOPs/Byte}$ قرار گرفته و هسته‌های پردازشی در وضعیت اتلاف توان ناشی از گلوگاه پهنای باند \lr{(Memory-Bound Regime)} قفل می‌شوند.
+در مکانیزم توجه استاندارد، ماتریس $N \times N$ برای طول دنباله $N=512$ و تعداد ۱۲ سر توجه، شامل بیش از ۳.۱ میلیون درایه ممیز شناور است که در هر لایه نیازمند نوشتن و خواندن مکرر از حافظه سراسری \lr{GDDR6} می‌باشد. شدت محاسباتی در این حالت در محدوده پایین $I \approx 25\text{--}40 \text{\lr{ FLOPs/Byte}}$ قرار گرفته و هسته‌های پردازشی در وضعیت اتلاف توان ناشی از گلوگاه پهنای باند \lr{(Memory-Bound Regime)} قفل می‌شوند.
 
 در ماژول \lr{nha\_attention}، تحول معماری در دو جبهه رخ می‌دهد:
 \begin{enumerate}

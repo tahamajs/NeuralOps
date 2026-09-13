@@ -16,10 +16,10 @@
 فرمول‌بندی این ماژول بر پایه همجوشی کرنل اختصاصی تایل‌بندی‌شده با اسکن پیشوندی پایا طراحی شده است. ویژگی‌های ورودی با استفاده از یک نگاشت تصادفی متعامد به فضای کرنل $\phi(\cdot)$ انتقال می‌یابند:
 \begin{align}
 \phi(\mathbf{x}) &= \frac{1}{\sqrt{d}} [\cos(\mathbf{x}\mathbf{W}), \sin(\mathbf{x}\mathbf{W})] \\
-\mathbf{S}_c &= \mathbf{S}_{c-1} + \sum_{i \in \text{Tile}_c} \phi(\mathbf{k}_i) \mathbf{v}_i^T \\
-\mathbf{o}_i &= \phi(\mathbf{q}_i) \mathbf{S}_{c-1} + \sum_{j \le i, j \in \text{Tile}_c} (\phi(\mathbf{q}_i) \phi(\mathbf{k}_j)^T) \mathbf{v}_j
+\mathbf{S}_c &= \mathbf{S}_{c-1} + \sum_{i \in \text{\lr{Tile}}_c} \phi(\mathbf{k}_i) \mathbf{v}_i^T \\
+\mathbf{o}_i &= \phi(\mathbf{q}_i) \mathbf{S}_{c-1} + \sum_{j \le i, j \in \text{\lr{Tile}}_c} (\phi(\mathbf{q}_i) \phi(\mathbf{k}_j)^T) \mathbf{v}_j
 \end{align}
-همچنین برای تمرکز بر نواحی مهم، نشانه‌گذارهای برجسته با تابع $\text{softpick}$ انتخاب شده و با توجه محلی محصور \lr{(Local Window Attention)} تجمیع می‌گردند. پیچیدگی زمانی از $\mathcal{O}(N^2 D)$ به $\mathcal{O}(N D d)$ تقلیل می‌یابد که در آن $d$ بعد ویژگی نگاشت شده است.
+همچنین برای تمرکز بر نواحی مهم، نشانه‌گذارهای برجسته با تابع $\text{\lr{softpick}}$ انتخاب شده و با توجه محلی محصور \lr{(Local Window Attention)} تجمیع می‌گردند. پیچیدگی زمانی از $\mathcal{O}(N^2 D)$ به $\mathcal{O}(N D d)$ تقلیل می‌یابد که در آن $d$ بعد ویژگی نگاشت شده است.
 
 \begin{center}
 \begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 

@@ -54,26 +54,26 @@
 \mathbf{Q}_b = \mathbf{Q}[:, :, b B_s : (b+1) B_s, :], \quad \mathbf{K}_b = \mathbf{K}[:, :, b B_s : (b+1) B_s, :]
 \end{equation}
 \begin{equation}
-\mathbf{S}_{\text{intra}}^{(b)} = \frac{\mathbf{Q}_b \mathbf{K}_b^\top}{\sqrt{d_h}} + \mathbf{M}_{\text{pad}}^{(b)}, \quad \mathbf{O}_{\text{intra}}^{(b)} = \operatorname{softmax}(\mathbf{S}_{\text{intra}}^{(b)}) \mathbf{V}_b
+\mathbf{S}_{\text{\lr{intra}}}^{(b)} = \frac{\mathbf{Q}_b \mathbf{K}_b^\top}{\sqrt{d_h}} + \mathbf{M}_{\text{\lr{pad}}}^{(b)}, \quad \mathbf{O}_{\text{\lr{intra}}}^{(b)} = \operatorname{softmax}(\mathbf{S}_{\text{\lr{intra}}}^{(b)}) \mathbf{V}_b
 \end{equation}
 
 ب) مولفه توجه بین‌بلوکی گزینشی:
 بردار کلیدهای کاندیدا از الحاق توکن‌های خارج از بلوک جاری تشکیل می‌گردد. امتیاز میانگین شباهت کوئری بلوک با کلیدهای کاندیدا محاسبه می‌شود:
 \begin{equation}
-\mathbf{S}_{\text{inter}}^{(b)} = \frac{\mathbf{Q}_b \mathbf{K}_{\text{cand}}^\top}{\sqrt{d_h}} + \mathbf{M}_{\text{cand}}
+\mathbf{S}_{\text{\lr{inter}}}^{(b)} = \frac{\mathbf{Q}_b \mathbf{K}_{\text{\lr{cand}}}^\top}{\sqrt{d_h}} + \mathbf{M}_{\text{\lr{cand}}}
 \end{equation}
 اعمال تقویت توکن سراسری در رمزگذارها:
 \begin{equation}
-S_{\text{inter}}^{(b)}(:, :, :, 0) \leftarrow S_{\text{inter}}^{(b)}(:, :, :, 0) + 10^4
+S_{\text{\lr{inter}}}^{(b)}(:, :, :, 0) \leftarrow S_{\text{\lr{inter}}}^{(b)}(:, :, :, 0) + 10^4
 \end{equation}
 \begin{equation}
-\mathcal{I}_{\text{topk}} = \operatorname{argTopK}(\mathbf{S}_{\text{inter}}^{(b)}, k=k_{\text{inter}}), \quad \mathbf{M}_{\text{sparse}} = \operatorname{scatter}(\mathcal{I}_{\text{topk}}, 1.0)
+\mathcal{I}_{\text{\lr{topk}}} = \operatorname{argTopK}(\mathbf{S}_{\text{\lr{inter}}}^{(b)}, k=k_{\text{\lr{inter}}}), \quad \mathbf{M}_{\text{\lr{sparse}}} = \operatorname{scatter}(\mathcal{I}_{\text{\lr{topk}}}, 1.0)
 \end{equation}
 \begin{equation}
-\mathbf{O}_{\text{inter}}^{(b)} = \operatorname{softmax}(\mathbf{S}_{\text{inter}}^{(b)} \odot \mathbf{M}_{\text{sparse}} - 10^4 (1 - \mathbf{M}_{\text{sparse}})) \mathbf{V}_{\text{cand}}
+\mathbf{O}_{\text{\lr{inter}}}^{(b)} = \operatorname{softmax}(\mathbf{S}_{\text{\lr{inter}}}^{(b)} \odot \mathbf{M}_{\text{\lr{sparse}}} - 10^4 (1 - \mathbf{M}_{\text{\lr{sparse}}})) \mathbf{V}_{\text{\lr{cand}}}
 \end{equation}
 
-پیچیدگی محاسباتی زمانی لایه به $\mathcal{O}(B \cdot H \cdot L \cdot (B_s + k_{\text{inter}}))$ تنزل می‌یابد که به مراتب کوچک‌تر از حالت متراکم است.
+پیچیدگی محاسباتی زمانی لایه به $\mathcal{O}(B \cdot H \cdot L \cdot (B_s + k_{\text{\lr{inter}}}))$ تنزل می‌یابد که به مراتب کوچک‌تر از حالت متراکم است.
 
 \subsection*{بخش ۵: معماری و پیاده‌سازی \lr{(Architecture \& Implementation)}}
 پیاده‌سازی کلاس \lr{BlockTransformerHIBA} با بهینه‌سازی دقیق در پایتورچ پیاده‌سازی شده است. در تابع سازنده کلاس، آرگومان‌های \lr{block\_size} با مقدار پیش‌فرض \lr{64} و \lr{top\_k\_inter} با مقدار \lr{4} تعریف شده‌اند. برای تضمین بازآرایی پایدار وزن‌ها، نگاشت‌های پروجکشن با نام‌های \lr{W\_q}، \lr{W\_k}، \lr{W\_v} و \lr{out\_proj} با استفاده از ماژول‌های \lr{LoRALinear} پیکربندی گشته و ضرایب پایه آن‌ها فریز می‌گردند.

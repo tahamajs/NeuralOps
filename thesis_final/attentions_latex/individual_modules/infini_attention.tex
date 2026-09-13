@@ -12,12 +12,12 @@
 \subsection*{بخش ۱: ایده محوری و چرایی معماری \lr{(Architectural Rationale)}}
 مکانیزم توجه چندسره استاندارد \lr{(Standard Multi-Head Attention - MHA)} با پیچیدگی محاسباتی و ردپای حافظه مربعی $\mathcal{O}(N^2)$ نسبت به طول دنباله $N$، اصلی‌ترین گلوگاه مقیاس‌پذیری مدل‌های ترنسفورمر در مواجهه با زمینه‌های متنی بسیار طولانی به شمار می‌رود. در فرآیند استنتاج اتورگرسیو، بافر حافظه کلید و مقدار \lr{(KV-Cache)} با نرخ $\mathcal{O}(B \cdot N \cdot D)$ به صورت خطی رشد کرده و علاوه بر اشغال پهنای باند حافظه سراسری \lr{(HBM/VRAM)}، سامانه را وارد رژیم شدیداً محدود به گذرگاه حافظه \lr{(Memory-Bound)} می‌سازد.
 
-رویکردهای مرسوم پنجره لغزان \lr{(Sliding Window Attention)} با محدود کردن توجه به یک همسایگی محلی به شعاع $w_{\text{local}} \ll N$، پیچیدگی محاسباتی را به $\mathcal{O}(N \cdot w_{\text{local}})$ کاهش می‌دهند؛ اما این رویکرد به بهای قطع پیوندهای متنی دوربرد و حذف کامل توکن‌های خارج از پنجره تمام می‌شود. در طرف دیگر، مدل‌های حافظه بازگشتی سنتی نظیر ترنسفورمر-اکس‌ال \lr{(Transformer-XL)} یا ترنسفورمر فشرده‌ساز \lr{(Compressive Transformer)} از بافرهای صف حلقوی \lr{(FIFO)} با اندازه‌های مجزا استفاده می‌کنند که همواره با مسأله محو تدریجی اطلاعات یا عدم یکپارچگی حالت حافظه با سرهای توجه مواجه هستند.
+رویکردهای مرسوم پنجره لغزان \lr{(Sliding Window Attention)} با محدود کردن توجه به یک همسایگی محلی به شعاع $w_{\text{\lr{local}}} \ll N$، پیچیدگی محاسباتی را به $\mathcal{O}(N \cdot w_{\text{\lr{local}}})$ کاهش می‌دهند؛ اما این رویکرد به بهای قطع پیوندهای متنی دوربرد و حذف کامل توکن‌های خارج از پنجره تمام می‌شود. در طرف دیگر، مدل‌های حافظه بازگشتی سنتی نظیر ترنسفورمر-اکس‌ال \lr{(Transformer-XL)} یا ترنسفورمر فشرده‌ساز \lr{(Compressive Transformer)} از بافرهای صف حلقوی \lr{(FIFO)} با اندازه‌های مجزا استفاده می‌کنند که همواره با مسأله محو تدریجی اطلاعات یا عدم یکپارچگی حالت حافظه با سرهای توجه مواجه هستند.
 
 معماری \lr{infini\_attention} که برآمده از نظریه توجه بی‌نهایت \lr{(Munkhdalai et al., Google 2024)} و اصول فشرده‌سازی بهینه زیرفضاهای بازنمایی است، برای حل این تعارض بنیادین پیشنهاد گردیده است. ایده محوری این ماژول عبارت است از: \textbf{هم‌مکانی توجه محلی پنجره‌ای با یک حافظه فشرده پیوسته درون هر سر توجه}. در این معماری، پرس‌وجوها \lr{(Queries)} به طور همزمان دو جریان اطلاعاتی مجزا اما هماهنگ را پیمایش می‌کنند:
 \begin{enumerate}
-    \item \textbf{جریان محلی \lr{(Local Stream)}:} اجرای ضرب داخلی با ماسک پنجره‌ای علّی در شعاع محلی $w_{\text{local}}$ برای ثبت دقیق جزئیات دستوری، توالی زمانی نزدیک و همنشینی کلمات.
-    \item \textbf{جریان حافظه فشرده \lr{(Compressive Memory Stream)}:} بازیابی اطلاعات معنایی سراسری از ماتریس پیوسته حافظه فشرده $\mathbf{M} \in \mathbb{R}^{H \times d_{\text{comp}} \times d}$ که نمایانگر حالت پایدار و خلاصه ساخت‌یافته زمینه در طول توالی نامحدود است.
+    \item \textbf{جریان محلی \lr{(Local Stream)}:} اجرای ضرب داخلی با ماسک پنجره‌ای علّی در شعاع محلی $w_{\text{\lr{local}}}$ برای ثبت دقیق جزئیات دستوری، توالی زمانی نزدیک و همنشینی کلمات.
+    \item \textbf{جریان حافظه فشرده \lr{(Compressive Memory Stream)}:} بازیابی اطلاعات معنایی سراسری از ماتریس پیوسته حافظه فشرده $\mathbf{M} \in \mathbb{R}^{H \times d_{\text{\lr{comp}}} \times d}$ که نمایانگر حالت پایدار و خلاصه ساخت‌یافته زمینه در طول توالی نامحدود است.
 \end{enumerate}
 
 ترکیب این دو خروجی از طریق یک گیت تطبیقی یادگیرنده به ازای هر لایه با ضریب $\sigma(\beta)$ صورت می‌پذیرد. این مکانیزم به مدل امکان می‌دهد در عین مصرف حافظه بسیار ناچیز و مستقل از طول کل دنباله، زمینه تاریخی نامحدود را بدون ریزش حافظه پردازش نماید. همچنین به منظور انطباق سریع بر روی مدل‌های زبانی پیش‌آموخته بدون تخریب ساختار پایه‌ای آنها، لایه‌های پروجکشن با آداپتورهای با رتبه پایین \lr{(LoRA)} غنی‌سازی شده‌اند.
@@ -26,11 +26,11 @@
 فرض کنید $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تانسور ورودی لایه توجه باشد؛ به طوری که $B$ اندازه دسته \lr{(Batch Size)}، $N$ طول توالی توکن‌ها \lr{(Sequence Length)}، و $D$ بعد پنهان مدل \lr{(Hidden Dimension)} است. همچنین $H$ تعداد سرهای پرس‌وجو، $H_{kv}$ تعداد سرهای کلید و مقدار در ساختار \lr{GQA} ($1 \le H_{kv} \le H$) و $d = D / H$ بعد اختصاصی هر سر توجه می‌باشد.
 
 \subsubsection*{۱. پروجکشن‌های خطی با آداپتورهای \lr{LoRA}}
-به ازای هر یک از پروجکشن‌های چهارگانه $P \in \{Q, K, V, O\}$، نگاشت خطی از طریق ماتریس وزن تثبیت‌شده $\mathbf{W}_{P, \text{base}}$ و آداپتور تفاضلی کم‌رتبه $\mathbf{B}_P \mathbf{A}_P$ تعریف می‌شود:
+به ازای هر یک از پروجکشن‌های چهارگانه $P \in \{Q, K, V, O\}$، نگاشت خطی از طریق ماتریس وزن تثبیت‌شده $\mathbf{W}_{P, \text{\lr{base}}}$ و آداپتور تفاضلی کم‌رتبه $\mathbf{B}_P \mathbf{A}_P$ تعریف می‌شود:
 \begin{equation}
-\mathbf{W}_P = \mathbf{W}_{P, \text{base}} + \frac{\alpha_{\text{lora}}}{r_{\text{lora}}} \mathbf{B}_P \mathbf{A}_P
+\mathbf{W}_P = \mathbf{W}_{P, \text{\lr{base}}} + \frac{\alpha_{\text{\lr{lora}}}}{r_{\text{\lr{lora}}}} \mathbf{B}_P \mathbf{A}_P
 \end{equation}
-که در آن $\mathbf{A}_P \in \mathbb{R}^{r_{\text{lora}} \times D_{\text{in}}}$ با توزیع یکنواخت کایمینگ \lr{(Kaiming Uniform)} و $\mathbf{B}_P \in \mathbb{R}^{D_{\text{out}} \times r_{\text{lora}}}$ با مقادیر صفر مقداردهی اولیه می‌شوند. بنابراین تانسورهای پروجکشن عبارتند از:
+که در آن $\mathbf{A}_P \in \mathbb{R}^{r_{\text{\lr{lora}}} \times D_{\text{\lr{in}}}}$ با توزیع یکنواخت کایمینگ \lr{(Kaiming Uniform)} و $\mathbf{B}_P \in \mathbb{R}^{D_{\text{\lr{out}}} \times r_{\text{\lr{lora}}}}$ با مقادیر صفر مقداردهی اولیه می‌شوند. بنابراین تانسورهای پروجکشن عبارتند از:
 \begin{equation}
 \mathbf{Q} = \mathbf{X} \mathbf{W}_Q \in \mathbb{R}^{B \times N \times (H d)}, \quad
 \mathbf{K} = \mathbf{X} \mathbf{W}_K \in \mathbb{R}^{B \times N \times (H_{kv} d)}, \quad
@@ -51,58 +51,58 @@
 \subsubsection*{۳. جریان توجه محلی پنجره‌ای \lr{(Local Sliding-Window Attention)}}
 ماتریس شباهت دو‌به‌دو محلی به ازای هر سر با مقیاس ضرب داخلی نرمال‌شده محاسبه می‌گردد:
 \begin{equation}
-\mathbf{S}_{\text{local}} = \frac{\mathbf{Q} \tilde{\mathbf{K}}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times N \times N}
+\mathbf{S}_{\text{\lr{local}}} = \frac{\mathbf{Q} \tilde{\mathbf{K}}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times N \times N}
 \end{equation}
-ماسک پنجره لغزان علّی $\mathbf{M}_{\text{window}} \in \{0, -\infty\}^{N \times N}$ به صورت تحلیلی به شکل زیر تعریف می‌شود:
+ماسک پنجره لغزان علّی $\mathbf{M}_{\text{\lr{window}}} \in \{0, -\infty\}^{N \times N}$ به صورت تحلیلی به شکل زیر تعریف می‌شود:
 \begin{equation}
-(\mathbf{M}_{\text{window}})_{i, j} = 
+(\mathbf{M}_{\text{\lr{window}}})_{i, j} = 
 \begin{cases} 
-0 & \text{if } 0 \le i - j < w_{\text{local}} \\ 
--\infty & \text{otherwise} 
+0 & \text{\lr{if }} 0 \le i - j < w_{\text{\lr{local}}} \\ 
+-\infty & \text{\lr{otherwise}} 
 \end{cases}
 \end{equation}
-با احتساب ماسک بردار توکن‌های معتبر $\mathbf{M}_{\text{pad}}$، ضرایب احتمالاتی توجه محلی حاصل می‌شوند:
+با احتساب ماسک بردار توکن‌های معتبر $\mathbf{M}_{\text{\lr{pad}}}$، ضرایب احتمالاتی توجه محلی حاصل می‌شوند:
 \begin{equation}
-\mathbf{A}_{\text{local}} = \operatorname{Softmax}\left( \mathbf{S}_{\text{local}} + \mathbf{M}_{\text{window}} + \mathbf{M}_{\text{pad}} \right) \in \mathbb{R}^{B \times H \times N \times N}
+\mathbf{A}_{\text{\lr{local}}} = \operatorname{Softmax}\left( \mathbf{S}_{\text{\lr{local}}} + \mathbf{M}_{\text{\lr{window}}} + \mathbf{M}_{\text{\lr{pad}}} \right) \in \mathbb{R}^{B \times H \times N \times N}
 \end{equation}
 \begin{equation}
-\mathbf{Y}_{\text{local}} = \mathbf{A}_{\text{local}} \tilde{\mathbf{V}} \in \mathbb{R}^{B \times H \times N \times d}
+\mathbf{Y}_{\text{\lr{local}}} = \mathbf{A}_{\text{\lr{local}}} \tilde{\mathbf{V}} \in \mathbb{R}^{B \times H \times N \times d}
 \end{equation}
 
 \subsubsection*{۴. جریان حافظه فشرده پیوسته \lr{(Compressive Memory Retrieval)}}
-حافظه فشرده سراسری به صورت یک تانسور پارامتری یادگیرنده $\mathbf{M} \in \mathbb{R}^{1 \times H \times d_{\text{comp}} \times d}$ مدل‌سازی می‌شود که در آن $d_{\text{comp}}$ نمایانگر بعد شیارهای حافظه فشرده \lr{(Compressive Memory Dimension)} است. امتیازدهی پرس‌وجو به فضای حافظه و بازیابی بردار زمینه معنایی به شکل زیر صورت می‌پذیرد:
+حافظه فشرده سراسری به صورت یک تانسور پارامتری یادگیرنده $\mathbf{M} \in \mathbb{R}^{1 \times H \times d_{\text{\lr{comp}}} \times d}$ مدل‌سازی می‌شود که در آن $d_{\text{\lr{comp}}}$ نمایانگر بعد شیارهای حافظه فشرده \lr{(Compressive Memory Dimension)} است. امتیازدهی پرس‌وجو به فضای حافظه و بازیابی بردار زمینه معنایی به شکل زیر صورت می‌پذیرد:
 \begin{equation}
-\mathbf{S}_{\text{mem}} = \frac{\mathbf{Q} \mathbf{M}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times N \times d_{\text{comp}}}
+\mathbf{S}_{\text{\lr{mem}}} = \frac{\mathbf{Q} \mathbf{M}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times N \times d_{\text{\lr{comp}}}}
 \end{equation}
 \begin{equation}
-\mathbf{A}_{\text{mem}} = \operatorname{Softmax}\left( \mathbf{S}_{\text{mem}} \right) \in \mathbb{R}^{B \times H \times N \times d_{\text{comp}}}
+\mathbf{A}_{\text{\lr{mem}}} = \operatorname{Softmax}\left( \mathbf{S}_{\text{\lr{mem}}} \right) \in \mathbb{R}^{B \times H \times N \times d_{\text{\lr{comp}}}}
 \end{equation}
 \begin{equation}
-\mathbf{Y}_{\text{mem}} = \mathbf{A}_{\text{mem}} \mathbf{M} \in \mathbb{R}^{B \times H \times N \times d}
+\mathbf{Y}_{\text{\lr{mem}}} = \mathbf{A}_{\text{\lr{mem}}} \mathbf{M} \in \mathbb{R}^{B \times H \times N \times d}
 \end{equation}
 
 \subsubsection*{۵. تلفیق تطبیقی گیت‌شده و پروجکشن نهایی}
 خروجی نهایی هر سر توجه از طریق ترکیب محدب محلی-حافظه با پارامتر یادگیرنده اسکالر $\beta \in \mathbb{R}$ سنتز می‌شود:
 \begin{equation}
-\beta_{\text{gate}} = \sigma(\beta) = \frac{1}{1 + e^{-\beta}} \in (0, 1)
+\beta_{\text{\lr{gate}}} = \sigma(\beta) = \frac{1}{1 + e^{-\beta}} \in (0, 1)
 \end{equation}
 \begin{equation}
-\mathbf{Y}_{\text{comb}} = \mathbf{Y}_{\text{local}} + \beta_{\text{gate}} \cdot \mathbf{Y}_{\text{mem}} \in \mathbb{R}^{B \times H \times N \times d}
+\mathbf{Y}_{\text{\lr{comb}}} = \mathbf{Y}_{\text{\lr{local}}} + \beta_{\text{\lr{gate}}} \cdot \mathbf{Y}_{\text{\lr{mem}}} \in \mathbb{R}^{B \times H \times N \times d}
 \end{equation}
-سپس سرها در راستای بعد ویژگی به هم متصل شده و تحت پروجکشن خروجی $\mathbf{W}_O$ و مقیاس نهایی $\alpha_{\text{scale}}$ قرار می‌گیرند:
+سپس سرها در راستای بعد ویژگی به هم متصل شده و تحت پروجکشن خروجی $\mathbf{W}_O$ و مقیاس نهایی $\alpha_{\text{\lr{scale}}}$ قرار می‌گیرند:
 \begin{equation}
-\mathbf{Y}_{\text{flat}} = \operatorname{Reshape}\left( \operatorname{Transpose}_{1, 2}(\mathbf{Y}_{\text{comb}}), [B, N, D] \right)
+\mathbf{Y}_{\text{\lr{flat}}} = \operatorname{Reshape}\left( \operatorname{Transpose}_{1, 2}(\mathbf{Y}_{\text{\lr{comb}}}), [B, N, D] \right)
 \end{equation}
 \begin{equation}
-\mathbf{O} = \left( \mathbf{Y}_{\text{flat}} \mathbf{W}_O \right) \cdot \alpha_{\text{scale}} \in \mathbb{R}^{B \times N \times D}
+\mathbf{O} = \left( \mathbf{Y}_{\text{\lr{flat}}} \mathbf{W}_O \right) \cdot \alpha_{\text{\lr{scale}}} \in \mathbb{R}^{B \times N \times D}
 \end{equation}
 
 \subsubsection*{۶. تحلیل پیچیدگی محاسباتی و حافظه}
 \begin{itemize}
     \item \textbf{پیچیدگی زمانی \lr{(Time Complexity)}:}
-    محاسبه جریان محلی با پنجره لغزان به پیچیدگی $\mathcal{O}(B \cdot N \cdot w_{\text{local}} \cdot D)$ نیازمند است. بازیابی از حافظه فشرده هزینه‌ای معادل $\mathcal{O}(B \cdot N \cdot d_{\text{comp}} \cdot D)$ تحمیل می‌کند. از آنجا که هر دو کمیت $w_{\text{local}}$ و $d_{\text{comp}}$ ثابت‌های مستقل از طول توالی هستند ($w_{\text{local}} = 128$ و $d_{\text{comp}} = 128$)، پیچیدگی زمانی کل به صورت اکیداً خطی $\mathcal{O}(N)$ نسبت به طول دنباله $N$ رفتار می‌کند.
+    محاسبه جریان محلی با پنجره لغزان به پیچیدگی $\mathcal{O}(B \cdot N \cdot w_{\text{\lr{local}}} \cdot D)$ نیازمند است. بازیابی از حافظه فشرده هزینه‌ای معادل $\mathcal{O}(B \cdot N \cdot d_{\text{\lr{comp}}} \cdot D)$ تحمیل می‌کند. از آنجا که هر دو کمیت $w_{\text{\lr{local}}}$ و $d_{\text{\lr{comp}}}$ ثابت‌های مستقل از طول توالی هستند ($w_{\text{\lr{local}}} = 128$ و $d_{\text{\lr{comp}}} = 128$)، پیچیدگی زمانی کل به صورت اکیداً خطی $\mathcal{O}(N)$ نسبت به طول دنباله $N$ رفتار می‌کند.
     \item \textbf{پیچیدگی حافظه \lr{(Space Complexity)}:}
-    حافظه مورد نیاز برای ذخیره‌سازی تانسور حافظه فشرده برابر با $\mathcal{O}(H \cdot d_{\text{comp}} \cdot d) = \mathcal{O}(d_{\text{comp}} \cdot D)$ است که کاملاً مستقل از طول دنباله $N$ می‌باشد. در فاز استنتاج، ردپای بافر با محدود شدن به پنجره لغزان به جای ذخیره کل توالی تاریخی $\mathcal{O}(N \cdot D)$ در سقف $\mathcal{O}(w_{\text{local}} \cdot D)$ محبوس می‌گردد.
+    حافظه مورد نیاز برای ذخیره‌سازی تانسور حافظه فشرده برابر با $\mathcal{O}(H \cdot d_{\text{\lr{comp}}} \cdot d) = \mathcal{O}(d_{\text{\lr{comp}}} \cdot D)$ است که کاملاً مستقل از طول دنباله $N$ می‌باشد. در فاز استنتاج، ردپای بافر با محدود شدن به پنجره لغزان به جای ذخیره کل توالی تاریخی $\mathcal{O}(N \cdot D)$ در سقف $\mathcal{O}(w_{\text{\lr{local}}} \cdot D)$ محبوس می‌گردد.
 \end{itemize}
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
@@ -111,9 +111,9 @@
 \subsubsection*{۱. سلسله‌مراتب کلاس و ماژول درونی \lr{LoRALinear}}
 برای پشتیبانی همزمان از تثبیت وزن‌های مبنا \lr{(Base Weights Freezing)} و تنظیم تفاضلی، کلاسی سفارشی تحت عنوان \lr{LoRALinear} پیاده‌سازی گردیده است. این کلاس شامل پارامترهای زیر است:
 \begin{itemize}
-    \item \lr{weight} به ابعاد $[D_{\text{out}}, D_{\text{in}}]$ و \lr{bias} به ابعاد $[D_{\text{out}}]$،
-    \item \lr{lora\_A} به ابعاد $[r, D_{\text{in}}]$ و \lr{lora\_B} به ابعاد $[D_{\text{out}}, r]$،
-    \item ضریب مقیاس‌گذاری آداپتور: $\gamma = \alpha_{\text{lora}} / r_{\text{lora}}$ که به صورت پیش‌فرض با $r=16$ و $\alpha=32.0$ برابر با $2.0$ می‌باشد.
+    \item \lr{weight} به ابعاد $[D_{\text{\lr{out}}}, D_{\text{\lr{in}}}]$ و \lr{bias} به ابعاد $[D_{\text{\lr{out}}}]$،
+    \item \lr{lora\_A} به ابعاد $[r, D_{\text{\lr{in}}}]$ و \lr{lora\_B} به ابعاد $[D_{\text{\lr{out}}}, r]$،
+    \item ضریب مقیاس‌گذاری آداپتور: $\gamma = \alpha_{\text{\lr{lora}}} / r_{\text{\lr{lora}}}$ که به صورت پیش‌فرض با $r=16$ و $\alpha=32.0$ برابر با $2.0$ می‌باشد.
 \end{itemize}
 
 \subsubsection*{۲. پارامترهای سازنده \lr{(\_\_init\_\_)}}
@@ -122,9 +122,9 @@
     \item \lr{hidden\_size}: بعد پنهان ورودی ($D = 768$ در مدل‌های استاندارد)،
     \item \lr{num\_heads} و \lr{num\_kv\_heads}: تعداد سرهای توجه و کی‌وی ($H = 12$ و $H_{kv} = 12$)،
     \item \lr{head\_dim}: بعد هر سر ($d = 64$)،
-    \item \lr{compress\_dim}: بعد حافظه فشرده ($d_{\text{comp}} = 128$)،
-    \item \lr{local\_window}: طول پنجره محلی لغزان ($w_{\text{local}} = 128$)،
-    \item \lr{memory}: پارامتر تانسوری حافظه با شکل $[1, H, d_{\text{comp}}, d]$، مقداردهی‌شده با توزیع نرمال با واریانس $10^{-6}$،
+    \item \lr{compress\_dim}: بعد حافظه فشرده ($d_{\text{\lr{comp}}} = 128$)،
+    \item \lr{local\_window}: طول پنجره محلی لغزان ($w_{\text{\lr{local}}} = 128$)،
+    \item \lr{memory}: پارامتر تانسوری حافظه با شکل $[1, H, d_{\text{\lr{comp}}}, d]$، مقداردهی‌شده با توزیع نرمال با واریانس $10^{-6}$،
     \item \lr{beta}: پارامتر اسکالر گیت تلفیق با مقدار اولیه $0.0$ ($\sigma(0.0) = 0.5$)،
     \item \lr{output\_scale}: ضریب مقیاس نهایی خروجی با مقدار اولیه $1.0$.
 \end{itemize}
@@ -134,36 +134,36 @@
 \begin{enumerate}
     \item \textbf{پروجکشن خطی:} 
     \begin{align*}
-    \mathbf{Q} &= \operatorname{q\_proj}(\mathbf{X}) \in \mathbb{R}^{32 \times 512 \times 768} \xrightarrow{\text{reshape}} [32, 512, 12, 64] \xrightarrow{\text{transpose}} [32, 12, 512, 64] \\
-    \mathbf{K} &= \operatorname{k\_proj}(\mathbf{X}) \in \mathbb{R}^{32 \times 512 \times 768} \xrightarrow{\text{reshape}} [32, 512, 12, 64] \xrightarrow{\text{transpose}} [32, 12, 512, 64] \\
-    \mathbf{V} &= \operatorname{v\_proj}(\mathbf{X}) \in \mathbb{R}^{32 \times 512 \times 768} \xrightarrow{\text{reshape}} [32, 512, 12, 64] \xrightarrow{\text{transpose}} [32, 12, 512, 64]
+    \mathbf{Q} &= \operatorname{q\_proj}(\mathbf{X}) \in \mathbb{R}^{32 \times 512 \times 768} \xrightarrow{\text{\lr{reshape}}} [32, 512, 12, 64] \xrightarrow{\text{\lr{transpose}}} [32, 12, 512, 64] \\
+    \mathbf{K} &= \operatorname{k\_proj}(\mathbf{X}) \in \mathbb{R}^{32 \times 512 \times 768} \xrightarrow{\text{\lr{reshape}}} [32, 512, 12, 64] \xrightarrow{\text{\lr{transpose}}} [32, 12, 512, 64] \\
+    \mathbf{V} &= \operatorname{v\_proj}(\mathbf{X}) \in \mathbb{R}^{32 \times 512 \times 768} \xrightarrow{\text{\lr{reshape}}} [32, 512, 12, 64] \xrightarrow{\text{\lr{transpose}}} [32, 12, 512, 64]
     \end{align*}
     \item \textbf{اعمال \lr{RoPE} و \lr{repeat\_kv}:} در صورت فعال بودن، توابع \lr{apply\_rotary\_pos\_emb} و \lr{repeat\_kv} اعمال شده و ابعاد $[32, 12, 512, 64]$ تثبیت می‌گردد.
     \item \textbf{شاخه حافظه فشرده \lr{(Compressive Memory Path)}:}
     \begin{align*}
-    \mathbf{M}_{\text{exp}} &= \operatorname{memory}.\operatorname{expand}(32, -1, -1, -1) \in \mathbb{R}^{32 \times 12 \times 128 \times 64} \\
-    \mathbf{S}_{\text{mem}} &= \mathbf{Q} \mathbf{M}_{\text{exp}}^\top / \sqrt{64} \in \mathbb{R}^{32 \times 12 \times 512 \times 128} \\
-    \mathbf{A}_{\text{mem}} &= \operatorname{Softmax}(\mathbf{S}_{\text{mem}}, \text{dim}=-1) \in \mathbb{R}^{32 \times 12 \times 512 \times 128} \\
-    \mathbf{Y}_{\text{mem}} &= \mathbf{A}_{\text{mem}} \mathbf{M}_{\text{exp}} \in \mathbb{R}^{32 \times 12 \times 512 \times 64}
+    \mathbf{M}_{\text{\lr{exp}}} &= \operatorname{memory}.\operatorname{expand}(32, -1, -1, -1) \in \mathbb{R}^{32 \times 12 \times 128 \times 64} \\
+    \mathbf{S}_{\text{\lr{mem}}} &= \mathbf{Q} \mathbf{M}_{\text{\lr{exp}}}^\top / \sqrt{64} \in \mathbb{R}^{32 \times 12 \times 512 \times 128} \\
+    \mathbf{A}_{\text{\lr{mem}}} &= \operatorname{Softmax}(\mathbf{S}_{\text{\lr{mem}}}, \text{\lr{dim}}=-1) \in \mathbb{R}^{32 \times 12 \times 512 \times 128} \\
+    \mathbf{Y}_{\text{\lr{mem}}} &= \mathbf{A}_{\text{\lr{mem}}} \mathbf{M}_{\text{\lr{exp}}} \in \mathbb{R}^{32 \times 12 \times 512 \times 64}
     \end{align*}
     \item \textbf{شاخه توجه محلی پنجره‌ای \lr{(Local Window Path)}:}
     \begin{align*}
-    \mathbf{S}_{\text{local}} &= \mathbf{Q} \mathbf{K}^\top / \sqrt{64} \in \mathbb{R}^{32 \times 12 \times 512 \times 512}
+    \mathbf{S}_{\text{\lr{local}}} &= \mathbf{Q} \mathbf{K}^\top / \sqrt{64} \in \mathbb{R}^{32 \times 12 \times 512 \times 512}
     \end{align*}
     ماسک پنجره لغزان به وسیله مقایسه ماتریسی نمایه‌ها محاسبه شده و درایه‌های خارج از فاصله ۱۲۸ توکن با مقدار $-10^4$ ماسک‌گذاری می‌شوند:
     \begin{align*}
-    \mathbf{S}_{\text{local}} &\leftarrow \mathbf{S}_{\text{local}}.\operatorname{masked\_fill}(\sim \text{window\_mask}, -1e4) \\
-    \mathbf{A}_{\text{local}} &= \operatorname{Dropout}(\operatorname{Softmax}(\mathbf{S}_{\text{local}}, \text{dim}=-1)) \in \mathbb{R}^{32 \times 12 \times 512 \times 512} \\
-    \mathbf{Y}_{\text{local}} &= \mathbf{A}_{\text{local}} \mathbf{V} \in \mathbb{R}^{32 \times 12 \times 512 \times 64}
+    \mathbf{S}_{\text{\lr{local}}} &\leftarrow \mathbf{S}_{\text{\lr{local}}}.\operatorname{masked\_fill}(\sim \text{\lr{window\_mask}}, -1e4) \\
+    \mathbf{A}_{\text{\lr{local}}} &= \operatorname{Dropout}(\operatorname{Softmax}(\mathbf{S}_{\text{\lr{local}}}, \text{\lr{dim}}=-1)) \in \mathbb{R}^{32 \times 12 \times 512 \times 512} \\
+    \mathbf{Y}_{\text{\lr{local}}} &= \mathbf{A}_{\text{\lr{local}}} \mathbf{V} \in \mathbb{R}^{32 \times 12 \times 512 \times 64}
     \end{align*}
     \item \textbf{تلفیق گیت‌شده و خروجی:}
     \begin{align*}
-    \mathbf{Y}_{\text{comb}} &= \mathbf{Y}_{\text{local}} + \sigma(\beta) \cdot \mathbf{Y}_{\text{mem}} \in \mathbb{R}^{32 \times 12 \times 512 \times 64} \\
-    \mathbf{Y}_{\text{flat}} &= \mathbf{Y}_{\text{comb}}.\operatorname{transpose}(1, 2).\operatorname{contiguous}().\operatorname{view}(32, 512, 768)
+    \mathbf{Y}_{\text{\lr{comb}}} &= \mathbf{Y}_{\text{\lr{local}}} + \sigma(\beta) \cdot \mathbf{Y}_{\text{\lr{mem}}} \in \mathbb{R}^{32 \times 12 \times 512 \times 64} \\
+    \mathbf{Y}_{\text{\lr{flat}}} &= \mathbf{Y}_{\text{\lr{comb}}}.\operatorname{transpose}(1, 2).\operatorname{contiguous}().\operatorname{view}(32, 512, 768)
     \end{align*}
-    در ساختارهای انکودر تودرتو مانند \lr{RoBERTa} که دارای زیرماژول خروجی جداگانه \lr{output.dense} هستند \lr{(is\_nested\_encoder = True)}، تانسور $\mathbf{Y}_{\text{flat}}$ مستقیماً بازگردانده می‌شود. در سایر مدل‌ها نظیر \lr{DistilBERT} و \lr{GPT-2}:
+    در ساختارهای انکودر تودرتو مانند \lr{RoBERTa} که دارای زیرماژول خروجی جداگانه \lr{output.dense} هستند \lr{(is\_nested\_encoder = True)}، تانسور $\mathbf{Y}_{\text{\lr{flat}}}$ مستقیماً بازگردانده می‌شود. در سایر مدل‌ها نظیر \lr{DistilBERT} و \lr{GPT-2}:
     \begin{align*}
-    \mathbf{O} &= \operatorname{out\_proj}(\mathbf{Y}_{\text{flat}}) \cdot \alpha_{\text{scale}} \in \mathbb{R}^{32 \times 512 \times 768}
+    \mathbf{O} &= \operatorname{out\_proj}(\mathbf{Y}_{\text{\lr{flat}}}) \cdot \alpha_{\text{\lr{scale}}} \in \mathbb{R}^{32 \times 512 \times 768}
     \end{align*}
 \end{enumerate}
 
@@ -178,25 +178,25 @@
 \subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
 ارزیابی مشخصات سخت‌افزاری ماژول \lr{infini\_attention} بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} مبتنی بر ریزمعماری \lr{Ada Lovelace (AD106)} با پارامترهای مرجع زیر تحلیل شده است:
 \begin{itemize}
-    \item \textbf{توان محاسباتی ممیز شناور متراکم \lr{(FP16/BF16 Tensor Core)}:} $71.0 \text{ TFLOPS}$،
-    \item \textbf{پهنای باند حافظه اصلی گرافیکی \lr{(GDDR6 VRAM Bandwidth)}:} $256.0 \text{ GB/s}$ از طریق باس ۱۲۸ بیتی،
-    \item \textbf{حافظه پنهان سطح دو \lr{(On-Chip L2 Cache)}:} $32.0 \text{ MB}$،
-    \item \textbf{حافظه اشتراکی و ثبات‌های \lr{SM} \lr{(SRAM / L1)}:} $128 \text{ KB}$ به ازای هر یک از ۳۶ واحد چندپردازنده‌ای جریانی ($4.6 \text{ MB}$ در مجموع).
+    \item \textbf{توان محاسباتی ممیز شناور متراکم \lr{(FP16/BF16 Tensor Core)}:} $71.0 \text{\lr{ TFLOPS}}$،
+    \item \textbf{پهنای باند حافظه اصلی گرافیکی \lr{(GDDR6 VRAM Bandwidth)}:} $256.0 \text{\lr{ GB/s}}$ از طریق باس ۱۲۸ بیتی،
+    \item \textbf{حافظه پنهان سطح دو \lr{(On-Chip L2 Cache)}:} $32.0 \text{\lr{ MB}}$،
+    \item \textbf{حافظه اشتراکی و ثبات‌های \lr{SM} \lr{(SRAM / L1)}:} $128 \text{\lr{ KB}}$ به ازای هر یک از ۳۶ واحد چندپردازنده‌ای جریانی ($4.6 \text{\lr{ MB}}$ در مجموع).
 \end{itemize}
 
 نقطه زانویی سقف کارایی \lr{(Roofline Knee Point)} سخت‌افزار عبارت است از:
 \begin{equation}
-I_{\text{knee}} = \frac{\text{Peak Operational Performance}}{\text{Memory Bandwidth}} = \frac{71.0 \times 10^{12} \text{ FLOP/s}}{256.0 \times 10^9 \text{ Byte/s}} \approx 277.3 \text{ FLOP/Byte}
+I_{\text{\lr{knee}}} = \frac{\text{\lr{Peak Operational Performance}}}{\text{\lr{Memory Bandwidth}}} = \frac{71.0 \times 10^{12} \text{\lr{ FLOP/s}}}{256.0 \times 10^9 \text{\lr{ Byte/s}}} \approx 277.3 \text{\lr{ FLOP/Byte}}
 \end{equation}
 
 \subsubsection*{۱. شدت محاسباتی و جریان ترافیک حافظه}
-در مکانیزم توجه سنتی \lr{(MHA)} با طول توالی ۵۱۲ توکن، ترافیک حافظه ناشی از نوشتن و خواندن ماتریس بزرگ شباهت $\mathbf{S} \in \mathbb{R}^{B \times H \times N \times N}$ بر روی حافظه با پهنای باند محدود \lr{HBM/GDDR6}، شدت محاسباتی را در سطح نازل $I \approx 64 \text{ FLOP/Byte}$ قفل کرده و پردازنده را در رژیم گلوگاه پهنای باند قرار می‌دهد.
+در مکانیزم توجه سنتی \lr{(MHA)} با طول توالی ۵۱۲ توکن، ترافیک حافظه ناشی از نوشتن و خواندن ماتریس بزرگ شباهت $\mathbf{S} \in \mathbb{R}^{B \times H \times N \times N}$ بر روی حافظه با پهنای باند محدود \lr{HBM/GDDR6}، شدت محاسباتی را در سطح نازل $I \approx 64 \text{\lr{ FLOP/Byte}}$ قفل کرده و پردازنده را در رژیم گلوگاه پهنای باند قرار می‌دهد.
 
 در ماژول \lr{infini\_attention}، حجم تانسور حافظه فشرده برابر است با:
 \begin{equation}
-\text{Memory Size} = H \times d_{\text{comp}} \times d \times 2 \text{ Bytes} = 12 \times 128 \times 64 \times 2 = 196,608 \text{ Bytes} \approx 192.0 \text{ KB}
+\text{\lr{Memory Size}} = H \times d_{\text{\lr{comp}}} \times d \times 2 \text{\lr{ Bytes}} = 12 \times 128 \times 64 \times 2 = 196,608 \text{\lr{ Bytes}} \approx 192.0 \text{\lr{ KB}}
 \end{equation}
-این حجم ناچیز \lr{(192 KB)} \textbf{به طور کامل و دائمی درون حافظه پنهان سطح دو \lr{(L2 Cache)}} با گنجایش $32 \text{ MB}$ جای می‌گیرد. در نتیجه، در طول اجرای حلقه‌های توجه، داده‌های حافظه فشرده بدون نیاز به ارسال تراکنش به حافظه سراسری \lr{GDDR6} با پهنای باند داخلی گیگابایت‌برثانیه‌ای \lr{SRAM/L2} بازیابی می‌شوند. این امر مصرف انرژی و زمان تأخیر خواندن داده را به شدت کاهش داده و شدت محاسباتی موثر هسته‌ها را بهبود می‌بخشد.
+این حجم ناچیز \lr{(192 KB)} \textbf{به طور کامل و دائمی درون حافظه پنهان سطح دو \lr{(L2 Cache)}} با گنجایش $32 \text{\lr{ MB}}$ جای می‌گیرد. در نتیجه، در طول اجرای حلقه‌های توجه، داده‌های حافظه فشرده بدون نیاز به ارسال تراکنش به حافظه سراسری \lr{GDDR6} با پهنای باند داخلی گیگابایت‌برثانیه‌ای \lr{SRAM/L2} بازیابی می‌شوند. این امر مصرف انرژی و زمان تأخیر خواندن داده را به شدت کاهش داده و شدت محاسباتی موثر هسته‌ها را بهبود می‌بخشد.
 
 \subsubsection*{۲. تفکیک ردپای اوج مصرف حافظه گرافیکی \lr{(Peak VRAM Breakdown)}}
 بر اساس سنجش دقیق آزمایشگاهی روی مدل \lr{DistilBERT}، اوج مصرف حافظه گرافیکی در تراز ممتاز \lr{352.72 MB} مهار شده است که در مقایسه با ردپای فراتر از ۴ گیگابایتی آموزش کامل سنتی، کاهش خیره‌کننده‌ای را ثبت می‌کند. تفکیک درایه‌های حافظه عبارت است از:

@@ -7,7 +7,7 @@
 \subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
 برای ماتریس‌های پرس‌وجو، کلید و مقدار ورودی $Q, K, V \in \mathbb{R}^{B \times H \times N \times d}$، فرآیند تبدیل بهینه‌شده به فرم ریاضی زیر مدل‌سازی می‌گردد:
 \begin{equation}
-\mathbf{O} = \operatorname{Transform}_{\text{compressed\_mha}}(Q, K, V)
+\mathbf{O} = \operatorname{Transform}_{\text{\lr{compressed\_mha}}}(Q, K, V)
 \end{equation}
 با تجزیه محاسبات و حذف عملیات زاید، تابع تبدیل پیچیدگی زمانی را از $\mathcal{O}(N^2 d)$ به $\mathcal{O}(N \cdot k \cdot d)$ تقلیل می‌دهد که در آن $k$ بعد مؤثر فشرده‌سازی است. روابط انتشار پیشرو و برگشتی با تضمین پایداری عددی در دقت ممیز شناور نیم‌دقت \lr{(FP16)} کالیبره شده‌اند.
 

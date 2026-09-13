@@ -14,15 +14,15 @@
 فرمت \lr{FP8} در مقایسه با \lr{FP16} با حفظ توزیع مقادیر فعال‌سازی، پهنای باند مورد نیاز حافظه را نصف کرده و توان عملیاتی ثبات‌های برداری را دوچندان می‌سازد. علاوه بر این، جهت حفظ توانایی تطابق‌پذیری مدل \lr{(Fine-tuning)}، این ماژول از تطبیق‌دهنده‌های کم‌رتبه \lr{(LoRA Adapters)} به شکل موازی روی وزن‌های پایه ثابت‌پایه \lr{(Frozen Base Weights)} استفاده می‌کند. در نتیجه، این معماری یک رویکرد جامع برای استنتاج و آموزش پارامتر‌کارآمد در مرزهای توان سخت‌افزار مدرن است.
 
 \subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-در این ماژول، وزن‌های اصلی پروجکشن ثابت \lr{(Frozen)} در نظر گرفته شده و تغییرات با ماتریس‌های کم‌رتبه \lr{(LoRA)} اعمال می‌گردد. برای هر پروجکشن $\mathbf{W} \in \mathbb{R}^{D \times d_{\text{out}}}$:
+در این ماژول، وزن‌های اصلی پروجکشن ثابت \lr{(Frozen)} در نظر گرفته شده و تغییرات با ماتریس‌های کم‌رتبه \lr{(LoRA)} اعمال می‌گردد. برای هر پروجکشن $\mathbf{W} \in \mathbb{R}^{D \times d_{\text{\lr{out}}}}$:
 \begin{equation}
 \mathbf{Y} = \mathbf{X} \mathbf{W} + \alpha \mathbf{X} \mathbf{A} \mathbf{B}
 \end{equation}
-که در آن $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تنسور ورودی، $\mathbf{A} \in \mathbb{R}^{D \times r}$ و $\mathbf{B} \in \mathbb{R}^{r \times d_{\text{out}}}$ تطبیق‌دهنده‌ها با رتبه $r$ \lr{(LoRA Rank)} و $\alpha$ عامل مقیاس‌دهی است.
+که در آن $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$ تنسور ورودی، $\mathbf{A} \in \mathbb{R}^{D \times r}$ و $\mathbf{B} \in \mathbb{R}^{r \times d_{\text{\lr{out}}}}$ تطبیق‌دهنده‌ها با رتبه $r$ \lr{(LoRA Rank)} و $\alpha$ عامل مقیاس‌دهی است.
 
 پس از پروجکشن، بردارهای پرس‌وجو و کلید \lr{(Q, K)} در صورت فعال بودن با جاسازی موقعیتی چرخشی \lr{(RoPE)} تعدیل می‌شوند:
 \begin{equation}
-\mathbf{\hat{q}}_m = \mathbf{q}_m \cos(m \theta) + \text{RotateHalf}(\mathbf{q}_m) \sin(m \theta)
+\mathbf{\hat{q}}_m = \mathbf{q}_m \cos(m \theta) + \text{\lr{RotateHalf}}(\mathbf{q}_m) \sin(m \theta)
 \end{equation}
 ماتریس‌های $\mathbf{Q}, \mathbf{K}, \mathbf{V}$ پس از بسط \lr{GQA} (گروه‌بندی سرها) به فرمت \lr{FP8 (e4m3fn)} تبدیل می‌شوند. هسته \lr{FlashAttention} عملیات توجه را با قطعه‌بندی \lr{(Tiling)} و پیچیدگی زمانی $\mathcal{O}(N^2 d)$ و پیچیدگی مکانی $\mathcal{O}(N)$ محاسبه می‌کند:
 \begin{equation}

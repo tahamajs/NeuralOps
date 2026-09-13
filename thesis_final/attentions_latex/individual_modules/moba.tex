@@ -5,9 +5,9 @@
 مدل‌سازی توالی‌های بلند در پردازش زبان طبیعی همواره با دیوار محاسباتی درجه دو $\mathcal{O}(N^2)$ مواجه است. ماژول \lr{moba} با تلفیق ایده مسیریابی پویای خبره‌ها \lr{(Mixture of Experts)} و تقطیع بلوکی دنباله نشانه‌ها ابداع شده است. به جای مقایسه کورکورانه هر توکن با تمامی توکن‌های پیشین، دنباله ورودی به بلوک‌های متوالی با اندازه معین (مانند ۶۴ توکن) افراز می‌شود. برای هر بلوک پرس‌وجو، یک بردار سنتروید میانگین محاسبه شده و شبکه مسیریاب هوشمند، تنها $k$ بلوک از مرتبط‌ترین بلوک‌های کلید/مقدار را انتخاب می‌کند. این رویکرد ضمن حفظ توجه کامل و پیوسته در محدوده بلوک محلی، پیوندهای دوربرد معنایی را با پیچیدگی کاملاً خطی پوشش می‌دهد.
 
 \subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
-دنباله ورودی به $M = \lceil N / B_{\text{block}} \rceil$ بلوک با طول $B_{\text{block}} = 64$ تقسیم می‌شود. بردار سنتروید بلوک $i$-ام پرس‌وجو به صورت میانگین‌گیری هندسی استخراج می‌گردد:
+دنباله ورودی به $M = \lceil N / B_{\text{\lr{block}}} \rceil$ بلوک با طول $B_{\text{\lr{block}}} = 64$ تقسیم می‌شود. بردار سنتروید بلوک $i$-ام پرس‌وجو به صورت میانگین‌گیری هندسی استخراج می‌گردد:
 \begin{equation}
-\mathbf{c}_i^Q = \frac{1}{B_{\text{block}}} \sum_{t=(i-1)B_{\text{block}}+1}^{i B_{\text{block}}} \mathbf{Q}_t \in \mathbb{R}^{d}
+\mathbf{c}_i^Q = \frac{1}{B_{\text{\lr{block}}}} \sum_{t=(i-1)B_{\text{\lr{block}}}+1}^{i B_{\text{\lr{block}}}} \mathbf{Q}_t \in \mathbb{R}^{d}
 \end{equation}
 به همین ترتیب سنتروید بلوک‌های کلید $\mathbf{c}_j^K$ تشکیل شده و امتیاز تقارب میان بلوک‌ها محاسبه می‌شود:
 \begin{equation}
@@ -15,15 +15,15 @@ S_{i, j} = \frac{\mathbf{c}_i^Q \cdot (\mathbf{c}_j^K)^\top}{\sqrt{d}}, \quad \m
 \end{equation}
 محاسبه توجه تنها بر روی اجتماع بلوک محلی و مجموعه منتخب $\mathcal{K}_i$ صورت می‌پذیرد:
 \begin{equation}
-\mathbf{O}_i = \operatorname{Softmax}\left(\frac{\mathbf{Q}_i \mathbf{K}_{\mathcal{K}_i}^\top}{\sqrt{d}} + \mathbf{M}_{\text{causal}}\right) \mathbf{V}_{\mathcal{K}_i}
+\mathbf{O}_i = \operatorname{Softmax}\left(\frac{\mathbf{Q}_i \mathbf{K}_{\mathcal{K}_i}^\top}{\sqrt{d}} + \mathbf{M}_{\text{\lr{causal}}}\right) \mathbf{V}_{\mathcal{K}_i}
 \end{equation}
-بدین ترتیب پیچیدگی زمانی از $\mathcal{O}(N^2 d)$ به $\mathcal{O}(N \cdot (B_{\text{block}} + k B_{\text{block}}) \cdot d) = \mathcal{O}(N \cdot d)$ تنزل می‌یابد.
+بدین ترتیب پیچیدگی زمانی از $\mathcal{O}(N^2 d)$ به $\mathcal{O}(N \cdot (B_{\text{\lr{block}}} + k B_{\text{\lr{block}}}) \cdot d) = \mathcal{O}(N \cdot d)$ تنزل می‌یابد.
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
 کلاس اصلی \lr{MoBAAttention} در فایل \lr{Codes/framework/attentions/moba\_attention.py} پیاده‌سازی گردیده است:
 \begin{itemize}
     \item \textbf{ابعاد تانسورها:} ورودی با ابعاد \lr{$[B, N, D]$} به وسیله لایه‌های \lr{LoRALinear} نگاشت شده و به \lr{$[B, H, N, d]$} تبدیل می‌شود.
-    \item \textbf{قطعه‌بندی بلوکی:} در امتداد بعد توالی، تانسورها با تغییر دید پیوسته به ابعاد \lr{$[B, H, M, B\_{\text{block}}, d]$} نگاشت می‌شوند.
+    \item \textbf{قطعه‌بندی بلوکی:} در امتداد بعد توالی، تانسورها با تغییر دید پیوسته به ابعاد \lr{$[B, H, M, B\_{\text{\lr{block}}}, d]$} نگاشت می‌شوند.
     \item \textbf{مسیریاب Top-K:} شبکه گیتینگ با ضرب سنترویدها، شاخص‌های بهینه را استخراج کرده و عملگر تانسوری با توابع جمع‌آوری ناهمگام \lr{torch.gather} بلوک‌های کلید و مقدار منتخب را بدون سربار کپی غیرضروری گردآوری می‌کند.
     \item \textbf{پایداری گرادیان:} برای جلوگیری از قطع جریان گرادیان در گیتینگ سخت، ضرایب سافت‌مکس نرم به عنوان وزن‌های انحراف مسیر اعمال می‌شوند.
 \end{itemize}

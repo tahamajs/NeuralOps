@@ -35,8 +35,8 @@ m(d; S_h, R) = \min\left(1, \max\left(0, \frac{1}{R}(R + S_h - d)\right)\right)
 مشتق پاره‌ای این تابع ماسک نسبت به طول بازه $S_h$ به وضوح نشان‌دهنده غیرصفر بودن گرادیان در ناحیه مرزی $S_h < d < S_h + R$ است:
 \begin{equation}
 \frac{\partial m(d; S_h, R)}{\partial S_h} = \begin{cases}
-\frac{1}{R} & \text{if } S_h < d < S_h + R \\
-0 & \text{otherwise}
+\frac{1}{R} & \text{\lr{if }} S_h < d < S_h + R \\
+0 & \text{\lr{otherwise}}
 \end{cases}
 \end{equation}
 مشتق زنجیره‌ای نسبت به متغیر یادگیری‌پذیر $\theta_h$ با استفاده از ویژگی مشتق تابع سیگموئید حاصل می‌شود:
@@ -45,9 +45,9 @@ m(d; S_h, R) = \min\left(1, \max\left(0, \frac{1}{R}(R + S_h - d)\right)\right)
 \end{equation}
 این ساختار ریاضی تضمین می‌کند که تا زمانی که نشانه‌هایی در حاشیه نرم $R$ قرار دارند، سیگنال خطای گرادیان می‌تواند بازه سر را منبسط یا منقبض سازد. در فاز استنتاج مستقیم، ماسک به صورت بولی سخت ارزیابی می‌شود:
 \begin{equation}
-M^{\text{span}}_{h, ij} = \begin{cases}
-0 & \text{if } \Delta_{ij} \le S_h \\
--\infty \text{ (یا } -10000.0) & \text{if } \Delta_{ij} > S_h
+M^{\text{\lr{span}}}_{h, ij} = \begin{cases}
+0 & \text{\lr{if }} \Delta_{ij} \le S_h \\
+-\infty \text{ (یا } -10000.0) & \text{\lr{if }} \Delta_{ij} > S_h
 \end{cases}
 \end{equation}
 
@@ -58,7 +58,7 @@ S_{h, ij} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sqrt{d}}
 \end{equation}
 امتیازات خام با ماسک بازه انطباقی و ماسک لایه‌گذاری \lr{(Padding Mask)} ترکیب می‌شوند:
 \begin{equation}
-\widehat{S}_{h, ij} = S_{h, ij} + M^{\text{span}}_{h, ij} + M^{\text{pad}}_{ij}
+\widehat{S}_{h, ij} = S_{h, ij} + M^{\text{\lr{span}}}_{h, ij} + M^{\text{\lr{pad}}}_{ij}
 \end{equation}
 ماتریس احتمالات توجه نرمال‌شده $\mathbf{A}_h \in \mathbb{R}^{B \times N \times N}$ و بردار زمینه $\mathbf{O}_h$ عبارت‌اند از:
 \begin{equation}
@@ -75,17 +75,17 @@ S_{h, ij} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sqrt{d}}
 \paragraph{۴. تابع هزینه منظم‌ساز اسپارسیتی \lr{(Sparsity Regularization)}:}
 به منظور ترغیب مدل به انقباض فعال بازه‌ها و جلوگیری از اتلاف حافظه، جریمه منظم‌ساز نرم $\ell_1$ به تابع هدف آموزش افزوده می‌شود:
 \begin{equation}
-\mathcal{L}_{\text{reg}} = \lambda \sum_{h=1}^H \frac{S_h}{S_{\max}} = \lambda \sum_{h=1}^H \sigma(\theta_h)
+\mathcal{L}_{\text{\lr{reg}}} = \lambda \sum_{h=1}^H \frac{S_h}{S_{\max}} = \lambda \sum_{h=1}^H \sigma(\theta_h)
 \end{equation}
 \begin{equation}
-\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{task}} + \mathcal{L}_{\text{reg}}
+\mathcal{L}_{\text{\lr{total}}} = \mathcal{L}_{\text{\lr{task}}} + \mathcal{L}_{\text{\lr{reg}}}
 \end{equation}
 که در آن $\lambda > 0$ ضریب کنترل موازنه میان حفظ دقت و فشرده‌سازی بازه سرها است.
 
 \paragraph{۵. تحلیل پیچیدگی محاسباتی و حافظه‌ای:}
 پیچیدگی زمانی ارزیابی استاندارد با اعمال هسته‌های تنک به $\mathcal{O}(B \cdot N \cdot \bar{S} \cdot d)$ کاهش می‌یابد که در آن $\bar{S} = \frac{1}{H}\sum_{h=1}^H S_h$ است. با فرض $\bar{S} \ll N$، این رابطه رفتاری خطی بر حسب طول دنباله نشان می‌دهد. در زمینه حافظه کش کلید-مقدار \lr{(KV Cache)} در حین تولید دنباله، حافظه مورد نیاز از رابطه زیر تبعیت می‌کند:
 \begin{equation}
-\text{KV Cache Size} = 2 \cdot B \cdot d \cdot \sum_{h=1}^H \min(N, S_h) \cdot b_e = 2 B \bar{S} D \cdot b_e \text{ بایت}
+\text{\lr{KV Cache Size}} = 2 \cdot B \cdot d \cdot \sum_{h=1}^H \min(N, S_h) \cdot b_e = 2 B \bar{S} D \cdot b_e \text{ بایت}
 \end{equation}
 که در آن $b_e$ تعداد بایت‌های نمایش هر عنصر داده (مثلاً ۲ بایت برای دقت \lr{FP16}) است. در مقایسه با استاندارد $2 B N D \cdot b_e$، میزان صرفه‌جویی به طور مستقیم برابر با نسبت $1 - \frac{\bar{S}}{N}$ خواهد بود.
 
@@ -123,9 +123,9 @@ S_{h, ij} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sqrt{d}}
 \paragraph{۲. لایه‌های پروجکشن و ادغام آداپتورهای \lr{LoRA}:}
 تمامی پروجکشن‌های خطی ورودی و خروجی ($\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V, \mathbf{W}_O$) به کمک کلاس سفارشی \lr{LoRALinear} پیاده‌سازی شده‌اند. این کلاس از ساختار تجزیه رتبه پایین زیر برای یادگیری سریع پسا-پیوند بهره می‌گیرد:
 \begin{equation}
-\mathbf{W} = \mathbf{W}_{\text{base}} + \frac{\alpha}{r} \left(\mathbf{B}_{\text{lora}} \mathbf{A}_{\text{lora}}\right)
+\mathbf{W} = \mathbf{W}_{\text{\lr{base}}} + \frac{\alpha}{r} \left(\mathbf{B}_{\text{\lr{lora}}} \mathbf{A}_{\text{\lr{lora}}}\right)
 \end{equation}
-در زمان پیوند به مدل‌های پایه، وزن‌های پایه فریز شده \lr{(freeze\_base=True)} و گرادیان‌ها منحصراً بر روی ماتریس‌های تطبیقی $\mathbf{A}_{\text{lora}} \in \mathbb{R}^{r \times D_{\text{in}}}$ و $\mathbf{B}_{\text{lora}} \in \mathbb{R}^{D_{\text{out}} \times r}$ و اسکالر مقیاس خروجی \lr{output\_scale} جاری می‌گردند.
+در زمان پیوند به مدل‌های پایه، وزن‌های پایه فریز شده \lr{(freeze\_base=True)} و گرادیان‌ها منحصراً بر روی ماتریس‌های تطبیقی $\mathbf{A}_{\text{\lr{lora}}} \in \mathbb{R}^{r \times D_{\text{\lr{in}}}}$ و $\mathbf{B}_{\text{\lr{lora}}} \in \mathbb{R}^{D_{\text{\lr{out}}} \times r}$ و اسکالر مقیاس خروجی \lr{output\_scale} جاری می‌گردند.
 
 \paragraph{۳. مقداردهی اولیه لاجیت‌های بازه:}
 پارامتر \lr{self.span\_logits} به صورت یک بردار آموزش‌پذیر با ابعاد $[H]$ تعریف شده و با مقدار ثابت $5.0$ مقداردهی اولیه می‌شود:
@@ -149,8 +149,8 @@ self.span_logits = nn.Parameter(torch.full((self.num_heads,), 5.0, dtype=torch.f
 ورودی حالت پنهان & داده اولیه لایه & \lr{hidden\_states} & $[B, N_q, D]$ \\
 پروجکشن پرس‌وجو & \lr{self.q\_proj} & $[B, N_q, D]$ & $\mathbf{Q} \in [B, H, N_q, d]$ \\
 پروجکشن کلید و مقدار & \lr{self.k\_proj, self.v\_proj} & $[B, N_k, D]$ & $\mathbf{K}, \mathbf{V} \in [B, H_{kv}, N_k, d]$ \\
-کدگذاری چرخشی & \lr{apply\_rotary\_pos\_emb} & $\mathbf{Q}, \mathbf{K}$ & $\mathbf{Q}_{\text{rot}}, \mathbf{K}_{\text{rot}} \in [B, H, N, d]$ \\
-تکرار چندسر \lr{GQA} & \lr{repeat\_kv} & $\mathbf{K}, \mathbf{V}$ & $\mathbf{K}_{\text{rep}}, \mathbf{V}_{\text{rep}} \in [B, H, N, d]$ \\
+کدگذاری چرخشی & \lr{apply\_rotary\_pos\_emb} & $\mathbf{Q}, \mathbf{K}$ & $\mathbf{Q}_{\text{\lr{rot}}}, \mathbf{K}_{\text{\lr{rot}}} \in [B, H, N, d]$ \\
+تکرار چندسر \lr{GQA} & \lr{repeat\_kv} & $\mathbf{K}, \mathbf{V}$ & $\mathbf{K}_{\text{\lr{rep}}}, \mathbf{V}_{\text{\lr{rep}}} \in [B, H, N, d]$ \\
 امتیاز خام شباهت & $\mathbf{Q} \mathbf{K}^\top / \sqrt{d}$ & $\mathbf{Q}, \mathbf{K}$ & $\mathbf{S} \in [B, H, N_q, N_k]$ \\
 محاسبه طول بازه سرها & $\sigma(\theta_h) \cdot S_{\max}$ & \lr{span\_logits} $[H]$ & \lr{span} $[H]$ \\
 ماتریس فواصل توکن‌ها & $|i - j|$ & \lr{pos} $[N_q]$ & \lr{dist} $[N_q, N_k]$ \\
@@ -180,26 +180,26 @@ else:
 این قطعه‌کد با اعطای دید سراسری منحصراً به توکن پایانی هر نمونه در دسته، سقف دقت مدل‌های علّی را از سطح شانس تصادفی نجات داده و بازیابی عملکردی را محقق می‌سازد.
 
 \paragraph{۶. انتقال وزن‌ها و اعتبارسنجی نرم فروبنیوس:}
-متد \lr{copy\_weights} وزن‌های پروجکشن را از مدل‌های گوناگون استخراج می‌کند. این تابع شامل منطق تفکیک ماتریس فشرده لایه‌های \lr{Conv1D} در مدل \lr{GPT-2} (تبدیل ترانهاده از $[D_{\text{in}}, D_{\text{out}}]$ به استاندارد پایتورچ $[D_{\text{out}}, D_{\text{in}}]$) و انکودرهای تودرتوی خانوده \lr{BERT} است. پیش از اعمال وزن‌ها، نرم فروبنیوس ماتریس ارزیابی می‌شود ($\|\mathbf{W}\|_F \ge 10^{-4}$) تا از صحت استخراج وزن‌های از پیش‌آموخته اطمینان حاصل گردد.
+متد \lr{copy\_weights} وزن‌های پروجکشن را از مدل‌های گوناگون استخراج می‌کند. این تابع شامل منطق تفکیک ماتریس فشرده لایه‌های \lr{Conv1D} در مدل \lr{GPT-2} (تبدیل ترانهاده از $[D_{\text{\lr{in}}}, D_{\text{\lr{out}}}]$ به استاندارد پایتورچ $[D_{\text{\lr{out}}}, D_{\text{\lr{in}}}]$) و انکودرهای تودرتوی خانوده \lr{BERT} است. پیش از اعمال وزن‌ها، نرم فروبنیوس ماتریس ارزیابی می‌شود ($\|\mathbf{W}\|_F \ge 10^{-4}$) تا از صحت استخراج وزن‌های از پیش‌آموخته اطمینان حاصل گردد.
 
 \subsection*{بخش ۴: تحلیل معماری سختافزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
-ارزیابی سخت‌افزاری و تحلیل مدل سقف کارایی \lr{(Roofline Model)} ماژول \lr{adaptive\_span\_attention} بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} با معماری \lr{Ada Lovelace (AD106)}، شامل ۴۶۰۸ هسته \lr{CUDA}، ۱۴۴ هسته تانسوری نسل چهارم، پهنای باند حافظه سراسری $B_{\text{mem}} = 256\text{ GB/s}$ و ۳۲ مگابایت حافظه پنهان سطح دوم \lr{(L2 Cache)}، نتایج عمیقی در خصوص رفتار ترافیک حافظه ارائه می‌دهد.
+ارزیابی سخت‌افزاری و تحلیل مدل سقف کارایی \lr{(Roofline Model)} ماژول \lr{adaptive\_span\_attention} بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} با معماری \lr{Ada Lovelace (AD106)}، شامل ۴۶۰۸ هسته \lr{CUDA}، ۱۴۴ هسته تانسوری نسل چهارم، پهنای باند حافظه سراسری $B_{\text{\lr{mem}}} = 256\text{\lr{ GB/s}}$ و ۳۲ مگابایت حافظه پنهان سطح دوم \lr{(L2 Cache)}، نتایج عمیقی در خصوص رفتار ترافیک حافظه ارائه می‌دهد.
 
 \paragraph{۱. تعادل ماشین و شدت محاسباتی \lr{(Arithmetic Intensity)}:}
-سقف تئوریک توان پردازش ممیز شناور نیمه‌دقیق \lr{(FP16 Tensor Core)} در این کارت گرافیک تقریباً $P_{\text{peak}} = 80\text{ TFLOPs}$ (در حالت چگال) است. تعادل ماشین \lr{(Machine Balance)} به صورت زیر محاسبه می‌شود:
+سقف تئوریک توان پردازش ممیز شناور نیمه‌دقیق \lr{(FP16 Tensor Core)} در این کارت گرافیک تقریباً $P_{\text{\lr{peak}}} = 80\text{\lr{ TFLOPs}}$ (در حالت چگال) است. تعادل ماشین \lr{(Machine Balance)} به صورت زیر محاسبه می‌شود:
 \begin{equation}
-I^* = \frac{P_{\text{peak}}}{B_{\text{mem}}} = \frac{80 \times 10^{12}\text{ FLOP/s}}{256 \times 10^9\text{ Byte/s}} \approx 312.5\text{ FLOPs/Byte}
+I^* = \frac{P_{\text{\lr{peak}}}}{B_{\text{\lr{mem}}}} = \frac{80 \times 10^{12}\text{\lr{ FLOP/s}}}{256 \times 10^9\text{\lr{ Byte/s}}} \approx 312.5\text{\lr{ FLOPs/Byte}}
 \end{equation}
 اگر شدت محاسباتی یک عملگر $I < 312.5$ باشد، پردازش در رژیم مقید به حافظه \lr{(Memory-Bound)} قرار می‌گیرد و سرعت اجرا توسط نرخ انتقال داده میان حافظه سراسری \lr{(GDDR6 HBM)} و تراشه تعیین می‌شود.
 
-در مکانیزم توجه استاندارد پایتورچ، ماتریس کامل امتیازات $\mathbf{S} \in \mathbb{R}^{B \times H \times N \times N}$ در حافظه سراسری ساخته می‌شود. حجم تبادل حافظه برای خواندن و نوشتن ماتریس امتیازات برابر با $2 \times (B \cdot H \cdot N^2 \cdot 2)\text{ Bytes}$ است، در حالی که تعداد کل عملیات ممیز شناور برابر با $4 B H N^2 d$ است. شدت محاسباتی توجه چگال برابر است با:
+در مکانیزم توجه استاندارد پایتورچ، ماتریس کامل امتیازات $\mathbf{S} \in \mathbb{R}^{B \times H \times N \times N}$ در حافظه سراسری ساخته می‌شود. حجم تبادل حافظه برای خواندن و نوشتن ماتریس امتیازات برابر با $2 \times (B \cdot H \cdot N^2 \cdot 2)\text{\lr{ Bytes}}$ است، در حالی که تعداد کل عملیات ممیز شناور برابر با $4 B H N^2 d$ است. شدت محاسباتی توجه چگال برابر است با:
 \begin{equation}
-I_{\text{dense}} = \frac{4 B H N^2 d}{4 B H N^2} = d\text{ FLOPs/Byte}
+I_{\text{\lr{dense}}} = \frac{4 B H N^2 d}{4 B H N^2} = d\text{\lr{ FLOPs/Byte}}
 \end{equation}
 برای بعد سر $d = 64$، شدت محاسباتی برابر با ۶۴ است که بسیار کمتر از $312.5$ بوده و نشان می‌دهد که خودتوجهی ذاتاً به شدت مقید به حافظه است.
 
 \paragraph{۲. اثر کاهش ترافیک حافظه در بازه انطباقی:}
-با محدود شدن بازه سرها به مقدار میانگین $\bar{S} \ll N$، حجم محاسبات هسته توجه به $4 B H N \bar{S} d$ کاهش می‌یابد. در صورت استفاده از هسته‌های کاشی‌کاری شده بلوکی تنک \lr{(Block-Sparse Triton Kernels)}، کاشی‌های ماتریس $\mathbf{K}$ و $\mathbf{V}$ صرفاً در محدوده پنجره فعال سر $\lceil S_h / \text{BLOCK} \rceil$ از حافظه سراسری به حافظه اشتراکی بسیار سریع \lr{SRAM (L1 Cache)} منتقل می‌شوند. در نتیجه، حجم خواندن داده از حافظه سراسری با نسبت $\frac{\bar{S}}{N}$ فشرده می‌شود. در طول دنباله $N = 4096$ با بازه فعال $\bar{S} = 128$، ترافیک حافظه تا $96.8\%$ کاهش یافته و فشار پهنای باند به شدت افت می‌کند.
+با محدود شدن بازه سرها به مقدار میانگین $\bar{S} \ll N$، حجم محاسبات هسته توجه به $4 B H N \bar{S} d$ کاهش می‌یابد. در صورت استفاده از هسته‌های کاشی‌کاری شده بلوکی تنک \lr{(Block-Sparse Triton Kernels)}، کاشی‌های ماتریس $\mathbf{K}$ و $\mathbf{V}$ صرفاً در محدوده پنجره فعال سر $\lceil S_h / \text{\lr{BLOCK}} \rceil$ از حافظه سراسری به حافظه اشتراکی بسیار سریع \lr{SRAM (L1 Cache)} منتقل می‌شوند. در نتیجه، حجم خواندن داده از حافظه سراسری با نسبت $\frac{\bar{S}}{N}$ فشرده می‌شود. در طول دنباله $N = 4096$ با بازه فعال $\bar{S} = 128$، ترافیک حافظه تا $96.8\%$ کاهش یافته و فشار پهنای باند به شدت افت می‌کند.
 
 \paragraph{۳. تفکیک ردپای حافظه گرافیکی \lr{(VRAM Footprint)}:}
 پروفایلینگ حافظه در طول ارزیابی تجربی بر روی پردازنده گرافیکی \lr{RTX 4070 Laptop} نشان‌دهنده توزیع پایدار زیر است:
@@ -270,7 +270,7 @@ $L = 4096$ & 5,920 MB & \textbf{819 MB} & $\mathbf{-86.2\%}$ & 210 \lr{tok/s} & 
 \paragraph{۳. عارضه‌یابی مهندسی مدل‌های علّی و حل خطای ترانهاده \lr{Conv1D}:}
 در معماری \lr{GPT-2}، در گام‌های اولیه دقت مدل بر روی \lr{51.95\%} (معادل حدس تصادفی کلاس اکثریت) متوقف می‌شد. کالبدشکافی کدهای فریم‌ورک دو ریشه اصلی این شکست را برملا کرد:
 \begin{enumerate}
-    \item \textbf{خطای ترانهاده در ادغام لایه \lr{Conv1D}:} در کتابخانه ترنسفورمرز، لایه‌های تصویری \lr{GPT-2} برخلاف لایه استاندارد پایتورچ با ماتریس وزن ترانهاده $[D_{\text{in}}, D_{\text{out}}]$ ذخیره می‌شوند. در هنگام ادغام وزن‌های \lr{LoRA}، عدم تطابق ابعاد موجب شکست خاموش در بلوک مدیریت خطا و عدم اعمال به‌روزرسانی‌ها به وزن‌های مدل می‌گردید. با اصلاح ترانهاده خودکار در لایه آداپتور، این مشکل رفع گردید.
+    \item \textbf{خطای ترانهاده در ادغام لایه \lr{Conv1D}:} در کتابخانه ترنسفورمرز، لایه‌های تصویری \lr{GPT-2} برخلاف لایه استاندارد پایتورچ با ماتریس وزن ترانهاده $[D_{\text{\lr{in}}}, D_{\text{\lr{out}}}]$ ذخیره می‌شوند. در هنگام ادغام وزن‌های \lr{LoRA}، عدم تطابق ابعاد موجب شکست خاموش در بلوک مدیریت خطا و عدم اعمال به‌روزرسانی‌ها به وزن‌های مدل می‌گردید. با اصلاح ترانهاده خودکار در لایه آداپتور، این مشکل رفع گردید.
     \item \textbf{تله لایه‌گذاری راست \lr{(Padding Trap)} و خاموشی افق دید:} کلاسیفایر \lr{GPT-2} وضعیت احساسی متن را از آخرین توکن واقعی می‌خواند. انقباض بازه در دنباله‌ای با پدینگ راست، آخرین توکن واقعی را از ابتدای جمله کاملاً بی‌خبر می‌ساخت. تزریق منطق «پریسکپ پویا» با باز کردن خط دید توکن پایانی به تمام جمله، بن‌بست عملکردی را شکست و دقت را به \lr{80.39\%} ارتقا داد.
 \end{enumerate}
 
@@ -302,7 +302,7 @@ $L = 4096$ & 5,920 MB & \textbf{819 MB} & $\mathbf{-86.2\%}$ & 210 \lr{tok/s} & 
 \paragraph{افق‌های توسعه و پیشنهادات برای پژوهش‌های آتی (Future Scope):}
 \begin{itemize}
     \item \textbf{توسعه هسته‌های ادغام‌شده با زبان تریتون \lr{(Fused Triton Kernels)}:} طراحی هسته‌های محاسباتی کاشی‌کاری شده ناهمگن که به طور مستقیم از مرزهای عدد صحیح $\lceil S_h \rceil$ برای پرش از روی بلوک‌های خارج از بازه بدون تبادل داده با حافظه سراسری \lr{HBM} استفاده کنند.
-    \item \textbf{بازه انطباقی نامتقارن علّی-دوطرفه:} فرمول‌بندی مستقل بازه گذشته $S_h^{\text{back}}$ و بازه آینده $S_h^{\text{fwd}}$ برای مدل‌های انکودر جهت واکاوی جهت‌داری جریان اطلاعات نحوی.
+    \item \textbf{بازه انطباقی نامتقارن علّی-دوطرفه:} فرمول‌بندی مستقل بازه گذشته $S_h^{\text{\lr{back}}}$ و بازه آینده $S_h^{\text{\lr{fwd}}}$ برای مدل‌های انکودر جهت واکاوی جهت‌داری جریان اطلاعات نحوی.
     \item \textbf{کمی‌سازی با دقت ترکیبی حساس به بازه \lr{(Span-Aware Mixed Precision)}:} اختصاص فرمت‌های عددی بسیار فشرده (نظیر \lr{FP4} یا \lr{INT4}) به سرهای دارای بازه طولانی و اختصاص دقت بالاتر \lr{(FP16)} به سرهای محلی پرتراکم.
     \item \textbf{پیوند با مدل‌های فضای حالت \lr{(SSMs / Mamba)}:} ترکیب بازه انطباقی ترنسفورمر با لایه‌های بازگشتی پیوسته برای ایجاد ساختار سلسله‌مراتبی پردازش بی‌نهایت توکن با حافظه ثابت.
 \end{itemize}

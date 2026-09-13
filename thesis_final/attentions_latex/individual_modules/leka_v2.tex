@@ -21,19 +21,19 @@
 ابعاد فضای ویژگی $f$ و $f/2$ برای استخراج فرکانس‌های فضایی متفاوت طراحی شده‌اند.
 پس از آن، با استفاده از یک تابع امتیازدهی \lr{(Landmark Scorer)} مجهز به شبکه‌ای دو‌لایه \lr{(MLP)} روی $\phi(\mathbf{K})$، زیرمجموعه‌ای از $L$ توکن برجسته \lr{(Landmarks)} انتخاب می‌شود:
 \begin{equation}
-\mathbf{K}_{\text{land}}, \mathbf{V}_{\text{land}} = \operatorname{TopK}_{L} \left( \operatorname{Score}(\phi(\mathbf{K})) \right)
+\mathbf{K}_{\text{\lr{land}}}, \mathbf{V}_{\text{\lr{land}}} = \operatorname{TopK}_{L} \left( \operatorname{Score}(\phi(\mathbf{K})) \right)
 \end{equation}
-تانسور توجه دوربرد $\mathbf{A}_{\text{leka}}$ با پیچیدگی $\mathcal{O}(N L d)$ با استفاده از عملگر هموارساز \lr{Softpick} شکل می‌گیرد:
+تانسور توجه دوربرد $\mathbf{A}_{\text{\lr{leka}}}$ با پیچیدگی $\mathcal{O}(N L d)$ با استفاده از عملگر هموارساز \lr{Softpick} شکل می‌گیرد:
 \begin{equation}
-\mathbf{A}_{\text{leka}} = \operatorname{Softpick} \left( \phi(\mathbf{Q}) \phi(\mathbf{K}_{\text{land}})^\top \right) \mathbf{V}_{\text{land}} \mathbf{W}_{\text{corr}}
+\mathbf{A}_{\text{\lr{leka}}} = \operatorname{Softpick} \left( \phi(\mathbf{Q}) \phi(\mathbf{K}_{\text{\lr{land}}})^\top \right) \mathbf{V}_{\text{\lr{land}}} \mathbf{W}_{\text{\lr{corr}}}
 \end{equation}
 به صورت همزمان، توجه محلی با اندازه پنجره $w$ استخراج می‌گردد:
 \begin{equation}
-\mathbf{A}_{\text{local}} = \operatorname{Softmax}\left( \frac{\mathbf{Q} \mathbf{K}^\top_{\text{local}}}{\sqrt{d}} \right) \mathbf{V}_{\text{local}}
+\mathbf{A}_{\text{\lr{local}}} = \operatorname{Softmax}\left( \frac{\mathbf{Q} \mathbf{K}^\top_{\text{\lr{local}}}}{\sqrt{d}} \right) \mathbf{V}_{\text{\lr{local}}}
 \end{equation}
-و خروجی نهایی از طریق گیتینگ یادگیرنده $g = \sigma(\theta_{\text{gate}})$ ترکیب می‌شود:
+و خروجی نهایی از طریق گیتینگ یادگیرنده $g = \sigma(\theta_{\text{\lr{gate}}})$ ترکیب می‌شود:
 \begin{equation}
-\mathbf{O} = g \cdot \mathbf{A}_{\text{leka}} + (1 - g) \cdot \mathbf{A}_{\text{local}}
+\mathbf{O} = g \cdot \mathbf{A}_{\text{\lr{leka}}} + (1 - g) \cdot \mathbf{A}_{\text{\lr{local}}}
 \end{equation}
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}

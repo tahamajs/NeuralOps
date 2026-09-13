@@ -17,7 +17,7 @@
 
 \subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
 \begin{equation}
-\mathcal{S}_i = \|\mathbf{K}_i\|_2 \cdot \max_j \left(\frac{\mathbf{Q}_j \mathbf{K}_i^T}{\sqrt{d_k}}\right), \quad \mathcal{I}_{\text{keep}} = \operatorname{TopK}(\mathcal{S}, k), \quad \mathbf{K}_{\text{pruned}} = \mathbf{K}[\mathcal{I}_{\text{keep}}]
+\mathcal{S}_i = \|\mathbf{K}_i\|_2 \cdot \max_j \left(\frac{\mathbf{Q}_j \mathbf{K}_i^T}{\sqrt{d_k}}\right), \quad \mathcal{I}_{\text{\lr{keep}}} = \operatorname{TopK}(\mathcal{S}, k), \quad \mathbf{K}_{\text{\lr{pruned}}} = \mathbf{K}[\mathcal{I}_{\text{\lr{keep}}}]
 \end{equation}
 که در آن تنها $k$ توکن با بیشترین نمره برجستگی $\mathcal{S}_i$ برای محاسبات توجه نگهداری می‌شوند.
 

@@ -15,36 +15,36 @@
 \subsection*{بخش ۲: فرمول‌بندی ریاضی و مبانی نظری \lr{(Mathematical Formulation)}}
 در این ماژول، ورودی پنهان $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ با استفاده از پروجکشن‌های سازگار با \lr{LoRA} به تانسورهای پرس‌وجو ($\mathbf{Q}$)، کلید ($\mathbf{K}$) و مقدار ($\mathbf{V}$) با فرمت $\mathbf{Q} \in \mathbb{R}^{B \times H \times L \times d}$ تبدیل می‌شود (که در آن $d = D / H$). مسیردهی توسط یک شبکه عصبی دروازه‌ساز \lr{(Gating Network)} صورت می‌گیرد:
 \begin{equation}
-    \mathbf{g} = \operatorname{Softmax}(\mathbf{X}_{\text{mean}} \mathbf{W}_{\text{gate}}), \quad \mathbf{g} \in \mathbb{R}^{B \times 1 \times 1 \times 3}
+    \mathbf{g} = \operatorname{Softmax}(\mathbf{X}_{\text{\lr{mean}}} \mathbf{W}_{\text{\lr{gate}}}), \quad \mathbf{g} \in \mathbb{R}^{B \times 1 \times 1 \times 3}
 \end{equation}
-که در آن $\mathbf{X}_{\text{mean}} = \frac{1}{L} \sum_{i=1}^L \mathbf{X}_{:,i,:}$ است.
+که در آن $\mathbf{X}_{\text{\lr{mean}}} = \frac{1}{L} \sum_{i=1}^L \mathbf{X}_{:,i,:}$ است.
 
 خروجی نهایی به صورت ترکیب وزنی زیر محاسبه می‌گردد:
 \begin{equation}
-    \mathbf{O} = g_1 \mathbf{O}_{\text{loc}} + g_2 \mathbf{O}_{\text{sp}} + g_3 \mathbf{O}_{\text{glb}}
+    \mathbf{O} = g_1 \mathbf{O}_{\text{\lr{loc}}} + g_2 \mathbf{O}_{\text{\lr{sp}}} + g_3 \mathbf{O}_{\text{\lr{glb}}}
 \end{equation}
 
 فرمول‌بندی شاخه‌ها:
-۱. توجه پنجره‌ای محلی ($\mathbf{O}_{\text{loc}}$):
+۱. توجه پنجره‌ای محلی ($\mathbf{O}_{\text{\lr{loc}}}$):
 \begin{equation}
-    \mathbf{O}_{\text{loc}} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} \odot \mathbf{M}_{\text{win}}\right) \mathbf{V}
+    \mathbf{O}_{\text{\lr{loc}}} = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} \odot \mathbf{M}_{\text{\lr{win}}}\right) \mathbf{V}
 \end{equation}
-که $\mathbf{M}_{\text{win}}$ ماسکی است که مقادیر خارج از شعاع $w$ را صفر می‌کند. پیچیدگی محاسباتی: $\mathcal{O}(BHLwd)$.
+که $\mathbf{M}_{\text{\lr{win}}}$ ماسکی است که مقادیر خارج از شعاع $w$ را صفر می‌کند. پیچیدگی محاسباتی: $\mathcal{O}(BHLwd)$.
 
-۲. توجه بلوکی پراکنده ($\mathbf{O}_{\text{sp}}$): توالی به بلوک‌هایی با اندازه $b$ تقسیم می‌شود. پرس‌وجوهای هر بلوک تنها به $k$ بلوک برتر از کلیدها متصل می‌گردند. پیچیدگی: $\mathcal{O}(BHL \frac{kb}{L} d) = \mathcal{O}(BHkbd)$.
+۲. توجه بلوکی پراکنده ($\mathbf{O}_{\text{\lr{sp}}}$): توالی به بلوک‌هایی با اندازه $b$ تقسیم می‌شود. پرس‌وجوهای هر بلوک تنها به $k$ بلوک برتر از کلیدها متصل می‌گردند. پیچیدگی: $\mathcal{O}(BHL \frac{kb}{L} d) = \mathcal{O}(BHkbd)$.
 
-۳. توجه طیفی سراسری ($\mathbf{O}_{\text{glb}}$): با استفاده از ویژگی‌های فوریه تصادفی \lr{(RFF)} برای تقریب خطی کرنل:
+۳. توجه طیفی سراسری ($\mathbf{O}_{\text{\lr{glb}}}$): با استفاده از ویژگی‌های فوریه تصادفی \lr{(RFF)} برای تقریب خطی کرنل:
 \begin{equation}
-    \phi(\mathbf{Q}) = \frac{1}{\sqrt{F}} [\cos(\mathbf{Q} \mathbf{W}_{\text{RFF}}), \sin(\mathbf{Q} \mathbf{W}_{\text{RFF}})]
+    \phi(\mathbf{Q}) = \frac{1}{\sqrt{F}} [\cos(\mathbf{Q} \mathbf{W}_{\text{\lr{RFF}}}), \sin(\mathbf{Q} \mathbf{W}_{\text{\lr{RFF}}})]
 \end{equation}
-که $\mathbf{W}_{\text{RFF}} \in \mathbb{R}^{d \times F}$. خروجی به صورت $\mathbf{O}_{\text{glb}} = \frac{\phi(\mathbf{Q}) (\phi(\mathbf{K})^\top \mathbf{V})}{\phi(\mathbf{Q}) (\phi(\mathbf{K})^\top \mathbf{1})}$ محاسبه می‌گردد. پیچیدگی: $\mathcal{O}(BHLFd)$.
+که $\mathbf{W}_{\text{\lr{RFF}}} \in \mathbb{R}^{d \times F}$. خروجی به صورت $\mathbf{O}_{\text{\lr{glb}}} = \frac{\phi(\mathbf{Q}) (\phi(\mathbf{K})^\top \mathbf{V})}{\phi(\mathbf{Q}) (\phi(\mathbf{K})^\top \mathbf{1})}$ محاسبه می‌گردد. پیچیدگی: $\mathcal{O}(BHLFd)$.
 پیچیدگی کلی سیستم به صورت خطی $\mathcal{O}(BHLd(\frac{w}{L} + \frac{kb}{L} + F))$ تقلیل می‌یابد که در طول‌های توالی بسیار بالا، منجر به کاهش چشمگیر سربار حافظه نسبت به $\mathcal{O}(L^2)$ می‌شود.
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
 سورس‌کد \lr{nasc\_attention} بر پایه واسط \lr{BaseAttention} 구현 گردیده است. پروجکشن‌های $\mathbf{Q}$، $\mathbf{K}$ و $\mathbf{V}$ از طریق کلاس اختصاصی \lr{LoRALinear} پیاده‌سازی شده‌اند که امکان اعمال رتبه پایین افزایشی \lr{(LoRA Adapters)} را برای تنظیم دقیق \lr{Fine-Tuning} بدون تغییر وزن‌های پایه \lr{(Base Weights)} فراهم می‌سازد. در مسیر پیشرو \lr{(Forward Pass)}:
 1. ابتدا $\mathbf{Q}$ به ابعاد $[B, H, L, d]$ تغییر شکل داده و در صورت لزوم کدگذاری مکانی چرخشی \lr{(RoPE)} با تابع \lr{apply\_rotary\_pos\_emb} بر روی آن اعمال می‌شود.
 2. کلیدها و مقادیر نیز با پشتیبانی از \lr{Grouped-Query Attention (GQA)} از طریق \lr{repeat\_kv} به ابعاد معادل گسترش می‌یابند.
-3. در صورت کوتاه بودن توالی ($L \le \text{window\_size}$)، سیستم جهت کاهش سربار کنترلی به صورت خودکار به \lr{Scaled Dot-Product Attention} استاندارد عقب‌گرد \lr{(Fallback)} می‌کند.
+3. در صورت کوتاه بودن توالی ($L \le \text{\lr{window\_size}}$)، سیستم جهت کاهش سربار کنترلی به صورت خودکار به \lr{Scaled Dot-Product Attention} استاندارد عقب‌گرد \lr{(Fallback)} می‌کند.
 4. برای توالی‌های طولانی‌تر، دروازه توزیع محاسبه شده و توابع کمکی \lr{\_local\_window\_attention}، \lr{\_sparse\_block\_attention} و \lr{\_global\_spectral\_rff\_attention} فراخوانی می‌شوند. در شاخه طیفی و در حالت دیکودر علّی \lr{(Causal)}، سیستم از جمع‌های پیشوندی \lr{(Cumulative Sums)} برای حفظ پیچیدگی زمانی خطی بهره می‌گیرد.
 
 \subsection*{بخش ۴: تحلیل معماری سخت‌افزار و مدل سقف کارایی \lr{(Hardware \& Roofline Analysis)}}
