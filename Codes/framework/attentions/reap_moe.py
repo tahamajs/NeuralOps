@@ -142,15 +142,23 @@ class LoRALinear(nn.Module):
 
 
 class SVDLinear(nn.Module):
-    def __init__(self, in_features: int, out_features: int, rank: Optional[int] = None):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: Optional[int] = None,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ):
         super().__init__()
+        factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
         self.rank = rank or max(1, min(in_features, out_features) // 4)
-        self.U = nn.Parameter(torch.randn(out_features, self.rank) * 0.02)
-        self.S = nn.Parameter(torch.ones(self.rank))
-        self.V = nn.Parameter(torch.randn(in_features, self.rank) * 0.02)
-        self.bias = nn.Parameter(torch.zeros(out_features))
+        self.U = nn.Parameter(torch.randn((out_features, self.rank), **factory_kwargs) * 0.02)
+        self.S = nn.Parameter(torch.ones(self.rank, **factory_kwargs))
+        self.V = nn.Parameter(torch.randn((in_features, self.rank), **factory_kwargs) * 0.02)
+        self.bias = nn.Parameter(torch.zeros(out_features, **factory_kwargs))
 
     @property
     def weight(self) -> torch.Tensor:
@@ -169,9 +177,12 @@ class REAPMoE(nn.Module):
         noise_std: float = 0.05,
         use_svd: bool = True,
         config: Optional[Any] = None,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
+        factory_kwargs = {"device": device, "dtype": dtype}
         if config is not None:
             d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model))
             n_experts = getattr(config, "num_experts", getattr(config, "n_experts", n_experts))
@@ -182,23 +193,23 @@ class REAPMoE(nn.Module):
         self.top_k = min(top_k, n_experts)
         self.noise_std = noise_std
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
-        self.output_scale = nn.Parameter(torch.ones(1))
+        self.output_scale = nn.Parameter(torch.ones(1, **factory_kwargs))
 
-        self.router_ln = nn.LayerNorm(self.d_model)
-        self.router = nn.Linear(d_model, n_experts, bias=False)
+        self.router_ln = nn.LayerNorm(self.d_model, **factory_kwargs)
+        self.router = nn.Linear(d_model, n_experts, bias=False, **factory_kwargs)
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
         if use_svd:
             expert_layer = lambda: nn.Sequential(
-                SVDLinear(d_model, d_model * 2, rank=max(1, min(d_model, d_model * 2) // 4)),
+                SVDLinear(d_model, d_model * 2, rank=max(1, min(d_model, d_model * 2) // 4), **factory_kwargs),
                 nn.GELU(),
-                SVDLinear(d_model * 2, d_model, rank=max(1, min(d_model * 2, d_model) // 4)),
+                SVDLinear(d_model * 2, d_model, rank=max(1, min(d_model * 2, d_model) // 4), **factory_kwargs),
             )
         else:
             expert_layer = lambda: nn.Sequential(
-                nn.Linear(d_model, d_model * 2),
+                nn.Linear(d_model, d_model * 2, **factory_kwargs),
                 nn.GELU(),
-                nn.Linear(d_model * 2, d_model),
+                nn.Linear(d_model * 2, d_model, **factory_kwargs),
             )
 
         self.experts = nn.ModuleList([expert_layer() for _ in range(n_experts)])
@@ -292,11 +303,18 @@ class REAPMoEAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and source_attn is not None:
+            target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
         # Projections
-        self.q_lin = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_lin = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_lin = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_lin = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_lin = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.k_lin = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.v_lin = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.out_lin = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
 
         self.q_proj = self.q_lin
         self.k_proj = self.k_lin
@@ -306,16 +324,18 @@ class REAPMoEAttention(BaseAttention):
         self.key = self.k_lin
         self.value = self.v_lin
 
-        self.moe = REAPMoE(self.dim, n_experts=n_experts, top_k=top_k, config=config)
-        self.norm1 = nn.LayerNorm(self.dim)
-        self.norm2 = nn.LayerNorm(self.dim)
+        self.moe = REAPMoE(self.dim, n_experts=n_experts, top_k=top_k, config=config, dtype=target_dtype)
+        self.norm1 = nn.LayerNorm(self.dim, dtype=target_dtype)
+        self.norm2 = nn.LayerNorm(self.dim, dtype=target_dtype)
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+        if target_dtype is not None:
+            self.to(target_dtype)
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -549,83 +569,158 @@ class REAPMoEAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("reap_moe_inject")
 @ATTENTION_REGISTRY.register("inject_reap_moe")
 def inject_reap_moe(
-    layer: nn.Module,
+    model: Optional[nn.Module] = None,
+    layer: Optional[nn.Module] = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[REAPMoEAttention]:
-    """Single-layer injection function matching framework convention.
-
-    Creates and returns a new REAPMoEAttention module initialized from old_attn.
-    The framework assigns the returned module to layer.attention / layer.self.
-    """
-    if old_attn is None and layer is not None:
-        for attr in ["attention", "self", "attn", "self_attn"]:
-            if hasattr(layer, attr):
-                cand = getattr(layer, attr)
-                if hasattr(cand, "query") or hasattr(cand, "q_proj") or hasattr(cand, "q_lin") or hasattr(cand, "c_attn"):
-                    old_attn = cand
-                    break
-
-    if old_attn is None:
+) -> Optional[Union[REAPMoEAttention, nn.Module]]:
+    """Safe injection hook for REAPMoEAttention across diverse transformer architectures."""
+    target = layer if layer is not None else model
+    if target is None:
         return None
 
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_reap_moe(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
     try:
+        src_attn = old_attn
+        if src_attn is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "self"):
+                        src_attn = cand.self
+                    else:
+                        src_attn = cand
+                    break
+
+        if src_attn is None and target is not None and hasattr(target, "forward"):
+            src_attn = target
+
+        if src_attn is None:
+            return None
+
+        # Double-injection guard
+        if src_attn is not None:
+            if isinstance(src_attn, REAPMoEAttention):
+                return None
+            if "REAPMoE" in src_attn.__class__.__name__ or "reap_moe" in src_attn.__class__.__name__.lower():
+                return None
+            if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), REAPMoEAttention):
+                return None
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), REAPMoEAttention):
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, REAPMoEAttention):
+                    return None
+                if "REAPMoE" in cand.__class__.__name__ or "reap_moe" in cand.__class__.__name__.lower():
+                    return None
+                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), REAPMoEAttention):
+                    return None
+                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), REAPMoEAttention):
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src_attn is not None:
+            c_name = src_attn.__class__.__name__
+            if "DeltaNet" in c_name or "LinearAttention" in c_name:
+                return None
+
+        if cfg is None and hasattr(src_attn, "config"):
+            cfg = src_attn.config
+
+        hidden_size = (
+            kwargs.get("hidden_size") or
+            getattr(src_attn, 'hidden_size', None) or
+            getattr(src_attn, 'embed_dim', None) or
+            (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+            (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
+            (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
+            (target.in_features if hasattr(target, 'in_features') else None) or
+            getattr(cfg, 'hidden_size', None) or
+            getattr(cfg, 'd_model', 64)
+        )
+        num_heads = (
+            kwargs.get("num_heads") or
+            kwargs.get("num_attention_heads") or
+            getattr(src_attn, 'num_heads', None) or
+            getattr(src_attn, 'num_attention_heads', None) or
+            getattr(cfg, 'num_attention_heads', None) or
+            getattr(cfg, 'num_heads', 4)
+        )
+
         new_attn = REAPMoEAttention(
-            config=model_config,
-            pretrained_attn=old_attn,
+            config=cfg,
             comp_config=comp_config,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_attention_heads=num_heads,
+            pretrained_attn=src_attn,
             **kwargs,
         )
-        if layer is not None:
-            if hasattr(layer, "attention"):
-                if hasattr(layer.attention, "self"):
-                    layer.attention.self = new_attn
+
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
                 else:
-                    layer.attention = new_attn
-            elif hasattr(layer, "self_attn"):
-                layer.self_attn = new_attn
-            elif hasattr(layer, "self"):
-                layer.self = new_attn
+                    target.attention = new_attn
+                return new_attn
+            for attr in ("self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_attn)
+                    return new_attn
+            target.attention = new_attn
+            return new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        return None
 
 
-def inject_reap_moe_model(
-    model: nn.Module,
-    target_layer_idx: Optional[int] = None,
-    **kwargs: Any,
-) -> Optional[nn.Module]:
-    """Safely replace attention modules in an entire model with REAPMoEAttention."""
-    try:
-        replaced = 0
-        for name, module in model.named_modules():
-            is_attn = False
-            if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
-                is_attn = True
-
-            if is_attn:
-                parent_name = name.rsplit(".", 1)[0] if "." in name else ""
-                child_name = name.rsplit(".", 1)[-1] if "." in name else name
-                parent = model.get_submodule(parent_name) if parent_name else model
-
-                new_attn = REAPMoEAttention(
-                    config=getattr(model, "config", None),
-                    pretrained_attn=module,
-                    **kwargs,
-                )
-                setattr(parent, child_name, new_attn)
-                replaced += 1
-                if target_layer_idx is not None and replaced > target_layer_idx:
-                    break
-        return model if replaced > 0 else None
-    except Exception:
-        raise RuntimeError("copy_weights failed")
-
-
+# Aliases
 inject_reap_moe_attention = inject_reap_moe
+inject_reap_moe_model = inject_reap_moe
 
