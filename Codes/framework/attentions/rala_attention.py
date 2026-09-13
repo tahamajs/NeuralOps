@@ -196,19 +196,28 @@ class RALALinearAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and source_attn is not None:
+            target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
         # Projections
-        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.k_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
 
         self.query = self.q_proj
         self.key = self.k_proj
         self.value = self.v_proj
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+        if target_dtype is not None:
+            self.to(target_dtype)
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -485,100 +494,158 @@ class RALALinearAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("rala_inject")
 @ATTENTION_REGISTRY.register("inject_rala")
 def inject_rala(
-    layer: nn.Module,
+    model: Optional[nn.Module] = None,
+    layer: Optional[nn.Module] = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[RALALinearAttention]:
-    """Single-layer injection function matching framework convention.
+) -> Optional[Union[RALALinearAttention, nn.Module]]:
+    """Safe injection hook for RALALinearAttention across diverse transformer architectures."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
 
-    Creates and returns a new RALALinearAttention module initialized from old_attn.
-    The framework assigns the returned module to layer.attention / layer.self.
-    """
-    if old_attn is None and layer is not None:
-        for attr in ["attention", "self", "attn", "self_attn"]:
-            if hasattr(layer, attr):
-                cand = getattr(layer, attr)
-                if cand is not None and (hasattr(cand, "query") or hasattr(cand, "q_proj") or hasattr(cand, "q_lin") or hasattr(cand, "c_attn")):
-                    old_attn = cand
-                    break
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
 
-    try:
-        new_attn = RALALinearAttention(
-            config=model_config,
-            pretrained_attn=old_attn,
-            comp_config=comp_config,
-            **kwargs,
-        )
-        if layer is not None:
-            if hasattr(layer, "attention"):
-                if hasattr(layer.attention, "self"):
-                    layer.attention.self = new_attn
-                else:
-                    layer.attention = new_attn
-            elif hasattr(layer, "self_attn"):
-                layer.self_attn = new_attn
-            elif hasattr(layer, "self"):
-                layer.self = new_attn
-        return new_attn
-    except Exception:
-        try:
-            new_attn = RALALinearAttention(
-                config=model_config,
-                pretrained_attn=None,
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_rala(
+                layer=lyr,
+                model_config=cfg,
                 comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
                 **kwargs,
             )
-            if layer is not None:
-                if hasattr(layer, "attention"):
-                    if hasattr(layer.attention, "self"):
-                        layer.attention.self = new_attn
-                    else:
-                        layer.attention = new_attn
-                elif hasattr(layer, "self_attn"):
-                    layer.self_attn = new_attn
-                elif hasattr(layer, "self"):
-                    layer.self = new_attn
-            return new_attn
-        except Exception:
-            raise RuntimeError("copy_weights failed")
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
 
-
-def inject_rala_model(
-    model: nn.Module,
-    target_layer_idx: Optional[int] = None,
-    **kwargs: Any,
-) -> Optional[nn.Module]:
-    """Safely replace attention modules in an entire model with RALALinearAttention."""
+    # 2. Single layer injection
     try:
-        replaced = 0
-        for name, module in model.named_modules():
-            is_attn = False
-            if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
-                is_attn = True
-
-            if is_attn:
-                parent_name = name.rsplit(".", 1)[0] if "." in name else ""
-                child_name = name.rsplit(".", 1)[-1] if "." in name else name
-                parent = model.get_submodule(parent_name) if parent_name else model
-
-                new_attn = RALALinearAttention(
-                    config=getattr(model, "config", None),
-                    pretrained_attn=module,
-                    **kwargs,
-                )
-                setattr(parent, child_name, new_attn)
-                replaced += 1
-                if target_layer_idx is not None and replaced > target_layer_idx:
+        src_attn = old_attn
+        if src_attn is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "self"):
+                        src_attn = cand.self
+                    else:
+                        src_attn = cand
                     break
-        return model if replaced > 0 else None
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+
+        if src_attn is None and target is not None and hasattr(target, "forward"):
+            src_attn = target
+
+        if src_attn is None:
+            return None
+
+        # Double-injection guard
+        if src_attn is not None:
+            if isinstance(src_attn, RALALinearAttention):
+                return None
+            if "RALA" in src_attn.__class__.__name__:
+                return None
+            if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), RALALinearAttention):
+                return None
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), RALALinearAttention):
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, RALALinearAttention):
+                    return None
+                if "RALA" in cand.__class__.__name__:
+                    return None
+                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), RALALinearAttention):
+                    return None
+                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), RALALinearAttention):
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src_attn is not None:
+            c_name = src_attn.__class__.__name__
+            if "DeltaNet" in c_name or "LinearAttention" in c_name:
+                return None
+
+        if cfg is None and hasattr(src_attn, "config"):
+            cfg = src_attn.config
+
+        hidden_size = (
+            kwargs.get("hidden_size") or
+            getattr(src_attn, 'hidden_size', None) or
+            getattr(src_attn, 'embed_dim', None) or
+            (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+            (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
+            (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
+            (target.in_features if hasattr(target, 'in_features') else None) or
+            getattr(cfg, 'hidden_size', None) or
+            getattr(cfg, 'd_model', 64)
+        )
+        num_heads = (
+            kwargs.get("num_heads") or
+            kwargs.get("num_attention_heads") or
+            getattr(src_attn, 'num_heads', None) or
+            getattr(src_attn, 'num_attention_heads', None) or
+            getattr(cfg, 'num_attention_heads', None) or
+            getattr(cfg, 'num_heads', 4)
+        )
+
+        new_attn = RALALinearAttention(
+            config=cfg,
+            pretrained_attn=src_attn,
+            comp_config=comp_config,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_attention_heads=num_heads,
+            **kwargs,
+        )
+
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
+                else:
+                    target.attention = new_attn
+                return new_attn
+            for attr in ("self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_attn)
+                    return new_attn
+            target.attention = new_attn
+            return new_attn
+        return new_attn
+    except Exception as e:
+        return None
 
 
 inject_rala_attention = inject_rala
 inject_rala_linear_attention = inject_rala
+inject_rala_model = inject_rala
 
