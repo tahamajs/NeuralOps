@@ -289,13 +289,22 @@ class XAttention(BaseAttention):
         self.is_nested_encoder: bool = False
         self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
 
-        self.query = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.key = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.value = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, freeze_base=True)
+        target_dtype = kwargs.get("dtype")
+        if target_dtype is None and pretrained_attn is not None:
+            try:
+                target_dtype = next(pretrained_attn.parameters()).dtype
+            except StopIteration:
+                target_dtype = torch.float32
+        if target_dtype is None:
+            target_dtype = torch.float32
+
+        self.query = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True, dtype=target_dtype)
+        self.key = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True, dtype=target_dtype)
+        self.value = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, freeze_base=True, dtype=target_dtype)
+        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, freeze_base=True, dtype=target_dtype)
 
         # Trainable output scale for seamless optimizer adaptation
-        self.output_scale = nn.Parameter(torch.ones(1))
+        self.output_scale = nn.Parameter(torch.ones(1, dtype=target_dtype))
 
         dropout_p = _cfg_get(
             config,
@@ -311,6 +320,8 @@ class XAttention(BaseAttention):
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+        
+        self.to(target_dtype)
 
     # Properties for universal aliases without polluting state_dict
     @property
@@ -768,6 +779,13 @@ def inject_xattention(
             else:
                 layer.attention = new_attn
                 return new_attn
+                
+        if cls_name == "DistilBertLayer":
+            layer.attention = new_attn
+            return new_attn
+        if cls_name == "RobertaLayer" or cls_name == "BertLayer":
+            layer.attention.self = new_attn
+            return new_attn
 
         layer.attention = new_attn
         return new_attn
