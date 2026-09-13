@@ -169,9 +169,15 @@ class Mamba(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and source_attn is not None:
+            target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
         # Projections with LoRALinear
-        self.in_proj = LoRALinear(self.d_model, self.d_model * 2, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.d_model, self.d_model, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.in_proj = LoRALinear(self.d_model, self.d_model * 2, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.out_proj = LoRALinear(self.d_model, self.d_model, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
 
         # Selective SSM decay parameter for causal sequences: A = -exp(A_log) <= 0
         self.A_log: nn.Parameter = nn.Parameter(torch.log(torch.arange(1, self.d_model + 1, dtype=torch.float32)))
@@ -180,6 +186,10 @@ class Mamba(BaseAttention):
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+        if target_dtype is not None:
+            self.in_proj.to(target_dtype)
+            self.out_proj.to(target_dtype)
 
     @property
     def self(self) -> Mamba:
@@ -574,6 +584,37 @@ def inject_mamba(
 
     if src_attn is None and cfg is None:
         return None
+
+    # Skip if already injected
+    if src_attn is not None:
+        if isinstance(src_attn, Mamba):
+            return None
+        if "Mamba" in src_attn.__class__.__name__:
+            return None
+        if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), Mamba):
+            return None
+        if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), Mamba):
+            return None
+
+    if target is not None:
+        for attr in ("attention", "self_attn", "attn", "self"):
+            cand = getattr(target, attr, None)
+            if cand is None:
+                continue
+            if isinstance(cand, Mamba):
+                return None
+            if "Mamba" in cand.__class__.__name__:
+                return None
+            if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), Mamba):
+                return None
+            if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), Mamba):
+                return None
+
+    # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+    if src_attn is not None:
+        c_name = src_attn.__class__.__name__
+        if "DeltaNet" in c_name or "LinearAttention" in c_name:
+            return None
 
     hidden_size = (
         getattr(src_attn, 'hidden_size', None) or
