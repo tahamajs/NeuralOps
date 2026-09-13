@@ -623,10 +623,16 @@ class NEXUSAttention(BaseAttention):
         self.is_nested_encoder: bool = False
         self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
-        self.query = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
-        self.key = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
-        self.value = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and pretrained_attn is not None:
+            target_dtype = next(pretrained_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
+        self.query = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype)
+        self.key = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype)
+        self.value = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype)
+        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype)
         self.dropout = nn.Dropout(self.cfg.dropout)
 
         self.seer_gate: Optional[SeerGating] = None
@@ -652,6 +658,9 @@ class NEXUSAttention(BaseAttention):
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+
+        if target_dtype is not None:
+            self.to(target_dtype)
 
     @property
     def q_proj(self):
@@ -972,79 +981,158 @@ class NEXUSAttention(BaseAttention):
 # ============================================================================
 # Injection helper (internal)
 # ============================================================================
-def inject_nexus_into_distilbert(
-    layer: Any,
-    model_config: Any = None,
-    nexus_cfg: Optional[NEXUSConfig] = None,
-    layer_idx: int = 0,
-    total_layers: int = 1,
-    old_attn: Any = None,
-    **kwargs: Any,
-) -> Optional[NEXUSAttention]:
-    r"""Replace the layer's attention sub-layer with NEXUS and copy pretrained weights."""
-    try:
-        if nexus_cfg is None:
-            nexus_cfg = NEXUSConfig()
-        new_attn = NEXUSAttention(
-            model_config=model_config,
-            nexus_cfg=nexus_cfg,
-            layer_idx=layer_idx,
-            total_layers=total_layers,
-            bert_mode=False,
-        )
-        src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
-        if src_attn is not None:
-            try:
-                new_attn.copy_weights(src_attn)
-            except Exception as e:
-                logger.error(f"NEXUS copy_weights failed: {e}")
-                return None
-            p = next(src_attn.parameters(), None)
-            if p is not None:
-                new_attn.to(device=p.device, dtype=p.dtype)
-
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
-            else:
-                layer.attention = new_attn
-        elif hasattr(layer, "self"):
-            layer.self = new_attn
-        return new_attn
-    except Exception as e:
-        logger.error(f"inject_nexus_into_distilbert failed: {e}")
-        return None
-
-
+# ============================================================================
+# Injection helper
+# ============================================================================
 @ATTENTION_REGISTRY.register("inject_nexus")
 @ATTENTION_REGISTRY.register("nexus_inject")
 def inject_nexus(
-    layer: Any,
+    model: Optional[nn.Module] = None,
+    layer: Optional[nn.Module] = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
-    total_layers: int = 1,
-    old_attn: Any = None,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[NEXUSAttention]:
-    r"""Registry bridge converting generic CompressionConfig into NEXUSConfig."""
-    nexus_cfg = NEXUSConfig(
-        block_size=getattr(comp_config, "block_size", 32) if comp_config else 32,
-        top_k_blocks=getattr(comp_config, "top_k_inter", 4) if comp_config else 4,
-        xattn_enabled=True,
-        seer_enabled=True,
-        dual_stage_enabled=True,
-        stripe_enabled=True,
-        rectify_interval=getattr(comp_config, "rectify_interval", 4) if comp_config else 4,
-        rff_features=getattr(comp_config, "rff_features", 128) if comp_config else 128,
-        softpick_enabled=True,
-        dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
-    )
-    return inject_nexus_into_distilbert(
-        layer, model_config, nexus_cfg, layer_idx, total_layers, old_attn
-    )
+) -> Optional[Union[NEXUSAttention, nn.Module]]:
+    """Safe injection hook for NEXUSAttention across diverse transformer architectures."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
 
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_nexus(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    try:
+        src_attn = old_attn
+        if src_attn is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "self"):
+                        src_attn = cand.self
+                    else:
+                        src_attn = cand
+                    break
+
+        if src_attn is None and target is not None and hasattr(target, "forward"):
+            src_attn = target
+
+        if src_attn is None:
+            return None
+
+        # Double-injection guard
+        if src_attn is not None:
+            if isinstance(src_attn, NEXUSAttention):
+                return None
+            if "NEXUS" in src_attn.__class__.__name__:
+                return None
+            if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), NEXUSAttention):
+                return None
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), NEXUSAttention):
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, NEXUSAttention):
+                    return None
+                if "NEXUS" in cand.__class__.__name__:
+                    return None
+                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), NEXUSAttention):
+                    return None
+                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), NEXUSAttention):
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src_attn is not None:
+            c_name = src_attn.__class__.__name__
+            if "DeltaNet" in c_name or "LinearAttention" in c_name:
+                return None
+
+        if cfg is None and hasattr(src_attn, "config"):
+            cfg = src_attn.config
+
+        nexus_cfg = kwargs.get("nexus_cfg", None)
+        if nexus_cfg is None:
+            nexus_cfg = NEXUSConfig(
+                block_size=getattr(comp_config, "block_size", 32) if comp_config else 32,
+                top_k_blocks=getattr(comp_config, "top_k_inter", 4) if comp_config else 4,
+                xattn_enabled=True,
+                seer_enabled=True,
+                dual_stage_enabled=True,
+                stripe_enabled=True,
+                rectify_interval=getattr(comp_config, "rectify_interval", 4) if comp_config else 4,
+                rff_features=getattr(comp_config, "rff_features", 128) if comp_config else 128,
+                softpick_enabled=True,
+                dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
+            )
+
+        new_attn = NEXUSAttention(
+            model_config=cfg,
+            nexus_cfg=nexus_cfg,
+            layer_idx=layer_idx,
+            total_layers=total_layers,
+            pretrained_attn=src_attn,
+            **kwargs,
+        )
+
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
+                else:
+                    target.attention = new_attn
+                return new_attn
+            for attr in ("self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_attn)
+                    return new_attn
+            target.attention = new_attn
+            return new_attn
+        return new_attn
+    except Exception as e:
+        logger.error("inject_nexus failed: %s", e)
+        return None
 
 
 # Aliases
 inject_nexus_attention = inject_nexus
+inject_nexus_into_distilbert = inject_nexus
