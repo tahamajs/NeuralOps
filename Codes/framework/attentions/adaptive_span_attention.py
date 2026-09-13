@@ -262,8 +262,8 @@ class AdaptiveSpanAttention(BaseAttention):
         out_lora_rank = 0 if self.is_nested_encoder else self.lora_rank
         self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=out_lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        # Initialize to 2.0 so span starts reasonably wide but not stuck (sigmoid(2.0) ~ 0.88)
-        self.span_logits = nn.Parameter(torch.full((self.num_heads,), 2.0, dtype=torch.float32))
+        # Initialize to 4.0 so span starts almost fully open (sigmoid(4.0) ~ 0.982)
+        self.span_logits = nn.Parameter(torch.full((self.num_heads,), 4.0, dtype=torch.float32))
 
         dropout_p = getattr(
             config,
@@ -603,7 +603,8 @@ class AdaptiveSpanAttention(BaseAttention):
                     ramp = torch.clamp((self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0)
 
                     attn = attn * ramp
-                    attn = attn / (attn.sum(dim=-1, keepdim=True) + 1e-8)
+                    attn_sum = attn.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+                    attn = attn / attn_sum
                     attn = torch.nan_to_num(attn, nan=0.0)
 
         attn = self.dropout(attn)
@@ -765,55 +766,5 @@ def inject_adaptive_span(
             target.attn = new_block
         elif hasattr(target, "self_attn"):
             target.self_attn = new_block
-
-        # For nested encoders (BERT/RoBERTa), the output projection lives in attention.output.dense
-        if hasattr(target, "attention") and hasattr(target.attention, "output"):
-            output_mod = target.attention.output
-            if hasattr(output_mod, "dense") and not isinstance(output_mod.dense, LoRALinear):
-                dense = output_mod.dense
-                in_f = getattr(dense, "in_features", dense.weight.shape[1] if hasattr(dense, "weight") else None)
-                out_f = getattr(dense, "out_features", dense.weight.shape[0] if hasattr(dense, "weight") else None)
-                if in_f is not None and out_f is not None:
-                    lora_rank_dense = getattr(new_block, "lora_rank", kwargs.get("lora_rank", 16))
-                    lora_alpha_dense = getattr(new_block, "lora_alpha", kwargs.get("lora_alpha", 32.0))
-                    lora_dense = LoRALinear(
-                        in_f,
-                        out_f,
-                        bias=(getattr(dense, "bias", None) is not None),
-                        lora_rank=lora_rank_dense,
-                        lora_alpha=lora_alpha_dense,
-                        freeze_base=True,
-                        device=dense.weight.device if hasattr(dense, "weight") else None,
-                        dtype=dense.weight.dtype if hasattr(dense, "weight") else None,
-                    )
-                    with torch.no_grad():
-                        if hasattr(dense, "weight"):
-                            lora_dense.weight.data.copy_(dense.weight.data)
-                        if getattr(dense, "bias", None) is not None and lora_dense.bias is not None:
-                            lora_dense.bias.data.copy_(dense.bias.data)
-                    output_mod.dense = lora_dense
-        elif hasattr(target, "output") and hasattr(target.output, "dense") and not isinstance(target.output.dense, LoRALinear):
-            dense = target.output.dense
-            in_f = getattr(dense, "in_features", dense.weight.shape[1] if hasattr(dense, "weight") else None)
-            out_f = getattr(dense, "out_features", dense.weight.shape[0] if hasattr(dense, "weight") else None)
-            if in_f is not None and out_f is not None:
-                lora_rank_dense = getattr(new_block, "lora_rank", kwargs.get("lora_rank", 16))
-                lora_alpha_dense = getattr(new_block, "lora_alpha", kwargs.get("lora_alpha", 32.0))
-                lora_dense = LoRALinear(
-                    in_f,
-                    out_f,
-                    bias=(getattr(dense, "bias", None) is not None),
-                    lora_rank=lora_rank_dense,
-                    lora_alpha=lora_alpha_dense,
-                    freeze_base=True,
-                    device=dense.weight.device if hasattr(dense, "weight") else None,
-                    dtype=dense.weight.dtype if hasattr(dense, "weight") else None,
-                )
-                with torch.no_grad():
-                    if hasattr(dense, "weight"):
-                        lora_dense.weight.data.copy_(dense.weight.data)
-                    if getattr(dense, "bias", None) is not None and lora_dense.bias is not None:
-                        lora_dense.bias.data.copy_(dense.bias.data)
-                target.output.dense = lora_dense
 
     return new_block
