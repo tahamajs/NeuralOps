@@ -194,10 +194,10 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             continue
 
         # 2. Classification / sequence classification heads are trainable, but when LoRA is used
-        # on backbones, large intermediate projection layers (e.g. classifier.dense, pre_classifier)
+        # on backbones, sequence classification heads (classifier., pre_classifier)
         # must remain frozen to prevent catastrophic overfitting during short recovery fine-tuning.
         if any(h in n_low for h in ("score.", "classifier.", "classification_head", "pre_classifier", "pooler")):
-            if has_lora and any(d in n_low for d in ("classifier.dense", "pre_classifier")):
+            if has_lora and any(d in n_low for d in ("classifier.", "pre_classifier.")):
                 continue
             trainable_params.append(param)
             continue
