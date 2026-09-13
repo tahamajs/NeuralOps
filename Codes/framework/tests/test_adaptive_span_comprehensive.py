@@ -210,3 +210,81 @@ def test_lora_linear_canonical_contract():
     assert out.shape == (2, 32)
     assert torch.isfinite(out).all()
 
+
+def test_adaptive_span_posterior_renormalization():
+    """1. Verify attention weights sum to exactly 1.0 along dim=-1 after soft ramp and re-normalization."""
+    attn_mod = AdaptiveSpanAttention(d_model=64, num_heads=4, max_span=16, ramp_size=8.0, dropout=0.0, is_causal=False)
+    attn_mod.eval()
+    x = torch.randn(2, 20, 64)
+    out, attn = attn_mod(x, output_attentions=True)
+    assert attn is not None
+    sums = attn.sum(dim=-1)
+    target = torch.ones_like(sums)
+    assert torch.allclose(sums, target, atol=1e-5, rtol=1e-5)
+
+
+def test_adaptive_span_gqa_asymmetry():
+    """2. Verify GQA repeat_kv logic expands tensors without dimension mismatches when num_heads > num_kv_heads."""
+    attn_mod = AdaptiveSpanAttention(
+        d_model=64,
+        num_heads=8,
+        num_kv_heads=2,
+        lora_rank=4,
+    )
+    assert attn_mod.num_heads == 8
+    assert attn_mod.num_kv_heads == 2
+    assert attn_mod.kv_repeat == 4
+
+    x = torch.randn(2, 12, 64)
+    out, _ = attn_mod(x)
+    assert out.shape == (2, 12, 64)
+    assert torch.isfinite(out).all()
+
+
+def test_adaptive_span_cross_attention_bypass():
+    """3. Verify cross-attention with unequal N_q and N_k safely bypasses span masking without crashing."""
+    attn_mod = AdaptiveSpanAttention(d_model=64, num_heads=4, lora_rank=4)
+    hidden_states = torch.randn(2, 8, 64)       # N_q = 8
+    key_value_states = torch.randn(2, 16, 64)   # N_k = 16
+    out, attn = attn_mod(
+        hidden_states=hidden_states,
+        key_value_states=key_value_states,
+        output_attentions=True,
+    )
+    assert out.shape == (2, 8, 64)
+    assert attn.shape == (2, 4, 8, 16)
+    assert torch.isfinite(out).all()
+
+
+def test_adaptive_span_nested_encoder_bypass():
+    """4. Verify nested encoder bypass (RoBERTa/BERT): q_proj gets grads, out_proj.lora_A.grad is None."""
+    attn_mod = AdaptiveSpanAttention(d_model=64, num_heads=4, lora_rank=4)
+    attn_mod.is_nested_encoder = True
+    x = torch.randn(2, 10, 64, requires_grad=True)
+    out, _ = attn_mod(x)
+    loss = out.sum()
+    loss.backward()
+
+    # q_proj must receive gradients
+    assert attn_mod.q_proj.lora_A.grad is not None
+    assert torch.isfinite(attn_mod.q_proj.lora_A.grad).all()
+
+    # out_proj is bypassed so its parameters must have no gradient
+    assert attn_mod.out_proj.lora_A.grad is None
+
+
+def test_adaptive_span_zero_span_stability():
+    """5. Verify numerical stability when span is ~0 (span_logits = -100.0) with zero NaNs or Infs."""
+    attn_mod = AdaptiveSpanAttention(d_model=64, num_heads=4, max_span=32, ramp_size=8.0)
+    with torch.no_grad():
+        attn_mod.span_logits.fill_(-100.0)
+
+    x = torch.randn(2, 16, 64)
+    out, attn = attn_mod(x, output_attentions=True)
+    assert not torch.isnan(out).any()
+    assert not torch.isinf(out).any()
+    assert attn is not None
+    assert not torch.isnan(attn).any()
+    assert not torch.isinf(attn).any()
+
+
