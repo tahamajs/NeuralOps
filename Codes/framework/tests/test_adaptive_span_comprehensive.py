@@ -257,9 +257,10 @@ def test_adaptive_span_cross_attention_bypass():
 
 
 def test_adaptive_span_nested_encoder_bypass():
-    """4. Verify nested encoder bypass (RoBERTa/BERT): q_proj gets grads, out_proj.lora_A.grad is None."""
-    attn_mod = AdaptiveSpanAttention(d_model=64, num_heads=4, lora_rank=4)
-    attn_mod.is_nested_encoder = True
+    """4. Verify nested encoder bypass (RoBERTa/BERT): q_proj gets grads, out_proj has no trainable LoRA grads."""
+    attn_mod = AdaptiveSpanAttention(d_model=64, num_heads=4, lora_rank=4, is_nested_encoder=True)
+    assert attn_mod.is_nested_encoder
+    assert attn_mod.out_proj.lora_A is None  # lora_rank=0 for out_proj when nested
     x = torch.randn(2, 10, 64, requires_grad=True)
     out, _ = attn_mod(x)
     loss = out.sum()
@@ -270,7 +271,57 @@ def test_adaptive_span_nested_encoder_bypass():
     assert torch.isfinite(attn_mod.q_proj.lora_A.grad).all()
 
     # out_proj is bypassed so its parameters must have no gradient
-    assert attn_mod.out_proj.lora_A.grad is None
+    assert attn_mod.out_proj.lora_A is None or attn_mod.out_proj.lora_A.grad is None
+
+
+def test_adaptive_span_nested_encoder_outer_dense_wrap():
+    """Verify inject_adaptive_span wraps outer attention.output.dense with LoRALinear for RoBERTa/BERT."""
+    class MockSelfAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.query = nn.Linear(64, 64)
+            self.key = nn.Linear(64, 64)
+            self.value = nn.Linear(64, 64)
+
+    class MockOutput(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.dense = nn.Linear(64, 64)
+
+    class MockAttention(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.self = MockSelfAttn()
+            self.output = MockOutput()
+
+    class MockLayer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.attention = MockAttention()
+
+    class FullRoberta(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.roberta = nn.Module()
+            self.roberta.encoder = nn.Module()
+            self.roberta.encoder.layer = nn.ModuleList([MockLayer()])
+
+    model = FullRoberta()
+    res = inject_adaptive_span(model=model, lora_rank=8, lora_alpha=16.0)
+    assert res is not None
+
+    layer = model.roberta.encoder.layer[0]
+    assert isinstance(layer.attention.self, AdaptiveSpanAttention)
+    assert layer.attention.self.is_nested_encoder
+    assert layer.attention.self.out_proj.lora_A is None  # no wasted inner LoRA
+
+    # Outer output.dense must now be wrapped with LoRALinear and have trainable LoRA parameters
+    assert isinstance(layer.attention.output.dense, LoRALinear)
+    assert layer.attention.output.dense.lora_A is not None
+    assert layer.attention.output.dense.lora_A.requires_grad
+    assert layer.attention.output.dense.lora_B is not None
+    assert layer.attention.output.dense.lora_B.requires_grad
+    assert not layer.attention.output.dense.weight.requires_grad
 
 
 def test_adaptive_span_zero_span_stability():

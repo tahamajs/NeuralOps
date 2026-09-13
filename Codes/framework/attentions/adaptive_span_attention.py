@@ -227,7 +227,15 @@ class AdaptiveSpanAttention(BaseAttention):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
-        self.is_nested_encoder: bool = False
+
+        # Detect nested encoder architecture early
+        source_cls = source_attn.__class__.__name__ if source_attn is not None else ""
+        is_nested = (
+            source_cls in ("BertSelfAttention", "RobertaSelfAttention")
+            or (source_cls.endswith(("SelfAttention", "SelfAttn")) and "distil" not in source_cls.lower())
+        )
+        has_out = any(hasattr(source_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")) if source_attn is not None else False
+        self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", (is_nested and not has_out)))
 
         self.has_relative_attention_bias: bool = False
         self.relative_attention_bias: Optional[nn.Embedding] = None
@@ -251,7 +259,8 @@ class AdaptiveSpanAttention(BaseAttention):
         self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        out_lora_rank = 0 if self.is_nested_encoder else self.lora_rank
+        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=out_lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         # Initialize to 2.0 so span starts reasonably wide but not stuck (sigmoid(2.0) ~ 0.88)
         self.span_logits = nn.Parameter(torch.full((self.num_heads,), 2.0, dtype=torch.float32))
@@ -418,10 +427,11 @@ class AdaptiveSpanAttention(BaseAttention):
         # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        self.is_nested_encoder = (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-            or (cls_name.endswith("SelfAttention") and not has_out_proj)
-        ) and not has_out_proj
+        if not self.is_nested_encoder:
+            self.is_nested_encoder = bool((
+                cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out_proj)
+            ) and not has_out_proj)
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
@@ -721,6 +731,11 @@ def inject_adaptive_span(
     if "qwen" in model_type_str or "gpt" in model_type_str:
         max_span = min(max_span, 64)
 
+    is_nested_layer = (
+        (hasattr(target, "attention") and hasattr(target.attention, "output") and hasattr(target.attention.output, "dense"))
+        or (hasattr(target, "output") and hasattr(target.output, "dense"))
+    )
+
     try:
         new_block = AdaptiveSpanAttention(
             config=cfg,
@@ -732,6 +747,7 @@ def inject_adaptive_span(
             dropout=dropout,
             max_span=max_span,
             pretrained_attn=src_attn,
+            is_nested_encoder=(True if is_nested_layer else kwargs.get("is_nested_encoder", None)),
             **kwargs,
         )
     except Exception:
@@ -749,5 +765,55 @@ def inject_adaptive_span(
             target.attn = new_block
         elif hasattr(target, "self_attn"):
             target.self_attn = new_block
+
+        # For nested encoders (BERT/RoBERTa), the output projection lives in attention.output.dense
+        if hasattr(target, "attention") and hasattr(target.attention, "output"):
+            output_mod = target.attention.output
+            if hasattr(output_mod, "dense") and not isinstance(output_mod.dense, LoRALinear):
+                dense = output_mod.dense
+                in_f = getattr(dense, "in_features", dense.weight.shape[1] if hasattr(dense, "weight") else None)
+                out_f = getattr(dense, "out_features", dense.weight.shape[0] if hasattr(dense, "weight") else None)
+                if in_f is not None and out_f is not None:
+                    lora_rank_dense = getattr(new_block, "lora_rank", kwargs.get("lora_rank", 16))
+                    lora_alpha_dense = getattr(new_block, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+                    lora_dense = LoRALinear(
+                        in_f,
+                        out_f,
+                        bias=(getattr(dense, "bias", None) is not None),
+                        lora_rank=lora_rank_dense,
+                        lora_alpha=lora_alpha_dense,
+                        freeze_base=True,
+                        device=dense.weight.device if hasattr(dense, "weight") else None,
+                        dtype=dense.weight.dtype if hasattr(dense, "weight") else None,
+                    )
+                    with torch.no_grad():
+                        if hasattr(dense, "weight"):
+                            lora_dense.weight.data.copy_(dense.weight.data)
+                        if getattr(dense, "bias", None) is not None and lora_dense.bias is not None:
+                            lora_dense.bias.data.copy_(dense.bias.data)
+                    output_mod.dense = lora_dense
+        elif hasattr(target, "output") and hasattr(target.output, "dense") and not isinstance(target.output.dense, LoRALinear):
+            dense = target.output.dense
+            in_f = getattr(dense, "in_features", dense.weight.shape[1] if hasattr(dense, "weight") else None)
+            out_f = getattr(dense, "out_features", dense.weight.shape[0] if hasattr(dense, "weight") else None)
+            if in_f is not None and out_f is not None:
+                lora_rank_dense = getattr(new_block, "lora_rank", kwargs.get("lora_rank", 16))
+                lora_alpha_dense = getattr(new_block, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+                lora_dense = LoRALinear(
+                    in_f,
+                    out_f,
+                    bias=(getattr(dense, "bias", None) is not None),
+                    lora_rank=lora_rank_dense,
+                    lora_alpha=lora_alpha_dense,
+                    freeze_base=True,
+                    device=dense.weight.device if hasattr(dense, "weight") else None,
+                    dtype=dense.weight.dtype if hasattr(dense, "weight") else None,
+                )
+                with torch.no_grad():
+                    if hasattr(dense, "weight"):
+                        lora_dense.weight.data.copy_(dense.weight.data)
+                    if getattr(dense, "bias", None) is not None and lora_dense.bias is not None:
+                        lora_dense.bias.data.copy_(dense.bias.data)
+                target.output.dense = lora_dense
 
     return new_block
