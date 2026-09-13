@@ -192,12 +192,19 @@ class ReGLAAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and source_attn is not None:
+            target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
         # Projections
-        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.gate_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.k_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.gate_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
 
         # Depthwise 1D conv branch
         self.conv = nn.Conv1d(
@@ -206,11 +213,14 @@ class ReGLAAttention(BaseAttention):
             kernel_size=kernel_size,
             groups=self.dim,
             bias=True,
+            dtype=target_dtype,
         )
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+        if target_dtype is not None:
+            self.to(target_dtype)
 
     @property
     def query(self) -> LoRALinear:
@@ -486,55 +496,153 @@ class ReGLAAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("regla_attention_inject")
 @ATTENTION_REGISTRY.register("inject_regla")
 def inject_regla(
-    layer: Any,
+    model: Optional[nn.Module] = None,
+    layer: Optional[nn.Module] = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[nn.Module]:
-    """Safely replace attention in model or layer with ReGLAAttention."""
-    try:
-        model = layer
-        cfg = model_config or getattr(model, "config", None)
-        src = old_attn
-        if src is None and model is not None:
-            for attr in ("attention", "self_attn", "attn", "self"):
-                if hasattr(model, attr) and not isinstance(getattr(model, attr), (nn.Dropout, nn.LayerNorm)):
-                    candidate = getattr(model, attr)
-                    if hasattr(candidate, "query") or hasattr(candidate, "q_lin") or hasattr(candidate, "q_proj") or hasattr(candidate, "c_attn"):
-                        src = candidate
-                        break
+) -> Optional[Union[ReGLAAttention, nn.Module]]:
+    """Safe injection hook for ReGLAAttention across diverse transformer architectures."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
 
-        hidden_size = _cfg_get(cfg, "hidden_size", getattr(src, "hidden_size", 768))
-        num_heads = _cfg_get(cfg, "num_attention_heads", getattr(src, "num_attention_heads", 12))
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_regla(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    try:
+        src_attn = old_attn
+        if src_attn is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "self"):
+                        src_attn = cand.self
+                    else:
+                        src_attn = cand
+                    break
+
+        if src_attn is None and target is not None and hasattr(target, "forward"):
+            src_attn = target
+
+        if src_attn is None:
+            return None
+
+        # Double-injection guard
+        if src_attn is not None:
+            if isinstance(src_attn, ReGLAAttention):
+                return None
+            if "ReGLA" in src_attn.__class__.__name__ or "regla" in src_attn.__class__.__name__.lower():
+                return None
+            if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), ReGLAAttention):
+                return None
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), ReGLAAttention):
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, ReGLAAttention):
+                    return None
+                if "ReGLA" in cand.__class__.__name__ or "regla" in cand.__class__.__name__.lower():
+                    return None
+                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), ReGLAAttention):
+                    return None
+                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), ReGLAAttention):
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src_attn is not None:
+            c_name = src_attn.__class__.__name__
+            if "DeltaNet" in c_name or "LinearAttention" in c_name:
+                return None
+
+        if cfg is None and hasattr(src_attn, "config"):
+            cfg = src_attn.config
+
+        hidden_size = (
+            kwargs.get("hidden_size") or
+            getattr(src_attn, 'hidden_size', None) or
+            getattr(src_attn, 'embed_dim', None) or
+            (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
+            (src_attn.query.in_features if hasattr(src_attn, 'query') and hasattr(src_attn.query, 'in_features') else None) or
+            (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
+            (target.in_features if hasattr(target, 'in_features') else None) or
+            _cfg_get(cfg, "hidden_size", 768)
+        )
+        num_heads = (
+            kwargs.get("num_heads") or
+            kwargs.get("num_attention_heads") or
+            getattr(src_attn, 'num_heads', None) or
+            getattr(src_attn, 'num_attention_heads', None) or
+            _cfg_get(cfg, "num_attention_heads", 12)
+        )
 
         new_attn = ReGLAAttention(
             config=cfg,
-            pretrained_attn=src,
+            pretrained_attn=src_attn,
             hidden_size=hidden_size,
             num_heads=num_heads,
             **kwargs,
         )
 
-        if model is not None:
-            for attr in ("attention", "self_attn", "attn", "self"):
-                if hasattr(model, attr) and getattr(model, attr) is src:
-                    setattr(model, attr, new_attn)
-                    return new_attn
-            if hasattr(model, "attention"):
-                if hasattr(model.attention, "self"):
-                    model.attention.self = new_attn
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
                 else:
-                    model.attention = new_attn
+                    target.attention = new_attn
                 return new_attn
+            for attr in ("self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_attn)
+                    return new_attn
+            target.attention = new_attn
             return new_attn
-
         return new_attn
     except Exception as e:
         logger.error("inject_regla failed: %s", e)
         return None
 
 
+# Aliases
 inject_regla_attention = inject_regla
