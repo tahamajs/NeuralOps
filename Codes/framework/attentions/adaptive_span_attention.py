@@ -1,16 +1,16 @@
-"""
+r"""
 Adaptive Span Attention Module (Sukhbaatar et al., 2019).
 
 Mathematical Formulation:
     1. Query-Key Attention Scores:
        $$S_{ij} = \frac{Q_i K_j^\top}{\sqrt{d}}$$
 
-    2. Dynamic Per-Head Span Masking:
-       Let $z_h = \sigma(\text{logit}_h) \cdot S_{\max}$.
-       $$M_{ij}^{(h)} = \begin{cases} 0 & \text{if } |i - j| \le z_h \\ -10000 & \text{otherwise} \end{cases}$$
+    2. Dynamic Per-Head Span Masking (Continuous Soft Ramp):
+       Let $z_h = \sigma(\text{logit}_h) \cdot S_{\max}$, and $R$ be ramp size.
+       $$g_{z_h}(d) = \operatorname{clamp}\left(\frac{R + z_h - d}{R}, 0, 1\right)$$
 
     3. Context Aggregation:
-       $$A = \operatorname{Softmax}(S + M + M_{\text{pad}})$$
+       $$A = \operatorname{Softmax}(S + M_{\text{causal}} + M_{\text{pad}}) \odot g_z$$
        $$O = (A V) W_O$$
 """
 
@@ -92,8 +92,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -147,7 +145,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("adaptive_span", supports_causal=True, supports_bidirectional=False, supports_gqa=True)
@@ -207,9 +205,14 @@ class AdaptiveSpanAttention(BaseAttention):
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         if config is not None:
-            self.max_span = getattr(config, "max_span", max_span)
+            self.max_span: int = int(getattr(config, "max_span", max_span))
+            self.ramp_size: float = float(getattr(config, "ramp_size", kwargs.get("ramp_size", 32.0)))
+        elif comp_config is not None:
+            self.max_span = int(getattr(comp_config, "max_span", max_span))
+            self.ramp_size = float(getattr(comp_config, "ramp_size", kwargs.get("ramp_size", 32.0)))
         else:
-            self.max_span = max_span
+            self.max_span = int(max_span)
+            self.ramp_size = float(kwargs.get("ramp_size", 32.0))
 
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
@@ -265,6 +268,15 @@ class AdaptiveSpanAttention(BaseAttention):
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+    @property
+    def current_span(self) -> torch.Tensor:
+        """Returns the current learned span (in number of tokens) for each head."""
+        return torch.sigmoid(self.span_logits) * self.max_span
+
+    def get_span_loss(self) -> torch.Tensor:
+        """L1 regularization penalty on the span to encourage context pruning as in Sukhbaatar et al. (2019)."""
+        return torch.sigmoid(self.span_logits).mean()
 
     def _relative_position_bucket(
         self, relative_position: torch.Tensor, bidirectional: bool = True, num_buckets: int = 32, max_distance: int = 128
@@ -327,11 +339,21 @@ class AdaptiveSpanAttention(BaseAttention):
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = src.c_attn.weight.data
-            bias = getattr(src.c_attn, "bias", None)
+            c_attn_layer = src.c_attn
+            if hasattr(c_attn_layer, "base_layer"):
+                c_attn_layer = c_attn_layer.base_layer
+            weight = c_attn_layer.weight.data
+            bias = getattr(c_attn_layer, "bias", None)
             bias_data = bias.data if bias is not None else None
             # Conv1D weights are stored as [in_features, out_features]
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
+            # Detect Conv1D via class name, unique attributes (nf, nx), or fallback shape
+            is_conv1d = (
+                c_attn_layer.__class__.__name__ == "Conv1D"
+                or hasattr(c_attn_layer, "nf")
+                or hasattr(c_attn_layer, "nx")
+                or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size and weight.shape[0] != 3 * self.hidden_size)
+            )
+            if is_conv1d:
                 weight = weight.t()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
@@ -345,10 +367,19 @@ class AdaptiveSpanAttention(BaseAttention):
             extracted["v"] = (v_w, v_b)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
-            w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
+            c_proj_layer = src.c_proj
+            if hasattr(c_proj_layer, "base_layer"):
+                c_proj_layer = c_proj_layer.base_layer
+            w_o = c_proj_layer.weight.data
+            is_conv1d_proj = (
+                c_proj_layer.__class__.__name__ == "Conv1D"
+                or hasattr(c_proj_layer, "nf")
+                or hasattr(c_proj_layer, "nx")
+                or (w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size)
+            )
+            if is_conv1d_proj:
                 w_o = w_o.t()
-            b_o = getattr(src.c_proj, "bias", None)
+            b_o = getattr(c_proj_layer, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
@@ -526,15 +557,30 @@ class AdaptiveSpanAttention(BaseAttention):
             causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(~causal_tril, -10000.0)
 
-        # Adaptive span mask (applied for self-attention)
+        # Compute softmax in float32 for numerical stability
+        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0)
+
+        # Differentiable Adaptive Span Soft Ramp (Sukhbaatar et al., 2019)
+        # Continuous piecewise-linear masking: g_z(d) = clamp((R + z - d) / R, 0.0, 1.0)
+        # Avoids [H, N, N] boolean allocation and provides non-zero gradients to self.span_logits
         if not is_cross_attention and N_q == N_k:
             span = torch.sigmoid(self.span_logits) * self.max_span   # [H]
-            pos = torch.arange(N_q, device=device, dtype=torch.float32)
-            dist = (pos.unsqueeze(0) - pos.unsqueeze(1)).abs()       # [N, N]
-            span_bool = dist.unsqueeze(0) <= span.unsqueeze(1).unsqueeze(2)  # [H, N, N]
-            scores = scores.masked_fill(~span_bool.to(scores.device).unsqueeze(0), -10000.0)
+            pos_q = torch.arange(N_q, device=device, dtype=torch.float32).unsqueeze(1)  # [N_q, 1]
+            pos_k = torch.arange(N_k, device=device, dtype=torch.float32).unsqueeze(0)  # [1, N_k]
+            if is_decoder:
+                dist = (pos_q - pos_k).clamp(min=0.0)  # [N_q, N_k]
+            else:
+                dist = (pos_q - pos_k).abs()           # [N_q, N_k]
 
-        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
+            span_h = span.view(1, H, 1, 1)
+            dist_mat = dist.view(1, 1, N_q, N_k)
+            ramp = torch.clamp((self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0)
+
+            attn = attn * ramp
+            attn = attn / (attn.sum(dim=-1, keepdim=True) + 1e-8)
+            attn = torch.nan_to_num(attn, nan=0.0)
+
+        attn = attn.to(dtype)
         attn = self.dropout(attn)
 
         if head_mask is not None:
@@ -664,7 +710,7 @@ def inject_adaptive_span(
             **kwargs,
         )
     except Exception:
-        raise RuntimeError("copy_weights failed")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):

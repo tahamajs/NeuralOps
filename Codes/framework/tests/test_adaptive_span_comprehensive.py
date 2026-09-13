@@ -180,3 +180,33 @@ def test_adaptive_span_injection_all_4_architectures():
     res_q = inject_adaptive_span(model=q_model, lora_rank=8)
     assert res_q is not None
     assert isinstance(q_model.model.layers[0].self_attn, AdaptiveSpanAttention)
+
+
+def test_adaptive_span_differentiability():
+    """Verify that span_logits is fully differentiable and receives non-zero gradients."""
+    attn_mod = AdaptiveSpanAttention(d_model=32, num_heads=2, max_span=16, ramp_size=8.0, is_causal=True)
+    # Set span_logits so span is inside the sequence length
+    attn_mod.span_logits.data.fill_(0.0)  # sigmoid(0) * 16 = 8
+    x = torch.randn(2, 16, 32, requires_grad=True)
+    out, _ = attn_mod(x)
+    loss = out.sum() + attn_mod.get_span_loss()
+    loss.backward()
+
+    assert attn_mod.span_logits.grad is not None
+    assert torch.isfinite(attn_mod.span_logits.grad).all()
+    assert (attn_mod.span_logits.grad != 0).any()
+
+
+def test_lora_linear_canonical_contract():
+    """Verify LoRALinear adheres strictly to canonical LoRA without extraneous output_scale."""
+    layer = LoRALinear(in_features=32, out_features=32, lora_rank=4, freeze_base=True)
+    assert not hasattr(layer, "output_scale")
+    assert not layer.weight.requires_grad
+    assert layer.lora_A.requires_grad
+    assert layer.lora_B.requires_grad
+    
+    x = torch.randn(2, 32)
+    out = layer(x)
+    assert out.shape == (2, 32)
+    assert torch.isfinite(out).all()
+
