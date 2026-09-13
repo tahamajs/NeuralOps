@@ -116,24 +116,27 @@ class SVDLinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = True,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
     ):
         super().__init__()
         if not hasattr(self, 'output_scale'):
             self.output_scale = nn.Parameter(torch.ones(1))
+        factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
         self.rank = rank or max(1, min(in_features, out_features) // 4)
         self.lora_rank = lora_rank
         self.scaling = lora_alpha / max(1, lora_rank)
 
-        self.U = nn.Parameter(torch.randn(out_features, self.rank) * 0.02)
-        self.S = nn.Parameter(torch.ones(self.rank))
-        self.V = nn.Parameter(torch.randn(in_features, self.rank) * 0.02)
-        self.bias = nn.Parameter(torch.zeros(out_features))
+        self.U = nn.Parameter(torch.randn(out_features, self.rank, **factory_kwargs) * 0.02)
+        self.S = nn.Parameter(torch.ones(self.rank, **factory_kwargs))
+        self.V = nn.Parameter(torch.randn(in_features, self.rank, **factory_kwargs) * 0.02)
+        self.bias = nn.Parameter(torch.zeros(out_features, **factory_kwargs))
 
         if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
         else:
@@ -251,21 +254,28 @@ class SVDMamba(BaseAttention):
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.supports_gqa = True
 
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and source_attn is not None:
+            target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
         # Attention path projections with LoRA
         self.q_proj = SVDLinear(
             self.d_model, self.all_head_size,
             rank=max(1, min(self.d_model, self.all_head_size) // 4),
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
         self.k_proj = SVDLinear(
             self.d_model, self.kv_head_size,
             rank=max(1, min(self.d_model, self.kv_head_size) // 4),
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
         self.v_proj = SVDLinear(
             self.d_model, self.kv_head_size,
             rank=max(1, min(self.d_model, self.kv_head_size) // 4),
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
 
         # Gating for dynamic aggregation (negative initial bias preserves pretrained attention path)
@@ -277,20 +287,20 @@ class SVDMamba(BaseAttention):
         self.in_proj = SVDLinear(
             self.d_model, 2 * self.inner_dim,
             rank=max(1, min(self.d_model, self.inner_dim) // 2),
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
         self.out_proj = SVDLinear(
             self.inner_dim, self.d_model,
             rank=max(1, min(self.inner_dim, self.d_model) // 2),
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
         self.x_proj = SVDLinear(
             self.inner_dim, self.dt_rank + 2 * self.d_state,
-            rank=self.dt_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=False
+            rank=self.dt_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=False, dtype=target_dtype
         )
         self.dt_proj = SVDLinear(
             self.dt_rank, self.inner_dim,
-            rank=self.dt_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=False
+            rank=self.dt_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=False, dtype=target_dtype
         )
 
         # Causal depthwise convolution
@@ -311,12 +321,14 @@ class SVDMamba(BaseAttention):
         self.global_V = nn.Parameter(torch.randn(self.d_model, self.global_rank) * 0.02)
         self.global_out = SVDLinear(
             self.global_rank, self.inner_dim, rank=self.global_rank,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=False
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=False, dtype=target_dtype
         )
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+        if target_dtype is not None:
+            self.to(target_dtype)
 
     @property
     def query(self) -> SVDLinear:
@@ -737,6 +749,40 @@ def inject_svd_mamba(
 
         if src is None and target is not None and hasattr(target, "forward"):
             src = target
+
+        if src is None:
+            return None
+
+        # Double-injection guard
+        if src is not None:
+            if isinstance(src, SVDMamba):
+                return None
+            if "SVDMamba" in src.__class__.__name__ or "SVD_Mamba" in src.__class__.__name__:
+                return None
+            if hasattr(src, "inner") and isinstance(getattr(src, "inner"), SVDMamba):
+                return None
+            if hasattr(src, "_wrapped_attention") and isinstance(getattr(src, "_wrapped_attention"), SVDMamba):
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, SVDMamba):
+                    return None
+                if "SVDMamba" in cand.__class__.__name__ or "SVD_Mamba" in cand.__class__.__name__:
+                    return None
+                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), SVDMamba):
+                    return None
+                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), SVDMamba):
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src is not None:
+            c_name = src.__class__.__name__
+            if "DeltaNet" in c_name or "LinearAttention" in c_name:
+                return None
 
         d_model = (
             kwargs.get("hidden_size") or
