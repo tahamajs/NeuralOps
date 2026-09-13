@@ -1,0 +1,98 @@
+{
+  "id": "galerkin_attention",
+  "name": "Galerkin Attention",
+  "file": "Codes/framework/attentions/galerkin_attention.py",
+  "type": "Attention Module",
+  "category": "Dynamic & Efficient Attention",
+  "paradigm": "linear",
+  "icon": "\ud83c\udf1f",
+  "description": "Galerkin Attention: Petrov-Galerkin Projection Attention for Transformer Architectures. Formulates transformer self-attention as a continuous non-local integral operator discretized via Petrov-Galerkin projection onto an orthonormal basis (e.g., discrete cosine basis).",
+  "classes": [
+    "LoRALinear",
+    "GalerkinAttention",
+    "DummyConfig"
+  ],
+  "methods_count": 26,
+  "math_latex": "\\text{Attn}(Q, K, V) = \\phi(Q) \\left( \\phi(K)^\\top V \\right)",
+  "components": [
+    {
+      "id": "kernel_phi",
+      "name": "Random Feature Map Projection phi(x)",
+      "role": "Kernel Linearization Space",
+      "shape_transform": "[r \u00d7 d_in]",
+      "color": "#f43f5e"
+    },
+    {
+      "id": "kv_accum",
+      "name": "Linear KV Buffer Accumulator",
+      "role": "O(N) Recurrent Sequence State",
+      "shape_transform": "[d_in \u00d7 d_out]",
+      "color": "#fb7185"
+    },
+    {
+      "id": "out_linear",
+      "name": "Output Linear Projection",
+      "role": "Output Context Reconstruction",
+      "shape_transform": "[d_out \u00d7 d_in]",
+      "color": "#e11d48"
+    }
+  ],
+  "model_projections": {
+    "distilbert": {
+      "model_name": "DistilBERT-Base",
+      "family": "Encoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 6,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 5780275,
+      "total_baseline_params": 66301440,
+      "total_compressed_params": 58515762,
+      "savings_ratio": 1.22,
+      "storage_saved_bytes": 15571356,
+      "storage_saved_formatted": "14.9 MB"
+    },
+    "roberta": {
+      "model_name": "RoBERTa-Base",
+      "family": "Encoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 12,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 5780275,
+      "total_baseline_params": 123933696,
+      "total_compressed_params": 108362340,
+      "savings_ratio": 1.22,
+      "storage_saved_bytes": 31142712,
+      "storage_saved_formatted": "29.7 MB"
+    },
+    "gpt2": {
+      "model_name": "GPT-2-Small",
+      "family": "Causal Decoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 12,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 5780275,
+      "total_baseline_params": 124318464,
+      "total_compressed_params": 108747108,
+      "savings_ratio": 1.22,
+      "storage_saved_bytes": 31142712,
+      "storage_saved_formatted": "29.7 MB"
+    },
+    "qwen": {
+      "model_name": "Qwen2.5-0.5B",
+      "family": "GQA Decoder (SLM)",
+      "hidden_size": 896,
+      "intermediate_size": 4864,
+      "num_layers": 24,
+      "baseline_layer_params": 14909440,
+      "compressed_layer_p": 13900185,
+      "total_baseline_params": 493961216,
+      "total_compressed_params": 469739096,
+      "savings_ratio": 1.07,
+      "storage_saved_bytes": 48444240,
+      "storage_saved_formatted": "46.2 MB"
+    }
+  }
+}
