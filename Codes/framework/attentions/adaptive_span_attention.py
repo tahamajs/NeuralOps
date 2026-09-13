@@ -26,7 +26,7 @@ import torch.nn.functional as F
 
 logger = logging.getLogger(__name__)
 
-from framework.core.attention_mask import get_token_valid_mask
+from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -565,17 +565,10 @@ class AdaptiveSpanAttention(BaseAttention):
             position_bias = self.compute_bias(N_q, N_k, device=device)
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        if mask is not None:
+            scores = apply_attention_mask(scores, mask)
         if position_bias is not None:
-            if mask is not None and mask.dim() == 4:
-                position_bias = position_bias + mask.to(scores.dtype)
             scores = scores + position_bias.to(scores.dtype)
-        elif mask is not None:
-            if mask.dim() == 4:
-                scores = scores + mask.to(scores.dtype)
-            else:
-                valid_m = get_token_valid_mask(mask, B, N_k, device)
-                if valid_m is not None:
-                    scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
         # Explicit Causal Masking for autoregressive decoders
         is_decoder = (
