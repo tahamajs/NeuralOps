@@ -115,19 +115,22 @@ class LoRALinear(nn.Module):
         lora_rank: int = 0,
         lora_alpha: float = 1.0,
         freeze_base: bool = True,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
     ):
         super().__init__()
         if not hasattr(self, 'output_scale'):
             self.output_scale = nn.Parameter(torch.ones(1))
+        factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
         self.lora_rank = lora_rank
         self.lora_alpha = lora_alpha
         self.scaling = lora_alpha / max(1, lora_rank)
 
-        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
@@ -138,8 +141,8 @@ class LoRALinear(nn.Module):
             nn.init.uniform_(self.bias, -bound, bound)
 
         if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
             self.lora_A.requires_grad = True
@@ -240,31 +243,37 @@ class TPAttention(BaseAttention):
 
         self.is_nested_encoder: bool = False
 
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and src is not None:
+            target_dtype = next(src.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
         # Factorised projections for Q and K
         self.q_proj1 = LoRALinear(
             self.dim, self.num_heads * self.rank, bias=False,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
         self.q_proj2 = LoRALinear(
             self.dim, self.num_heads * self.rank, bias=False,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
         self.k_proj1 = LoRALinear(
             self.dim, self.num_kv_heads * self.rank, bias=False,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
         self.k_proj2 = LoRALinear(
             self.dim, self.num_kv_heads * self.rank, bias=False,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
 
         self.v_proj = LoRALinear(
             self.dim, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
         self.out_proj = LoRALinear(
             self.q_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
 
         dropout_p = (
@@ -276,6 +285,10 @@ class TPAttention(BaseAttention):
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+
+        if target_dtype is not None:
+            for proj in (self.q_proj1, self.q_proj2, self.k_proj1, self.k_proj2, self.v_proj, self.out_proj):
+                proj.to(target_dtype)
 
     def copy_weights(self, old_attn: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
@@ -608,36 +621,113 @@ class TPAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("tp_attention_inject")
 @ATTENTION_REGISTRY.register("inject_tpa")
 def inject_tpa(
-    layer: Any,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Any = None,
     **kwargs: Any,
-) -> Optional[TPAttention]:
-    """Safe injection hook for TPAttention."""
+) -> Optional[Union[TPAttention, nn.Module]]:
+    """Safe injection hook for TPAttention across diverse transformer architectures."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_tpa(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
     try:
         src = old_attn
-        if src is None:
+        if src is None and target is not None:
             for attr in ("attention", "self_attn", "attn", "self"):
-                if hasattr(layer, attr):
-                    src = getattr(layer, attr)
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "self"):
+                        src = cand.self
+                    else:
+                        src = cand
                     break
+
+        if src is None and target is not None and hasattr(target, "forward"):
+            src = target
 
         if src is None:
             return None
 
-        if model_config is None and hasattr(layer, "config"):
-            model_config = layer.config
-        if model_config is None and hasattr(src, "config"):
-            model_config = src.config
+        # Double-injection guard
+        if src is not None:
+            if isinstance(src, TPAttention):
+                return None
+            if "TPAttention" in src.__class__.__name__ or "TPA" in src.__class__.__name__:
+                return None
+            if hasattr(src, "inner") and isinstance(getattr(src, "inner"), TPAttention):
+                return None
+            if hasattr(src, "_wrapped_attention") and isinstance(getattr(src, "_wrapped_attention"), TPAttention):
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, TPAttention):
+                    return None
+                if "TPAttention" in cand.__class__.__name__ or "TPA" in cand.__class__.__name__:
+                    return None
+                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), TPAttention):
+                    return None
+                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), TPAttention):
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src is not None:
+            c_name = src.__class__.__name__
+            if "DeltaNet" in c_name or "LinearAttention" in c_name:
+                return None
+
+        if cfg is None and hasattr(src, "config"):
+            cfg = src.config
 
         rank = kwargs.pop("rank", _cfg_get(comp_config, "tpa_rank", _cfg_get(comp_config, "rank", 8)))
         lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
 
         new_attn = TPAttention(
-            config=model_config,
+            config=cfg,
             rank=rank,
             lora_rank=lora_rank,
             pretrained_attn=src,
@@ -645,17 +735,17 @@ def inject_tpa(
         )
 
         for attr in ("self_attn", "attn", "self"):
-            if hasattr(layer, attr):
-                setattr(layer, attr, new_attn)
+            if hasattr(target, attr):
+                setattr(target, attr, new_attn)
                 return new_attn
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_attn
             else:
-                layer.attention = new_attn
+                target.attention = new_attn
             return new_attn
-        layer.attention = new_attn
+        target.attention = new_attn
         return new_attn
     except Exception as e:
         logger.error("inject_tpa failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None
