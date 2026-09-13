@@ -181,13 +181,17 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
                 trainable_params.append(param)
             continue
 
-        # 1. LoRA adapter, gate, calibration scale, and decay parameters are always trainable
-        if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt", ".gate", "gate.", ".alpha", ".beta", ".output_scale", ".decay")):
+        # 1. LoRA adapter, gate, calibration scale, decay, and span parameters are always trainable
+        if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt", ".gate", "gate.", ".alpha", ".beta", ".output_scale", ".decay", "span_logits", ".span_logits")):
             trainable_params.append(param)
             continue
 
-        # 2. Classification / sequence classification heads are always trainable
+        # 2. Classification / sequence classification heads are trainable, but when LoRA is used
+        # on backbones, large intermediate projection layers (e.g. classifier.dense, pre_classifier)
+        # must remain frozen to prevent catastrophic overfitting during short recovery fine-tuning.
         if any(h in n_low for h in ("score.", "classifier.", "classification_head", "pre_classifier", "pooler")):
+            if has_lora and any(d in n_low for d in ("classifier.dense", "pre_classifier")):
+                continue
             trainable_params.append(param)
             continue
 
@@ -226,9 +230,9 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             if ".inner.e" in n_low or ".inner.f" in n_low:
                 trainable_params.append(param)
                 continue
-            # Allow any custom injected parameter inside an .inner. attention submodule
+            # Allow any custom injected parameter inside an .inner. or ._wrapped_attention. attention submodule
             # but NOT the base weight/bias of a linear layer (those stay frozen)
-            if ".inner." in n_low and not (n_low.endswith(".weight") or n_low.endswith(".bias")):
+            if (".inner." in n_low or "._wrapped_attention." in n_low) and not (n_low.endswith(".weight") or n_low.endswith(".bias")):
                 trainable_params.append(param)
                 continue
             # Allow GoldFinch delta-memory / gate parameters
@@ -239,7 +243,7 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             continue
 
         # 5. Non-LoRA, non-SVD models (custom attention replacements, SSM, CUR, etc.):
-        if any(tag in n_low for tag in (".inner.", "swa_mamba", "kernel_linear", ".u", ".v")):
+        if any(tag in n_low for tag in (".inner.", "._wrapped_attention.", "swa_mamba", "kernel_linear", ".u", ".v")):
             trainable_params.append(param)
         elif any(tag in n_low for tag in (".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
                                           ".w_a", ".w_b", ".weight_u", ".weight_v", ".factor", ".factors",
