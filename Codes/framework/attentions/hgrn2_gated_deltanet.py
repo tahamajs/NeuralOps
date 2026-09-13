@@ -172,6 +172,15 @@ class HGRN2GatedDeltaNet(BaseAttention):
         if old_attn is not None:
             self.copy_weights(old_attn)
 
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and old_attn is not None:
+            target_dtype = next(old_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
+        if target_dtype is not None:
+            self.to(target_dtype)
+
         # Requirement 4: Trainable parameter check and OOM-prevention warning
         n_trainable_12_layers = sum(p.numel() for p in self.parameters() if p.requires_grad) * 12
         if n_trainable_12_layers > 5e6:
@@ -351,15 +360,51 @@ def inject_hgrn2_gated_deltanet(
     # 2. Single layer injection
     curr_attn = old_attn
     if curr_attn is None and target is not None:
-        if hasattr(target, "attention"):
-            curr_attn = target.attention
-        elif hasattr(target, "self"):
-            curr_attn = target.self
-        elif hasattr(target, "attn"):
-            curr_attn = target.attn
+        for attr in ("attention", "self_attn", "attn", "self"):
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if hasattr(cand, "self"):
+                    curr_attn = cand.self
+                else:
+                    curr_attn = cand
+                break
+
+    if curr_attn is None and target is not None and hasattr(target, "forward"):
+        curr_attn = target
 
     if curr_attn is None:
         return None
+
+    # Double-injection guard
+    if curr_attn is not None:
+        if isinstance(curr_attn, HGRN2GatedDeltaNet):
+            return None
+        if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__:
+            return None
+        if hasattr(curr_attn, "inner") and isinstance(getattr(curr_attn, "inner"), HGRN2GatedDeltaNet):
+            return None
+        if hasattr(curr_attn, "_wrapped_attention") and isinstance(getattr(curr_attn, "_wrapped_attention"), HGRN2GatedDeltaNet):
+            return None
+
+    if target is not None:
+        for attr in ("attention", "self_attn", "attn", "self"):
+            cand = getattr(target, attr, None)
+            if cand is None:
+                continue
+            if isinstance(cand, HGRN2GatedDeltaNet):
+                return None
+            if "HGRN2GatedDeltaNet" in cand.__class__.__name__:
+                return None
+            if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), HGRN2GatedDeltaNet):
+                return None
+            if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), HGRN2GatedDeltaNet):
+                return None
+
+    # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+    if curr_attn is not None:
+        c_name = curr_attn.__class__.__name__
+        if "DeltaNet" in c_name or "LinearAttention" in c_name:
+            return None
 
     try:
         new_layer = HGRN2GatedDeltaNet(
@@ -371,14 +416,19 @@ def inject_hgrn2_gated_deltanet(
         )
     except Exception as ex:
         logger.warning("Failed to instantiate HGRN2GatedDeltaNet: %s", ex)
-        raise RuntimeError(f"Injection failed")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):
-            target.attention = new_layer
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_layer
+            else:
+                target.attention = new_layer
         elif hasattr(target, "self"):
             target.self = new_layer
         elif hasattr(target, "attn"):
             target.attn = new_layer
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_layer
 
     return new_layer
