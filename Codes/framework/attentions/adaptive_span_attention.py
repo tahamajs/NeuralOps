@@ -262,18 +262,24 @@ class AdaptiveSpanAttention(BaseAttention):
         else:
             self.relative_attention_num_buckets = 32
             self.relative_attention_max_distance = 128
-            self.lora_rank = kwargs.get("lora_rank", lora_rank)
-            self.lora_alpha = kwargs.get("lora_alpha", 32.0)
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and source_attn is not None:
+            target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
+        self.lora_rank = kwargs.get("lora_rank", lora_rank)
+        self.lora_alpha = kwargs.get("lora_alpha", 32.0)
         self.freeze_base: bool = (self.lora_rank > 0)
 
-        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
+        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
         out_lora_rank = 0 if self.is_nested_encoder else self.lora_rank
         if self.is_nested_encoder:
             self.out_proj = IdentityOutProj()
         else:
-            self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=out_lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+            self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=out_lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
 
         # Initialize to 4.0 so span starts almost fully open (sigmoid(4.0) ~ 0.982)
         self.span_logits = nn.Parameter(torch.full((self.num_heads,), 4.0, dtype=torch.float32))
@@ -292,6 +298,13 @@ class AdaptiveSpanAttention(BaseAttention):
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+            
+        if target_dtype is not None:
+            self.q_proj.to(target_dtype)
+            self.k_proj.to(target_dtype)
+            self.v_proj.to(target_dtype)
+            self.out_proj.to(target_dtype)
+
         if hasattr(self, "source_attn"):
             del self.source_attn
 
