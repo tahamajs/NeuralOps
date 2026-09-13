@@ -686,6 +686,7 @@ def main():
     ap.add_argument("--batch_size", type=int, default=32)
     ap.add_argument("--learning_rate", type=float, default=2e-4)
     ap.add_argument("--precision", choices=("fp32", "fp16"), default="fp16")
+    ap.add_argument("--freeze_clf", action="store_true", help="Freeze classifier head during recovery")
     ap.add_argument("--seq_len", type=int, default=128)
     ap.add_argument("--config", type=str, default=None,
                     help="Path to YAML configuration file (e.g. configs/qwen3_5.yaml)")
@@ -2140,6 +2141,10 @@ def main():
                                     m.reset_parameters()
                                     m.merged = False
 
+                        if getattr(args, "freeze_clf", False):
+                            for n, p in model.named_parameters():
+                                if "score" in n.lower() or "classifier" in n.lower():
+                                    p.requires_grad = False
                         from framework.utils.compat import get_recovery_params
                         trainable = get_recovery_params(model)
                         if trainable:
