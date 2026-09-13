@@ -21,16 +21,16 @@ models = [
     {
         "name": "distilbert",
         "slug": "distilbert",
-        "out_dir": r"results\unified_svd-mamba\distilbert",
+        "out_dir": r"results\unified_svd_mamba\distilbert",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
             "--model", r"models\distilbert_sst2",
             "--model_family", "bert",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_svd-mamba\distilbert",
+            "--output_dir", r"results\unified_svd_mamba\distilbert",
             "--parent_checkpoint", r"results\unified_asvd\distilbert\finetuned_model.pt",
-            "--modules", "full,svd-mamba",
+            "--modules", "full,svd_mamba",
             "--batch_size", "8",
             "--recovery_steps", "50",
             "--learning_rate", "2e-4",
@@ -41,22 +41,22 @@ models = [
             "--defer_export",
             "--timeout", "180",
         ],
-        "summary_csv": r"results\unified_svd-mamba\distilbert\summary.csv",
-        "stats_json": r"results\unified_svd-mamba\distilbert\svd-mamba_stats.json",
+        "summary_csv": r"results\unified_svd_mamba\distilbert\summary.csv",
+        "stats_json": r"results\unified_svd_mamba\distilbert\svd_mamba_stats.json",
     },
     {
         "name": "roberta",
         "slug": "roberta",
-        "out_dir": r"results\unified_svd-mamba\roberta",
+        "out_dir": r"results\unified_svd_mamba\roberta",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
             "--model", r"models\roberta-base",
             "--model_family", "roberta",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_svd-mamba\roberta",
+            "--output_dir", r"results\unified_svd_mamba\roberta",
             "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
-            "--modules", "full,svd-mamba",
+            "--modules", "full,svd_mamba",
             "--batch_size", "8",
             "--recovery_steps", "50",
             "--learning_rate", "2e-4",
@@ -67,22 +67,22 @@ models = [
             "--defer_export",
             "--timeout", "180",
         ],
-        "summary_csv": r"results\unified_svd-mamba\roberta\summary.csv",
-        "stats_json": r"results\unified_svd-mamba\roberta\svd-mamba_stats.json",
+        "summary_csv": r"results\unified_svd_mamba\roberta\summary.csv",
+        "stats_json": r"results\unified_svd_mamba\roberta\svd_mamba_stats.json",
     },
     {
         "name": "gpt2",
         "slug": "gpt2",
-        "out_dir": r"results\unified_svd-mamba\gpt2",
+        "out_dir": r"results\unified_svd_mamba\gpt2",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
             "--model", r"models\gpt2",
             "--model_family", "gpt",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_svd-mamba\gpt2",
+            "--output_dir", r"results\unified_svd_mamba\gpt2",
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
-            "--modules", "full,svd-mamba",
+            "--modules", "full,svd_mamba",
             "--batch_size", "8",
             "--recovery_steps", "50",
             "--learning_rate", "2e-4",
@@ -93,42 +93,43 @@ models = [
             "--defer_export",
             "--timeout", "180",
         ],
-        "summary_csv": r"results\unified_svd-mamba\gpt2\summary.csv",
-        "stats_json": r"results\unified_svd-mamba\gpt2\svd-mamba_stats.json",
+        "summary_csv": r"results\unified_svd_mamba\gpt2\summary.csv",
+        "stats_json": r"results\unified_svd_mamba\gpt2\svd_mamba_stats.json",
     },
     {
         "name": "qwen3_5",
         "slug": "qwen3_5",
-        "out_dir": r"results\unified_svd-mamba\qwen3_5",
+        "out_dir": r"results\unified_svd_mamba\qwen3_5",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
             "--model", r"models\Qwen3.5-0.8B",
             "--model_family", "qwen3_5",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_svd-mamba\qwen3_5",
+            "--output_dir", r"results\unified_svd_mamba\qwen3_5",
             "--parent_checkpoint", r"results\unified_asvd\qwen3_5\finetuned_model.pt",
-            "--modules", "full,svd-mamba",
-            "--batch_size", "8",
+            "--modules", "full,svd_mamba",
+            "--batch_size", "4",
             "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
             "--rank", "32",
+            "--gradient_checkpointing",
             "--precision", "fp16",
             "--fresh",
             "--defer_export",
             "--timeout", "180",
         ],
-        "summary_csv": r"results\unified_svd-mamba\qwen3_5\summary.csv",
-        "stats_json": r"results\unified_svd-mamba\qwen3_5\svd-mamba_stats.json",
+        "summary_csv": r"results\unified_svd_mamba\qwen3_5\summary.csv",
+        "stats_json": r"results\unified_svd_mamba\qwen3_5\svd_mamba_stats.json",
     },
 ]
 
 import argparse
 
-parser = argparse.ArgumentParser(description="Unified 4-Model SVD-MAMBA Benchmark")
+parser = argparse.ArgumentParser(description="Unified 4-Model SVD_MAMBA Benchmark")
 parser.add_argument("--models", nargs="*", default=None, help="Specific models to run (e.g. gpt2 or distilbert,roberta)")
-parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names (e.g. full,svd-mamba)")
+parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names (e.g. full,svd_mamba)")
 parser.add_argument("--batch_size", type=int, default=None, help="Batch size override")
 parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
 parser.add_argument("--rank", type=int, default=None, help="Rank override")
@@ -307,7 +308,7 @@ for m in models:
     # Save complete publication-ready metrics
     metrics_payload = {
         "model_name": name,
-        "module": "svd-mamba",
+        "module": "svd_mamba",
         "status": status,
         "accuracy_pct": acc,
         "f1": float(row.get("f1", row.get("mean_f1", 0.0))),
@@ -377,7 +378,7 @@ Part of the SVD Linear Attention and LLM Compression Benchmark Suite.
     with open(hf_export_dir / "README.md", "w", encoding="utf-8") as f:
         f.write(card_content)
 
-    repo_id = f"{hf_org}/svd-linear-attention-{slug}-svd-mamba"
+    repo_id = f"{hf_org}/svd-linear-attention-{slug}-svd_mamba"
     if api is not None:
         try:
             print(f"Uploading to Hugging Face: {repo_id}...", flush=True)
@@ -385,7 +386,7 @@ Part of the SVD Linear Attention and LLM Compression Benchmark Suite.
             api.upload_folder(
                 folder_path=str(hf_export_dir),
                 repo_id=repo_id,
-                commit_message=f"Upload hardened SVD-MAMBA model weights ({name}) - Acc: {acc:.2f}%",
+                commit_message=f"Upload hardened SVD_MAMBA model weights ({name}) - Acc: {acc:.2f}%",
             )
             print(f"Successfully uploaded {name} to {repo_id}", flush=True)
             uploaded_repos.append(repo_id)
