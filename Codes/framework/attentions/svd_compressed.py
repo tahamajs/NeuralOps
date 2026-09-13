@@ -381,8 +381,17 @@ class SVDCompressedAttention(BaseAttention):
         self.dropout = nn.Dropout(float(dropout_p) if dropout_p is not None else 0.1)
 
         src_attn = old_attn or kwargs.get("pretrained_attn", None)
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and src_attn is not None:
+            target_dtype = next(src_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
         if src_attn is not None:
             self.copy_weights(src_attn)
+
+        if target_dtype is not None:
+            self.to(target_dtype)
 
     def _set_factorised_weights(
         self, W_tensor: torch.Tensor, bias_tensor: Optional[torch.Tensor], down: nn.Linear, up: nn.Linear, rank: int
@@ -997,86 +1006,143 @@ def main() -> None:
 @ATTENTION_REGISTRY.register("inject_svd_compressed")
 @ATTENTION_REGISTRY.register("inject_svd_compressed_attention")
 def inject_svd_compressed(
-    layer: Any = None,
+    model: Optional[nn.Module] = None,
+    layer: Optional[nn.Module] = None,
     model_config: Optional[Any] = None,
     comp_config: Optional[Any] = None,
     layer_idx: int = 0,
-    total_layers: int = 1,
+    total_layers: int = 12,
     old_attn: Optional[Any] = None,
     lora_rank: Optional[int] = None,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Optional[Union[SVDCompressedAttention, nn.Module]]:
     r"""Bridge helper safely injecting SVDCompressedAttention into a transformer layer or model."""
-    # Dual injector: whole model traversal
-    if layer is not None and (hasattr(layer, "transformer") or hasattr(layer, "distilbert") or hasattr(layer, "roberta") or (hasattr(layer, "model") and not hasattr(layer, "forward"))):
-        cfg = model_config or getattr(layer, "config", None)
-        layers = None
-        for path in ("distilbert.transformer.layer", "roberta.encoder.layer", "bert.encoder.layer", "transformer.h", "model.layers"):
-            parts = path.split(".")
-            curr = layer
-            for p in parts:
-                curr = getattr(curr, p, None)
-                if curr is None:
-                    break
-            if curr is not None:
-                layers = curr
-                break
-        if layers is not None:
-            for lid, l in enumerate(layers):
-                inject_svd_compressed(
-                    layer=l,
-                    model_config=cfg,
-                    comp_config=comp_config,
-                    layer_idx=lid,
-                    total_layers=len(layers),
-                    **kwargs,
-                )
-        return layer
-
-    if old_attn is None and layer is not None:
-        old_attn = getattr(layer, "attention", getattr(layer, "attn", getattr(layer, "self_attn", None)))
-        if old_attn is None and hasattr(layer, "self"):
-            old_attn = layer
-    if old_attn is None:
+    target = layer if layer is not None else model
+    if target is None:
         return None
 
-    if model_config is None and hasattr(layer, "config"):
-        model_config = layer.config
-    if model_config is None and hasattr(old_attn, "config"):
-        model_config = old_attn.config
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
 
-    rank = _cfg_get(comp_config, "rank", _cfg_get(comp_config, "svd_rank", kwargs.get("rank", 32)))
-    ranks = kwargs.pop("ranks", None)
-    if ranks is None:
-        ranks = {"q": rank, "k": rank, "v": rank, "o": rank}
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
 
-    dropout = _cfg_get(comp_config, "dropout", 0.1)
-    lr = lora_rank if lora_rank is not None else _cfg_get(comp_config, "lora_rank", 16)
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_svd_compressed(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                lora_rank=lora_rank,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
 
+    # 2. Single layer injection
     try:
+        src_attn = old_attn
+        if src_attn is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "self"):
+                        src_attn = cand.self
+                    else:
+                        src_attn = cand
+                    break
+
+        if src_attn is None and target is not None and hasattr(target, "forward"):
+            src_attn = target
+
+        if src_attn is None:
+            return None
+
+        # Double-injection guard
+        if src_attn is not None:
+            if isinstance(src_attn, SVDCompressedAttention):
+                return None
+            if "SVDCompressed" in src_attn.__class__.__name__:
+                return None
+            if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), SVDCompressedAttention):
+                return None
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), SVDCompressedAttention):
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, SVDCompressedAttention):
+                    return None
+                if "SVDCompressed" in cand.__class__.__name__:
+                    return None
+                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), SVDCompressedAttention):
+                    return None
+                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), SVDCompressedAttention):
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src_attn is not None:
+            c_name = src_attn.__class__.__name__
+            if "DeltaNet" in c_name or "LinearAttention" in c_name:
+                return None
+
+        if cfg is None and hasattr(src_attn, "config"):
+            cfg = src_attn.config
+
+        rank = _cfg_get(comp_config, "rank", _cfg_get(comp_config, "svd_rank", kwargs.get("rank", 32)))
+        ranks = kwargs.pop("ranks", None)
+        if ranks is None:
+            ranks = {"q": rank, "k": rank, "v": rank, "o": rank}
+
+        dropout = _cfg_get(comp_config, "dropout", 0.1)
+        lr = lora_rank if lora_rank is not None else _cfg_get(comp_config, "lora_rank", 16)
+
         new_attn = SVDCompressedAttention(
-            config=model_config,
-            old_attn=old_attn,
+            config=cfg,
+            old_attn=src_attn,
             dropout=dropout,
             layer_idx=layer_idx,
             ranks=ranks,
             lora_rank=lr,
             **kwargs,
         )
+
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
+                else:
+                    target.attention = new_attn
+                return new_attn
+            for attr in ("self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_attn)
+                    return new_attn
+            target.attention = new_attn
+            return new_attn
+        return new_attn
     except Exception as e:
-        log.warning(f"Failed to instantiate SVDCompressedAttention: {e}")
-        raise RuntimeError(f"Injection failed")
-
-    if hasattr(layer, "attention"):
-        if hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
-        else:
-            layer.attention = new_attn
-    elif hasattr(layer, "attn"):
-        layer.attn = new_attn
-    elif hasattr(layer, "self_attn"):
-        layer.self_attn = new_attn
-    elif hasattr(layer, "self"):
-        layer.self = new_attn
-
-    return new_attn
+        log.warning("inject_svd_compressed failed: %s", e)
+        return None
