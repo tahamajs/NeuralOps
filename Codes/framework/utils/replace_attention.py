@@ -18,9 +18,17 @@ class UniversalAttentionWrapper(nn.Module):
 
     def __init__(self, inner_attn: nn.Module, layer_name: str = "", return_tuple: Optional[bool] = None) -> None:
         super().__init__()
-        self.inner = inner_attn
+        self._wrapped_attention = inner_attn
         self.layer_name = layer_name
         self.return_tuple = return_tuple
+
+    @property
+    def inner(self) -> nn.Module:
+        return self._wrapped_attention
+
+    @inner.setter
+    def inner(self, module: nn.Module) -> None:
+        self._wrapped_attention = module
 
     def forward(self, *args: Any, **kwargs: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         # 1. Extract hidden states / input tensor
@@ -59,21 +67,21 @@ class UniversalAttentionWrapper(nn.Module):
             # Native Qwen attention owns RoPE. A legacy replacement may opt
             # out explicitly; positional tensors are then removed only from
             # this injected call, never from the base model.
-            if not getattr(self.inner, "supports_rope", False):
-                kwargs = bypass_qwen_rope(kwargs, self.inner)
+            if not getattr(self._wrapped_attention, "supports_rope", False):
+                kwargs = bypass_qwen_rope(kwargs, self._wrapped_attention)
                 kwargs.pop("qwen_rope_bypassed", None)
             if isinstance(attention_mask, torch.Tensor) and attention_mask.dim() == 4:
                 attention_mask = qwen_attention_mask(
                     attention_mask,
                     causal=True,
-                    expects_bidirectional=bool(getattr(self.inner, "expects_bidirectional", False)),
+                    expects_bidirectional=bool(getattr(self._wrapped_attention, "expects_bidirectional", False)),
                 )
 
         key_value_states = kwargs.pop("key_value_states", None)
         position_bias = kwargs.pop("position_bias", None)
 
         from framework.core.t5_compat import is_t5_model
-        cfg = getattr(self.inner, "config", getattr(self, "config", None))
+        cfg = getattr(self._wrapped_attention, "config", getattr(self, "config", None))
         is_t5 = is_t5_model(cfg) or key_value_states is not None or position_bias is not None
 
         if is_t5:
@@ -95,12 +103,12 @@ class UniversalAttentionWrapper(nn.Module):
         # 3. Dynamic call dispatch
         out = None
         call_attempts = [
-            lambda: self.inner(hidden_states, attention_mask=attention_mask, head_mask=head_mask, output_attentions=output_attentions, **kwargs),
-            lambda: self.inner(hidden_states, attention_mask=attention_mask, **kwargs),
-            lambda: self.inner(hidden_states, mask=attention_mask, **kwargs),
-            lambda: self.inner(query=hidden_states, key=hidden_states, value=hidden_states, mask=attention_mask, **kwargs),
-            lambda: self.inner(hidden_states, **kwargs),
-            lambda: self.inner(hidden_states),
+            lambda: self._wrapped_attention(hidden_states, attention_mask=attention_mask, head_mask=head_mask, output_attentions=output_attentions, **kwargs),
+            lambda: self._wrapped_attention(hidden_states, attention_mask=attention_mask, **kwargs),
+            lambda: self._wrapped_attention(hidden_states, mask=attention_mask, **kwargs),
+            lambda: self._wrapped_attention(query=hidden_states, key=hidden_states, value=hidden_states, mask=attention_mask, **kwargs),
+            lambda: self._wrapped_attention(hidden_states, **kwargs),
+            lambda: self._wrapped_attention(hidden_states),
         ]
 
         last_err = None
@@ -115,12 +123,12 @@ class UniversalAttentionWrapper(nn.Module):
         if out is None:
             if last_err is not None:
                 raise last_err
-            raise RuntimeError(f"Failed to execute forward pass on {type(self.inner).__name__}")
+            raise RuntimeError(f"Failed to execute forward pass on {type(self._wrapped_attention).__name__}")
 
         # 4. Standardize output format
         from framework.utils.compat import is_decoder_family
         from framework.utils.model_family import detect_family
-        cfg = getattr(self.inner, "config", getattr(self, "config", None))
+        cfg = getattr(self._wrapped_attention, "config", getattr(self, "config", None))
         fam = detect_family(cfg) if cfg is not None else "unknown"
         is_dec = is_decoder_family(fam) or fam in {"qwen3_5", "qwen", "gpt", "llama", "ssm"}
 
@@ -149,8 +157,8 @@ class UniversalAttentionWrapper(nn.Module):
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """T5 forward pass executing relative position bias and cross/self attention correctly."""
         # 1. If inner module implements custom forward_t5, call it
-        if hasattr(self.inner, "forward_t5") and callable(self.inner.forward_t5):
-            res = self.inner.forward_t5(
+        if hasattr(self._wrapped_attention, "forward_t5") and callable(self._wrapped_attention.forward_t5):
+            res = self._wrapped_attention.forward_t5(
                 hidden_states,
                 attention_mask=attention_mask,
                 key_value_states=key_value_states,
@@ -166,14 +174,14 @@ class UniversalAttentionWrapper(nn.Module):
         kv_input = key_value_states if is_cross_attention else hidden_states
         B, N_q, D = hidden_states.shape
         N_k = kv_input.shape[1]
-        H = getattr(self.inner, "num_heads", getattr(self, "num_heads", 8))
-        d = getattr(self.inner, "head_dim", getattr(self, "head_dim", 64))
+        H = getattr(self._wrapped_attention, "num_heads", getattr(self, "num_heads", 8))
+        d = getattr(self._wrapped_attention, "head_dim", getattr(self, "head_dim", 64))
 
         # 3. Position bias computation and propagation
         if position_bias is None:
-            compute_bias_fn = getattr(self.inner, "compute_bias", getattr(self, "compute_bias", None))
-            has_rel = getattr(self.inner, "has_relative_attention_bias", getattr(self, "has_relative_attention_bias", False))
-            rel_emb = getattr(self.inner, "relative_attention_bias", getattr(self, "relative_attention_bias", None))
+            compute_bias_fn = getattr(self._wrapped_attention, "compute_bias", getattr(self, "compute_bias", None))
+            has_rel = getattr(self._wrapped_attention, "has_relative_attention_bias", getattr(self, "has_relative_attention_bias", False))
+            rel_emb = getattr(self._wrapped_attention, "relative_attention_bias", getattr(self, "relative_attention_bias", None))
 
             if has_rel and compute_bias_fn is not None and rel_emb is not None:
                 position_bias = compute_bias_fn(N_q, N_k, device=hidden_states.device)
@@ -185,11 +193,11 @@ class UniversalAttentionWrapper(nn.Module):
                 if causal_mask is not None:
                     position_bias = position_bias + causal_mask.to(position_bias.dtype)
 
-        # 4. Extract projection layers from self.inner
-        q_mod = getattr(self.inner, "q_proj", getattr(self.inner, "q", getattr(self.inner, "query", None)))
-        k_mod = getattr(self.inner, "k_proj", getattr(self.inner, "k", getattr(self.inner, "key", None)))
-        v_mod = getattr(self.inner, "v_proj", getattr(self.inner, "v", getattr(self.inner, "value", None)))
-        o_mod = getattr(self.inner, "out_proj", getattr(self.inner, "o", getattr(self.inner, "dense", None)))
+        # 4. Extract projection layers from self._wrapped_attention
+        q_mod = getattr(self._wrapped_attention, "q_proj", getattr(self._wrapped_attention, "q", getattr(self._wrapped_attention, "query", None)))
+        k_mod = getattr(self._wrapped_attention, "k_proj", getattr(self._wrapped_attention, "k", getattr(self._wrapped_attention, "key", None)))
+        v_mod = getattr(self._wrapped_attention, "v_proj", getattr(self._wrapped_attention, "v", getattr(self._wrapped_attention, "value", None)))
+        o_mod = getattr(self._wrapped_attention, "out_proj", getattr(self._wrapped_attention, "o", getattr(self._wrapped_attention, "dense", None)))
 
         if q_mod is not None and k_mod is not None and v_mod is not None:
             Q = q_mod(hidden_states).view(B, N_q, H, d).transpose(1, 2)
@@ -221,7 +229,7 @@ class UniversalAttentionWrapper(nn.Module):
             probs = F.softmax(scores.float(), dim=-1).to(scores.dtype)
             probs = torch.nan_to_num(probs, nan=0.0)
 
-            dropout = getattr(self.inner, "dropout", None)
+            dropout = getattr(self._wrapped_attention, "dropout", None)
             if dropout is not None and callable(dropout):
                 probs = dropout(probs)
 
@@ -231,9 +239,9 @@ class UniversalAttentionWrapper(nn.Module):
 
         # Fallback to direct inner call
         try:
-            res = self.inner(hidden_states, key_value_states=key_value_states, encoder_hidden_states=key_value_states, **kwargs)
+            res = self._wrapped_attention(hidden_states, key_value_states=key_value_states, encoder_hidden_states=key_value_states, **kwargs)
         except TypeError:
-            res = self.inner(hidden_states, **kwargs)
+            res = self._wrapped_attention(hidden_states, **kwargs)
         if isinstance(res, tuple):
             return res[0], (res[1] if len(res) > 1 and res[1] is not None else position_bias)
         return res, position_bias
@@ -242,7 +250,9 @@ class UniversalAttentionWrapper(nn.Module):
         try:
             return super().__getattr__(name)
         except AttributeError:
-            return getattr(self.inner, name)
+            if name in ("_wrapped_attention", "_modules", "_parameters", "_buffers"):
+                raise
+            return getattr(self._wrapped_attention, name)
 
 
 

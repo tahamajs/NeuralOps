@@ -151,6 +151,14 @@ class LoRALinear(nn.Module):
         return out
 
 
+class IdentityOutProj(nn.Identity):
+    lora_A = None
+    lora_B = None
+
+    def freeze_base_weights(self) -> None:
+        pass
+
+
 @ATTENTION_REGISTRY.register("adaptive_span", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("adaptive_span_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class AdaptiveSpanAttention(BaseAttention):
@@ -218,6 +226,11 @@ class AdaptiveSpanAttention(BaseAttention):
             self.ramp_size = float(kwargs.get("ramp_size", 32.0))
 
         model_type = getattr(config, "model_type", "").lower() if config else ""
+        if "qwen" in model_type or "gpt" in model_type:
+            self.max_span = min(self.max_span, 64)
+        elif "roberta" in model_type or "bert" in model_type:
+            self.max_span = min(self.max_span, 96)
+
         is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
         if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
             is_dec = True
@@ -261,7 +274,10 @@ class AdaptiveSpanAttention(BaseAttention):
         self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         out_lora_rank = 0 if self.is_nested_encoder else self.lora_rank
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=out_lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        if self.is_nested_encoder:
+            self.out_proj = IdentityOutProj()
+        else:
+            self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=out_lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         # Initialize to 4.0 so span starts almost fully open (sigmoid(4.0) ~ 0.982)
         self.span_logits = nn.Parameter(torch.full((self.num_heads,), 4.0, dtype=torch.float32))
@@ -276,11 +292,12 @@ class AdaptiveSpanAttention(BaseAttention):
             ),
         ) if config else dropout
         self.dropout = nn.Dropout(dropout_p)
-        self.source_attn = source_attn
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+        if hasattr(self, "source_attn"):
+            del self.source_attn
 
     @property
     def current_span(self) -> torch.Tensor:
@@ -434,6 +451,8 @@ class AdaptiveSpanAttention(BaseAttention):
                 or cfg_type in ("roberta", "bert")
                 or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and "gpt" not in cls_name.lower() and "qwen" not in cls_name.lower())
             )
+        if self.is_nested_encoder and not isinstance(self.out_proj, IdentityOutProj):
+            self.out_proj = IdentityOutProj()
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
@@ -450,7 +469,7 @@ class AdaptiveSpanAttention(BaseAttention):
                 if norm < 1e-4:
                     raise RuntimeError(f"AdaptiveSpanAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
 
-        if extracted["o"][0] is not None:
+        if not self.is_nested_encoder and extracted["o"][0] is not None:
             norm_o = torch.linalg.norm(extracted["o"][0].float())
             if norm_o < 1e-4:
                 raise RuntimeError(f"AdaptiveSpanAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
@@ -458,6 +477,8 @@ class AdaptiveSpanAttention(BaseAttention):
         # Copy into projection modules
         with torch.no_grad():
             for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+                if proj_key == "o" and self.is_nested_encoder:
+                    continue
                 w, b = extracted[proj_key]
                 if w is not None:
                     target_w = target.weight
@@ -467,12 +488,6 @@ class AdaptiveSpanAttention(BaseAttention):
                     if b is not None and target.bias is not None:
                         b_val = b.data if isinstance(b, nn.Parameter) else b
                         target.bias.data[:min(len(target.bias), len(b_val))].copy_(b_val[:min(len(target.bias), len(b_val))])
-                elif proj_key == "o" and self.is_nested_encoder:
-                    min_d = min(target.weight.shape[0], target.weight.shape[1])
-                    target.weight.data.zero_()
-                    target.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
-                    if target.bias is not None:
-                        target.bias.data.zero_()
 
                 target.freeze_base_weights()
 
@@ -521,8 +536,8 @@ class AdaptiveSpanAttention(BaseAttention):
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
-        elif self.rotary_emb is not None or (hasattr(self, "source_attn") and getattr(self.source_attn, "rotary_emb", None) is not None):
-            rotary_mod = self.rotary_emb or getattr(self.source_attn, "rotary_emb", None)
+        elif self.rotary_emb is not None:
+            rotary_mod = self.rotary_emb
             pos_ids = kwargs.get("position_ids", None)
             if pos_ids is None:
                 pos_ids = torch.arange(N_q, device=device).unsqueeze(0).expand(B, -1)
@@ -589,7 +604,7 @@ class AdaptiveSpanAttention(BaseAttention):
         # Avoids [H, N, N] boolean allocation and provides non-zero gradients to self.span_logits
         if not is_cross_attention and N_q == N_k:
             # Stronger fast-path: only allocate ramp when it can actually affect attention
-            if self.max_span < (N_k - self.ramp_size):
+            if self.max_span < N_k:
                 span = torch.sigmoid(self.span_logits) * self.max_span   # [H]
                 # If per-head (span + ramp_size) >= N_k for all heads, ramp has no effect
                 if not ((span + self.ramp_size) >= N_k).all():
@@ -704,6 +719,31 @@ def inject_adaptive_span(
     if src_attn is None and cfg is None:
         return None
 
+    # Skip if already injected
+    if src_attn is not None:
+        if isinstance(src_attn, AdaptiveSpanAttention):
+            return None
+        if "AdaptiveSpan" in src_attn.__class__.__name__:
+            return None
+        if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), AdaptiveSpanAttention):
+            return None
+        if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), AdaptiveSpanAttention):
+            return None
+
+    if target is not None:
+        for attr in ("attention", "self_attn", "attn", "self"):
+            cand = getattr(target, attr, None)
+            if cand is None:
+                continue
+            if isinstance(cand, AdaptiveSpanAttention):
+                return None
+            if "AdaptiveSpan" in cand.__class__.__name__:
+                return None
+            if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), AdaptiveSpanAttention):
+                return None
+            if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), AdaptiveSpanAttention):
+                return None
+
     # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
     if src_attn is not None:
         c_name = src_attn.__class__.__name__
@@ -733,6 +773,8 @@ def inject_adaptive_span(
     model_type_str = str(getattr(cfg, "model_type", "")).lower() if cfg is not None else ""
     if "qwen" in model_type_str or "gpt" in model_type_str:
         max_span = min(max_span, 64)
+    elif "roberta" in model_type_str or "bert" in model_type_str:
+        max_span = min(max_span, 96)  # Allow ramp to matter
 
     is_nested_layer = (
         (hasattr(target, "attention") and hasattr(target.attention, "output") and hasattr(target.attention.output, "dense"))

@@ -82,6 +82,10 @@ def get_attention_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
             continue
 
         class_name = module.__class__.__name__.lower()
+        if "universalattentionwrapper" in class_name or "adaptivespan" in class_name:
+            continue
+        if name.endswith(".inner") or name.endswith("._wrapped_attention"):
+            continue
         is_output_submodule = name.endswith(".output") or name.endswith("_output") or "selfoutput" in class_name
         if is_output_submodule:
             continue
