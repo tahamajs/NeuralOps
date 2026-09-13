@@ -685,6 +685,8 @@ def main():
                     help="Path to YAML configuration file (e.g. configs/qwen3_5.yaml)")
     ap.add_argument("--timeout", type=int, default=3600)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--gradient_checkpointing", action="store_true", default=False,
+                    help="Enable gradient checkpointing on the model")
     ap.add_argument("--strict_compat", action="store_true",
                     help="Skip modules without a truthful native/adapted Qwen path")
     ap.add_argument("--model_family", choices=("auto", "bert", "roberta", "gpt", "qwen", "qwen3_5", "t5", "ssm", "unknown"), default="auto")
@@ -1176,9 +1178,17 @@ def main():
              active_opt, args.muon_lr, args.adam_lr if active_opt == "muon" else args.learning_rate, args.weight_decay)
     LOG.info("  precision:         %s", args.precision)
     LOG.info("=" * 80)
-    # Only enable gradient checkpointing for long sequences (> 512) to avoid PyTorch SavedTensorHooks generator assert
-    if args.seq_len > 512 and hasattr(base, "gradient_checkpointing_enable"):
-        base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+    # Enable gradient checkpointing if requested or for long sequences (> 512)
+    if (args.gradient_checkpointing or args.seq_len > 512) and hasattr(base, "gradient_checkpointing_enable"):
+        try:
+            base.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+            LOG.info("Enabled gradient checkpointing for %s backbone", family)
+        except Exception:
+            try:
+                base.gradient_checkpointing_enable()
+                LOG.info("Enabled gradient checkpointing for %s backbone", family)
+            except Exception as e:
+                LOG.warning("Could not enable gradient checkpointing: %s", e)
 
     checkpoint = out / "finetuned_model.pt"
     if args.parent_checkpoint:
