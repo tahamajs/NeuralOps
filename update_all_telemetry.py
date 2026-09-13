@@ -18,7 +18,7 @@ def find_bench(mod_name):
         clean.replace("_distiller", ""),
         clean.replace("_pruner", "")
     ]
-    for c in candidates:
+    for c in candidates:https://brave.com/leo/?mtm_source=brave-browser&mtm_medium=brave-ntp&mtm_campaign=brave-leo-launch&mtm_content=99425607-2724-4502-a2a9-ea6822c1ab93
         if c in bench_data:
             return clean, bench_data[c]
     return clean, None
