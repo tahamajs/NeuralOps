@@ -114,6 +114,8 @@ models = [
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
             "--rank", "32",
+            "--max_span", "64",
+            "--gradient_checkpointing",
             "--precision", "fp16",
             "--fresh",
             "--defer_export",
