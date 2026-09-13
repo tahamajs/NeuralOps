@@ -1,14 +1,14 @@
 {
     "model": "roberta-base_hgrn2_layer",
     "performance": {
-        "accuracy_pct": 50.46,
-        "f1_score": 0.5878,
-        "f1_macro": 0.4835,
-        "precision": 0.5012,
-        "recall": 0.5011,
-        "val_loss": 0.7672,
+        "accuracy_pct": 50.8,
+        "f1_score": 0.6273,
+        "f1_macro": 0.4519,
+        "precision": 0.5038,
+        "recall": 0.5023,
+        "val_loss": 0.7587,
         "status": "PASS_LOW",
-        "elapsed_s": 269.59
+        "elapsed_s": 57.63
     },
     "efficiency": {
         "total_params_before": 124647170,
@@ -52,8 +52,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 679.37,
-        "tokens_per_sec": 1487.65
+        "peak_vram_mb": 691.37,
+        "tokens_per_sec": 8248.01
     },
     "architecture": {
         "span_distribution": {},
@@ -63,8 +63,8 @@
     "scalability": {
         "L_128_vram_mb": 654.31,
         "L_256_vram_mb": 656.88,
-        "L_512_vram_mb": 664.25,
+        "L_512_vram_mb": 673.0,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-11T12:28:27.022353"
+    "timestamp": "2026-09-11T18:42:10.766904"
 }
