@@ -16,12 +16,15 @@ Mathematical Formulation:
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+logger = logging.getLogger(__name__)
 
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
@@ -334,7 +337,7 @@ class AdaptiveSpanAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
+                logger.error("AdaptiveSpanAttention copy_weights failed for projection %s: %s", proj, e)
                 raise RuntimeError(f"copy_weights failed: {e}")
 
         # 2. GPT-2 Fused c_attn Conv1D handling
@@ -557,34 +560,42 @@ class AdaptiveSpanAttention(BaseAttention):
             causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(~causal_tril, -10000.0)
 
-        # Compute softmax in float32 for numerical stability, then cast back
-        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(scores.dtype)
+        # Softmax computation with chunked fallback for very long sequences
+        if scores.dtype in (torch.float16, torch.bfloat16) and N_k > 1024:
+            attn = torch.empty_like(scores)
+            c_sz = 512
+            for s_idx in range(0, N_q, c_sz):
+                e_idx = min(s_idx + c_sz, N_q)
+                attn[:, :, s_idx:e_idx, :] = torch.nan_to_num(
+                    F.softmax(scores[:, :, s_idx:e_idx, :].float(), dim=-1), nan=0.0
+                ).to(scores.dtype)
+        else:
+            attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(scores.dtype)
 
         # Differentiable Adaptive Span Soft Ramp (Sukhbaatar et al., 2019)
         # Continuous piecewise-linear masking: g_z(d) = clamp((R + z - d) / R, 0.0, 1.0)
         # Avoids [H, N, N] boolean allocation and provides non-zero gradients to self.span_logits
         if not is_cross_attention and N_q == N_k:
-            span = torch.sigmoid(self.span_logits) * self.max_span   # [H]
-            
-            # Fast path: skip ramp tensor allocation if all spans are wide enough to cover the context
-            # A span covers the full sequence if span >= N_k - ramp_size
-            if not (span >= N_k - self.ramp_size).all():
-                pos_q = torch.arange(N_q, device=device, dtype=scores.dtype).unsqueeze(1)  # [N_q, 1]
-                pos_k = torch.arange(N_k, device=device, dtype=scores.dtype).unsqueeze(0)  # [1, N_k]
-                if is_decoder:
-                    dist = (pos_q - pos_k).clamp(min=0.0)  # [N_q, N_k]
-                else:
-                    dist = (pos_q - pos_k).abs()           # [N_q, N_k]
+            # Fast path: If maximum possible span covers the sequence length, ramp is a no-op
+            if self.max_span < N_k:
+                span = torch.sigmoid(self.span_logits) * self.max_span   # [H]
+                # If per-head (span + ramp_size) >= N_k for all heads, ramp has no effect
+                if not ((span + self.ramp_size) >= N_k).all():
+                    pos_q = torch.arange(N_q, device=device, dtype=scores.dtype).unsqueeze(1)  # [N_q, 1]
+                    pos_k = torch.arange(N_k, device=device, dtype=scores.dtype).unsqueeze(0)  # [1, N_k]
+                    if is_decoder:
+                        dist = (pos_q - pos_k).clamp(min=0.0)  # [N_q, N_k]
+                    else:
+                        dist = (pos_q - pos_k).abs()           # [N_q, N_k]
 
-                span_h = span.view(1, H, 1, 1).to(scores.dtype)
-                dist_mat = dist.view(1, 1, N_q, N_k)
-                ramp = torch.clamp((self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0)
+                    span_h = span.view(1, H, 1, 1).to(scores.dtype)
+                    dist_mat = dist.view(1, 1, N_q, N_k)
+                    ramp = torch.clamp((self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0)
 
-                attn = attn * ramp
-                attn = attn / (attn.sum(dim=-1, keepdim=True) + 1e-8)
-                attn = torch.nan_to_num(attn, nan=0.0)
+                    attn = attn * ramp
+                    attn = attn / (attn.sum(dim=-1, keepdim=True) + 1e-8)
+                    attn = torch.nan_to_num(attn, nan=0.0)
 
-        attn = attn.to(dtype)
         attn = self.dropout(attn)
 
         if head_mask is not None:
@@ -705,6 +716,10 @@ def inject_adaptive_span(
     rank = getattr(comp_config, "adaptive_span_rank", kwargs.get("rank", 32))
     dropout = getattr(comp_config, "dropout", kwargs.get("dropout", 0.1))
     max_span = getattr(comp_config, "max_span", kwargs.get("max_span", 128))
+
+    model_type_str = str(getattr(cfg, "model_type", "")).lower() if cfg is not None else ""
+    if "qwen" in model_type_str or "gpt" in model_type_str:
+        max_span = min(max_span, 64)
 
     try:
         new_block = AdaptiveSpanAttention(
