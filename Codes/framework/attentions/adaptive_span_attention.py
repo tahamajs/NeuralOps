@@ -1,4 +1,4 @@
-r"""
+"""
 Adaptive Span Attention Module (Sukhbaatar et al., 2019).
 
 Mathematical Formulation:
