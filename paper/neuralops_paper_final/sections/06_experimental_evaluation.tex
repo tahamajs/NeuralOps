@@ -32,7 +32,7 @@ We conduct an extensive empirical evaluation of NeuralOps across multiple standa
 \subsection{Experimental Setup and Hardware Telemetry}
 All empirical benchmarks were executed across two standardized hardware platforms:
 \begin{enumerate}
-    \item \textbf{NVIDIA GeForce RTX 4070 Laptop GPU:} 8GB GDDR6 VRAM, Ada Lovelace architecture, 140W TGP, 46 SMs, FP16 Tensor Core peak throughput of $140\,\text{TFLOPs}$, memory bandwidth of $288\,\text{GB/s}$, operating under CUDA 12.4, PyTorch 2.5.0 with automated AMP FP16 mixed-precision acceleration.
+    \item \textbf{NVIDIA GeForce RTX 4070 Laptop GPU:} 8GB GDDR6 VRAM, Ada Lovelace architecture, 140W TGP, 36 SMs (4,608 CUDA cores), FP16 Tensor Core peak throughput of $121.5\,\text{TFLOPS}$, memory bandwidth of $256\,\text{GB/s}$ (128-bit bus at 16 Gbps), operating under CUDA 12.4, PyTorch 2.5.0 with automated AMP FP16 mixed-precision acceleration.
     \item \textbf{NVIDIA A100 SXM4 (80GB):} 80GB HBM2e VRAM, Ampere architecture, $2,039\,\text{GB/s}$ bandwidth, $312\,\text{TFLOPS}$ FP16 Tensor Core throughput.
 \end{enumerate}
 We systematically profile 230 registered modules across 5 distinct tracks: (1) SVD \& Low-Rank Projections, (2) State-Space Models (SSMs) \& Recurrent Linear Scans, (3) Mixture-of-Experts (MoE) \& Dynamic Hybrids, (4) Kernelized \& Linearized MHA, and (5) Structural Pruning \& Quantization.

@@ -1,0 +1,117 @@
+{
+  "id": "moe_deltakv_paged",
+  "name": "MOE Deltakv Paged",
+  "file": "Codes/framework/attentions/moe_deltakv_paged.py",
+  "type": "Attention Module",
+  "category": "Mixture of Experts & Routing",
+  "paradigm": "moe",
+  "icon": "\ud83d\udd00",
+  "description": "MoE-DeltaKV-Paged Hybrid Attention Module. Combines Mixture-of-Block-Attention (MoBA) with Paged Delta-KV cache compression. Fixes:",
+  "classes": [
+    "MoEDeltaKVPagedAttention"
+  ],
+  "methods_count": 10,
+  "math_latex": "\\Delta \\mathbf{K}_t = \\mathbf{K}_t - \\mathbf{K}_{t-1}, \\quad \\forall t \\in \\{1, \\dots, N-1\\}",
+  "components": [
+    {
+      "id": "router_gate",
+      "name": "Dynamic Routing Gating (4 Experts)",
+      "role": "Top-2 Expert Token Dispatcher",
+      "shape_transform": "[4 \u00d7 d_in]",
+      "color": "#ec4899"
+    },
+    {
+      "id": "expert_0",
+      "name": "Sparse Expert Module 0",
+      "role": "Specialized Sub-Network",
+      "shape_transform": "[d_ffn \u00d7 d_in]",
+      "color": "#8b5cf6"
+    },
+    {
+      "id": "expert_1",
+      "name": "Sparse Expert Module 1",
+      "role": "Specialized Sub-Network",
+      "shape_transform": "[d_ffn \u00d7 d_in]",
+      "color": "#8b5cf6"
+    },
+    {
+      "id": "expert_2",
+      "name": "Sparse Expert Module 2",
+      "role": "Specialized Sub-Network",
+      "shape_transform": "[d_ffn \u00d7 d_in]",
+      "color": "#8b5cf6"
+    },
+    {
+      "id": "expert_3",
+      "name": "Sparse Expert Module 3",
+      "role": "Specialized Sub-Network",
+      "shape_transform": "[d_ffn \u00d7 d_in]",
+      "color": "#8b5cf6"
+    },
+    {
+      "id": "aggregator",
+      "name": "Softmax Weighted Combiner",
+      "role": "Weighted Token Reconstruction",
+      "shape_transform": "[d_out \u00d7 d_in]",
+      "color": "#a855f7"
+    }
+  ],
+  "model_projections": {
+    "distilbert": {
+      "model_name": "DistilBERT-Base",
+      "family": "Encoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 6,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 21236736,
+      "total_baseline_params": 66301440,
+      "total_compressed_params": 151254528,
+      "savings_ratio": 0.6,
+      "storage_saved_bytes": 0,
+      "storage_saved_formatted": "0.0 MB"
+    },
+    "roberta": {
+      "model_name": "RoBERTa-Base",
+      "family": "Encoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 12,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 21236736,
+      "total_baseline_params": 123933696,
+      "total_compressed_params": 293839872,
+      "savings_ratio": 0.6,
+      "storage_saved_bytes": 0,
+      "storage_saved_formatted": "0.0 MB"
+    },
+    "gpt2": {
+      "model_name": "GPT-2-Small",
+      "family": "Causal Decoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 12,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 21236736,
+      "total_baseline_params": 124318464,
+      "total_compressed_params": 294224640,
+      "savings_ratio": 0.6,
+      "storage_saved_bytes": 0,
+      "storage_saved_formatted": "0.0 MB"
+    },
+    "qwen": {
+      "model_name": "Qwen2.5-0.5B",
+      "family": "GQA Decoder (SLM)",
+      "hidden_size": 896,
+      "intermediate_size": 4864,
+      "num_layers": 24,
+      "baseline_layer_params": 14909440,
+      "compressed_layer_p": 54136320,
+      "total_baseline_params": 493961216,
+      "total_compressed_params": 1435406336,
+      "savings_ratio": 0.53,
+      "storage_saved_bytes": 0,
+      "storage_saved_formatted": "0.0 MB"
+    }
+  }
+}

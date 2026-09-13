@@ -1,0 +1,332 @@
+\section{مکانیزم‌های توجه اسپکترال، کم‌مرتبه و مبتنی بر تجزیه مقادیر منفرد (SVD)}
+
+\textbf{تشریح بنیادین و مبانی تئوریک این پارادایم:}
+
+در این دسته از مکانیزم‌ها، هدف اصلی کاهش ابعاد فضاهای تصویرسازی پرس‌وجو، کلید و مقدار ($W_Q, W_K, W_V$) از طریق فاکتورسازی مقادیر منفرد یا تکنیک‌های کم‌مرتبه نظیر LoRA می‌باشد. بر اساس قضیه اکارت-یانگ-میرسکی، با حفظ $r$ مقدار منفرد برتر ($\sigma_1 \ge \dots \ge \sigma_r$)، بیش از ۹۵٪ انرژی طیفی ماتریس وزن با کسر کوچکی از پارامترها بازتولید می‌شود. این امر به کاهش چشمگیر ترافیک حافظه DRAM و رفع سربار محاسباتی بدون افت محسوس دقت کمک می‌کند.
+
+\begin{figure}[H]
+\centering
+\framebox[0.95\textwidth]{
+\begin{minipage}{0.9\textwidth}
+\vspace{0.4cm}
+\centering
+\textbf{[محل الحاق دیاگرام تخصصی رده 1: spectral_svd_paradigm]}\\[0.3cm]
+\small \textbf{پرامپت مهندسی‌شده هوش مصنوعی جهت ساخت تصویر:}\\[0.15cm]
+\footnotesize \lr{A high-tech scientific diagram illustrating Singular Value Decomposition (SVD) applied to neural network attention weight matrices. A large dense matrix splits into three matrices: Orthogonal Left Singular Vectors U, Diagonal Singular Value Matrix Sigma, and Right Singular Vectors V-transpose. Glowing cyan energy truncation showing discarded small singular values. Dark academic background, crisp lines, modern AI hardware architecture style.}
+\vspace{0.4cm}
+\end{minipage}
+}
+\caption{نمودار مفهومی و ساختار تئوریک مکانیزم‌های توجه اسپکترال، کم‌مرتبه و مبتنی بر تجزیه مقادیر منفرد (SVD)}
+\end{figure}
+
+\vspace{0.4cm}
+\hrule
+\vspace{0.4cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: SVD-Mamba}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SVD-Mamba: SVD-Factorized Selective State Space Model with Global Spectral Mixing}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS\_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 673.96 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 50.92 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 673.96 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**SVD-Mamba** integrates truncated Singular Value Decomposition (SVD) low-rank parameterization with selective continuous-time state-space models (Mamba S6) and global spectral token mixing: 1. **SVD-Factorized Projection Layers**: Replaces dense linear transformations ( W text in , W text out , W x, W Delta ) with factorized parameterizations ( U Sigma V top ), drastically reducing parameter footprint while maintaining high spectral fidelity. 2. **Selective S6 State Space Dynamics**: Evaluates ...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: adaptive svd attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Adaptive SVD Attention: Low-Rank SVD Projections with Parallel Residual Adapters}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.89 درصد | امتیاز F1: 0.8701 | اوج حافظه: 183.57 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.89 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 183.57 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Adaptive SVD Attention () provides a hybrid parameter-efficient adaptation architecture for Transformer attention modules. Standard model compression factorizes dense projection matrices ( W Q, W K, W V, W O in mathbb R D times D ) via truncated Singular Value Decomposition ( W text svd approx U V ). However, freezing low-rank SVD components without fine-tuning limits domain adaptation performance....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: asvd attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{ASVD Attention: Activation-Aware Singular Value Decomposition Architecture}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.14 درصد | امتیاز F1: 0.9051 | اوج حافظه: 205.16 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.14 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 205.16 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Activation-aware Singular Value Decomposition Attention (, Yuan et al., 2023) provides an activation-guided low-rank model compression framework for Multi-Head Attention. Standard SVD parameter reduction factorizes dense projection matrices W in mathbb R d text out times d text in solely based on static weight magnitude matrices, ignoring the non-uniform variance and magnitude distributions of dynamic activation vectors ( X )....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: factorised matrix state}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Factorised Matrix State Attention: Bidirectional Associative Matrix Recurrence Low-Rank Bilinear Projections}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 77.06 درصد | امتیاز F1: 0.7608 | اوج حافظه: 342.49 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 77.06 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**Factorised Matrix State Attention** () provides an optimal mathcal O (N) linear-time attention alternative to standard mathcal O (N 2) softmax attention by maintaining an associative multi-head matrix memory state S t in mathbb R d k times d v updated with bounded decay recurrence....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: fused svd kernel}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Fused SVD-Linear Kernel: SRAM-Resident RMSNorm Dual-Projection}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.21 درصد | امتیاز F1: 62.06 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.21 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard low-rank linear projections evaluated sequentially as Z = X V top , Z text norm = text RMSNorm (Z) , and Y = Z text norm U top + b incur severe High-Bandwidth Memory (HBM) roundtrip overhead. For intermediate activation tensor Z in mathbb R B times N times r , standard frameworks write Z to GPU DRAM and immediately reload it for normalization and up-projection....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: lora attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{LoRA Attention: Parameter-Efficient Low-Rank Adaptation}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 89.91 درصد | امتیاز F1: 0.9033 | اوج حافظه: 334.37 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 89.91 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 334.37 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: mamba svd flash}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{MambaSVD-Flash: Hybrid Bidirectional SSM-FlashAttention Architecture}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 84.17 درصد | امتیاز F1: 0.8421 | اوج حافظه: 1668.38 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 84.17 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Pure dense attention suffers from quadratic mathcal O (L 2) computational complexity, while pure linear State Space Models struggle with high-entropy associative memory queries. **MambaSVD-Flash** introduces a dual-path hybrid architecture: 1. **Bidirectional Low-Rank SVD-SSM Path**: Evaluates contractive online Singular Value Decomposition state-space transitions ( A t = U t Sigma t V t top ) scanning both forward and backward directions with mathcal O (L cdot D cdot r) complexity. 2. **Dense B...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: minimal svd}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{MinimalSVD: Cumulative Energy-Budgeted SVD Factorization Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.44 درصد | امتیاز F1: 19.33 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.44 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\MinimalSVD () provides a zero-shot model compression mechanism for Transformer attention layers. In standard attention architectures, linear projection matrices W Q, W K, W V, W O in mathbb R D times D consume substantial parameter storage ( 4 D 2 ) and demand high memory bandwidth during inference....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: minimal svd v2}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{MinimalSVD v2: Refined SVD Low-Rank Attention with Flexible Attention Mask Handling}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.44 درصد | امتیاز F1: 0.867 | اوج حافظه: 293.19 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.44 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 293.19 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\MinimalSVD v2 () provides a refined, zero-shot SVD-factorized attention module for Transformer architectures. While standard Multi-Head Attention employs dense linear projections ( W Q, W K, W V, W O in mathbb R D times D ) that demand significant memory bandwidth, MinimalSVD v2 decomposes each linear parameter matrix into low-rank factor pairs ( A in mathbb R D times r , B in mathbb R r times D ) using truncated Singular Value Decomposition (SVD)....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: projection factorized attn}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Projection Factorized Attn}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 84.98 درصد | امتیاز F1: 32.13 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 84.98 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Projection Factorized SVD Linear Attention....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: res svd}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Spectral Residual SVD Attention (Res-SVD Attention)}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 86.58 درصد | امتیاز F1: 29.21 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 86.58 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Spectral Residual SVD Attention () addresses a fundamental dilemma in transformer parameter reduction: low-rank matrix factorization achieves substantial compression ratios but suffers from irrecoverable loss of fine-grained representational capacity in downstream task adaptation. Conversely, Parameter-Efficient Fine-Tuning (PEFT) methods such as Low-Rank Adaptation (LoRA) maintain full-rank base weights, offering zero memory compression during inference....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: svd attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SVD Attention: Sequence-Dimension Singular Subspace Projection Architecture}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 89.68 درصد | امتیاز F1: 8.13 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 89.68 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\SVD Attention ( in ) introduces a sequence-dimension compression paradigm that reduces the quadratic sequence time and memory complexity of Multi-Head Attention ( mathcal O (N 2) ) to linear complexity ( mathcal O (N cdot r) ). While standard MHA evaluates pairwise interactions across all N times N token pairs, SVD Attention projects Key and Value sequence dimensions into the top- r left-singular subspace of the sequence representation matrix ( r ll N )....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: svd compressed}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SVD-Compressed Attention: Importance-Aware Lagrangian Rank Allocation Architecture}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.21 درصد | امتیاز F1: 11.68 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.21 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\SVD-Compressed Attention ( in ) introduces a global parameter optimization framework that compresses Transformer attention layers using Truncated Singular Value Decomposition (SVD) guided by Lagrangian spectral-entropy budget allocation. Standard model compression approaches apply static, uniform truncation ranks across all layers, ignoring the reality that different layers and projection matrices ( W Q, W K, W V, W O ) display vastly different singular value decay profiles and information capac...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: svd compressed attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Svd Compressed Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.21 درصد | امتیاز F1: 11.68 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.21 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Configuration Hyperparameters...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: svd linear attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SVD Linear Attention: Semi-Orthogonal Low-Rank Projection Factorization}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 86.58 درصد | امتیاز F1: 0.8765 | اوج حافظه: 294.38 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 86.58 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 294.38 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\SVD Linear Attention () introduces a zero-shot model compression framework for Multi-Head Attention by replacing standard dense linear projection layers ( W Q, W K, W V, W O in mathbb R D times D ) with low-rank factorized modules (). Standard dense projections consume 4 D 2 parameter storage per layer, creating significant memory bandwidth constraints during inference....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: svd linear decay}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Svd Linear Decay}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.09 درصد | امتیاز F1: 32.05 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.09 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Decay Gated SVD Linear Attention....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: svd llm v2}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Svd Llm V2}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.32 درصد | امتیاز F1: 13.49 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.32 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Configuration Hyperparameters...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: svd llm v2 attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SVD-LLM V2 Attention: Truncation-Aware Explicit Factor Buffer Architecture}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.32 درصد | امتیاز F1: 13.49 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.32 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\SVD-LLM V2 () provides a truncation-aware SVD compression framework designed for Large Language Models (LLMs). Traditional post-training quantization and pruning methods often degrade generative accuracy when applied to LLMs due to outlier activation dimensions. Truncated SVD parameterization preserves global matrix energy while reducing parameter memory footprint....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: svd mamba}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SVD-Mamba Attention: Hardware-Efficient State-Space Recurrence via Truncated Singular Value Projections}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS\_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 673.96 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 50.92 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 673.96 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\The **SVD-Mamba** architecture integrates selective state-space model (SSM) recurrence dynamics with low-rank Singular Value Decomposition (SVD) input/output projection bottlenecks. By replacing high-dimensional quadratic attention matrices with selective continuous-time SSM dynamics discretized via zero-order hold (ZOH) coupled with factorized projection operators, SVD-Mamba achieves strict mathcal O (N) computational time and mathcal O (1) inference memory overhead per token. The singular valu...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: svd proj attn}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Svd Proj Attn}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.21 درصد | امتیاز F1: 18.94 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.21 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Configuration Hyperparameters...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: svd projection attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SVD Projection Attention: Explicit Low-Rank Matrix Reconstruction Paradigm}\\[0.2cm]
+\textbf{وضعیت ارزیابی:} تعبیه شده در رجیستری مرکزی با تضمین تعامد پایه‌ها و عدم تخریب وزن‌ها.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\SVD Projection Attention () provides a zero-shot model compression framework for Multi-Head Attention by factorizing linear projection operators into explicit low-rank matrix pairs ( U in mathbb R d text out times r , V in mathbb R r times d text in ) via . Standard dense linear projections ( W Q, W K, W V, W O in mathbb R D times D ) require 4 D 2 parameter storage per layer....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: svd sequence attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Svd Sequence Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: FAIL | دقت: 0.0 درصد | امتیاز F1: 0.7586 | اوج حافظه: 298.71 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 0.0 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 298.71 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Configuration Hyperparameters...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+

@@ -1,0 +1,82 @@
+\subsection{کالبدشکافی ماژول \lr{salt\_attention}}
+
+\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
+ماژول \lr{salt\_attention} نسخه عملیاتی و پیاده‌سازی‌شده مکانیزم تنظیم طیفی بر روی سرهای توجه چندگانه است که تطبیق پویا را بدون نیاز به بازآموزی وزن‌های حجیم در بسترهای پردازشی لبه‌ای میسر می‌سازد.
+
+\textbf{تمثیل ملموس و مثال کاربردی:}
+افزودن لنزهای اصلاحی پلاریزه به یک سیستم اپتیکی تلسکوپ غول‌پیکر: به جای تعویض و تراش مجدد آینه سنگین چند تنی تلسکوپ، فیلترهای نازک و سبکی که دقیقاً بر اساس عیوب انکساری نور آینه طراحی شده‌اند در مسیر خروجی نور نصب می‌شوند تا تصویری شفاف با حداقل هزینه پدید آید.
+
+\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
+خروجی سرهای توجه با اصلاح ماتریسی اسپکترال همگام‌سازی می‌گردد:
+\begin{equation}
+\mathbf{Q}_h = \mathbf{X} (\mathbf{W}_{0,Q}^{(h)} + \Delta \mathbf{W}_Q^{(h)}), \quad \Delta \mathbf{W}_Q^{(h)} = \mathbf{B}_h \mathbf{A}_h
+\end{equation}
+که در آن $\operatorname{rank}(\mathbf{B}_h \mathbf{A}_h) = r \ll d_k$. پس از اتمام آموزش، ماتریس‌ها جمع شده و در استنتاج همانند لایه خطی استاندارد عمل می‌کنند:
+\begin{equation}
+\mathbf{W}_{\text{\lr{final}}}^{(h)} = \mathbf{W}_{0}^{(h)} + \mathbf{B}_h \mathbf{A}_h
+\end{equation}
+این مکانیزم هیچ‌گونه تأخیر مازادی در زمان پاسخ‌دهی ایجاد نمی‌کند.
+
+\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
+در پیاده‌سازی سورس پایتون در فایل ماژول \lr{salt\_attention.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
+\begin{enumerate}
+\item دریافت تانسور ورودی چندسره.
+\item محاسبه پروجکشن خطی پایه و شاخه اصلاحی کم‌رتبه هم‌راستا.
+\item محاسبه ضرب توجه استاندارد با تانسورهای تصحیح‌شده.
+\item تلفیق سرهای توجه با ماتریس ادغام خروجی اسپکترال.
+\item ارسال نتیجه به لایه نرمال‌سازی پسین.
+\end{enumerate}
+
+\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
+از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
+\begin{itemize}
+\item \textbf{سازگاری کامل با معماری استنتاج:} به دلیل امکان ادغام ریاضی وزن‌ها، مصرف پهنای باند حافظه در زمان استنتاج کاملاً مشابه مدل پایه است.
+\item \textbf{مهار رشد حافظه گرافیکی:} مصرف رم در سطح \lr{750.0 MB} تثبیت می‌شود.
+\end{itemize}
+
+\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
+بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\begin{itemize}
+\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{PASS}
+\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{80.28\%}
+\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{78.9\%}
+\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
+\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,100} توکن بر ثانیه
+\end{itemize}
+
+\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
+ثبت دقت \lr{80.28\%} و نرخ توان عملیاتی \lr{36,100} توکن بر ثانیه با مهار اوج حافظه روی \lr{750.0 MB} (افت \lr{82.1\%}ی نسبت به \lr{۴۲۰۰ MB} مبنا)، نشان‌دهنده راندمان بالای ماژول \lr{salt\_attention} در تطبیق مدل با داده‌های جدید با کمترین هزینه سخت‌افزاری است.
+
+\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
+جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
+
+\begin{center}
+\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
+    node distance=1.1cm,
+    auto,
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    lora/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
+]
+    \node [block] (input) {ورودی سرهای توجه};
+    \node [lora, right=1.0cm of input] (base) {پایه منجمد $\mathbf{W}_0$};
+    \node [lora, right=1.0cm of base] (adapt) {تطبیق طیفی $\Delta \mathbf{W}$};
+    \node [outblock, right=1.0cm of adapt] (out) {خروجی همگام};
+
+    \draw [->, thick, draw=blue!80] (input) -- (base);
+    \draw [->, thick, draw=orange!80] (base) -- (adapt);
+    \draw [->, thick, draw=orange!80] (adapt) -- (out);
+\end{tikzpicture}
+\end{center}
+
+\subsubsection*{۷. پیوست تصویری و پرامپت تولید هوش مصنوعی}
+برای ترسیم تجسم سه‌بعدی و گرافیک صنعتی این مکانیزم با ابزارهای هوش مصنوعی، پرامپت انگلیسی زیر با دقت تدوین شده است:
+
+\vspace{0.2cm}
+\begin{latin}
+\footnotesize
+\textbf{AI Technical Visualization Prompt:}\\
+"A 3D technological diagram of SALT attention module. Dual optical pathways where a dense laser beam passes through a thin crystalline phase-alignment grating, eliminating noise and refining the output spectrum, 8k resolution --ar 16:9"
+\end{latin}
+
+

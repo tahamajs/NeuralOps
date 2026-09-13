@@ -1,0 +1,108 @@
+\clearpage
+\phantomsection
+\vspace*{0.2cm}
+\noindent\rule{\textwidth}{1.2pt}
+\vspace*{0.1cm}
+\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 105: \lr{vig\_attention}}
+\label{sec:mod_vig_attention}
+\vspace*{-0.2cm}
+\noindent\rule{\textwidth}{0.5pt}
+\vspace*{0.3cm}
+
+\subsection{کالبدشکافی ماژول \lr{vig\_attention}}
+
+\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
+مکانیزم \lr{vig\_attention} از پارادایم \textbf{گراف‌های بینایی و شبکه‌های شطرنجی دوطرفه \lr{(Row-Column Grid Attention)}} برای شکستن ماتریس دو بعدی توجه بهره می‌برد.
+
+\textbf{تمثیل ملموس و مثال کاربردی:}
+تمثیل \textbf{طراحی خیابان‌بندی شطرنجی منهتن نیویورک}: عبور و مرور خودروها به جای کشیدن بزرگراه‌های مستقیم میان هر دو ساختمان دلخواه، در مسیرهای متقاطع افقی (خیابان‌ها) و عمودی (بلوارها) جریان می‌یابد تا هیچ تقاطعی دچار گره کور ترافیکی نشود.
+
+\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
+\begin{equation}
+\mathbf{Z}_{\text{\lr{row}}} = \operatorname{ELU-Lin}(\mathbf{X}), \quad \mathbf{Z}_{\text{\lr{col}}} = \operatorname{ELU-Lin}(\mathbf{X}^T)^T, \quad \mathbf{Y} = \sigma(\mathbf{Z}_{\text{\lr{row}}}) \odot \mathbf{Z}_{\text{\lr{col}}}
+\end{equation}
+با شکستن توجه دوبعدی به دو مرحله یک‌بعدی متوالی در راستای سطرها و ستون‌های شبکه ویژگی.
+
+\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
+در پیاده‌سازی سورس پایتون در فایل ماژول \lr{vig\_attention.py}، پردازش در متد \lr{forward} به صورت مرحله‌به‌مرحله و گام‌به‌گام صورت می‌پذیرد:
+\begin{enumerate}
+\item \textbf{دریافت تانسور ورودی:} تانسور تعبیه ورودی $\mathbf{X}$ با ابعاد $[B, N, D]$ (اندازه دسته، طول دنباله و بعد پنهان) دریافت می‌شود.
+\item \textbf{پروجکشن خطی و تفکیک سرها:} نگاشت ابعادی به سرهای موازی با دستورات \lr{view} و \lr{transpose(1, 2)} جهت ایجاد تانسورهای $[B, H, N, d_k]$ صورت می‌گیرد.
+\item \textbf{تثبیت عددی و مهار خطای ممیز شناور:} اضافه کردن ترم خطای پایدارکننده $\epsilon = 10^{-6}$ به مخرج توابع کسری برای ممانعت از رخداد خطای زیرریز \lr{(Underflow)} در محاسبات ممیز شناور ۱۶ بیتی \lr{(FP16)}.
+\item \textbf{کاهش ابعاد و تجمیع اطلاعات:} اجرای مستقل توجه خطی روی سطرهای ماتریس و تلفیق آن با توجه روی ستون‌های ماتریس ویژگی.
+\item \textbf{بازگشت به بعد اصلی و پروجکشن پایانی:} تانسور به شکل $[B, N, D]$ بازآرایی شده و با یک لایه خطی پایانی به لایه پسین تزریق می‌گردد.
+\end{enumerate}
+
+\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
+از دیدگاه مدل سقف کارایی \lr{(Roofline Model)} و معماری پردازنده‌های گرافیکی مدرن (نظیر کارت گرافیک \lr{NVIDIA RTX 4070}):
+\begin{itemize}
+\item \textbf{مهار عطش پهنای باند حافظه } \lr{(Memory-Bound Relief)}\rl{:}  در مدل‌های استاندارد، تبادل دائم داده‌های ماتریس توجه با حافظه سراسری کند \lr{DRAM/HBM} باعث معطلی هسته‌های محاسباتی می‌شود. در این ماژول به واسطه فشرده‌سازی جریان داده، پردازش در حافظه کش پرسرعت \lr{SRAM} متمرکز شده و شدت محاسباتی \lr{(Arithmetic Intensity)} به طور محسوسی بهبود می‌یابد.
+\item \textbf{صرفه‌جویی بنیادین در بافر توکن‌ها } \lr{(KV-Cache)}\rl{:}  در فاز استنتاج خودبازگشتی، به جای ذخیره‌سازی ماتریس‌های رو به رشد گذشته، ردپای حافظه کنترل شده و مصرف حافظه گرافیکی پایدار می‌ماند.
+\end{itemize}
+
+\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
+بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
+\begin{itemize}
+\item \textbf{وضعیت رسمی آزمون کیفی:} \lr{SKIP\_BERT\_ARCHITECTURAL}
+\item \textbf{دقت ثبت‌شده روی بنچ‌مارک:} \lr{51.03\%}
+\item \textbf{شاخص ارزیابی آماری } \lr{(F1 Score)}\rl{:}  \lr{28.49\%}
+\item \textbf{اوج مصرف حافظه گرافیکی } \lr{(Peak VRAM)}\rl{:}  \lr{750.0 MB} (در برابر \lr{۴۲۰۰ MB} مدل مبنا)
+\item \textbf{نرخ توان عملیاتی } \lr{(Throughput)}\rl{:}  \lr{36,500} توکن بر ثانیه
+\end{itemize}
+
+\textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
+مصرف \lr{۷۵۰.۰ MB} حافظه در برابر \lr{۴۲۰۰ MB} مدل مبنا حاکی از راندمان بالای محاسباتی است؛ دقت ۵۱.۰۳٪ به این دلیل است که فرضیات شطرنجی دوبعدی گراف بینایی با ساختار خطی گرامری زبان طبیعی کاملاً منطبق نیست و ذاتاً برای پردازش تصاویر یا داده‌های جدولی توسعه یافته است.
+
+\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
+جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
+
+\begin{center}
+\begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
+    node distance=1.1cm,
+    auto,
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    kernel/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
+]
+    \node [block] (input) {ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$};
+    \node [kernel, right=1.2cm of input] (k) {نگاشت کرنل $\phi(\mathbf{Q}), \phi(\mathbf{K})$};
+    \node [block, right=1.2cm of k] (acc) {تجمع ماتریس حافظه $\mathbf{S}_t$};
+    \node [outblock, right=1.2cm of acc] (out) {خروجی خطی};
+
+    \draw [->, thick, draw=blue!80] (input) -- (k);
+    \draw [->, thick, draw=orange!80] (k) -- (acc);
+    \draw [->, thick, draw=blue!80] (acc) -- (out);
+\end{tikzpicture}
+\end{center}
+
+\subsubsection*{۷. پیوست تصویری و پرامپت تولید هوش مصنوعی}
+برای ترسیم تجسم سه‌بعدی و گرافیک صنعتی این مکانیزم با ابزارهای هوش مصنوعی، پرامپت انگلیسی زیر با دقت تدوین شده است:
+
+\vspace{0.2cm}
+\begin{latin}
+\footnotesize
+\textbf{AI Technical Visualization Prompt:}\\
+"A 3D grid visualization resembling Manhattan's street grid with orthogonal glowing light pulses traversing avenues and streets smoothly without traffic jams."
+\end{latin}
+
+
+
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+
+در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{vig\_attention} ارائه شده است.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/architecture/vig_attention_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(vig\_attention)}}
+\label{fig:arch_vig_attention}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{img/comparison/vig_attention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(vig\_attention)}}
+\label{fig:comp_vig_attention}
+\end{figure}
+

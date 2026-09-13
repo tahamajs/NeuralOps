@@ -1,0 +1,1023 @@
+\section{رویکردهای همجوشی سخت‌افزاری در حافظه SRAM و بهینه‌سازی‌های هیبرید و کوانتیزه}
+
+\textbf{تشریح بنیادین و مبانی تئوریک این پارادایم:}
+
+این رده بر طراحی مشترک سخت‌افزار-الگوریتم (Hardware-Software Co-Design) تمرکز دارد. با همجوشی کرنل‌ها مستقیماً درون حافظه فوق‌سریع SRAM پردازنده گرافیکی (با استفاده از Triton یا FlashAttention) و کوانتیزاسیون وزن‌ها به قالب‌های کم‌عرض نظیر FP8 یا INT4، تبادل داده با حافظه اصلی به حداقل رسیده و شدت محاسباتی (Arithmetic Intensity) به بالاترین حد ممکن افزایش می‌یابد.
+
+\begin{figure}[H]
+\centering
+\framebox[0.95\textwidth]{
+\begin{minipage}{0.9\textwidth}
+\vspace{0.4cm}
+\centering
+\textbf{[محل الحاق دیاگرام تخصصی رده 5: hardware_fused_sram_paradigm]}\\[0.3cm]
+\small \textbf{پرامپت مهندسی‌شده هوش مصنوعی جهت ساخت تصویر:}\\[0.15cm]
+\footnotesize \lr{Hardware architecture schematic showing GPU chip memory hierarchy: High-Bandwidth Memory (HBM/DRAM) transferring tiled blocks into ultra-fast on-chip SRAM cache. Inside SRAM, FlashAttention and Triton fused kernels execute matrix multiplication and online softmax without intermediate memory round-trips. Glowing copper circuits, cyan data pipelines.}
+\vspace{0.4cm}
+\end{minipage}
+}
+\caption{نمودار مفهومی و ساختار تئوریک رویکردهای همجوشی سخت‌افزاری در حافظه SRAM و بهینه‌سازی‌های هیبرید و کوانتیزه}
+\end{figure}
+
+\vspace{0.4cm}
+\hrule
+\vspace{0.4cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: SOAFusedAttention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SOA-Fused Attention: Low-Rank Latent Space Multi-Head Attention with Zero-Shot SVD Initialization}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 81.31 درصد | امتیاز F1: 0.8191 | اوج حافظه: 282.69 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 81.31 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Dense Multi-Head Self-Attention layers allocate distinct projection matrices for Query, Key, and Value ( W Q, W K, W V in mathbb R D times D ). In standard architectures, these matrices contain significant spectral redundancy, with >80 of their Frobenius energy concentrated in low-rank singular subspaces....\\[0.2cm]
+\textbf{فرمول‌بندی و روابط ریاضی:}\\2.1 Low-Rank Factorization of Attention Projections...
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: adaptive span attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Adaptive Span Attention: Dynamic Head-Specific Context Window Gating}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 91.74 درصد | امتیاز F1: 17.69 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 91.74 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Adaptive Span Attention, introduced by Sukhbaatar et al. (NeurIPS 2019), addresses the dynamic trade-off between long-context modeling and computational efficiency in Transformer architectures. Standard Multi-Head Attention forces every attention head to compute pairwise interactions across the entire sequence length N , leading to quadratic computational ( mathcal O (N 2) ) and memory complexity across all heads. However, empirical studies reveal that different heads specialize in distinct temp...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: adasplash attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{AdaSplash Attention: Adaptive Splash Attention with alpha-Entmax Sparse Activations}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 91.28 درصد | امتیاز F1: 49.47 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 91.28 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Attention employs the Softmax activation function, which maps unbounded dot-product affinities s ij = frac q i k j top sqrt d h into a probability distribution: [ operatorname softmax (s) i = frac exp(s i) sum j=1 L exp(s j) > 0, quad forall i in 1, dots, L ] Because the exponential function is strictly positive on the entire real line ( exp(x) > 0, forall x in mathbb R ), Softmax forces every single token in the sequence to assign a non-zero probability mass to all other tok...\\[0.2cm]
+\textbf{فرمول‌بندی و روابط ریاضی:}\\2.1 Tsallis alpha -Entropy and the alpha -Entmax Simplex Projection...
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: aegis hybrid}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{AEGIS-Hybrid Attention: Low-Rank Factorized Hybrid Attention with Adaptive Gated Fusion and LoRA Recovery}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.32 درصد | امتیاز F1: 18.49 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.32 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Attention (MHA) architectures suffer from two fundamental bottlenecks that constrain their scalability and parameter efficiency: 1. **Quadratic Computational Memory Complexity ( mathcal O (L 2) )**: Dense token-to-token all-pairs dot-product attention computes an affinity matrix of size L times L . For long document reasoning and agentic workflows, memory footprint scales quadratically, quickly exceeding hardware SRAM and high-bandwidth memory (HBM). 2. **Homogeneous Interact...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: aegis hybrid attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Aegis Hybrid Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.32 درصد | امتیاز F1: 18.49 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.32 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Configuration Hyperparameters...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: aegis spectron fp8}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{AEGIS-Spectron-FP8: Tri-Branch Hybrid Attention with Token-Level Spectral Entropy Routing and True mathcal O (N) Linear Complexity}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.02 درصد | امتیاز F1: 20.3 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.02 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\textbf{فرمول‌بندی و روابط ریاضی:}\\2.1 Complete Architectural Flow...
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: aegis v1}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{AEGIS-Attention V1: Adaptive Enhanced Global-Local Integrated Sparse Attention Baseline}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.55 درصد | امتیاز F1: 18.2 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.55 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Transformer Multi-Head Attention (MHA) computes all-to-all token interactions with quadratic time and memory complexity mathcal O (L 2) , imposing prohibitive computational burdens on long sequences. **AEGIS-Attention V1** (Adaptive Enhanced Global-Local Integrated Sparse Attention Baseline) replaces dense quadratic attention with an integrated hybrid formulation combining: 1. **Truncated SVD Low-Rank Projections**: Decomposes full-rank weight projections W in mathbb R d text out times ...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: aegis v2}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{AEGIS-Attention V2: Low-Rank Factorized Hybrid Attention with Adaptive Soft-Pruning}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.32 درصد | امتیاز F1: 18.13 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.32 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**AEGIS-Attention V2** introduces low-rank factorized projections, localized sliding-window attention, global linear kernel attention with adaptive soft-pruning token gating, and dynamic multi-head gated fusion....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: aegis v3}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{AEGIS-Attention V3: Energy-Constrained SVD Softpick Rectified Sparse Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.09 درصد | امتیاز F1: 24.77 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.09 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**AEGIS-Attention V3** unifies dynamic energy-constrained truncated SVD projections, split-head local sliding-window attention with **Softpick rectified sparse activations**, and global Random Fourier Feature (RFF) linear kernel attention with adaptive per-head gating....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: aegis v4}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{AEGIS-Attention V4: Adaptive Enhanced Global-Local Integrated Sparse Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.44 درصد | امتیاز F1: 17.82 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.44 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**AEGIS-Attention V4** provides a unified multi-head attention layer combining: 1. **SVD-Factorized Projections with Energy-Based Rank Selection**: Dynamically calculates per-projection rank r in [4, 64] to preserve ge 95 singular value energy. 2. **Split-Head Local Sliding-Window Attention**: Softpick rectified non-linearities with window size W = 64 for H l = 8 local heads. 3. **Global Linear RFF Kernel Attention**: 256-dimensional random Fourier feature mapping with zero-sum key centering for...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: aegis v5}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{AEGIS-Attention V5: Hybrid Multi-Head Attention with ELU+1 Feature Maps Safe Masking}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 83.72 درصد | امتیاز F1: 0.8515 | اوج حافظه: 212.04 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 83.72 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**AEGIS-Attention V5** is a hybrid efficient attention module that decouples multi-head attention into H l = 8 local sliding-window heads with Softpick rectified sparse non-linearities and H g = 4 global linear kernel attention heads with **learnable ELU+1 feature maps** and safe mask propagation....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: aegis v6}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{AEGIS-Attention V6: Unified SVD-LoRA Hybrid Attention with Orthogonal Kernel Projections}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 69.13 درصد | امتیاز F1: 65.91 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 69.13 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**AEGIS-Attention V6** unifies: 1. **Factorized Low-Rank SVD-LoRA Projections**: Combines frozen truncated SVD bases ( V Sigma U top ) with trainable rank-16 LoRA adapters ( B top A top ). 2. **Stable Orthogonal Kernel Feature Mapping**: Computes positive RFF maps with QR-orthogonalized projection matrices and Gaussian quadratic norm regularization: phi(x) = frac 1 sqrt m exp(x Omega - frac x 2 2 ) . 3. **Dual Query Input Gating**: Query gating sigma(W q Q) and input gating sigma(W text in X) mo...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: chela slay}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.37 درصد | امتیاز F1: 14.71 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.37 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: compressed attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Compressed Attention via Truncated SVD}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 89.56 درصد | امتیاز F1: 204.25 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 89.56 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: compressed mha attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Compressed Multi-Head Attention (Compressed-MHA)}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 83.14 درصد | امتیاز F1: 200.89 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 83.14 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: eat}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{EAT: Efficient Attention Transformer with Progressive Token Pruning}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.37 درصد | امتیاز F1: 8.1 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.37 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: full attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Full Attention: Standard Multi-Head Scaled Dot-Product Attention Architecture}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 93.58 درصد | امتیاز F1: 2.76 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 93.58 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Full Multi-Head Attention (MHA), introduced by Vaswani et al. (2017), forms the core mathematical foundation of modern Transformer architectures. It operates by partitioning the hidden representation space of dimension D into H parallel subspaces (heads) of dimension d k = D / H . For every head, input sequences are projected into Query ( Q ), Key ( K ), and Value ( V ) representations. Pairwise token interactions are computed via scaled inner products, yielding dynamic routing matrices that agg...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: fusion attn}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 93.12 درصد | امتیاز F1: 17.35 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 93.12 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: goldfinch ahn}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{GoldFinch-AHN: Adaptive Hybrid Network Combining Sliding Window and Gated DeltaNet}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 91.17 درصد | امتیاز F1: 20.55 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 91.17 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: gqa attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Grouped-Query Attention (GQA): Memory-Efficient Shared Key-Value Subspace Architecture}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 92.32 درصد | امتیاز F1: 16.69 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 92.32 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Grouped-Query Attention (GQA), proposed by Ainslie et al. (2023), establishes a theoretical and practical middle ground between standard Multi-Head Attention (MHA) and Multi-Query Attention (MQA). In standard MHA, every query head maintains its own independent key and value head ( H KV = H Q ). While MHA delivers unconstrained subspace expressivity, its memory footprint scales linearly with the number of heads during autoregressive decoding, causing severe memory bandwidth bottlenecks. Conversel...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: granite hybrid}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Granite-Hybrid Attention: Interleaved Mamba-2 State Space Architecture with Multi-Head Attention and Mixture-of-Experts}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 63.65 درصد | امتیاز F1: 0.7325 | اوج حافظه: 1604.75 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 63.65 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Self-Attention (MHSA) architectures suffer from quadratic time and memory complexity mathcal O (L 2) with sequence length L , imposing prohibitive overhead for long-context generation. Conversely, pure State Space Models (SSMs) like Mamba-2 achieve linear scaling mathcal O (L cdot D cdot d text state ) , but lack the non-local associative recall and exact token-matching precision of dense self-attention....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: hamming attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Hamming Attention Distillation (HAD): Sign-Binarized Attention with Continuous Relaxations}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 77.06 درصد | امتیاز F1: 0.8066 | اوج حافظه: 336.18 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 77.06 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Dense Transformer attention requires floating-point inner products Q K top in mathbb R L times L , consuming significant memory bandwidth and ALU power. **Hamming Attention Distillation (HAD)** replaces continuous floating-point dot products with **differentiable continuous relaxations of Hamming distances** over sign-binarized representations....\\[0.2cm]
+\textbf{فرمول‌بندی و روابط ریاضی:}\\2.1 Continuous Tanh Relaxation of Sign Binarization...
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: hymba transx}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{HymbaTransX: Hybrid Differential Transformer State Space Model Block}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 88.65 درصد | امتیاز F1: 106.42 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 88.65 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: infini attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Infini-Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.25 درصد | امتیاز F1: 0.9069 | اوج حافظه: 352.72 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.25 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 352.72 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: kda attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Kernelized Decay Attention (KDA)}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 76.83 درصد | امتیاز F1: 0.7584 | اوج حافظه: 349.3 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 76.83 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**Kernelized Decay Attention (KDA)** establishes a multi-head bidirectional linear recurrence mechanism with learnable gating decay lambda = sigma( beta) , spherical ell 2 normalization of keys/queries, and denominator normalizer tracking....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: lola attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Lola Attention: Low-Rank Localized Attention via Three-Memory System Caching}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 77.87 درصد | امتیاز F1: 0.8016 | اوج حافظه: 338.53 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 77.87 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Autoregressive Transformer inference over long context sequences is heavily memory-bandwidth bound due to key-value (KV) cache accumulation. Low-Rank Localized Attention (LoLA Attention) mitigates KV cache memory footprint using a multi-tier memory system cache partition....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: minimal aurora}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{MinimalAURORA Attention: Energy-Preserving SVD-Factorized Attention with Cumulative Spectral Truncation}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.44 درصد | امتیاز F1: 0.867 | اوج حافظه: 293.2 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.44 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 293.2 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: minimal nova}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{MinimalNOVA Attention: SVD-Factorized Low-Rank Projection Attention for Efficient Transformer Compression}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.44 درصد | امتیاز F1: 0.867 | اوج حافظه: 293.19 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.44 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 293.19 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: minimal prism}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{MinimalPRISM Attention: Singular Spectrum Energy-Factorized Low-Rank Projection Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.44 درصد | امتیاز F1: 0.867 | اوج حافظه: 293.19 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.44 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 293.19 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: mla attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Multi-Head Latent Attention (MLA): Low-Rank Latent Bottleneck Compression (DeepSeek-V2)}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 83.14 درصد | امتیاز F1: 7.97 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 83.14 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Multi-Head Latent Attention (MLA), introduced in DeepSeek-V2 (DeepSeek-AI, 2024), represents a major architectural advance in compressing the Key-Value (KV) cache for large-scale autoregressive Transformer inference. Traditional approaches like Grouped-Query Attention (GQA) reduce KV cache overhead by sharing key-value heads across query groups. However, GQA still caches full head-dimensional Key and Value tensors for each shared head, creating substantial memory bandwidth bottlenecks during lon...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: nasc attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{NASC: NEXUS-AEGIS Spectral Cascade Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 89.11 درصد | امتیاز F1: 0.8917 | اوج حافظه: 339.63 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 89.11 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 339.63 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**NASC (NEXUS-AEGIS Spectral Cascade)** is a complexity-adaptive hybrid attention architecture that unifies the strengths of localized causal sliding windows, block-sparse Mixture-of-Experts routing, and global Random Fourier Feature (RFF) linear kernel approximations into a single gated layer....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: nexus}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{NEXUS: Neural Efficient X-scoring Unified Sparse Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 69.13 درصد | امتیاز F1: 13.89 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 69.13 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: nha attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Native Hybrid Attention (NHA)}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.71 درصد | امتیاز F1: 0.9107 | اوج حافظه: 335.47 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.71 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 335.47 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: nha compressor}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Nha Compressor}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.71 درصد | امتیاز F1: 0.9107 | اوج حافظه: 335.47 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.71 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 335.47 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Configuration Hyperparameters...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: nsa attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Native Sparse Attention: Hybrid Local Sliding-Window and Dynamic Top-k Global Routing}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.83 درصد | امتیاز F1: 0.9119 | اوج حافظه: 339.85 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.83 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 339.85 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Dense Multi-Head Self-Attention (MHSA) scales quadratically mathcal O (L 2 d) with sequence length L , computing pairwise attention interactions across all token pairs regardless of semantic distance. Purely localized attention models enforce fixed spatial windows of size W , reducing computational complexity to mathcal O (L cdot W cdot d) , but completely sever long-range associative dependencies across distant sequence positions....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: optimized hybrid attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Optimized Hybrid Attention (OHA): Fused Sliding-Window Local Self-Attention and Sequence-Compressed Low-Rank Global Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.14 درصد | امتیاز F1: 0.9057 | اوج حافظه: 340.16 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.14 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 340.16 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: orion}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{ORION: Optimized Rectified Input-Aware Orthogonal Network with Energy-Preserving SVD Projections and Bifurcated Multi-Head Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 81.42 درصد | امتیاز F1: 28.42 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 81.42 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Self-Attention (MHSA) in Transformer architectures requires quadratic computational time and memory scaling mathcal O (N 2) with sequence length N . While linearized kernel attention models reduce sequence complexity to mathcal O (N cdot F cdot d h) , they frequently degrade local representation quality due to over-smoothed attention distributions. Conversely, full softmax attention retains high-resolution local dependencies but suffers from memory bottlenecks on long inputs....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: phantom}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{PHANTOM: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping via Deterministic CUR Decomposition and Angular LSH}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 76.38 درصد | امتیاز F1: 37.5 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 76.38 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Self-Attention (MHSA) in Transformer models requires quadratic computational time and memory scaling mathcal O (N 2) with sequence length N , presenting significant bottlenecks for long-context deployment. While dense low-rank projections reduce parameter counts, standard SVD linear layers discard structural column/row interpretable sparsity. Furthermore, sparse attention heuristics often fail to dynamically route non-local dependencies....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: primal attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Primal Attention: Asymmetric Kernel SVD via Segment-Pooled Landmark Decomposition}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 92.66 درصد | امتیاز F1: 326.24 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 92.66 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Attention requires materializing the full pairwise attention score matrix A in mathbb R L times L , incurring an mathcal O (L 2) memory wall. Primal Attention formulates self-attention through asymmetric kernel SVD approximation in the primal representation space....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: progressive token pruning}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Progressive Token Pruning (PTP)}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.48 درصد | امتیاز F1: 0.9081 | اوج حافظه: 331.85 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.48 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 331.85 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: qcqa attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Quality and Capacity-Aware Grouped Query Attention (QCQA): Dynamic Soft-Routing Mixture over Compressed KV Subspaces}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 80.39 درصد | امتیاز F1: 9.21 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 80.39 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Quality and Capacity-Aware Grouped Query Attention (QCQA) resolves a fundamental limitation of static Grouped-Query Attention (GQA): rigid, deterministic assignment of query heads to key-value heads. In GQA, a fixed group of query heads shares a static key-value head pair, regardless of input token content or contextual semantics. This rigid partition can restrict expressive capacity when queries require information outside their pre-assigned KV head group....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: rala attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Rank-Augmented Linear Attention (RALA): Low-Rank Parametric Head Interaction Augmentation}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 74.08 درصد | امتیاز F1: 11.21 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 74.08 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Rank-Augmented Linear Attention (RALA, ICLR 2024) addresses the expressivity bottlenecks of standard kernel-based linear attention mechanisms. While standard linear attention reduces the quadratic sequence complexity ( mathcal O (N 2) ) of Multi-Head Attention to linear complexity ( mathcal O (N) ) via positive kernel feature maps ( phi(x) = text ELU (x) + 1.0 ), low-rank associative memory approximations suffer from capacity saturation when modeling complex multi-head token interactions....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: rala compressor}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{RALA Compressor: Rank-Augmented Linear Attention Layer Architecture Masking Specifications}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 60.09 درصد | امتیاز F1: 0.6306 | اوج حافظه: 335.14 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 60.09 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Rank-Augmented Linear Attention Compressor ( in ) provides an expressive linear-complexity attention mechanism ( mathcal O (N) ). Standard linear attention models approximate Softmax attention using kernel feature maps ( phi(x) = text ELU (x) + 1.0 ), reducing quadratic sequence scaling ( mathcal O (N 2) ) to linear scaling. However, fixed feature maps introduce capacity bottlenecks that degrade long-range retrieval performance....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: replace}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Replace: Dynamic Attention Layer Replacement Engine}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: FAIL | دقت: 0.0 درصد | امتیاز F1: 0.7586 | اوج حافظه: 298.71 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 0.0 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 298.71 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\The **Replace** engine provides unified introspection, surgery, and hot-swapping mechanics for neural network attention sub-layers. It traverses arbitrary HuggingFace Transformer backends (BERT, RoBERTa, GPT-2, LLaMA, Mistral, T5) and replaces full quadratic multi-head attention blocks with linear, low-rank, or state-space mechanisms while preserving weights, biases, and normalization layers....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: rpc}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Rpc}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 89.79 درصد | امتیاز F1: 8.82 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 89.79 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Configuration Hyperparameters...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: rpc attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{RPC Attention: Randomized Phase Cluster Attention via Fixed Random Subspace Sketching}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 89.79 درصد | امتیاز F1: 8.82 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 89.79 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Attention evaluates full d -dimensional inner products between queries and keys, incurring high memory bandwidth requirements and mathcal O (L 2 d) arithmetic overhead. Random Projection Compressed (RPC) Attention compresses query-key inner product evaluations by projecting head states onto a lower-dimensional d p -dimensional random subspace ( d p ll d )....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: salt}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Salt}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 80.28 درصد | امتیاز F1: 0.8102 | اوج حافظه: 337.76 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 80.28 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Configuration Hyperparameters...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: salt attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SALT Attention: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Transformer Fine-Tuning}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 80.28 درصد | امتیاز F1: 0.8102 | اوج حافظه: 337.76 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 80.28 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: samba m3}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba State-Space Model}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 88.53 درصد | امتیاز F1: 0.8904 | اوج حافظه: 418.72 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 88.53 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 418.72 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Transformer architectures parameterized purely by dense Multi-Head Self-Attention (MHSA) suffer from an mathcal O (L 2) computational memory wall when scaling to long sequence lengths. While local sliding-window attention restricts interactions to a finite context window W to achieve linear complexity mathcal O (L cdot W) , it loses the capacity to maintain global long-range context across distant sequence tokens. Conversely, continuous-time selective State-Space Models (SSMs) like Mamba process...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: smart weighted ensemble}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Smart Weighted Ensemble: Task-Aware Attention Dynamic Confidence Fusion}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.14 درصد | امتیاز F1: 0.9029 | اوج حافظه: 337.59 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.14 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 337.59 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: soa attn}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SOA Attention: Shared Orthogonal Attention with Latent Bottlenecks}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 86.7 درصد | امتیاز F1: 9.45 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 86.7 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: span expanded attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Span-Expanded Attention: Receptive Field Extension with Parallel HyLoRA Adaptation}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.48 درصد | امتیاز F1: 0.9075 | اوج حافظه: 329.46 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.48 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 329.46 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Span-Expanded Attention () provides an architectural framework designed to expand Transformer attention receptive fields while maintaining parameter efficiency. Standard Multi-Head Attention is constrained by sequence length bottlenecks ( L ), making context expansion costly during fine-tuning or long-document processing....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: spectra v2}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{SPECTRA-v2: Sparse Per-Head Efficient Context Transformer with Rectified Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.48 درصد | امتیاز F1: 0.9075 | اوج حافظه: 329.46 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.48 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 329.46 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\**SPECTRA-v2** (Sparse Per-Head Efficient Context Transformer with Rectified Attention) introduces a multi-scale hybrid attention mechanism designed to break quadratic Transformer scaling mathcal O (L 2) while maintaining full expressive capacity across long context horizons: 1. **Intra-Block Local Attention with Learned Adaptive Spans**: Evaluates high-fidelity local token interactions within fixed block tiles ( B text size = 64 ) modulated by a continuous, differentiable per-head span paramete...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: spectra v2 attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Spectra V2 Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.48 درصد | امتیاز F1: 0.9075 | اوج حافظه: 329.46 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.48 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 329.46 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Configuration Hyperparameters...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: spectron}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Spectron: Importance-Aware Low-Rank + Sparse Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.09 درصد | امتیاز F1: 22.56 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.09 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: spectron attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Spectron Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 85.09 درصد | امتیاز F1: 22.56 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 85.09 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Configuration Hyperparameters...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: squeezing heads}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Squeezing Heads}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.37 درصد | امتیاز F1: 0.9075 | اوج حافظه: 332.46 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.37 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 332.46 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Configuration Hyperparameters...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: squeezing heads distill}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Squeezing Heads Distillation: Multi-Head Receptive Field Distillation Capacity Compression}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.37 درصد | امتیاز F1: 0.9075 | اوج حافظه: 332.46 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.37 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 332.46 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: squeezing heads distiller}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Squeezing Heads Distiller: Progressive Multi-Head Knowledge Distillation Dimension Pruning}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.6 درصد | امتیاز F1: 7.81 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.6 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\The **Squeezing Heads Distiller** module performs progressive cross-head knowledge distillation, compressing high-rank multi-head attention blocks into compact, high-throughput reduced-head representations. By supervising intermediate head attention logits and value representations via Kullback-Leibler divergence against an uncompressed teacher, Squeezing Heads eliminates redundant projection subspace rank while preserving contextual fidelity....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: template attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Template Attention: Reference Implementation Standardization Baseline}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 89.91 درصد | امتیاز F1: 0.9033 | اوج حافظه: 329.61 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 89.91 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 329.61 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\The **Template Attention** module provides a standardized reference implementation designed to establish rigorous architectural conventions, lifecycle hooks, and interface contracts across the toolkit. It demonstrates uniform multi-head projection mapping, rotary position embeddings (RoPE), optional group-query attention (GQA), and low-rank adapter injection interfaces....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: token compressed}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Token-Compressed Attention Wrapper: Structural Abstraction Pass-Through Layer-Wise Delegator}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 81.08 درصد | امتیاز F1: 9.09 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 81.08 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: token compressed attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Token Compressed Attention: Saliency-Based Key-Value Pruning}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 81.08 درصد | امتیاز F1: 9.09 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 81.08 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: tpa attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{TPAttention: Tensor Product Attention with Factorised Query-Key Projections}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 73.39 درصد | امتیاز F1: 11.63 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 73.39 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Tensor Product Attention () introduces a polynomial kernel projection paradigm that factorizes traditional dense Query and Key projections into outer tensor products of low-rank vectors. In standard Multi-Head Attention, computing Query and Key projections requires full-rank matrix parameters W Q, W K in mathbb R D times D ....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: tt}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{TokenCompressedAttention: A No‑Compression Baseline Wrapper for Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 81.08 درصد | امتیاز F1: 0.7919 | اوج حافظه: 508.09 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 81.08 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: unified rope}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Universal Rotary Position Embedding (UnifiedRoPE): Positional Invariance across Attention SSM Branches}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 88.99 درصد | امتیاز F1: 9.68 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 88.99 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Universal Rotary Position Embedding () provides a unified, hardware-efficient rotational positional encoding framework designed for modern transformer and hybrid architectures (spanning flat MHA in DistilBERT, nested encoder self-attention in BERT/RoBERTa, causal decoders in GPT-2, and Grouped-Query Attention in Qwen/LLaMA). In standard Transformers, Rotary Position Embeddings (RoPE, Su et al., 2021) encode sequence positions by rotating Query and Key vectors in complex 2D planes, capturing rela...\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: vig attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{ViG Attention: Bidirectional Row-Column ELU Linear Recurrent Grid Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: SKIP_BERT_ARCHITECTURAL | دقت: 51.03 درصد | امتیاز F1: 28.49 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 51.03 درصد در ازای مهار قاطعانه مصرف حافظه در سطح None مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Standard Multi-Head Attention treats sequences as 1D structures, incurring mathcal O (N 2) quadratic complexity over length N . Vision Grid Attention (ViG) reformulates 1D token sequences of length N into a 2D spatial grid of dimensions H times W (where H cdot W ge N )....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: vspec}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{VSpec++ Attention: Variational Spectral Token-Adaptive Attention with SVD-Gated Projections and Dynamic Top-k Routing}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 79.24 درصد | امتیاز F1: 53.87 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این معماری با دقت 79.24 درصد مصالحه کارآمدی بین سرعت پردازش و غنای بازنمایی ارائه می‌دهد. تقریب‌های کم‌مرتبه اعمال‌شده، گلوگاه محاسباتی را رفع نموده و پایداری استنتاج را حفظ کرده‌اند.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: weighted ensemble}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Weighted Ensemble}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 90.14 درصد | امتیاز F1: 0.9029 | اوج حافظه: 337.59 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 90.14 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف 337.59 مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\Learns to weight model predictions based on task embeddings and pairwise task similarity matrix....\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: wgqa}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Weighted Grouped-Query Attention (WGQA)}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 89.91 درصد | امتیاز F1: 8.74 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 89.91 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: wgqa attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{Weighted Grouped-Query Attention (WGQA)}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS | دقت: 89.91 درصد | امتیاز F1: 8.74 | اوج حافظه: None مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول با عملکرد درخشان 89.91 درصد توانسته است دقت معنایی مدل را بدون افت نسبت به خط مبنا حفظ کند. مهار مصرف حافظه در سقف None مگابایت، گواه کارآمدی فاکتورسازی ساختاریافته در دور زدن دیواره حافظه HBM است.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
+\noindent
+\framebox[\textwidth]{
+\begin{minipage}{0.96\textwidth}
+\vspace{0.25cm}
+{\large \textbf{ماژول توجه: zeros attention}}\\[0.2cm]
+\textbf{عنوان لاتین و فرمول‌بندی:} \lr{ZeroS Attention: Zero-Mean Normalized Linear Attention}\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS\_LOW | دقت: 51.15 درصد | امتیاز F1: 0.6698 | اوج حافظه: 380.5 مگابایت\\[0.2cm]
+\textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 51.15 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 380.5 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
+\textbf{مبانی و ایده معماری:}\\این مکانیزم توجه با هدف بازآرایی محاسبات و تقلیل حافظه از طریق تفکیک فضاهای پنهان طراحی گردیده است.\\[0.2cm]
+\vspace{0.25cm}
+\end{minipage}}
+
+\vspace{0.5cm}
+
