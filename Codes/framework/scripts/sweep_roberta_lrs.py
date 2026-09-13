@@ -17,23 +17,23 @@ train = ds["train"]
 tok = AutoTokenizer.from_pretrained("models/roberta-base")
 tb = prepare_train_batches(tok, train, "sst2", 128, 8, device, max_batches=50)
 
-for freeze_clf in [True, False]:
-    for lr in [1e-5, 2e-5, 5e-5]:
-        m = AutoModelForSequenceClassification.from_pretrained("models/roberta-base", num_labels=2).to(device)
-        ckpt = torch.load("results/unified_asvd/roberta/finetuned_model.pt", map_location=device)
-        m.load_state_dict(ckpt, strict=False)
-        inject_attention(m, "adaptive_span", rank=16)
+# Mode A: classifier completely frozen (only lora and span_logits)
+# Mode B: classifier.dense frozen, classifier.out_proj trainable
+for mode, lr in [("frozen_all", 1e-5), ("frozen_all", 2e-4), ("freeze_dense_only", 1e-5), ("freeze_dense_only", 2e-4)]:
+    m = AutoModelForSequenceClassification.from_pretrained("models/roberta-base", num_labels=2).to(device)
+    ckpt = torch.load("results/unified_asvd/roberta/finetuned_model.pt", map_location=device)
+    m.load_state_dict(ckpt, strict=False)
+    inject_attention(m, "adaptive_span", rank=16)
 
-        for p in m.parameters():
-            p.requires_grad = False
+    for p in m.parameters():
+        p.requires_grad = False
 
-        for n, p in m.named_parameters():
-            if "lora_" in n or "span_logits" in n:
-                p.requires_grad = True
-            if not freeze_clf and ("classifier." in n):
-                p.requires_grad = True
+    for n, p in m.named_parameters():
+        if "lora_" in n or "span_logits" in n:
+            p.requires_grad = True
+        if mode == "freeze_dense_only" and "classifier.out_proj" in n:
+            p.requires_grad = True
 
-        finetune_lora(m, tok, train, "sst2", 50, 128, 8, device, fp16=True, lr=lr, precomputed_batches=tb)
-        acc = evaluate(m, tok, val, "sst2", 128, 32, device, fp16=True)
-        spans = [p.data.tolist() for n, p in m.named_parameters() if "span_logits" in n]
-        print(f"freeze_clf={freeze_clf}, lr={lr:.1e} -> Val Acc: {acc:.2f}%, layer 0 span logits: {[round(s, 4) for s in spans[0][:3]]}")
+    finetune_lora(m, tok, train, "sst2", 50, 128, 8, device, fp16=True, lr=lr, precomputed_batches=tb)
+    acc = evaluate(m, tok, val, "sst2", 128, 32, device, fp16=True)
+    print(f"Mode={mode}, lr={lr:.1e} -> Val Acc: {acc:.2f}%")
