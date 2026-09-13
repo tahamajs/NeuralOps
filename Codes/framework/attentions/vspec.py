@@ -206,27 +206,30 @@ class DynamicLowRankProjector(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = True,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
         self.output_scale = nn.Parameter(torch.ones(1))
+        factory_kwargs = {"device": device, "dtype": dtype}
         self.rank = rank
         self.in_dim = in_dim
         self.out_dim = out_dim
         self.lora_rank = lora_rank
         self.scaling = lora_alpha / max(1, lora_rank)
 
-        self.U = nn.Parameter(torch.randn(out_dim, rank) * 0.02)
-        self.S = nn.Parameter(torch.ones(rank))
-        self.V = nn.Parameter(torch.randn(in_dim, rank) * 0.02)
+        self.U = nn.Parameter(torch.randn(out_dim, rank, **factory_kwargs) * 0.02)
+        self.S = nn.Parameter(torch.ones(rank, **factory_kwargs))
+        self.V = nn.Parameter(torch.randn(in_dim, rank, **factory_kwargs) * 0.02)
 
         if bias:
-            self.bias = nn.Parameter(torch.zeros(out_dim))
+            self.bias = nn.Parameter(torch.zeros(out_dim, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_dim))
-            self.lora_B = nn.Parameter(torch.empty(out_dim, lora_rank))
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_dim), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_dim, lora_rank), **factory_kwargs))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
         else:
@@ -371,21 +374,27 @@ class VSpecAttention(BaseAttention):
         self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
         self.lora_alpha = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
+        target_dtype = kwargs.get("dtype", None)
+        if target_dtype is None and src_attn is not None:
+            target_dtype = next(src_attn.parameters(), torch.tensor([])).dtype
+            if not isinstance(target_dtype, torch.dtype):
+                target_dtype = torch.float32
+
         self.Pq = DynamicLowRankProjector(
             rank=self.rank, in_dim=self.hidden_size, out_dim=self.all_head_size,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
         self.Pk = DynamicLowRankProjector(
             rank=self.rank, in_dim=self.hidden_size, out_dim=self.kv_head_size,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
         self.Pv = DynamicLowRankProjector(
             rank=self.rank, in_dim=self.hidden_size, out_dim=self.kv_head_size,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
         self.Po = DynamicLowRankProjector(
             rank=self.rank, in_dim=self.all_head_size, out_dim=self.hidden_size,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
 
         self.sg_q = VariationalSpectralGate(self.hidden_size, self.rank)
@@ -409,6 +418,9 @@ class VSpecAttention(BaseAttention):
 
         if src_attn is not None:
             self.copy_weights(src_attn)
+
+        if target_dtype is not None:
+            self.to(target_dtype)
 
     @property
     def query(self): return self.Pq
@@ -713,76 +725,153 @@ class VSpecAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("inject_vspec")
 @ATTENTION_REGISTRY.register("inject_vspec_attn")
 def inject_vspec_attn(
-    layer: nn.Module,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[VSpecAttention]:
-    """Safe injection hook for VSpecAttention."""
-    if old_attn is None:
+) -> Optional[Union[VSpecAttention, nn.Module]]:
+    """Safe injection hook for VSpecAttention across diverse transformer architectures."""
+    target = layer if layer is not None else model
+    if target is None:
         return None
 
-    if model_config is None and hasattr(layer, "config"):
-        model_config = layer.config
-    if model_config is None and hasattr(old_attn, "config"):
-        model_config = old_attn.config
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
 
-    hidden_size = (
-        _cfg_get(model_config, "hidden_size")
-        or _cfg_get(model_config, "d_model")
-        or _cfg_get(model_config, "dim")
-        or getattr(old_attn, "hidden_size", None)
-        or getattr(old_attn, "embed_dim", None)
-        or (old_attn.q_proj.in_features if hasattr(old_attn, "q_proj") and hasattr(old_attn.q_proj, "in_features") else None)
-        or (old_attn.q_lin.in_features if hasattr(old_attn, "q_lin") and hasattr(old_attn.q_lin, "in_features") else None)
-        or (old_attn.query.in_features if hasattr(old_attn, "query") and hasattr(old_attn.query, "in_features") else None)
-        or 768
-    )
-    num_heads = (
-        _cfg_get(model_config, "num_attention_heads")
-        or _cfg_get(model_config, "num_heads")
-        or _cfg_get(model_config, "n_heads")
-        or getattr(old_attn, "num_heads", None)
-        or getattr(old_attn, "num_attention_heads", None)
-        or 12
-    )
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
 
-    if model_config is None:
-        import types
-        model_config = types.SimpleNamespace(
-            hidden_size=hidden_size,
-            num_attention_heads=num_heads,
-            num_key_value_heads=getattr(old_attn, "num_key_value_heads", num_heads),
-            is_decoder=getattr(old_attn, "is_decoder", False),
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_vspec_attn(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    try:
+        src = old_attn
+        if src is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "self"):
+                        src = cand.self
+                    else:
+                        src = cand
+                    break
+
+        if src is None and target is not None and hasattr(target, "forward"):
+            src = target
+
+        if src is None:
+            return None
+
+        # Double-injection guard
+        if src is not None:
+            if isinstance(src, VSpecAttention):
+                return None
+            if "VSpec" in src.__class__.__name__:
+                return None
+            if hasattr(src, "inner") and isinstance(getattr(src, "inner"), VSpecAttention):
+                return None
+            if hasattr(src, "_wrapped_attention") and isinstance(getattr(src, "_wrapped_attention"), VSpecAttention):
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, VSpecAttention):
+                    return None
+                if "VSpec" in cand.__class__.__name__:
+                    return None
+                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), VSpecAttention):
+                    return None
+                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), VSpecAttention):
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src is not None:
+            c_name = src.__class__.__name__
+            if "DeltaNet" in c_name or "LinearAttention" in c_name:
+                return None
+
+        if cfg is None and hasattr(src, "config"):
+            cfg = src.config
+
+        hidden_size = (
+            _cfg_get(cfg, "hidden_size")
+            or _cfg_get(cfg, "d_model")
+            or _cfg_get(cfg, "dim")
+            or getattr(src, "hidden_size", None)
+            or getattr(src, "embed_dim", None)
+            or (src.q_proj.in_features if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features") else None)
+            or (src.q_lin.in_features if hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features") else None)
+            or (src.query.in_features if hasattr(src, "query") and hasattr(src.query, "in_features") else None)
+            or 768
+        )
+        num_heads = (
+            _cfg_get(cfg, "num_attention_heads")
+            or _cfg_get(cfg, "num_heads")
+            or _cfg_get(cfg, "n_heads")
+            or getattr(src, "num_heads", None)
+            or getattr(src, "num_attention_heads", None)
+            or 12
         )
 
-    rank = kwargs.pop("rank", _cfg_get(comp_config, "vspec_rank", _cfg_get(comp_config, "rank", 32)))
-    lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
+        rank = kwargs.pop("rank", _cfg_get(comp_config, "vspec_rank", _cfg_get(comp_config, "rank", 32)))
+        lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
 
-    try:
         new_block = VSpecAttention(
-            config=model_config,
+            config=cfg,
             rank=rank,
             lora_rank=lora_rank,
-            pretrained_attn=old_attn,
+            pretrained_attn=src,
             **kwargs,
         )
 
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                layer.attention.self = new_block
-                new_block.is_nested_encoder = True
-            else:
-                layer.attention = new_block
-            return new_block
-        for attr in ("self_attn", "attn", "self"):
-            if hasattr(layer, attr):
-                setattr(layer, attr, new_block)
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_block
+                    new_block.is_nested_encoder = True
+                else:
+                    target.attention = new_block
                 return new_block
-        layer.attention = new_block
+            for attr in ("self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_block)
+                    return new_block
+            target.attention = new_block
+            return new_block
         return new_block
     except Exception as e:
         logger.error("inject_vspec_attn failed at layer %d: %s", layer_idx, e)
