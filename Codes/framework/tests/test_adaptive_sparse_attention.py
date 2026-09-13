@@ -33,9 +33,9 @@ def test_default_sparsity_per_family():
     p_custom_enc = AdaptiveSparseAttention(config=cfg_enc, adaptive_sparse_encoder_sparsity=0.15)
     assert p_custom_enc.default_sparsity == pytest.approx(0.15, abs=1e-3)
 
-    # Verify sparsity_logits is frozen (requires_grad=False)
-    assert not p_enc.sparsity_logits.requires_grad
-    assert not p_dec.sparsity_logits.requires_grad
+    # Verify sparsity_logits is learnable (requires_grad=True)
+    assert p_enc.sparsity_logits.requires_grad
+    assert p_dec.sparsity_logits.requires_grad
 
 
 def test_weight_copy_all_four_architectures():
