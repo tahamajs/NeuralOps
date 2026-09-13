@@ -3,7 +3,7 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 82: \lr{routing\_attention}}
+\section{کالبدشکافی عمیق و تحلیل ساختاری ماژول \lr{routing\_attention}}
 \label{sec:mod_routing_attention}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
@@ -46,7 +46,6 @@ c(\mathbf{x}_i) = \arg\max_{k \in \{1, \dots, K\}} \frac{\langle \mathbf{x}_i, \
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
 
-
 \begin{table}[H]
 \centering
 \small
@@ -54,13 +53,12 @@ c(\mathbf{x}_i) = \arg\max_{k \in \{1, \dots, K\}} \frac{\langle \mathbf{x}_i, \
 \label{tab:benchmark_routing_attention}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852\%} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}
-
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 ثبت دقت \lr{83.40\%} و مصرف رم \lr{780.0 MB} (کاهش \lr{81.4\%}ی نسبت به مدل مبنای \lr{۴۲۰۰ MB}) همراه با سرعت \lr{33,100} توکن در ثانیه، تأییدکننده همبستگی زاویه‌ای توکن‌ها در فضای معنایی است و نشان می‌دهد خوشه‌بندی کروی انحراف خطای بسیار اندکی تولید می‌کند.
@@ -72,9 +70,9 @@ c(\mathbf{x}_i) = \arg\max_{k \in \{1, \dots, K\}} \frac{\langle \mathbf{x}_i, \
 \begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
     node distance=1.1cm,
     auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    clus/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small}
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    clus/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
 ]
     \node [block] (input) {ورودی $\mathbf{X}$};
     \node [clus, right=1.0cm of input] (norm) {نرمال‌سازی کروی};
@@ -97,21 +95,19 @@ c(\mathbf{x}_i) = \arg\max_{k \in \{1, \dots, K\}} \frac{\langle \mathbf{x}_i, \
 "A 3D scientific visualization of spherical routing attention. Showing hundreds of glowing data points projected onto the surface of a luminous sphere, partitioned into vibrant Voronoi geometric cells with localized laser interconnections, 8k resolution --ar 16:9"
 \end{latin}
 
-\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{routing\_attention} ارائه شده است.
 
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{routing\_attention} ارائه شده است.
-
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{img/architecture/routing_attention_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{routing\_attention}}
+\includegraphics[width=0.92\textwidth]{img/architecture/routing_attention_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(routing\_attention)}}
 \label{fig:arch_routing_attention}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{img/comparison/routing_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{routing\_attention} در برابر خط مبنا}
+\includegraphics[width=0.92\textwidth]{img/comparison/routing_attention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(routing\_attention)}}
 \label{fig:comp_routing_attention}
 \end{figure}
-

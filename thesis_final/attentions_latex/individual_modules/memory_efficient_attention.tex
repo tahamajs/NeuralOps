@@ -15,7 +15,7 @@
 \begin{itemize}
     \item \textbf{نام کامل انگلیسی ماژول:} \lr{memory\_efficient\_attention}
     \item \textbf{نام فارسی معادل:} مکانیزم توجه توجه تلفیقی سخت‌افزاری و کوانتایزاسیون کم‌دقت FP8 با نام اختصاصی \lr{memory\_efficient\_attention}
-    \item \textbf{دسته‌بندی معماری:} \lr{Hardware-Fused \& Quantized Attention \lr{(FP8/Triton)}}
+    \item \textbf{دسته‌بندی معماری:} \lr{Hardware-Fused \& Quantized Attention (FP8/Triton)}
     \item \textbf{مرجع علمی و محاسباتی:} تحقیقات مرتبط با مدل محاسباتی سقف نظری سخت‌افزار \lr{(Roofline Model \& IO Complexity)} و توسعه‌های اخیر ترنسفورمرهای کارآمد
     \item \textbf{خلاصه ایده اصلی:} ماژول \lr{memory\_efficient\_attention} با هدف کاهش گلوگاه محاسباتی لایه توجه استاندارد و جایگزینی پیچیدگی مربعی $\mathcal{O}(N^2)$ طراحی گردیده است. این معماری با بهره‌گیری از رویکردهای نوین فشرده‌سازی زیرفضا، پروجکشن‌های بهینه‌شده و بازآرایی محاسباتی، برقراری توازن میان حفظ ظرفیت بیانی مدل و کمینه‌سازی بار پردازشی را دنبال می‌کند.
     \item \textbf{جایگاه در تبارشناسی توجه:} این مکانیزم پاسخی به چالش مقیاس‌پذیری طول دنباله در مدل‌های پایه بزرگ بوده و در میانه طیف رویکردهای صرفاً نرم‌افزاری و تکنیک‌های اختصاصی فیوژن سخت‌افزاری قرار می‌گیرد.
@@ -126,6 +126,6 @@ $$\text{IO Traffic} = \Omega\left(\frac{N^2 d}{\sqrt{M_{\text{SRAM}}}}\right)$$
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{img/comparison/tt_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{memory\_efficient\_attention} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(memory\_efficient\_attention)}}
 \label{fig:comp_memory_efficient_attention}
 \end{figure}

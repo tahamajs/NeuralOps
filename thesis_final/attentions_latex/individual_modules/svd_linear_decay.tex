@@ -87,9 +87,9 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \toprule
 \textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{0.00\%} & \lr{0.908} & \lr{389.5 MB} & \lr{139,909 tok/s} & \lr{SKIP\_BERT\_ARCHITECTURAL} \\
-\lr{RoBERTa-base} & \lr{0.00\%} & \lr{0.759} & \lr{298.7 MB} & \lr{96,436 tok/s} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
-\lr{GPT-2} & \lr{0.00\%} & \lr{0.635} & \lr{793.2 MB} & \lr{64,783 tok/s} & \lr{SKIP\_GPT\_ARCHITECTURAL} \\
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.908\%} & \lr{389.5 MB} & \lr{139,909 tok/s} & \lr{SKIP\_BERT\_ARCHITECTURAL} \\
+\lr{RoBERTa-base} & \lr{0.00\%} & \lr{0.759\%} & \lr{298.7 MB} & \lr{96,436 tok/s} & \lr{SKIP\_ROBERTA\_ARCHITECTURAL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.635\%} & \lr{793.2 MB} & \lr{64,783 tok/s} & \lr{SKIP\_GPT\_ARCHITECTURAL} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -129,7 +129,7 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{img/comparison/svd_linear_decay_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{svd\_linear\_decay} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(svd\_linear\_decay)}}
 \label{fig:comp_svd_linear_decay}
 \end{figure}
 
@@ -137,14 +137,14 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/architecture/svd_linear_decay_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{svd\_linear\_decay}}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(svd\_linear\_decay)}}
 \label{fig:arch_svd_linear_decay}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/comparison/svd_linear_decay_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{svd\_linear\_decay} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(svd\_linear\_decay)}}
 \label{fig:comp_svd_linear_decay}
 \end{figure}
 

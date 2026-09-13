@@ -29,7 +29,7 @@
 \vspace{0.25cm}
 {\large \textbf{ماژول توجه: SVD-Mamba}}\\[0.2cm]
 \textbf{عنوان لاتین و فرمول‌بندی:} \lr{SVD-Mamba: SVD-Factorized Selective State Space Model with Global Spectral Mixing}\\[0.2cm]
-\textbf{کارنامه تجربی:} وضعیت: PASS_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 673.96 مگابایت\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS\_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 673.96 مگابایت\\[0.2cm]
 \textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 50.92 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 673.96 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
 \textbf{مبانی و ایده معماری:}\\**SVD-Mamba** integrates truncated Singular Value Decomposition (SVD) low-rank parameterization with selective continuous-time state-space models (Mamba S6) and global spectral token mixing: 1. **SVD-Factorized Projection Layers**: Replaces dense linear transformations ( W text in , W text out , W x, W Delta ) with factorized parameterizations ( U Sigma V top ), drastically reducing parameter footprint while maintaining high spectral fidelity. 2. **Selective S6 State Space Dynamics**: Evaluates ...\\[0.2cm]
 \vspace{0.25cm}
@@ -281,7 +281,7 @@
 \vspace{0.25cm}
 {\large \textbf{ماژول توجه: svd mamba}}\\[0.2cm]
 \textbf{عنوان لاتین و فرمول‌بندی:} \lr{SVD-Mamba Attention: Hardware-Efficient State-Space Recurrence via Truncated Singular Value Projections}\\[0.2cm]
-\textbf{کارنامه تجربی:} وضعیت: PASS_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 673.96 مگابایت\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS\_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 673.96 مگابایت\\[0.2cm]
 \textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 50.92 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 673.96 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
 \textbf{مبانی و ایده معماری:}\\The **SVD-Mamba** architecture integrates selective state-space model (SSM) recurrence dynamics with low-rank Singular Value Decomposition (SVD) input/output projection bottlenecks. By replacing high-dimensional quadratic attention matrices with selective continuous-time SSM dynamics discretized via zero-order hold (ZOH) coupled with factorized projection operators, SVD-Mamba achieves strict mathcal O (N) computational time and mathcal O (1) inference memory overhead per token. The singular valu...\\[0.2cm]
 \vspace{0.25cm}

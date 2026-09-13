@@ -92,9 +92,9 @@ k(q, k) \approx \phi(q)^\top \phi(k)
 \toprule
 \textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{89.85\%} & \lr{0.898} & \lr{241.8 MB} & \lr{48,180 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{89.20\%} & \lr{0.890} & \lr{310.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{85.80\%} & \lr{0.852} & \lr{440.2 MB} & \lr{24,820 tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{89.85\%} & \lr{0.898\%} & \lr{241.8 MB} & \lr{48,180 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{89.20\%} & \lr{0.890\%} & \lr{310.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{85.80\%} & \lr{0.852\%} & \lr{440.2 MB} & \lr{24,820 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,6 +134,6 @@ k(q, k) \approx \phi(q)^\top \phi(k)
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{img/comparison/ast_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{fast\_attention} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(fast\_attention)}}
 \label{fig:comp_fast_attention}
 \end{figure}

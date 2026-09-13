@@ -87,9 +87,9 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \toprule
 \textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{0.00\%} & \lr{0.908} & \lr{389.5 MB} & \lr{142,216 tok/s} & \lr{FAIL} \\
-\lr{RoBERTa-base} & \lr{0.00\%} & \lr{0.759} & \lr{298.7 MB} & \lr{83,314 tok/s} & \lr{FAIL} \\
-\lr{GPT-2} & \lr{0.00\%} & \lr{0.635} & \lr{793.2 MB} & \lr{64,305 tok/s} & \lr{FAIL} \\
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.908\%} & \lr{389.5 MB} & \lr{142,216 tok/s} & \lr{FAIL} \\
+\lr{RoBERTa-base} & \lr{0.00\%} & \lr{0.759\%} & \lr{298.7 MB} & \lr{83,314 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.635\%} & \lr{793.2 MB} & \lr{64,305 tok/s} & \lr{FAIL} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -129,7 +129,7 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{img/comparison/svd_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{svd\_attention} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(svd\_attention)}}
 \label{fig:comp_svd_attention}
 \end{figure}
 
@@ -137,14 +137,14 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/architecture/svd_attention_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{svd\_attention}}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(svd\_attention)}}
 \label{fig:arch_svd_attention}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/comparison/svd_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{svd\_attention} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(svd\_attention)}}
 \label{fig:comp_svd_attention}
 \end{figure}
 

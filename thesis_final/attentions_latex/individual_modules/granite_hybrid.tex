@@ -55,11 +55,11 @@
 \begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
     node distance=1.1cm,
     auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    router/.style={diamond, draw=orange!80, fill=orange!20, text centered, inner sep=2pt, font=\footnotesize},
-    b1/.style={rectangle, draw=purple!70, fill=purple!12, rounded corners=4pt, text centered, minimum height=0.75cm, font=\footnotesize},
-    b2/.style={rectangle, draw=teal!70, fill=teal!12, rounded corners=4pt, text centered, minimum height=0.75cm, font=\footnotesize},
-    fuse/.style={rectangle, draw=green!80, fill=green!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small}
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    router/.style={diamond, draw=orange!80, fill=orange!20, align=center, text centered, inner sep=2pt, font=\footnotesize},
+    b1/.style={rectangle, draw=purple!70, fill=purple!12, rounded corners=4pt, align=center, text centered, minimum height=0.75cm, font=\footnotesize},
+    b2/.style={rectangle, draw=teal!70, fill=teal!12, rounded corners=4pt, align=center, text centered, minimum height=0.75cm, font=\footnotesize},
+    fuse/.style={rectangle, draw=green!80, fill=green!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
 ]
     \node [block] (in) {ورودی $\mathbf{X}$};
     \node [router, right=1.1cm of in] (route) {مسیریاب گیت};

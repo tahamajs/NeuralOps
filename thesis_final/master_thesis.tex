@@ -7,6 +7,7 @@
 \usepackage{graphicx}
 \graphicspath{{img/}{.}}
 \usepackage{color,colortbl}
+\definecolor{indigo}{RGB}{75,0,130}
 \usepackage{float}
 \usepackage{caption}
 \usepackage{subcaption}
@@ -30,14 +31,29 @@
 \usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=cyan,
             pdftitle={طراحی، ارزیابی تجربی و فشرده‌سازی مکانیزم‌های توجه خطی و تجزیه مقادیر منفرد}]{hyperref}
 
+% -- کدها و لیستینگ‌ها --------------------------------------------------------
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10},
+  columns=fullflexible
+}
+
 % -- زی‌پرشین (باید حتماً آخرین بسته باشد) ----------------------------------------
-\usepackage{xepersian}
+\usepackage[mathdigits=default]{xepersian}
+\makeatletter
+\def\tagform@#1{\maketag@@@{\lr{(}\ignorespaces#1\unskip\@@italiccorr\lr{)}}}
+\makeatother
 
 \DeclareRobustCommand\lr[1]{\LRE{\resetlatinfont #1}}
+\newcommand{\code}[1]{\lr{\texttt{#1}}}
 
 
 \settextfont{X Nazanin}
 \setdigitfont{X Nazanin}
+\DefaultMathsDigits
 \setlatintextfont[Scale=0.80]{Times New Roman}
 
 \makeatletter
@@ -45,6 +61,7 @@
 \def\@kernel@tabular@init{}
 \makeatother
 
+\setcounter{tocdepth}{2}
 \begin{document}
 
 % ==============================================================================
@@ -282,7 +299,7 @@
 \subsection{شدت محاسباتی \lr{(Arithmetic Intensity)}}
 شدت محاسباتی یک الگوریتم به صورت نسبت تعداد کل عملیات ممیز شناور \lr{(FLOPs)} به تعداد بایت‌های منتقل‌شده از حافظه سراسری \lr{(HBM)} به ثبات‌های پردازشی \lr{(SRAM)} تعریف می‌گردد:
 \begin{equation}
-\text{AI} = \frac{\text{FLOPs}}{\text{Memory Traffic (Bytes)}}
+\mathrm{AI} = \frac{\mathrm{FLOPs}}{\text{\lr{Memory Traffic (Bytes)}}}
 \end{equation}
 در صورتی که شدت محاسباتی از نقطه شکست سخت‌افزار \lr{(Ridge Point)} کمتر باشد، الگوریتم در ناحیه مقید به حافظه \lr{(Memory-Bound)} قرار داشته و افزایش تعداد هسته‌های پردازشی تاثیری بر شتاب آن نخواهد داشت. توجه متراکم استاندارد به دلیل فراخوانی مکرر ماتریس $N \times N$ شدیداً مقید به پهنای باند است، در حالی که الگوریتم‌های فیوزشده نظیر \lr{FlashAttention} و \lr{Fusion Attention} با نگهداری بلاک‌ها در حافظه سریع \lr{SRAM}، شدت محاسباتی را چند برابر ارتقا می‌دهند.
 
@@ -367,10 +384,10 @@
     phase/.style={rectangle, draw=blue!80, fill=blue!10, rounded corners, minimum width=4cm, minimum height=1cm, align=center, font=\small},
     arrow/.style={-Stealth, thick, draw=blue!70}
 ]
-\node[phase] (p1) {\textbf{گام اول: تزریق درجا (Drop-in Injection)}\\جایگزینی لایه توجه بدون تغییر معماری کلی};
-\node[phase, below=of p1] (p2) {\textbf{گام دوم: نگاشت تانسورها (Weight Alignment)}\\استخراج ماتریس‌ها، فاکتورسازی SVD و لایه LoRA};
-\node[phase, below=of p2] (p3) {\textbf{گام سوم: بازیابی سریع (Recovery Phase)}\\کالیبراسیون ۵۰ تا ۲۵۰ گام با نرخ یادگیری $1e-4$};
-\node[phase, below=of p3] (p4) {\textbf{گام چهارم: پروفایلینگ سخت‌افزاری (Hardware Profiling)}\\اندازه‌گیری VRAM، Throughput و ارزیابی Quality Gate};
+\node[phase] (p1) {\textbf{گام اول: تزریق درجای ماژول \lr{(Drop-in Injection)}}\\جایگزینی مستقیم لایه توجه بدون ایجاد تغییر در معماری پایه};
+\node[phase, below=of p1] (p2) {\textbf{گام دوم: نگاشت پارامتری تانسورها \lr{(Weight Alignment)}}\\تجزیه مقادیر منفرد \lr{(SVD)} و مقداردهی ماتریس‌های کم‌مرتبه \lr{(LoRA)}};
+\node[phase, below=of p2] (p3) {\textbf{گام سوم: فاز بازیابی سریع \lr{(Recovery Phase)}}\\کالیبراسیون شبکه در ۵۰ الی ۲۵۰ گام با نرخ یادگیری $\lr{1e-4}$};
+\node[phase, below=of p3] (p4) {\textbf{گام چهارم: پروفایلینگ سخت‌افزاری \lr{(Hardware Profiling)}}\\سنجش اوج مصرف حافظه، توان عملیاتی و ارزیابی دروازه کیفیت \lr{(Quality Gate)}};
 \draw[arrow] (p1) -- (p2);
 \draw[arrow] (p2) -- (p3);
 \draw[arrow] (p3) -- (p4);
@@ -382,9 +399,9 @@
 \section{معیار دروازه کیفیت \lr{(Quality Gate)}}
 برای اعتبارسنجی عملیاتی ماژول‌ها، شرط پذیرش در دروازه کیفیت تعریف گردید:
 \begin{equation}
-\text{Quality Gate Status} = \begin{cases}
-\text{PASS} & \text{Accuracy} \ge 56.00\% \quad \text{and} \quad \text{No CUDA Error} \\
-\text{FAIL} & \text{Accuracy} < 56.00\% \quad \text{or} \quad \text{OOM Crash}
+\text{\lr{Quality Gate Status}} = \begin{cases}
+\text{\lr{PASS}} & \text{\lr{Accuracy}} \ge 56.00\% \quad \text{\lr{and}} \quad \text{\lr{No CUDA Error}} \\
+\text{\lr{FAIL}} & \text{\lr{Accuracy}} < 56.00\% \quad \text{\lr{or}} \quad \text{\lr{OOM Crash}}
 \end{cases}
 \end{equation}
 آستانه \lr{56\%} بر اساس ۳ انحراف معیار بالاتر از حدس تصادفی محاسبه شده و تضمین می‌کند که مدل از مرزهای آماری پایه فراتر رفته است.
@@ -513,7 +530,7 @@
 \subsection{تحلیل طیفی مقادیر ویژه و نقشه حرارتی ماتریس گذار حالت}
 شکل \ref{fig:chart_spectral_eigenvalue_decay} تحلیل عمیق رفتار اسپکترال و زوال مقادیر منفرد \lr{(Singular Value Decay)} و ماتریس گذار حالت بازگشتی را در سه پانل به نمایش می‌گذارد:
 \begin{enumerate}
-    \item \textbf{نمودار زوال مقادیر ویژه \lr{(Spectral Eigenvalue Decay)}:} در پانل (الف)، توزیع مقادیر منفرد نرمال‌شده \lr{$(\sigma_k / \sigma_1)$} در مقیاس لگاریتمی ترسیم شده است. ماژول قهرمان \lr{Fusion Attention} و مدل‌های طیفی \lr{ASVD} زوال توانی بسیار تندی را نشان می‌دهند؛ به طوری که در رتبه برش \lr{$r=16$}، مقادیر منفرد به زیر \lr{$10^{-2}$} سقوط می‌کنند که موید چگالی شدید اطلاعات در مؤلفه‌های ابتدایی است.
+    \item \textbf{نمودار زوال مقادیر ویژه \lr{(Spectral Eigenvalue Decay)}:} در پانل (الف)، توزیع مقادیر منفرد نرمال‌شده \lr{$(\sigma\_k / \sigma\_1)$} در مقیاس لگاریتمی ترسیم شده است. ماژول قهرمان \lr{Fusion Attention} و مدل‌های طیفی \lr{ASVD} زوال توانی بسیار تندی را نشان می‌دهند؛ به طوری که در رتبه برش \lr{$r=16$}، مقادیر منفرد به زیر \lr{$10^{-2}$} سقوط می‌کنند که موید چگالی شدید اطلاعات در مؤلفه‌های ابتدایی است.
     \item \textbf{نقشه حرارتی ماتریس گذار حالت \lr{(State Transition Heatmap $\mathbf{\bar{A}}_t$)}:} در پانل (ب)، ماتریس گذار کانال‌های پنهان مدل‌های فضای حالت \lr{(SSM / Mamba)} به تصویر درآمده است. ساختار قطری غالب با زوال نمایی کنترل‌شده، شرط پایداری لیاپانوف \lr{$(\mathbf{\bar{A}}_t \in (0, 1))$} را تضمین کرده و مانع از انفجار یا محو گرادیان در گام‌های بازگشتی طولانی می‌گردد.
     \item \textbf{نسبت انرژی فروبنیوس حفظ‌شده \lr{(Cumulative Frobenius Energy)}:} در پانل (ج)، منحنی تجمیعی انرژی طیفی نشان می‌دهد که مدل قهرمان تنها با رتبه برش \lr{$r=16$}، بیش از \lr{99.7\%} کل انرژی فروبنیوس ماتریس توجه کامل را جذب می‌نماید که بسیار فراتر از آستانه تضمین کیفیت \lr{(92.0\%)} است.
 \end{enumerate}
@@ -579,7 +596,7 @@
 \section{دستاوردهای علمی و عملی}
 \begin{enumerate}
     \item تدوین دانشنامه جامع و تک‌نگاری ۱۲ بخشی ۱۰۰ مکانیزم برتر توجه به زبان فارسی برای نخستین بار.
-    \item اثبات عملی امکان‌پذیری استقرار مدل‌های زبانی بزرگ کانتکست-بلند روی کارت‌های گرافیکی معمولی با ۸ گیگابایت VRAM.
+    \item اثبات عملی امکان‌پذیری استقرار مدل‌های زبانی بزرگ کانتکست-بلند روی کارت‌های گرافیکی معمولی با ۸ گیگابایت \lr{VRAM}.
     \item طراحی چارچوب سیستم‌محور چارچوب پژوهش با قابلیت تزریق درجا و ارزیابی خودکار.
 \end{enumerate}
 
@@ -647,11 +664,11 @@
 \end{center}
 \vspace{0.5cm}
 
-Large language models (LLMs) based on the Transformer architecture have fundamentally reshaped modern natural language processing. However, their standard Multi-Head Attention (MHA) exhibits quadratic computational and memory complexity, $\mathcal{O}(N^2)$, with respect to sequence length. This memory footprint creates a severe hardware bottleneck—the "Memory Wall"—especially when deploying models on consumer-grade edge GPUs.
+Large language models (LLMs) based on the Transformer architecture have fundamentally reshaped modern natural language processing. However, their standard Multi-Head Attention \lr{(MHA)} exhibits quadratic computational and memory complexity, $\mathcal{O}(N^2)$, with respect to sequence length. This memory footprint creates a severe hardware bottleneck—the "Memory Wall"—especially when deploying models on consumer-grade edge GPUs.
 
-This thesis presents a comprehensive hardware-aware framework, a hardware-aware framework for the empirical benchmarking, drop-in injection, and compression of attention mechanisms. We systematically evaluate the \textbf{Top 100 attention mechanisms selected from over 130 implementations} across four diverse language model architectures: DistilBERT, RoBERTa-base, GPT-2, and Qwen3.5-0.8B on the GLUE SST-2 benchmark under identical laboratory conditions using an NVIDIA GeForce RTX 4070 Laptop GPU (8GB GDDR6).
+This thesis presents a comprehensive hardware-aware framework for the empirical benchmarking, drop-in injection, and compression of attention mechanisms. We systematically evaluate the \textbf{Top 100 attention mechanisms selected from over 130 implementations} across four diverse language model architectures: DistilBERT, RoBERTa-base, GPT-2, and Qwen3.5-0.8B on the GLUE SST-2 benchmark under identical laboratory conditions using an NVIDIA GeForce RTX 4070 Laptop GPU (8GB GDDR6).
 
-Through a four-phase evaluation pipeline (drop-in injection, weight alignment, rapid recovery calibration, and hardware roofline profiling), we demonstrate that low-rank Singular Value Decomposition (SVD) combined with trainable LoRA residual adapters effectively preserves linguistic representation while slashing peak VRAM. Our champion model, \textbf{Fusion Attention}, cuts peak VRAM from 4200.0 MB to 480.0 MB (an 88.6\% reduction), boosts throughput by 4.38x from 15,400 to 67,500 tokens/sec, and achieves an outstanding accuracy of 93.12\% (outperforming standard attention). These findings confirm that transformer attention can be linearised and compressed for efficient local inference without compromising representation capacity.
+Through a four-phase evaluation pipeline (drop-in injection, weight alignment, rapid recovery calibration, and hardware roofline profiling), we demonstrate that low-rank Singular Value Decomposition \lr{(SVD)} combined with trainable LoRA residual adapters effectively preserves linguistic representation while slashing peak VRAM. Our champion model, \textbf{Fusion Attention}, cuts peak VRAM from 4200.0 MB to 480.0 MB (an 88.6\% reduction), boosts throughput by 4.38x from 15,400 to 67,500 tokens/sec, and achieves an outstanding accuracy of 93.12\% (outperforming standard attention). These findings confirm that transformer attention can be linearised and compressed for efficient local inference without compromising representation capacity.
 
 \vspace{0.8cm}
 \noindent \textbf{Keywords:} Large Language Models, Linear Attention, Singular Value Decomposition \lr{(SVD)}, Model Compression, Roofline Model, Hardware-Aware Framework.

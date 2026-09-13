@@ -1,0 +1,96 @@
+{
+  "id": "svd_compressed",
+  "name": "SVD Compressed",
+  "file": "Codes/framework/attentions/svd_compressed.py",
+  "type": "Attention Module",
+  "category": "Low-Rank SVD & Factorization",
+  "paradigm": "svd",
+  "icon": "\u26a1",
+  "description": "SVD-Compressed Attention with Importance-Aware Lagrangian Rank Allocation. Truncated Singular Value Decomposition (SVD) attention compression module with Lagrangian spectral-entropy optimal rank budgeting and optional low-rank plus sparse residual decomposition.",
+  "classes": [
+    "SVDCompressedAttention"
+  ],
+  "methods_count": 25,
+  "math_latex": "E_i(r) = \\frac{\\sum_{j=1}^r \\sigma_{i, j}^2}{\\sum_{j=1}^{\\min(d_{\\text{in}}, d_{\\text{out}})} \\sigma_{i, j}^2}, \\quad \\operatorname{Cost}_i(r) = 1 - E_i(r)",
+  "components": [
+    {
+      "id": "v_factor",
+      "name": "Factor V (Low-Rank Subspace Projection, r=1)",
+      "role": "Projection to Rank-r Eigenspace",
+      "shape_transform": "[1 \u00d7 d_in]",
+      "color": "#3acbb8"
+    },
+    {
+      "id": "u_factor",
+      "name": "Factor U (Full-Rank Expansion, r=1)",
+      "role": "Reconstruction to Output Space",
+      "shape_transform": "[d_out \u00d7 1]",
+      "color": "#2dd4bf"
+    },
+    {
+      "id": "adapter",
+      "name": "Residual Adapter / Norm Calibration",
+      "role": "High-Frequency Spectral Recovery",
+      "shape_transform": "[d_out \u00d7 d_in] Residual",
+      "color": "#5eead4"
+    }
+  ],
+  "model_projections": {
+    "distilbert": {
+      "model_name": "DistilBERT-Base",
+      "family": "Encoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 6,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 13824,
+      "total_baseline_params": 66301440,
+      "total_compressed_params": 23917056,
+      "savings_ratio": 512.0,
+      "storage_saved_bytes": 84768768,
+      "storage_saved_formatted": "80.8 MB"
+    },
+    "roberta": {
+      "model_name": "RoBERTa-Base",
+      "family": "Encoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 12,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 13824,
+      "total_baseline_params": 123933696,
+      "total_compressed_params": 39164928,
+      "savings_ratio": 512.0,
+      "storage_saved_bytes": 169537536,
+      "storage_saved_formatted": "161.7 MB"
+    },
+    "gpt2": {
+      "model_name": "GPT-2-Small",
+      "family": "Causal Decoder",
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "num_layers": 12,
+      "baseline_layer_params": 7077888,
+      "compressed_layer_p": 12288,
+      "total_baseline_params": 124318464,
+      "total_compressed_params": 39531264,
+      "savings_ratio": 576.0,
+      "storage_saved_bytes": 169574400,
+      "storage_saved_formatted": "161.7 MB"
+    },
+    "qwen": {
+      "model_name": "Qwen2.5-0.5B",
+      "family": "GQA Decoder (SLM)",
+      "hidden_size": 896,
+      "intermediate_size": 4864,
+      "num_layers": 24,
+      "baseline_layer_params": 14909440,
+      "compressed_layer_p": 53632,
+      "total_baseline_params": 493961216,
+      "total_compressed_params": 137421824,
+      "savings_ratio": 278.0,
+      "storage_saved_bytes": 713078784,
+      "storage_saved_formatted": "680.0 MB"
+    }
+  }
+}

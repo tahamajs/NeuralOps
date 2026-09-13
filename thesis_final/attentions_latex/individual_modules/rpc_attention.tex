@@ -3,7 +3,7 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 18: \lr{rpc\_attention}}
+\section{کالبدشکافی عمیق و تحلیل ساختاری ماژول \lr{rpc\_attention}}
 \label{sec:mod_rpc_attention}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
@@ -75,11 +75,11 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \label{tab:benchmark_rpc_attention}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{87.84\%} & \lr{0.880} & \lr{333.8 MB} & \lr{61,913 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{66.97\%} & \lr{0.734} & \lr{384.0 MB} & \lr{32,882 tok/s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{57.34\%} & \lr{0.655} & \lr{571.0 MB} & \lr{31,136 tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{87.84\%} & \lr{0.880\%} & \lr{333.8 MB} & \lr{61,913 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{66.97\%} & \lr{0.734\%} & \lr{384.0 MB} & \lr{32,882 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{57.34\%} & \lr{0.655\%} & \lr{571.0 MB} & \lr{31,136 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -114,27 +114,18 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 ماژول \lr{rpc\_attention} با موفقیت نشان داد که پیاده‌سازی مکانیزم‌های توجه مدرن با کاهش پیچیدگی و مصرف حافظه، گزینه‌ای بسیار جذاب برای عملیاتی‌سازی مدل‌های زبانی بر روی کارت‌های گرافیکی مصرف‌کننده \lr{مانند سری RTX 40} به شمار می‌رود. این یافته مستقیماً فرضیه اصلی این رساله مبنی بر امکان‌پذیری فشرده‌سازی لایه توجه ترنسفورمر بدون افت فاحش در شاخص‌های درک زبانی را تایید می‌نماید.
 
 \subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش نمودار مقایسه عملکرد تجربی ماژول با خط پایه در سه شاخص کلیدی دقت، اوج مصرف حافظه گرافیکی و توان عملیاتی استنتاج ارائه گردیده است (شکل \ref{fig:comp_rpc_attention}).
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{rpc\_attention} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_rpc_attention.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(rpc\_attention)}}
+\label{fig:arch_rpc_attention}
+\end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{img/comparison/rpc_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{rpc\_attention} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(rpc\_attention)}}
 \label{fig:comp_rpc_attention}
 \end{figure}
-
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.95\textwidth]{img/arch_rpc_attention.jpeg}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{rpc\_attention}}
-\label{fig:arch_rpc_attention}
-\end{figure}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.95\textwidth]{img/comparison/rpc_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{rpc\_attention} در برابر خط مبنا}
-\label{fig:comp_rpc_attention}
-\end{figure}
-

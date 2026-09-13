@@ -87,9 +87,9 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \toprule
 \textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{0.00\%} & \lr{0.908} & \lr{389.5 MB} & \lr{139,704 tok/s} & \lr{FAIL} \\
-\lr{RoBERTa-base} & \lr{0.00\%} & \lr{0.758} & \lr{712.3 MB} & \lr{75,538 tok/s} & \lr{FAIL} \\
-\lr{GPT-2} & \lr{0.00\%} & \lr{0.635} & \lr{793.2 MB} & \lr{65,084 tok/s} & \lr{FAIL} \\
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.908\%} & \lr{389.5 MB} & \lr{139,704 tok/s} & \lr{FAIL} \\
+\lr{RoBERTa-base} & \lr{0.00\%} & \lr{0.758\%} & \lr{712.3 MB} & \lr{75,538 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.635\%} & \lr{793.2 MB} & \lr{65,084 tok/s} & \lr{FAIL} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -129,7 +129,7 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{img/comparison/samba_m3_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{samba\_m3} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(samba\_m3)}}
 \label{fig:comp_samba_m3}
 \end{figure}
 
@@ -137,14 +137,14 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/architecture/samba_m3_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{samba\_m3}}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(samba\_m3)}}
 \label{fig:arch_samba_m3}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/comparison/samba_m3_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{samba\_m3} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(samba\_m3)}}
 \label{fig:comp_samba_m3}
 \end{figure}
 

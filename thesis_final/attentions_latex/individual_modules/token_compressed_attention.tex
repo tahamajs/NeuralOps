@@ -3,7 +3,7 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 90: \lr{token\_compressed\_attention}}
+\section{کالبدشکافی عمیق و تحلیل ساختاری ماژول \lr{token\_compressed\_attention}}
 \label{sec:mod_token_compressed_attention}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
@@ -41,7 +41,6 @@
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
 
-
 \begin{table}[H]
 \centering
 \small
@@ -49,13 +48,12 @@
 \label{tab:benchmark_token_compressed_attention}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852\%} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}
-
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 تقلیل طول موثر کلیدها به نصف، حجم بافر KV-Cache را در فاز استنتاج تا ۵۰ درصد کاهش داده و حافظه مصرفی را در سطح \lr{۷۵۰ MB} مقید می‌سازد، در حالی که دقت ۸۱.۰۸٪ بیانگر حفظ مفاهیم اصلی جمله است.
@@ -67,9 +65,9 @@
 \begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
     node distance=1.1cm,
     auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    kernel/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small}
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    kernel/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
 ]
     \node [block] (input) {ورودی $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$};
     \node [kernel, right=1.2cm of input] (k) {نگاشت کرنل $\phi(\mathbf{Q}), \phi(\mathbf{K})$};
@@ -92,21 +90,19 @@
 "A 3D futuristic news editor terminal with laser scanners highlighting vital sentence tokens while discarding dim filler words into a recycling bin."
 \end{latin}
 
-\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{token\_compressed\_attention} ارائه شده است.
 
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{token\_compressed\_attention} ارائه شده است.
-
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{img/architecture/token_compressed_attention_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{token\_compressed\_attention}}
+\includegraphics[width=0.92\textwidth]{img/arch_progressive_token_pruning.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(token\_compressed\_attention)}}
 \label{fig:arch_token_compressed_attention}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{img/comparison/token_compressed_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{token\_compressed\_attention} در برابر خط مبنا}
+\includegraphics[width=0.92\textwidth]{img/comparison/token_compressed_attention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(token\_compressed\_attention)}}
 \label{fig:comp_token_compressed_attention}
 \end{figure}
-

@@ -91,13 +91,13 @@
 
 ## ماژول 010: aegis_spectron_fp8
 - **دسته‌بندی:** Hardware-Fused \& Quantized Attention (FP8/Triton)
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of aegis_spectron_fp8 deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for aegis_spectron_fp8, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing aegis_spectron_fp8 vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.02% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing aegis_spectron_fp8 vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.02% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 011: aegis_v1
 - **دسته‌بندی:** Spectral & Low-Rank Attention Optimization
@@ -161,13 +161,13 @@
 
 ## ماژول 017: asvd_attention
 - **دسته‌بندی:** SVD \& Low-Rank Spectral Decomposition
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of asvd_attention deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for asvd_attention, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing asvd_attention vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.14% vs 91.20%), VRAM (205.2MB vs 4200.0MB), and Throughput (79,132 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing asvd_attention vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.14% vs 91.20%), VRAM (205.2MB vs 4200.0MB), and Throughput (79,132 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 018: async_spec_attention
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
@@ -181,13 +181,13 @@
 
 ## ماژول 019: bam_umoe
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of bam_umoe deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for bam_umoe, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing bam_umoe vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.48% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing bam_umoe vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.48% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 020: block_sparse_attention
 - **دسته‌بندی:** Dynamic \& Block Sparse Routing Attention
@@ -210,13 +210,13 @@
   `High-contrast 3-bar comparative performance benchmark chart showing block_transformer_hiba vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.48% vs 93.58%), VRAM (329.5MB vs 4200.0MB), and Throughput (104,704 tok/s vs 15,400 tok/s), modern flat design.`
 ## ماژول 022: chela_slay
 - **دسته‌بندی:** SVD \& Low-Rank Spectral Decomposition
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of chela_slay deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for chela_slay, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing chela_slay vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.37% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing chela_slay vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.37% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 023: cluster
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
@@ -340,23 +340,23 @@
 
 ## ماژول 035: eat
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of eat deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for eat, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing eat vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.37% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing eat vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.37% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 036: eat_attention
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of eat_attention deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for eat_attention, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing eat_attention vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.37% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing eat_attention vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.37% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 037: efficient_attention
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
@@ -370,13 +370,13 @@
 
 ## ماژول 038: expert_choice_moe
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of expert_choice_moe deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for expert_choice_moe, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing expert_choice_moe vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.14% vs 91.20%), VRAM (764.3MB vs 4200.0MB), and Throughput (46,335 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing expert_choice_moe vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.14% vs 91.20%), VRAM (764.3MB vs 4200.0MB), and Throughput (46,335 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 039: factorised_matrix_state
 - **دسته‌بندی:** SVD \& Low-Rank Spectral Decomposition
@@ -675,13 +675,13 @@
 
 ## ماژول 069: infini_attention
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of infini_attention deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for infini_attention, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing infini_attention vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.25% vs 91.20%), VRAM (352.7MB vs 4200.0MB), and Throughput (78,097 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing infini_attention vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.25% vs 91.20%), VRAM (352.7MB vs 4200.0MB), and Throughput (78,097 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 070: jamba
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
@@ -923,13 +923,13 @@
   `High-contrast 3-bar comparative performance benchmark chart showing moba vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.48% vs 93.58%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern flat design.`
 ## ماژول 094: moba_attention
 - **دسته‌بندی:** Dynamic \& Block Sparse Routing Attention
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of moba_attention deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for moba_attention, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing moba_attention vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.48% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing moba_attention vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.48% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 095: moe_deltakv_paged
 - **دسته‌بندی:** Spectral & Low-Rank Attention Optimization
@@ -1010,13 +1010,13 @@
 
 ## ماژول 103: optimized_hybrid_attention
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of optimized_hybrid_attention deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for optimized_hybrid_attention, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing optimized_hybrid_attention vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.14% vs 91.20%), VRAM (340.2MB vs 4200.0MB), and Throughput (17,513 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing optimized_hybrid_attention vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.14% vs 91.20%), VRAM (340.2MB vs 4200.0MB), and Throughput (17,513 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 104: orion
 - **دسته‌بندی:** Hybrid Multi-Head & Rectified Linear Attention
@@ -1040,13 +1040,13 @@
 
 ## ماژول 106: padre
 - **دسته‌بندی:** Dynamic \& Block Sparse Routing Attention
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of padre deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for padre, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing padre vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.37% vs 91.20%), VRAM (338.7MB vs 4200.0MB), and Throughput (61,065 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing padre vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.37% vs 91.20%), VRAM (338.7MB vs 4200.0MB), and Throughput (61,065 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 107: performer_attention
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
@@ -1218,13 +1218,13 @@
 
 ## ماژول 124: reap_moe
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of reap_moe deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for reap_moe, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing reap_moe vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.14% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing reap_moe vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.14% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 125: reformer_attention
 - **دسته‌بندی:** Dynamic \& Block Sparse Routing Attention
@@ -1248,13 +1248,13 @@
 
 ## ماژول 127: replace
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of replace deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for replace, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing replace vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.25% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing replace vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.25% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 128: res_svd
 - **دسته‌بندی:** Spectral & Low-Rank Attention Optimization
@@ -1388,13 +1388,13 @@
 
 ## ماژول 141: smart_weighted_ensemble
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of smart_weighted_ensemble deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for smart_weighted_ensemble, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing smart_weighted_ensemble vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.14% vs 91.20%), VRAM (337.6MB vs 4200.0MB), and Throughput (144,611 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing smart_weighted_ensemble vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.14% vs 91.20%), VRAM (337.6MB vs 4200.0MB), and Throughput (144,611 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 142: soa_attn
 - **دسته‌بندی:** Spectral & Low-Rank Attention Optimization
@@ -1465,23 +1465,23 @@
 
 ## ماژول 149: spectral_mamba
 - **دسته‌بندی:** SVD \& Low-Rank Spectral Decomposition
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of spectral_mamba deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for spectral_mamba, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing spectral_mamba vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.48% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing spectral_mamba vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.48% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 150: spectral_mamba_attention
 - **دسته‌بندی:** SVD \& Low-Rank Spectral Decomposition
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of spectral_mamba_attention deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for spectral_mamba_attention, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing spectral_mamba_attention vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.48% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing spectral_mamba_attention vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.48% vs 91.20%), VRAM (4200.0MB vs 4200.0MB), and Throughput (15,400 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 151: spectron
 - **دسته‌بندی:** Low-Rank + Sparse Residual Decomposition
@@ -1505,23 +1505,23 @@
 
 ## ماژول 153: squeezing_heads
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of squeezing_heads deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for squeezing_heads, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing squeezing_heads vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.37% vs 91.20%), VRAM (332.5MB vs 4200.0MB), and Throughput (77,342 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing squeezing_heads vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.37% vs 91.20%), VRAM (332.5MB vs 4200.0MB), and Throughput (77,342 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 154: squeezing_heads_distill
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of squeezing_heads_distill deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for squeezing_heads_distill, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing squeezing_heads_distill vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.37% vs 91.20%), VRAM (332.5MB vs 4200.0MB), and Throughput (71,869 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing squeezing_heads_distill vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.37% vs 91.20%), VRAM (332.5MB vs 4200.0MB), and Throughput (71,869 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 014: squeezing_heads_distiller
 - **دسته‌بندی:** Head Pruning & Knowledge Distillation
@@ -1894,13 +1894,13 @@
 
 ## ماژول 192: weighted_ensemble
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion
-- **مدل پایه ارزیابی‌شده:** \lr{legacy_bert}
+- **مدل پایه ارزیابی‌شده:** \lr{DistilBERT}
 - **پرامپت دیاگرام معماری:**
   `Professional technical architecture diagram of weighted_ensemble deep neural attention mechanism, highlighting tensor flow [B, N, D] into multi-head projections, low-rank factorization, and residual connections with clean cyber-blue and teal gradients, white background, conference paper quality.`
 - **پرامپت تحلیل طیفی و نقشه گرما:**
   `High-resolution scientific 2D spectral decay plot and attention matrix sparsity heatmap for weighted_ensemble, showing singular value distribution comparing full-rank baseline vs compressed rank k, scientific vector graphics style with clear labels.`
 - **پرامپت نمودار میله‌ای مقایسه کارایی:**
-  `High-contrast 3-bar comparative performance benchmark chart showing weighted_ensemble vs Standard Attention Baseline on \lr{legacy_bert}, comparing Accuracy (90.14% vs 91.20%), VRAM (337.6MB vs 4200.0MB), and Throughput (166,097 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
+  `High-contrast 3-bar comparative performance benchmark chart showing weighted_ensemble vs Standard Attention Baseline on \lr{DistilBERT}, comparing Accuracy (90.14% vs 91.20%), VRAM (337.6MB vs 4200.0MB), and Throughput (166,097 tok/s vs 15,400 tok/s), modern scientific publication design with clear bold labels and color coding.`
 
 ## ماژول 193: wgqa
 - **دسته‌بندی:** Mixture of Experts \& Ensemble Fusion

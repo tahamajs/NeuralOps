@@ -1,0 +1,16 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage{amsmath}
+\usepackage{xepersian}
+\settextfont{X Nazanin}
+\setdigitfont{X Nazanin}
+
+\makeatletter
+\def\tagform@#1{\maketag@@@{\lr{(}\ignorespaces#1\unskip\@@italiccorr\lr{)}}}
+\makeatother
+
+\begin{document}
+این یک فرمول تستی است:
+\begin{equation}
+y = ax + b
+\end{equation}
+\end{document}

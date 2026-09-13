@@ -3,7 +3,7 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 29: \lr{svd\_llm\_v2\_attention}}
+\section{کالبدشکافی عمیق و تحلیل ساختاری ماژول \lr{svd\_llm\_v2\_attention}}
 \label{sec:mod_svd_llm_v2_attention}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
@@ -75,11 +75,11 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \label{tab:benchmark_svd_llm_v2_attention}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{81.88\%} & \lr{0.826} & \lr{288.5 MB} & \lr{59,614 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{50.92\%} & \lr{0.675} & \lr{338.6 MB} & \lr{39,079 tok/s} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.675} & \lr{477.9 MB} & \lr{31,407 tok/s} & \lr{PASS\_LOW} \\
+\lr{DistilBERT} & \lr{81.88\%} & \lr{0.826\%} & \lr{288.5 MB} & \lr{59,614 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{50.92\%} & \lr{0.675\%} & \lr{338.6 MB} & \lr{39,079 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.675\%} & \lr{477.9 MB} & \lr{31,407 tok/s} & \lr{PASS\_LOW} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -114,27 +114,18 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 ماژول \lr{svd\_llm\_v2\_attention} با موفقیت نشان داد که پیاده‌سازی مکانیزم‌های توجه مدرن با کاهش پیچیدگی و مصرف حافظه، گزینه‌ای بسیار جذاب برای عملیاتی‌سازی مدل‌های زبانی بر روی کارت‌های گرافیکی مصرف‌کننده \lr{مانند سری RTX 40} به شمار می‌رود. این یافته مستقیماً فرضیه اصلی این رساله مبنی بر امکان‌پذیری فشرده‌سازی لایه توجه ترنسفورمر بدون افت فاحش در شاخص‌های درک زبانی را تایید می‌نماید.
 
 \subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش نمودار مقایسه عملکرد تجربی ماژول با خط پایه در سه شاخص کلیدی دقت، اوج مصرف حافظه گرافیکی و توان عملیاتی استنتاج ارائه گردیده است (شکل \ref{fig:comp_svd_llm_v2_attention}).
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{svd\_llm\_v2\_attention} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_svd_llm_v2_attention.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(svd\_llm\_v2\_attention)}}
+\label{fig:arch_svd_llm_v2_attention}
+\end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{img/comparison/svd_llm_v2_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{svd\_llm\_v2\_attention} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(svd\_llm\_v2\_attention)}}
 \label{fig:comp_svd_llm_v2_attention}
 \end{figure}
-
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.95\textwidth]{img/arch_svd_llm_v2.jpeg}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{svd\_llm\_v2\_attention}}
-\label{fig:arch_svd_llm_v2_attention}
-\end{figure}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.95\textwidth]{img/comparison/svd_llm_v2_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{svd\_llm\_v2\_attention} در برابر خط مبنا}
-\label{fig:comp_svd_llm_v2_attention}
-\end{figure}
-

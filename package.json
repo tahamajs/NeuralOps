@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "jsdom": "^30.0.1",
+    "playwright": "^1.63.0"
+  }
+}

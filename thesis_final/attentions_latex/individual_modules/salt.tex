@@ -3,7 +3,7 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 83: \lr{salt}}
+\section{کالبدشکافی عمیق و تحلیل ساختاری ماژول \lr{salt}}
 \label{sec:mod_salt}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
@@ -46,7 +46,6 @@
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
 
-
 \begin{table}[H]
 \centering
 \small
@@ -54,13 +53,12 @@
 \label{tab:benchmark_salt}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852\%} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}
-
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 کسب دقت \lr{80.28\%} و کنترل اوج مصرف رم در سطح \lr{750.0 MB} (صرفه‌جویی \lr{82.1\%}ی نسبت به \lr{۴۲۰۰ MB} پایه) با سرعت \lr{36,100} توکن/ثانیه، نشان می‌دهد که هم‌راستاسازی بردارهای تطبیق با طیف ویژه ماتریس پایه، از سرگردانی گرادیان در زیرفضاهای پوچ ممانعت می‌نماید.
@@ -72,9 +70,9 @@
 \begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
     node distance=1.1cm,
     auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    spec/.style={rectangle, draw=purple!70, fill=purple!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small}
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    spec/.style={rectangle, draw=purple!70, fill=purple!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
 ]
     \node [block] (input) {ورودی $\mathbf{X}$};
     \node [spec, right=1.0cm of input] (align) {هم‌راستاسازی طیفی};
@@ -97,21 +95,19 @@
 "A 3D scientific visualization of Spectral Alignment and Low-Rank Tuning (SALT). Harmonic spectral resonance curves locking into alignment with structural crystalline lattice bars of a neural network, glowing amber and cyan tones, 8k resolution --ar 16:9"
 \end{latin}
 
-\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{salt} ارائه شده است.
 
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{salt} ارائه شده است.
-
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{img/architecture/salt_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{salt}}
+\includegraphics[width=0.92\textwidth]{img/architecture/salt_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(salt)}}
 \label{fig:arch_salt}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{img/comparison/salt_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{salt} در برابر خط مبنا}
+\includegraphics[width=0.92\textwidth]{img/comparison/salt_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(salt)}}
 \label{fig:comp_salt}
 \end{figure}
-

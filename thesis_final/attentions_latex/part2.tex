@@ -87,7 +87,7 @@
 \vspace{0.25cm}
 {\large \textbf{ماژول توجه: galerkin attention}}\\[0.2cm]
 \textbf{عنوان لاتین و فرمول‌بندی:} \lr{Petrov-Galerkin Projection Attention: Energy-Preserving Spectral Operator Discretization}\\[0.2cm]
-\textbf{کارنامه تجربی:} وضعیت: PASS_LOW | دقت: 51.26 درصد | امتیاز F1: 0.6763 | اوج حافظه: 568.72 مگابایت\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS\_LOW | دقت: 51.26 درصد | امتیاز F1: 0.6763 | اوج حافظه: 568.72 مگابایت\\[0.2cm]
 \textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 51.26 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 568.72 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
 \textbf{مبانی و ایده معماری:}\\Standard Multi-Head Attention (MHA) calculates all pairwise token dot products with quadratic mathcal O (L 2) time and space complexity. Petrov-Galerkin Attention models self-attention as a continuous non-local Fredholm integral operator mathcal K v(x) = int kappa(x, y) v(y) dy over function spaces, discretizing the kernel via orthogonal Petrov-Galerkin projection onto an r -dimensional orthonormal basis Phi in mathbb R N times r with Phi top Phi = I r ....\\[0.2cm]
 \vspace{0.25cm}
@@ -101,7 +101,7 @@
 \vspace{0.25cm}
 {\large \textbf{ماژول توجه: gated linear attention}}\\[0.2cm]
 \textbf{عنوان لاتین و فرمول‌بندی:} \lr{Gated Linear Attention (GatedLinearAttention)}\\[0.2cm]
-\textbf{کارنامه تجربی:} وضعیت: PASS_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 714.69 مگابایت\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS\_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 714.69 مگابایت\\[0.2cm]
 \textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 50.92 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 714.69 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
 \textbf{مبانی و ایده معماری:}\\**Gated Linear Attention (GLA)** achieved **79.82 Accuracy and 79.76 F1** on SST-2 with DistilBERT (19.8s epoch latency). It equips linear attention with dual gating: data-dependent exponential decay gating along the recurrence dimension and multiplicative SiLU output gating....\\[0.2cm]
 \vspace{0.25cm}
@@ -157,7 +157,7 @@
 \vspace{0.25cm}
 {\large \textbf{ماژول توجه: linformer attention}}\\[0.2cm]
 \textbf{عنوان لاتین و فرمول‌بندی:} \lr{Linformer Attention: Linear-Complexity Sequence Projection via Low-Rank Matrix Factorization}\\[0.2cm]
-\textbf{کارنامه تجربی:} وضعیت: PASS_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 666.75 مگابایت\\[0.2cm]
+\textbf{کارنامه تجربی:} وضعیت: PASS\_LOW | دقت: 50.92 درصد | امتیاز F1: 0.6748 | اوج حافظه: 666.75 مگابایت\\[0.2cm]
 \textbf{توجیه علمی نتایج:} این ماژول به عنوان رویکرد فشرده‌سازی حداکثری ارزیابی شده است. افت نسبی دقت به 50.92 درصد در ازای مهار قاطعانه مصرف حافظه در سطح 666.75 مگابایت صورت پذیرفته که آن را مناسب کاربردهای لبه شبکه می‌سازد.\\[0.2cm]
 \textbf{مبانی و ایده معماری:}\\Standard Multi-Head Self-Attention (Vaswani et al., 2017) computes pairwise token interactions across length L , incurring an mathcal O (L 2) computational and memory complexity wall. Linformer (Wang et al., 2020) mitigates this bottleneck by proving empirically and theoretically that the normalized attention matrix A in mathbb R L imes L is low-rank....\\[0.2cm]
 \vspace{0.25cm}

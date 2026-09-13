@@ -1,0 +1,19 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage{amsmath}
+\usepackage{xepersian}
+\settextfont{X Nazanin}
+\setdigitfont{X Nazanin}
+
+\makeatletter
+\def\tagform@#1{\maketag@@@{\lr{(}\ignorespaces#1\unskip\@@italiccorr\lr{)}}}
+\makeatother
+
+\begin{document}
+این یک فرمول تستی است:
+\begin{equation}
+\lr{$ \text{Quality Gate Status} = \begin{cases}
+\text{PASS} & \text{Accuracy} \ge 56.00\% \quad \text{and} \quad \text{No CUDA Error} \\
+\text{FAIL} & \text{Accuracy} < 56.00\% \quad \text{or} \quad \text{OOM Crash}
+\end{cases} $}
+\end{equation}
+\end{document}

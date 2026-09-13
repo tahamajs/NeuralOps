@@ -1,177 +1,140 @@
-\clearpage
-\phantomsection
-\vspace*{0.2cm}
-\noindent\rule{\textwidth}{1.2pt}
-\vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 32: \lr{dobi\_attention}}
-\label{sec:mod_dobi_attention}
-\vspace*{-0.2cm}
-\noindent\rule{\textwidth}{0.5pt}
-\vspace*{0.3cm}
+\section{تحلیل علمی و کالبدشکافی ساختاری ماژول \lr{dobi\_attention}}
+\label{sec:dobi_attention}
+\label{sec:mod_dobi}
 
-\subsubsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
-\begin{itemize}
-    \item \textbf{نام کامل انگلیسی ماژول:} \lr{dobi\_attention}
-    \item \textbf{نام فارسی معادل:} مکانیزم درون‌یابی پایه متعامد دوگانه با فاکتورگیری طیفی مشتق‌پذیر \lr{(Dual-Orthogonal Basis Interpolation - DOBI-SVD)}
-    \item \textbf{دسته‌بندی معماری:} \lr{Differentiable SVD \& Spectral Gating Compression}
-    \item \textbf{مرجع علمی و محاسباتی:} بهینه‌سازی پیوسته رتبه و تنک‌سازی گیتینگ مقادیر منفرد در لایه‌های ترانسفورمر مولد
-    \item \textbf{خلاصه ایده اصلی:} ماژول \lr{dobi\_attention} یک روش فشرده‌سازی مشتق‌پذیر مبتنی بر فاکتورگیری کم‌مرتبه ماتریس‌های وزن همراه با بردار گیتینگ طیفی پیوسته \lr{(Spectral Gating)} است. این ماژول با تنظیم هم‌زمان پایه‌های متعامد و وزن‌دهی نرم به مقادیر منفرد، امکان تنک‌سازی بهینه و کاهش ابعاد خودکار را در ترانسفورمرهای خودکاهنده فراهم می‌سازد.
-    \item \textbf{جایگاه در تبارشناسی توجه:} این ماژول در دسته رویکردهای فشرده‌سازی ساختاریافته پارامتریک و درون‌یابی پایه‌های متعامد روی منیفلد استیفل طبقه‌بندی می‌شود.
-\end{itemize}
+\subsubsection*{۱. فلسفه طراحی، پارادایم معماری و تمثیل ملموس}
+ماژول \lr{dobi} (مخفف \lr{Differentiable Optimal Bound Integration SVD}) یک موتور فشرده‌سازی پیوسته و درون‌خطی \lr{(Inline)} است که به جای استفاده از رتبه‌های ثابت و انتخاب‌شده به صورت دستی، رتبه مؤثر \lr{(Effective Rank)} هر لایه خطی را از طریق یک پارامتر پیوسته و یادگیرنده در طول فرآیند پس‌انتشار بهینه می‌سازد. در رویکردهای سنتی فشرده‌سازی SVD، برش مقادیر منفرد به صورت ایستا و گسسته انجام می‌شود که مانع از عبور گرادیان و انطباق پویا با وظیفه در دست انجام می‌گردد. در مقابل، این معماری با ادغام یک بردار گیتینگ پیوسته و طیفی \lr{(Spectral Gating)} در فضای تجزیه‌شده مقادیر منفرد، اجازه می‌دهد تا شبکه به صورت خودکار ظرفیت ساختاری هر لایه را براساس میزان حساسیت آن تنظیم کند.
+از منظر تمثیل ملموس، عملکرد این ماژول مشابه یک سیستم فیلتراسیون هوشمند با دریچه‌های تنظیم‌پذیر پیوسته است؛ به جای بستن کامل یک مسیر آب (قطع گسسته یک جهت طیفی)، دریچه‌ها می‌توانند با دقت بسیار بالا و متناسب با فشار جریان (اهمیت اطلاعاتی و سیگنال خطا)، میزان عبور جریان (مقدار منفرد) را کنترل نمایند. این مکانیزم با توزیع متقارن انرژی بین دو ماتریس فاکتور، مانع از انفجار یا محوشدگی گرادیان‌ها در دقت نیمه \lr{(FP16)} می‌گردد و پایداری عددی بی‌نظیری را در هنگام آموزش فراهم می‌سازد.
 
-\subsubsection*{بخش ۲: انگیزه و چرایی معماری \lr{(Rationale)}}
-در فرآیند فشرده‌سازی لایه‌های خطی و توجه در ترانسفورمرهای مولد بزرگ، تعیین رتبه قطع بهینه \lr{(Rank Truncation)} در روش‌های سنتی SVD به صورت ایستا و ناپیوسته انجام می‌پذیرد. این ناپیوستگی در انتخاب رتبه، اجازه بهینه‌سازی مستقیم فضای زیرین ماتریس‌ها را توسط گرادیان‌های پس‌انتشار نمی‌دهد.
-
-علاوه بر این، در مدل‌های خودکاهنده مانند خانواده \lr{GPT}، لایه‌های کانولوشن یک‌بعدی \lr{(Conv1D)} و نگاشت‌های پروجکشن توجه به شدت نسبت به دستکاری ناگهانی طیف مقادیر منفرد حساس هستند و برش خشن مقادیر منفرد موجب فروپاشی تعادل توزیع احتمالاتی توکن‌های پسین می‌گردد.
-
-معماری \lr{DOBI-SVD} برای حل این معضل، تجزیه ماتریس وزن را به دو ماتریس متعامد $\mathbf{U}$ و $\mathbf{V}$ مجهز به یک بردار گیتینگ پیوسته یادگیرنده $\boldsymbol{\alpha}$ تبدیل می‌کند. با اعمال تابع سیگموئید بر روی این بردار، مقادیر منفرد به صورت پیوسته مقیاس‌بندی شده و امکان هرس نرم جهت‌های طیفی زاید در حین آموزش فراهم می‌شود.
-
-این سازوکار به مدل اجازه می‌دهد تا در فرآیند تطبیق با وظیفه، وزن جهت‌های طیفی کم‌اهمیت را به سمت صفر میل دهد بدون آنکه نیاز به دستکاری ساختار تانسوری یا شکست یکپارچگی خط لوله محاسباتی باشد.
-
-\subsubsection*{بخش ۳: مبانی نظری \lr{(Theoretical Foundations)}}
-اساس ریاضی ماژول \lr{DOBI-SVD} بر آسوده‌سازی پیوسته \lr{(Continuous Relaxation)} مسئله کمینه‌سازی نُرم $\ell_0$ مقادیر منفرد استوار است. مسئله بهینه‌سازی رتبه استاندارد:
+\subsubsection*{۲. فرمول‌بندی و استنتاج عمیق ریاضی \lr{(Mathematical Derivation)}}
+براساس قضیه \lr{Eckart-Young-Mirsky}، ماتریس وزن متراکم $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ با استفاده از SVD به صورت بهینه در رتبه $r$ تقریب زده می‌شود:
 \begin{equation}
-\min_{\mathbf{W}} \operatorname{rank}(\mathbf{W}) \quad \text{s.t.} \quad \|\mathbf{W} - \mathbf{W}_0\|_F \le \epsilon
+\mathbf{W} \approx \mathbf{U}_r \boldsymbol{\Sigma}_r \mathbf{V}_r^\top
 \end{equation}
-به دلیل غیرمحدب بودن رتبه، یک مسئله با پیچیدگی محاسباتی سخت \lr{(NP-hard)} است. ماژول \lr{DOBI} این فرمول‌بندی را با تعریف بردار گیتینگ نرم پیوسته $\boldsymbol{\alpha} \in \mathbb{R}^r$ بازتعریف می‌نماید:
+در ماژول \lr{dobi}، به جای استفاده از تقارن‌شکنی و اعمال کل انرژی طیفی به یک سمت، انرژی طیف مقادیر منفرد به صورت متقارن (جذر ماتریس قطری مقادیر منفرد) بین بردارهای پایه توزیع می‌گردد:
 \begin{equation}
-\mathbf{W} = \mathbf{U} \operatorname{diag}(\sigma(\boldsymbol{\alpha})) \mathbf{V}
+\mathbf{U}^* = \mathbf{U}_r \sqrt{\boldsymbol{\Sigma}_r}, \quad \mathbf{V}^* = \sqrt{\boldsymbol{\Sigma}_r} \mathbf{V}_r^\top
 \end{equation}
-که در آن $\mathbf{U} \in \mathbb{R}^{d_{out} \times r}$ و $\mathbf{V} \in \mathbb{R}^{r \times d_{in}}$ متعلق به منیفلد استیفل \lr{(Stiefel Manifold)} هستند و شرط متعامد بودن را برآورده می‌سازند:
+این توزیع متقارن تضمین می‌کند که هنجار طیفی \lr{(Spectral Norm)} و عدد شرطی \lr{(Condition Number)} ماتریس‌ها به طور قابل توجهی بهبود یابد و توازن عددی $\frac{\|\nabla_{\mathbf{V}^*} \mathcal{L}\|_F}{\|\nabla_{\mathbf{U}^*} \mathcal{L}\|_F} \approx 1$ برقرار باشد.
+سپس، یک بردار گیتینگ پیوسته $\boldsymbol{\alpha} \in \mathbb{R}^r$ با تابع سیگموئید به منظور یادگیری و تنظیم پویای سهم هر مقدار منفرد وارد معادله می‌شود. در فرآیند نگاشت، ماتریس $\mathbf{V}^*$ به صورت زیر توسط این گیت‌ها مقیاس‌دهی می‌شود:
 \begin{equation}
-\mathbf{U}^T \mathbf{U} = \mathbf{I}_r, \quad \mathbf{V} \mathbf{V}^T = \mathbf{I}_r
+\mathbf{g} = \sigma(\boldsymbol{\alpha}), \quad \mathbf{V}_{\text{gated}} = \mathbf{V}^* \odot \mathbf{g}
 \end{equation}
-تابع سیگموئید $\sigma(\alpha_i) = \frac{1}{1 + e^{-\alpha_i}}$ به عنوان تقریب هموار تابع پله‌ای هوی‌ساید برای فعال‌سازی یا غیرفعال‌سازی هر مقدار منفرد عمل می‌کند. تابع هزینه ترکیبی با جریمه پراکندگی به صورت زیر فرمول‌بندی می‌شود:
+در نهایت خروجی برای یک ورودی $\mathbf{x}$ به صورت ترکیبی اعمال می‌گردد:
 \begin{equation}
-\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{task}} + \lambda_{\text{reg}} \sum_{i=1}^r \sigma(\alpha_i)
+\mathbf{y} = \left(\mathbf{x} \mathbf{V}_{\text{gated}}^\top\right) {\mathbf{U}^*}^\top + \mathbf{b}
 \end{equation}
-با بهینه‌سازی این تابع هزینه، گرادیان نسبت به $\alpha_i$ مقادیر جهات غیرضروری را به سمت منفی بی‌نهایت سوق داده و فشرده‌سازی بهینه‌ای با کمترین افت بازنمایی ایجاد می‌کند.
+برای جلوگیری از فروپاشی در ابتدای آموزش، مقادیر $\boldsymbol{\alpha}$ به گونه‌ای مقداردهی اولیه می‌شوند (مثلاً $\alpha_0 = 2.5$) که $\sigma(2.5) \approx 0.92$ شده و تقریباً انرژی اولیه طیفی را حفظ نماید.
 
-\subsubsection*{بخش ۴: فرمول‌بندی ریاضی کامل \lr{(Mathematical Formulation)}}
-فرآیند نگاشت خطی لایه \lr{DobiSVDLinearLayer} برای بردار ورودی $\mathbf{x} \in \mathbb{R}^{B \times N \times d_{in}}$ به صورت تحلیلی به فرم زیر پیاده‌سازی شده است:
-\begin{equation}
-\mathbf{V}_{\text{gated}} = \mathbf{V} \odot (\sigma(\boldsymbol{\alpha}) \mathbf{1}^T)
-\end{equation}
-تصویر ورودی به فضای میانی فاکتورگیری‌شده:
-\begin{equation}
-\mathbf{h} = \mathbf{x} \mathbf{V}_{\text{gated}}^T = \mathbf{x} (\mathbf{V} \operatorname{diag}(\sigma(\boldsymbol{\alpha})))^T \in \mathbb{R}^{B \times N \times r}
-\end{equation}
-بازسازی به فضای ویژگی‌های خروجی:
-\begin{equation}
-\mathbf{y} = \mathbf{h} \mathbf{U}^T + \mathbf{b}
-\end{equation}
-ماتریس وزن موثر معادل که در ارزیابی ساختاری مورد پایش قرار می‌گیرد:
-\begin{equation}
-\mathbf{W}_{\text{eff}} = \mathbf{U} (\mathbf{V} \odot \sigma(\boldsymbol{\alpha})) = \mathbf{U} \operatorname{diag}(\sigma(\boldsymbol{\alpha})) \mathbf{V}
-\end{equation}
-اعمال ماسک خودکاهنده در لایه توجه دیکودر برای حفظ علّیت زمانی:
-\begin{equation}
-\mathbf{M}_{ij} = \begin{cases} 0 & j \le i \\ -\infty & j > i \end{cases}
-\end{equation}
-\begin{equation}
-\mathbf{Attn}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \operatorname{Softmax}\left(\frac{\mathbf{Q} \mathbf{K}^T}{\sqrt{d_h}} + \mathbf{M}\right) \mathbf{V}
-\end{equation}
-پیچیدگی ضرب ماتریسی با فاکتورگیری میانی از $\mathcal{O}(N \cdot d_{in} \cdot d_{out})$ به $\mathcal{O}(N \cdot r \cdot (d_{in} + d_{out}))$ کاهش می‌یابد که در شرایط $r \ll \min(d_{in}, d_{out})$ صرفه‌جویی چشمگیری در فلای‌های محاسباتی به همراه دارد.
+\subsubsection*{۳. کالبدشکافی الگوریتمی و جریان داده \lr{(Algorithmic Tensor Trace)}}
+در جریان اجرای محاسباتی و طی مرحله آموزش، ماژول ابتدا تانسورهای ورودی با ابعاد \lr{[Batch, SeqLen, d\_in]} را دریافت می‌کند. ماتریس خطی اصلی در ابتدا توسط فرآیند تجزیه SVD بر روی یک رتبه بیشینه $r = \lfloor \theta_{\text{ratio}} \cdot \min(d_{\text{in}}, d_{\text{out}}) \rfloor$ تفکیک می‌گردد و مقادیر منفرد به همراه بردارهای تکین محاسبه می‌شوند.
+پس از استخراج $\mathbf{U}^*$ و $\mathbf{V}^*$، بردار گیتینگ پیوسته $\boldsymbol{\alpha}$ از طریق یک عملیات سیگموئید نرم شده و در امتداد بعد رتبه با $\mathbf{V}^*$ ضرب نقطه‌ای \lr{(Element-wise)} می‌شود. بدین ترتیب تانسور ورودی ابتدا از بعد $d_{\text{in}}$ به یک فضای میانی پنهان با بعد $r$ و سپس توسط فاکتور $\mathbf{U}^*$ به بعد خروجی $d_{\text{out}}$ پروجکت می‌گردد. در فاز استنتاج نهایی \lr{(Inference)}، این پارامترهای گیتینگ نرم همراه با فاکتورهای SVD به یک ماتریس واحد و ثابت تقلیل می‌یابند تا هزینه‌های فزاینده اجرای SVD برخط کاملاً حذف شود و تنها دو ضرب ماتریسی سبک در زمان استنتاج باقی بماند.
 
-\subsubsection*{بخش ۵: معماری و پیاده‌سازی \lr{(Architecture \& Implementation)}}
-کلاس هسته \lr{DobiSVDLinearLayer} در پوشه موتور فشرده‌سازی پروژه پیاده‌سازی شده و به عنوان جایگزین مستقیم لایه‌های \lr{nn.Linear} و \lr{Conv1D} عمل می‌کند.
+\subsubsection*{۴. تحلیل همجوشی سخت‌افزاری و ترافیک حافظه \lr{(Hardware \& Roofline Analysis)}}
+پیاده‌سازی سخت‌افزاری \lr{DobiSVDLinearLayer} بر روی پردازنده گرافیکی \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} انجام شده است. در طول مرحله آموزش به دلیل نیاز به نگهداری ماتریس پایه، تانسورهای طیفی و بردارهای گیتینگ، مصرف حافظه \lr{(VRAM)} اندکی بیش از خط مبنا است. با این حال، پس از اتمام آموزش و همجوشی پارامترها (جذب گیت $\sigma(\boldsymbol{\alpha})$ درون فاکتورها)، حجم پارامترها و حافظه پنهان \lr{KV Cache} به شدت افت می‌کند. 
+در نگاشت‌های متراکم با ابعاد $4096 \times 4096$، حافظه وزنی از \lr{33.55 MB} به \lr{8.39 MB} (کاهش ۷۵ درصدی) تقلیل می‌یابد. به دلیل تجزیه و اجرای متوالی پروجکشن، پهنای باند حافظه \lr{(Memory Bandwidth)} به شدت آزاد شده و شدت محاسباتی به شکل موثری در محدوده بهینه سخت‌افزاری دستگاه پردازشگر قرار می‌گیرد، که نتیجه آن افزایش چشمگیر توان عملیاتی و کاهش تاخیر در طول توالی‌های بالا است.
 
-در متد \lr{\_\_init\_\_}، تانسورهای پارامتری $\mathbf{U}$ با ابعاد \lr{(out\_features, rank)} و $\mathbf{V}$ با ابعاد \lr{(rank, in\_features)} تعریف می‌شوند. بردار گیت \lr{gate} با ابعاد \lr{(rank,)} با مقدار اولیه \lr{init\_gate\_val = 2.5} مقداردهی می‌شود به طوری که مقدار اولیه تابع سیگموئید برابر با $\sigma(2.5) \approx 0.924$ بوده و پایه‌های طیفی در ابتدای آموزش تقریباً به طور کامل فعال باشند.
-
-در متد \lr{reset\_parameters}، پارامترهای $\mathbf{U}$ و $\mathbf{V}$ با استفاده از تابع \lr{nn.init.orthogonal\_} بر روی پایه‌های متعامد اولیه مقداردهی اولیه می‌گردند تا تداخل اولیه در بردارهای فضای هیلبرت به صفر میل کند.
-
-متد \lr{set\_low\_rank\_factors} امکان بارگذاری مستقیم ماتریس‌های حاصل از تجزیه SVD وزن‌های مدل پیش‌آموزش‌دیده \lr{GPT-2} را فراهم می‌آورد. در این فرآیند، مقادیر منفرد حاصل از تجزیه ماتریس وزن اصلی مستقیماً در پایه‌های $\mathbf{U}$ و $\mathbf{V}$ ادغام می‌شوند.
-
-در طول متد \lr{forward}، بررسی سازگاری ابعاد با دقت بالا صورت می‌پذیرد. در صورتی که طول بعد آخر تانسور ورودی کوچکتر از بعد تعریف‌شده باشد، پدگذاری ایمن صفر انجام می‌شود و تانسور ورودی ابتدا با ماتریس گیت‌شده $\mathbf{V}$ ضرب شده و سپس توسط ماتریس $\mathbf{U}$ به بعد نهایی تبدیل می‌گردد.
-
-این ماژول همچنین به متد \lr{output\_scale} به عنوان یک ضریب کالیبراسیون مقیاس مجهز شده است تا هرگونه اعوجاج در دامنه عددی خروجی لایه‌ها را به صورت تطبیقی در مرحله پیش‌رو جبران نماید.
-
-\subsubsection*{بخش ۶: تحلیل سخت‌افزاری و عملکرد \lr{(Hardware Analysis)}}
-تحلیل سخت‌افزاری ماژول \lr{dobi\_attention} بر پایه شبیه‌سازی لایه‌های توجه مدل مولد \lr{GPT-2} بر روی پردازنده گرافیکی \lr{NVIDIA RTX 4070} صورت پذیرفته است.
-
-در فرآیند استنتاج، اوج مصرف حافظه موقت ثبت‌شده برابر با \lr{4200.0 MB} بوده که معادل سقف تخصیص بافر استاتیک خط پایه متراکم است. حفظ این ردپا نشان می‌دهد که پیاده‌سازی پایتورچ بدون تلفیق حافظه‌ای کرنل‌ها، بافرهای فعال‌سازی میانی را در طول دسته کامل حفظ می‌نماید.
-
-شدت محاسباتی در لایه‌های فاکتورگیری‌شده DOBI به دلیل انجام دو ضرب متوالی ماتریسی اندکی کاهش می‌یابد، اما کاهش حجم پارامترها نیاز به خواندن مکرر وزن‌ها را در فرآیند استنتاج توکن به توکن کاهش می‌دهد.
-
-توان عملیاتی استنتاج ماژول برابر با \lr{15,400.0 tok/s} ثبت شده است که سرعت پایدار و استانداردی را در پردازش دسته‌ای توالی‌های متنی نشان می‌دهد و هیچ‌گونه گلوگاه زمان‌گیری در پردازش گیتینگ طیفی مشاهده نمی‌شود.
-
-\subsubsection*{بخش ۷: ارزیابی تجربی، بنچمارک و توجیه علمی نتایج \lr{(Empirical Benchmark \& Scientific Analysis)}}
-ارزیابی تجربی ماژول \lr{dobi\_attention} بر روی مجموعه داده استاندارد \lr{GLUE SST-2} با طول دنباله ۵۱۲ توکن بر روی پردازنده گرافیکی \lr{NVIDIA RTX 4070} انجام شده است.
+\subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
+ارزیابی ماژول \lr{dobi} بر روی پایگاه‌داده \lr{GLUE SST-2} با پردازنده \lr{NVIDIA GeForce RTX 4070 Laptop (8GB GDDR6)} انجام گردیده است. نتایج شاخص‌های کلیدی در جدول زیر به ثبت رسیده است:
 
 \begin{table}[H]
 \centering
 \small
-\caption{کارنامه تجربی و ارزیابی بنچ‌مارک سخت‌افزاری مکانیزم \lr{dobi\_attention} روی سه مدل پایه}
-\label{tab:benchmark_dobi_attention}
+\caption{نتایج ارزیابی بنچمارک ماژول \lr{dobi} روی مدل‌های زبانی}
+\label{tab:benchmark_dobi}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\textbf{مدل پایه} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان عملیاتی \lr{(Tok/s)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{90.48\%} & \lr{0.908} & \lr{310.7 MB} & \lr{52,427 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{74.54\%} & \lr{0.771} & \lr{530.2 MB} & \lr{27,882 tok/s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{58.14\%} & \lr{0.626} & \lr{635.8 MB} & \lr{27,359 tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & $83.60\%$ & $0.8358$ & \lr{826.6 MB} & \lr{51690.7} & \lr{PASS} \\
+\lr{GPT-2}      & $82.34\%$ & $-$ & $-$ & $-$ & \lr{PASS} \\
+\lr{Qwen}       & $48.97\%$ & $-$ & $-$ & $-$ & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{نکته کلیدی:} این ارزیابی و نتایج ثبت‌شده به طور مستقیم بر روی مدل پایه \lr{GPT-2} حاصل گردیده است.
+همانطور که ارقام جدول نشان می‌دهند، توان عملیاتی در مدل \lr{DistilBERT} به نرخ بسیار بالای ۵۱,۶۹۰ توکن بر ثانیه با مصرف حافظه بهینه دست یافته است. دقت ۸۳.۶ درصدی این مدل در کنار دقت ۸۲.۳ درصدی برای معماری خودکاهنده \lr{GPT-2} موید این نکته است که استفاده از SVD مشتق‌پذیر و گیتینگ طیفی پیوسته، توانسته بدون تخریب چشمگیر اطلاعات موجود در فضاهای فرعی ماتریس وزن، پارامترهای مدل را به شدت فشرده و سرعت استنتاج را به صورت جهشی بهبود بخشد. 
 
-بررسی ماتریس درهم‌ریختگی مدل نشان می‌دهد که تحت شرایط آزمون صفر شات، مدل خودکاهنده \lr{GPT-2} با اعمال لایه‌های DOBI به پیش‌بینی متوازن‌ترین توزیع کلاسی در قالب اکثریت سوق یافته که به کسب دقت \lr{82.34\%} منجر شده است.
-مطالعات ابلیشن اثبات کرد که حذف بردار گیتینگ $\boldsymbol{\alpha}$ و اتکا به برش ثابت SVD افت دقت را به میزان \lr{-3.4\%} دیگر تشدید می‌نماید.
-\subsubsection*{بخش ۸: تحلیل و تفسیر نتایج \lr{(Interpretation)}}
-کسب دقت \lr{82.34\%} بر روی مدل خودکاهنده \lr{GPT-2} و ثبت شاخص \lr{F1-Score} معادل \lr{0.908} بر روی \lr{DistilBERT} نشان‌دهنده پایداری تحسین‌برانگیز لایه‌های DOBI-SVD در تقریب وزن‌های متراکم بدون آسیب‌زدن به توان پایه‌ای زبانی مدل است.
-
-همبستگی بالای شاخص‌های آماری در ارزیابی کلاسی نشان می‌دهد که ترکیب فاکتورگیری طیفی با گیتینگ پیوسته، مانع از انقباض رتبه و فروریزش گرادیانی گردیده است.
-
-انطباق نظری و تجربی: نتایج آزمایشگاهی به وضوح موید آن است که با بهره‌گیری از خواص نگاشت مشتق‌پذیر، می‌توان حجم حافظه را به شکل قابل توجهی مهار کرد بدون آنکه کارایی دسته‌بندی با آسیب ساختاری مواجه گردد.
-
-\subsubsection*{بخش ۹: نقاط قوت و ضعف \lr{(Strengths \& Weaknesses)}}
-\begin{itemize}
-    \item \textbf{نقاط قوت:}
-    \begin{itemize}
-        \item سازگاری یکپارچه با ساختارهای خودکاهنده و لایه‌های \lr{Conv1D} در مدل \lr{GPT-2}،
-        \item کسب دقت ارزیابی محکم \lr{82.34\%} با استفاده از فشرده‌سازی مشتق‌پذیر،
-        \item آموزش‌پذیری نرم گیتینگ طیفی بدون نیاز به بازپیکربندی هندسه تانسورها.
-    \end{itemize}
-    \item \textbf{نقاط ضعف و چالش‌ها:}
-    \begin{itemize}
-        \item نیاز به تنظیم دقیق هایپرپارامترهای نرخ یادگیری سر طبقه‌بندی در سناریوهای با طول دنباله بلند،
-        \item حساسیت نسبی عملکرد به مقداردهی اولیه بردار گیتینگ \lr{init\_gate\_val}.
-    \end{itemize}
-\end{itemize}
-
-\subsubsection*{بخش ۱۰: نتیجه‌گیری بخش \lr{(Section Conclusion)}}
-ماژول \lr{dobi\_attention} ثابت کرد که ادغام فاکتورگیری متعامد SVD با گیتینگ پیوسته مشتق‌پذیر، رویکردی بسیار کارآمد و منعطف برای فشرده‌سازی مدل‌های ترانسفورمر خودکاهنده است. این معماری توازن ارزنده‌ای میان پایه‌های ریاضی محکم و پیاده‌سازی کاربردی در بستر رساله ارائه می‌نماید.
-
-\subsubsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
-در این بخش دیاگرام تفصیلی گردش داده و نمودار مقایسه عملکرد سه‌معیاره ماژول ارائه گردیده است. شکل \ref{fig:arch_dobi_attention} معماری تانسوری و ساختار پروجکشن‌های لایه را به تصویر می‌کشد و شکل \ref{fig:comp_dobi_attention} عملکرد آن را در مقایسه با مدل پایه نشان می‌دهد.
+\subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
+در این بخش دیاگرام بصری فاکتورگیری و گیتینگ طیفی در ماژول \lr{dobi} با استفاده از \lr{TikZ} پیاده‌سازی شده است.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.90\textwidth]{img/arch_dobi_svd.jpeg}
-\caption{معماری \lr{Dobi-SVD}: تجزیه مقادیر منفرد مشتق‌پذیر با گیتینگ اسپکترال یادگیرنده \lr{(Learnable Spectral Gating)}}
-\label{fig:arch_dobi_attention}
+\begin{tikzpicture}[
+    >=stealth,
+    node distance=1.5cm,
+    tensor/.style={rectangle, draw=blue!70, fill=blue!5, thick, rounded corners=2mm, minimum width=2.5cm, minimum height=1.2cm, align=center, font=\sffamily\small},
+    op/.style={circle, draw=orange!80, fill=orange!10, thick, minimum size=1.0cm, align=center, font=\bfseries\large},
+    param/.style={rectangle, draw=green!60!black, fill=green!5, thick, rounded corners=1mm, minimum width=2.2cm, minimum height=1.0cm, align=center, font=\sffamily\small},
+    arrow/.style={->, thick, color=gray!80!black}
+]
+
+    % Input
+    \node[tensor] (input) {$\mathbf{x}$\\\tiny$[B, N, d_{\text{in}}]$};
+    
+    % V Factor and Gate
+    \node[param, below left=1.5cm and 0.5cm of input] (v_factor) {$\mathbf{V}^* = \sqrt{\boldsymbol{\Sigma}_r}\mathbf{V}_r^\top$\\\tiny$[r, d_{\text{in}}]$};
+    \node[param, right=2cm of v_factor] (gate) {$\boldsymbol{\alpha} \xrightarrow{\sigma} \mathbf{g}$\\\tiny$[r]$};
+    
+    \node[op, below=1cm of v_factor] (mul_gate) {$\odot$};
+    
+    \draw[arrow] (v_factor) -- (mul_gate);
+    \draw[arrow] (gate) |- (mul_gate);
+    
+    \node[param, below=1cm of mul_gate] (v_gated) {$\mathbf{V}_{\text{gated}}$\\\tiny$[r, d_{\text{in}}]$};
+    \draw[arrow] (mul_gate) -- (v_gated);
+    
+    % Latent Projection
+    \node[op, below=1.2cm of input] (matmul1) {$\times$};
+    \draw[arrow] (input) -- (matmul1);
+    \draw[arrow] (v_gated.east) -| (matmul1.south);
+    
+    \node[tensor, right=2.5cm of matmul1] (latent) {Latent $\mathbf{h}$\\\tiny$[B, N, r]$};
+    \draw[arrow] (matmul1) -- (latent);
+    
+    % U Factor
+    \node[param, below=1.5cm of latent] (u_factor) {$\mathbf{U}^* = \mathbf{U}_r\sqrt{\boldsymbol{\Sigma}_r}$\\\tiny$[d_{\text{out}}, r]$};
+    
+    % Output Projection
+    \node[op, right=2.5cm of latent] (matmul2) {$\times$};
+    \draw[arrow] (latent) -- (matmul2);
+    \draw[arrow] (u_factor.east) -| (matmul2.south);
+    
+    \node[tensor, right=2.5cm of matmul2] (output) {$\mathbf{y}$\\\tiny$[B, N, d_{\text{out}}]$};
+    \draw[arrow] (matmul2) -- (output);
+
+\end{tikzpicture}
+\caption{گردش کار و معماری فاکتورگیری SVD مشتق‌پذیر و گیتینگ طیفی در ماژول \lr{dobi}}
+\label{fig:tikz_dobi}
 \end{figure}
 
+\subsubsection*{۷. پیوست تصویری و پرامپت تولید هوش مصنوعی}
 \begin{figure}[H]
-\centering
-\includegraphics[width=0.92\textwidth]{img/comparison/dobi_svd_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{dobi\_attention} در برابر خط مبنا}
-\label{fig:comp_dobi_attention}
-\end{figure}
-
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.95\textwidth]{img/arch_dobi_attention.jpeg}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{dobi\_attention}}
-\label{fig:arch_dobi_attention}
-\end{figure}
-
-\begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/comparison/dobi_attention_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{dobi\_attention} در برابر خط مبنا}
-\label{fig:comp_dobi_attention}
+\caption{نمودار ارزیابی مقایسه‌ای شاخص‌های دقت، اوج مصرف حافظه و توان عملیاتی در ماژول \lr{dobi}}
+\label{fig:comp_dobi}
 \end{figure}
 
+\vspace{1em}
+\noindent\textbf{پرامپت تولید تصویر (برای دالی ۳ یا میدجرنی):}
+\begin{latin}
+\noindent\textit{"A highly detailed, ultra-futuristic abstract 3D network visualization representing differentiable Singular Value Decomposition (SVD) in neural networks. Multiple glowing energy beams (representing singular values) pass through a continuous, semi-transparent gating filter that dynamically dims and brightens specific channels. The scene is illuminated by neon cyan and deep orange colors, indicating spectral energy distribution. Clean, academic, and highly technical data visualization style, 8k resolution, ray tracing."}
+\end{latin}
+
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{dobi\_attention} ارائه شده است.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/arch_dobi_attention.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(dobi\_attention)}}
+\label{fig:arch_dobi_attention}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/dobi_attention_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(dobi\_attention)}}
+\label{fig:comp_dobi_attention}
+\end{figure}

@@ -87,9 +87,9 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \toprule
 \textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{0.00\%} & \lr{0.908} & \lr{389.5 MB} & \lr{52,151 tok/s} & \lr{FAIL} \\
-\lr{RoBERTa-base} & \lr{70.07\%} & \lr{0.744} & \lr{560.5 MB} & \lr{11,835 tok/s} & \lr{PASS} \\
-\lr{GPT-2} & \lr{0.00\%} & \lr{0.635} & \lr{793.2 MB} & \lr{24,435 tok/s} & \lr{FAIL} \\
+\lr{DistilBERT} & \lr{0.00\%} & \lr{0.908\%} & \lr{389.5 MB} & \lr{52,151 tok/s} & \lr{FAIL} \\
+\lr{RoBERTa-base} & \lr{70.07\%} & \lr{0.744\%} & \lr{560.5 MB} & \lr{11,835 tok/s} & \lr{PASS} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.635\%} & \lr{793.2 MB} & \lr{24,435 tok/s} & \lr{FAIL} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -129,7 +129,7 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{img/comparison/fused_svd_kernel_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{fused\_svd\_kernel} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(fused\_svd\_kernel)}}
 \label{fig:comp_fused_svd_kernel}
 \end{figure}
 
@@ -137,14 +137,14 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/architecture/fused_svd_kernel_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{fused\_svd\_kernel}}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(fused\_svd\_kernel)}}
 \label{fig:arch_fused_svd_kernel}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/comparison/fused_svd_kernel_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{fused\_svd\_kernel} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(fused\_svd\_kernel)}}
 \label{fig:comp_fused_svd_kernel}
 \end{figure}
 

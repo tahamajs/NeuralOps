@@ -87,9 +87,9 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \toprule
 \textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{84.17\%} & \lr{0.842} & \lr{1668.4 MB} & \lr{1,059 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{0.00\%} & \lr{0.759} & \lr{298.7 MB} & \lr{92,804 tok/s} & \lr{FAIL} \\
-\lr{GPT-2} & \lr{0.00\%} & \lr{0.635} & \lr{793.2 MB} & \lr{64,043 tok/s} & \lr{FAIL} \\
+\lr{DistilBERT} & \lr{84.17\%} & \lr{0.842\%} & \lr{1668.4 MB} & \lr{1,059 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{0.00\%} & \lr{0.759\%} & \lr{298.7 MB} & \lr{92,804 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{0.00\%} & \lr{0.635\%} & \lr{793.2 MB} & \lr{64,043 tok/s} & \lr{FAIL} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -129,7 +129,7 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{img/comparison/mamba_svd_flash_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{mamba\_svd\_flash} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(mamba\_svd\_flash)}}
 \label{fig:comp_mamba_svd_flash}
 \end{figure}
 
@@ -137,14 +137,14 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/architecture/mamba_svd_flash_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{mamba\_svd\_flash}}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(mamba\_svd\_flash)}}
 \label{fig:arch_mamba_svd_flash}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/comparison/mamba_svd_flash_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{mamba\_svd\_flash} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(mamba\_svd\_flash)}}
 \label{fig:comp_mamba_svd_flash}
 \end{figure}
 

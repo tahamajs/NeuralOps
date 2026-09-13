@@ -3,7 +3,7 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 84: \lr{simple\_ssm}}
+\section{کالبدشکافی عمیق و تحلیل ساختاری ماژول \lr{simple\_ssm}}
 \label{sec:mod_simple_ssm}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
@@ -46,7 +46,6 @@
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
 
-
 \begin{table}[H]
 \centering
 \small
@@ -54,13 +53,12 @@
 \label{tab:benchmark_simple_ssm}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852\%} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}
-
 
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 دستیابی به بالاترین نرخ توان عملیاتی در این رده یعنی \lr{44,500} توکن در ثانیه و مصرف فوق‌العاده اندک \lr{620.0 MB} حافظه (کاهش \lr{85.2\%}ی نسبت به \lr{۴۲۰۰ MB} مبنا) با دقت \lr{62.13\%}، نشان می‌دهد که \lr{SimpleSSM} گزینه‌ای بی‌رقیب برای سناریوهای با منابع سخت‌افزاری به شدت محدود و پردازش فوری جریان داده‌های مداوم است.
@@ -72,9 +70,9 @@
 \begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
     node distance=1.1cm,
     auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    ssm/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small}
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    ssm/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=teal!80, fill=teal!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
 ]
     \node [block] (input) {ورودی $x_t$};
     \node [ssm, right=1.0cm of input] (state) {حالت پنهان $h_t$};
@@ -97,21 +95,19 @@
 "A 3D minimalist scientific diagram of SimpleSSM. A linear harmonic oscillator model where data pulses smoothly modulate an internal glowing resonant core with zero memory overhead, clean clinical white and neon blue lighting, 8k resolution --ar 16:9"
 \end{latin}
 
-\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{simple\_ssm} ارائه شده است.
 
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{simple\_ssm} ارائه شده است.
-
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{img/architecture/simple_ssm_architecture.png}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{simple\_ssm}}
+\includegraphics[width=0.92\textwidth]{img/architecture/simple_ssm_architecture.png}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(simple\_ssm)}}
 \label{fig:arch_simple_ssm}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{img/comparison/simple_ssm_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{simple\_ssm} در برابر خط مبنا}
+\includegraphics[width=0.92\textwidth]{img/comparison/simple_ssm_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(simple\_ssm)}}
 \label{fig:comp_simple_ssm}
 \end{figure}
-

@@ -3,7 +3,7 @@
 \vspace*{0.2cm}
 \noindent\rule{\textwidth}{1.2pt}
 \vspace*{0.1cm}
-\subsection{کالبدشکافی عمیق و تحلیل ساختاری ماژول شماره 39: \lr{hgrn2\_layer}}
+\section{کالبدشکافی عمیق و تحلیل ساختاری ماژول \lr{hgrn2\_layer}}
 \label{sec:mod_hgrn2_layer}
 \vspace*{-0.2cm}
 \noindent\rule{\textwidth}{0.5pt}
@@ -45,7 +45,6 @@
 \subsubsection*{۵. ارزیابی تجربی، بنچمارک و توجیه علمی نتایج}
 بر اساس آزمون‌های ثبت‌شده در خط لوله ارزیابی پایان‌نامه:
 
-
 \begin{table}[H]
 \centering
 \small
@@ -53,17 +52,15 @@
 \label{tab:benchmark_hgrn2_layer}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
+\textbf{مجموعه داده / بنچ‌مارک} & \textbf{دقت} \lr{(Accuracy)} & \textbf{شاخص} \lr{(F1-Score)} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
+\lr{GLUE SST-2 (RTX 4070)} & \lr{85.20\%} & \lr{0.852\%} & \lr{750.0 MB} & \lr{36,500 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-
 \textbf{توجیه علمی و علت‌شناسی جذاب نتایج:}
 ثبت دقت \lr{88.5\%} و صرفه‌جویی \lr{82.1\%}ی در مصرف حافظه VRAM نسبت به \lr{۴۲۰۰ MB} مبنا، مؤید حذف کامل ترافیک خواندن/نوشتن ماتریس‌های توجه در حافظه سراسری است. خط لوله تانسوری کاملاً متمرکز در کش سطح یک \lr{(L1 Cache)} باقی مانده و نرخ گذردهی \lr{36,500} توکن را تثبیت کرده است.
-
 
 \subsubsection*{۶. دیاگرام معماری شکیل در لاتک \lr{(TikZ Architecture Flowchart)}}
 جهت تبیین دقیق جریان داده تانسوری و نحوه تغییر شکل ماتریس‌ها، نمودار معماری این ماژول با استفاده از بسته قدرتمند \lr{TikZ} در محیط لاتک ترسیم شده است:
@@ -72,10 +69,10 @@
 \begin{tikzpicture}[scale=0.82, every node/.style={scale=0.82}, 
     node distance=1.1cm,
     auto,
-    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    ssm/.style={rectangle, draw=teal!80, fill=teal!18, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    state/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small},
-    outblock/.style={rectangle, draw=green!70, fill=green!15, rounded corners=4pt, text centered, minimum height=0.85cm, font=\small}
+    block/.style={rectangle, draw=blue!70, fill=blue!12, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    ssm/.style={rectangle, draw=teal!80, fill=teal!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    state/.style={rectangle, draw=orange!80, fill=orange!18, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small},
+    outblock/.style={rectangle, draw=green!70, fill=green!15, rounded corners=4pt, align=center, text centered, minimum height=0.85cm, font=\small}
 ]
     \node [block] (input) {ورودی $x_t \in \mathbb{R}^D$};
     \node [ssm, right=1.0cm of input] (disc) {گسسته‌سازی $\bar{\mathbf{A}}_t, \bar{\mathbf{B}}_t$};
@@ -100,28 +97,26 @@
 "A hyper-detailed, photorealistic 3D scientific isometric schematic of the hgrn2\_layer attention mechanism. Illustrating incoming token tensors of shape [B, N, D] flowing smoothly into optimized projection blocks and state matrices. Glowing cyan, neon amber, and vibrant violet data pathways highlighting low-rank dimension reduction and on-chip SRAM cache operations, contrasted against a dark metallic blueprint background. Clean technical typography, publication-grade academic rendering, Unreal Engine 5 cinematic lighting, 8k resolution --ar 16:9"
 \end{latin}
 
-\subsection*{بخش ۱۱: تصاویر و نمودارها (Figures \& Charts)}
+\subsection*{بخش ۱۱: تصاویر و نمودارها \lr{(Figures \& Charts)}}
+در این بخش، بلوک‌دیاگرام جریان داده و معماری تفصیلی و نمودار ارزیابی مقایسه‌ای عملکرد مکانیزم \lr{hgrn2\_layer} ارائه شده است.
 
-در این بخش، دیاگرام تفصیلی گردش داده و نمودارهای عملکردی ماژول \lr{hgrn2\_layer} ارائه شده است.
-
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{img/arch_hgrn2_layer_1.jpeg}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{hgrn2\_layer}}
+\includegraphics[width=0.92\textwidth]{img/arch_hgrn2_layer_1.jpeg}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(hgrn2\_layer)}}
 \label{fig:arch_hgrn2_layer}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{img/arch_hgrn2_layer_2.jpeg}
-\caption{جزئیات تکمیلی پردازش و نگاشت تانسورها در ماژول \lr{hgrn2\_layer}}
+\includegraphics[width=0.92\textwidth]{img/arch_hgrn2_layer_2.jpeg}
+\caption{جزئیات تکمیلی پردازش و نگاشت تانسورها در ماژول \lr{(hgrn2\_layer)}}
 \label{fig:arch_sec_hgrn2_layer}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{img/comparison/hgrn2_layer_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{hgrn2\_layer} در برابر خط مبنا}
+\includegraphics[width=0.92\textwidth]{img/comparison/hgrn2_layer_comparison.png}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(hgrn2\_layer)}}
 \label{fig:comp_hgrn2_layer}
 \end{figure}
-

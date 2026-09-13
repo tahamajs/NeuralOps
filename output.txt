@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import os; from google import genai; client = genai.Client(); response = client.models.generate_content(model='gemini-2.5-flash', contents='test'); print(response.text)
+                                                  ~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/client.py", line 341, in __init__
+    self._api_client = self._get_api_client(
+                       ~~~~~~~~~~~~~~~~~~~~^
+        vertexai=resolved_vertexai,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+        http_options=http_options,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/client.py", line 392, in _get_api_client
+    return BaseApiClient(
+        vertexai=vertexai,
+    ...<4 lines>...
+        http_options=http_options,
+    )
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/_api_client.py", line 788, in __init__
+    raise ValueError(
+    ...<3 lines>...
+    )
+ValueError: No API key was provided. Please pass a valid API key. Learn how to create an API key at https://ai.google.dev/gemini-api/docs/api-key.

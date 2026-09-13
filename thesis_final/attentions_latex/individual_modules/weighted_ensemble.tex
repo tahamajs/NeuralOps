@@ -87,9 +87,9 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \toprule
 \textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{90.14\%} & \lr{0.903} & \lr{337.6 MB} & \lr{166,097 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{0.00\%} & \lr{0.759} & \lr{298.7 MB} & \lr{114,346 tok/s} & \lr{FAIL} \\
-\lr{GPT-2} & \lr{61.01\%} & \lr{0.665} & \lr{634.9 MB} & \lr{71,138 tok/s} & \lr{PASS} \\
+\lr{DistilBERT} & \lr{90.14\%} & \lr{0.903\%} & \lr{337.6 MB} & \lr{166,097 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{0.00\%} & \lr{0.759\%} & \lr{298.7 MB} & \lr{114,346 tok/s} & \lr{FAIL} \\
+\lr{GPT-2} & \lr{61.01\%} & \lr{0.665\%} & \lr{634.9 MB} & \lr{71,138 tok/s} & \lr{PASS} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -129,7 +129,7 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{img/comparison/weighted_ensemble_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{weighted\_ensemble} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(weighted\_ensemble)}}
 \label{fig:comp_weighted_ensemble}
 \end{figure}
 
@@ -137,14 +137,14 @@ $$G(x)_i = \frac{\exp(H(x)_i)}{\sum_{j=1}^E \exp(H(x)_j)}, \quad H(x) = x \cdot 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/arch_weighted_ensemble.jpeg}
-\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{weighted\_ensemble}}
+\caption{دیاگرام ساختار معماری و جریان تانسوری ماژول \lr{(weighted\_ensemble)}}
 \label{fig:arch_weighted_ensemble}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{img/comparison/weighted_ensemble_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{weighted\_ensemble} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(weighted\_ensemble)}}
 \label{fig:comp_weighted_ensemble}
 \end{figure}
 

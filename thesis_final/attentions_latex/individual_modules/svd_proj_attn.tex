@@ -74,9 +74,9 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \toprule
 \textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{76.15\%} & \lr{0.787} & \lr{283.8 MB} & \lr{69,162 tok/s} & \lr{PASS} \\
-\lr{RoBERTa-base} & \lr{50.92\%} & \lr{0.675} & \lr{328.4 MB} & \lr{42,387 tok/s} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.675} & \lr{468.7 MB} & \lr{31,071 tok/s} & \lr{PASS\_LOW} \\
+\lr{DistilBERT} & \lr{76.15\%} & \lr{0.787\%} & \lr{283.8 MB} & \lr{69,162 tok/s} & \lr{PASS} \\
+\lr{RoBERTa-base} & \lr{50.92\%} & \lr{0.675\%} & \lr{328.4 MB} & \lr{42,387 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.675\%} & \lr{468.7 MB} & \lr{31,071 tok/s} & \lr{PASS\_LOW} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -116,6 +116,6 @@ $$\min_{\operatorname{rank}(\mathbf{B}) \le k} \|\mathbf{W} - \mathbf{B}\|_F = \
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{img/comparison/svd_proj_attn_comparison.png}
-\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی دقت، اوج مصرف حافظه و توان عملیاتی مکانیزم \lr{svd\_proj\_attn} در برابر خط مبنا}
+\caption{نمودار ارزیابی مقایسه‌ای سه‌شاخصی مکانیزم در برابر خط مبنا \lr{(svd\_proj\_attn)}}
 \label{fig:comp_svd_proj_attn}
 \end{figure}

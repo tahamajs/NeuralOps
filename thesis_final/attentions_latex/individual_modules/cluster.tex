@@ -6,7 +6,7 @@
 
 \subsubsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
 \begin{itemize}
-    \item \textbf{نام کامل انگلیسی ماژول:} \lr{Cluster Attention Engine \lr{(Spherical K-Means Centroid Attention)}}
+    \item \textbf{نام کامل انگلیسی ماژول:} \lr{Cluster Attention Engine (Spherical K-Means Centroid Attention)}
     \item \textbf{نام فارسی معادل:} موتور توجه خوشه‌بندی توکن‌های پویا بر پایه سنترویدهای ابرکره \lr{(cluster)}
     \item \textbf{دسته‌بندی معماری:} \lr{Dynamic Routing \& Centroid-Based Token Clustering}
     \item \textbf{مرجع علمی و محاسباتی:} مقاله تحلیلی کلاستر-فورمر \lr{ClusterFormer، وانگ و همکاران، 2021}، الگوریتم خوشه‌بندی $k$-میانگین کروی دسته‌ای بر روی ابرکره واحد و نظریه کوانتایزاسیون برداری توکن‌ها.
@@ -76,7 +76,7 @@ c(i) = \arg\max_{k \in \{1, \dots, K\}} \left( \frac{\mathbf{q}_i}{\|\mathbf{q}_
 
 متد \lr{copy\_weights} مسئولیت بارگذاری وزن‌های متراکم از مدل مبدأ و بررسی سلامت لایه‌ها بر پایه نرم فروبنیوس $(\|\mathbf{W}\|_F \ge 10^{-4})$ را به انجام می‌رساند.
 
-در نهایت، تانسورهای پردازش‌شده با دستور \lr{.contiguous().view\lr{(B, N, D)}} در یک بلوک یکنواخت از حافظه گرافیکی مرتب می‌شوند.
+در نهایت، تانسورهای پردازش‌شده با دستور \lr{.contiguous().view(B, N, D)} در یک بلوک یکنواخت از حافظه گرافیکی مرتب می‌شوند.
 
 \subsubsection*{بخش ۶: تحلیل سخت‌افزاری و عملکرد \lr{(Hardware Analysis)}}
 تحلیل در چارچوب مدل سقف نظری \lr{(Roofline Model)} روی شتاب‌دهنده گرافیکی \lr{NVIDIA RTX 4070} مشخص می‌سازد که عملیات خوشه‌بندی کروی به دلیل فراخوانی‌های مکرر در سطح حافظه مشترک، در ناحیه گذار بین مقید به حافظه و مقید به محاسبات قرار دارد.
@@ -99,9 +99,9 @@ c(i) = \arg\max_{k \in \{1, \dots, K\}} \left( \frac{\mathbf{q}_i}{\|\mathbf{q}_
 \toprule
 \textbf{مدل پایه \lr{(Base Model)}} & \textbf{دقت \lr{(Accuracy)}} & \textbf{شاخص \lr{F1}} & \textbf{حافظه \lr{(Peak VRAM)}} & \textbf{توان \lr{(Throughput)}} & \textbf{وضعیت} \\
 \midrule
-\lr{DistilBERT} & \lr{50.92\%} & \lr{0.675} & \lr{336.8 MB} & \lr{3,226 tok/s} & \lr{PASS\_LOW} \\
-\lr{RoBERTa-base} & \lr{50.92\%} & \lr{0.675} & \lr{667.1 MB} & \lr{1,606 tok/s} & \lr{PASS\_LOW} \\
-\lr{GPT-2} & \lr{50.92\%} & \lr{0.675} & \lr{567.7 MB} & \lr{12,094 tok/s} & \lr{PASS\_LOW} \\
+\lr{DistilBERT} & \lr{50.92\%} & \lr{0.675\%} & \lr{336.8 MB} & \lr{3,226 tok/s} & \lr{PASS\_LOW} \\
+\lr{RoBERTa-base} & \lr{50.92\%} & \lr{0.675\%} & \lr{667.1 MB} & \lr{1,606 tok/s} & \lr{PASS\_LOW} \\
+\lr{GPT-2} & \lr{50.92\%} & \lr{0.675\%} & \lr{567.7 MB} & \lr{12,094 tok/s} & \lr{PASS\_LOW} \\
 \bottomrule
 \end{tabular}
 \end{table}
