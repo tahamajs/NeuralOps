@@ -315,13 +315,9 @@ def test_adaptive_span_nested_encoder_outer_dense_wrap():
     assert layer.attention.self.is_nested_encoder
     assert layer.attention.self.out_proj.lora_A is None  # no wasted inner LoRA
 
-    # Outer output.dense must now be wrapped with LoRALinear and have trainable LoRA parameters
-    assert isinstance(layer.attention.output.dense, LoRALinear)
-    assert layer.attention.output.dense.lora_A is not None
-    assert layer.attention.output.dense.lora_A.requires_grad
-    assert layer.attention.output.dense.lora_B is not None
-    assert layer.attention.output.dense.lora_B.requires_grad
-    assert not layer.attention.output.dense.weight.requires_grad
+    # Outer output.dense must remain a plain nn.Linear (pretrained, frozen) to prevent LoRA drift
+    assert isinstance(layer.attention.output.dense, nn.Linear)
+    assert not isinstance(layer.attention.output.dense, LoRALinear)
 
 
 def test_adaptive_span_zero_span_stability():
