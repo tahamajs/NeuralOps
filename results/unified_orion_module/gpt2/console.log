@@ -1,4 +1,6 @@
-`torch_dtype` is deprecated! Use `dtype` instead!
+Skipping attention module 'SOAFusedAttention' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
+Skipping attention module 'soa_fused_module' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
+Skipping attention module 'soa_module' due to: cannot import name 'inject_soa_module' from 'framework.attentions.soa_attn' (D:\SVD_Project\Codes\framework\attentions\soa_attn.py)
 [1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
 Key          | Status  | 
 -------------+---------+-
@@ -6,61 +8,61 @@ score.weight | MISSING |
 
 Notes:
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep:   model:             models\gpt2
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep:   family:            gpt
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-11 07:13:45,275 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:13:45,433 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
-2026-09-11 07:13:45,808 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-11 07:13:46,280 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-11 07:13:48,472 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 60.78%
-2026-09-11 07:13:48,482 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:13:48,482 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-11 07:13:48,482 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-11 07:13:48,482 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-11 07:13:48,483 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-11 07:13:48,483 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-11 07:13:48,483 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-11 07:13:48,483 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:13:48,483 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 07:13:50,878 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_orion_module\gpt2\gpt2_full_full_metrics.json
-2026-09-11 07:13:50,884 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_orion_module\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
-2026-09-11 07:13:51,202 [INFO] QwenQualitySweep: [1/2] full -> PASS 60.78% (F1: 0.6354, Peak VRAM: 793.19 MB)
-2026-09-11 07:13:51,202 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_orion_module\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 07:13:51,345 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: orion_module (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 07:14:00,351 [INFO] framework.core.attention_utils: Successfully injected 'orion_module' into 12 transformer blocks.
-2026-09-11 07:14:00,356 [INFO] QwenQualitySweep: module=orion_module path=adapted_gpt
-2026-09-11 07:14:00,357 [INFO] QwenQualitySweep: module=orion_module injection summary: 0 SVDLinear layers active
-2026-09-11 07:14:00,357 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for orion_module (lr=2.0e-04)
-2026-09-11 07:14:00,531 [INFO] framework.utils.compat: Recovery fine-tuning selected 1181232 trainable parameters across 145 tensors.
-2026-09-11 07:14:00,532 [INFO] QwenQualitySweep: LoRA fine-tuning: 1181232 trainable parameters across 145 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-11 07:14:01,297 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6266 (bs=8, micro_bs=8)
-2026-09-11 07:14:03,666 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6463 (bs=8, micro_bs=8)
-2026-09-11 07:14:06,677 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.6772 (bs=8, micro_bs=8)
-2026-09-11 07:14:09,643 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.7400 (bs=8, micro_bs=8)
-2026-09-11 07:14:12,605 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6987 (bs=8, micro_bs=8)
-2026-09-11 07:14:15,577 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.8232 (bs=8, micro_bs=8)
-2026-09-11 07:14:18,550 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7910 (bs=8, micro_bs=8)
-2026-09-11 07:14:21,510 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7523 (bs=8, micro_bs=8)
-2026-09-11 07:14:24,482 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.5734 (bs=8, micro_bs=8)
-2026-09-11 07:14:27,451 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6073 (bs=8, micro_bs=8)
-2026-09-11 07:14:30,432 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.7723 (bs=8, micro_bs=8)
-2026-09-11 07:14:58,412 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_orion_module\gpt2\gpt2_orion_module_full_metrics.json
-2026-09-11 07:14:58,486 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_orion_module\gpt2\checkpoints\orion_module\weights.pt (module_params=0, lora_params=97)
-2026-09-11 07:14:58,842 [INFO] QwenQualitySweep: [2/2] orion_module -> PASS_LOW 50.92% (F1: 0.6748, Peak VRAM: 2262.79 MB)
-2026-09-11 07:14:58,842 [INFO] QwenQualitySweep: [Quality Guard] Module 'orion_module' did not pass quality criteria (status=PASS_LOW, acc=50.92%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-11 07:14:58,997 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:14:58,998 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
-2026-09-11 07:14:59,000 [INFO] QwenQualitySweep: 
+2026-09-11 20:31:58,266 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-11 20:31:58,267 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-11 20:31:58,267 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:31:58,267 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-11 20:31:58,267 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-11 20:31:58,267 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-11 20:31:58,267 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-11 20:31:58,267 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-11 20:31:58,267 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-11 20:31:58,267 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-11 20:31:58,267 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-11 20:31:58,267 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:31:58,475 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-11 20:31:58,864 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-11 20:31:59,270 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-11 20:32:01,517 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 57.91%
+2026-09-11 20:32:01,529 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:32:01,529 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-11 20:32:01,529 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-11 20:32:01,530 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-11 20:32:01,530 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-11 20:32:01,530 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-11 20:32:01,530 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-11 20:32:01,530 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:32:01,532 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 20:32:03,909 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_orion_module\gpt2\gpt2_full_full_metrics.json
+2026-09-11 20:32:03,918 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_orion_module\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-11 20:32:04,263 [INFO] QwenQualitySweep: [1/2] full -> PASS 57.91% (F1: 0.301, Peak VRAM: 793.19 MB)
+2026-09-11 20:32:04,263 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_orion_module\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-11 20:32:04,426 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: orion_module (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 20:32:13,690 [INFO] framework.core.attention_utils: Successfully injected 'orion_module' into 12 transformer blocks.
+2026-09-11 20:32:13,693 [INFO] QwenQualitySweep: module=orion_module path=adapted_gpt
+2026-09-11 20:32:13,693 [INFO] QwenQualitySweep: module=orion_module injection summary: 0 SVDLinear layers active
+2026-09-11 20:32:13,693 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for orion_module (lr=2.0e-04)
+2026-09-11 20:32:13,856 [INFO] framework.utils.compat: Recovery fine-tuning selected 1181232 trainable parameters across 145 tensors.
+2026-09-11 20:32:13,857 [INFO] QwenQualitySweep: LoRA fine-tuning: 1181232 trainable parameters across 145 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-11 20:32:14,201 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6806 (bs=8, micro_bs=8)
+2026-09-11 20:32:14,826 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6672 (bs=8, micro_bs=8)
+2026-09-11 20:32:15,576 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7067 (bs=8, micro_bs=8)
+2026-09-11 20:32:16,335 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5843 (bs=8, micro_bs=8)
+2026-09-11 20:32:17,129 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6547 (bs=8, micro_bs=8)
+2026-09-11 20:32:17,963 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.6089 (bs=8, micro_bs=8)
+2026-09-11 20:32:18,790 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7132 (bs=8, micro_bs=8)
+2026-09-11 20:32:19,571 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7441 (bs=8, micro_bs=8)
+2026-09-11 20:32:20,356 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7360 (bs=8, micro_bs=8)
+2026-09-11 20:32:21,121 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6555 (bs=8, micro_bs=8)
+2026-09-11 20:32:21,957 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6851 (bs=8, micro_bs=8)
+2026-09-11 20:32:27,918 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_orion_module\gpt2\gpt2_orion_module_full_metrics.json
+2026-09-11 20:32:27,935 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_orion_module\gpt2\checkpoints\orion_module\weights.pt (module_params=0, lora_params=97)
+2026-09-11 20:32:28,294 [INFO] QwenQualitySweep: [2/2] orion_module -> PASS_LOW 50.80% (F1: 0.6733, Peak VRAM: 496.82 MB)
+2026-09-11 20:32:28,294 [INFO] QwenQualitySweep: [Quality Guard] Module 'orion_module' did not pass quality criteria (status=PASS_LOW, acc=50.80%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-11 20:32:28,460 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:32:28,460 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-11 20:32:28,463 [INFO] QwenQualitySweep: 
       Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-        full     PASS   60.78% 0.00% (base) 0.6354                  0            1.00x  793.2 MB               1.78              2.04
-orion_module PASS_LOW   50.92%       -9.86% 0.6748                  0            1.25x 2262.8 MB              27.78             31.86
-2026-09-11 07:14:59,000 [INFO] QwenQualitySweep: ================================================================================
+        full     PASS   57.91% 0.00% (base) 0.3010                  0            1.00x  793.2 MB               1.80              2.06
+orion_module PASS_LOW   50.80%       -7.11% 0.6733                  0            1.25x  496.8 MB               5.74              6.58
+2026-09-11 20:32:28,463 [INFO] QwenQualitySweep: ================================================================================

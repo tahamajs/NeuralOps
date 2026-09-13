@@ -1,194 +1,80 @@
-`torch_dtype` is deprecated! Use `dtype` instead!
+Skipping attention module 'SOAFusedAttention' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
+Skipping attention module 'soa_fused_module' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
+Skipping attention module 'soa_module' due to: cannot import name 'inject_soa_module' from 'framework.attentions.soa_attn' (D:\SVD_Project\Codes\framework\attentions\soa_attn.py)
 [1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
 Key                             | Status     | 
 --------------------------------+------------+-
-roberta.embeddings.position_ids | UNEXPECTED | 
-lm_head.layer_norm.bias         | UNEXPECTED | 
-lm_head.bias                    | UNEXPECTED | 
 lm_head.layer_norm.weight       | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
 lm_head.dense.weight            | UNEXPECTED | 
 lm_head.dense.bias              | UNEXPECTED | 
 classifier.dense.weight         | MISSING    | 
 classifier.dense.bias           | MISSING    | 
-classifier.out_proj.weight      | MISSING    | 
 classifier.out_proj.bias        | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
 
 Notes:
 - UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep:   model:             models\roberta-base
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep:   family:            roberta
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:21:38,329 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
-2026-09-11 05:21:38,989 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.6811
-2026-09-11 05:21:39,365 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.6746
-2026-09-11 05:21:39,703 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.6785
-2026-09-11 05:21:40,080 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.6543
-2026-09-11 05:21:40,442 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.6399
-2026-09-11 05:21:40,781 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7380
-2026-09-11 05:21:41,119 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.5593
-2026-09-11 05:21:41,456 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6770
-2026-09-11 05:21:41,462 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_jamba\roberta\finetuned_model.pt
-2026-09-11 05:21:41,527 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-11 05:21:41,801 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-11 05:21:42,894 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 75.11%
-2026-09-11 05:21:42,902 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:21:42,902 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-11 05:21:42,902 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-11 05:21:42,902 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-11 05:21:42,902 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-11 05:21:42,902 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-11 05:21:42,902 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-11 05:21:42,902 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:21:42,902 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 05:21:44,360 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_jamba\roberta\roberta-base_full_full_metrics.json
-2026-09-11 05:21:44,364 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_jamba\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
-2026-09-11 05:21:44,598 [INFO] QwenQualitySweep: [1/2] full -> PASS 75.11% (F1: 0.7586, Peak VRAM: 298.71 MB)
-2026-09-11 05:21:44,598 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_jamba\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 05:21:44,716 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: jamba (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 05:21:45,756 [INFO] framework.core.attention_utils: Successfully injected 'jamba' into 12 transformer blocks.
-2026-09-11 05:21:45,761 [INFO] QwenQualitySweep: module=jamba path=adapted_roberta
-2026-09-11 05:21:45,762 [INFO] QwenQualitySweep: module=jamba injection summary: 0 SVDLinear layers active
-2026-09-11 05:21:45,762 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for jamba (lr=2.0e-04)
-2026-09-11 05:21:46,561 [INFO] framework.utils.compat: Recovery fine-tuning selected 2803970 trainable parameters across 172 tensors.
-2026-09-11 05:21:46,565 [INFO] QwenQualitySweep: LoRA fine-tuning: 2803970 trainable parameters across 172 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-11 05:21:46,851 [ERROR] QwenQualitySweep: Module jamba execution failure:
-Traceback (most recent call last):
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2224, in main
-    pipe_res = future.result(timeout=effective_timeout)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 456, in result
-    return self.__get_result()
-           ~~~~~~~~~~~~~~~~~^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 401, in __get_result
-    raise self._exception
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\thread.py", line 59, in run
-    result = self.fn(*self.args, **self.kwargs)
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2123, in _run_candidate_pipeline
-    had_nan = finetune_lora(
-        model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
-    ...<2 lines>...
-        weight_decay=args.weight_decay, timeout=effective_timeout,
-    )
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 615, in finetune_lora
-    out = model(**cx, labels=cy)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 876, in wrapper
-    output = func(self, *args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 949, in forward
-    outputs = self.roberta(
-        input_ids,
-    ...<5 lines>...
-        **kwargs,
-    )
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 952, in wrapper
-    output = func(self, *args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\output_capturing.py", line 248, in wrapper
-    outputs = func(self, *args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 631, in forward
-    encoder_outputs = self.encoder(
-        embedding_output,
-    ...<6 lines>...
-        **kwargs,
-    )
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 514, in forward
-    hidden_states = layer_module(
-        hidden_states,
-    ...<4 lines>...
-        **kwargs,
-    )
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_layers.py", line 93, in __call__
-    return super().__call__(*args, **kwargs)
-           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 435, in forward
-    self_attention_output, _ = self.attention(
-                               ~~~~~~~~~~~~~~^
-        hidden_states,
-        ^^^^^^^^^^^^^^
-    ...<2 lines>...
-        **kwargs,
-        ^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 366, in forward
-    attention_output, attn_weights = self.self(
-                                     ~~~~~~~~~^
-        hidden_states,
-        ^^^^^^^^^^^^^^
-    ...<3 lines>...
-        **kwargs,
-        ^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "D:\SVD_Project\Codes\framework\utils\replace_attention.py", line 109, in forward
-    out = attempt()
-  File "D:\SVD_Project\Codes\framework\utils\replace_attention.py", line 98, in <lambda>
-    lambda: self.inner(hidden_states, attention_mask=attention_mask, head_mask=head_mask, output_attentions=output_attentions, **kwargs),
-            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "D:\SVD_Project\Codes\framework\attentions\jamba.py", line 458, in forward
-    mamba_out, _ = self.mamba(hidden_states, attention_mask=attention_mask)
-                   ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "D:\SVD_Project\Codes\framework\attentions\jamba.py", line 167, in forward
-    ssm_out = ssm_out * self.output_scale
-                        ^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1928, in __getattr__
-    raise AttributeError(
-        f"'{type(self).__name__}' object has no attribute '{name}'"
-    )
-AttributeError: 'SVDMambaSub' object has no attribute 'output_scale'
-2026-09-11 05:21:46,862 [INFO] QwenQualitySweep: [2/2] jamba -> FAIL 0.00% (F1: 0.7586, Peak VRAM: 298.71 MB)
-2026-09-11 05:21:46,862 [INFO] QwenQualitySweep: [Quality Guard] Module 'jamba' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-11 05:21:46,971 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:21:46,971 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
-2026-09-11 05:21:46,973 [INFO] QwenQualitySweep: 
-Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-  full   PASS   75.11% 0.00% (base) 0.7586                  0            1.00x  298.7 MB               1.03              1.18
- jamba   FAIL    0.00%      -75.11% 0.7586                  0            1.00x  298.7 MB               1.03              1.18
-2026-09-11 05:21:46,973 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 19:10:44,013 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-11 19:10:44,014 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-11 19:10:44,014 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 19:10:44,014 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-11 19:10:44,014 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-11 19:10:44,014 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-11 19:10:44,014 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-11 19:10:44,014 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-11 19:10:44,014 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-11 19:10:44,014 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-11 19:10:44,014 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-11 19:10:44,014 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 19:10:44,025 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_jamba\roberta\finetuned_model.pt
+2026-09-11 19:10:44,127 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-11 19:10:44,350 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-11 19:10:46,002 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 75.46%
+2026-09-11 19:10:46,010 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 19:10:46,010 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-11 19:10:46,010 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-11 19:10:46,010 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-11 19:10:46,010 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-11 19:10:46,010 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-11 19:10:46,010 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-11 19:10:46,010 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 19:10:46,012 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 19:10:47,764 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_jamba\roberta\roberta-base_full_full_metrics.json
+2026-09-11 19:10:47,773 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_jamba\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-11 19:10:48,031 [INFO] QwenQualitySweep: [1/2] full -> PASS 75.46% (F1: 0.7277, Peak VRAM: 712.34 MB)
+2026-09-11 19:10:48,031 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_jamba\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-11 19:10:48,149 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: jamba (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 19:10:49,273 [INFO] framework.core.attention_utils: Successfully injected 'jamba' into 12 transformer blocks.
+2026-09-11 19:10:49,278 [INFO] QwenQualitySweep: module=jamba path=adapted_roberta
+2026-09-11 19:10:49,279 [INFO] QwenQualitySweep: module=jamba injection summary: 0 SVDLinear layers active
+2026-09-11 19:10:49,279 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for jamba (lr=2.0e-04)
+2026-09-11 19:10:50,070 [INFO] framework.utils.compat: Recovery fine-tuning selected 2804030 trainable parameters across 232 tensors.
+2026-09-11 19:10:50,070 [WARNING] framework.utils.compat: Total trainable parameters (2804030) exceeds 2,000,000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-11 19:10:50,078 [INFO] framework.utils.compat: Reduced recovery parameters to 2214206 trainable parameters across 231 tensors.
+2026-09-11 19:10:50,079 [INFO] QwenQualitySweep: LoRA fine-tuning: 2214206 trainable parameters across 231 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-11 19:10:50,711 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.7454 (bs=8, micro_bs=8)
+2026-09-11 19:10:51,472 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7776 (bs=8, micro_bs=8)
+2026-09-11 19:10:52,211 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7856 (bs=8, micro_bs=8)
+2026-09-11 19:10:53,064 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6325 (bs=8, micro_bs=8)
+2026-09-11 19:10:53,855 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.7435 (bs=8, micro_bs=8)
+2026-09-11 19:10:54,531 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.6189 (bs=8, micro_bs=8)
+2026-09-11 19:10:55,182 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6934 (bs=8, micro_bs=8)
+2026-09-11 19:10:55,786 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.8748 (bs=8, micro_bs=8)
+2026-09-11 19:10:56,397 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7272 (bs=8, micro_bs=8)
+2026-09-11 19:10:57,012 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6973 (bs=8, micro_bs=8)
+2026-09-11 19:10:57,633 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.8701 (bs=8, micro_bs=8)
+2026-09-11 19:11:02,335 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_jamba\roberta\roberta-base_jamba_full_metrics.json
+2026-09-11 19:11:02,382 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_jamba\roberta\checkpoints\jamba\weights.pt (module_params=0, lora_params=268)
+2026-09-11 19:11:02,923 [INFO] QwenQualitySweep: [2/2] jamba -> PASS_LOW 50.92% (F1: 0.6733, Peak VRAM: 1321.02 MB)
+2026-09-11 19:11:02,923 [INFO] QwenQualitySweep: [Quality Guard] Module 'jamba' did not pass quality criteria (status=PASS_LOW, acc=50.92%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-11 19:11:03,069 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 19:11:03,069 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-11 19:11:03,071 [INFO] QwenQualitySweep: 
+Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+  full     PASS   75.46% 0.00% (base) 0.7277                  0            1.00x  712.3 MB               1.25              1.44
+ jamba PASS_LOW   50.92%      -24.54% 0.6733                  0            0.39x 1321.0 MB               4.21              4.83
+2026-09-11 19:11:03,071 [INFO] QwenQualitySweep: ================================================================================

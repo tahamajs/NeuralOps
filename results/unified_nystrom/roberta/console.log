@@ -1,85 +1,78 @@
-`torch_dtype` is deprecated! Use `dtype` instead!
+Skipping attention module 'SOAFusedAttention' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
+Skipping attention module 'soa_fused_module' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
+Skipping attention module 'soa_module' due to: cannot import name 'inject_soa_module' from 'framework.attentions.soa_attn' (D:\SVD_Project\Codes\framework\attentions\soa_attn.py)
 [1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
 Key                             | Status     | 
 --------------------------------+------------+-
-lm_head.dense.bias              | UNEXPECTED | 
-lm_head.layer_norm.bias         | UNEXPECTED | 
 lm_head.dense.weight            | UNEXPECTED | 
 roberta.embeddings.position_ids | UNEXPECTED | 
 lm_head.layer_norm.weight       | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
 lm_head.bias                    | UNEXPECTED | 
-classifier.out_proj.bias        | MISSING    | 
-classifier.out_proj.weight      | MISSING    | 
-classifier.dense.weight         | MISSING    | 
+lm_head.dense.bias              | UNEXPECTED | 
 classifier.dense.bias           | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
+classifier.dense.weight         | MISSING    | 
 
 Notes:
 - UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-11 07:02:50,402 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-11 07:02:50,402 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-11 07:02:50,402 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:02:50,402 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-11 07:02:50,402 [INFO] QwenQualitySweep:   model:             models\roberta-base
-2026-09-11 07:02:50,402 [INFO] QwenQualitySweep:   family:            roberta
-2026-09-11 07:02:50,402 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-11 07:02:50,402 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-11 07:02:50,403 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-11 07:02:50,403 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-11 07:02:50,403 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-11 07:02:50,403 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:02:50,403 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
-2026-09-11 07:02:51,237 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.6811
-2026-09-11 07:02:51,713 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.6746
-2026-09-11 07:02:52,142 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.6785
-2026-09-11 07:02:52,603 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.6543
-2026-09-11 07:02:53,050 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.6399
-2026-09-11 07:02:53,572 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7380
-2026-09-11 07:02:54,027 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.5593
-2026-09-11 07:02:54,493 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6770
-2026-09-11 07:02:54,500 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_nystrom\roberta\finetuned_model.pt
-2026-09-11 07:02:54,576 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-11 07:02:55,030 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-11 07:02:56,265 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 75.11%
-2026-09-11 07:02:56,274 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:02:56,274 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-11 07:02:56,274 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-11 07:02:56,274 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-11 07:02:56,274 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-11 07:02:56,275 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-11 07:02:56,275 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-11 07:02:56,275 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:02:56,275 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 07:02:57,932 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nystrom\roberta\roberta-base_full_full_metrics.json
-2026-09-11 07:02:57,939 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nystrom\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
-2026-09-11 07:02:58,250 [INFO] QwenQualitySweep: [1/2] full -> PASS 75.11% (F1: 0.7586, Peak VRAM: 298.71 MB)
-2026-09-11 07:02:58,250 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_nystrom\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 07:02:58,393 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: nystrom (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 07:02:59,044 [INFO] framework.core.attention_utils: Successfully injected 'nystrom' into 12 transformer blocks.
-2026-09-11 07:02:59,046 [INFO] QwenQualitySweep: module=nystrom path=adapted_roberta
-2026-09-11 07:02:59,047 [INFO] QwenQualitySweep: module=nystrom injection summary: 0 SVDLinear layers active
-2026-09-11 07:02:59,047 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for nystrom (lr=2.0e-04)
-2026-09-11 07:02:59,181 [INFO] framework.utils.compat: Recovery fine-tuning selected 1771826 trainable parameters across 148 tensors.
-2026-09-11 07:02:59,184 [INFO] QwenQualitySweep: LoRA fine-tuning: 1771826 trainable parameters across 148 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-11 07:02:59,426 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.7102 (bs=8, micro_bs=8)
-2026-09-11 07:02:59,982 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6807 (bs=8, micro_bs=8)
-2026-09-11 07:03:00,699 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.6519 (bs=8, micro_bs=8)
-2026-09-11 07:03:01,463 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.7820 (bs=8, micro_bs=8)
-2026-09-11 07:03:02,163 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.7347 (bs=8, micro_bs=8)
-2026-09-11 07:03:02,991 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7328 (bs=8, micro_bs=8)
-2026-09-11 07:03:03,758 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.8470 (bs=8, micro_bs=8)
-2026-09-11 07:03:04,509 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6343 (bs=8, micro_bs=8)
-2026-09-11 07:03:05,260 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.9227 (bs=8, micro_bs=8)
-2026-09-11 07:03:06,007 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.8110 (bs=8, micro_bs=8)
-2026-09-11 07:03:06,791 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.8996 (bs=8, micro_bs=8)
-2026-09-11 07:03:12,107 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nystrom\roberta\roberta-base_nystrom_full_metrics.json
-2026-09-11 07:03:12,185 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nystrom\roberta\checkpoints\nystrom\weights.pt (module_params=0, lora_params=340)
-2026-09-11 07:03:12,524 [INFO] QwenQualitySweep: [2/2] nystrom -> PASS_LOW 50.92% (F1: 0.6748, Peak VRAM: 385.2 MB)
-2026-09-11 07:03:12,524 [INFO] QwenQualitySweep: [Quality Guard] Module 'nystrom' did not pass quality criteria (status=PASS_LOW, acc=50.92%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-11 07:03:12,676 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 07:03:12,677 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
-2026-09-11 07:03:12,680 [INFO] QwenQualitySweep: 
+2026-09-11 20:24:45,580 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-11 20:24:45,580 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-11 20:24:45,580 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:24:45,580 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-11 20:24:45,580 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-11 20:24:45,581 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-11 20:24:45,581 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-11 20:24:45,581 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-11 20:24:45,581 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-11 20:24:45,581 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-11 20:24:45,581 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-11 20:24:45,581 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:24:45,587 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_nystrom\roberta\finetuned_model.pt
+2026-09-11 20:24:45,709 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-11 20:24:46,108 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-11 20:24:47,966 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 75.46%
+2026-09-11 20:24:47,977 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:24:47,977 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-11 20:24:47,977 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-11 20:24:47,977 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-11 20:24:47,977 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-11 20:24:47,977 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-11 20:24:47,977 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-11 20:24:47,977 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:24:47,979 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 20:24:49,958 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nystrom\roberta\roberta-base_full_full_metrics.json
+2026-09-11 20:24:49,965 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nystrom\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-11 20:24:50,303 [INFO] QwenQualitySweep: [1/2] full -> PASS 75.46% (F1: 0.7277, Peak VRAM: 712.34 MB)
+2026-09-11 20:24:50,303 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_nystrom\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-11 20:24:50,455 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: nystrom (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 20:24:51,188 [INFO] framework.core.attention_utils: Successfully injected 'nystrom' into 12 transformer blocks.
+2026-09-11 20:24:51,192 [INFO] QwenQualitySweep: module=nystrom path=adapted_roberta
+2026-09-11 20:24:51,193 [INFO] QwenQualitySweep: module=nystrom injection summary: 0 SVDLinear layers active
+2026-09-11 20:24:51,193 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for nystrom (lr=2.0e-04)
+2026-09-11 20:24:51,334 [INFO] framework.utils.compat: Recovery fine-tuning selected 1771826 trainable parameters across 148 tensors.
+2026-09-11 20:24:51,335 [INFO] QwenQualitySweep: LoRA fine-tuning: 1771826 trainable parameters across 148 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-11 20:24:51,596 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6902 (bs=8, micro_bs=8)
+2026-09-11 20:24:52,086 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6657 (bs=8, micro_bs=8)
+2026-09-11 20:24:52,740 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.6691 (bs=8, micro_bs=8)
+2026-09-11 20:24:53,382 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6087 (bs=8, micro_bs=8)
+2026-09-11 20:24:54,001 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6766 (bs=8, micro_bs=8)
+2026-09-11 20:24:54,642 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.6979 (bs=8, micro_bs=8)
+2026-09-11 20:24:55,262 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6761 (bs=8, micro_bs=8)
+2026-09-11 20:24:55,892 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6942 (bs=8, micro_bs=8)
+2026-09-11 20:24:56,524 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.6672 (bs=8, micro_bs=8)
+2026-09-11 20:24:57,185 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.5963 (bs=8, micro_bs=8)
+2026-09-11 20:24:57,825 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6705 (bs=8, micro_bs=8)
+2026-09-11 20:25:02,428 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nystrom\roberta\roberta-base_nystrom_full_metrics.json
+2026-09-11 20:25:02,493 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nystrom\roberta\checkpoints\nystrom\weights.pt (module_params=0, lora_params=100)
+2026-09-11 20:25:02,900 [INFO] QwenQualitySweep: [2/2] nystrom -> PASS_LOW 52.18% (F1: 0.68, Peak VRAM: 661.55 MB)
+2026-09-11 20:25:02,900 [INFO] QwenQualitySweep: [Quality Guard] Module 'nystrom' did not pass quality criteria (status=PASS_LOW, acc=52.18%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-11 20:25:03,056 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 20:25:03,056 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-11 20:25:03,059 [INFO] QwenQualitySweep: 
  Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-   full     PASS   75.11% 0.00% (base) 0.7586                  0            1.00x  298.7 MB               1.12              1.28
-nystrom PASS_LOW   50.92%      -24.19% 0.6748                  0            0.94x  385.2 MB               5.15              5.90
-2026-09-11 07:03:12,680 [INFO] QwenQualitySweep: ================================================================================
+   full     PASS   75.46% 0.00% (base) 0.7277                  0            1.00x  712.3 MB               1.37              1.57
+nystrom PASS_LOW   52.18%      -23.28% 0.6800                  0            0.94x  661.5 MB               4.45              5.10
+2026-09-11 20:25:03,059 [INFO] QwenQualitySweep: ================================================================================

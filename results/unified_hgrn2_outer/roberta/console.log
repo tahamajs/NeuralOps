@@ -1,84 +1,63 @@
-Skipping attention module 'adaptive_sparse_attention' due to: expected an indented block after 'except' statement on line 544 (adaptive_sparse_attention.py, line 545)
-Skipping attention module 'aegis_hybrid' due to: expected an indented block after 'except' statement on line 465 (aegis_hybrid.py, line 466)
-Skipping attention module 'aegis_hybrid_attention' due to: expected an indented block after 'except' statement on line 465 (aegis_hybrid.py, line 466)
-Skipping attention module 'aegis_spectron_fp8' due to: expected an indented block after 'except' statement on line 503 (aegis_spectron_fp8.py, line 504)
-Skipping attention module 'asvd_attention' due to: expected an indented block after 'except' statement on line 516 (asvd_attention.py, line 517)
-Skipping attention module 'bam_umoe' due to: expected an indented block after 'except' statement on line 429 (bam_umoe.py, line 430)
-Skipping attention module 'block_transformer_hiba' due to: expected an indented block after 'except' statement on line 318 (block_transformer_hiba.py, line 319)
-Skipping attention module 'chela_slay' due to: expected an indented block after 'except' statement on line 359 (chela_slay.py, line 360)
-Skipping attention module 'cluster_attention' due to: expected an indented block after 'except' statement on line 290 (cluster_attention.py, line 291)
-Skipping attention module 'cosformer' due to: expected an indented block after 'except' statement on line 343 (cosformer.py, line 344)
-Skipping attention module 'decay_linear_attention' due to: expected an indented block after 'except' statement on line 315 (decay_linear_attention.py, line 316)
-Skipping attention module 'eat' due to: expected an indented block after 'except' statement on line 296 (eat.py, line 297)
-Skipping attention module 'expert_choice_moe' due to: expected an indented block after 'except' statement on line 410 (expert_choice_moe.py, line 411)
-Skipping attention module 'factorised_matrix_state' due to: expected an indented block after 'except' statement on line 337 (factorised_matrix_state.py, line 338)
-Skipping attention module 'flash_attention3' due to: expected an indented block after 'except' statement on line 315 (flash_attention3.py, line 316)
-Skipping attention module 'flash_attention3_fp8' due to: expected an indented block after 'except' statement on line 319 (flash_attention3_fp8.py, line 320)
-Skipping attention module 'fusion_attn' due to: expected an indented block after 'except' statement on line 312 (fusion_attn.py, line 313)
-Skipping attention module 'galerkin_attention' due to: expected an indented block after 'except' statement on line 320 (galerkin_attention.py, line 321)
-Skipping attention module 'gated_deltanet_block' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'gated_delta_net' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'granite_hybrid' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'griffin_ssd' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'hgrn2_gated_deltanet' due to: expected an indented block after 'except' statement on line 425 (gated_delta_net.py, line 426)
-Skipping attention module 'jamba' due to: expected an indented block after 'except' statement on line 410 (expert_choice_moe.py, line 411)
-Skipping attention module 'kda_attention' due to: expected an indented block after 'except' statement on line 560 (kda_attention.py, line 561)
-Skipping compression_engine module 'adaptive_compressor' due to: name 'self' is not defined
-Skipping compression_engine module 'entropy_budget_allocation' due to: expected an indented block after 'except' statement on line 397 (entropy_budget_allocation.py, line 398)
-Skipping compression_engine module 'erc_svd' due to: expected an indented block after 'except' statement on line 313 (erc_svd.py, line 314)
-Skipping compression_engine module 'faq_quantizer' due to: expected an indented block after 'except' statement on line 359 (faq_quantizer.py, line 360)
-Skipping compression_engine module 'replaceme_compressor' due to: expected an indented block after 'except' statement on line 231 (replaceme_compressor.py, line 232)
-Skipping compression_engine module 'slicegpt_compressor' due to: expected an indented block after 'except' statement on line 318 (slicegpt_pca.py, line 319)
-Skipping compression_engine module 'slicegpt_pca' due to: expected an indented block after 'except' statement on line 318 (slicegpt_pca.py, line 319)
-Skipping compression_engine module 'spectraformer_attention' due to: expected an indented block after 'except' statement on line 450 (spectraformer_attention.py, line 451)
-Skipping attention module 'upi_stuffed_mamba' due to: expected an indented block after 'except' statement on line 206 (upi_stuffed_mamba.py, line 207)
-Skipping attention module 'wgqa_attention' due to: expected an indented block after 'except' statement on line 580 (wgqa_attention.py, line 581)
-Skipping attention module 'xattention' due to: expected an indented block after 'except' statement on line 442 (xattention.py, line 443)
-Skipping attention module 'zeros_attention' due to: expected an indented block after 'except' statement on line 430 (zeros_attention.py, line 431)
-`torch_dtype` is deprecated! Use `dtype` instead!
-
-Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 197/197 [00:00<00:00, 12752.97it/s]
+Skipping attention module 'SOAFusedAttention' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
+Skipping attention module 'soa_fused_module' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
+Skipping attention module 'soa_module' due to: cannot import name 'inject_soa_module' from 'framework.attentions.soa_attn' (D:\SVD_Project\Codes\framework\attentions\soa_attn.py)
 [1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
 Key                             | Status     | 
 --------------------------------+------------+-
-lm_head.dense.bias              | UNEXPECTED | 
 lm_head.bias                    | UNEXPECTED | 
 lm_head.layer_norm.weight       | UNEXPECTED | 
-roberta.embeddings.position_ids | UNEXPECTED | 
 lm_head.dense.weight            | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
 lm_head.layer_norm.bias         | UNEXPECTED | 
-classifier.out_proj.bias        | MISSING    | 
+roberta.embeddings.position_ids | UNEXPECTED | 
 classifier.dense.weight         | MISSING    | 
-classifier.dense.bias           | MISSING    | 
 classifier.out_proj.weight      | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
 
 Notes:
 - UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-10 18:14:44,694 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-10 18:14:44,695 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-10 18:14:44,695 [INFO] QwenQualitySweep: ================================================================================
-2026-09-10 18:14:44,695 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-10 18:14:44,695 [INFO] QwenQualitySweep:   model:             models\roberta-base
-2026-09-10 18:14:44,695 [INFO] QwenQualitySweep:   family:            roberta
-2026-09-10 18:14:44,695 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-10 18:14:44,695 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-10 18:14:44,695 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-10 18:14:44,695 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-10 18:14:44,695 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-10 18:14:44,695 [INFO] QwenQualitySweep: ================================================================================
-2026-09-10 18:14:44,710 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_hgrn2_outer\roberta\finetuned_model.pt
-Traceback (most recent call last):
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2516, in <module>
-    if __name__ == "__main__": main()
-                               ~~~~^^
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 1281, in main
-    state = torch.load(checkpoint, map_location="cpu", weights_only=False)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\serialization.py", line 1432, in load
-    with _open_zipfile_reader(opened_file) as opened_zipfile:
-         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\serialization.py", line 763, in __init__
-    super().__init__(torch._C.PyTorchFileReader(name_or_buffer))
-                     ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
-OSError: [Errno 22] Invalid argument
+2026-09-11 18:46:31,868 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-11 18:46:31,868 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-11 18:46:31,868 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 18:46:31,868 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-11 18:46:31,869 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-11 18:46:31,869 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-11 18:46:31,869 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-11 18:46:31,869 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-11 18:46:31,869 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-11 18:46:31,869 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-11 18:46:31,869 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-11 18:46:31,869 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 18:46:31,875 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_hgrn2_outer\roberta\finetuned_model.pt
+2026-09-11 18:46:31,969 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-11 18:46:32,208 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-11 18:46:33,816 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 75.46%
+2026-09-11 18:46:33,824 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 18:46:33,824 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-11 18:46:33,824 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-11 18:46:33,824 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-11 18:46:33,824 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-11 18:46:33,824 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-11 18:46:33,824 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-11 18:46:33,824 [INFO] QwenQualitySweep: ================================================================================
+2026-09-11 18:46:33,826 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 18:46:35,502 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_hgrn2_outer\roberta\roberta-base_full_full_metrics.json
+2026-09-11 18:46:35,508 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_hgrn2_outer\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-11 18:46:35,763 [INFO] QwenQualitySweep: [1/2] full -> PASS 75.46% (F1: 0.7277, Peak VRAM: 712.34 MB)
+2026-09-11 18:46:35,763 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_hgrn2_outer\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-11 18:46:35,875 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: hgrn2_outer (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-11 18:46:36,433 [INFO] framework.core.attention_utils: Successfully injected 'hgrn2_outer' into 12 transformer blocks.
+2026-09-11 18:46:36,435 [INFO] QwenQualitySweep: module=hgrn2_outer path=adapted_roberta
+2026-09-11 18:46:36,435 [INFO] QwenQualitySweep: module=hgrn2_outer injection summary: 0 SVDLinear layers active
+2026-09-11 18:46:36,435 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for hgrn2_outer (lr=2.0e-04)
+2026-09-11 18:46:36,545 [INFO] framework.utils.compat: Recovery fine-tuning selected 1771838 trainable parameters across 160 tensors.
+2026-09-11 18:46:36,546 [INFO] QwenQualitySweep: LoRA fine-tuning: 1771838 trainable parameters across 160 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-11 18:47:07,563 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6645 (bs=8, micro_bs=8)
+2026-09-11 18:49:07,918 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6368 (bs=8, micro_bs=8)
+2026-09-11 18:51:43,086 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.5284 (bs=8, micro_bs=8)
+2026-09-11 18:54:17,656 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.9585 (bs=8, micro_bs=8)
+2026-09-11 18:56:53,046 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.8796 (bs=8, micro_bs=8)
+2026-09-11 18:59:27,953 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.8750 (bs=8, micro_bs=8)
+2026-09-11 19:02:03,051 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7998 (bs=8, micro_bs=8)

@@ -2,40 +2,40 @@
   {
     "Model": "distilbert",
     "Exit Code": 0,
-    "Baseline Acc": "90.48%",
-    "ViG Attention Acc": "50.92%",
-    "Delta Acc": "-39.56%",
-    "F1": "0.6748",
-    "Status": "PASS_LOW",
+    "Baseline Acc": "90.94%",
+    "ViG Attention Acc": "88.30%",
+    "Delta Acc": "-2.64%",
+    "F1": "0.8854",
+    "Status": "PASS",
     "Compressed Layers": "0",
     "Comp Rate": "0.99x",
-    "Peak VRAM": "375.0 MB",
-    "Time (s)": "18.3"
+    "Peak VRAM": "348.8 MB",
+    "Time (s)": "21.0"
   },
   {
     "Model": "roberta",
     "Exit Code": 0,
-    "Baseline Acc": "75.11%",
-    "ViG Attention Acc": "50.92%",
-    "Delta Acc": "-24.19%",
-    "F1": "0.6748",
-    "Status": "PASS_LOW",
+    "Baseline Acc": "75.46%",
+    "ViG Attention Acc": "61.24%",
+    "Delta Acc": "-14.22%",
+    "F1": "0.7188",
+    "Status": "PASS",
     "Compressed Layers": "0",
     "Comp Rate": "0.94x",
-    "Peak VRAM": "425.2 MB",
-    "Time (s)": "26.9"
+    "Peak VRAM": "679.9 MB",
+    "Time (s)": "29.1"
   },
   {
     "Model": "gpt2",
     "Exit Code": 0,
-    "Baseline Acc": "60.78%",
-    "ViG Attention Acc": "0.00%",
-    "Delta Acc": "-60.78%",
-    "F1": "0.6354",
-    "Status": "FAIL",
+    "Baseline Acc": "57.91%",
+    "ViG Attention Acc": "61.35%",
+    "Delta Acc": "+3.44%",
+    "F1": "0.7185",
+    "Status": "PASS",
     "Compressed Layers": "0",
-    "Comp Rate": "1.00x",
-    "Peak VRAM": "793.2 MB",
-    "Time (s)": "16.4"
+    "Comp Rate": "0.99x",
+    "Peak VRAM": "573.9 MB",
+    "Time (s)": "31.0"
   }
 ]
