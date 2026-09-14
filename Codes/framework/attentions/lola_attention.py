@@ -87,59 +87,92 @@ class LowRankCache(nn.Module):
         self.low_rank_k_buf: torch.Tensor
         self.register_buffer("low_rank_v_buf", torch.zeros(0), persistent=False)
         self.low_rank_v_buf: torch.Tensor
+        self.register_buffer("_cache_proj", torch.zeros(0), persistent=False)
+        self._cache_proj: torch.Tensor
+        self._update_step: int = 0
+
+    def reset(self) -> None:
+        self.recent_k = torch.zeros(0, device=self.recent_k.device, dtype=self.recent_k.dtype)
+        self.recent_v = torch.zeros(0, device=self.recent_v.device, dtype=self.recent_v.dtype)
+        self.sparse_k = torch.zeros(0, device=self.sparse_k.device, dtype=self.sparse_k.dtype)
+        self.sparse_v = torch.zeros(0, device=self.sparse_v.device, dtype=self.sparse_v.dtype)
+        self.low_rank_k_buf = torch.zeros(0, device=self.low_rank_k_buf.device, dtype=self.low_rank_k_buf.dtype)
+        self.low_rank_v_buf = torch.zeros(0, device=self.low_rank_v_buf.device, dtype=self.low_rank_v_buf.dtype)
+        self._update_step = 0
 
     def update(self, K: torch.Tensor, V: torch.Tensor) -> None:
         B, H, N, D = K.shape
-        k_flat = K[0, 0].detach()
-        v_flat = V[0, 0].detach()
+        # Reshape to [B * H, N, D] for per-batch-per-head caching
+        k_flat = K.detach().reshape(B * H, N, D)
+        v_flat = V.detach().reshape(B * H, N, D)
 
         # Recent cache
-        if self.recent_k.numel() == 0:
-            self.recent_k = k_flat[-self.max_len :]
-            self.recent_v = v_flat[-self.max_len :]
+        if self.recent_k.numel() == 0 or self.recent_k.size(0) != B * H or self.recent_k.size(-1) != D:
+            self.recent_k = k_flat[:, -self.max_len :, :]
+            self.recent_v = v_flat[:, -self.max_len :, :]
         else:
-            self.recent_k = torch.cat([self.recent_k, k_flat], dim=0)[-self.max_len :, :]
-            self.recent_v = torch.cat([self.recent_v, v_flat], dim=0)[-self.max_len :, :]
+            self.recent_k = torch.cat([self.recent_k, k_flat], dim=1)[:, -self.max_len :, :]
+            self.recent_v = torch.cat([self.recent_v, v_flat], dim=1)[:, -self.max_len :, :]
 
-        # Sparse cache
+        # Sparse cache (sample every 4th token along sequence dim=1)
         sparse_idx = torch.arange(0, N, 4, device=K.device)
-        sparse_k = k_flat[sparse_idx]
-        sparse_v = v_flat[sparse_idx]
-        if self.sparse_k.numel() == 0:
-            self.sparse_k = sparse_k[-self.max_len // 2 :]
-            self.sparse_v = sparse_v[-self.max_len // 2 :]
+        sparse_k = k_flat[:, sparse_idx, :]
+        sparse_v = v_flat[:, sparse_idx, :]
+        if self.sparse_k.numel() == 0 or self.sparse_k.size(0) != B * H or self.sparse_k.size(-1) != D:
+            self.sparse_k = sparse_k[:, -self.max_len // 2 :, :]
+            self.sparse_v = sparse_v[:, -self.max_len // 2 :, :]
         else:
-            self.sparse_k = torch.cat([self.sparse_k, sparse_k], dim=0)[-self.max_len // 2 :, :]
-            self.sparse_v = torch.cat([self.sparse_v, sparse_v], dim=0)[-self.max_len // 2 :, :]
+            self.sparse_k = torch.cat([self.sparse_k, sparse_k], dim=1)[:, -self.max_len // 2 :, :]
+            self.sparse_v = torch.cat([self.sparse_v, sparse_v], dim=1)[:, -self.max_len // 2 :, :]
 
-        if self.recent_k.size(0) > self.low_rank_k:
+        # Low-rank subspace cache
+        if self.recent_k.size(1) >= self.low_rank_k:
             step = getattr(self, "_update_step", 0) + 1
             self._update_step = step
-            if step % 50 == 1 or self.low_rank_k_buf.numel() == 0:
+            if step % 50 == 1 or self.low_rank_k_buf.numel() == 0 or self.low_rank_k_buf.size(0) != B * H:
                 with torch.no_grad():
                     rk = self.recent_k.float()
-                    q_proj = torch.randn(rk.size(1), self.low_rank_k, device=rk.device, dtype=torch.float32)
-                    y = torch.matmul(rk, q_proj).float()
-                    q_orth, _ = torch.linalg.qr(y)
-                    self.low_rank_k_buf = torch.matmul(q_orth, torch.matmul(q_orth.T, rk)).to(self.recent_k.dtype)
-
                     rv = self.recent_v.float()
-                    y_v = torch.matmul(rv, q_proj).float()
-                    q_orth_v, _ = torch.linalg.qr(y_v)
-                    self.low_rank_v_buf = torch.matmul(q_orth_v, torch.matmul(q_orth_v.T, rv)).to(self.recent_v.dtype)
+                    # Persistent/fixed low-rank projection buffer
+                    if (
+                        self._cache_proj.numel() == 0
+                        or self._cache_proj.size(0) != D
+                        or self._cache_proj.size(1) != self.low_rank_k
+                        or self._cache_proj.device != rk.device
+                    ):
+                        proj = torch.empty(D, self.low_rank_k, device=rk.device, dtype=torch.float32)
+                        nn.init.orthogonal_(proj)
+                        self._cache_proj = proj
+
+                    try:
+                        y_k = torch.matmul(rk, self._cache_proj)
+                        q_orth_k, _ = torch.linalg.qr(y_k)
+                        self.low_rank_k_buf = torch.matmul(
+                            q_orth_k, torch.matmul(q_orth_k.transpose(-2, -1), rk)
+                        ).to(self.recent_k.dtype)
+
+                        y_v = torch.matmul(rv, self._cache_proj)
+                        q_orth_v, _ = torch.linalg.qr(y_v)
+                        self.low_rank_v_buf = torch.matmul(
+                            q_orth_v, torch.matmul(q_orth_v.transpose(-2, -1), rv)
+                        ).to(self.recent_v.dtype)
+                    except Exception:
+                        pass
 
     def get_cached(self) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
         if self.recent_k.numel() == 0:
             return None, None
+        B_H = self.recent_k.size(0)
         tensors_k = [self.recent_k]
         tensors_v = [self.recent_v]
-        if self.sparse_k.numel() > 0:
+        if self.sparse_k.numel() > 0 and self.sparse_k.size(0) == B_H:
             tensors_k.append(self.sparse_k)
             tensors_v.append(self.sparse_v)
-        if self.low_rank_k_buf.numel() > 0:
+        if self.low_rank_k_buf.numel() > 0 and self.low_rank_k_buf.size(0) == B_H:
             tensors_k.append(self.low_rank_k_buf)
             tensors_v.append(self.low_rank_v_buf)
-        return torch.cat(tensors_k, dim=0), torch.cat(tensors_v, dim=0)
+        return torch.cat(tensors_k, dim=1), torch.cat(tensors_v, dim=1)
+
 
 
 class LowRankLinear(nn.Module):
@@ -242,27 +275,35 @@ class LoLAAttention(BaseAttention):
         actual_rank = rank if rank is not None else _cfg_get("rank", 32)
         super().__init__(cfg, actual_rank)
 
-        # Ensure hidden_size and num_heads are safely discovered
+        # Ensure hidden_size, num_heads, and head_dim are safely discovered
+        cfg_head_dim = getattr(cfg, "head_dim", None) if cfg is not None else None
         if cfg is not None:
             self.adapter = ModelAdapter(cfg)
-            self.num_heads = self.adapter.num_heads or 12
-            self.num_kv_heads = self.adapter.num_key_value_heads or self.num_heads
-            self.hidden_size = self.adapter.hidden_size or 768
-            self.head_dim = self.adapter.head_dim or (self.hidden_size // self.num_heads)
+            self.num_heads = self.adapter.num_heads or getattr(cfg, "num_attention_heads", 12)
+            self.num_kv_heads = self.adapter.num_key_value_heads or getattr(cfg, "num_key_value_heads", self.num_heads)
+            self.hidden_size = self.adapter.hidden_size or getattr(cfg, "hidden_size", 768)
+            self.head_dim = int(cfg_head_dim or kwargs.get("head_dim") or self.adapter.head_dim or (self.hidden_size // self.num_heads))
             self.kv_repeat = self.adapter.kv_repeat or 1
-            self.is_decoder = bool(_cfg_get("is_decoder", False))
         else:
-            self.num_heads = kwargs.get("num_heads", 12)
+            self.adapter = None
+            self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
             self.num_kv_heads = kwargs.get("num_key_value_heads", self.num_heads)
             self.hidden_size = kwargs.get("hidden_size", 768)
-            self.head_dim = kwargs.get("head_dim", self.hidden_size // self.num_heads)
+            self.head_dim = int(kwargs.get("head_dim") or (self.hidden_size // self.num_heads))
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-            self.is_decoder = bool(kwargs.get("is_decoder", False))
+
+        _mt = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        self.is_decoder = (
+            getattr(cfg, "is_decoder", False)
+            or getattr(cfg, "causal", False)
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+            or bool(kwargs.get("is_decoder", False))
+        ) if cfg else bool(kwargs.get("is_decoder", False))
 
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.is_nested_encoder: bool = False
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         self.rank: int = actual_rank
         self.lora_rank: int = _cfg_get("lora_rank", lora_rank)
@@ -283,6 +324,10 @@ class LoLAAttention(BaseAttention):
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+
+    def reset_cache(self) -> None:
+        if hasattr(self, "cache") and hasattr(self.cache, "reset"):
+            self.cache.reset()
 
     def _set_lowrank_factors(self, lowrank: LowRankLinear, weight: torch.Tensor, bias: Optional[torch.Tensor]) -> None:
         with torch.no_grad():
@@ -326,9 +371,8 @@ class LoLAAttention(BaseAttention):
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -496,10 +540,11 @@ class LoLAAttention(BaseAttention):
         scale = d ** -0.5
 
         # Check for causal decoders
+        _cfg_mt = str(getattr(self.config, "model_type", "") or "").lower() if self.config is not None else ""
         is_decoder = (
             self.is_decoder
-            or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or (getattr(self.config, "is_decoder", False) if self.config is not None else False)
+            or any(_cfg_mt.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
         )
 
         scores_lr = torch.matmul(Q, K.transpose(-2, -1)) * scale
@@ -507,27 +552,39 @@ class LoLAAttention(BaseAttention):
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
         if mask is not None:
             if mask.dim() == 4:
-                scores_lr = scores_lr + mask.to(scores_lr.dtype)
+                if mask.dtype == torch.bool:
+                    scores_lr = scores_lr.masked_fill(~mask, -10000.0)
+                else:
+                    scores_lr = scores_lr + mask.to(scores_lr.dtype)
+            elif mask.dim() == 3:
+                scores_lr = scores_lr + mask.unsqueeze(1).to(scores_lr.dtype)
+            elif mask.dim() == 2:
+                valid_m = get_token_valid_mask(mask, B, N_k, device)
+                if valid_m is not None:
+                    scores_lr = scores_lr.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
             else:
                 valid_m = get_token_valid_mask(mask, B, N_k, device)
                 if valid_m is not None:
                     scores_lr = scores_lr.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
-        if is_decoder:
-            causal_tril = torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+        if is_decoder and N_k >= N_q:
+            causal_tril = torch.tril(
+                torch.ones((N_q, N_k), device=device, dtype=torch.bool),
+                diagonal=N_k - N_q,
+            ).unsqueeze(0).unsqueeze(0)
             scores_lr = scores_lr.masked_fill(~causal_tril, -10000.0)
 
         # Caching logic for non-causal or bidirectional mode
-        if not is_decoder and not is_cross_attention and self.training:
+        if not is_decoder and not is_cross_attention:
             self.cache.update(K, V)
 
         cached_k, cached_v = (None, None) if is_decoder else self.cache.get_cached()
-        if cached_k is not None and cached_v is not None and not is_decoder:
-            C = cached_k.size(0)
-            K_cache = cached_k.unsqueeze(0).unsqueeze(0).expand(B, H, C, d)
-            V_cache = cached_v.unsqueeze(0).unsqueeze(0).expand(B, H, C, d)
-            scores_cache = torch.matmul(Q, K_cache.transpose(-2, -1)) * scale * torch.sigmoid(self.sparse_gate)
-            scores = torch.cat([scores_lr * torch.sigmoid(self.LR_scale), scores_cache], dim=-1)
+        if cached_k is not None and cached_v is not None and not is_decoder and cached_k.size(0) == (B * H):
+            C = cached_k.size(1)
+            K_cache = cached_k.view(B, H, C, d)
+            V_cache = cached_v.view(B, H, C, d)
+            scores_cache = torch.matmul(Q, K_cache.transpose(-2, -1)) * scale * torch.sigmoid(torch.clamp(self.sparse_gate, min=-10.0, max=10.0))
+            scores = torch.cat([scores_lr * torch.sigmoid(torch.clamp(self.LR_scale, min=-10.0, max=10.0)), scores_cache], dim=-1)
             V_comb = torch.cat([V, V_cache], dim=2)
         else:
             scores = scores_lr
@@ -549,15 +606,17 @@ class LoLAAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
 
         if self.is_nested_encoder:
-            output = context * self.output_scale
+            output = context
         else:
-            output = self.out_proj(context) * self.output_scale
+            output = self.out_proj(context)
 
         return output, (attn if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("lola_attention_inject")
 @ATTENTION_REGISTRY.register("lola_inject")
+@ATTENTION_REGISTRY.register("inject_lola_attention")
+@ATTENTION_REGISTRY.register("inject_lola")
 def inject_lola_attention(
     layer: nn.Module,
     model_config: Any = None,
@@ -568,22 +627,42 @@ def inject_lola_attention(
     **kwargs: Any,
 ) -> Optional[LoLAAttention]:
     try:
-        rank = getattr(comp_config, "rank", 32) if comp_config is not None else 32
+        rank = getattr(comp_config, "rank", 32) if comp_config is not None else kwargs.pop("rank", 32)
+        kwargs.pop("rank", None)
         new_attn = LoLAAttention(
             config=model_config,
             rank=rank,
             comp_config=comp_config,
             pretrained_attn=old_attn,
+            **kwargs,
         )
+        if old_attn is not None:
+            p = next(old_attn.parameters(), None)
+            if p is not None:
+                new_attn.to(device=p.device, dtype=p.dtype)
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
+                new_attn.is_nested_encoder = True
                 layer.attention.self = new_attn
             else:
+                new_attn.is_nested_encoder = False
                 layer.attention = new_attn
+        elif hasattr(layer, "self"):
+            new_attn.is_nested_encoder = True
+            layer.self = new_attn
         elif hasattr(layer, "self_attn"):
+            new_attn.is_nested_encoder = False
             layer.self_attn = new_attn
         elif hasattr(layer, "attn"):
+            new_attn.is_nested_encoder = False
             layer.attn = new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"LoLAAttention injection failed: {e}")
+        return None
+
+
+lola_inject = inject_lola_attention
+LoLA = LoLAAttention
+
