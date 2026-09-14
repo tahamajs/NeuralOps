@@ -100,6 +100,18 @@ def test_soa_roberta_weight_copy():
     x = torch.randn(2, 8, 64)
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)
+    loss = out.sum()
+    loss.backward()
+    assert attn.q_up.lora_A.grad is not None
+    assert attn.k_up.lora_A.grad is not None
+    assert attn.v_up.lora_A.grad is not None
+
+
+def test_soa_none_config():
+    attn = SOAAttention(config=None, hidden_size=64, num_heads=4, rank=8)
+    x = torch.randn(2, 8, 64)
+    out, _ = attn(x)
+    assert out.shape == (2, 8, 64)
 
 
 def test_soa_gpt2_weight_copy():

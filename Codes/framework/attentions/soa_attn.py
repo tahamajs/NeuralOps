@@ -488,8 +488,8 @@ class SOAAttention(BaseAttention):
                     w_v, b_v = adapter.get_weight_bias(src, "v")
                     if w_o is None:
                         w_o, b_o = adapter.get_weight_bias(src, "o")
-                except Exception as e:
-                    logger.debug("UniversalAdapter fallback failed: %s", e)
+                except Exception:
+                    pass
 
             # Strict validation
             missing = []
@@ -541,16 +541,38 @@ class SOAAttention(BaseAttention):
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
                     raise RuntimeError(f"SOAAttention: Out projection norm is near zero: {f_norm_o}")
+            elif self.is_nested_encoder:
+                if hasattr(self.out_proj, "weight") and self.out_proj.weight.ndim == 2:
+                    nn.init.eye_(self.out_proj.weight)
+                if hasattr(self.out_proj, "bias") and self.out_proj.bias is not None:
+                    nn.init.zeros_(self.out_proj.bias)
 
             # Freeze base weights
-            for p in [self.q_down.weight, self.q_up.weight, self.k_down.weight, self.k_up.weight, self.v_down.weight, self.v_up.weight]:
-                p.requires_grad = False
-            if self.q_up.bias is not None:
-                self.q_up.bias.requires_grad = False
-            if self.k_up.bias is not None:
-                self.k_up.bias.requires_grad = False
-            if self.v_up.bias is not None:
-                self.v_up.bias.requires_grad = False
+            for mod in [self.q_down, self.k_down, self.v_down]:
+                mod.weight.requires_grad = False
+                if getattr(mod, "bias", None) is not None:
+                    mod.bias.requires_grad = False
+            for mod in [self.q_up, self.k_up, self.v_up]:
+                if hasattr(mod, "freeze_base_weights"):
+                    mod.freeze_base_weights()
+                else:
+                    mod.weight.requires_grad = False
+                    if getattr(mod, "bias", None) is not None:
+                        mod.bias.requires_grad = False
+                    if getattr(mod, "lora_A", None) is not None:
+                        mod.lora_A.requires_grad = True
+                    if getattr(mod, "lora_B", None) is not None:
+                        mod.lora_B.requires_grad = True
+            if hasattr(self.out_proj, "freeze_base_weights"):
+                self.out_proj.freeze_base_weights()
+            else:
+                self.out_proj.weight.requires_grad = False
+                if getattr(self.out_proj, "bias", None) is not None:
+                    self.out_proj.bias.requires_grad = False
+                if getattr(self.out_proj, "lora_A", None) is not None:
+                    self.out_proj.lora_A.requires_grad = True
+                if getattr(self.out_proj, "lora_B", None) is not None:
+                    self.out_proj.lora_B.requires_grad = True
 
     @classmethod
     def from_distilbert_pretrained(
@@ -634,17 +656,14 @@ class SOAAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
 
         if self.is_nested_encoder:
+            if not any(p.requires_grad for p in self.parameters()):
+                raise RuntimeError("SOAAttention: No trainable parameters — backward will fail.")
             return (context, attn_weights if output_attentions else None)
 
         output = self.out_proj(context)
         return (output, attn_weights if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("soa_attn_inject")
-@ATTENTION_REGISTRY.register("soa_inject")
-@ATTENTION_REGISTRY.register("soa_module_inject")
-@ATTENTION_REGISTRY.register("inject_soa_attn")
-@ATTENTION_REGISTRY.register("inject_soa")
 @ATTENTION_REGISTRY.register("soa_attn_inject")
 @ATTENTION_REGISTRY.register("soa_inject")
 @ATTENTION_REGISTRY.register("soa_module_inject")
@@ -659,6 +678,7 @@ def inject_soa_attn(
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Any = None,
+    target_layer_idx: Optional[int] = None,
     **kwargs: Any,
 ) -> Optional[Union[SOAAttention, nn.Module]]:
     """Safely replace attention module with hardened SOAAttention across diverse transformer architectures."""
@@ -689,6 +709,8 @@ def inject_soa_attn(
         num_injected = 0
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
+            if target_layer_idx is not None and idx != target_layer_idx:
+                continue
             res = inject_soa_attn(
                 layer=lyr,
                 model_config=cfg,
@@ -754,8 +776,8 @@ def inject_soa_attn(
         if cfg is None and hasattr(src_attn, "config"):
             cfg = src_attn.config
 
-        k_rank = getattr(comp_config, "soa_rank", getattr(comp_config, "rank", kwargs.get("k_rank", 64)))
-        dropout = getattr(comp_config, "dropout", kwargs.get("dropout", 0.1))
+        k_rank = getattr(comp_config, "soa_rank", getattr(comp_config, "rank", kwargs.pop("k_rank", 128)))
+        dropout = getattr(comp_config, "dropout", kwargs.pop("dropout", 0.1))
 
         new_attn = SOAAttention(
             config=cfg,
