@@ -581,10 +581,10 @@ class NEXUSAttention(BaseAttention):
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
+            _mt = str(getattr(model_config, "model_type", "") or "").lower() if model_config else ""
             self.is_decoder = (
-                getattr(model_config, "is_decoder", False)
-                or getattr(model_config, "causal", False)
-                or getattr(model_config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                bool(getattr(model_config, "is_decoder", False) or getattr(model_config, "causal", False))
+                or any(_mt.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "falcon", "bloom", "opt"))
                 if model_config else False
             )
 
@@ -933,11 +933,13 @@ class NEXUSAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        context = context * self.output_scale
         if self.is_nested_encoder:
             output = context
         else:
             output = self.out_proj(self.dropout(context))
+
+        # Apply output_scale ONCE to the final output (not before the projection)
+        output = output * self.output_scale
 
         return (output, None)
 

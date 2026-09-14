@@ -117,8 +117,6 @@ class FactorisedLinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.energy = energy
@@ -296,9 +294,9 @@ class ORIONAttention(BaseAttention):
             self.num_kernel_heads = self.num_heads - self.num_full_heads
 
         # Decoder detection
-        model_type = getattr(cfg, "model_type", "").lower() if cfg else ""
-        is_dec = getattr(cfg, "is_decoder", getattr(cfg, "is_causal", kwargs.get("is_causal", False))) if cfg else False
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+        model_type = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
+        is_dec = bool(getattr(cfg, "is_decoder", getattr(cfg, "is_causal", kwargs.get("is_causal", False)))) if cfg else False
+        if any(model_type.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "falcon", "bloom", "opt")):
             is_dec = True
         elif hasattr(cfg, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(cfg, "architectures", []) or [])):
             is_dec = True
