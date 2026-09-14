@@ -7260,18 +7260,18 @@
       "models": {
         "DistilBERT": {
           "status": "PASS",
-          "accuracy_pct": 83.83,
-          "f1_score": 0.8569,
-          "peak_vram_mb": 329.4,
-          "throughput_tokens_sec": 76476.96,
+          "accuracy_pct": 89.56,
+          "f1_score": 0.9016,
+          "peak_vram_mb": 298.36,
+          "throughput_tokens_sec": 24670.27,
           "source_file": "results/unified_res_svd/distilbert/summary.csv"
         },
         "GPT-2": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.6748,
-          "peak_vram_mb": 560.97,
-          "throughput_tokens_sec": 30675.09,
+          "status": "PASS",
+          "accuracy_pct": 71.33,
+          "f1_score": 0.7760,
+          "peak_vram_mb": 336.25,
+          "throughput_tokens_sec": 10784.31,
           "source_file": "results/unified_res_svd/gpt2/summary.csv"
         },
         "Qwen": {
@@ -7283,11 +7283,11 @@
           "source_file": "results/qwen_sst2_compat/summary.csv"
         },
         "RoBERTa": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.6748,
-          "peak_vram_mb": 426.15,
-          "throughput_tokens_sec": 32256.39,
+          "status": "PASS",
+          "accuracy_pct": 76.61,
+          "f1_score": 0.7910,
+          "peak_vram_mb": 594.37,
+          "throughput_tokens_sec": 12547.05,
           "source_file": "results/unified_res_svd/roberta/summary.csv"
         },
         "Unknown": {
@@ -7299,9 +7299,9 @@
           "source_file": "results/t5_cola_parallel/summary.csv"
         }
       },
-      "best_accuracy": 83.83,
+      "best_accuracy": 89.56,
       "has_pass": true,
-      "has_pass_low": true,
+      "has_pass_low": false,
       "is_pure_pass": true,
       "overall_status": "PASS"
     },
