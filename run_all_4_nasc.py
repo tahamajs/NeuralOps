@@ -55,12 +55,13 @@ models = [
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
             "--output_dir", r"results\unified_nasc\roberta",
-            "--parent_checkpoint", r"results\unified_asvd\roberta\finetuned_model.pt",
+            "--parent_checkpoint", r"results\unified_delta_kv\roberta\finetuned_model.pt",
             "--modules", "full,nasc",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "100",
             "--learning_rate", "2e-4",
-            "--lora_rank", "16",
+            "--finetune_mode", "lora",
+            "--lora_r", "16",
             "--rank", "32",
             "--precision", "fp16",
             "--fresh",
@@ -259,7 +260,8 @@ for m in models:
         df = pd.read_csv(summary_path)
         if not df.empty:
             if "status" in df.columns:
-                cand = df[df["module"] != "full"] if "module" in df.columns else df
+                col = "module_name" if "module_name" in df.columns else ("module" if "module" in df.columns else None)
+                cand = df[df[col] != "full"] if col else df
                 if not cand.empty:
                     row = cand.iloc[-1].to_dict()
                 else:
