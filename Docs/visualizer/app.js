@@ -4491,6 +4491,21 @@ function renderTokenLifecycle(moduleMeta, modelKey = currentModel) {
 }
 
 
+// Pipeline item click handler — expose globally
+window.focusPipelineComponent = function(compId) {
+    // Focus in 3D
+    if (window.selectPartIn3D) selectPartIn3D(compId, { flyCamera: true, updateInspector: true });
+    // Highlight pipeline item
+    document.querySelectorAll('.component-pipe-item').forEach(el => {
+        el.classList.toggle('cpi-highlighted', el.getAttribute('data-comp-id') === compId);
+    });
+    // Scroll lifecycle step if matching
+    document.querySelectorAll('.lifecycle-step-item').forEach(el => {
+        const tgt = el.getAttribute('data-step-target');
+        if (tgt && compId.includes(tgt)) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+};
+
 function renderComponentPipeline(moduleMeta, modelKey = currentModel) {
     const listEl = document.getElementById('component-pipeline-list');
     const badgeEl = document.getElementById('component-count-badge');
@@ -4566,6 +4581,21 @@ function renderLatexFormula(moduleMeta, formulaOverride = null) {
     const bodyEl = document.getElementById('formula-latex-body');
     if (!bodyEl) return;
     const math = formulaOverride || (moduleMeta && (moduleMeta.math_latex || moduleMeta.math)) || 'W_{comp} = \\mathcal{C}(W_{dense})';
+
+    // Add copy button
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'formula-copy-btn';
+    copyBtn.title = 'Copy LaTeX formula';
+    copyBtn.innerHTML = '⎘ Copy LaTeX';
+    copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(math).then(() => {
+            copyBtn.innerHTML = '✓ Copied!';
+            setTimeout(() => { copyBtn.innerHTML = '⎘ Copy LaTeX'; }, 1500);
+        }).catch(() => {
+            copyBtn.innerHTML = '⎘ Copy LaTeX';
+        });
+    });
+    bodyEl.appendChild(copyBtn);
 
     if (window.katex) {
         try {
@@ -4760,6 +4790,19 @@ function applyResearchModule(moduleMeta) {
     renderStructuralTransformation(moduleMeta, currentModel);
     updateModelSelectorTabs(moduleMeta);
 
+    // Update global module counter badge in header
+    const modCountBadge = document.getElementById('hud-active-module-badge');
+    if (modCountBadge) {
+        modCountBadge.textContent = moduleMeta.name.slice(0, 18).toUpperCase();
+        modCountBadge.style.opacity = '1';
+    }
+
+    // Permalink: update URL hash with current module+model
+    try {
+        const newHash = `#module=${encodeURIComponent(moduleMeta.id)}&model=${currentModel}`;
+        history.replaceState(null, '', newHash);
+    } catch(e) {}
+
     inspector.classList.remove('hidden');
 }
 
@@ -4810,9 +4853,21 @@ async function bootstrap() {
     try {
         const res = await fetch('spatial-data.json');
         spatialData = await res.json();
-        loadModelAndModule('distilbert', 'svd');
+
+        // Parse hash permalink
+        let initialModelKey = 'distilbert';
+        let initialModuleId = 'SOAFusedAttention';
+        try {
+            const hash = window.location.hash;
+            const modMatch = hash.match(/module=([^&]+)/);
+            const mdlMatch = hash.match(/model=([^&]+)/);
+            if (modMatch) initialModuleId = decodeURIComponent(modMatch[1]);
+            if (mdlMatch) initialModelKey = decodeURIComponent(mdlMatch[1]);
+        } catch(e) {}
+
+        loadModelAndModule(initialModelKey, 'svd');
         if (modulesCatalog.length > 0) {
-            const initialMod = modulesCatalog.find(m => m.id === 'SOAFusedAttention') || modulesCatalog[0];
+            const initialMod = modulesCatalog.find(m => m.id === initialModuleId) || modulesCatalog.find(m => m.id === 'SOAFusedAttention') || modulesCatalog[0];
             if (initialMod) applyResearchModule(initialMod);
         }
         render(0);
@@ -4905,29 +4960,106 @@ document.addEventListener('DOMContentLoaded', () => {
     const scrubber = document.getElementById('timeline-scrubber');
     const timeCode = document.getElementById('timeline-step');
     
+    // Play/Pause - sync with existing playBtn listener
+    const playBtnDock = document.getElementById('btn-play-pause');
+    if (playBtnDock) {
+        // Remove old inline text, refresh icon on click
+        const refreshPlayIcon = () => {
+            playBtnDock.innerHTML = isPlaying
+                ? '<span class="btn-icon">⏸</span> Pause Flow'
+                : '<span class="btn-icon">▶</span> Play Flow';
+            playBtnDock.classList.toggle('paused', !isPlaying);
+        };
+        // Override default click with proper state sync
+        playBtnDock.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            refreshPlayIcon();
+        });
+        refreshPlayIcon();
+    }
+    
     if (selSpeed) {
         selSpeed.addEventListener('change', (e) => {
-            simulationSpeed = parseFloat(e.target.value); // Assume this controls speed
+            simulationSpeed = parseFloat(e.target.value);
+            // visual feedback
+            selSpeed.style.color = '#53ecd9';
+            setTimeout(() => { selSpeed.style.color = ''; }, 500);
         });
     }
     
     if (scrubber && timeCode) {
+        // Build lifecycle stage labels dynamically
+        const getStageTargets = () => {
+            if (!activeResearchModule) return ['q_lin', 'q_lin', 'q_lin', 'out_lin', 'lin1', 'lin2', 'lin2'];
+            const model = currentModel;
+            if (model === 'qwen') return ['q_proj', 'k_proj', 'v_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj'];
+            if (model === 'gpt2') return ['c_attn', 'c_attn', 'c_attn', 'c_proj', 'c_fc', 'c_fc', 'c_proj'];
+            return ['q_lin', 'k_lin', 'v_lin', 'out_lin', 'lin1', 'lin2', 'lin2'];
+        };
+        const stageLabels = ['01 Input', '02 Norm', '03 Attention', '04 +Residual', '05 FFN', '06 +Residual', '07 Output'];
+        
         scrubber.addEventListener('input', (e) => {
             const step = parseInt(e.target.value, 10);
-            timeCode.innerText = `Step ${step + 1}/7`;
-            // Optional: Snap the camera to specific components based on the step
-            const stages = [
-                'layer.0',
-                'layer.0',
-                'q_lin',
-                'out_lin',
-                'lin1',
-                'lin2',
-                'layer.11'
-            ];
-            if (stages[step] && window.focusComponentIn3D) {
-                window.focusComponentIn3D(stages[step]);
+            timeCode.innerText = stageLabels[step] || `Step ${step + 1}/7`;
+            const stages = getStageTargets();
+            const target = stages[step];
+            if (target && window.selectPartIn3D) {
+                window.selectPartIn3D(target, { flyCamera: true, updateInspector: false });
             }
+            // Highlight the matching lifecycle step item
+            document.querySelectorAll('.lifecycle-step-item').forEach((el, i) => {
+                el.classList.toggle('active-step', i === step);
+            });
         });
     }
+
+    // ---- Keyboard shortcuts ----
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        switch(e.code) {
+            case 'Space':
+                e.preventDefault();
+                isPlaying = !isPlaying;
+                const pb = document.getElementById('btn-play-pause');
+                if (pb) pb.innerHTML = isPlaying ? '<span class="btn-icon">⏸</span> Pause Flow' : '<span class="btn-icon">▶</span> Play Flow';
+                break;
+            case 'KeyR':
+                smoothFlyCamera(maxGraphHeight * 0.5, Math.max(18.0, maxGraphHeight * 1.35));
+                break;
+            case 'Digit1': case 'Numpad1': selectPartIn3D('q_lin', { flyCamera: true }); break;
+            case 'Digit2': case 'Numpad2': selectPartIn3D('k_lin', { flyCamera: true }); break;
+            case 'Digit3': case 'Numpad3': selectPartIn3D('v_lin', { flyCamera: true }); break;
+            case 'Digit4': case 'Numpad4': selectPartIn3D('out_lin', { flyCamera: true }); break;
+            case 'Digit5': case 'Numpad5': selectPartIn3D('lin1', { flyCamera: true }); break;
+            case 'Digit6': case 'Numpad6': selectPartIn3D('lin2', { flyCamera: true }); break;
+            case 'KeyM':
+                const modal = document.getElementById('module-modal');
+                if (modal) modal.classList.toggle('hidden');
+                break;
+            case 'Escape':
+                const mod = document.getElementById('module-modal');
+                if (mod) mod.classList.add('hidden');
+                break;
+        }
+    });
+    
+    // ---- Keyboard shortcut tooltip ----
+    const shortcutHint = document.createElement('div');
+    shortcutHint.id = 'shortcut-hint';
+    shortcutHint.innerHTML = `
+        <div class="shortcut-row"><kbd>Space</kbd> Play/Pause</div>
+        <div class="shortcut-row"><kbd>R</kbd> Reset Camera</div>
+        <div class="shortcut-row"><kbd>M</kbd> Module Library</div>
+        <div class="shortcut-row"><kbd>1-6</kbd> Jump to Layer</div>
+        <div class="shortcut-row"><kbd>Esc</kbd> Close Modal</div>
+    `;
+    document.body.appendChild(shortcutHint);
+    
+    let shortcutTimer;
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        shortcutHint.classList.add('visible');
+        clearTimeout(shortcutTimer);
+        shortcutTimer = setTimeout(() => shortcutHint.classList.remove('visible'), 2000);
+    });
 });
