@@ -60,7 +60,7 @@ K_{\text{\lr{capacity}}}(g) \propto \sum_{h \in \mathcal{G}_g} \exp(\mathcal{H}_
 ]
     \node [block] (input) {سرهای پرس‌وجو $\mathbf{Q}$};
     \node [gqa, right=1.0cm of input] (ent) {سنجش انتروپی و کیفیت};
-    \node [gqa, right=1.0cm of ent] (group) {گروه‌بندی تطبیقی \lr{KV};
+    \node [gqa, right=1.0cm of ent] (group) {گروه‌بندی تطبیقی \lr{KV}};
     \node [outblock, right=1.0cm of group] (out) {خروجی بهینه};
 
     \draw [->, thick, draw=blue!80] (input) -- (ent);
@@ -68,15 +68,5 @@ K_{\text{\lr{capacity}}}(g) \propto \sum_{h \in \mathcal{G}_g} \exp(\mathcal{H}_
     \draw [->, thick, draw=purple!80] (group) -- (out);
 \end{tikzpicture}
 \end{center}
-
-\subsubsection*{۷. پیوست تصویری و پرامپت تولید هوش مصنوعی}
-برای ترسیم تجسم سه‌بعدی و گرافیک صنعتی این مکانیزم با ابزارهای هوش مصنوعی، پرامپت انگلیسی زیر با دقت تدوین شده است:
-
-\vspace{0.2cm}
-\begin{latin}
-\footnotesize
-\textbf{AI Technical Visualization Prompt:}\\
-"A 3D isometric visualization of Quality and Capacity-Aware GQA. Multiple query fiber lines dynamically clustering into varying thickness bundles based on glowing amber entropy metrics, connecting to shared emerald memory rods, 8k resolution --ar 16:9"
-\end{latin}
 
 

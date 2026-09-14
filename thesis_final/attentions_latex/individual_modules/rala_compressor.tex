@@ -61,22 +61,12 @@
     \node [block] (input) {وزن مبنا $\mathbf{W}$};
     \node [comp, right=1.0cm of input] (lin) {پایه خطی};
     \node [comp, right=1.0cm of lin] (res) {مانده کم‌رتبه};
-    \node [outblock, right=1.0cm of res] (out) {وزن فشرده \lr{RALA};
+    \node [outblock, right=1.0cm of res] (out) {وزن فشرده \lr{RALA}};
 
     \draw [->, thick, draw=blue!80] (input) -- (lin);
     \draw [->, thick, draw=orange!80] (lin) -- (res);
     \draw [->, thick, draw=orange!80] (res) -- (out);
 \end{tikzpicture}
 \end{center}
-
-\subsubsection*{۷. پیوست تصویری و پرامپت تولید هوش مصنوعی}
-برای ترسیم تجسم سه‌بعدی و گرافیک صنعتی این مکانیزم با ابزارهای هوش مصنوعی، پرامپت انگلیسی زیر با دقت تدوین شده است:
-
-\vspace{0.2cm}
-\begin{latin}
-\footnotesize
-\textbf{AI Technical Visualization Prompt:}\\
-"A 3D technological visualization of the RALA compressor. An intricate crystalline neural network layer being systematically compressed into a streamlined dual-core processor core, cyan data pulses, 8k resolution --ar 16:9"
-\end{latin}
 
 
