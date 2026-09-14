@@ -295,9 +295,10 @@ class SVDCompressedAttention(BaseAttention):
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
+            _mt = str(_cfg_get(model_config, "model_type", "") or "").lower()
             self.is_decoder = (
                 bool(_cfg_get(model_config, "is_decoder", False))
-                or str(_cfg_get(model_config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama")
+                or any(_mt.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "falcon", "bloom", "opt"))
                 or (old_attn is not None and hasattr(old_attn, "c_attn"))
             )
 
@@ -447,8 +448,8 @@ class SVDCompressedAttention(BaseAttention):
                         c_w = c_w.t()
 
                     q_dim = self.q_head_size
-                    k_dim = self.hidden_size
-                    v_dim = self.hidden_size
+                    k_dim = self.kv_head_size
+                    v_dim = self.kv_head_size
 
                     w_q = c_w[:q_dim, :]
                     w_k = c_w[q_dim : q_dim + k_dim, :]
