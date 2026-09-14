@@ -140,3 +140,42 @@ def test_nystrom_inject_safe():
     x = torch.randn(2, 8, 64)
     out, _ = layer.attention(x)
     assert out.shape == (2, 8, 64)
+
+
+def test_nystrom_short_and_long_sequence():
+    cfg = MockConfig(hidden_size=64, num_attention_heads=4, is_decoder=False)
+    attn = NystromAttention(config=cfg, num_landmarks=16)
+
+    # Short sequence (N=32 <= 128) -> triggers dense fallback
+    x_short = torch.randn(2, 32, 64)
+    out_short, _ = attn(x_short)
+    assert out_short.shape == (2, 32, 64)
+
+    # Long sequence (N=256 > 128) -> triggers landmark pooling + pinv
+    x_long = torch.randn(2, 256, 64)
+    out_long, _ = attn(x_long)
+    assert out_long.shape == (2, 256, 64)
+
+
+def test_nystrom_backward_nested_and_decoder():
+    # RoBERTa nested encoder backward test
+    cfg_roberta = MockConfig(hidden_size=64, num_attention_heads=4, is_decoder=False)
+    old_roberta = DummyRobertaAttention(64)
+    attn_roberta = NystromAttention(config=cfg_roberta, old_attn=old_roberta, lora_rank=8, num_landmarks=16)
+    x_roberta = torch.randn(2, 32, 64, requires_grad=True)
+    out_roberta, _ = attn_roberta(x_roberta)
+    loss = out_roberta.sum()
+    loss.backward()
+    assert attn_roberta.query.lora_A.grad is not None
+    assert attn_roberta.query.weight.grad is None  # Frozen base weight
+
+    # GPT-2 decoder backward test
+    cfg_gpt = MockConfig(hidden_size=64, num_attention_heads=4, is_decoder=True, model_type="gpt2")
+    old_gpt = DummyGPT2Attention(64)
+    attn_gpt = NystromAttention(config=cfg_gpt, old_attn=old_gpt, lora_rank=8, num_landmarks=16)
+    x_gpt = torch.randn(2, 32, 64, requires_grad=True)
+    out_gpt, _ = attn_gpt(x_gpt)
+    loss_gpt = out_gpt.sum()
+    loss_gpt.backward()
+    assert attn_gpt.query.lora_A.grad is not None
+    assert attn_gpt.out_proj.lora_A.grad is not None
