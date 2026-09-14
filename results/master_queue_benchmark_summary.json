@@ -430,5 +430,86 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T00:58:07.278457"
+  },
+  {
+    "module": "enlighten",
+    "runner": "run_all_4_enlighten.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:58:07.289791"
+  },
+  {
+    "module": "entropy_budget",
+    "runner": "run_all_4_entropy_budget.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:58:07.294059"
+  },
+  {
+    "module": "erc",
+    "runner": "run_all_4_erc.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:58:07.301921"
+  },
+  {
+    "module": "expert_choice_moe",
+    "runner": "run_all_4_expert_choice_moe.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:58:07.306477"
+  },
+  {
+    "module": "factorised_matrix_state",
+    "runner": "run_all_4_factorised_matrix_state.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:58:07.312282"
+  },
+  {
+    "module": "faq",
+    "runner": "run_all_4_faq.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:58:07.315101"
+  },
+  {
+    "module": "fasa",
+    "runner": "run_all_4_fasa.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:58:07.317393"
+  },
+  {
+    "module": "flap",
+    "runner": "run_all_4_flap.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:58:07.319385"
+  },
+  {
+    "module": "flash3",
+    "runner": "run_all_4_flash3.py",
+    "exit_code": 0,
+    "elapsed_s": 278.21,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T01:02:45.529041"
   }
 ]
