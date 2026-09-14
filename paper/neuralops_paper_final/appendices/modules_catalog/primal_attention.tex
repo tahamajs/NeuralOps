@@ -104,7 +104,7 @@ Unknown & \texttt{PASS} & 30.87\% & --- & --- & --- \\
 
 \textbf{Empirical Trade-offs \& Limitations:}
 \begin{itemize}
-    \item \textbf{Autoregressive & Deep Bidirectional Penalty}: On RoBERTa-base ($68.00\%$ accuracy, $17,737.13\,\text{tok/s}$) and GPT-2 ($63.07\%$ accuracy, $1,684.64\,\text{MB}$ peak VRAM), landmark approximations exhibit representational degradation due to iterative pinv conditioning errors.
+    \item \textbf{Autoregressive \& Deep Bidirectional Penalty}: On RoBERTa-base ($68.00\%$ accuracy, $17,737.13\,\text{tok/s}$) and GPT-2 ($63.07\%$ accuracy, $1,684.64\,\text{MB}$ peak VRAM), landmark approximations exhibit representational degradation due to iterative pinv conditioning errors.
     \item \textbf{Iterative Latency Overhead}: Newton-Schulz pseudoinverse steps introduce sequential kernel dispatch overheads compared to purely fused single-pass operators.
 \end{itemize}
 
