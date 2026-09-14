@@ -188,11 +188,11 @@ class FactorisedLinear(nn.Module):
         return self.up.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if self.down.weight.device != x.device or self.down.weight.dtype != x.dtype:
-            self.to(device=x.device, dtype=x.dtype)
+        if self.down.weight.device != x.device:
+            self.to(device=x.device)
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = out + F.linear(F.linear(x, self.lora_A.to(dtype=x.dtype)), self.lora_B.to(dtype=x.dtype)) * self.lora_scaling
         return out
 
 

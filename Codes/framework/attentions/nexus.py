@@ -151,11 +151,11 @@ class LoRALinear(nn.Module):
                 self.lora_B.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if self.weight.device != x.device or self.weight.dtype != x.dtype:
-            self.to(device=x.device, dtype=x.dtype)
-        out = F.linear(x, self.weight, self.bias)
+        if self.weight.device != x.device:
+            self.to(device=x.device)
+        out = F.linear(x, self.weight.to(dtype=x.dtype), self.bias.to(dtype=x.dtype) if self.bias is not None else None)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = out + F.linear(F.linear(x, self.lora_A.to(dtype=x.dtype)), self.lora_B.to(dtype=x.dtype)) * self.lora_scaling
         return out
 
 
