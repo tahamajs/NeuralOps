@@ -250,3 +250,27 @@ def test_tpa_non_square_head_dim():
     out, _ = attn(x)
     assert out.shape == (2, 6, 512)
 
+
+def test_tpa_gradient_checkpointing_toggle():
+    cfg = make_config(hidden_size=64, num_heads=4)
+    # 1. With gradient checkpointing enabled in training
+    attn_ckpt = TPAttention(cfg, pretrained_attn=DummyAttn(64, 4), rank=4, gradient_checkpointing=True)
+    attn_ckpt.train()
+    x1 = torch.randn(2, 8, 64, requires_grad=True)
+    out1, _ = attn_ckpt(x1)
+    loss1 = out1.sum()
+    loss1.backward()
+    assert x1.grad is not None
+    assert not torch.isnan(x1.grad).any()
+
+    # 2. With gradient checkpointing disabled
+    attn_no_ckpt = TPAttention(cfg, pretrained_attn=DummyAttn(64, 4), rank=4, gradient_checkpointing=False)
+    attn_no_ckpt.train()
+    x2 = torch.randn(2, 8, 64, requires_grad=True)
+    out2, _ = attn_no_ckpt(x2)
+    loss2 = out2.sum()
+    loss2.backward()
+    assert x2.grad is not None
+    assert not torch.isnan(x2.grad).any()
+
+
