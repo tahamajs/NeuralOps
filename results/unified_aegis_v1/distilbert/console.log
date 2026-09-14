@@ -50,3 +50,14 @@ Loading weights: 100%|##########| 104/104 [00:00<00:00, 2606.26it/s]
 2026-09-14 22:02:26,210 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.6166 (bs=8, micro_bs=8)
 2026-09-14 22:02:27,298 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6268 (bs=8, micro_bs=8)
 2026-09-14 22:02:28,323 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.5981 (bs=8, micro_bs=8)
+2026-09-14 22:02:37,333 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v1\distilbert\distilbert_sst2_aegis_v1_full_metrics.json
+2026-09-14 22:02:37,363 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v1\distilbert\checkpoints\aegis_v1\weights.pt (module_params=0, lora_params=52)
+2026-09-14 22:02:37,804 [INFO] QwenQualitySweep: [2/2] aegis_v1 -> PASS 60.89% (F1: 0.7142, Peak VRAM: 332.49 MB)
+2026-09-14 22:02:37,804 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v1\distilbert\checkpoints\aegis_v1. Automated export will be handled post-sweep by orchestrator.
+2026-09-14 22:02:38,109 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 22:02:38,109 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-14 22:02:38,117 [INFO] QwenQualitySweep: 
+  Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+    full   PASS   90.94% 0.00% (base) 0.9125                  0            1.00x  389.5 MB               2.36              2.71
+aegis_v1   PASS   60.89%      -30.05% 0.7142                 24            0.99x  332.5 MB               8.80             10.09
+2026-09-14 22:02:38,118 [INFO] QwenQualitySweep: ================================================================================
