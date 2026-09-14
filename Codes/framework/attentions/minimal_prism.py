@@ -264,12 +264,7 @@ class MinimalPRISMAttention(BaseAttention):
             or any(_mt.startswith(p) for p in _prefixes)
             or (pretrained_attn is not None and hasattr(pretrained_attn, "c_attn"))
         )
-        if is_decoder is not None:
-            self.is_decoder = bool(is_decoder)
-
         self.is_nested_encoder: bool = False
-        self.output_scale = nn.Parameter(torch.ones(1))
-        self.output_scale.requires_grad = True
 
         src_p = None
         if pretrained_attn is not None:
@@ -548,9 +543,9 @@ class MinimalPRISMAttention(BaseAttention):
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
-            output = context * self.output_scale
+            output = context
         else:
-            output = self.out_proj(context) * self.output_scale
+            output = self.out_proj(context)
 
         return output, (attn_weights if output_attentions else None)
 
