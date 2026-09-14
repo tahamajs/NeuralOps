@@ -495,7 +495,7 @@ class EATBlock(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
+                head_mask = head_mask.unsqueeze(-1)
             probs = probs * head_mask
 
         attn_out = torch.matmul(probs.to(v.dtype), v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)

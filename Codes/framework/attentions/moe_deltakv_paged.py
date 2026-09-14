@@ -370,7 +370,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 elif head_mask.dim() == 2:
                     head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
                 elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(1)
+                    head_mask = head_mask.unsqueeze(-1)
                 attn = attn * head_mask
             out = torch.matmul(attn, v_hat).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
             self.aux_loss = torch.tensor(0.0, device=q.device)

@@ -214,7 +214,7 @@ class SVDLinearAttention(BaseAttention):
         else:
             self.is_decoder = (
                 bool(_cfg_get(config, "is_decoder", False))
-                or str(_cfg_get(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama")
+                or str(_cfg_get(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
                 or (old_attn is not None and hasattr(old_attn, "c_attn"))
             )
 
@@ -536,7 +536,7 @@ class SVDLinearAttention(BaseAttention):
                 elif head_mask.dim() == 2:
                     head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
                 elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(1)
+                    head_mask = head_mask.unsqueeze(-1)
                 probs = probs * head_mask
 
             context = torch.matmul(probs, V)
@@ -583,7 +583,7 @@ class SVDLinearAttention(BaseAttention):
                 elif head_mask.dim() == 2:
                     head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
                 elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(1)
+                    head_mask = head_mask.unsqueeze(-1)
                 probs = probs * head_mask
 
             context = torch.matmul(probs, V_proj)  # [B, H, seq_len, d]

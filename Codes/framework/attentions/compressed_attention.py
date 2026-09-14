@@ -429,7 +429,7 @@ class CompressedAttentionLayer(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
+                head_mask = head_mask.unsqueeze(-1)
             probs = probs * head_mask
 
         attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, self.all_head_size)

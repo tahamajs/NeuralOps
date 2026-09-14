@@ -566,7 +566,7 @@ class DecayLinearAttention(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
+                head_mask = head_mask.unsqueeze(-1)
             y = y * head_mask
 
         y = torch.nan_to_num(y, nan=0.0)

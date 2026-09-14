@@ -371,7 +371,7 @@ class ClusterAttention(BaseAttention):
         if hasattr(src, "config"):
             if getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta") and not has_out_proj:
                 is_nested = True
-        self.is_nested_encoder = bool(is_nested or self.is_nested_encoder)
+        self.is_nested_encoder = bool(is_nested)
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
@@ -581,7 +581,7 @@ class ClusterAttention(BaseAttention):
                 elif head_mask.dim() == 2:
                     head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
                 elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(1)
+                    head_mask = head_mask.unsqueeze(-1)
                 attn = attn * head_mask
 
             out_context = torch.matmul(attn, V)
@@ -640,7 +640,7 @@ class ClusterAttention(BaseAttention):
                 elif head_mask.dim() == 2:
                     head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
                 elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(1)
+                    head_mask = head_mask.unsqueeze(-1)
                 out_context = out_context * head_mask
 
             if valid_mask_2d is not None:

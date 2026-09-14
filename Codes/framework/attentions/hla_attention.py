@@ -484,11 +484,10 @@ class HLAAttention(BaseAttention):
 
         context = y.transpose(1, 2).contiguous().view(B, L, H * Dh)
 
-        context = context * self.output_scale
         if self.is_nested_encoder:
-            out = context
+            out = context * self.output_scale
         else:
-            out = self.out_proj(context)
+            out = self.out_proj(context) * self.output_scale
 
         if attention_mask is not None and mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
