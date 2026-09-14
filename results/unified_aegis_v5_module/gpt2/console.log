@@ -1,7 +1,7 @@
-2026-09-15 00:14:34,503 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-15 02:34:44,695 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
 
 Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 148/148 [00:00<00:00, 2976.54it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 2188.08it/s]
 [1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
 Key          | Status  | 
 -------------+---------+-
@@ -9,72 +9,62 @@ score.weight | MISSING |
 
 Notes:
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-15 00:14:35,882 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-15 00:14:35,882 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-15 00:14:35,882 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:14:35,882 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-15 00:14:35,882 [INFO] QwenQualitySweep:   model:             models\gpt2
-2026-09-15 00:14:35,883 [INFO] QwenQualitySweep:   family:            gpt
-2026-09-15 00:14:35,883 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-15 00:14:35,883 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-15 00:14:35,883 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-15 00:14:35,883 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-15 00:14:35,884 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-15 00:14:35,884 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:14:35,884 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\gpt2_sst2_lora_baseline\finetuned_model.pt' does not exist; attempting automatic fallback search.
-2026-09-15 00:14:35,886 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
-2026-09-15 00:14:37,882 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=2.6597
-2026-09-15 00:14:39,110 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=2.3356
-2026-09-15 00:14:40,386 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.5385
-2026-09-15 00:14:41,629 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0049
-2026-09-15 00:14:42,863 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.8259
-2026-09-15 00:14:44,101 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=1.0690
-2026-09-15 00:14:45,332 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=1.2230
-2026-09-15 00:14:46,590 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6620
-2026-09-15 00:14:46,597 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_aegis_v5_module\gpt2\finetuned_model.pt
-2026-09-15 00:14:46,708 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-15 00:14:47,430 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-15 00:14:51,783 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 49.54%
-2026-09-15 00:14:51,832 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:14:51,833 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-15 00:14:51,833 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-15 00:14:51,833 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-15 00:14:51,833 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-15 00:14:51,833 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-15 00:14:51,833 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-15 00:14:51,833 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:14:51,838 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 00:14:56,965 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v5_module\gpt2\gpt2_full_full_metrics.json
-2026-09-15 00:14:56,972 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v5_module\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
-2026-09-15 00:14:57,586 [INFO] QwenQualitySweep: [1/2] full -> PASS_LOW 49.54% (F1: 0.2903, Peak VRAM: 390.24 MB)
-2026-09-15 00:14:57,587 [INFO] QwenQualitySweep: [Quality Guard] Module 'full' did not pass quality criteria (status=PASS_LOW, acc=49.54%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-15 00:14:57,836 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: aegis_v5_module (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 00:15:07,199 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v5_module' into 12 transformer blocks.
-2026-09-15 00:15:07,221 [INFO] QwenQualitySweep: module=aegis_v5_module path=adapted_gpt
-2026-09-15 00:15:07,223 [INFO] QwenQualitySweep: module=aegis_v5_module injection summary: 48 SVDLinear layers active
-2026-09-15 00:15:07,224 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v5_module (lr=2.0e-04)
-2026-09-15 00:15:07,658 [INFO] framework.utils.compat: Recovery fine-tuning selected 1573056 trainable parameters across 168 tensors.
-2026-09-15 00:15:07,660 [INFO] framework.utils.compat: Discovered 168 trainable tensors (1573056 params)
-2026-09-15 00:15:07,682 [INFO] QwenQualitySweep: LoRA fine-tuning: 1573056 trainable parameters across 168 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-15 00:15:08,055 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=1.2717 (bs=8, micro_bs=8)
-2026-09-15 00:15:09,165 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=1.4673 (bs=8, micro_bs=8)
-2026-09-15 00:15:10,583 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=1.0144 (bs=8, micro_bs=8)
-2026-09-15 00:15:11,972 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=1.5183 (bs=8, micro_bs=8)
-2026-09-15 00:15:13,392 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5669 (bs=8, micro_bs=8)
-2026-09-15 00:15:14,786 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=2.1823 (bs=8, micro_bs=8)
-2026-09-15 00:15:16,161 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=1.1064 (bs=8, micro_bs=8)
-2026-09-15 00:15:17,553 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.5573 (bs=8, micro_bs=8)
-2026-09-15 00:15:18,969 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=1.1338 (bs=8, micro_bs=8)
-2026-09-15 00:15:20,320 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=1.2102 (bs=8, micro_bs=8)
-2026-09-15 00:15:21,704 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.5404 (bs=8, micro_bs=8)
-2026-09-15 00:15:32,495 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v5_module\gpt2\gpt2_aegis_v5_module_full_metrics.json
-2026-09-15 00:15:32,537 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v5_module\gpt2\checkpoints\aegis_v5_module\weights.pt (module_params=0, lora_params=97)
-2026-09-15 00:15:33,267 [INFO] QwenQualitySweep: [2/2] aegis_v5_module -> PASS_LOW 47.48% (F1: 0.3811, Peak VRAM: 334.59 MB)
-2026-09-15 00:15:33,267 [INFO] QwenQualitySweep: [Quality Guard] Module 'aegis_v5_module' did not pass quality criteria (status=PASS_LOW, acc=47.48%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-15 00:15:33,518 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:15:33,518 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
-2026-09-15 00:15:33,523 [INFO] QwenQualitySweep: 
+2026-09-15 02:34:46,174 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 02:34:46,174 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 02:34:46,174 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:34:46,174 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 02:34:46,174 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 02:34:46,175 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 02:34:46,175 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 02:34:46,175 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 02:34:46,175 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 02:34:46,175 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 02:34:46,176 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 02:34:46,176 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:34:46,560 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 02:34:47,164 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 02:34:47,957 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 02:34:52,903 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 02:34:52,957 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:34:52,957 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 02:34:52,957 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 02:34:52,957 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 02:34:52,957 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 02:34:52,957 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 02:34:52,958 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 02:34:52,958 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:34:52,961 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 02:34:58,489 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v5_module\gpt2\gpt2_full_full_metrics.json
+2026-09-15 02:34:58,497 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v5_module\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 02:34:59,231 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 793.19 MB)
+2026-09-15 02:34:59,231 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v5_module\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 02:34:59,504 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: aegis_v5_module (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 02:35:09,298 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v5_module' into 12 transformer blocks.
+2026-09-15 02:35:09,321 [INFO] QwenQualitySweep: module=aegis_v5_module path=adapted_gpt
+2026-09-15 02:35:09,323 [INFO] QwenQualitySweep: module=aegis_v5_module injection summary: 48 SVDLinear layers active
+2026-09-15 02:35:09,323 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v5_module (lr=2.0e-04)
+2026-09-15 02:35:09,751 [INFO] framework.utils.compat: Recovery fine-tuning selected 1573056 trainable parameters across 168 tensors.
+2026-09-15 02:35:09,753 [INFO] framework.utils.compat: Discovered 168 trainable tensors (1573056 params)
+2026-09-15 02:35:09,761 [INFO] QwenQualitySweep: LoRA fine-tuning: 1573056 trainable parameters across 168 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 02:35:10,256 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.9132 (bs=8, micro_bs=8)
+2026-09-15 02:35:11,439 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.9040 (bs=8, micro_bs=8)
+2026-09-15 02:35:12,863 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.9900 (bs=8, micro_bs=8)
+2026-09-15 02:35:14,327 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.4077 (bs=8, micro_bs=8)
+2026-09-15 02:35:15,771 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.8865 (bs=8, micro_bs=8)
+2026-09-15 02:35:17,171 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.4838 (bs=8, micro_bs=8)
+2026-09-15 02:35:18,613 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.8527 (bs=8, micro_bs=8)
+2026-09-15 02:35:20,036 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6619 (bs=8, micro_bs=8)
+2026-09-15 02:35:21,442 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.4821 (bs=8, micro_bs=8)
+2026-09-15 02:35:22,870 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.9560 (bs=8, micro_bs=8)
+2026-09-15 02:35:24,300 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.4623 (bs=8, micro_bs=8)
+2026-09-15 02:35:35,783 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v5_module\gpt2\gpt2_aegis_v5_module_full_metrics.json
+2026-09-15 02:35:35,823 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v5_module\gpt2\checkpoints\aegis_v5_module\weights.pt (module_params=0, lora_params=97)
+2026-09-15 02:35:36,724 [INFO] QwenQualitySweep: [2/2] aegis_v5_module -> PASS_LOW 54.82% (F1: 0.5397, Peak VRAM: 594.88 MB)
+2026-09-15 02:35:36,724 [INFO] QwenQualitySweep: [Quality Guard] Module 'aegis_v5_module' did not pass quality criteria (status=PASS_LOW, acc=54.82%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 02:35:37,040 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:35:37,040 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 02:35:37,049 [INFO] QwenQualitySweep: 
          Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-           full PASS_LOW   49.54% 0.00% (base) 0.2903                  0            1.00x  390.2 MB               4.03              4.62
-aegis_v5_module PASS_LOW   47.48%       -2.06% 0.3811                 48            0.99x  334.6 MB              10.50             12.04
-2026-09-15 00:15:33,523 [INFO] QwenQualitySweep: ================================================================================
+           full     PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.26              4.88
+aegis_v5_module PASS_LOW   54.82%      -24.54% 0.5397                 48            0.99x  594.9 MB              11.13             12.76
+2026-09-15 02:35:37,050 [INFO] QwenQualitySweep: ================================================================================

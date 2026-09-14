@@ -21,3 +21,5 @@ aegis_v3,run_all_4_aegis_v3.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:27:28.50211
 aegis_v3_module,run_all_4_aegis_v3_module.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:27:28.516924
 aegis_v4,run_all_4_aegis_v4.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:27:28.521356
 aegis_v4_module,run_all_4_aegis_v4_module.py,0,286.35,PASS,,2026-09-15T02:32:14.873366
+aegis_v5,run_all_4_aegis_v5.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:32:14.907826
+aegis_v5_module,run_all_4_aegis_v5_module.py,0,211.21,PASS,,2026-09-15T02:35:46.125814
