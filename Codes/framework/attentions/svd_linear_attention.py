@@ -50,9 +50,8 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
         w = w.data.clone()
         cls_name = getattr(module, "__class__", type(module)).__name__
         base_cls_name = getattr(base, "__class__", type(base)).__name__
-        if "Conv1D" in cls_name or "Conv1D" in base_cls_name:
-            if w.ndim == 2 and w.shape[0] < w.shape[1]:
-                w = w.t()
+        if "Conv1D" in cls_name or "Conv1D" in base_cls_name or hasattr(module, "nf") or hasattr(base, "nf"):
+            w = w.t()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -76,6 +75,8 @@ def apply_rotary_pos_emb(
     """Applies Rotary Position Embedding (RoPE) with partial dimension and odd-dimension safety."""
     rotary_dim = cos.shape[-1]
     safe_rotary_dim = (rotary_dim // 2) * 2
+    if safe_rotary_dim == 0:
+        return q, k
 
     q_rot, q_pass = q[..., :safe_rotary_dim], q[..., safe_rotary_dim:]
     k_rot, k_pass = k[..., :safe_rotary_dim], k[..., safe_rotary_dim:]
@@ -274,16 +275,53 @@ class SVDLinearAttention(BaseAttention):
         super().__init__(config, rank=actual_rank)
 
         # 1. Dimensions & Architecture
+        # Detect from old_attn if available and not explicitly provided
+        detected_hidden = None
+        detected_heads = None
+        detected_head_dim = None
+        if old_attn is not None:
+            for attr in ("all_head_size", "embed_dim", "hidden_size", "d_model"):
+                if hasattr(old_attn, attr):
+                    detected_hidden = getattr(old_attn, attr)
+                    break
+            if detected_hidden is None:
+                # Inspect query/q_proj/q_lin/c_attn weights
+                for proj_name in ("query", "q_proj", "q_lin"):
+                    if hasattr(old_attn, proj_name):
+                        proj = getattr(old_attn, proj_name)
+                        if hasattr(proj, "in_features"):
+                            detected_hidden = proj.in_features
+                            break
+                        elif hasattr(proj, "weight"):
+                            detected_hidden = proj.weight.shape[-1]
+                            break
+            for attr in ("num_attention_heads", "num_heads", "n_head", "n_heads"):
+                if hasattr(old_attn, attr):
+                    detected_heads = getattr(old_attn, attr)
+                    break
+            for attr in ("attention_head_size", "head_dim", "d_head"):
+                if hasattr(old_attn, attr):
+                    detected_head_dim = getattr(old_attn, attr)
+                    break
+
         self.hidden_size: int = _cfg_get(
-            config, "hidden_size", getattr(old_attn, "embed_dim", kwargs.get("hidden_size", 768))
+            config,
+            "hidden_size",
+            kwargs.get("hidden_size", kwargs.get("embed_dim", detected_hidden or 768)),
         )
         self.num_heads: int = _cfg_get(
             config,
             "num_attention_heads",
-            _cfg_get(config, "num_heads", getattr(old_attn, "num_heads", kwargs.get("num_attention_heads", 12))),
+            _cfg_get(
+                config,
+                "num_heads",
+                kwargs.get("num_attention_heads", kwargs.get("num_heads", detected_heads or 12)),
+            ),
         )
         self.head_dim: int = _cfg_get(
-            config, "head_dim", getattr(old_attn, "head_dim", kwargs.get("head_dim", self.hidden_size // self.num_heads))
+            config,
+            "head_dim",
+            kwargs.get("head_dim", detected_head_dim or (self.hidden_size // self.num_heads)),
         )
 
         cfg_kv = _cfg_get(
@@ -406,11 +444,15 @@ class SVDLinearAttention(BaseAttention):
         self, target_linear: SVDLinear, weight: torch.Tensor, bias: Optional[torch.Tensor] = None
     ) -> None:
         with torch.no_grad():
-            U, S, Vt = torch.linalg.svd(weight.detach().cpu().float(), full_matrices=False)
+            dev = weight.device
+            try:
+                U, S, Vt = torch.linalg.svd(weight.detach().float(), full_matrices=False)
+            except Exception:
+                U, S, Vt = torch.linalg.svd(weight.detach().cpu().float(), full_matrices=False)
             r = min(target_linear.rank, U.size(1), Vt.size(0))
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-5))
-            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=weight.device, dtype=weight.dtype)
-            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=weight.device, dtype=weight.dtype)
+            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=dev, dtype=weight.dtype)
+            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=dev, dtype=weight.dtype)
             target_linear.set_low_rank_factors(U_r, V_r)
             if bias is not None and target_linear.bias is not None:
                 target_linear.bias.data.copy_(bias.to(target_linear.bias.device, target_linear.bias.dtype))
@@ -423,17 +465,8 @@ class SVDLinearAttention(BaseAttention):
             w_v, b_v = None, None
             w_o, b_o = None, None
 
-            # Detect nested encoder container or inner self-attention
-            src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
-            if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
-            ):
-                self.is_nested_encoder = True
-
+            # Nested encoder container handling
             if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-                self.is_nested_encoder = True
                 src = old_attn.self
                 if hasattr(old_attn.output, "dense"):
                     w_o = old_attn.output.dense.weight
@@ -611,7 +644,11 @@ class SVDLinearAttention(BaseAttention):
             if mask_binary.dim() == 2:
                 mask_expanded = mask_binary.view(B, 1, N, 1)
             elif mask_binary.dim() == 3:
-                mask_expanded = mask_binary.view(B, 1, N, 1)
+                # [B, H, N] -> [B, H, N, 1] or [B, N, 1] -> [B, 1, N, 1]
+                if mask_binary.shape[1] == H:
+                    mask_expanded = mask_binary.unsqueeze(-1)
+                else:
+                    mask_expanded = mask_binary.view(B, 1, N, 1)
             elif mask_binary.dim() == 4:
                 if mask_binary.shape[-2] == 1 and mask_binary.shape[-1] == N:
                     mask_expanded = mask_binary.permute(0, 1, 3, 2)
@@ -634,31 +671,59 @@ class SVDLinearAttention(BaseAttention):
             decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
             lambda_decay = compute_exponential_decay(decay_logits, activation=self.decay_activation)
 
-        # Fast parallel vectorized scan for non-streaming batch mode
-        if past_state is None and not self.decay_channel_wise and N <= 2048:
-            # log-space cumulative sum decay kernel
-            # lambda_decay is [B, H, N, 1, 1]
-            log_decay = torch.log(torch.clamp(lambda_decay.squeeze(-1).squeeze(-1), min=1e-6))  # [B, H, N]
-            log_gamma = torch.cumsum(log_decay, dim=-1)  # [B, H, N]
-            # Pairwise log decay matrix: log_M[t, j] = log_gamma[t] - log_gamma[j] for j <= t
-            log_M = log_gamma.unsqueeze(-1) - log_gamma.unsqueeze(-2)  # [B, H, N, N]
-            # Mask out future positions
-            causal_bool = torch.tril(torch.ones(N, N, device=q.device, dtype=torch.bool))
-            M = torch.exp(torch.clamp(log_M, max=0.0)) * causal_bool.unsqueeze(0).unsqueeze(0)
+        # Ensure unobserved padding tokens do not decay memory state (lambda = 1.0)
+        if mask is not None:
+            lambda_decay = torch.where(mask_expanded > 0, lambda_decay, torch.ones_like(lambda_decay))
 
-            # Affinity: A = phi_q @ phi_k^T  [B, H, N, N]
-            aff = torch.matmul(phi_q, phi_k.transpose(-2, -1)) * M  # [B, H, N, N]
-            num = torch.matmul(aff, v_f)  # [B, H, N, D_v]
-            den = aff.sum(dim=-1, keepdim=True) + self.eps  # [B, H, N, 1]
-            context = (num / den).to(q.dtype)
+        # O(N) chunk-wise cumulative decay scan for non-streaming batch mode
+        if past_state is None and not self.decay_channel_wise:
+            chunk_size = 64
+            num_chunks = (N + chunk_size - 1) // chunk_size
+            S_chunk = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=torch.float32)
+            Z_chunk = torch.zeros(B, H, D_k, 1, device=q.device, dtype=torch.float32)
+            outputs = []
 
-            # Exact final recurrent state
-            log_w_final = log_gamma[:, :, -1:] - log_gamma  # [B, H, N]
-            w_final = torch.exp(torch.clamp(log_w_final, max=0.0)).unsqueeze(-1)  # [B, H, N, 1]
-            phi_k_w = phi_k * w_final  # [B, H, N, D_k]
-            S = torch.matmul(phi_k_w.transpose(-1, -2), v_f)  # [B, H, D_k, D_v]
-            Z = phi_k_w.sum(dim=-2, keepdim=True).transpose(-1, -2)  # [B, H, D_k, 1]
-            return context, (S, Z)
+            for c in range(num_chunks):
+                start = c * chunk_size
+                end = min(start + chunk_size, N)
+                qc = phi_q[:, :, start:end, :]
+                kc = phi_k[:, :, start:end, :]
+                vc = v_f[:, :, start:end, :]
+                lam_c = lambda_decay[:, :, start:end].squeeze(-1).squeeze(-1)  # [B, H, Lc]
+                Lc = end - start
+
+                # Cumulative decay within chunk
+                log_lam_c = torch.log(torch.clamp(lam_c, min=1e-6))
+                log_gamma_c = torch.cumsum(log_lam_c, dim=-1)  # [B, H, Lc]
+
+                # Intra-chunk decay matrix: M_intra[i, j] = exp(log_gamma_c[i] - log_gamma_c[j]) for j <= i
+                log_M_intra = log_gamma_c.unsqueeze(-1) - log_gamma_c.unsqueeze(-2)  # [B, H, Lc, Lc]
+                causal_bool = torch.tril(torch.ones(Lc, Lc, dtype=torch.bool, device=qc.device))
+                M_intra = torch.exp(torch.clamp(log_M_intra, max=0.0)) * causal_bool.unsqueeze(0).unsqueeze(0)
+
+                aff_intra = torch.matmul(qc, kc.transpose(-1, -2)) * M_intra  # [B, H, Lc, Lc]
+                num_intra = torch.matmul(aff_intra, vc)
+                den_intra = aff_intra.sum(dim=-1, keepdim=True)
+
+                # Inter-chunk contribution from preceding chunks
+                decay_from_past = torch.exp(torch.clamp(log_gamma_c, max=0.0)).unsqueeze(-1)  # [B, H, Lc, 1]
+                num_inter = torch.matmul(qc, S_chunk) * decay_from_past
+                den_inter = torch.matmul(qc, Z_chunk) * decay_from_past
+
+                out_c = (num_intra + num_inter) / (den_intra + den_inter + self.eps)
+                outputs.append(out_c)
+
+                # Update running state to end of this chunk
+                total_chunk_decay = torch.exp(torch.clamp(log_gamma_c[:, :, -1:], max=0.0)).unsqueeze(-1)  # [B, H, 1, 1]
+                log_w_to_end = log_gamma_c[:, :, -1:] - log_gamma_c  # [B, H, Lc]
+                w_to_end = torch.exp(torch.clamp(log_w_to_end, max=0.0)).unsqueeze(-1)  # [B, H, Lc, 1]
+                kc_w = kc * w_to_end
+
+                S_chunk = total_chunk_decay * S_chunk + torch.matmul(kc_w.transpose(-1, -2), vc)
+                Z_chunk = total_chunk_decay * Z_chunk + kc_w.sum(dim=-2, keepdim=True).transpose(-1, -2)
+
+            context = torch.cat(outputs, dim=2).to(q.dtype)
+            return context, (S_chunk, Z_chunk)
 
         # Sequential associative memory recurrence loop
         if past_state is not None:
@@ -720,14 +785,41 @@ class SVDLinearAttention(BaseAttention):
                 mask_expanded = mask_binary.view(B, 1, N, 1)
             phi_k = phi_k * mask_expanded
 
-        # Causal mode for decoders
+        # Causal mode for decoders (O(N) chunk-wise accumulation, chunk_size=64)
         if self.is_decoder and N > 1:
-            aff = torch.matmul(phi_q, phi_k.transpose(-2, -1))  # [B, H, N, N]
-            causal_mask = torch.tril(torch.ones(N, N, device=q.device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
-            aff = aff * causal_mask
-            num = torch.matmul(aff, v_f)
-            den = aff.sum(dim=-1, keepdim=True) + self.eps
-            context = (num / den).to(q.dtype)
+            chunk_size = 64
+            num_chunks = (N + chunk_size - 1) // chunk_size
+            S_chunk = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=torch.float32)
+            Z_chunk = torch.zeros(B, H, D_k, 1, device=q.device, dtype=torch.float32)
+            outputs = []
+
+            for c in range(num_chunks):
+                start = c * chunk_size
+                end = min(start + chunk_size, N)
+                qc = phi_q[:, :, start:end, :]  # [B, H, Lc, D_k]
+                kc = phi_k[:, :, start:end, :]  # [B, H, Lc, D_k]
+                vc = v_f[:, :, start:end, :]    # [B, H, Lc, D_v]
+                Lc = end - start
+
+                # Intra-chunk causal affinity: [B, H, Lc, Lc]
+                aff_intra = torch.matmul(qc, kc.transpose(-1, -2))
+                causal_intra = torch.tril(torch.ones(Lc, Lc, device=q.device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+                aff_intra = aff_intra * causal_intra
+                num_intra = torch.matmul(aff_intra, vc)
+                den_intra = aff_intra.sum(dim=-1, keepdim=True)
+
+                # Inter-chunk contribution from preceding chunks
+                num_inter = torch.matmul(qc, S_chunk)
+                den_inter = torch.matmul(qc, Z_chunk)
+
+                out_c = (num_intra + num_inter) / (den_intra + den_inter + self.eps)
+                outputs.append(out_c)
+
+                # Update running state
+                S_chunk = S_chunk + torch.matmul(kc.transpose(-1, -2), vc)
+                Z_chunk = Z_chunk + kc.sum(dim=-2, keepdim=True).transpose(-1, -2)
+
+            context = torch.cat(outputs, dim=2).to(q.dtype)
         else:
             # Associative accumulation for bidirectional encoders
             kv_state = torch.matmul(phi_k.transpose(-1, -2), v_f)  # [B, H, D_k, D_v]
@@ -739,12 +831,17 @@ class SVDLinearAttention(BaseAttention):
         return context
 
     def _forward_exact_softmax(
-        self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: Optional[torch.Tensor]
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        mask: Optional[torch.Tensor],
+        is_cross: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         scale = 1.0 / math.sqrt(self.head_dim)
         scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
 
-        if self.is_decoder and q.shape[-2] > 1:
+        if self.is_decoder and not is_cross and q.shape[-2] > 1:
             causal_mask = torch.triu(
                 torch.full((q.shape[-2], k.shape[-2]), float("-inf"), device=scores.device, dtype=torch.float32),
                 diagonal=1,
@@ -781,6 +878,11 @@ class SVDLinearAttention(BaseAttention):
         return_state = kwargs.get("return_state", False)
         past_state = kwargs.get("past_state", None)
 
+        if return_state and self.mode not in ("decay_linear", "linear_decay", "decay", "gated_linear") and not self.use_decay_gating:
+            raise ValueError(
+                f"return_state=True is only supported in decay_linear/gated_linear modes, got mode='{self.mode}'"
+            )
+
         if hidden_states is None:
             hidden_states = query if query is not None else key
         if attention_mask is None:
@@ -813,7 +915,7 @@ class SVDLinearAttention(BaseAttention):
 
         # 4. Mode dispatch
         if self.mode == "exact":
-            context, attn_probs = self._forward_exact_softmax(q, k, v, eff_mask)
+            context, attn_probs = self._forward_exact_softmax(q, k, v, eff_mask, is_cross=is_cross)
         elif self.use_decay_gating or self.mode in ["decay_linear", "linear_decay", "decay", "gated_linear"]:
             context, updated_state = self._forward_decay_gated_linear_kernel(
                 q=q,
@@ -835,7 +937,7 @@ class SVDLinearAttention(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
+                head_mask = head_mask.unsqueeze(-1)
             if attn_probs is not None:
                 attn_probs = attn_probs * head_mask
             context = context * head_mask
@@ -888,13 +990,16 @@ class SVDLinearAttention(BaseAttention):
         _, H, _, D_k = q.shape
         D_v = v.shape[-1]
 
-        decay_logits = self.decay_gate(x_t)
-        if self.decay_channel_wise:
-            decay_logits = decay_logits.view(B, 1, H, D_k).permute(0, 2, 1, 3)
-            lam_t = compute_exponential_decay(decay_logits, activation=self.decay_activation).unsqueeze(-1).squeeze(2)
+        if self.use_decay_gating:
+            decay_logits = self.decay_gate(x_t)
+            if self.decay_channel_wise:
+                decay_logits = decay_logits.view(B, 1, H, D_k).permute(0, 2, 1, 3)
+                lam_t = compute_exponential_decay(decay_logits, activation=self.decay_activation).unsqueeze(-1).squeeze(2)
+            else:
+                decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
+                lam_t = compute_exponential_decay(decay_logits, activation=self.decay_activation).squeeze(2)
         else:
-            decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
-            lam_t = compute_exponential_decay(decay_logits, activation=self.decay_activation).squeeze(2)
+            lam_t = torch.ones(B, H, 1, 1, device=x_t.device, dtype=torch.float32)
 
         if past_state is not None:
             S_prev, Z_prev = past_state
@@ -936,8 +1041,6 @@ class SVDLinearAttention(BaseAttention):
         return base_loss
 
 
-@ATTENTION_REGISTRY.register("svd_linear_attn")
-@ATTENTION_REGISTRY.register("svd_linear_attention")
 @ATTENTION_REGISTRY.register("svd_linear_inject")
 @ATTENTION_REGISTRY.register("inject_svd_linear_attention")
 def inject_svd_linear_attention(
@@ -1011,6 +1114,11 @@ def inject_svd_linear_attention(
     if curr_attn is None:
         return None
 
+    # Determine nested encoder injection point (e.g. RoBERTa target.attention.self)
+    is_nested = hasattr(target, "attention") and hasattr(target.attention, "self")
+    if is_nested and curr_attn is target.attention:
+        curr_attn = target.attention.self
+
     try:
         new_attn = SVDLinearAttention(
             config=cfg,
@@ -1020,12 +1128,15 @@ def inject_svd_linear_attention(
             lora_rank=lora_rank,
             **kwargs,
         )
+        new_attn.is_nested_encoder = is_nested
     except Exception as e:
         logger.warning(f"Failed to instantiate SVDLinearAttention: {e}")
         raise RuntimeError(f"Injection failed")
 
     if target is not None:
-        if hasattr(target, "attention"):
+        if is_nested:
+            target.attention.self = new_attn
+        elif hasattr(target, "attention"):
             target.attention = new_attn
         elif hasattr(target, "self_attn"):
             target.self_attn = new_attn

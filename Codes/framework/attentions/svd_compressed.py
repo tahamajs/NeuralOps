@@ -620,9 +620,9 @@ class SVDCompressedAttention(BaseAttention):
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
-        # Defensive device/dtype alignment
-        if self.q_down.weight.device != hidden_states.device or self.q_down.weight.dtype != hidden_states.dtype:
-            self.to(device=hidden_states.device, dtype=hidden_states.dtype)
+        # Defensive device alignment
+        if self.q_down.weight.device != hidden_states.device:
+            self.to(device=hidden_states.device)
 
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states

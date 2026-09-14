@@ -48,9 +48,6 @@ class SVDLinearLayer(nn.Module):
         lora_alpha: float = 1.0,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         base_layer = getattr(linear_layer, "base_layer", linear_layer)
         raw_w = base_layer.weight.data
         cls_name = base_layer.__class__.__name__.lower()
@@ -157,7 +154,7 @@ class SVDLinearLayer(nn.Module):
             lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
             out = out + (self.scaling * lora_out).reshape(*orig_shape[:-1], self.out_features).to(out.dtype)
 
-        return out * self.output_scale
+        return out
 
 
 @COMPRESSOR_REGISTRY.register("svd_linear")
@@ -181,9 +178,6 @@ class SVDLinearCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="svd_linear", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         conf = cfg or kwargs.get("comp_config", None)
         if conf is not None:
             rank = _cfg_get(conf, "svd_rank", _cfg_get(conf, "rank", rank))
