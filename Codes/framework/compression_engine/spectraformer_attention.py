@@ -96,9 +96,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -153,7 +150,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("spectraformer")
@@ -171,9 +168,6 @@ class SpectraformerAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank or 64)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.config = config
         comp_config = _cfg_get(config, "compression_config", None) or kwargs.get("comp_config", None)
 
@@ -636,33 +630,20 @@ def inject_spectraformer(
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
                     layer.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
                 else:
                     layer.attention = new_attn
-            elif hasattr(layer, 'attention'):
-
-                if hasattr(layer.attention, 'self'):
-
-                    layer.attention.self = new_attn
-
-                else:
-
-                    if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-                        layer.attention.self = new_attn
-                    else:
-                        layer.attention = new_attn
-
             elif hasattr(layer, 'self'):
-
                 layer.self = new_attn
-
+                new_attn.is_nested_encoder = True
             elif hasattr(layer, 'attn'):
-
                 layer.attn = new_attn
-
+            elif hasattr(layer, 'self_attn'):
+                layer.self_attn = new_attn
             else:
-
                 if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
                     layer.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
                 else:
                     layer.attention = new_attn
 

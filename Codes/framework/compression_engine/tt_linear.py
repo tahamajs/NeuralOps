@@ -74,9 +74,6 @@ class TTLinearLayer(nn.Module):
         lora_alpha: float = 1.0,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
@@ -199,7 +196,6 @@ class TTLinearLayer(nn.Module):
             lora_delta = self.scaling * F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B).to(out.dtype)
             out = out + lora_delta
 
-        out = out * self.output_scale
         return out.view(*orig_shape[:-1], self.out_features)
 
     @classmethod

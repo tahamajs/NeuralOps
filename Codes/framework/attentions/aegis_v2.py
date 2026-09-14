@@ -648,7 +648,7 @@ class AegisAttentionV2(BaseAttention):
             global_out_h = torch.matmul(phi_Q_h, KV)
             Z = phi_K_h.sum(dim=-2, keepdim=True)
             norm = torch.matmul(phi_Q_h, Z.transpose(-2, -1))
-            global_out_h = global_out_h / (norm.clamp(min=1.0))
+            global_out_h = global_out_h / (norm.clamp(min=1e-6))
             global_out = global_out_h.transpose(1, 2)
 
             if mask_2d is not None:

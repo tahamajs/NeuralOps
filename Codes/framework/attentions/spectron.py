@@ -160,8 +160,6 @@ class LowRankSparseLinear(nn.Module):
         bias: Optional[torch.Tensor] = None,
     **kwargs) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.down: nn.Linear = down
         self.up: nn.Linear = up
         self.sparse_weight: nn.Parameter = nn.Parameter(sparse_weight)
@@ -299,7 +297,6 @@ class SpectronAttention(BaseAttention):
     ) -> None:
         model_config = config or kwargs.get("model_config", None)
         super().__init__(model_config)
-        self.output_scale = nn.Parameter(torch.ones(1))
 
         # 1. Dimensions & Architecture
         self.hidden_size: int = int(_cfg_get(
@@ -624,7 +621,7 @@ class SpectronAttention(BaseAttention):
             out = out + F.linear(F.linear(x, lora_A), lora_B) * self.scaling
         if self.add_sparse and sparse_w is not None:
             out = out + F.linear(x, sparse_w)
-        return out * self.output_scale
+        return out
 
     def forward(
         self,

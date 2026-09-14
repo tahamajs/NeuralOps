@@ -841,7 +841,7 @@ class AegisHybridAttention(BaseAttention):
                 K_sum = phi_K.sum(dim=2) # [B, H, Dh]
                 norm = torch.einsum("bhnd,bhd->bhn", phi_Q, K_sum).unsqueeze(-1) # [B, H, N, 1]
 
-            norm = norm.clamp(min=1.0)
+            norm = norm.clamp(min=1e-6)
             global_out_h = (global_out_h / norm).to(dtype)
             
             if head_mask_tensor is not None:
