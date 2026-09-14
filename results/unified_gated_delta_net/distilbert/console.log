@@ -49,3 +49,4 @@ Loading weights: 100%|##########| 104/104 [00:00<00:00, 3253.17it/s]
 2026-09-15 01:21:09,475 [INFO] framework.utils.compat: Discovered 60 trainable tensors (737280 params)
 2026-09-15 01:21:09,477 [INFO] QwenQualitySweep: LoRA fine-tuning: 737280 trainable parameters across 60 tensors (lr=2.0e-04, optimizer=adamw)
 2026-09-15 01:21:32,083 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6467 (bs=8, micro_bs=8)
+2026-09-15 01:22:57,419 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7277 (bs=8, micro_bs=8)
