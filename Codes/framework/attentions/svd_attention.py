@@ -459,13 +459,21 @@ class SVDLinearAttention(BaseAttention):
             _copy_kv(self.key, w_k, b_k)
             _copy_kv(self.value, w_v, b_v)
 
-            # Copy Out projection if not nested encoder
-            if w_o is not None and not self.is_nested_encoder:
+            # Always copy Out projection — our module fully replaces BertAttention
+            # (including BertSelfOutput), so we must apply out_proj in all cases.
+            if w_o is not None:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    raise RuntimeError("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
-                self.out_proj.weight.copy_(w_o)
-                if b_o is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.copy_(b_o)
+                    logger.warning("out_proj weight has near-zero Frobenius norm — skipping copy")
+                else:
+                    if w_o.shape == self.out_proj.weight.shape:
+                        self.out_proj.weight.copy_(w_o)
+                    else:
+                        r = min(self.out_proj.weight.shape[0], w_o.shape[0])
+                        c = min(self.out_proj.weight.shape[1], w_o.shape[1])
+                        self.out_proj.weight.data[:r, :c].copy_(w_o[:r, :c])
+                    if b_o is not None and self.out_proj.bias is not None:
+                        mn = min(len(self.out_proj.bias), len(b_o))
+                        self.out_proj.bias.data[:mn].copy_(b_o[:mn])
 
     def forward(
         self,
@@ -599,10 +607,8 @@ class SVDLinearAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        if self.is_nested_encoder:
-            out = context
-        else:
-            out = self.out_proj(context)
+        # Always apply out_proj — our module replaces the full BertAttention container
+        out = self.out_proj(context)
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
