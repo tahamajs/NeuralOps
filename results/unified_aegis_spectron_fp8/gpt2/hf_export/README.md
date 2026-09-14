@@ -16,12 +16,12 @@ metrics:
 Validated factorized/adapted checkpoint of **gpt2** using **gpt2** evaluated on **SST-2**.
 
 ## Empirical Performance Results
-- **Validation Accuracy**: `59.98%`
-- **F1 Score (Binary)**: `0.7142`
-- **F1 Macro**: `0.5234`
-- **Precision**: `0.7385`
-- **Recall**: `0.5926`
-- **Validation Loss**: `0.6305`
+- **Validation Accuracy**: `59.75%`
+- **F1 Score (Binary)**: `0.713`
+- **F1 Macro**: `0.5196`
+- **Precision**: `0.7368`
+- **Recall**: `0.5903`
+- **Validation Loss**: `0.6326`
 - **Quality Gate Status**: `PASS` (Pass Threshold: >= 56.00%)
 
 ## Efficiency Profile & Resource Footprint
@@ -31,9 +31,9 @@ Validated factorized/adapted checkpoint of **gpt2** using **gpt2** evaluated on 
 - **Total Parameters After**: `101512020`
 - **Trainable Recovery Params**: `2995248`
 - **Compressed / Injected Layers**: `24`
-- **Peak VRAM**: `470.37 MB`
-- **Throughput**: `5818.13 tokens/sec`
-- **Evaluation Time**: `54.5 s`
+- **Peak VRAM**: `465.47 MB`
+- **Throughput**: `5186.51 tokens/sec`
+- **Evaluation Time**: `59.55 s`
 
 ## Reproduction & Usage
 ```python

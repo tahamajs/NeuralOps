@@ -6,3 +6,13 @@ adaptive_ranks,run_all_4_adaptive_ranks.py,0,0.0,SKIPPED_EXISTING,,2026-09-14T22
 adaptive_span,run_all_4_adaptive_span.py,0,0.0,SKIPPED_EXISTING,,2026-09-14T22:44:36.243828
 adaptive_sparse,run_all_4_adaptive_sparse.py,0,306.19,PASS,,2026-09-14T22:49:42.434619
 adaptive_sparse_attention,run_all_4_adaptive_sparse_attention.py,0,2145.48,PASS,,2026-09-14T23:25:28.442941
+adaptive_svd_attention,run_all_4_adaptive_svd_attention.py,0,0.0,SKIPPED_EXISTING,,2026-09-14T23:25:28.446248
+adaptive_svd_attn,run_all_4_adaptive_svd_attn.py,0,0.0,SKIPPED_EXISTING,,2026-09-14T23:25:28.447189
+adasplash,run_all_4_adasplash.py,0,0.0,SKIPPED_EXISTING,,2026-09-14T23:25:28.448086
+adasvd,run_all_4_adasvd.py,0,0.0,SKIPPED_EXISTING,,2026-09-14T23:25:28.449202
+admm,run_all_4_admm.py,0,0.0,SKIPPED_EXISTING,,2026-09-14T23:25:28.449618
+admm_pruner,run_all_4_admm_pruner.py,0,0.0,SKIPPED_EXISTING,,2026-09-14T23:25:28.450144
+aegis_hybrid,run_all_4_aegis_hybrid.py,0,732.61,PASS,,2026-09-14T23:37:41.062181
+aegis_spectron_fp8,run_all_4_aegis_spectron_fp8.py,0,577.89,PASS,,2026-09-14T23:47:18.961540
+aegis_v1,run_all_4_aegis_v1.py,1,444.6,FAIL,,2026-09-14T23:54:43.569657
+aegis_v1_module,run_all_4_aegis_v1_module.py,1,275.24,FAIL,,2026-09-14T23:59:18.809666

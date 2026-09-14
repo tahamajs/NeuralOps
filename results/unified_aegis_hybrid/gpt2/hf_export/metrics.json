@@ -11,7 +11,7 @@
   "params_active": null,
   "param_reduction_pct": null,
   "peak_vram_mb": 299.91,
-  "tokens_per_sec": 9855.89,
+  "tokens_per_sec": 9379.25,
   "elapsed_seconds": null,
   "full_metrics": {
     "module_name": "aegis_hybrid",
@@ -22,9 +22,9 @@
     "precision": 0.7289,
     "recall": 0.6412,
     "val_loss": 0.6186,
-    "elapsed_s": 36.76,
+    "elapsed_s": 36.56,
     "peak_vram_mb": 299.91,
-    "tokens_per_sec": 9855.89,
+    "tokens_per_sec": 9379.25,
     "total_params_before": 126800640,
     "total_params_after": 103053648,
     "trainable_recovery_params": 4564560,
@@ -39,6 +39,6 @@
     "lora_params": 2654208,
     "error": NaN,
     "path": "adapted_gpt",
-    "timestamp": "2026-09-14T21:56:26.392035"
+    "timestamp": "2026-09-14T23:28:33.100096"
   }
 }
