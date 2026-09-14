@@ -59,9 +59,6 @@ class ResSVDLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         max_possible_rank = min(in_features, out_features)
@@ -164,7 +161,7 @@ class ResSVDLinear(nn.Module):
         if self.bias is not None:
             out = out + self.bias
 
-        return out * self.output_scale
+        return out
 
     @classmethod
     def from_linear(
@@ -579,9 +576,11 @@ def spectral_residual_lora_factory(
 
 res_svd_compressor_factory = res_svd_factory
 SpectralResidualLoRACompressor = SpectralResidualLoRA
+SVDLinear = ResSVDLinear
 
 __all__ = [
     "ResSVDLinear",
+    "SVDLinear",
     "ResSVDCompressor",
     "SpectralResidualLoRA",
     "SpectralResidualLoRACompressor",
