@@ -81,8 +81,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -137,7 +135,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("rala")
@@ -179,15 +177,22 @@ class RALALinearAttention(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
         self.rank_r = getattr(comp_config, "rala_rank", getattr(config, "rala_rank", kwargs.get("rala_rank", 8)))
-        self.U = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.02)
-        self.V = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.02)
-        self.alpha = nn.Parameter(torch.tensor(0.1))
+        self.U = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.1)
+        self.V = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.1)
+        self.alpha = nn.Parameter(torch.tensor(0.5))
 
-        is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
-        if kwargs.get("is_causal", False):
-            is_dec = True
-        self.is_decoder = bool(is_dec)
-        self.is_causal = bool(is_dec)
+        _mt = str(getattr(config, "model_type", "") or "").lower()
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt")
+        self.is_decoder = (
+            bool(getattr(config, "is_decoder", False))
+            or bool(getattr(config, "causal", False))
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+            or (pretrained_attn is not None and hasattr(pretrained_attn, "c_attn"))
+            or bool(kwargs.get("is_causal", False))
+        )
+        if "is_decoder" in kwargs and kwargs["is_decoder"] is not None:
+            self.is_decoder = bool(kwargs["is_decoder"])
+        self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
         self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
@@ -215,6 +220,11 @@ class RALALinearAttention(BaseAttention):
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+            try:
+                src_device = next(source_attn.parameters()).device
+                self.to(src_device)
+            except Exception:
+                pass
 
         if target_dtype is not None:
             self.to(target_dtype)
