@@ -407,15 +407,13 @@ class HGRN2Layer(BaseAttention):
         h_fwd, h_bwd = self._recurrent_scan_parallel(f, iv, mask_bool)
 
         if self.is_decoder or h_bwd is None:
-            h = h_fwd
+            h_ctx = h_fwd
         else:
-            h = 0.5 * (h_fwd + h_bwd)
+            h_ctx = h_fwd + h_bwd
 
-        # Apply LayerNorm to recurrent state to stabilize representation
-        h = self.state_norm(h)
-
-        # 4. Gating and output projection
-        gated = h * F.silu(z)
+        # Context stabilization with token self-value preservation
+        h_norm = self.state_norm(h_ctx)
+        gated = (0.5 * v + 0.5 * h_norm) * F.silu(z)
         out = self.out_proj(gated)
         if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
             out = out + torch.matmul(torch.matmul(gated, self.out_lora_A.t()), self.out_lora_B.t()) * self.lora_scaling
