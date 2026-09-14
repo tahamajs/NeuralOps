@@ -56,7 +56,7 @@ models = [
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
             "--output_dir", r"results\unified_delta_kv\roberta",
-            "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
+            "--parent_checkpoint", r"results\unified_asvd\roberta\finetuned_model.pt",
             "--modules", "full,delta_kv",
             "--batch_size", "8",
             "--recovery_steps", "50",
@@ -427,6 +427,63 @@ for m in models:
             print(f"  Removed heavy pytorch_model.bin for lean payload.")
         except Exception:
             pass
+    metrics_payload = {
+        "model": name,
+        "compression_module": "delta_kv",
+        "dataset": "sst2",
+        "accuracy_pct": acc,
+        "status": status,
+        "f1_score": row.get("f1_score", None),
+        "compression_rate": row.get("compression_rate", None),
+        "peak_vram_mb": row.get("peak_vram_mb", None),
+        "tokens_per_sec": row.get("tokens_per_sec", None),
+        "elapsed_seconds": row.get("elapsed_seconds", None),
+        "full_metrics": row,
+    }
+    with open(hf_export_dir / "metrics.json", "w", encoding="utf-8") as mf:
+        json.dump(metrics_payload, mf, indent=2)
+
+    card_content = f"""---
+tags:
+- svd-linear-attention
+- model-compression
+- delta-kv
+- {slug}
+- pytorch
+datasets:
+- sst2
+metrics:
+- accuracy
+- f1
+---
+
+# DeltaKV Compression: {name.upper()} ({slug})
+
+Residual-based KV cache compression via long-range similarity applied to **{name}** evaluated on **SST-2**.
+
+## Empirical Performance Results
+- **Validation Accuracy**: `{acc:.2f}%`
+- **F1 Score**: `{row.get('f1_score', 'N/A')}`
+- **Validation Loss**: `{row.get('val_loss', 'N/A')}`
+- **Quality Gate Status**: `{status}` (Pass Threshold: >= 56.00%)
+
+## Efficiency Profile & Resource Footprint
+- **Compression Rate**: `{row.get('compression_rate', '1.00')}x`
+- **Compressed Layers**: `{row.get('num_compressed_layers', 'N/A')}`
+- **Peak VRAM**: `{row.get('peak_vram_mb', 'N/A')} MB`
+- **Throughput**: `{row.get('tokens_per_sec', 'N/A')} tokens/sec`
+
+## Usage
+```python
+import torch
+
+checkpoint = torch.load("weights.pt", map_location="cpu")
+print("Loaded DeltaKV compressed checkpoint successfully.")
+```
+"""
+    readme_path = hf_export_dir / "README.md"
+    if not readme_path.exists():
+        readme_path.write_text(card_content, encoding="utf-8")
 
     repo_id = f"{hf_org}/svd-linear-attention-{slug}-delta-kv"
     try:
