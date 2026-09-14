@@ -211,7 +211,8 @@ class MinimalSVDAttention(BaseAttention):
         super().__init__(cfg, actual_rank)
         self.num_heads: int = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", kwargs.get("num_attention_heads", 4)))
         self.hidden_size: int = getattr(cfg, "hidden_size", kwargs.get("hidden_size", 768))
-        self.head_dim: int = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
+        cfg_head_dim = getattr(cfg, "head_dim", None) if cfg else (getattr(model_config, "head_dim", None) if model_config else None)
+        self.head_dim: int = int(cfg_head_dim or kwargs.get("head_dim") or (self.hidden_size // self.num_heads if self.num_heads > 0 else (self.hidden_size or 64)))
         self.all_head_size: int = self.num_heads * self.head_dim
 
         cfg_kv = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None)) if cfg else None
@@ -246,7 +247,6 @@ class MinimalSVDAttention(BaseAttention):
             getattr(cfg, "is_nested_encoder", False)
             or model_type in ("roberta", "bert", "xlm-roberta")
         )
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         self.q_proj = FactorisedLinear(self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
         self.k_proj = FactorisedLinear(self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
@@ -434,6 +434,9 @@ class MinimalSVDAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
+        if self.q_proj.down.weight.device != device or self.q_proj.down.weight.dtype != dtype:
+            self.to(device=device, dtype=dtype)
+
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv = kv_input.shape[1]
@@ -497,9 +500,9 @@ class MinimalSVDAttention(BaseAttention):
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
-            output = context * self.output_scale
+            output = context
         else:
-            output = self.out_proj(context) * self.output_scale
+            output = self.out_proj(context)
 
         return output, (attn_weights if output_attentions else None)
 
@@ -546,7 +549,10 @@ def inject_minimal_svd(
             new_attn.is_nested_encoder = True
         else:
             layer.attention = new_attn
+            new_attn.is_nested_encoder = False
     elif hasattr(layer, "self"):
         layer.self = new_attn
         new_attn.is_nested_encoder = True
+    else:
+        new_attn.is_nested_encoder = False
     return new_attn

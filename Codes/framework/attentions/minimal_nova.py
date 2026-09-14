@@ -268,8 +268,6 @@ class MinimalNOVAAttention(BaseAttention):
             self.is_decoder = bool(is_decoder)
 
         self.is_nested_encoder: bool = False
-        self.output_scale = nn.Parameter(torch.ones(1))
-        self.output_scale.requires_grad = True
 
         src_p = None
         if pretrained_attn is not None:
@@ -548,9 +546,9 @@ class MinimalNOVAAttention(BaseAttention):
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
-            output = context * self.output_scale
+            output = context
         else:
-            output = self.out_proj(context) * self.output_scale
+            output = self.out_proj(context)
 
         return output, (attn_weights if output_attentions else None)
 
@@ -665,19 +663,23 @@ def inject_minimal_nova(
     if p is not None:
         new_attn.to(device=p.device, dtype=p.dtype)
 
-    if hasattr(target, "attention") and hasattr(target.attention, "self"):
+    if hasattr(target, "attention"):
+        if hasattr(target.attention, "self"):
+            target.attention.self = new_attn
+            new_attn.is_nested_encoder = True
+        else:
+            target.attention = new_attn
+            new_attn.is_nested_encoder = False
+    elif hasattr(target, "self"):
+        target.self = new_attn
         new_attn.is_nested_encoder = True
-        target.attention.self = new_attn
+    elif hasattr(target, "self_attn"):
+        target.self_attn = new_attn
+        new_attn.is_nested_encoder = False
+    elif hasattr(target, "attn"):
+        target.attn = new_attn
+        new_attn.is_nested_encoder = False
     else:
         new_attn.is_nested_encoder = False
-        if hasattr(target, "attention"):
-            target.attention = new_attn
-        elif hasattr(target, "self"):
-            new_attn.is_nested_encoder = True
-            target.self = new_attn
-        elif hasattr(target, "self_attn"):
-            target.self_attn = new_attn
-        elif hasattr(target, "attn"):
-            target.attn = new_attn
 
     return new_attn
