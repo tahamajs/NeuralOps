@@ -136,8 +136,6 @@ class SVDLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.rank = rank
@@ -227,7 +225,7 @@ class SVDLinear(nn.Module):
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
 
-        return out * self.output_scale
+        return out
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         with torch.no_grad():
@@ -317,9 +315,10 @@ class SVDLinearAttention(BaseAttention):
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
+            _mt = str(_cfg_get(config, "model_type", "") or "").lower()
             self.is_decoder = (
-                _cfg_get(config, "is_decoder", False)
-                or _cfg_get(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                bool(_cfg_get(config, "is_decoder", False))
+                or any(_mt.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "falcon", "bloom", "opt"))
                 or (old_attn is not None and hasattr(old_attn, "c_attn"))
             )
 
@@ -386,6 +385,7 @@ class SVDLinearAttention(BaseAttention):
         gate_out_dim = self.all_head_size if self.decay_channel_wise else self.num_heads
         self.decay_gate = nn.Linear(self.hidden_size, gate_out_dim, bias=True)
         self.dropout = nn.Dropout(self.dropout_rate)
+        self.output_scale = nn.Parameter(torch.ones(1))  # applied once after out_proj
         self._init_decay_gate()
 
         if old_attn is not None:
@@ -848,6 +848,9 @@ class SVDLinearAttention(BaseAttention):
             output = context
         else:
             output = self.out_proj(context)
+
+        # Apply output_scale ONCE to the final output (not inside each projection)
+        output = output * self.output_scale
 
         if output.shape[-1] != hidden_states.shape[-1]:
             if output.shape[-1] < hidden_states.shape[-1]:
