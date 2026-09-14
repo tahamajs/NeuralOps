@@ -1,14 +1,14 @@
 {
     "model": "roberta-base_aegis_v1",
     "performance": {
-        "accuracy_pct": 50.92,
-        "f1_score": 0.6743,
-        "f1_macro": 0.3395,
-        "precision": 0.5046,
-        "recall": 0.5,
-        "val_loss": 0.6818,
-        "status": "PASS_LOW",
-        "elapsed_s": 45.69
+        "accuracy_pct": 80.62,
+        "f1_score": 0.8284,
+        "f1_macro": 0.8029,
+        "precision": 0.8227,
+        "recall": 0.8041,
+        "val_loss": 0.4528,
+        "status": "PASS",
+        "elapsed_s": 47.09
     },
     "efficiency": {
         "total_params_before": 124647170,
@@ -89,7 +89,7 @@
     },
     "hardware": {
         "peak_vram_mb": 675.79,
-        "tokens_per_sec": 8046.67
+        "tokens_per_sec": 7213.71
     },
     "architecture": {
         "span_distribution": {},
@@ -102,5 +102,5 @@
         "L_512_vram_mb": 671.86,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-14T22:28:22.026556"
+    "timestamp": "2026-09-14T23:23:50.431879"
 }
