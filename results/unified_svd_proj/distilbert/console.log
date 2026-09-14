@@ -1,59 +1,22 @@
-`torch_dtype` is deprecated! Use `dtype` instead!
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep:   family:            bert
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-11 09:31:04,162 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 09:31:04,167 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\unified_asvd\distilbert\finetuned_model.pt
-2026-09-11 09:31:04,231 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-11 09:31:04,784 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-11 09:31:05,953 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.48%
-2026-09-11 09:31:05,963 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 09:31:05,963 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-11 09:31:05,963 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-11 09:31:05,963 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-11 09:31:05,963 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-11 09:31:05,963 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-11 09:31:05,963 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-11 09:31:05,963 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 09:31:05,963 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 09:31:07,076 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd_proj\distilbert\distilbert_sst2_full_full_metrics.json
-2026-09-11 09:31:07,087 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd_proj\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
-2026-09-11 09:31:07,218 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.48% (F1: 0.9077, Peak VRAM: 389.51 MB)
-2026-09-11 09:31:07,218 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_svd_proj\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 09:31:07,357 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: svd_proj (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 09:31:11,013 [INFO] framework.core.attention_utils: Successfully injected 'svd_proj' into 6 transformer blocks.
-2026-09-11 09:31:11,014 [INFO] QwenQualitySweep: module=svd_proj path=legacy_bert
-2026-09-11 09:31:11,014 [INFO] QwenQualitySweep: module=svd_proj injection summary: 0 SVDLinear layers active
-2026-09-11 09:31:11,014 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for svd_proj (lr=2.0e-04)
-2026-09-11 09:31:11,051 [INFO] framework.utils.compat: Recovery fine-tuning selected 1181978 trainable parameters across 76 tensors.
-2026-09-11 09:31:11,051 [INFO] QwenQualitySweep: LoRA fine-tuning: 1181978 trainable parameters across 76 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-11 09:31:11,237 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.5192 (bs=8, micro_bs=8)
-2026-09-11 09:31:11,415 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6725 (bs=8, micro_bs=8)
-2026-09-11 09:31:11,596 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.5780 (bs=8, micro_bs=8)
-2026-09-11 09:31:11,839 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6123 (bs=8, micro_bs=8)
-2026-09-11 09:31:12,034 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6185 (bs=8, micro_bs=8)
-2026-09-11 09:31:12,248 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.5590 (bs=8, micro_bs=8)
-2026-09-11 09:31:12,509 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.4925 (bs=8, micro_bs=8)
-2026-09-11 09:31:12,754 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.4914 (bs=8, micro_bs=8)
-2026-09-11 09:31:12,990 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.4944 (bs=8, micro_bs=8)
-2026-09-11 09:31:13,194 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.4383 (bs=8, micro_bs=8)
-2026-09-11 09:31:13,409 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.5308 (bs=8, micro_bs=8)
-2026-09-11 09:31:15,198 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd_proj\distilbert\distilbert_sst2_svd_proj_full_metrics.json
-2026-09-11 09:31:15,239 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd_proj\distilbert\checkpoints\svd_proj\weights.pt (module_params=144, lora_params=136)
-2026-09-11 09:31:15,387 [INFO] QwenQualitySweep: [2/2] svd_proj -> PASS 76.15% (F1: 0.7873, Peak VRAM: 283.77 MB)
-2026-09-11 09:31:15,387 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_svd_proj\distilbert\checkpoints\svd_proj. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 09:31:15,520 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 09:31:15,520 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
-2026-09-11 09:31:15,523 [INFO] QwenQualitySweep: 
-  Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-    full   PASS   90.48% 0.00% (base) 0.9077                  0            1.00x  389.5 MB               0.74              0.85
-svd_proj   PASS   76.15%      -14.33% 0.7873                  0            1.23x  283.8 MB               1.75              2.01
-2026-09-11 09:31:15,524 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 19:39:33,246 [INFO] QwenQualitySweep: GPU VRAM: 2.32 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-14 19:39:33,246 [WARNING] QwenQualitySweep: LOW GPU MEMORY: Only 2.32 GB VRAM available (< 4.0 GB). High risk of CUDA OOM.
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2576, in <module>
+    if __name__ == "__main__": main()
+                               ~~~~^^
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 1175, in main
+    base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, dtype=dtype).to(device)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\auto\auto_factory.py", line 387, in from_pretrained
+    return model_class.from_pretrained(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        pretrained_model_name_or_path, *model_args, config=config, **hub_kwargs, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_utils.py", line 4132, in from_pretrained
+    loading_info, disk_offload_index = cls._load_pretrained_model(model, state_dict, checkpoint_files, load_config)
+                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_utils.py", line 4240, in _load_pretrained_model
+    file_pointer = safe_open(file, framework="pt", device="cpu")
+OSError: The paging file is too small for this operation to complete. (os error 1455)
