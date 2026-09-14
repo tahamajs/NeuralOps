@@ -223,10 +223,30 @@ Context Length ($L$) & Inference Latency ($ms$) & Peak VRAM ($MB$) & Speedup vs 
 \subsection{\texttt{aasvd}}
 \textbf{Overview and Operational Mechanics:}
 
-Approximate Activation SVD computing low-rank factors via randomized range finders on activation-scaled matrices.
+Activation-Aware Singular Value Decomposition (AASVD) computes low-rank factors via streaming Exponential Moving Average (EMA) activation covariance accumulation:
+\begin{equation}
+C_X^{(t)} = \beta C_X^{(t-1)} + (1-\beta) \frac{1}{B} \sum_{i=1}^B X_i^\top X_i.
+\end{equation}
+Weight matrices are projected onto the principal empirical activation subspace ($W_{\text{weighted}} = W C_X^{1/2}$), factorized into truncated singular components $U_r, V_r$, and unweighted via $C_X^{-1/2}$, preserving salient outlier activations under low-rank parameterization.
 
 \textbf{Implementation Details:}
-This module integrates directly within the NeuralOps ecosystem, providing optimized forward and backward passes. It maintains strict compliance with the architectural memory constraints, ensuring optimal throughput scaling.
+This module integrates directly within the NeuralOps compression engine as \texttt{AASVDCompressor}, factorizing linear projections into structural \texttt{SVDLinear} layers ($y = (x V^\top) U^\top + b$) with recovery fine-tuning support.
+
+\begin{table}[h]
+\centering
+\small
+\caption{\textbf{Empirical Benchmark Telemetry for \texttt{aasvd}}. Measured on NVIDIA RTX 4070 Laptop GPU across standard GLUE tasks.}
+\label{tab:telemetry_aasvd_compressions}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lccccc}
+\toprule
+\textbf{Model Family} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1-Score} & \textbf{Peak VRAM} & \textbf{Throughput} \\
+\midrule
+DistilBERT & \texttt{PASS} & 89.45\% & 89.96\% & 234.2 MB & 163,468 tok/s \\
+RoBERTa & \texttt{PASS} & 88.07\% & 88.77\% & 343.5 MB & 101,497 tok/s \\
+GPT-2 & \texttt{PASS} & 80.73\% & 82.43\% & 467.7 MB & 12,376 tok/s \\
+\bottomrule
+\end{tabular*}
+\end{table}
 
 \subsection{\texttt{adaptive\_svd}}
 \subsubsection*{Adaptive SVD Attention: Low-Rank SVD Projections with Parallel Residual Adapters}

@@ -409,11 +409,11 @@
           "source_file": "results/unified_aasvd/distilbert/summary.csv"
         },
         "GPT-2": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.6748,
-          "peak_vram_mb": 643.86,
-          "throughput_tokens_sec": 69685.69,
+          "status": "PASS",
+          "accuracy_pct": 80.73,
+          "f1_score": 0.8243,
+          "peak_vram_mb": 467.74,
+          "throughput_tokens_sec": 12376.1,
           "source_file": "results/unified_aasvd/gpt2/summary.csv"
         },
         "Qwen": {
@@ -431,19 +431,11 @@
           "peak_vram_mb": 343.48,
           "throughput_tokens_sec": 101496.89,
           "source_file": "results/unified_aasvd/roberta/summary.csv"
-        },
-        "Unknown": {
-          "status": "PASS",
-          "accuracy_pct": 73.97,
-          "f1_score": null,
-          "peak_vram_mb": null,
-          "throughput_tokens_sec": null,
-          "source_file": "results/t5_sst2_full_sweep_fixed_v3/summary.csv"
         }
       },
       "best_accuracy": 89.45,
       "has_pass": true,
-      "has_pass_low": true,
+      "has_pass_low": false,
       "is_pure_pass": true,
       "overall_status": "PASS"
     },
@@ -11293,19 +11285,35 @@
       "module_name": "aasvd  # aliases: aa_svd, aa_svd_compressor",
       "models": {
         "DistilBERT": {
-          "status": "FAIL",
-          "accuracy_pct": 0.0,
-          "f1_score": 0.0,
-          "peak_vram_mb": 0.0,
-          "throughput_tokens_sec": 0.0,
-          "source_file": "results/run_quality_clean/summary.csv"
+          "status": "PASS",
+          "accuracy_pct": 89.45,
+          "f1_score": 0.8996,
+          "peak_vram_mb": 234.19,
+          "throughput_tokens_sec": 163468.26,
+          "source_file": "results/unified_aasvd/distilbert/summary.csv"
+        },
+        "RoBERTa": {
+          "status": "PASS",
+          "accuracy_pct": 88.07,
+          "f1_score": 0.8877,
+          "peak_vram_mb": 343.48,
+          "throughput_tokens_sec": 101496.89,
+          "source_file": "results/unified_aasvd/roberta/summary.csv"
+        },
+        "GPT-2": {
+          "status": "PASS",
+          "accuracy_pct": 80.73,
+          "f1_score": 0.8243,
+          "peak_vram_mb": 467.74,
+          "throughput_tokens_sec": 12376.1,
+          "source_file": "results/unified_aasvd/gpt2/summary.csv"
         }
       },
-      "best_accuracy": 0.0,
-      "has_pass": false,
+      "best_accuracy": 89.45,
+      "has_pass": true,
       "has_pass_low": false,
-      "is_pure_pass": false,
-      "overall_status": "FAIL"
+      "is_pure_pass": true,
+      "overall_status": "PASS"
     },
     "mamba_svd_flash_inject": {
       "module_name": "mamba_svd_flash_inject",
