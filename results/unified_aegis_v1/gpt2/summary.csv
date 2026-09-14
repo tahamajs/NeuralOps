@@ -1,3 +1,3 @@
 module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
 full,PASS,87.84,0.8776,0.8784,0.8791,0.8789,0.3093,6.18,391.24,27937.76,126800640,126800640,0,1.0,0.0,0.0,48,0,,,0,2359296,,adapted_gpt,2026-09-14T22:04:59.785509
-aegis_v1,PASS,83.37,0.8528,0.8309,0.8519,0.8316,0.3677,89.94,345.29,5698.2,126800640,127488960,3047616,0.9946,-0.54,0.0,72,0,,,12,2654208,,adapted_gpt,2026-09-14T18:02:30.860369
+aegis_v1,PASS,80.85,0.8348,0.8035,0.8361,0.8058,0.422,42.76,344.49,9004.41,126800640,127488960,3047616,0.9946,-0.54,0.0,72,0,,,12,2654208,,adapted_gpt,2026-09-14T22:05:42.775719

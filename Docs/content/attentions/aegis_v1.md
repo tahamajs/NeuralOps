@@ -613,3 +613,8 @@ The `AegisAttentionV1` architecture incorporates telemetry hooks for tracking si
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.94% | **60.89%** | -30.05% | 0.7142 | 0.99x | 24 | [svd-linear-attention-distilbert-sst2-aegis-v1](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-v1) | 2026-09-14 |
