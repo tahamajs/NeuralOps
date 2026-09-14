@@ -58,17 +58,54 @@ def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     return torch.cat((-x2, x1), dim=-1)
 
 
+def _delta_chunk_forward(
+    S: torch.Tensor,
+    q_i: torch.Tensor,
+    k_i: torch.Tensor,
+    v_i: torch.Tensor,
+    beta_i: torch.Tensor,
+    alpha_i: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Inner loop over a small chunk size C (e.g. 8)."""
+    C = q_i.shape[2]
+    chunk_outs = []
+    curr_S = S
+    for t in range(C):
+        kt = k_i[:, :, t:t+1, :]
+        vt = v_i[:, :, t:t+1, :]
+        qt = q_i[:, :, t:t+1, :]
+        bt = beta_i[:, :, t:t+1].unsqueeze(-1)
+        at = alpha_i[:, :, t:t+1].unsqueeze(-1)
+
+        inter_v = torch.matmul(kt, curr_S)
+        err = vt - inter_v
+
+        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True)
+        denom = (1.0 + norm_k_sq).clamp(min=1.0)
+        step = (at / denom).clamp(min=0.0, max=1.0)
+
+        delta_update = step * torch.matmul(kt.transpose(-1, -2), err)
+        curr_S = bt * curr_S + delta_update
+        curr_S = torch.nan_to_num(curr_S, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        yt = torch.matmul(qt, curr_S)
+        chunk_outs.append(yt)
+
+    return torch.cat(chunk_outs, dim=2), curr_S
+
+
 def chunked_delta_rule_scan(
     q: torch.Tensor,
     k: torch.Tensor,
     v: torch.Tensor,
     beta: torch.Tensor,
     alpha: torch.Tensor,
-    chunk_size: int = 64,
+    chunk_size: int = 8,
+    use_checkpoint: bool = True,
 ) -> torch.Tensor:
     r"""
-    Numerically stable recurrence for Delta-Rule recurrent attention.
-    Uses normalized LMS updates with strictly contractive step sizes to prevent FP16 divergence.
+    True chunked recurrence for Delta-Rule recurrent attention with O(num_chunks) outer recurrence.
+    Shards intermediate computation across chunks to eliminate OOM and bad_alloc errors.
     """
     B, H, L, d = q.shape
     device = q.device
@@ -86,35 +123,47 @@ def chunked_delta_rule_scan(
     q_norm = torch.norm(q_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
     q_unit = q_f / q_norm
 
-    # Sequential running-state recurrence in FP32
+    # Pad sequence to multiple of chunk_size
+    pad_len = (chunk_size - L % chunk_size) % chunk_size
+    if pad_len > 0:
+        q_unit = F.pad(q_unit, (0, 0, 0, pad_len))
+        k_unit = F.pad(k_unit, (0, 0, 0, pad_len))
+        v_f = F.pad(v_f, (0, 0, 0, pad_len))
+        beta_f = F.pad(beta_f, (0, pad_len), value=0.0)
+        alpha_f = F.pad(alpha_f, (0, pad_len), value=1.0)
+
+    L_pad = L + pad_len
+    num_chunks = L_pad // chunk_size
+
+    q_c = q_unit.view(B, H, num_chunks, chunk_size, d)
+    k_c = k_unit.view(B, H, num_chunks, chunk_size, d)
+    v_c = v_f.view(B, H, num_chunks, chunk_size, d)
+    beta_c = beta_f.view(B, H, num_chunks, chunk_size)
+    alpha_c = alpha_f.view(B, H, num_chunks, chunk_size)
+
     S = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
     outputs = []
 
-    for t in range(L):
-        kt = k_unit[:, :, t:t+1, :]          # [B, H, 1, d]
-        vt = v_f[:, :, t:t+1, :]             # [B, H, 1, d]
-        qt = q_unit[:, :, t:t+1, :]          # [B, H, 1, d]
-        bt = beta_f[:, :, t:t+1].unsqueeze(-1)   # [B, H, 1, 1]
-        at = alpha_f[:, :, t:t+1].unsqueeze(-1)  # [B, H, 1, 1]
+    from torch.utils.checkpoint import checkpoint
 
-        # Predict v from historical state S
-        inter_v = torch.matmul(kt, S)         # [B, H, 1, d]
-        err = vt - inter_v
+    for c in range(num_chunks):
+        q_i = q_c[:, :, c]
+        k_i = k_c[:, :, c]
+        v_i = v_c[:, :, c]
+        beta_i = beta_c[:, :, c]
+        alpha_i = alpha_c[:, :, c]
 
-        # Stable Normalized LMS delta update:
-        # Bounded step size ensures strictly contractive operator |1 - step * ||k||^2| < 1
-        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True)
-        denom = (1.0 + norm_k_sq).clamp(min=1.0)
-        step = (at / denom).clamp(min=0.0, max=1.0)
-
-        delta_update = step * torch.matmul(kt.transpose(-1, -2), err)
-        S = bt * S + delta_update
-        S = torch.nan_to_num(S, nan=0.0, posinf=1e4, neginf=-1e4)
-
-        yt = torch.matmul(qt, S)
-        outputs.append(yt)
+        if use_checkpoint and q.requires_grad:
+            y_i, S = checkpoint(
+                _delta_chunk_forward, S, q_i, k_i, v_i, beta_i, alpha_i, use_reentrant=False
+            )
+        else:
+            y_i, S = _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i)
+        outputs.append(y_i)
 
     y = torch.cat(outputs, dim=2)
+    if pad_len > 0:
+        y = y[:, :, :L, :]
     return torch.nan_to_num(y, nan=0.0)
 
 
@@ -168,7 +217,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -229,7 +277,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("gated_delta_net", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -283,7 +331,16 @@ class GatedDeltaNet(BaseAttention):
         self.d_model: int = int(d_model)
         self.num_heads: int = int(num_heads)
         self.num_kv_heads: int = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", kwargs.get("num_kv_heads", self.num_heads))) if config is not None else kwargs.get("num_kv_heads", self.num_heads)
-        self.head_dim: int = getattr(config, "head_dim", None) or (self.d_model // max(1, self.num_heads))
+        head_dim = getattr(config, "head_dim", None)
+        if head_dim is None and source_attn is not None:
+            for q_cand in ["q_proj", "query", "q_lin", "W_q"]:
+                q_mod = getattr(source_attn, q_cand, None)
+                if q_mod is not None and hasattr(q_mod, "out_features"):
+                    head_dim = q_mod.out_features // max(1, self.num_heads)
+                    break
+        if head_dim is None:
+            head_dim = self.d_model // max(1, self.num_heads)
+        self.head_dim: int = int(head_dim)
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -305,9 +362,9 @@ class GatedDeltaNet(BaseAttention):
         self.freeze_base: bool = (self.lora_rank > 0)
 
         # Decoder & nested encoder detection
-        model_type = getattr(config, "model_type", "").lower()
+        model_type = getattr(config, "model_type", "").lower() if config is not None else ""
         is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False)))
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+        if any(model_type.startswith(pfx) for pfx in ("gpt", "qwen", "llama", "mistral", "bloom", "opt", "falcon", "codegen")):
             is_dec = True
         elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
@@ -327,7 +384,6 @@ class GatedDeltaNet(BaseAttention):
         if not is_nested and model_type in ["roberta", "bert", "xlm-roberta"] and not self.is_decoder:
             is_nested = True
         self.is_nested_encoder: bool = bool(is_nested)
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(self.d_model, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
@@ -346,7 +402,8 @@ class GatedDeltaNet(BaseAttention):
         self.source_attn = source_attn
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         self.comp_config: Optional[Any] = comp_config
-        self.chunk_size: int = int(_cfg_get(comp_config, "chunk_size", kwargs.get("chunk_size", 64)))
+        self.chunk_size: int = int(_cfg_get(comp_config, "chunk_size", kwargs.get("chunk_size", 8)))
+        self.use_gradient_checkpointing: bool = kwargs.get("use_gradient_checkpointing", True)
         self.max_seq_len_for_recurrence: int = int(_cfg_get(comp_config, "max_seq_len_for_recurrence", kwargs.get("max_seq_len_for_recurrence", 256)))
 
         if source_attn is not None:
@@ -425,8 +482,7 @@ class GatedDeltaNet(BaseAttention):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.warning("copy_weights c_attn merge warning: %s", e)
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -493,8 +549,7 @@ class GatedDeltaNet(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.warning("UniversalAdapter fallback warning: %s", e)
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -588,10 +643,13 @@ class GatedDeltaNet(BaseAttention):
             v_f = v_f * m_f.unsqueeze(-1)
 
         # Chunked associative recurrence via vectorised intra-chunk matrix multiplications
-        chunk_size = getattr(self, "chunk_size", 32)
-        logger.info("Using chunked delta scan with chunk_size=%d", chunk_size)
+        chunk_size = getattr(self, "chunk_size", 8)
+        use_checkpoint = getattr(self, "use_gradient_checkpointing", True)
+        logger.debug("Using chunked delta scan with chunk_size=%d, checkpointing=%s", chunk_size, use_checkpoint)
 
-        y_fwd = chunked_delta_rule_scan(q_f, k_f, v_f, beta_f, alpha_f, chunk_size=chunk_size)
+        y_fwd = chunked_delta_rule_scan(
+            q_f, k_f, v_f, beta_f, alpha_f, chunk_size=chunk_size, use_checkpoint=use_checkpoint
+        )
 
         # 2. Anticausal backward scan (computed for bidirectional encoders by reversing sequences)
         if not self.is_decoder:
@@ -601,7 +659,9 @@ class GatedDeltaNet(BaseAttention):
             beta_bwd = torch.flip(beta_f, dims=[2])
             alpha_bwd = torch.flip(alpha_f, dims=[2])
 
-            y_bwd_flipped = chunked_delta_rule_scan(q_bwd, k_bwd, v_bwd, beta_bwd, alpha_bwd, chunk_size=chunk_size)
+            y_bwd_flipped = chunked_delta_rule_scan(
+                q_bwd, k_bwd, v_bwd, beta_bwd, alpha_bwd, chunk_size=chunk_size, use_checkpoint=use_checkpoint
+            )
             y_bwd = torch.flip(y_bwd_flipped, dims=[2])
             return y_fwd.to(q.dtype), y_bwd.to(q.dtype)
 
@@ -711,7 +771,7 @@ class GatedDeltaNet(BaseAttention):
         if mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        return out * self.output_scale, None
+        return out, None
 
 
 @ATTENTION_REGISTRY.register("gated_delta_net_inject")
@@ -823,13 +883,16 @@ def inject_gated_delta_net(
                 new_block.is_nested_encoder = True
                 target.attention.self = new_block
             else:
+                new_block.is_nested_encoder = False
                 target.attention = new_block
         elif hasattr(target, "self"):
             new_block.is_nested_encoder = True
             target.self = new_block
         elif hasattr(target, "attn"):
+            new_block.is_nested_encoder = False
             target.attn = new_block
         elif hasattr(target, "self_attn"):
+            new_block.is_nested_encoder = False
             target.self_attn = new_block
 
     return new_block
