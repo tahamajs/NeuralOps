@@ -1,14 +1,14 @@
 {
     "model": "gpt2_full",
     "performance": {
-        "accuracy_pct": 60.78,
-        "f1_score": 0.6354,
-        "f1_macro": 0.6055,
-        "precision": 0.6085,
-        "recall": 0.6066,
-        "val_loss": 0.6585,
-        "status": "PASS",
-        "elapsed_s": 6.2
+        "accuracy_pct": 49.54,
+        "f1_score": 0.2903,
+        "f1_macro": 0.4494,
+        "precision": 0.5014,
+        "recall": 0.5009,
+        "val_loss": 0.7992,
+        "status": "PASS_LOW",
+        "elapsed_s": 5.8
     },
     "efficiency": {
         "total_params_before": 124441344,
@@ -27,8 +27,8 @@
         "per_layer_ranks": {}
     },
     "hardware": {
-        "peak_vram_mb": 793.19,
-        "tokens_per_sec": 26460.42
+        "peak_vram_mb": 390.24,
+        "tokens_per_sec": 27173.61
     },
     "architecture": {
         "span_distribution": {},
@@ -36,10 +36,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 681.07,
-        "L_256_vram_mb": 691.32,
-        "L_512_vram_mb": 721.95,
+        "L_128_vram_mb": 282.75,
+        "L_256_vram_mb": 297.56,
+        "L_512_vram_mb": 322.19,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-11T11:13:11.660335"
+    "timestamp": "2026-09-15T00:46:38.231026"
 }

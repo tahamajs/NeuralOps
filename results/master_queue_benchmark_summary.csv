@@ -36,3 +36,14 @@ come,run_all_4_come.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T00:20:20.667952
 compressed_attention,run_all_4_compressed_attention.py,0,232.84,PASS,,2026-09-15T00:24:13.512563
 compressed_attention_layer,run_all_4_compressed_attention_layer.py,0,195.81,PASS,,2026-09-15T00:27:29.329194
 compressed_mha,run_all_4_compressed_mha.py,0,162.92,PASS,,2026-09-15T00:30:12.260785
+cosformer,run_all_4_cosformer.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T00:30:12.268221
+cur,run_all_4_cur.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T00:30:12.271278
+cur_linear,run_all_4_cur_linear.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T00:30:12.276277
+cur_moe,run_all_4_cur_moe.py,0,161.49,PASS,,2026-09-15T00:32:53.775249
+cure,run_all_4_cure.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T00:32:53.781217
+decay_linear_attention,run_all_4_decay_linear_attention.py,0,360.47,PASS,,2026-09-15T00:38:54.251108
+delta_kv,run_all_4_delta_kv.py,0,332.14,PASS,,2026-09-15T00:44:26.399807
+direct_svd,run_all_4_direct_svd.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T00:44:26.405164
+dobi,run_all_4_dobi.py,0,243.42,PASS,,2026-09-15T00:48:29.830677
+dynamic_entropy,run_all_4_dynamic_entropy.py,0,291.96,PASS,,2026-09-15T00:53:21.797696
+eat,run_all_4_eat.py,0,285.47,PASS,,2026-09-15T00:58:07.278457
