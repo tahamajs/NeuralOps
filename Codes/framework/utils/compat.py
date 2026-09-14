@@ -200,6 +200,10 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
                 trainable_params.append(param)
             continue
 
+        # Parameters inside a base_layer of a LoRA wrapper must remain strictly frozen
+        if ".base_layer." in n_low and not any(tag in n_low for tag in ("lora_a", "lora_b", "lora_")):
+            continue
+
         # 1. LoRA adapter, gate, calibration scale, decay, and span parameters are always trainable
         if any(tag in n_low for tag in ("lora_a", "lora_b", "lora_", ".adapter", ".prompt", ".gate", "gate.", ".alpha", ".beta", ".output_scale", ".decay", "span_logits", ".span_logits")):
             trainable_params.append(param)
