@@ -1212,15 +1212,24 @@ def main():
                 LOG.warning("Could not enable gradient checkpointing: %s", e)
 
     checkpoint = out / "finetuned_model.pt"
-    if args.parent_checkpoint:
-        parent_checkpoint = Path(args.parent_checkpoint)
-    else:
-        # Dynamically discover parent baseline checkpoint specifically matching current model family and dataset
+    parent_checkpoint = Path(args.parent_checkpoint) if args.parent_checkpoint and Path(args.parent_checkpoint).exists() else None
+    if parent_checkpoint is None:
+        if args.parent_checkpoint:
+            LOG.warning("Specified parent_checkpoint '%s' does not exist; attempting automatic fallback search.", args.parent_checkpoint)
         candidates = [
             out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt",
             out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt",
             out.parent / f"{family}_{args.dataset}_full_sweep" / "finetuned_model.pt",
             out.parent / f"{family}_{args.dataset}_baseline" / "finetuned_model.pt",
+            out.parent / "unified_asvd" / family / "finetuned_model.pt",
+            out.parent / "unified_delta_kv" / family / "finetuned_model.pt",
+            out.parent / "unified_nsa" / family / "finetuned_model.pt",
+            out.parent / "unified_infini" / family / "finetuned_model.pt",
+            out.parent / "unified_rpc" / family / "finetuned_model.pt",
+            out.parent / "unified_res_svd" / family / "finetuned_model.pt",
+            Path("results") / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt",
+            Path("results") / "unified_asvd" / family / "finetuned_model.pt",
+            Path("results") / "unified_delta_kv" / family / "finetuned_model.pt",
         ]
         parent_checkpoint = next((c for c in candidates if c.exists()), Path("non_existent_placeholder.pt"))
 

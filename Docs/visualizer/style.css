@@ -2633,3 +2633,122 @@ kbd {
     0%,100% { box-shadow: 0 0 0 0 rgba(83,236,217,0); }
     50% { box-shadow: 0 0 0 5px rgba(83,236,217,0.4); }
 }
+
+/* Modal Controls Subrow & Sort Buttons */
+.modal-controls-subrow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.modal-sort-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #050a12;
+    padding: 3px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--panel-border);
+    flex-shrink: 0;
+}
+
+.sort-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 2px;
+}
+
+.sort-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.sort-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sort-btn.active {
+    background: #0284c7;
+    color: #fff;
+    font-weight: 600;
+    border-color: #38bdf8;
+}
+
+/* Card Accuracy Badge & 4-Model Quick Breakdown */
+.card-acc-badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    letter-spacing: 0.3px;
+}
+
+.acc-high {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
+.acc-mid {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+.acc-low {
+    background: rgba(244, 63, 94, 0.15);
+    color: #f87171;
+    border-color: rgba(244, 63, 94, 0.35);
+}
+
+.acc-none {
+    background: rgba(100, 116, 139, 0.15);
+    color: #94a3b8;
+    border-color: rgba(100, 116, 139, 0.25);
+}
+
+.card-benchmark-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+    padding: 4px 6px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.card-model-accs {
+    display: flex;
+    gap: 4px;
+}
+
+.cma-chip {
+    font-size: 8px;
+    font-family: var(--font-mono);
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-faint);
+}
+
+.cma-chip b {
+    color: #e2e8f0;
+}
+

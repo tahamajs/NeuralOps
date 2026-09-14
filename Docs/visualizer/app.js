@@ -2632,9 +2632,11 @@ function initModuleCatalog() {
     const closeBtn = document.getElementById('btn-close-modal');
     const searchInput = document.getElementById('modal-search-input');
     const catPills = document.querySelectorAll('.cat-pill');
+    const sortBtns = document.querySelectorAll('.sort-btn');
 
     let currentCat = 'all';
     let currentSearch = '';
+    let currentSort = 'accuracy';
 
     const openModal = () => {
         if (modal) {
@@ -2643,7 +2645,7 @@ function initModuleCatalog() {
                 searchInput.value = '';
                 searchInput.focus();
             }
-            renderModuleCards('all', '');
+            renderModuleCards('all', '', currentSort);
         }
     };
 
@@ -2667,7 +2669,17 @@ function initModuleCatalog() {
             catPills.forEach(p => p.classList.remove('active'));
             pill.classList.add('active');
             currentCat = pill.dataset.cat;
-            renderModuleCards(currentCat, currentSearch);
+            renderModuleCards(currentCat, currentSearch, currentSort);
+        });
+    });
+
+    // Sort order switching
+    sortBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            sortBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentSort = btn.dataset.sort;
+            renderModuleCards(currentCat, currentSearch, currentSort);
         });
     });
 
@@ -2675,23 +2687,52 @@ function initModuleCatalog() {
     if (searchInput) {
         searchInput.addEventListener('input', () => {
             currentSearch = searchInput.value.trim().toLowerCase();
-            renderModuleCards(currentCat, currentSearch);
+            renderModuleCards(currentCat, currentSearch, currentSort);
         });
     }
 }
 
-function renderModuleCards(category = 'all', searchQuery = '') {
+function renderModuleCards(category = 'all', searchQuery = '', sortBy = 'accuracy') {
     const grid = document.getElementById('modal-module-grid');
     const countEl = document.getElementById('modal-module-count');
     if (!grid) return;
 
     grid.innerHTML = '';
 
-    const filtered = modulesCatalog.filter(m => {
+    let filtered = modulesCatalog.filter(m => {
         const matchesCat = (category === 'all' || m.category === category);
         const text = (m.id + ' ' + m.name + ' ' + m.description + ' ' + m.category + ' ' + (m.math || '')).toLowerCase();
         const matchesSearch = !searchQuery || text.includes(searchQuery);
         return matchesCat && matchesSearch;
+    });
+
+    // Apply accurate sorting across all 240 modules
+    filtered.sort((a, b) => {
+        const fullA = modulesComponentsMap[a.id] || a;
+        const fullB = modulesComponentsMap[b.id] || b;
+        const vbA = fullA.verified_benchmark || a.verified_benchmark || {};
+        const vbB = fullB.verified_benchmark || b.verified_benchmark || {};
+
+        if (sortBy === 'accuracy') {
+            const accA = vbA.best_accuracy != null ? vbA.best_accuracy : -1;
+            const accB = vbB.best_accuracy != null ? vbB.best_accuracy : -1;
+            if (accB !== accA) return accB - accA;
+            return a.name.localeCompare(b.name);
+        } else if (sortBy === 'savings') {
+            const projA = (fullA.model_projections && fullA.model_projections.distilbert) || {};
+            const projB = (fullB.model_projections && fullB.model_projections.distilbert) || {};
+            const ratioA = projA.savings_ratio || 1.0;
+            const ratioB = projB.savings_ratio || 1.0;
+            if (ratioB !== ratioA) return ratioB - ratioA;
+            return a.name.localeCompare(b.name);
+        } else if (sortBy === 'name') {
+            return a.name.localeCompare(b.name);
+        } else if (sortBy === 'category') {
+            const catComp = (a.category || '').localeCompare(b.category || '');
+            if (catComp !== 0) return catComp;
+            return a.name.localeCompare(b.name);
+        }
+        return 0;
     });
 
     if (countEl) countEl.innerText = `${filtered.length} of ${modulesCatalog.length}`;
@@ -2702,6 +2743,32 @@ function renderModuleCards(category = 'all', searchQuery = '') {
     }
 
     filtered.forEach(mod => {
+        const fullMod = modulesComponentsMap[mod.id] || mod;
+        const vb = fullMod.verified_benchmark || mod.verified_benchmark || {};
+        const bestAcc = vb.best_accuracy;
+        const status = vb.overall_status || 'BENCH';
+
+        // Accuracy badge style class
+        let accBadgeClass = 'acc-none';
+        let accText = 'No benchmark';
+        if (bestAcc != null) {
+            if (bestAcc >= 80) accBadgeClass = 'acc-high';
+            else if (bestAcc >= 50) accBadgeClass = 'acc-mid';
+            else accBadgeClass = 'acc-low';
+            accText = `${Number(bestAcc).toFixed(1)}% Acc · ${status}`;
+        }
+
+        // Multi-model accuracy chips
+        const modelsAcc = vb.models || {};
+        const chips = ['distilbert', 'roberta', 'gpt2', 'qwen'].map(mk => {
+            const mData = modelsAcc[mk];
+            const shortName = mk === 'distilbert' ? 'Distil' : mk === 'roberta' ? 'RoB' : mk === 'gpt2' ? 'GPT2' : 'Qwen';
+            if (mData && mData.accuracy_pct != null) {
+                return `<span class="cma-chip">${shortName}: <b>${Number(mData.accuracy_pct).toFixed(0)}%</b></span>`;
+            }
+            return '';
+        }).filter(Boolean).join('');
+
         const card = document.createElement('div');
         card.className = 'module-card';
 
@@ -2713,11 +2780,12 @@ function renderModuleCards(category = 'all', searchQuery = '') {
             <div class="card-top">
                 <div class="card-badge-row">
                     <span class="card-category">${mod.icon || '⚡'} ${mod.category}</span>
-                    <span class="card-type">${mod.type}</span>
+                    <span class="card-acc-badge ${accBadgeClass}">${accText}</span>
                 </div>
                 <h4 class="card-title">${mod.name}</h4>
                 <p class="card-desc">${mod.description}</p>
                 ${mathSnippet}
+                ${chips ? `<div class="card-benchmark-row"><div class="card-model-accs">${chips}</div></div>` : ''}
             </div>
             <div class="card-bottom">
                 <span class="card-file" title="${mod.file}">${mod.id}.py</span>
@@ -2749,7 +2817,7 @@ function populateQuickSelectDropdown() {
     const select = document.getElementById('quick-module-select');
     if (!select || !modulesCatalog || modulesCatalog.length === 0) return;
 
-    select.innerHTML = '<option value="" disabled selected>⚡ Quick Pick (241 Modules)...</option>';
+    select.innerHTML = '<option value="" disabled selected>⚡ Quick Pick (240 Modules)...</option>';
 
     // Group modules by category
     const groups = {};
@@ -2785,10 +2853,21 @@ function populateQuickSelectDropdown() {
         const optgroup = document.createElement('optgroup');
         optgroup.label = `${icon} ${cat} (${groups[cat].length})`;
 
-        groups[cat].sort((a, b) => a.name.localeCompare(b.name)).forEach(mod => {
+        // Sort by accuracy descending within each category for precision navigation
+        groups[cat].sort((a, b) => {
+            const fullA = modulesComponentsMap[a.id] || a;
+            const fullB = modulesComponentsMap[b.id] || b;
+            const accA = (fullA.verified_benchmark && fullA.verified_benchmark.best_accuracy != null) ? fullA.verified_benchmark.best_accuracy : -1;
+            const accB = (fullB.verified_benchmark && fullB.verified_benchmark.best_accuracy != null) ? fullB.verified_benchmark.best_accuracy : -1;
+            if (accB !== accA) return accB - accA;
+            return a.name.localeCompare(b.name);
+        }).forEach(mod => {
+            const fullMod = modulesComponentsMap[mod.id] || mod;
+            const vb = fullMod.verified_benchmark || mod.verified_benchmark || {};
+            const accTag = vb.best_accuracy != null ? ` [${Number(vb.best_accuracy).toFixed(1)}%]` : '';
             const opt = document.createElement('option');
             opt.value = mod.id;
-            opt.textContent = `${mod.name.slice(0, 32)} (${mod.id})`;
+            opt.textContent = `${mod.name.slice(0, 28)}${accTag} (${mod.id})`;
             optgroup.appendChild(opt);
         });
 
@@ -4830,6 +4909,17 @@ function applyResearchModule(moduleMeta) {
         modCountBadge.textContent = moduleMeta.name.slice(0, 18).toUpperCase();
         modCountBadge.style.opacity = '1';
     }
+
+    // Sync top mechanism navigation bar active state
+    document.querySelectorAll('.mechanism-button').forEach(btn => {
+        const btnModel = btn.dataset.model;
+        const btnModule = btn.dataset.module;
+        const isCurrentModel = (btnModel === currentModel);
+        const isCurrentModule = (!btnModule || btnModule === 'svd' || btnModule === moduleMeta.paradigm || btnModule === moduleMeta.id);
+        const isActive = isCurrentModel && isCurrentModule;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
 
     // Permalink: update URL hash with current module+model
     try {
