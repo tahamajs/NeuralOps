@@ -206,12 +206,20 @@ class LEKAV3Attention(BaseAttention):
         self.num_heads = self.num_attention_heads
         self.num_kv_heads = int(num_kv_heads)
 
-        cfg_head_dim = getattr(config, "head_dim", None) if config is not None else None
-        kw_head_dim = kwargs.get("head_dim", None)
+        # Safely extract head_dim from config or source_attn
+        cfg_head_dim = kwargs.get("head_dim")
+        if cfg_head_dim is None and config is not None:
+            cfg_head_dim = getattr(config, "head_dim", None)
+        if cfg_head_dim is None and source_attn is not None:
+            for attr in ("q_proj", "query", "q_lin"):
+                mod = getattr(source_attn, attr, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    q_weight = mod.weight
+                    cfg_head_dim = q_weight.shape[0] // max(1, self.num_heads)
+                    break
+
         if cfg_head_dim is not None:
             self.head_dim = int(cfg_head_dim)
-        elif kw_head_dim is not None:
-            self.head_dim = int(kw_head_dim)
         else:
             self.head_dim = self.dim // self.num_heads if self.num_heads > 0 else 64
 
@@ -238,17 +246,17 @@ class LEKAV3Attention(BaseAttention):
         )
         dropout_p = getattr(comp_config, "dropout", getattr(config, "dropout", 0.1)) if config is not None else 0.1
 
-        # Decoder detection
-        model_type = getattr(config, "model_type", "").lower() if config else ""
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
-            is_dec = True
+        # Decoder / Causal detection across model families
+        _mt = str(getattr(config, "model_type", "") or "").lower()
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt")
+        self.is_decoder = (
+            getattr(config, "is_decoder", False)
+            or getattr(config, "causal", False)
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+        ) if config else False
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
-            is_dec = True
-        self.is_decoder = bool(is_dec)
-        self.is_causal = bool(is_dec)
+            self.is_decoder = True
+        self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
         # LoRA config
@@ -268,15 +276,23 @@ class LEKAV3Attention(BaseAttention):
 
         self.dropout = nn.Dropout(dropout_p)
 
-        # Multi-scale random projections
-        self.register_buffer("proj1", torch.randn(self.head_dim, self.feature_dim) / math.sqrt(self.head_dim), persistent=True)
-        self.register_buffer("proj2", torch.randn(self.head_dim, self.feature_dim // 2) / math.sqrt(self.head_dim), persistent=True)
+        # Multi-scale random projections with bandwidth scaling
+        self.register_buffer(
+            "proj1",
+            torch.randn(self.head_dim, self.feature_dim) / math.sqrt(self.head_dim / 2.0),
+            persistent=True,
+        )
+        self.register_buffer(
+            "proj2",
+            torch.randn(self.head_dim, self.feature_dim // 2) / math.sqrt(self.head_dim / 2.0),
+            persistent=True,
+        )
 
         # Landmark scorer based on K_features (dim = 2 * feature_dim)
         self.landmark_scorer = nn.Sequential(
-            nn.Linear(2 * self.feature_dim, 32),
+            nn.Linear(2 * self.feature_dim, 64),
             nn.GELU(),
-            nn.Linear(32, 1),
+            nn.Linear(64, 1),
         )
 
         self.W_corr = nn.Parameter(torch.eye(self.head_dim).unsqueeze(0).repeat(self.num_heads, 1, 1))
@@ -289,6 +305,7 @@ class LEKAV3Attention(BaseAttention):
     def kernel_feature_map(self, x: torch.Tensor) -> torch.Tensor:
         proj1 = self.proj1.to(device=x.device, dtype=x.dtype)
         f1 = torch.matmul(x, proj1)
+        f1 = torch.clamp(f1, min=-10.0, max=10.0)
         return torch.cat([torch.cos(f1), torch.sin(f1)], dim=-1) / math.sqrt(self.feature_dim)
 
     def transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
@@ -301,10 +318,12 @@ class LEKAV3Attention(BaseAttention):
         K_features: torch.Tensor,
         V: torch.Tensor,
         valid_mask: Optional[torch.Tensor] = None,
+        num_landmarks: Optional[int] = None,
         return_indices: bool = False,
     ) -> Union[Tuple[torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
         B, H, N, feat_dim = K_features.shape
-        L = min(max(self.num_landmarks, N // 2), N)
+        target_landmarks = num_landmarks if num_landmarks is not None else self.num_landmarks
+        L = min(target_landmarks, N)
         scores = self.landmark_scorer(K_features)[..., 0]  # (B, H, N)
         if valid_mask is not None:
             pad = (~valid_mask).unsqueeze(1)  # [B, 1, N] bool
@@ -497,7 +516,11 @@ class LEKAV3Attention(BaseAttention):
         Q_features = self.kernel_feature_map(q)
         K_features = self.kernel_feature_map(k)
 
-        K_land, V_land, land_idx = self.select_landmarks(K_features, v, valid_mask, return_indices=True)
+        # Adaptive landmark count: scale with sequence length while honoring self.num_landmarks
+        effective_landmarks = min(N, max(self.num_landmarks, N // 2))
+        K_land, V_land, land_idx = self.select_landmarks(
+            K_features, v, valid_mask, num_landmarks=effective_landmarks, return_indices=True
+        )
 
         W = self.W_corr.to(device=V_land.device, dtype=V_land.dtype).unsqueeze(0).expand(B, -1, -1, -1)
         V_land_adj = torch.matmul(V_land, W)
