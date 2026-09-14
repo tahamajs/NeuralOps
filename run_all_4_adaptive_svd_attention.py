@@ -55,10 +55,10 @@ models = [
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
             "--output_dir", r"results\unified_adaptive_svd_attention\roberta",
-            "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
+            "--parent_checkpoint", r"results\unified_delta_kv\roberta\finetuned_model.pt",
             "--modules", "full,adaptive_svd_attention",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "100",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
             "--rank", "32",
@@ -84,7 +84,7 @@ models = [
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,adaptive_svd_attention",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "100",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
             "--rank", "32",
@@ -231,7 +231,7 @@ print(f"========================================================\n", flush=True)
 
 try:
     from huggingface_hub import HfApi
-    api = HfApi()
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
 except ImportError:
     api = None
     print("[WARN] huggingface_hub is not installed. Automated HF upload will be skipped.", flush=True)
@@ -258,8 +258,9 @@ for m in models:
     try:
         df = pd.read_csv(summary_path)
         if not df.empty:
-            if "status" in df.columns:
-                cand = df[df["module"] != "full"] if "module" in df.columns else df
+            mod_col = "module_name" if "module_name" in df.columns else ("module" if "module" in df.columns else None)
+            if mod_col:
+                cand = df[df[mod_col] != "full"]
                 if not cand.empty:
                     row = cand.iloc[-1].to_dict()
                 else:
@@ -270,10 +271,14 @@ for m in models:
         print(f"Error reading summary for {name}: {e}", flush=True)
 
     status = str(row.get("status", "FAIL"))
-    try:
-        acc = float(row.get("accuracy_pct", row.get("mean_accuracy", 0.0)))
-    except Exception:
-        acc = 0.0
+    acc = 0.0
+    for k in ("accuracy_pct", "mean_accuracy", "acc", "eval_accuracy"):
+        if k in row and not pd.isna(row[k]):
+            try:
+                acc = float(row[k])
+                break
+            except Exception:
+                pass
 
     is_successful = (status == "PASS") and (acc >= 56.0)
 
