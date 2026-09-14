@@ -84,9 +84,7 @@ class ADMMMaskedLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
+        pass
         self.in_features = in_features
         self.out_features = out_features
         self.weight = nn.Parameter(torch.empty(out_features, in_features, dtype=dtype, device=device))

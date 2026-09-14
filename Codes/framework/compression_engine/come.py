@@ -56,9 +56,7 @@ class CoMeBridge(nn.Module):
 
     def __init__(self, hidden_size: int, alpha_init: float = 0.1) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
+        pass
         self.hidden_size = hidden_size
         self.linear = nn.Linear(hidden_size, hidden_size, bias=False)
         with torch.no_grad():
@@ -157,7 +155,7 @@ class CoMeBridgedLayer(nn.Module):
         out = self.layer(*args, **kwargs)
         if self.bridge is not None:
             out = self.bridge(out)
-        return out * self.output_scale
+        return out
 
 
 class CoMeLoRALinear(nn.Module):
