@@ -114,16 +114,17 @@ class HGRN2Layer(BaseAttention):
         self.forget_gate = nn.Linear(self.d_model, self.d_model, bias=True)
         self.input_gate = nn.Linear(self.d_model, self.d_model, bias=True)
         self.v_proj = nn.Linear(self.d_model, self.d_model, bias=False)
-        self.g_proj = nn.Linear(self.d_model, self.d_model, bias=False)
+        self.g_proj = nn.Linear(self.d_model, self.d_model, bias=True)
         self.state_norm = nn.LayerNorm(self.d_model)
         self.out_proj = nn.Linear(self.d_model, self.d_model, bias=True)
 
-        # Initialize gates with sensible defaults for long-term retention
+        # Initialize gates with sensible defaults for long-term retention and unity gain
         nn.init.normal_(self.forget_gate.weight, mean=0.0, std=0.01)
         nn.init.constant_(self.forget_gate.bias, -2.5)
         nn.init.normal_(self.input_gate.weight, mean=0.0, std=0.02)
         nn.init.constant_(self.input_gate.bias, 0.0)
         nn.init.normal_(self.g_proj.weight, mean=0.0, std=0.02)
+        nn.init.constant_(self.g_proj.bias, 1.28)
         nn.init.normal_(self.v_proj.weight, mean=0.0, std=0.02)
 
         # LoRA Adapters
@@ -420,6 +421,8 @@ class HGRN2Layer(BaseAttention):
         gated = h * F.silu(z)
         if self.is_nested_encoder:
             out = gated
+            if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
+                out = out + torch.matmul(torch.matmul(gated, self.out_lora_A.t()), self.out_lora_B.t()) * self.lora_scaling
         else:
             out = self.out_proj(gated)
             if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
@@ -501,7 +504,7 @@ def inject_hgrn2_layer(
     is_nested_target = False
     if curr_attn is None and target is not None:
         if hasattr(target, "attention") and hasattr(target.attention, "self"):
-            curr_attn = target.attention.self
+            curr_attn = target.attention
             is_nested_target = True
         elif hasattr(target, "attention"):
             curr_attn = target.attention

@@ -155,6 +155,7 @@ def test_hgrn2_layer_backward_nested_and_decoder():
     loss.backward()
     assert layer_nested.forget_gate.weight.grad is not None
     assert layer_nested.v_lora_A.grad is not None
+    assert layer_nested.out_lora_A.grad is not None
 
     # Test decoder (GPT-2)
     cfg_dec = MockConfig(is_decoder=True, model_type="gpt2")
