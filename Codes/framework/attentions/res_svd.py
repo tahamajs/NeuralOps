@@ -343,8 +343,9 @@ class ResSVDAttention(BaseAttention):
         with torch.no_grad():
             for proj_key, target in target_map.items():
                 if proj_key == "o" and self.is_nested_encoder:
-                    temp_linear = nn.Linear(target.in_features, target.out_features, bias=False)
+                    temp_linear = nn.Linear(target.in_features, target.out_features, bias=True)
                     nn.init.eye_(temp_linear.weight)
+                    nn.init.zeros_(temp_linear.bias)
                     new_layer = ResSVDLinear.from_linear(
                         temp_linear,
                         base_rank=self.base_rank,
