@@ -477,20 +477,33 @@ def apply_module_to_model(
             or ATTENTION_REGISTRY.get(f"{module_name}_inject")
             or ATTENTION_REGISTRY.get(f"inject_{module_name}_attention")
         )
+        injected = False
         if custom_injector is not None and callable(custom_injector):
             try:
                 res = custom_injector(model=model, rank=rank, copy_weights=True)
-                if res is not None:
+                from framework.core.base import BaseAttention
+                is_single_layer = isinstance(res, (BaseAttention, nn.Linear))
+                is_whole_model = (
+                    res is not None
+                    and not is_single_layer
+                    and (res is model or (hasattr(res, "named_parameters") and any(hasattr(res, a) for a in ("config", "encoder", "transformer", "model", "roberta", "bert", "distilbert", "gpt2", "qwen2", "layers", "layer", "h"))))
+                )
+                if is_whole_model:
+                    model = res
+                    injected = True
                     if device is not None:
                         model = model.to(device)
                     new_params = sum(p.numel() for p in model.parameters())
                     comp_ratio = orig_params / max(1, new_params)
                     return model, comp_ratio
+                elif is_single_layer:
+                    logger.debug("Dedicated injector %s returned a single layer instead of whole model, falling back to inject_attention", custom_injector)
             except Exception as e:
                 logger.debug("Dedicated injector %s failed, falling back to inject_attention: %s", custom_injector, e)
 
-        if module_name in ATTENTION_REGISTRY:
-            inject_attention(model, module_name, rank=rank, copy_weights=True)
+        if not injected:
+            if module_name in ATTENTION_REGISTRY:
+                inject_attention(model, module_name, rank=rank, copy_weights=True)
         else:
             try:
                 import importlib
