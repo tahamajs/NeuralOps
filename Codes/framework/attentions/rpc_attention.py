@@ -115,8 +115,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -171,7 +169,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("rpc")
@@ -195,20 +193,44 @@ class RPCAttention(BaseAttention):
             "num_key_value_heads",
             _cfg_get(config, "num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads)),
         ))
-        self.head_dim = int(_cfg_get(
-            config,
-            "head_dim",
-            kwargs.get("head_dim", self.dim // self.num_heads if self.num_heads > 0 else 64),
-        ))
+
+        cfg_head_dim = _cfg_get(config, "head_dim", None)
+        adapter_head_dim = getattr(getattr(config, "adapter", None), "head_dim", None)
+        kw_head_dim = kwargs.get("head_dim", None)
+        inferred = cfg_head_dim or adapter_head_dim or kw_head_dim
+
+        if inferred is None and pretrained_attn is not None:
+            for attr in ("q_proj", "query", "q_lin"):
+                if hasattr(pretrained_attn, attr):
+                    layer_q = getattr(pretrained_attn, attr)
+                    if hasattr(layer_q, "weight"):
+                        inferred = layer_q.weight.shape[0] // max(1, self.num_heads)
+                        break
+
+        self.head_dim = int(inferred or (self.dim // max(1, self.num_heads) if self.num_heads > 0 else 64))
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
         raw_rank = kwargs.get("rank", _cfg_get(comp_config, "rank", _cfg_get(config, "rank", rank if rank is not None else 64)))
-        self.rank = max(1, min(int(raw_rank), self.head_dim))
+        self.rank = int(raw_rank)
 
-        is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
-        if kwargs.get("is_causal", False) or str(_cfg_get(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
-            is_dec = True
+        # Adaptive rank based on model depth
+        num_layers = _cfg_get(config, "num_hidden_layers", _cfg_get(config, "n_layers", None))
+        if num_layers is not None and num_layers > 12:
+            self.rank = max(self.rank, 128)
+        elif num_layers is not None and num_layers > 6:
+            self.rank = max(self.rank, 64)
+
+        self.rank = max(1, min(self.rank, self.head_dim))
+
+        _mt = str(_cfg_get(config, "model_type", "") or "").lower()
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        is_dec = (
+            bool(_cfg_get(config, "is_decoder", False))
+            or bool(kwargs.get("is_causal", False))
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+            or (pretrained_attn is not None and hasattr(pretrained_attn, "c_attn"))
+        )
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
@@ -240,6 +262,17 @@ class RPCAttention(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+        logger.info(
+            "RPCAttention initialized: hidden=%d, heads=%d, head_dim=%d, rank=%d, is_decoder=%s, is_nested=%s, lora_rank=%d",
+            self.dim,
+            self.num_heads,
+            self.head_dim,
+            self.rank,
+            self.is_decoder,
+            self.is_nested_encoder,
+            self.lora_rank,
+        )
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -333,8 +366,7 @@ class RPCAttention(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug(f"UniversalAdapter extraction failed: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -515,15 +547,36 @@ def inject_rpc(
                 **kwargs,
             )
 
-            for attr in ("attention", "self_attn", "attn", "self"):
-                if hasattr(layer, attr) and getattr(layer, attr) is src:
-                    setattr(layer, attr, new_attn)
+            if hasattr(layer, "attention"):
+                if hasattr(layer.attention, "self") and (layer.attention.self is src or src is layer.attention):
+                    layer.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
+                    logger.info(f"[Layer {layer_idx}] Injected into attention.self. is_nested=True")
                     return new_attn
+                elif layer.attention is src:
+                    layer.attention = new_attn
+                    new_attn.is_nested_encoder = False
+                    logger.info(f"[Layer {layer_idx}] Injected into attention. is_nested=False")
+                    return new_attn
+            elif hasattr(layer, "self_attn") and layer.self_attn is src:
+                layer.self_attn = new_attn
+                new_attn.is_nested_encoder = False
+                return new_attn
+            elif hasattr(layer, "attn") and layer.attn is src:
+                layer.attn = new_attn
+                new_attn.is_nested_encoder = False
+                return new_attn
+            elif hasattr(layer, "self") and layer.self is src:
+                layer.self = new_attn
+                new_attn.is_nested_encoder = True
+                return new_attn
 
             if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
                 layer.attention.self = new_attn
+                new_attn.is_nested_encoder = True
             else:
                 layer.attention = new_attn
+                new_attn.is_nested_encoder = False
             return new_attn
 
         if isinstance(layer, nn.Module):
