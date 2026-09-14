@@ -86,7 +86,7 @@ models = [
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,delta_kv",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "100",
             "--learning_rate", "2e-4",
             "--rank", "16",
             "--delta_kv_sparsity", "0.29",
