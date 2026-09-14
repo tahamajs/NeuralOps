@@ -556,34 +556,33 @@ class SVDLinearAttention(BaseAttention):
             context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
         else:
-            # Batched randomized QR subspace extraction without per-sample Python loops
-            valid_mask = get_token_valid_mask(eff_mask, batch_size, kv_len, device)
-            masked_h = kv_input * valid_mask.unsqueeze(-1).to(dtype)
-
-            D_dim = masked_h.size(-1)
-            if not hasattr(self, "omega") or self.omega.shape[0] != D_dim or self.omega.shape[1] < effective_rank:
-                new_omega = torch.empty(D_dim, max(effective_rank, self.rank or 64), device=device, dtype=torch.float32)
-                nn.init.orthogonal_(new_omega)
-                self.register_buffer("omega", new_omega, persistent=False)
-
+            # Data-dependent SVD compression of sequence dimension
+            # Instead of random projection, compute actual truncated SVD of K
+            # to find the optimal rank-r subspace that preserves attention patterns
             with torch.no_grad():
-                omega = self.omega[:D_dim, :effective_rank].to(device=device, dtype=torch.float32)
-                Y = torch.matmul(masked_h.float(), omega)  # [B, kv_len, r]
+                # K shape: [B, H, kv_len, head_dim]
+                # We want to project kv_len -> effective_rank
+                # Use SVD on K to find the best rank-r approximation
+                K_2d = K.float().reshape(-1, kv_len, self.head_dim)  # [B*H, kv_len, head_dim]
                 try:
-                    Q_mat, _ = torch.linalg.qr(Y.float(), mode="reduced")  # [B, kv_len, actual_r]
+                    U, S, Vh = torch.linalg.svd(K_2d, full_matrices=False)
                 except Exception:
-                    Q_mat, _ = torch.linalg.qr(Y.float().cpu(), mode="reduced")
-                    Q_mat = Q_mat.to(device=device)
-                actual_r = min(effective_rank, Q_mat.shape[-1])
-                U_r = Q_mat[:, :, :actual_r].to(device=device, dtype=dtype)
+                    U, S, Vh = torch.linalg.svd(K_2d.cpu(), full_matrices=False)
+                    U = U.to(device=device)
+                    S = S.to(device=device)
+                # U: [B*H, kv_len, min(kv_len, head_dim)]
+                # Take top-r left singular vectors as the projection basis
+                actual_r = min(effective_rank, U.shape[-1], kv_len)
+                U_r = U[:, :, :actual_r]  # [B*H, kv_len, actual_r]
+                U_r = U_r.reshape(batch_size, self.num_heads, kv_len, actual_r).to(dtype)
 
-            self._last_u_r = U_r
-            U_r_t = U_r.unsqueeze(1)  # [B, 1, kv_len, actual_r]
+            self._last_u_r = U_r.reshape(batch_size, -1, kv_len, actual_r)[:, 0, :, :]  # save for ortho loss
 
-            K_proj = torch.matmul(U_r_t.transpose(-2, -1), K)  # [B, H, actual_r, d]
-            V_proj = torch.matmul(U_r_t.transpose(-2, -1), V)  # [B, H, actual_r, d]
+            # Project K and V into the SVD subspace
+            K_proj = torch.matmul(U_r.transpose(-2, -1), K)  # [B, H, actual_r, head_dim]
+            V_proj = torch.matmul(U_r.transpose(-2, -1), V)  # [B, H, actual_r, head_dim]
 
-            scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1)) / math.sqrt(self.head_dim)  # [B, H, seq_len, actual_r]
+            scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1)) / math.sqrt(self.head_dim)
 
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             probs = F.softmax(scores, dim=-1).to(dtype)
@@ -598,7 +597,7 @@ class SVDLinearAttention(BaseAttention):
                     head_mask = head_mask.unsqueeze(-1)
                 probs = probs * head_mask
 
-            context = torch.matmul(probs, V_proj)  # [B, H, seq_len, d]
+            context = torch.matmul(probs, V_proj)  # [B, H, seq_len, head_dim]
             q_valid_mask = get_token_valid_mask(attention_mask, batch_size, seq_len, device)
             context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
