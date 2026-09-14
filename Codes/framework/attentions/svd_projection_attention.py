@@ -688,13 +688,23 @@ def inject_svd_proj_attn(
         raise RuntimeError(f"Injection failed")
 
     if target is not None:
-        for attr in ("attention", "attn", "self_attn", "self"):
-            if hasattr(target, attr):
-                if attr == "attention" and hasattr(target.attention, "self"):
-                    target.attention.self = new_attn
-                else:
-                    setattr(target, attr, new_attn)
-                return new_attn
+        if hasattr(target, "attention") and hasattr(target.attention, "self"):
+            new_attn.is_nested_encoder = True
+            target.attention.self = new_attn
+            return new_attn
+        elif hasattr(target, "self") and not hasattr(target, "dense"):
+            new_attn.is_nested_encoder = True
+            target.self = new_attn
+            return new_attn
+        elif hasattr(target, "attention"):
+            target.attention = new_attn
+            return new_attn
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_attn
+            return new_attn
+        elif hasattr(target, "attn"):
+            target.attn = new_attn
+            return new_attn
         target.attention = new_attn
 
     return new_attn
