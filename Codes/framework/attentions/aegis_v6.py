@@ -246,7 +246,7 @@ class FactorisedLowRankProjection(nn.Module):
             out = (out_svd + out_lora + self.bias.float()).to(orig_dtype)
         else:
             out = (out_svd + self.bias.float()).to(orig_dtype)
-        return out * self.output_scale
+        return out
 
 
 @dataclass
@@ -441,8 +441,6 @@ class AegisAttentionV3(BaseAttention):
 
         self.gates = GatingModule(config.hidden_size, self.h, self.d, config.use_query_gate, config.use_input_gate)
         self.fusion = ContextFusionGate(config.hidden_size, self.h, self.d, init_bias=config.fusion_gate_bias)
-        self.output_scale = nn.Parameter(torch.ones(1))
-
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
@@ -699,7 +697,7 @@ class AegisAttentionV3(BaseAttention):
         KV = torch.matmul(K_feat.transpose(-2, -1), V)
         Z = K_feat.sum(dim=-2, keepdim=True)
         num = torch.matmul(Q_feat, KV)
-        den = torch.matmul(Q_feat, Z.transpose(-2, -1)).clamp(min=1.0)
+        den = torch.matmul(Q_feat, Z.transpose(-2, -1)).clamp(min=1e-6)
         out = num / den
         out = out * pad.transpose(-2, -1)
         return torch.nan_to_num(out, nan=0.0)
@@ -770,7 +768,6 @@ class AegisAttentionV3(BaseAttention):
         else:
             out = self.out_proj(fused)
 
-        out = out * self.output_scale
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
         out = out.clamp(min=-1e4, max=1e4)
 

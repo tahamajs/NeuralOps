@@ -669,8 +669,6 @@ class SOAAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
 
         if self.is_nested_encoder:
-            if not any(p.requires_grad for p in self.parameters()):
-                raise RuntimeError("SOAAttention: No trainable parameters — backward will fail.")
             return (context, attn_weights if output_attentions else None)
 
         output = self.out_proj(context)
