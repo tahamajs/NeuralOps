@@ -6,14 +6,14 @@
         "f1_macro": 0.3374,
         "precision": 0.2546,
         "recall": 0.5,
-        "val_loss": 1.1126,
+        "val_loss": 0.8881,
         "status": "PASS_LOW",
-        "elapsed_s": 5.26
+        "elapsed_s": 15.09
     },
     "efficiency": {
         "total_params_before": 66955010,
         "total_params_after": 67609736,
-        "trainable_recovery_params": 1246856,
+        "trainable_recovery_params": 654726,
         "compression_rate": 0.9903,
         "compression_ratio_pct": -0.98,
         "flops_reduction_pct": 0.0,
@@ -27,8 +27,8 @@
         "per_layer_ranks": {}
     },
     "hardware": {
-        "peak_vram_mb": 345.69,
-        "tokens_per_sec": 60562.91
+        "peak_vram_mb": 342.47,
+        "tokens_per_sec": 18111.35
     },
     "architecture": {
         "span_distribution": {},
@@ -36,10 +36,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 302.18,
-        "L_256_vram_mb": 306.94,
+        "L_128_vram_mb": 299.17,
+        "L_256_vram_mb": 303.93,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-11T19:59:51.552112"
+    "timestamp": "2026-09-14T03:29:01.812269"
 }
