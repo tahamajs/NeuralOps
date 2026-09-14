@@ -697,46 +697,33 @@ def inject_adaptive_svd(
                 **kwargs,
             )
         except Exception:
-            raise RuntimeError("copy_weights failed")
+            return None
 
         if layer is not None:
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
+                    test_module.is_nested_encoder = True
                     layer.attention.self = test_module
                 else:
+                    test_module.is_nested_encoder = False
                     layer.attention = test_module
             elif hasattr(layer, "self_attn"):
+                test_module.is_nested_encoder = False
+                test_module.is_decoder = True
+                test_module.is_causal = True
                 layer.self_attn = test_module
-            elif hasattr(layer, 'attention'):
-
-                if hasattr(layer.attention, 'self'):
-
-                    layer.attention.self = test_module
-
-                else:
-
-                    if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-                        layer.attention.self = test_module
-                    else:
-                        layer.attention = test_module
-
-            elif hasattr(layer, 'self'):
-
+            elif hasattr(layer, "attn"):
+                test_module.is_nested_encoder = False
+                test_module.is_decoder = True
+                test_module.is_causal = True
+                layer.attn = test_module
+            elif hasattr(layer, "self"):
+                test_module.is_nested_encoder = True
                 layer.self = test_module
 
-            elif hasattr(layer, 'attn'):
-
-                layer.attn = test_module
-
-            else:
-
-                if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-                    layer.attention.self = test_module
-                else:
-                    layer.attention = test_module
         return test_module
     except Exception:
-        raise RuntimeError("copy_weights failed")
+        return None
 
 
 
