@@ -235,7 +235,7 @@ class FactorisedLinear(nn.Module):
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        return out
 
 
 def local_window_attention(
@@ -299,12 +299,12 @@ def kernel_linear_attention(
         KV_cum = torch.cumsum(kv_outer, dim=2)
         z_cum = torch.cumsum(K_feat, dim=2)
         num = torch.einsum("bhnf,bhnfd->bhnd", Q_feat, KV_cum)
-        denom = torch.einsum("bhnf,bhnf->bhn", Q_feat, z_cum).unsqueeze(-1).clamp(min=1.0)
+        denom = torch.einsum("bhnf,bhnf->bhn", Q_feat, z_cum).unsqueeze(-1).clamp(min=1e-4)
         ctx = num / denom
     else:
         KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_f)
         K_sum = K_feat.sum(dim=2)
-        denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1).clamp(min=1.0)
+        denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1).clamp(min=1e-4)
         ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
     return torch.nan_to_num(ctx, nan=0.0).clamp(min=-1e4, max=1e4).to(orig_dtype)
 
@@ -745,11 +745,15 @@ def inject_aegis_v1(
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
+            new_attn.is_nested_encoder = True
             layer.attention.self = new_attn
         else:
+            new_attn.is_nested_encoder = False
             layer.attention = new_attn
     elif hasattr(layer, "self"):
+        new_attn.is_nested_encoder = False
         layer.self = new_attn
     elif hasattr(layer, "attn"):
+        new_attn.is_nested_encoder = False
         layer.attn = new_attn
     return new_attn
