@@ -81,8 +81,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -141,7 +139,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("infini", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -196,29 +194,58 @@ class InfiniAttention(BaseAttention):
         self.hidden_size = self.dim
         self.num_heads = int(num_heads)
         self.num_kv_heads = int(num_kv_heads)
-        self.head_dim = self.dim // self.num_heads if self.num_heads > 0 else 64
+        # Head dimension calculation
+        cfg_head_dim = getattr(config, "head_dim", None) if config else None
+        adapter_head_dim = getattr(getattr(config, "adapter", None), "head_dim", None) if config else None
+        kw_head_dim = kwargs.get("head_dim", None)
+        inferred = cfg_head_dim or adapter_head_dim or kw_head_dim
+
+        if inferred is None and pretrained_attn is not None:
+            for attr in ("q_proj", "query", "q_lin"):
+                if hasattr(pretrained_attn, attr):
+                    layer_q = getattr(pretrained_attn, attr)
+                    if hasattr(layer_q, "weight"):
+                        inferred = layer_q.weight.shape[0] // max(1, self.num_heads)
+                        break
+
+        self.head_dim = int(inferred or (self.dim // self.num_heads if self.num_heads > 0 else 64))
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
-        self.compress_dim = compress_dim
+
+        raw_rank = kwargs.get("rank", getattr(comp_config, "rank", getattr(config, "rank", rank if rank is not None else 64)))
+        self.rank = int(raw_rank) if raw_rank is not None else 64
+
+        # Adaptive rank based on model depth (e.g. RoBERTa 12-layer requires >= 64, large >= 128)
+        num_layers = getattr(config, "num_hidden_layers", getattr(config, "n_layers", None)) if config else None
+        if num_layers is not None and num_layers > 12:
+            self.rank = max(self.rank, 128)
+        elif num_layers is not None and num_layers > 6:
+            self.rank = max(self.rank, 64)
+
+        raw_compress = kwargs.get("compress_dim", getattr(comp_config, "compress_dim", getattr(config, "compress_dim", compress_dim)))
+        self.compress_dim = int(raw_compress) if raw_compress is not None else max(self.rank, 128)
         self.local_window = local_window
 
         # Decoder detection
-        model_type = getattr(config, "model_type", "").lower() if config else ""
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
-            is_dec = True
-        if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
-            is_dec = True
+        _mt = str(getattr(config, "model_type", "") or "").lower() if config else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        is_dec = (
+            bool(getattr(config, "is_decoder", False) if config else False)
+            or bool(kwargs.get("is_causal", False))
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+            or (pretrained_attn is not None and hasattr(pretrained_attn, "c_attn"))
+        )
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
         # LoRA config
-        self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if config else 16
+        raw_lora_rank = kwargs.get("lora_rank", getattr(comp_config, "lora_rank", getattr(config, "lora_rank", 16)))
+        self.lora_rank = int(raw_lora_rank) if raw_lora_rank is not None else 16
+        if num_layers is not None and num_layers > 6:
+            self.lora_rank = max(self.lora_rank, 32)
         self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
         self.freeze_base = (self.lora_rank > 0)
 
@@ -233,9 +260,8 @@ class InfiniAttention(BaseAttention):
         self.key = self.k_proj
         self.value = self.v_proj
 
-        self.memory = nn.Parameter(torch.randn(1, self.num_heads, compress_dim, self.head_dim) * 0.001)
+        self.memory = nn.Parameter(torch.randn(1, self.num_heads, self.compress_dim, self.head_dim) * 0.001)
         self.beta = nn.Parameter(torch.zeros(1))
-        self.output_scale = nn.Parameter(torch.ones(1))
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.0)) if config else 0.0
         self.dropout = nn.Dropout(dropout_p)
@@ -486,7 +512,7 @@ class InfiniAttention(BaseAttention):
             return combined, (attn_local if output_attentions else None)
 
         out = self.out_proj(combined)
-        return out * self.output_scale, (attn_local if output_attentions else None)
+        return out, (attn_local if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("infini_inject")
