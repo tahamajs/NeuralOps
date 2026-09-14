@@ -205,7 +205,7 @@ class ReGLAAttention(BaseAttention):
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        self.lora_rank = _cfg_get(config, "lora_rank", _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+        self.lora_rank = _cfg_get(config, "lora_rank", _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", 8)))
         self.lora_alpha = _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         self.freeze_base = (self.lora_rank > 0)
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
