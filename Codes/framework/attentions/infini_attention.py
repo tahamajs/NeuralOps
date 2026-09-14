@@ -261,7 +261,8 @@ class InfiniAttention(BaseAttention):
         self.value = self.v_proj
 
         self.memory = nn.Parameter(torch.randn(1, self.num_heads, self.compress_dim, self.head_dim) * 0.001)
-        self.beta = nn.Parameter(torch.zeros(1))
+        # Initialize beta to -3.0 so sigmoid(beta) ~ 0.047, preserving pretrained attention while memory learns
+        self.beta = nn.Parameter(torch.tensor([-3.0]))
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.0)) if config else 0.0
         self.dropout = nn.Dropout(dropout_p)
