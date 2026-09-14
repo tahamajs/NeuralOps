@@ -576,7 +576,7 @@ class NASCAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        use_dense = (L <= self.window_size or is_cross or (not self.is_decoder and not self.enable_cascade_on_encoders))
+        use_dense = (is_causal or is_cross or L <= self.window_size or (not self.is_decoder and not self.enable_cascade_on_encoders))
 
         if not hasattr(self, '_logged_once'):
             logger.info("NASCAttention: L=%d, L_kv=%d, is_causal=%s, head_dim=%d, all_head_size=%d, path=%s", L, L_kv, is_causal, self.head_dim, self.all_head_size, 'dense' if use_dense else 'cascade')
