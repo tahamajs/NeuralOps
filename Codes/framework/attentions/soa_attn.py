@@ -76,6 +76,13 @@ def apply_rotary_pos_emb(
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension support."""
     rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim > head_dim:
+        cos = cos[..., :head_dim]
+        sin = sin[..., :head_dim]
+        rotary_dim = head_dim
+
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
 
@@ -91,6 +98,61 @@ def apply_rotary_pos_emb(
     return q, k
 
 
+class FactorizedLoRAUp(nn.Module):
+    """Up-projection with frozen base weight and trainable LoRA adapter."""
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        else:
+            self.register_parameter("bias", None)
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+        if lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
+            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+            self.scaling = lora_alpha / lora_rank
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+            self.scaling = 1.0
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+
+    def freeze_base_weights(self) -> None:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+        return out
+
+
 class LoRALinear(nn.Module):
     """Linear projection with frozen base weights and trainable LoRA adapters."""
 
@@ -104,8 +166,6 @@ class LoRALinear(nn.Module):
         freeze_base: bool = True,
     ):
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.lora_rank = lora_rank
@@ -134,16 +194,24 @@ class LoRALinear(nn.Module):
             self.register_parameter("lora_B", None)
 
         if freeze_base:
-            self.weight.requires_grad = False
-            if self.bias is not None:
-                self.bias.requires_grad = False
+            self.freeze_base_weights()
+
+    def freeze_base_weights(self) -> None:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_rank > 0:
+            if self.lora_A is not None:
+                self.lora_A.requires_grad = True
+            if self.lora_B is not None:
+                self.lora_B.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("soa_module", supports_causal=True, supports_gqa=True)
@@ -174,29 +242,43 @@ class SOAAttention(BaseAttention):
         is_decoder: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
-        cfg = config or model_config
-        src_attn = pretrained_attn or old_attn
-        super().__init__(cfg, rank)
+        cfg = config or model_config or kwargs.get("config", None)
+        src_attn = pretrained_attn if pretrained_attn is not None else (old_attn if old_attn is not None else kwargs.get("source_attn", None))
+        super().__init__(cfg, rank=k_rank, **kwargs)
 
         # 1. Architecture detection & dimensions
         self.hidden_size: int = getattr(
-            cfg, "hidden_size", getattr(cfg, "dim", kwargs.get("hidden_size", 768))
-        ) if cfg is not None else kwargs.get("hidden_size", 768)
+            cfg, "hidden_size", getattr(cfg, "dim", kwargs.get("hidden_size", kwargs.get("dim", 768)))
+        ) if cfg is not None else kwargs.get("hidden_size", kwargs.get("dim", 768))
 
         self.num_heads: int = getattr(
             cfg,
             "num_attention_heads",
-            getattr(cfg, "n_heads", getattr(cfg, "num_heads", kwargs.get("num_attention_heads", 12))),
-        ) if cfg is not None else kwargs.get("num_attention_heads", 12)
+            getattr(cfg, "n_heads", getattr(cfg, "num_heads", kwargs.get("num_attention_heads", kwargs.get("num_heads", 12)))),
+        ) if cfg is not None else kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
+        self.num_heads = int(self.num_heads or 12)
 
-        self.head_dim: int = getattr(
-            cfg, "head_dim", kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads))
-        ) if cfg is not None else self.hidden_size // max(1, self.num_heads)
+        # Probe head_dim from source attention if available
+        head_dim = kwargs.get("head_dim", None)
+        if not head_dim and src_attn is not None:
+            for attr in ("q_proj", "query", "q_lin"):
+                mod = getattr(src_attn, attr, None)
+                if mod is not None and hasattr(mod, "weight") and mod.weight is not None:
+                    if mod.weight.ndim == 2:
+                        head_dim = mod.weight.shape[0] // max(1, self.num_heads)
+                        break
+            if not head_dim:
+                head_dim = getattr(src_attn, "head_dim", None)
+        if not head_dim and cfg is not None:
+            head_dim = getattr(cfg, "head_dim", None)
+        if not head_dim or head_dim <= 0:
+            head_dim = self.hidden_size // max(1, self.num_heads)
+        self.head_dim = int(head_dim)
 
         cfg_kv = (
-            getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None))
+            getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", None))))
             if cfg is not None
-            else None
+            else kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", None))
         )
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_key_value_groups: int = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -205,16 +287,28 @@ class SOAAttention(BaseAttention):
         self.q_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        self.k_rank: int = rank or k_rank
+        # Adaptive k_rank
+        comp_config = getattr(cfg, "compression_config", None)
+        if k_rank is None or k_rank == 64:
+            effective_rank = getattr(comp_config, "k_rank", getattr(comp_config, "soa_rank", rank if rank is not None else max(128, self.hidden_size // 4)))
+        else:
+            effective_rank = min(k_rank, self.hidden_size)
+        self.k_rank: int = effective_rank
+        self.rank = effective_rank
         self.lora_rank: int = lora_rank
         self.lora_alpha: float = lora_alpha
 
         # Decoder / Causal flag
+        _mt = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
+                             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
         is_dec = (
             bool(_cfg_get(cfg, "is_decoder", False))
             or bool(_cfg_get(cfg, "is_causal", False))
-            or str(_cfg_get(cfg, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
             or (src_attn is not None and hasattr(src_attn, "c_attn"))
+            or (src_attn is not None and getattr(src_attn, "is_causal", False))
+            or (src_attn is not None and getattr(src_attn, "is_decoder", False))
             or bool(kwargs.get("is_causal", False))
             or bool(kwargs.get("is_decoder", False))
         )
@@ -224,13 +318,13 @@ class SOAAttention(BaseAttention):
 
         # 2. Factorized SVD linear projections for Q, K, V
         self.q_down = nn.Linear(self.hidden_size, self.k_rank, bias=False)
-        self.q_up = nn.Linear(self.k_rank, self.q_head_size, bias=True)
+        self.q_up = FactorizedLoRAUp(self.k_rank, self.q_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
 
         self.k_down = nn.Linear(self.hidden_size, self.k_rank, bias=False)
-        self.k_up = nn.Linear(self.k_rank, self.kv_head_size, bias=True)
+        self.k_up = FactorizedLoRAUp(self.k_rank, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
 
         self.v_down = nn.Linear(self.hidden_size, self.k_rank, bias=False)
-        self.v_up = nn.Linear(self.k_rank, self.kv_head_size, bias=True)
+        self.v_up = FactorizedLoRAUp(self.k_rank, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
 
         # Output projection with trainable LoRA adapter
         self.out_proj = LoRALinear(
