@@ -1345,8 +1345,9 @@ def main():
                 from framework.utils.lora import save_lora_weights
                 save_lora_weights(base, str(checkpoint), metadata={"finetune_mode": "lora", "steps": args.finetune_steps, "dataset": args.dataset, "seed": args.seed})
             else:
-                LOG.info("Fine-tuning classification head for %d steps before module injection", args.finetune_steps)
-                finetune(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16")
+                head_lr = 1e-3 if family in ("roberta", "bert", "gpt") else 1e-4
+                LOG.info("Fine-tuning classification head for %d steps before module injection (head_lr=%.1e)", args.finetune_steps, head_lr)
+                finetune(base, tokenizer, train, args.dataset, args.finetune_steps, args.seq_len, args.batch_size, device, args.precision == "fp16", lr=head_lr)
                 try:
                     if "baseline" in str(checkpoint).lower():
                         torch.save(base.state_dict(), checkpoint)
