@@ -136,3 +136,117 @@ def test_tpa_inject():
 
     empty_layer = nn.Module()
     assert inject_tpa(empty_layer, model_config=cfg, old_attn=None) is None
+
+
+def test_tpa_no_output_scale():
+    cfg = make_config(hidden_size=64, num_heads=4)
+    attn = TPAttention(cfg, pretrained_attn=DummyAttn(64, 4), rank=4)
+    assert not hasattr(attn.q_proj1, "output_scale")
+    assert not hasattr(attn.q_proj2, "output_scale")
+    assert not hasattr(attn.v_proj, "output_scale")
+    assert not hasattr(attn.out_proj, "output_scale")
+
+
+def test_tpa_qwen_head_dim_and_rank():
+    class Qwen35Config:
+        hidden_size = 1024
+        num_attention_heads = 8
+        num_key_value_heads = 8
+        head_dim = 256
+        model_type = "qwen3_5"
+        is_decoder = True
+        dropout = 0.0
+
+    attn = TPAttention(Qwen35Config())
+    assert attn.head_dim == 256
+    assert attn.q_head_size == 2048
+    assert attn.rank == 16  # 16*16 = 256
+    assert attn.is_decoder is True
+    assert attn.qk_proj is None
+
+    x = torch.randn(2, 4, 1024)
+    out, _ = attn(x)
+    assert out.shape == (2, 4, 1024)
+
+
+def test_tpa_orthogonal_init():
+    cfg = make_config(hidden_size=64, num_heads=4)
+    dummy = DummyAttn(64, 4)
+    attn = TPAttention(cfg, pretrained_attn=dummy, rank=4)
+
+    w1 = attn.q_proj1.weight
+    w2 = attn.q_proj2.weight
+    assert float(torch.linalg.norm(w1)) > 0.5
+    assert float(torch.linalg.norm(w2)) > 0.5
+    assert not torch.isnan(w1).any()
+    assert not torch.isnan(w2).any()
+
+
+def test_tpa_nested_encoder_injection():
+    class DummyBertSelf(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.query = nn.Linear(64, 64)
+            self.key = nn.Linear(64, 64)
+            self.value = nn.Linear(64, 64)
+
+    class DummyBertAttention(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.self = DummyBertSelf()
+            self.output = nn.Module()
+            self.output.dense = nn.Linear(64, 64)
+
+    class DummyBertLayer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.attention = DummyBertAttention()
+
+    class DummyLlamaLayer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.self_attn = DummyAttn(64, 4)
+
+    bert_layer = DummyBertLayer()
+    injected_bert = inject_tpa(bert_layer, model_config=make_config(64, 4), old_attn=bert_layer.attention.self)
+    assert injected_bert.is_nested_encoder is True
+    assert bert_layer.attention.self is injected_bert
+
+    llama_layer = DummyLlamaLayer()
+    injected_llama = inject_tpa(llama_layer, model_config=make_config(64, 4), old_attn=llama_layer.self_attn)
+    assert injected_llama.is_nested_encoder is False
+    assert llama_layer.self_attn is injected_llama
+
+
+def test_tpa_gpt2_is_decoder_detection():
+    class DummyGPT2Attention(nn.Module):
+        def __init__(self, dim=64):
+            super().__init__()
+            self.c_attn = nn.Linear(dim, 3 * dim)
+            self.c_proj = nn.Linear(dim, dim)
+            self.is_decoder = True
+
+    gpt_layer = DummyGPT2Attention(64)
+    cfg = make_config(hidden_size=64, num_heads=4, is_decoder=False)
+    attn = TPAttention(cfg, pretrained_attn=gpt_layer, rank=4)
+    assert attn.is_decoder is True
+
+
+def test_tpa_non_square_head_dim():
+    cfg = types.SimpleNamespace(
+        hidden_size=512,
+        num_attention_heads=4,
+        num_key_value_heads=4,
+        head_dim=128,
+        is_decoder=False,
+        model_type="bert",
+        dropout=0.0,
+    )
+    attn = TPAttention(cfg, rank=8)
+    assert attn.head_dim == 128
+    assert attn.rank == 11
+    assert attn.qk_proj is not None
+    x = torch.randn(2, 6, 512)
+    out, _ = attn(x)
+    assert out.shape == (2, 6, 512)
+
