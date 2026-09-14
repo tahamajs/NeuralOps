@@ -52,8 +52,6 @@ class TaskAwareAttention(nn.Module):
 
     def __init__(self, num_tasks: Union[int, Any] = 1, hidden_dim: int = 64):
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         if isinstance(num_tasks, int):
             self.num_tasks = max(1, num_tasks)
         else:
