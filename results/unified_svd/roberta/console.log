@@ -1,141 +1,47 @@
-2026-09-15 02:20:30,725 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-15 02:29:48,325 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
 
 Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 197/197 [00:00<00:00, 3163.75it/s]
+Loading weights:  90%|######### | 178/197 [00:00<00:00, 1778.69it/s]
+Loading weights: 100%|##########| 197/197 [00:00<00:00, 1924.25it/s]
 [1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
 Key                             | Status     | 
 --------------------------------+------------+-
-lm_head.layer_norm.weight       | UNEXPECTED | 
-lm_head.dense.weight            | UNEXPECTED | 
 roberta.embeddings.position_ids | UNEXPECTED | 
-lm_head.layer_norm.bias         | UNEXPECTED | 
-lm_head.bias                    | UNEXPECTED | 
 lm_head.dense.bias              | UNEXPECTED | 
-classifier.dense.bias           | MISSING    | 
-classifier.dense.weight         | MISSING    | 
-classifier.out_proj.weight      | MISSING    | 
+lm_head.bias                    | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
 classifier.out_proj.bias        | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
 
 Notes:
 - UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-15 02:20:32,212 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-15 02:20:32,212 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-15 02:20:32,212 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 02:20:32,212 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-15 02:20:32,212 [INFO] QwenQualitySweep:   model:             models\roberta-base
-2026-09-15 02:20:32,213 [INFO] QwenQualitySweep:   family:            roberta
-2026-09-15 02:20:32,213 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-15 02:20:32,213 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-15 02:20:32,213 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-15 02:20:32,213 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-15 02:20:32,213 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-15 02:20:32,214 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 02:20:32,651 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\roberta_sst2_lora_baseline\finetuned_model.pt
-2026-09-15 02:20:33,594 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-15 02:20:34,332 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-fatal   : Memory allocation failure
-Traceback (most recent call last):
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2604, in <module>
-    if __name__ == "__main__": main()
-                               ~~~~^^
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 1383, in main
-    base_benchmark_acc = round(evaluate(base, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
-                               ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
-    return func(*args, **kwargs)
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 515, in evaluate
-    res = evaluate_comprehensive(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=fp16, precomputed_batches=precomputed_batches)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
-    return func(*args, **kwargs)
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 459, in evaluate_comprehensive
-    outputs = model(**x)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 876, in wrapper
-    output = func(self, *args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 949, in forward
-    outputs = self.roberta(
-        input_ids,
-    ...<5 lines>...
-        **kwargs,
-    )
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 952, in wrapper
-    output = func(self, *args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\output_capturing.py", line 248, in wrapper
-    outputs = func(self, *args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 631, in forward
-    encoder_outputs = self.encoder(
-        embedding_output,
-    ...<6 lines>...
-        **kwargs,
-    )
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 514, in forward
-    hidden_states = layer_module(
-        hidden_states,
-    ...<4 lines>...
-        **kwargs,
-    )
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_layers.py", line 93, in __call__
-    return super().__call__(*args, **kwargs)
-           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 435, in forward
-    self_attention_output, _ = self.attention(
-                               ~~~~~~~~~~~~~~^
-        hidden_states,
-        ^^^^^^^^^^^^^^
-    ...<2 lines>...
-        **kwargs,
-        ^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 366, in forward
-    attention_output, attn_weights = self.self(
-                                     ~~~~~~~~~^
-        hidden_states,
-        ^^^^^^^^^^^^^^
-    ...<3 lines>...
-        **kwargs,
-        ^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\roberta\modeling_roberta.py", line 226, in forward
-    query_layer = self.query(hidden_states).view(*hidden_shape).transpose(1, 2)
-                  ~~~~~~~~~~^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\linear.py", line 125, in forward
-    return F.linear(input, self.weight, self.bias)
-           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-RuntimeError: CUDA error: CUBLAS_STATUS_NOT_SUPPORTED when calling `cublasLtMatmulAlgoGetHeuristic( ltHandle, computeDesc.descriptor(), Adesc.descriptor(), Bdesc.descriptor(), Cdesc.descriptor(), Cdesc.descriptor(), preference.descriptor(), 1, &heuristicResult, &returnedResult)`
+2026-09-15 02:29:50,282 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 02:29:50,282 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 02:29:50,282 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:29:50,282 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 02:29:50,282 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-15 02:29:50,283 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-15 02:29:50,283 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 02:29:50,283 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 02:29:50,283 [INFO] QwenQualitySweep:   recovery_steps:    300
+2026-09-15 02:29:50,283 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=5.0e-05, weight_decay=1.0e-02)
+2026-09-15 02:29:50,284 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 02:29:50,284 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:29:50,918 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\roberta_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 02:29:52,569 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 02:29:53,572 [INFO] QwenQualitySweep: Prepared 109 eval batches and 100 train batches directly on GPU.
+2026-09-15 02:29:59,140 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 78.56%
+2026-09-15 02:29:59,205 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:29:59,205 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 02:29:59,205 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 02:29:59,205 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 02:29:59,206 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 02:29:59,206 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 02:29:59,206 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 02:29:59,206 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:29:59,209 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=300, batch_size=8, optimizer=adamw)

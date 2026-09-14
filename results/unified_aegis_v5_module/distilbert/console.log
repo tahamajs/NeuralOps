@@ -1,73 +1,73 @@
-2026-09-15 00:12:13,299 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-15 02:32:29,114 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
 
 Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 104/104 [00:00<00:00, 2554.82it/s]
-2026-09-15 00:12:14,080 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
-2026-09-15 00:12:14,080 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-15 00:12:14,080 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:12:14,081 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-15 00:12:14,081 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
-2026-09-15 00:12:14,081 [INFO] QwenQualitySweep:   family:            bert
-2026-09-15 00:12:14,081 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-15 00:12:14,081 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-15 00:12:14,082 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-15 00:12:14,082 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-15 00:12:14,082 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-15 00:12:14,082 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:12:14,082 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\distilbert\finetuned_model.pt' does not exist; attempting automatic fallback search.
-2026-09-15 00:12:14,084 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
-2026-09-15 00:12:15,490 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0003
-2026-09-15 00:12:16,194 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0018
-2026-09-15 00:12:16,903 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1534
-2026-09-15 00:12:17,613 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0083
-2026-09-15 00:12:18,331 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0008
-2026-09-15 00:12:19,071 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0023
-2026-09-15 00:12:19,793 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0015
-2026-09-15 00:12:20,514 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0020
-2026-09-15 00:12:20,526 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_aegis_v5_module\distilbert\finetuned_model.pt
-2026-09-15 00:12:20,592 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-15 00:12:21,438 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-15 00:12:23,539 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.94%
-2026-09-15 00:12:23,590 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:12:23,591 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-15 00:12:23,591 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-15 00:12:23,591 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-15 00:12:23,591 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-15 00:12:23,591 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-15 00:12:23,591 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-15 00:12:23,591 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:12:23,593 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 00:12:26,013 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v5_module\distilbert\distilbert_sst2_full_full_metrics.json
-2026-09-15 00:12:26,020 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v5_module\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
-2026-09-15 00:12:26,191 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.94% (F1: 0.9125, Peak VRAM: 182.94 MB)
-2026-09-15 00:12:26,191 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v5_module\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-15 00:12:26,419 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: aegis_v5_module (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 00:12:31,378 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v5_module' into 6 transformer blocks.
-2026-09-15 00:12:31,389 [INFO] QwenQualitySweep: module=aegis_v5_module path=legacy_bert
-2026-09-15 00:12:31,391 [INFO] QwenQualitySweep: module=aegis_v5_module injection summary: 24 SVDLinear layers active
-2026-09-15 00:12:31,391 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v5_module (lr=2.0e-04)
-2026-09-15 00:12:31,533 [INFO] framework.utils.compat: Recovery fine-tuning selected 786528 trainable parameters across 84 tensors.
-2026-09-15 00:12:31,533 [INFO] framework.utils.compat: Discovered 84 trainable tensors (786528 params)
-2026-09-15 00:12:31,542 [INFO] QwenQualitySweep: LoRA fine-tuning: 786528 trainable parameters across 84 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-15 00:12:31,924 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.4023 (bs=8, micro_bs=8)
-2026-09-15 00:12:32,827 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.4735 (bs=8, micro_bs=8)
-2026-09-15 00:12:33,988 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.4402 (bs=8, micro_bs=8)
-2026-09-15 00:12:35,126 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.2806 (bs=8, micro_bs=8)
-2026-09-15 00:12:36,266 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.3556 (bs=8, micro_bs=8)
-2026-09-15 00:12:37,377 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.0290 (bs=8, micro_bs=8)
-2026-09-15 00:12:38,497 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.0327 (bs=8, micro_bs=8)
-2026-09-15 00:12:39,594 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.1109 (bs=8, micro_bs=8)
-2026-09-15 00:12:40,720 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.2675 (bs=8, micro_bs=8)
-2026-09-15 00:12:41,830 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.0180 (bs=8, micro_bs=8)
-2026-09-15 00:12:42,954 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.1417 (bs=8, micro_bs=8)
-2026-09-15 00:12:51,163 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v5_module\distilbert\distilbert_sst2_aegis_v5_module_full_metrics.json
-2026-09-15 00:12:51,191 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v5_module\distilbert\checkpoints\aegis_v5_module\weights.pt (module_params=0, lora_params=52)
-2026-09-15 00:12:51,410 [INFO] QwenQualitySweep: [2/2] aegis_v5_module -> PASS 80.96% (F1: 0.8379, Peak VRAM: 208.28 MB)
-2026-09-15 00:12:51,411 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v5_module\distilbert\checkpoints\aegis_v5_module. Automated export will be handled post-sweep by orchestrator.
-2026-09-15 00:12:51,650 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:12:51,650 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
-2026-09-15 00:12:51,655 [INFO] QwenQualitySweep: 
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 4139.14it/s]
+2026-09-15 02:32:29,816 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-15 02:32:29,817 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 02:32:29,817 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:32:29,817 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 02:32:29,817 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-15 02:32:29,818 [INFO] QwenQualitySweep:   family:            bert
+2026-09-15 02:32:29,818 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 02:32:29,818 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 02:32:29,818 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 02:32:29,818 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 02:32:29,818 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 02:32:29,819 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:32:29,819 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\distilbert\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-15 02:32:29,820 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-15 02:32:31,235 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0001
+2026-09-15 02:32:31,952 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0005
+2026-09-15 02:32:32,668 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1861
+2026-09-15 02:32:33,393 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0247
+2026-09-15 02:32:34,148 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0038
+2026-09-15 02:32:34,869 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0151
+2026-09-15 02:32:35,583 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0045
+2026-09-15 02:32:36,306 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0014
+2026-09-15 02:32:36,318 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_aegis_v5_module\distilbert\finetuned_model.pt
+2026-09-15 02:32:36,380 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 02:32:37,225 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 02:32:39,246 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.71%
+2026-09-15 02:32:39,299 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:32:39,299 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 02:32:39,299 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 02:32:39,299 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 02:32:39,300 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 02:32:39,300 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 02:32:39,300 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 02:32:39,300 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:32:39,301 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 02:32:41,757 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v5_module\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-15 02:32:41,763 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v5_module\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-15 02:32:41,934 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.71% (F1: 0.9099, Peak VRAM: 182.94 MB)
+2026-09-15 02:32:41,935 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v5_module\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 02:32:42,165 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: aegis_v5_module (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 02:32:47,013 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v5_module' into 6 transformer blocks.
+2026-09-15 02:32:47,025 [INFO] QwenQualitySweep: module=aegis_v5_module path=legacy_bert
+2026-09-15 02:32:47,026 [INFO] QwenQualitySweep: module=aegis_v5_module injection summary: 24 SVDLinear layers active
+2026-09-15 02:32:47,026 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v5_module (lr=2.0e-04)
+2026-09-15 02:32:47,160 [INFO] framework.utils.compat: Recovery fine-tuning selected 786528 trainable parameters across 84 tensors.
+2026-09-15 02:32:47,160 [INFO] framework.utils.compat: Discovered 84 trainable tensors (786528 params)
+2026-09-15 02:32:47,170 [INFO] QwenQualitySweep: LoRA fine-tuning: 786528 trainable parameters across 84 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 02:32:47,532 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.4329 (bs=8, micro_bs=8)
+2026-09-15 02:32:48,456 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.5196 (bs=8, micro_bs=8)
+2026-09-15 02:32:49,589 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.3430 (bs=8, micro_bs=8)
+2026-09-15 02:32:50,712 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.2607 (bs=8, micro_bs=8)
+2026-09-15 02:32:51,862 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.3931 (bs=8, micro_bs=8)
+2026-09-15 02:32:53,011 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.0298 (bs=8, micro_bs=8)
+2026-09-15 02:32:54,180 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.0276 (bs=8, micro_bs=8)
+2026-09-15 02:32:55,329 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.1343 (bs=8, micro_bs=8)
+2026-09-15 02:32:56,443 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.2513 (bs=8, micro_bs=8)
+2026-09-15 02:32:57,669 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.0292 (bs=8, micro_bs=8)
+2026-09-15 02:32:58,798 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.1622 (bs=8, micro_bs=8)
+2026-09-15 02:33:06,930 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v5_module\distilbert\distilbert_sst2_aegis_v5_module_full_metrics.json
+2026-09-15 02:33:06,957 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v5_module\distilbert\checkpoints\aegis_v5_module\weights.pt (module_params=0, lora_params=52)
+2026-09-15 02:33:07,154 [INFO] QwenQualitySweep: [2/2] aegis_v5_module -> PASS 78.44% (F1: 0.8216, Peak VRAM: 208.28 MB)
+2026-09-15 02:33:07,154 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v5_module\distilbert\checkpoints\aegis_v5_module. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 02:33:07,392 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:33:07,392 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-15 02:33:07,396 [INFO] QwenQualitySweep: 
          Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-           full   PASS   90.94% 0.00% (base) 0.9125                  0            1.00x  182.9 MB               1.88              2.15
-aegis_v5_module   PASS   80.96%       -9.98% 0.8379                 24            0.99x  208.3 MB               7.97              9.14
-2026-09-15 00:12:51,656 [INFO] QwenQualitySweep: ================================================================================
+           full   PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  182.9 MB               1.91              2.19
+aegis_v5_module   PASS   78.44%      -12.27% 0.8216                 24            0.99x  208.3 MB               7.98              9.15
+2026-09-15 02:33:07,397 [INFO] QwenQualitySweep: ================================================================================

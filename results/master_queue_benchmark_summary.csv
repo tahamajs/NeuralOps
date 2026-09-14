@@ -13,3 +13,11 @@ adasvd,run_all_4_adasvd.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:15:27.888121
 admm,run_all_4_admm.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:15:27.889460
 admm_pruner,run_all_4_admm_pruner.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:15:27.890574
 aegis_hybrid,run_all_4_aegis_hybrid.py,0,206.82,PASS,,2026-09-15T02:18:54.708500
+aegis_spectron_fp8,run_all_4_aegis_spectron_fp8.py,0,263.83,PASS,,2026-09-15T02:23:18.550461
+aegis_v1,run_all_4_aegis_v1.py,0,249.92,PASS,,2026-09-15T02:27:28.485249
+aegis_v1_module,run_all_4_aegis_v1_module.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:27:28.499142
+aegis_v2,run_all_4_aegis_v2.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:27:28.500695
+aegis_v3,run_all_4_aegis_v3.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:27:28.502111
+aegis_v3_module,run_all_4_aegis_v3_module.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:27:28.516924
+aegis_v4,run_all_4_aegis_v4.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:27:28.521356
+aegis_v4_module,run_all_4_aegis_v4_module.py,0,286.35,PASS,,2026-09-15T02:32:14.873366
