@@ -327,6 +327,7 @@ class GalerkinAttention(BaseAttention):
             and hasattr(getattr(src, "output"), "dense")
         ):
             is_nested = True
+            src = src.self
         elif (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
@@ -646,7 +647,10 @@ def inject_galerkin(
     src_attn = old_attn
     if src_attn is None:
         if hasattr(layer, "attention"):
-            src_attn = layer.attention
+            if hasattr(layer.attention, "self"):
+                src_attn = layer.attention.self
+            else:
+                src_attn = layer.attention
         elif hasattr(layer, "attn"):
             src_attn = layer.attn
         elif hasattr(layer, "self_attn"):

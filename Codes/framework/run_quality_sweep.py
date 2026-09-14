@@ -2183,12 +2183,16 @@ def main():
                                     m.reset_parameters()
                                     m.merged = False
 
-                        if getattr(args, "freeze_clf", False):
+                        should_freeze_clf = getattr(args, "freeze_clf", False) or bool(args.parent_checkpoint)
+                        if should_freeze_clf:
                             for n, p in model.named_parameters():
-                                if "score" in n.lower() or "classifier" in n.lower():
+                                if any(h in n.lower() for h in ("score", "classifier", "pre_classifier")):
                                     p.requires_grad = False
                         from framework.utils.compat import get_recovery_params
                         trainable = get_recovery_params(model)
+                        if should_freeze_clf and trainable:
+                            clf_param_ids = {id(cp) for cn, cp in model.named_parameters() if any(h in cn.lower() for h in ("score", "classifier", "pre_classifier"))}
+                            trainable = [p for p in trainable if id(p) not in clf_param_ids]
                         if trainable:
                             trainable_ids = {id(p) for p in trainable}
                             for p in model.parameters():
