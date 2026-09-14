@@ -1,85 +1,80 @@
-`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 197/197 [00:00<00:00, 3081.11it/s]
 [1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
 Key                             | Status     | 
 --------------------------------+------------+-
-roberta.embeddings.position_ids | UNEXPECTED | 
-lm_head.layer_norm.bias         | UNEXPECTED | 
-lm_head.bias                    | UNEXPECTED | 
-lm_head.layer_norm.weight       | UNEXPECTED | 
-lm_head.dense.weight            | UNEXPECTED | 
 lm_head.dense.bias              | UNEXPECTED | 
-classifier.dense.weight         | MISSING    | 
-classifier.out_proj.weight      | MISSING    | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
 classifier.dense.bias           | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.dense.weight         | MISSING    | 
 classifier.out_proj.bias        | MISSING    | 
 
 Notes:
 - UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep:   model:             models\roberta-base
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep:   family:            roberta
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-11 05:23:14,556 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:23:14,557 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
-2026-09-11 05:23:15,338 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.6811
-2026-09-11 05:23:15,822 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.6746
-2026-09-11 05:23:16,331 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.6785
-2026-09-11 05:23:16,797 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.6543
-2026-09-11 05:23:17,395 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.6399
-2026-09-11 05:23:17,976 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.7380
-2026-09-11 05:23:18,481 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.5593
-2026-09-11 05:23:18,935 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6770
-2026-09-11 05:23:18,943 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_jamba_info\roberta\finetuned_model.pt
-2026-09-11 05:23:19,013 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-11 05:23:19,493 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-11 05:23:20,853 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 75.11%
-2026-09-11 05:23:20,864 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:23:20,864 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-11 05:23:20,864 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-11 05:23:20,865 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-11 05:23:20,865 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-11 05:23:20,865 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-11 05:23:20,865 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-11 05:23:20,865 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:23:20,865 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 05:23:22,575 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_jamba_info\roberta\roberta-base_full_full_metrics.json
-2026-09-11 05:23:22,581 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_jamba_info\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
-2026-09-11 05:23:22,876 [INFO] QwenQualitySweep: [1/2] full -> PASS 75.11% (F1: 0.7586, Peak VRAM: 298.71 MB)
-2026-09-11 05:23:22,877 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_jamba_info\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 05:23:23,020 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: jamba_info (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 05:23:23,904 [INFO] framework.core.attention_utils: Successfully injected 'jamba_info' into 12 transformer blocks.
-2026-09-11 05:23:23,909 [INFO] QwenQualitySweep: module=jamba_info path=adapted_roberta
-2026-09-11 05:23:23,910 [INFO] QwenQualitySweep: module=jamba_info injection summary: 0 SVDLinear layers active
-2026-09-11 05:23:23,910 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for jamba_info (lr=2.0e-04)
-2026-09-11 05:23:24,275 [INFO] framework.utils.compat: Recovery fine-tuning selected 3393794 trainable parameters across 220 tensors.
-2026-09-11 05:23:24,281 [INFO] QwenQualitySweep: LoRA fine-tuning: 3393794 trainable parameters across 220 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-11 05:23:26,141 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.5471 (bs=8, micro_bs=8)
-2026-09-11 05:23:31,782 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7340 (bs=8, micro_bs=8)
-2026-09-11 05:23:38,788 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7957 (bs=8, micro_bs=8)
-2026-09-11 05:23:45,808 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.8537 (bs=8, micro_bs=8)
-2026-09-11 05:23:52,129 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.7549 (bs=8, micro_bs=8)
-2026-09-11 05:23:57,258 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.6063 (bs=8, micro_bs=8)
-2026-09-11 05:24:02,347 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7104 (bs=8, micro_bs=8)
-2026-09-11 05:24:07,418 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7957 (bs=8, micro_bs=8)
-2026-09-11 05:24:12,385 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7491 (bs=8, micro_bs=8)
-2026-09-11 05:24:17,386 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6229 (bs=8, micro_bs=8)
-2026-09-11 05:24:22,771 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.7109 (bs=8, micro_bs=8)
-2026-09-11 05:24:42,758 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_jamba_info\roberta\roberta-base_jamba_info_full_metrics.json
-2026-09-11 05:24:42,815 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_jamba_info\roberta\checkpoints\jamba_info\weights.pt (module_params=0, lora_params=292)
-2026-09-11 05:24:43,127 [INFO] QwenQualitySweep: [2/2] jamba_info -> PASS_LOW 52.98% (F1: 0.6792, Peak VRAM: 526.75 MB)
-2026-09-11 05:24:43,127 [INFO] QwenQualitySweep: [Quality Guard] Module 'jamba_info' did not pass quality criteria (status=PASS_LOW, acc=52.98%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-11 05:24:43,266 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:24:43,266 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
-2026-09-11 05:24:43,271 [INFO] QwenQualitySweep: 
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-14 06:06:30,409 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:06:30,420 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_jamba_info\roberta\finetuned_model.pt
+2026-09-14 06:06:30,597 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-14 06:06:31,316 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-14 06:06:36,512 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 75.46%
+2026-09-14 06:06:36,565 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:06:36,565 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-14 06:06:36,565 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-14 06:06:36,566 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-14 06:06:36,566 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-14 06:06:36,566 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-14 06:06:36,566 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-14 06:06:36,566 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:06:36,585 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 06:06:41,932 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_jamba_info\roberta\roberta-base_full_full_metrics.json
+2026-09-14 06:06:41,954 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_jamba_info\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-14 06:06:42,719 [INFO] QwenQualitySweep: [1/2] full -> PASS 75.46% (F1: 0.7277, Peak VRAM: 712.34 MB)
+2026-09-14 06:06:42,720 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_jamba_info\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-14 06:06:43,028 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: jamba_info (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 06:06:45,700 [INFO] framework.core.attention_utils: Successfully injected 'jamba_info' into 12 transformer blocks.
+2026-09-14 06:06:45,733 [INFO] QwenQualitySweep: module=jamba_info path=adapted_roberta
+2026-09-14 06:06:45,736 [INFO] QwenQualitySweep: module=jamba_info injection summary: 108 SVDLinear layers active
+2026-09-14 06:06:45,736 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for jamba_info (lr=2.0e-04)
+2026-09-14 06:06:46,652 [INFO] framework.utils.compat: Recovery fine-tuning selected 2801796 trainable parameters across 348 tensors.
+2026-09-14 06:06:46,652 [WARNING] framework.utils.compat: Total trainable parameters (2801796) exceeds 2,000,000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-14 06:06:46,695 [INFO] framework.utils.compat: Reduced recovery parameters to 1794180 trainable parameters across 271 tensors.
+2026-09-14 06:06:46,698 [INFO] QwenQualitySweep: LoRA fine-tuning: 1794180 trainable parameters across 271 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-14 06:06:48,904 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.7336 (bs=8, micro_bs=8)
+2026-09-14 06:06:51,556 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6645 (bs=8, micro_bs=8)
+2026-09-14 06:06:54,830 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7483 (bs=8, micro_bs=8)
+2026-09-14 06:06:58,033 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6008 (bs=8, micro_bs=8)
+2026-09-14 06:07:01,235 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.7365 (bs=8, micro_bs=8)
+2026-09-14 06:07:04,484 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.5868 (bs=8, micro_bs=8)
+2026-09-14 06:07:07,720 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6887 (bs=8, micro_bs=8)
+2026-09-14 06:07:10,964 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6584 (bs=8, micro_bs=8)
+2026-09-14 06:07:14,202 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7505 (bs=8, micro_bs=8)
+2026-09-14 06:07:17,425 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6547 (bs=8, micro_bs=8)
+2026-09-14 06:07:20,727 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6690 (bs=8, micro_bs=8)
+2026-09-14 06:07:47,069 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_jamba_info\roberta\roberta-base_jamba_info_full_metrics.json
+2026-09-14 06:07:47,188 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_jamba_info\roberta\checkpoints\jamba_info\weights.pt (module_params=0, lora_params=292)
+2026-09-14 06:07:48,394 [INFO] QwenQualitySweep: [2/2] jamba_info -> PASS_LOW 54.13% (F1: 0.6448, Peak VRAM: 913.27 MB)
+2026-09-14 06:07:48,395 [INFO] QwenQualitySweep: [Quality Guard] Module 'jamba_info' did not pass quality criteria (status=PASS_LOW, acc=54.13%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-14 06:07:48,752 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:07:48,752 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-14 06:07:48,761 [INFO] QwenQualitySweep: 
     Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-      full     PASS   75.11% 0.00% (base) 0.7586                  0            1.00x  298.7 MB               1.21              1.39
-jamba_info PASS_LOW   52.98%      -22.13% 0.6792                  0            0.70x  526.8 MB              18.58             21.31
-2026-09-11 05:24:43,271 [INFO] QwenQualitySweep: ================================================================================
+      full     PASS   75.46% 0.00% (base) 0.7277                  0            1.00x  712.3 MB               4.11              4.71
+jamba_info PASS_LOW   54.13%      -21.33% 0.6448                108            0.70x  913.3 MB              24.34             27.92
+2026-09-14 06:07:48,761 [INFO] QwenQualitySweep: ================================================================================

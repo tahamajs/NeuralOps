@@ -1,76 +1,77 @@
-`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 197/197 [00:00<00:00, 3357.88it/s]
 [1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
 Key                             | Status     | 
 --------------------------------+------------+-
 lm_head.dense.weight            | UNEXPECTED | 
 lm_head.layer_norm.bias         | UNEXPECTED | 
-lm_head.dense.bias              | UNEXPECTED | 
-lm_head.layer_norm.weight       | UNEXPECTED | 
 roberta.embeddings.position_ids | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
 lm_head.bias                    | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
 classifier.out_proj.weight      | MISSING    | 
-classifier.out_proj.bias        | MISSING    | 
-classifier.dense.weight         | MISSING    | 
 classifier.dense.bias           | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
 
 Notes:
 - UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-11 11:49:28,407 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-11 11:49:28,407 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-11 11:49:28,407 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 11:49:28,407 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-11 11:49:28,407 [INFO] QwenQualitySweep:   model:             models\roberta-base
-2026-09-11 11:49:28,408 [INFO] QwenQualitySweep:   family:            roberta
-2026-09-11 11:49:28,408 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-11 11:49:28,408 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-11 11:49:28,408 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-11 11:49:28,408 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-11 11:49:28,408 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-11 11:49:28,408 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 11:49:28,418 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_griffin_ssd\roberta\finetuned_model.pt
-2026-09-11 11:49:28,537 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-11 11:49:29,268 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-11 11:49:34,204 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 75.46%
-2026-09-11 11:49:34,253 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 11:49:34,253 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-11 11:49:34,253 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-11 11:49:34,253 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-11 11:49:34,253 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-11 11:49:34,253 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-11 11:49:34,254 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-11 11:49:34,254 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 11:49:34,265 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 11:49:39,479 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_griffin_ssd\roberta\roberta-base_full_full_metrics.json
-2026-09-11 11:49:39,490 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_griffin_ssd\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
-2026-09-11 11:49:40,178 [INFO] QwenQualitySweep: [1/2] full -> PASS 75.46% (F1: 0.7277, Peak VRAM: 712.34 MB)
-2026-09-11 11:49:40,178 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_griffin_ssd\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 11:49:40,417 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: griffin_ssd (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 11:49:42,049 [INFO] framework.core.attention_utils: Successfully injected 'griffin_ssd' into 12 transformer blocks.
-2026-09-11 11:49:42,062 [INFO] QwenQualitySweep: module=griffin_ssd path=adapted_roberta
-2026-09-11 11:49:42,063 [INFO] QwenQualitySweep: module=griffin_ssd injection summary: 0 SVDLinear layers active
-2026-09-11 11:49:42,063 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for griffin_ssd (lr=2.0e-04)
-2026-09-11 11:49:42,412 [INFO] framework.utils.compat: Recovery fine-tuning selected 2066906 trainable parameters across 208 tensors.
-2026-09-11 11:49:42,414 [INFO] QwenQualitySweep: LoRA fine-tuning: 2066906 trainable parameters across 208 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-11 11:49:43,115 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.5873 (bs=8, micro_bs=8)
-2026-09-11 11:49:44,604 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.8521 (bs=8, micro_bs=8)
-2026-09-11 11:49:46,452 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7012 (bs=8, micro_bs=8)
-2026-09-11 11:49:48,329 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.7311 (bs=8, micro_bs=8)
-2026-09-11 11:49:50,193 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6472 (bs=8, micro_bs=8)
-2026-09-11 11:49:52,014 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.6850 (bs=8, micro_bs=8)
-2026-09-11 11:49:53,858 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6960 (bs=8, micro_bs=8)
-2026-09-11 11:49:55,709 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6932 (bs=8, micro_bs=8)
-2026-09-11 11:49:57,604 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7051 (bs=8, micro_bs=8)
-2026-09-11 11:49:59,484 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6702 (bs=8, micro_bs=8)
-2026-09-11 11:50:01,326 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.7462 (bs=8, micro_bs=8)
-2026-09-11 11:50:15,523 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_griffin_ssd\roberta\roberta-base_griffin_ssd_full_metrics.json
-2026-09-11 11:50:15,583 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_griffin_ssd\roberta\checkpoints\griffin_ssd\weights.pt (module_params=0, lora_params=124)
-2026-09-11 11:50:16,437 [INFO] QwenQualitySweep: [2/2] griffin_ssd -> PASS_LOW 54.70% (F1: 0.6868, Peak VRAM: 713.18 MB)
-2026-09-11 11:50:16,437 [INFO] QwenQualitySweep: [Quality Guard] Module 'griffin_ssd' did not pass quality criteria (status=PASS_LOW, acc=54.70%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-11 11:50:16,689 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 11:50:16,689 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
-2026-09-11 11:50:16,692 [INFO] QwenQualitySweep: 
-     Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-       full     PASS   75.46% 0.00% (base) 0.7277                  0            1.00x  712.3 MB               3.97              4.56
-griffin_ssd PASS_LOW   54.70%      -20.76% 0.6868                  0            0.89x  713.2 MB              13.76             15.78
-2026-09-11 11:50:16,692 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-14 06:18:16,136 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:18:16,148 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_griffin_ssd\roberta\finetuned_model.pt
+2026-09-14 06:18:16,315 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-14 06:18:17,069 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-14 06:18:21,984 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 75.46%
+2026-09-14 06:18:22,034 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:18:22,034 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-14 06:18:22,034 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-14 06:18:22,035 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-14 06:18:22,035 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-14 06:18:22,035 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-14 06:18:22,035 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-14 06:18:22,035 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:18:22,053 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 06:18:27,358 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_griffin_ssd\roberta\roberta-base_full_full_metrics.json
+2026-09-14 06:18:27,379 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_griffin_ssd\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-14 06:18:28,066 [INFO] QwenQualitySweep: [1/2] full -> PASS 75.46% (F1: 0.7277, Peak VRAM: 712.34 MB)
+2026-09-14 06:18:28,066 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_griffin_ssd\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-14 06:18:28,297 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: griffin_ssd (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 06:18:29,950 [INFO] QwenQualitySweep: module=griffin_ssd path=adapted_roberta
+2026-09-14 06:18:29,951 [INFO] QwenQualitySweep: module=griffin_ssd injection summary: 60 SVDLinear layers active
+2026-09-14 06:18:29,952 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for griffin_ssd (lr=2.0e-04)
+2026-09-14 06:18:30,280 [INFO] framework.utils.compat: Recovery fine-tuning selected 1474776 trainable parameters across 204 tensors.
+2026-09-14 06:18:30,281 [INFO] QwenQualitySweep: LoRA fine-tuning: 1474776 trainable parameters across 204 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-14 06:18:31,045 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.5257 (bs=8, micro_bs=8)
+2026-09-14 06:18:32,500 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.8681 (bs=8, micro_bs=8)
+2026-09-14 06:18:34,319 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.9602 (bs=8, micro_bs=8)
+2026-09-14 06:18:36,136 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6136 (bs=8, micro_bs=8)
+2026-09-14 06:18:38,031 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.7032 (bs=8, micro_bs=8)
+2026-09-14 06:18:39,912 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.6718 (bs=8, micro_bs=8)
+2026-09-14 06:18:41,708 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6760 (bs=8, micro_bs=8)
+2026-09-14 06:18:43,536 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6249 (bs=8, micro_bs=8)
+2026-09-14 06:18:45,381 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.5893 (bs=8, micro_bs=8)
+2026-09-14 06:18:47,231 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6526 (bs=8, micro_bs=8)
+2026-09-14 06:18:49,023 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.7242 (bs=8, micro_bs=8)
+2026-09-14 06:19:03,192 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_griffin_ssd\roberta\roberta-base_griffin_ssd_full_metrics.json
+2026-09-14 06:19:03,254 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_griffin_ssd\roberta\checkpoints\griffin_ssd\weights.pt (module_params=0, lora_params=124)
+2026-09-14 06:19:04,130 [INFO] QwenQualitySweep: [2/2] griffin_ssd -> PASS 59.06% (F1: 0.6992, Peak VRAM: 710.67 MB)
+2026-09-14 06:19:04,130 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_griffin_ssd\roberta\checkpoints\griffin_ssd. Automated export will be handled post-sweep by orchestrator.
+2026-09-14 06:19:04,438 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:19:04,438 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-14 06:19:04,446 [INFO] QwenQualitySweep: 
+     Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+       full   PASS   75.46% 0.00% (base) 0.7277                  0            1.00x  712.3 MB               4.09              4.69
+griffin_ssd   PASS   59.06%      -16.40% 0.6992                 60            0.89x  710.7 MB              13.83             15.86
+2026-09-14 06:19:04,446 [INFO] QwenQualitySweep: ================================================================================

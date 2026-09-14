@@ -6,22 +6,22 @@
         "f1_macro": 0.3374,
         "precision": 0.2546,
         "recall": 0.5,
-        "val_loss": 0.7156,
+        "val_loss": 0.752,
         "status": "PASS_LOW",
-        "elapsed_s": 18.57
+        "elapsed_s": 41.77
     },
     "efficiency": {
         "total_params_before": 124647170,
         "total_params_after": 138882866,
-        "trainable_recovery_params": 43148594,
+        "trainable_recovery_params": 592178,
         "compression_rate": 0.8975,
         "compression_ratio_pct": -11.42,
         "flops_reduction_pct": 0.0,
         "num_compressed_layers": 0,
-        "num_fallback_layers": 0,
+        "num_fallback_layers": 24,
         "num_injected_attention_layers": 0,
         "lora_params": 0,
-        "avg_reconstruction_error": 0.0546,
+        "avg_reconstruction_error": 0.05462170061058619,
         "weighted_reconstruction_error": 0.0546,
         "per_layer_reconstruction_errors": {
             "roberta.encoder.layer.0.attention.self.query": 0.0539,
@@ -76,8 +76,8 @@
         "per_layer_ranks": {}
     },
     "hardware": {
-        "peak_vram_mb": 684.03,
-        "tokens_per_sec": 70849.78
+        "peak_vram_mb": 715.58,
+        "tokens_per_sec": 14153.29
     },
     "architecture": {
         "span_distribution": {},
@@ -85,10 +85,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 669.17,
-        "L_256_vram_mb": 671.04,
-        "L_512_vram_mb": 673.3,
+        "L_128_vram_mb": 700.63,
+        "L_256_vram_mb": 702.51,
+        "L_512_vram_mb": 708.4,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-11T10:13:23.780217"
+    "timestamp": "2026-09-14T07:17:47.732002"
 }

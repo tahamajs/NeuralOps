@@ -1,4 +1,6 @@
-`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 3517.36it/s]
 [1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
 Key          | Status  | 
 -------------+---------+-
@@ -6,61 +8,64 @@ score.weight | MISSING |
 
 Notes:
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep:   model:             models\gpt2
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep:   family:            gpt
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-11 05:24:54,194 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:24:54,351 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
-2026-09-11 05:24:54,707 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-11 05:24:55,010 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-11 05:24:57,044 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 60.78%
-2026-09-11 05:24:57,052 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:24:57,052 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-11 05:24:57,052 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-11 05:24:57,052 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-11 05:24:57,052 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-11 05:24:57,052 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-11 05:24:57,052 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-11 05:24:57,052 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:24:57,052 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 05:24:59,193 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_jamba_info\gpt2\gpt2_full_full_metrics.json
-2026-09-11 05:24:59,198 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_jamba_info\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
-2026-09-11 05:24:59,459 [INFO] QwenQualitySweep: [1/2] full -> PASS 60.78% (F1: 0.6354, Peak VRAM: 793.19 MB)
-2026-09-11 05:24:59,460 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_jamba_info\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 05:24:59,584 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: jamba_info (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 05:25:00,510 [INFO] framework.core.attention_utils: Successfully injected 'jamba_info' into 12 transformer blocks.
-2026-09-11 05:25:00,515 [INFO] QwenQualitySweep: module=jamba_info path=adapted_gpt
-2026-09-11 05:25:00,515 [INFO] QwenQualitySweep: module=jamba_info injection summary: 0 SVDLinear layers active
-2026-09-11 05:25:00,515 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for jamba_info (lr=2.0e-04)
-2026-09-11 05:25:00,774 [INFO] framework.utils.compat: Recovery fine-tuning selected 2803200 trainable parameters across 217 tensors.
-2026-09-11 05:25:00,775 [INFO] QwenQualitySweep: LoRA fine-tuning: 2803200 trainable parameters across 217 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-11 05:25:02,474 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6433 (bs=8, micro_bs=8)
-2026-09-11 05:25:04,986 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7344 (bs=8, micro_bs=8)
-2026-09-11 05:25:07,954 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.6830 (bs=8, micro_bs=8)
-2026-09-11 05:25:10,918 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6351 (bs=8, micro_bs=8)
-2026-09-11 05:25:13,765 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.8110 (bs=8, micro_bs=8)
-2026-09-11 05:25:16,575 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7254 (bs=8, micro_bs=8)
-2026-09-11 05:25:19,591 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=1.0878 (bs=8, micro_bs=8)
-2026-09-11 05:25:22,572 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6024 (bs=8, micro_bs=8)
-2026-09-11 05:25:25,485 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.8233 (bs=8, micro_bs=8)
-2026-09-11 05:25:28,776 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6592 (bs=8, micro_bs=8)
-2026-09-11 05:25:31,566 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.8440 (bs=8, micro_bs=8)
-2026-09-11 05:25:44,713 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_jamba_info\gpt2\gpt2_jamba_info_full_metrics.json
-2026-09-11 05:25:44,767 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_jamba_info\gpt2\checkpoints\jamba_info\weights.pt (module_params=0, lora_params=289)
-2026-09-11 05:25:45,190 [INFO] QwenQualitySweep: [2/2] jamba_info -> PASS_LOW 50.80% (F1: 0.6733, Peak VRAM: 791.26 MB)
-2026-09-11 05:25:45,191 [INFO] QwenQualitySweep: [Quality Guard] Module 'jamba_info' did not pass quality criteria (status=PASS_LOW, acc=50.80%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-11 05:25:45,365 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 05:25:45,365 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
-2026-09-11 05:25:45,374 [INFO] QwenQualitySweep: 
-    Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-      full     PASS   60.78% 0.00% (base) 0.6354                  0            1.00x  793.2 MB               1.61              1.84
-jamba_info PASS_LOW   50.80%       -9.98% 0.6733                  0            0.73x  791.3 MB              12.18             13.97
-2026-09-11 05:25:45,374 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:08:05,485 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-14 06:08:05,485 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-14 06:08:05,485 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:08:05,485 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-14 06:08:05,485 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-14 06:08:05,486 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-14 06:08:05,486 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-14 06:08:05,486 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-14 06:08:05,486 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-14 06:08:05,486 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-14 06:08:05,486 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-14 06:08:05,486 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:08:05,567 [INFO] QwenQualitySweep: Injected 48 LoRALinear layers into gpt backbone
+2026-09-14 06:08:05,567 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-14 06:08:05,743 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-14 06:08:06,452 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-14 06:08:14,758 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 87.84%
+2026-09-14 06:08:14,807 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:08:14,807 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-14 06:08:14,807 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-14 06:08:14,807 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-14 06:08:14,807 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-14 06:08:14,807 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-14 06:08:14,808 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-14 06:08:14,808 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:08:14,821 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 06:08:20,301 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_jamba_info\gpt2\gpt2_full_full_metrics.json
+2026-09-14 06:08:20,333 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_jamba_info\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=97)
+2026-09-14 06:08:21,011 [INFO] QwenQualitySweep: [1/2] full -> PASS 87.84% (F1: 0.8776, Peak VRAM: 391.24 MB)
+2026-09-14 06:08:21,012 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_jamba_info\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-14 06:08:21,232 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: jamba_info (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 06:08:23,614 [INFO] framework.core.attention_utils: Successfully injected 'jamba_info' into 12 transformer blocks.
+2026-09-14 06:08:23,650 [INFO] QwenQualitySweep: module=jamba_info path=adapted_gpt
+2026-09-14 06:08:23,653 [INFO] QwenQualitySweep: module=jamba_info injection summary: 132 SVDLinear layers active
+2026-09-14 06:08:23,654 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for jamba_info (lr=2.0e-04)
+2026-09-14 06:08:24,572 [INFO] framework.utils.compat: Recovery fine-tuning selected 4276356 trainable parameters across 396 tensors.
+2026-09-14 06:08:24,572 [WARNING] framework.utils.compat: Total trainable parameters (4276356) exceeds 2,000,000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-14 06:08:24,617 [INFO] framework.utils.compat: Reduced recovery parameters to 1794180 trainable parameters across 243 tensors.
+2026-09-14 06:08:24,635 [INFO] QwenQualitySweep: LoRA fine-tuning: 1794180 trainable parameters across 243 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-14 06:08:26,697 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.8872 (bs=8, micro_bs=8)
+2026-09-14 06:08:29,100 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6009 (bs=8, micro_bs=8)
+2026-09-14 06:08:32,456 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.3684 (bs=8, micro_bs=8)
+2026-09-14 06:08:35,420 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.2816 (bs=8, micro_bs=8)
+2026-09-14 06:08:38,376 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5797 (bs=8, micro_bs=8)
+2026-09-14 06:08:41,309 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.4613 (bs=8, micro_bs=8)
+2026-09-14 06:08:44,267 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.1818 (bs=8, micro_bs=8)
+2026-09-14 06:08:47,220 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.3411 (bs=8, micro_bs=8)
+2026-09-14 06:08:50,326 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.8573 (bs=8, micro_bs=8)
+2026-09-14 06:08:54,387 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.1208 (bs=8, micro_bs=8)
+2026-09-14 06:08:57,444 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.5038 (bs=8, micro_bs=8)
+2026-09-14 06:09:21,372 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_jamba_info\gpt2\gpt2_jamba_info_full_metrics.json
+2026-09-14 06:09:21,525 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_jamba_info\gpt2\checkpoints\jamba_info\weights.pt (module_params=0, lora_params=337)
+2026-09-14 06:09:22,308 [INFO] QwenQualitySweep: [2/2] jamba_info -> PASS 85.44% (F1: 0.8587, Peak VRAM: 479.49 MB)
+2026-09-14 06:09:22,308 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_jamba_info\gpt2\checkpoints\jamba_info. Automated export will be handled post-sweep by orchestrator.
+2026-09-14 06:09:22,530 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 06:09:22,530 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-14 06:09:22,535 [INFO] QwenQualitySweep: 
+    Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+      full   PASS   87.84% 0.00% (base) 0.8776                 48            1.00x  391.2 MB               4.21              4.82
+jamba_info   PASS   85.44%       -2.40% 0.8587                132            0.73x  479.5 MB              22.10             25.35
+2026-09-14 06:09:22,535 [INFO] QwenQualitySweep: ================================================================================

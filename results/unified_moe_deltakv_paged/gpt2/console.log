@@ -1,4 +1,6 @@
-`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 2459.16it/s]
 [1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
 Key          | Status  | 
 -------------+---------+-
@@ -6,61 +8,62 @@ score.weight | MISSING |
 
 Notes:
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep:   model:             models\gpt2
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep:   family:            gpt
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-11 06:41:36,622 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 06:41:36,813 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
-2026-09-11 06:41:37,172 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-11 06:41:37,599 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-11 06:41:39,839 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 60.78%
-2026-09-11 06:41:39,850 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 06:41:39,850 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-11 06:41:39,850 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-11 06:41:39,851 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-11 06:41:39,851 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-11 06:41:39,851 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-11 06:41:39,851 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-11 06:41:39,851 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 06:41:39,851 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 06:41:42,185 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_moe_deltakv_paged\gpt2\gpt2_full_full_metrics.json
-2026-09-11 06:41:42,191 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_moe_deltakv_paged\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
-2026-09-11 06:41:42,522 [INFO] QwenQualitySweep: [1/2] full -> PASS 60.78% (F1: 0.6354, Peak VRAM: 793.19 MB)
-2026-09-11 06:41:42,522 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_moe_deltakv_paged\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 06:41:42,673 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: moe_deltakv_paged (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 06:41:43,380 [INFO] framework.core.attention_utils: Successfully injected 'moe_deltakv_paged' into 12 transformer blocks.
-2026-09-11 06:41:43,382 [INFO] QwenQualitySweep: module=moe_deltakv_paged path=adapted_gpt
-2026-09-11 06:41:43,383 [INFO] QwenQualitySweep: module=moe_deltakv_paged injection summary: 0 SVDLinear layers active
-2026-09-11 06:41:43,383 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for moe_deltakv_paged (lr=2.0e-04)
-2026-09-11 06:41:43,467 [INFO] framework.utils.compat: Recovery fine-tuning selected 1536 trainable parameters across 1 tensors.
-2026-09-11 06:41:43,468 [INFO] QwenQualitySweep: LoRA fine-tuning: 1536 trainable parameters across 1 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-11 06:41:43,602 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.8753 (bs=8, micro_bs=8)
-2026-09-11 06:41:43,765 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.8461 (bs=8, micro_bs=8)
-2026-09-11 06:41:43,944 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7555 (bs=8, micro_bs=8)
-2026-09-11 06:41:44,130 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.7586 (bs=8, micro_bs=8)
-2026-09-11 06:41:44,327 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.8724 (bs=8, micro_bs=8)
-2026-09-11 06:41:44,526 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.8347 (bs=8, micro_bs=8)
-2026-09-11 06:41:44,734 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7280 (bs=8, micro_bs=8)
-2026-09-11 06:41:44,938 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7660 (bs=8, micro_bs=8)
-2026-09-11 06:41:45,131 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.9453 (bs=8, micro_bs=8)
-2026-09-11 06:41:45,278 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.7179 (bs=8, micro_bs=8)
-2026-09-11 06:41:45,499 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6228 (bs=8, micro_bs=8)
-2026-09-11 06:41:49,282 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_moe_deltakv_paged\gpt2\gpt2_moe_deltakv_paged_full_metrics.json
-2026-09-11 06:41:49,284 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_moe_deltakv_paged\gpt2\checkpoints\moe_deltakv_paged\weights.pt (module_params=0, lora_params=1)
-2026-09-11 06:41:49,670 [INFO] QwenQualitySweep: [2/2] moe_deltakv_paged -> PASS_LOW 50.92% (F1: 0.6439, Peak VRAM: 556.61 MB)
-2026-09-11 06:41:49,670 [INFO] QwenQualitySweep: [Quality Guard] Module 'moe_deltakv_paged' did not pass quality criteria (status=PASS_LOW, acc=50.92%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-11 06:41:49,838 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 06:41:49,838 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
-2026-09-11 06:41:49,840 [INFO] QwenQualitySweep: 
+2026-09-14 05:19:49,281 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-14 05:19:49,282 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-14 05:19:49,282 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:19:49,282 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-14 05:19:49,282 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-14 05:19:49,282 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-14 05:19:49,282 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-14 05:19:49,282 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-14 05:19:49,282 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-14 05:19:49,282 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-14 05:19:49,282 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-14 05:19:49,282 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:19:49,389 [INFO] QwenQualitySweep: Injected 48 LoRALinear layers into gpt backbone
+2026-09-14 05:19:49,389 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-14 05:19:49,568 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-14 05:19:50,315 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-14 05:19:58,636 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 87.84%
+2026-09-14 05:19:58,687 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:19:58,687 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-14 05:19:58,687 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-14 05:19:58,688 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-14 05:19:58,688 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-14 05:19:58,688 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-14 05:19:58,688 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-14 05:19:58,688 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:19:58,702 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 05:20:04,197 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_moe_deltakv_paged\gpt2\gpt2_full_full_metrics.json
+2026-09-14 05:20:04,230 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_moe_deltakv_paged\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=97)
+2026-09-14 05:20:04,892 [INFO] QwenQualitySweep: [1/2] full -> PASS 87.84% (F1: 0.8776, Peak VRAM: 391.24 MB)
+2026-09-14 05:20:04,893 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_moe_deltakv_paged\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-14 05:20:05,126 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: moe_deltakv_paged (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 05:20:06,645 [INFO] framework.core.attention_utils: Successfully injected 'moe_deltakv_paged' into 12 transformer blocks.
+2026-09-14 05:20:06,660 [INFO] QwenQualitySweep: module=moe_deltakv_paged path=adapted_gpt
+2026-09-14 05:20:06,663 [INFO] QwenQualitySweep: module=moe_deltakv_paged injection summary: 24 SVDLinear layers active
+2026-09-14 05:20:06,663 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for moe_deltakv_paged (lr=2.0e-04)
+2026-09-14 05:20:06,894 [INFO] framework.utils.compat: Recovery fine-tuning selected 1474560 trainable parameters across 48 tensors.
+2026-09-14 05:20:06,896 [INFO] QwenQualitySweep: LoRA fine-tuning: 1474560 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-14 05:20:07,425 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.9756 (bs=8, micro_bs=8)
+2026-09-14 05:20:08,642 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7856 (bs=8, micro_bs=8)
+2026-09-14 05:20:10,112 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.8055 (bs=8, micro_bs=8)
+2026-09-14 05:20:11,571 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.7270 (bs=8, micro_bs=8)
+2026-09-14 05:20:13,019 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.7851 (bs=8, micro_bs=8)
+2026-09-14 05:20:14,469 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7013 (bs=8, micro_bs=8)
+2026-09-14 05:20:15,917 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6414 (bs=8, micro_bs=8)
+2026-09-14 05:20:17,390 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7119 (bs=8, micro_bs=8)
+2026-09-14 05:20:18,840 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.6667 (bs=8, micro_bs=8)
+2026-09-14 05:20:20,260 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.7515 (bs=8, micro_bs=8)
+2026-09-14 05:20:21,675 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6469 (bs=8, micro_bs=8)
+2026-09-14 05:20:33,409 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_moe_deltakv_paged\gpt2\gpt2_moe_deltakv_paged_full_metrics.json
+2026-09-14 05:20:33,520 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_moe_deltakv_paged\gpt2\checkpoints\moe_deltakv_paged\weights.pt (module_params=0, lora_params=49)
+2026-09-14 05:20:34,175 [INFO] QwenQualitySweep: [2/2] moe_deltakv_paged -> PASS_LOW 51.61% (F1: 0.6393, Peak VRAM: 327.78 MB)
+2026-09-14 05:20:34,175 [INFO] QwenQualitySweep: [Quality Guard] Module 'moe_deltakv_paged' did not pass quality criteria (status=PASS_LOW, acc=51.61%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-14 05:20:34,404 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:20:34,404 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-14 05:20:34,411 [INFO] QwenQualitySweep: 
            Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-             full     PASS   60.78% 0.00% (base) 0.6354                  0            1.00x  793.2 MB               1.77              2.03
-moe_deltakv_paged PASS_LOW   50.92%       -9.86% 0.6439                  0            1.00x  556.6 MB               3.63              4.17
-2026-09-11 06:41:49,840 [INFO] QwenQualitySweep: ================================================================================
+             full     PASS   87.84% 0.00% (base) 0.8776                 48            1.00x  391.2 MB               4.18              4.80
+moe_deltakv_paged PASS_LOW   51.61%      -36.23% 0.6393                 24            1.01x  327.8 MB              11.40             13.07
+2026-09-14 05:20:34,411 [INFO] QwenQualitySweep: ================================================================================

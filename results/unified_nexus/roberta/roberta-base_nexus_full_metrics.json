@@ -1,25 +1,25 @@
 {
     "model": "roberta-base_nexus",
     "performance": {
-        "accuracy_pct": 50.92,
-        "f1_score": 0.6748,
-        "f1_macro": 0.3374,
-        "precision": 0.2546,
-        "recall": 0.5,
-        "val_loss": 0.8928,
-        "status": "PASS_LOW",
-        "elapsed_s": 30.98
+        "accuracy_pct": 86.93,
+        "f1_score": 0.8787,
+        "f1_macro": 0.8685,
+        "precision": 0.8751,
+        "recall": 0.8681,
+        "val_loss": 0.3364,
+        "status": "PASS",
+        "elapsed_s": 36.85
     },
     "efficiency": {
         "total_params_before": 124647170,
-        "total_params_after": 133043726,
-        "trainable_recovery_params": 1309452,
-        "compression_rate": 0.9369,
-        "compression_ratio_pct": -6.74,
+        "total_params_after": 132945422,
+        "trainable_recovery_params": 1211148,
+        "compression_rate": 0.9376,
+        "compression_ratio_pct": -6.66,
         "flops_reduction_pct": 0.0,
-        "num_compressed_layers": 0,
+        "num_compressed_layers": 60,
         "num_fallback_layers": 0,
-        "num_injected_attention_layers": 12,
+        "num_injected_attention_layers": 0,
         "lora_params": 1179648,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
@@ -27,8 +27,8 @@
         "per_layer_ranks": {}
     },
     "hardware": {
-        "peak_vram_mb": 672.73,
-        "tokens_per_sec": 9427.05
+        "peak_vram_mb": 661.29,
+        "tokens_per_sec": 6535.85
     },
     "architecture": {
         "span_distribution": {},
@@ -36,10 +36,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 633.22,
-        "L_256_vram_mb": 637.98,
-        "L_512_vram_mb": 650.86,
+        "L_128_vram_mb": 630.68,
+        "L_256_vram_mb": 639.5,
+        "L_512_vram_mb": 680.66,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-14T03:30:07.986526"
+    "timestamp": "2026-09-14T04:42:11.119363"
 }

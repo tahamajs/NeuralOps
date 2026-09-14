@@ -1,4 +1,6 @@
-`torch_dtype` is deprecated! Use `dtype` instead!
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 3663.71it/s]
 [1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
 Key          | Status  | 
 -------------+---------+-
@@ -6,61 +8,64 @@ score.weight | MISSING |
 
 Notes:
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep:   model:             models\gpt2
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep:   family:            gpt
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-11 06:35:57,937 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 06:35:58,108 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
-2026-09-11 06:35:58,469 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-11 06:35:58,927 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-11 06:36:01,116 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 60.78%
-2026-09-11 06:36:01,127 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 06:36:01,127 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-11 06:36:01,127 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-11 06:36:01,127 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-11 06:36:01,127 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-11 06:36:01,127 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-11 06:36:01,127 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-11 06:36:01,127 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 06:36:01,128 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 06:36:03,458 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_mixattention_moska\gpt2\gpt2_full_full_metrics.json
-2026-09-11 06:36:03,463 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_mixattention_moska\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
-2026-09-11 06:36:03,789 [INFO] QwenQualitySweep: [1/2] full -> PASS 60.78% (F1: 0.6354, Peak VRAM: 793.19 MB)
-2026-09-11 06:36:03,789 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_mixattention_moska\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 06:36:03,941 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: mixattention_moska (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 06:36:04,668 [INFO] framework.core.attention_utils: Successfully injected 'mixattention_moska' into 12 transformer blocks.
-2026-09-11 06:36:04,671 [INFO] QwenQualitySweep: module=mixattention_moska path=adapted_gpt
-2026-09-11 06:36:04,671 [INFO] QwenQualitySweep: module=mixattention_moska injection summary: 0 SVDLinear layers active
-2026-09-11 06:36:04,671 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for mixattention_moska (lr=2.0e-04)
-2026-09-11 06:36:04,770 [INFO] framework.utils.compat: Recovery fine-tuning selected 1181232 trainable parameters across 145 tensors.
-2026-09-11 06:36:04,770 [INFO] QwenQualitySweep: LoRA fine-tuning: 1181232 trainable parameters across 145 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-11 06:36:04,969 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6102 (bs=8, micro_bs=8)
-2026-09-11 06:36:05,303 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7562 (bs=8, micro_bs=8)
-2026-09-11 06:36:05,746 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.8278 (bs=8, micro_bs=8)
-2026-09-11 06:36:06,160 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5392 (bs=8, micro_bs=8)
-2026-09-11 06:36:06,556 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5616 (bs=8, micro_bs=8)
-2026-09-11 06:36:06,969 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7953 (bs=8, micro_bs=8)
-2026-09-11 06:36:07,324 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7655 (bs=8, micro_bs=8)
-2026-09-11 06:36:07,765 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6525 (bs=8, micro_bs=8)
-2026-09-11 06:36:08,149 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.6997 (bs=8, micro_bs=8)
-2026-09-11 06:36:08,618 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6053 (bs=8, micro_bs=8)
-2026-09-11 06:36:09,035 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6656 (bs=8, micro_bs=8)
-2026-09-11 06:36:12,365 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_mixattention_moska\gpt2\gpt2_mixattention_moska_full_metrics.json
-2026-09-11 06:36:12,430 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_mixattention_moska\gpt2\checkpoints\mixattention_moska\weights.pt (module_params=0, lora_params=97)
-2026-09-11 06:36:12,844 [INFO] QwenQualitySweep: [2/2] mixattention_moska -> PASS_LOW 51.61% (F1: 0.6774, Peak VRAM: 568.71 MB)
-2026-09-11 06:36:12,845 [INFO] QwenQualitySweep: [Quality Guard] Module 'mixattention_moska' did not pass quality criteria (status=PASS_LOW, acc=51.61%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-11 06:36:13,000 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 06:36:13,000 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
-2026-09-11 06:36:13,015 [INFO] QwenQualitySweep: 
-            Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-              full     PASS   60.78% 0.00% (base) 0.6354                  0            1.00x  793.2 MB               1.72              1.97
-mixattention_moska PASS_LOW   51.61%       -9.17% 0.6774                  0            0.99x  568.7 MB               3.19              3.66
-2026-09-11 06:36:13,015 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:25:47,564 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-14 05:25:47,564 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-14 05:25:47,564 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:25:47,564 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-14 05:25:47,564 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-14 05:25:47,564 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-14 05:25:47,564 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-14 05:25:47,564 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-14 05:25:47,564 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-14 05:25:47,564 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-14 05:25:47,565 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-14 05:25:47,565 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:25:47,641 [INFO] QwenQualitySweep: Injected 48 LoRALinear layers into gpt backbone
+2026-09-14 05:25:47,642 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-14 05:25:47,823 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-14 05:25:48,595 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-14 05:25:56,903 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 87.84%
+2026-09-14 05:25:56,952 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:25:56,952 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-14 05:25:56,952 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-14 05:25:56,952 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-14 05:25:56,952 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-14 05:25:56,953 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-14 05:25:56,953 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-14 05:25:56,953 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:25:56,968 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 05:26:02,391 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_mixattention_moska\gpt2\gpt2_full_full_metrics.json
+2026-09-14 05:26:02,422 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_mixattention_moska\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=97)
+2026-09-14 05:26:03,086 [INFO] QwenQualitySweep: [1/2] full -> PASS 87.84% (F1: 0.8776, Peak VRAM: 391.24 MB)
+2026-09-14 05:26:03,086 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_mixattention_moska\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-14 05:26:03,330 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: mixattention_moska (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-14 05:26:04,932 [INFO] framework.core.attention_utils: Successfully injected 'mixattention_moska' into 12 transformer blocks.
+2026-09-14 05:26:04,939 [INFO] QwenQualitySweep: module=mixattention_moska path=adapted_gpt
+2026-09-14 05:26:04,941 [INFO] QwenQualitySweep: module=mixattention_moska injection summary: 72 SVDLinear layers active
+2026-09-14 05:26:04,941 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for mixattention_moska (lr=2.0e-04)
+2026-09-14 05:26:05,198 [INFO] framework.utils.compat: Recovery fine-tuning selected 2654208 trainable parameters across 144 tensors.
+2026-09-14 05:26:05,198 [WARNING] framework.utils.compat: Total trainable parameters (2654208) exceeds 2,000,000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-14 05:26:05,208 [INFO] framework.utils.compat: Reduced recovery parameters to 1794048 trainable parameters across 98 tensors.
+2026-09-14 05:26:05,214 [INFO] QwenQualitySweep: LoRA fine-tuning: 1794048 trainable parameters across 98 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-14 05:26:05,569 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.7243 (bs=8, micro_bs=8)
+2026-09-14 05:26:06,620 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.3889 (bs=8, micro_bs=8)
+2026-09-14 05:26:07,845 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.2678 (bs=8, micro_bs=8)
+2026-09-14 05:26:09,135 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.2472 (bs=8, micro_bs=8)
+2026-09-14 05:26:10,509 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.1581 (bs=8, micro_bs=8)
+2026-09-14 05:26:11,795 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.1920 (bs=8, micro_bs=8)
+2026-09-14 05:26:13,005 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.1333 (bs=8, micro_bs=8)
+2026-09-14 05:26:14,314 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.3369 (bs=8, micro_bs=8)
+2026-09-14 05:26:15,617 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.8689 (bs=8, micro_bs=8)
+2026-09-14 05:26:16,974 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.2334 (bs=8, micro_bs=8)
+2026-09-14 05:26:18,337 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.4443 (bs=8, micro_bs=8)
+2026-09-14 05:26:29,013 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_mixattention_moska\gpt2\gpt2_mixattention_moska_full_metrics.json
+2026-09-14 05:26:29,155 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_mixattention_moska\gpt2\checkpoints\mixattention_moska\weights.pt (module_params=0, lora_params=145)
+2026-09-14 05:26:29,888 [INFO] QwenQualitySweep: [2/2] mixattention_moska -> PASS 87.27% (F1: 0.8835, Peak VRAM: 333.18 MB)
+2026-09-14 05:26:29,889 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_mixattention_moska\gpt2\checkpoints\mixattention_moska. Automated export will be handled post-sweep by orchestrator.
+2026-09-14 05:26:30,128 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:26:30,129 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-14 05:26:30,133 [INFO] QwenQualitySweep: 
+            Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+              full   PASS   87.84% 0.00% (base) 0.8776                 48            1.00x  391.2 MB               4.12              4.73
+mixattention_moska   PASS   87.27%       -0.57% 0.8835                 72            1.00x  333.2 MB              10.31             11.83
+2026-09-14 05:26:30,133 [INFO] QwenQualitySweep: ================================================================================
