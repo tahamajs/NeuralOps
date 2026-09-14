@@ -198,7 +198,7 @@ class NEXUSConfig:
     stripe_width: int = 4
     rectify_interval: int = 4
     rff_features: int = 128
-    softpick_enabled: bool = True
+    softpick_enabled: bool = False
     softpick_temperature: float = 1.0
     dropout: float = 0.1
 
@@ -426,70 +426,38 @@ class DualStageStripeAttention(nn.Module):
 
         # Always guarantee block 0 (containing CLS at index 0) is retained
         inter_mask[:, :, :, 0] = True
+        # Intra-block diagonal is always retained
+        diag_idx = torch.arange(nb, device=Q.device)
+        inter_mask[:, :, diag_idx, diag_idx] = True
 
-        outputs: List[torch.Tensor] = []
-        for bi in range(nb):
-            start = bi * bs
-            end = min(start + bs, N)
-            Q_b = Q[:, :, start:end, :]
-            Bs = end - start
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 
-            K_intra = K[:, :, start:end, :]
-            V_intra = V[:, :, start:end, :]
+        # Expand block-level inter_mask to token-level
+        expanded_mask = inter_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
+        scores = scores.masked_fill(~expanded_mask, -10000.0)
 
-            active_blocks = inter_mask[:, :, bi, :]
-            K_inter_list: List[torch.Tensor] = []
-            V_inter_list: List[torch.Tensor] = []
-            for bj in range(nb):
-                if active_blocks[:, :, bj].any() and bj != bi:
-                    s2 = bj * bs
-                    e2 = min(s2 + bs, N)
-                    K_inter_list.append(K[:, :, s2:e2, :])
-                    V_inter_list.append(V[:, :, s2:e2, :])
+        # Apply stripe mask for long sequences if enabled
+        if self.cfg.stripe_enabled and N > 256:
+            sw = self.cfg.stripe_width
+            idx = torch.arange(N, device=Q.device)
+            stripe_group = idx // sw
+            q_stripe = stripe_group.unsqueeze(1)
+            k_stripe = stripe_group.unsqueeze(0)
+            stripe_mask = (q_stripe - k_stripe).abs() <= 1
+            scores = scores.masked_fill(~stripe_mask.unsqueeze(0).unsqueeze(0), -10000.0)
 
-            if K_inter_list:
-                K_inter = torch.cat(K_inter_list, dim=2)
-                V_inter = torch.cat(V_inter_list, dim=2)
-                K_total = torch.cat([K_intra, K_inter], dim=2)
-                V_total = torch.cat([V_intra, V_inter], dim=2)
-            else:
-                K_total = K_intra
-                V_total = V_intra
+        # Mask padding keys (token_valid indicates which tokens are real, not padding)
+        if token_valid is not None:
+            scores = scores.masked_fill((~token_valid.bool()).unsqueeze(1).unsqueeze(2), -10000.0)
 
-            if self.cfg.stripe_enabled and N > 256:
-                # PATCH: Disable stripe masking for short sequences (N ≤ 256).
-                # For MRPC with L=128 and stripe_width=4, each query can attend only
-                # to tokens within ±4 tokens of its stripe group — far too restrictive
-                # for cross-sentence paraphrase detection. Only apply for long sequences.
-                sw = self.cfg.stripe_width
-                idx = torch.arange(K_total.size(2), device=Q.device)
-                stripe_group = idx // sw
-                q_stripe_group = (torch.arange(Bs, device=Q.device) // sw).unsqueeze(1)
-                k_stripe_group = stripe_group.unsqueeze(0)
-                stripe_mask = (q_stripe_group - k_stripe_group).abs() <= 1
-                stripe_mask = stripe_mask.unsqueeze(0).unsqueeze(0)
-            else:
-                stripe_mask = None
+        if self.cfg.softpick_enabled:
+            attn = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature).to(Q.dtype)
+        else:
+            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            attn = F.softmax(scores, dim=-1).to(Q.dtype)
 
-            scores = torch.matmul(Q_b, K_total.transpose(-2, -1)) * scale
-
-            if stripe_mask is not None:
-                scores = scores.masked_fill(~stripe_mask, -10000.0)
-
-            if token_valid is not None:
-                intra_valid = token_valid[:, start:end].unsqueeze(1).unsqueeze(-1)
-                scores = scores.masked_fill(~intra_valid.bool(), -10000.0)
-
-            attn = (
-                softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
-                if self.cfg.softpick_enabled
-                else F.softmax(scores, dim=-1)
-            )
-
-            out_b = torch.matmul(attn, V_total)
-            outputs.append(out_b)
-
-        return torch.cat(outputs, dim=2)
+        context = torch.matmul(attn, V)
+        return context
 
 
 # ============================================================================
@@ -648,7 +616,7 @@ class NEXUSAttention(BaseAttention):
         self.dss_attn = DualStageStripeAttention(self.cfg, self.head_dim)
 
         self.rect_interval = self.cfg.rectify_interval
-        self.is_rectify = layer_idx % self.rect_interval == 0
+        self.is_rectify = (pretrained_attn is None) and (self.rect_interval > 0) and (layer_idx % self.rect_interval == 0)
         if self.is_rectify:
             self.spec_rectify: Optional[SpectraformerRectify] = SpectraformerRectify(
                 self.head_dim, self.cfg.rff_features
