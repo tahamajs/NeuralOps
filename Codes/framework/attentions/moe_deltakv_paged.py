@@ -126,6 +126,76 @@ def apply_rotary_pos_emb(
 
     return q, k
 
+
+class LoRALinear(nn.Module):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = True,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__()
+        factory_kwargs = {"device": device, "dtype": dtype}
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
+        self.freeze_base = freeze_base
+
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+        else:
+            self.register_parameter("bias", None)
+
+        if self.lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+
+    def reset_parameters(self) -> None:
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+        if self.lora_rank > 0 and self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B)
+            self.lora_B.requires_grad = True
+
+    def freeze_base_weights(self) -> None:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_rank > 0:
+            if self.lora_A is not None:
+                self.lora_A.requires_grad = True
+            if self.lora_B is not None:
+                self.lora_B.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        return out
+
+
 @ATTENTION_REGISTRY.register("moe_deltakv_paged", supports_causal=True, supports_gqa=True)
 class MoEDeltaKVPagedAttention(nn.Module):
     r"""
@@ -155,6 +225,8 @@ class MoEDeltaKVPagedAttention(nn.Module):
         self.page_size = getattr(config, "page_size", kwargs.get("page_size", 64))
         self.k_experts = getattr(config, "k_experts", kwargs.get("k_experts", 4))
         self.svd_rank = getattr(config, "svd_rank", kwargs.get("svd_rank", 16))
+        self.lora_rank = getattr(config, "lora_rank", kwargs.get("lora_rank", 16))
+        self.lora_alpha = getattr(config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
 
         _mt = str(getattr(config, "model_type", "") or "").lower()
         self.is_causal = bool(
@@ -167,14 +239,14 @@ class MoEDeltaKVPagedAttention(nn.Module):
         self.is_decoder = bool(self.is_causal)
         self.is_nested_encoder = False
 
-        self.query = nn.Linear(self.hidden_size, self.all_head_size)
-        self.key = nn.Linear(self.hidden_size, self.all_head_size)
-        self.value = nn.Linear(self.hidden_size, self.all_head_size)
+        self.query = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
+        self.key = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
+        self.value = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
 
         self.W_rg = nn.Linear(self.head_dim, self.head_dim, bias=False)
         nn.init.eye_(self.W_rg.weight)
 
-        self.out_proj = nn.Linear(self.all_head_size, self.hidden_size)
+        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
 
         dropout_p = getattr(
             config,
@@ -309,6 +381,9 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 self.out_proj.weight.data.copy_(torch.eye(self.hidden_size, self.all_head_size))
                 if self.out_proj.bias is not None:
                     self.out_proj.bias.data.zero_()
+
+            for target in (self.query, self.key, self.value, self.out_proj):
+                target.freeze_base_weights()
 
         if hasattr(pretrained_attn, "is_decoder"):
             self.is_decoder = bool(pretrained_attn.is_decoder)
