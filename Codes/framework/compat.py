@@ -280,6 +280,13 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     is_nested_or_deep = any("encoder" in n.lower() or "roberta" in n.lower() or "bert" in n.lower() for n, _ in model.named_parameters())
     prune_threshold = 10_000_000 if (has_lora or is_nested_or_deep) else 2_000_000
 
+    if total_trainable > 5_000_000:
+        for m in model.modules():
+            if hasattr(m, "lora_rank") and getattr(m, "lora_rank", 0) > 8:
+                m.lora_rank = 8
+                if hasattr(m, "lora_scaling") and hasattr(m, "lora_alpha"):
+                    m.lora_scaling = m.lora_alpha / 8
+
     if total_trainable > prune_threshold:
         logger.warning(
             "Total trainable parameters (%d) exceeds %d threshold for recovery. Pruning heavy base weights to prevent OOM.",
