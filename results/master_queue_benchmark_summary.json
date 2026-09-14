@@ -511,5 +511,32 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T01:02:45.529041"
+  },
+  {
+    "module": "flash3_fp8",
+    "runner": "run_all_4_flash3_fp8.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T01:02:45.536210"
+  },
+  {
+    "module": "flat_llm",
+    "runner": "run_all_4_flat_llm.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T01:02:45.538368"
+  },
+  {
+    "module": "fms",
+    "runner": "run_all_4_fms.py",
+    "exit_code": 0,
+    "elapsed_s": 263.34,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T01:07:08.880734"
   }
 ]
