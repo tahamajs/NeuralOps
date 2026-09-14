@@ -3,6 +3,7 @@ NASC: NEXUS-AEGIS Spectral Cascade Attention.
 Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
 """
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -13,6 +14,8 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -61,15 +64,22 @@ def apply_rotary_pos_emb(
 
 
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    """Stable softpick function."""
+    """Stable softpick function with negative-clamp and softmax fallback."""
     orig_dtype = x.dtype
     x = x.float()
     m = x.max(dim=dim, keepdim=True).values
+    m = torch.where(m < -1e3, torch.zeros_like(m), m)
     z = x - m
     exp_z = torch.exp(z / temperature)
     exp_neg_m = torch.exp((-m) / temperature).clamp(max=1e4)
     p = F.relu(exp_z - exp_neg_m)
-    p = p / (p.sum(dim=dim, keepdim=True) + 1e-8)
+    denom = p.sum(dim=dim, keepdim=True)
+    zero_mask = denom <= 1e-8
+    if zero_mask.any():
+        fallback = F.softmax(x, dim=dim)
+        p = torch.where(zero_mask, fallback, p / (denom + 1e-8))
+    else:
+        p = p / denom
     return p.to(orig_dtype)
 
 
@@ -86,8 +96,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -141,7 +149,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("nasc", supports_causal=True, supports_gqa=True)
@@ -171,7 +179,16 @@ class NASCAttention(BaseAttention):
         super().__init__(config, rank)
         self.hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
         self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
-        self.head_dim: int = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
+
+        cfg_head_dim = getattr(config, "head_dim", None) if config else None
+        if cfg_head_dim is not None:
+            self.head_dim = int(cfg_head_dim)
+        elif kwargs.get("head_dim") is not None:
+            self.head_dim = int(kwargs["head_dim"])
+        elif self.num_heads > 0:
+            self.head_dim = self.hidden_size // self.num_heads
+        else:
+            self.head_dim = 64
         self.all_head_size: int = self.num_heads * self.head_dim
 
         cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None)) if config else None
@@ -196,10 +213,11 @@ class NASCAttention(BaseAttention):
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
+            m_type = str(getattr(config, "model_type", "")).lower() if config else ""
             self.is_decoder = (
                 getattr(config, "is_decoder", False)
                 or getattr(config, "causal", False)
-                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
+                or any(m_type.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
                 if config else False
             )
 
@@ -210,7 +228,9 @@ class NASCAttention(BaseAttention):
         self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
         self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
 
-        self.rff_proj = nn.Parameter(torch.randn(self.head_dim, rff_features) * 0.02)
+        rff_init = torch.empty(self.head_dim, rff_features)
+        nn.init.orthogonal_(rff_init)
+        self.rff_proj = nn.Parameter(rff_init, requires_grad=False)
         self.gate_proj = nn.Linear(self.hidden_size, 3)
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
@@ -248,8 +268,7 @@ class NASCAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter extraction fallback for %s: %s", proj, e)
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -400,7 +419,8 @@ class NASCAttention(BaseAttention):
         dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
         mask = dist > self.window_size
         if is_causal:
-            mask = mask | (idx.unsqueeze(0) < idx.unsqueeze(1))
+            # Query i attending to key j: future keys (j > i) must be masked
+            mask = mask | (idx.unsqueeze(0) > idx.unsqueeze(1))
         scores = scores.masked_fill(mask.unsqueeze(0).unsqueeze(0), -10000.0)
 
         # Padding mask
@@ -444,14 +464,18 @@ class NASCAttention(BaseAttention):
 
         top_k = min(self.top_k, nb)
         _, top_idx = blk_scores.topk(top_k, dim=-1)
-        top_idx[:, :, :, 0] = 0
+        if is_causal:
+            for i in range(nb):
+                top_idx[:, :, i, 0] = i
+        else:
+            top_idx[:, :, :, 0] = 0
 
         out_blocks = torch.zeros_like(Qb)
         for i in range(nb):
             idx = top_idx[:, :, i, :]
             idx_exp = idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, self.block_size, d)
-            K_sel = torch.gather(Kb, 2, idx_exp).view(B, H, top_k * self.block_size, d)
-            V_sel = torch.gather(Vb, 2, idx_exp).view(B, H, top_k * self.block_size, d)
+            K_sel = torch.gather(Kb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
+            V_sel = torch.gather(Vb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
 
             scores_i = torch.matmul(Qb[:, :, i].float(), K_sel.float().transpose(-2, -1)) * scale
 
@@ -462,7 +486,7 @@ class NASCAttention(BaseAttention):
 
             valid_b_exp = valid_b.unsqueeze(1).expand(B, H, nb, self.block_size)
             idx_v = idx.unsqueeze(-1).expand(-1, -1, -1, self.block_size)
-            valid_sel = torch.gather(valid_b_exp, 2, idx_v).view(B, H, top_k * self.block_size)
+            valid_sel = torch.gather(valid_b_exp, 2, idx_v).reshape(B, H, top_k * self.block_size)
             pad_sel = ~valid_sel.unsqueeze(2)
             scores_i = scores_i.masked_fill(pad_sel, -10000.0)
             scores_i = torch.nan_to_num(scores_i, nan=-1e4, posinf=1e4, neginf=-1e4)
@@ -549,6 +573,10 @@ class NASCAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
+        if not hasattr(self, '_logged_once'):
+            logger.info("NASCAttention: L=%d, L_kv=%d, is_causal=%s, head_dim=%d, all_head_size=%d, path=%s", L, L_kv, is_causal, self.head_dim, self.all_head_size, 'dense' if (L <= self.window_size or is_cross) else 'cascade')
+            self._logged_once = True
+
         if L <= self.window_size or is_cross:
             # Fall back to standard scaled dot product attention for short/cross sequences
             scale = 1.0 / math.sqrt(d)
@@ -582,17 +610,27 @@ class NASCAttention(BaseAttention):
             O = torch.matmul(attn, V)
         else:
             summary = hidden_states.mean(dim=1)
-            gates = F.softmax(self.gate_proj(summary), dim=-1).view(B, 1, 1, 3)
+            gates = F.softmax(self.gate_proj(summary), dim=-1)  # [B, 3]
+            g0 = gates[:, 0].view(B, 1, 1, 1)
+            g1 = gates[:, 1].view(B, 1, 1, 1)
+            g2 = gates[:, 2].view(B, 1, 1, 1)
 
             O_loc = self._local_window_attention(Q, K, V, valid_mask, is_causal)
             O_sp = self._sparse_block_attention(Q, K, V, valid_mask, is_causal)
             O_glb = self._global_spectral_rff_attention(Q, K, V, valid_mask, is_causal)
 
-            O = (
-                gates[:, :, :, 0].unsqueeze(-1) * O_loc
-                + gates[:, :, :, 1].unsqueeze(-1) * O_sp
-                + gates[:, :, :, 2].unsqueeze(-1) * O_glb
-            )
+            O = g0 * O_loc + g1 * O_sp + g2 * O_glb
+
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    hm = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    hm = head_mask.unsqueeze(1).unsqueeze(-1)
+                elif head_mask.dim() == 3:
+                    hm = head_mask.unsqueeze(-1)
+                else:
+                    hm = head_mask
+                O = O * hm
 
         context = O.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
@@ -606,53 +644,142 @@ class NASCAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("nasc_injection")
+@ATTENTION_REGISTRY.register("inject_nasc")
+@ATTENTION_REGISTRY.register("inject_nasc_attention")
 def inject_nasc(
-    layer: nn.Module,
+    layer: Optional[nn.Module] = None,
+    model: Optional[nn.Module] = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 1,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> NASCAttention:
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+) -> Optional[Union[NASCAttention, nn.Module]]:
+    target = layer if layer is not None else model
+    if target is None:
+        return None
 
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
 
-    rank = getattr(comp_config, "rank", 16) if comp_config is not None else 16
-    window_size = getattr(comp_config, "window_size", 64) if comp_config is not None else 64
-    block_size = getattr(comp_config, "block_size", 32) if comp_config is not None else 32
-    top_k = getattr(comp_config, "top_k", 2) if comp_config is not None else 2
-    rff_features = getattr(comp_config, "rff_features", 64) if comp_config is not None else 64
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
 
-    new_attn = NASCAttention(
-        config=model_config,
-        rank=rank,
-        window_size=window_size,
-        block_size=block_size,
-        top_k=top_k,
-        rff_features=rff_features,
-    )
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
-    if src_attn is not None:
-        try:
-            new_attn.copy_weights(src_attn)
-        except Exception as e:
-            print(f'copy_weights failed: {e}')
-            raise RuntimeError(f"copy_weights failed: {e}")
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_nasc(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
+    try:
+        src_attn = old_attn
+        if src_attn is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "self"):
+                        src_attn = cand.self
+                    else:
+                        src_attn = cand
+                    break
+
+        if src_attn is None and target is not None and hasattr(target, "forward"):
+            src_attn = target
+
+        if src_attn is None:
+            return None
+
+        # Double-injection guard
+        if isinstance(src_attn, NASCAttention):
+            return None
+        if "NASC" in src_attn.__class__.__name__:
+            return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        c_name = src_attn.__class__.__name__
+        if "DeltaNet" in c_name or "LinearAttention" in c_name:
+            return None
+
+        if cfg is None and hasattr(src_attn, "config"):
+            cfg = src_attn.config
+
+        if cfg is None:
+            cfg = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+
+        rank = getattr(comp_config, "rank", 16) if comp_config is not None else 16
+        window_size = getattr(comp_config, "window_size", 64) if comp_config is not None else 64
+        block_size = getattr(comp_config, "block_size", 32) if comp_config is not None else 32
+        top_k = getattr(comp_config, "top_k", 2) if comp_config is not None else 2
+        rff_features = getattr(comp_config, "rff_features", 64) if comp_config is not None else 64
+
+        new_attn = NASCAttention(
+            config=cfg,
+            rank=rank,
+            window_size=window_size,
+            block_size=block_size,
+            top_k=top_k,
+            rff_features=rff_features,
+            pretrained_attn=src_attn,
+            **kwargs,
+        )
+
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
-    if hasattr(layer, "attention"):
-        if hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
-        else:
-            layer.attention = new_attn
-    elif hasattr(layer, "self"):
-        layer.self = new_attn
-    return new_attn
+
+        if target is not None:
+            if hasattr(target, "attention") and hasattr(target.attention, "self"):
+                new_attn.is_nested_encoder = True
+                target.attention.self = new_attn
+                return new_attn
+            else:
+                new_attn.is_nested_encoder = False
+                if hasattr(target, "attention"):
+                    target.attention = new_attn
+                    return new_attn
+                elif hasattr(target, "self"):
+                    new_attn.is_nested_encoder = True
+                    target.self = new_attn
+                    return new_attn
+                elif hasattr(target, "self_attn"):
+                    target.self_attn = new_attn
+                    return new_attn
+                elif hasattr(target, "attn"):
+                    target.attn = new_attn
+                    return new_attn
+            target.attention = new_attn
+            return new_attn
+        return new_attn
+    except Exception as e:
+        logger.error("inject_nasc failed: %s", e)
+        return None
+
 
 # Aliases
 inject_nasc_attention = inject_nasc
+
