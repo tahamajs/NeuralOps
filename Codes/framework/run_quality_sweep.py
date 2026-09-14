@@ -1533,8 +1533,9 @@ def main():
             "hymba_transx": 4, "mamba_svd_flash": 8, "spectral_mamba": 8,
             "vspec": 8, "slicegpt": 8, "slicegpt_pca": 8,
             "asvd": 8, "cosformer": 8, "cur": 8, "vig": 8,
+            "tpa": 4, "tpa_attention": 4, "tp_attention": 4,
         }
-        effective_batch_size = _OOM_MODULE_BATCH_OVERRIDES.get(name, args.batch_size)
+        effective_batch_size = min(args.batch_size, _OOM_MODULE_BATCH_OVERRIDES[name]) if name in _OOM_MODULE_BATCH_OVERRIDES else args.batch_size
 
         total_params_before = sum(p.numel() for p in base.parameters())
         model_slug = Path(args.model).name.replace("/", "_").replace("\\", "_")

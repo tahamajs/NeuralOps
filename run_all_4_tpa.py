@@ -12,7 +12,7 @@ os.environ.pop("HF_HUB_OFFLINE", None)
 os.environ.pop("TRANSFORMERS_OFFLINE", None)
 os.environ["HF_HUB_DISABLE_XET"] = "1"
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size_mb:128"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size_mb:64"
 
 # Switch to project directory if on Windows GPU server
 if os.path.exists(r"D:\svd_project"):
@@ -32,11 +32,13 @@ models = [
             "--output_dir", r"results\unified_tpa\distilbert",
             "--parent_checkpoint", r"results\unified_asvd\distilbert\finetuned_model.pt",
             "--modules", "full,tpa",
-            "--batch_size", "8",
+            "--batch_size", "4",
             "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
-            "--rank", "32",
+            "--rank", "8",
+            "--seq_len", "128",
+            "--gradient_checkpointing",
             "--precision", "fp16",
             "--fresh",
             "--defer_export",
@@ -58,11 +60,13 @@ models = [
             "--output_dir", r"results\unified_tpa\roberta",
             "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,tpa",
-            "--batch_size", "8",
+            "--batch_size", "4",
             "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
-            "--rank", "32",
+            "--rank", "8",
+            "--seq_len", "128",
+            "--gradient_checkpointing",
             "--precision", "fp16",
             "--fresh",
             "--defer_export",
@@ -84,11 +88,13 @@ models = [
             "--output_dir", r"results\unified_tpa\gpt2",
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,tpa",
-            "--batch_size", "8",
+            "--batch_size", "4",
             "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
-            "--rank", "32",
+            "--rank", "8",
+            "--seq_len", "128",
+            "--gradient_checkpointing",
             "--precision", "fp16",
             "--fresh",
             "--defer_export",
@@ -114,7 +120,8 @@ models = [
             "--recovery_steps", "50",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
-            "--rank", "32",
+            "--rank", "16",
+            "--seq_len", "128",
             "--gradient_checkpointing",
             "--precision", "fp16",
             "--fresh",
@@ -135,7 +142,8 @@ parser.add_argument("--batch_size", type=int, default=None, help="Batch size ove
 parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
 parser.add_argument("--rank", type=int, default=None, help="Rank override")
 parser.add_argument("--lora_rank", type=int, default=None, help="LoRA rank override")
-parser.add_argument("--gradient_checkpointing", action="store_true", default=False, help="Enable gradient checkpointing for all models")
+parser.add_argument("--gradient_checkpointing", action="store_true", default=False, help="Explicitly enable gradient checkpointing for all models")
+parser.add_argument("--no_gradient_checkpointing", action="store_true", default=False, help="Disable gradient checkpointing")
 parser.add_argument("--seq_len", type=int, default=None, help="Sequence length override")
 parser.add_argument("positional_models", nargs="*", default=None, help="Positional model names for backwards compatibility")
 
@@ -180,6 +188,9 @@ for m in models:
     if args.gradient_checkpointing:
         if "--gradient_checkpointing" not in m["cmd"]:
             m["cmd"].append("--gradient_checkpointing")
+    if args.no_gradient_checkpointing:
+        if "--gradient_checkpointing" in m["cmd"]:
+            m["cmd"].remove("--gradient_checkpointing")
 
 print("=" * 80, flush=True)
 print("STARTING UNIFIED 4-MODEL HARDENED TPATTENTION BENCHMARK ON GPU SERVER", flush=True)

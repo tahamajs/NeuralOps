@@ -555,6 +555,12 @@ class TPAttention(BaseAttention):
             elif hasattr(old_attn, "c_attn") or any(x in old_attn.__class__.__name__.lower() for x in ("gpt", "qwen", "llama", "decoder")):
                 self.is_decoder = True
 
+            del w_q, w_k, w_v, w_o, b_q, b_k, b_v, b_o, sub_q, sub_k, sub_v, sub_o
+            import gc
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -572,31 +578,36 @@ class TPAttention(BaseAttention):
         B, L, D = hidden_states.shape
         H, H_kv, r, hd = self.num_heads, self.num_kv_heads, self.rank, self.head_dim
 
-        # Projections
-        q1 = self.q_proj1(hidden_states).view(B, L, H, r)
-        q2 = self.q_proj2(hidden_states).view(B, L, H, r)
-        k1 = self.k_proj1(hidden_states).view(B, L, H_kv, r)
-        k2 = self.k_proj2(hidden_states).view(B, L, H_kv, r)
-        v = self.v_proj(hidden_states).view(B, L, H_kv, hd)
+        # Projections with outer product
+        def _compute_q(x: torch.Tensor) -> torch.Tensor:
+            q1 = self.q_proj1(x).view(B, L, H, r)
+            q2 = self.q_proj2(x).view(B, L, H, r)
+            out_q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).flatten(-2, -1)
+            if self.qk_proj is not None:
+                out_q = self.qk_proj(out_q)
+            return out_q
 
-        # Tensor product with optional gradient checkpointing
-        def _tp(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-            return (a.unsqueeze(-1) * b.unsqueeze(-2)).flatten(-2, -1)
+        def _compute_k(x: torch.Tensor) -> torch.Tensor:
+            k1 = self.k_proj1(x).view(B, L, H_kv, r)
+            k2 = self.k_proj2(x).view(B, L, H_kv, r)
+            out_k = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).flatten(-2, -1)
+            if self.qk_proj is not None:
+                out_k = self.qk_proj(out_k)
+            return out_k
 
         if self.training and getattr(self, "gradient_checkpointing", True):
-            from torch.utils.checkpoint import checkpoint
-            Q = checkpoint(_tp, q1, q2, use_reentrant=False)
-            K = checkpoint(_tp, k1, k2, use_reentrant=False)
+            try:
+                from torch.utils.checkpoint import checkpoint
+                Q = checkpoint(_compute_q, hidden_states, use_reentrant=False)
+                K = checkpoint(_compute_k, hidden_states, use_reentrant=False)
+            except Exception:
+                Q = _compute_q(hidden_states)
+                K = _compute_k(hidden_states)
         else:
-            Q = _tp(q1, q2)
-            K = _tp(k1, k2)
+            Q = _compute_q(hidden_states)
+            K = _compute_k(hidden_states)
 
-        # Free intermediate projection tensors immediately
-        del q1, q2, k1, k2
-
-        if self.qk_proj is not None:
-            Q = self.qk_proj(Q)
-            K = self.qk_proj(K)
+        v = self.v_proj(hidden_states).view(B, L, H_kv, hd)
 
         Q = Q.transpose(1, 2)
         K = K.transpose(1, 2)
@@ -617,18 +628,32 @@ class TPAttention(BaseAttention):
         is_causal_mask = self.is_decoder and L > 1
         custom_mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
 
-        # If custom mask is provided and 2D/3D/4D, prepare for SDPA
+        # Optimize attention mask for memory efficiency
         if custom_mask is not None:
             if custom_mask.dtype == torch.bool:
-                if custom_mask.dim() == 2:
+                if custom_mask.all():
+                    custom_mask = None
+                elif custom_mask.dim() == 2:
                     custom_mask = custom_mask.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, L]
                 elif custom_mask.dim() == 3:
                     custom_mask = custom_mask.unsqueeze(1)  # [B, 1, L, S]
             elif torch.is_floating_point(custom_mask):
-                if custom_mask.dim() == 2:
-                    custom_mask = custom_mask.unsqueeze(1).unsqueeze(2)
-                elif custom_mask.dim() == 3:
-                    custom_mask = custom_mask.unsqueeze(1)
+                if (custom_mask == 0.0).all():
+                    custom_mask = None
+                elif (custom_mask <= -1.0).any() and ((custom_mask == 0.0) | (custom_mask <= -1.0)).all():
+                    # Extended HF mask (0.0 for keep, <= -1.0 for padding) -> convert to boolean for FlashAttention
+                    custom_mask = (custom_mask > -1.0)
+                    if custom_mask.dim() == 2:
+                        custom_mask = custom_mask.unsqueeze(1).unsqueeze(2)
+                    elif custom_mask.dim() == 3:
+                        custom_mask = custom_mask.unsqueeze(1)
+                else:
+                    if custom_mask.dim() == 2:
+                        custom_mask = custom_mask.unsqueeze(1).unsqueeze(2)
+                    elif custom_mask.dim() == 3:
+                        custom_mask = custom_mask.unsqueeze(1)
+                    if custom_mask.dtype != Q.dtype:
+                        custom_mask = custom_mask.to(dtype=Q.dtype)
 
         # SDPA (no .contiguous() calls to avoid memory duplication)
         if not output_attentions and head_mask is None:
@@ -691,13 +716,14 @@ class TPAttention(BaseAttention):
                 attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
             context = torch.matmul(attn_weights, v)
 
-        context = context.transpose(1, 2).contiguous().view(B, L, H * hd)
-        del Q, K, v  # Free large tensors
+        del Q, K, v  # Free large tensors immediately
 
         if self.is_nested_encoder:
-            output = context
+            output = context.transpose(1, 2).contiguous().view(B, L, H * hd)
+            del context
         else:
-            output = self.out_proj(context)
+            output = self.out_proj(context.transpose(1, 2).contiguous().view(B, L, H * hd))
+            del context
 
         if output.shape[-1] != hidden_states.shape[-1]:
             output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1])) if output.shape[-1] < hidden_states.shape[-1] else output[..., :hidden_states.shape[-1]]
