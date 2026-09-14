@@ -171,19 +171,38 @@ class ReGLAAttention(BaseAttention):
         if self.num_heads <= 0 or self.dim % self.num_heads != 0:
             raise ValueError(f"dim={self.dim} not divisible by num_heads={self.num_heads}")
 
-        self.head_dim = self.dim // self.num_heads
+        cfg_hd = _cfg_get(config, "head_dim", None)
+        if cfg_hd is not None:
+            self.head_dim = int(cfg_hd)
+        elif pretrained_attn is not None:
+            for attr in ("q_proj", "query", "q_lin"):
+                if hasattr(pretrained_attn, attr):
+                    qw = getattr(pretrained_attn, attr).weight
+                    self.head_dim = qw.shape[0] // self.num_heads
+                    break
+            else:
+                self.head_dim = self.dim // self.num_heads
+        else:
+            self.head_dim = self.dim // self.num_heads
+
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kernel_size = kernel_size
+        self.conv_scale = nn.Parameter(torch.zeros(1))
 
-        model_type = str(_cfg_get(config, "model_type", "")).lower()
-        is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
-            is_dec = True
-        if kwargs.get("is_causal", False):
-            is_dec = True
-        self.is_decoder = bool(is_dec)
-        self.is_causal = bool(is_dec)
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
+        _mt = str(_cfg_get(config, "model_type", "") or "").lower()
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon")
+        self.is_decoder = (
+            bool(_cfg_get(config, "is_decoder", False))
+            or bool(_cfg_get(config, "causal", False))
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+            or (source_attn is not None and hasattr(source_attn, "c_attn"))
+            or bool(kwargs.get("is_causal", False))
+        )
+        if "is_decoder" in kwargs and kwargs["is_decoder"] is not None:
+            self.is_decoder = bool(kwargs["is_decoder"])
+        self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
         self.lora_rank = _cfg_get(config, "lora_rank", _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
@@ -364,10 +383,10 @@ class ReGLAAttention(BaseAttention):
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
 
-            # Initialize gate_proj from k_proj
-            self.gate_proj.weight.data.copy_(self.k_proj.weight.data)
-            if self.k_proj.bias is not None and self.gate_proj.bias is not None:
-                self.gate_proj.bias.data.copy_(self.k_proj.bias.data)
+            # Initialize gate_proj independently with normal init
+            nn.init.normal_(self.gate_proj.weight, mean=0.0, std=0.02)
+            if self.gate_proj.bias is not None:
+                nn.init.zeros_(self.gate_proj.bias)
             if self.freeze_base:
                 self.gate_proj.freeze_base_weights()
 
@@ -403,17 +422,17 @@ class ReGLAAttention(BaseAttention):
             v = repeat_kv(v, repeats)
             g = repeat_kv(g, repeats)
 
-        # Non-negative kernel activation
+        # Non-negative kernel activation & gating
         q = F.elu(q) + 1.0
-        k_gated = (F.elu(k) + 1.0) * torch.sigmoid(g)
+        g_sig = torch.sigmoid(g)
 
         valid_mask = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
         if valid_mask is None:
             valid_mask = torch.ones(B, L, device=hidden_states.device, dtype=torch.bool)
 
-        mask_4d = valid_mask.unsqueeze(1).unsqueeze(-1).to(k_gated.dtype)
-        k_gated = k_gated * mask_4d
-        v = v * mask_4d
+        mask_4d = valid_mask.unsqueeze(1).unsqueeze(-1).to(q.dtype)
+        k_gated = (F.elu(k) + 1.0) * g_sig * mask_4d
+        v_gated = v * g_sig * mask_4d
 
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
@@ -428,7 +447,7 @@ class ReGLAAttention(BaseAttention):
                 end = min(start + chunk, L)
                 q_c = q[:, :, start:end]
                 k_c = k_gated[:, :, start:end]
-                v_c = v[:, :, start:end]
+                v_c = v_gated[:, :, start:end]
 
                 intra_kv = torch.cumsum(k_c.unsqueeze(-1) * v_c.unsqueeze(-2), dim=2)
                 num_intra = (q_c.unsqueeze(-2) @ intra_kv).squeeze(-2)
@@ -436,7 +455,7 @@ class ReGLAAttention(BaseAttention):
                 num = num_intra + num_inter
 
                 z_intra = torch.cumsum(k_c, dim=2)
-                den = (q_c * (z_intra + Z.unsqueeze(2))).sum(-1, keepdim=True).clamp(min=1.0)
+                den = (q_c * (z_intra + Z.unsqueeze(2))).sum(-1, keepdim=True).clamp(min=1e-4)
                 out_list.append(num / den)
 
                 S = S + (k_c.unsqueeze(-1) * v_c.unsqueeze(-2)).sum(dim=2)
@@ -444,10 +463,10 @@ class ReGLAAttention(BaseAttention):
 
             out = torch.cat(out_list, dim=2)
         else:
-            kv = torch.matmul(k_gated.transpose(-2, -1), v)
+            kv = torch.matmul(k_gated.transpose(-2, -1), v_gated)
             z = k_gated.sum(dim=2, keepdim=True)
             num = torch.matmul(q, kv)
-            den = torch.matmul(q, z.transpose(-2, -1)).clamp(min=1.0)
+            den = (q * z).sum(-1, keepdim=True).clamp(min=1e-4)
             out = num / den
 
         out = out * mask_4d
@@ -480,7 +499,7 @@ class ReGLAAttention(BaseAttention):
         else:
             loc_proj = loc
 
-        fused = (out + loc_proj) * pad_2d
+        fused = (out + torch.sigmoid(self.conv_scale) * loc_proj) * pad_2d
 
         if self.is_nested_encoder:
             output = fused if fused.shape[-1] == self.dim else self.out_proj(fused)
