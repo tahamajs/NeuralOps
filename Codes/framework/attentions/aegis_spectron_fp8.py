@@ -254,6 +254,7 @@ class SpectronSpectralEntropyRouter(nn.Module):
 
         self.register_buffer("costs", torch.tensor([config.c_loc, config.c_glob, config.c_lin]))
         self.h_proj = nn.Linear(config.hidden_size, 3)
+        nn.init.zeros_(self.h_proj.weight)
         self.h_proj.bias.data.copy_(torch.tensor(config.router_init_bias))
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
