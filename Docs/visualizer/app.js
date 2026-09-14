@@ -1710,6 +1710,7 @@ function selectPartIn3D(target, options = {}) {
     // 6b. Update Mathematical Formulation with the exact clicked component formula
     const activeComps = getModelPipelineComponents(activeResearchModule, currentModel);
     const matchedComp = activeComps.find(c => {
+        if (!c || !c.id) return false;
         const cid = c.id.toLowerCase();
         const tk = targetKey.toLowerCase();
         return cid.includes(tk) || tk.includes(cid);
@@ -4869,47 +4870,69 @@ let _tourActive = false;
 let _tourStep = 0;
 let _tourTimer = null;
 const TOUR_STEPS = [
-    { y: 2,  dist: 20, label: '01 — Input Embeddings',     fn: () => selectPartIn3D('q_lin', { flyCamera: true }) },
-    { y: 5,  dist: 18, label: '02 — Q · K · V Projections', fn: () => selectPartIn3D('k_lin', { flyCamera: true }) },
-    { y: 8,  dist: 16, label: '03 — Attention Output',       fn: () => selectPartIn3D('out_lin', { flyCamera: true }) },
-    { y: 10, dist: 16, label: '04 — Residual Add #1',        fn: () => {} },
-    { y: 13, dist: 18, label: '05 — FFN Up Projection',      fn: () => selectPartIn3D('lin1', { flyCamera: true }) },
-    { y: 16, dist: 18, label: '06 — FFN Down Projection',    fn: () => selectPartIn3D('lin2', { flyCamera: true }) },
-    { y: 20, dist: 22, label: '07 — Output LM Head',         fn: () => {} },
-    { y: 12, dist: 35, label: '08 — Full Architecture',      fn: () => smoothFlyCamera(maxGraphHeight * 0.5, Math.max(18, maxGraphHeight * 1.35)) },
+    { y: 2,  dist: 20, label: '01 — Input Embeddings',      target: null },
+    { y: 5,  dist: 18, label: '02 — Q · K · V Projections', target: 'q_lin' },
+    { y: 8,  dist: 16, label: '03 — Attention Output',       target: 'out_lin' },
+    { y: 10, dist: 16, label: '04 — Residual Add #1',        target: null },
+    { y: 13, dist: 18, label: '05 — FFN Up Projection',      target: 'lin1' },
+    { y: 16, dist: 18, label: '06 — FFN Down Projection',    target: 'lin2' },
+    { y: 20, dist: 22, label: '07 — Output LM Head',         target: null },
+    { y: 12, dist: 35, label: '08 — Full Architecture View', target: null, fullFit: true },
 ];
 
 function startTour() {
     _tourActive = true;
     _tourStep = 0;
     const btn = document.getElementById('btn-auto-tour');
-    if (btn) { btn.textContent = '⏹ Stop Tour'; btn.classList.add('active'); }
+    if (btn) { btn.innerHTML = '⏹ Stop'; btn.classList.add('active'); }
+    const lbl = document.getElementById('tour-step-label');
+    if (lbl) { lbl.style.display = 'block'; lbl.style.opacity = '1'; }
     runTourStep();
 }
 function stopTour() {
     _tourActive = false;
     clearTimeout(_tourTimer);
     const btn = document.getElementById('btn-auto-tour');
-    if (btn) { btn.textContent = '▶ Auto Tour'; btn.classList.remove('active'); }
+    if (btn) { btn.innerHTML = '▶ Tour'; btn.classList.remove('active'); }
+    const lbl = document.getElementById('tour-step-label');
+    if (lbl) lbl.style.opacity = '0';
+    // Clear active lifecycle highlight
+    document.querySelectorAll('.lifecycle-step-item').forEach(el => el.classList.remove('active-step'));
 }
 function runTourStep() {
     if (!_tourActive) return;
     const step = TOUR_STEPS[_tourStep % TOUR_STEPS.length];
-    smoothFlyCamera(step.y, step.dist);
-    step.fn();
-    // Update tour label
+
+    // Camera fly
+    if (step.fullFit) {
+        smoothFlyCamera(maxGraphHeight * 0.5, Math.max(18, maxGraphHeight * 1.35));
+    } else {
+        smoothFlyCamera(step.y, step.dist);
+    }
+
+    // Safe mesh selection — guard with try/catch and check interactableMeshes
+    if (step.target && interactableMeshes.length > 0) {
+        try {
+            selectPartIn3D(step.target, { flyCamera: false, updateInspector: false });
+        } catch(e) { /* ignore if mesh not found */ }
+    }
+
+    // Update tour step label
     const lbl = document.getElementById('tour-step-label');
     if (lbl) { lbl.textContent = step.label; lbl.style.opacity = '1'; }
-    // Highlight lifecycle step
+
+    // Highlight matching lifecycle step
     const idx = _tourStep % 7;
     document.querySelectorAll('.lifecycle-step-item').forEach((el, i) => {
         el.classList.toggle('active-step', i === idx);
     });
+
     _tourStep++;
-    _tourTimer = setTimeout(runTourStep, 3200);
-    if (_tourStep >= TOUR_STEPS.length) {
-        setTimeout(stopTour, 3200);
-    }
+    const isLast = (_tourStep >= TOUR_STEPS.length);
+    _tourTimer = setTimeout(() => {
+        if (isLast) stopTour();
+        else runTourStep();
+    }, 3200);
 }
 window.toggleTour = function() {
     if (_tourActive) stopTour(); else startTour();
