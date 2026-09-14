@@ -1312,13 +1312,13 @@ def main():
             for p in head.parameters(): p.requires_grad = True
         LOG.info("Injected %d LoRALinear layers into %s backbone", num_lora, family)
 
-    if checkpoint.exists():
-        LOG.info("Loading cached fine-tuned checkpoint: %s", checkpoint)
-        state = torch.load(checkpoint, map_location="cpu", weights_only=False)
-        _safe_load_state(base, state)
-    elif parent_checkpoint.exists():
+    if parent_checkpoint.exists() and (args.fresh or not checkpoint.exists()):
         LOG.info("Loading shared baseline checkpoint from parent directory: %s", parent_checkpoint)
         state = torch.load(parent_checkpoint, map_location="cpu", weights_only=False)
+        _safe_load_state(base, state)
+    elif checkpoint.exists():
+        LOG.info("Loading cached fine-tuned checkpoint: %s", checkpoint)
+        state = torch.load(checkpoint, map_location="cpu", weights_only=False)
         _safe_load_state(base, state)
     else:
         if args.finetune_steps > 0:
