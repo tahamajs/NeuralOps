@@ -275,28 +275,38 @@ class NASCAttention(BaseAttention):
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = src.c_attn.weight.data
-            bias = getattr(src.c_attn, "bias", None)
-            bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
-            split_size = weight.shape[0] // 3
-            q_w = weight[:split_size, :]
-            k_w = weight[split_size : 2 * split_size, :]
-            v_w = weight[2 * split_size :, :]
-            q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
-            v_b = bias_data[2 * split_size :] if bias_data is not None else None
-            extracted["q"] = (q_w, q_b)
-            extracted["k"] = (k_w, k_b)
-            extracted["v"] = (v_w, v_b)
+            c_attn_mod = src.c_attn
+            base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+            weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
+            if weight is not None:
+                weight = weight.data.clone()
+                bias = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                bias_data = bias.data.clone() if bias is not None else None
+                c_cls = getattr(base_c, "__class__", type(base_c)).__name__
+                if ("Conv1D" in c_cls) or hasattr(base_c, "nf") or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__) or hasattr(c_attn_mod, "nf") or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
+                    weight = weight.t()
+                split_size = weight.shape[0] // 3
+                q_w = weight[:split_size, :]
+                k_w = weight[split_size : 2 * split_size, :]
+                v_w = weight[2 * split_size :, :]
+                q_b = bias_data[:split_size] if bias_data is not None else None
+                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+                v_b = bias_data[2 * split_size :] if bias_data is not None else None
+                extracted["q"] = (q_w, q_b)
+                extracted["k"] = (k_w, k_b)
+                extracted["v"] = (v_w, v_b)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
-            w_o = src.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
-            b_o = getattr(src.c_proj, "bias", None)
-            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+            c_proj_mod = src.c_proj
+            base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
+            w_o = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
+            if w_o is not None:
+                w_o = w_o.data.clone()
+                b_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
+                p_cls = getattr(base_o, "__class__", type(base_o)).__name__
+                if ("Conv1D" in p_cls) or hasattr(base_o, "nf") or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__) or hasattr(c_proj_mod, "nf") or (w_o.ndim == 2 and w_o.shape[0] < w_o.shape[1]):
+                    w_o = w_o.t()
+                extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
