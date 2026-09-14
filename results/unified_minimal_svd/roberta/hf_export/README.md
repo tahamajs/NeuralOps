@@ -7,7 +7,7 @@ datasets:
 - sst2
 ---
 # MINIMAL_SVD - roberta
-- Benchmark Accuracy: 56.42%
+- Benchmark Accuracy: 79.36%
 - F1 Score: 0.0000
 - Status: PASS
 - Architecture: roberta
