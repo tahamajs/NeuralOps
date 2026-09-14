@@ -258,11 +258,11 @@ class SVDLinearAttention(BaseAttention):
         self.dropout: nn.Dropout = nn.Dropout(dropout_val)
         self._last_u_r: Optional[torch.Tensor] = None
 
-        # Deterministic projection buffer for SVD subspace
+        # Persistent SVD projection buffer (populated in copy_weights from W_K)
+        # Shape: [hidden_size, rank] — the top-r right singular vectors of W_K
         init_rank = max(1, self.rank or 64)
-        omega = torch.empty(self.hidden_size, init_rank)
-        nn.init.orthogonal_(omega)
-        self.register_buffer("omega", omega, persistent=False)
+        self.register_buffer("svd_proj", torch.eye(self.hidden_size, init_rank), persistent=True)
+        self._svd_proj_ready: bool = False
 
         if old_attn is not None:
             self.copy_weights(old_attn)
@@ -475,6 +475,28 @@ class SVDLinearAttention(BaseAttention):
                         mn = min(len(self.out_proj.bias), len(b_o))
                         self.out_proj.bias.data[:mn].copy_(b_o[:mn])
 
+            # Compute SVD of W_K to get a fixed weight-space projection
+            # W_K shape: [kv_head_size, hidden_size] → SVD gives right singular vectors of shape [hidden_size, ...]
+            # We use the top-r right singular vectors (Vh rows) as the projection basis
+            try:
+                with torch.no_grad():
+                    wk = self.key.weight.float()  # [kv_head_size, hidden_size]
+                    _, _, Vh = torch.linalg.svd(wk, full_matrices=False)
+                    # Vh: [min(kv_head_size, hidden_size), hidden_size]
+                    r = min(self.rank or 64, Vh.shape[0], self.hidden_size)
+                    # svd_proj: [hidden_size, r] — project hidden_states → rank-r space
+                    proj = Vh[:r, :].T  # [hidden_size, r]
+                    if proj.shape == self.svd_proj.shape:
+                        self.svd_proj.copy_(proj)
+                    else:
+                        mn_r = min(proj.shape[1], self.svd_proj.shape[1])
+                        self.svd_proj[:, :mn_r].copy_(proj[:, :mn_r])
+                    self._svd_proj_ready = True
+                    logger.info("SVD projection computed from W_K: shape=%s, rank=%d", self.svd_proj.shape, r)
+            except Exception as e:
+                logger.warning("SVD projection computation failed: %s — falling back to identity", e)
+                self._svd_proj_ready = False
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -556,31 +578,29 @@ class SVDLinearAttention(BaseAttention):
             context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
         else:
-            # Data-dependent SVD compression of sequence dimension
-            # Instead of random projection, compute actual truncated SVD of K
-            # to find the optimal rank-r subspace that preserves attention patterns
+            # Use the fixed SVD subspace precomputed from W_K in copy_weights.
+            # This is stable across batches — LoRA can converge on a fixed subspace.
+            # svd_proj: [hidden_size, r]  (registered buffer, frozen)
             with torch.no_grad():
-                # K shape: [B, H, kv_len, head_dim]
-                # We want to project kv_len -> effective_rank
-                # Use SVD on K to find the best rank-r approximation
-                K_2d = K.float().reshape(-1, kv_len, self.head_dim)  # [B*H, kv_len, head_dim]
+                proj = self.svd_proj.to(device=device, dtype=dtype)  # [hidden_size, r]
+                actual_r = proj.shape[1]
+
+                # Project the kv_input sequence through the fixed subspace
+                # kv_input: [B, kv_len, hidden_size] → scores: [B, kv_len, actual_r]
+                seq_scores = torch.matmul(kv_input.float(), proj.float())  # [B, kv_len, r]
                 try:
-                    U, S, Vh = torch.linalg.svd(K_2d, full_matrices=False)
+                    U_r, _ = torch.linalg.qr(seq_scores, mode="reduced")  # [B, kv_len, r]
                 except Exception:
-                    U, S, Vh = torch.linalg.svd(K_2d.cpu(), full_matrices=False)
-                    U = U.to(device=device)
-                    S = S.to(device=device)
-                # U: [B*H, kv_len, min(kv_len, head_dim)]
-                # Take top-r left singular vectors as the projection basis
-                actual_r = min(effective_rank, U.shape[-1], kv_len)
-                U_r = U[:, :, :actual_r]  # [B*H, kv_len, actual_r]
-                U_r = U_r.reshape(batch_size, self.num_heads, kv_len, actual_r).to(dtype)
+                    U_r, _ = torch.linalg.qr(seq_scores.cpu(), mode="reduced")
+                    U_r = U_r.to(device=device)
+                U_r = U_r.to(dtype)  # [B, kv_len, actual_r]
 
-            self._last_u_r = U_r.reshape(batch_size, -1, kv_len, actual_r)[:, 0, :, :]  # save for ortho loss
+            self._last_u_r = U_r
 
-            # Project K and V into the SVD subspace
-            K_proj = torch.matmul(U_r.transpose(-2, -1), K)  # [B, H, actual_r, head_dim]
-            V_proj = torch.matmul(U_r.transpose(-2, -1), V)  # [B, H, actual_r, head_dim]
+            # Project K and V through the stable subspace
+            U_r_t = U_r.unsqueeze(1)  # [B, 1, kv_len, actual_r]
+            K_proj = torch.matmul(U_r_t.transpose(-2, -1), K)  # [B, H, actual_r, head_dim]
+            V_proj = torch.matmul(U_r_t.transpose(-2, -1), V)  # [B, H, actual_r, head_dim]
 
             scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1)) / math.sqrt(self.head_dim)
 
