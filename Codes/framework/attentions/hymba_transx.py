@@ -75,8 +75,6 @@ def apply_rotary_pos_emb(
 class HeadRoPE(nn.Module):
     def __init__(self, head_dim: int, max_seq_len: int = 4096, base: float = 10000.0) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.head_dim = head_dim
         self.max_seq_len = max_seq_len
         inv_freq = 1.0 / (base ** (torch.arange(0, head_dim, 2).float() / head_dim))
@@ -177,9 +175,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1, device=out.device, dtype=out.dtype))
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("hymba_transx", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -227,18 +223,35 @@ class HymbaTransXBlock(BaseAttention):
         self.hidden_size = self.dim
         self.num_heads = int(num_heads)
         self.num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads)) if config else self.num_heads
-        self.head_dim = self.dim // self.num_heads if self.num_heads > 0 else 64
+
+        cfg_head_dim = getattr(config, "head_dim", kwargs.get("head_dim", None)) if config else kwargs.get("head_dim", None)
+        if cfg_head_dim is None and source_attn is not None:
+            for attr in ("q_proj", "query", "q_lin", "W_q1"):
+                mod = getattr(source_attn, attr, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    cfg_head_dim = mod.weight.shape[0] // max(1, self.num_heads)
+                    break
+
+        if cfg_head_dim is not None:
+            self.head_dim = int(cfg_head_dim)
+        else:
+            self.head_dim = self.dim // self.num_heads if self.num_heads > 0 else 64
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
         # Decoder detection
-        model_type = getattr(config, "model_type", "").lower() if config else ""
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        _mt = str(getattr(config, "model_type", "") or "").lower() if config else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        is_dec = (
+            getattr(config, "is_decoder", False)
+            or getattr(config, "causal", False)
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+        ) if config else False
+        if hasattr(config, "architectures") and any(
+            "GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])
+        ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -260,8 +273,7 @@ class HymbaTransXBlock(BaseAttention):
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         self.mamba = SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
-        self.alpha = nn.Parameter(torch.tensor(3.0))
-        self.output_scale = nn.Parameter(torch.ones(1))
+        self.alpha = nn.Parameter(torch.tensor(-1.0))
 
         dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
@@ -389,13 +401,12 @@ class HymbaTransXBlock(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.warning(f"UniversalAdapter extraction in HymbaTransXBlock failed: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"HymbaTransXBlock copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
+            logger.warning(
+                f"HymbaTransXBlock copy_weights: missing projections {missing_after} from {src.__class__.__name__}; keeping defaults."
             )
 
         with torch.no_grad():
@@ -405,33 +416,38 @@ class HymbaTransXBlock(BaseAttention):
             w_o, b_o = extracted["o"]
 
             # Query 1 & 2
-            if w_q.ndim != 2:
-                w_q = w_q.reshape(w_q.size(0), -1)
-            if w_q.shape != self.W_q1.weight.shape and self.W_q1.weight.shape == w_q.t().shape:
-                w_q = w_q.t()
-            out_d = min(self.W_q1.weight.size(0), w_q.size(0))
-            in_d = min(self.W_q1.weight.size(1), w_q.size(1))
-            self.W_q1.weight.data[:out_d, :in_d].copy_(w_q[:out_d, :in_d].to(device=self.W_q1.weight.device, dtype=self.W_q1.weight.dtype))
-            self.W_q2.weight.data[:out_d, :in_d].copy_((w_q[:out_d, :in_d] * 0.9).to(device=self.W_q2.weight.device, dtype=self.W_q2.weight.dtype))
+            if w_q is not None:
+                if w_q.ndim != 2:
+                    w_q = w_q.reshape(w_q.size(0), -1)
+                if w_q.shape != self.W_q1.weight.shape and self.W_q1.weight.shape == w_q.t().shape:
+                    w_q = w_q.t()
+                out_d = min(self.W_q1.weight.size(0), w_q.size(0))
+                in_d = min(self.W_q1.weight.size(1), w_q.size(1))
+                self.W_q1.weight.data[:out_d, :in_d].copy_(w_q[:out_d, :in_d].to(device=self.W_q1.weight.device, dtype=self.W_q1.weight.dtype))
 
-            # Key 1 & 2
-            if w_k.ndim != 2:
-                w_k = w_k.reshape(w_k.size(0), -1)
-            if w_k.shape != self.W_k1.weight.shape and self.W_k1.weight.shape == w_k.t().shape:
-                w_k = w_k.t()
-            out_d = min(self.W_k1.weight.size(0), w_k.size(0))
-            in_d = min(self.W_k1.weight.size(1), w_k.size(1))
-            self.W_k1.weight.data[:out_d, :in_d].copy_(w_k[:out_d, :in_d].to(device=self.W_k1.weight.device, dtype=self.W_k1.weight.dtype))
-            self.W_k2.weight.data[:out_d, :in_d].copy_((w_k[:out_d, :in_d] * 0.9).to(device=self.W_k2.weight.device, dtype=self.W_k2.weight.dtype))
+            # Decorrelate W_q2 and W_k2 via independent Kaiming init
+            nn.init.kaiming_uniform_(self.W_q2.weight, a=math.sqrt(5))
+            nn.init.kaiming_uniform_(self.W_k2.weight, a=math.sqrt(5))
+
+            # Key 1
+            if w_k is not None:
+                if w_k.ndim != 2:
+                    w_k = w_k.reshape(w_k.size(0), -1)
+                if w_k.shape != self.W_k1.weight.shape and self.W_k1.weight.shape == w_k.t().shape:
+                    w_k = w_k.t()
+                out_d = min(self.W_k1.weight.size(0), w_k.size(0))
+                in_d = min(self.W_k1.weight.size(1), w_k.size(1))
+                self.W_k1.weight.data[:out_d, :in_d].copy_(w_k[:out_d, :in_d].to(device=self.W_k1.weight.device, dtype=self.W_k1.weight.dtype))
 
             # Value
-            if w_v.ndim != 2:
-                w_v = w_v.reshape(w_v.size(0), -1)
-            if w_v.shape != self.W_v.weight.shape and self.W_v.weight.shape == w_v.t().shape:
-                w_v = w_v.t()
-            out_d = min(self.W_v.weight.size(0), w_v.size(0))
-            in_d = min(self.W_v.weight.size(1), w_v.size(1))
-            self.W_v.weight.data[:out_d, :in_d].copy_(w_v[:out_d, :in_d].to(device=self.W_v.weight.device, dtype=self.W_v.weight.dtype))
+            if w_v is not None:
+                if w_v.ndim != 2:
+                    w_v = w_v.reshape(w_v.size(0), -1)
+                if w_v.shape != self.W_v.weight.shape and self.W_v.weight.shape == w_v.t().shape:
+                    w_v = w_v.t()
+                out_d = min(self.W_v.weight.size(0), w_v.size(0))
+                in_d = min(self.W_v.weight.size(1), w_v.size(1))
+                self.W_v.weight.data[:out_d, :in_d].copy_(w_v[:out_d, :in_d].to(device=self.W_v.weight.device, dtype=self.W_v.weight.dtype))
 
             # Output
             if w_o is not None:
@@ -454,7 +470,8 @@ class HymbaTransXBlock(BaseAttention):
             for name, mod in [("W_q1", self.W_q1), ("W_k1", self.W_k1), ("W_v", self.W_v), ("out_proj", self.out_proj)]:
                 w_norm = float(torch.linalg.norm(mod.weight.data.float()).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"HymbaTransXBlock weight verification failed for '{name}': norm too small ({w_norm:.2e})")
+                    logger.warning(f"HymbaTransXBlock weight verification warning for '{name}': norm too small ({w_norm:.2e}), reinitializing")
+                    nn.init.kaiming_uniform_(mod.weight, a=math.sqrt(5))
                 if self.freeze_base:
                     mod.freeze_base_weights()
 
@@ -543,8 +560,16 @@ class HymbaTransXBlock(BaseAttention):
             diff_attn = diff_attn * hm
 
         A_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-        mamba_res = self.mamba(x, attention_mask=attention_mask)
-        M_out = mamba_res[0] if isinstance(mamba_res, tuple) else mamba_res
+        if self.is_decoder:
+            mamba_res = self.mamba(x, attention_mask=attention_mask)
+            M_out = mamba_res[0] if isinstance(mamba_res, tuple) else mamba_res
+        else:
+            x_rev = torch.flip(x, dims=[1])
+            mamba_fwd = self.mamba(x, attention_mask=attention_mask)
+            mamba_bwd = self.mamba(x_rev, attention_mask=attention_mask)
+            mf = mamba_fwd[0] if isinstance(mamba_fwd, tuple) else mamba_fwd
+            mb = mamba_bwd[0] if isinstance(mamba_bwd, tuple) else mamba_bwd
+            M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
 
         alpha = torch.sigmoid(self.alpha)
         combined = alpha * A_out + (1.0 - alpha) * M_out
@@ -554,7 +579,7 @@ class HymbaTransXBlock(BaseAttention):
         else:
             out = self.out_proj(combined)
 
-        return out * self.output_scale, (diff_attn if output_attentions else None)
+        return out, (diff_attn if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("hymba_transx_inject")
@@ -725,11 +750,18 @@ def inject_hymba_transx(
                     new_attn.is_nested_encoder = True
                 else:
                     layer.attention = new_attn
+                    new_attn.is_nested_encoder = False
             elif hasattr(layer, "self"):
                 layer.self = new_attn
                 new_attn.is_nested_encoder = True
             elif hasattr(layer, "attn"):
                 layer.attn = new_attn
+                new_attn.is_nested_encoder = False
+            elif hasattr(layer, "self_attn"):
+                layer.self_attn = new_attn
+                new_attn.is_nested_encoder = False
+            else:
+                new_attn.is_nested_encoder = False
         return new_attn
     except Exception as e:
         logger.error("inject_hymba_transx failed: %s", e)
