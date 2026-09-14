@@ -68,6 +68,11 @@ def apply_rotary_pos_emb(
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
 
+    if rotary_dim > head_dim:
+        cos = cos[..., :head_dim]
+        sin = sin[..., :head_dim]
+        rotary_dim = head_dim
+
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
@@ -80,6 +85,61 @@ def apply_rotary_pos_emb(
         k = (k * cos) + (_rotate_half(k) * sin)
 
     return q, k
+
+
+class FactorizedLoRAUp(nn.Module):
+    """Up-projection with frozen base weight and trainable LoRA adapter."""
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = False,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        else:
+            self.register_parameter("bias", None)
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+        if lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
+            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+            self.scaling = lora_alpha / lora_rank
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+            self.scaling = 1.0
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+
+    def freeze_base_weights(self) -> None:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+        return out
 
 
 class LoRALinear(nn.Module):
@@ -95,8 +155,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -151,7 +209,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 class FactorizedLinear(nn.Module):
@@ -196,54 +254,86 @@ class SOAFusedAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         cfg = config or model_config or kwargs.get("config", None)
-        effective_rank = rank or k_rank or 64
-        super().__init__(cfg, effective_rank)
+        super().__init__(cfg, rank=k_rank, **kwargs)
         self.config = cfg
         comp_config = getattr(cfg, "compression_config", None)
 
-        self.hidden_size = getattr(cfg, "hidden_size", kwargs.get("hidden_size", 768))
+        self.hidden_size = getattr(cfg, "hidden_size", getattr(cfg, "dim", kwargs.get("hidden_size", kwargs.get("dim", 768)))) if cfg else kwargs.get("hidden_size", kwargs.get("dim", 768))
         self.dim = self.hidden_size
-        self.num_heads = getattr(cfg, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads = getattr(cfg, "num_attention_heads", getattr(cfg, "n_heads", getattr(cfg, "num_heads", kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))))) if cfg else kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
         self.num_kv_heads = getattr(
             cfg,
             "num_key_value_heads",
-            kwargs.get("num_key_value_heads", self.num_heads),
-        )
-        self.head_dim = getattr(
-            cfg,
-            "head_dim",
-            kwargs.get("head_dim", self.dim // self.num_heads),
-        )
+            getattr(cfg, "num_kv_heads", kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", self.num_heads))),
+        ) if cfg else kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", self.num_heads))
+        self.num_heads = int(self.num_heads or 12)
+        self.num_kv_heads = int(self.num_kv_heads or self.num_heads)
+
+        # Robust head_dim probe: check source weight first
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", kwargs.get("old_attn", None))
+        head_dim = kwargs.get("head_dim", None)
+        if not head_dim and source_attn is not None:
+            for attr in ("q_proj", "query", "q_lin"):
+                mod = getattr(source_attn, attr, None)
+                if mod is not None and hasattr(mod, "weight") and mod.weight is not None:
+                    if mod.weight.ndim == 2:
+                        head_dim = mod.weight.shape[0] // max(1, self.num_heads)
+                        break
+            if not head_dim:
+                head_dim = getattr(source_attn, "head_dim", None)
+        if not head_dim and cfg is not None:
+            head_dim = getattr(cfg, "head_dim", None)
+        if not head_dim or head_dim <= 0:
+            head_dim = self.dim // max(1, self.num_heads)
+
+        self.head_dim = int(head_dim)
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
-        self.k_rank = effective_rank
 
-        is_dec = getattr(cfg, "is_decoder", kwargs.get("is_decoder", False))
-        if kwargs.get("is_causal", False):
-            is_dec = True
+        # Adaptive k_rank: at least 128 (min 128, dim // 4)
+        if k_rank is None or k_rank == 64:
+            effective_rank = getattr(comp_config, "k_rank", getattr(comp_config, "soa_rank", rank if rank is not None else max(128, self.dim // 4)))
+        else:
+            effective_rank = min(k_rank, self.dim)
+        self.k_rank = effective_rank
+        self.rank = effective_rank
+
+        # Robust is_decoder detection with prefix matching
+        _mt = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
+                             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        is_dec = (
+            getattr(cfg, "is_decoder", False)
+            or getattr(cfg, "causal", False)
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+            or (source_attn is not None and hasattr(source_attn, "c_attn"))
+            or (source_attn is not None and getattr(source_attn, "is_causal", False))
+            or (source_attn is not None and getattr(source_attn, "is_decoder", False))
+            or bool(kwargs.get("is_decoder", False))
+            or bool(kwargs.get("is_causal", False))
+        )
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
-        self.is_nested_encoder = False
+        self.is_nested_encoder = bool(kwargs.get("is_nested_encoder", False))
 
         self.lora_rank = getattr(cfg, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))) if cfg else 16
         self.lora_alpha = getattr(cfg, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if cfg else 32.0
         self.freeze_base = (self.lora_rank > 0)
 
-        # Projections
+        # Projections: down is frozen linear, up is FactorizedLoRAUp with trainable LoRA
         self.q_down = nn.Linear(self.dim, self.k_rank, bias=False)
         self.k_down = nn.Linear(self.dim, self.k_rank, bias=False)
         self.v_down = nn.Linear(self.dim, self.k_rank, bias=False)
 
-        self.q_up = nn.Linear(self.k_rank, self.all_head_size, bias=False)
-        self.k_up = nn.Linear(self.k_rank, self.all_kv_head_size, bias=False)
-        self.v_up = nn.Linear(self.k_rank, self.all_kv_head_size, bias=False)
+        self.q_up = FactorizedLoRAUp(self.k_rank, self.all_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
+        self.k_up = FactorizedLoRAUp(self.k_rank, self.all_kv_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
+        self.v_up = FactorizedLoRAUp(self.k_rank, self.all_kv_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
 
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         dropout_p = getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout)) if cfg else dropout
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -362,9 +452,8 @@ class SOAFusedAttention(BaseAttention):
                     w, b = adapter.get_weight_bias(src, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -409,8 +498,9 @@ class SOAFusedAttention(BaseAttention):
             w_o, b_o = extracted["o"]
             if w_o is None:
                 if self.is_nested_encoder:
-                    nn.init.eye_(self.out_proj.weight)
-                    if self.out_proj.bias is not None:
+                    if hasattr(self.out_proj, "weight") and self.out_proj.weight.ndim == 2:
+                        nn.init.eye_(self.out_proj.weight)
+                    if hasattr(self.out_proj, "bias") and self.out_proj.bias is not None:
                         nn.init.zeros_(self.out_proj.bias)
             else:
                 if w_o.shape == self.out_proj.weight.shape:
@@ -425,13 +515,31 @@ class SOAFusedAttention(BaseAttention):
                     raise RuntimeError(f"Weight copy failed for out_proj: norm {fnorm:.6f} < 1e-4")
 
         if self.freeze_base:
-            for mod in [self.q_down, self.q_up, self.k_down, self.k_up, self.v_down, self.v_up, self.out_proj]:
+            for mod in [self.q_down, self.k_down, self.v_down]:
+                mod.weight.requires_grad = False
+                if getattr(mod, "bias", None) is not None:
+                    mod.bias.requires_grad = False
+            for mod in [self.q_up, self.k_up, self.v_up]:
                 if hasattr(mod, "freeze_base_weights"):
                     mod.freeze_base_weights()
                 else:
                     mod.weight.requires_grad = False
                     if getattr(mod, "bias", None) is not None:
                         mod.bias.requires_grad = False
+                    if getattr(mod, "lora_A", None) is not None:
+                        mod.lora_A.requires_grad = True
+                    if getattr(mod, "lora_B", None) is not None:
+                        mod.lora_B.requires_grad = True
+            if hasattr(self.out_proj, "freeze_base_weights"):
+                self.out_proj.freeze_base_weights()
+            else:
+                self.out_proj.weight.requires_grad = False
+                if getattr(self.out_proj, "bias", None) is not None:
+                    self.out_proj.bias.requires_grad = False
+                if getattr(self.out_proj, "lora_A", None) is not None:
+                    self.out_proj.lora_A.requires_grad = True
+                if getattr(self.out_proj, "lora_B", None) is not None:
+                    self.out_proj.lora_B.requires_grad = True
 
     _init_from_pretrained = copy_weights
 
@@ -504,42 +612,138 @@ class SOAFusedAttention(BaseAttention):
         context = torch.matmul(probs, v).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
+            if not any(p.requires_grad for p in self.parameters()):
+                raise RuntimeError("SOAFusedAttention: No trainable parameters — backward will fail.")
             return context, (probs if output_attentions else None)
 
         out = self.out_proj(context)
         return out, (probs if output_attentions else None)
 
 
+@ATTENTION_REGISTRY.register("soa_fused_attn_inject")
+@ATTENTION_REGISTRY.register("soa_fused_inject")
 def inject_soa_fused_attn(
-    model: nn.Module,
+    model: Optional[nn.Module] = None,
+    layer: Optional[nn.Module] = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Any = None,
     target_layer_idx: Optional[int] = None,
     **kwargs: Any,
-) -> Optional[nn.Module]:
-    """Safely replace attention in model with SOAFusedAttention."""
+) -> Optional[Union[SOAFusedAttention, nn.Module]]:
+    """Safely replace attention module with SOAFusedAttention across diverse transformer architectures."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            if target_layer_idx is not None and idx != target_layer_idx:
+                continue
+            res = inject_soa_fused_attn(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single layer injection
     try:
-        replaced = 0
-        for name, module in model.named_modules():
-            is_attn = False
-            if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
-                is_attn = True
-
-            if is_attn:
-                parent_name = name.rsplit(".", 1)[0] if "." in name else ""
-                child_name = name.rsplit(".", 1)[-1] if "." in name else name
-                parent = model.get_submodule(parent_name) if parent_name else model
-
-                new_attn = SOAFusedAttention(
-                    config=getattr(model, "config", None),
-                    pretrained_attn=module,
-                    **kwargs,
-                )
-                setattr(parent, child_name, new_attn)
-                replaced += 1
-                if target_layer_idx is not None and replaced > target_layer_idx:
+        src_attn = old_attn
+        if src_attn is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if hasattr(cand, "self"):
+                        src_attn = cand.self
+                    else:
+                        src_attn = cand
                     break
-        return model if replaced > 0 else None
+
+        if src_attn is None and target is not None and hasattr(target, "forward"):
+            src_attn = target
+
+        if src_attn is None:
+            return None
+
+        # Double-injection guard
+        if src_attn is not None:
+            if isinstance(src_attn, SOAFusedAttention) or "SOAFused" in src_attn.__class__.__name__:
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, SOAFusedAttention) or "SOAFused" in cand.__class__.__name__:
+                    return None
+
+        # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
+        if src_attn is not None:
+            c_name = src_attn.__class__.__name__
+            if "DeltaNet" in c_name or "LinearAttention" in c_name:
+                return None
+
+        if cfg is None and hasattr(src_attn, "config"):
+            cfg = src_attn.config
+
+        k_rank = getattr(comp_config, "soa_rank", getattr(comp_config, "rank", kwargs.pop("k_rank", 128)))
+        dropout = getattr(comp_config, "dropout", kwargs.pop("dropout", 0.1))
+
+        new_attn = SOAFusedAttention(
+            config=cfg,
+            k_rank=k_rank,
+            dropout=dropout,
+            pretrained_attn=src_attn,
+            **kwargs,
+        )
+
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
+                    target.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
+                else:
+                    target.attention = new_attn
+                return new_attn
+            for attr in ("self_attn", "attn", "self"):
+                if hasattr(target, attr):
+                    setattr(target, attr, new_attn)
+                    return new_attn
+            target.attention = new_attn
+            return new_attn
+        return new_attn
     except Exception as e:
-        logger.error("inject_soa_fused_attn failed: %s", e, exc_info=True)
+        logger.error("inject_soa_fused_attn failed at layer %d: %s", layer_idx, e)
         return None
 
 
