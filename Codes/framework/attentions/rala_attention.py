@@ -177,9 +177,9 @@ class RALALinearAttention(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
         self.rank_r = getattr(comp_config, "rala_rank", getattr(config, "rala_rank", kwargs.get("rala_rank", 8)))
-        self.U = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.1)
-        self.V = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.1)
-        self.alpha = nn.Parameter(torch.tensor(0.5))
+        self.U = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.01)
+        self.V = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.01)
+        self.alpha = nn.Parameter(torch.tensor(0.0))
 
         _mt = str(getattr(config, "model_type", "") or "").lower()
         _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt")
@@ -643,13 +643,13 @@ def inject_rala(
                     new_attn.is_nested_encoder = True
                 else:
                     target.attention = new_attn
-                return new_attn
-            for attr in ("self_attn", "attn", "self"):
-                if hasattr(target, attr):
-                    setattr(target, attr, new_attn)
-                    return new_attn
-            target.attention = new_attn
-            return new_attn
+            elif hasattr(target, "self"):
+                target.self = new_attn
+                new_attn.is_nested_encoder = True
+            elif hasattr(target, "self_attn"):
+                target.self_attn = new_attn
+            elif hasattr(target, "attn"):
+                target.attn = new_attn
         return new_attn
     except Exception as e:
         return None

@@ -507,7 +507,7 @@ class ORIONAttention(BaseAttention):
                 intra_den = intra_attn.sum(dim=-1, keepdim=True)
                 inter_den = torch.matmul(q_c, Z.unsqueeze(-1))
 
-                den = (intra_den + inter_den).clamp(min=1.0)
+                den = (intra_den + inter_den).clamp(min=1e-4)
                 ctx_list.append((intra_out + inter_out) / den)
 
                 S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
@@ -517,7 +517,7 @@ class ORIONAttention(BaseAttention):
         else:
             KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V)
             K_sum = K_feat.sum(dim=2)
-            denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1).clamp(min=1.0)
+            denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1).clamp(min=1e-4)
             ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
         return ctx.to(orig_dtype)
 
