@@ -5716,50 +5716,29 @@
       "models": {
         "DistilBERT": {
           "status": "PASS",
-          "accuracy_pct": 85.44,
-          "f1_score": 0.867,
-          "peak_vram_mb": 293.19,
-          "throughput_tokens_sec": 76814.2,
+          "accuracy_pct": 88.65,
+          "f1_score": 0.8896,
+          "peak_vram_mb": 285.84,
+          "throughput_tokens_sec": 22731.9,
           "source_file": "results/unified_minimal_nova/distilbert/summary.csv"
         },
-        "GPT-2": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.6748,
-          "peak_vram_mb": 494.67,
-          "throughput_tokens_sec": 31712.66,
-          "source_file": "results/unified_minimal_nova/gpt2/summary.csv"
-        },
-        "Qwen": {
-          "status": "PASS",
-          "accuracy_pct": 49.08,
-          "f1_score": null,
-          "peak_vram_mb": null,
-          "throughput_tokens_sec": null,
-          "source_file": "results/qwen_sst2_compat/summary.csv"
-        },
         "RoBERTa": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.6748,
-          "peak_vram_mb": 339.04,
-          "throughput_tokens_sec": 35458.12,
+          "status": "PASS",
+          "accuracy_pct": 79.82,
+          "f1_score": 0.8124,
+          "peak_vram_mb": 580.81,
+          "throughput_tokens_sec": 13055.63,
           "source_file": "results/unified_minimal_nova/roberta/summary.csv"
         },
-        "Unknown": {
+        "GPT-2": {
           "status": "PASS",
-          "accuracy_pct": 30.97,
-          "f1_score": null,
-          "peak_vram_mb": null,
-          "throughput_tokens_sec": null,
-          "source_file": "results/t5_cola_parallel/summary.csv"
+          "accuracy_pct": 79.36,
+          "f1_score": 0.8207,
+          "peak_vram_mb": 319.87,
+          "throughput_tokens_sec": 9739.09,
+          "source_file": "results/unified_minimal_nova/gpt2/summary.csv"
         }
-      },
-      "best_accuracy": 85.44,
-      "has_pass": true,
-      "has_pass_low": true,
-      "is_pure_pass": true,
-      "overall_status": "PASS"
+      }
     },
     "minimal_prism": {
       "module_name": "minimal_prism",
@@ -5816,58 +5795,29 @@
       "models": {
         "DistilBERT": {
           "status": "PASS",
-          "accuracy_pct": 85.44,
-          "f1_score": 0.867,
-          "peak_vram_mb": 293.19,
-          "throughput_tokens_sec": 77579.43,
+          "accuracy_pct": 88.88,
+          "f1_score": 0.8921,
+          "peak_vram_mb": 286.12,
+          "throughput_tokens_sec": 24363.59,
           "source_file": "results/unified_minimal_svd/distilbert/summary.csv"
         },
-        "GPT-2": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.6748,
-          "peak_vram_mb": 494.67,
-          "throughput_tokens_sec": 30244.27,
-          "source_file": "results/unified_minimal_svd/gpt2/summary.csv"
-        },
-        "Qwen": {
-          "status": "PASS",
-          "accuracy_pct": 48.51,
-          "f1_score": null,
-          "peak_vram_mb": null,
-          "throughput_tokens_sec": null,
-          "source_file": "results/qwen_sst2_compat/summary.csv"
-        },
         "RoBERTa": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.6748,
-          "peak_vram_mb": 339.04,
-          "throughput_tokens_sec": 35000.5,
+          "status": "PASS",
+          "accuracy_pct": 79.36,
+          "f1_score": 0.8065,
+          "peak_vram_mb": 580.81,
+          "throughput_tokens_sec": 13506.32,
           "source_file": "results/unified_minimal_svd/roberta/summary.csv"
         },
-        "BERT": {
+        "GPT-2": {
           "status": "PASS",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.3374,
-          "peak_vram_mb": 404.0,
-          "throughput_tokens_sec": 558171.2,
-          "source_file": "results/run_quality_20260828_023053/summary.csv"
-        },
-        "Unknown": {
-          "status": "PASS",
-          "accuracy_pct": 30.87,
-          "f1_score": null,
-          "peak_vram_mb": null,
-          "throughput_tokens_sec": null,
-          "source_file": "results/t5_cola_parallel/summary.csv"
+          "accuracy_pct": 80.85,
+          "f1_score": 0.8262,
+          "peak_vram_mb": 320.43,
+          "throughput_tokens_sec": 9545.66,
+          "source_file": "results/unified_minimal_svd/gpt2/summary.csv"
         }
-      },
-      "best_accuracy": 85.44,
-      "has_pass": true,
-      "has_pass_low": true,
-      "is_pure_pass": true,
-      "overall_status": "PASS"
+      }
     },
     "minimal_svd_v2": {
       "module_name": "minimal_svd_v2",
