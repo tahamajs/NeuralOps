@@ -199,7 +199,7 @@ class NASCAttention(BaseAttention):
             self.is_decoder = (
                 getattr(config, "is_decoder", False)
                 or getattr(config, "causal", False)
-                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
                 if config else False
             )
 
@@ -577,7 +577,7 @@ class NASCAttention(BaseAttention):
                 elif head_mask.dim() == 2:
                     head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
                 elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(1)
+                    head_mask = head_mask.unsqueeze(-1)
                 attn = attn * head_mask
             O = torch.matmul(attn, V)
         else:

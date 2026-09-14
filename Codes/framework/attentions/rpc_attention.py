@@ -207,7 +207,7 @@ class RPCAttention(BaseAttention):
         self.rank = max(1, min(int(raw_rank), self.head_dim))
 
         is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
-        if kwargs.get("is_causal", False) or str(_cfg_get(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama"):
+        if kwargs.get("is_causal", False) or str(_cfg_get(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
             is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)

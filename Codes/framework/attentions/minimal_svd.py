@@ -237,7 +237,7 @@ class MinimalSVDAttention(BaseAttention):
             self.is_decoder = (
                 getattr(cfg, "is_decoder", False)
                 or getattr(cfg, "causal", False)
-                or getattr(cfg, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                or getattr(cfg, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
                 if cfg else False
             )
 
@@ -370,7 +370,7 @@ class MinimalSVDAttention(BaseAttention):
         if hasattr(src, "config"):
             if getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta") and not has_out_proj:
                 is_nested = True
-        self.is_nested_encoder = bool(is_nested or self.is_nested_encoder)
+        self.is_nested_encoder = bool(is_nested)
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
@@ -489,18 +489,17 @@ class MinimalSVDAttention(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
+                head_mask = head_mask.unsqueeze(-1)
             attn_weights = attn_weights * head_mask
 
         context = torch.matmul(attn_weights, V)
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        context = context * self.output_scale
         if self.is_nested_encoder:
-            output = context
+            output = context * self.output_scale
         else:
-            output = self.out_proj(context)
+            output = self.out_proj(context) * self.output_scale
 
         return output, (attn_weights if output_attentions else None)
 

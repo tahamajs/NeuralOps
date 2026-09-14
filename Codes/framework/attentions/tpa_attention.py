@@ -596,7 +596,7 @@ class TPAttention(BaseAttention):
                 elif head_mask.dim() == 2:
                     head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
                 elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(1)
+                    head_mask = head_mask.unsqueeze(-1)
                 attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
             context = torch.matmul(attn_weights, v)
 

@@ -439,20 +439,18 @@ class CompressedDistilBertAttention(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
+                head_mask = head_mask.unsqueeze(-1)
             attn_probs = attn_probs * head_mask
 
-        context = torch.matmul(attn_probs, v).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-        context = context * self.output_scale
-
         if self.is_nested_encoder:
-            out = context
+            out = context * self.output_scale
         else:
             out_proj = torch.matmul(context, self.Vh_out.t()) * self.S_out.unsqueeze(0).unsqueeze(0)
             out = torch.matmul(out_proj, self.U_out.t()) + self.bias_out
             if self.lora_rank > 0 and self.lora_A_out is not None and self.lora_B_out is not None:
                 lora_out = F.linear(F.linear(context, self.lora_A_out), self.lora_B_out) * self.lora_scaling
                 out = out + lora_out
+            out = out * self.output_scale
 
         return out, (attn_probs if output_attentions else None)
 

@@ -615,7 +615,7 @@ class BlockTransformerHIBA(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
+                head_mask = head_mask.unsqueeze(-1)
 
         # Valid token mask
         active_mask = encoder_attention_mask if is_cross_attention else attention_mask

@@ -204,7 +204,7 @@ class GatedLinearAttention(BaseAttention):
             self.is_decoder = (
                 getattr(config, "is_decoder", False)
                 or getattr(config, "causal", False)
-                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
                 if config else False
             )
 
@@ -562,17 +562,15 @@ class GatedLinearAttention(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
+                head_mask = head_mask.unsqueeze(-1)
             y = y * head_mask
 
         y = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
         context = torch.nan_to_num(y * F.silu(z), nan=0.0, posinf=1e4, neginf=-1e4)
-        context = context * self.output_scale
-
         if self.is_nested_encoder:
-            out = context
+            out = context * self.output_scale
         else:
-            out = self.out_proj(context)
+            out = self.out_proj(context) * self.output_scale
 
         if eff_mask is not None and mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
