@@ -238,7 +238,6 @@ class NativeHybridAttention(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         # 1. Independent LoRA rank/alpha configuration
         if config is not None:
@@ -263,6 +262,20 @@ class NativeHybridAttention(BaseAttention):
         self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
+        omega = self._build_orthogonal_matrix(self.head_dim, self.rff_features)
+        self.register_buffer("rff_proj", omega)
+
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", dropout)) if config else dropout
+        self.dropout = nn.Dropout(dropout_p)
+        self.gate = nn.Linear(self.dim, 1)
+        # Initialize gate to bias strongly towards pretrained local attention (sigmoid(3.0) ≈ 0.95)
+        nn.init.zeros_(self.gate.weight)
+        nn.init.constant_(self.gate.bias, 3.0)
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
+
+        if source_attn is not None:
+            self.copy_weights(source_attn)
+
     @property
     def query(self) -> LoRALinear:
         return self.q_proj
@@ -274,20 +287,6 @@ class NativeHybridAttention(BaseAttention):
     @property
     def value(self) -> LoRALinear:
         return self.v_proj
-
-        omega = self._build_orthogonal_matrix(self.head_dim, self.rff_features)
-        self.register_buffer("rff_proj", omega)
-
-        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", dropout)) if config else dropout
-        self.dropout = nn.Dropout(dropout_p)
-        self.gate = nn.Linear(self.dim, 1)
-        # Initialize gate to bias strongly towards pretrained local attention (sigmoid(3.0) ≈ 0.95)
-        nn.init.zeros_(self.gate.weight)
-        nn.init.constant_(self.gate.bias, 3.0)
-        self.rotary_emb = getattr(source_attn, "rotary_emb", None)
-
-        if source_attn is not None:
-            self.copy_weights(source_attn)
 
     def _build_orthogonal_matrix(self, d: int, m: int) -> torch.Tensor:
         blocks = []
@@ -622,9 +621,8 @@ class NativeHybridAttention(BaseAttention):
             try:
                 cos, sin = self.rotary_emb(V, pos_ids)
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, pos_ids)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
         # GQA repeat_kv
         if self.num_heads != self.num_kv_heads:
@@ -655,7 +653,6 @@ class NativeHybridAttention(BaseAttention):
         if self.is_nested_encoder:
             return out, None
 
-        out = out * self.output_scale
         out = self.out_proj(out)
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:

@@ -134,8 +134,6 @@ class AdaSplashLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features: int = in_features
         self.out_features: int = out_features
         self.lora_rank: int = min(lora_rank, min(in_features, out_features))
@@ -194,7 +192,7 @@ class AdaSplashLinear(nn.Module):
         out = F.linear(x, self.weight, self.bias)
         if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("adasplash", supports_causal=True, supports_bidirectional=True, supports_gqa=True, supports_rope=True)
@@ -344,9 +342,8 @@ class AdaSplashAttention(BaseAttention):
             w, b = None, None
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
             if w is None:
                 # 1. Output projection checks first (RoBERTa/BERT outer, GPT-2, DistilBERT, etc.)
@@ -559,9 +556,8 @@ class AdaSplashAttention(BaseAttention):
         elif hasattr(self, "rotary_emb") and self.rotary_emb is not None:
             try:
                 q, k = maybe_apply_rotary(q, k, self.adapter, self.rotary_emb, kwargs.get("position_ids"))
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
