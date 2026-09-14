@@ -5,3 +5,4 @@ adaptive_compressor,run_all_4_adaptive_compressor.py,0,0.0,SKIPPED_EXISTING,,202
 adaptive_ranks,run_all_4_adaptive_ranks.py,0,0.0,SKIPPED_EXISTING,,2026-09-14T22:44:36.242124
 adaptive_span,run_all_4_adaptive_span.py,0,0.0,SKIPPED_EXISTING,,2026-09-14T22:44:36.243828
 adaptive_sparse,run_all_4_adaptive_sparse.py,0,306.19,PASS,,2026-09-14T22:49:42.434619
+adaptive_sparse_attention,run_all_4_adaptive_sparse_attention.py,0,2145.48,PASS,,2026-09-14T23:25:28.442941
