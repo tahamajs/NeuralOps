@@ -83,10 +83,10 @@ models = [
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,aasvd",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "100",
             "--learning_rate", "2e-4",
             "--rank", "288",
-            "--aasvd_max_error", "0.50",
+            "--aasvd_max_error", "0.75",
             "--aasvd_target_attention_only", "true",
             "--precision", "fp16",
             "--fresh",
@@ -131,7 +131,7 @@ parser = argparse.ArgumentParser(description="Unified 4-Model Hardened AASVD Ben
 parser.add_argument("--models", nargs="*", default=None, help="Specific models to run (e.g. gpt2 or distilbert,roberta)")
 parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names (e.g. full,aasvd)")
 parser.add_argument("--batch_size", type=int, default=None, help="Batch size override")
-parser.add_argument("--recovery_steps", type=int, default=50, help="Number of recovery fine-tuning steps")
+parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
 parser.add_argument("--rank", type=int, default=None, help="Compression rank override")
 parser.add_argument("--max_error", type=float, default=None, help="AASVD max reconstruction error threshold")
 parser.add_argument("--attention_only", type=str, default=None, help="Target attention layers only (true/false)")
@@ -387,15 +387,29 @@ print("STAGE 2: QUALITY-GATED EXPORT TO HUGGING FACE & GITHUB (AASVD)", flush=Tr
 print("=" * 80, flush=True)
 
 import shutil
-from Codes.framework.utils.hf_git_exporter import (
-    find_documentation_file,
-    upload_to_huggingface,
-    update_documentation_table,
-    commit_and_push_git,
-)
+try:
+    from framework.utils.hf_git_exporter import (
+        find_documentation_file,
+        upload_to_huggingface,
+        update_documentation_table,
+        commit_and_push_git,
+    )
+except ImportError:
+    try:
+        from Codes.framework.utils.hf_git_exporter import (
+            find_documentation_file,
+            upload_to_huggingface,
+            update_documentation_table,
+            commit_and_push_git,
+        )
+    except ImportError:
+        upload_to_huggingface = None
+        update_documentation_table = None
+        commit_and_push_git = None
+        find_documentation_file = None
 
 hf_org = "Hooshaai"
-doc_path = find_documentation_file("aasvd")
+doc_path = find_documentation_file("aasvd") if find_documentation_file else None
 pass_count = 0
 uploaded_repos = []
 
@@ -475,15 +489,35 @@ for m in models:
     }
 
     print(f"  Uploading lean package to Hugging Face: https://huggingface.co/{repo_id} (private)", flush=True)
-    hf_url = upload_to_huggingface(
-        export_dir=hf_export_dir,
-        repo_id=repo_id,
-        model_name=slug,
-        module_name="aasvd",
-        dataset_name="sst2",
-        perf_metrics=perf_metrics,
-        comp_metrics=comp_metrics,
-    )
+    hf_url = None
+    if upload_to_huggingface is not None:
+        try:
+            hf_url = upload_to_huggingface(
+                export_dir=hf_export_dir,
+                repo_id=repo_id,
+                model_name=slug,
+                module_name="aasvd",
+                dataset_name="sst2",
+                perf_metrics=perf_metrics,
+                comp_metrics=comp_metrics,
+            )
+        except Exception as e_up:
+            print(f"  upload_to_huggingface error: {e_up}", flush=True)
+
+    if not hf_url:
+        try:
+            from huggingface_hub import HfApi
+            api = HfApi()
+            api.create_repo(repo_id=repo_id, private=True, exist_ok=True)
+            api.upload_folder(
+                folder_path=str(hf_export_dir),
+                repo_id=repo_id,
+                commit_message=f"Upload hardened AASVD model weights ({name}) - Acc: {acc:.2f}%",
+            )
+            hf_url = f"https://huggingface.co/{repo_id}"
+        except Exception as e_hf:
+            print(f"  Direct HfApi upload error: {e_hf}", flush=True)
+
     if hf_url:
         print(f"  Successfully uploaded to {hf_url}", flush=True)
         uploaded_repos.append(hf_url)
@@ -491,7 +525,7 @@ for m in models:
         print(f"  Hugging Face upload failed or skipped for {repo_id}", flush=True)
 
     # Update documentation table
-    if doc_path and doc_path.exists():
+    if update_documentation_table and doc_path and doc_path.exists():
         f1_val = row.get("f1_score", "N/A")
         comp_val = row.get("compression_rate", "1.00")
         svd_layers = row.get("num_compressed_layers", "N/A")
@@ -514,7 +548,7 @@ for m in models:
 target_branch = "benchmark-results-aasvd"
 print(f"\nCommitting results and documentation updates to dedicated branch '{target_branch}'...", flush=True)
 commit_msg = f"feat(benchmark): AASVD evaluation ({pass_count}/{len(models)} passed on SST-2)"
-push_res = commit_and_push_git(commit_msg, branch=target_branch)
+push_res = commit_and_push_git(commit_msg, branch=target_branch) if commit_and_push_git else None
 
 if push_res:
     print(f"Git commit and push completed successfully on branch '{target_branch}': {push_res}", flush=True)
