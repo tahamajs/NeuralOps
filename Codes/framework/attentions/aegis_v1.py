@@ -253,7 +253,8 @@ def local_window_attention(
     idx_q = torch.arange(N, device=Q.device).unsqueeze(1)
     idx_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
     dist = (idx_q - idx_k).abs()
-    mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
+    mask = (dist <= window // 2) | (idx_q == 0) | (idx_k == 0)
+    mask = mask.unsqueeze(0).unsqueeze(0)
     if is_decoder and N > 1:
         causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
         mask = mask & causal

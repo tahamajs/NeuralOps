@@ -712,9 +712,15 @@ class AegisSpectronFP8Attention(BaseAttention):
         attn_weights = torch.matmul(Q, K.transpose(-1, -2)) / math.sqrt(d)
 
         idx = torch.arange(N, device=Q.device)
-        dist = (idx.unsqueeze(-1) - idx.unsqueeze(-2)).abs()
-        mask = (dist > W).unsqueeze(0).unsqueeze(0)
+        idx_q = idx.unsqueeze(-1)
+        idx_k = idx.unsqueeze(-2)
+        dist = (idx_q - idx_k).abs()
+        mask = (dist > (W // 2)) & (idx_q != 0) & (idx_k != 0)
         mask_val = -10000.0
+
+        if getattr(self.config, "is_decoder", getattr(self, "is_decoder", False)) and N > 1:
+            causal_mask = idx_k > idx_q
+            mask = mask | causal_mask
         attn_weights = attn_weights.masked_fill(mask, mask_val)
 
         # Enforce strict causal masking for decoders (fix future token leakage)

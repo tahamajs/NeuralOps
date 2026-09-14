@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 os.environ.setdefault("LOKY_MAX_CPU_COUNT", "4")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 import argparse, copy, csv, gc, importlib, json, logging, math, sys, time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
@@ -659,7 +660,6 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
 
 def main():
     import os
-    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     if torch.cuda.is_available():
         torch.backends.cudnn.benchmark = True
         torch.backends.cuda.matmul.allow_tf32 = True
@@ -1171,10 +1171,18 @@ def main():
     # unscale gradients belonging to fp16 parameters. Cast the trained model
     # to the requested sweep precision immediately afterwards.
     dtype = torch.float32
+    gc.collect()
+    torch.cuda.empty_cache()
+    if torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
     try:
-        base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, dtype=dtype).to(device)
-    except TypeError:
-        base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, torch_dtype=dtype).to(device)
+        try:
+            base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, dtype=dtype).to(device)
+        except TypeError:
+            base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, torch_dtype=dtype).to(device)
+    except torch.OutOfMemoryError as e:
+        LOG.critical("CUDA OOM while loading base model: %s", e)
+        sys.exit(1)
     base.config.pad_token_id = tokenizer.pad_token_id; install_qwen_aliases(base)
     base.tokenizer = tokenizer
     if hasattr(base, "config") and base.config is not None:
