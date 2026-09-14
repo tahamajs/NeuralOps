@@ -19,6 +19,7 @@ import torch.nn.functional as F
 
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import apply_attention_mask
+from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -251,7 +252,7 @@ class ASVDLinear(nn.Module):
 
 @ATTENTION_REGISTRY.register("asvd", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("asvd_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-class ASVDAttention(nn.Module):
+class ASVDAttention(BaseAttention):
     r"""Hardened ASVD Attention with Factored Low-Rank Matrix Decomposition, GQA, RoPE, and LoRA.
 
     Computational Complexity:
@@ -692,13 +693,20 @@ class ASVDAttention(nn.Module):
 @ATTENTION_REGISTRY.register("asvd_fn")
 @ATTENTION_REGISTRY.register("asvd_inject")
 def inject_asvd(
+    model: Any = None,
     layer: Any = None,
     config: Any = None,
     rank: Optional[int] = None,
     old_attn: Optional[nn.Module] = None,
+    copy_weights: bool = True,
     **kwargs: Any,
 ) -> Optional[nn.Module]:
     """Universal injection factory for ASVDAttention with pre-flight extraction validation."""
+    target_model = model or kwargs.get("model", None)
+    if target_model is not None and any(hasattr(target_model, a) for a in ("transformer", "model", "roberta", "bert", "distilbert", "gpt2", "qwen2", "layers")):
+        from framework.core.attention_utils import inject_attention
+        return inject_attention(target_model, "asvd", rank=rank, copy_weights=copy_weights, **kwargs)
+
     if old_attn is None and layer is not None:
         for attr in ("attention", "self_attn", "self", "attn"):
             if hasattr(layer, attr):
