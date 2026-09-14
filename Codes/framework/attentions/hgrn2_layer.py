@@ -272,12 +272,9 @@ class HGRN2Layer(BaseAttention):
                     elif b.shape[0] > tb.shape[0]:
                         tb.copy_(b[:tb.shape[0]])
 
-        # DO NOT copy Q/K to gates - gates have fundamentally different semantics
-        # (element-wise modulation, not similarity dot-products). Pretrained Q/K cannot
-        # serve as gates. Only copy V -> v_proj and O -> out_proj.
+        # Copy V -> v_proj and O -> out_proj across all architectures
         _copy_param(self.v_proj, w_v, b_v)
-        if not self.is_nested_encoder:
-            _copy_param(self.out_proj, w_o, b_o)
+        _copy_param(self.out_proj, w_o, b_o)
 
         fnorm = float(torch.linalg.norm(self.v_proj.weight.detach().float()))
         if fnorm < 1e-4:
@@ -419,14 +416,9 @@ class HGRN2Layer(BaseAttention):
 
         # 4. Gating and output projection
         gated = h * F.silu(z)
-        if self.is_nested_encoder:
-            out = gated
-            if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
-                out = out + torch.matmul(torch.matmul(gated, self.out_lora_A.t()), self.out_lora_B.t()) * self.lora_scaling
-        else:
-            out = self.out_proj(gated)
-            if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
-                out = out + torch.matmul(torch.matmul(gated, self.out_lora_A.t()), self.out_lora_B.t()) * self.lora_scaling
+        out = self.out_proj(gated)
+        if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
+            out = out + torch.matmul(torch.matmul(gated, self.out_lora_A.t()), self.out_lora_B.t()) * self.lora_scaling
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
@@ -534,10 +526,14 @@ def inject_hgrn2_layer(
     if target is not None:
         if is_nested_target and hasattr(target, "attention") and hasattr(target.attention, "self"):
             target.attention.self = new_layer
+            if hasattr(target.attention, "output") and hasattr(target.attention.output, "dense"):
+                target.attention.output.dense = nn.Identity()
         elif hasattr(target, "attention"):
             target.attention = new_layer
         elif hasattr(target, "self"):
             target.self = new_layer
+            if hasattr(target, "output") and hasattr(target.output, "dense"):
+                target.output.dense = nn.Identity()
         elif hasattr(target, "attn"):
             target.attn = new_layer
 
