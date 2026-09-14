@@ -186,7 +186,7 @@ class NEXUSConfig:
         dropout: Attention dropout probability.
     """
 
-    block_size: int = 32
+    block_size: int = 16
     top_k_blocks: int = 4
     xattn_enabled: bool = True
     xattn_stride: int = 2
@@ -200,8 +200,10 @@ class NEXUSConfig:
     stripe_width: int = 4
     rectify_interval: int = 4
     rff_features: int = 128
-    softpick_enabled: bool = False
+    softpick_enabled: bool = True
     softpick_temperature: float = 1.0
+    sparse_min_seq_len: int = 8
+    enable_spectraformer: bool = False
     dropout: float = 0.1
 
 
@@ -346,13 +348,19 @@ class SeerGating(nn.Module):
             (gate_score * n_blocks).long(), min=1, max=n_blocks
         )  # (B, H)
 
-        # PATCH: The original [:k, :k] mask was always the upper-left triangle,
-        # meaning blocks in sentence 2 (indices 2–3 for L=128/block_size=32)
-        # could never attend to sentence 1 blocks. This destroyed cross-sentence
-        # reasoning required for MRPC paraphrase detection.
-        # Fix: use a full n_blocks×n_blocks True mask — all blocks attend to all blocks.
-        # Sparsity is still enforced by the XAttention inter-block top-k scoring.
-        mask = torch.ones(B, H, n_blocks, n_blocks, device=Q.device, dtype=torch.bool)
+        # Per-head adaptive top-k block retention mask
+        mask = torch.zeros(B, H, n_blocks, n_blocks, device=Q.device, dtype=torch.bool)
+        diag_idx = torch.arange(n_blocks, device=Q.device)
+        mask[:, :, diag_idx, diag_idx] = True
+        mask[:, :, :, 0] = True
+
+        for b in range(B):
+            for h in range(H):
+                k_keep = keep_per_head[b, h].item()
+                if k_keep > 1 and n_blocks > 2:
+                    extra_needed = min(k_keep - 1, n_blocks - 1)
+                    if extra_needed > 0:
+                        mask[b, h, :, 1: 1 + extra_needed] = True
         return mask
 
 
@@ -557,8 +565,13 @@ class NEXUSAttention(BaseAttention):
             model_config, "num_attention_heads", getattr(model_config, "num_heads", kwargs.get("num_attention_heads", 4))
         )
         self.hidden_size: int = getattr(model_config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.head_dim: int = getattr(
-            model_config, "head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64
+        cfg_head_dim = getattr(model_config, "head_dim", None) if model_config else None
+        adapter_head_dim = getattr(getattr(model_config, "adapter", None), "head_dim", None) if model_config else None
+        self.head_dim: int = int(
+            cfg_head_dim
+            or adapter_head_dim
+            or kwargs.get("head_dim")
+            or (self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
         )
         self.all_head_size: int = self.num_heads * self.head_dim
 
@@ -591,7 +604,6 @@ class NEXUSAttention(BaseAttention):
             )
 
         self.is_nested_encoder: bool = False
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         src_p = next(pretrained_attn.parameters(), None) if pretrained_attn is not None else None
         target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
@@ -603,6 +615,8 @@ class NEXUSAttention(BaseAttention):
         self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, device=target_device, dtype=target_dtype)
         self.dropout = nn.Dropout(self.cfg.dropout)
 
+        self.dss_attn = DualStageStripeAttention(self.cfg, self.head_dim)
+
         self.seer_gate: Optional[SeerGating] = None
         if self.cfg.seer_enabled:
             self.seer_gate = SeerGating(
@@ -613,10 +627,15 @@ class NEXUSAttention(BaseAttention):
                 self.cfg.seer_temperature,
             )
 
-        self.dss_attn = DualStageStripeAttention(self.cfg, self.head_dim)
-
         self.rect_interval = self.cfg.rectify_interval
-        self.is_rectify = (pretrained_attn is None) and (self.rect_interval > 0) and (layer_idx % self.rect_interval == 0)
+        self.is_rectify = (
+            (self.rect_interval > 0)
+            and (layer_idx % self.rect_interval == 0)
+            and (
+                (pretrained_attn is None)
+                or getattr(self.cfg, "enable_spectraformer", False)
+            )
+        )
         if self.is_rectify:
             self.spec_rectify: Optional[SpectraformerRectify] = SpectraformerRectify(
                 self.head_dim, self.cfg.rff_features
@@ -675,7 +694,10 @@ class NEXUSAttention(BaseAttention):
         elif mask.dim() == 4:
             token_valid = mask.squeeze(1).squeeze(1) > -10000.0 if mask.min() < -1000 else mask.squeeze(1).squeeze(1) > 0
         elif mask.dim() == 3:
-            token_valid = mask.squeeze(1).bool()
+            if mask.shape[-1] == N and mask.shape[-2] == N:
+                token_valid = (mask[:, 0, :] > -10000.0) if mask.min() < -1000 else (mask[:, 0, :] > 0)
+            else:
+                token_valid = mask.squeeze(1).bool()
         elif mask.dim() == 2:
             token_valid = mask.bool() if mask.dtype == torch.bool else mask > 0
         else:
@@ -885,8 +907,20 @@ class NEXUSAttention(BaseAttention):
         token_valid = self._get_token_valid_mask(eff_mask, B, N_kv, device)
 
         is_causal = bool(self.is_decoder and not is_cross)
+        min_seq_len = getattr(self.cfg, "sparse_min_seq_len", 8)
+        use_dense = is_causal or is_cross or (N <= min_seq_len) or (self.dss_attn is None)
 
-        if is_causal or is_cross or N <= self.cfg.block_size:
+        if self.training and not hasattr(self, "_logged_path"):
+            logger.info(
+                "NEXUS layer %d: N=%d, path=%s, is_causal=%s",
+                self.layer_idx,
+                N,
+                "softmax" if use_dense else "sparse",
+                is_causal,
+            )
+            self._logged_path = True
+
+        if use_dense:
             # For causal decoding, cross attention, or short sequences, use exact scaled dot product attention
             scale = 1.0 / math.sqrt(D)
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
@@ -941,9 +975,6 @@ class NEXUSAttention(BaseAttention):
             output = context
         else:
             output = self.out_proj(self.dropout(context))
-
-        # Apply output_scale ONCE to the final output (not before the projection)
-        output = output * self.output_scale
 
         return (output, None)
 
@@ -1066,7 +1097,7 @@ def inject_nexus(
         nexus_cfg = kwargs.get("nexus_cfg", None)
         if nexus_cfg is None:
             nexus_cfg = NEXUSConfig(
-                block_size=getattr(comp_config, "block_size", 32) if comp_config else 32,
+                block_size=getattr(comp_config, "block_size", 16) if comp_config else 16,
                 top_k_blocks=getattr(comp_config, "top_k_inter", 4) if comp_config else 4,
                 xattn_enabled=True,
                 seer_enabled=True,
@@ -1075,6 +1106,8 @@ def inject_nexus(
                 rectify_interval=getattr(comp_config, "rectify_interval", 4) if comp_config else 4,
                 rff_features=getattr(comp_config, "rff_features", 128) if comp_config else 128,
                 softpick_enabled=True,
+                sparse_min_seq_len=8,
+                enable_spectraformer=getattr(comp_config, "enable_spectraformer", False) if comp_config else False,
                 dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
             )
 
@@ -1092,16 +1125,24 @@ def inject_nexus(
             new_attn.to(device=p.device, dtype=p.dtype)
 
         if target is not None:
-            if hasattr(target, "attention"):
-                if hasattr(target.attention, "self"):
-                    target.attention.self = new_attn
-                    new_attn.is_nested_encoder = True
-                else:
-                    target.attention = new_attn
+            if hasattr(target, "attention") and hasattr(target.attention, "self"):
+                new_attn.is_nested_encoder = True
+                target.attention.self = new_attn
                 return new_attn
-            for attr in ("self_attn", "attn", "self"):
-                if hasattr(target, attr):
-                    setattr(target, attr, new_attn)
+            else:
+                new_attn.is_nested_encoder = False
+                if hasattr(target, "attention"):
+                    target.attention = new_attn
+                    return new_attn
+                elif hasattr(target, "self"):
+                    new_attn.is_nested_encoder = True
+                    target.self = new_attn
+                    return new_attn
+                elif hasattr(target, "self_attn"):
+                    target.self_attn = new_attn
+                    return new_attn
+                elif hasattr(target, "attn"):
+                    target.attn = new_attn
                     return new_attn
             target.attention = new_attn
             return new_attn
