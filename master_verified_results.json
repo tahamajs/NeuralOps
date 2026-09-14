@@ -1010,9 +1010,9 @@
         },
         "GPT-2": {
           "status": "PASS",
-          "accuracy_pct": 69.50,
+          "accuracy_pct": 69.5,
           "f1_score": 0.7555,
-          "peak_vram_mb": 348.60,
+          "peak_vram_mb": 348.6,
           "throughput_tokens_sec": 9180.02,
           "source_file": "results/unified_aegis_v3/gpt2/summary.csv"
         },
@@ -1060,10 +1060,10 @@
         },
         "GPT-2": {
           "status": "PASS",
-          "accuracy_pct": 56.31,
-          "f1_score": 0.6495,
-          "peak_vram_mb": 595.01,
-          "throughput_tokens_sec": 38299.87,
+          "accuracy_pct": 69.5,
+          "f1_score": 0.7555,
+          "peak_vram_mb": 348.6,
+          "throughput_tokens_sec": 9357.03,
           "source_file": "results/unified_aegis_v4/gpt2/summary.csv"
         },
         "Qwen": {
@@ -1075,11 +1075,11 @@
           "source_file": "results/qwen_sst2_optimized/summary.csv"
         },
         "RoBERTa": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.6748,
-          "peak_vram_mb": 387.94,
-          "throughput_tokens_sec": 30013.68,
+          "status": "PASS",
+          "accuracy_pct": 86.47,
+          "f1_score": 0.8706,
+          "peak_vram_mb": 404.47,
+          "throughput_tokens_sec": 5891.73,
           "source_file": "results/unified_aegis_v4/roberta/summary.csv"
         },
         "Unknown": {
@@ -1091,9 +1091,9 @@
           "source_file": "results/t5_sst2_full_sweep_fixed_v3/summary.csv"
         }
       },
-      "best_accuracy": 83.72,
+      "best_accuracy": 86.47,
       "has_pass": true,
-      "has_pass_low": true,
+      "has_pass_low": false,
       "is_pure_pass": true,
       "overall_status": "PASS"
     },
@@ -11842,9 +11842,9 @@
         },
         "GPT-2": {
           "status": "PASS",
-          "accuracy_pct": 69.50,
+          "accuracy_pct": 69.5,
           "f1_score": 0.7555,
-          "peak_vram_mb": 348.60,
+          "peak_vram_mb": 348.6,
           "throughput_tokens_sec": 9180.02,
           "source_file": "results/unified_aegis_v3/gpt2/summary.csv"
         },
@@ -11876,24 +11876,24 @@
         },
         "GPT-2": {
           "status": "PASS",
-          "accuracy_pct": 56.31,
-          "f1_score": 0.6495,
-          "peak_vram_mb": 595.01,
-          "throughput_tokens_sec": 42942.59,
+          "accuracy_pct": 69.5,
+          "f1_score": 0.7555,
+          "peak_vram_mb": 348.6,
+          "throughput_tokens_sec": 9357.03,
           "source_file": "results/unified_aegis_v4_module/gpt2/summary.csv"
         },
         "RoBERTa": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.6748,
-          "peak_vram_mb": 387.94,
-          "throughput_tokens_sec": 28990.86,
+          "status": "PASS",
+          "accuracy_pct": 86.47,
+          "f1_score": 0.8706,
+          "peak_vram_mb": 404.47,
+          "throughput_tokens_sec": 5891.73,
           "source_file": "results/unified_aegis_v4_module/roberta/summary.csv"
         }
       },
-      "best_accuracy": 83.72,
+      "best_accuracy": 86.47,
       "has_pass": true,
-      "has_pass_low": true,
+      "has_pass_low": false,
       "is_pure_pass": true,
       "overall_status": "PASS"
     },
