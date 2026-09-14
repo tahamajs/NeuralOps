@@ -39,20 +39,16 @@ Table~\ref{tab:telemetry_adaptive\_sparse\_attention} reports the empirical hard
 \centering
 \small
 \caption{\textbf{Empirical Benchmark Telemetry for \texttt{adaptive\_sparse\_attention}}. Measured on NVIDIA RTX 4070 GPU across standard GLUE tasks.}
-\label{tab:telemetry_adaptive\_sparse\_attention}
-\begin{tabularx}{\columnwidth}{lX}
+\label{tab:telemetry_adaptive_sparse_attention}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lccccc}
 \toprule
-\textbf{Performance Metric} & \textbf{Empirical Value} \\
+\textbf{Model Family} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1-Score} & \textbf{Peak VRAM} & \textbf{Throughput} \\
 \midrule
-Forward Execution Latency & \texttt{37.17 ms} \\
-Backward Execution Latency & \texttt{46.08 ms} \\
-Operational Throughput & \texttt{0.0 tok/s} \\
-Measured Speedup vs. Baseline & \texttt{1.00x} \\
-Parameter Count & \texttt{4517778} \\
-Compression Ratio & \texttt{0.971} \\
-Evaluation Execution Status & \textbf{\texttt{PASS}} \\
+DistilBERT & \texttt{PASS} & 89.91\% & 90.33\% & 396.5 MB & 16,770 tok/s \\
+RoBERTa    & \texttt{PASS} & 85.32\% & 83.88\% & 412.7 MB & 7,753 tok/s \\
+GPT-2      & \texttt{PASS} & 87.84\% & 87.76\% & 451.9 MB & 7,802 tok/s \\
 \bottomrule
-\end{tabularx}
+\end{tabular*}
 \end{table}
 
 \subsubsection*{3.6 Architectural Strengths \& Limitations}

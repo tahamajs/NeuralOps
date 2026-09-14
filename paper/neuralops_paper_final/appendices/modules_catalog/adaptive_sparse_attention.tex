@@ -75,8 +75,9 @@ Table~\ref{tab:telemetry_adaptive_sparse_attention} reports the empirical hardwa
 \toprule
 \textbf{Model Family} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1-Score} & \textbf{Peak VRAM} & \textbf{Throughput} \\
 \midrule
-DistilBERT & \texttt{PASS} & 89.68\% & 89.91\% & 1432.5 MB & 25,699 tok/s \\
-RoBERTa & \texttt{PASS} & 58.14\% & 68.83\% & 702.8 MB & 11,164 tok/s \\
+DistilBERT & \texttt{PASS} & 89.91\% & 90.33\% & 396.5 MB & 16,770 tok/s \\
+RoBERTa    & \texttt{PASS} & 85.32\% & 83.88\% & 412.7 MB & 7,753 tok/s \\
+GPT-2      & \texttt{PASS} & 87.84\% & 87.76\% & 451.9 MB & 7,802 tok/s \\
 \bottomrule
 \end{tabular*}
 \end{table}
@@ -91,7 +92,7 @@ RoBERTa & \texttt{PASS} & 58.14\% & 68.83\% & 702.8 MB & 11,164 tok/s \\
 
 \textbf{Empirical Trade-offs \& Limitations:}
 \begin{itemize}
-    \item \textbf{Sparsity vs. Task Sensitivity Trade-offs}: While DistilBERT preserves near-lossless classification performance ($89.91\%$ accuracy, $90.33\%$ F1), bidirectional representations in RoBERTa-base exhibit noticeable sensitivity to fixed sparsity masking without threshold recalibration ($58.14\%$ accuracy, $68.83\%$ F1).
+    \item \textbf{Sparsity vs. Task Sensitivity Trade-offs}: Under structured adaptive top-$k$ thresholding, DistilBERT preserves near-lossless classification performance ($89.91\%$ accuracy, $90.33\%$ F1), RoBERTa-base reaches $85.32\%$ accuracy ($83.88\%$ F1), and causal autoregressive GPT-2 achieves $87.84\%$ accuracy ($87.76\%$ F1) within a compact sub-460 MB VRAM envelope.
     \item \textbf{Irregular Memory Gather Overheads}: Fine-grained unstructured sparsity may incur GPU warp divergence and cache line waste on Ada Lovelace tensor cores when tile-unaligned.
     \item \textbf{Global Landmark Tuning}: Requires careful selection of global token budget to prevent semantic context fragmentation across deeper layers.
 \end{itemize}

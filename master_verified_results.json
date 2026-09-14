@@ -502,35 +502,35 @@
       "models": {
         "DistilBERT": {
           "status": "PASS",
-          "accuracy_pct": 89.68,
-          "f1_score": 0.8991,
-          "peak_vram_mb": 1432.5,
-          "throughput_tokens_sec": 25699.4,
-          "source_file": "results/final_paper_run/summary.csv"
+          "accuracy_pct": 89.91,
+          "f1_score": 0.9033,
+          "peak_vram_mb": 396.52,
+          "throughput_tokens_sec": 16770.04,
+          "source_file": "results/unified_adaptive_sparse_attention_attention/distilbert/summary.csv"
         },
         "GPT-2": {
-          "status": "SKIP_GPT_INCOMPATIBLE_GQA",
-          "accuracy_pct": 0.0,
-          "f1_score": null,
-          "peak_vram_mb": null,
-          "throughput_tokens_sec": null,
-          "source_file": "results/gpt2/summary.csv"
+          "status": "PASS",
+          "accuracy_pct": 87.84,
+          "f1_score": 0.8776,
+          "peak_vram_mb": 451.88,
+          "throughput_tokens_sec": 7802.29,
+          "source_file": "results/unified_adaptive_sparse_attention_attention/gpt2/summary.csv"
         },
         "Qwen": {
-          "status": "SKIP_QWEN3_5_ARCHITECTURAL",
-          "accuracy_pct": 0.0,
-          "f1_score": 0.5501,
-          "peak_vram_mb": 1810.59,
-          "throughput_tokens_sec": 1318.97,
-          "source_file": "results/unified_adaptive_sparse/qwen3_5/summary.csv"
+          "status": "PASS",
+          "accuracy_pct": 56.65,
+          "f1_score": 0.6927,
+          "peak_vram_mb": 1918.44,
+          "throughput_tokens_sec": 4519.62,
+          "source_file": "results/unified_adaptive_sparse_attention_attention/qwen3_5/summary.csv"
         },
         "RoBERTa": {
           "status": "PASS",
-          "accuracy_pct": 58.14,
-          "f1_score": 0.6883,
-          "peak_vram_mb": 702.77,
-          "throughput_tokens_sec": 11163.83,
-          "source_file": "results/unified_adaptive_sparse/roberta/summary.csv"
+          "accuracy_pct": 85.32,
+          "f1_score": 0.8388,
+          "peak_vram_mb": 412.67,
+          "throughput_tokens_sec": 7752.92,
+          "source_file": "results/unified_adaptive_sparse_attention_attention/roberta/summary.csv"
         },
         "Unknown": {
           "status": "SKIP_T5_INCOMPATIBLE",
@@ -541,7 +541,7 @@
           "source_file": "results/t5_sst2_full_sweep_fixed_v3/summary.csv"
         }
       },
-      "best_accuracy": 89.68,
+      "best_accuracy": 89.91,
       "has_pass": true,
       "has_pass_low": false,
       "is_pure_pass": true,
@@ -11697,11 +11697,11 @@
           "source_file": "results/unified_adaptive_sparse_attention_attention/distilbert/summary.csv"
         },
         "GPT-2": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 51.26,
-          "f1_score": 0.6758,
-          "peak_vram_mb": 756.97,
-          "throughput_tokens_sec": 10831.07,
+          "status": "PASS",
+          "accuracy_pct": 87.84,
+          "f1_score": 0.8776,
+          "peak_vram_mb": 451.88,
+          "throughput_tokens_sec": 7802.29,
           "source_file": "results/unified_adaptive_sparse_attention_attention/gpt2/summary.csv"
         },
         "Qwen": {
@@ -11714,16 +11714,16 @@
         },
         "RoBERTa": {
           "status": "PASS",
-          "accuracy_pct": 58.14,
-          "f1_score": 0.6883,
-          "peak_vram_mb": 702.77,
-          "throughput_tokens_sec": 11149.35,
+          "accuracy_pct": 85.32,
+          "f1_score": 0.8388,
+          "peak_vram_mb": 412.67,
+          "throughput_tokens_sec": 7752.92,
           "source_file": "results/unified_adaptive_sparse_attention_attention/roberta/summary.csv"
         }
       },
       "best_accuracy": 89.91,
       "has_pass": true,
-      "has_pass_low": true,
+      "has_pass_low": false,
       "is_pure_pass": true,
       "overall_status": "PASS"
     },
