@@ -259,9 +259,6 @@ class SVDCompressedAttention(BaseAttention):
     ) -> None:
         model_config = config or kwargs.get("model_config", None)
         super().__init__(model_config)
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
-
         # 1. Dimensions & Architecture
         self.hidden_size: int = int(_cfg_get(
             model_config, "hidden_size", kwargs.get("hidden_size", 768)
@@ -725,8 +722,7 @@ class SVDCompressedAttention(BaseAttention):
         else:
             output = proj_o(context)
 
-        # 9. Apply output_scale ONCE to the final output (not inside Q/K/V/O projections)
-        output = output * self.output_scale
+
 
         if output.shape[-1] != hidden_states.shape[-1]:
             if output.shape[-1] < hidden_states.shape[-1]:

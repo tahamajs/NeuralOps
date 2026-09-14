@@ -643,7 +643,7 @@ class SVDMamba(BaseAttention):
             h_den_chunk = torch.clamp(h_den_intra + h_den_inter, min=0.0, max=1e4)
 
             # Bounded denominator clamp to prevent explosive activations
-            denom_c = (C_ssm[:, s_idx:e_idx].abs().unsqueeze(2).float() * h_den_chunk).sum(dim=-1).clamp(min=1.0)
+            denom_c = (C_ssm[:, s_idx:e_idx].abs().unsqueeze(2).float() * h_den_chunk).sum(dim=-1).clamp(min=1e-4)
             num_c = (C_ssm[:, s_idx:e_idx].unsqueeze(2).float() * h_chunk).sum(dim=-1)
             y_c = (num_c / denom_c).to(x_conv.dtype)
             y_chunks.append(y_c)
