@@ -628,7 +628,7 @@ class SVDCompressedAttention(BaseAttention):
                 out = out + F.linear(F.linear(x, self.q_lora_A), self.q_lora_B) * self.scaling
             if self.add_sparse and self.q_sparse_weight is not None:
                 out = out + F.linear(x, self.q_sparse_weight)
-            return out * self.output_scale
+            return out
 
         def proj_k(x: torch.Tensor) -> torch.Tensor:
             out = self.k_up(self.k_down(x))
@@ -636,7 +636,7 @@ class SVDCompressedAttention(BaseAttention):
                 out = out + F.linear(F.linear(x, self.k_lora_A), self.k_lora_B) * self.scaling
             if self.add_sparse and self.k_sparse_weight is not None:
                 out = out + F.linear(x, self.k_sparse_weight)
-            return out * self.output_scale
+            return out
 
         def proj_v(x: torch.Tensor) -> torch.Tensor:
             out = self.v_up(self.v_down(x))
@@ -644,7 +644,7 @@ class SVDCompressedAttention(BaseAttention):
                 out = out + F.linear(F.linear(x, self.v_lora_A), self.v_lora_B) * self.scaling
             if self.add_sparse and self.v_sparse_weight is not None:
                 out = out + F.linear(x, self.v_sparse_weight)
-            return out * self.output_scale
+            return out
 
         def proj_o(x: torch.Tensor) -> torch.Tensor:
             out = self.o_up(self.o_down(x))
@@ -652,7 +652,7 @@ class SVDCompressedAttention(BaseAttention):
                 out = out + F.linear(F.linear(x, self.o_lora_A), self.o_lora_B) * self.scaling
             if self.add_sparse and self.o_sparse_weight is not None:
                 out = out + F.linear(x, self.o_sparse_weight)
-            return out * self.output_scale
+            return out
 
         # 1. Projections
         Q = proj_q(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
@@ -711,6 +711,9 @@ class SVDCompressedAttention(BaseAttention):
         else:
             output = proj_o(context)
 
+        # 9. Apply output_scale ONCE to the final output (not inside Q/K/V/O projections)
+        output = output * self.output_scale
+
         if output.shape[-1] != hidden_states.shape[-1]:
             if output.shape[-1] < hidden_states.shape[-1]:
                 output = F.pad(output, (0, hidden_states.shape[-1] - output.shape[-1]))
@@ -718,6 +721,7 @@ class SVDCompressedAttention(BaseAttention):
                 output = output[..., :hidden_states.shape[-1]]
 
         return output, (attn_weights if output_attentions else None)
+
 
 
 # =============================================================================
