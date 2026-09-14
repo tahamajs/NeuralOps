@@ -40,6 +40,10 @@ all_ok = True
 
 for m in modules:
     p = os.path.join(base, m + '.tex')
+    if not os.path.exists(p):
+        # Some legacy generated inputs intentionally omit the .tex suffix;
+        # TeX accepts both forms, so the verifier must follow the same rule.
+        p = os.path.join(base, m)
     with open(p, encoding='utf-8') as f:
         content = f.read()
     
