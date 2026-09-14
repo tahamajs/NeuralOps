@@ -120,7 +120,12 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
+_ATTN_NAMES = {
+    "q_proj", "k_proj", "v_proj", "o_proj", "out_proj",
+    "q_lin", "k_lin", "v_lin", "out_lin",
+    "c_attn", "c_proj",
+    "query", "key", "value",
+}
 
 
 @COMPRESSOR_REGISTRY.register("dobi_class")
