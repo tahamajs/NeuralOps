@@ -281,9 +281,10 @@ class DeltaKVCompressor(BaseCompressor):
             # Check if this layer is targeted
             if not self._is_target_module(name, module):
                 if self.target_attention_only:
-                    # Freeze uncompressed non-attention layers during recovery
-                    for p in module.parameters():
-                        p.requires_grad = False
+                    # Freeze uncompressed non-attention layers during recovery, preserving classifier/head
+                    if not any(k in name_lower for k in ("classifier", "score", "head")):
+                        for p in module.parameters():
+                            p.requires_grad = False
                     self.skipped_layers.append(name)
                 continue
 
@@ -332,12 +333,17 @@ class DeltaKVCompressor(BaseCompressor):
                 else:
                     target_mod.weight.data.copy_(W_compressed.to(dtype=target_mod.weight.dtype))
 
-                # If wrapped in LoRALinear, keep LoRA parameters trainable
+                # If wrapped in LoRALinear, keep LoRA parameters trainable; otherwise make weights trainable
                 if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
                     if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
                         module.lora_A.weight.requires_grad = True
                     if hasattr(module.lora_B, "weight") and module.lora_B.weight is not None:
                         module.lora_B.weight.requires_grad = True
+                else:
+                    if hasattr(target_mod, "weight") and target_mod.weight is not None:
+                        target_mod.weight.requires_grad = True
+                    if hasattr(target_mod, "bias") and target_mod.bias is not None:
+                        target_mod.bias.requires_grad = True
 
                 self.compressed_layers.append(name)
                 # Parameter calculation: low-rank factors (r*(in+out)) + sparse nonzeros (sparsity*in*out)
