@@ -323,8 +323,6 @@ class FusedSVDLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.rank = rank
@@ -559,7 +557,6 @@ class FusedSVDKernelAttention(BaseAttention):
             _cfg_get(config, "attention_probs_dropout_prob", _cfg_get(config, "dropout", dropout))
         )
         self.dropout = nn.Dropout(self.dropout_rate)
-        self.output_scale = nn.Parameter(torch.ones(1))
 
         self.q_proj = FusedSVDLinear(self.hidden_size, self.q_head_size, rank=self.rank, bias=True, use_rms_norm=self.use_rms_norm)
         self.k_proj = FusedSVDLinear(self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, use_rms_norm=self.use_rms_norm)
@@ -864,7 +861,7 @@ class FusedSVDKernelAttention(BaseAttention):
         else:
             out = self.out_proj(context)
 
-        return out * self.output_scale, (probs if output_attentions else None)
+        return out, (probs if output_attentions else None)
 
 
 def fused_svd_kernel_factory(config: Any = None, **kwargs: Any) -> nn.Module:
@@ -994,6 +991,11 @@ def inject_fused_svd_kernel(
         if src_attn is not None:
             new_attn.copy_weights(src_attn)
         if layer is not None:
+            # Transfer new_attn to the target layer's device and dtype
+            target_param = next(layer.parameters(), None)
+            if target_param is not None:
+                new_attn.to(device=target_param.device, dtype=target_param.dtype)
+
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
                     layer.attention.self = new_attn
