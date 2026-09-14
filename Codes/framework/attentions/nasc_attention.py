@@ -209,6 +209,9 @@ class NASCAttention(BaseAttention):
         self.rff_features: int = rff_features
         self.lora_rank: int = lora_rank
         self.lora_alpha: float = lora_alpha
+        self.enable_cascade_on_encoders: bool = bool(
+            kwargs.get("enable_cascade_on_encoders", getattr(config, "enable_cascade_on_encoders", False))
+        )
 
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
@@ -573,12 +576,14 @@ class NASCAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
+        use_dense = (L <= self.window_size or is_cross or (not self.is_decoder and not self.enable_cascade_on_encoders))
+
         if not hasattr(self, '_logged_once'):
-            logger.info("NASCAttention: L=%d, L_kv=%d, is_causal=%s, head_dim=%d, all_head_size=%d, path=%s", L, L_kv, is_causal, self.head_dim, self.all_head_size, 'dense' if (L <= self.window_size or is_cross) else 'cascade')
+            logger.info("NASCAttention: L=%d, L_kv=%d, is_causal=%s, head_dim=%d, all_head_size=%d, path=%s", L, L_kv, is_causal, self.head_dim, self.all_head_size, 'dense' if use_dense else 'cascade')
             self._logged_once = True
 
-        if L <= self.window_size or is_cross:
-            # Fall back to standard scaled dot product attention for short/cross sequences
+        if use_dense:
+            # Fall back to standard scaled dot product attention for short/cross sequences or encoders
             scale = 1.0 / math.sqrt(d)
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
             if is_causal:
@@ -731,11 +736,17 @@ def inject_nasc(
         if cfg is None:
             cfg = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
 
-        rank = getattr(comp_config, "rank", 16) if comp_config is not None else 16
-        window_size = getattr(comp_config, "window_size", 64) if comp_config is not None else 64
-        block_size = getattr(comp_config, "block_size", 32) if comp_config is not None else 32
-        top_k = getattr(comp_config, "top_k", 2) if comp_config is not None else 2
-        rff_features = getattr(comp_config, "rff_features", 64) if comp_config is not None else 64
+        rank = getattr(comp_config, "rank", 16) if comp_config is not None else kwargs.pop("rank", 16)
+        window_size = getattr(comp_config, "window_size", 64) if comp_config is not None else kwargs.pop("window_size", 64)
+        block_size = getattr(comp_config, "block_size", 32) if comp_config is not None else kwargs.pop("block_size", 32)
+        top_k = getattr(comp_config, "top_k", 2) if comp_config is not None else kwargs.pop("top_k", 2)
+        rff_features = getattr(comp_config, "rff_features", 64) if comp_config is not None else kwargs.pop("rff_features", 64)
+
+        kwargs.pop("rank", None)
+        kwargs.pop("window_size", None)
+        kwargs.pop("block_size", None)
+        kwargs.pop("top_k", None)
+        kwargs.pop("rff_features", None)
 
         new_attn = NASCAttention(
             config=cfg,
@@ -777,7 +788,7 @@ def inject_nasc(
         return new_attn
     except Exception as e:
         logger.error("inject_nasc failed: %s", e)
-        return None
+        raise e
 
 
 # Aliases

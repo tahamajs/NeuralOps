@@ -10,7 +10,7 @@ Fixes:
 """
 
 import math
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 import torch
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
@@ -135,12 +135,22 @@ class MoEDeltaKVPagedAttention(nn.Module):
 
     def __init__(self, config: Optional[Any] = None, **kwargs: Any) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
         self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
-        self.head_dim: int = self.hidden_size // self.num_heads
+
+        cfg_head_dim = getattr(config, "head_dim", None) if config else None
+        self.head_dim: int = int(cfg_head_dim or kwargs.get("head_dim") or (self.hidden_size // self.num_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
+
+        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None)) if config else None
+        if cfg_kv is not None:
+            self.num_kv_heads = int(cfg_kv)
+        elif kwargs.get("num_kv_heads") is not None:
+            self.num_kv_heads = int(kwargs["num_kv_heads"])
+        else:
+            self.num_kv_heads = self.num_heads
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
         self.page_size = getattr(config, "page_size", kwargs.get("page_size", 64))
         self.k_experts = getattr(config, "k_experts", kwargs.get("k_experts", 4))
@@ -168,7 +178,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
             ),
         )
         self.dropout = nn.Dropout(dropout_p)
-        self.aux_loss: torch.Tensor = torch.tensor(0.0)
+        self.register_buffer("aux_loss", torch.tensor(0.0), persistent=False)
 
         pretrained_attn = kwargs.get("pretrained_attn", None)
         if pretrained_attn is not None:
@@ -185,9 +195,8 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 w, b = UniversalAdapter.get_weight_bias(pretrained_attn, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
         if hasattr(pretrained_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             weight = pretrained_attn.c_attn.weight.data
@@ -383,14 +392,21 @@ class MoEDeltaKVPagedAttention(nn.Module):
         k_blocks = k_padded.view(B, H, num_pages, self.page_size, d)
         v_blocks = v_padded.view(B, H, num_pages, self.page_size, d)
 
-        q_bar = q_blocks.mean(dim=3)  # [B, H, num_pages, d]
-        k_bar = k_blocks.mean(dim=3)  # [B, H, num_pages, d]
+        valid_b = valid_mask.view(B, 1, num_pages, self.page_size).float()  # [B, 1, num_pages, page_size]
+        q_bar = (q_blocks * valid_b.unsqueeze(-1)).sum(dim=3) / valid_b.sum(dim=3, keepdim=True).clamp(min=1)
+        k_bar = (k_blocks * valid_b.unsqueeze(-1)).sum(dim=3) / valid_b.sum(dim=3, keepdim=True).clamp(min=1)
 
         router_logits = torch.matmul(self.W_rg(q_bar), k_bar.transpose(-1, -2)) / math.sqrt(d)
+
+        # Mask out fully-padded pages
+        page_valid = valid_mask.view(B, 1, num_pages, self.page_size).any(dim=-1)  # [B, 1, num_pages]
+        router_logits = router_logits.masked_fill(~page_valid.unsqueeze(2), -1e4)
 
         if self.is_causal:
             causal_mask = torch.tril(torch.ones((num_pages, num_pages), device=q.device, dtype=torch.bool))
             router_logits = router_logits.masked_fill(~causal_mask, float("-inf"))
+
+        router_logits = torch.nan_to_num(router_logits, nan=-1e4, posinf=1e4, neginf=-1e4)
 
         # Boost page 0 logit to ensure it is always selected by top-k (CLS preservation)
         router_logits_biased = router_logits.clone()
@@ -433,13 +449,24 @@ class MoEDeltaKVPagedAttention(nn.Module):
         g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)
         context = (context_per_expert * g_j_exp).sum(dim=3)
 
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                hm = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                hm = head_mask.unsqueeze(1).unsqueeze(-1)
+            elif head_mask.dim() == 3:
+                hm = head_mask.unsqueeze(-1)
+            else:
+                hm = head_mask
+            context = context * hm
+
         context = context.view(B, H, padded_N, d).transpose(1, 2).contiguous().view(B, padded_N, self.all_head_size)
         if self.is_nested_encoder:
             out = context[:, :N, :]
         else:
             out = self.out_proj(context[:, :N, :])
 
-        return out * self.output_scale, None
+        return out, None
 
 
 @ATTENTION_REGISTRY.register("moe_deltakv_paged_inject")
@@ -464,11 +491,20 @@ def inject_moe_deltakv_paged(
         if layer is not None:
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
+                    new_attn.is_nested_encoder = True
                     layer.attention.self = new_attn
                 else:
+                    new_attn.is_nested_encoder = False
                     layer.attention = new_attn
             elif hasattr(layer, "self"):
+                new_attn.is_nested_encoder = True
                 layer.self = new_attn
+            elif hasattr(layer, "self_attn"):
+                new_attn.is_nested_encoder = False
+                layer.self_attn = new_attn
+            elif hasattr(layer, "attn"):
+                new_attn.is_nested_encoder = False
+                layer.attn = new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        raise RuntimeError(f"inject_moe_deltakv_paged failed: {e}")
