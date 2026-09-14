@@ -103,7 +103,6 @@ class CompressedDistilBertAttention(BaseAttention):
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.is_decoder: bool = getattr(cfg, "is_decoder", False)
         self.is_nested_encoder: bool = False
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         rank_val = rank or kwargs.get("rank_qkv", rank_qkv)
         if rank is None and "rank_qkv" not in kwargs:
@@ -442,15 +441,17 @@ class CompressedDistilBertAttention(BaseAttention):
                 head_mask = head_mask.unsqueeze(-1)
             attn_probs = attn_probs * head_mask
 
+        context = torch.matmul(attn_probs, v)
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
         if self.is_nested_encoder:
-            out = context * self.output_scale
+            out = context
         else:
             out_proj = torch.matmul(context, self.Vh_out.t()) * self.S_out.unsqueeze(0).unsqueeze(0)
             out = torch.matmul(out_proj, self.U_out.t()) + self.bias_out
             if self.lora_rank > 0 and self.lora_A_out is not None and self.lora_B_out is not None:
                 lora_out = F.linear(F.linear(context, self.lora_A_out), self.lora_B_out) * self.lora_scaling
                 out = out + lora_out
-            out = out * self.output_scale
 
         return out, (attn_probs if output_attentions else None)
 

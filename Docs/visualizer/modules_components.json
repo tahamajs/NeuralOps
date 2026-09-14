@@ -594,11 +594,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 643.86,
-            "throughput_tokens_sec": 69685.69,
+            "status": "PASS",
+            "accuracy_pct": 80.73,
+            "f1_score": 0.8243,
+            "peak_vram_mb": 467.74,
+            "throughput_tokens_sec": 12376.1,
             "source_file": "results/unified_aasvd/gpt2/summary.csv"
           }
         },
@@ -640,11 +640,11 @@
             "source_file": "results/unified_aasvd/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 643.86,
-            "throughput_tokens_sec": 69685.69,
+            "status": "PASS",
+            "accuracy_pct": 80.73,
+            "f1_score": 0.8243,
+            "peak_vram_mb": 467.74,
+            "throughput_tokens_sec": 12376.1,
             "source_file": "results/unified_aasvd/gpt2/summary.csv"
           },
           "qwen": {
@@ -760,11 +760,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 643.86,
-            "throughput_tokens_sec": 69685.69,
+            "status": "PASS",
+            "accuracy_pct": 80.73,
+            "f1_score": 0.8243,
+            "peak_vram_mb": 467.74,
+            "throughput_tokens_sec": 12376.1,
             "source_file": "results/unified_aasvd/gpt2/summary.csv"
           }
         },
@@ -806,11 +806,11 @@
             "source_file": "results/unified_aasvd/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 643.86,
-            "throughput_tokens_sec": 69685.69,
+            "status": "PASS",
+            "accuracy_pct": 80.73,
+            "f1_score": 0.8243,
+            "peak_vram_mb": 467.74,
+            "throughput_tokens_sec": 12376.1,
             "source_file": "results/unified_aasvd/gpt2/summary.csv"
           },
           "qwen": {
@@ -907,10 +907,10 @@
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 72.13,
-            "f1_score": 0.767,
-            "peak_vram_mb": 300.97,
-            "throughput_tokens_sec": 113445.26,
+            "accuracy_pct": 90.94,
+            "f1_score": 0.9155,
+            "peak_vram_mb": 327.38,
+            "throughput_tokens_sec": 10179.8,
             "source_file": "results/unified_adaptive_compressor/roberta/summary.csv"
           }
         },
@@ -928,11 +928,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 52.75,
-            "f1_score": 0.6776,
-            "peak_vram_mb": 638.53,
-            "throughput_tokens_sec": 69068.37,
+            "status": "PASS",
+            "accuracy_pct": 83.6,
+            "f1_score": 0.8566,
+            "peak_vram_mb": 412.11,
+            "throughput_tokens_sec": 15236.0,
             "source_file": "results/unified_adaptive_compressor/gpt2/summary.csv"
           }
         },
@@ -953,7 +953,7 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 90.37,
+        "best_accuracy": 90.94,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
@@ -966,19 +966,19 @@
             "source_file": "results/unified_adaptive_compressor/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 52.75,
-            "f1_score": 0.6776,
-            "peak_vram_mb": 638.53,
-            "throughput_tokens_sec": 69068.37,
+            "status": "PASS",
+            "accuracy_pct": 83.6,
+            "f1_score": 0.8566,
+            "peak_vram_mb": 412.11,
+            "throughput_tokens_sec": 15236.0,
             "source_file": "results/unified_adaptive_compressor/gpt2/summary.csv"
           },
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 72.13,
-            "f1_score": 0.767,
-            "peak_vram_mb": 300.97,
-            "throughput_tokens_sec": 113445.26,
+            "accuracy_pct": 90.94,
+            "f1_score": 0.9155,
+            "peak_vram_mb": 327.38,
+            "throughput_tokens_sec": 10179.8,
             "source_file": "results/unified_adaptive_compressor/roberta/summary.csv"
           }
         }
@@ -1382,11 +1382,11 @@
           "storage_saved_formatted": "43.1 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 89.68,
-            "f1_score": 0.8991,
-            "peak_vram_mb": 1432.5,
-            "throughput_tokens_sec": 25699.4,
-            "source_file": "results/final_paper_run/summary.csv"
+            "accuracy_pct": 89.91,
+            "f1_score": 0.9033,
+            "peak_vram_mb": 396.52,
+            "throughput_tokens_sec": 16770.04,
+            "source_file": "results/unified_adaptive_sparse_attention_attention/distilbert/summary.csv"
           }
         },
         "roberta": {
@@ -1404,11 +1404,11 @@
           "storage_saved_formatted": "86.3 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 58.14,
-            "f1_score": 0.6883,
-            "peak_vram_mb": 702.77,
-            "throughput_tokens_sec": 11163.83,
-            "source_file": "results/unified_adaptive_sparse/roberta/summary.csv"
+            "accuracy_pct": 85.32,
+            "f1_score": 0.8388,
+            "peak_vram_mb": 412.67,
+            "throughput_tokens_sec": 7752.92,
+            "source_file": "results/unified_adaptive_sparse_attention_attention/roberta/summary.csv"
           }
         },
         "gpt2": {
@@ -1425,12 +1425,12 @@
           "storage_saved_bytes": 90455424,
           "storage_saved_formatted": "86.3 MB",
           "benchmark": {
-            "status": "SKIP_GPT_INCOMPATIBLE_GQA",
-            "accuracy_pct": 0.0,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null,
-            "source_file": "results/gpt2/summary.csv"
+            "status": "PASS",
+            "accuracy_pct": 87.84,
+            "f1_score": 0.8776,
+            "peak_vram_mb": 451.88,
+            "throughput_tokens_sec": 7802.29,
+            "source_file": "results/unified_adaptive_sparse_attention_attention/gpt2/summary.csv"
           }
         },
         "qwen": {
@@ -1447,52 +1447,52 @@
           "storage_saved_bytes": 322043952,
           "storage_saved_formatted": "307.1 MB",
           "benchmark": {
-            "status": "SKIP_QWEN3_5_ARCHITECTURAL",
-            "accuracy_pct": 0.0,
-            "f1_score": 0.5501,
-            "peak_vram_mb": 1810.59,
-            "throughput_tokens_sec": 1318.97,
-            "source_file": "results/unified_adaptive_sparse/qwen3_5/summary.csv"
+            "status": "PASS",
+            "accuracy_pct": 56.65,
+            "f1_score": 0.6927,
+            "peak_vram_mb": 1918.44,
+            "throughput_tokens_sec": 4519.62,
+            "source_file": "results/unified_adaptive_sparse_attention_attention/qwen3_5/summary.csv"
           }
         }
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 89.68,
+        "best_accuracy": 89.91,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 89.68,
-            "f1_score": 0.8991,
-            "peak_vram_mb": 1432.5,
-            "throughput_tokens_sec": 25699.4,
-            "source_file": "results/final_paper_run/summary.csv"
+            "accuracy_pct": 89.91,
+            "f1_score": 0.9033,
+            "peak_vram_mb": 396.52,
+            "throughput_tokens_sec": 16770.04,
+            "source_file": "results/unified_adaptive_sparse_attention_attention/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "SKIP_GPT_INCOMPATIBLE_GQA",
-            "accuracy_pct": 0.0,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null,
-            "source_file": "results/gpt2/summary.csv"
+            "status": "PASS",
+            "accuracy_pct": 87.84,
+            "f1_score": 0.8776,
+            "peak_vram_mb": 451.88,
+            "throughput_tokens_sec": 7802.29,
+            "source_file": "results/unified_adaptive_sparse_attention_attention/gpt2/summary.csv"
           },
           "qwen": {
-            "status": "SKIP_QWEN3_5_ARCHITECTURAL",
-            "accuracy_pct": 0.0,
-            "f1_score": 0.5501,
-            "peak_vram_mb": 1810.59,
-            "throughput_tokens_sec": 1318.97,
-            "source_file": "results/unified_adaptive_sparse/qwen3_5/summary.csv"
+            "status": "PASS",
+            "accuracy_pct": 56.65,
+            "f1_score": 0.6927,
+            "peak_vram_mb": 1918.44,
+            "throughput_tokens_sec": 4519.62,
+            "source_file": "results/unified_adaptive_sparse_attention_attention/qwen3_5/summary.csv"
           },
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 58.14,
-            "f1_score": 0.6883,
-            "peak_vram_mb": 702.77,
-            "throughput_tokens_sec": 11163.83,
-            "source_file": "results/unified_adaptive_sparse/roberta/summary.csv"
+            "accuracy_pct": 85.32,
+            "f1_score": 0.8388,
+            "peak_vram_mb": 412.67,
+            "throughput_tokens_sec": 7752.92,
+            "source_file": "results/unified_adaptive_sparse_attention_attention/roberta/summary.csv"
           }
         }
       }
@@ -1551,10 +1551,10 @@
           "storage_saved_formatted": "70.9 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 85.89,
-            "f1_score": 0.8701,
-            "peak_vram_mb": 183.57,
-            "throughput_tokens_sec": 90105.57,
+            "accuracy_pct": 87.96,
+            "f1_score": 0.8855,
+            "peak_vram_mb": 290.38,
+            "throughput_tokens_sec": 25530.24,
             "source_file": "results/unified_adaptive_svd_attention/distilbert/summary.csv"
           }
         },
@@ -1572,11 +1572,11 @@
           "storage_saved_bytes": 148635648,
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 340.54,
-            "throughput_tokens_sec": 52861.22,
+            "status": "PASS",
+            "accuracy_pct": 77.64,
+            "f1_score": 0.773,
+            "peak_vram_mb": 585.95,
+            "throughput_tokens_sec": 11510.52,
             "source_file": "results/unified_adaptive_svd_attention/roberta/summary.csv"
           }
         },
@@ -1594,11 +1594,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 51.15,
-            "f1_score": 0.6753,
-            "peak_vram_mb": 495.72,
-            "throughput_tokens_sec": 45078.28,
+            "status": "PASS",
+            "accuracy_pct": 76.38,
+            "f1_score": 0.8034,
+            "peak_vram_mb": 301.99,
+            "throughput_tokens_sec": 10699.28,
             "source_file": "results/unified_adaptive_svd_attention/gpt2/summary.csv"
           }
         },
@@ -1619,32 +1619,32 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 85.89,
+        "best_accuracy": 87.96,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 85.89,
-            "f1_score": 0.8701,
-            "peak_vram_mb": 183.57,
-            "throughput_tokens_sec": 90105.57,
+            "accuracy_pct": 87.96,
+            "f1_score": 0.8855,
+            "peak_vram_mb": 290.38,
+            "throughput_tokens_sec": 25530.24,
             "source_file": "results/unified_adaptive_svd_attention/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 51.15,
-            "f1_score": 0.6753,
-            "peak_vram_mb": 495.72,
-            "throughput_tokens_sec": 45078.28,
+            "status": "PASS",
+            "accuracy_pct": 76.38,
+            "f1_score": 0.8034,
+            "peak_vram_mb": 301.99,
+            "throughput_tokens_sec": 10699.28,
             "source_file": "results/unified_adaptive_svd_attention/gpt2/summary.csv"
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 340.54,
-            "throughput_tokens_sec": 52861.22,
+            "status": "PASS",
+            "accuracy_pct": 77.64,
+            "f1_score": 0.773,
+            "peak_vram_mb": 585.95,
+            "throughput_tokens_sec": 11510.52,
             "source_file": "results/unified_adaptive_svd_attention/roberta/summary.csv"
           }
         }
@@ -3110,11 +3110,11 @@
           "storage_saved_bytes": 148635648,
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 361.7,
-            "throughput_tokens_sec": 31797.46,
+            "status": "PASS",
+            "accuracy_pct": 72.02,
+            "f1_score": 0.7505,
+            "peak_vram_mb": 591.97,
+            "throughput_tokens_sec": 4678.15,
             "source_file": "results/unified_aegis_v2/roberta/summary.csv"
           }
         },
@@ -3132,11 +3132,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 51.03,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 476.01,
-            "throughput_tokens_sec": 32964.04,
+            "status": "PASS",
+            "accuracy_pct": 74.89,
+            "f1_score": 0.7812,
+            "peak_vram_mb": 300.59,
+            "throughput_tokens_sec": 5372.02,
             "source_file": "results/unified_aegis_v2/gpt2/summary.csv"
           }
         },
@@ -3178,11 +3178,11 @@
             "source_file": "results/unified_aegis_v2/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 51.03,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 476.01,
-            "throughput_tokens_sec": 32964.04,
+            "status": "PASS",
+            "accuracy_pct": 74.89,
+            "f1_score": 0.7812,
+            "peak_vram_mb": 300.59,
+            "throughput_tokens_sec": 5372.02,
             "source_file": "results/unified_aegis_v2/gpt2/summary.csv"
           },
           "qwen": {
@@ -3194,11 +3194,11 @@
             "source_file": "results/gpu_qwen_sweep_/summary.csv"
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 361.7,
-            "throughput_tokens_sec": 31797.46,
+            "status": "PASS",
+            "accuracy_pct": 72.02,
+            "f1_score": 0.7505,
+            "peak_vram_mb": 591.97,
+            "throughput_tokens_sec": 4678.15,
             "source_file": "results/unified_aegis_v2/roberta/summary.csv"
           }
         }
@@ -3281,11 +3281,11 @@
           "storage_saved_bytes": 148635648,
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 387.94,
-            "throughput_tokens_sec": 30065.74,
+            "status": "PASS",
+            "accuracy_pct": 86.47,
+            "f1_score": 0.8706,
+            "peak_vram_mb": 404.47,
+            "throughput_tokens_sec": 5921.14,
             "source_file": "results/unified_aegis_v3/roberta/summary.csv"
           }
         },
@@ -3304,10 +3304,10 @@
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 56.31,
-            "f1_score": 0.6495,
-            "peak_vram_mb": 595.01,
-            "throughput_tokens_sec": 45270.42,
+            "accuracy_pct": 69.5,
+            "f1_score": 0.7555,
+            "peak_vram_mb": 348.6,
+            "throughput_tokens_sec": 9180.02,
             "source_file": "results/unified_aegis_v3/gpt2/summary.csv"
           }
         },
@@ -3336,7 +3336,7 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 83.72,
+        "best_accuracy": 86.47,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
@@ -3350,10 +3350,10 @@
           },
           "gpt2": {
             "status": "PASS",
-            "accuracy_pct": 56.31,
-            "f1_score": 0.6495,
-            "peak_vram_mb": 595.01,
-            "throughput_tokens_sec": 45270.42,
+            "accuracy_pct": 69.5,
+            "f1_score": 0.7555,
+            "peak_vram_mb": 348.6,
+            "throughput_tokens_sec": 9180.02,
             "source_file": "results/unified_aegis_v3/gpt2/summary.csv"
           },
           "qwen": {
@@ -3365,11 +3365,11 @@
             "source_file": "results/qwen3_5/summary.csv"
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 387.94,
-            "throughput_tokens_sec": 30065.74,
+            "status": "PASS",
+            "accuracy_pct": 86.47,
+            "f1_score": 0.8706,
+            "peak_vram_mb": 404.47,
+            "throughput_tokens_sec": 5921.14,
             "source_file": "results/unified_aegis_v3/roberta/summary.csv"
           }
         }
@@ -3452,11 +3452,11 @@
           "storage_saved_bytes": 148635648,
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 387.94,
-            "throughput_tokens_sec": 30013.68,
+            "status": "PASS",
+            "accuracy_pct": 86.47,
+            "f1_score": 0.8706,
+            "peak_vram_mb": 404.47,
+            "throughput_tokens_sec": 5891.73,
             "source_file": "results/unified_aegis_v4/roberta/summary.csv"
           }
         },
@@ -3475,10 +3475,10 @@
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 56.31,
-            "f1_score": 0.6495,
-            "peak_vram_mb": 595.01,
-            "throughput_tokens_sec": 38299.87,
+            "accuracy_pct": 69.5,
+            "f1_score": 0.7555,
+            "peak_vram_mb": 348.6,
+            "throughput_tokens_sec": 9357.03,
             "source_file": "results/unified_aegis_v4/gpt2/summary.csv"
           }
         },
@@ -3507,7 +3507,7 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 83.72,
+        "best_accuracy": 86.47,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
@@ -3521,10 +3521,10 @@
           },
           "gpt2": {
             "status": "PASS",
-            "accuracy_pct": 56.31,
-            "f1_score": 0.6495,
-            "peak_vram_mb": 595.01,
-            "throughput_tokens_sec": 38299.87,
+            "accuracy_pct": 69.5,
+            "f1_score": 0.7555,
+            "peak_vram_mb": 348.6,
+            "throughput_tokens_sec": 9357.03,
             "source_file": "results/unified_aegis_v4/gpt2/summary.csv"
           },
           "qwen": {
@@ -3536,11 +3536,11 @@
             "source_file": "results/qwen_sst2_optimized/summary.csv"
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 387.94,
-            "throughput_tokens_sec": 30013.68,
+            "status": "PASS",
+            "accuracy_pct": 86.47,
+            "f1_score": 0.8706,
+            "peak_vram_mb": 404.47,
+            "throughput_tokens_sec": 5891.73,
             "source_file": "results/unified_aegis_v4/roberta/summary.csv"
           }
         }
@@ -3623,11 +3623,11 @@
           "storage_saved_bytes": 148635648,
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 387.94,
-            "throughput_tokens_sec": 23907.31,
+            "status": "PASS",
+            "accuracy_pct": 86.47,
+            "f1_score": 0.8706,
+            "peak_vram_mb": 404.47,
+            "throughput_tokens_sec": 5332.55,
             "source_file": "results/unified_aegis_v5/roberta/summary.csv"
           }
         },
@@ -3646,10 +3646,10 @@
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 56.31,
-            "f1_score": 0.6495,
-            "peak_vram_mb": 595.01,
-            "throughput_tokens_sec": 33873.87,
+            "accuracy_pct": 69.5,
+            "f1_score": 0.7555,
+            "peak_vram_mb": 348.6,
+            "throughput_tokens_sec": 9024.59,
             "source_file": "results/unified_aegis_v5/gpt2/summary.csv"
           }
         },
@@ -3678,7 +3678,7 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 83.72,
+        "best_accuracy": 86.47,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
@@ -3692,10 +3692,10 @@
           },
           "gpt2": {
             "status": "PASS",
-            "accuracy_pct": 56.31,
-            "f1_score": 0.6495,
-            "peak_vram_mb": 595.01,
-            "throughput_tokens_sec": 33873.87,
+            "accuracy_pct": 69.5,
+            "f1_score": 0.7555,
+            "peak_vram_mb": 348.6,
+            "throughput_tokens_sec": 9024.59,
             "source_file": "results/unified_aegis_v5/gpt2/summary.csv"
           },
           "qwen": {
@@ -3707,11 +3707,11 @@
             "source_file": "results/qwen3_5/summary.csv"
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 387.94,
-            "throughput_tokens_sec": 23907.31,
+            "status": "PASS",
+            "accuracy_pct": 86.47,
+            "f1_score": 0.8706,
+            "peak_vram_mb": 404.47,
+            "throughput_tokens_sec": 5332.55,
             "source_file": "results/unified_aegis_v5/roberta/summary.csv"
           }
         }
@@ -4449,10 +4449,10 @@
           "storage_saved_formatted": "70.9 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 90.14,
-            "f1_score": 0.9051,
-            "peak_vram_mb": 205.16,
-            "throughput_tokens_sec": 79132.45,
+            "accuracy_pct": 90.37,
+            "f1_score": 0.9079,
+            "peak_vram_mb": 344.33,
+            "throughput_tokens_sec": 22010.38,
             "source_file": "results/unified_asvd/distilbert/summary.csv"
           }
         },
@@ -4471,10 +4471,10 @@
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 81.19,
-            "f1_score": 0.837,
-            "peak_vram_mb": 396.3,
-            "throughput_tokens_sec": 40672.66,
+            "accuracy_pct": 77.75,
+            "f1_score": 0.8142,
+            "peak_vram_mb": 713.59,
+            "throughput_tokens_sec": 9227.27,
             "source_file": "results/unified_asvd/roberta/summary.csv"
           }
         },
@@ -4492,11 +4492,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 55.85,
-            "f1_score": 0.6872,
-            "peak_vram_mb": 596.37,
-            "throughput_tokens_sec": 44336.88,
+            "status": "PASS",
+            "accuracy_pct": 85.78,
+            "f1_score": 0.8686,
+            "peak_vram_mb": 346.29,
+            "throughput_tokens_sec": 9646.44,
             "source_file": "results/unified_asvd/gpt2/summary.csv"
           }
         },
@@ -4525,24 +4525,24 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 90.14,
+        "best_accuracy": 90.37,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 90.14,
-            "f1_score": 0.9051,
-            "peak_vram_mb": 205.16,
-            "throughput_tokens_sec": 79132.45,
+            "accuracy_pct": 90.37,
+            "f1_score": 0.9079,
+            "peak_vram_mb": 344.33,
+            "throughput_tokens_sec": 22010.38,
             "source_file": "results/unified_asvd/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 55.85,
-            "f1_score": 0.6872,
-            "peak_vram_mb": 596.37,
-            "throughput_tokens_sec": 44336.88,
+            "status": "PASS",
+            "accuracy_pct": 85.78,
+            "f1_score": 0.8686,
+            "peak_vram_mb": 346.29,
+            "throughput_tokens_sec": 9646.44,
             "source_file": "results/unified_asvd/gpt2/summary.csv"
           },
           "qwen": {
@@ -4555,10 +4555,10 @@
           },
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 81.19,
-            "f1_score": 0.837,
-            "peak_vram_mb": 396.3,
-            "throughput_tokens_sec": 40672.66,
+            "accuracy_pct": 77.75,
+            "f1_score": 0.8142,
+            "peak_vram_mb": 713.59,
+            "throughput_tokens_sec": 9227.27,
             "source_file": "results/unified_asvd/roberta/summary.csv"
           }
         }
@@ -5495,11 +5495,11 @@
           "storage_saved_bytes": 74317824,
           "storage_saved_formatted": "70.9 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 336.75,
-            "throughput_tokens_sec": 3225.85,
+            "status": "PASS",
+            "accuracy_pct": 90.02,
+            "f1_score": 0.9039,
+            "peak_vram_mb": 331.87,
+            "throughput_tokens_sec": 3165.73,
             "source_file": "results/unified_cluster/distilbert/summary.csv"
           }
         },
@@ -5517,11 +5517,11 @@
           "storage_saved_bytes": 148635648,
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 667.11,
-            "throughput_tokens_sec": 1605.69,
+            "status": "PASS",
+            "accuracy_pct": 72.02,
+            "f1_score": 0.7724,
+            "peak_vram_mb": 659.63,
+            "throughput_tokens_sec": 1531.33,
             "source_file": "results/unified_cluster/roberta/summary.csv"
           }
         },
@@ -5539,11 +5539,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 567.69,
-            "throughput_tokens_sec": 12094.12,
+            "status": "PASS",
+            "accuracy_pct": 87.96,
+            "f1_score": 0.885,
+            "peak_vram_mb": 397.23,
+            "throughput_tokens_sec": 10707.08,
             "source_file": "results/unified_cluster/gpt2/summary.csv"
           }
         },
@@ -5572,24 +5572,24 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 89.91,
+        "best_accuracy": 90.02,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
           "distilbert": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 336.75,
-            "throughput_tokens_sec": 3225.85,
+            "status": "PASS",
+            "accuracy_pct": 90.02,
+            "f1_score": 0.9039,
+            "peak_vram_mb": 331.87,
+            "throughput_tokens_sec": 3165.73,
             "source_file": "results/unified_cluster/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 567.69,
-            "throughput_tokens_sec": 12094.12,
+            "status": "PASS",
+            "accuracy_pct": 87.96,
+            "f1_score": 0.885,
+            "peak_vram_mb": 397.23,
+            "throughput_tokens_sec": 10707.08,
             "source_file": "results/unified_cluster/gpt2/summary.csv"
           },
           "qwen": {
@@ -5601,11 +5601,11 @@
             "source_file": "results/qwen3_5/summary.csv"
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 667.11,
-            "throughput_tokens_sec": 1605.69,
+            "status": "PASS",
+            "accuracy_pct": 72.02,
+            "f1_score": 0.7724,
+            "peak_vram_mb": 659.63,
+            "throughput_tokens_sec": 1531.33,
             "source_file": "results/unified_cluster/roberta/summary.csv"
           }
         }
@@ -6512,10 +6512,10 @@
           "storage_saved_formatted": "14.9 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 78.21,
-            "f1_score": 0.7894,
-            "peak_vram_mb": 337.54,
-            "throughput_tokens_sec": 69817.49,
+            "accuracy_pct": 77.75,
+            "f1_score": 0.7651,
+            "peak_vram_mb": 334.78,
+            "throughput_tokens_sec": 17787.97,
             "source_file": "results/unified_cosformer/distilbert/summary.csv"
           }
         },
@@ -6534,10 +6534,10 @@
           "storage_saved_formatted": "29.7 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 56.77,
-            "f1_score": 0.6952,
-            "peak_vram_mb": 386.79,
-            "throughput_tokens_sec": 36366.16,
+            "accuracy_pct": 58.72,
+            "f1_score": 0.6629,
+            "peak_vram_mb": 659.13,
+            "throughput_tokens_sec": 9914.45,
             "source_file": "results/unified_cosformer/roberta/summary.csv"
           }
         },
@@ -6555,11 +6555,11 @@
           "storage_saved_bytes": 31142712,
           "storage_saved_formatted": "29.7 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 1506.31,
-            "throughput_tokens_sec": 5721.29,
+            "status": "PASS",
+            "accuracy_pct": 70.18,
+            "f1_score": 0.751,
+            "peak_vram_mb": 1283.09,
+            "throughput_tokens_sec": 5788.7,
             "source_file": "results/unified_cosformer/gpt2/summary.csv"
           }
         },
@@ -6588,40 +6588,32 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 78.21,
+        "best_accuracy": 77.75,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 78.21,
-            "f1_score": 0.7894,
-            "peak_vram_mb": 337.54,
-            "throughput_tokens_sec": 69817.49,
+            "accuracy_pct": 77.75,
+            "f1_score": 0.7651,
+            "peak_vram_mb": 334.78,
+            "throughput_tokens_sec": 17787.97,
             "source_file": "results/unified_cosformer/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 1506.31,
-            "throughput_tokens_sec": 5721.29,
-            "source_file": "results/unified_cosformer/gpt2/summary.csv"
-          },
-          "qwen": {
             "status": "PASS",
-            "accuracy_pct": 50.34,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null,
-            "source_file": "results/qwen_sst2_optimized/summary.csv"
+            "accuracy_pct": 70.18,
+            "f1_score": 0.751,
+            "peak_vram_mb": 1283.09,
+            "throughput_tokens_sec": 5788.7,
+            "source_file": "results/unified_cosformer/gpt2/summary.csv"
           },
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 56.77,
-            "f1_score": 0.6952,
-            "peak_vram_mb": 386.79,
-            "throughput_tokens_sec": 36366.16,
+            "accuracy_pct": 58.72,
+            "f1_score": 0.6629,
+            "peak_vram_mb": 659.13,
+            "throughput_tokens_sec": 9914.45,
             "source_file": "results/unified_cosformer/roberta/summary.csv"
           }
         }
@@ -7905,10 +7897,10 @@
           "storage_saved_formatted": "70.9 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 90.14,
-            "f1_score": 0.9029,
-            "peak_vram_mb": 338.34,
-            "throughput_tokens_sec": 162649.35,
+            "accuracy_pct": 91.06,
+            "f1_score": 0.9139,
+            "peak_vram_mb": 310.69,
+            "throughput_tokens_sec": 53139.65,
             "source_file": "results/unified_delta_kv/distilbert/summary.csv"
           }
         },
@@ -7927,10 +7919,10 @@
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 81.65,
-            "f1_score": 0.8422,
-            "peak_vram_mb": 359.04,
-            "throughput_tokens_sec": 94750.01,
+            "accuracy_pct": 92.09,
+            "f1_score": 0.9234,
+            "peak_vram_mb": 335.0,
+            "throughput_tokens_sec": 9808.15,
             "source_file": "results/unified_delta_kv/roberta/summary.csv"
           }
         },
@@ -7948,11 +7940,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 55.96,
-            "f1_score": 0.6784,
-            "peak_vram_mb": 636.41,
-            "throughput_tokens_sec": 71404.22,
+            "status": "PASS",
+            "accuracy_pct": 85.32,
+            "f1_score": 0.868,
+            "peak_vram_mb": 414.3,
+            "throughput_tokens_sec": 15811.65,
             "source_file": "results/unified_delta_kv/gpt2/summary.csv"
           }
         },
@@ -7981,24 +7973,24 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 90.14,
+        "best_accuracy": 92.09,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 90.14,
-            "f1_score": 0.9029,
-            "peak_vram_mb": 338.34,
-            "throughput_tokens_sec": 162649.35,
+            "accuracy_pct": 91.06,
+            "f1_score": 0.9139,
+            "peak_vram_mb": 310.69,
+            "throughput_tokens_sec": 53139.65,
             "source_file": "results/unified_delta_kv/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 55.96,
-            "f1_score": 0.6784,
-            "peak_vram_mb": 636.41,
-            "throughput_tokens_sec": 71404.22,
+            "status": "PASS",
+            "accuracy_pct": 85.32,
+            "f1_score": 0.868,
+            "peak_vram_mb": 414.3,
+            "throughput_tokens_sec": 15811.65,
             "source_file": "results/unified_delta_kv/gpt2/summary.csv"
           },
           "qwen": {
@@ -8011,10 +8003,10 @@
           },
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 81.65,
-            "f1_score": 0.8422,
-            "peak_vram_mb": 359.04,
-            "throughput_tokens_sec": 94750.01,
+            "accuracy_pct": 92.09,
+            "f1_score": 0.9234,
+            "peak_vram_mb": 335.0,
+            "throughput_tokens_sec": 9808.15,
             "source_file": "results/unified_delta_kv/roberta/summary.csv"
           }
         }
@@ -9655,11 +9647,11 @@
           "storage_saved_bytes": 148635648,
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 54.36,
-            "f1_score": 0.6795,
-            "peak_vram_mb": 395.27,
-            "throughput_tokens_sec": 31530.93,
+            "status": "PASS",
+            "accuracy_pct": 74.77,
+            "f1_score": 0.7727,
+            "peak_vram_mb": 410.26,
+            "throughput_tokens_sec": 6820.9,
             "source_file": "results/unified_factorised_matrix_state/roberta/summary.csv"
           }
         },
@@ -9678,10 +9670,10 @@
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 60.89,
-            "f1_score": 0.7058,
-            "peak_vram_mb": 573.78,
-            "throughput_tokens_sec": 40042.51,
+            "accuracy_pct": 70.76,
+            "f1_score": 0.7615,
+            "peak_vram_mb": 349.49,
+            "throughput_tokens_sec": 8689.53,
             "source_file": "results/unified_factorised_matrix_state/gpt2/summary.csv"
           }
         },
@@ -9724,10 +9716,10 @@
           },
           "gpt2": {
             "status": "PASS",
-            "accuracy_pct": 60.89,
-            "f1_score": 0.7058,
-            "peak_vram_mb": 573.78,
-            "throughput_tokens_sec": 40042.51,
+            "accuracy_pct": 70.76,
+            "f1_score": 0.7615,
+            "peak_vram_mb": 349.49,
+            "throughput_tokens_sec": 8689.53,
             "source_file": "results/unified_factorised_matrix_state/gpt2/summary.csv"
           },
           "qwen": {
@@ -9739,11 +9731,11 @@
             "source_file": "results/qwen_sst2_compat/summary.csv"
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 54.36,
-            "f1_score": 0.6795,
-            "peak_vram_mb": 395.27,
-            "throughput_tokens_sec": 31530.93,
+            "status": "PASS",
+            "accuracy_pct": 74.77,
+            "f1_score": 0.7727,
+            "peak_vram_mb": 410.26,
+            "throughput_tokens_sec": 6820.9,
             "source_file": "results/unified_factorised_matrix_state/roberta/summary.csv"
           }
         }
@@ -14162,11 +14154,11 @@
           "storage_saved_bytes": 0,
           "storage_saved_formatted": "0.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 53.67,
-            "f1_score": 0.6259,
-            "peak_vram_mb": 339.09,
-            "throughput_tokens_sec": 2928.62,
+            "status": "PASS",
+            "accuracy_pct": 62.96,
+            "f1_score": 0.7103,
+            "peak_vram_mb": 447.16,
+            "throughput_tokens_sec": 10808.18,
             "source_file": "results/unified_hgrn2_layer/distilbert/summary.csv"
           }
         },
@@ -14185,10 +14177,10 @@
           "storage_saved_formatted": "0.0 MB",
           "benchmark": {
             "status": "PASS_LOW",
-            "accuracy_pct": 50.46,
-            "f1_score": 0.5878,
-            "peak_vram_mb": 679.37,
-            "throughput_tokens_sec": 1487.65,
+            "accuracy_pct": 52.06,
+            "f1_score": 0.6645,
+            "peak_vram_mb": 787.82,
+            "throughput_tokens_sec": 6703.93,
             "source_file": "results/unified_hgrn2_layer/roberta/summary.csv"
           }
         },
@@ -14206,11 +14198,11 @@
           "storage_saved_bytes": 0,
           "storage_saved_formatted": "0.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 49.66,
-            "f1_score": 0.57,
-            "peak_vram_mb": 587.96,
-            "throughput_tokens_sec": 2702.14,
+            "status": "PASS",
+            "accuracy_pct": 71.44,
+            "f1_score": 0.7255,
+            "peak_vram_mb": 507.02,
+            "throughput_tokens_sec": 6889.54,
             "source_file": "results/unified_hgrn2_layer/gpt2/summary.csv"
           }
         },
@@ -14244,19 +14236,19 @@
         "is_pure_pass": true,
         "models": {
           "distilbert": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 53.67,
-            "f1_score": 0.6259,
-            "peak_vram_mb": 339.09,
-            "throughput_tokens_sec": 2928.62,
+            "status": "PASS",
+            "accuracy_pct": 62.96,
+            "f1_score": 0.7103,
+            "peak_vram_mb": 447.16,
+            "throughput_tokens_sec": 10808.18,
             "source_file": "results/unified_hgrn2_layer/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 49.66,
-            "f1_score": 0.57,
-            "peak_vram_mb": 587.96,
-            "throughput_tokens_sec": 2702.14,
+            "status": "PASS",
+            "accuracy_pct": 71.44,
+            "f1_score": 0.7255,
+            "peak_vram_mb": 507.02,
+            "throughput_tokens_sec": 6889.54,
             "source_file": "results/unified_hgrn2_layer/gpt2/summary.csv"
           },
           "qwen": {
@@ -14269,10 +14261,10 @@
           },
           "roberta": {
             "status": "PASS_LOW",
-            "accuracy_pct": 50.46,
-            "f1_score": 0.5878,
-            "peak_vram_mb": 679.37,
-            "throughput_tokens_sec": 1487.65,
+            "accuracy_pct": 52.06,
+            "f1_score": 0.6645,
+            "peak_vram_mb": 787.82,
+            "throughput_tokens_sec": 6703.93,
             "source_file": "results/unified_hgrn2_layer/roberta/summary.csv"
           }
         }
@@ -19942,10 +19934,10 @@
           "storage_saved_formatted": "70.9 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 85.44,
-            "f1_score": 0.867,
-            "peak_vram_mb": 293.19,
-            "throughput_tokens_sec": 76814.2,
+            "accuracy_pct": 88.65,
+            "f1_score": 0.8896,
+            "peak_vram_mb": 285.84,
+            "throughput_tokens_sec": 22731.9,
             "source_file": "results/unified_minimal_nova/distilbert/summary.csv"
           }
         },
@@ -19963,11 +19955,11 @@
           "storage_saved_bytes": 148635648,
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 339.04,
-            "throughput_tokens_sec": 35458.12,
+            "status": "PASS",
+            "accuracy_pct": 79.82,
+            "f1_score": 0.8124,
+            "peak_vram_mb": 580.81,
+            "throughput_tokens_sec": 13055.63,
             "source_file": "results/unified_minimal_nova/roberta/summary.csv"
           }
         },
@@ -19985,11 +19977,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 494.67,
-            "throughput_tokens_sec": 31712.66,
+            "status": "PASS",
+            "accuracy_pct": 79.36,
+            "f1_score": 0.8207,
+            "peak_vram_mb": 319.87,
+            "throughput_tokens_sec": 9739.09,
             "source_file": "results/unified_minimal_nova/gpt2/summary.csv"
           }
         },
@@ -20017,42 +20009,34 @@
         }
       },
       "verified_benchmark": {
-        "overall_status": "PASS",
-        "best_accuracy": 85.44,
-        "has_pass": true,
-        "is_pure_pass": true,
+        "overall_status": "UNKNOWN",
+        "best_accuracy": null,
+        "has_pass": false,
+        "is_pure_pass": false,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 85.44,
-            "f1_score": 0.867,
-            "peak_vram_mb": 293.19,
-            "throughput_tokens_sec": 76814.2,
+            "accuracy_pct": 88.65,
+            "f1_score": 0.8896,
+            "peak_vram_mb": 285.84,
+            "throughput_tokens_sec": 22731.9,
             "source_file": "results/unified_minimal_nova/distilbert/summary.csv"
           },
-          "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 494.67,
-            "throughput_tokens_sec": 31712.66,
-            "source_file": "results/unified_minimal_nova/gpt2/summary.csv"
-          },
-          "qwen": {
-            "status": "PASS",
-            "accuracy_pct": 49.08,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null,
-            "source_file": "results/qwen_sst2_compat/summary.csv"
-          },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 339.04,
-            "throughput_tokens_sec": 35458.12,
+            "status": "PASS",
+            "accuracy_pct": 79.82,
+            "f1_score": 0.8124,
+            "peak_vram_mb": 580.81,
+            "throughput_tokens_sec": 13055.63,
             "source_file": "results/unified_minimal_nova/roberta/summary.csv"
+          },
+          "gpt2": {
+            "status": "PASS",
+            "accuracy_pct": 79.36,
+            "f1_score": 0.8207,
+            "peak_vram_mb": 319.87,
+            "throughput_tokens_sec": 9739.09,
+            "source_file": "results/unified_minimal_nova/gpt2/summary.csv"
           }
         }
       }
@@ -20280,10 +20264,10 @@
           "storage_saved_formatted": "70.9 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 85.44,
-            "f1_score": 0.867,
-            "peak_vram_mb": 293.19,
-            "throughput_tokens_sec": 77579.43,
+            "accuracy_pct": 88.88,
+            "f1_score": 0.8921,
+            "peak_vram_mb": 286.12,
+            "throughput_tokens_sec": 24363.59,
             "source_file": "results/unified_minimal_svd/distilbert/summary.csv"
           }
         },
@@ -20301,11 +20285,11 @@
           "storage_saved_bytes": 148635648,
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 339.04,
-            "throughput_tokens_sec": 35000.5,
+            "status": "PASS",
+            "accuracy_pct": 79.36,
+            "f1_score": 0.8065,
+            "peak_vram_mb": 580.81,
+            "throughput_tokens_sec": 13506.32,
             "source_file": "results/unified_minimal_svd/roberta/summary.csv"
           }
         },
@@ -20323,11 +20307,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 494.67,
-            "throughput_tokens_sec": 30244.27,
+            "status": "PASS",
+            "accuracy_pct": 80.85,
+            "f1_score": 0.8262,
+            "peak_vram_mb": 320.43,
+            "throughput_tokens_sec": 9545.66,
             "source_file": "results/unified_minimal_svd/gpt2/summary.csv"
           }
         },
@@ -20355,42 +20339,34 @@
         }
       },
       "verified_benchmark": {
-        "overall_status": "PASS",
-        "best_accuracy": 85.44,
-        "has_pass": true,
-        "is_pure_pass": true,
+        "overall_status": "UNKNOWN",
+        "best_accuracy": null,
+        "has_pass": false,
+        "is_pure_pass": false,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 85.44,
-            "f1_score": 0.867,
-            "peak_vram_mb": 293.19,
-            "throughput_tokens_sec": 77579.43,
+            "accuracy_pct": 88.88,
+            "f1_score": 0.8921,
+            "peak_vram_mb": 286.12,
+            "throughput_tokens_sec": 24363.59,
             "source_file": "results/unified_minimal_svd/distilbert/summary.csv"
           },
-          "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 494.67,
-            "throughput_tokens_sec": 30244.27,
-            "source_file": "results/unified_minimal_svd/gpt2/summary.csv"
-          },
-          "qwen": {
-            "status": "PASS",
-            "accuracy_pct": 48.51,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null,
-            "source_file": "results/qwen_sst2_compat/summary.csv"
-          },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 339.04,
-            "throughput_tokens_sec": 35000.5,
+            "status": "PASS",
+            "accuracy_pct": 79.36,
+            "f1_score": 0.8065,
+            "peak_vram_mb": 580.81,
+            "throughput_tokens_sec": 13506.32,
             "source_file": "results/unified_minimal_svd/roberta/summary.csv"
+          },
+          "gpt2": {
+            "status": "PASS",
+            "accuracy_pct": 80.85,
+            "f1_score": 0.8262,
+            "peak_vram_mb": 320.43,
+            "throughput_tokens_sec": 9545.66,
+            "source_file": "results/unified_minimal_svd/gpt2/summary.csv"
           }
         }
       }
@@ -20618,10 +20594,10 @@
           "storage_saved_formatted": "70.9 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 90.71,
-            "f1_score": 0.9107,
-            "peak_vram_mb": 327.71,
-            "throughput_tokens_sec": 59487.49,
+            "accuracy_pct": 90.94,
+            "f1_score": 0.9131,
+            "peak_vram_mb": 318.68,
+            "throughput_tokens_sec": 22375.04,
             "source_file": "results/unified_mixattention_moska/distilbert/summary.csv"
           }
         },
@@ -20641,9 +20617,9 @@
           "benchmark": {
             "status": "PASS",
             "accuracy_pct": 86.24,
-            "f1_score": 0.8704,
-            "peak_vram_mb": 376.7,
-            "throughput_tokens_sec": 31562.88,
+            "f1_score": 0.8739,
+            "peak_vram_mb": 648.25,
+            "throughput_tokens_sec": 12049.15,
             "source_file": "results/unified_mixattention_moska/roberta/summary.csv"
           }
         },
@@ -20661,11 +20637,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 51.61,
-            "f1_score": 0.6774,
-            "peak_vram_mb": 568.71,
-            "throughput_tokens_sec": 34947.22,
+            "status": "PASS",
+            "accuracy_pct": 87.27,
+            "f1_score": 0.8835,
+            "peak_vram_mb": 333.18,
+            "throughput_tokens_sec": 10823.89,
             "source_file": "results/unified_mixattention_moska/gpt2/summary.csv"
           }
         },
@@ -20694,40 +20670,32 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 90.71,
+        "best_accuracy": 90.94,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 90.71,
-            "f1_score": 0.9107,
-            "peak_vram_mb": 327.71,
-            "throughput_tokens_sec": 59487.49,
+            "accuracy_pct": 90.94,
+            "f1_score": 0.9131,
+            "peak_vram_mb": 318.68,
+            "throughput_tokens_sec": 22375.04,
             "source_file": "results/unified_mixattention_moska/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 51.61,
-            "f1_score": 0.6774,
-            "peak_vram_mb": 568.71,
-            "throughput_tokens_sec": 34947.22,
-            "source_file": "results/unified_mixattention_moska/gpt2/summary.csv"
-          },
-          "qwen": {
             "status": "PASS",
-            "accuracy_pct": 49.43,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null,
-            "source_file": "results/qwen_sst2_lora_modules/summary.csv"
+            "accuracy_pct": 87.27,
+            "f1_score": 0.8835,
+            "peak_vram_mb": 333.18,
+            "throughput_tokens_sec": 10823.89,
+            "source_file": "results/unified_mixattention_moska/gpt2/summary.csv"
           },
           "roberta": {
             "status": "PASS",
             "accuracy_pct": 86.24,
-            "f1_score": 0.8704,
-            "peak_vram_mb": 376.7,
-            "throughput_tokens_sec": 31562.88,
+            "f1_score": 0.8739,
+            "peak_vram_mb": 648.25,
+            "throughput_tokens_sec": 12049.15,
             "source_file": "results/unified_mixattention_moska/roberta/summary.csv"
           }
         }
@@ -21991,11 +21959,11 @@
           "storage_saved_formatted": "70.9 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 89.11,
-            "f1_score": 0.8917,
-            "peak_vram_mb": 339.63,
-            "throughput_tokens_sec": 24918.94,
-            "source_file": "results/unified_nasc_attention/distilbert/summary.csv"
+            "accuracy_pct": 90.48,
+            "f1_score": 0.9075,
+            "peak_vram_mb": 323.33,
+            "throughput_tokens_sec": 19502.63,
+            "source_file": "results/unified_nasc/distilbert/summary.csv"
           }
         },
         "roberta": {
@@ -22013,11 +21981,11 @@
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 85.55,
-            "f1_score": 0.8587,
-            "peak_vram_mb": 388.0,
-            "throughput_tokens_sec": 11631.37,
-            "source_file": "results/unified_nasc_attention/roberta/summary.csv"
+            "accuracy_pct": 89.22,
+            "f1_score": 0.9011,
+            "peak_vram_mb": 396.36,
+            "throughput_tokens_sec": 10404.11,
+            "source_file": "results/unified_nasc/roberta/summary.csv"
           }
         },
         "gpt2": {
@@ -22034,12 +22002,12 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 1514.06,
-            "throughput_tokens_sec": 5049.18,
-            "source_file": "results/unified_nasc_attention/gpt2/summary.csv"
+            "status": "PASS",
+            "accuracy_pct": 85.32,
+            "f1_score": 0.8683,
+            "peak_vram_mb": 344.32,
+            "throughput_tokens_sec": 9415.39,
+            "source_file": "results/unified_nasc/gpt2/summary.csv"
           }
         },
         "qwen": {
@@ -22059,33 +22027,33 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 89.11,
+        "best_accuracy": 90.48,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 85.55,
-            "f1_score": 0.8587,
-            "peak_vram_mb": 388.0,
-            "throughput_tokens_sec": 11631.37,
-            "source_file": "results/unified_nasc_attention/roberta/summary.csv"
+            "accuracy_pct": 89.22,
+            "f1_score": 0.9011,
+            "peak_vram_mb": 396.36,
+            "throughput_tokens_sec": 10404.11,
+            "source_file": "results/unified_nasc/roberta/summary.csv"
           },
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 89.11,
-            "f1_score": 0.8917,
-            "peak_vram_mb": 339.63,
-            "throughput_tokens_sec": 24918.94,
-            "source_file": "results/unified_nasc_attention/distilbert/summary.csv"
+            "accuracy_pct": 90.48,
+            "f1_score": 0.9075,
+            "peak_vram_mb": 323.33,
+            "throughput_tokens_sec": 19502.63,
+            "source_file": "results/unified_nasc/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 1514.06,
-            "throughput_tokens_sec": 5049.18,
-            "source_file": "results/unified_nasc_attention/gpt2/summary.csv"
+            "status": "PASS",
+            "accuracy_pct": 85.32,
+            "f1_score": 0.8683,
+            "peak_vram_mb": 344.32,
+            "throughput_tokens_sec": 9415.39,
+            "source_file": "results/unified_nasc/gpt2/summary.csv"
           }
         }
       }
@@ -26741,10 +26709,10 @@
           "storage_saved_formatted": "70.9 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 83.83,
-            "f1_score": 0.8569,
-            "peak_vram_mb": 329.4,
-            "throughput_tokens_sec": 76476.96,
+            "accuracy_pct": 89.56,
+            "f1_score": 0.9016,
+            "peak_vram_mb": 298.36,
+            "throughput_tokens_sec": 24670.27,
             "source_file": "results/unified_res_svd/distilbert/summary.csv"
           }
         },
@@ -26762,11 +26730,11 @@
           "storage_saved_bytes": 148635648,
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 426.15,
-            "throughput_tokens_sec": 32256.39,
+            "status": "PASS",
+            "accuracy_pct": 76.61,
+            "f1_score": 0.791,
+            "peak_vram_mb": 594.37,
+            "throughput_tokens_sec": 12547.05,
             "source_file": "results/unified_res_svd/roberta/summary.csv"
           }
         },
@@ -26784,11 +26752,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 560.97,
-            "throughput_tokens_sec": 30675.09,
+            "status": "PASS",
+            "accuracy_pct": 71.33,
+            "f1_score": 0.776,
+            "peak_vram_mb": 336.25,
+            "throughput_tokens_sec": 10784.31,
             "source_file": "results/unified_res_svd/gpt2/summary.csv"
           }
         },
@@ -26817,24 +26785,24 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 83.83,
+        "best_accuracy": 89.56,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 83.83,
-            "f1_score": 0.8569,
-            "peak_vram_mb": 329.4,
-            "throughput_tokens_sec": 76476.96,
+            "accuracy_pct": 89.56,
+            "f1_score": 0.9016,
+            "peak_vram_mb": 298.36,
+            "throughput_tokens_sec": 24670.27,
             "source_file": "results/unified_res_svd/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 560.97,
-            "throughput_tokens_sec": 30675.09,
+            "status": "PASS",
+            "accuracy_pct": 71.33,
+            "f1_score": 0.776,
+            "peak_vram_mb": 336.25,
+            "throughput_tokens_sec": 10784.31,
             "source_file": "results/unified_res_svd/gpt2/summary.csv"
           },
           "qwen": {
@@ -26846,11 +26814,11 @@
             "source_file": "results/qwen_sst2_compat/summary.csv"
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 426.15,
-            "throughput_tokens_sec": 32256.39,
+            "status": "PASS",
+            "accuracy_pct": 76.61,
+            "f1_score": 0.791,
+            "peak_vram_mb": 594.37,
+            "throughput_tokens_sec": 12547.05,
             "source_file": "results/unified_res_svd/roberta/summary.csv"
           }
         }
@@ -30722,10 +30690,10 @@
           "storage_saved_formatted": "70.9 MB",
           "benchmark": {
             "status": "PASS",
-            "accuracy_pct": 81.31,
-            "f1_score": 0.8191,
-            "peak_vram_mb": 282.69,
-            "throughput_tokens_sec": 86194.93,
+            "accuracy_pct": 89.11,
+            "f1_score": 0.8962,
+            "peak_vram_mb": 293.12,
+            "throughput_tokens_sec": 25749.31,
             "source_file": "results/unified_soa_attn/distilbert/summary.csv"
           }
         },
@@ -30743,11 +30711,11 @@
           "storage_saved_bytes": 148635648,
           "storage_saved_formatted": "141.8 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 323.6,
-            "throughput_tokens_sec": 60449.91,
+            "status": "PASS",
+            "accuracy_pct": 57.22,
+            "f1_score": 0.696,
+            "peak_vram_mb": 595.15,
+            "throughput_tokens_sec": 11201.26,
             "source_file": "results/unified_soa_attn/roberta/summary.csv"
           }
         },
@@ -30765,11 +30733,11 @@
           "storage_saved_bytes": 150994944,
           "storage_saved_formatted": "144.0 MB",
           "benchmark": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 486.24,
-            "throughput_tokens_sec": 42558.25,
+            "status": "PASS",
+            "accuracy_pct": 80.62,
+            "f1_score": 0.8315,
+            "peak_vram_mb": 311.1,
+            "throughput_tokens_sec": 5967.01,
             "source_file": "results/unified_soa_attn/gpt2/summary.csv"
           }
         },
@@ -30798,40 +30766,32 @@
       },
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 81.31,
+        "best_accuracy": 89.11,
         "has_pass": true,
         "is_pure_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 81.31,
-            "f1_score": 0.8191,
-            "peak_vram_mb": 282.69,
-            "throughput_tokens_sec": 86194.93,
+            "accuracy_pct": 89.11,
+            "f1_score": 0.8962,
+            "peak_vram_mb": 293.12,
+            "throughput_tokens_sec": 25749.31,
             "source_file": "results/unified_soa_attn/distilbert/summary.csv"
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 486.24,
-            "throughput_tokens_sec": 42558.25,
+            "status": "PASS",
+            "accuracy_pct": 80.62,
+            "f1_score": 0.8315,
+            "peak_vram_mb": 311.1,
+            "throughput_tokens_sec": 5967.01,
             "source_file": "results/unified_soa_attn/gpt2/summary.csv"
           },
-          "qwen": {
-            "status": "PASS",
-            "accuracy_pct": 50.34,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null,
-            "source_file": "results/qwen_sst2_lora_modules/summary.csv"
-          },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 323.6,
-            "throughput_tokens_sec": 60449.91,
+            "status": "PASS",
+            "accuracy_pct": 57.22,
+            "f1_score": 0.696,
+            "peak_vram_mb": 595.15,
+            "throughput_tokens_sec": 11201.26,
             "source_file": "results/unified_soa_attn/roberta/summary.csv"
           }
         }
