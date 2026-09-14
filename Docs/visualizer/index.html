@@ -19,6 +19,9 @@
     </script>
 </head>
 <body class="app">
+    <div id="fps-counter">—</div>
+    <div id="color-legend"></div>
+    <div id="tour-step-label"></div>
     <!-- Scene Wrap with WebGL Canvas and SVG Leader Guides -->
     <section id="scene-wrap" class="scene-wrap" aria-label="Spatial architecture comparison">
         <canvas id="webgl-canvas" aria-label="Interactive 3D architecture" data-engine="three.js"></canvas>
@@ -65,6 +68,21 @@
             <!-- Deep Inspector Toggle -->
             <button id="btn-toggle-inspector" class="round-button" title="Toggle Deep Architecture Inspector">
                 🔬 Inspector
+            </button>
+
+            <!-- Auto Camera Tour -->
+            <button id="btn-auto-tour" class="round-button" title="Auto-tour: animated camera flies through all layers">
+                ▶ Auto Tour
+            </button>
+
+            <!-- Color Legend -->
+            <button id="btn-legend-toggle" class="round-button" title="Toggle node color legend">
+                🎨 Legend
+            </button>
+
+            <!-- Pin current module for comparison -->
+            <button id="btn-pin-module" class="round-button" title="Pin this module for side-by-side comparison">
+                📌 Pin
             </button>
 
             <!-- Share/Permalink Button -->
@@ -366,6 +384,16 @@
                 <h4>Module Description &amp; Implementation</h4>
                 <p id="insp-desc">Click any 3D node or choose from the tree above to inspect rank decomposition, storage memory, and tensor dimensions.</p>
             </div>
+            <!-- Parameter Breakdown Table -->
+            <div id="param-breakdown-table"></div>
+
+            <!-- Module Comparison Pin -->
+            <div id="comparison-pin-section">
+                <div class="pbt-title">📌 Pinned vs Active Comparison</div>
+                <div style="font-size:9px;color:var(--text-faint);margin-bottom:6px;">Pinned: <span id="pinned-module-name">—</span></div>
+                <div id="comparison-pin-content"></div>
+            </div>
+
             <div class="educational-callout" id="insp-edu-note">
                 💡 <em>Token Funneling:</em> In SVD layers, watch how tokens squeeze horizontally through rank dimension $r=64$ in Factor $V$ before expanding back to full output dimension in Factor $U$.
             </div>

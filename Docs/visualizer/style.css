@@ -2434,3 +2434,202 @@ kbd {
     overflow-x: auto;
     max-width: 100%;
 }
+
+
+/* ─── MEGA ENHANCEMENT CSS ──────────────────────────────────────────────── */
+
+/* Spark bar charts in matrix cards */
+.mmc-spark-section {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.mmc-spark-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    font-family: var(--font-mono);
+}
+.mmc-spark-label {
+    width: 28px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+}
+.mmc-spark-bar-bg {
+    flex: 1;
+    height: 5px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.mmc-spark-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+}
+.mmc-spark-val {
+    width: 38px;
+    text-align: right;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+/* Auto-tour label */
+#tour-step-label {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(6,10,18,0.88);
+    border: 1px solid rgba(83,236,217,0.4);
+    color: #53ecd9;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    padding: 6px 18px;
+    border-radius: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+    z-index: 999;
+}
+#tour-step-label.show { opacity: 1; }
+
+/* FPS Counter */
+#fps-counter {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    color: #34d399;
+    opacity: 0.6;
+    z-index: 9998;
+    pointer-events: none;
+    transition: color 0.5s;
+}
+
+/* Color Legend */
+#color-legend {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    background: rgba(6,10,18,0.93);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 12px 14px;
+    z-index: 9997;
+    display: none;
+    min-width: 210px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.legend-title {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: #94a3b8;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+.legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+}
+.legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+.legend-info {
+    display: flex;
+    flex-direction: column;
+}
+.legend-label {
+    font-size: 10px;
+    color: #e2e8f0;
+    font-family: var(--font-mono);
+}
+.legend-desc {
+    font-size: 9px;
+    color: var(--text-faint);
+}
+
+/* Parameter breakdown table */
+#param-breakdown-table {
+    margin-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding-top: 10px;
+}
+.pbt-title {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: #94a3b8;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+.pbt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+    font-family: var(--font-mono);
+}
+.pbt-table th {
+    color: var(--text-faint);
+    text-align: left;
+    padding: 3px 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+.pbt-table td {
+    padding: 3px 4px;
+    color: #cbd5e1;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: middle;
+}
+.pbt-table tr:hover td { background: rgba(255,255,255,0.03); }
+.pbt-swatch {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 1px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+.pbt-mono { font-family: var(--font-mono); color: #53ecd9; }
+.pbt-role { color: var(--text-faint); font-size: 8px; }
+
+/* Comparison pin section */
+#comparison-pin-section {
+    margin-top: 12px;
+    border-top: 1px solid rgba(245, 158, 11, 0.25);
+    padding-top: 10px;
+    display: none;
+}
+.cp-win {
+    color: #34d399 !important;
+    font-weight: 600;
+}
+
+/* Auto-tour button active */
+#btn-auto-tour.active {
+    background: rgba(83,236,217,0.15);
+    border-color: rgba(83,236,217,0.5);
+    color: #53ecd9;
+}
+
+/* Lifecycle step ring animation during tour */
+.lifecycle-step-item.active-step .lsi-num {
+    animation: ring-pulse 1.2s ease-in-out infinite;
+}
+@keyframes ring-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(83,236,217,0); }
+    50% { box-shadow: 0 0 0 5px rgba(83,236,217,0.4); }
+}
