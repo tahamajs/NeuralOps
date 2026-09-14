@@ -116,6 +116,10 @@ class VariationalSpectralGate(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2)
         )
+        # Initialize gate to neutral (near 1.0) so SVD representations are preserved at step 0
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.constant_(self.net[-1].bias[:rank], 3.0)   # mu -> sigmoid(3.0) ≈ 0.95
+        nn.init.constant_(self.net[-1].bias[rank:], -3.0)  # log_sigma -> low variance
 
     def forward(
         self, x: torch.Tensor, valid_mask: Optional[torch.Tensor] = None
@@ -141,6 +145,9 @@ class HeadGate(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, n_heads)
         )
+        # Initialize head gate to neutral 1.0 (bias=3.0 -> sigmoid(3.0) ≈ 0.95)
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.constant_(self.net[-1].bias, 3.0)
 
     def forward(self, x: torch.Tensor, valid_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         pooled = _masked_mean(x, valid_mask).float()

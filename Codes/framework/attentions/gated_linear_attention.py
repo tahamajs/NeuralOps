@@ -480,8 +480,8 @@ class GatedLinearAttention(BaseAttention):
         denom_fwd = (attn_scores.abs() * D_causal).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
         denom_bwd = (attn_scores.abs() * D_anti).sum(dim=-1, keepdim=True)    # [B, H, L, 1]
 
-        y_fwd = num_fwd / (denom_fwd + 1e-4).clamp(min=1.0)
-        y_bwd = num_bwd / (denom_bwd + 1e-4).clamp(min=1.0)
+        y_fwd = num_fwd / (denom_fwd + 1e-4).clamp(min=1e-4)
+        y_bwd = num_bwd / (denom_bwd + 1e-4).clamp(min=1e-4)
 
         return y_fwd, y_bwd
 
