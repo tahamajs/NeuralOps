@@ -434,8 +434,6 @@ class WeightedEnsembleAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank, **kwargs)
-        if not hasattr(self, "output_scale"):
-            self.output_scale = nn.Parameter(torch.ones(1))
 
         cfg_source = getattr(config, "text_config", config) if config is not None else None
         h_size = (
@@ -575,7 +573,7 @@ class WeightedEnsembleAttention(BaseAttention):
             Z = phi_K.sum(dim=-2, keepdim=True)  # [B, H, 1, Dh]
             den = torch.matmul(phi_Q, Z.transpose(-2, -1))  # [B, H, N, 1]
 
-        den = den.clamp(min=1.0)
+        den = den.clamp(min=1e-6)
         out = num / den
         return torch.nan_to_num(out, nan=0.0)
 
@@ -676,7 +674,6 @@ class WeightedEnsembleAttention(BaseAttention):
             out = self.out_proj(fused)
             out = self.dropout(out)
 
-        out = out * self.output_scale
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).clamp(min=-1e4, max=1e4)
         return out, None
 

@@ -137,7 +137,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("mamba_svd_flash")
@@ -210,7 +210,6 @@ class MambaSVDFlash(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         # Heads and GQA
         n_heads = num_heads or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
@@ -690,7 +689,6 @@ class MambaSVDFlash(BaseAttention):
         Y = gamma * ssm_out + (1.0 - gamma) * attn_out
         Y = torch.nan_to_num(Y, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        Y = Y * self.output_scale
         if self.is_nested_encoder:
             out = Y
         else:

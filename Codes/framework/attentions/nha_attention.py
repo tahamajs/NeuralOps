@@ -560,7 +560,7 @@ class NativeHybridAttention(BaseAttention):
                 intra_den = intra_attn.sum(dim=-1, keepdim=True)
                 inter_den = torch.matmul(q_c, Z.unsqueeze(-1))
 
-                den = (intra_den + inter_den).clamp(min=1.0)
+                den = (intra_den + inter_den).clamp(min=1e-6)
                 out_list.append(((intra_num + inter_num) / den).to(Q.dtype))
 
                 S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
@@ -571,7 +571,7 @@ class NativeHybridAttention(BaseAttention):
             KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
             Z = phi_K.sum(dim=-2, keepdim=True)
             num = torch.matmul(phi_Q, KV)
-            den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=1.0)
+            den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=1e-6)
             out = (num / den) * pad
 
         return out
