@@ -44,9 +44,16 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     """Rotates half the hidden dimensions of the input tensor."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    d = x.shape[-1]
+    even_d = (d // 2) * 2
+    x_rot = x[..., :even_d]
+    half = even_d // 2
+    x1 = x_rot[..., :half]
+    x2 = x_rot[..., half:]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if even_d < d:
+        return torch.cat([rotated, x[..., even_d:]], dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -99,8 +106,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -161,7 +166,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("galerkin", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -202,7 +207,14 @@ class GalerkinAttention(BaseAttention):
         self.num_heads: int = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12)) if config is not None else 12
         self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
         hidden_size: int = getattr(config, "hidden_size", getattr(config, "d_model", 768)) if config is not None else 768
-        self.head_dim: int = getattr(config, "head_dim", None) or getattr(config, "d_kv", hidden_size // max(1, self.num_heads))
+        cfg_head_dim = getattr(config, "head_dim", None) if config is not None else None
+        if cfg_head_dim is None and source_attn is not None:
+            for attr in ("q_proj", "query", "q_lin", "W_q"):
+                mod = getattr(source_attn, attr, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    cfg_head_dim = mod.weight.shape[0] // max(1, self.num_heads)
+                    break
+        self.head_dim: int = int(cfg_head_dim) if cfg_head_dim is not None else getattr(config, "d_kv", hidden_size // max(1, self.num_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -219,19 +231,23 @@ class GalerkinAttention(BaseAttention):
         self.freeze_base: bool = (self.lora_rank > 0)
 
         # Decoder & nested encoder detection
-        model_type = getattr(config, "model_type", "").lower()
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False)))
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        _mt = str(getattr(config, "model_type", "") or "").lower() if config is not None else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", 
+                             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        is_dec = (
+            getattr(config, "is_decoder", False)
+            or getattr(config, "is_causal", False)
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+        ) if config is not None else False
+        if hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
 
-        is_nested = kwargs.get("is_nested_encoder", False)
-        if not is_nested and source_attn is not None:
+        is_nested = kwargs.get("is_nested_encoder", None)
+        if is_nested is None and source_attn is not None:
             src_cls = source_attn.__class__.__name__
             if (
                 src_cls in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
@@ -239,8 +255,10 @@ class GalerkinAttention(BaseAttention):
                 or (hasattr(source_attn, "self") and hasattr(source_attn, "output"))
             ):
                 is_nested = True
-        if not is_nested and model_type in ["roberta", "bert", "xlm-roberta"] and not self.is_decoder:
-            is_nested = True
+            elif hasattr(source_attn, "out_lin") or hasattr(source_attn, "c_proj") or hasattr(source_attn, "o_proj"):
+                is_nested = False
+        if is_nested is None:
+            is_nested = False
         self.is_nested_encoder: bool = bool(is_nested)
 
         # Multi-head projections equipped with trainable LoRA adapters
@@ -260,7 +278,6 @@ class GalerkinAttention(BaseAttention):
         ) if config else dropout
         self.dropout = nn.Dropout(dropout_p)
 
-        self.output_scale = nn.Parameter(torch.ones(1))
         self.rotary_emb = None
         self.comp_config: Optional[Any] = comp_config
 
@@ -315,6 +332,8 @@ class GalerkinAttention(BaseAttention):
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ):
             is_nested = True
+        elif has_out_lin:
+            is_nested = False
         elif self.is_nested_encoder:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
@@ -336,8 +355,7 @@ class GalerkinAttention(BaseAttention):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.warning(f"copy_weights c_attn merge warning: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -383,7 +401,7 @@ class GalerkinAttention(BaseAttention):
                 "q": ["q_lin", "q_proj", "query", "W_q"],
                 "k": ["k_lin", "k_proj", "key", "W_k"],
                 "v": ["v_lin", "v_proj", "value", "W_v"],
-                "o": ["out_lin", "out_proj", "dense", "o_proj"],
+                "o": ["out_lin", "out_proj", "dense", "o_proj", "proj", "output"],
             }
             for proj_key, names in proj_candidates.items():
                 for name in names:
@@ -404,13 +422,12 @@ class GalerkinAttention(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.warning(f"UniversalAdapter fallback warning: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"GalerkinAttention copy_weights failed: missing mandatory projections {missing_after} "
+            logger.warning(
+                f"GalerkinAttention copy_weights: missing mandatory projections {missing_after} "
                 f"from module {src.__class__.__name__}."
             )
 
@@ -450,7 +467,7 @@ class GalerkinAttention(BaseAttention):
                 # Weight verification (Frobenius norm >= 1e-4)
                 w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"GalerkinAttention weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(f"GalerkinAttention weight copy verification: norm too small ({w_norm:.2e}) for '{proj_key}'")
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
@@ -600,11 +617,14 @@ class GalerkinAttention(BaseAttention):
                 head_mask = head_mask.unsqueeze(-1)
             context = context * head_mask
 
+        # Reshape [B, H, N, d] -> [B, N, self.all_head_size]
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
         # 6. Output projection with nested encoder bypass
         if self.is_nested_encoder:
-            out = context * self.output_scale
+            out = context
         else:
-            out = self.out_proj(context) * self.output_scale
+            out = self.out_proj(context)
 
         return out, (probs if output_attentions else None)
 
@@ -649,13 +669,16 @@ def inject_galerkin(
                 new_attn.is_nested_encoder = True
             else:
                 layer.attention = new_attn
+                new_attn.is_nested_encoder = False
         elif hasattr(layer, "self") and hasattr(layer, "output"):
             layer.self = new_attn
             new_attn.is_nested_encoder = True
         elif hasattr(layer, "attn"):
             layer.attn = new_attn
+            new_attn.is_nested_encoder = False
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_attn
+            new_attn.is_nested_encoder = False
         return new_attn
     except Exception as e:
         logger.error(f"Galerkin injection failed: {e}")

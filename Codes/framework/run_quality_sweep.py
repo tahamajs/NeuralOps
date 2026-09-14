@@ -515,7 +515,7 @@ def evaluate(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=True,
     return res["accuracy_pct"]
 
 
-def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16):
+def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=1e-4):
     # Head-only fine-tuning is deliberate: it is stable for a randomly added
     # Qwen classifier head and guarantees the head is trained before injection.
     for p in model.parameters(): p.requires_grad = False
@@ -533,7 +533,7 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
         p.requires_grad = True
         if p.dtype != torch.float32:
             p.data = p.data.float()
-    opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=5e-4)
+    opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=lr)
     scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
     model.train()
     for step in range(steps):
