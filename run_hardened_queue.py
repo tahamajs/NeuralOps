@@ -4,21 +4,25 @@ import time
 import os
 
 # Priority queue of hardened modules to run across RoBERTa and GPT-2 (and Qwen3.5 where supported)
+# Excluded failed modules: mamba, svd_mamba, aegis_hybrid
 QUEUE = [
-    ("svd_compressed", ["roberta", "gpt2", "qwen3_5"]),
-    ("xattention", ["roberta", "gpt2"]),
-    ("soa_module", ["roberta", "gpt2"]),
-    ("reap_moe", ["roberta", "gpt2"]),
-    ("regla_attention", ["roberta", "gpt2"]),
-    ("phantom", ["roberta", "gpt2"]),
-    ("vspec", ["roberta", "gpt2"]),
-    ("orion", ["roberta", "gpt2"]),
-    ("rala", ["roberta", "gpt2"]),
-    ("tpa", ["roberta", "gpt2"]),
+    ("svd_compressed", ["distilbert", "roberta", "gpt2"]),
+    ("nexus", ["distilbert", "roberta", "gpt2"]),
+    ("xattention", ["distilbert", "roberta", "gpt2"]),
+    ("soa_module", ["distilbert", "roberta", "gpt2"]),
+    ("reap_moe", ["distilbert", "roberta", "gpt2"]),
+    ("regla_attention", ["distilbert", "roberta", "gpt2"]),
+    ("phantom", ["distilbert", "roberta", "gpt2"]),
+    ("vspec", ["distilbert", "roberta", "gpt2"]),
+    ("orion", ["distilbert", "roberta", "gpt2"]),
+    ("rala", ["distilbert", "roberta", "gpt2"]),
+    ("tpa", ["distilbert", "roberta", "gpt2"]),
 ]
 
 SCRIPT_MAP = {
     "svd_compressed": "run_all_4_svd_compressed.py",
+    "svd_mamba": "run_all_4_svd_mamba.py",
+    "nexus": "run_all_4_nexus.py",
     "xattention": "run_all_4_xattention.py",
     "soa_module": "run_all_4_soa_module.py",
     "reap_moe": "run_all_4_reap_moe.py",

@@ -93,6 +93,17 @@ def should_compress_linear(model: Any, name: str, family: Optional[str] = None) 
     if fam == "qwen3_5":
         return should_compress_qwen3_5(name)
 
+    # Explicitly recognize DistilBERT, RoBERTa/BERT, GPT-2, Qwen/LLaMA names
+    recognized_attn = [
+        "q_lin", "k_lin", "v_lin", "out_lin",                     # DistilBERT
+        "query", "key", "value", "dense", "output.dense",         # RoBERTa / BERT
+        "c_attn", "c_proj",                                       # GPT-2
+        "q_proj", "k_proj", "v_proj", "o_proj", "out_proj"        # Qwen / LLaMA
+    ]
+    
+    if any(leaf == k or k in name_low.split(".") for k in recognized_attn):
+        return True
+
     if is_decoder_family(fam):
         return is_decoder_projection_name(name) or any(kw in name_low for kw in ["mlp", "ffn", "dense", "feed_forward"])
 
@@ -276,15 +287,37 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             "Total trainable parameters (%d) exceeds 2,000,000 threshold for recovery. Pruning heavy base weights to prevent OOM.",
             total_trainable,
         )
-        pruned_params = []
-        for p in trainable_params:
-            if p.ndim <= 1:
-                pruned_params.append(p)
-            elif p.numel() <= 32768:
-                pruned_params.append(p)
+        # Prioritize 1D/bias params, then pure LoRA params, then small matrices
+        # First: identify pure LoRA / gate parameters
+        lora_params_list = []
+        other_params_list = []
+        for name, param in model.named_parameters():
+            if any(param is p for p in trainable_params):
+                n_l = name.lower()
+                if any(k in n_l for k in (".lora_", "lora_a", "lora_b", ".output_scale", ".gate", ".alpha", ".beta")):
+                    lora_params_list.append((name, param))
+                else:
+                    other_params_list.append((name, param))
+        
+        # Keep LoRA params first, then add other small params up to budget
+        budget = 1_800_000
+        kept_params = []
+        curr_count = 0
+        for name, p in lora_params_list:
+            if curr_count + p.numel() <= budget:
+                kept_params.append(p)
+                curr_count += p.numel()
             else:
                 p.requires_grad = False
-        trainable_params = pruned_params
+                
+        for name, p in other_params_list:
+            if curr_count + p.numel() <= budget and (p.ndim <= 1 or p.numel() <= 32768):
+                kept_params.append(p)
+                curr_count += p.numel()
+            else:
+                p.requires_grad = False
+
+        trainable_params = kept_params
         for name, param in model.named_parameters():
             param.requires_grad = any(param is p for p in trainable_params)
         total_trainable = sum(p.numel() for p in trainable_params)

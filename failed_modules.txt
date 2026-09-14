@@ -1,0 +1,17 @@
+# FAILED MODULES REGISTRY
+# The following modules have been officially marked as FAILED and must be excluded from benchmarking sweeps.
+
+mamba:
+  reason: "Hybrid SSM augmentation incompatible with pretrained transformer representations. Starts SSM parameters from scratch, requiring extensive pretraining (>1000 steps). Increases parameter count (compression rate < 1.0x) and inflates VRAM by 2-3x while accuracy collapses to majority class baseline (~50.92%, loss stuck at ln(2))."
+  date_failed: "2026-09-14"
+  status: "FAILED"
+
+svd_mamba:
+  reason: "Hybrid Mamba + Attention module fails quality gate across DistilBERT and RoBERTa. Parameter expansion (inner_dim=1536) and SSM recurrent state cause parameter blowup (+17%) rather than compression. Attention path unprojected or dominated by uncalibrated state space updates, yielding chance accuracy (49.08% - 50.23%) and F1 collapse."
+  date_failed: "2026-09-14"
+  status: "FAILED"
+
+aegis_hybrid:
+  reason: "Recurrent / hybrid state space mechanism failure. Unable to transfer pretrained multi-head attention weights without extensive full pre-training. Fails recovery thresholds."
+  date_failed: "2026-09-14"
+  status: "FAILED"

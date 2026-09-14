@@ -33,6 +33,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.adapters import UniversalAdapter
+from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -683,12 +684,7 @@ class SVDCompressedAttention(BaseAttention):
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
-            if eff_mask.dim() == 2:
-                scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-            elif eff_mask.dim() == 3:
-                scores = scores + eff_mask.unsqueeze(1).float()
-            elif eff_mask.dim() == 4:
-                scores = scores + eff_mask.float()
+            scores = apply_attention_mask(scores, eff_mask)
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
         attn_weights = F.softmax(scores, dim=-1).to(hidden_states.dtype)
@@ -1063,11 +1059,7 @@ def inject_svd_compressed(
         if src_attn is None and target is not None:
             for attr in ("attention", "self_attn", "attn", "self"):
                 if hasattr(target, attr):
-                    cand = getattr(target, attr)
-                    if hasattr(cand, "self"):
-                        src_attn = cand.self
-                    else:
-                        src_attn = cand
+                    src_attn = getattr(target, attr)
                     break
 
         if src_attn is None and target is not None and hasattr(target, "forward"):
