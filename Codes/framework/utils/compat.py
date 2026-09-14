@@ -194,9 +194,9 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
         if fallback_layers and (parent_module_prefix in fallback_layers or any(name.startswith(fb + ".") or name == fb for fb in fallback_layers)):
             continue
 
-        # For recurrent/hybrid modules (HGRN, Delta, Mamba, SSM, etc.), allow lora adapters, output scales, gates, and decays
+        # For recurrent/hybrid modules (HGRN, Delta, Mamba, SSM, etc.), ONLY allow lora_A/lora_B parameters!
         if is_recurrent_module:
-            if any(tag in n_low for tag in ("lora_a", "lora_b", "lora_", ".output_scale", ".gate", ".alpha", ".beta", ".decay")):
+            if any(tag in n_low for tag in ("lora_a", "lora_b")):
                 trainable_params.append(param)
             continue
 
@@ -297,6 +297,13 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     # For nested encoders / deep models, threshold can be 10M
     is_nested_or_deep = any("encoder" in n.lower() or "roberta" in n.lower() or "bert" in n.lower() for n, _ in model.named_parameters())
     prune_threshold = 10_000_000 if (has_lora or is_nested_or_deep) else 2_000_000
+
+    if total_trainable > 5_000_000:
+        for m in model.modules():
+            if hasattr(m, "lora_rank") and getattr(m, "lora_rank", 0) > 8:
+                m.lora_rank = 8
+                if hasattr(m, "lora_scaling") and hasattr(m, "lora_alpha"):
+                    m.lora_scaling = m.lora_alpha / 8
 
     if total_trainable > prune_threshold:
         logger.warning(
