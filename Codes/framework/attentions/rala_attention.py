@@ -420,12 +420,12 @@ class RALALinearAttention(BaseAttention):
             k = repeat_kv(k, repeats)
             v = repeat_kv(v, repeats)
 
-        q_prime = F.elu(q) + 1.0
+        q_prime = F.softplus(q)
 
         valid_mask = get_token_valid_mask(attention_mask, batch_size, seq_len, hidden_states.device)
         mask_4d = valid_mask.unsqueeze(1).unsqueeze(-1).to(k.dtype)  # (B, 1, N, 1)
 
-        k_prime = (F.elu(k) + 1.0) * mask_4d
+        k_prime = F.softplus(k) * mask_4d
         v_masked = v * mask_4d
 
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
@@ -466,7 +466,7 @@ class RALALinearAttention(BaseAttention):
                 denom_list.append(denom_i)
 
             num = torch.stack(num_list, dim=2)
-            denom = torch.stack(denom_list, dim=2).clamp(min=1.0)
+            denom = torch.stack(denom_list, dim=2).clamp(min=1e-4)
             lin_out = torch.nan_to_num(num / denom)
 
             rank_mat = torch.einsum("h d r, h e r -> h d e", self.U, self.V)
@@ -474,13 +474,13 @@ class RALALinearAttention(BaseAttention):
         else:
             kv = torch.einsum("b h n d, b h n e -> b h d e", k_prime, v_masked)
             z = k_prime.sum(dim=2)  # (B, H, d)
-            denom = torch.einsum("b h n d, b h d -> b h n", q_prime, z).unsqueeze(-1).clamp(min=1.0)
+            denom = torch.einsum("b h n d, b h d -> b h n", q_prime, z).unsqueeze(-1).clamp(min=1e-4)
             lin_out = torch.nan_to_num(torch.einsum("b h n d, b h d e -> b h n e", q_prime, kv) / denom)
 
             rank_mat = torch.einsum("h d r, h e r -> h d e", self.U, self.V)
             aug_out = torch.nan_to_num(torch.einsum("b h n d, h d e -> b h n e", q_prime, rank_mat) / denom)
 
-        scale_factor = math.sqrt(self.head_dim)
+        scale_factor = 1.0 / math.sqrt(self.head_dim)
         out = (lin_out + self.alpha * aug_out) * scale_factor * mask_4d
 
         # head_mask handling
