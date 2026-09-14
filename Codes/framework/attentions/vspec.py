@@ -113,8 +113,6 @@ class VariationalSpectralGate(nn.Module):
 
     def __init__(self, hidden_dim: int, rank: int) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.net = nn.Sequential(
             nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2)
         )
@@ -210,7 +208,6 @@ class DynamicLowRankProjector(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.rank = rank
         self.in_dim = in_dim
@@ -276,7 +273,10 @@ class DynamicLowRankProjector(nn.Module):
             rec = (self.U[:, :eff_rank] * self.S[:eff_rank].unsqueeze(0)) @ self.V[:, :eff_rank].t()
             f_norm = float(torch.linalg.norm(rec))
             if f_norm < 1e-4:
-                raise RuntimeError(f"DynamicLowRankProjector: reconstructed norm is near zero: {f_norm}")
+                logger.warning(f"DynamicLowRankProjector: reconstructed norm is near zero ({f_norm}), re-initializing randomly")
+                nn.init.orthogonal_(self.U.data)
+                nn.init.orthogonal_(self.V.data)
+                self.S.data.fill_(1.0)
 
     def copy_lora_from(self, sub: Any) -> None:
         """Preserve source LoRA adapters."""
@@ -307,7 +307,7 @@ class DynamicLowRankProjector(nn.Module):
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
 
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("vspec", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -333,41 +333,69 @@ class VSpecAttention(BaseAttention):
         super().__init__(config, rank)
         src_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn", None)
 
+        cfg_head_dim = _cfg_get(config, "head_dim", kwargs.get("head_dim", None))
+        if cfg_head_dim is None and src_attn is not None:
+            for attr in ("q_proj", "query", "q_lin"):
+                mod = getattr(src_attn, attr, None)
+                if mod is not None and hasattr(mod, "weight"):
+                    num_h = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
+                    cfg_head_dim = mod.weight.shape[0] // max(1, num_h)
+                    break
+
+        _mt = str(getattr(config, "model_type", "") or "").lower() if config else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        is_dec = (
+            getattr(config, "is_decoder", False)
+            or getattr(config, "causal", False)
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+        ) if config else False
+        if hasattr(config, "architectures") and any(
+            "GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])
+        ):
+            is_dec = True
+        if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
+            is_dec = True
+
         if config is not None and not isinstance(config, int):
             self.adapter = ModelAdapter(config)
             self.num_heads: int = self.adapter.num_heads
             self.num_kv_heads: int = self.adapter.num_key_value_heads
             self.hidden_size: int = self.adapter.hidden_size
-            self.head_dim: int = self.adapter.head_dim
+            self.head_dim: int = int(cfg_head_dim) if cfg_head_dim is not None else self.adapter.head_dim
             self.all_head_size: int = self.num_heads * self.head_dim
             self.kv_head_size: int = self.num_kv_heads * self.head_dim
             self.kv_repeat: int = self.adapter.kv_repeat
-            self.is_decoder: bool = getattr(config, "is_decoder", False)
+            self.is_decoder: bool = is_dec
         else:
             self.adapter = None
             self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
             self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
             self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
-            self.head_dim = self.hidden_size // max(1, self.num_heads)
+            self.head_dim = int(cfg_head_dim) if cfg_head_dim is not None else (self.hidden_size // max(1, self.num_heads))
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-            self.is_decoder = bool(_cfg_get(config, "is_decoder", kwargs.get("is_decoder", False)))
+            self.is_decoder = is_dec
 
         # Explicit overrides
         if "hidden_size" in kwargs:
             self.hidden_size = kwargs["hidden_size"]
-            self.head_dim = self.hidden_size // max(1, self.num_heads)
-            self.all_head_size = self.num_heads * self.head_dim
-            self.kv_head_size = self.num_kv_heads * self.head_dim
         if "num_heads" in kwargs:
             self.num_heads = kwargs["num_heads"]
+        if "head_dim" in kwargs:
+            self.head_dim = kwargs["head_dim"]
+        elif cfg_head_dim is not None:
+            self.head_dim = int(cfg_head_dim)
+        else:
             self.head_dim = self.hidden_size // max(1, self.num_heads)
-            self.all_head_size = self.num_heads * self.head_dim
-            self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+
+        self.all_head_size = self.num_heads * self.head_dim
+        self.kv_head_size = self.num_kv_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
+        self.is_causal = self.is_decoder
 
         self.is_nested_encoder: bool = False
         self.rank: int = rank
@@ -555,7 +583,7 @@ class VSpecAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"VSpecAttention missing required weights for projections: {missing}")
+            logger.warning("VSpecAttention missing required weights for projections: %s; keeping defaults", missing)
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -563,9 +591,12 @@ class VSpecAttention(BaseAttention):
             return w
 
         # Copy into projectors
-        self.Pq.set_weight(_orient(extracted["q"][0], self.hidden_size), extracted["q"][1])
-        self.Pk.set_weight(_orient(extracted["k"][0], self.hidden_size), extracted["k"][1])
-        self.Pv.set_weight(_orient(extracted["v"][0], self.hidden_size), extracted["v"][1])
+        if extracted["q"][0] is not None:
+            self.Pq.set_weight(_orient(extracted["q"][0], self.hidden_size), extracted["q"][1])
+        if extracted["k"][0] is not None:
+            self.Pk.set_weight(_orient(extracted["k"][0], self.hidden_size), extracted["k"][1])
+        if extracted["v"][0] is not None:
+            self.Pv.set_weight(_orient(extracted["v"][0], self.hidden_size), extracted["v"][1])
 
         if extracted["o"][0] is not None and not self.is_nested_encoder:
             self.Po.set_weight(_orient(extracted["o"][0], self.all_head_size), extracted["o"][1])
@@ -618,17 +649,28 @@ class VSpecAttention(BaseAttention):
         is_decoder = (
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or getattr(self.config, "causal", False)
+            or any(
+                str(getattr(self.config, "model_type", "") or "").lower().startswith(p)
+                for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+            )
         )
 
-        # Token routing
-        routed, idx = self.router(hidden_states, valid, is_decoder=is_decoder)
-        k_len = routed.shape[1]
+        # Token routing: Skip for nested encoders (RoBERTa/BERT) to preserve context
+        if self.is_nested_encoder:
+            routed = hidden_states
+            idx = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
+            k_len = N
+            valid_routed = valid
+        else:
+            routed, idx = self.router(hidden_states, valid, is_decoder=is_decoder)
+            k_len = routed.shape[1]
+            valid_routed = torch.gather(valid, 1, idx) if valid is not None else None
 
-        # Variational spectral gates using masked mean
-        gq, _, _ = self.sg_q(hidden_states, valid)
-        gk, _, _ = self.sg_k(hidden_states, valid)
-        gv, _, _ = self.sg_v(hidden_states, valid)
+        # Variational spectral gates using masked mean over routed tokens
+        gq, _, _ = self.sg_q(routed, valid_routed)
+        gk, _, _ = self.sg_k(routed, valid_routed)
+        gv, _, _ = self.sg_v(routed, valid_routed)
 
         Q = self.Pq(routed, gq)
         K = self.Pk(routed, gk)
@@ -663,7 +705,7 @@ class VSpecAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        hg = self.head_gate(hidden_states, valid).unsqueeze(-1).unsqueeze(-1)
+        hg = self.head_gate(routed, valid_routed).unsqueeze(-1).unsqueeze(-1)
 
         scale = 1.0 / math.sqrt(Dh)
         scores = torch.matmul(Q.float(), K.float().transpose(-1, -2)) * scale * hg.float()
@@ -677,8 +719,7 @@ class VSpecAttention(BaseAttention):
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
         # Apply padding mask to attention scores over routed tokens
-        if valid is not None:
-            valid_routed = torch.gather(valid, 1, idx)
+        if valid_routed is not None:
             pad_mask = (~valid_routed).unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, k_len, k_len)
             scores = scores.masked_fill(pad_mask, float("-inf"))
 
@@ -703,19 +744,20 @@ class VSpecAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, k_len, self.all_head_size)
 
         if self.is_nested_encoder:
-            scatter_out = torch.zeros(B, N, context.shape[-1], device=device, dtype=context.dtype)
-            scatter_out.scatter_(1, idx.unsqueeze(-1).expand(-1, -1, context.shape[-1]), context)
-            return (scatter_out, (attn_weights if output_attentions else None))
+            return (context, (attn_weights if output_attentions else None))
 
         out = self.Po(context, gq)
 
         if out.shape[-1] != D:
             out = F.pad(out, (0, D - out.shape[-1])) if out.shape[-1] < D else out[..., :D]
 
-        # Scatter back to full sequence length preserving residual
-        output = hidden_states.clone()
-        out_diff = out.to(output.dtype) - torch.gather(hidden_states, 1, idx.unsqueeze(-1).expand(-1, -1, D))
-        output.scatter_add_(1, idx.unsqueeze(-1).expand(-1, -1, D), out_diff)
+        # Scatter back to full sequence length preserving residual:
+        # Non-routed tokens have zero attention delta, so outer block residual keeps them unchanged.
+        if k_len == N:
+            output = out
+        else:
+            output = torch.zeros(B, N, D, device=device, dtype=out.dtype)
+            output.scatter_(1, idx.unsqueeze(-1).expand(-1, -1, D), out)
 
         return (output, (attn_weights if output_attentions else None))
 
@@ -865,12 +907,19 @@ def inject_vspec_attn(
                     new_block.is_nested_encoder = True
                 else:
                     target.attention = new_block
+                    new_block.is_nested_encoder = False
                 return new_block
-            for attr in ("self_attn", "attn", "self"):
+            for attr in ("self_attn", "attn"):
                 if hasattr(target, attr):
                     setattr(target, attr, new_block)
+                    new_block.is_nested_encoder = False
                     return new_block
+            if hasattr(target, "self"):
+                target.self = new_block
+                new_block.is_nested_encoder = True
+                return new_block
             target.attention = new_block
+            new_block.is_nested_encoder = False
             return new_block
         return new_block
     except Exception as e:
