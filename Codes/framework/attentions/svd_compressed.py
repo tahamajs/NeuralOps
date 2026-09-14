@@ -25,7 +25,7 @@ import argparse
 import logging
 import os
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import math
