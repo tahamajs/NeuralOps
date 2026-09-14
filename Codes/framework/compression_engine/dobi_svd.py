@@ -44,9 +44,6 @@ class DobiSVDLinearLayer(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
@@ -108,20 +105,10 @@ class DobiSVDLinearLayer(nn.Module):
         V_gated = self.V * g                       # [rank, in_features]
         latent = F.linear(x_flat, V_gated)         # [..., rank]
         out = F.linear(latent, self.U, self.bias)  # [..., out_features]
-        out = out * self.output_scale
         return out.view(*orig_shape[:-1], self.out_features)
 
     def extra_repr(self) -> str:
         return f"in_features={self.in_features}, out_features={self.out_features}, rank={self.rank}, bias={self.bias is not None}"
-
-    def __iter__(self):
-        """Allow tuple unpacking: dobi_layer, err, r = compressor.compress_linear(...)."""
-        yield self
-        yield getattr(self, "reconstruction_error", 0.0)
-        yield getattr(self, "rank", 0)
-
-    def __getitem__(self, idx: int) -> Any:
-        return (self, getattr(self, "reconstruction_error", 0.0), getattr(self, "rank", 0))[idx]
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -168,16 +155,13 @@ class DobiSVDCompressor(BaseCompressor):
         init_gate_val: float = 2.5,
         max_error: float = 0.35,
         fallback_to_original: bool = True,
-        target_attention_only: bool = False,
+        target_attention_only: bool = True,
         max_retries: int = 2,
         target_modules: Optional[List[str]] = None,
         cfg: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="dobi", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         cfg_obj = cfg if cfg is not None else kwargs.get("comp_config", None)
         self.cfg = cfg_obj
 
@@ -241,7 +225,7 @@ class DobiSVDCompressor(BaseCompressor):
     def _determine_rank(self, in_f: int, out_f: int, target_r: Optional[int]) -> int:
         """Compute target rank guaranteeing parameter reduction and physical bounds."""
         max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
-        max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
+        max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r, 128))
 
         if target_r is not None:
             r = target_r
@@ -291,8 +275,10 @@ class DobiSVDCompressor(BaseCompressor):
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float()
 
+        assert W.shape == (out_f, in_f), f"W shape {W.shape} does not match ({out_f}, {in_f})"
+
         max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
-        max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
+        max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r, 128))
 
         current_r = self._determine_rank(in_f, out_f, rank)
         device = raw_w.device
@@ -333,6 +319,9 @@ class DobiSVDCompressor(BaseCompressor):
                 device=device,
             )
             dobi_layer.set_low_rank_factors(U_r, V_r)
+            assert dobi_layer.U.shape == (out_f, r), f"U shape mismatch: {dobi_layer.U.shape} vs ({out_f}, {r})"
+            assert dobi_layer.V.shape == (r, in_f), f"V shape mismatch: {dobi_layer.V.shape} vs ({r}, {in_f})"
+
             if target_mod.bias is not None and dobi_layer.bias is not None:
                 tb = target_mod.bias.data
                 db = dobi_layer.bias.data
@@ -522,7 +511,7 @@ def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "dobi_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
         target_attention_only = kwargs.pop(
             "target_attention_only",
-            _cfg_get(comp_config, "dobi_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+            _cfg_get(comp_config, "dobi_target_attention_only", _cfg_get(comp_config, "target_attention_only", True)),
         )
 
         compressor = DobiSVDCompressor(
