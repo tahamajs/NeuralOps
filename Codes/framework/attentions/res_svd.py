@@ -92,8 +92,6 @@ class ResSVDAttention(BaseAttention):
     ) -> None:
         effective_rank = rank if rank is not None else 16
         super().__init__(config, effective_rank)
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.config = config
         comp_config = getattr(config, "compression_config", None)
 
@@ -105,11 +103,20 @@ class ResSVDAttention(BaseAttention):
             "num_key_value_heads",
             kwargs.get("num_key_value_heads", self.num_heads),
         )
-        self.head_dim: int = getattr(
-            config,
-            "head_dim",
-            kwargs.get("head_dim", self.dim // self.num_heads),
-        )
+
+        cfg_head_dim = getattr(config, "head_dim", None)
+        adapter_head_dim = getattr(getattr(config, "adapter", None), "head_dim", None)
+        kw_head_dim = kwargs.get("head_dim", None)
+        inferred = cfg_head_dim or adapter_head_dim or kw_head_dim
+        if inferred is None and pretrained_attn is not None:
+            for attr in ("q_proj", "query", "q_lin"):
+                if hasattr(pretrained_attn, attr):
+                    layer_q = getattr(pretrained_attn, attr)
+                    if hasattr(layer_q, "weight"):
+                        inferred = layer_q.weight.shape[0] // max(1, self.num_heads)
+                        break
+
+        self.head_dim = int(inferred or (self.dim // max(1, self.num_heads)))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
 
@@ -119,16 +126,17 @@ class ResSVDAttention(BaseAttention):
         self.factorize_base = factorize_base
         self.freeze_base = freeze_base
 
-        is_dec = (
-            getattr(config, "is_decoder", False)
-            or getattr(config, "is_causal", False)
-            or str(getattr(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
+        _mt = str(getattr(config, "model_type", "") or "").lower()
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        self.is_decoder = (
+            bool(getattr(config, "is_decoder", False))
+            or bool(getattr(config, "is_causal", False))
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
             or (pretrained_attn is not None and hasattr(pretrained_attn, "c_attn"))
-            or kwargs.get("is_causal", False)
-            or kwargs.get("is_decoder", False)
+            or bool(kwargs.get("is_causal", False))
+            or bool(kwargs.get("is_decoder", False))
         )
-        self.is_decoder = bool(is_dec)
-        self.is_causal = bool(is_dec)
+        self.is_causal = bool(self.is_decoder)
         self.is_nested_encoder = False
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
@@ -170,6 +178,33 @@ class ResSVDAttention(BaseAttention):
             bias=True,
         )
 
+        dropout_p = (
+            dropout
+            if dropout is not None
+            else getattr(
+                config,
+                "dropout",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            )
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
+        if source_attn is not None:
+            self.copy_weights(source_attn)
+
+        logger.info(
+            "ResSVDAttention initialized: hidden=%d, heads=%d, head_dim=%d, all_head_size=%d, is_decoder=%s, is_nested=%s, base_rank=%d, residual_rank=%d",
+            self.hidden_size,
+            self.num_heads,
+            self.head_dim,
+            self.all_head_size,
+            self.is_decoder,
+            self.is_nested_encoder,
+            self.base_rank,
+            self.residual_rank,
+        )
+
     @property
     def q_proj(self) -> ResSVDLinear:
         return self.query
@@ -193,21 +228,6 @@ class ResSVDAttention(BaseAttention):
     @property
     def v_lin(self) -> ResSVDLinear:
         return self.value
-
-        dropout_p = (
-            dropout
-            if dropout is not None
-            else getattr(
-                config,
-                "dropout",
-                getattr(config, "attention_probs_dropout_prob", 0.1),
-            )
-        )
-        self.dropout = nn.Dropout(dropout_p)
-
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
-        if source_attn is not None:
-            self.copy_weights(source_attn)
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
