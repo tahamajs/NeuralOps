@@ -2104,7 +2104,7 @@ def main():
                     num_svd_layers = sum(
                         1 for m in model.modules()
                         if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "LoRALinear")
-                        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "MinimalNOVA", "MinimalPRISM", "NEXUS", "ORION", "MoBA"))
+                        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "NEXUS", "ORION", "MoBA"))
                         or hasattr(m, "q_down")
                     )
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
