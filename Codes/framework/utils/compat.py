@@ -161,7 +161,8 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     svd_modules = [m for m in model.modules() if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer")]
     has_svd = len(svd_modules) > 0
     svd_param_ids = {id(p) for m in svd_modules for p in m.parameters()}
-    has_lora = any(any(t in n.lower() for t in (".lora_", ".lora_a", ".lora_b")) for n, _ in model.named_parameters())
+    LORA_KEYWORDS = ("lora_a", "lora_b", "lora_")
+    has_lora = any(any(t in n.lower() for t in LORA_KEYWORDS) for n, _ in model.named_parameters())
     fallback_layers = set()
     if hasattr(model, "compression_stats") and isinstance(model.compression_stats, dict):
         fb = model.compression_stats.get("fallback_layers", [])
@@ -176,7 +177,7 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     for name, param in model.named_parameters():
         n_low = name.lower()
         parent_module_prefix = name.split(".base_layer.")[0] if ".base_layer." in name else name.rsplit(".", 1)[0]
-        layer_has_lora = any(k.startswith(parent_module_prefix) and any(t in k.lower() for t in (".lora_", ".lora_a", ".lora_b")) for k, _ in model.named_parameters())
+        layer_has_lora = any(k.startswith(parent_module_prefix) and any(t in k.lower() for t in LORA_KEYWORDS) for k, _ in model.named_parameters())
 
         # Check if parent or enclosing module is a recurrent/hybrid module
         is_recurrent_module = False
@@ -195,12 +196,12 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
 
         # For recurrent/hybrid modules (HGRN, Delta, Mamba, SSM, etc.), allow lora adapters, output scales, gates, and decays
         if is_recurrent_module:
-            if any(tag in n_low for tag in (".lora_a", ".lora_b", "lora_a", "lora_b", ".output_scale", ".gate", ".alpha", ".beta", ".decay")):
+            if any(tag in n_low for tag in ("lora_a", "lora_b", "lora_", ".output_scale", ".gate", ".alpha", ".beta", ".decay")):
                 trainable_params.append(param)
             continue
 
         # 1. LoRA adapter, gate, calibration scale, decay, and span parameters are always trainable
-        if any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b", ".adapter", ".prompt", ".gate", "gate.", ".alpha", ".beta", ".output_scale", ".decay", "span_logits", ".span_logits")):
+        if any(tag in n_low for tag in ("lora_a", "lora_b", "lora_", ".adapter", ".prompt", ".gate", "gate.", ".alpha", ".beta", ".output_scale", ".decay", "span_logits", ".span_logits")):
             trainable_params.append(param)
             continue
 
@@ -218,7 +219,7 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             ".weight", ".bias", ".u", ".v", ".a", ".b", ".beta", ".alpha", ".gate",
             ".in_proj", ".out_proj", ".x_proj", ".q_proj", ".k_proj", ".v_proj", ".z_proj"
         )):
-            if not any(tag in n_low for tag in (".lora_", ".lora_a", ".lora_b")):
+            if not any(tag in n_low for tag in LORA_KEYWORDS):
                 if layer_has_lora or has_lora:
                     continue
 
@@ -261,7 +262,7 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             continue
 
         # 5. Non-LoRA, non-SVD models (custom attention replacements, SSM, CUR, etc.):
-        if any(tag in n_low for tag in (".inner.", "._wrapped_attention.", "swa_mamba", "kernel_linear", ".u", ".v")):
+        if any(tag in n_low for tag in (".inner.", "._wrapped_attention.", "swa_mamba", "kernel_linear")) or any(f".{x}." in n_low or n_low.endswith(f".{x}") for x in ("u", "v", "weight_u", "weight_v")):
             trainable_params.append(param)
         elif any(tag in n_low for tag in (".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
                                           ".w_a", ".w_b", ".weight_u", ".weight_v", ".factor", ".factors",
@@ -275,42 +276,53 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
         elif any(tag in n_low for tag in (".gate.", ".beta.", ".input_gate.", ".forget_gate.", ".alpha_gate.")):
             trainable_params.append(param)
 
+    # Deduplicate trainable_params preserving order
+    seen_ids = set()
+    unique_trainable = []
+    for p in trainable_params:
+        if id(p) not in seen_ids:
+            seen_ids.add(id(p))
+            unique_trainable.append(p)
+    trainable_params = unique_trainable
+
     # Set requires_grad
+    trainable_id_set = {id(p) for p in trainable_params}
     for name, param in model.named_parameters():
-        param.requires_grad = any(param is p for p in trainable_params)
+        param.requires_grad = id(param) in trainable_id_set
 
     # Safety check on total trainable parameters to prevent OOM
     total_trainable = sum(p.numel() for p in trainable_params)
     logger.info("Recovery fine-tuning selected %d trainable parameters across %d tensors.", total_trainable, len(trainable_params))
-    if total_trainable > 2_000_000:
+    
+    # For nested encoders / deep models, threshold can be 10M
+    is_nested_or_deep = any("encoder" in n.lower() or "roberta" in n.lower() or "bert" in n.lower() for n, _ in model.named_parameters())
+    prune_threshold = 10_000_000 if (has_lora or is_nested_or_deep) else 2_000_000
+
+    if total_trainable > prune_threshold:
         logger.warning(
-            "Total trainable parameters (%d) exceeds 2,000,000 threshold for recovery. Pruning heavy base weights to prevent OOM.",
+            "Total trainable parameters (%d) exceeds %d threshold for recovery. Pruning heavy base weights to prevent OOM.",
             total_trainable,
+            prune_threshold,
         )
-        # Prioritize 1D/bias params, then pure LoRA params, then small matrices
-        # First: identify pure LoRA / gate parameters
-        lora_params_list = []
-        other_params_list = []
+        # NEVER prune params named lora_A, lora_B, or other LoRA keywords.
+        # Also protect classifier, score, gate, scale, alpha, beta.
+        PROTECTED_KEYWORDS = ("lora_a", "lora_b", "lora_", "classifier", "score", "gate", "scale", "alpha", "beta")
+        protected_params = []
+        other_params = []
         for name, param in model.named_parameters():
-            if any(param is p for p in trainable_params):
+            if id(param) in trainable_id_set:
                 n_l = name.lower()
-                if any(k in n_l for k in (".lora_", "lora_a", "lora_b", ".output_scale", ".gate", ".alpha", ".beta")):
-                    lora_params_list.append((name, param))
+                if any(k in n_l for k in PROTECTED_KEYWORDS):
+                    protected_params.append((name, param))
                 else:
-                    other_params_list.append((name, param))
+                    other_params.append((name, param))
         
-        # Keep LoRA params first, then add other small params up to budget
-        budget = 1_800_000
-        kept_params = []
-        curr_count = 0
-        for name, p in lora_params_list:
-            if curr_count + p.numel() <= budget:
-                kept_params.append(p)
-                curr_count += p.numel()
-            else:
-                p.requires_grad = False
-                
-        for name, p in other_params_list:
+        # Keep all protected params first
+        kept_params = [p for _, p in protected_params]
+        curr_count = sum(p.numel() for p in kept_params)
+        budget = max(prune_threshold - 200_000, curr_count)
+        
+        for name, p in other_params:
             if curr_count + p.numel() <= budget and (p.ndim <= 1 or p.numel() <= 32768):
                 kept_params.append(p)
                 curr_count += p.numel()
@@ -318,10 +330,17 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
                 p.requires_grad = False
 
         trainable_params = kept_params
+        kept_id_set = {id(p) for p in kept_params}
         for name, param in model.named_parameters():
-            param.requires_grad = any(param is p for p in trainable_params)
+            param.requires_grad = id(param) in kept_id_set
         total_trainable = sum(p.numel() for p in trainable_params)
         logger.info("Reduced recovery parameters to %d trainable parameters across %d tensors.", total_trainable, len(trainable_params))
+
+    # Debug logging for parameter discovery
+    logger.info("Discovered %d trainable tensors (%d params)", len(trainable_params), total_trainable)
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            logger.debug("  %s: %s (%d params)", name, tuple(param.shape), param.numel())
 
     return trainable_params
 
