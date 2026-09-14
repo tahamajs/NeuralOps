@@ -37,11 +37,10 @@ class GatedDeltaNetBlock(BaseAttention):
         d_model: Optional[Union[int, Any]] = None,
         num_heads: Optional[int] = None,
         use_full_attention: bool = False,
+        comp_config: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         if d_model is None:
             if config is not None:
                 d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
@@ -57,6 +56,7 @@ class GatedDeltaNetBlock(BaseAttention):
         self.d_model: int = d_model
         self.num_heads: int = num_heads
         self.use_full_attention: bool = use_full_attention
+        self.comp_config = comp_config
 
         if use_full_attention:
             self.attn: Optional[nn.MultiheadAttention] = nn.MultiheadAttention(
@@ -66,7 +66,7 @@ class GatedDeltaNetBlock(BaseAttention):
             self.attn = None
 
         self.deltanet = GatedDeltaNet(
-            config=config, d_model=self.d_model, num_heads=self.num_heads, **kwargs
+            config=config, comp_config=comp_config, d_model=self.d_model, num_heads=self.num_heads, **kwargs
         )
         self.norm = nn.LayerNorm(self.d_model)
         self.is_nested_encoder: bool = getattr(self.deltanet, "is_nested_encoder", False)
@@ -185,9 +185,9 @@ class GatedDeltaNetBlock(BaseAttention):
             if delta_out.shape[-1] != x.shape[-1]:
                 delta_out = F.pad(delta_out, (0, x.shape[-1] - delta_out.shape[-1])) if delta_out.shape[-1] < x.shape[-1] else delta_out[..., :x.shape[-1]]
             if self.is_nested_encoder:
-                return delta_out * self.output_scale, None
+                return delta_out, None
             out = self.norm(x + delta_out)
-            return out * self.output_scale, None
+            return out, None
 
 
 @ATTENTION_REGISTRY.register("gated_deltanet_block_inject")
@@ -236,7 +236,14 @@ def inject_gated_deltanet_block(
     try:
         use_full = getattr(comp_config, "use_full_attention", False) if comp_config else False
         new_block = GatedDeltaNetBlock(
-            config=model_config, d_model=d_model, num_heads=num_heads, use_full_attention=use_full, **kwargs
+            config=model_config,
+            comp_config=comp_config,
+            d_model=d_model,
+            num_heads=num_heads,
+            use_full_attention=use_full,
+            layer_id=layer_idx,
+            layer_idx=layer_idx,
+            **kwargs,
         )
         if src_attn is not None and hasattr(new_block, "copy_weights"):
             new_block.copy_weights(src_attn)
@@ -247,14 +254,20 @@ def inject_gated_deltanet_block(
                 new_block.deltanet.is_nested_encoder = True
                 layer.attention.self = new_block
             else:
+                new_block.is_nested_encoder = False
+                new_block.deltanet.is_nested_encoder = False
                 layer.attention = new_block
         elif hasattr(layer, "self"):
             new_block.is_nested_encoder = True
             new_block.deltanet.is_nested_encoder = True
             layer.self = new_block
         elif hasattr(layer, "attn"):
+            new_block.is_nested_encoder = False
+            new_block.deltanet.is_nested_encoder = False
             layer.attn = new_block
         elif hasattr(layer, "self_attn"):
+            new_block.is_nested_encoder = False
+            new_block.deltanet.is_nested_encoder = False
             layer.self_attn = new_block
 
         return new_block

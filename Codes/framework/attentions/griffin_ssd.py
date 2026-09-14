@@ -118,8 +118,6 @@ class GriffinSSDBlock(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
 
         def _get(k: str, default: Any = None) -> Any:
             for obj in (comp_config, config, getattr(config, "compression_config", None)):
@@ -169,6 +167,12 @@ class GriffinSSDBlock(BaseAttention):
         resolved_head_dim = _get("head_dim", None)
         if resolved_head_dim is None and old_attn is not None:
             resolved_head_dim = getattr(old_attn, "head_dim", None)
+            if resolved_head_dim is None:
+                for q_cand in ("q_proj", "q_lin", "query", "W_q"):
+                    m = getattr(old_attn, q_cand, None)
+                    if m is not None and hasattr(m, "out_features"):
+                        resolved_head_dim = m.out_features // max(1, self.num_heads)
+                        break
         if resolved_head_dim is None:
             resolved_head_dim = self.dim // max(1, self.num_heads)
         self.head_dim: int = int(resolved_head_dim)
@@ -187,10 +191,26 @@ class GriffinSSDBlock(BaseAttention):
         # Decoder / causal detection
         model_type = str(_get("model_type", "")).lower()
         is_dec = _get("is_decoder", _get("is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+        if any(model_type.startswith(pfx) for pfx in ("gpt", "qwen", "llama", "mistral", "bloom", "opt", "falcon", "codegen")):
+            is_dec = True
+        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
+
+        # Nested encoder detection
+        is_nested = False
+        if old_attn is not None:
+            src_cls = old_attn.__class__.__name__
+            if (
+                src_cls in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+                or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
+                or (hasattr(old_attn, "self") and hasattr(old_attn, "output"))
+            ):
+                is_nested = True
+        if not is_nested and model_type in ["roberta", "bert", "xlm-roberta"] and not self.is_decoder:
+            is_nested = True
+        self.is_nested_encoder: bool = bool(is_nested)
 
         # LoRA setup
         self.lora_rank: int = int(_get("lora_rank", kwargs.get("lora_rank", lora_rank)))
@@ -204,8 +224,8 @@ class GriffinSSDBlock(BaseAttention):
         self.ssd_proj = LoRALinear(self.dim, self.all_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        # Learnable decay gate for global SSD branch
-        self.decay_param = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
+        # Learnable decay gate for global SSD branch (0.0 -> sigmoid(0) = 0.5)
+        self.decay_param = nn.Parameter(torch.zeros(self.num_heads, 1, 1))
 
         self.rotary_emb = getattr(old_attn, "rotary_emb", None) if old_attn is not None else None
         self.comp_config = comp_config
@@ -233,8 +253,7 @@ class GriffinSSDBlock(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
         except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            pass
 
         # 2. GPT-2 Fused c_attn
         if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:
@@ -256,6 +275,7 @@ class GriffinSSDBlock(BaseAttention):
 
         # 3. RoBERTa / BERT Nested
         elif hasattr(old_attn, "self") and hasattr(getattr(old_attn, "self"), "query"):
+            self.is_nested_encoder = True
             s = getattr(old_attn, "self")
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
@@ -332,37 +352,37 @@ class GriffinSSDBlock(BaseAttention):
         decay: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """State-Space Duality (SSD) matrix scan supporting forward and bidirectional mode."""
+        """State-Space Duality (SSD) matrix scan supporting forward causal and bidirectional mode."""
         B, H, L, d = q.shape
 
         log_decay = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))  # [1, H, 1, 1]
         pos = torch.arange(L, device=q.device, dtype=q.dtype)
         pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)  # [L, L]
 
-        # 1. Forward causal decay matrix
-        tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
-        D_causal = torch.exp((pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)) * tril_mask.float()
-
         attn_scores = (q @ k.transpose(-1, -2))  # [B, H, L, L]
 
         if mask is not None:
             mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
             mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)
-            D_causal = D_causal * mask_2d
-
-        y_fwd = (attn_scores * D_causal) @ v  # [B, H, L, d]
+        else:
+            mask_2d = None
 
         if self.is_decoder:
+            # Forward causal decay matrix
+            tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
+            D_causal = torch.exp((pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)) * tril_mask.float()
+            if mask_2d is not None:
+                D_causal = D_causal * mask_2d
+            y_fwd = (attn_scores * D_causal) @ v  # [B, H, L, d]
             return y_fwd, None
-
-        # 2. Backward anticausal decay matrix
-        triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
-        D_anti = torch.exp((-pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)) * triu_mask.float()
-        if mask is not None:
-            D_anti = D_anti * mask_2d
-
-        y_bwd = (attn_scores * D_anti) @ v  # [B, H, L, d]
-        return y_fwd, y_bwd
+        else:
+            # Symmetric distance decay for bidirectional encoders: D_sym(i, j) = exp(|i - j| * log_decay)
+            dist = torch.abs(pos_diff).unsqueeze(0).unsqueeze(0)
+            D_sym = torch.exp((dist * log_decay).clamp(min=-40.0, max=0.0))
+            if mask_2d is not None:
+                D_sym = D_sym * mask_2d
+            y_sym = (attn_scores * D_sym) @ v  # [B, H, L, d]
+            return y_sym, None
 
     def forward(
         self,
@@ -476,7 +496,10 @@ class GriffinSSDBlock(BaseAttention):
 
         # 4. Fused Output
         fused = (local_out + global_out).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-        out = self.out_proj(fused)
+        if self.is_nested_encoder:
+            out = fused
+        else:
+            out = self.out_proj(fused)
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
@@ -487,7 +510,7 @@ class GriffinSSDBlock(BaseAttention):
         if attention_mask is not None and mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        return out * self.output_scale, None
+        return out, None
 
 
 @ATTENTION_REGISTRY.register("griffin_ssd_inject")
@@ -576,19 +599,24 @@ def inject_griffin_ssd(
         )
     except Exception as ex:
         logger.warning("Failed to instantiate GriffinSSDBlock: %s", ex)
-        raise RuntimeError(f"Injection failed")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
+                new_layer.is_nested_encoder = True
                 target.attention.self = new_layer
             else:
+                new_layer.is_nested_encoder = False
                 target.attention = new_layer
         elif hasattr(target, "self"):
+            new_layer.is_nested_encoder = True
             target.self = new_layer
         elif hasattr(target, "attn"):
+            new_layer.is_nested_encoder = False
             target.attn = new_layer
         elif hasattr(target, "self_attn"):
+            new_layer.is_nested_encoder = False
             target.self_attn = new_layer
 
     return new_layer
