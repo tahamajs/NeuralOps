@@ -564,7 +564,7 @@ class ASVDAttention(nn.Module):
 
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         encoder_hidden_states: Optional[torch.Tensor] = None,
@@ -579,6 +579,13 @@ class ASVDAttention(nn.Module):
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         """Forward pass for factorized ASVD attention."""
+        if hidden_states is None:
+            hidden_states = kwargs.get("query", kwargs.get("x", None))
+        if hidden_states is None and len(args) > 0 and isinstance(args[0], torch.Tensor):
+            hidden_states = args[0]
+        if attention_mask is None:
+            attention_mask = kwargs.get("mask", kwargs.get("attn_mask", None))
+
         B, N, D = hidden_states.shape
         H = self.num_heads
         d = self.head_dim
