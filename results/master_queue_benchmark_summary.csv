@@ -59,3 +59,9 @@ flash3,run_all_4_flash3.py,0,278.21,PASS,,2026-09-15T01:02:45.529041
 flash3_fp8,run_all_4_flash3_fp8.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T01:02:45.536210
 flat_llm,run_all_4_flat_llm.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T01:02:45.538368
 fms,run_all_4_fms.py,0,263.34,PASS,,2026-09-15T01:07:08.880734
+frandi,run_all_4_frandi.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T01:07:08.893242
+full,run_all_4_full.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T01:07:08.895367
+fused_svd_kernel,run_all_4_fused_svd_kernel.py,0,370.35,PASS,,2026-09-15T01:13:19.249817
+fusion_attn,run_all_4_fusion_attn.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T01:13:19.254509
+galerkin,run_all_4_galerkin.py,0,187.65,PASS,,2026-09-15T01:16:26.906150
+galerkin_attention,run_all_4_galerkin_attention.py,0,252.33,PASS,,2026-09-15T01:20:39.247719
