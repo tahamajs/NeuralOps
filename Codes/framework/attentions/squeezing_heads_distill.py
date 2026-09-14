@@ -102,8 +102,6 @@ class LoRALinear(nn.Module):
         freeze_base: bool = True,
     ):
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.lora_rank = lora_rank
@@ -141,7 +139,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("squeezing_heads_distiller", supports_causal=True, supports_gqa=True)
@@ -175,9 +173,22 @@ class SqueezingHeadsDistiller(BaseAttention):
             "num_attention_heads",
             _cfg_get(config, "num_heads", kwargs.get("num_attention_heads", 12)),
         ))
-        self.head_dim: int = int(_cfg_get(
-            config, "head_dim", kwargs.get("head_dim", self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
-        ))
+        cfg_hd = _cfg_get(config, "head_dim", None)
+        kw_hd = kwargs.get("head_dim", None)
+        if cfg_hd is not None:
+            self.head_dim = int(cfg_hd)
+        elif kw_hd is not None:
+            self.head_dim = int(kw_hd)
+        elif old_attn is not None:
+            for attr in ("q_proj", "query", "q_lin"):
+                if hasattr(old_attn, attr):
+                    qw = getattr(old_attn, attr).weight
+                    self.head_dim = qw.shape[0] // self.num_heads
+                    break
+            else:
+                self.head_dim = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
+        else:
+            self.head_dim = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
 
         cfg_kv = _cfg_get(
             config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
@@ -196,16 +207,17 @@ class SqueezingHeadsDistiller(BaseAttention):
         self.all_head_size: int = self.q_head_size
 
         # 2. Causal decoder flag detection
+        _mt = str(_cfg_get(config, "model_type", "") or "").lower()
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        self.is_decoder = (
+            bool(_cfg_get(config, "is_decoder", False))
+            or bool(_cfg_get(config, "is_causal", False))
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+            or (old_attn is not None and hasattr(old_attn, "c_attn"))
+            or bool(kwargs.get("is_causal", False))
+        )
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
-        else:
-            self.is_decoder = (
-                bool(_cfg_get(config, "is_decoder", False))
-                or bool(_cfg_get(config, "is_causal", False))
-                or str(_cfg_get(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
-                or (old_attn is not None and hasattr(old_attn, "c_attn"))
-                or bool(kwargs.get("is_causal", False))
-            )
         self.is_causal = self.is_decoder
 
         self.is_nested_encoder: bool = False
