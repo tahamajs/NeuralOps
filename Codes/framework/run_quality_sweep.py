@@ -2190,6 +2190,9 @@ def main():
                         from framework.utils.compat import get_recovery_params
                         trainable = get_recovery_params(model)
                         if trainable:
+                            trainable_ids = {id(p) for p in trainable}
+                            for p in model.parameters():
+                                p.requires_grad = (id(p) in trainable_ids)
                             trainable_recovery_params = sum(p.numel() for p in trainable)
                             had_nan = finetune_lora(
                                 model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
