@@ -471,6 +471,20 @@ def apply_module_to_model(
             except ImportError as e:
                 logger.warning("Could not import attention module '%s': %s", module_name, e)
 
+        # Check if dedicated injector function is registered
+        custom_injector = (
+            ATTENTION_REGISTRY.get(f"inject_{module_name}")
+            or ATTENTION_REGISTRY.get(f"{module_name}_inject")
+            or ATTENTION_REGISTRY.get(f"inject_{module_name}_attention")
+        )
+        if custom_injector is not None and callable(custom_injector):
+            try:
+                res = custom_injector(model=model, rank=rank, copy_weights=True)
+                if res is not None:
+                    return model, 1.0
+            except Exception as e:
+                logger.debug("Dedicated injector %s failed, falling back to inject_attention: %s", custom_injector, e)
+
         if module_name in ATTENTION_REGISTRY:
             inject_attention(model, module_name, rank=rank, copy_weights=True)
         else:

@@ -202,7 +202,7 @@ class SVDMamba(BaseAttention):
         d_model: Optional[int] = None,
         d_state: int = 16,
         d_conv: int = 4,
-        expand: int = 2,
+        expand: int = 1,
         dt_rank: Optional[int] = None,
         global_rank: int = 8,
         lora_rank: int = 16,
@@ -281,7 +281,14 @@ class SVDMamba(BaseAttention):
         # Gating for dynamic aggregation (negative initial bias preserves pretrained attention path)
         self.gating = nn.Linear(self.d_model, self.d_model)
         nn.init.zeros_(self.gating.weight)
-        nn.init.constant_(self.gating.bias, -2.0)
+        nn.init.constant_(self.gating.bias, -7.0)
+
+        # Attention output projection
+        self.attn_out_proj = SVDLinear(
+            self.all_head_size, self.d_model,
+            rank=max(1, min(self.all_head_size, self.d_model) // 4),
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
+        )
 
         # SVD-factorized projections
         self.in_proj = SVDLinear(
@@ -497,13 +504,13 @@ class SVDMamba(BaseAttention):
 
             self.in_proj.decompose_from_weight(in_w, in_b)
 
-            # Out proj
-            if w_o is not None:
-                out_w = w_o[: self.d_model, :]
-                if out_w.shape[1] < self.inner_dim:
-                    n_rep = math.ceil(self.inner_dim / out_w.shape[1])
-                    out_w = out_w.repeat(1, n_rep)[:, : self.inner_dim]
-                self.out_proj.decompose_from_weight(out_w, b_o[: self.d_model] if b_o is not None else None)
+        # Out proj (goes to attn_out_proj)
+        if w_o is not None:
+            out_w = w_o[: self.d_model, : self.all_head_size]
+            if out_w.shape[1] < self.all_head_size:
+                n_rep = math.ceil(self.all_head_size / out_w.shape[1])
+                out_w = out_w.repeat(1, n_rep)[:, : self.all_head_size]
+            self.attn_out_proj.decompose_from_weight(out_w, b_o[: self.d_model] if b_o is not None else None)
 
             # Verify Frobenius norms
             if float(torch.linalg.norm(self.in_proj.weight.float())) < 1e-4:
@@ -581,6 +588,7 @@ class SVDMamba(BaseAttention):
         probs = F.softmax(scores, dim=-1).to(V_attn.dtype)
         probs = torch.nan_to_num(probs, nan=0.0)
         attn_out = torch.matmul(probs, V_attn).transpose(1, 2).contiguous().view(batch, seqlen, self.all_head_size)
+        attn_out = self.attn_out_proj(attn_out)
 
         # ---------------------------------------------------------
         # 2. Selective SSM Path (Bounded FP32 associative update with min=1.0 denominator clamp)
