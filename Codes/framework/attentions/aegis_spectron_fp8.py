@@ -237,7 +237,7 @@ class FactorizedLinear(nn.Module):
         out = self.lin2(self.lin1(x))
         if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
-        return out * self.output_scale
+        return out
 
 
 class SpectronSpectralEntropyRouter(nn.Module):
@@ -768,18 +768,18 @@ class AegisSpectronFP8Attention(BaseAttention):
 
                 # Denominator: cumsum_{j <= t} phi_K_j -> [B, N, rank]
                 K_cumsum = torch.cumsum(phi_K_f, dim=1)
-                den = (phi_Q_f * K_cumsum).sum(dim=-1, keepdim=True).clamp(min=1.0)
+                den = (phi_Q_f * K_cumsum).sum(dim=-1, keepdim=True).clamp(min=1e-4)
 
-                out_lr = (num / den).to(Q.dtype) / math.sqrt(self.config.svd_rank)
+                out_lr = (num / den).to(Q.dtype)
                 return out_lr.view(B, N, h, d).transpose(1, 2)
             else:
                 # True Bidirectional Linear Attention with Normalization (FP32 to prevent FP16 Overflow)
                 KV = torch.matmul(phi_K_f.transpose(-1, -2), V_f)
                 Z = phi_K_f.sum(dim=1, keepdim=True)
                 num = torch.matmul(phi_Q_f, KV)
-                den = torch.matmul(phi_Q_f, Z.transpose(-1, -2)).clamp(min=1.0)
+                den = torch.matmul(phi_Q_f, Z.transpose(-1, -2)).clamp(min=1e-4)
 
-                out_lr = (num / den).to(Q.dtype) / math.sqrt(self.config.svd_rank)
+                out_lr = (num / den).to(Q.dtype)
                 return out_lr.view(B, N, h, d).transpose(1, 2)
 
     def _linear_branch(self, X: torch.Tensor) -> torch.Tensor:
@@ -959,13 +959,18 @@ def inject_aegis_spectron_fp8(
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
+            new_attn.is_nested_encoder = True
             layer.attention.self = new_attn
         else:
+            new_attn.is_nested_encoder = False
             layer.attention = new_attn
     elif hasattr(layer, "self_attn"):
+        new_attn.is_nested_encoder = False
         layer.self_attn = new_attn
     elif hasattr(layer, "self"):
+        new_attn.is_nested_encoder = False
         layer.self = new_attn
     elif hasattr(layer, "attn"):
+        new_attn.is_nested_encoder = False
         layer.attn = new_attn
     return new_attn
