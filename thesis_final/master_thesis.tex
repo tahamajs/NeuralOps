@@ -51,9 +51,8 @@
 \newcommand{\code}[1]{\lr{\texttt{#1}}}
 
 
-\settextfont{X Nazanin}
-\setdigitfont{X Nazanin}
-\DefaultMathsDigits
+\settextfont[Path=/Users/tahamajs/Library/Fonts/,BoldFont={X Nazanin Bold.ttf},ItalicFont={X Nazanin Italic.ttf}]{X Nazanin.ttf}
+\setdigitfont[Path=/Users/tahamajs/Library/Fonts/]{X Nazanin.ttf}
 \setlatintextfont[Scale=0.80]{Times New Roman}
 
 \makeatletter
@@ -386,7 +385,7 @@
 ]
 \node[phase] (p1) {\textbf{گام اول: تزریق درجای ماژول \lr{(Drop-in Injection)}}\\جایگزینی مستقیم لایه توجه بدون ایجاد تغییر در معماری پایه};
 \node[phase, below=of p1] (p2) {\textbf{گام دوم: نگاشت پارامتری تانسورها \lr{(Weight Alignment)}}\\تجزیه مقادیر منفرد \lr{(SVD)} و مقداردهی ماتریس‌های کم‌مرتبه \lr{(LoRA)}};
-\node[phase, below=of p2] (p3) {\textbf{گام سوم: فاز بازیابی سریع \lr{(Recovery Phase)}}\\کالیبراسیون شبکه در ۵۰ الی ۲۵۰ گام با نرخ یادگیری $\lr{1e-4}$};
+\node[phase, below=of p2] (p3) {\textbf{گام سوم: فاز بازیابی سریع \lr{(Recovery Phase)}}\\کالیبراسیون شبکه در ۵۰ الی ۲۵۰ گام با نرخ یادگیری \lr{1e-4}};
 \node[phase, below=of p3] (p4) {\textbf{گام چهارم: پروفایلینگ سخت‌افزاری \lr{(Hardware Profiling)}}\\سنجش اوج مصرف حافظه، توان عملیاتی و ارزیابی دروازه کیفیت \lr{(Quality Gate)}};
 \draw[arrow] (p1) -- (p2);
 \draw[arrow] (p2) -- (p3);
