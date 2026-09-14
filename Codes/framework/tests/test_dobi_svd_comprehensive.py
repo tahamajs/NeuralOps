@@ -66,6 +66,13 @@ def test_dobi_layer_backward_gradients():
 
 def test_dobi_compressor_target_attention_only():
     model = DummyAttentionModel(d=64)
+    # Initialize weights with low-rank structure so SVD reconstruction error is low
+    with torch.no_grad():
+        for mod in (model.query, model.key, model.value, model.out_proj):
+            a = torch.randn(64, 8)
+            b = torch.randn(8, 64)
+            mod.weight.copy_(torch.matmul(a, b))
+
     compressor = DobiSVDCompressor(model, rank=16, target_attention_only=True)
     compressed_model, stats = compressor.compress()
     # Attention projections should be compressed
@@ -97,6 +104,15 @@ def test_dobi_compress_conv1d():
             return self.c_proj(self.c_attn(x))
 
     model = ModelWithConv1D()
+    with torch.no_grad():
+        # Low rank Conv1D weights: rank 8
+        a1 = torch.randn(64, 8)
+        b1 = torch.randn(8, 192)
+        model.c_attn.weight.copy_(torch.matmul(a1, b1))
+        a2 = torch.randn(64, 8)
+        b2 = torch.randn(8, 64)
+        model.c_proj.weight.copy_(torch.matmul(a2, b2))
+
     compressor = DobiSVDCompressor(model, rank=16, target_attention_only=True)
     compressed_model, stats = compressor.compress()
     assert isinstance(compressed_model.c_attn, DobiSVDLinearLayer)
@@ -104,6 +120,15 @@ def test_dobi_compress_conv1d():
     x = torch.randn(2, 8, 64)
     out = compressed_model(x)
     assert out.shape == (2, 8, 64)
+
+
+def test_dobi_fallback_on_high_error():
+    model = DummyAttentionModel(d=64)
+    # With full rank random weights and max_error=0.01, it must fall back to original
+    compressor = DobiSVDCompressor(model, rank=4, max_error=0.01, fallback_to_original=True)
+    compressed_model, stats = compressor.compress()
+    assert not isinstance(compressed_model.query, DobiSVDLinearLayer)
+    assert len(stats["fallback_layers"]) > 0
 
 
 def test_dobi_factory_and_inject():
