@@ -23,3 +23,14 @@ aegis_v4,run_all_4_aegis_v4.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:27:28.52135
 aegis_v4_module,run_all_4_aegis_v4_module.py,0,286.35,PASS,,2026-09-15T02:32:14.873366
 aegis_v5,run_all_4_aegis_v5.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:32:14.907826
 aegis_v5_module,run_all_4_aegis_v5_module.py,0,211.21,PASS,,2026-09-15T02:35:46.125814
+aegis_v6,run_all_4_aegis_v6.py,0,211.25,PASS,,2026-09-15T02:39:17.382393
+armor,run_all_4_armor.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:39:17.393577
+astro,run_all_4_astro.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:39:17.396055
+asvd,run_all_4_asvd.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:39:17.399299
+bam_umoe,run_all_4_bam_umoe.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:39:17.401528
+block_transformer_hiba,run_all_4_block_transformer_hiba.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:39:17.405248
+cachenotes,run_all_4_cachenotes.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:39:17.407313
+chela_slay,run_all_4_chela_slay.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:39:17.410355
+cluster,run_all_4_cluster.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:39:17.413620
+come,run_all_4_come.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T02:39:17.415985
+compressed_attention,run_all_4_compressed_attention.py,0,160.76,PASS,,2026-09-15T02:41:58.175737

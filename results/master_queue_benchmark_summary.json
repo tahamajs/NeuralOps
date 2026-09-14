@@ -214,5 +214,104 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T02:35:46.125814"
+  },
+  {
+    "module": "aegis_v6",
+    "runner": "run_all_4_aegis_v6.py",
+    "exit_code": 0,
+    "elapsed_s": 211.25,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T02:39:17.382393"
+  },
+  {
+    "module": "armor",
+    "runner": "run_all_4_armor.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T02:39:17.393577"
+  },
+  {
+    "module": "astro",
+    "runner": "run_all_4_astro.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T02:39:17.396055"
+  },
+  {
+    "module": "asvd",
+    "runner": "run_all_4_asvd.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T02:39:17.399299"
+  },
+  {
+    "module": "bam_umoe",
+    "runner": "run_all_4_bam_umoe.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T02:39:17.401528"
+  },
+  {
+    "module": "block_transformer_hiba",
+    "runner": "run_all_4_block_transformer_hiba.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T02:39:17.405248"
+  },
+  {
+    "module": "cachenotes",
+    "runner": "run_all_4_cachenotes.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T02:39:17.407313"
+  },
+  {
+    "module": "chela_slay",
+    "runner": "run_all_4_chela_slay.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T02:39:17.410355"
+  },
+  {
+    "module": "cluster",
+    "runner": "run_all_4_cluster.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T02:39:17.413620"
+  },
+  {
+    "module": "come",
+    "runner": "run_all_4_come.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T02:39:17.415985"
+  },
+  {
+    "module": "compressed_attention",
+    "runner": "run_all_4_compressed_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 160.76,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T02:41:58.175737"
   }
 ]

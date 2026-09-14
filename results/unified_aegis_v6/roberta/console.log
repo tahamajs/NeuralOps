@@ -67,3 +67,14 @@ Notes:
 2026-09-15 02:37:30,210 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=1.1950 (bs=8, micro_bs=8)
 2026-09-15 02:37:32,265 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.9349 (bs=8, micro_bs=8)
 2026-09-15 02:37:34,371 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.4971 (bs=8, micro_bs=8)
+2026-09-15 02:37:50,551 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v6\roberta\roberta-base_aegis_v6_full_metrics.json
+2026-09-15 02:37:50,636 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v6\roberta\checkpoints\aegis_v6\weights.pt (module_params=240, lora_params=4)
+2026-09-15 02:37:51,472 [INFO] QwenQualitySweep: [2/2] aegis_v6 -> PASS 59.75% (F1: 0.6648, Peak VRAM: 595.4 MB)
+2026-09-15 02:37:51,472 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v6\roberta\checkpoints\aegis_v6. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 02:37:51,730 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 02:37:51,730 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-15 02:37:51,734 [INFO] QwenQualitySweep: 
+  Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+    full   PASS   78.56% 0.00% (base) 0.8124                  0            1.00x  712.3 MB               4.11              4.72
+aegis_v6   PASS   59.75%      -18.81% 0.6648                  0            1.19x  595.4 MB              15.72             18.02
+2026-09-15 02:37:51,734 [INFO] QwenQualitySweep: ================================================================================
