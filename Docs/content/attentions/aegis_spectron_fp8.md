@@ -178,6 +178,13 @@ Input Activation X [B, N, D]
 
 ## 4. Empirical Benchmark Results & Diagnostic Case Studies
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.94% | **62.50%** | -28.44% | 0.7208 | 1.22x | 0 | [svd-linear-attention-distilbert-sst2-aegis-spectron-fp8](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-aegis-spectron-fp8) | 2026-09-14 |
+
+
 ### 4.1 Unified 4-Model SST-2 Evaluation Benchmark (200 Recovery Steps)
 
 The architecture was evaluated across four representative Transformer families on the SST-2 benchmark under FP16 autocast with functional FP8 quantization:
@@ -1369,4 +1376,3 @@ print('Output logits shape:', outputs.logits.shape)
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
