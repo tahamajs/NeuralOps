@@ -598,14 +598,14 @@ class FusedSVDKernelAttention(BaseAttention):
                 self.is_nested_encoder = True
 
             if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
+            src = old_attn
+            while hasattr(src, "self") and not any(hasattr(src, attr) for attr in ("query", "key", "value", "q_proj", "k_proj", "v_proj")):
                 self.is_nested_encoder = True
-                src = old_attn.self
-                if hasattr(old_attn.output, "dense") and hasattr(old_attn.output.dense, "weight"):
-                    w_o = old_attn.output.dense.weight.data
-                    b_o = getattr(old_attn.output.dense, "bias", None)
-                    b_o = b_o.data if b_o is not None else None
-            else:
-                src = old_attn
+                src = src.self
+            if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense") and hasattr(old_attn.output.dense, "weight"):
+                w_o = old_attn.output.dense.weight.data
+                b_o = getattr(old_attn.output.dense, "bias", None)
+                b_o = b_o.data if b_o is not None else None
 
             # 1. GPT-2 Conv1D fused c_attn & c_proj
             if hasattr(src, "c_attn") and src.c_attn is not None:

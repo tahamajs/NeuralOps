@@ -312,7 +312,13 @@ class SVDLinearAttention(BaseAttention):
 
             if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
                 self.is_nested_encoder = True
-                src = old_attn.self
+                # Unwrap nested encoder modules to find innermost attention
+                src = old_attn
+                while hasattr(src, "self") and not any(
+                    hasattr(src, attr) for attr in ["query", "key", "value", "q_proj", "k_proj", "v_proj"]
+                ):
+                    src = src.self
+                # Copy output projection if available
                 if hasattr(old_attn.output, "dense"):
                     w_o = old_attn.output.dense.weight
                     b_o = old_attn.output.dense.bias
