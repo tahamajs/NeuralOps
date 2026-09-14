@@ -604,3 +604,8 @@ The `FusedSVDLinear` architecture incorporates telemetry hooks for tracking sing
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **gpt2** | sst2 | `PASS` | 79.36% | **60.32%** | -19.04% | 0.6608 | 1.23x | 0 | [svd-linear-attention-gpt2-fused-svd-kernel](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-fused-svd-kernel) | 2026-09-15 |
