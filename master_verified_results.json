@@ -8074,56 +8074,32 @@
       "models": {
         "DistilBERT": {
           "status": "PASS",
-          "accuracy_pct": 81.31,
-          "f1_score": 0.8191,
-          "peak_vram_mb": 282.69,
-          "throughput_tokens_sec": 86194.93,
+          "accuracy_pct": 89.11,
+          "f1_score": 0.8962,
+          "peak_vram_mb": 293.12,
+          "throughput_tokens_sec": 25749.31,
           "source_file": "results/unified_soa_attn/distilbert/summary.csv"
         },
         "GPT-2": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.6748,
-          "peak_vram_mb": 486.24,
-          "throughput_tokens_sec": 42558.25,
+          "status": "PASS",
+          "accuracy_pct": 80.62,
+          "f1_score": 0.8315,
+          "peak_vram_mb": 311.1,
+          "throughput_tokens_sec": 5967.01,
           "source_file": "results/unified_soa_attn/gpt2/summary.csv"
         },
-        "Qwen": {
-          "status": "PASS",
-          "accuracy_pct": 50.34,
-          "f1_score": null,
-          "peak_vram_mb": null,
-          "throughput_tokens_sec": null,
-          "source_file": "results/qwen_sst2_lora_modules/summary.csv"
-        },
         "RoBERTa": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.6748,
-          "peak_vram_mb": 323.6,
-          "throughput_tokens_sec": 60449.91,
+          "status": "PASS",
+          "accuracy_pct": 57.22,
+          "f1_score": 0.696,
+          "peak_vram_mb": 595.15,
+          "throughput_tokens_sec": 11201.26,
           "source_file": "results/unified_soa_attn/roberta/summary.csv"
-        },
-        "BERT": {
-          "status": "PASS",
-          "accuracy_pct": 50.92,
-          "f1_score": 0.3374,
-          "peak_vram_mb": 412.7,
-          "throughput_tokens_sec": 570453.7,
-          "source_file": "results/run_quality_20260828_023053/summary.csv"
-        },
-        "Unknown": {
-          "status": "PASS",
-          "accuracy_pct": 69.13,
-          "f1_score": null,
-          "peak_vram_mb": null,
-          "throughput_tokens_sec": null,
-          "source_file": "results/t5_cola_parallel/summary.csv"
         }
       },
-      "best_accuracy": 81.31,
+      "best_accuracy": 89.11,
       "has_pass": true,
-      "has_pass_low": true,
+      "has_pass_low": false,
       "is_pure_pass": true,
       "overall_status": "PASS"
     },
