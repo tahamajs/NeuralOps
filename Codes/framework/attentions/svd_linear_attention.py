@@ -423,7 +423,6 @@ class SVDLinearAttention(BaseAttention):
         gate_out_dim = self.all_head_size if self.decay_channel_wise else self.num_heads
         self.decay_gate = nn.Linear(self.hidden_size, gate_out_dim, bias=True)
         self.dropout = nn.Dropout(self.dropout_rate)
-        self.output_scale = nn.Parameter(torch.ones(1))  # applied once after out_proj
         self._init_decay_gate()
 
         if old_attn is not None:
@@ -953,9 +952,6 @@ class SVDLinearAttention(BaseAttention):
             output = context
         else:
             output = self.out_proj(context)
-
-        # Apply output_scale ONCE to the final output (not inside each projection)
-        output = output * self.output_scale
 
         if output.shape[-1] != hidden_states.shape[-1]:
             if output.shape[-1] < hidden_states.shape[-1]:
