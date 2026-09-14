@@ -673,7 +673,10 @@ class SVDLinearAttention(BaseAttention):
 
         # Ensure unobserved padding tokens do not decay memory state (lambda = 1.0)
         if mask is not None:
-            lambda_decay = torch.where(mask_expanded > 0, lambda_decay, torch.ones_like(lambda_decay))
+            mask_decay = mask_expanded
+            while mask_decay.dim() < lambda_decay.dim():
+                mask_decay = mask_decay.unsqueeze(-1)
+            lambda_decay = torch.where(mask_decay > 0, lambda_decay, torch.ones_like(lambda_decay))
 
         # O(N) chunk-wise cumulative decay scan for non-streaming batch mode
         if past_state is None and not self.decay_channel_wise:

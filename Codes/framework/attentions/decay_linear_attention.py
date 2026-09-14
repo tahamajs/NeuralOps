@@ -27,6 +27,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -182,31 +183,57 @@ class DecayLinearAttention(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        if d_model is None:
-            if config is not None:
-                d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
-            elif source_attn is not None:
-                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                d_model = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-            else:
-                d_model = kwargs.get("hidden_size", 768)
+        def _cfg_get(k: str, default: Any = None) -> Any:
+            for obj in (config, comp_config):
+                if obj is not None and hasattr(obj, k):
+                    val = getattr(obj, k)
+                    if val is not None:
+                        return val
+            return kwargs.get(k, default)
 
-        if hasattr(d_model, "hidden_size"):
-            d_model = d_model.hidden_size
+        hidden_size = kwargs.get("hidden_size")
+        if hidden_size is None and d_model is not None:
+            hidden_size = d_model
+        if hidden_size is None:
+            hidden_size = _cfg_get("hidden_size", _cfg_get("dim", None))
+            if hidden_size is None and source_attn is not None:
+                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
+                hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
+            elif hidden_size is None:
+                hidden_size = 768
+
+        if hasattr(hidden_size, "hidden_size"):
+            hidden_size = hidden_size.hidden_size
 
         if num_heads is None:
-            if config is not None:
-                num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12))
-            elif source_attn is not None:
+            num_heads = kwargs.get("num_attention_heads")
+        if num_heads is None:
+            num_heads = _cfg_get("num_attention_heads", _cfg_get("num_heads", None))
+            if num_heads is None and source_attn is not None:
                 num_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)))
-            else:
-                num_heads = kwargs.get("num_attention_heads", 12)
+            elif num_heads is None:
+                num_heads = 12
 
         super().__init__(config, rank)
-        self.dim: int = int(d_model)
+        self.dim: int = int(hidden_size)
         self.num_heads: int = int(num_heads)
-        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
-        self.head_dim: int = getattr(config, "head_dim", None) or (self.dim // max(1, self.num_heads))
+
+        resolved_head_dim = _cfg_get("head_dim", None)
+        if resolved_head_dim is None and source_attn is not None:
+            resolved_head_dim = getattr(source_attn, "head_dim", None)
+        if resolved_head_dim is None and source_attn is not None and hasattr(source_attn, "q_proj") and hasattr(source_attn.q_proj, "out_features"):
+            resolved_head_dim = source_attn.q_proj.out_features // max(1, self.num_heads)
+        if resolved_head_dim is None:
+            resolved_head_dim = self.dim // max(1, self.num_heads)
+        self.head_dim: int = int(resolved_head_dim)
+
+        kv_heads = _cfg_get("num_key_value_heads", None)
+        if kv_heads is None and source_attn is not None:
+            kv_heads = getattr(source_attn, "num_key_value_heads", getattr(source_attn, "num_kv_heads", getattr(source_attn, "n_kv_heads", None)))
+            if kv_heads is None and hasattr(source_attn, "k_proj") and hasattr(source_attn.k_proj, "out_features") and self.head_dim > 0:
+                kv_heads = source_attn.k_proj.out_features // self.head_dim
+        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
+
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -216,14 +243,15 @@ class DecayLinearAttention(BaseAttention):
         self.layer_idx: int = int(resolved_layer_id)
 
         # LoRA adaptation configuration
-        self.lora_rank: int = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha: float = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+        self.lora_rank: int = int(_cfg_get("lora_rank", kwargs.get("lora_rank", 16)))
+        self.lora_alpha: float = float(_cfg_get("lora_alpha", kwargs.get("lora_alpha", 32.0)))
         self.freeze_base: bool = (self.lora_rank > 0)
 
         # Decoder & nested encoder detection
-        model_type = getattr(config, "model_type", "").lower()
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False)))
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+        model_type = getattr(config, "model_type", "").lower() if config is not None else ""
+        is_dec = _cfg_get("is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False)))
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "phi", "gemma", "opt", "bloom", "falcon")
+        if any(model_type.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
@@ -231,15 +259,15 @@ class DecayLinearAttention(BaseAttention):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
-        self.is_nested_encoder: bool = False
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
+        self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", False))
 
         # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.k_proj = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.v_proj = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.decay_gate = nn.Linear(self.dim, self.num_heads, bias=True)
-        self.log_decay = nn.Parameter(torch.full((self.num_heads,), -1.5))
+        # Bounded initialization spanning [sigmoid(-0.5), sigmoid(0.0)] = [0.38, 0.50] for head diversity and wide context horizon
+        self.log_decay = nn.Parameter(torch.linspace(-0.5, 0.0, self.num_heads))
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         nn.init.zeros_(self.decay_gate.weight)
@@ -284,22 +312,20 @@ class DecayLinearAttention(BaseAttention):
         if old_attn is None:
             return
 
-        cls_name = old_attn.__class__.__name__
-        has_out_lin = hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj")
-        is_nested = False
+        cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
+        has_out_lin = hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj") or hasattr(old_attn, "dense")
         if (
             hasattr(old_attn, "self")
             and hasattr(getattr(old_attn, "self"), "query")
             and hasattr(old_attn, "output")
             and hasattr(getattr(old_attn, "output"), "dense")
         ):
-            is_nested = True
+            self.is_nested_encoder = True
         elif (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ) and not has_out_lin:
-            is_nested = True
-        self.is_nested_encoder = bool(is_nested)
+            self.is_nested_encoder = True
 
         if hasattr(old_attn, "rotary_emb"):
             self.rotary_emb = old_attn.rotary_emb
@@ -318,8 +344,7 @@ class DecayLinearAttention(BaseAttention):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.debug(f"c_attn_mod.merge failed: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -349,11 +374,13 @@ class DecayLinearAttention(BaseAttention):
             s = getattr(old_attn, "self")
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
-                if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                base_mod = getattr(mod, "base_layer", mod)
+                if base_mod is not None and hasattr(base_mod, "weight"):
+                    extracted[proj_key] = (base_mod.weight.data.clone(), base_mod.bias.data.clone() if getattr(base_mod, "bias", None) is not None else None)
             if hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
                 out_mod = old_attn.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                base_out = getattr(out_mod, "base_layer", out_mod)
+                extracted["o"] = (base_out.weight.data.clone(), base_out.bias.data.clone() if getattr(base_out, "bias", None) is not None else None)
 
         # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
         else:
@@ -361,14 +388,19 @@ class DecayLinearAttention(BaseAttention):
                 "q": ["q_lin", "q_proj", "query", "W_q"],
                 "k": ["k_lin", "k_proj", "key", "W_k"],
                 "v": ["v_lin", "v_proj", "value", "W_v"],
-                "o": ["out_lin", "out_proj", "dense", "o_proj"],
+                "o": ["out_lin", "out_proj", "dense", "o_proj", "c_proj", "wo"],
             }
             for proj_key, names in proj_candidates.items():
                 for name in names:
                     if hasattr(old_attn, name):
                         mod = getattr(old_attn, name)
-                        if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                        base_mod = getattr(mod, "base_layer", mod)
+                        if hasattr(base_mod, "weight"):
+                            w_data = base_mod.weight.data.clone()
+                            if (base_mod.__class__.__name__ == "Conv1D") or hasattr(base_mod, "nf") or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1]):
+                                w_data = w_data.t()
+                            b_data = getattr(base_mod, "bias", None)
+                            extracted[proj_key] = (w_data, b_data.data.clone() if b_data is not None else None)
                             break
 
         # Fallback via UniversalAdapter
@@ -382,8 +414,7 @@ class DecayLinearAttention(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug(f"UniversalAdapter fallback: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -441,24 +472,24 @@ class DecayLinearAttention(BaseAttention):
         lambdas: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
         reverse: bool = False,
+        chunk_size: int = 32,
     ) -> torch.Tensor:
         r"""
-        Vectorized parallel decay scan (O(L) state equivalent, fully parallel tensor ops).
-        Eliminates slow sequential token-by-token Python loops and prevents evaluation timeouts.
+        Numerically stable parallel decay scan with O(1) state per chunk (chunked recurrence).
+        Eliminates quadratic O(L^2) memory footprint and prevents GPU out-of-memory.
         """
         B, H, L, d = q.shape
 
         q_f = q.float()
         k_f = k.float()
         v_f = v.float()
-        lambdas_f = lambdas.float().clamp(min=1e-4, max=1.0 - 1e-4)  # [B, H, L]
+        lambdas_f = lambdas.float().clamp(min=1e-4, max=1.0 - 1e-4)
 
         if mask is not None:
-            m_f = mask.float().unsqueeze(1) if mask.dim() == 2 else mask.float()
-            if m_f.dim() == 4:
-                m_f = (mask > -1000.0).any(dim=1).any(dim=-2).float().unsqueeze(1)
-            k_f = k_f * m_f.unsqueeze(-1)
-            v_f = v_f * m_f.unsqueeze(-1)
+            # mask is [B, L] boolean tensor where True = valid token
+            m_f = mask.float().unsqueeze(1).unsqueeze(-1)  # [B, 1, L, 1]
+            k_f = k_f * m_f
+            v_f = v_f * m_f
 
         if reverse:
             q_f = q_f.flip(dims=[2])
@@ -468,16 +499,92 @@ class DecayLinearAttention(BaseAttention):
 
         log_lambdas = torch.log(lambdas_f)
         cum_log = torch.cumsum(log_lambdas, dim=-1)
-        log_decay = cum_log.unsqueeze(-1) - cum_log.unsqueeze(-2)
-        decay = torch.exp(log_decay.clamp(max=0.0))
 
-        causal_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
-        decay = decay.masked_fill(~causal_mask, 0.0)
+        if L <= chunk_size:
+            log_decay = cum_log.unsqueeze(-1) - cum_log.unsqueeze(-2)
+            decay = torch.exp(log_decay.clamp(max=0.0))
+            causal_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
+            decay = decay.masked_fill(~causal_mask, 0.0)
+            scores = torch.matmul(q_f, k_f.transpose(-1, -2)) * decay
+            num = torch.matmul(scores, v_f)
+            denom = scores.sum(dim=-1, keepdim=True)
+        else:
+            pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+            if pad_len > 0:
+                q_pad = F.pad(q_f, (0, 0, 0, pad_len))
+                k_pad = F.pad(k_f, (0, 0, 0, pad_len))
+                v_pad = F.pad(v_f, (0, 0, 0, pad_len))
+                last_cum = cum_log[:, :, -1:]
+                cum_pad = torch.cat([cum_log, last_cum.expand(-1, -1, pad_len)], dim=-1)
+            else:
+                q_pad, k_pad, v_pad, cum_pad = q_f, k_f, v_f, cum_log
 
-        scores = torch.matmul(q_f, k_f.transpose(-1, -2)) * decay  # [B, H, L, L]
-        num = torch.matmul(scores, v_f)                           # [B, H, L, d]
-        denom = scores.sum(dim=-1, keepdim=True)
-        y = num / denom.clamp(min=1.0)
+            total_L = L + pad_len
+            num_chunks = total_L // chunk_size
+
+            qc = q_pad.view(B, H, num_chunks, chunk_size, d)
+            kc = k_pad.view(B, H, num_chunks, chunk_size, d)
+            vc = v_pad.view(B, H, num_chunks, chunk_size, d)
+            cum_c = cum_pad.view(B, H, num_chunks, chunk_size)
+
+            intra_log_decay = cum_c.unsqueeze(-1) - cum_c.unsqueeze(-2)
+            intra_decay = torch.exp(intra_log_decay.clamp(max=0.0))
+            causal_mask = torch.tril(torch.ones(chunk_size, chunk_size, device=q.device, dtype=torch.bool))
+            intra_decay = intra_decay.masked_fill(~causal_mask, 0.0)
+
+            if pad_len > 0:
+                valid_in_last = chunk_size - pad_len
+                intra_decay[:, :, -1, :, valid_in_last:] = 0.0
+
+            intra_scores = torch.matmul(qc, kc.transpose(-1, -2)) * intra_decay
+            num_intra = torch.matmul(intra_scores, vc)
+            denom_intra = intra_scores.sum(dim=-1, keepdim=True)
+
+            S = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
+            z = torch.zeros(B, H, d, 1, device=q.device, dtype=torch.float32)
+
+            num_list = []
+            denom_list = []
+
+            prev_cum_end = None
+            for c in range(num_chunks):
+                curr_cum = cum_c[:, :, c]
+                if c == 0:
+                    inter_decay = torch.zeros(B, H, chunk_size, 1, device=q.device, dtype=torch.float32)
+                else:
+                    inter_decay = torch.exp((curr_cum - prev_cum_end).clamp(max=0.0)).unsqueeze(-1)
+
+                num_inter = torch.matmul(qc[:, :, c], S) * inter_decay
+                denom_inter = torch.matmul(qc[:, :, c], z) * inter_decay
+
+                num_list.append(num_intra[:, :, c] + num_inter)
+                denom_list.append(denom_intra[:, :, c] + denom_inter)
+
+                cum_end = curr_cum[:, :, -1:]
+                decay_to_end = torch.exp((cum_end - curr_cum).clamp(max=0.0)).unsqueeze(-1)
+
+                k_curr = kc[:, :, c]
+                v_curr = vc[:, :, c]
+                if c == num_chunks - 1 and pad_len > 0:
+                    valid_in_last = chunk_size - pad_len
+                    k_curr = k_curr.clone()
+                    k_curr[:, :, valid_in_last:] = 0.0
+
+                k_to_end = k_curr * decay_to_end
+
+                if c == 0:
+                    decay_prev_to_end = 0.0
+                else:
+                    decay_prev_to_end = torch.exp((cum_end - prev_cum_end).clamp(max=0.0)).unsqueeze(-1)
+
+                S = S * decay_prev_to_end + torch.matmul(k_to_end.transpose(-1, -2), v_curr)
+                z = z * decay_prev_to_end + k_to_end.sum(dim=-2, keepdim=True).transpose(-1, -2)
+                prev_cum_end = cum_end
+
+            num = torch.cat(num_list, dim=2)[:, :, :L, :]
+            denom = torch.cat(denom_list, dim=2)[:, :, :L, :]
+
+        y = num / denom.clamp(min=1e-6)
 
         if reverse:
             y = y.flip(dims=[2])
@@ -544,11 +651,7 @@ class DecayLinearAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
         mask_bool = None
         if eff_mask is not None:
-            if eff_mask.dim() == 2:
-                mask_bool = eff_mask.bool()
-            elif eff_mask.dim() == 4:
-                m_sub = eff_mask > -1000.0 if eff_mask.dtype != torch.bool else eff_mask
-                mask_bool = m_sub.any(dim=1).any(dim=-2).bool()
+            mask_bool = get_token_valid_mask(eff_mask, B, kv_len, hidden_states.device)
 
         # 5. True O(L) Linear Decay Scan
         y_fwd = self._decay_scan_linear(q, k, v, lambdas, mask=mask_bool, reverse=False)
@@ -572,8 +675,7 @@ class DecayLinearAttention(BaseAttention):
         y = torch.nan_to_num(y, nan=0.0)
         out = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        # 7. Output projection with nested encoder bypass
-        out = out * self.output_scale
+        # 7. Output projection with nested encoder bypass (no output_scale)
         if self.is_nested_encoder:
             final_out = out
         else:
@@ -598,13 +700,15 @@ def inject_decay_linear(
 ) -> Optional[DecayLinearAttention]:
     r"""Safe injection hook for DecayLinearAttention."""
     src_attn = old_attn
-    if src_attn is None:
+    if src_attn is None and layer is not None:
         if hasattr(layer, "attention"):
             src_attn = layer.attention
         elif hasattr(layer, "attn"):
             src_attn = layer.attn
         elif hasattr(layer, "self_attn"):
             src_attn = layer.self_attn
+        elif hasattr(layer, "self"):
+            src_attn = layer.self
 
     try:
         new_block = DecayLinearAttention(
@@ -618,12 +722,19 @@ def inject_decay_linear(
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
                 layer.attention.self = new_block
+                new_block.is_nested_encoder = True
             else:
                 layer.attention = new_block
+                new_block.is_nested_encoder = False
         elif hasattr(layer, "attn"):
             layer.attn = new_block
+            new_block.is_nested_encoder = False
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_block
+            new_block.is_nested_encoder = False
+        elif hasattr(layer, "self"):
+            layer.self = new_block
+            new_block.is_nested_encoder = True
         return new_block
     except Exception as e:
         logger.error("Failed to inject DecayLinearAttention at layer %d: %s", layer_idx, e)
