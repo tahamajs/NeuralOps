@@ -1141,6 +1141,15 @@ def main():
         torch.cuda.manual_seed_all(args.seed)
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+        try:
+            free_bytes, total_bytes = torch.cuda.mem_get_info()
+            free_gb = free_bytes / (1024 ** 3)
+            total_gb = total_bytes / (1024 ** 3)
+            LOG.info("GPU VRAM: %.2f GB free / %.2f GB total on %s", free_gb, total_gb, torch.cuda.get_device_name())
+            if free_gb < 4.0:
+                LOG.warning("LOW GPU MEMORY: Only %.2f GB VRAM available (< 4.0 GB). High risk of CUDA OOM.", free_gb)
+        except Exception as mem_err:
+            LOG.debug("Could not query GPU memory info: %s", mem_err)
     if args.output_dir is None:
         safe_model = Path(args.model).name.replace("-", "_").lower()
         args.output_dir = f"D:/SVD_Project/results/{safe_model}_{args.dataset}_sweep"
@@ -2487,7 +2496,11 @@ def main():
                 except Exception as export_exc:
                     LOG.warning("Automated export exception for %s: %s", name, export_exc)
 
-        del model; gc.collect(); torch.cuda.empty_cache()
+        del model
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
 
     # -------------------------------------------------------------------------
     # Final Compact Summary Table

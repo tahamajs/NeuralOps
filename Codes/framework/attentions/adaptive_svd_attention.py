@@ -46,8 +46,6 @@ class AdaptiveSVDLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features: int = in_features
         self.out_features: int = out_features
         max_possible_rank = min(in_features, out_features)
@@ -148,7 +146,7 @@ class AdaptiveSVDLinear(nn.Module):
             out = out + F.linear(Ax, self.lora_B)
         if self.bias is not None:
             out = out + self.bias
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("adaptive_svd_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -174,16 +172,13 @@ class AdaptiveSVDAttention(BaseAttention):
         super().__init__(config, **kwargs)
         if config is not None:
             self.adapter = ModelAdapter(config)
-            self.num_heads = kwargs.get("num_heads", self.adapter.num_heads or 12)
-            self.num_kv_heads = kwargs.get("num_kv_heads", self.adapter.num_key_value_heads or self.num_heads)
-            self.hidden_size = kwargs.get("hidden_size", self.adapter.hidden_size or 768)
-            self.head_dim = kwargs.get("head_dim", self.adapter.head_dim or (self.hidden_size // max(1, self.num_heads)))
-            self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+            self.num_heads = kwargs.get("num_heads", getattr(self.adapter, "num_heads", None) or getattr(config, "num_attention_heads", 12))
+            self.num_kv_heads = kwargs.get("num_kv_heads", getattr(self.adapter, "num_key_value_heads", None) or getattr(config, "num_key_value_heads", self.num_heads))
+            self.hidden_size = kwargs.get("hidden_size", getattr(self.adapter, "hidden_size", None) or getattr(config, "hidden_size", 768))
             self.svd_rank = getattr(config, "svd_rank", svd_rank if svd_rank is not None else getattr(config, "rank", 32))
             self.residual_rank = getattr(config, "residual_rank", residual_rank)
             self.energy_threshold = float(getattr(config, "energy_threshold", kwargs.get("energy_threshold", energy_threshold)))
             dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
-            self.is_decoder = getattr(config, "is_decoder", False)
             self.relative_attention_num_buckets = getattr(config, "relative_attention_num_buckets", 32)
             self.relative_attention_max_distance = getattr(config, "relative_attention_max_distance", 128)
         else:
@@ -191,15 +186,59 @@ class AdaptiveSVDAttention(BaseAttention):
             self.hidden_size = kwargs.get("hidden_size", 768)
             self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
             self.num_kv_heads = kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads))
-            self.head_dim = kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads))
-            self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
             self.svd_rank = svd_rank if svd_rank is not None else kwargs.get("rank", 32)
             self.residual_rank = residual_rank
             self.energy_threshold = float(kwargs.get("energy_threshold", energy_threshold))
             dropout_p = kwargs.get("dropout", 0.1)
-            self.is_decoder = kwargs.get("is_decoder", False)
             self.relative_attention_num_buckets = 32
             self.relative_attention_max_distance = 128
+
+        self.num_heads = int(self.num_heads or 12)
+        self.num_kv_heads = int(self.num_kv_heads or self.num_heads)
+        self.hidden_size = int(self.hidden_size or 768)
+
+        # Robust head_dim resolution: check source weight first
+        head_dim = kwargs.get("head_dim", None)
+        if not head_dim and pretrained_attn is not None:
+            for attr in ("q_proj", "query", "q_lin"):
+                mod = getattr(pretrained_attn, attr, None)
+                if mod is not None and hasattr(mod, "weight") and mod.weight is not None:
+                    if mod.weight.ndim == 2:
+                        head_dim = mod.weight.shape[0] // max(1, self.num_heads)
+                        break
+            if not head_dim:
+                head_dim = getattr(pretrained_attn, "head_dim", None)
+
+        if not head_dim and config is not None:
+            head_dim = getattr(config, "head_dim", None)
+            if not head_dim and self.adapter is not None:
+                head_dim = getattr(self.adapter, "head_dim", None)
+
+        if not head_dim or head_dim <= 0:
+            head_dim = self.hidden_size // max(1, self.num_heads)
+
+        self.head_dim = int(head_dim)
+        self.all_head_size = self.num_heads * self.head_dim
+        self.kv_head_size = self.num_kv_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+
+        # Robust is_decoder detection with prefix matching
+        _mt = str(getattr(config, "model_type", "") or "").lower() if config else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
+                             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        is_dec = (
+            getattr(config, "is_decoder", False)
+            or getattr(config, "is_causal", False)
+            or getattr(config, "causal", False)
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+            or (pretrained_attn is not None and hasattr(pretrained_attn, "c_attn"))
+            or (pretrained_attn is not None and getattr(pretrained_attn, "is_causal", False))
+            or (pretrained_attn is not None and getattr(pretrained_attn, "is_decoder", False))
+            or bool(kwargs.get("is_decoder", False))
+            or bool(kwargs.get("is_causal", False))
+        )
+        self.is_decoder = bool(is_dec)
+        self.is_causal = bool(is_dec)
 
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
@@ -243,7 +282,6 @@ class AdaptiveSVDAttention(BaseAttention):
         self.dense = self.out_proj
         self.o_proj = self.out_proj
         self.c_proj = self.out_proj
-        self.output_scale = nn.Parameter(torch.ones(1))
 
         self.dropout = nn.Dropout(dropout_p)
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
@@ -342,9 +380,8 @@ class AdaptiveSVDAttention(BaseAttention):
             w, b = None, None
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
             if w is None:
                 # Manual fallback for GPT-2 Fused c_attn Conv1D
@@ -537,7 +574,18 @@ class AdaptiveSVDAttention(BaseAttention):
             scores = apply_attention_mask(scores, mask)
 
         # Explicit Causal Masking for autoregressive decoders
-        if self.is_decoder or getattr(self.config, "is_decoder", False) or getattr(self.config, "model_type", "") == "gpt2":
+        _cfg = self.config
+        _mt = str(getattr(_cfg, "model_type", "") or "").lower() if _cfg else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
+                             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        is_causal = (
+            self.is_decoder
+            or (_cfg is not None and getattr(_cfg, "is_decoder", False))
+            or (_cfg is not None and getattr(_cfg, "is_causal", False))
+            or (_cfg is not None and getattr(_cfg, "causal", False))
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+        )
+        if is_causal:
             causal_tril = torch.tril(torch.ones((N_q, N_k), device=hidden_states.device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(~causal_tril, -10000.0)
 
@@ -561,8 +609,8 @@ class AdaptiveSVDAttention(BaseAttention):
             output = self.out_proj(context)
 
         if position_bias is not None:
-            return output * self.output_scale, position_bias
-        return output * self.output_scale, attn_weights if output_attentions else None
+            return output, position_bias
+        return output, attn_weights if output_attentions else None
 
 
 
@@ -577,30 +625,43 @@ def inject_adaptive_svd(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[AdaptiveSVDAttention]:
+    if old_attn is None and layer is not None:
+        for attr in ("attention", "self_attn", "self", "attn"):
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if cand is not None:
+                    if hasattr(cand, "self"):
+                        old_attn = cand.self
+                    else:
+                        old_attn = cand
+                    break
+
     if model_config is None and layer is not None:
         model_config = getattr(layer, "config", None)
     if model_config is None and old_attn is not None:
         model_config = getattr(old_attn, "config", None)
     if model_config is None:
-        hidden_size = getattr(layer, "hidden_size", getattr(old_attn, "hidden_size", 64))
-        num_heads = getattr(
-            layer,
-            "num_attention_heads",
-            getattr(
-                layer,
-                "num_heads",
-                getattr(
-                    old_attn,
-                    "num_attention_heads",
-                    getattr(old_attn, "num_heads", 4),
-                ),
-            ),
+        hidden_size = getattr(layer, "hidden_size", getattr(old_attn, "hidden_size", None))
+        if not hidden_size and old_attn is not None:
+            for attr in ("query", "q_proj", "q_lin", "c_attn"):
+                mod = getattr(old_attn, attr, None)
+                if mod is not None and hasattr(mod, "in_features"):
+                    hidden_size = mod.in_features
+                    break
+        if not hidden_size and old_attn is not None:
+            hidden_size = getattr(old_attn, "all_head_size", getattr(old_attn, "embed_dim", None))
+        hidden_size = int(hidden_size or 768)
+
+        num_heads = (
+            getattr(layer, "num_attention_heads", None)
+            or getattr(layer, "num_heads", None)
+            or getattr(old_attn, "num_attention_heads", None)
+            or getattr(old_attn, "num_heads", None)
+            or getattr(old_attn, "n_heads", None)
+            or 12
         )
-        head_dim = getattr(
-            layer,
-            "head_dim",
-            getattr(old_attn, "head_dim", hidden_size // max(1, num_heads)),
-        )
+        num_heads = int(num_heads or 12)
+        head_dim = getattr(layer, "head_dim", getattr(old_attn, "head_dim", hidden_size // max(1, num_heads)))
         model_config = type(
             "Config",
             (),
@@ -617,14 +678,6 @@ def inject_adaptive_svd(
                 "dropout": 0.1,
             },
         )()
-
-    if old_attn is None and layer is not None:
-        for attr in ("attention", "self_attn", "self", "attn"):
-            if hasattr(layer, attr):
-                cand = getattr(layer, attr)
-                if cand is not None:
-                    old_attn = cand
-                    break
 
     try:
         svd_rank = getattr(
@@ -649,46 +702,33 @@ def inject_adaptive_svd(
                 **kwargs,
             )
         except Exception:
-            raise RuntimeError("copy_weights failed")
+            return None
 
         if layer is not None:
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
+                    test_module.is_nested_encoder = True
                     layer.attention.self = test_module
                 else:
+                    test_module.is_nested_encoder = False
                     layer.attention = test_module
             elif hasattr(layer, "self_attn"):
+                test_module.is_nested_encoder = False
+                test_module.is_decoder = True
+                test_module.is_causal = True
                 layer.self_attn = test_module
-            elif hasattr(layer, 'attention'):
-
-                if hasattr(layer.attention, 'self'):
-
-                    layer.attention.self = test_module
-
-                else:
-
-                    if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-                        layer.attention.self = test_module
-                    else:
-                        layer.attention = test_module
-
-            elif hasattr(layer, 'self'):
-
+            elif hasattr(layer, "attn"):
+                test_module.is_nested_encoder = False
+                test_module.is_decoder = True
+                test_module.is_causal = True
+                layer.attn = test_module
+            elif hasattr(layer, "self"):
+                test_module.is_nested_encoder = True
                 layer.self = test_module
 
-            elif hasattr(layer, 'attn'):
-
-                layer.attn = test_module
-
-            else:
-
-                if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-                    layer.attention.self = test_module
-                else:
-                    layer.attention = test_module
         return test_module
     except Exception:
-        raise RuntimeError("copy_weights failed")
+        return None
 
 
 

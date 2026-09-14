@@ -129,3 +129,41 @@ def test_hgrn2_layer_inject_safe():
     x = torch.randn(2, 8, 64)
     out, _ = layer.attention(x)
     assert out.shape == (2, 8, 64)
+
+
+def test_hgrn2_layer_gates_trainable_after_copy():
+    cfg = MockConfig()
+    old_attn = DummyDistilBertAttention(64)
+    layer = HGRN2Layer(config=cfg, d_model=64, old_attn=old_attn, freeze_base=True)
+    assert layer.forget_gate.weight.requires_grad is True
+    assert layer.forget_gate.bias.requires_grad is True
+    assert layer.input_gate.weight.requires_grad is True
+    assert layer.input_gate.bias.requires_grad is True
+    assert layer.g_proj.weight.requires_grad is True
+    assert layer.v_proj.weight.requires_grad is False
+    assert layer.out_proj.weight.requires_grad is False
+
+
+def test_hgrn2_layer_backward_nested_and_decoder():
+    # Test nested encoder (RoBERTa)
+    cfg_nested = MockConfig(model_type="roberta")
+    old_roberta = DummyRobertaAttention(64)
+    layer_nested = HGRN2Layer(config=cfg_nested, d_model=64, old_attn=old_roberta)
+    x = torch.randn(2, 8, 64, requires_grad=True)
+    out, _ = layer_nested(x)
+    loss = out.sum()
+    loss.backward()
+    assert layer_nested.forget_gate.weight.grad is not None
+    assert layer_nested.v_lora_A.grad is not None
+
+    # Test decoder (GPT-2)
+    cfg_dec = MockConfig(is_decoder=True, model_type="gpt2")
+    old_gpt = DummyGPT2Attention(64)
+    layer_dec = HGRN2Layer(config=cfg_dec, d_model=64, old_attn=old_gpt)
+    x = torch.randn(2, 8, 64, requires_grad=True)
+    out, _ = layer_dec(x)
+    loss = out.sum()
+    loss.backward()
+    assert layer_dec.forget_gate.weight.grad is not None
+    assert layer_dec.v_lora_A.grad is not None
+    assert layer_dec.out_lora_A.grad is not None
