@@ -100,8 +100,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -162,7 +160,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("cosformer", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -250,7 +248,8 @@ class CosformerAttention(BaseAttention):
         # Decoder & nested encoder detection
         model_type = getattr(config, "model_type", "").lower() if config is not None else ""
         is_dec = _cfg_get("is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False)))
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "phi", "gemma", "opt", "bloom", "falcon")
+        if any(model_type.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
@@ -258,9 +257,10 @@ class CosformerAttention(BaseAttention):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
-        self.is_nested_encoder: bool = False
+        self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", False))
 
-        self.tau = nn.Parameter(torch.tensor(float(self.head_dim) ** 0.5))
+        # Temperature scaling parameter (fixed to 1.0 to preserve ELU+1 kernel expressivity)
+        self.tau = nn.Parameter(torch.tensor(1.0), requires_grad=False)
 
         # Multi-head projections equipped with LoRA adapters
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
@@ -334,8 +334,7 @@ class CosformerAttention(BaseAttention):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.debug(f"c_attn_mod.merge failed: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -526,14 +525,13 @@ class CosformerAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        # 4. Non-negative kernel activation with temperature scaling (in FP32 for numerical stability)
-        tau = torch.clamp(self.tau, min=0.1)
+        # 4. Non-negative kernel activation (in FP32 for numerical stability, without tau collapse)
         if self.act_fun == "softplus":
-            Q = F.softplus(Q.float() / tau)
-            K = F.softplus(K.float() / tau)
+            Q = F.softplus(Q.float())
+            K = F.softplus(K.float())
         else:
-            Q = F.elu(Q.float() / tau) + 1.0
-            K = F.elu(K.float() / tau) + 1.0
+            Q = F.elu(Q.float()) + 1.0
+            K = F.elu(K.float()) + 1.0
         V = V.float()
 
         # 5. Complete token valid mask applied to both K and V
@@ -553,30 +551,80 @@ class CosformerAttention(BaseAttention):
         K_cos = K * cos_w_k
         K_sin = K * sin_w_k
 
-        # 7. Linear attention computation (Causal Prefix-Sum vs Bidirectional Associative)
+        # 7. Linear attention computation (Causal Chunked-Prefix-Sum vs Bidirectional Associative)
         if self.is_decoder and not is_cross_attention and N == kv_len:
-            # Strictly causal linear attention via cumulative sums (prefix sums)
-            # Outer products: [B, H, N, d, d]
-            outer_cos = K_cos.unsqueeze(-1) * V.unsqueeze(-2)
-            outer_sin = K_sin.unsqueeze(-1) * V.unsqueeze(-2)
+            # Strictly causal linear attention via chunked associative recurrence (eliminating [B, H, N, d, d] allocations)
+            chunk_size = 32
+            if N <= chunk_size:
+                causal_mask = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
+                score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2)).masked_fill(~causal_mask, 0.0)
+                score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2)).masked_fill(~causal_mask, 0.0)
+                scores = score_c + score_s
+                num = torch.matmul(scores, V)
+                denom = score_c.sum(dim=-1, keepdim=True) + score_s.sum(dim=-1, keepdim=True) + self.eps
+                context = (num / denom.clamp(min=self.eps)).to(dtype)
+            else:
+                pad_len = (chunk_size - (N % chunk_size)) % chunk_size
+                if pad_len > 0:
+                    Q_c_pad = F.pad(Q_cos, (0, 0, 0, pad_len))
+                    Q_s_pad = F.pad(Q_sin, (0, 0, 0, pad_len))
+                    K_c_pad = F.pad(K_cos, (0, 0, 0, pad_len))
+                    K_s_pad = F.pad(K_sin, (0, 0, 0, pad_len))
+                    V_pad = F.pad(V, (0, 0, 0, pad_len))
+                else:
+                    Q_c_pad, Q_s_pad, K_c_pad, K_s_pad, V_pad = Q_cos, Q_sin, K_cos, K_sin, V
 
-            S_cos = torch.cumsum(outer_cos, dim=2)  # [B, H, N, d, d]
-            S_sin = torch.cumsum(outer_sin, dim=2)  # [B, H, N, d, d]
+                total_N = N + pad_len
+                num_chunks = total_N // chunk_size
 
-            Z_cos = torch.cumsum(K_cos, dim=2)      # [B, H, N, d]
-            Z_sin = torch.cumsum(K_sin, dim=2)      # [B, H, N, d]
+                qc_c = Q_c_pad.view(B, H, num_chunks, chunk_size, d)
+                qs_c = Q_s_pad.view(B, H, num_chunks, chunk_size, d)
+                kc_c = K_c_pad.view(B, H, num_chunks, chunk_size, d)
+                ks_c = K_s_pad.view(B, H, num_chunks, chunk_size, d)
+                v_c = V_pad.view(B, H, num_chunks, chunk_size, d)
 
-            # Numerator: (Q_cos @ S_cos) + (Q_sin @ S_sin)
-            num_cos = torch.matmul(Q_cos.unsqueeze(-2), S_cos).squeeze(-2)  # [B, H, N, d]
-            num_sin = torch.matmul(Q_sin.unsqueeze(-2), S_sin).squeeze(-2)  # [B, H, N, d]
-            num = num_cos + num_sin
+                causal_mask = torch.tril(torch.ones(chunk_size, chunk_size, device=device, dtype=torch.bool))
 
-            # Denominator: (Q_cos * Z_cos).sum(-1) + (Q_sin * Z_sin).sum(-1) + eps
-            denom_cos = (Q_cos * Z_cos).sum(dim=-1, keepdim=True)
-            denom_sin = (Q_sin * Z_sin).sum(dim=-1, keepdim=True)
-            denom = denom_cos + denom_sin + self.eps
+                score_c = torch.matmul(qc_c, kc_c.transpose(-1, -2)).masked_fill(~causal_mask, 0.0)
+                score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2)).masked_fill(~causal_mask, 0.0)
+                scores = score_c + score_s
 
-            context = (num / denom.clamp(min=1.0)).to(dtype)
+                num_intra = torch.matmul(scores, v_c)
+                denom_intra = score_c.sum(dim=-1, keepdim=True) + score_s.sum(dim=-1, keepdim=True)
+
+                S_cos = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+                S_sin = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+                Z_cos = torch.zeros(B, H, d, 1, device=device, dtype=torch.float32)
+                Z_sin = torch.zeros(B, H, d, 1, device=device, dtype=torch.float32)
+
+                num_list = []
+                denom_list = []
+
+                for c in range(num_chunks):
+                    num_inter = torch.matmul(qc_c[:, :, c], S_cos) + torch.matmul(qs_c[:, :, c], S_sin)
+                    denom_inter = torch.matmul(qc_c[:, :, c], Z_cos) + torch.matmul(qs_c[:, :, c], Z_sin)
+
+                    num_list.append(num_intra[:, :, c] + num_inter)
+                    denom_list.append(denom_intra[:, :, c] + denom_inter)
+
+                    kc_curr = kc_c[:, :, c]
+                    ks_curr = ks_c[:, :, c]
+                    v_curr = v_c[:, :, c]
+                    if c == num_chunks - 1 and pad_len > 0:
+                        valid = chunk_size - pad_len
+                        kc_curr = kc_curr.clone()
+                        ks_curr = ks_curr.clone()
+                        kc_curr[:, :, valid:] = 0.0
+                        ks_curr[:, :, valid:] = 0.0
+
+                    S_cos = S_cos + torch.matmul(kc_curr.transpose(-1, -2), v_curr)
+                    S_sin = S_sin + torch.matmul(ks_curr.transpose(-1, -2), v_curr)
+                    Z_cos = Z_cos + kc_curr.sum(dim=-2, keepdim=True).transpose(-1, -2)
+                    Z_sin = Z_sin + ks_curr.sum(dim=-2, keepdim=True).transpose(-1, -2)
+
+                num = torch.cat(num_list, dim=2)[:, :, :N, :]
+                denom = torch.cat(denom_list, dim=2)[:, :, :N, :]
+                context = (num / (denom + self.eps).clamp(min=self.eps)).to(dtype)
         else:
             # Global bidirectional associative accumulation
             # KV_cos: [B, H, d, d], KV_sin: [B, H, d, d]
@@ -589,7 +637,7 @@ class CosformerAttention(BaseAttention):
             num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)  # [B, H, N, d]
             denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1)) + torch.matmul(Q_sin, Z_sin.transpose(-2, -1)) + self.eps
 
-            context = (num / denom.clamp(min=1.0)).to(dtype)
+            context = (num / denom.clamp(min=self.eps)).to(dtype)
 
         # 8. Head mask handling
         if head_mask is not None:
@@ -667,12 +715,16 @@ def inject_cosformer(
                 new_attn.is_nested_encoder = True
             else:
                 layer.attention = new_attn
+                new_attn.is_nested_encoder = False
         elif hasattr(layer, "attn"):
             layer.attn = new_attn
+            new_attn.is_nested_encoder = False
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_attn
+            new_attn.is_nested_encoder = False
         elif hasattr(layer, "self"):
             layer.self = new_attn
+            new_attn.is_nested_encoder = True
         return new_attn
     except Exception as e:
         logger.error(f"Cosformer copy_weights failed: {e}")
