@@ -34,10 +34,11 @@ except Exception:
     class Mamba(nn.Module):
         def __init__(self, d_model: int = 768, **kwargs: Any) -> None:
             super().__init__()
-            if not hasattr(self, 'output_scale'):
-                self.output_scale = nn.Parameter(torch.ones(1))
             self.in_proj = nn.Linear(d_model, 2 * d_model)
             self.out_proj = nn.Linear(d_model, d_model)
+            nn.init.zeros_(self.out_proj.weight)
+            if self.out_proj.bias is not None:
+                nn.init.zeros_(self.out_proj.bias)
         def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
             x1, x2 = self.in_proj(x).chunk(2, dim=-1)
             y = F.silu(x1) * x2
@@ -126,7 +127,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -181,7 +181,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @dataclass
@@ -199,7 +199,6 @@ class SpectralMambaConfig:
 class SpectralMamba(nn.Module):
     def __init__(self, d_model: int = 768, d_state: int = 16, **kwargs: Any) -> None:
         super().__init__()
-        self.output_scale = nn.Parameter(torch.ones(1))
         self.d_model = d_model
         self.mamba = Mamba(d_model)
         self.dt_scale = nn.Parameter(torch.zeros(d_model))
@@ -209,7 +208,7 @@ class SpectralMamba(nn.Module):
         while isinstance(out, (tuple, list)):
             out = out[0]
         gate = torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
-        return out * self.output_scale * gate
+        return out * gate
 
 
 @ATTENTION_REGISTRY.register("spectral_mamba")
@@ -669,33 +668,20 @@ def inject_spectral_mamba(
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
                     layer.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
                 else:
                     layer.attention = new_attn
-            elif hasattr(layer, 'attention'):
-
-                if hasattr(layer.attention, 'self'):
-
-                    layer.attention.self = new_attn
-
-                else:
-
-                    if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-                        layer.attention.self = new_attn
-                    else:
-                        layer.attention = new_attn
-
             elif hasattr(layer, 'self'):
-
                 layer.self = new_attn
-
+                new_attn.is_nested_encoder = True
             elif hasattr(layer, 'attn'):
-
                 layer.attn = new_attn
-
+            elif hasattr(layer, 'self_attn'):
+                layer.self_attn = new_attn
             else:
-
                 if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
                     layer.attention.self = new_attn
+                    new_attn.is_nested_encoder = True
                 else:
                     layer.attention = new_attn
         return new_attn
