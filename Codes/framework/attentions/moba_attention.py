@@ -563,6 +563,9 @@ class MoBAAttention(BaseAttention):
         else:
             final_out = self.out_proj(out)
 
+        # Apply output_scale ONCE to the final output (not inside Q/K/V/O projections)
+        final_out = final_out * self.output_scale
+
         return final_out, None
 
 
