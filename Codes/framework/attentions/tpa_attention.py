@@ -273,6 +273,7 @@ class TPAttention(BaseAttention):
             self.is_decoder = bool(kwargs.get("is_decoder", False))
 
         self.is_nested_encoder: bool = False
+        self.gradient_checkpointing: bool = bool(kwargs.get("gradient_checkpointing", True))
 
         target_dtype = kwargs.get("dtype", None)
         if target_dtype is None and src is not None:
@@ -437,11 +438,44 @@ class TPAttention(BaseAttention):
                     f"TPAttention: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
 
-            # Orthogonal initialization for Q and K factor pairs across ALL hidden features
             def _init_tp(W: torch.Tensor, proj1: LoRALinear, proj2: LoRALinear, num_h: int, r: int, src_sub=None) -> None:
-                # Option B: Initialize proj1 and proj2 with orthogonal weights to preserve full dimensional variance
-                nn.init.orthogonal_(proj1.weight)
-                nn.init.orthogonal_(proj2.weight)
+                import gc
+                W_f = W.detach().float().cpu()
+                U = S = Vt = None
+                S_sqrt = p1 = p2 = None
+                try:
+                    U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
+                    eff_r = min(num_h * r, U.size(1), Vt.size(0))
+                    S_sqrt = torch.sqrt(S[:eff_r].clamp(min=1e-6))
+                    p1 = U[:num_h * r, :eff_r] * S_sqrt.unsqueeze(0)
+                    p2 = S_sqrt.unsqueeze(1) * Vt[:eff_r, :]
+
+                    proj1.weight.data.zero_()
+                    proj2.weight.data.zero_()
+                    min_p1_0 = min(proj1.weight.shape[0], p1.size(0))
+                    min_p1_1 = min(proj1.weight.shape[1], p1.size(1))
+                    proj1.weight.data[:min_p1_0, :min_p1_1].copy_(
+                        p1[:min_p1_0, :min_p1_1].to(proj1.weight.dtype)
+                    )
+                    min_p2_0 = min(proj2.weight.shape[0], p2.size(0))
+                    min_p2_1 = min(proj2.weight.shape[1], p2.size(1))
+                    proj2.weight.data[:min_p2_0, :min_p2_1].copy_(
+                        p2[:min_p2_0, :min_p2_1].to(proj2.weight.dtype)
+                    )
+                except Exception:
+                    nn.init.orthogonal_(proj1.weight)
+                    nn.init.orthogonal_(proj2.weight)
+                finally:
+                    del W_f, U, S, Vt, S_sqrt, p1, p2
+                    gc.collect()
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+
+                if float(torch.linalg.norm(proj1.weight)) < 1e-4:
+                    nn.init.orthogonal_(proj1.weight)
+                if float(torch.linalg.norm(proj2.weight)) < 1e-4:
+                    nn.init.orthogonal_(proj2.weight)
+
                 if proj1.bias is not None:
                     proj1.bias.zero_()
                 if proj2.bias is not None:
@@ -538,18 +572,32 @@ class TPAttention(BaseAttention):
         B, L, D = hidden_states.shape
         H, H_kv, r, hd = self.num_heads, self.num_kv_heads, self.rank, self.head_dim
 
+        # Projections
         q1 = self.q_proj1(hidden_states).view(B, L, H, r)
         q2 = self.q_proj2(hidden_states).view(B, L, H, r)
         k1 = self.k_proj1(hidden_states).view(B, L, H_kv, r)
         k2 = self.k_proj2(hidden_states).view(B, L, H_kv, r)
         v = self.v_proj(hidden_states).view(B, L, H_kv, hd)
 
-        # 1. Efficient broadcasting instead of einsum & contiguous transpose
-        Q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).view(B, L, H, r * r)
-        K = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).view(B, L, H_kv, r * r)
+        # Tensor product with optional gradient checkpointing
+        def _tp(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+            return (a.unsqueeze(-1) * b.unsqueeze(-2)).flatten(-2, -1)
+
+        if self.training and getattr(self, "gradient_checkpointing", True):
+            from torch.utils.checkpoint import checkpoint
+            Q = checkpoint(_tp, q1, q2, use_reentrant=False)
+            K = checkpoint(_tp, k1, k2, use_reentrant=False)
+        else:
+            Q = _tp(q1, q2)
+            K = _tp(k1, k2)
+
+        # Free intermediate projection tensors immediately
+        del q1, q2, k1, k2
+
         if self.qk_proj is not None:
             Q = self.qk_proj(Q)
             K = self.qk_proj(K)
+
         Q = Q.transpose(1, 2)
         K = K.transpose(1, 2)
         v = v.transpose(1, 2)
@@ -582,26 +630,40 @@ class TPAttention(BaseAttention):
                 elif custom_mask.dim() == 3:
                     custom_mask = custom_mask.unsqueeze(1)
 
+        # SDPA (no .contiguous() calls to avoid memory duplication)
         if not output_attentions and head_mask is None:
-            if HAS_SDPA_KERNEL:
-                with sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.MATH, SDPBackend.EFFICIENT_ATTENTION]):
+            try:
+                from torch.nn.attention import sdpa_kernel, SDPBackend
+                with sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION]):
                     context = F.scaled_dot_product_attention(
-                        query=Q.contiguous(),
-                        key=K.contiguous(),
-                        value=v.contiguous(),
+                        query=Q,
+                        key=K,
+                        value=v,
                         attn_mask=custom_mask,
                         dropout_p=self.dropout.p if self.training else 0.0,
                         is_causal=is_causal_mask if custom_mask is None else False,
                     )
-            else:
-                context = F.scaled_dot_product_attention(
-                    query=Q.contiguous(),
-                    key=K.contiguous(),
-                    value=v.contiguous(),
-                    attn_mask=custom_mask,
-                    dropout_p=self.dropout.p if self.training else 0.0,
-                    is_causal=is_causal_mask if custom_mask is None else False,
-                )
+            except (ImportError, RuntimeError, TypeError):
+                try:
+                    from torch.nn.attention import sdpa_kernel, SDPBackend
+                    with sdpa_kernel([SDPBackend.MATH]):
+                        context = F.scaled_dot_product_attention(
+                            query=Q,
+                            key=K,
+                            value=v,
+                            attn_mask=custom_mask,
+                            dropout_p=self.dropout.p if self.training else 0.0,
+                            is_causal=is_causal_mask if custom_mask is None else False,
+                        )
+                except Exception:
+                    context = F.scaled_dot_product_attention(
+                        query=Q,
+                        key=K,
+                        value=v,
+                        attn_mask=custom_mask,
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                        is_causal=is_causal_mask if custom_mask is None else False,
+                    )
             attn_weights = None
         else:
             # Fallback path if output_attentions or head_mask are explicitly requested
@@ -630,6 +692,7 @@ class TPAttention(BaseAttention):
             context = torch.matmul(attn_weights, v)
 
         context = context.transpose(1, 2).contiguous().view(B, L, H * hd)
+        del Q, K, v  # Free large tensors
 
         if self.is_nested_encoder:
             output = context
