@@ -53,6 +53,10 @@ class HGRN2Layer(BaseAttention):
     r"""Hierarchically Gated Recurrent Network v2 (HGRN-2) Layer.
     Supports causal mode for decoders, bidirectional mode for encoders, LoRA adapters,
     and pretrained weight copying from DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
+
+    NOTE: This is NOT a compression module. It replaces attention with an RNN.
+    Parameter count is the same. Only use for speed improvements on
+    long sequences (when parallel scan is implemented).
     """
 
     def __init__(
@@ -89,17 +93,20 @@ class HGRN2Layer(BaseAttention):
         self.res_clip: float = res_clip
         self.freeze_base: bool = freeze_base
 
+        _mt = str(_cfg_get(config, "model_type", "") or "").lower()
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon")
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
             self.is_decoder = bool(
                 _cfg_get(config, "is_decoder", False)
-                or _cfg_get(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+                or _cfg_get(config, "causal", False)
+                or any(_mt.startswith(p) for p in _decoder_prefixes)
                 or kwargs.get("is_decoder", False)
+                or kwargs.get("is_causal", False)
             )
 
         self.is_nested_encoder: bool = False
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
         self.lora_rank = lora_rank if lora_rank is not None else 16
         self.lora_alpha = lora_alpha
         self.lora_scaling = (self.lora_alpha / max(1, self.lora_rank)) if self.lora_rank > 0 else 1.0
@@ -111,10 +118,13 @@ class HGRN2Layer(BaseAttention):
         self.state_norm = nn.LayerNorm(self.d_model)
         self.out_proj = nn.Linear(self.d_model, self.d_model, bias=True)
 
-        # Initialize forget gate weight/bias for long-term retention: softplus(-2.5) ~ 0.0788 => f_t ~ 0.924
+        # Initialize gates with sensible defaults for long-term retention
         nn.init.normal_(self.forget_gate.weight, mean=0.0, std=0.01)
         nn.init.constant_(self.forget_gate.bias, -2.5)
+        nn.init.normal_(self.input_gate.weight, mean=0.0, std=0.02)
         nn.init.constant_(self.input_gate.bias, 0.0)
+        nn.init.normal_(self.g_proj.weight, mean=0.0, std=0.02)
+        nn.init.normal_(self.v_proj.weight, mean=0.0, std=0.02)
 
         # LoRA Adapters
         if self.lora_rank > 0:
@@ -129,9 +139,12 @@ class HGRN2Layer(BaseAttention):
             self.register_parameter("out_lora_B", None)
 
         if self.freeze_base:
-            for mod in (self.forget_gate, self.input_gate, self.v_proj, self.g_proj, self.out_proj):
+            for mod in (self.v_proj, self.out_proj):
                 for p in mod.parameters():
                     p.requires_grad = False
+            for mod in (self.forget_gate, self.input_gate, self.g_proj):
+                for p in mod.parameters():
+                    p.requires_grad = True
 
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
         if old_attn is not None:
@@ -145,15 +158,18 @@ class HGRN2Layer(BaseAttention):
         w_o, b_o = None, None
 
         src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
-        if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-            hasattr(old_attn, "query")
-            and not hasattr(old_attn, "dense")
-            and not hasattr(old_attn, "out_proj")
-        ):
-            self.is_nested_encoder = True
+        is_nested = (
+            src_cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+            or (
+                hasattr(old_attn, "query")
+                and not hasattr(old_attn, "dense")
+                and not hasattr(old_attn, "out_proj")
+            )
+            or (hasattr(old_attn, "self") and hasattr(old_attn, "output"))
+        )
+        self.is_nested_encoder = bool(is_nested)
 
         if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-            self.is_nested_encoder = True
             src = old_attn.self
             if hasattr(old_attn.output, "dense"):
                 w_o, b_o = _unpack_weight_bias(old_attn.output.dense)
@@ -255,22 +271,24 @@ class HGRN2Layer(BaseAttention):
                     elif b.shape[0] > tb.shape[0]:
                         tb.copy_(b[:tb.shape[0]])
 
-        # Map Q -> g_proj, K -> input_gate, V -> v_proj, O -> out_proj
-        _copy_param(self.g_proj, w_q, b_q)
-        _copy_param(self.input_gate, w_k, b_k)
+        # DO NOT copy Q/K to gates - gates have fundamentally different semantics
+        # (element-wise modulation, not similarity dot-products). Pretrained Q/K cannot
+        # serve as gates. Only copy V -> v_proj and O -> out_proj.
         _copy_param(self.v_proj, w_v, b_v)
         if not self.is_nested_encoder:
             _copy_param(self.out_proj, w_o, b_o)
 
-        for p_name, p_tensor in [("g_proj", self.g_proj.weight), ("v_proj", self.v_proj.weight)]:
-            fnorm = float(torch.linalg.norm(p_tensor.float()))
-            if fnorm < 1e-4:
-                logger.warning("HGRN2Layer %s weight norm is near zero: %g", p_name, fnorm)
+        fnorm = float(torch.linalg.norm(self.v_proj.weight.detach().float()))
+        if fnorm < 1e-4:
+            logger.warning("HGRN2Layer v_proj weight norm is near zero: %g", fnorm)
 
         if self.freeze_base:
-            for mod in (self.forget_gate, self.input_gate, self.v_proj, self.g_proj, self.out_proj):
+            for mod in (self.v_proj, self.out_proj):
                 for p in mod.parameters():
                     p.requires_grad = False
+            for mod in (self.forget_gate, self.input_gate, self.g_proj):
+                for p in mod.parameters():
+                    p.requires_grad = True
 
     @property
     def query(self) -> nn.Module:
@@ -284,43 +302,62 @@ class HGRN2Layer(BaseAttention):
     def value(self) -> nn.Module:
         return self.v_proj
 
+    def _scan_direction(
+        self,
+        f: torch.Tensor,
+        iv: torch.Tensor,
+        chunk_size: int = 32,
+    ) -> torch.Tensor:
+        """Parallel chunked log-space associative scan."""
+        B, L, D = iv.shape
+        f_fp32 = f.float()
+        iv_fp32 = iv.float()
+        log_f = torch.log(f_fp32.clamp(min=1e-6))
+
+        h_chunks = []
+        h_prev = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
+
+        for start in range(0, L, chunk_size):
+            end = min(start + chunk_size, L)
+            C = end - start
+            f_c = log_f[:, start:end]
+            iv_c = iv_fp32[:, start:end]
+            A = torch.cumsum(f_c, dim=1)
+            A_diff = A.unsqueeze(2) - A.unsqueeze(1)
+            mask = torch.tril(torch.ones(C, C, device=iv.device, dtype=torch.bool))
+            A_diff = torch.where(mask.unsqueeze(0).unsqueeze(-1), A_diff, torch.full_like(A_diff, -1e4))
+            decay_weights = torch.exp(A_diff) * mask.unsqueeze(0).unsqueeze(-1)
+            intra = torch.sum(decay_weights * iv_c.unsqueeze(1), dim=2)
+            inter = h_prev.unsqueeze(1) * torch.exp(A)
+            h_c = inter + intra
+            if self.res_clip is not None and self.res_clip > 0:
+                h_c = torch.clamp(h_c, -self.res_clip, self.res_clip)
+            h_chunks.append(h_c)
+            h_prev = h_c[:, -1]
+
+        return torch.cat(h_chunks, dim=1).to(iv.dtype)
+
     def _recurrent_scan_parallel(
         self,
         f: torch.Tensor,
         iv: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Memory-efficient element-wise recurrence scan in FP32."""
-        B, L, D = iv.shape
-        f_fp32 = f.float()
-        iv_fp32 = iv.float()
-
+        """Memory-efficient parallel element-wise recurrence scan in FP32."""
         if mask is not None:
             mask_float = mask.float() if mask.dim() == 2 else mask[:, 0, 0, :].float()
-            iv_fp32 = iv_fp32 * mask_float.unsqueeze(-1)
+            iv = iv * mask_float.unsqueeze(-1)
 
-        # Sequential scan with PyTorch in-place/compiled efficiency to avoid [B, D, L, L] OOM
-        h_fwd_list = []
-        h_t = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
-        for t in range(L):
-            h_t = f_fp32[:, t] * h_t + iv_fp32[:, t]
-            h_t = torch.clamp(h_t, -self.res_clip, self.res_clip)
-            h_fwd_list.append(h_t)
-
-        h_fwd = torch.stack(h_fwd_list, dim=1).to(iv.dtype)  # [B, L, D]
+        h_fwd = self._scan_direction(f, iv)
 
         if self.is_decoder:
             return h_fwd, None
 
         # Anticausal backward scan for bidirectional encoders
-        h_bwd_list = []
-        h_t_bwd = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
-        for t in reversed(range(L)):
-            h_t_bwd = f_fp32[:, t] * h_t_bwd + iv_fp32[:, t]
-            h_t_bwd = torch.clamp(h_t_bwd, -self.res_clip, self.res_clip)
-            h_bwd_list.append(h_t_bwd)
-
-        h_bwd = torch.stack(list(reversed(h_bwd_list)), dim=1).to(iv.dtype)  # [B, L, D]
+        f_rev = torch.flip(f, dims=[1])
+        iv_rev = torch.flip(iv, dims=[1])
+        h_rev = self._scan_direction(f_rev, iv_rev)
+        h_bwd = torch.flip(h_rev, dims=[1])
         return h_fwd, h_bwd
 
     def forward(
@@ -397,7 +434,7 @@ class HGRN2Layer(BaseAttention):
         if attention_mask is not None and mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        return out * self.output_scale, None
+        return out, None
 
 
 @ATTENTION_REGISTRY.register("hgrn2_layer_inject")
