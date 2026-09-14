@@ -276,8 +276,13 @@ class RoutingAttention(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 2. RoBERTa nested
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self"):
+            # Unwrap nested self-attention modules to locate innermost attention
+            s = src
+            while hasattr(s, "self") and not any(
+                hasattr(s, attr) for attr in ["query", "key", "value", "q_proj", "k_proj", "v_proj"]
+            ):
+                s = s.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
