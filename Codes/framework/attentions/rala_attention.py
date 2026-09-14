@@ -480,7 +480,7 @@ class RALALinearAttention(BaseAttention):
             rank_mat = torch.einsum("h d r, h e r -> h d e", self.U, self.V)
             aug_out = torch.nan_to_num(torch.einsum("b h n d, h d e -> b h n e", q_prime, rank_mat) / denom)
 
-        scale_factor = 1.0 / math.sqrt(self.head_dim)
+        scale_factor = 1.0
         out = (lin_out + self.alpha * aug_out) * scale_factor * mask_4d
 
         # head_mask handling
