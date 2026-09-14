@@ -634,10 +634,10 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
             try:
                 scaler.unscale_(opt)
                 torch.nn.utils.clip_grad_norm_(trainable, max_norm=1.0)
-            except RuntimeError:
-                pass
-            scaler.step(opt)
-            scaler.update()
+                scaler.step(opt)
+                scaler.update()
+            except (RuntimeError, ValueError):
+                opt.step()
             scheduler.step()
             if (step + 1) % 5 == 0 or step == steps - 1 or step == 0:
                 LOG.info("LoRA fine-tune step %d/%d loss=%.4f (bs=%d, micro_bs=%d)", step + 1, steps, step_loss, total_n, micro_bs)
