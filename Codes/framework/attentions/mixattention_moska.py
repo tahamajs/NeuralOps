@@ -74,8 +74,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -129,7 +127,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("fasa", supports_causal=True, supports_gqa=True)
@@ -160,9 +158,13 @@ class MixAttentionMoSKA(BaseAttention):
         self.dim: int = kwargs.get("hidden_size") or getattr(config, "hidden_size", getattr(config, "dim", 768))
         self.hidden_size: int = self.dim
         self.num_heads: int = kwargs.get("num_heads") or kwargs.get("num_attention_heads") or getattr(config, "num_attention_heads", getattr(config, "n_heads", 4))
-        self.head_dim: int = self.dim // self.num_heads if self.num_heads > 0 else 64
+
+        cfg_head_dim = getattr(config, "head_dim", None) if config else None
+        self.head_dim: int = int(cfg_head_dim or kwargs.get("head_dim") or (self.dim // self.num_heads if self.num_heads > 0 else 64))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.fasa_keep_ratio: float = fasa_keep_ratio
+        self.protect_first_token: bool = kwargs.get("protect_first_token", True)
+        self.importance_method: str = kwargs.get("importance_method", "var")
 
         cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None)) if config else None
         if cfg_kv is not None:
@@ -179,15 +181,15 @@ class MixAttentionMoSKA(BaseAttention):
         self.lora_rank: int = lora_rank
         self.lora_alpha: float = lora_alpha
 
+        _mt = str(getattr(config, "model_type", "") or "").lower() if config else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        self.is_decoder = (
+            getattr(config, "is_decoder", False)
+            or getattr(config, "causal", False)
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+        ) if config else False
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
-        else:
-            self.is_decoder = (
-                getattr(config, "is_decoder", False)
-                or getattr(config, "causal", False)
-                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
-                if config else False
-            )
 
         self.is_nested_encoder: bool = False
 
@@ -418,20 +420,25 @@ class MixAttentionMoSKA(BaseAttention):
 
     def _fasa_prune(
         self, k: torch.Tensor, v: torch.Tensor, mask: Optional[torch.Tensor] = None
-    ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
+    ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]]:
         B, H, L, D_h = k.shape
-        if L <= 4:
-            return k, v, mask
+        if L <= 8:
+            return k, v, mask, None
 
-        importance = k.float().var(dim=-1).mean(dim=1)  # (B, L)
+        if getattr(self, "importance_method", "var") == "l2":
+            importance = torch.norm(k.float(), p=2, dim=-1).mean(dim=1)  # (B, L)
+        else:
+            importance = k.float().var(dim=-1).mean(dim=1)  # (B, L)
+
         if mask is not None:
             mask_2d = get_token_valid_mask(mask, B, L, k.device)
             importance = importance.masked_fill(~mask_2d, -10000.0)
 
-        # Always protect [CLS] token at index 0 unconditionally
-        importance[:, 0] = 1e9
+        # Protect [CLS] token at index 0 if configured
+        if getattr(self, "protect_first_token", True):
+            importance[:, 0] = 1e9
 
-        keep = max(2, min(L, int(L * self.fasa_keep_ratio)))
+        keep = max(8, min(L, int(L * self.fasa_keep_ratio)))
         _, idx = torch.topk(importance, keep, dim=-1)
         idx, _ = torch.sort(idx, dim=-1)
 
@@ -444,7 +451,7 @@ class MixAttentionMoSKA(BaseAttention):
             mask_2d = get_token_valid_mask(mask, B, L, k.device)
             pruned_mask = mask_2d.gather(1, idx)
 
-        return k_pruned, v_pruned, pruned_mask
+        return k_pruned, v_pruned, pruned_mask, idx
 
     def forward(
         self,
@@ -525,8 +532,9 @@ class MixAttentionMoSKA(BaseAttention):
                 attn_weights = attn_weights * head_mask
 
             out = torch.matmul(attn_weights, v).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+            final_attn_weights = attn_weights if output_attentions else None
         else:
-            k_p, v_p, p_mask = self._fasa_prune(k, v, eff_mask)
+            k_p, v_p, p_mask, kept_idx = self._fasa_prune(k, v, eff_mask)
             attn_scores = torch.matmul(q.float(), k_p.float().transpose(-2, -1)) * scale
 
             if p_mask is not None:
@@ -547,6 +555,17 @@ class MixAttentionMoSKA(BaseAttention):
 
             out = torch.matmul(attn_weights, v_p).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
 
+            if output_attentions:
+                if kept_idx is not None:
+                    # Scatter weights back into full [B, H, L, L_kv] shape for caller compatibility
+                    full_weights = torch.zeros(B, H, L, L_kv, device=device, dtype=dtype)
+                    kept_exp = kept_idx.unsqueeze(1).unsqueeze(2).expand(-1, H, L, -1)
+                    final_attn_weights = full_weights.scatter(3, kept_exp, attn_weights)
+                else:
+                    final_attn_weights = attn_weights
+            else:
+                final_attn_weights = None
+
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
@@ -554,7 +573,7 @@ class MixAttentionMoSKA(BaseAttention):
         else:
             output = self.out_proj(out)
 
-        return output, (attn_weights if output_attentions else None)
+        return output, final_attn_weights
 
 
 @ATTENTION_REGISTRY.register("fasa_inject")
@@ -587,11 +606,14 @@ def inject_mixattention_moska(
     )
 
     try:
-        keep_ratio = getattr(comp_config, "fasa_keep_ratio", 0.5) if comp_config is not None else 0.5
+        keep_ratio = getattr(comp_config, "fasa_keep_ratio", 0.5) if comp_config is not None else kwargs.pop("fasa_keep_ratio", 0.5)
+        kwargs.pop("fasa_keep_ratio", None)
+        kwargs.pop("rank", None)
+
         new_attn = MixAttentionMoSKA(
             config=model_config,
             fasa_keep_ratio=keep_ratio,
-            old_attn=src_attn,
+            pretrained_attn=src_attn,
             hidden_size=hidden_size,
             num_heads=num_heads,
             num_attention_heads=num_heads,
@@ -604,13 +626,19 @@ def inject_mixattention_moska(
                 new_attn.to(device=p.device, dtype=p.dtype)
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
                 new_attn.is_nested_encoder = True
+                layer.attention.self = new_attn
             else:
+                new_attn.is_nested_encoder = False
                 layer.attention = new_attn
         elif hasattr(layer, "self"):
+            new_attn.is_nested_encoder = True
             layer.self = new_attn
+        elif hasattr(layer, "self_attn"):
+            new_attn.is_nested_encoder = False
+            layer.self_attn = new_attn
         elif hasattr(layer, "attn"):
+            new_attn.is_nested_encoder = False
             layer.attn = new_attn
         return new_attn
     except Exception as e:
