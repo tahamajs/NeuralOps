@@ -121,8 +121,9 @@ class HGRN2GatedDeltaNet(BaseAttention):
 
         # Causal / Decoder detection
         model_type = str(_cfg_get(config, "model_type", "")).lower()
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon")
         is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+        if any(model_type.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (_cfg_get(config, "architectures", []) or [])):
             is_dec = True
@@ -159,7 +160,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
 
         # Gate and output projection
         self.gate = nn.Linear(self.d_model, self.d_model)
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
         self.out_proj = LoRALinear(
             self.d_model,
             self.d_model,
@@ -207,9 +207,8 @@ class HGRN2GatedDeltaNet(BaseAttention):
             try:
                 adapter = UniversalAdapter()
                 w_o, b_o = adapter.get_weight_bias(old_attn, "o")
-            except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+            except Exception:
+                pass
 
             if w_o is None:
                 for cand in ("out_proj", "out_lin", "o_proj", "output", "proj", "c_proj", "dense"):
@@ -286,7 +285,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
 
         gamma = torch.sigmoid(self.gate(hidden_states))
         fused = gamma * hgrn_out + (1.0 - gamma) * delta_out
-        fused = fused * self.output_scale
         out = self.out_proj(fused)
 
         # Output shape match
@@ -296,7 +294,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
             else:
                 out = out[..., : hidden_states.shape[-1]]
 
-        return out * self.output_scale, None
+        return out, None
 
 
 @ATTENTION_REGISTRY.register("hgrn2_gated_deltanet_inject")
