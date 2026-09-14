@@ -2,40 +2,41 @@
 \label{sec:app_module_soa_attn}
 
 \subsubsection*{3.1 Module Overview}
-The \texttt{soa\_attn} operator implements an optimized track 2: state-space models \& recurrent scans within the NeuralOps framework.
+The \texttt{soa\_attn} operator implements Shared Orthogonal Attention (SOA) with per-projection factorized low-rank bottleneck pairs initialized via truncated SVD within the NeuralOps framework.
 \begin{itemize}
-    \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
+    \item \textbf{Track Paradigm:} Track 1: Factorized Projections \& Low-Rank Attention Bottlenecks
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/soa\_attn.py}
     \item \textbf{Registration Name:} \texttt{soa\_attn} $\mid$ \textbf{Class:} \texttt{SOAAttention}
 \end{itemize}
 
 \subsubsection*{3.2 Mathematical Formulation}
-Let $X \in \mathbb{R}^{B \times L \times d_{\text{in}}}$ denote the batch sequence representation tensor for batch size $B$, sequence length $L$, and channel dimension $d_{\text{in}}$. The exact forward mathematical transformation of \texttt{soa\_attn} is formulated as:
+Let $X \in \mathbb{R}^{B \times L \times d_{\text{in}}}$ denote the batch sequence representation tensor for batch size $B$, sequence length $L$, and hidden dimension $d_{\text{in}}$. Dense query, key, and value projection matrices are decomposed via truncated singular value decomposition into rank-$r$ bottleneck factor pairs:
 
 \begin{align}
-\Delta_t &= \operatorname{softplus}(W_\Delta x_t + b_\Delta), \quad \bar{A}_t = \exp(\Delta_t A), \quad \bar{B}_t = \Delta_t B_t, \\
-h_t &= \bar{A}_t h_{t-1} + \bar{B}_t x_t \in \mathbb{R}^{d \times d_s}, \\
-y_t &= C_t h_t + D x_t, \quad O_t = \operatorname{SiLU}(z_t) \odot y_t.
+Q &= \left( X W_Q^{\text{down}\top} \right) W_Q^{\text{up}\top} + \Delta_{\text{LoRA}}(X), \\
+K &= \left( X W_K^{\text{down}\top} \right) W_K^{\text{up}\top} + \Delta_{\text{LoRA}}(X), \\
+V &= \left( X W_V^{\text{down}\top} \right) W_V^{\text{up}\top} + \Delta_{\text{LoRA}}(X), \\
+\text{Attn}(Q, K, V) &= \operatorname{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}} + M\right) V, \quad O = \text{Attn}(Q, K, V) W_O^\top,
 \end{align}
-
+where singular values $\Sigma^{1/2}$ are symmetrically distributed across down- and up-projection factors to ensure balanced gradient flow during LoRA recovery adaptation.
 
 \subsubsection*{3.3 Computational Complexity}
 \begin{itemize}
-    \item \textbf{Time Complexity:} $\mathcal{O}(N d)$
-    \item \textbf{Memory State Complexity:} $\mathcal{O}(d \cdot d_s)$
-    \item \textbf{Scaling Class:} Strictly $\mathcal{O}(N)$ in compute with constant $\mathcal{O}(1)$ inference state size per token, eliminating KV cache growth.
+    \item \textbf{Time Complexity:} $\mathcal{O}(L^2 d + L d r)$
+    \item \textbf{Memory State Complexity:} $\mathcal{O}(L d + r d)$
+    \item \textbf{Scaling Class:} Quadratic in sequence length $L$, reduced linear projection parameter footprint by factor of $d / (2r)$.
 \end{itemize}
 
 \subsubsection*{3.4 Key Hyperparameters}
 \begin{itemize}
-    \item \texttt{model\_config}: Operational hyperparameter.
-    \item \texttt{k\_rank}: Low-rank compression bottleneck.
-    \item \texttt{dropout}: Operational hyperparameter.
-    \item \texttt{pretrained\_attn}: Operational hyperparameter.
+    \item \texttt{model\_config}: Transformer backbone configuration.
+    \item \texttt{k\_rank}: Low-rank compression bottleneck rank ($r=32$).
+    \item \texttt{lora\_rank}: Trainable adapter rank for recovery adaptation ($r_{\text{LoRA}}=16$).
+    \item \texttt{pretrained\_attn}: Source attention module for weight extraction.
 \end{itemize}
 
 \subsubsection*{3.5 Empirical Performance Telemetry}
-Table~\ref{tab:telemetry_soa_attn} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16 enabled, batch size $B=4$, sequence length $L=128$).
+Table~\ref{tab:telemetry_soa_attn} reports the empirical hardware performance measurements recorded on an isolated NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.7, AMP FP16 enabled, batch size $B=8$, sequence length $L=128$).
 
 \begin{table}[h]
 \centering
@@ -46,12 +47,9 @@ Table~\ref{tab:telemetry_soa_attn} reports the empirical hardware performance me
 \toprule
 \textbf{Model Family} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1-Score} & \textbf{Peak VRAM} & \textbf{Throughput} \\
 \midrule
-DistilBERT & \texttt{PASS} & 81.31\% & 81.91\% & 282.7 MB & 86,195 tok/s \\
-RoBERTa & \texttt{PASS\_LOW} & 50.92\% & 67.48\% & 323.6 MB & 60,450 tok/s \\
-BERT & \texttt{PASS} & 50.92\% & 33.74\% & 412.7 MB & 570,454 tok/s \\
-GPT-2 & \texttt{PASS\_LOW} & 50.92\% & 67.48\% & 486.2 MB & 42,558 tok/s \\
-Qwen & \texttt{PASS} & 50.34\% & --- & --- & --- \\
-Unknown & \texttt{PASS} & 69.13\% & --- & --- & --- \\
+DistilBERT & \texttt{PASS} & 89.11\% & 0.8962 & 293.1 MB & 25,749 tok/s \\
+RoBERTa & \texttt{PASS} & 57.22\% & 0.6960 & 595.2 MB & 11,201 tok/s \\
+GPT-2 & \texttt{PASS} & 80.62\% & 0.8315 & 311.1 MB & 5,967 tok/s \\
 \bottomrule
 \end{tabular*}
 \end{table}
