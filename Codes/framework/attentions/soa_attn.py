@@ -410,10 +410,15 @@ class SOAAttention(BaseAttention):
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 self.is_decoder = True
                 self.is_causal = True
-                c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                c_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
-                if ("Conv1D" in c_cls) or hasattr(src.c_attn, "nf") or (c_attn_w.dim() == 2 and c_attn_w.shape[0] < c_attn_w.shape[1]):
+
+                c_attn_mod = src.c_attn
+                base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
+                c_attn_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None)).detach()
+                c_attn_b = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
+                c_attn_b = c_attn_b.detach() if c_attn_b is not None else None
+
+                c_cls = getattr(base_c, "__class__", type(base_c)).__name__
+                if ("Conv1D" in c_cls) or hasattr(base_c, "nf") or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__) or hasattr(c_attn_mod, "nf") or (c_attn_w.dim() == 2 and c_attn_w.shape[0] < c_attn_w.shape[1]):
                     c_attn_w = c_attn_w.t()
 
                 q_dim = self.q_head_size
@@ -429,12 +434,16 @@ class SOAAttention(BaseAttention):
                     b_k = c_attn_b[q_dim : q_dim + k_dim]
                     b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
 
-                out_w = src.c_proj.weight.detach()
-                p_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
-                if ("Conv1D" in p_cls) or hasattr(src.c_proj, "nf") or (out_w.dim() == 2 and out_w.shape[0] < out_w.shape[1]):
+                c_proj_mod = src.c_proj
+                base_p = getattr(c_proj_mod, "base_layer", c_proj_mod)
+                out_w = getattr(base_p, "weight", getattr(c_proj_mod, "weight", None)).detach()
+                b_o = getattr(base_p, "bias", getattr(c_proj_mod, "bias", None))
+                b_o = b_o.detach() if b_o is not None else None
+
+                p_cls = getattr(base_p, "__class__", type(base_p)).__name__
+                if ("Conv1D" in p_cls) or hasattr(base_p, "nf") or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__) or hasattr(c_proj_mod, "nf") or (out_w.dim() == 2 and out_w.shape[0] < out_w.shape[1]):
                     out_w = out_w.t()
                 w_o = out_w
-                b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
             elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
@@ -516,8 +525,9 @@ class SOAAttention(BaseAttention):
 
                 down.weight.zero_()
                 up.weight.zero_()
-                down.weight[:r, :].copy_(Vt[:r, :].to(down.weight.dtype))
-                up.weight[:, :r].copy_((U[:, :r] * S[:r]).to(up.weight.dtype))
+                sqrt_s = torch.sqrt(S[:r])
+                down.weight[:r, :].copy_((sqrt_s.unsqueeze(1) * Vt[:r, :]).to(down.weight.dtype))
+                up.weight[:, :r].copy_((U[:, :r] * sqrt_s).to(up.weight.dtype))
 
                 if bias is not None and up.bias is not None:
                     up.bias.copy_(bias.to(up.bias.dtype))
