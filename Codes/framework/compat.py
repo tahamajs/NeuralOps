@@ -8,8 +8,8 @@ import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 
-from .model_family import ModelAdapter, detect_family
-from .qwen_compat import QwenIncompatibleError
+from framework.utils.model_family import ModelAdapter, detect_family
+from framework.utils.qwen_compat import QwenIncompatibleError
 from framework.core.model_utils import replace_module
 
 
@@ -176,9 +176,9 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
         if fallback_layers and (parent_module_prefix in fallback_layers or any(name.startswith(fb + ".") or name == fb for fb in fallback_layers)):
             continue
 
-        # For recurrent/hybrid modules (HGRN, Delta, Mamba, SSM, etc.), allow lora adapters, output scales, gates, and decays
+        # For recurrent/hybrid modules (HGRN, Delta, Mamba, SSM, etc.), ONLY allow lora_A/lora_B parameters!
         if is_recurrent_module:
-            if any(tag in n_low for tag in ("lora_a", "lora_b", "lora_", ".output_scale", ".gate", ".alpha", ".beta", ".decay")):
+            if any(tag in n_low for tag in ("lora_a", "lora_b")):
                 trainable_params.append(param)
             continue
 
