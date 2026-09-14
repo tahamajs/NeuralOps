@@ -114,9 +114,7 @@ class CoMeBridgedLayer(nn.Module):
 
     def __init__(self, layer: nn.Module, bridge: Optional[CoMeBridge] = None) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
+        pass
         self.layer = layer
         self.bridge = bridge
 
@@ -175,9 +173,7 @@ class CoMeLoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
+        pass
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
@@ -290,9 +286,7 @@ class CoMeCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="come", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
+        pass
         conf = kwargs.get("comp_config", kwargs.get("cfg", None))
 
         target_layers = _cfg_get(conf, "come_target_layers", _cfg_get(conf, "target_layers", target_layers))

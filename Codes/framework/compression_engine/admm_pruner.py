@@ -163,9 +163,7 @@ class ADMMPruner(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="admm_pruner", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
+        pass
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
 
         self.sparsity = max(
