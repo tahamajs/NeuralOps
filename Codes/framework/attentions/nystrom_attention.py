@@ -81,8 +81,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -141,7 +139,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("nystrom", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -152,7 +150,7 @@ class NystromAttention(BaseAttention):
         config: Optional[Any] = None,
         rank: Optional[int] = None,
         num_landmarks: Optional[int] = None,
-        pinv_iterations: int = 6,
+        pinv_iterations: int = 3,
         pretrained_attn: Optional[nn.Module] = None,
         old_attn: Optional[nn.Module] = None,
         comp_config: Optional[Any] = None,
@@ -200,11 +198,12 @@ class NystromAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        self.num_landmarks = (
+        landmarks_cfg = (
             num_landmarks
             if num_landmarks is not None
-            else getattr(config, "num_landmarks", getattr(config, "nystrom_landmarks", rank if rank is not None else 64))
-        ) if config is not None else 64
+            else getattr(config, "num_landmarks", getattr(config, "nystrom_landmarks", rank if rank is not None else 32))
+        ) if config is not None else (num_landmarks if num_landmarks is not None else 32)
+        self.num_landmarks = min(32, int(landmarks_cfg))
         self.pinv_iterations = pinv_iterations
 
         # Decoder detection
@@ -401,17 +400,36 @@ class NystromAttention(BaseAttention):
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
 
-    def _iterative_pinv(self, A: torch.Tensor, iters: int = 6) -> torch.Tensor:
-        norm_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
-        norm_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
-        alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
+    def _iterative_pinv(self, A: torch.Tensor, iters: int = 3) -> torch.Tensor:
+        try:
+            return torch.linalg.pinv(A.float()).to(A.dtype)
+        except Exception:
+            norm_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
+            norm_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
+            alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
 
-        V = alpha * A.transpose(-2, -1)
-        I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
+            V = alpha * A.transpose(-2, -1)
+            I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
 
-        for _ in range(iters):
-            V = torch.matmul(V, 2.0 * I - torch.matmul(A, V))
-        return V
+            for _ in range(iters):
+                V = torch.matmul(V, 2.0 * I - torch.matmul(A, V))
+            return V
+
+    def _dense_attention(
+        self,
+        Q: torch.Tensor,
+        K: torch.Tensor,
+        V: torch.Tensor,
+        valid_mask: torch.Tensor,
+        dtype: torch.dtype,
+    ) -> torch.Tensor:
+        scale = 1.0 / math.sqrt(self.head_dim)
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+        scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
+        attn_weights = F.softmax(scores, dim=-1).to(dtype)
+        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+        attn_weights = self.dropout(attn_weights)
+        return torch.matmul(attn_weights, V)
 
     def forward(
         self,
@@ -455,6 +473,10 @@ class NystromAttention(BaseAttention):
             attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
             attn_weights = self.dropout(attn_weights)
             context = torch.matmul(attn_weights, V)
+        elif N <= max(128, 2 * self.num_landmarks):
+            # Short sequence dense fallback: Nyström low-rank approximation is mathematically
+            # sub-optimal and memory-inefficient when N <= 2*landmarks (or N <= 128)
+            context = self._dense_attention(Q, K, V, valid_mask, dtype)
         else:
             m = min(self.num_landmarks, N)
 
@@ -534,7 +556,7 @@ def inject_nystrom(
     )
 
     try:
-        landmarks = getattr(comp_config, "num_landmarks", 64) if comp_config else 64
+        landmarks = getattr(comp_config, "num_landmarks", 32) if comp_config else 32
         new_attn = NystromAttention(
             config=model_config,
             num_landmarks=landmarks,
