@@ -11663,25 +11663,25 @@
           "source_file": "results/unified_adaptive_compressor/distilbert/summary.csv"
         },
         "GPT-2": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 52.75,
-          "f1_score": 0.6776,
-          "peak_vram_mb": 638.53,
-          "throughput_tokens_sec": 69068.37,
+          "status": "PASS",
+          "accuracy_pct": 83.6,
+          "f1_score": 0.8566,
+          "peak_vram_mb": 412.11,
+          "throughput_tokens_sec": 15236.0,
           "source_file": "results/unified_adaptive_compressor/gpt2/summary.csv"
         },
         "RoBERTa": {
           "status": "PASS",
-          "accuracy_pct": 72.13,
-          "f1_score": 0.767,
-          "peak_vram_mb": 300.97,
-          "throughput_tokens_sec": 113445.26,
+          "accuracy_pct": 90.94,
+          "f1_score": 0.9155,
+          "peak_vram_mb": 327.38,
+          "throughput_tokens_sec": 10179.8,
           "source_file": "results/unified_adaptive_compressor/roberta/summary.csv"
         }
       },
-      "best_accuracy": 90.37,
+      "best_accuracy": 90.94,
       "has_pass": true,
-      "has_pass_low": true,
+      "has_pass_low": false,
       "is_pure_pass": true,
       "overall_status": "PASS"
     },
