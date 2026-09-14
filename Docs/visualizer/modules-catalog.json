@@ -149,36 +149,36 @@
       "markdown_preview": "# Adaptive Sparse Attention: Dynamic Top-K & Threshold-Based Sparsity Routing\n\n## 1. Overview & Architectural Motivation\n\nStandard Multi-Head Attention (MHA) exhibits quadratic computational and memory complexity $\\mathcal{O}(L^2)$ with respect to sequence length $L$, computing dense pairwise compatibility scores for every query-key token pair. In deep transformers, attention probability distributions are empirically sparse: a small fraction of key tokens account for the vast majority of probability mass, while the remaining tokens contribute negligible context and accumulate numerical noise.\n",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 89.68,
+        "best_accuracy": 89.91,
         "has_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 89.68,
-            "f1_score": 0.8991,
-            "peak_vram_mb": 1432.5,
-            "throughput_tokens_sec": 25699.4
+            "accuracy_pct": 89.91,
+            "f1_score": 0.9033,
+            "peak_vram_mb": 396.52,
+            "throughput_tokens_sec": 16770.04
           },
           "gpt2": {
-            "status": "SKIP_GPT_INCOMPATIBLE_GQA",
-            "accuracy_pct": 0.0,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null
+            "status": "PASS",
+            "accuracy_pct": 87.84,
+            "f1_score": 0.8776,
+            "peak_vram_mb": 451.88,
+            "throughput_tokens_sec": 7802.29
           },
           "qwen": {
-            "status": "SKIP_QWEN3_5_ARCHITECTURAL",
-            "accuracy_pct": 0.0,
-            "f1_score": 0.5501,
-            "peak_vram_mb": 1810.59,
-            "throughput_tokens_sec": 1318.97
+            "status": "PASS",
+            "accuracy_pct": 56.65,
+            "f1_score": 0.6927,
+            "peak_vram_mb": 1918.44,
+            "throughput_tokens_sec": 4519.62
           },
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 58.14,
-            "f1_score": 0.6883,
-            "peak_vram_mb": 702.77,
-            "throughput_tokens_sec": 11163.83
+            "accuracy_pct": 85.32,
+            "f1_score": 0.8388,
+            "peak_vram_mb": 412.67,
+            "throughput_tokens_sec": 7752.92
           }
         }
       }
@@ -196,29 +196,29 @@
       "markdown_preview": "# Adaptive SVD Attention: Low-Rank SVD Projections with Parallel Residual Adapters\n\n## 1. Executive Abstract & Architectural Motivation\n\nAdaptive SVD Attention (`AdaptiveSVDAttention`) provides a hybrid parameter-efficient adaptation architecture for Transformer attention modules. Standard model compression factorizes dense projection matrices ($W_Q, W_K, W_V, W_O \\in \\mathbb{R}^{D \\times D}$) via truncated Singular Value Decomposition ($W_{\\text{svd}} \\approx U V$). However, freezing low-rank SVD components without fine-tuning limits domain adaptation performance.\n\n`AdaptiveSVDAttention` augm",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 85.89,
+        "best_accuracy": 87.96,
         "has_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 85.89,
-            "f1_score": 0.8701,
-            "peak_vram_mb": 183.57,
-            "throughput_tokens_sec": 90105.57
+            "accuracy_pct": 87.96,
+            "f1_score": 0.8855,
+            "peak_vram_mb": 290.38,
+            "throughput_tokens_sec": 25530.24
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 51.15,
-            "f1_score": 0.6753,
-            "peak_vram_mb": 495.72,
-            "throughput_tokens_sec": 45078.28
+            "status": "PASS",
+            "accuracy_pct": 76.38,
+            "f1_score": 0.8034,
+            "peak_vram_mb": 301.99,
+            "throughput_tokens_sec": 10699.28
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 340.54,
-            "throughput_tokens_sec": 52861.22
+            "status": "PASS",
+            "accuracy_pct": 77.64,
+            "f1_score": 0.773,
+            "peak_vram_mb": 585.95,
+            "throughput_tokens_sec": 11510.52
           }
         }
       }
@@ -482,11 +482,11 @@
             "throughput_tokens_sec": 67307.31
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 51.03,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 476.01,
-            "throughput_tokens_sec": 32964.04
+            "status": "PASS",
+            "accuracy_pct": 74.89,
+            "f1_score": 0.7812,
+            "peak_vram_mb": 300.59,
+            "throughput_tokens_sec": 5372.02
           },
           "qwen": {
             "status": "PASS",
@@ -496,11 +496,11 @@
             "throughput_tokens_sec": null
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 361.7,
-            "throughput_tokens_sec": 31797.46
+            "status": "PASS",
+            "accuracy_pct": 72.02,
+            "f1_score": 0.7505,
+            "peak_vram_mb": 591.97,
+            "throughput_tokens_sec": 4678.15
           }
         }
       }
@@ -518,7 +518,7 @@
       "markdown_preview": "# AEGIS-Attention V3: Energy-Constrained SVD & Softpick Rectified Sparse Attention\n\n## 1. Executive Abstract & Theoretical Foundations\n\n**AEGIS-Attention V3** unifies dynamic energy-constrained truncated SVD projections, split-head local sliding-window attention with **Softpick rectified sparse activations**, and global Random Fourier Feature (RFF) linear kernel attention with adaptive per-head gating.\n\nKey architectural mechanisms:\n1. **Dynamic Energy-Constrained SVD**: Selects minimal projection rank $r \\in [4, 64]$ to satisfy cumulative singular value energy ratio $\\ge 95\\%$.\n2. **Softpick ",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 83.72,
+        "best_accuracy": 86.47,
         "has_pass": true,
         "models": {
           "distilbert": {
@@ -530,10 +530,10 @@
           },
           "gpt2": {
             "status": "PASS",
-            "accuracy_pct": 56.31,
-            "f1_score": 0.6495,
-            "peak_vram_mb": 595.01,
-            "throughput_tokens_sec": 45270.42
+            "accuracy_pct": 69.5,
+            "f1_score": 0.7555,
+            "peak_vram_mb": 348.6,
+            "throughput_tokens_sec": 9180.02
           },
           "qwen": {
             "status": "SKIP_QWEN_INCOMPATIBLE_ACCURACY_PLATEAU",
@@ -543,11 +543,11 @@
             "throughput_tokens_sec": null
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 387.94,
-            "throughput_tokens_sec": 30065.74
+            "status": "PASS",
+            "accuracy_pct": 86.47,
+            "f1_score": 0.8706,
+            "peak_vram_mb": 404.47,
+            "throughput_tokens_sec": 5921.14
           }
         }
       }
@@ -565,7 +565,7 @@
       "markdown_preview": "# AEGIS-Attention V4: Adaptive Enhanced Global-Local Integrated Sparse Attention\n\n## 1. Executive Abstract & Architectural Principles\n\n**AEGIS-Attention V4** provides a unified multi-head attention layer combining:\n1. **SVD-Factorized Projections with Energy-Based Rank Selection**: Dynamically calculates per-projection rank $r \\in [4, 64]$ to preserve $\\ge 95\\%$ singular value energy.\n2. **Split-Head Local Sliding-Window Attention**: Softpick rectified non-linearities with window size $W = 64$ for $H_l = 8$ local heads.\n3. **Global Linear RFF Kernel Attention**: 256-dimensional random Fourier ",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 83.72,
+        "best_accuracy": 86.47,
         "has_pass": true,
         "models": {
           "distilbert": {
@@ -577,10 +577,10 @@
           },
           "gpt2": {
             "status": "PASS",
-            "accuracy_pct": 56.31,
-            "f1_score": 0.6495,
-            "peak_vram_mb": 595.01,
-            "throughput_tokens_sec": 38299.87
+            "accuracy_pct": 69.5,
+            "f1_score": 0.7555,
+            "peak_vram_mb": 348.6,
+            "throughput_tokens_sec": 9357.03
           },
           "qwen": {
             "status": "PASS",
@@ -590,11 +590,11 @@
             "throughput_tokens_sec": null
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 387.94,
-            "throughput_tokens_sec": 30013.68
+            "status": "PASS",
+            "accuracy_pct": 86.47,
+            "f1_score": 0.8706,
+            "peak_vram_mb": 404.47,
+            "throughput_tokens_sec": 5891.73
           }
         }
       }
@@ -612,7 +612,7 @@
       "markdown_preview": "# AEGIS-Attention V5: Hybrid Multi-Head Attention with ELU+1 Feature Maps & Safe Masking\n\n## 1. Executive Abstract & Theoretical Foundations\n\n**AEGIS-Attention V5** is a hybrid efficient attention module that decouples multi-head attention into $H_l = 8$ local sliding-window heads with Softpick rectified sparse non-linearities and $H_g = 4$ global linear kernel attention heads with **learnable ELU+1 feature maps** and safe mask propagation.\n\nKey architectural highlights:\n1. **Low-Rank SVD Projections**: Factorizes linear projections $W \\approx W_{\\text{up}} W_{\\text{down}}$ with energy thresho",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 83.72,
+        "best_accuracy": 86.47,
         "has_pass": true,
         "models": {
           "distilbert": {
@@ -624,10 +624,10 @@
           },
           "gpt2": {
             "status": "PASS",
-            "accuracy_pct": 56.31,
-            "f1_score": 0.6495,
-            "peak_vram_mb": 595.01,
-            "throughput_tokens_sec": 33873.87
+            "accuracy_pct": 69.5,
+            "f1_score": 0.7555,
+            "peak_vram_mb": 348.6,
+            "throughput_tokens_sec": 9024.59
           },
           "qwen": {
             "status": "SKIP_QWEN_INCOMPATIBLE_ACCURACY_PLATEAU",
@@ -637,11 +637,11 @@
             "throughput_tokens_sec": null
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 387.94,
-            "throughput_tokens_sec": 23907.31
+            "status": "PASS",
+            "accuracy_pct": 86.47,
+            "f1_score": 0.8706,
+            "peak_vram_mb": 404.47,
+            "throughput_tokens_sec": 5332.55
           }
         }
       }
@@ -706,22 +706,22 @@
       "markdown_preview": "# ASVD Attention: Activation-Aware Singular Value Decomposition Architecture\n\n## 1. Executive Abstract & Architectural Motivation\n\nActivation-aware Singular Value Decomposition Attention (`ASVDAttention`, Yuan et al., 2023) provides an activation-guided low-rank model compression framework for Multi-Head Attention. Standard SVD parameter reduction factorizes dense projection matrices $W \\in \\mathbb{R}^{d_{\\text{out}} \\times d_{\\text{in}}}$ solely based on static weight magnitude matrices, ignoring the non-uniform variance and magnitude distributions of dynamic activation vectors ($X$).\n\nASVD r",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 90.14,
+        "best_accuracy": 90.37,
         "has_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 90.14,
-            "f1_score": 0.9051,
-            "peak_vram_mb": 205.16,
-            "throughput_tokens_sec": 79132.45
+            "accuracy_pct": 90.37,
+            "f1_score": 0.9079,
+            "peak_vram_mb": 344.33,
+            "throughput_tokens_sec": 22010.38
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 55.85,
-            "f1_score": 0.6872,
-            "peak_vram_mb": 596.37,
-            "throughput_tokens_sec": 44336.88
+            "status": "PASS",
+            "accuracy_pct": 85.78,
+            "f1_score": 0.8686,
+            "peak_vram_mb": 346.29,
+            "throughput_tokens_sec": 9646.44
           },
           "qwen": {
             "status": "PASS",
@@ -732,10 +732,10 @@
           },
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 81.19,
-            "f1_score": 0.837,
-            "peak_vram_mb": 396.3,
-            "throughput_tokens_sec": 40672.66
+            "accuracy_pct": 77.75,
+            "f1_score": 0.8142,
+            "peak_vram_mb": 713.59,
+            "throughput_tokens_sec": 9227.27
           }
         }
       }
@@ -894,22 +894,22 @@
       "markdown_preview": "# ClusterFormer: Dynamic Token-Clustering Attention via Batch Iterative K-Means\n\n## 1. Executive Abstract & Architectural Motivation\n\nDense Multi-Head Self-Attention computes all $L \\times L$ pairwise interactions, leading to quadratic time complexity $\\mathcal{O}(L^2 d)$. Standard sparse attention methods use fixed positional windows or static random graphs that cannot adapt to the semantic content of input sequences.\n\n**ClusterFormer (`ClusterAttention`)** addresses this challenge by grouping queries into $K \\ll L$ semantic cluster centroids via batch-wise iterative $K$-means clustering (Llo",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 89.91,
+        "best_accuracy": 90.02,
         "has_pass": true,
         "models": {
           "distilbert": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 336.75,
-            "throughput_tokens_sec": 3225.85
+            "status": "PASS",
+            "accuracy_pct": 90.02,
+            "f1_score": 0.9039,
+            "peak_vram_mb": 331.87,
+            "throughput_tokens_sec": 3165.73
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 567.69,
-            "throughput_tokens_sec": 12094.12
+            "status": "PASS",
+            "accuracy_pct": 87.96,
+            "f1_score": 0.885,
+            "peak_vram_mb": 397.23,
+            "throughput_tokens_sec": 10707.08
           },
           "qwen": {
             "status": "PASS",
@@ -919,11 +919,11 @@
             "throughput_tokens_sec": null
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 667.11,
-            "throughput_tokens_sec": 1605.69
+            "status": "PASS",
+            "accuracy_pct": 72.02,
+            "f1_score": 0.7724,
+            "peak_vram_mb": 659.63,
+            "throughput_tokens_sec": 1531.33
           }
         }
       }
@@ -1035,36 +1035,29 @@
       "markdown_preview": "# Cosformer: Rethinking Softmax in Attention with Linear Complexity\n\n## 1. Executive Abstract & Architectural Motivation\n\nStandard Multi-Head Self-Attention requires quadratic computational complexity $\\mathcal{O}(L^2)$ and memory footprint $\\mathcal{O}(L^2)$ due to the explicit computation of the Softmax attention matrix:\n\\[\n\\operatorname{Attn}(Q, K, V) = \\operatorname{Softmax}\\left(\\frac{Q K^\\top}{\\sqrt{d}}\\right) V\n\\]\n**Cosformer** (Qin et al., 2022, ICLR) addresses this computational bottleneck by replacing Softmax with a **decomposed non-negative kernel mapping combined with a cosine-base",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 78.21,
+        "best_accuracy": 77.75,
         "has_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 78.21,
-            "f1_score": 0.7894,
-            "peak_vram_mb": 337.54,
-            "throughput_tokens_sec": 69817.49
+            "accuracy_pct": 77.75,
+            "f1_score": 0.7651,
+            "peak_vram_mb": 334.78,
+            "throughput_tokens_sec": 17787.97
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 1506.31,
-            "throughput_tokens_sec": 5721.29
-          },
-          "qwen": {
             "status": "PASS",
-            "accuracy_pct": 50.34,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null
+            "accuracy_pct": 70.18,
+            "f1_score": 0.751,
+            "peak_vram_mb": 1283.09,
+            "throughput_tokens_sec": 5788.7
           },
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 56.77,
-            "f1_score": 0.6952,
-            "peak_vram_mb": 386.79,
-            "throughput_tokens_sec": 36366.16
+            "accuracy_pct": 58.72,
+            "f1_score": 0.6629,
+            "peak_vram_mb": 659.13,
+            "throughput_tokens_sec": 9914.45
           }
         }
       }
@@ -1228,10 +1221,10 @@
           },
           "gpt2": {
             "status": "PASS",
-            "accuracy_pct": 60.89,
-            "f1_score": 0.7058,
-            "peak_vram_mb": 573.78,
-            "throughput_tokens_sec": 40042.51
+            "accuracy_pct": 70.76,
+            "f1_score": 0.7615,
+            "peak_vram_mb": 349.49,
+            "throughput_tokens_sec": 8689.53
           },
           "qwen": {
             "status": "PASS",
@@ -1241,11 +1234,11 @@
             "throughput_tokens_sec": null
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 54.36,
-            "f1_score": 0.6795,
-            "peak_vram_mb": 395.27,
-            "throughput_tokens_sec": 31530.93
+            "status": "PASS",
+            "accuracy_pct": 74.77,
+            "f1_score": 0.7727,
+            "peak_vram_mb": 410.26,
+            "throughput_tokens_sec": 6820.9
           }
         }
       }
@@ -1982,18 +1975,18 @@
         "has_pass": true,
         "models": {
           "distilbert": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 53.67,
-            "f1_score": 0.6259,
-            "peak_vram_mb": 339.09,
-            "throughput_tokens_sec": 2928.62
+            "status": "PASS",
+            "accuracy_pct": 62.96,
+            "f1_score": 0.7103,
+            "peak_vram_mb": 447.16,
+            "throughput_tokens_sec": 10808.18
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 49.66,
-            "f1_score": 0.57,
-            "peak_vram_mb": 587.96,
-            "throughput_tokens_sec": 2702.14
+            "status": "PASS",
+            "accuracy_pct": 71.44,
+            "f1_score": 0.7255,
+            "peak_vram_mb": 507.02,
+            "throughput_tokens_sec": 6889.54
           },
           "qwen": {
             "status": "PASS",
@@ -2004,10 +1997,10 @@
           },
           "roberta": {
             "status": "PASS_LOW",
-            "accuracy_pct": 50.46,
-            "f1_score": 0.5878,
-            "peak_vram_mb": 679.37,
-            "throughput_tokens_sec": 1487.65
+            "accuracy_pct": 52.06,
+            "f1_score": 0.6645,
+            "peak_vram_mb": 787.82,
+            "throughput_tokens_sec": 6703.93
           }
         }
       }
@@ -2814,37 +2807,30 @@
       "math": "W_0 = U \\Sigma V^T, \\quad \\Sigma = \\operatorname{diag}(\\sigma_1, \\sigma_2, \\dots, \\sigma_{\\min(d_{\\text{out}}, d_{\\text{in}})})",
       "markdown_preview": "# MinimalNOVA Attention: SVD-Factorized Low-Rank Projection Attention for Efficient Transformer Compression\n\n## 1. Abstract & Theoretical Motivation\n\nStandard Multi-Head Self-Attention (MHSA) in Transformer architectures requires dense projection matrices ($W_Q, W_K, W_V, W_O \\in \\mathbb{R}^{D \\times D}$) that introduce heavy parameter memory footprints and high matrix multiplication FLOP counts. Standard low-rank compression methods apply static projection ranks across all network layers, ignoring the empirical singular value distribution of pre-trained parameters.\n\nTo circumvent the paramete",
       "verified_benchmark": {
-        "overall_status": "PASS",
-        "best_accuracy": 85.44,
-        "has_pass": true,
+        "overall_status": "UNKNOWN",
+        "best_accuracy": null,
+        "has_pass": false,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 85.44,
-            "f1_score": 0.867,
-            "peak_vram_mb": 293.19,
-            "throughput_tokens_sec": 76814.2
-          },
-          "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 494.67,
-            "throughput_tokens_sec": 31712.66
-          },
-          "qwen": {
-            "status": "PASS",
-            "accuracy_pct": 49.08,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null
+            "accuracy_pct": 88.65,
+            "f1_score": 0.8896,
+            "peak_vram_mb": 285.84,
+            "throughput_tokens_sec": 22731.9
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 339.04,
-            "throughput_tokens_sec": 35458.12
+            "status": "PASS",
+            "accuracy_pct": 79.82,
+            "f1_score": 0.8124,
+            "peak_vram_mb": 580.81,
+            "throughput_tokens_sec": 13055.63
+          },
+          "gpt2": {
+            "status": "PASS",
+            "accuracy_pct": 79.36,
+            "f1_score": 0.8207,
+            "peak_vram_mb": 319.87,
+            "throughput_tokens_sec": 9739.09
           }
         }
       }
@@ -2908,37 +2894,30 @@
       "math": "A = U_{:, :r} \\text{diag}(\\sqrt{S_{:r}}) \\in \\mathbb{R}^{\\text{out} \\times r}, \\quad B = \\text{diag}(\\sqrt{S_{:r}}) V_{:r, :} \\in \\mathbb{R}^{r \\times \\text{in}}",
       "markdown_preview": "# MinimalSVD: Cumulative Energy-Budgeted SVD Factorization Attention\n\n## 1. Executive Abstract & Architectural Motivation\n\nMinimalSVD (`MinimalSVDAttention`) provides a zero-shot model compression mechanism for Transformer attention layers. In standard attention architectures, linear projection matrices $W_Q, W_K, W_V, W_O \\in \\mathbb{R}^{D \\times D}$ consume substantial parameter storage ($4 D^2$) and demand high memory bandwidth during inference.\n\nMinimalSVD factorizes each pre-trained linear projection matrix $W \\approx A B$ using Truncated Singular Value Decomposition (SVD), where $B \\in \\",
       "verified_benchmark": {
-        "overall_status": "PASS",
-        "best_accuracy": 85.44,
-        "has_pass": true,
+        "overall_status": "UNKNOWN",
+        "best_accuracy": null,
+        "has_pass": false,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 85.44,
-            "f1_score": 0.867,
-            "peak_vram_mb": 293.19,
-            "throughput_tokens_sec": 77579.43
-          },
-          "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 494.67,
-            "throughput_tokens_sec": 30244.27
-          },
-          "qwen": {
-            "status": "PASS",
-            "accuracy_pct": 48.51,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null
+            "accuracy_pct": 88.88,
+            "f1_score": 0.8921,
+            "peak_vram_mb": 286.12,
+            "throughput_tokens_sec": 24363.59
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 339.04,
-            "throughput_tokens_sec": 35000.5
+            "status": "PASS",
+            "accuracy_pct": 79.36,
+            "f1_score": 0.8065,
+            "peak_vram_mb": 580.81,
+            "throughput_tokens_sec": 13506.32
+          },
+          "gpt2": {
+            "status": "PASS",
+            "accuracy_pct": 80.85,
+            "f1_score": 0.8262,
+            "peak_vram_mb": 320.43,
+            "throughput_tokens_sec": 9545.66
           }
         }
       }
@@ -3003,36 +2982,29 @@
       "markdown_preview": "# MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA)\n\n## 1. Mathematical Formulation & Architectural Design\n\nThe **MixAttention-MoSKA (Frequency/Variance-Aware Sparse Attention - FASA)** architecture reduces the quadratic attention complexity of Transformers by dynamically pruning uninformative Key-Value tokens based on their **channel-wise spectral variance**. While standard static pruning techniques discard tokens arbitrarily or rely on expensive learned routers, MoSKA exploits the intrinsic information-theoretic entropy embedded in the variance of key channel activations, ",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 90.71,
+        "best_accuracy": 90.94,
         "has_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 90.71,
-            "f1_score": 0.9107,
-            "peak_vram_mb": 327.71,
-            "throughput_tokens_sec": 59487.49
+            "accuracy_pct": 90.94,
+            "f1_score": 0.9131,
+            "peak_vram_mb": 318.68,
+            "throughput_tokens_sec": 22375.04
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 51.61,
-            "f1_score": 0.6774,
-            "peak_vram_mb": 568.71,
-            "throughput_tokens_sec": 34947.22
-          },
-          "qwen": {
             "status": "PASS",
-            "accuracy_pct": 49.43,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null
+            "accuracy_pct": 87.27,
+            "f1_score": 0.8835,
+            "peak_vram_mb": 333.18,
+            "throughput_tokens_sec": 10823.89
           },
           "roberta": {
             "status": "PASS",
             "accuracy_pct": 86.24,
-            "f1_score": 0.8704,
-            "peak_vram_mb": 376.7,
-            "throughput_tokens_sec": 31562.88
+            "f1_score": 0.8739,
+            "peak_vram_mb": 648.25,
+            "throughput_tokens_sec": 12049.15
           }
         }
       }
@@ -3238,29 +3210,29 @@
       "markdown_preview": "# NASC: NEXUS-AEGIS Spectral Cascade Attention\n\n## Overview\n**NASC (NEXUS-AEGIS Spectral Cascade)** is a complexity-adaptive hybrid attention architecture that unifies the strengths of localized causal sliding windows, block-sparse Mixture-of-Experts routing, and global Random Fourier Feature (RFF) linear kernel approximations into a single gated layer.\n\n---\n\n\n## Architecture & Data Flow\n\nThe `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthesis:\n\n```\nInput Activation X [B, N, D]\n   \u2502\n   \u251c\u2500\u2500 Low-Rank Bottleneck Down-Projection",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 89.11,
+        "best_accuracy": 90.48,
         "has_pass": true,
         "models": {
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 85.55,
-            "f1_score": 0.8587,
-            "peak_vram_mb": 388.0,
-            "throughput_tokens_sec": 11631.37
+            "accuracy_pct": 89.22,
+            "f1_score": 0.9011,
+            "peak_vram_mb": 396.36,
+            "throughput_tokens_sec": 10404.11
           },
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 89.11,
-            "f1_score": 0.8917,
-            "peak_vram_mb": 339.63,
-            "throughput_tokens_sec": 24918.94
+            "accuracy_pct": 90.48,
+            "f1_score": 0.9075,
+            "peak_vram_mb": 323.33,
+            "throughput_tokens_sec": 19502.63
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 1514.06,
-            "throughput_tokens_sec": 5049.18
+            "status": "PASS",
+            "accuracy_pct": 85.32,
+            "f1_score": 0.8683,
+            "peak_vram_mb": 344.32,
+            "throughput_tokens_sec": 9415.39
           }
         }
       }
@@ -4089,22 +4061,22 @@
       "markdown_preview": "# Spectral Residual SVD Attention (Res-SVD Attention)\n\n## 1. Executive Abstract & Architectural Motivation\n\nSpectral Residual SVD Attention (`ResSVDAttention`) addresses a fundamental dilemma in transformer parameter reduction: low-rank matrix factorization achieves substantial compression ratios but suffers from irrecoverable loss of fine-grained representational capacity in downstream task adaptation. Conversely, Parameter-Efficient Fine-Tuning (PEFT) methods such as Low-Rank Adaptation (LoRA) maintain full-rank base weights, offering zero memory compression during inference.\n\n`ResSVDAttenti",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 83.83,
+        "best_accuracy": 89.56,
         "has_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 83.83,
-            "f1_score": 0.8569,
-            "peak_vram_mb": 329.4,
-            "throughput_tokens_sec": 76476.96
+            "accuracy_pct": 89.56,
+            "f1_score": 0.9016,
+            "peak_vram_mb": 298.36,
+            "throughput_tokens_sec": 24670.27
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 560.97,
-            "throughput_tokens_sec": 30675.09
+            "status": "PASS",
+            "accuracy_pct": 71.33,
+            "f1_score": 0.776,
+            "peak_vram_mb": 336.25,
+            "throughput_tokens_sec": 10784.31
           },
           "qwen": {
             "status": "PASS",
@@ -4114,11 +4086,11 @@
             "throughput_tokens_sec": null
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 426.15,
-            "throughput_tokens_sec": 32256.39
+            "status": "PASS",
+            "accuracy_pct": 76.61,
+            "f1_score": 0.791,
+            "peak_vram_mb": 594.37,
+            "throughput_tokens_sec": 12547.05
           }
         }
       }
@@ -4545,36 +4517,29 @@
       "markdown_preview": "# SOA Attention: Shared Orthogonal Attention with Latent Bottlenecks\n\n## 1. Mathematical Formulation & Architecture\nFactorizes Q, K, and V projections into low-rank representations initialized via truncated Singular Value Decomposition (SVD):\n$$W \\approx U_{:, :r} \\Sigma_{:r, :r} V_{:, :r}^T, \\quad r=64$$\nMulti-head attention computation:\n$$A = \\operatorname{Softmax}\\left(\\frac{Q K^T}{\\sqrt{d_h}} + M_{\\text{pad}}\\right), \\quad O = (A V) W_O$$\n\n\n## Architecture & Data Flow\n\nThe `LoRALinear` module coordinates input projection factorization, intermediate representation routing, and output synthe",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 81.31,
+        "best_accuracy": 89.11,
         "has_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 81.31,
-            "f1_score": 0.8191,
-            "peak_vram_mb": 282.69,
-            "throughput_tokens_sec": 86194.93
+            "accuracy_pct": 89.11,
+            "f1_score": 0.8962,
+            "peak_vram_mb": 293.12,
+            "throughput_tokens_sec": 25749.31
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 486.24,
-            "throughput_tokens_sec": 42558.25
-          },
-          "qwen": {
             "status": "PASS",
-            "accuracy_pct": 50.34,
-            "f1_score": null,
-            "peak_vram_mb": null,
-            "throughput_tokens_sec": null
+            "accuracy_pct": 80.62,
+            "f1_score": 0.8315,
+            "peak_vram_mb": 311.1,
+            "throughput_tokens_sec": 5967.01
           },
           "roberta": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 323.6,
-            "throughput_tokens_sec": 60449.91
+            "status": "PASS",
+            "accuracy_pct": 57.22,
+            "f1_score": 0.696,
+            "peak_vram_mb": 595.15,
+            "throughput_tokens_sec": 11201.26
           }
         }
       }
@@ -6291,11 +6256,11 @@
             "throughput_tokens_sec": 163468.26
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 643.86,
-            "throughput_tokens_sec": 69685.69
+            "status": "PASS",
+            "accuracy_pct": 80.73,
+            "f1_score": 0.8243,
+            "peak_vram_mb": 467.74,
+            "throughput_tokens_sec": 12376.1
           },
           "qwen": {
             "status": "PASS",
@@ -6338,11 +6303,11 @@
             "throughput_tokens_sec": 163468.26
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 50.92,
-            "f1_score": 0.6748,
-            "peak_vram_mb": 643.86,
-            "throughput_tokens_sec": 69685.69
+            "status": "PASS",
+            "accuracy_pct": 80.73,
+            "f1_score": 0.8243,
+            "peak_vram_mb": 467.74,
+            "throughput_tokens_sec": 12376.1
           },
           "qwen": {
             "status": "PASS",
@@ -6374,7 +6339,7 @@
       "markdown_preview": "# AdaptiveTransformerCompressor: Dynamic Energy-Threshold Attention Subspace Compression Engine\n\n## 1. Executive Abstract & Theoretical Motivation\nSelf-Attention projection matrices ($W_Q, W_K, W_V, W_O \\in \\mathbb{R}^{d_{\\text{model}} \\times d_{\\text{model}}}$) inside `nn.MultiheadAttention` layers exhibit non-uniform singular value spectra across transformer blocks. Early layers focus on local syntactic correlations and require lower ranks, while deeper layers process global semantic relationships demanding higher subspace capacity.\n\n`AdaptiveTransformerCompressor` (registered as `adaptive_s",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 90.37,
+        "best_accuracy": 90.94,
         "has_pass": true,
         "models": {
           "distilbert": {
@@ -6385,18 +6350,18 @@
             "throughput_tokens_sec": 203442.72
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 52.75,
-            "f1_score": 0.6776,
-            "peak_vram_mb": 638.53,
-            "throughput_tokens_sec": 69068.37
+            "status": "PASS",
+            "accuracy_pct": 83.6,
+            "f1_score": 0.8566,
+            "peak_vram_mb": 412.11,
+            "throughput_tokens_sec": 15236.0
           },
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 72.13,
-            "f1_score": 0.767,
-            "peak_vram_mb": 300.97,
-            "throughput_tokens_sec": 113445.26
+            "accuracy_pct": 90.94,
+            "f1_score": 0.9155,
+            "peak_vram_mb": 327.38,
+            "throughput_tokens_sec": 10179.8
           }
         }
       }
@@ -7253,22 +7218,22 @@
       "markdown_preview": "# DeltaKV: Residual-Based Key-Value Cache Compression via Long-Range Reference Matching\n\n## 1. Executive Abstract & Theoretical Motivation\n\nIn long-context LLM inference, the Key-Value (KV) cache grows linearly with sequence length, creating severe VRAM bottlenecks. Traditional KV cache eviction algorithms discard historical tokens, harming long-range context retrieval. **DeltaKV** preserves context fidelity by storing residual representations relative to retrieved historical reference vectors.\n\nDeltaKV identifies long-range similarity patterns across sequence positions. Instead of storing ful",
       "verified_benchmark": {
         "overall_status": "PASS",
-        "best_accuracy": 90.14,
+        "best_accuracy": 92.09,
         "has_pass": true,
         "models": {
           "distilbert": {
             "status": "PASS",
-            "accuracy_pct": 90.14,
-            "f1_score": 0.9029,
-            "peak_vram_mb": 338.34,
-            "throughput_tokens_sec": 162649.35
+            "accuracy_pct": 91.06,
+            "f1_score": 0.9139,
+            "peak_vram_mb": 310.69,
+            "throughput_tokens_sec": 53139.65
           },
           "gpt2": {
-            "status": "PASS_LOW",
-            "accuracy_pct": 55.96,
-            "f1_score": 0.6784,
-            "peak_vram_mb": 636.41,
-            "throughput_tokens_sec": 71404.22
+            "status": "PASS",
+            "accuracy_pct": 85.32,
+            "f1_score": 0.868,
+            "peak_vram_mb": 414.3,
+            "throughput_tokens_sec": 15811.65
           },
           "qwen": {
             "status": "PASS",
@@ -7279,10 +7244,10 @@
           },
           "roberta": {
             "status": "PASS",
-            "accuracy_pct": 81.65,
-            "f1_score": 0.8422,
-            "peak_vram_mb": 359.04,
-            "throughput_tokens_sec": 94750.01
+            "accuracy_pct": 92.09,
+            "f1_score": 0.9234,
+            "peak_vram_mb": 335.0,
+            "throughput_tokens_sec": 9808.15
           }
         }
       }

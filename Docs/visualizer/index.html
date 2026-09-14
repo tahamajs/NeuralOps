@@ -416,15 +416,24 @@
 
             <div class="modal-search-row">
                 <input type="text" id="modal-search-input" class="modal-search-input" placeholder="Search 241 modules by name, algorithm, keyword (e.g. Mamba, CUR, AASVD, EAT, ToMoE)..." autocomplete="off">
-                <div id="modal-category-pills" class="modal-category-pills">
-                    <button class="cat-pill active" data-cat="all">All (241)</button>
-                    <button class="cat-pill" data-cat="Low-Rank SVD &amp; Factorization">⚡ SVD &amp; Low-Rank</button>
-                    <button class="cat-pill" data-cat="Mixture of Experts &amp; Routing">🔀 Mixture-of-Experts</button>
-                    <button class="cat-pill" data-cat="Linear Attention &amp; State-Space (SSM)">🐍 Linear &amp; SSM</button>
-                    <button class="cat-pill" data-cat="Latent &amp; KV-Cache Compression">🧠 Latent &amp; KV-Cache</button>
-                    <button class="cat-pill" data-cat="Structured Pruning &amp; Channel Slicing">✂️ Pruning &amp; Slicing</button>
-                    <button class="cat-pill" data-cat="Dynamic &amp; Efficient Attention">🌟 Dynamic Attention</button>
-                    <button class="cat-pill" data-cat="Quantization &amp; Mixed Precision">💎 Quantization</button>
+                <div class="modal-controls-subrow">
+                    <div id="modal-category-pills" class="modal-category-pills">
+                        <button class="cat-pill active" data-cat="all">All (240)</button>
+                        <button class="cat-pill" data-cat="Low-Rank SVD &amp; Factorization">⚡ SVD &amp; Low-Rank</button>
+                        <button class="cat-pill" data-cat="Mixture of Experts &amp; Routing">🔀 Mixture-of-Experts</button>
+                        <button class="cat-pill" data-cat="Linear Attention &amp; State-Space (SSM)">🐍 Linear &amp; SSM</button>
+                        <button class="cat-pill" data-cat="Latent &amp; KV-Cache Compression">🧠 Latent &amp; KV-Cache</button>
+                        <button class="cat-pill" data-cat="Structured Pruning &amp; Channel Slicing">✂️ Pruning &amp; Slicing</button>
+                        <button class="cat-pill" data-cat="Dynamic &amp; Efficient Attention">🌟 Dynamic Attention</button>
+                        <button class="cat-pill" data-cat="Quantization &amp; Mixed Precision">💎 Quantization</button>
+                    </div>
+                    <div class="modal-sort-container">
+                        <span class="sort-label">Sort:</span>
+                        <button class="sort-btn active" data-sort="accuracy" title="Sort by verified GLUE accuracy">🏆 Accuracy</button>
+                        <button class="sort-btn" data-sort="savings" title="Sort by parameter reduction ratio">⚡ Savings</button>
+                        <button class="sort-btn" data-sort="name" title="Sort alphabetically by name">🔤 Name</button>
+                        <button class="sort-btn" data-sort="category" title="Sort grouped by category">📂 Category</button>
+                    </div>
                 </div>
             </div>
 
