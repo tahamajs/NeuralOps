@@ -1,15 +1,15 @@
 [
   {
-    "Model": "distilbert",
+    "Model": "roberta",
     "Exit Code": 0,
-    "Baseline Acc": "90.94%",
-    "Spectral Residual LoRA (res_svd) Acc": "89.56%",
-    "Delta Acc": "-1.38%",
-    "F1": "0.9016",
-    "Status": "PASS",
+    "Baseline Acc": "75.46%",
+    "Spectral Residual LoRA (res_svd) Acc": "51.95%",
+    "Delta Acc": "-23.51%",
+    "F1": "0.6794",
+    "Status": "PASS_LOW",
     "Compressed Layers": "0",
-    "Comp Rate": "1.14x",
-    "Peak VRAM": "298.4 MB",
-    "Time (s)": "54.2"
+    "Comp Rate": "1.08x",
+    "Peak VRAM": "593.6 MB",
+    "Time (s)": "71.2"
   }
 ]
