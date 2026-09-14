@@ -497,11 +497,14 @@ def inject_routing(
                     return layer
             if hasattr(layer, "attention"):
                 if hasattr(layer.attention, "self"):
+                    new_attn.is_nested_encoder = True
                     layer.attention.self = new_attn
                 else:
+                    new_attn.is_nested_encoder = False
                     layer.attention = new_attn
-                return layer
-            layer.attention = new_attn
+            elif hasattr(layer, "self_attn"):
+                new_attn.is_nested_encoder = False
+                layer.self_attn = new_attn
             return layer
         return new_attn
     except Exception as e:
