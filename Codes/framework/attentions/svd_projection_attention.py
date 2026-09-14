@@ -168,7 +168,7 @@ class SVDProjectionLinear(nn.Module):
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
 
-        return out * self.output_scale
+        return out
 
     def set_svd_factors(self, U: torch.Tensor, V: torch.Tensor) -> None:
         """Set precomputed U and V factors."""
@@ -307,6 +307,11 @@ class SVDProjectionAttention(BaseAttention):
         # 4. Copy weights if old_attn passed
         if old_attn is not None:
             self.copy_weights(old_attn)
+            try:
+                src_device = next(old_attn.parameters()).device
+                self.to(src_device)
+            except StopIteration:
+                pass
 
     @property
     def query(self) -> SVDProjectionLinear:
