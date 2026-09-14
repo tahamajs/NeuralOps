@@ -15,6 +15,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+try:
+    from torch.nn.attention import sdpa_kernel, SDPBackend
+    HAS_SDPA_KERNEL = True
+except ImportError:
+    HAS_SDPA_KERNEL = False
+
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from framework.core.base import BaseAttention
@@ -119,8 +125,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ):
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -161,7 +165,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("tpa", supports_causal=True, supports_gqa=True)
@@ -212,9 +216,15 @@ class TPAttention(BaseAttention):
 
         self.dim: int = int(dim)
         self.num_heads: int = max(1, int(num_heads))
-        self.head_dim: int = getattr(
-            config, "head_dim", kwargs.get("head_dim", self.dim // self.num_heads)
-        ) if config is not None else self.dim // self.num_heads
+
+        cfg_hd = _cfg_get(config, "head_dim", None) if config is not None else None
+        kw_hd = kwargs.get("head_dim", None)
+        if cfg_hd is not None:
+            self.head_dim: int = int(cfg_hd)
+        elif kw_hd is not None:
+            self.head_dim: int = int(kw_hd)
+        else:
+            self.head_dim: int = self.dim // self.num_heads
 
         cfg_kv = (
             _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
@@ -229,17 +239,38 @@ class TPAttention(BaseAttention):
         self.q_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
-        self.rank: int = kwargs.get("rank", _cfg_get(config, "rank", rank))
+        # Rank adjustment: ensure r * r matches head_dim if possible
+        raw_r = kwargs.get("rank", _cfg_get(config, "rank", rank))
+        r = raw_r
+        if r * r != self.head_dim:
+            logger.warning(f"Rank {r} gives head_dim {r*r}, but model head_dim is {self.head_dim}. Adjusting rank.")
+            r = int(math.sqrt(self.head_dim))
+            if r * r != self.head_dim:
+                r = max(1, int(self.head_dim ** 0.5))
+        self.rank: int = r
+
         self.lora_rank: int = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
         self.lora_alpha: float = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
+        # Projection if r * r != head_dim
+        if self.rank * self.rank != self.head_dim:
+            self.qk_proj: Optional[nn.Linear] = nn.Linear(self.rank * self.rank, self.head_dim, bias=False)
+        else:
+            self.qk_proj = None
+
         # Decoder / Causal flag
+        _mt = str(_cfg_get(config, "model_type", "") or "").lower() if config is not None else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
         if is_decoder is not None:
             self.is_decoder: bool = is_decoder
-        elif config is not None:
-            self.is_decoder = bool(_cfg_get(config, "is_decoder", False))
+        elif config is not None and (
+            _cfg_get(config, "is_decoder", False)
+            or _cfg_get(config, "causal", False)
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
+        ):
+            self.is_decoder = True
         else:
-            self.is_decoder = False
+            self.is_decoder = bool(kwargs.get("is_decoder", False))
 
         self.is_nested_encoder: bool = False
 
@@ -406,51 +437,29 @@ class TPAttention(BaseAttention):
                     f"TPAttention: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
 
-            # SVD factorized initialization for Q and K factor pairs across ALL hidden features
+            # Orthogonal initialization for Q and K factor pairs across ALL hidden features
             def _init_tp(W: torch.Tensor, proj1: LoRALinear, proj2: LoRALinear, num_h: int, r: int, src_sub=None) -> None:
-                W_f = W.float()
-                U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
-                eff_r = min(num_h * r, U.size(1), Vt.size(0))
+                # Option B: Initialize proj1 and proj2 with orthogonal weights to preserve full dimensional variance
+                nn.init.orthogonal_(proj1.weight)
+                nn.init.orthogonal_(proj2.weight)
+                if proj1.bias is not None:
+                    proj1.bias.zero_()
+                if proj2.bias is not None:
+                    proj2.bias.zero_()
+                proj1.weight.requires_grad = False
+                proj2.weight.requires_grad = False
 
-                # Correct rank decomposition covering all in_features:
-                # proj1 projects (dim -> num_heads*r) and proj2 projects (dim -> num_heads*r)
-                # p1 uses scaled U, p2 uses scaled Vt to capture full input dimensionality
-                S_sqrt = torch.sqrt(S[:eff_r].clamp(min=1e-6))
-                p1 = U[:num_h * r, :eff_r] * S_sqrt.unsqueeze(0)  # [num_h*r, eff_r]
-                p2 = (S_sqrt.unsqueeze(1) * Vt[:eff_r, :])         # [eff_r, in_features]
-
-                proj1.weight.zero_()
-                proj2.weight.zero_()
-
-                # If proj1 shape is [num_h*r, in_features], initialize properly
-                min_p1_0 = min(proj1.weight.shape[0], p1.size(0))
-                min_p1_1 = min(proj1.weight.shape[1], p1.size(1))
-                proj1.weight[:min_p1_0, :min_p1_1].copy_(p1[:min_p1_0, :min_p1_1].to(proj1.weight.dtype))
-
-                min_p2_0 = min(proj2.weight.shape[0], p2.size(0))
-                min_p2_1 = min(proj2.weight.shape[1], p2.size(1))
-                proj2.weight[:min_p2_0, :min_p2_1].copy_(p2[:min_p2_0, :min_p2_1].to(proj2.weight.dtype))
-
-                if float(torch.linalg.norm(proj1.weight)) < 1e-4:
-                    nn.init.normal_(proj1.weight, std=0.02)
-                if float(torch.linalg.norm(proj2.weight)) < 1e-4:
-                    nn.init.normal_(proj2.weight, std=0.02)
-
-                if src_sub is not None and hasattr(src_sub, "lora_A") and hasattr(src_sub, "lora_B"):
-                    if src_sub.lora_A is not None and src_sub.lora_B is not None:
-                        src_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
-                        src_lB = getattr(src_sub.lora_B, "weight", src_sub.lora_B)
-                        if hasattr(src_lA, "data") and hasattr(src_lB, "data"):
-                            if proj1.lora_A is not None and proj1.lora_B is not None:
-                                r_min = min(proj1.lora_A.shape[0], src_lA.shape[0])
-                                in_min = min(proj1.lora_A.shape[1], src_lA.shape[1])
-                                proj1.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
-                                proj1.lora_A.requires_grad = True
-
-                                out_min = min(proj1.lora_B.shape[0], src_lB.shape[0])
-                                r_min_b = min(proj1.lora_B.shape[1], src_lB.shape[1])
-                                proj1.lora_B.data[:out_min, :r_min_b].copy_(src_lB.data[:out_min, :r_min_b])
-                                proj1.lora_B.requires_grad = True
+                # LoRA init with standard kaiming uniform / zeros (no copy from src_sub)
+                if proj1.lora_A is not None and proj1.lora_B is not None:
+                    nn.init.kaiming_uniform_(proj1.lora_A, a=math.sqrt(5))
+                    nn.init.zeros_(proj1.lora_B)
+                    proj1.lora_A.requires_grad = True
+                    proj1.lora_B.requires_grad = True
+                if proj2.lora_A is not None and proj2.lora_B is not None:
+                    nn.init.kaiming_uniform_(proj2.lora_A, a=math.sqrt(5))
+                    nn.init.zeros_(proj2.lora_B)
+                    proj2.lora_A.requires_grad = True
+                    proj2.lora_B.requires_grad = True
 
             def _copy_layer(target_layer, w, b, src_sub=None):
                 if w is not None:
@@ -507,6 +516,11 @@ class TPAttention(BaseAttention):
                 if f_norm_o < 1e-4:
                     raise RuntimeError(f"TPAttention: Out projection norm is near zero: {f_norm_o}")
 
+            if hasattr(old_attn, "is_decoder"):
+                self.is_decoder = bool(old_attn.is_decoder)
+            elif hasattr(old_attn, "c_attn") or any(x in old_attn.__class__.__name__.lower() for x in ("gpt", "qwen", "llama", "decoder")):
+                self.is_decoder = True
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -531,8 +545,13 @@ class TPAttention(BaseAttention):
         v = self.v_proj(hidden_states).view(B, L, H_kv, hd)
 
         # 1. Efficient broadcasting instead of einsum & contiguous transpose
-        Q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).view(B, L, H, r * r).transpose(1, 2)
-        K = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).view(B, L, H_kv, r * r).transpose(1, 2)
+        Q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).view(B, L, H, r * r)
+        K = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).view(B, L, H_kv, r * r)
+        if self.qk_proj is not None:
+            Q = self.qk_proj(Q)
+            K = self.qk_proj(K)
+        Q = Q.transpose(1, 2)
+        K = K.transpose(1, 2)
         v = v.transpose(1, 2)
 
         # Partial Rotary Position Embeddings (RoPE)
@@ -564,7 +583,17 @@ class TPAttention(BaseAttention):
                     custom_mask = custom_mask.unsqueeze(1)
 
         if not output_attentions and head_mask is None:
-            with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=True):
+            if HAS_SDPA_KERNEL:
+                with sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.MATH, SDPBackend.EFFICIENT_ATTENTION]):
+                    context = F.scaled_dot_product_attention(
+                        query=Q.contiguous(),
+                        key=K.contiguous(),
+                        value=v.contiguous(),
+                        attn_mask=custom_mask,
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                        is_causal=is_causal_mask if custom_mask is None else False,
+                    )
+            else:
                 context = F.scaled_dot_product_attention(
                     query=Q.contiguous(),
                     key=K.contiguous(),
@@ -576,7 +605,7 @@ class TPAttention(BaseAttention):
             attn_weights = None
         else:
             # Fallback path if output_attentions or head_mask are explicitly requested
-            scale = 1.0 / float(r)
+            scale = 1.0 / math.sqrt(self.head_dim)
             scores = torch.matmul(Q, K.transpose(-1, -2)) * scale
             if is_causal_mask and custom_mask is None:
                 causal_mask = torch.triu(
@@ -734,18 +763,35 @@ def inject_tpa(
             **kwargs,
         )
 
-        for attr in ("self_attn", "attn", "self"):
-            if hasattr(target, attr):
-                setattr(target, attr, new_attn)
-                return new_attn
+        p = next(src.parameters(), None) if src is not None else None
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
+                new_attn.is_nested_encoder = True
                 target.attention.self = new_attn
             else:
+                new_attn.is_nested_encoder = False
                 target.attention = new_attn
-            return new_attn
-        target.attention = new_attn
+        elif hasattr(target, "self_attn"):
+            new_attn.is_nested_encoder = False
+            target.self_attn = new_attn
+        elif hasattr(target, "attn"):
+            new_attn.is_nested_encoder = False
+            target.attn = new_attn
+        elif hasattr(target, "self"):
+            new_attn.is_nested_encoder = True
+            target.self = new_attn
+        else:
+            new_attn.is_nested_encoder = False
+            target.attention = new_attn
         return new_attn
     except Exception as e:
         logger.error("inject_tpa failed at layer %d: %s", layer_idx, e)
         return None
+
+
+tp_inject = inject_tpa
+TPA = TPAttention
+
