@@ -171,3 +171,115 @@ def test_lola_base_layer_peft_unwrapping():
     out, _ = attn(x)
     assert out.shape == (2, 8, 64)
 
+
+def test_lola_no_output_scale():
+    cfg = MockConfig()
+    attn = LoLAAttention(config=cfg, rank=16)
+    assert not hasattr(attn, "output_scale")
+
+
+def test_lola_qwen3_5_head_dim():
+    class Qwen35Config:
+        hidden_size = 1024
+        num_attention_heads = 8
+        num_key_value_heads = 8
+        head_dim = 256
+        model_type = "qwen3_5"
+        is_decoder = True
+
+    attn = LoLAAttention(config=Qwen35Config(), rank=16)
+    assert attn.head_dim == 256
+    assert attn.all_head_size == 2048
+    assert attn.hidden_size == 1024
+    assert attn.is_decoder is True
+
+    x = torch.randn(2, 4, 1024)
+    out, _ = attn(x)
+    assert out.shape == (2, 4, 1024)
+
+
+def test_lola_lowrank_cache_batch_and_heads():
+    from framework.attentions.lola_attention import LowRankCache
+    cache = LowRankCache(max_len=16, low_rank_k=4)
+    B, H, N, D = 2, 4, 8, 16
+    K = torch.randn(B, H, N, D)
+    V = torch.randn(B, H, N, D)
+    cache.update(K, V)
+    k_cached, v_cached = cache.get_cached()
+    assert k_cached is not None and v_cached is not None
+    # Shape must be [B*H, C, D]
+    assert k_cached.shape[0] == B * H
+    assert k_cached.shape[2] == D
+    assert v_cached.shape[0] == B * H
+    assert v_cached.shape[2] == D
+
+    # Test cache reset
+    cache.reset()
+    k_empty, v_empty = cache.get_cached()
+    assert k_empty is None and v_empty is None
+
+
+def test_lola_causal_mask_enforcement():
+    cfg = MockConfig(is_decoder=True, model_type="gpt2")
+    attn = LoLAAttention(config=cfg, rank=16)
+    x = torch.randn(2, 6, 64)
+    out, weights = attn(x, output_attentions=True)
+    assert weights is not None
+    # Future positions must have probability zero
+    for i in range(6):
+        for j in range(i + 1, 6):
+            assert torch.all(weights[:, :, i, j] == 0.0)
+
+
+def test_lola_4d_masks():
+    cfg = MockConfig()
+    attn = LoLAAttention(config=cfg, rank=16)
+    x = torch.randn(2, 4, 64)
+
+    # 4D boolean mask [B, 1, N, N]
+    bool_mask = torch.ones(2, 1, 4, 4, dtype=torch.bool)
+    bool_mask[:, :, :, 3] = False  # mask out last token
+    out_bool, _ = attn(x, attention_mask=bool_mask)
+    assert out_bool.shape == (2, 4, 64)
+
+    # 4D float additive mask
+    float_mask = torch.zeros(2, 1, 4, 4, dtype=torch.float32)
+    float_mask[:, :, :, 3] = -10000.0
+    out_float, _ = attn(x, attention_mask=float_mask)
+    assert out_float.shape == (2, 4, 64)
+
+
+def test_lola_nested_encoder_injection():
+    class DummyBertSelf(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.query = nn.Linear(64, 64)
+            self.key = nn.Linear(64, 64)
+            self.value = nn.Linear(64, 64)
+
+    class DummyBertAttention(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.self = DummyBertSelf()
+            self.output = nn.Module()
+            self.output.dense = nn.Linear(64, 64)
+
+    class DummyBertLayer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.attention = DummyBertAttention()
+
+    class DummyLlamaLayer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.self_attn = DummyQwenAttention(64)
+
+    bert_layer = DummyBertLayer()
+    injected_bert = inject_lola_attention(bert_layer, model_config=MockConfig(), old_attn=bert_layer.attention.self)
+    assert injected_bert.is_nested_encoder is True
+
+    llama_layer = DummyLlamaLayer()
+    injected_llama = inject_lola_attention(llama_layer, model_config=MockConfig(), old_attn=llama_layer.self_attn)
+    assert injected_llama.is_nested_encoder is False
+
+
