@@ -1,26 +1,26 @@
 {
     "model": "roberta-base_flash3",
     "performance": {
-        "accuracy_pct": 52.52,
-        "f1_score": 0.6801,
-        "f1_macro": 0.38,
-        "precision": 0.6679,
-        "recall": 0.5165,
-        "val_loss": 0.6845,
-        "status": "PASS_LOW",
-        "elapsed_s": 21.86
+        "accuracy_pct": 87.61,
+        "f1_score": 0.8873,
+        "f1_macro": 0.8749,
+        "precision": 0.8869,
+        "recall": 0.8746,
+        "val_loss": 0.4187,
+        "status": "PASS",
+        "elapsed_s": 24.96
     },
     "efficiency": {
-        "total_params_before": 124647170,
-        "total_params_after": 132913970,
-        "trainable_recovery_params": 1179696,
-        "compression_rate": 0.9378,
-        "compression_ratio_pct": -6.63,
+        "total_params_before": 127325954,
+        "total_params_after": 134707970,
+        "trainable_recovery_params": 2973696,
+        "compression_rate": 0.9452,
+        "compression_ratio_pct": -5.8,
         "flops_reduction_pct": 0.0,
-        "num_compressed_layers": 48,
+        "num_compressed_layers": 85,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
-        "lora_params": 1179648,
+        "lora_params": 2973696,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -40,8 +40,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 367.69,
-        "tokens_per_sec": 14812.13
+        "peak_vram_mb": 394.02,
+        "tokens_per_sec": 12178.79
     },
     "architecture": {
         "span_distribution": {},
@@ -49,10 +49,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 345.9,
-        "L_256_vram_mb": 348.95,
-        "L_512_vram_mb": 355.65,
+        "L_128_vram_mb": 364.18,
+        "L_256_vram_mb": 369.0,
+        "L_512_vram_mb": 377.21,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-14T06:32:00.953347"
+    "timestamp": "2026-09-15T00:59:41.826711"
 }
