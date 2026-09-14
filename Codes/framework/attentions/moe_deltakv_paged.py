@@ -155,7 +155,15 @@ class MoEDeltaKVPagedAttention(nn.Module):
         self.page_size = getattr(config, "page_size", kwargs.get("page_size", 64))
         self.k_experts = getattr(config, "k_experts", kwargs.get("k_experts", 4))
         self.svd_rank = getattr(config, "svd_rank", kwargs.get("svd_rank", 16))
-        self.is_causal = getattr(config, "is_causal", getattr(config, "is_decoder", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
+
+        _mt = str(getattr(config, "model_type", "") or "").lower()
+        self.is_causal = bool(
+            getattr(config, "is_causal", False)
+            or getattr(config, "is_decoder", False)
+            or kwargs.get("is_causal", False)
+            or kwargs.get("is_decoder", False)
+            or any(_mt.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
+        )
         self.is_decoder = bool(self.is_causal)
         self.is_nested_encoder = False
 
@@ -363,14 +371,23 @@ class MoEDeltaKVPagedAttention(nn.Module):
         if padded_N > N:
             valid_mask = F.pad(valid_mask, (0, padded_N - N), value=False)
 
-        if num_pages <= 2:
-            # Full attention path when sequence length fits in 1-2 pages
+        if self.is_causal or num_pages <= 2:
+            # Full attention path for causal decoders or when sequence length fits in 1-2 pages
             scale = 1.0 / math.sqrt(d)
             scores = torch.matmul(q, k_hat.transpose(-2, -1)) * scale
+
+            if self.is_causal and N > 1:
+                causal_mask = torch.triu(
+                    torch.full((N, N), float("-inf"), device=q.device, dtype=torch.float32),
+                    diagonal=1,
+                ).unsqueeze(0).unsqueeze(0)
+                scores = scores + causal_mask
+
             if attention_mask is not None:
                 pad_mask = (~valid_mask[:, :N]).unsqueeze(1).unsqueeze(2)
                 scores = scores.masked_fill(pad_mask, -10000.0)
 
+            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             attn = F.softmax(scores, dim=-1)
             attn = self.dropout(attn)
             if head_mask is not None:
