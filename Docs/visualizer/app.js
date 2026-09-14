@@ -2615,6 +2615,7 @@ function render(time) {
     renderer.setViewport(0, 0, width, height);
     renderer.setScissor(0, 0, width, height);
     renderer.render(scene, cameraBaseline);
+    updateFPS();
 }
 
 // ---------------------------------------------------------------------------
@@ -4234,6 +4235,34 @@ function renderModelsMatrix(moduleMeta) {
             `;
         }
 
+        // Build SVG spark-bars for benchmark metrics
+        let sparkHtml = '';
+        if (bmark && bmark.accuracy_pct != null) {
+            const acc = Math.min(100, Math.max(0, bmark.accuracy_pct));
+            const vram = bmark.peak_vram_mb ? Math.min(100, bmark.peak_vram_mb / 10) : 0;
+            const spd = bmark.throughput_tokens_sec ? Math.min(100, bmark.throughput_tokens_sec / 1200) : 0;
+            const accColor = acc >= 75 ? '#34d399' : acc >= 50 ? '#fbbf24' : '#f87171';
+            sparkHtml = `
+                <div class="mmc-spark-section">
+                    <div class="mmc-spark-row">
+                        <span class="mmc-spark-label">Acc</span>
+                        <div class="mmc-spark-bar-bg"><div class="mmc-spark-bar" style="width:${acc}%;background:${accColor}"></div></div>
+                        <span class="mmc-spark-val" style="color:${accColor}">${acc.toFixed(1)}%</span>
+                    </div>
+                    <div class="mmc-spark-row">
+                        <span class="mmc-spark-label">VRAM</span>
+                        <div class="mmc-spark-bar-bg"><div class="mmc-spark-bar" style="width:${vram}%;background:#818cf8"></div></div>
+                        <span class="mmc-spark-val">${bmark.peak_vram_mb ? Math.round(bmark.peak_vram_mb)+'MB' : '—'}</span>
+                    </div>
+                    <div class="mmc-spark-row">
+                        <span class="mmc-spark-label">Spd</span>
+                        <div class="mmc-spark-bar-bg"><div class="mmc-spark-bar" style="width:${spd}%;background:#f59e0b"></div></div>
+                        <span class="mmc-spark-val">${bmark.throughput_tokens_sec ? Math.round(bmark.throughput_tokens_sec/1000)+'k/s' : '—'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
         return `
             <div class="model-matrix-card ${isActive ? 'active' : ''}" data-model="${key}" onclick="switchModelFromMatrix('${key}')" title="Click to view 3D architecture on ${displayName}">
                 <div class="mmc-header">
@@ -4250,6 +4279,7 @@ function renderModelsMatrix(moduleMeta) {
                     <span>/Layer: <b>${formatParamCount(layerComp)}</b></span>
                 </div>
                 ${bmarkHtml}
+                ${sparkHtml}
             </div>
         `;
     }).join('');
@@ -4789,6 +4819,9 @@ function applyResearchModule(moduleMeta) {
     renderLatexFormula(moduleMeta);
     renderStructuralTransformation(moduleMeta, currentModel);
     updateModelSelectorTabs(moduleMeta);
+    // Param breakdown & comparison pin
+    if (window.renderParamBreakdownTable) renderParamBreakdownTable(moduleMeta, currentModel);
+    if (typeof renderComparisonPin === 'function' && _pinnedModule) renderComparisonPin();
 
     // Update global module counter badge in header
     const modCountBadge = document.getElementById('hud-active-module-badge');
@@ -4809,6 +4842,257 @@ function applyResearchModule(moduleMeta) {
 // ---------------------------------------------------------------------------
 // 21. Bootstrap
 // ---------------------------------------------------------------------------
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MEGA ENHANCEMENT — Added Features
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── FPS Counter ──────────────────────────────────────────────────────────────
+let _fpsFrames = 0, _fpsLast = performance.now(), _fpsValue = 0;
+function updateFPS() {
+    _fpsFrames++;
+    const now = performance.now();
+    if (now - _fpsLast >= 1000) {
+        _fpsValue = _fpsFrames;
+        _fpsFrames = 0;
+        _fpsLast = now;
+        const el = document.getElementById('fps-counter');
+        if (el) {
+            el.textContent = `${_fpsValue} fps`;
+            el.style.color = _fpsValue >= 50 ? '#34d399' : _fpsValue >= 30 ? '#fbbf24' : '#f87171';
+        }
+    }
+}
+
+// ── Auto-Tour Camera Mode ────────────────────────────────────────────────────
+let _tourActive = false;
+let _tourStep = 0;
+let _tourTimer = null;
+const TOUR_STEPS = [
+    { y: 2,  dist: 20, label: '01 — Input Embeddings',     fn: () => selectPartIn3D('q_lin', { flyCamera: true }) },
+    { y: 5,  dist: 18, label: '02 — Q · K · V Projections', fn: () => selectPartIn3D('k_lin', { flyCamera: true }) },
+    { y: 8,  dist: 16, label: '03 — Attention Output',       fn: () => selectPartIn3D('out_lin', { flyCamera: true }) },
+    { y: 10, dist: 16, label: '04 — Residual Add #1',        fn: () => {} },
+    { y: 13, dist: 18, label: '05 — FFN Up Projection',      fn: () => selectPartIn3D('lin1', { flyCamera: true }) },
+    { y: 16, dist: 18, label: '06 — FFN Down Projection',    fn: () => selectPartIn3D('lin2', { flyCamera: true }) },
+    { y: 20, dist: 22, label: '07 — Output LM Head',         fn: () => {} },
+    { y: 12, dist: 35, label: '08 — Full Architecture',      fn: () => smoothFlyCamera(maxGraphHeight * 0.5, Math.max(18, maxGraphHeight * 1.35)) },
+];
+
+function startTour() {
+    _tourActive = true;
+    _tourStep = 0;
+    const btn = document.getElementById('btn-auto-tour');
+    if (btn) { btn.textContent = '⏹ Stop Tour'; btn.classList.add('active'); }
+    runTourStep();
+}
+function stopTour() {
+    _tourActive = false;
+    clearTimeout(_tourTimer);
+    const btn = document.getElementById('btn-auto-tour');
+    if (btn) { btn.textContent = '▶ Auto Tour'; btn.classList.remove('active'); }
+}
+function runTourStep() {
+    if (!_tourActive) return;
+    const step = TOUR_STEPS[_tourStep % TOUR_STEPS.length];
+    smoothFlyCamera(step.y, step.dist);
+    step.fn();
+    // Update tour label
+    const lbl = document.getElementById('tour-step-label');
+    if (lbl) { lbl.textContent = step.label; lbl.style.opacity = '1'; }
+    // Highlight lifecycle step
+    const idx = _tourStep % 7;
+    document.querySelectorAll('.lifecycle-step-item').forEach((el, i) => {
+        el.classList.toggle('active-step', i === idx);
+    });
+    _tourStep++;
+    _tourTimer = setTimeout(runTourStep, 3200);
+    if (_tourStep >= TOUR_STEPS.length) {
+        setTimeout(stopTour, 3200);
+    }
+}
+window.toggleTour = function() {
+    if (_tourActive) stopTour(); else startTour();
+};
+
+// ── Benchmark CSV Export ─────────────────────────────────────────────────────
+window.exportBenchmarkCSV = function() {
+    if (!activeResearchModule) return;
+    const m = activeResearchModule;
+    const rows = [['Model', 'Status', 'Accuracy%', 'F1', 'VRAM_MB', 'Throughput_t/s', 'Savings_x', 'Storage_Saved']];
+    const keys = ['distilbert', 'roberta', 'gpt2', 'qwen'];
+    keys.forEach(k => {
+        const proj = (m.model_projections || {})[k] || {};
+        const bm = proj.benchmark || {};
+        rows.push([
+            proj.model_name || k,
+            bm.status || '—',
+            bm.accuracy_pct != null ? bm.accuracy_pct.toFixed(2) : '—',
+            bm.f1_score != null ? bm.f1_score.toFixed(4) : '—',
+            bm.peak_vram_mb != null ? Math.round(bm.peak_vram_mb) : '—',
+            bm.throughput_tokens_sec != null ? Math.round(bm.throughput_tokens_sec) : '—',
+            proj.savings_ratio != null ? proj.savings_ratio.toFixed(2) : '—',
+            proj.storage_saved_formatted || '—'
+        ]);
+    });
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${m.id}_benchmarks.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+};
+
+// ── Color Legend Overlay ─────────────────────────────────────────────────────
+function buildColorLegend() {
+    const el = document.getElementById('color-legend');
+    if (!el) return;
+    const entries = [
+        { color: '#2e4659', label: 'Dense Baseline', desc: 'Full-rank weight matrix (O(N²))' },
+        { color: '#3acbb8', label: 'SVD Compressed', desc: 'Low-rank factorized U·V pair' },
+        { color: '#b57ee0', label: 'MoE Router', desc: 'Gating network — token dispatch' },
+        { color: '#9f68cb', label: 'MoE Expert', desc: 'Sparse expert sub-network' },
+        { color: '#e6a848', label: 'MLA Latent', desc: 'KV-cache latent bottleneck' },
+        { color: '#38bdf8', label: 'SliceGPT', desc: 'Orthogonally pruned channel slice' },
+        { color: '#10b981', label: 'Embedding', desc: 'Token ID → continuous vector' },
+        { color: '#f43f5e', label: 'LM Head', desc: 'Logit projection → vocabulary' },
+        { color: '#60a5fa', label: 'Residual Add', desc: 'Skip-connection + operator' },
+    ];
+    el.innerHTML = `
+        <div class="legend-title">🎨 Node Color Legend</div>
+        ${entries.map(e => `
+            <div class="legend-row">
+                <span class="legend-swatch" style="background:${e.color}"></span>
+                <div class="legend-info">
+                    <span class="legend-label">${e.label}</span>
+                    <span class="legend-desc">${e.desc}</span>
+                </div>
+            </div>
+        `).join('')}
+    `;
+}
+
+// ── Parameter Breakdown Table ─────────────────────────────────────────────────
+window.renderParamBreakdownTable = function(moduleMeta, modelKey) {
+    const el = document.getElementById('param-breakdown-table');
+    if (!el || !moduleMeta) return;
+    const proj = (moduleMeta.model_projections || {})[modelKey || currentModel] || {};
+    const dModel = proj.hidden_size || 768;
+    const dFfn = proj.intermediate_size || 3072;
+    const comps = moduleMeta.components || [];
+
+    let rows = '';
+    if (comps.length > 0) {
+        comps.forEach(c => {
+            // Parse shape_transform to compute param count
+            const shapeStr = c.shape_transform || '';
+            const paramEst = (() => {
+                const m = shapeStr.match(/\[(\d+)\s*[×x]\s*(\d+)\]/);
+                if (m) return parseInt(m[1]) * parseInt(m[2]);
+                if (shapeStr.includes('d_out') && shapeStr.includes('d_in')) return dModel * dModel;
+                if (shapeStr.includes('d_in')) return 64 * dModel;
+                if (shapeStr.includes('d_out')) return dModel * 64;
+                return null;
+            })();
+            rows += `<tr>
+                <td><span class="pbt-swatch" style="background:${c.color||'#2dd4bf'}"></span>${c.name}</td>
+                <td class="pbt-mono">${shapeStr}</td>
+                <td class="pbt-mono">${paramEst ? formatParamCount(paramEst) : '—'}</td>
+                <td class="pbt-role">${c.role || '—'}</td>
+            </tr>`;
+        });
+    } else {
+        // generic rows from pipeline
+        const pipeline = getModelPipelineComponents(moduleMeta, modelKey || currentModel);
+        pipeline.flat().forEach(c => {
+            rows += `<tr>
+                <td><span class="pbt-swatch" style="background:${c.color||'#2dd4bf'}"></span>${c.name}</td>
+                <td class="pbt-mono">${c.shape_transform || '—'}</td>
+                <td class="pbt-mono">${c.params || '—'}</td>
+                <td class="pbt-role">${c.role || '—'}</td>
+            </tr>`;
+        });
+    }
+
+    el.innerHTML = `
+        <div class="pbt-title">📐 Component Parameter Breakdown</div>
+        <table class="pbt-table">
+            <thead><tr>
+                <th>Component</th><th>Shape</th><th>Params</th><th>Role</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+        <button class="formula-copy-btn" onclick="exportBenchmarkCSV()" style="margin-top:8px;">⬇ Export CSV</button>
+    `;
+};
+
+// ── Module Comparison Pin ─────────────────────────────────────────────────────
+let _pinnedModule = null;
+window.pinCurrentModule = function() {
+    if (!activeResearchModule) return;
+    _pinnedModule = { ...activeResearchModule };
+    const el = document.getElementById('pinned-module-name');
+    if (el) el.textContent = _pinnedModule.name;
+    const section = document.getElementById('comparison-pin-section');
+    if (section) section.style.display = 'block';
+    renderComparisonPin();
+};
+function renderComparisonPin() {
+    if (!_pinnedModule || !activeResearchModule) return;
+    const el = document.getElementById('comparison-pin-content');
+    if (!el) return;
+    const A = _pinnedModule, B = activeResearchModule;
+    const modelKeys = ['distilbert', 'roberta', 'gpt2', 'qwen'];
+    let rows = modelKeys.map(k => {
+        const pA = ((A.model_projections || {})[k] || {});
+        const pB = ((B.model_projections || {})[k] || {});
+        const ratioA = pA.savings_ratio || '—';
+        const ratioB = pB.savings_ratio || '—';
+        const winner = (typeof ratioA === 'number' && typeof ratioB === 'number') ?
+            (ratioA > ratioB ? 'A' : ratioB > ratioA ? 'B' : '=') : '?';
+        return `<tr>
+            <td>${k.toUpperCase()}</td>
+            <td class="${winner==='A'?'cp-win':''}">${typeof ratioA==='number'?ratioA.toFixed(1)+'x':ratioA}</td>
+            <td class="${winner==='B'?'cp-win':''}">${typeof ratioB==='number'?ratioB.toFixed(1)+'x':ratioB}</td>
+        </tr>`;
+    }).join('');
+
+    el.innerHTML = `
+        <table class="pbt-table">
+            <thead><tr><th>Model</th><th title="${A.name}">${(A.name||'').slice(0,14)}…</th><th title="${B.name}">${(B.name||'').slice(0,14)}…</th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+        <button class="formula-copy-btn" style="margin-top:6px;" onclick="document.getElementById('comparison-pin-section').style.display='none'; _pinnedModule=null;">✕ Clear Pin</button>
+    `;
+}
+
+// ── Hook renderParamBreakdown & renderComparisonPin into applyResearchModule ──
+const _origApply = window._origApplyResearchModule;
+// We patch at call site below
+
+// ── Color Legend auto-build ───────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    buildColorLegend();
+
+    const tourBtn = document.getElementById('btn-auto-tour');
+    if (tourBtn) tourBtn.addEventListener('click', () => window.toggleTour());
+
+    const legendToggle = document.getElementById('btn-legend-toggle');
+    const legendPanel = document.getElementById('color-legend');
+    if (legendToggle && legendPanel) {
+        legendToggle.addEventListener('click', () => {
+            const visible = legendPanel.style.display !== 'none';
+            legendPanel.style.display = visible ? 'none' : 'block';
+            legendToggle.textContent = visible ? '🎨 Legend' : '✕ Legend';
+        });
+    }
+
+    const pinBtn = document.getElementById('btn-pin-module');
+    if (pinBtn) pinBtn.addEventListener('click', () => window.pinCurrentModule());
+});
+
+
 async function bootstrap() {
     setupTreeFilter();
     initModuleCatalog();
