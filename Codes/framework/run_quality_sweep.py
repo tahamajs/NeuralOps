@@ -194,7 +194,7 @@ def compute_compression_metrics(
     num_svd_layers = sum(
         1 for m in model.modules()
         if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "LoRALinear")
-        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "MinimalNOVA", "NEXUS", "ORION", "MoBA"))
+        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "MinimalNOVA", "MinimalPRISM", "NEXUS", "ORION", "MoBA"))
         or hasattr(m, "q_down")
     )
     univ_count = sum(1 for m in model.modules() if "attention" in m.__class__.__name__.lower() and "universal" in m.__class__.__name__.lower())
@@ -2087,13 +2087,14 @@ def main():
                             setattr(model.config, "kvtc_fallback_to_original", args.kvtc_fallback_to_original)
                             setattr(model.config, "fallback_to_original", args.kvtc_fallback_to_original)
                     model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
+                    model = model.to(device)
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(
                         1 for m in model.modules()
                         if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "LoRALinear")
-                        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "MinimalNOVA", "NEXUS", "ORION", "MoBA"))
+                        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "MinimalNOVA", "MinimalPRISM", "NEXUS", "ORION", "MoBA"))
                         or hasattr(m, "q_down")
                     )
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
