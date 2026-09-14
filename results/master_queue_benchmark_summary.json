@@ -151,5 +151,167 @@
     "status": "FAIL",
     "error": null,
     "timestamp": "2026-09-14T23:59:18.809666"
+  },
+  {
+    "module": "aegis_v2",
+    "runner": "run_all_4_aegis_v2.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-14T23:59:18.817456"
+  },
+  {
+    "module": "aegis_v3",
+    "runner": "run_all_4_aegis_v3.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-14T23:59:18.818803"
+  },
+  {
+    "module": "aegis_v3_module",
+    "runner": "run_all_4_aegis_v3_module.py",
+    "exit_code": 0,
+    "elapsed_s": 457.63,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T00:06:56.448684"
+  },
+  {
+    "module": "aegis_v4",
+    "runner": "run_all_4_aegis_v4.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:06:56.455316"
+  },
+  {
+    "module": "aegis_v4_module",
+    "runner": "run_all_4_aegis_v4_module.py",
+    "exit_code": 0,
+    "elapsed_s": 301.51,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T00:11:57.967229"
+  },
+  {
+    "module": "aegis_v5",
+    "runner": "run_all_4_aegis_v5.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:11:57.975054"
+  },
+  {
+    "module": "aegis_v5_module",
+    "runner": "run_all_4_aegis_v5_module.py",
+    "exit_code": 0,
+    "elapsed_s": 285.66,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T00:16:43.642501"
+  },
+  {
+    "module": "aegis_v6",
+    "runner": "run_all_4_aegis_v6.py",
+    "exit_code": 0,
+    "elapsed_s": 217.0,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T00:20:20.648765"
+  },
+  {
+    "module": "armor",
+    "runner": "run_all_4_armor.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:20:20.653374"
+  },
+  {
+    "module": "astro",
+    "runner": "run_all_4_astro.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:20:20.654637"
+  },
+  {
+    "module": "asvd",
+    "runner": "run_all_4_asvd.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:20:20.657170"
+  },
+  {
+    "module": "bam_umoe",
+    "runner": "run_all_4_bam_umoe.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:20:20.658251"
+  },
+  {
+    "module": "block_transformer_hiba",
+    "runner": "run_all_4_block_transformer_hiba.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:20:20.660099"
+  },
+  {
+    "module": "cachenotes",
+    "runner": "run_all_4_cachenotes.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:20:20.663810"
+  },
+  {
+    "module": "chela_slay",
+    "runner": "run_all_4_chela_slay.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:20:20.665098"
+  },
+  {
+    "module": "cluster",
+    "runner": "run_all_4_cluster.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:20:20.666242"
+  },
+  {
+    "module": "come",
+    "runner": "run_all_4_come.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T00:20:20.667952"
+  },
+  {
+    "module": "compressed_attention",
+    "runner": "run_all_4_compressed_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 232.84,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T00:24:13.512563"
   }
 ]
