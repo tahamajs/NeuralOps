@@ -631,15 +631,18 @@ class SOAAttention(BaseAttention):
         is_causal = (self.is_decoder or getattr(self, "is_causal", False) or kwargs.get("is_causal", False)) and (encoder_hidden_states is None)
         if is_causal and N > 1:
             causal_mask = torch.triu(
-                torch.full((N, N), -1e4, device=scores.device, dtype=scores.dtype),
+                torch.full((N, N), float("-inf"), device=scores.device, dtype=torch.float32),
                 diagonal=1,
-            )
-            scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+            ).unsqueeze(0).unsqueeze(0)
+            scores = scores + causal_mask
 
         # Standard Attention Mask
         mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
         if mask is not None:
-            scores = apply_attention_mask(scores, mask)
+            if mask.dim() == 4 and mask.dtype == torch.bool:
+                scores = scores.masked_fill(~mask, -10000.0)
+            else:
+                scores = apply_attention_mask(scores, mask)
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
