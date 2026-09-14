@@ -481,7 +481,11 @@ def apply_module_to_model(
             try:
                 res = custom_injector(model=model, rank=rank, copy_weights=True)
                 if res is not None:
-                    return model, 1.0
+                    if device is not None:
+                        model = model.to(device)
+                    new_params = sum(p.numel() for p in model.parameters())
+                    comp_ratio = orig_params / max(1, new_params)
+                    return model, comp_ratio
             except Exception as e:
                 logger.debug("Dedicated injector %s failed, falling back to inject_attention: %s", custom_injector, e)
 
