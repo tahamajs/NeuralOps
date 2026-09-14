@@ -55,7 +55,7 @@ models = [
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
             "--output_dir", r"results\unified_minimal_prism\roberta",
-            "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
+            "--parent_checkpoint", r"results\unified_delta_kv\roberta\finetuned_model.pt",
             "--modules", "full,minimal_prism",
             "--batch_size", "8",
             "--recovery_steps", "200",
