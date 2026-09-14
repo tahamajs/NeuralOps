@@ -295,6 +295,10 @@ def kernel_linear_attention(
     Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
     K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
 
+    if token_valid is not None:
+        valid_mask = token_valid.unsqueeze(1).unsqueeze(-1).float()
+        K_feat = K_feat * valid_mask
+
     if is_causal:
         kv_outer = torch.einsum("bhnf,bhnd->bhnfd", K_feat, V_f)
         KV_cum = torch.cumsum(kv_outer, dim=2)
@@ -364,7 +368,7 @@ class AegisAttentionV1(BaseAttention):
         rff_init = torch.empty(self.num_global_heads, self.head_dim, self.cfg.rff_features)
         for h in range(self.num_global_heads):
             q_mat, _ = torch.linalg.qr(torch.randn(max(self.head_dim, self.cfg.rff_features), max(self.head_dim, self.cfg.rff_features)))
-            rff_init[h] = q_mat[:self.head_dim, :self.cfg.rff_features] / math.sqrt(self.cfg.rff_features)
+            rff_init[h] = q_mat[:self.head_dim, :self.cfg.rff_features] * math.sqrt(self.head_dim)
         self.rff_proj: nn.Parameter = nn.Parameter(rff_init)
 
         if self.cfg.use_adaptive_gate:
@@ -662,9 +666,12 @@ class AegisAttentionV1(BaseAttention):
         Q_local, Q_global = Q[:, :Hl], Q[:, Hl:]
         K_local, K_global = K[:, :Hl], K[:, Hl:]
         V_local, V_global = V[:, :Hl], V[:, Hl:]
-
+        # 1. Sliding Window Local Attention (for local heads)
         ctx_local = local_window_attention(
-            Q_local, K_local, V_local, self.cfg.local_window, self.cfg.temperature, token_valid, self.is_decoder
+            Q_local, K_local, V_local, 
+            window=self.cfg.local_window, 
+            token_valid=attention_mask,
+            is_decoder=getattr(self, 'is_decoder', False)
         )
         ctx_global = kernel_linear_attention(
             Q_global, K_global, V_global, self.rff_proj, self.cfg.use_zero_sum_keys, is_causal=getattr(self, 'is_decoder', False)
