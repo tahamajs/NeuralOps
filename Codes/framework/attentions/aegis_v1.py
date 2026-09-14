@@ -277,6 +277,7 @@ def kernel_linear_attention(
     use_zero_sum: bool = True,
     max_clamp: float = 11.0,
     is_causal: bool = False,
+    token_valid: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     B, H, N, D = Q.shape
     F_dim = rff_proj.size(-1)
@@ -620,11 +621,14 @@ class AegisAttentionV1(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         token_valid = None
         if eff_mask is not None:
-            if eff_mask.dim() == 2:
-                token_valid = eff_mask > 0 if eff_mask.dtype != torch.bool else eff_mask
+            if eff_mask.dtype == torch.bool:
+                token_valid = eff_mask if eff_mask.dim() == 2 else eff_mask.any(dim=1).any(dim=-2)
+            elif eff_mask.dim() == 2:
+                # HuggingFace standard: 0=pad, 1=real token
+                token_valid = eff_mask.bool()
             elif eff_mask.dim() == 4:
-                m_eff = eff_mask > -10000.0 if eff_mask.dtype != torch.bool else eff_mask
-                token_valid = m_eff.any(dim=1).any(dim=-2).bool()
+                # Extended mask: values near 0.0 = real, near -10000 = pad
+                token_valid = (eff_mask > -5000.0).any(dim=1).any(dim=-2)
 
         if N < self.cfg.local_window or self.is_decoder:
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * (D**-0.5)
@@ -668,13 +672,15 @@ class AegisAttentionV1(BaseAttention):
         V_local, V_global = V[:, :Hl], V[:, Hl:]
         # 1. Sliding Window Local Attention (for local heads)
         ctx_local = local_window_attention(
-            Q_local, K_local, V_local, 
-            window=self.cfg.local_window, 
-            token_valid=attention_mask,
+            Q_local, K_local, V_local,
+            window=self.cfg.local_window,
+            token_valid=token_valid,
             is_decoder=getattr(self, 'is_decoder', False)
         )
         ctx_global = kernel_linear_attention(
-            Q_global, K_global, V_global, self.rff_proj, self.cfg.use_zero_sum_keys, is_causal=getattr(self, 'is_decoder', False)
+            Q_global, K_global, V_global, self.rff_proj, self.cfg.use_zero_sum_keys,
+            is_causal=getattr(self, 'is_decoder', False),
+            token_valid=token_valid,
         )
 
         if self.blend_logits is not None:
