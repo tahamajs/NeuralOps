@@ -350,7 +350,7 @@ class AegisAttention(BaseAttention):
             self.is_decoder = (
                 getattr(cfg, "is_decoder", False)
                 or getattr(cfg, "causal", False)
-                or getattr(cfg, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
+                or getattr(cfg, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
                 if cfg else False
             )
 
@@ -637,7 +637,7 @@ class AegisAttention(BaseAttention):
                 elif head_mask.dim() == 2:
                     head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
                 elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(1)
+                    head_mask = head_mask.unsqueeze(-1)
                 attn = attn * head_mask
 
             out = torch.matmul(attn, V).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
@@ -673,7 +673,7 @@ class AegisAttention(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
+                head_mask = head_mask.unsqueeze(-1)
             context = context * head_mask
 
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)

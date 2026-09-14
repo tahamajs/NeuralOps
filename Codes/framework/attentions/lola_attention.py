@@ -542,17 +542,16 @@ class LoLAAttention(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
+                head_mask = head_mask.unsqueeze(-1)
             attn = attn * head_mask
 
         context = torch.matmul(attn, V_comb)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
 
-        context = context * self.output_scale
         if self.is_nested_encoder:
-            output = context
+            output = context * self.output_scale
         else:
-            output = self.out_proj(context)
+            output = self.out_proj(context) * self.output_scale
 
         return output, (attn if output_attentions else None)
 

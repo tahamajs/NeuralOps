@@ -483,7 +483,7 @@ class MoBAAttention(BaseAttention):
                 elif head_mask.dim() == 2:
                     head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
                 elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(1)
+                    head_mask = head_mask.unsqueeze(-1)
                 attn_probs = attn_probs * head_mask
 
             context = torch.matmul(attn_probs, V)
