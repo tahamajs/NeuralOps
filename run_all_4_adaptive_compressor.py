@@ -55,13 +55,15 @@ models = [
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
             "--output_dir", r"results\unified_adaptive_compressor\roberta",
-            "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
+            "--parent_checkpoint", r"results\unified_delta_kv\roberta\finetuned_model.pt",
             "--modules", "full,adaptive_compressor",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "100",
             "--learning_rate", "2e-4",
-            "--lora_rank", "16",
+            "--finetune_mode", "lora",
+            "--lora_r", "16",
             "--rank", "32",
+            "--max_error", "0.80",
             "--precision", "fp16",
             "--fresh",
             "--defer_export",
@@ -84,10 +86,11 @@ models = [
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,adaptive_compressor",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "100",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
             "--rank", "32",
+            "--max_error", "0.80",
             "--precision", "fp16",
             "--fresh",
             "--defer_export",
@@ -126,7 +129,7 @@ models = [
 
 import argparse
 
-parser = argparse.ArgumentParser(description="Unified 4-Model SambaMoE Benchmark")
+parser = argparse.ArgumentParser(description="Unified 4-Model Adaptive Compressor Benchmark")
 parser.add_argument("--models", nargs="*", default=None, help="Specific models to run (e.g. gpt2 or distilbert,roberta)")
 parser.add_argument("--modules", type=str, default=None, help="Comma-separated module names (e.g. full,adaptive_compressor)")
 parser.add_argument("--batch_size", type=int, default=None, help="Batch size override")
@@ -173,7 +176,7 @@ for m in models:
         update_cmd_arg(m["cmd"], "--lora_rank", str(args.lora_rank))
 
 print("=" * 80, flush=True)
-print("STARTING UNIFIED 4-MODEL HARDENED SAMBA-MOE BENCHMARK ON GPU SERVER", flush=True)
+print("STARTING UNIFIED 4-MODEL HARDENED ADAPTIVE COMPRESSOR BENCHMARK ON GPU SERVER", flush=True)
 print(f"Running models: {[m['name'] for m in models]}", flush=True)
 print("=" * 80, flush=True)
 
@@ -239,7 +242,7 @@ for m in models:
         "Model": m["name"],
         "Exit Code": res.returncode,
         "Baseline Acc": f"{baseline_acc:.2f}%" if baseline_acc is not None else "N/A",
-        "SambaMoE Acc": f"{acc:.2f}%" if acc is not None else "N/A",
+        "AdaptiveCompressor Acc": f"{acc:.2f}%" if acc is not None else "N/A",
         "Delta Acc": delta_acc_str,
         "F1": f1_str,
         "Status": status,
@@ -251,7 +254,7 @@ for m in models:
     print(f"\n>>> FINISHED MODEL: {m['name']} in {elapsed:.1f}s (Exit: {res.returncode}, Status: {status})", flush=True)
 
 print("\n" + "=" * 80, flush=True)
-print("4-MODEL BENCHMARK RESULTS SUMMARY (SambaMoE on GPU)", flush=True)
+print("4-MODEL BENCHMARK RESULTS SUMMARY (AdaptiveCompressor on GPU)", flush=True)
 print("=" * 80, flush=True)
 res_df = pd.DataFrame(final_stats)
 print(res_df.to_string(index=False), flush=True)
@@ -328,7 +331,7 @@ except Exception as _e_p:
 
 # Quality gate & export to HuggingFace
 print("\n" + "=" * 80, flush=True)
-print("STAGE 2: QUALITY-GATED EXPORT TO HUGGING FACE & GITHUB (SambaMoE)", flush=True)
+print("STAGE 2: QUALITY-GATED EXPORT TO HUGGING FACE & GITHUB (Adaptive Compressor)", flush=True)
 print("=" * 80, flush=True)
 
 from huggingface_hub import HfApi
@@ -451,7 +454,7 @@ Part of the SVD Linear Attention and LLM Compression Benchmark Suite.
         api.upload_folder(
             folder_path=str(hf_export_dir),
             repo_id=repo_id,
-            commit_message=f"Upload hardened SambaMoE model weights ({name}) - Acc: {acc:.2f}%",
+            commit_message=f"Upload hardened Adaptive Compressor model weights ({name}) - Acc: {acc:.2f}%",
         )
         print(f"Successfully uploaded {name} to {repo_id}", flush=True)
         uploaded_repos.append(repo_id)
