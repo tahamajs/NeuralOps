@@ -625,30 +625,43 @@ def inject_adaptive_svd(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[AdaptiveSVDAttention]:
+    if old_attn is None and layer is not None:
+        for attr in ("attention", "self_attn", "self", "attn"):
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if cand is not None:
+                    if hasattr(cand, "self"):
+                        old_attn = cand.self
+                    else:
+                        old_attn = cand
+                    break
+
     if model_config is None and layer is not None:
         model_config = getattr(layer, "config", None)
     if model_config is None and old_attn is not None:
         model_config = getattr(old_attn, "config", None)
     if model_config is None:
-        hidden_size = getattr(layer, "hidden_size", getattr(old_attn, "hidden_size", 64))
-        num_heads = getattr(
-            layer,
-            "num_attention_heads",
-            getattr(
-                layer,
-                "num_heads",
-                getattr(
-                    old_attn,
-                    "num_attention_heads",
-                    getattr(old_attn, "num_heads", 4),
-                ),
-            ),
+        hidden_size = getattr(layer, "hidden_size", getattr(old_attn, "hidden_size", None))
+        if not hidden_size and old_attn is not None:
+            for attr in ("query", "q_proj", "q_lin", "c_attn"):
+                mod = getattr(old_attn, attr, None)
+                if mod is not None and hasattr(mod, "in_features"):
+                    hidden_size = mod.in_features
+                    break
+        if not hidden_size and old_attn is not None:
+            hidden_size = getattr(old_attn, "all_head_size", getattr(old_attn, "embed_dim", None))
+        hidden_size = int(hidden_size or 768)
+
+        num_heads = (
+            getattr(layer, "num_attention_heads", None)
+            or getattr(layer, "num_heads", None)
+            or getattr(old_attn, "num_attention_heads", None)
+            or getattr(old_attn, "num_heads", None)
+            or getattr(old_attn, "n_heads", None)
+            or 12
         )
-        head_dim = getattr(
-            layer,
-            "head_dim",
-            getattr(old_attn, "head_dim", hidden_size // max(1, num_heads)),
-        )
+        num_heads = int(num_heads or 12)
+        head_dim = getattr(layer, "head_dim", getattr(old_attn, "head_dim", hidden_size // max(1, num_heads)))
         model_config = type(
             "Config",
             (),
@@ -665,14 +678,6 @@ def inject_adaptive_svd(
                 "dropout": 0.1,
             },
         )()
-
-    if old_attn is None and layer is not None:
-        for attr in ("attention", "self_attn", "self", "attn"):
-            if hasattr(layer, attr):
-                cand = getattr(layer, attr)
-                if cand is not None:
-                    old_attn = cand
-                    break
 
     try:
         svd_rank = getattr(
