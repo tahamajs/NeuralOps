@@ -130,3 +130,77 @@ def test_leka_v3_inject_safe():
     x = torch.randn(2, 8, 64)
     out, _ = layer.attention(x)
     assert out.shape == (2, 8, 64)
+
+
+def test_leka_v3_no_output_scale():
+    cfg = MockConfig()
+    attn = LEKAv3Attention(config=cfg, hidden_size=64, num_heads=4)
+    for name, param in attn.named_parameters():
+        assert "output_scale" not in name, f"Found output_scale parameter: {name}"
+    assert not hasattr(attn.query, "output_scale")
+    assert not hasattr(attn.key, "output_scale")
+    assert not hasattr(attn.value, "output_scale")
+    assert not hasattr(attn.out_proj, "output_scale")
+
+
+def test_leka_v3_landmark_scorer_uses_k_features():
+    cfg = MockConfig()
+    attn = LEKAv3Attention(config=cfg, hidden_size=64, num_heads=4)
+    # landmark_scorer in_features should equal 2 * feature_dim
+    assert attn.landmark_scorer[0].in_features == 2 * attn.feature_dim
+    # Test scoring with K_features
+    B, H, N = 2, 4, 16
+    K_features = torch.randn(B, H, N, 2 * attn.feature_dim)
+    V = torch.randn(B, H, N, attn.head_dim)
+    K_land, V_land = attn.select_landmarks(K_features, V)
+    assert K_land.shape[0] == B
+    assert K_land.shape[1] == H
+    assert V_land.shape[0] == B
+    assert V_land.shape[1] == H
+
+
+def test_leka_v3_gate_bias_and_hyperparameters():
+    cfg = MockConfig()
+    attn = LEKAv3Attention(config=cfg, hidden_size=64, num_heads=4)
+    # Gate bias initialized to +2.0
+    assert torch.allclose(attn.gate, torch.full((4,), 2.0))
+    # Sigmoid of gate should be > 0.85
+    gate_val = torch.sigmoid(attn.gate)
+    assert (gate_val > 0.85).all()
+    # Num landmarks default >= 64
+    assert attn.num_landmarks >= 64
+    # Local window size default >= 16
+    assert attn.local_window_size >= 16
+
+
+def test_leka_v3_nested_encoder_injection_reset():
+    class DummyNestedRobertaLayer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.attention = DummyRobertaAttention(64)
+
+    class DummyFlatLayer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.attention = DummyDistilBertAttention(64)
+
+    # 1. Nested injection must set is_nested_encoder = True
+    nested_layer = DummyNestedRobertaLayer()
+    injected_nested = inject_leka_v3(layer=nested_layer, model_config=MockConfig())
+    assert injected_nested is not None
+    assert injected_nested.is_nested_encoder is True
+
+    # 2. Flat injection must set is_nested_encoder = False
+    flat_layer = DummyFlatLayer()
+    injected_flat = inject_leka_v3(layer=flat_layer, model_config=MockConfig())
+    assert injected_flat is not None
+    assert injected_flat.is_nested_encoder is False
+
+
+def test_leka_v3_qwen_head_dim_config():
+    cfg = MockConfig(hidden_size=1024, num_attention_heads=16, num_key_value_heads=8, head_dim=256)
+    attn = LEKAv3Attention(config=cfg)
+    assert attn.head_dim == 256
+    assert attn.all_head_size == 16 * 256
+    assert attn.all_kv_head_size == 8 * 256
+
