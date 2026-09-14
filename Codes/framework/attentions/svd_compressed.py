@@ -383,16 +383,18 @@ class SVDCompressedAttention(BaseAttention):
         self.dropout = nn.Dropout(float(dropout_p) if dropout_p is not None else 0.1)
 
         src_attn = old_attn or kwargs.get("pretrained_attn", None)
-        target_dtype = kwargs.get("dtype", None)
-        if target_dtype is None and src_attn is not None:
-            target_dtype = next(src_attn.parameters(), torch.tensor([])).dtype
-            if not isinstance(target_dtype, torch.dtype):
-                target_dtype = torch.float32
+        src_p = next(src_attn.parameters(), None) if src_attn is not None else None
+        target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
+        target_device = kwargs.get("device", src_p.device if src_p is not None else None)
 
         if src_attn is not None:
             self.copy_weights(src_attn)
 
-        if target_dtype is not None:
+        if target_device is not None and target_dtype is not None:
+            self.to(device=target_device, dtype=target_dtype)
+        elif target_device is not None:
+            self.to(device=target_device)
+        elif target_dtype is not None:
             self.to(target_dtype)
 
     def _set_factorised_weights(
@@ -618,11 +620,17 @@ class SVDCompressedAttention(BaseAttention):
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
+        # Defensive device/dtype alignment
+        if self.q_down.weight.device != hidden_states.device or self.q_down.weight.dtype != hidden_states.dtype:
+            self.to(device=hidden_states.device, dtype=hidden_states.dtype)
+
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len = kv_input.shape[1]
 
         def proj_q(x: torch.Tensor) -> torch.Tensor:
+            if x.device != self.q_down.weight.device:
+                x = x.to(self.q_down.weight.device)
             out = self.q_up(self.q_down(x))
             if self.lora_rank > 0 and self.q_lora_A is not None and self.q_lora_B is not None:
                 out = out + F.linear(F.linear(x, self.q_lora_A), self.q_lora_B) * self.scaling
@@ -631,6 +639,8 @@ class SVDCompressedAttention(BaseAttention):
             return out
 
         def proj_k(x: torch.Tensor) -> torch.Tensor:
+            if x.device != self.k_down.weight.device:
+                x = x.to(self.k_down.weight.device)
             out = self.k_up(self.k_down(x))
             if self.lora_rank > 0 and self.k_lora_A is not None and self.k_lora_B is not None:
                 out = out + F.linear(F.linear(x, self.k_lora_A), self.k_lora_B) * self.scaling
@@ -639,6 +649,8 @@ class SVDCompressedAttention(BaseAttention):
             return out
 
         def proj_v(x: torch.Tensor) -> torch.Tensor:
+            if x.device != self.v_down.weight.device:
+                x = x.to(self.v_down.weight.device)
             out = self.v_up(self.v_down(x))
             if self.lora_rank > 0 and self.v_lora_A is not None and self.v_lora_B is not None:
                 out = out + F.linear(F.linear(x, self.v_lora_A), self.v_lora_B) * self.scaling
@@ -647,6 +659,8 @@ class SVDCompressedAttention(BaseAttention):
             return out
 
         def proj_o(x: torch.Tensor) -> torch.Tensor:
+            if x.device != self.o_down.weight.device:
+                x = x.to(self.o_down.weight.device)
             out = self.o_up(self.o_down(x))
             if self.lora_rank > 0 and self.o_lora_A is not None and self.o_lora_B is not None:
                 out = out + F.linear(F.linear(x, self.o_lora_A), self.o_lora_B) * self.scaling
@@ -1124,6 +1138,10 @@ def inject_svd_compressed(
             lora_rank=lr,
             **kwargs,
         )
+
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
 
         if target is not None:
             if hasattr(target, "attention"):

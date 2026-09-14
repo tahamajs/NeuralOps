@@ -7,16 +7,21 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
+    d = x.shape[-1]
+    even_d = (d // 2) * 2
+    x1 = x[..., : even_d // 2]
+    x2 = x[..., even_d // 2 : even_d]
+    rotated = torch.cat((-x2, x1), dim=-1)
+    if even_d < d:
+        rotated = torch.cat([rotated, x[..., even_d:]], dim=-1)
+    return rotated
 
 
 def apply_rotary_pos_emb(
@@ -70,6 +75,8 @@ class FactorisedLinear(nn.Module):
         energy: float = 0.95,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -80,12 +87,12 @@ class FactorisedLinear(nn.Module):
         self.lora_alpha = lora_alpha
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
 
-        self.down: nn.Linear = nn.Linear(in_features, self.rank, bias=False)
-        self.up: nn.Linear = nn.Linear(self.rank, out_features, bias=bias)
+        self.down: nn.Linear = nn.Linear(in_features, self.rank, bias=False, device=device, dtype=dtype)
+        self.up: nn.Linear = nn.Linear(self.rank, out_features, bias=bias, device=device, dtype=dtype)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.randn(lora_rank, in_features) * 0.01)
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+            self.lora_A = nn.Parameter(torch.randn(lora_rank, in_features, device=device, dtype=dtype) * 0.01)
+            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank, device=device, dtype=dtype))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -124,8 +131,14 @@ class FactorisedLinear(nn.Module):
                 if bias is not None:
                     bias = bias.view(self.out_features, rep).mean(dim=1)
             elif W.shape[0] != self.out_features or W.shape[1] != self.in_features:
+                logger.warning(
+                    f"FactorisedLinear shape mismatch: W={W.shape}, expected=({self.out_features}, {self.in_features}). "
+                    f"Padding or truncating as fallback."
+                )
                 padded_W = torch.zeros(self.out_features, self.in_features, device=W.device, dtype=W.dtype)
-                padded_W[:min(self.out_features, W.shape[0]), :min(self.in_features, W.shape[1])] = W[:min(self.out_features, W.shape[0]), :min(self.in_features, W.shape[1])]
+                padded_W[:min(self.out_features, W.shape[0]), :min(self.in_features, W.shape[1])] = W[
+                    :min(self.out_features, W.shape[0]), :min(self.in_features, W.shape[1])
+                ]
                 W = padded_W
 
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
@@ -137,8 +150,8 @@ class FactorisedLinear(nn.Module):
             r = max(1, r)
 
             sqrt_s = torch.sqrt(S[:r])
-            A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
-            B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
+            A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype).to(self.up.weight.device)
+            B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype).to(self.down.weight.device)
 
             self.up.weight.data.zero_()
             self.down.weight.data.zero_()
@@ -146,7 +159,9 @@ class FactorisedLinear(nn.Module):
             self.down.weight.data[:r, :] = B
 
             if bias is not None and self.up.bias is not None:
-                self.up.bias.data[:min(len(self.up.bias), len(bias))].copy_(bias[:min(len(self.up.bias), len(bias))])
+                self.up.bias.data[:min(len(self.up.bias), len(bias))].copy_(
+                    bias[:min(len(self.up.bias), len(bias))].to(self.up.bias.device, self.up.bias.dtype)
+                )
 
             self.freeze_base_weights()
 
@@ -173,6 +188,8 @@ class FactorisedLinear(nn.Module):
         return self.up.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.down.weight.device != x.device or self.down.weight.dtype != x.dtype:
+            self.to(device=x.device, dtype=x.dtype)
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
@@ -211,7 +228,15 @@ class MinimalNOVAAttention(BaseAttention):
         super().__init__(cfg, actual_rank)
         self.num_heads: int = getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", kwargs.get("num_attention_heads", 4)))
         self.hidden_size: int = getattr(cfg, "hidden_size", kwargs.get("hidden_size", 768))
-        self.head_dim: int = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
+
+        cfg_head_dim = getattr(cfg, "head_dim", None) if cfg else None
+        adapter_head_dim = getattr(getattr(cfg, "adapter", None), "head_dim", None) if cfg else None
+        self.head_dim: int = int(
+            cfg_head_dim
+            or adapter_head_dim
+            or kwargs.get("head_dim")
+            or (self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
+        )
         self.all_head_size: int = self.num_heads * self.head_dim
 
         cfg_kv = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None)) if cfg else None
@@ -231,33 +256,52 @@ class MinimalNOVAAttention(BaseAttention):
         self.lora_rank: int = lora_rank
         self.lora_alpha: float = lora_alpha
 
+        mt = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "olmo", "falcon", "mpt", "stablelm")
+        self.is_decoder = (
+            (bool(getattr(cfg, "is_decoder", False)) if cfg else False)
+            or (bool(getattr(cfg, "causal", False)) if cfg else False)
+            or any(mt.startswith(p) for p in _decoder_prefixes)
+            or (pretrained_attn is not None and hasattr(pretrained_attn, "c_attn"))
+        )
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
-        else:
-            self.is_decoder = (
-                getattr(cfg, "is_decoder", False)
-                or getattr(cfg, "causal", False)
-                or getattr(cfg, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama")
-                if cfg else False
-            )
 
-        model_type = getattr(cfg, "model_type", "").lower() if cfg else ""
-        self.is_nested_encoder: bool = (
-            getattr(cfg, "is_nested_encoder", False)
-            or model_type in ("roberta", "bert", "xlm-roberta")
+        self.is_nested_encoder: bool = False
+        self.output_scale = nn.Parameter(torch.ones(1))
+        self.output_scale.requires_grad = True
+
+        src_p = None
+        if pretrained_attn is not None:
+            src_p = next(pretrained_attn.parameters(), None)
+        target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
+        target_device = kwargs.get("device", src_p.device if src_p is not None else None)
+
+        self.q_proj = FactorisedLinear(
+            self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, device=target_device, dtype=target_dtype
         )
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
-
-        self.q_proj = FactorisedLinear(self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
-        self.k_proj = FactorisedLinear(self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
-        self.v_proj = FactorisedLinear(self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
-        self.out_proj = FactorisedLinear(self.all_head_size, self.hidden_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
+        self.k_proj = FactorisedLinear(
+            self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, energy=energy,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, device=target_device, dtype=target_dtype
+        )
+        self.v_proj = FactorisedLinear(
+            self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, energy=energy,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, device=target_device, dtype=target_dtype
+        )
+        self.out_proj = FactorisedLinear(
+            self.all_head_size, self.hidden_size, rank=self.rank, bias=True, energy=energy,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, device=target_device, dtype=target_dtype
+        )
 
         dropout_p = getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout)) if cfg else dropout
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+
+        if target_device is not None or target_dtype is not None:
+            self.to(device=target_device, dtype=target_dtype)
 
     @property
     def query(self) -> FactorisedLinear:
@@ -370,7 +414,7 @@ class MinimalNOVAAttention(BaseAttention):
         if hasattr(src, "config"):
             if getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta") and not has_out_proj:
                 is_nested = True
-        self.is_nested_encoder = bool(is_nested or self.is_nested_encoder)
+        self.is_nested_encoder = bool(is_nested)
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
@@ -434,6 +478,10 @@ class MinimalNOVAAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
+        # Defensive device check
+        if self.q_proj.down.weight.device != device or self.q_proj.down.weight.dtype != dtype:
+            self.to(device=device, dtype=dtype)
+
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv = kv_input.shape[1]
@@ -472,7 +520,10 @@ class MinimalNOVAAttention(BaseAttention):
                 else:
                     scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
             elif eff_mask.dim() == 3:
-                scores = scores + eff_mask.unsqueeze(1).float()
+                if eff_mask.dtype == torch.bool:
+                    scores = scores.masked_fill(~eff_mask.unsqueeze(1), -10000.0)
+                else:
+                    scores = scores + eff_mask.unsqueeze(1).float()
             elif eff_mask.dim() == 4:
                 if eff_mask.dtype == torch.bool:
                     scores = scores.masked_fill(~eff_mask, -10000.0)
@@ -489,18 +540,17 @@ class MinimalNOVAAttention(BaseAttention):
             elif head_mask.dim() == 2:
                 head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(1)
+                head_mask = head_mask.unsqueeze(-1)
             attn_weights = attn_weights * head_mask
 
         context = torch.matmul(attn_weights, V)
-        context = context.transpose(1, 2).contiguous().view(B, N, H * D)
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        context = context * self.output_scale
         if self.is_nested_encoder:
-            output = context
+            output = context * self.output_scale
         else:
-            output = self.out_proj(context)
+            output = self.out_proj(context) * self.output_scale
 
         return output, (attn_weights if output_attentions else None)
 
@@ -511,43 +561,123 @@ class MinimalNOVAAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("minimal_nova_inject")
 @ATTENTION_REGISTRY.register("inject_minimal_nova")
 def inject_minimal_nova(
-    layer: nn.Module,
+    layer: Optional[nn.Module] = None,
+    model: Optional[nn.Module] = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 1,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[MinimalNOVAAttention]:
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+) -> Optional[Union[MinimalNOVAAttention, nn.Module]]:
+    r"""Injection hook for MinimalNOVAAttention into transformer layer or entire model."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
 
-    r"""Injection hook for MinimalNOVAAttention into transformer layer."""
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
     energy = getattr(comp_config, "svd_energy", 0.95) if comp_config else 0.95
     dropout = getattr(comp_config, "dropout", 0.1) if comp_config else 0.1
+
+    # 1. Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        # Pre-test on the first layer before mutating model
+        test_src = getattr(layer_list[0], "attention", getattr(layer_list[0], "self", None))
+        if test_src is not None:
+            try:
+                test_module = MinimalNOVAAttention(
+                    model_config=cfg,
+                    energy=energy,
+                    dropout=dropout,
+                    **kwargs,
+                )
+                test_module.copy_weights(test_src)
+            except Exception as e:
+                logger.warning(f"MinimalNOVA pre-test failed: {e}. Aborting injection.")
+                return None
+
+        count = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_minimal_nova(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                count += 1
+        return target if count > 0 else None
+
+    # 2. Single-layer injection
+    src_attn = old_attn
+    if src_attn is None and target is not None:
+        for attr in ("attention", "self_attn", "attn", "self"):
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if hasattr(cand, "self"):
+                    src_attn = cand.self
+                else:
+                    src_attn = cand
+                break
+
+    if src_attn is None:
+        logger.warning("inject_minimal_nova: no source attention found, aborting.")
+        return None
+
+    # Double injection guard
+    if isinstance(src_attn, MinimalNOVAAttention) or "MinimalNOVA" in src_attn.__class__.__name__:
+        return None
+
     new_attn = MinimalNOVAAttention(
-        model_config=model_config,
+        model_config=cfg,
         energy=energy,
         dropout=dropout,
+        **kwargs,
     )
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
-    if src_attn is not None:
-        try:
-            new_attn.copy_weights(src_attn)
-        except Exception as e:
-            logger.error(f"copy_weights failed for minimal_nova: {e}")
-            return None
-        p = next(src_attn.parameters(), None)
-        if p is not None:
-            new_attn.to(device=p.device, dtype=p.dtype)
 
-    if hasattr(layer, "attention"):
-        if hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
-            new_attn.is_nested_encoder = True
-        else:
-            layer.attention = new_attn
-    elif hasattr(layer, "self"):
-        layer.self = new_attn
+    try:
+        new_attn.copy_weights(src_attn)
+    except Exception as e:
+        logger.error(f"copy_weights failed for minimal_nova: {e}")
+        return None
+
+    p = next(src_attn.parameters(), None)
+    if p is not None:
+        new_attn.to(device=p.device, dtype=p.dtype)
+
+    if hasattr(target, "attention") and hasattr(target.attention, "self"):
         new_attn.is_nested_encoder = True
+        target.attention.self = new_attn
+    else:
+        new_attn.is_nested_encoder = False
+        if hasattr(target, "attention"):
+            target.attention = new_attn
+        elif hasattr(target, "self"):
+            new_attn.is_nested_encoder = True
+            target.self = new_attn
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_attn
+        elif hasattr(target, "attn"):
+            target.attn = new_attn
+
     return new_attn

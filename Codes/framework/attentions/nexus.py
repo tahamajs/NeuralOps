@@ -151,6 +151,8 @@ class LoRALinear(nn.Module):
                 self.lora_B.requires_grad = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.weight.device != x.device or self.weight.dtype != x.dtype:
+            self.to(device=x.device, dtype=x.dtype)
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
@@ -591,16 +593,14 @@ class NEXUSAttention(BaseAttention):
         self.is_nested_encoder: bool = False
         self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
-        target_dtype = kwargs.get("dtype", None)
-        if target_dtype is None and pretrained_attn is not None:
-            target_dtype = next(pretrained_attn.parameters(), torch.tensor([])).dtype
-            if not isinstance(target_dtype, torch.dtype):
-                target_dtype = torch.float32
+        src_p = next(pretrained_attn.parameters(), None) if pretrained_attn is not None else None
+        target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
+        target_device = kwargs.get("device", src_p.device if src_p is not None else None)
 
-        self.query = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype)
-        self.key = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype)
-        self.value = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype)
+        self.query = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, device=target_device, dtype=target_dtype)
+        self.key = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, device=target_device, dtype=target_dtype)
+        self.value = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, device=target_device, dtype=target_dtype)
+        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, device=target_device, dtype=target_dtype)
         self.dropout = nn.Dropout(self.cfg.dropout)
 
         self.seer_gate: Optional[SeerGating] = None
@@ -627,7 +627,11 @@ class NEXUSAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-        if target_dtype is not None:
+        if target_device is not None and target_dtype is not None:
+            self.to(device=target_device, dtype=target_dtype)
+        elif target_device is not None:
+            self.to(device=target_device)
+        elif target_dtype is not None:
             self.to(target_dtype)
 
     @property
@@ -1082,6 +1086,10 @@ def inject_nexus(
             pretrained_attn=src_attn,
             **kwargs,
         )
+
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
 
         if target is not None:
             if hasattr(target, "attention"):
