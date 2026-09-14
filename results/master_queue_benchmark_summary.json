@@ -6,7 +6,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-14T22:37:51.876817"
+    "timestamp": "2026-09-14T22:44:36.237789"
   },
   {
     "module": "aasvd",
@@ -15,7 +15,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-14T22:37:51.883767"
+    "timestamp": "2026-09-14T22:44:36.239386"
   },
   {
     "module": "adaptive_compressor",
@@ -24,7 +24,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-14T22:37:51.887668"
+    "timestamp": "2026-09-14T22:44:36.241203"
   },
   {
     "module": "adaptive_ranks",
@@ -33,7 +33,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-14T22:37:51.888560"
+    "timestamp": "2026-09-14T22:44:36.242124"
   },
   {
     "module": "adaptive_span",
@@ -42,15 +42,15 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-14T22:37:51.890479"
+    "timestamp": "2026-09-14T22:44:36.243828"
   },
   {
     "module": "adaptive_sparse",
     "runner": "run_all_4_adaptive_sparse.py",
     "exit_code": 0,
-    "elapsed_s": 271.89,
+    "elapsed_s": 306.19,
     "status": "PASS",
     "error": null,
-    "timestamp": "2026-09-14T22:42:23.778539"
+    "timestamp": "2026-09-14T22:49:42.434619"
   }
 ]
