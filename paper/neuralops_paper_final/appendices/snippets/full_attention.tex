@@ -2,7 +2,7 @@
 \label{sec:app_module_full\_attention}
 
 \subsubsection*{3.1 Module Overview}
-Standard Multi-Head Scaled Dot-Product Attention (Vaswani et al., 2017).  Computes pairwise token interactions across multiple representation subspaces: \$\$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d\_k}} + M\right) V\$\$  Computational Complexity:     - Time: \$\mathcal{O}(B 
+Standard Multi-Head Scaled Dot-Product Attention (Vaswani et al., 2017). Computes pairwise token interactions across multiple representation subspaces via scaled dot-product attention.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization & SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/full\_attention.py}

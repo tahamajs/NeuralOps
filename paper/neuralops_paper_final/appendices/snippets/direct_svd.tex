@@ -2,7 +2,7 @@
 \label{sec:app_module_direct\_svd}
 
 \subsubsection*{3.1 Module Overview}
-Direct SVD Compressor.  Performs direct truncated SVD on all linear layers:     W ≈ U\_r * Sigma\_r * V\_r^T Allocates singular energy symmetrically:     U\_factor = U\_r * sqrt(Sigma\_r)     V\_factor = sqrt(Sigma\_r) * V\_r^T and replaces dense nn.Linear layers with factorized SVDLinear modules to achieve
+Direct SVD Compressor.  Performs direct truncated SVD on all linear layers:     W $\approx$ U\_r * Sigma\_r * V\_r^T Allocates singular energy symmetrically:     U\_factor = U\_r * sqrt(Sigma\_r)     V\_factor = sqrt(Sigma\_r) * V\_r^T and replaces dense nn.Linear layers with factorized SVDLinear modules to achieve
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization & SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/direct\_svd.py}

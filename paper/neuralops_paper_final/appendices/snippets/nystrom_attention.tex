@@ -2,7 +2,7 @@
 \label{sec:app_module_nystrom\_attention}
 
 \subsubsection*{3.1 Module Overview}
-Nyströmformer: Linear Complexity Self-Attention via Nyström Landmark Approximation (Xiong et al., 2021).  Mathematical Formulation:     \$\$\hat{A} = \hat{F}\_1 \hat{F}\_2^+ \hat{F}\_3\$\$     \$\$\hat{F}\_1 = \operatorname{Softmax}\left(\frac{Q \tilde{K}^\top}{\sqrt{d\_k}}\right) \in \mathbb{R}^{N \times m},
+Nystr"{o}mformer: Linear Complexity Self-Attention via Nystr"{o}m Landmark Approximation (Xiong et al., 2021).  Mathematical Formulation:     $$\hat{A} = \hat{F}\_1 \hat{F}\_2^+ \hat{F}\_3$$     $$\hat{F}\_1 = \operatorname{Softmax}\left(\frac{Q \tilde{K}^\top}{\sqrt{d\_k}}\right) \in \mathbb{R}^{N \times m},
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/nystrom\_attention.py}

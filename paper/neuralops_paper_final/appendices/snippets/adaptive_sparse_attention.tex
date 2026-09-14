@@ -2,7 +2,7 @@
 \label{sec:app_module_adaptive\_sparse\_attention}
 
 \subsubsection*{3.1 Module Overview}
-Adaptive Sparse Multi-Head Attention.  Mathematical Formulation:     1. Query-Key Attention Scores:        \$\$S\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d}}\$\$          2. Adaptive Dynamic Sparsification:        Per-head learnable sparsity ratio \$\gamma\_h = \sigma(\text{logit}\_h)\$.        Top-\$k\$ active key p
+Adaptive Sparse Multi-Head Attention.  Mathematical Formulation:     1. Query-Key Attention Scores:        $$S\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d}}$$          2. Adaptive Dynamic Sparsification:        Per-head learnable sparsity ratio $\gamma\_h = \sigma(\text{logit}\_h)$.        Top-$k$ active key p
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/adaptive\_sparse\_attention.py}

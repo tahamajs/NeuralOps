@@ -2,7 +2,7 @@
 \label{sec:app_module_adasplash\_attention}
 
 \subsubsection*{3.1 Module Overview}
-AdaSplash Attention Layer with α-Entmax and Local Splash Radius.  Mathematical Formulation:     1. Query-Key Relevance:        \$\$S\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d\_h}}\$\$          2. Adaptive Splash Masking:        Retains all local tokens within splash radius \$W\$ while applying sparse 1.5-entmax: 
+AdaSplash Attention Layer with $\alpha$-Entmax and Local Splash Radius.  Mathematical Formulation:     1. Query-Key Relevance:        $$S\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d\_h}}$$          2. Adaptive Splash Masking:        Retains all local tokens within splash radius $W$ while applying sparse 1.5-entmax: 
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization & SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/adasplash\_attention.py}

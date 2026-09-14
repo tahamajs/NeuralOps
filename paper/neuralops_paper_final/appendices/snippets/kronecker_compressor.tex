@@ -2,7 +2,7 @@
 \label{sec:app_module_kronecker\_compressor}
 
 \subsubsection*{3.1 Module Overview}
-Compresses a model by replacing every eligible nn.Linear layer with a Kronecker product decomposition (A ⊗ B), falling back to low-rank SVD when dimensions do not allow composite factorization.  Args:     model: PyTorch model to compress (optional if instantiated as standalone engine).     rank: Ran
+Compresses a model by replacing every eligible nn.Linear layer with a Kronecker product decomposition (A $\otimes$ B), falling back to low-rank SVD when dimensions do not allow composite factorization.  Args:     model: PyTorch model to compress (optional if instantiated as standalone engine).     rank: Ran
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization & SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/kronecker\_compressor.py}

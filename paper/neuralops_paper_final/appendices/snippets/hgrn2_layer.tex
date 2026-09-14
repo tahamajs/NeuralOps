@@ -2,7 +2,7 @@
 \label{sec:app_module_hgrn2\_layer}
 
 \subsubsection*{3.1 Module Overview}
-Hierarchically Gated Recurrent Network v2 (HGRN-2) Bidirectional Layer.  Mathematical Mechanism:     For input token activations \$x\_t \in \mathbb{R}^D\$:     1. **Dynamic Gating \& Value Transformation:**        \$\$f\_t = \exp(-\text{softplus}(W\_f x\_t + b\_f)) \in (0, 1)^D \quad \text{(Log-space Bounded
+Hierarchically Gated Recurrent Network v2 (HGRN-2) Bidirectional Layer.  Mathematical Mechanism:     For input token activations $x\_t \in \mathbb{R}^D$:     1. **Dynamic Gating \& Value Transformation:**        $$f\_t = \exp(-\text{softplus}(W\_f x\_t + b\_f)) \in (0, 1)^D \quad \text{(Log-space Bounded
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models & Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/hgrn2\_layer.py}

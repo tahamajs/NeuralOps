@@ -2,7 +2,7 @@
 \label{sec:app_module_flash\_attention3}
 
 \subsubsection*{3.1 Module Overview}
-FlashAttention-3 Multi-Head Exact Attention.  Mathematical Formulation:     \$\$S = \frac{Q K^\top}{\sqrt{d\_h}} + M\$\$     \$\$P = \operatorname{Softmax}(S) = \frac{\exp(S - m)}{\sum \exp(S - m)}\$\$     \$\$O = P V\$\$     FlashAttention-3 tiles \$Q, K, V\$ into SRAM blocks and utilizes asynchronous hardware co
+FlashAttention-3 Multi-Head Exact Attention.  Mathematical Formulation:     $$S = \frac{Q K^\top}{\sqrt{d\_h}} + M$$     $$P = \operatorname{Softmax}(S) = \frac{\exp(S - m)}{\sum \exp(S - m)}$$     $$O = P V$$     FlashAttention-3 tiles $Q, K, V$ into SRAM blocks and utilizes asynchronous hardware co
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization & SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/flash\_attention3.py}

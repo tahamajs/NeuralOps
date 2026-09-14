@@ -2,7 +2,7 @@
 \label{sec:app_module_adaptive\_ranks}
 
 \subsubsection*{3.1 Module Overview}
-Adaptive Ranks SVD Compressor.  Dynamically determines ranks per layer according to cumulative singular value energy threshold:     \$\$\frac{\sum\_{i=1}^r \sigma\_i^2}{\sum\_{j=1}^d \sigma\_j^2} \ge \tau \quad (\tau = 0.92)\$\$ with minimum rank floor \$r\_{\min} = \max(16, \lfloor 0.15 \cdot \min(d\_{in}, d\_
+Adaptive Ranks SVD Compressor. Dynamically determines ranks per layer according to cumulative singular value energy threshold.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/compression\_engine/adaptive\_ranks.py}

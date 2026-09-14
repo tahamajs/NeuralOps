@@ -2,7 +2,7 @@
 \label{sec:app_module_optimized\_hybrid\_attention}
 
 \subsubsection*{3.1 Module Overview}
-Optimized Hybrid Attention (OHA) combining sliding-window local and compressed global attention.  Mathematical Formulation:     1. Local Sliding-Window Path:        \$\$S^{\text{local}}\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d}} + M^{\text{band}}\_{ij}\$\$        \$\$O^{\text{local}} = \operatorname{Softmax}(S^{
+Optimized Hybrid Attention (OHA) combining sliding-window local and compressed global attention.  Mathematical Formulation:     1. Local Sliding-Window Path:        $$S^{\text{local}}\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d}} + M^{\text{band}}\_{ij}$$        $$O^{\text{local}} = \operatorname{Softmax}(S^{
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/optimized\_hybrid\_attention.py}

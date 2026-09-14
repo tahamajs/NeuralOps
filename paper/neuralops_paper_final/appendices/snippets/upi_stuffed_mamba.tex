@@ -2,7 +2,7 @@
 \label{sec:app_module_upi\_stuffed\_mamba}
 
 \subsubsection*{3.1 Module Overview}
-Bidirectional Uncertainty-Penalized Interpolated Mamba Block.  Mathematical Mechanism:     Given input sequence \$X \in \mathbb{R}^{B \times L \times D}\$:     1. **Input Projections \& Symmetric Convolution:**        \$\$[X\_{\text{ssm}}, Z] = X W\_{\text{in}} \in \mathbb{R}^{B \times L \times 2 D}\$\$
+Bidirectional Uncertainty-Penalized Interpolated Mamba Block.  Mathematical Mechanism:     Given input sequence $X \in \mathbb{R}^{B \times L \times D}$:     1. **Input Projections \& Symmetric Convolution:**        $$[X\_{\text{ssm}}, Z] = X W\_{\text{in}} \in \mathbb{R}^{B \times L \times 2 D}$$
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models & Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/upi\_stuffed\_mamba.py}

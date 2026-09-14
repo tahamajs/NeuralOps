@@ -2,7 +2,7 @@
 \label{sec:app_module_lsh\_attention}
 
 \subsubsection*{3.1 Module Overview}
-Locality-Sensitive Hashing (LSH) Attention (Reformer, Kitaev et al., 2020).  Mathematical Formulation:     1. Angular LSH Hashing:        \$\$h(x) = \arg\max \left( [x R; -x R] \right) \in \{0, \dots, 2b - 1\}\$\$        where \$R \in \mathbb{R}^{d\_k \times b}\$ is a normalized Gaussian random rotation ma
+Locality-Sensitive Hashing (LSH) Attention (Reformer, Kitaev et al., 2020).  Mathematical Formulation:     1. Angular LSH Hashing:        $$h(x) = \arg\max \left( [x R; -x R] \right) \in \{0, \dots, 2b - 1\}$$        where $R \in \mathbb{R}^{d\_k \times b}$ is a normalized Gaussian random rotation ma
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/lsh\_attention.py}

@@ -4,7 +4,7 @@
 \subsubsection*{3.1 Module Overview}
 \texttt{GroupedQueryAttention} (GQA) interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA) by partitioning $H_Q$ query heads into $G = H_{\text{kv}}$ groups, where each group shares a single Key-Value head ($H_{\text{kv}} \le H_Q$). It incorporates checkpoint upcycling via mean-pooled weight projections, RoPE rotary position embeddings, LoRA fine-tuning adapters, and nested encoder bypass.
 \begin{itemize}
-    \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \\& Pruning
+    \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/gqa\_attention.py}
     \item \textbf{Registration Name:} \texttt{gqa\_attention} $\mid$ \textbf{Class:} \texttt{GroupedQueryAttention}
 \end{itemize}

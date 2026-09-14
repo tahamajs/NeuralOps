@@ -2,7 +2,7 @@
 \label{sec:app_module_gqa\_attention}
 
 \subsubsection*{3.1 Module Overview}
-Grouped-Query Attention (GQA) Mechanism (Ainslie et al., 2023).  Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA) by dividing \$H\_Q\$ query heads into \$G\$ groups, where each group shares a single Key-Value head pair (\$H\_{KV} = G \le H\_Q\$): \$\$K\_{\text{shared}} = \text{rep
+Grouped-Query Attention (GQA) Mechanism (Ainslie et al., 2023).  Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA) by dividing $H\_Q$ query heads into $G$ groups, where each group shares a single Key-Value head pair ($H\_{KV} = G \le H\_Q$): $$K\_{\text{shared}} = \text{rep
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization & SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/gqa\_attention.py}

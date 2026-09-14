@@ -4,7 +4,7 @@
 \subsubsection*{3.1 Module Overview}
 \texttt{FUSIONATTN} is a Length-Routed Top-$K$ Block-Sparse Attention module that dynamically switches execution regimes based on sequence length $N$: short sequences ($N \le L_{\text{threshold}} = 128$) execute a full-attention fast-path, whereas long sequences ($N > L_{\text{threshold}}$) are routed to a Top-$K$ block-sparse attention kernel governed by a neural block-importance scoring network.
 \begin{itemize}
-    \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \\& Pruning
+    \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/fusion\_attn.py}
     \item \textbf{Registration Name:} \texttt{fusion\_attn} $\mid$ \textbf{Class:} \texttt{FUSIONATTN}
 \end{itemize}

@@ -2,7 +2,7 @@
 \label{sec:app_module_salt\_attention}
 
 \subsubsection*{3.1 Module Overview}
-SALT Attention module replacing standard linear projections with SALTLinear.  Mathematical Formulation:     1. SVD \& LoRA Factorized Linear Projections:        \$\$Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V\$\$     2. Scaled Dot-Product Attention:        \$\$O = \operatorname{Softmax}\left(\frac{Q K^\top
+SALT Attention module replacing standard linear projections with SALTLinear.  Mathematical Formulation:     1. SVD \& LoRA Factorized Linear Projections:        $$Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V$$     2. Scaled Dot-Product Attention:        $$O = \operatorname{Softmax}\left(\frac{Q K^\top
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/salt\_attention.py}

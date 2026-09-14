@@ -2,7 +2,7 @@
 \label{sec:app_module_hamming\_attention}
 
 \subsubsection*{3.1 Module Overview}
-Hamming Attention Distillation (HAD) Module.  Mathematical Formulation:     1. Pseudo-Binarization via Tanh Relaxation:        \$\$Q\_b = \tanh(5.0 \cdot \gamma\_Q \odot Q) \in [-1, 1]^{B \times H \times L \times d\_k}\$\$        \$\$K\_b = \tanh(5.0 \cdot \gamma\_K \odot K) \in [-1, 1]^{B \times H \times L \t
+Hamming Attention Distillation (HAD) Module.  Mathematical Formulation:     1. Pseudo-Binarization via Tanh Relaxation:        $$Q\_b = \tanh(5.0 \cdot \gamma\_Q \odot Q) \in [-1, 1]^{B \times H \times L \times d\_k}$$        $$K\_b = \tanh(5.0 \cdot \gamma\_K \odot K) \in [-1, 1]^{B \times H \times L \t
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts & Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/hamming\_attention.py}

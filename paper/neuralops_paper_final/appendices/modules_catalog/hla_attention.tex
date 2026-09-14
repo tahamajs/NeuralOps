@@ -2,9 +2,9 @@
 \label{sec:app_module_hla_attention}
 
 \subsubsection*{3.1 Module Overview}
-Hadamard Linear Attention (HLA) Bidirectional Module.  Mathematical Mechanism:     Maintains multi-head associative causal/anti-causal matrix states \$S\_t \in \mathbb{R}^{B \times H \times d\_k \times d\_k}\$:     \$\$\begin{aligned}     \phi(Q) \&= \text{ELU}(Q) + 1, \quad \phi(K) = \text{ELU}(K) + 1 \\
+Hadamard Linear Attention (HLA) Bidirectional Module.  Mathematical Mechanism:     Maintains multi-head associative causal/anti-causal matrix states $S\_t \in \mathbb{R}^{B \times H \times d\_k \times d\_k}$:     $$\begin{aligned}     \phi(Q) \&= \text{ELU}(Q) + 1, \quad \phi(K) = \text{ELU}(K) + 1 \\
 \begin{itemize}
-    \item \textbf{Track Paradigm:} Track 2: State-Space Models \\& Recurrent Scans
+    \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/hla\_attention.py}
     \item \textbf{Registration Name:} \texttt{hla\_attention} $\mid$ \textbf{Class:} \texttt{HLAAttention}
 \end{itemize}

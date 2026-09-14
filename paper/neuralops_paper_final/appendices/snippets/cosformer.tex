@@ -2,7 +2,7 @@
 \label{sec:app_module_cosformer}
 
 \subsubsection*{3.1 Module Overview}
-Cosformer Attention Layer.  Mathematical Formulation:     1. Non-negative kernel mapping:        \$\$\phi(x) = \operatorname{ReLU}(x) \quad \text{or} \quad \operatorname{ELU}(x) + 1\$\$          2. Cosine-based positional reweighting:        \$\$R(i, j) = \cos\left(\frac{\pi(i - j)}{2 M}\right) = \cos\lef
+Cosformer Attention Layer.  Mathematical Formulation:     1. Non-negative kernel mapping:        $$\phi(x) = \operatorname{ReLU}(x) \quad \text{or} \quad \operatorname{ELU}(x) + 1$$          2. Cosine-based positional reweighting:        $$R(i, j) = \cos\left(\frac{\pi(i - j)}{2 M}\right) = \cos\lef
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 4: Kernelized & Spectral Attention
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/cosformer.py}

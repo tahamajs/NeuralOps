@@ -2,9 +2,9 @@
 \label{sec:app_module_hgrn2_outer}
 
 \subsubsection*{3.1 Module Overview}
-HGRN-2 Outer-Product Recurrent Linear Attention Module.  Mathematical Mechanism:     For multi-head queries \$Q \in \mathbb{R}^{B \times H \times L \times d\_k}\$, keys \$K\$, values \$V\$:     1. **Feature Normalization \& Bounded Forget Gating:**        \$\$\tilde{q}\_t = \text{RMSNorm}(q\_t), \quad \tilde{k}
+HGRN-2 Outer-Product Recurrent Linear Attention Module.  Mathematical Mechanism:     For multi-head queries $Q \in \mathbb{R}^{B \times H \times L \times d\_k}$, keys $K$, values $V$:     1. **Feature Normalization \& Bounded Forget Gating:**        $$\tilde{q}\_t = \text{RMSNorm}(q\_t), \quad \tilde{k}
 \begin{itemize}
-    \item \textbf{Track Paradigm:} Track 2: State-Space Models \\& Recurrent Scans
+    \item \textbf{Track Paradigm:} Track 2: State-Space Models \& Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/hgrn2\_outer.py}
     \item \textbf{Registration Name:} \texttt{hgrn2\_outer} $\mid$ \textbf{Class:} \texttt{HGRN2OuterBlock}
 \end{itemize}

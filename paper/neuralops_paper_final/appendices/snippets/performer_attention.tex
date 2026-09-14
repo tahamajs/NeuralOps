@@ -2,7 +2,7 @@
 \label{sec:app_module_performer\_attention}
 
 \subsubsection*{3.1 Module Overview}
-Performer Attention (FAVOR+).  Mathematical Formulation:     1. Positive Orthogonal Random Features:        \$\$\phi(x) = \frac{\exp\left(x W^\top - \frac{\|x\|^2}{2}\right)}{\sqrt{m}}\$\$        where \$W \in \mathbb{R}^{m \times d}\$ is an orthogonal random projection matrix (\$W W^\top \approx I\$).
+Performer Attention (FAVOR+).  Mathematical Formulation:     1. Positive Orthogonal Random Features:        $$\phi(x) = \frac{\exp\left(x W^\top - \frac{\|x\|^2}{2}\right)}{\sqrt{m}}$$        where $W \in \mathbb{R}^{m \times d}$ is an orthogonal random projection matrix ($W W^\top \approx I$).
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/performer\_attention.py}

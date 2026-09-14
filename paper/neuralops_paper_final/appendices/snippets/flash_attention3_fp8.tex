@@ -2,7 +2,7 @@
 \label{sec:app_module_flash\_attention3\_fp8}
 
 \subsubsection*{3.1 Module Overview}
-FlashAttention-3 FP8 Hardware-Accelerated Multi-Head Attention.  Mathematical Formulation:     1. FP8 Quantization:        \$\$Q\_{\text{fp8}} = \operatorname{cast}\_{\text{fp8}}(Q), \quad K\_{\text{fp8}} = \operatorname{cast}\_{\text{fp8}}(K), \quad V\_{\text{fp8}} = \operatorname{cast}\_{\text{fp8}}(V)\$\$ 
+FlashAttention-3 FP8 Hardware-Accelerated Multi-Head Attention.  Mathematical Formulation:     1. FP8 Quantization:        $$Q\_{\text{fp8}} = \operatorname{cast}\_{\text{fp8}}(Q), \quad K\_{\text{fp8}} = \operatorname{cast}\_{\text{fp8}}(K), \quad V\_{\text{fp8}} = \operatorname{cast}\_{\text{fp8}}(V)$$ 
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization & SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/flash\_attention3\_fp8.py}

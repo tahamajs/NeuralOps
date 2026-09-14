@@ -2,9 +2,9 @@
 \label{sec:app_module_asvd_attention}
 
 \subsubsection*{3.1 Module Overview}
-ASVD Attention with Factored Low-Rank Matrix Decomposition.  Computational Complexity:     - Factorized Projections: \$\mathcal{O}(B \cdot N \cdot r \cdot (d + d\_{\text{all}}))\$     - Attention Scoring: \$\mathcal{O}(B \cdot H \cdot N^2 \cdot d\_k)\$  Tensor Dimensions:     - hidden\_states: \$[B, N, D]\$ 
+ASVD Attention with Factored Low-Rank Matrix Decomposition.  Computational Complexity:     - Factorized Projections: $\mathcal{O}(B \cdot N \cdot r \cdot (d + d\_{\text{all}}))$     - Attention Scoring: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d\_k)$  Tensor Dimensions:     - hidden\_states: $[B, N, D]$ 
 \begin{itemize}
-    \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \\& SVD Projections
+    \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization \& SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/asvd\_attention.py}
     \item \textbf{Registration Name:} \texttt{asvd\_attention} $\mid$ \textbf{Class:} \texttt{ASVDAttention}
 \end{itemize}

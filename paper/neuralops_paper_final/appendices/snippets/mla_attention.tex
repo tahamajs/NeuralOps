@@ -2,7 +2,7 @@
 \label{sec:app_module_mla\_attention}
 
 \subsubsection*{3.1 Module Overview}
-Multi-Head Latent Attention (MLA) Mechanism.  Compresses the Key and Value representations into a low-rank latent vector \$\mathbf{c}\_{KV} \in \mathbb{R}^{d\_c}\$ prior to head projection, drastically reducing Key-Value activation caching requirements: \$\$\mathbf{c}\_{KV} = W\_{DKV} X \in \mathbb{R}^{B \t
+Multi-Head Latent Attention (MLA) Mechanism.  Compresses the Key and Value representations into a low-rank latent vector $\mathbf{c}\_{KV} \in \mathbb{R}^{d\_c}$ prior to head projection, drastically reducing Key-Value activation caching requirements: $$\mathbf{c}\_{KV} = W\_{DKV} X \in \mathbb{R}^{B \t
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 5: Structured Sparsity & Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/mla\_attention.py}

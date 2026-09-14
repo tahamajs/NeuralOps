@@ -2,7 +2,7 @@
 \label{sec:app_module_fused\_svd\_kernel}
 
 \subsubsection*{3.1 Module Overview}
-RESEARCH SOTA: Fused SVD-Linear Module. Combines low-rank projection \$Z = x V^T\$, in-SRAM RMSNorm, and up-projection \$Y = Z U^T + b\$ into a single kernel invocation, eliminating HBM roundtrips.
+RESEARCH SOTA: Fused SVD-Linear Module. Combines low-rank projection $Z = x V^T$, in-SRAM RMSNorm, and up-projection $Y = Z U^T + b$ into a single kernel invocation, eliminating HBM roundtrips.
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 4: Kernelized & Spectral Attention
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/fused\_svd\_kernel.py}

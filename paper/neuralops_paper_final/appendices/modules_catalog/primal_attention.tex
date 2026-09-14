@@ -4,7 +4,7 @@
 \subsubsection*{3.1 Module Overview}
 \texttt{PrimalAttention} implements a Primal-Space Nystr\"om kernel approximation of self-attention using uniform segment landmark pooling, triple kernel submatrix construction ($F_1, F_2, F_3$), high-precision Moore-Penrose pseudoinversion in FP32 with condition cutoff $\text{rcond}=10^{-4}$, and iterative quadratic Schulz-Newton refinement. It natively supports RoPE positional embeddings, Grouped-Query repetition, LoRA adapters, and nested encoder bypass.
 \begin{itemize}
-    \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \\& Pruning
+    \item \textbf{Track Paradigm:} Track 5: Structured Sparsity \& Pruning
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/primal\_attention.py}
     \item \textbf{Registration Name:} \texttt{primal\_attention} $\mid$ \textbf{Class:} \texttt{PrimalAttention}
 \end{itemize}

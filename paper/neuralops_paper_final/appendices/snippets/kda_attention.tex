@@ -2,7 +2,7 @@
 \label{sec:app_module_kda\_attention}
 
 \subsubsection*{3.1 Module Overview}
-Kernelized Decay Attention (KDA) Bidirectional Mechanism.  Implements bidirectional linear recurrent state tracking with a learned gating decay parameter \$\beta\$: \$\$\begin{aligned} \vec{S}\_t \&= \sigma(\beta) \odot \vec{S}\_{t-1} + \tilde{k}\_t v\_t^\top, \quad \vec{z}\_t = \sigma(\beta) \odot \vec{z}\_{t
+Kernelized Decay Attention (KDA) Bidirectional Mechanism.  Implements bidirectional linear recurrent state tracking with a learned gating decay parameter $\beta$: $$\begin{aligned} \vec{S}\_t \&= \sigma(\beta) \odot \vec{S}\_{t-1} + \tilde{k}\_t v\_t^\top, \quad \vec{z}\_t = \sigma(\beta) \odot \vec{z}\_{t
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 2: State-Space Models & Recurrent Scans
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/kda\_attention.py}

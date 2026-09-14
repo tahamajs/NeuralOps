@@ -2,7 +2,7 @@
 \label{sec:app_module_adaptive\_span\_attention}
 
 \subsubsection*{3.1 Module Overview}
-Adaptive Span Attention (Sukhbaatar et al., 2019).  Mathematical Formulation:     1. Query-Key Attention Scores:        \$\$S\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d}}\$\$          2. Dynamic Per-Head Span Masking:        Let \$z\_h = \sigma(\text{logit}\_h) \cdot S\_{\max}\$.        \$\$M\_{ij}^{(h)} = \begin{cases
+Adaptive Span Attention (Sukhbaatar et al., 2019).  Mathematical Formulation:     1. Query-Key Attention Scores:        $$S\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d}}$$          2. Dynamic Per-Head Span Masking:        Let $z\_h = \sigma(\text{logit}\_h) \cdot S\_{\max}$.        $$M\_{ij}^{(h)} = \begin{cases
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization & SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/adaptive\_span\_attention.py}

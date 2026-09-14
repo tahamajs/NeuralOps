@@ -2,7 +2,7 @@
 \label{sec:app_module_cluster\_attention}
 
 \subsubsection*{3.1 Module Overview}
-ClusterFormer Attention Layer (Fast Transformers with Clustered Attention).  Mathematical Formulation:     1. Query Clustering via \$K\$-Means:        Partitions queries \$Q \in \mathbb{R}^{B \times H \times L \times d}\$ into \$K \ll L\$ centroids:        \$\$\mu\_k = \frac{\sum\_{i=1}^L \mathbb{I}(c\_i = k) 
+ClusterFormer Attention Layer (Fast Transformers with Clustered Attention).  Mathematical Formulation:     1. Query Clustering via $K$-Means:        Partitions queries $Q \in \mathbb{R}^{B \times H \times L \times d}$ into $K \ll L$ centroids:        $$\mu\_k = \frac{\sum\_{i=1}^L \mathbb{I}(c\_i = k) 
 \begin{itemize}
     \item \textbf{Track Paradigm:} Track 1: Low-Rank Factorization & SVD Projections
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/cluster\_attention.py}

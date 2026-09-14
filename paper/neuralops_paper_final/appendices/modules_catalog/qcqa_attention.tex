@@ -2,9 +2,9 @@
 \label{sec:app_module_qcqa_attention}
 
 \subsubsection*{3.1 Module Overview}
-Quality and Capacity-Aware Grouped Query Attention layer.  Args:     config: Model configuration specifying `hidden\_size`, `num\_attention\_heads`, and `dropout`.     num\_kv\_heads: Number of compressed key-value heads (\$H\_{kv}\$).     router\_temp: Temperature scaling factor \$\tau\$ for soft routing soft
+Quality and Capacity-Aware Grouped Query Attention layer.  Args:     config: Model configuration specifying `hidden\_size`, `num\_attention\_heads`, and `dropout`.     num\_kv\_heads: Number of compressed key-value heads ($H\_{kv}$).     router\_temp: Temperature scaling factor $\tau$ for soft routing soft
 \begin{itemize}
-    \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \\& Dynamic Routing
+    \item \textbf{Track Paradigm:} Track 3: Mixture-of-Experts \& Dynamic Routing
     \item \textbf{Source File Path:} \texttt{Codes/framework/attentions/qcqa\_attention.py}
     \item \textbf{Registration Name:} \texttt{qcqa\_attention} $\mid$ \textbf{Class:} \texttt{QCQAAttention}
 \end{itemize}

@@ -68,7 +68,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{adasplash}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/adasplash\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{adasplash}, \texttt{adasplash\_attention}, \texttt{adasplash\_inject} \\
-\textbf{Architectural Overview:} AdaSplash Attention: Adaptive Splash Attention with α-Entmax Sparse Activations. Combines localized sliding-window splash radius with sparse α-entmax adaptive thresholding and global token routing, ensuring robust numerical convergence and exact pret...
+\textbf{Architectural Overview:} AdaSplash Attention: Adaptive Splash Attention with $\alpha$-Entmax Sparse Activations. Combines localized sliding-window splash radius with sparse $\alpha$-entmax adaptive thresholding and global token routing, ensuring robust numerical convergence and exact pret...
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -176,7 +176,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{asvd}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/asvd\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{asvd}, \texttt{asvd\_attention} \\
-\textbf{Architectural Overview:} ASVD (Activation‑aware Singular Value Decomposition) Attention. Paper: https://arxiv.org/abs/2307.07382
+\textbf{Architectural Overview:} ASVD (Activation-aware Singular Value Decomposition) Attention. Paper: https://arxiv.org/abs/2307.07382
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -668,7 +668,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{linformer}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/linformer\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{linformer}, \texttt{linformer\_attention}, \texttt{linformer\_inject} \\
-\textbf{Architectural Overview:} Linformer Attention – corrected version. Fixes: - Use pretrained attn for initializing Q,K,V,out proj. - Add injection function. - Handle longer sequences by padding E,F (though limited). - Proper mask handling.
+\textbf{Architectural Overview:} Linformer Attention -- corrected version. Fixes: - Use pretrained attn for initializing Q,K,V,out proj. - Add injection function. - Handle longer sequences by padding E,F (though limited). - Proper mask handling.
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -704,7 +704,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{lsh}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/lsh\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{lsh}, \texttt{lsh\_inject} \\
-\textbf{Architectural Overview:} Locality-Sensitive Hashing (LSH) Attention – Reformer style. Paper: https://arxiv.org/abs/2001.04451 Approximates dense attention by clustering keys and queries into discrete hash buckets via angular random hyperplane projections with fallback contex...
+\textbf{Architectural Overview:} Locality-Sensitive Hashing (LSH) Attention -- Reformer style. Paper: https://arxiv.org/abs/2001.04451 Approximates dense attention by clustering keys and queries into discrete hash buckets via angular random hyperplane projections with fallback contex...
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -824,7 +824,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{mla}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/mla\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{mla} \\
-\textbf{Architectural Overview:} Multi-Head Latent Attention (MLA) – DeepSeek‑V2. Paper: https://arxiv.org/abs/2405.04434
+\textbf{Architectural Overview:} Multi-Head Latent Attention (MLA) -- DeepSeek-V2. Paper: https://arxiv.org/abs/2405.04434
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -896,7 +896,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{nha}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/nha\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{nha}, \texttt{nha\_attention}, \texttt{nha\_compressor} \\
-\textbf{Architectural Overview:} Native Hybrid Attention (NHA) – Real attention module combining local sliding-window attention with global linear attention via Random Fourier Features.
+\textbf{Architectural Overview:} Native Hybrid Attention (NHA) -- Real attention module combining local sliding-window attention with global linear attention via Random Fourier Features.
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -932,7 +932,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{nystrom}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/nystrom\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{nystrom}, \texttt{nystrom\_attention}, \texttt{nystrom\_inject} \\
-\textbf{Architectural Overview:} Nyströmformer Attention – Nyström-based low-rank kernel approximation. Paper: https://arxiv.org/abs/2102.03902
+\textbf{Architectural Overview:} Nystr"{o}mformer Attention -- Nystr"{o}m-based low-rank kernel approximation. Paper: https://arxiv.org/abs/2102.03902
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -968,7 +968,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{performer}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/performer\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{performer}, \texttt{performer\_attention}, \texttt{performer\_inject} \\
-\textbf{Architectural Overview:} Performer Attention – Fast Attention via Positive Orthogonal Random Features (FAVOR+). Paper: https://arxiv.org/abs/2009.14794
+\textbf{Architectural Overview:} Performer Attention -- Fast Attention via Positive Orthogonal Random Features (FAVOR+). Paper: https://arxiv.org/abs/2009.14794
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -992,7 +992,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{primal}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/primal\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{primal} \\
-\textbf{Architectural Overview:} Primal Attention: Self-Attention through Asymmetric Kernel SVD in Primal Representation. Nyström-inspired low-rank landmark approximation of self-attention using segment pooling landmarks and iterative Schulz pseudoinverse refinement. Mathematical Me...
+\textbf{Architectural Overview:} Primal Attention: Self-Attention through Asymmetric Kernel SVD in Primal Representation. Nystr"{o}m-inspired low-rank landmark approximation of self-attention using segment pooling landmarks and iterative Schulz pseudoinverse refinement. Mathematical Me...
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -1040,7 +1040,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{rala}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/rala\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{rala} \\
-\textbf{Architectural Overview:} Rank‑Augmented Linear Attention (RALA) – ICLR 2024. Augments linear attention kernel maps with low-rank static head interaction matrices.
+\textbf{Architectural Overview:} Rank-Augmented Linear Attention (RALA) -- ICLR 2024. Augments linear attention kernel maps with low-rank static head interaction matrices.
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -1352,7 +1352,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{svd\_proj\_attn}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/svd\_projection\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{svd\_proj\_attn}, \texttt{svd\_projection\_attention}, \texttt{svd\_projection}, \texttt{svd\_proj\_attn\_inject} \\
-\textbf{Architectural Overview:} SVD Projection Attention – Each projection (Q, K, V, Out) is replaced by a low‑rank SVDLinear with explicit weight matrix reconstruction: W = U @ V.
+\textbf{Architectural Overview:} SVD Projection Attention -- Each projection (Q, K, V, Out) is replaced by a low-rank SVDLinear with explicit weight matrix reconstruction: W = U @ V.
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -1484,7 +1484,7 @@ Below we catalog the registered attention mechanisms across all 5 benchmark trac
 \subsubsection{\texttt{vig}}
 \textbf{Source File:} \texttt{Codes/framework/attentions/vig\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{vig} \\
-\textbf{Architectural Overview:} ViG Attention: Vision GNN‑inspired Grid Linear Attention with Gated Fusion. Paper: https://arxiv.org/abs/2206.00272
+\textbf{Architectural Overview:} ViG Attention: Vision GNN-inspired Grid Linear Attention with Gated Fusion. Paper: https://arxiv.org/abs/2206.00272
 
 \begin{itemize}
     \item \textbf{Computational Complexity:} $\mathcal{O}(N \cdot r)$ low-rank projection scaling.
@@ -1747,7 +1747,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{cr}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/cr\_compressor.py} \\
 \textbf{Registered Aliases:} \texttt{cr} \\
-\textbf{Technique Overview:} CR (Column-Row / Interpolative Decomposition) Compressor. Decomposes W ≈ C @ P, where C are actual columns of W. Registered in COMPRESSOR REGISTRY as 'cr'.
+\textbf{Technique Overview:} CR (Column-Row / Interpolative Decomposition) Compressor. Decomposes W $\approx$ C @ P, where C are actual columns of W. Registered in COMPRESSOR REGISTRY as 'cr'.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -1769,7 +1769,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{cur\_linear}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/cur\_linear.py} \\
 \textbf{Registered Aliases:} \texttt{cur\_linear} \\
-\textbf{Technique Overview:} CUR Linear Layer: low-rank cross-approximation using column and row skeleton selection. W ≈ C @ U @ R
+\textbf{Technique Overview:} CUR Linear Layer: low-rank cross-approximation using column and row skeleton selection. W $\approx$ C @ U @ R
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -1802,7 +1802,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{cur\_moe}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/cure.py} \\
 \textbf{Registered Aliases:} \texttt{cur\_moe} \\
-\textbf{Technique Overview:} CUR‑MoE: Interpretable CUR decomposition for MoE expert layers. Registered as 'cur moe'.
+\textbf{Technique Overview:} CUR-MoE: Interpretable CUR decomposition for MoE expert layers. Registered as 'cur moe'.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -1857,7 +1857,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{enlighten}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/enlighten\_compressor.py} \\
 \textbf{Registered Aliases:} \texttt{enlighten} \\
-\textbf{Technique Overview:} ENLighten: low‑rank SVD + 2:4 structured sparsity (photonic‑aligned). Registered as 'enlighten'.
+\textbf{Technique Overview:} ENLighten: low-rank SVD + 2:4 structured sparsity (photonic-aligned). Registered as 'enlighten'.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -2077,7 +2077,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{kronecker\_linear}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/kronecker\_linear.py} \\
 \textbf{Registered Aliases:} \texttt{kronecker\_linear} \\
-\textbf{Technique Overview:} Kronecker Linear Layer: weight matrix represented as Kronecker product A ⊗ B. Provides true sub-quadratic FLOP execution and factorized memory efficiency.
+\textbf{Technique Overview:} Kronecker Linear Layer: weight matrix represented as Kronecker product A $\otimes$ B. Provides true sub-quadratic FLOP execution and factorized memory efficiency.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -2121,7 +2121,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{liftr}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/liftr.py} \\
 \textbf{Registered Aliases:} \texttt{liftr}, \texttt{liftr\_compressor} \\
-\textbf{Technique Overview:} LIFTR – Linearized Function Trick Compressor. Registered in COMPRESSOR REGISTRY as 'liftr'. Mathematical Formulation: 1. Activation Function Linearization: - operatorname ReLU (x) to operatorname Identity (x) - operatorname GELU (x) approx 0.8 cdot x...
+\textbf{Technique Overview:} LIFTR -- Linearized Function Trick Compressor. Registered in COMPRESSOR REGISTRY as 'liftr'. Mathematical Formulation: 1. Activation Function Linearization: - operatorname ReLU (x) to operatorname Identity (x) - operatorname GELU (x) approx 0.8 cdot x...
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -2187,7 +2187,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{mlorq}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/mlorq\_compressor.py} \\
 \textbf{Registered Aliases:} \texttt{mlorq} \\
-\textbf{Technique Overview:} MLoRQ: Multi‑Layer optimal rank and quantisation under a total memory budget. Registered as 'mlorq'.
+\textbf{Technique Overview:} MLoRQ: Multi-Layer optimal rank and quantisation under a total memory budget. Registered as 'mlorq'.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -2220,7 +2220,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{nli\_softmax}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/nli\_softmax.py} \\
 \textbf{Registered Aliases:} \texttt{nli\_softmax} \\
-\textbf{Technique Overview:} NLI Softmax approximation – a fast, quantisation‑friendly softmax. Uses standard forward softmax, simplified sigmoid‑based backward.
+\textbf{Technique Overview:} NLI Softmax approximation -- a fast, quantisation-friendly softmax. Uses standard forward softmax, simplified sigmoid-based backward.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -2275,7 +2275,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{padre\_attention}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/padre\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{padre\_attention} \\
-\textbf{Technique Overview:} PADRe – Polynomial Attention with Dropout Regularization. Replaces softmax with a stable polynomial approximation, enabling faster inference and potential for linear‑time attention via kernelisation.
+\textbf{Technique Overview:} PADRe -- Polynomial Attention with Dropout Regularization. Replaces softmax with a stable polynomial approximation, enabling faster inference and potential for linear-time attention via kernelisation.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -2330,7 +2330,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{roast\_hashed\_linear}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/roast\_hashed\_linear.py} \\
 \textbf{Registered Aliases:} \texttt{roast\_hashed\_linear} \\
-\textbf{Technique Overview:} ROAST: Hardware‑Aware Weight Sharing with Tiling. Reference: "ROAST: A Hardware‑Aware Weight Sharing Scheme for Efficient Neural Networks"
+\textbf{Technique Overview:} ROAST: Hardware-Aware Weight Sharing with Tiling. Reference: "ROAST: A Hardware-Aware Weight Sharing Scheme for Efficient Neural Networks"
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -2352,7 +2352,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{rpc\_attention}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/rpc\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{rpc\_attention} \\
-\textbf{Technique Overview:} RPC Attention: Kernel PCA perspective on self‑attention.
+\textbf{Technique Overview:} RPC Attention: Kernel PCA perspective on self-attention.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -2594,7 +2594,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{tlinformer\_attention}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/tlinformer\_attention.py} \\
 \textbf{Registered Aliases:} \texttt{tlinformer\_attention} \\
-\textbf{Technique Overview:} TLinFormer: Exact linear‑time attention via low‑rank projections. Paper: LinFormer (Wang et al., 2020) – adapted for DistilBERT.
+\textbf{Technique Overview:} TLinFormer: Exact linear-time attention via low-rank projections. Paper: LinFormer (Wang et al., 2020) -- adapted for DistilBERT.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
@@ -2638,7 +2638,7 @@ Below we catalog the registered compression algorithms including SVD, tensor-tra
 \subsubsection{\texttt{uniql}}
 \textbf{Source File:} \texttt{Codes/framework/compression\_engine/uniql\_compressor.py} \\
 \textbf{Registered Aliases:} \texttt{uniql} \\
-\textbf{Technique Overview:} UniQL: Joint low‑rank + quantisation using SVD and uniform quant. Registered as 'uniql'.
+\textbf{Technique Overview:} UniQL: Joint low-rank + quantisation using SVD and uniform quant. Registered as 'uniql'.
 
 \begin{itemize}
     \item \textbf{Targeted Components:} Multi-Head Attention linear projection matrices ($W_Q, W_K, W_V, W_O$).
