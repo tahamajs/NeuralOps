@@ -12,6 +12,7 @@ os.environ.pop("HF_HUB_OFFLINE", None)
 os.environ.pop("TRANSFORMERS_OFFLINE", None)
 os.environ["HF_HUB_DISABLE_XET"] = "1"
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True,max_split_size_mb:128"
 
 # Switch to project directory if on Windows GPU server
 if os.path.exists(r"D:\svd_project"):
@@ -134,6 +135,8 @@ parser.add_argument("--batch_size", type=int, default=None, help="Batch size ove
 parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
 parser.add_argument("--rank", type=int, default=None, help="Rank override")
 parser.add_argument("--lora_rank", type=int, default=None, help="LoRA rank override")
+parser.add_argument("--gradient_checkpointing", action="store_true", default=False, help="Enable gradient checkpointing for all models")
+parser.add_argument("--seq_len", type=int, default=None, help="Sequence length override")
 parser.add_argument("positional_models", nargs="*", default=None, help="Positional model names for backwards compatibility")
 
 args = parser.parse_args()
@@ -172,6 +175,11 @@ for m in models:
         update_cmd_arg(m["cmd"], "--rank", str(args.rank))
     if args.lora_rank is not None:
         update_cmd_arg(m["cmd"], "--lora_rank", str(args.lora_rank))
+    if args.seq_len is not None:
+        update_cmd_arg(m["cmd"], "--seq_len", str(args.seq_len))
+    if args.gradient_checkpointing:
+        if "--gradient_checkpointing" not in m["cmd"]:
+            m["cmd"].append("--gradient_checkpointing")
 
 print("=" * 80, flush=True)
 print("STARTING UNIFIED 4-MODEL HARDENED TPATTENTION BENCHMARK ON GPU SERVER", flush=True)
