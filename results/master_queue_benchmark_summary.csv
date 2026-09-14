@@ -34,3 +34,5 @@ chela_slay,run_all_4_chela_slay.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T00:20:20.6
 cluster,run_all_4_cluster.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T00:20:20.666242
 come,run_all_4_come.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T00:20:20.667952
 compressed_attention,run_all_4_compressed_attention.py,0,232.84,PASS,,2026-09-15T00:24:13.512563
+compressed_attention_layer,run_all_4_compressed_attention_layer.py,0,195.81,PASS,,2026-09-15T00:27:29.329194
+compressed_mha,run_all_4_compressed_mha.py,0,162.92,PASS,,2026-09-15T00:30:12.260785

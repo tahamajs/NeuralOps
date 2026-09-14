@@ -313,5 +313,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T00:24:13.512563"
+  },
+  {
+    "module": "compressed_attention_layer",
+    "runner": "run_all_4_compressed_attention_layer.py",
+    "exit_code": 0,
+    "elapsed_s": 195.81,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T00:27:29.329194"
+  },
+  {
+    "module": "compressed_mha",
+    "runner": "run_all_4_compressed_mha.py",
+    "exit_code": 0,
+    "elapsed_s": 162.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T00:30:12.260785"
   }
 ]
