@@ -2,40 +2,40 @@
   {
     "Model": "distilbert",
     "Exit Code": 0,
-    "Baseline Acc": "90.48%",
-    "DeltaKV Acc": "90.14%",
-    "Delta Acc": "-0.34%",
-    "F1": "0.9029",
+    "Baseline Acc": "90.94%",
+    "DeltaKV Acc": "91.06%",
+    "Delta Acc": "+0.12%",
+    "F1": "0.9139",
     "Status": "PASS",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "338.3 MB",
-    "Time (s)": "18.8"
+    "Peak VRAM": "310.7 MB",
+    "Time (s)": "32.4"
   },
   {
     "Model": "roberta",
     "Exit Code": 0,
-    "Baseline Acc": "75.11%",
-    "DeltaKV Acc": "81.65%",
-    "Delta Acc": "+6.54%",
-    "F1": "0.8422",
-    "Status": "PASS",
+    "Baseline Acc": "75.46%",
+    "DeltaKV Acc": "50.92%",
+    "Delta Acc": "-24.54%",
+    "F1": "0.6748",
+    "Status": "PASS_LOW",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "359.0 MB",
-    "Time (s)": "24.9"
+    "Peak VRAM": "530.2 MB",
+    "Time (s)": "43.9"
   },
   {
     "Model": "gpt2",
     "Exit Code": 0,
-    "Baseline Acc": "60.78%",
-    "DeltaKV Acc": "55.96%",
-    "Delta Acc": "-4.82%",
-    "F1": "0.6784",
-    "Status": "PASS_LOW",
-    "Compressed Layers": "0",
+    "Baseline Acc": "87.84%",
+    "DeltaKV Acc": "85.32%",
+    "Delta Acc": "-2.52%",
+    "F1": "0.8680",
+    "Status": "PASS",
+    "Compressed Layers": "48",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "636.4 MB",
-    "Time (s)": "24.2"
+    "Peak VRAM": "414.3 MB",
+    "Time (s)": "63.0"
   }
 ]
