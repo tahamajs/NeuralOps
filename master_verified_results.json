@@ -5850,48 +5850,32 @@
       "models": {
         "DistilBERT": {
           "status": "PASS",
-          "accuracy_pct": 90.71,
-          "f1_score": 0.9107,
-          "peak_vram_mb": 327.71,
-          "throughput_tokens_sec": 59487.49,
+          "accuracy_pct": 90.94,
+          "f1_score": 0.9131,
+          "peak_vram_mb": 318.68,
+          "throughput_tokens_sec": 22375.04,
           "source_file": "results/unified_mixattention_moska/distilbert/summary.csv"
         },
         "GPT-2": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 51.61,
-          "f1_score": 0.6774,
-          "peak_vram_mb": 568.71,
-          "throughput_tokens_sec": 34947.22,
-          "source_file": "results/unified_mixattention_moska/gpt2/summary.csv"
-        },
-        "Qwen": {
           "status": "PASS",
-          "accuracy_pct": 49.43,
-          "f1_score": null,
-          "peak_vram_mb": null,
-          "throughput_tokens_sec": null,
-          "source_file": "results/qwen_sst2_lora_modules/summary.csv"
+          "accuracy_pct": 87.27,
+          "f1_score": 0.8835,
+          "peak_vram_mb": 333.18,
+          "throughput_tokens_sec": 10823.89,
+          "source_file": "results/unified_mixattention_moska/gpt2/summary.csv"
         },
         "RoBERTa": {
           "status": "PASS",
           "accuracy_pct": 86.24,
-          "f1_score": 0.8704,
-          "peak_vram_mb": 376.7,
-          "throughput_tokens_sec": 31562.88,
+          "f1_score": 0.8739,
+          "peak_vram_mb": 648.25,
+          "throughput_tokens_sec": 12049.15,
           "source_file": "results/unified_mixattention_moska/roberta/summary.csv"
-        },
-        "Unknown": {
-          "status": "PASS",
-          "accuracy_pct": 30.87,
-          "f1_score": null,
-          "peak_vram_mb": null,
-          "throughput_tokens_sec": null,
-          "source_file": "results/t5_cola_parallel/summary.csv"
         }
       },
-      "best_accuracy": 90.71,
+      "best_accuracy": 90.94,
       "has_pass": true,
-      "has_pass_low": true,
+      "has_pass_low": false,
       "is_pure_pass": true,
       "overall_status": "PASS"
     },
