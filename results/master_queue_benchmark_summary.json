@@ -1,228 +1,21 @@
 [
   {
-    "module": "a3",
-    "runner": "run_all_4_a3.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:09:07.363005"
-  },
-  {
-    "module": "aasvd",
-    "runner": "run_all_4_aasvd.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:09:07.364360"
-  },
-  {
-    "module": "adaptive_compressor",
-    "runner": "run_all_4_adaptive_compressor.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:09:07.365709"
-  },
-  {
-    "module": "adaptive_ranks",
-    "runner": "run_all_4_adaptive_ranks.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:09:07.366330"
-  },
-  {
-    "module": "adaptive_span",
-    "runner": "run_all_4_adaptive_span.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:09:07.367664"
-  },
-  {
-    "module": "adaptive_sparse",
-    "runner": "run_all_4_adaptive_sparse.py",
-    "exit_code": 0,
-    "elapsed_s": 82.07,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-15T02:10:29.439997"
-  },
-  {
-    "module": "adaptive_sparse_attention",
-    "runner": "run_all_4_adaptive_sparse_attention.py",
-    "exit_code": 0,
-    "elapsed_s": 297.0,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-15T02:15:27.877633"
-  },
-  {
-    "module": "adaptive_svd_attention",
-    "runner": "run_all_4_adaptive_svd_attention.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:15:27.883389"
-  },
-  {
-    "module": "adaptive_svd_attn",
-    "runner": "run_all_4_adaptive_svd_attn.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:15:27.885054"
-  },
-  {
-    "module": "adasplash",
-    "runner": "run_all_4_adasplash.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:15:27.886659"
-  },
-  {
-    "module": "adasvd",
-    "runner": "run_all_4_adasvd.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:15:27.888121"
-  },
-  {
-    "module": "admm",
-    "runner": "run_all_4_admm.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:15:27.889460"
-  },
-  {
-    "module": "admm_pruner",
-    "runner": "run_all_4_admm_pruner.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:15:27.890574"
-  },
-  {
-    "module": "aegis_hybrid",
-    "runner": "run_all_4_aegis_hybrid.py",
-    "exit_code": 0,
-    "elapsed_s": 206.82,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-15T02:18:54.708500"
-  },
-  {
-    "module": "aegis_spectron_fp8",
-    "runner": "run_all_4_aegis_spectron_fp8.py",
-    "exit_code": 0,
-    "elapsed_s": 263.83,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-15T02:23:18.550461"
-  },
-  {
-    "module": "aegis_v1",
-    "runner": "run_all_4_aegis_v1.py",
-    "exit_code": 0,
-    "elapsed_s": 249.92,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-15T02:27:28.485249"
-  },
-  {
-    "module": "aegis_v1_module",
-    "runner": "run_all_4_aegis_v1_module.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:27:28.499142"
-  },
-  {
-    "module": "aegis_v2",
-    "runner": "run_all_4_aegis_v2.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:27:28.500695"
-  },
-  {
-    "module": "aegis_v3",
-    "runner": "run_all_4_aegis_v3.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:27:28.502111"
-  },
-  {
-    "module": "aegis_v3_module",
-    "runner": "run_all_4_aegis_v3_module.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:27:28.516924"
-  },
-  {
-    "module": "aegis_v4",
-    "runner": "run_all_4_aegis_v4.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:27:28.521356"
-  },
-  {
-    "module": "aegis_v4_module",
-    "runner": "run_all_4_aegis_v4_module.py",
-    "exit_code": 0,
-    "elapsed_s": 286.35,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-15T02:32:14.873366"
-  },
-  {
-    "module": "aegis_v5",
-    "runner": "run_all_4_aegis_v5.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-15T02:32:14.907826"
-  },
-  {
     "module": "aegis_v5_module",
     "runner": "run_all_4_aegis_v5_module.py",
     "exit_code": 0,
-    "elapsed_s": 211.21,
+    "elapsed_s": 219.88,
     "status": "PASS",
     "error": null,
-    "timestamp": "2026-09-15T02:35:46.125814"
+    "timestamp": "2026-09-15T02:52:55.855927"
   },
   {
     "module": "aegis_v6",
     "runner": "run_all_4_aegis_v6.py",
     "exit_code": 0,
-    "elapsed_s": 211.25,
+    "elapsed_s": 204.45,
     "status": "PASS",
     "error": null,
-    "timestamp": "2026-09-15T02:39:17.382393"
+    "timestamp": "2026-09-15T02:56:20.818724"
   },
   {
     "module": "armor",
@@ -231,7 +24,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-15T02:39:17.393577"
+    "timestamp": "2026-09-15T02:56:20.823765"
   },
   {
     "module": "astro",
@@ -240,7 +33,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-15T02:39:17.396055"
+    "timestamp": "2026-09-15T02:56:20.825204"
   },
   {
     "module": "asvd",
@@ -249,7 +42,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-15T02:39:17.399299"
+    "timestamp": "2026-09-15T02:56:20.826181"
   },
   {
     "module": "bam_umoe",
@@ -258,7 +51,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-15T02:39:17.401528"
+    "timestamp": "2026-09-15T02:56:20.827213"
   },
   {
     "module": "block_transformer_hiba",
@@ -267,7 +60,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-15T02:39:17.405248"
+    "timestamp": "2026-09-15T02:56:20.828494"
   },
   {
     "module": "cachenotes",
@@ -276,7 +69,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-15T02:39:17.407313"
+    "timestamp": "2026-09-15T02:56:20.829435"
   },
   {
     "module": "chela_slay",
@@ -285,7 +78,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-15T02:39:17.410355"
+    "timestamp": "2026-09-15T02:56:20.830395"
   },
   {
     "module": "cluster",
@@ -294,7 +87,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-15T02:39:17.413620"
+    "timestamp": "2026-09-15T02:56:20.831445"
   },
   {
     "module": "come",
@@ -303,15 +96,96 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-15T02:39:17.415985"
+    "timestamp": "2026-09-15T02:56:20.832341"
   },
   {
     "module": "compressed_attention",
     "runner": "run_all_4_compressed_attention.py",
     "exit_code": 0,
-    "elapsed_s": 160.76,
+    "elapsed_s": 155.79,
     "status": "PASS",
     "error": null,
-    "timestamp": "2026-09-15T02:41:58.175737"
+    "timestamp": "2026-09-15T02:58:56.623362"
+  },
+  {
+    "module": "compressed_attention_layer",
+    "runner": "run_all_4_compressed_attention_layer.py",
+    "exit_code": 0,
+    "elapsed_s": 151.66,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T03:01:28.282693"
+  },
+  {
+    "module": "compressed_mha",
+    "runner": "run_all_4_compressed_mha.py",
+    "exit_code": 0,
+    "elapsed_s": 148.65,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T03:03:56.930641"
+  },
+  {
+    "module": "cosformer",
+    "runner": "run_all_4_cosformer.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T03:03:56.934131"
+  },
+  {
+    "module": "cur",
+    "runner": "run_all_4_cur.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T03:03:56.936370"
+  },
+  {
+    "module": "cur_linear",
+    "runner": "run_all_4_cur_linear.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T03:03:56.938014"
+  },
+  {
+    "module": "cur_moe",
+    "runner": "run_all_4_cur_moe.py",
+    "exit_code": 0,
+    "elapsed_s": 140.46,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T03:06:17.395765"
+  },
+  {
+    "module": "cure",
+    "runner": "run_all_4_cure.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T03:06:17.399547"
+  },
+  {
+    "module": "decay_linear_attention",
+    "runner": "run_all_4_decay_linear_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 327.71,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T03:11:45.120734"
+  },
+  {
+    "module": "delta_kv",
+    "runner": "run_all_4_delta_kv.py",
+    "exit_code": 0,
+    "elapsed_s": 213.07,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T03:15:18.206377"
   }
 ]
