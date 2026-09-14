@@ -6,7 +6,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-14T21:34:50.165606"
+    "timestamp": "2026-09-14T22:37:51.876817"
   },
   {
     "module": "aasvd",
@@ -15,7 +15,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-14T21:34:50.166189"
+    "timestamp": "2026-09-14T22:37:51.883767"
   },
   {
     "module": "adaptive_compressor",
@@ -24,7 +24,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-14T21:34:50.166699"
+    "timestamp": "2026-09-14T22:37:51.887668"
   },
   {
     "module": "adaptive_ranks",
@@ -33,7 +33,7 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-14T21:34:50.167219"
+    "timestamp": "2026-09-14T22:37:51.888560"
   },
   {
     "module": "adaptive_span",
@@ -42,114 +42,15 @@
     "elapsed_s": 0.0,
     "status": "SKIPPED_EXISTING",
     "error": null,
-    "timestamp": "2026-09-14T21:34:50.167807"
+    "timestamp": "2026-09-14T22:37:51.890479"
   },
   {
     "module": "adaptive_sparse",
     "runner": "run_all_4_adaptive_sparse.py",
     "exit_code": 0,
-    "elapsed_s": 81.72,
+    "elapsed_s": 271.89,
     "status": "PASS",
     "error": null,
-    "timestamp": "2026-09-14T21:36:11.891056"
-  },
-  {
-    "module": "adaptive_sparse_attention",
-    "runner": "run_all_4_adaptive_sparse_attention.py",
-    "exit_code": 0,
-    "elapsed_s": 311.04,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-14T21:41:23.506729"
-  },
-  {
-    "module": "adaptive_svd_attention",
-    "runner": "run_all_4_adaptive_svd_attention.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-14T21:41:23.509128"
-  },
-  {
-    "module": "adaptive_svd_attn",
-    "runner": "run_all_4_adaptive_svd_attn.py",
-    "exit_code": 0,
-    "elapsed_s": 327.89,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-14T21:46:51.402916"
-  },
-  {
-    "module": "adasplash",
-    "runner": "run_all_4_adasplash.py",
-    "exit_code": 0,
-    "elapsed_s": 357.86,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-14T21:52:49.264669"
-  },
-  {
-    "module": "adasvd",
-    "runner": "run_all_4_adasvd.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-14T21:52:49.268228"
-  },
-  {
-    "module": "admm",
-    "runner": "run_all_4_admm.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-14T21:52:49.272324"
-  },
-  {
-    "module": "admm_pruner",
-    "runner": "run_all_4_admm_pruner.py",
-    "exit_code": 0,
-    "elapsed_s": 0.0,
-    "status": "SKIPPED_EXISTING",
-    "error": null,
-    "timestamp": "2026-09-14T21:52:49.275718"
-  },
-  {
-    "module": "aegis_hybrid",
-    "runner": "run_all_4_aegis_hybrid.py",
-    "exit_code": 0,
-    "elapsed_s": 257.23,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-14T21:57:06.516702"
-  },
-  {
-    "module": "aegis_spectron_fp8",
-    "runner": "run_all_4_aegis_spectron_fp8.py",
-    "exit_code": 0,
-    "elapsed_s": 269.56,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-14T22:01:36.080243"
-  },
-  {
-    "module": "aegis_v1",
-    "runner": "run_all_4_aegis_v1.py",
-    "exit_code": 0,
-    "elapsed_s": 287.18,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-14T22:06:23.263960"
-  },
-  {
-    "module": "aegis_v1_module",
-    "runner": "run_all_4_aegis_v1_module.py",
-    "exit_code": 0,
-    "elapsed_s": 985.76,
-    "status": "PASS",
-    "error": null,
-    "timestamp": "2026-09-14T22:22:49.035059"
+    "timestamp": "2026-09-14T22:42:23.778539"
   }
 ]
