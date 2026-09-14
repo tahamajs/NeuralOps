@@ -66,6 +66,25 @@
             <button id="btn-toggle-inspector" class="round-button" title="Toggle Deep Architecture Inspector">
                 🔬 Inspector
             </button>
+
+            <!-- Share/Permalink Button -->
+            <button id="btn-share" class="round-button" title="Copy permalink to this module (Shortcut: Ctrl+C)" onclick="(function(){
+                const url = window.location.href;
+                navigator.clipboard.writeText(url).then(()=>{
+                    const t = document.createElement('div');
+                    t.className='permalink-copied';
+                    t.textContent='🔗 Link copied!';
+                    document.body.appendChild(t);
+                    setTimeout(()=>t.remove(), 2500);
+                }).catch(()=>{});
+            })()">
+                🔗 Share
+            </button>
+
+            <!-- Keyboard shortcuts hint -->
+            <button class="round-button" title="Keyboard Shortcuts: Space=Play/Pause, R=Reset, M=Modules, 1-6=Layer nav" style="opacity:0.6;font-size:11px;">
+                ⌨ Keys
+            </button>
         </div>
     </header>
 
@@ -164,7 +183,7 @@
             <option value="2.0">2.0x</option>
         </select>
         <div class="timeline">
-            <span class="timecode" id="timeline-step">Step 1/7</span>
+            <span class="timecode" id="timeline-step">01 Input</span>
             <input type="range" id="timeline-scrubber" min="0" max="6" step="1" value="0" title="Scrub through token lifecycle">
             <span class="timecode" id="timeline-label">Input Embeddings</span>
         </div>
@@ -211,6 +230,7 @@
         <button id="btn-zoom-in"></button>
         <div id="comparison-hud">
             <span id="hud-model-name"></span>
+            <span id="hud-active-module-badge" class="hud-badge" style="background:rgba(83,236,217,0.15);color:#53ecd9;border:1px solid rgba(83,236,217,0.4);font-size:9px;letter-spacing:0.5px;padding:1px 6px;border-radius:3px;opacity:0;transition:opacity 0.4s;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</span>
             <span id="hud-base-params"></span>
             <span id="hud-comp-params"></span>
             <span id="hud-ratio"></span>
