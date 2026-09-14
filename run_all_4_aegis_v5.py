@@ -55,10 +55,10 @@ models = [
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
             "--output_dir", r"results\unified_aegis_v5\roberta",
-            "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
+            "--parent_checkpoint", r"results\unified_delta_kv\roberta\finetuned_model.pt",
             "--modules", "full,aegis_v5",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "100",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
             "--rank", "32",
@@ -84,7 +84,7 @@ models = [
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,aegis_v5",
             "--batch_size", "8",
-            "--recovery_steps", "50",
+            "--recovery_steps", "100",
             "--learning_rate", "2e-4",
             "--lora_rank", "16",
             "--rank", "32",
@@ -133,6 +133,7 @@ parser.add_argument("--batch_size", type=int, default=None, help="Batch size ove
 parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
 parser.add_argument("--rank", type=int, default=None, help="Rank override")
 parser.add_argument("--lora_rank", type=int, default=None, help="LoRA rank override")
+parser.add_argument("--export_only", action="store_true", help="Skip benchmark execution and only export/upload existing passing models")
 parser.add_argument("positional_models", nargs="*", default=None, help="Positional model names for backwards compatibility")
 
 args = parser.parse_args()
@@ -174,38 +175,41 @@ for m in models:
 
 start_time = time.time()
 
-for m in models:
-    name = m["name"]
-    out_dir = Path(m["out_dir"])
-    cmd = m["cmd"]
+if not args.export_only:
+    for m in models:
+        name = m["name"]
+        out_dir = Path(m["out_dir"])
+        cmd = m["cmd"]
 
-    print(f"\n========================================================")
-    print(f"Starting {name.upper()} Benchmark...")
-    print(f"Command: {' '.join(cmd)}")
-    print(f"========================================================\n", flush=True)
+        print(f"\n========================================================")
+        print(f"Starting {name.upper()} Benchmark...")
+        print(f"Command: {' '.join(cmd)}")
+        print(f"========================================================\n", flush=True)
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    log_file = out_dir / "console.log"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        log_file = out_dir / "console.log"
 
-    with open(log_file, "w", encoding="utf-8") as lf:
-        proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1
-        )
-        for line in proc.stdout:
-            sys.stdout.write(line)
-            sys.stdout.flush()
-            lf.write(line)
-            lf.flush()
-        proc.wait()
+        with open(log_file, "w", encoding="utf-8") as lf:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
+            for line in proc.stdout:
+                sys.stdout.write(line)
+                sys.stdout.flush()
+                lf.write(line)
+                lf.flush()
+            proc.wait()
 
-    if proc.returncode != 0:
-        print(f"\n[ERROR] Benchmark failed for {name} with returncode {proc.returncode}.", flush=True)
-    else:
-        print(f"\n[SUCCESS] Finished Benchmark for {name}.", flush=True)
+        if proc.returncode != 0:
+            print(f"\n[ERROR] Benchmark failed for {name} with returncode {proc.returncode}.", flush=True)
+        else:
+            print(f"\n[SUCCESS] Finished Benchmark for {name}.", flush=True)
+else:
+    print("\n[INFO] --export_only active: Skipping benchmark runs and proceeding directly to export & Hugging Face upload.", flush=True)
 
 print(f"\n========================================================")
 print(f"All Requested Models Processed in {time.time() - start_time:.2f}s")
@@ -258,8 +262,9 @@ for m in models:
     try:
         df = pd.read_csv(summary_path)
         if not df.empty:
-            if "status" in df.columns:
-                cand = df[df["module"] != "full"] if "module" in df.columns else df
+            mod_col = "module_name" if "module_name" in df.columns else ("module" if "module" in df.columns else None)
+            if mod_col:
+                cand = df[df[mod_col] != "full"]
                 if not cand.empty:
                     row = cand.iloc[-1].to_dict()
                 else:
@@ -270,10 +275,14 @@ for m in models:
         print(f"Error reading summary for {name}: {e}", flush=True)
 
     status = str(row.get("status", "FAIL"))
-    try:
-        acc = float(row.get("accuracy_pct", row.get("mean_accuracy", 0.0)))
-    except Exception:
-        acc = 0.0
+    acc = 0.0
+    for k in ("accuracy_pct", "mean_accuracy", "acc", "eval_accuracy"):
+        if k in row and not pd.isna(row[k]):
+            try:
+                acc = float(row[k])
+                break
+            except Exception:
+                pass
 
     is_successful = (status == "PASS") and (acc >= 56.0)
 
@@ -288,11 +297,15 @@ for m in models:
 
     hf_export_dir.mkdir(parents=True, exist_ok=True)
     checkpoints_dir = out_dir / "checkpoints"
-    weights_candidates = (
-        list(checkpoints_dir.glob("**/weights.pt"))
-        + list(weights_dir.glob("**/weights.pt"))
-        + list(out_dir.glob("**/weights.pt"))
-    )
+    mod_weights = checkpoints_dir / "aegis_v5" / "weights.pt"
+    if mod_weights.exists():
+        weights_candidates = [mod_weights]
+    else:
+        weights_candidates = (
+            list(checkpoints_dir.glob("**/weights.pt"))
+            + list(weights_dir.glob("**/weights.pt"))
+            + list(out_dir.glob("**/weights.pt"))
+        )
     if weights_candidates:
         src_weights = weights_candidates[0]
         dst_weights = hf_export_dir / "weights.pt"
@@ -377,19 +390,23 @@ Part of the SVD Linear Attention and LLM Compression Benchmark Suite.
     with open(hf_export_dir / "README.md", "w", encoding="utf-8") as f:
         f.write(card_content)
 
-    repo_id = f"{hf_org}/svd-linear-attention-{slug}-aegis_v5"
+    repos_to_upload = [
+        f"{hf_org}/svd-linear-attention-{slug}-aegis_v5",
+        f"{hf_org}/svd-linear-attention-{slug}-aegis_v5_module",
+    ]
     if api is not None:
-        try:
-            print(f"Uploading to Hugging Face: {repo_id}...", flush=True)
-            api.create_repo(repo_id=repo_id, private=True, exist_ok=True)
-            api.upload_folder(
-                folder_path=str(hf_export_dir),
-                repo_id=repo_id,
-                commit_message=f"Upload hardened AEGIS_V5 model weights ({name}) - Acc: {acc:.2f}%",
-            )
-            print(f"Successfully uploaded {name} to {repo_id}", flush=True)
-            uploaded_repos.append(repo_id)
-        except Exception as e:
-            print(f"Upload failed for {repo_id}: {e}", flush=True)
+        for repo_id in repos_to_upload:
+            try:
+                print(f"Uploading to Hugging Face: {repo_id}...", flush=True)
+                api.create_repo(repo_id=repo_id, private=True, exist_ok=True)
+                api.upload_folder(
+                    folder_path=str(hf_export_dir),
+                    repo_id=repo_id,
+                    commit_message=f"Upload hardened AEGIS_V5 model weights ({name}) - Acc: {acc:.2f}%",
+                )
+                print(f"Successfully uploaded {name} to {repo_id}", flush=True)
+                uploaded_repos.append(repo_id)
+            except Exception as e:
+                print(f"Upload failed for {repo_id}: {e}", flush=True)
 
 print(f"\nExport Complete: {pass_count}/{len(models)} passed quality gate.", flush=True)

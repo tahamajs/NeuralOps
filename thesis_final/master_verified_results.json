@@ -2810,10 +2810,10 @@
         },
         "GPT-2": {
           "status": "PASS",
-          "accuracy_pct": 60.89,
-          "f1_score": 0.7058,
-          "peak_vram_mb": 573.78,
-          "throughput_tokens_sec": 40042.51,
+          "accuracy_pct": 70.76,
+          "f1_score": 0.7615,
+          "peak_vram_mb": 349.49,
+          "throughput_tokens_sec": 8689.53,
           "source_file": "results/unified_factorised_matrix_state/gpt2/summary.csv"
         },
         "Qwen": {
@@ -2825,11 +2825,11 @@
           "source_file": "results/qwen_sst2_compat/summary.csv"
         },
         "RoBERTa": {
-          "status": "PASS_LOW",
-          "accuracy_pct": 54.36,
-          "f1_score": 0.6795,
-          "peak_vram_mb": 395.27,
-          "throughput_tokens_sec": 31530.93,
+          "status": "PASS",
+          "accuracy_pct": 74.77,
+          "f1_score": 0.7727,
+          "peak_vram_mb": 410.26,
+          "throughput_tokens_sec": 6820.9,
           "source_file": "results/unified_factorised_matrix_state/roberta/summary.csv"
         },
         "Unknown": {
@@ -2843,7 +2843,7 @@
       },
       "best_accuracy": 77.06,
       "has_pass": true,
-      "has_pass_low": true,
+      "has_pass_low": false,
       "is_pure_pass": true,
       "overall_status": "PASS"
     },
