@@ -41,11 +41,13 @@ class ModelAdapter:
     def __init__(self, model_or_config: Any, family: Optional[str] = None):
         self.source = _config(model_or_config)
         self.family = family or detect_family(model_or_config)
-        self.hidden_size = int(getattr(self.source, "hidden_size", getattr(self.source, "d_model", 0)))
-        self.num_heads = int(getattr(self.source, "num_attention_heads",
-                                     getattr(self.source, "num_heads",
-                                             getattr(self.source, "num_decoder_attention_heads", 0))))
-        self.head_dim = int(getattr(self.source, "head_dim", self.hidden_size // self.num_heads if self.num_heads else 0))
+        self.hidden_size = int(getattr(self.source, "hidden_size", getattr(self.source, "d_model", 0)) or 0)
+        heads = getattr(self.source, "num_attention_heads",
+                        getattr(self.source, "num_heads",
+                                getattr(self.source, "num_decoder_attention_heads", 0)))
+        self.num_heads = int(heads or 0)
+        h_dim = getattr(self.source, "head_dim", None)
+        self.head_dim = int(h_dim if h_dim is not None else (self.hidden_size // self.num_heads if self.num_heads else 0))
         kv_heads = getattr(
             self.source, "num_key_value_heads",
             getattr(self.source, "num_key_value_heads_decoder",
