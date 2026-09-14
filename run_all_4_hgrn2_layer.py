@@ -215,7 +215,7 @@ for m in models:
         for fx in src.parent.glob("*"):
             if fx.is_file() and fx.name not in ("weights.pt", "pytorch_model.bin"):
                 shutil.copy2(fx, hf_export_dir / fx.name)
-    with open(hf_export_dir / "metrics.json", "w") as mf:
+    with open(hf_export_dir / "metrics.json", "w", encoding="utf-8") as mf:
         json.dump({"model_name": name, "module": MODULE, "status": status, "accuracy_pct": acc,
                    "f1": float(row.get("f1", 0)), "full_metrics": row}, mf, indent=2)
     card = f"""---
@@ -224,7 +224,7 @@ datasets: [sst2]
 metrics: [accuracy, f1]
 ---
 # SVD Linear Attention: {name.upper()} ({MODULE})
-{DESCRIPTION} — validated checkpoint evaluated on SST-2.
+{DESCRIPTION} - validated checkpoint evaluated on SST-2.
 - **Accuracy**: `{acc:.2f}%` | **Status**: `{status}` (threshold >= 56%)
 - **F1**: `{row.get('f1', 'N/A')}` | **Peak VRAM**: `{row.get('peak_vram_mb', 'N/A')} MB`
 ```python
@@ -232,7 +232,7 @@ import torch; checkpoint = torch.load("weights.pt", map_location="cpu")
 ```
 Part of the SVD Linear Attention Benchmark Suite.
 """
-    (hf_export_dir / "README.md").write_text(card)
+    (hf_export_dir / "README.md").write_text(card, encoding="utf-8")
     repo_id = f"{hf_org}/svd-linear-attention-{slug}-{MODULE}"
     if api:
         try:
