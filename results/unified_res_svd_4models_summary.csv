@@ -1,2 +1,2 @@
 Model,Exit Code,Baseline Acc,Spectral Residual LoRA (res_svd) Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-roberta,0,75.46%,51.95%,-23.51%,0.6794,PASS_LOW,0,1.08x,593.6 MB,71.2
+roberta,0,60.09%,76.61%,+16.52%,0.7910,PASS,0,1.08x,594.4 MB,90.3

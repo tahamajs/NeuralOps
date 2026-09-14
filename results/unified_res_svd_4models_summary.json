@@ -2,14 +2,14 @@
   {
     "Model": "roberta",
     "Exit Code": 0,
-    "Baseline Acc": "75.46%",
-    "Spectral Residual LoRA (res_svd) Acc": "51.95%",
-    "Delta Acc": "-23.51%",
-    "F1": "0.6794",
-    "Status": "PASS_LOW",
+    "Baseline Acc": "60.09%",
+    "Spectral Residual LoRA (res_svd) Acc": "76.61%",
+    "Delta Acc": "+16.52%",
+    "F1": "0.7910",
+    "Status": "PASS",
     "Compressed Layers": "0",
     "Comp Rate": "1.08x",
-    "Peak VRAM": "593.6 MB",
-    "Time (s)": "71.2"
+    "Peak VRAM": "594.4 MB",
+    "Time (s)": "90.3"
   }
 ]
