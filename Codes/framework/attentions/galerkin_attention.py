@@ -560,7 +560,7 @@ class GalerkinAttention(BaseAttention):
 
             scores_max = scores.max(dim=-1, keepdim=True).values
             exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=50.0))
-            denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1.0)
+            denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
             probs = exp_scores / denom
             probs = torch.nan_to_num(probs, nan=0.0)
             probs = self.dropout(probs)
@@ -585,10 +585,10 @@ class GalerkinAttention(BaseAttention):
             scale = d**-0.5
             scores = torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1)) * scale  # [B, H, r, r]
 
-            # Numerically stable softmax with denominator clamping (min=1.0)
+            # Numerically stable softmax with denominator clamping (min=1e-6)
             scores_max = scores.max(dim=-1, keepdim=True).values
             exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=50.0))
-            denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1.0)
+            denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
             probs = exp_scores / denom
             probs = torch.nan_to_num(probs, nan=0.0)
             probs = self.dropout(probs)
