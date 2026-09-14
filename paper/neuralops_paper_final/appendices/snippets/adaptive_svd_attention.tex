@@ -39,21 +39,17 @@ Table~\ref{tab:telemetry_adaptive\_svd\_attention} reports the empirical hardwar
 \begin{table}[h]
 \centering
 \small
-\caption{\textbf{Empirical Benchmark Telemetry for \texttt{adaptive\_svd\_attention}}. Measured on NVIDIA RTX 4070 GPU across standard GLUE tasks.}
-\label{tab:telemetry_adaptive\_svd\_attention}
-\begin{tabularx}{\columnwidth}{lX}
+\caption{\textbf{Empirical Benchmark Telemetry for \texttt{adaptive\_svd\_attention}}. Measured on NVIDIA RTX 4070 Laptop GPU across standard GLUE tasks.}
+\label{tab:telemetry_adaptive_svd_attention}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lccccc}
 \toprule
-\textbf{Performance Metric} & \textbf{Empirical Value} \\
+\textbf{Model Family} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1-Score} & \textbf{Peak VRAM} & \textbf{Throughput} \\
 \midrule
-Forward Execution Latency & \texttt{20.66 ms} \\
-Backward Execution Latency & \texttt{29.73 ms} \\
-Operational Throughput & \texttt{0.0 tok/s} \\
-Measured Speedup vs. Baseline & \texttt{1.00x} \\
-Parameter Count & \texttt{4419458} \\
-Compression Ratio & \texttt{0.992} \\
-Evaluation Execution Status & \textbf{\texttt{PASS}} \\
+DistilBERT & \texttt{PASS} & 87.96\% & 88.55\% & 290.4 MB & 25,530 tok/s \\
+RoBERTa & \texttt{PASS} & 77.64\% & 77.30\% & 586.0 MB & 11,511 tok/s \\
+GPT-2 & \texttt{PASS} & 76.38\% & 80.34\% & 302.0 MB & 10,699 tok/s \\
 \bottomrule
-\end{tabularx}
+\end{tabular*}
 \end{table}
 
 \subsubsection*{3.6 Architectural Strengths \& Limitations}
