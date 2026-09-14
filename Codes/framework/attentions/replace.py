@@ -84,7 +84,14 @@ def _replace_bert_attention(
         try:
             import inspect
             if hasattr(inject_fn, "__code__") and "layer_idx" in inspect.getfullargspec(inject_fn).args:
-                new_attn = inject_fn(layer, getattr(model, "config", None), attention_params, idx, total_layers, old_attn)
+                new_attn = inject_fn(
+                    layer=layer,
+                    model_config=getattr(model, "config", None),
+                    comp_config=type("CompConfig", (), attention_params)() if attention_params else None,
+                    layer_idx=idx,
+                    total_layers=total_layers,
+                    old_attn=old_attn,
+                )
                 if getattr(layer, "attention", None) is not new_attn:
                     # Some injectors replace the whole layer.attention; others just return the module.
                     layer.attention.self = new_attn
@@ -122,7 +129,14 @@ def _replace_gpt_attention(
         try:
             import inspect
             if hasattr(inject_fn, "__code__") and "layer_idx" in inspect.getfullargspec(inject_fn).args:
-                new_attn = inject_fn(block, getattr(model, "config", None), attention_params, idx, total_layers, old_attn)
+                new_attn = inject_fn(
+                    layer=block,
+                    model_config=getattr(model, "config", None),
+                    comp_config=type("CompConfig", (), attention_params)() if attention_params else None,
+                    layer_idx=idx,
+                    total_layers=total_layers,
+                    old_attn=old_attn,
+                )
                 if getattr(block, "attn", None) is not new_attn:
                     block.attn = new_attn
                 continue
@@ -153,12 +167,12 @@ def _replace_distilbert_attention(
     for idx, layer in enumerate(layers):
         old_attn = layer.attention
         res = inject_fn(
-            layer,
-            model.config,
-            attention_params,
-            idx,
-            total_layers,
-            old_attn,
+            layer=layer,
+            model_config=model.config,
+            comp_config=type("CompConfig", (), attention_params)() if attention_params else None,
+            layer_idx=idx,
+            total_layers=total_layers,
+            old_attn=old_attn,
         )
         if isinstance(res, nn.Module) and getattr(layer, "attention", None) is not res:
             if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
