@@ -133,6 +133,7 @@ parser.add_argument("--batch_size", type=int, default=None, help="Batch size ove
 parser.add_argument("--recovery_steps", type=int, default=None, help="Number of recovery fine-tuning steps")
 parser.add_argument("--rank", type=int, default=None, help="Rank override")
 parser.add_argument("--lora_rank", type=int, default=None, help="LoRA rank override")
+parser.add_argument("--export_only", action="store_true", help="Skip benchmark execution and only export/upload existing passing models")
 parser.add_argument("positional_models", nargs="*", default=None, help="Positional model names for backwards compatibility")
 
 args = parser.parse_args()
@@ -174,38 +175,41 @@ for m in models:
 
 start_time = time.time()
 
-for m in models:
-    name = m["name"]
-    out_dir = Path(m["out_dir"])
-    cmd = m["cmd"]
+if not args.export_only:
+    for m in models:
+        name = m["name"]
+        out_dir = Path(m["out_dir"])
+        cmd = m["cmd"]
 
-    print(f"\n========================================================")
-    print(f"Starting {name.upper()} Benchmark...")
-    print(f"Command: {' '.join(cmd)}")
-    print(f"========================================================\n", flush=True)
+        print(f"\n========================================================")
+        print(f"Starting {name.upper()} Benchmark...")
+        print(f"Command: {' '.join(cmd)}")
+        print(f"========================================================\n", flush=True)
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    log_file = out_dir / "console.log"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        log_file = out_dir / "console.log"
 
-    with open(log_file, "w", encoding="utf-8") as lf:
-        proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1
-        )
-        for line in proc.stdout:
-            sys.stdout.write(line)
-            sys.stdout.flush()
-            lf.write(line)
-            lf.flush()
-        proc.wait()
+        with open(log_file, "w", encoding="utf-8") as lf:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
+            for line in proc.stdout:
+                sys.stdout.write(line)
+                sys.stdout.flush()
+                lf.write(line)
+                lf.flush()
+            proc.wait()
 
-    if proc.returncode != 0:
-        print(f"\n[ERROR] Benchmark failed for {name} with returncode {proc.returncode}.", flush=True)
-    else:
-        print(f"\n[SUCCESS] Finished Benchmark for {name}.", flush=True)
+        if proc.returncode != 0:
+            print(f"\n[ERROR] Benchmark failed for {name} with returncode {proc.returncode}.", flush=True)
+        else:
+            print(f"\n[SUCCESS] Finished Benchmark for {name}.", flush=True)
+else:
+    print("\n[INFO] --export_only active: Skipping benchmark runs and proceeding directly to export & Hugging Face upload.", flush=True)
 
 print(f"\n========================================================")
 print(f"All Requested Models Processed in {time.time() - start_time:.2f}s")
@@ -293,11 +297,15 @@ for m in models:
 
     hf_export_dir.mkdir(parents=True, exist_ok=True)
     checkpoints_dir = out_dir / "checkpoints"
-    weights_candidates = (
-        list(checkpoints_dir.glob("**/weights.pt"))
-        + list(weights_dir.glob("**/weights.pt"))
-        + list(out_dir.glob("**/weights.pt"))
-    )
+    mod_weights = checkpoints_dir / "factorised_matrix_state" / "weights.pt"
+    if mod_weights.exists():
+        weights_candidates = [mod_weights]
+    else:
+        weights_candidates = (
+            list(checkpoints_dir.glob("**/weights.pt"))
+            + list(weights_dir.glob("**/weights.pt"))
+            + list(out_dir.glob("**/weights.pt"))
+        )
     if weights_candidates:
         src_weights = weights_candidates[0]
         dst_weights = hf_export_dir / "weights.pt"
