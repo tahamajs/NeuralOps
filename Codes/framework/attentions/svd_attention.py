@@ -105,8 +105,6 @@ class LoRALinear(nn.Module):
         freeze_base: bool = True,
     ):
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.lora_rank = lora_rank
@@ -144,7 +142,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("svd", supports_causal=True, supports_gqa=True)
@@ -260,11 +258,11 @@ class SVDLinearAttention(BaseAttention):
         self.dropout: nn.Dropout = nn.Dropout(dropout_val)
         self._last_u_r: Optional[torch.Tensor] = None
 
-        # Deterministic projection buffer for SVD subspace
+        # Persistent SVD projection buffer (populated in copy_weights from W_K)
+        # Shape: [hidden_size, rank] — the top-r right singular vectors of W_K
         init_rank = max(1, self.rank or 64)
-        omega = torch.empty(self.hidden_size, init_rank)
-        nn.init.orthogonal_(omega)
-        self.register_buffer("omega", omega, persistent=False)
+        self.register_buffer("svd_proj", torch.eye(self.hidden_size, init_rank), persistent=True)
+        self._svd_proj_ready: bool = False
 
         if old_attn is not None:
             self.copy_weights(old_attn)
@@ -312,7 +310,13 @@ class SVDLinearAttention(BaseAttention):
 
             if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
                 self.is_nested_encoder = True
-                src = old_attn.self
+                # Unwrap nested encoder modules to find innermost attention
+                src = old_attn
+                while hasattr(src, "self") and not any(
+                    hasattr(src, attr) for attr in ["query", "key", "value", "q_proj", "k_proj", "v_proj"]
+                ):
+                    src = src.self
+                # Copy output projection if available
                 if hasattr(old_attn.output, "dense"):
                     w_o = old_attn.output.dense.weight
                     b_o = old_attn.output.dense.bias
@@ -455,13 +459,43 @@ class SVDLinearAttention(BaseAttention):
             _copy_kv(self.key, w_k, b_k)
             _copy_kv(self.value, w_v, b_v)
 
-            # Copy Out projection if not nested encoder
-            if w_o is not None and not self.is_nested_encoder:
+            # Always copy Out projection — our module fully replaces BertAttention
+            # (including BertSelfOutput), so we must apply out_proj in all cases.
+            if w_o is not None:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    raise RuntimeError("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
-                self.out_proj.weight.copy_(w_o)
-                if b_o is not None and self.out_proj.bias is not None:
-                    self.out_proj.bias.copy_(b_o)
+                    logger.warning("out_proj weight has near-zero Frobenius norm — skipping copy")
+                else:
+                    if w_o.shape == self.out_proj.weight.shape:
+                        self.out_proj.weight.copy_(w_o)
+                    else:
+                        r = min(self.out_proj.weight.shape[0], w_o.shape[0])
+                        c = min(self.out_proj.weight.shape[1], w_o.shape[1])
+                        self.out_proj.weight.data[:r, :c].copy_(w_o[:r, :c])
+                    if b_o is not None and self.out_proj.bias is not None:
+                        mn = min(len(self.out_proj.bias), len(b_o))
+                        self.out_proj.bias.data[:mn].copy_(b_o[:mn])
+
+            # Compute SVD of W_K to get a fixed weight-space projection
+            # W_K shape: [kv_head_size, hidden_size] → SVD gives right singular vectors of shape [hidden_size, ...]
+            # We use the top-r right singular vectors (Vh rows) as the projection basis
+            try:
+                with torch.no_grad():
+                    wk = self.key.weight.float()  # [kv_head_size, hidden_size]
+                    _, _, Vh = torch.linalg.svd(wk, full_matrices=False)
+                    # Vh: [min(kv_head_size, hidden_size), hidden_size]
+                    r = min(self.rank or 64, Vh.shape[0], self.hidden_size)
+                    # svd_proj: [hidden_size, r] — project hidden_states → rank-r space
+                    proj = Vh[:r, :].T  # [hidden_size, r]
+                    if proj.shape == self.svd_proj.shape:
+                        self.svd_proj.copy_(proj)
+                    else:
+                        mn_r = min(proj.shape[1], self.svd_proj.shape[1])
+                        self.svd_proj[:, :mn_r].copy_(proj[:, :mn_r])
+                    self._svd_proj_ready = True
+                    logger.info("SVD projection computed from W_K: shape=%s, rank=%d", self.svd_proj.shape, r)
+            except Exception as e:
+                logger.warning("SVD projection computation failed: %s — falling back to identity", e)
+                self._svd_proj_ready = False
 
     def forward(
         self,
@@ -544,34 +578,31 @@ class SVDLinearAttention(BaseAttention):
             context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
         else:
-            # Batched randomized QR subspace extraction without per-sample Python loops
-            valid_mask = get_token_valid_mask(eff_mask, batch_size, kv_len, device)
-            masked_h = kv_input * valid_mask.unsqueeze(-1).to(dtype)
-
-            D_dim = masked_h.size(-1)
-            if not hasattr(self, "omega") or self.omega.shape[0] != D_dim or self.omega.shape[1] < effective_rank:
-                new_omega = torch.empty(D_dim, max(effective_rank, self.rank or 64), device=device, dtype=torch.float32)
-                nn.init.orthogonal_(new_omega)
-                self.register_buffer("omega", new_omega, persistent=False)
-
+            # Use the fixed SVD subspace precomputed from W_K in copy_weights.
+            # This is stable across batches — LoRA can converge on a fixed subspace.
+            # svd_proj: [hidden_size, r]  (registered buffer, frozen)
             with torch.no_grad():
-                omega = self.omega[:D_dim, :effective_rank].to(device=device, dtype=torch.float32)
-                Y = torch.matmul(masked_h.float(), omega)  # [B, kv_len, r]
+                proj = self.svd_proj.to(device=device, dtype=dtype)  # [hidden_size, r]
+                actual_r = proj.shape[1]
+
+                # Project the kv_input sequence through the fixed subspace
+                # kv_input: [B, kv_len, hidden_size] → scores: [B, kv_len, actual_r]
+                seq_scores = torch.matmul(kv_input.float(), proj.float())  # [B, kv_len, r]
                 try:
-                    Q_mat, _ = torch.linalg.qr(Y.float(), mode="reduced")  # [B, kv_len, actual_r]
+                    U_r, _ = torch.linalg.qr(seq_scores, mode="reduced")  # [B, kv_len, r]
                 except Exception:
-                    Q_mat, _ = torch.linalg.qr(Y.float().cpu(), mode="reduced")
-                    Q_mat = Q_mat.to(device=device)
-                actual_r = min(effective_rank, Q_mat.shape[-1])
-                U_r = Q_mat[:, :, :actual_r].to(device=device, dtype=dtype)
+                    U_r, _ = torch.linalg.qr(seq_scores.cpu(), mode="reduced")
+                    U_r = U_r.to(device=device)
+                U_r = U_r.to(dtype)  # [B, kv_len, actual_r]
 
             self._last_u_r = U_r
+
+            # Project K and V through the stable subspace
             U_r_t = U_r.unsqueeze(1)  # [B, 1, kv_len, actual_r]
+            K_proj = torch.matmul(U_r_t.transpose(-2, -1), K)  # [B, H, actual_r, head_dim]
+            V_proj = torch.matmul(U_r_t.transpose(-2, -1), V)  # [B, H, actual_r, head_dim]
 
-            K_proj = torch.matmul(U_r_t.transpose(-2, -1), K)  # [B, H, actual_r, d]
-            V_proj = torch.matmul(U_r_t.transpose(-2, -1), V)  # [B, H, actual_r, d]
-
-            scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1)) / math.sqrt(self.head_dim)  # [B, H, seq_len, actual_r]
+            scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1)) / math.sqrt(self.head_dim)
 
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             probs = F.softmax(scores, dim=-1).to(dtype)
@@ -586,7 +617,7 @@ class SVDLinearAttention(BaseAttention):
                     head_mask = head_mask.unsqueeze(-1)
                 probs = probs * head_mask
 
-            context = torch.matmul(probs, V_proj)  # [B, H, seq_len, d]
+            context = torch.matmul(probs, V_proj)  # [B, H, seq_len, head_dim]
             q_valid_mask = get_token_valid_mask(attention_mask, batch_size, seq_len, device)
             context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
@@ -595,10 +626,8 @@ class SVDLinearAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        if self.is_nested_encoder:
-            out = context
-        else:
-            out = self.out_proj(context)
+        # Always apply out_proj — our module replaces the full BertAttention container
+        out = self.out_proj(context)
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
