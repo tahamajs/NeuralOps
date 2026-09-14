@@ -191,7 +191,12 @@ def compute_compression_metrics(
     """Dynamically extract comprehensive compression, efficiency, and architectural metrics."""
     comp_stats = getattr(model, "compression_stats", {}) or {}
 
-    num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer"))
+    num_svd_layers = sum(
+        1 for m in model.modules()
+        if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "LoRALinear")
+        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "MinimalNOVA", "NEXUS", "ORION", "MoBA"))
+        or hasattr(m, "q_down")
+    )
     univ_count = sum(1 for m in model.modules() if "attention" in m.__class__.__name__.lower() and "universal" in m.__class__.__name__.lower())
     if univ_count > 0:
         num_injected_attention = univ_count
@@ -2085,7 +2090,12 @@ def main():
                     injected = True
                     path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
                     LOG.info("module=%s path=%s", name, path_name)
-                    num_svd_layers = sum(1 for m in model.modules() if m.__class__.__name__ == "SVDLinear")
+                    num_svd_layers = sum(
+                        1 for m in model.modules()
+                        if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "LoRALinear")
+                        or any(k in m.__class__.__name__ for k in ("SVDCompressed", "MinimalNOVA", "NEXUS", "ORION", "MoBA"))
+                        or hasattr(m, "q_down")
+                    )
                     LOG.info("module=%s injection summary: %d SVDLinear layers active", name, num_svd_layers)
                     if name in ("aasvd", "adasvd", "admm", "admm_pruner", "admm_pruner_distill", "armor", "armor_pruner", "astro", "astro_quantizer", "cachenotes", "cachenotes_compressor", "come", "come_compressor", "coopq", "coopq_quantizer", "cr", "cr_compressor", "cur", "cur_compressor", "cur_moe", "cur_moe_compressor", "delta_kv", "delta_kv_compressor", "direct_svd", "direct_svd_compressor", "dobi", "dobi_svd", "dynamic_entropy_svd", "dynamic_rank", "dynamic_entropy", "enlighten", "enlighten_compressor", "entropy_budget", "entropy_budget_allocation", "erc", "erc_svd", "faq", "faq_quantizer", "flap", "flat_llm", "flat_llm_compressor", "frandi", "frandi_compressor", "grecodec", "grecodec_compressor", "hashednets", "hashednets_compressor", "hashed_net", "hashed_net_compressor", "huffman", "hybrid_svd", "hybridkv", "hybridkv_compressor", "kmeans", "kmeans_quantize", "kronecker", "kronecker_compressor", "kronecker_tt_lora", "kvtc", "kvtc_compressor", "kvtc_quantizer"):
                         try:
