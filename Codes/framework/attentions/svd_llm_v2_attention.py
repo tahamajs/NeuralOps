@@ -119,8 +119,6 @@ class SVDLLMV2Attention(BaseAttention):
             else _cfg_get(comp_config, "rank", _cfg_get(config, "svd_rank", _cfg_get(config, "rank", 64)))
         )
         super().__init__(config, actual_rank)
-        self.output_scale = nn.Parameter(torch.ones(1))
-        self.output_scale.requires_grad = True
 
         # 1. Dimensions & Architecture
         self.hidden_size: int = kwargs.get(
@@ -569,10 +567,9 @@ class SVDLLMV2Attention(BaseAttention):
 
         # 8. Output projection (bypassed if nested encoder)
         if self.is_nested_encoder:
-            out = context * self.output_scale
+            out = context
         else:
             out = self._project(context, self.out_proj_vh, self.out_proj_s, self.out_proj_u, self.out_proj_bias, self.out_lora_A, self.out_lora_B)
-            out = out * self.output_scale
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:
