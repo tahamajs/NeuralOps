@@ -61,3 +61,7 @@ flat_llm,run_all_4_flat_llm.py,0,108.0,PASS,,2026-09-15T12:33:34.455414
 fms,run_all_4_fms.py,0,164.07,PASS,,2026-09-15T12:36:20.629245
 frandi,run_all_4_frandi.py,0,112.04,PASS,,2026-09-15T12:38:14.866187
 full,run_all_4_full.py,0,111.16,PASS,,2026-09-15T12:40:08.243229
+fused_svd_kernel,run_all_4_fused_svd_kernel.py,0,267.47,PASS,,2026-09-15T12:44:37.796190
+fusion_attn,run_all_4_fusion_attn.py,0,142.95,PASS,,2026-09-15T12:47:02.312851
+galerkin,run_all_4_galerkin.py,0,154.83,PASS,,2026-09-15T12:49:38.619211
+galerkin_attention,run_all_4_galerkin_attention.py,0,157.31,PASS,,2026-09-15T12:52:17.433217

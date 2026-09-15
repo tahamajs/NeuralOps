@@ -49,3 +49,14 @@ Loading weights: 100%|##########| 104/104 [00:00<00:00, 6182.61it/s]
 2026-09-15 12:40:49,469 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.8175 (bs=8, micro_bs=8)
 2026-09-15 12:40:51,032 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.1137 (bs=8, micro_bs=8)
 2026-09-15 12:40:52,603 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.2153 (bs=8, micro_bs=8)
+2026-09-15 12:41:21,845 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_fused_svd_kernel\distilbert\distilbert_sst2_fused_svd_kernel_full_metrics.json
+2026-09-15 12:41:21,958 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_fused_svd_kernel\distilbert\checkpoints\fused_svd_kernel\weights.pt (module_params=72, lora_params=4)
+2026-09-15 12:41:22,249 [INFO] QwenQualitySweep: [2/2] fused_svd_kernel -> PASS 79.93% (F1: 0.8201, Peak VRAM: 280.27 MB)
+2026-09-15 12:41:22,250 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_fused_svd_kernel\distilbert\checkpoints\fused_svd_kernel. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 12:41:22,516 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 12:41:22,516 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-15 12:41:22,523 [INFO] QwenQualitySweep: 
+                           Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                             full   PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  389.5 MB               2.09              2.40
+fused_svd_kernel (efficient-attn)   PASS   79.93%      -10.78% 0.8201                  0            1.24x  280.3 MB              28.70             32.92
+2026-09-15 12:41:22,523 [INFO] QwenQualitySweep: ================================================================================

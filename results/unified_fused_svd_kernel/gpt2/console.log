@@ -1,12 +1,7 @@
-Skipping attention module 'fused_svd_kernel' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
-Skipping attention module 'projection_factorized_attn' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
-Skipping compression_engine module 'svd_linear' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
-Skipping attention module 'svd_linear_attention' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
-Skipping attention module 'svd_linear_decay' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
-2026-09-15 03:31:05,094 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-15 12:42:30,477 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
 
 Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 148/148 [00:00<00:00, 3548.32it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 4137.17it/s]
 [1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
 Key          | Status  | 
 -------------+---------+-
@@ -14,78 +9,63 @@ score.weight | MISSING |
 
 Notes:
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-15 03:31:06,338 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-15 03:31:06,338 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-15 03:31:06,338 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 03:31:06,338 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-15 03:31:06,338 [INFO] QwenQualitySweep:   model:             models\gpt2
-2026-09-15 03:31:06,339 [INFO] QwenQualitySweep:   family:            gpt
-2026-09-15 03:31:06,339 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-15 03:31:06,339 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-15 03:31:06,340 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-15 03:31:06,340 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-15 03:31:06,340 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-15 03:31:06,340 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 03:31:06,683 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
-2026-09-15 03:31:07,303 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-15 03:31:08,025 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-15 03:31:13,069 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
-2026-09-15 03:31:13,122 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 03:31:13,122 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-15 03:31:13,122 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-15 03:31:13,123 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-15 03:31:13,123 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-15 03:31:13,123 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-15 03:31:13,123 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-15 03:31:13,123 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 03:31:13,126 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 03:31:18,460 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_fused_svd_kernel\gpt2\gpt2_full_full_metrics.json
-2026-09-15 03:31:18,468 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_fused_svd_kernel\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
-2026-09-15 03:31:19,208 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 793.19 MB)
-2026-09-15 03:31:19,209 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_fused_svd_kernel\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-15 03:31:19,509 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: fused_svd_kernel (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 03:31:19,531 [WARNING] framework.core.registry: Error during lazy loading of attention 'fused_svd_kernel': expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
-2026-09-15 03:31:20,807 [WARNING] framework.core.registry: Error during lazy loading of attention 'fused_svd_kernel': expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
-2026-09-15 03:31:20,835 [WARNING] framework.core.registry: Error during lazy loading of attention 'fused_svd_kernel': expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
-2026-09-15 03:31:20,859 [WARNING] framework.core.registry: Error during lazy loading of attention 'fused_svd_kernel': expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
-2026-09-15 03:31:20,876 [ERROR] QwenQualitySweep: Module fused_svd_kernel execution failure:
-Traceback (most recent call last):
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2302, in main
-    pipe_res = future.result(timeout=effective_timeout)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 456, in result
-    return self.__get_result()
-           ~~~~~~~~~~~~~~~~~^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 401, in __get_result
-    raise self._exception
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\thread.py", line 59, in run
-    result = self.fn(*self.args, **self.kwargs)
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2120, in _run_candidate_pipeline
-    model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
-               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\SVD_Project\Codes\framework\eval_all_models_datasets.py", line 470, in apply_module_to_model
-    importlib.import_module(f"framework.attentions.{module_name}")
-    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\importlib\__init__.py", line 88, in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-  File "<frozen importlib._bootstrap_external>", line 1022, in exec_module
-  File "<frozen importlib._bootstrap_external>", line 1160, in get_code
-  File "<frozen importlib._bootstrap_external>", line 1090, in source_to_code
-  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-  File "D:\SVD_Project\Codes\framework\attentions\fused_svd_kernel.py", line 601
-    src = old_attn
-    ^^^
-IndentationError: expected an indented block after 'if' statement on line 600
-2026-09-15 03:31:20,896 [INFO] QwenQualitySweep: [2/2] fused_svd_kernel -> FAIL 0.00% (F1: 0.7978, Peak VRAM: 793.19 MB)
-2026-09-15 03:31:20,897 [INFO] QwenQualitySweep: [Quality Guard] Module 'fused_svd_kernel' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-15 03:31:21,185 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 03:31:21,185 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
-2026-09-15 03:31:21,193 [INFO] QwenQualitySweep: 
-          Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-            full   PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.18              4.79
-fused_svd_kernel   FAIL    0.00%      -79.36% 0.7978                  0            1.00x  793.2 MB               4.18              4.79
-2026-09-15 03:31:21,193 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 12:42:31,754 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 12:42:31,755 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 12:42:31,755 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 12:42:31,755 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 12:42:31,755 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 12:42:31,755 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 12:42:31,755 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 12:42:31,755 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 12:42:31,755 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 12:42:31,755 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 12:42:31,756 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 12:42:31,756 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 12:42:32,092 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 12:42:32,697 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 12:42:33,421 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 12:42:38,165 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 12:42:38,214 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 12:42:38,214 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 12:42:38,214 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 12:42:38,215 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 12:42:38,215 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 12:42:38,215 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 12:42:38,215 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 12:42:38,215 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 12:42:38,229 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 12:42:43,424 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_fused_svd_kernel\gpt2\gpt2_full_full_metrics.json
+2026-09-15 12:42:43,432 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_fused_svd_kernel\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 12:42:44,092 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 793.19 MB)
+2026-09-15 12:42:44,092 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_fused_svd_kernel\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 12:42:44,288 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: fused_svd_kernel (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 12:42:50,960 [INFO] QwenQualitySweep: module=fused_svd_kernel path=adapted_gpt
+2026-09-15 12:42:50,962 [INFO] QwenQualitySweep: module=fused_svd_kernel injection summary: 0 SVDLinear layers active
+2026-09-15 12:42:50,962 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for fused_svd_kernel (lr=2.0e-04)
+2026-09-15 12:42:51,153 [INFO] framework.utils.compat: Recovery fine-tuning selected 2368512 trainable parameters across 108 tensors.
+2026-09-15 12:42:51,155 [WARNING] framework.utils.compat: Total trainable parameters (2368512) exceeds 2000000 threshold for recovery. Pruning heavy base weights to prevent OOM.
+2026-09-15 12:42:51,157 [INFO] framework.utils.compat: Reduced recovery parameters to 1778688 trainable parameters across 84 tensors.
+2026-09-15 12:42:51,157 [INFO] framework.utils.compat: Discovered 84 trainable tensors (1778688 params)
+2026-09-15 12:42:51,161 [INFO] QwenQualitySweep: LoRA fine-tuning: 1778688 trainable parameters across 84 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 12:42:52,053 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.7324 (bs=8, micro_bs=8)
+2026-09-15 12:42:54,525 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6821 (bs=8, micro_bs=8)
+2026-09-15 12:42:57,565 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7550 (bs=8, micro_bs=8)
+2026-09-15 12:43:00,657 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5697 (bs=8, micro_bs=8)
+2026-09-15 12:43:03,745 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6023 (bs=8, micro_bs=8)
+2026-09-15 12:43:06,802 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.6801 (bs=8, micro_bs=8)
+2026-09-15 12:43:09,909 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.9417 (bs=8, micro_bs=8)
+2026-09-15 12:43:12,970 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6367 (bs=8, micro_bs=8)
+2026-09-15 12:43:16,097 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7141 (bs=8, micro_bs=8)
+2026-09-15 12:43:19,225 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6245 (bs=8, micro_bs=8)
+2026-09-15 12:43:22,361 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.7167 (bs=8, micro_bs=8)
+2026-09-15 12:44:21,004 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_fused_svd_kernel\gpt2\gpt2_fused_svd_kernel_full_metrics.json
+2026-09-15 12:44:21,072 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_fused_svd_kernel\gpt2\checkpoints\fused_svd_kernel\weights.pt (module_params=144, lora_params=1)
+2026-09-15 12:44:21,853 [INFO] QwenQualitySweep: [2/2] fused_svd_kernel -> PASS 70.07% (F1: 0.754, Peak VRAM: 464.46 MB)
+2026-09-15 12:44:21,853 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_fused_svd_kernel\gpt2\checkpoints\fused_svd_kernel. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 12:44:22,107 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 12:44:22,107 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 12:44:22,115 [INFO] QwenQualitySweep: 
+                           Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                             full   PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.05              4.64
+fused_svd_kernel (efficient-attn)   PASS   70.07%       -9.29% 0.7540                  0            1.26x  464.5 MB              57.07             65.45
+2026-09-15 12:44:22,115 [INFO] QwenQualitySweep: ================================================================================
