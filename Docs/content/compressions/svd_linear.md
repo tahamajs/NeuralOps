@@ -574,4 +574,4 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| GPT2 | 49.20% | 0.1781 | 1.2621 | 0 | 462.94 | `PASS_LOW` | N/A |
+| GPT2 | 50.34% | 0.2573 | 1.2472 | 0 | 467.44 | `PASS_LOW` | N/A |
