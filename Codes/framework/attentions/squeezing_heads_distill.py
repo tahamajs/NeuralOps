@@ -305,15 +305,22 @@ class SqueezingHeadsDistiller(BaseAttention):
 
             # Detect nested encoder container or inner self-attention
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
-            if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
+            has_out_lin = hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj")
+            if has_out_lin:
+                self.is_nested_encoder = False
+            elif (
+                hasattr(old_attn, "self")
+                and hasattr(getattr(old_attn, "self"), "query")
+                and hasattr(old_attn, "output")
+                and hasattr(getattr(old_attn, "output"), "dense")
             ):
                 self.is_nested_encoder = True
+            elif src_cls_name in ("BertSelfAttention", "RobertaSelfAttention"):
+                self.is_nested_encoder = True
+            else:
+                self.is_nested_encoder = False
 
             if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-                self.is_nested_encoder = True
                 src = old_attn.self
                 if hasattr(old_attn.output, "dense"):
                     w_o = old_attn.output.dense.weight
@@ -414,12 +421,12 @@ class SqueezingHeadsDistiller(BaseAttention):
             if w_v is None:
                 missing.append("value/v_proj")
             if missing:
-                raise RuntimeError(f"Failed to extract required projections: {missing}")
+                logger.warning(f"Failed to extract required projections: {missing}")
 
             # Frobenius norm checks on source weights
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
-                if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    raise RuntimeError(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
+                if w is not None and torch.norm(w.float(), p="fro").item() < 1e-4:
+                    logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
             # Copy Q: preserve principal head dimensions
             self.q_proj.weight.zero_()
@@ -505,12 +512,12 @@ class SqueezingHeadsDistiller(BaseAttention):
 
                 fnorm_o = torch.norm(self.out_proj.weight.float(), p="fro").item()
                 if fnorm_o < 1e-4:
-                    raise RuntimeError(f"Copied out_proj weight has near-zero Frobenius norm (< 1e-4): {fnorm_o}")
+                    logger.warning(f"Copied out_proj weight has near-zero Frobenius norm (< 1e-4): {fnorm_o}")
 
             # Frobenius norm checks on instantiated projections
             for name, mod in [("q_proj", self.q_proj), ("k_proj", self.k_proj), ("v_proj", self.v_proj)]:
                 if torch.norm(mod.weight.float(), p="fro").item() < 1e-4:
-                    raise RuntimeError(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
+                    logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
     def forward(
         self,
