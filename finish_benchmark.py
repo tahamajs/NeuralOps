@@ -303,6 +303,18 @@ def main():
     for idx, runner in enumerate(to_run):
         module = extract_module_name(runner)
         _current_module[0] = module
+
+        # Pull latest code and fixes from origin/main before running each module
+        try:
+            subprocess.run(
+                ["git", "pull", "--autostash", "--rebase", "origin", "main"],
+                cwd=REPO_DIR,
+                capture_output=True,
+                timeout=60,
+            )
+        except Exception:
+            pass
+
         LOG.info("=" * 60)
         LOG.info("[%d/%d] Running: %s", idx + 1, len(to_run), module)
         t0 = time.time()

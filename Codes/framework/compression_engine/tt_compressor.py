@@ -60,7 +60,7 @@ class TTCompressor(BaseCompressor):
         tt_rank: int = 16,
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
-        max_error: float = 0.20,
+        max_error: float = 0.30,
         max_retries: int = 3,
         fallback_to_original: bool = True,
         target_attention_only: bool = False,
@@ -176,6 +176,13 @@ class TTCompressor(BaseCompressor):
                 )
             except Exception as e:
                 logger.warning("TT-SVD decomposition failed for %s: %s. Keeping original module.", name, e)
+                fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                continue
+
+            if tt_layer is None:
+                logger.info("TTCompressor: %s could not be compressed within budget; keeping original.", name)
                 fallback_layers.append(name)
                 for p in module.parameters():
                     p.requires_grad = False

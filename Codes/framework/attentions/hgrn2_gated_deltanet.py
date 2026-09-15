@@ -42,8 +42,9 @@ def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[t
         cls_name = getattr(module, "__class__", type(module)).__name__
         base_cls_name = getattr(base, "__class__", type(base)).__name__
         if "Conv1D" in cls_name or "Conv1D" in base_cls_name:
-            if w.ndim == 2 and w.shape[0] < w.shape[1]:
-                w = w.t()
+            w = w.t()
+        elif w.ndim == 2 and w.shape[0] < w.shape[1]:
+            w = w.t()
     if b is not None:
         b = b.data.clone()
     return w, b
@@ -160,6 +161,10 @@ class HGRN2GatedDeltaNet(BaseAttention):
 
         # Gate and output projection
         self.gate = nn.Linear(self.d_model, self.d_model)
+        with torch.no_grad():
+            self.gate.weight.zero_()
+            self.gate.bias.fill_(0.0)   # sigmoid(0) = 0.5 (equal blend)
+
         self.out_proj = LoRALinear(
             self.d_model,
             self.d_model,
@@ -181,71 +186,91 @@ class HGRN2GatedDeltaNet(BaseAttention):
         if target_dtype is not None:
             self.to(target_dtype)
 
-        # Requirement 4: Trainable parameter check and OOM-prevention warning
-        n_trainable_12_layers = sum(p.numel() for p in self.parameters() if p.requires_grad) * 12
-        if n_trainable_12_layers > 5e6:
+        # Trainable parameter check and OOM-prevention warning
+        per_layer = sum(p.numel() for p in self.parameters() if p.requires_grad)
+        self._per_layer_trainable = per_layer
+        if per_layer > 5e6:
             logger.warning(
-                "Module HGRN2GatedDeltaNet creates %.1fM trainable parameters across 12 layers, may cause OOM on small GPUs.",
-                n_trainable_12_layers / 1e6,
+                "HGRN2GatedDeltaNet per-layer trainable params: %.1fM.",
+                per_layer / 1e6,
             )
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained Multi-Head Attention weights to both branches and output projection."""
+        hgrn_ok = False
+        deltanet_ok = False
         if hasattr(self.hgrn, "copy_weights"):
             try:
                 self.hgrn.copy_weights(old_attn)
+                hgrn_ok = True
             except Exception as ex:
-                logger.debug("HGRN weight copy notice: %s", ex)
+                logger.warning("HGRN copy_weights FAILED: %s", ex)
         if hasattr(self.deltanet, "copy_weights"):
             try:
                 self.deltanet.copy_weights(old_attn)
+                deltanet_ok = True
             except Exception as ex:
-                logger.debug("DeltaNet weight copy notice: %s", ex)
+                logger.warning("DeltaNet copy_weights FAILED: %s", ex)
 
+        if not hgrn_ok and not deltanet_ok:
+            raise RuntimeError("Both HGRN and DeltaNet copy_weights failed — aborting")
+        if hgrn_ok and not deltanet_ok:
+            with torch.no_grad():
+                self.gate.weight.zero_()
+                self.gate.bias.fill_(4.0)
+            logger.info("Only HGRN branch copied — biased gate to HGRN")
+        elif deltanet_ok and not hgrn_ok:
+            with torch.no_grad():
+                self.gate.weight.zero_()
+                self.gate.bias.fill_(-4.0)
+            logger.info("Only DeltaNet branch copied — biased gate to DeltaNet")
+
+        w_o, b_o = None, None
         try:
-            w_o, b_o = None, None
-            try:
-                adapter = UniversalAdapter()
-                w_o, b_o = adapter.get_weight_bias(old_attn, "o")
-            except Exception:
-                pass
+            adapter = UniversalAdapter()
+            w_o, b_o = adapter.get_weight_bias(old_attn, "o")
+        except Exception:
+            pass
 
-            if w_o is None:
-                for cand in ("out_proj", "out_lin", "o_proj", "output", "proj", "c_proj", "dense"):
-                    for target in (old_attn, getattr(old_attn, "self", None), getattr(old_attn, "attention", None), getattr(old_attn, "output", None)):
-                        if target is not None and hasattr(target, cand):
-                            mod = getattr(target, cand)
-                            if hasattr(mod, "dense"):
-                                mod = getattr(mod, "dense")
-                            cw, cb = _unpack_weight_bias(mod)
-                            if cw is not None:
-                                w_o, b_o = cw, cb
-                                break
-                    if w_o is not None:
-                        break
+        if w_o is None:
+            for cand in ("out_proj", "out_lin", "o_proj", "output", "proj", "c_proj", "dense"):
+                for target in (old_attn, getattr(old_attn, "self", None), getattr(old_attn, "attention", None), getattr(old_attn, "output", None)):
+                    if target is not None and hasattr(target, cand):
+                        mod = getattr(target, cand)
+                        if hasattr(mod, "dense"):
+                            mod = getattr(mod, "dense")
+                        cw, cb = _unpack_weight_bias(mod)
+                        if cw is not None:
+                            w_o, b_o = cw, cb
+                            break
+                if w_o is not None:
+                    break
 
-            if w_o is not None:
-                with torch.no_grad():
-                    if w_o.shape == self.out_proj.weight.shape:
-                        self.out_proj.weight.copy_(w_o)
-                    elif w_o.t().shape == self.out_proj.weight.shape:
-                        self.out_proj.weight.copy_(w_o.t())
-                    elif w_o.numel() == self.out_proj.weight.numel():
-                        self.out_proj.weight.copy_(w_o.reshape(self.out_proj.weight.shape))
+        if w_o is not None:
+            with torch.no_grad():
+                if w_o.shape == self.out_proj.weight.shape:
+                    self.out_proj.weight.copy_(w_o)
+                elif w_o.t().shape == self.out_proj.weight.shape:
+                    self.out_proj.weight.copy_(w_o.t())
+                elif w_o.numel() == self.out_proj.weight.numel():
+                    self.out_proj.weight.copy_(w_o.reshape(self.out_proj.weight.shape))
 
-                    if b_o is not None and self.out_proj.bias is not None:
-                        if b_o.shape == self.out_proj.bias.shape:
-                            self.out_proj.bias.copy_(b_o)
-                        elif b_o.numel() == self.out_proj.bias.numel():
-                            self.out_proj.bias.copy_(b_o.reshape(self.out_proj.bias.shape))
+                if b_o is not None and self.out_proj.bias is not None:
+                    if b_o.shape == self.out_proj.bias.shape:
+                        self.out_proj.bias.copy_(b_o)
+                    elif b_o.numel() == self.out_proj.bias.numel():
+                        self.out_proj.bias.copy_(b_o.reshape(self.out_proj.bias.shape))
+        else:
+            raise RuntimeError(
+                f"Output projection weight not found for {type(old_attn).__name__}. "
+                f"Aborting injection to prevent random-init collapse."
+            )
 
-            if self.freeze_base:
-                self.out_proj.freeze_base_weights()
-                self.gate.weight.requires_grad = False
-                if self.gate.bias is not None:
-                    self.gate.bias.requires_grad = False
-        except Exception as ex:
-            logger.debug("Output projection copy failed: %s", ex)
+        if self.freeze_base:
+            self.out_proj.freeze_base_weights()
+            self.gate.weight.requires_grad = False
+            if self.gate.bias is not None:
+                self.gate.bias.requires_grad = False
 
     def forward(
         self,
@@ -264,6 +289,10 @@ class HGRN2GatedDeltaNet(BaseAttention):
         """Forward propagation across hybrid HGRN-2 and Gated DeltaNet branches."""
         # Nested encoder cross-attention bypass
         if encoder_hidden_states is not None:
+            logger.warning(
+                "HGRN2GatedDeltaNet received encoder_hidden_states but cross-attention "
+                "is not implemented. Returning raw hidden_states (identity)."
+            )
             return hidden_states, None
 
         hgrn_res = self.hgrn(
@@ -340,6 +369,8 @@ def inject_hgrn2_gated_deltanet(
         if layer_list is not None:
             num_injected = 0
             tot = len(layer_list)
+            sub_kwargs = {k: v for k, v in kwargs.items() if k not in ("lora_rank", "lora_alpha")}
+            last_injected = None
             for idx, lyr in enumerate(layer_list):
                 res = inject_hgrn2_gated_deltanet(
                     layer=lyr,
@@ -349,10 +380,15 @@ def inject_hgrn2_gated_deltanet(
                     total_layers=tot,
                     lora_rank=lora_rank,
                     lora_alpha=lora_alpha,
-                    **kwargs,
+                    **sub_kwargs,
                 )
                 if res is not None:
                     num_injected += 1
+                    last_injected = res
+            if num_injected > 0 and last_injected is not None:
+                total = num_injected * getattr(last_injected, "_per_layer_trainable", 0)
+                if total > 20e6:
+                    logger.warning("Total trainable across model: %.1fM", total / 1e6)
             return target if num_injected > 0 else None
 
     # 2. Single layer injection
@@ -405,12 +441,13 @@ def inject_hgrn2_gated_deltanet(
             return None
 
     try:
+        sub_kwargs = {k: v for k, v in kwargs.items() if k not in ("lora_rank", "lora_alpha")}
         new_layer = HGRN2GatedDeltaNet(
             config=cfg,
             old_attn=curr_attn,
             lora_rank=lora_rank,
             lora_alpha=lora_alpha,
-            **kwargs,
+            **sub_kwargs,
         )
     except Exception as ex:
         logger.warning("Failed to instantiate HGRN2GatedDeltaNet: %s", ex)
