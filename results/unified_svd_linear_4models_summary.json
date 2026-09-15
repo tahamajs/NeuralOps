@@ -3,13 +3,13 @@
     "Model": "gpt2",
     "Exit Code": 0,
     "Baseline Acc": "79.36%",
-    "SVD Linear Acc": "49.20%",
-    "Delta Acc": "-30.16%",
-    "F1": "0.1781",
+    "SVD Linear Acc": "50.34%",
+    "Delta Acc": "-29.02%",
+    "F1": "0.2573",
     "Status": "PASS_LOW",
     "Compressed Layers": "0",
-    "Comp Rate": "1.26x",
-    "Peak VRAM": "462.9 MB",
-    "Time (s)": "47.4"
+    "Comp Rate": "1.25x",
+    "Peak VRAM": "467.4 MB",
+    "Time (s)": "48.4"
   }
 ]
