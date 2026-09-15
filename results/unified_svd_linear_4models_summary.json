@@ -1,15 +1,15 @@
 [
   {
-    "Model": "distilbert",
+    "Model": "roberta",
     "Exit Code": 0,
-    "Baseline Acc": "90.71%",
-    "SVD Linear Acc": "90.71%",
-    "Delta Acc": "+0.00%",
-    "F1": "0.9097",
-    "Status": "PASS_NO_COMPRESSION",
+    "Baseline Acc": "78.56%",
+    "SVD Linear Acc": "59.75%",
+    "Delta Acc": "-18.81%",
+    "F1": "0.7077",
+    "Status": "PASS",
     "Compressed Layers": "0",
-    "Comp Rate": "1.00x",
-    "Peak VRAM": "323.6 MB",
-    "Time (s)": "32.4"
+    "Comp Rate": "1.18x",
+    "Peak VRAM": "545.5 MB",
+    "Time (s)": "45.5"
   }
 ]
