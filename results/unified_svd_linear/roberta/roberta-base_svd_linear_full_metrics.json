@@ -1,23 +1,23 @@
 {
     "model": "roberta-base_svd_linear",
     "performance": {
-        "accuracy_pct": 54.24,
-        "f1_score": 0.6885,
-        "f1_macro": 0.4134,
-        "precision": 0.7206,
-        "recall": 0.534,
-        "val_loss": 0.6629,
+        "accuracy_pct": 54.7,
+        "f1_score": 0.6877,
+        "f1_macro": 0.4316,
+        "precision": 0.6767,
+        "recall": 0.5389,
+        "val_loss": 0.897,
         "status": "PASS_LOW",
-        "elapsed_s": 25.46
+        "elapsed_s": 23.89
     },
     "efficiency": {
         "total_params_before": 124647170,
-        "total_params_after": 114150302,
-        "trainable_recovery_params": 1290396,
+        "total_params_after": 114150290,
+        "trainable_recovery_params": 1290384,
         "compression_rate": 1.092,
         "compression_ratio_pct": 8.42,
         "flops_reduction_pct": 66.67,
-        "num_compressed_layers": 48,
+        "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 0,
         "lora_params": 1179648,
@@ -88,8 +88,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 579.94,
-        "tokens_per_sec": 13258.2
+        "peak_vram_mb": 579.93,
+        "tokens_per_sec": 14094.9
     },
     "architecture": {
         "span_distribution": {},
@@ -97,10 +97,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 558.88,
-        "L_256_vram_mb": 561.45,
-        "L_512_vram_mb": 581.57,
+        "L_128_vram_mb": 558.87,
+        "L_256_vram_mb": 561.44,
+        "L_512_vram_mb": 581.56,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-14T18:49:22.541943"
+    "timestamp": "2026-09-15T08:17:02.456597"
 }
