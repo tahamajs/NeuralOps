@@ -291,7 +291,7 @@ def main():
 
     for idx, runner in enumerate(runners, 1):
         module_name = extract_module_name(runner)
-        print(f"\n[{idx}/{total_modules}] Checking module: '{module_name}' ({runner.name})")
+        print(f"\n[{idx}/{total_modules}] Checking module: '{module_name}' ({runner.name})", flush=True)
 
         # Auto-update from origin/main so GPU server picks up latest fixes continuously
         try:
@@ -305,7 +305,7 @@ def main():
             pass
 
         if args.skip_existing and is_module_already_done(module_name, results_root, models_list):
-            print(f"  -> SKIPPED: All target models {models_list} already finished in results/unified_{module_name}/")
+            print(f"  -> SKIPPED: All target models {models_list} already finished in results/unified_{module_name}/", flush=True)
             skipped_count += 1
             queue_results.append({
                 "module": module_name,

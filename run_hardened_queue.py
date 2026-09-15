@@ -4,15 +4,9 @@ import time
 import os
 
 # Priority queue of hardened modules to run across RoBERTa and GPT-2 (and Qwen3.5 where supported)
-<<<<<<< HEAD
 # Excluded failed modules: mamba, svd_mamba, aegis_hybrid
 QUEUE = [
     ("svd_compressed", ["distilbert", "roberta", "gpt2"]),
-=======
-QUEUE = [
-    ("svd_compressed", ["distilbert", "roberta", "gpt2"]),
-    ("svd_mamba", ["distilbert", "roberta", "gpt2"]),
->>>>>>> 69da8ec1a (add files of results)
     ("nexus", ["distilbert", "roberta", "gpt2"]),
     ("xattention", ["distilbert", "roberta", "gpt2"]),
     ("soa_module", ["distilbert", "roberta", "gpt2"]),
