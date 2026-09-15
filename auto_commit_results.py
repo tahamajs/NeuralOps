@@ -36,6 +36,9 @@ def auto_commit_loop(interval_s: int = 600):
 
     while True:
         try:
+            # Sync latest code and fixes from origin/main
+            run_cmd(["git", "pull", "--autostash", "--rebase", "origin", "main"])
+
             # Stage only metrics, csvs, jsons, pngs, and doc updates - ignore checkpoints and weights
             run_cmd(["git", "add", "results/**/*.csv", "results/**/*.json", "results/**/*.png", "Docs/content/**/*.md", "results/master_queue_benchmark_summary*"])
 
@@ -52,7 +55,9 @@ def auto_commit_loop(interval_s: int = 600):
                     if p_ret == 0:
                         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Successfully pushed latest results to GitHub origin/main.")
                     else:
-                        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Push failed (will retry next interval): {p_err or p_out}")
+                        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Push failed (retrying with rebase): {p_err or p_out}")
+                        run_cmd(["git", "pull", "--autostash", "--rebase", "origin", "main"])
+                        run_cmd(["git", "push", "origin", "main"])
                 else:
                     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Commit issue: {c_err}")
             else:
