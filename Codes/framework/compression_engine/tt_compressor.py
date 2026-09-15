@@ -283,7 +283,7 @@ def tt_compressor_factory(
 ) -> Any:
     """Factory function for Tensor Train compressor."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    tt_rank = rank or _cfg_get(comp_config, "tt_rank", _cfg_get(comp_config, "rank", 16))
+    tt_rank = kwargs.pop("tt_rank", rank or _cfg_get(comp_config, "tt_rank", _cfg_get(comp_config, "rank", 16)))
     target_attn = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     compressor = TTCompressor(
         model,
