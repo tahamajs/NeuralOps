@@ -210,7 +210,7 @@ class NASCAttention(BaseAttention):
         self.lora_rank: int = lora_rank
         self.lora_alpha: float = lora_alpha
         self.enable_cascade_on_encoders: bool = bool(
-            kwargs.get("enable_cascade_on_encoders", getattr(config, "enable_cascade_on_encoders", False))
+            kwargs.get("enable_cascade_on_encoders", getattr(config, "enable_cascade_on_encoders", True))
         )
 
         if is_decoder is not None:
@@ -341,15 +341,22 @@ class NASCAttention(BaseAttention):
         # Detect nested encoder architecture
         cls_name = src.__class__.__name__
         has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
-        is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
+        if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
+            self.is_nested_encoder = False
+        elif (
+            hasattr(src, "self")
+            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src, "output")
+            and hasattr(getattr(src, "output"), "dense")
+        ):
+            self.is_nested_encoder = True
         elif (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
         ) and not has_out_proj:
-            is_nested = True
-        self.is_nested_encoder = bool(is_nested)
+            self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
 
         # Check required weights
         missing = [k for k in ["q", "k", "v"] if extracted[k][0] is None]
@@ -586,10 +593,10 @@ class NASCAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        use_dense = (is_causal or is_cross or L <= self.window_size or (not self.is_decoder and not self.enable_cascade_on_encoders))
+        use_dense = bool(is_cross or (not self.is_decoder and not self.enable_cascade_on_encoders))
 
         if not hasattr(self, '_logged_once'):
-            logger.info("NASCAttention: L=%d, L_kv=%d, is_causal=%s, head_dim=%d, all_head_size=%d, path=%s", L, L_kv, is_causal, self.head_dim, self.all_head_size, 'dense' if use_dense else 'cascade')
+            logger.debug("NASCAttention: L=%d, L_kv=%d, is_causal=%s, head_dim=%d, all_head_size=%d, path=%s", L, L_kv, is_causal, self.head_dim, self.all_head_size, 'dense' if use_dense else 'cascade')
             self._logged_once = True
 
         if use_dense:
