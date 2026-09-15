@@ -37,7 +37,7 @@ module $\mathcal{A}'$ such that:
    simultaneously.
 2. \textbf{Learned fusion:} A per-token gate mixes the two streams.
 3. \textbf{Stability:} The gate is initialized to favor the pretrained behavior.
-4. \textbf{Quality:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+4. \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 5. \textbf{Pretrained compatibility:} No base retraining; only LoRA + gate 
    parameters are trainable.
 
@@ -81,8 +81,6 @@ toward local, $\sigma(3) \approx 0.95$).
   variance.
 \begin{itemize}
 \item \textbf{Chunked causal scan.} A memory-bounded RFF implementation for decoders.
-\end{itemize}
-\begin{itemize}
 \item \textbf{A production-hardened implementation.} Supports four architectures
 \end{itemize}
   with RoPE, GQA, LoRA recovery, and safe injection.
@@ -93,7 +91,7 @@ toward local, $\sigma(3) \approx 0.95$).
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
 \end{itemize}
-  under {{LICENSE}}.
+  under MIT.
 
 \subsection{1.5 Paper Organization}
 

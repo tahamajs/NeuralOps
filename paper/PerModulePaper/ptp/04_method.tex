@@ -52,11 +52,7 @@ s_i = \sigma\!\left(W_2 \cdot \text{GELU}(W_1 x_i + b_1) + b_2\right)
 with:
 \begin{itemize}
 \item $W_1 \in \mathbb{R}^{64 \times d}$: input projection.
-\end{itemize}
-\begin{itemize}
 \item $W_2 \in \mathbb{R}^{1 \times 64}$: output scalar.
-\end{itemize}
-\begin{itemize}
 \item $\sigma$: sigmoid.
 \end{itemize}
 
@@ -68,11 +64,7 @@ For $d = 768$: ~49K parameters per attention layer.
 
 \begin{itemize}
 \item $W_1$: Kaiming uniform.
-\end{itemize}
-\begin{itemize}
 \item $W_2$: Kaiming uniform.
-\end{itemize}
-\begin{itemize}
 \item Bias: zero.
 \end{itemize}
 
@@ -84,6 +76,7 @@ Alternatives:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Type} & \textbf{Pros} & \textbf{Cons} \\
@@ -170,6 +163,7 @@ v_pruned = torch.gather(v_all, 2, top_idx_exp)
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Operation} & \textbf{Complexity} \\
@@ -295,6 +289,7 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Dense} & \textbf{PTP} \\
@@ -315,6 +310,7 @@ Output projection & $\mathcal{O}(B L d^2)$ & Same \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{PTP} \\
@@ -369,4 +365,4 @@ retained attention mass, the optimal $\rho$ satisfies:
 \tag{4.10}
 \]
 
-\textbf{Empirical observation.} $\rho^* \approx {{KEEP_RATIO}}$ for SST-2.
+\textbf{Empirical observation.} $\rho^* \approx 0.8$ for SST-2.

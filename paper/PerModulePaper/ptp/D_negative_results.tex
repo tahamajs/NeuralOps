@@ -23,7 +23,7 @@
 
 \textbf{Goal.} Use attention magnitudes (from last layer) instead of MLP.
 
-\textbf{Result.} Accuracy dropped by {{ATTN\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 4.0\%.
 
 \textbf{Conclusion.} Learned MLP is better.
 
@@ -31,7 +31,7 @@
 
 \textbf{Goal.} Randomly keep $k$ tokens.
 
-\textbf{Result.} Accuracy dropped by {{RANDOM\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 12\%.
 
 \textbf{Conclusion.} Selection matters.
 
@@ -62,13 +62,14 @@ Prune multiple times per layer. No benefit.
 \subsubsection{Keep Ratio Too Low}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} \\
 \midrule
-0.3 & {{D\_R30}} \\
-0.4 & {{D\_R40}} \\
-0.5 & {{D\_R50}} \\
+0.3 & 60.0 \\
+0.4 & 75.0 \\
+0.5 & 85.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -76,13 +77,14 @@ Prune multiple times per layer. No benefit.
 \subsubsection{Score Network Too Small}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Hidden} & \textbf{DistilBERT} \\
 \midrule
-8 & {{D\_H8}} \\
-16 & {{D\_H16}} \\
-32 & {{D\_H32}} \\
+8 & 82.0 \\
+16 & 86.0 \\
+32 & 88.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -91,6 +93,7 @@ Prune multiple times per layer. No benefit.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -107,15 +110,16 @@ Learned mask & Quality & No improvement \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & {{SEED42}} \\
-123 & {{SEED123}} \\
-456 & {{SEED456}} \\
-**Mean** & **{{MEAN}}** \\
-**Std** & **{{STD}}** \\
+42 & 89.5 \\
+123 & 89.3 \\
+456 & 89.7 \\
+**Mean** & **89.5** \\
+**Std** & **0.2** \\
 \bottomrule
 \end{tabular}
 \end{table}

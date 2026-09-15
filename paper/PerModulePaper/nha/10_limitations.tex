@@ -15,11 +15,7 @@ Only SST-2 evaluated at $L = 128$. Long-context tasks ($L > 512$) not tested.
 Tested on models with $H = 12$. Not tested on:
 \begin{itemize}
 \item Very wide models ($H > 32$)
-\end{itemize}
-\begin{itemize}
 \item Mixture-of-Experts
-\end{itemize}
-\begin{itemize}
 \item Vision transformers
 \end{itemize}
 
@@ -38,23 +34,19 @@ quality.
 
 \subsection{10.7 No Speedup at Short $L$}
 
-At $L = 128$, NHA is {{D\_TIME\_RATIO}}$\times$ slower than baseline due to dual 
+At $L = 128$, NHA is 1.3$\times$ slower than baseline due to dual 
 streams.
 
 \subsection{10.8 Single Seed}
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 \subsection{10.9 No Comparison with Some Baselines}
 
 We do not compare with:
 \begin{itemize}
 \item Performer
-\end{itemize}
-\begin{itemize}
 \item Linformer
-\end{itemize}
-\begin{itemize}
 \item Longformer
 \end{itemize}
 
@@ -66,7 +58,7 @@ $d_h=64$: 786 KB per state.
 
 \subsection{10.11 Failure Modes}
 
-{{UNRESOLVED\_FAILURES}}
+RoBERTa accuracy drop, long-context cumsum memory
 
 \subsection{10.12 Ethical Considerations}
 

@@ -1,37 +1,112 @@
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
+% --- Typography & Geometry ---
 \usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{microtype}
+\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
+
+% --- Math & Symbols ---
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{bm}
+
+% --- Tables & Arrays ---
 \usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+
+% --- Graphics & Floats ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% --- Code Listings ---
 \usepackage{xcolor}
 \usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
 
 \definecolor{codebg}{HTML}{F8F9FA}
+\definecolor{codeframe}{HTML}{D0D7DE}
+\definecolor{keywordcolor}{HTML}{0550AE}
+\definecolor{stringcolor}{HTML}{0A3069}
+\definecolor{commentcolor}{HTML}{57606A}
+
 \lstset{
     backgroundcolor=\color{codebg},
     basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
+    keywordstyle=\color{keywordcolor}\bfseries,
+    stringstyle=\color{stringcolor},
+    commentstyle=\color{commentcolor}\itshape,
     frame=single,
+    rulecolor=\color{codeframe},
     breaklines=true,
     breakatwhitespace=true,
-    extendedchars=true
+    extendedchars=true,
+    xleftmargin=6pt,
+    xrightmargin=6pt,
+    aboveskip=8pt,
+    belowskip=8pt
 }
 
+% --- Hyperlinks ---
+\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
 }
+
+% --- Input Title & Authors ---
+\input{00_meta.tex}
 
 \begin{document}
 
-\input{00_meta.tex}
+\maketitle
+
+% --- Abstract & Keywords Block ---
+\begin{abstract}
+Sparse attention methods exploit the observation that most attention mass lies 
+within a small neighborhood around each query. Fixed-window methods 
+(Longformer, BigBird) capture local context cheaply but miss distant 
+dependencies. Content-based methods (Routing Transformer, Reformer) capture 
+distant dependencies but add hashing or clustering overhead. We present 
+**Native Sparse Attention** (NSA), which combines **both**: a fixed sliding 
+window captures local context, while a **dynamic top-$k$ routing** selects 
+the $k$ most relevant distant keys per query based on actual attention scores. 
+The selection is **fully vectorized** -- no Python loop, no clustering, no 
+hashing -- making NSA easy to implement, train, and reason about.
+
+NSA is parameterized by two scalars: window size $w$ and top-$k$ count $k$. 
+For each query $i$, the retained keys are:
+
+$$
+\mathcal{S}_i = \underbrace{\{j : |i - j| \leq w\}}_{\text{local window}} \cup \underbrace{\text{top-}k_{j' \notin \mathcal{W}_i} s_{ij'}}_{\text{dynamic global}}
+$$
+
+The union is computed via a boolean mask that is applied before softmax. 
+Padding, causality, and GQA are all preserved.
+
+We evaluate NSA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
+$w = 32$, $k = 16$. NSA achieves **89.5\%**, 
+**76.5\%**, and **77.5\%** accuracy, within **-1.2\%**, 
+**-2.1\%**, and **-1.9\%** of the dense baselines. Attention 
+density drops to **{{DENSITY}}\%** (from 100\% dense). The dynamic top-$k$ 
+selection shifts systematically with layer depth, revealing head-level 
+content specialization.
+
+**Keywords:** sparse attention, sliding window, dynamic top-k, content-aware 
+routing, efficient transformer
+
+---
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} sparse attention, sliding window, dynamic top-k, content-aware
+\end{abstract}
+
+\vspace{1em}
+
+% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -46,7 +121,12 @@
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
+% --- Appendices ---
+\clearpage
 \appendix
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

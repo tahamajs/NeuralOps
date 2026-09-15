@@ -108,11 +108,7 @@ $\sqrt{d_h}$ matches the expected variance of Gaussian projections.
 \textbf{Properties:}
 \begin{itemize}
 \item \textbf{Non-negative:} $\mathrm{elu}(x) > -1$ $\to$ $\phi > 0$.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Bounded:} $\phi \in [0, \infty)$.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Smooth:} ELU is $C^1$.
 \end{itemize}
 
@@ -214,11 +210,7 @@ uses per-head. Per-token is:
 
 \begin{itemize}
 \item \textbf{Parameter-efficient:} $d + 1$ parameters instead of $d H + H$.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Position-aware:} Can adapt to local vs global needs per position.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Simpler:} No head dimension to manage.
 \end{itemize}
 
@@ -265,6 +257,7 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Component} & \textbf{Local} & \textbf{Global RFF} & \textbf{NHA (total)} \\
@@ -283,6 +276,7 @@ primary efficiency benefit.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{NHA} \\

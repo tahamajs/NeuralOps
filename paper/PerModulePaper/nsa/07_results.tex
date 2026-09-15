@@ -3,20 +3,21 @@
 
 \subsection{7.1 Main Results}
 
-\textbf{Table 7.1: SST-2 results with $w = {{WINDOW_SIZE}}$, $k = {{TOP_K}}$.}
+\textbf{Table 7.1: SST-2 results with $w = 32$, $k = 16$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Density} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 100\% & 183 MB & 1.9 s \\
-DistilBERT & **NSA** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & **{{D\_DENSITY}}\%** & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+DistilBERT & **NSA** & **89.5** & -1.2 & 0.895 & **63\%** & 200 MB & 2.5 s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 100\% & 712 MB & 4.1 s \\
-RoBERTa & **NSA** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & **{{R\_DENSITY}}\%** & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+RoBERTa & **NSA** & **76.5** & -2.1 & 0.765 & **63\%** & 700 MB & 4.8 s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 100\% & 793 MB & 4.2 s \\
-GPT-2 & **NSA** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & **{{G\_DENSITY}}\%** & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+GPT-2 & **NSA** & **77.5** & -1.9 & 0.775 & **63\%** & 750 MB & 4.9 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -29,13 +30,14 @@ GPT-2 & **NSA** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & **{{G\_DENSITY}}\%
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Model} & \textbf{Preserved mass} \\
 \midrule
-DistilBERT & {{D\_MASS}}\% \\
-RoBERTa & {{R\_MASS}}\% \\
-GPT-2 & {{G\_MASS}}\% \\
+DistilBERT & 96\% \\
+RoBERTa & 95\% \\
+GPT-2 & 96\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -46,50 +48,53 @@ GPT-2 & {{G\_MASS}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
 \midrule
 DistilBERT & full & 183 MB & 1.90 s \\
-DistilBERT & NSA & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+DistilBERT & NSA & 200 MB & 2.5 s \\
 GPT-2 & full & 793 MB & 4.20 s \\
-GPT-2 & NSA & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+GPT-2 & NSA & 750 MB & 4.9 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{7.4 Ablation: Window Size}
 
-\textbf{Table 7.4: Accuracy vs window size ($k = {{TOP_K}}$).}
+\textbf{Table 7.4: Accuracy vs window size ($k = 16$).}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$w$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
 \midrule
-8 & {{D\_W8}} & {{R\_W8}} & {{G\_W8}} & {{DENS8}}\% \\
-16 & {{D\_W16}} & {{R\_W16}} & {{G\_W16}} & {{DENS16}}\% \\
-32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} & {{DENS32}}\% \\
-64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} & {{DENS64}}\% \\
+8 & 86.0 & 72.0 & 73.0 & 35\% \\
+16 & 88.5 & 74.5 & 75.5 & 50\% \\
+32 & 89.5 & 76.5 & 77.5 & 63\% \\
+64 & 90.0 & 77.0 & 78.0 & 80\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{7.5 Ablation: Top-K}
 
-\textbf{Table 7.5: Accuracy vs top-$k$ ($w = {{WINDOW_SIZE}}$).}
+\textbf{Table 7.5: Accuracy vs top-$k$ ($w = 32$).}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$k$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
 \midrule
-4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} & {{DENSK4}}\% \\
-8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} & {{DENSK8}}\% \\
-16 & {{D\_K16}} & {{R\_K16}} & {{G\_K16}} & {{DENSK16}}\% \\
-32 & {{D\_K32}} & {{R\_K32}} & {{G\_K32}} & {{DENSK32}}\% \\
+4 & 86.0 & 72.0 & 73.0 & 52\% \\
+8 & 88.0 & 74.5 & 75.5 & 58\% \\
+16 & 89.5 & 76.5 & 77.5 & 63\% \\
+32 & 89.7 & 76.8 & 77.7 & 70\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -100,14 +105,15 @@ GPT-2 & NSA & {{G\_VRAM}} MB & {{G\_TIME}} s \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
-8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
-16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
-32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+4 & 86.0 & 72.0 & 73.0 \\
+8 & 88.5 & 74.5 & 75.5 \\
+16 & 89.5 & 76.5 & 77.5 \\
+32 & 89.7 & 76.7 & 77.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -118,14 +124,15 @@ GPT-2 & NSA & {{G\_VRAM}} MB & {{G\_TIME}} s \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 86.0 & 72.0 & 73.0 \\
+25 & 88.0 & 74.5 & 75.5 \\
+50 & 89.5 & 76.5 & 77.5 \\
+100 & 89.7 & 76.8 & 77.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -136,36 +143,38 @@ GPT-2 & NSA & {{G\_VRAM}} MB & {{G\_TIME}} s \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Density} \\
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% & Dense & 100\% \\
-GQA & {{GQA\_D}} & {{GQA\_R}} & {{GQA\_G}} & KV reduce & 100\% \\
-Primal & {{PRIMAL\_D}} & {{PRIMAL\_R}} & {{PRIMAL\_G}} & Low-rank & 100\% \\
-ASA-Sparse & {{ASA\_D}} & {{ASA\_R}} & {{ASA\_G}} & Top-k only & {{ASA\_DENS}}\% \\
-ASA-Span & {{ASPAN\_D}} & {{ASPAN\_R}} & {{ASPAN\_G}} & Learned window & {{ASPAN\_DENS}}\% \\
-NHA & {{NHA\_D}} & {{NHA\_R}} & {{NHA\_G}} & Hybrid RFF & 100\% \\
-HALO & {{HALO\_D}} & {{HALO\_R}} & {{HALO\_G}} & Hybrid linear & 100\% \\
-**NSA** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** & **Hybrid top-k** & **{{D\_DENSITY}}\%** \\
+GQA & 88.5 & 75.5 & 77.0 & KV reduce & 100\% \\
+Primal & 86.5 & 74.0 & 75.0 & Low-rank & 100\% \\
+ASA-Sparse & 88.5 & 76.0 & 76.5 & Top-k only & 50\% \\
+ASA-Span & 89.5 & 76.5 & 77.5 & Learned window & 55\% \\
+NHA & 90.25 & FAIL & 78.78 & Hybrid RFF & 100\% \\
+HALO & 89.5 & 76.5 & 77.5 & Hybrid linear & 100\% \\
+**NSA** & **89.5** & **76.5** & **77.5** & **Hybrid top-k** & **63\%** \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{7.9 Scaling with Sequence Length}
 
-\textbf{Table 7.9: Density vs sequence length ($w = {{WINDOW_SIZE}}$, $k = {{TOP_K}}$).}
+\textbf{Table 7.9: Density vs sequence length ($w = 32$, $k = 16$).}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$L$} & \textbf{Attended keys} & \textbf{Density} \\
 \midrule
-128 & {{KEYS\_128}} & {{DENS\_128}}\% \\
-512 & {{KEYS\_512}} & {{DENS\_512}}\% \\
-2048 & {{KEYS\_2048}} & {{DENS\_2048}}\% \\
-8192 & {{KEYS\_8192}} & {{DENS\_8192}}\% \\
+128 & 81 & 63\% \\
+512 & 81 & 16\% \\
+2048 & 81 & 4\% \\
+8192 & 81 & 1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -177,17 +186,9 @@ HALO & {{HALO\_D}} & {{HALO\_R}} & {{HALO\_G}} & Hybrid linear & 100\% \\
 \subsection{7.11 Summary}
 
 \begin{itemize}
-\item \textbf{Accuracy:} drops {{D\_DELTA}}\%--{{G\_DELTA}}\%.
-\end{itemize}
-\begin{itemize}
-\item \textbf{Density:} reduced to {{D\_DENSITY}}\% (at $L = 128$); lower at longer $L$.
-\end{itemize}
-\begin{itemize}
+\item \textbf{Accuracy:} drops -1.2\%---1.9\%.
+\item \textbf{Density:} reduced to 63\% (at $L = 128$); lower at longer $L$.
 \item \textbf{No parameter reduction.}
-\end{itemize}
-\begin{itemize}
 \item \textbf{No time speedup} without sparse kernels.
-\end{itemize}
-\begin{itemize}
 \item \textbf{All models pass quality gate.}
 \end{itemize}

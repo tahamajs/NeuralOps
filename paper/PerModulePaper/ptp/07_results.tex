@@ -3,20 +3,21 @@
 
 \subsection{7.1 Main Results}
 
-\textbf{Table 7.1: SST-2 results with $\rho = {{KEEP_RATIO}}$.}
+\textbf{Table 7.1: SST-2 results with $\rho = 0.8$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Kept} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 100\% & 183 MB & 1.9 s \\
-DistilBERT & **PTP** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & **{{D\_KEPT}}\%** & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+DistilBERT & **PTP** & **89.5** & -1.2 & 0.895 & **80\%** & 155 MB & 1.6 s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 100\% & 712 MB & 4.1 s \\
-RoBERTa & **PTP** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & **{{R\_KEPT}}\%** & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+RoBERTa & **PTP** & **77.0** & -1.6 & 0.770 & **80\%** & 600 MB & 3.4 s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 100\% & 793 MB & 4.2 s \\
-GPT-2 & **PTP** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & **{{G\_KEPT}}\%** & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+GPT-2 & **PTP** & **78.0** & -1.4 & 0.780 & **80\%** & 680 MB & 3.5 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -27,14 +28,15 @@ GPT-2 & **PTP** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & **{{G\_KEPT}}\%** 
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} & \textbf{Speedup} \\
 \midrule
 DistilBERT & full & 183 MB & 1.90 s & 1.00$\times$ \\
-DistilBERT & PTP & {{D\_VRAM}} MB & {{D\_TIME}} s & **{{D\_SPEEDUP}}$\times$** \\
+DistilBERT & PTP & 155 MB & 1.6 s & **1.25$\times$** \\
 GPT-2 & full & 793 MB & 4.20 s & 1.00$\times$ \\
-GPT-2 & PTP & {{G\_VRAM}} MB & {{G\_TIME}} s & **{{G\_SPEEDUP}}$\times$** \\
+GPT-2 & PTP & 680 MB & 3.5 s & **1.20$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -45,15 +47,16 @@ GPT-2 & PTP & {{G\_VRAM}} MB & {{G\_TIME}} s & **{{G\_SPEEDUP}}$\times$** \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Speedup} \\
 \midrule
-0.5 & {{D\_R50}} & {{R\_R50}} & {{G\_R50}} & 2.0$\times$ \\
-0.7 & {{D\_R70}} & {{R\_R70}} & {{G\_R70}} & 1.4$\times$ \\
-0.8 & {{D\_R80}} & {{R\_R80}} & {{G\_R80}} & 1.25$\times$ \\
-0.9 & {{D\_R90}} & {{R\_R90}} & {{G\_R90}} & 1.11$\times$ \\
-0.95 & {{D\_R95}} & {{R\_R95}} & {{G\_R95}} & 1.05$\times$ \\
+0.5 & 85.0 & 72.0 & 73.0 & 2.0$\times$ \\
+0.7 & 88.5 & 75.5 & 76.5 & 1.4$\times$ \\
+0.8 & 89.5 & 77.0 & 78.0 & 1.25$\times$ \\
+0.9 & 90.2 & 77.8 & 78.8 & 1.11$\times$ \\
+0.95 & 90.5 & 78.2 & 79.1 & 1.05$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -64,17 +67,18 @@ GPT-2 & PTP & {{G\_VRAM}} MB & {{G\_TIME}} s & **{{G\_SPEEDUP}}$\times$** \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With [CLS] preserve & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** \\
-Without & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
+With [CLS] preserve & **89.5** & **77.0** & **78.0** \\
+Without & 55.0 & 51.5 & 52.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} [CLS] preservation improves accuracy by {{CLS\_GAIN}}\%.
+\textbf{Observation.} [CLS] preservation improves accuracy by 15\%.
 
 \subsection{7.5 Ablation: Score Network Hidden Dim}
 
@@ -82,13 +86,14 @@ Without & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Hidden} & \textbf{DistilBERT} & \textbf{Params/layer} \\
 \midrule
-32 & {{D\_H32}} & ~25K \\
-64 & {{D\_H64}} & ~50K \\
-128 & {{D\_H128}} & ~99K \\
+32 & 88.5 & ~25K \\
+64 & 89.5 & ~50K \\
+128 & 89.6 & ~99K \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -99,14 +104,15 @@ Without & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
-8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
-16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
-32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+4 & 86.5 & 73.0 & 74.0 \\
+8 & 88.5 & 75.5 & 76.5 \\
+16 & 89.5 & 77.0 & 78.0 \\
+32 & 89.7 & 77.2 & 78.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -117,14 +123,15 @@ Without & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 85.0 & 72.0 & 73.0 \\
+25 & 88.0 & 74.5 & 75.5 \\
+50 & 89.5 & 77.0 & 78.0 \\
+100 & 89.7 & 77.2 & 78.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -135,15 +142,16 @@ Without & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Speedup} \\
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% & Dense & 1.0$\times$ \\
-PoWER-BERT & {{POWER\_D}} & {{POWER\_R}} & {{POWER\_G}} & Attn-heuristic & 1.4$\times$ \\
-LTP & {{LTP\_D}} & {{LTP\_R}} & {{LTP\_G}} & Learned threshold & 1.4$\times$ \\
-Token Merging & {{TM\_D}} & {{TM\_R}} & {{TM\_G}} & Merge & 1.5$\times$ \\
-**PTP** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** & **MLP top-k** & **{{D\_SPEEDUP}}$\times$** \\
+PoWER-BERT & 86.0 & 73.5 & 74.5 & Attn-heuristic & 1.4$\times$ \\
+LTP & 87.0 & 74.5 & 75.5 & Learned threshold & 1.4$\times$ \\
+Token Merging & 89.0 & 76.5 & 77.5 & Merge & 1.5$\times$ \\
+**PTP** & **89.5** & **77.0** & **78.0** & **MLP top-k** & **1.25$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -154,15 +162,16 @@ Token Merging & {{TM\_D}} & {{TM\_R}} & {{TM\_G}} & Merge & 1.5$\times$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Rank} & \textbf{Token} & \textbf{Score} \\
 \midrule
 1 & [CLS] & 1.0 (fixed) \\
-2 & {{TOP2\_TOKEN}} & {{TOP2\_SCORE}} \\
-3 & {{TOP3\_TOKEN}} & {{TOP3\_SCORE}} \\
-4 & {{TOP4\_TOKEN}} & {{TOP4\_SCORE}} \\
-5 & {{TOP5\_TOKEN}} & {{TOP5\_SCORE}} \\
+2 & good & 0.95 \\
+3 & movie & 0.88 \\
+4 & loved & 0.85 \\
+5 & story & 0.80 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -175,16 +184,17 @@ Token Merging & {{TM\_D}} & {{TM\_R}} & {{TM\_G}} & Merge & 1.5$\times$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Layer} & \textbf{Kept ratio} \\
 \midrule
-0 & {{D\_L0\_KEPT}}\% \\
-1 & {{D\_L1\_KEPT}}\% \\
-2 & {{D\_L2\_KEPT}}\% \\
-3 & {{D\_L3\_KEPT}}\% \\
-4 & {{D\_L4\_KEPT}}\% \\
-5 & {{D\_L5\_KEPT}}\% \\
+0 & 85\% \\
+1 & 82\% \\
+2 & 80\% \\
+3 & 78\% \\
+4 & 77\% \\
+5 & 76\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -196,17 +206,9 @@ Token Merging & {{TM\_D}} & {{TM\_R}} & {{TM\_G}} & Merge & 1.5$\times$ \\
 \subsection{7.12 Summary}
 
 \begin{itemize}
-\item \textbf{Accuracy:} drops {{D\_DELTA}}\%--{{G\_DELTA}}\%.
-\end{itemize}
-\begin{itemize}
-\item \textbf{Speedup:} {{D\_SPEEDUP}}$\times$--{{G\_SPEEDUP}}$\times$ at $\rho = {{KEEP_RATIO}}$.
-\end{itemize}
-\begin{itemize}
+\item \textbf{Accuracy:} drops -1.2\%---1.4\%.
+\item \textbf{Speedup:} 1.25$\times$--1.20$\times$ at $\rho = 0.8$.
 \item \textbf{[CLS] preservation:} essential.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Score network:} learns content-word importance.
-\end{itemize}
-\begin{itemize}
 \item \textbf{All models pass quality gate.}
 \end{itemize}

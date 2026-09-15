@@ -11,20 +11,21 @@ small MLP, retains the top-$k$ fraction, and preserves [CLS] and causality.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Speedup} & \textbf{Kept} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & {{D\_SPEEDUP}}$\times$ & {{D\_KEPT}}\% \\
-RoBERTa & {{R\_DELTA}}\% & {{R\_SPEEDUP}}$\times$ & {{R\_KEPT}}\% \\
-GPT-2 & {{G\_DELTA}}\% & {{G\_SPEEDUP}}$\times$ & {{G\_KEPT}}\% \\
+DistilBERT & -1.2\% & 1.25$\times$ & 80\% \\
+RoBERTa & -1.6\% & 1.20$\times$ & 80\% \\
+GPT-2 & -1.4\% & 1.20$\times$ & 80\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{11.3 Key Takeaways}
 
-1. \textbf{Token pruning is effective} at $\rho = {{KEEP_RATIO}}$.
+1. \textbf{Token pruning is effective} at $\rho = 0.8$.
 2. \textbf{[CLS] preservation is essential.}
 3. \textbf{Learned scores reveal structure.}
 4. \textbf{Causality preserved.}
@@ -35,25 +36,15 @@ GPT-2 & {{G\_DELTA}}\% & {{G\_SPEEDUP}}$\times$ & {{G\_KEPT}}\% \\
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Causal score network
-\end{itemize}
-\begin{itemize}
 \item Per-head scoring
-\end{itemize}
-\begin{itemize}
 \item Learned keep ratio
-\end{itemize}
-\begin{itemize}
 \item Long-context evaluation
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Cross-layer score sharing
-\end{itemize}
-\begin{itemize}
 \item Theoretical bounds
-\end{itemize}
-\begin{itemize}
 \item Integration with MoE
 \end{itemize}
 
@@ -70,8 +61,6 @@ We thank {{ACKNOWLEDGMENTS}}.
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed PTP, implemented the code, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
 \end{itemize}
 

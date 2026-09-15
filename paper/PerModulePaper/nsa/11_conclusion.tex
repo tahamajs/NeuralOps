@@ -12,13 +12,14 @@ parameter-free, and compatible with four pretrained architectures.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Density} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & {{D\_DENSITY}}\% \\
-RoBERTa & {{R\_DELTA}}\% & {{R\_DENSITY}}\% \\
-GPT-2 & {{G\_DELTA}}\% & {{G\_DENSITY}}\% \\
+DistilBERT & -1.2\% & 63\% \\
+RoBERTa & -2.1\% & 63\% \\
+GPT-2 & -1.9\% & 63\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -36,22 +37,14 @@ GPT-2 & {{G\_DELTA}}\% & {{G\_DENSITY}}\% \\
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Triton kernels for sparse matmul
-\end{itemize}
-\begin{itemize}
 \item Learned window and top-k per head
-\end{itemize}
-\begin{itemize}
 \item Long-context evaluation
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical error bounds
-\end{itemize}
-\begin{itemize}
 \item Cross-layer selection transfer
-\end{itemize}
-\begin{itemize}
 \item Integration with quantization and MoE
 \end{itemize}
 
@@ -68,8 +61,6 @@ We thank {{ACKNOWLEDGMENTS}}.
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed NSA, implemented the code, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
 \end{itemize}
 

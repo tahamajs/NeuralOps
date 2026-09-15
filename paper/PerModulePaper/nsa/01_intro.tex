@@ -10,8 +10,6 @@ of the attention mass. Empirical studies (Clark et al., 2019; Voita et al.,
 
 \begin{itemize}
 \item \textbf{Local dominance:} Most mass lies within a few tokens of the query.
-\end{itemize}
-\begin{itemize}
 \item \textbf{A few global heads:} Some heads attend to distant content, typically
 \end{itemize}
   across a small number of positions.
@@ -40,7 +38,7 @@ module $\mathcal{A}'$ such that:
 3. \textbf{Differentiable:} Selection is differentiable (or at least 
    trainable end-to-end).
 4. \textbf{Vectorized:} No Python loop over queries.
-5. \textbf{Quality:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+5. \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 6. \textbf{Pretrained compatibility:} Only LoRA + $O(1)$ parameters are trainable.
 
 \subsection{1.3 Our Approach: NSA}
@@ -74,8 +72,6 @@ $\text{TopK}$ selects the $k$ highest-scoring keys outside the window.
   dynamic top-$k$ content-based routing.
 \begin{itemize}
 \item \textbf{Full vectorization.} No clustering, no hashing, no Python loop.
-\end{itemize}
-\begin{itemize}
 \item \textbf{A production-hardened implementation.} Supports four architectures
 \end{itemize}
   with RoPE, GQA, LoRA recovery, and safe injection.

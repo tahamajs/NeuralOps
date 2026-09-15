@@ -23,14 +23,8 @@ global attention.
 
 \begin{itemize}
 \item \textbf{Long-context inference} ($L > 512$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Memory-constrained hardware}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Interpretability studies} of local vs global needs
-\end{itemize}
-\begin{itemize}
 \item \textbf{Base for further optimization} (quantization, distillation)
 \end{itemize}
 
@@ -38,8 +32,6 @@ global attention.
 
 \begin{itemize}
 \item \textbf{Very short sequences} ($L < 128$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Parameter reduction} (use A3/AASVD)
 \end{itemize}
 
@@ -47,6 +39,7 @@ global attention.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Sequence length} & \textbf{Recommended $w$} \\
@@ -63,6 +56,7 @@ global attention.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Use case} & \textbf{Recommended $m$} \\
@@ -81,12 +75,13 @@ For GPT-2 at $L = 2048$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{VRAM} & \textbf{Time} & \textbf{Accuracy} \\
 \midrule
 Baseline & 793 MB & 8.5 s & 79.36\% \\
-NHA & {{G\_VRAM}} MB & {{G\_TIME}} s & {{G\_ACC}}\% \\
+NHA & 572 MB & 5.0 s & 78.78\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,21 +98,15 @@ NHA & {{G\_VRAM}} MB & {{G\_TIME}} s & {{G\_ACC}}\% \\
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Long-context inference:} Enables more capable applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Cheaper inference:} Reduces compute per token.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Interpretability:} Gate analysis reveals structure.
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables surveillance at scale.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Favors large labs.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.

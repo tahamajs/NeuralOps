@@ -4,7 +4,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -16,10 +16,10 @@ pip install -r requirements.txt
 \begin{lstlisting}
 python run_all_4_nha.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --rff_features {{RFF_FEATURES}} \
-    --gate_init_bias {{GATE_BIAS}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 64 \
+    --rff_features 128 \
+    --gate_init_bias 3.0 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{12.3 Reproducing Tables}
@@ -65,13 +65,14 @@ torch.cuda.manual_seed_all(seed)
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Mean gate} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & ~{{D\_GATE}} \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & ~{{R\_GATE}} \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_GATE}} \\
+DistilBERT & 90.25\% $\pm$ 1\% & ~0.75 \\
+RoBERTa & 67.89\% $\pm$ 1\% & ~0.70 \\
+GPT-2 & 78.78\% $\pm$ 1\% & ~0.72 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -80,22 +81,14 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_GATE}} \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\end{itemize}
-\begin{itemize}
-\item \textbf{Checkpoints:} \texttt{{{HF\\_ORG}}/svd-linear-attention-*-nha}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified\\_nha/*/summary.csv}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-nha}
+\item \textbf{Metrics:} \texttt{results/unified\_nha/*/summary.csv}
 \end{itemize}
 
 \subsection{12.7 Known Issues}
 
 \begin{itemize}
 \item FP32 required for RFF stability
-\end{itemize}
-\begin{itemize}
 \item Long sequences may need reduced chunk size
-\end{itemize}
-\begin{itemize}
 \item RoPE fallback may fail on some models
 \end{itemize}

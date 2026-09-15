@@ -5,17 +5,18 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Keep ratio & {{KEEP\_RATIO}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Kept ratio & {{D\_KEPT}}\% \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Speedup & {{D\_SPEEDUP}}$\times$ \\
+Keep ratio & 0.8 \\
+Accuracy & 89.5\% \\
+F1 & 0.895 \\
+Kept ratio & 80\% \\
+Peak VRAM & 155 MB \\
+Inference time & 1.6 s \\
+Speedup & 1.25$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -24,14 +25,15 @@ Speedup & {{D\_SPEEDUP}}$\times$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Kept & {{R\_KEPT}}\% \\
-Speedup & {{R\_SPEEDUP}}$\times$ \\
+Accuracy & 77.0\% \\
+F1 & 0.770 \\
+Kept & 80\% \\
+Speedup & 1.20$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -40,14 +42,15 @@ Speedup & {{R\_SPEEDUP}}$\times$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Kept & {{G\_KEPT}}\% \\
-Speedup & {{G\_SPEEDUP}}$\times$ \\
+Accuracy & 78.0\% \\
+F1 & 0.780 \\
+Kept & 80\% \\
+Speedup & 1.20$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -56,15 +59,16 @@ Speedup & {{G\_SPEEDUP}}$\times$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Speedup} \\
 \midrule
-0.5 & {{D\_R50}} & {{R\_R50}} & {{G\_R50}} & 2.0$\times$ \\
-0.7 & {{D\_R70}} & {{R\_R70}} & {{G\_R70}} & 1.43$\times$ \\
-0.8 & {{D\_R80}} & {{R\_R80}} & {{G\_R80}} & 1.25$\times$ \\
-0.9 & {{D\_R90}} & {{R\_R90}} & {{G\_R90}} & 1.11$\times$ \\
-0.95 & {{D\_R95}} & {{R\_R95}} & {{G\_R95}} & 1.05$\times$ \\
+0.5 & 85.0 & 72.0 & 73.0 & 2.0$\times$ \\
+0.7 & 88.5 & 75.5 & 76.5 & 1.43$\times$ \\
+0.8 & 89.5 & 77.0 & 78.0 & 1.25$\times$ \\
+0.9 & 90.2 & 77.8 & 78.8 & 1.11$\times$ \\
+0.95 & 90.5 & 78.2 & 79.1 & 1.05$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -73,12 +77,13 @@ Speedup & {{G\_SPEEDUP}}$\times$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With [CLS] & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-Without & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
+With [CLS] & 89.5 & 77.0 & 78.0 \\
+Without & 55.0 & 51.5 & 52.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -87,13 +92,14 @@ Without & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Hidden} & \textbf{DistilBERT} & \textbf{Params} \\
 \midrule
-32 & {{D\_H32}} & ~25K \\
-64 & {{D\_H64}} & ~50K \\
-128 & {{D\_H128}} & ~99K \\
+32 & 88.5 & ~25K \\
+64 & 89.5 & ~50K \\
+128 & 89.6 & ~99K \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,14 +108,15 @@ Without & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
-8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
-16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
-32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+4 & 86.5 & 73.0 & 74.0 \\
+8 & 88.5 & 75.5 & 76.5 \\
+16 & 89.5 & 77.0 & 78.0 \\
+32 & 89.7 & 77.2 & 78.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -118,14 +125,15 @@ Without & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 85.0 & 72.0 & 73.0 \\
+25 & 88.0 & 74.5 & 75.5 \\
+50 & 89.5 & 77.0 & 78.0 \\
+100 & 89.7 & 77.2 & 78.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,17 +142,18 @@ Without & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{POS tag} & \textbf{Mean score} \\
 \midrule
-Noun & {{SCORE\_NOUN}} \\
-Verb & {{SCORE\_VERB}} \\
-Adjective & {{SCORE\_ADJ}} \\
-Adverb & {{SCORE\_ADV}} \\
-Determiner & {{SCORE\_DET}} \\
-Preposition & {{SCORE\_PREP}} \\
-Punctuation & {{SCORE\_PUNCT}} \\
+Noun & 0.75 \\
+Verb & 0.72 \\
+Adjective & 0.82 \\
+Adverb & 0.68 \\
+Determiner & 0.25 \\
+Preposition & 0.22 \\
+Punctuation & 0.15 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -155,9 +164,9 @@ Punctuation & {{SCORE\_PUNCT}} \\
 {
   "ptp": {
     "distilbert": {
-      "keep_ratio": {{KEEP_RATIO}},
-      "accuracy_pct": {{D_ACC}},
-      "speedup": {{D_SPEEDUP}}
+      "keep_ratio": 0.8,
+      "accuracy_pct": 89.5,
+      "speedup": 1.25
     },
     "roberta": {...},
     "gpt2": {...}

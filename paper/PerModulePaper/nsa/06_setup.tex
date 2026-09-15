@@ -5,6 +5,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{H} & \textbf{d\_h} & \textbf{Params} & \textbf{Attention} \\
@@ -16,7 +17,7 @@ GPT-2 & 12 & 12 & 64 & 124.4M & Causal \\
 \end{tabular}
 \end{table}
 
-Loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
+Loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
 \subsection{6.2 Dataset}
 
@@ -24,6 +25,7 @@ Loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Split} & \textbf{Size} \\
@@ -41,14 +43,15 @@ Majority baseline: 50.92\%. Sequence length: 128.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-Window size $w$ & {{WINDOW\_SIZE}} \\
-Top-$k$ count $k$ & {{TOP\_K}} \\
-LoRA rank & {{LORA\_RANK}} \\
-LoRA alpha & {{LORA\_ALPHA}} \\
+Window size $w$ & 32 \\
+Top-$k$ count $k$ & 16 \\
+LoRA rank & 16 \\
+LoRA alpha & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -57,15 +60,16 @@ LoRA alpha & {{LORA\_ALPHA}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-Weight decay & {{WD}} \\
-Steps & {{RECOVERY\_STEPS}} \\
-Batch size & {{BATCH\_SIZE}} \\
+LR & 2e-4 \\
+Weight decay & 1e-2 \\
+Steps & 50 \\
+Batch size & 8 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -81,25 +85,15 @@ Precision & FP16 \\
 \subsubsection{Efficiency}
 \begin{itemize}
 \item Peak VRAM
-\end{itemize}
-\begin{itemize}
 \item Inference time
-\end{itemize}
-\begin{itemize}
 \item Attention density $\rho$
-\end{itemize}
-\begin{itemize}
 \item Attended keys per query
 \end{itemize}
 
 \subsubsection{Selection Analysis}
 \begin{itemize}
 \item Fraction of top-$k$ selections per layer
-\end{itemize}
-\begin{itemize}
 \item Overlap with true top-$k$
-\end{itemize}
-\begin{itemize}
 \item Attention mass preservation
 \end{itemize}
 
@@ -107,6 +101,7 @@ Precision & FP16 \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Status} & \textbf{Accuracy} \\
@@ -122,14 +117,15 @@ FAIL & < 50.92\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Spec} \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -139,9 +135,9 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_nsa.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --top_k {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 32 \
+    --top_k 16 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{6.9 Ablations}

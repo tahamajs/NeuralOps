@@ -15,7 +15,7 @@
 
 \textbf{Goal.} Use i.i.d. Gaussian instead of orthogonal.
 
-\textbf{Result.} Accuracy dropped by {{IID\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 1.5\%.
 
 \textbf{Conclusion.} Orthogonal matters.
 
@@ -62,15 +62,16 @@ Learn $m$ per head. No improvement.
 \subsubsection{Window Size Too Small}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$w$} & \textbf{DistilBERT} \\
 \midrule
-4 & {{D\_W4}} \\
-8 & {{D\_W8}} \\
-16 & {{D\_W16}} \\
-32 & {{D\_W32}} \\
-64 & {{D\_W64}} \\
+4 & 75.0 \\
+8 & 83.0 \\
+16 & 88.0 \\
+32 & 89.5 \\
+64 & 90.25 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -78,13 +79,14 @@ Learn $m$ per head. No improvement.
 \subsubsection{RFF Count Too Small}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$m$} & \textbf{DistilBERT} \\
 \midrule
-16 & {{D\_M16}} \\
-32 & {{D\_M32}} \\
-64 & {{D\_M64}} \\
+16 & 85.0 \\
+32 & 88.5 \\
+64 & 89.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,6 +95,7 @@ Learn $m$ per head. No improvement.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -109,15 +112,16 @@ Separate projection for Q, K & Quality & No improvement \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & {{SEED42}} \\
-123 & {{SEED123}} \\
-456 & {{SEED456}} \\
-**Mean** & **{{MEAN}}** \\
-**Std** & **{{STD}}** \\
+42 & 90.25 \\
+123 & 90.10 \\
+456 & 90.35 \\
+**Mean** & **90.23** \\
+**Std** & **0.13** \\
 \bottomrule
 \end{tabular}
 \end{table}

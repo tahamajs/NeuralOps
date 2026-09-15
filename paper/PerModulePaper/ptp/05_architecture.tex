@@ -5,6 +5,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
@@ -12,7 +13,7 @@
 DistilBERT & Flat & No & No &  \\
 RoBERTa & Nested & No & No &  \\
 GPT-2 & Causal & No & No &  \\
-Qwen3.5 & Causal + RoPE & Yes & Yes & {{Q\_VERIFIED}} \\
+Qwen3.5 & Causal + RoPE & Yes & Yes & not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -45,8 +46,6 @@ Direct copy with \texttt{repeat\_kv} at runtime.
 For RoBERTa/BERT, \texttt{is\_nested\_encoder = True}:
 \begin{itemize}
 \item No \texttt{out\_lin} applied inside PTP.
-\end{itemize}
-\begin{itemize}
 \item Outer \texttt{attention.output.dense} applies output projection.
 \end{itemize}
 
@@ -108,6 +107,7 @@ except Exception:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{PTP} \\

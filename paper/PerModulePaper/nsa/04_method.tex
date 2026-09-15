@@ -142,11 +142,7 @@ $\mathcal{O}(L^2)$ time. This is not better than dense attention, but:
 
 \begin{itemize}
 \item We only care about \textbf{memory} (masked softmax), not time.
-\end{itemize}
-\begin{itemize}
 \item For $L > 512$, the sparse mask saves memory in subsequent operations.
-\end{itemize}
-\begin{itemize}
 \item A custom top-$k$ kernel could reduce time, but that's future work.
 \end{itemize}
 
@@ -217,6 +213,7 @@ Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Dense} & \textbf{NSA} \\
@@ -248,6 +245,7 @@ $-10^4$-masked entries. This is future work.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{NSA} \\

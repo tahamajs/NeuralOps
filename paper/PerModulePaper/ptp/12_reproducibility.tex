@@ -4,7 +4,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -16,8 +16,8 @@ pip install -r requirements.txt
 \begin{lstlisting}
 python run_all_4_ptp.py \
     --models distilbert,roberta,gpt2 \
-    --keep_ratio {{KEEP_RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --keep_ratio 0.8 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{12.3 Reproducing Tables}
@@ -55,13 +55,14 @@ torch.cuda.manual_seed_all(seed)
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Kept} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & ~{{D\_KEPT}}\% \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & ~{{R\_KEPT}}\% \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_KEPT}}\% \\
+DistilBERT & 89.5\% $\pm$ 1\% & ~80\% \\
+RoBERTa & 77.0\% $\pm$ 1\% & ~80\% \\
+GPT-2 & 78.0\% $\pm$ 1\% & ~80\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,11 +71,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_KEPT}}\% \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\end{itemize}
-\begin{itemize}
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-ptp}
-\end{itemize}
-\begin{itemize}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-ptp}
 \item \textbf{Metrics:} \texttt{results/unified\_ptp/*/summary.csv}
 \end{itemize}
 
@@ -82,10 +79,6 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_KEPT}}\% \\
 
 \begin{itemize}
 \item Score network sees future tokens (not for generation)
-\end{itemize}
-\begin{itemize}
 \item Very short sequences lose accuracy
-\end{itemize}
-\begin{itemize}
 \item Shared selection across queries
 \end{itemize}
