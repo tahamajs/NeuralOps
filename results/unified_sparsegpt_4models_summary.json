@@ -1,7 +1,7 @@
 [
   {
     "Model": "distilbert",
-    "Exit Code": 0,
+    "Exit Code": 1,
     "Baseline Acc": "90.48%",
     "SparseGPT Acc": "86.93%",
     "Delta Acc": "-3.55%",
@@ -10,11 +10,11 @@
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "340.1 MB",
-    "Time (s)": "28.1"
+    "Time (s)": "0.1"
   },
   {
     "Model": "roberta",
-    "Exit Code": 0,
+    "Exit Code": 1,
     "Baseline Acc": "75.11%",
     "SparseGPT Acc": "50.92%",
     "Delta Acc": "-24.19%",
@@ -23,11 +23,11 @@
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "363.5 MB",
-    "Time (s)": "44.0"
+    "Time (s)": "0.1"
   },
   {
     "Model": "gpt2",
-    "Exit Code": 0,
+    "Exit Code": 1,
     "Baseline Acc": "60.78%",
     "SparseGPT Acc": "53.33%",
     "Delta Acc": "-7.45%",
@@ -36,6 +36,6 @@
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "634.4 MB",
-    "Time (s)": "39.0"
+    "Time (s)": "0.1"
   }
 ]
