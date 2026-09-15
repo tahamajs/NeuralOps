@@ -24,8 +24,8 @@ def sync_git():
 
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Detected new results/code changes. Staging...")
 
-    # Stage results CSVs, JSONs, and modified codes (large .pt / .bin / .log files are ignored by .gitignore)
-    run_cmd("git add results/**/*.csv results/**/*.json Codes/runners/results/ Codes/framework/")
+    # Stage results CSVs, JSONs, PNG plots, and modified codes
+    run_cmd("git add results/**/*.csv results/**/*.json results/**/*.png Codes/framework/")
 
     # Check if there is anything actually staged
     code, staged, _ = run_cmd("git diff --cached --name-only")
