@@ -556,5 +556,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T23:18:57.722069"
+  },
+  {
+    "module": "routing",
+    "runner": "run_all_4_routing.py",
+    "exit_code": 0,
+    "elapsed_s": 406.8,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T23:25:46.101597"
   }
 ]
