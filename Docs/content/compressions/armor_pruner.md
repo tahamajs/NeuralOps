@@ -709,3 +709,11 @@ The `ARMORLinear` architecture incorporates telemetry hooks for tracking singula
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (ARMOR Pruner)
+Evaluated on SST-2 sentiment classification (FP16, 2:4 structured sparsity core, rank 16 low-rank correction, decoupled branches, 200 recovery steps):
+
+| Model Architecture | Baseline Acc | ARMOR Pruned Acc | Δ Acc | F1 Score | Actual Sparsity | Effective Param Ratio | Avg Recon Error | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:------------:|:----------------:|:-----:|:--------:|:---------------:|:---------------------:|:---------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.71% | 90.02% | -0.69% | 0.9032 | 50.0% | 1.00x | 0.3923 | 183.1 MB | `PASS_NO_COMPRESSION` | N/A |
+| ROBERTA | 78.56% | 79.70% | +1.14% | 0.8127 | 50.0% | 1.00x | 0.4026 | 520.7 MB | `PASS_NO_COMPRESSION` | N/A |
+| GPT2 | 79.36% | 49.31% | -30.05% | 0.0090 | 50.0% | 1.00x | 0.3876 | 627.9 MB | `PASS_NO_COMPRESSION` | N/A |
