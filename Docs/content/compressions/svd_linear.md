@@ -574,12 +574,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 86.58% | 0.8765 | 1.1512 | 24 | 294.38 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa39439-021ce57a729959f939b6a8e2;7f2cd939-8250-466a-a026-91432f03c587)
-
-429 Too Many Requests for url: https://huggingface.co/api/repos/create.
-You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 23 hours.) |
-| ROBERTA | 54.01% | 0.6889 | 1.092 | 48 | 339.31 | `PASS_LOW` | N/A |
-| GPT2 | 57.22% | 0.6804 | 1.1646 | 48 | 496.14 | `PASS` | [`gpt2`](Upload error: (Request ID: Root=1-6aa39439-1b04c0b6585194be2acff47c;9050f47f-6d78-4ec6-9022-575f3affef73)
-
-429 Too Many Requests for url: https://huggingface.co/api/repos/create.
-You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 23 hours.) |
+| DISTILBERT | 88.30% | 0.8891 | 1.1512 | 24 | 285.1 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-svd_linear) |
+| ROBERTA | 54.24% | 0.6885 | 1.092 | 48 | 579.94 | `PASS_LOW` | N/A |
+| GPT2 | 68.46% | 0.759 | 1.1705 | 72 | 325.44 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-svd_linear) |
