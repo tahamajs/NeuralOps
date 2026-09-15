@@ -324,8 +324,10 @@ class NMFCompressor(BaseCompressor):
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
                 )
-                W_rec = nmf_layer.weight.float()
-                err = (torch.norm(W_orig - W_rec, p="fro") / (torch.norm(W_orig, p="fro") + 1e-8)).item()
+                shift_val = nmf_layer.shift.float()
+                W_pos = (W_orig - shift_val).clamp_min(1e-6)
+                HV = torch.matmul(nmf_layer.H.float(), nmf_layer.V.float())
+                err = (torch.norm(W_pos - HV, p="fro") / (torch.norm(W_pos, p="fro") + 1e-8)).item()
 
                 if self.fallback_to_original and err > self.max_error:
                     for p in module.parameters(recurse=False):

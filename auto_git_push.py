@@ -15,6 +15,19 @@ print(f"[Auto-Git-Push] Service started for {REPO_DIR}. Sync interval: 60s", flu
 
 while True:
     try:
+        # Always sync latest code from origin/main so the GPU server is always up to date
+        try:
+            subprocess.run(
+                ["git", "pull", "--autostash", "--rebase", "origin", "main"],
+                cwd=REPO_DIR,
+                env=env,
+                timeout=60,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception:
+            pass
+
         # Stage results documentation, json, csv, and state
         subprocess.run(["git", "add", "results/**/*.csv"], cwd=REPO_DIR, env=env, stderr=subprocess.DEVNULL)
         subprocess.run(["git", "add", "results/**/*.json"], cwd=REPO_DIR, env=env, stderr=subprocess.DEVNULL)

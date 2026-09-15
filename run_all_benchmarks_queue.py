@@ -287,6 +287,17 @@ def main():
         module_name = extract_module_name(runner)
         print(f"\n[{idx}/{total_modules}] Checking module: '{module_name}' ({runner.name})")
 
+        # Auto-update from origin/main so GPU server picks up latest fixes continuously
+        try:
+            subprocess.run(
+                ["git", "pull", "--autostash", "--rebase", "origin", "main"],
+                cwd=str(repo_dir),
+                capture_output=True,
+                timeout=60,
+            )
+        except Exception as pull_err:
+            pass
+
         if args.skip_existing and is_module_already_done(module_name, results_root, models_list):
             print(f"  -> SKIPPED: All target models {models_list} already finished in results/unified_{module_name}/")
             skipped_count += 1
