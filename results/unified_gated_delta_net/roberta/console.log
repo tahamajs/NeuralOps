@@ -59,3 +59,4 @@ Notes:
 2026-09-15 23:26:03,766 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.9275 (bs=4, micro_bs=4)
 2026-09-15 23:29:14,470 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.8428 (bs=4, micro_bs=4)
 2026-09-15 23:32:32,647 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.3731 (bs=4, micro_bs=4)
+2026-09-15 23:37:00,183 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5299 (bs=4, micro_bs=4)

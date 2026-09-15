@@ -49,3 +49,15 @@ Loading weights: 100%|##########| 104/104 [00:00<00:00, 2342.51it/s]
 2026-09-15 23:36:42,807 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7100 (bs=8, micro_bs=8)
 2026-09-15 23:36:44,702 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.7023 (bs=8, micro_bs=8)
 2026-09-15 23:36:46,517 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6581 (bs=8, micro_bs=8)
+2026-09-15 23:37:02,953 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_simple_ssm\distilbert\distilbert_sst2_simple_ssm_full_metrics.json
+2026-09-15 23:37:03,005 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_simple_ssm\distilbert\checkpoints\simple_ssm\weights.pt (module_params=0, lora_params=40)
+2026-09-15 23:37:03,766 [INFO] QwenQualitySweep: [2/2] simple_ssm -> PASS_NO_COMPRESSION 50.34% (F1: 0.6002, Peak VRAM: 350.04 MB)
+2026-09-15 23:37:03,769 [WARNING] QwenQualitySweep: Module 'simple_ssm' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 23:37:03,769 [INFO] QwenQualitySweep: [Quality Guard] Module 'simple_ssm' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=50.34%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 23:37:04,250 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 23:37:04,250 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-15 23:37:04,266 [INFO] QwenQualitySweep: 
+                     Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                       full                PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  389.5 MB               4.75              5.45
+simple_ssm (efficient-attn) PASS_NO_COMPRESSION   50.34%      -40.37% 0.6002                  0            1.00x  350.0 MB              14.55             16.68
+2026-09-15 23:37:04,267 [INFO] QwenQualitySweep: ================================================================================
