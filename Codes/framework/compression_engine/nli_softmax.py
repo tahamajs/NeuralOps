@@ -78,6 +78,84 @@ _ATTN_NAMES = {
 }
 
 
+class LoRALinear(nn.Module):
+    r"""Linear projection layer with frozen base weights and trainable residual LoRA adapters."""
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = False,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
+        super().__init__()
+        factory_kwargs = {"device": device, "dtype": dtype}
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
+        self.freeze_base = freeze_base
+
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+        else:
+            self.register_parameter("bias", None)
+
+        if self.lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
+
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+
+    def reset_parameters(self) -> None:
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+        if self.lora_rank > 0 and self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B)
+            self.lora_B.requires_grad = True
+
+    def freeze_base_weights(self) -> None:
+        """Freeze base projection parameters so only LoRA parameters adapt."""
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_rank > 0 and self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_rank > 0 and self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def unfreeze_base_weights(self) -> None:
+        """Unfreeze base projection parameters."""
+        self.weight.requires_grad = True
+        if self.bias is not None:
+            self.bias.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = out + lora_out
+        return out
+
+
 @ATTENTION_REGISTRY.register("nli_softmax_attention")
 @ATTENTION_REGISTRY.register("nli_softmax")
 class NLISoftmaxAttention(BaseAttention):
@@ -88,6 +166,8 @@ class NLISoftmaxAttention(BaseAttention):
       eliminating gradient collapse in layer.attention.self.
     - Multi-architecture copy_weights supports GPT-2 Conv1D (c_attn, c_proj), RoBERTa nested (self.query),
       and flat linear projections (q_lin, q_proj).
+    - Uses LoRALinear with freeze_base=True so base weights remain frozen and only LoRA adapters
+      (lora_A, lora_B) are fine-tuned, preventing parameter explosion and accuracy collapse.
     - Frobenius norm validation (>= 1e-4) on copied weights.
     - @property query, key, value for state_dict compatibility.
     """
@@ -116,14 +196,25 @@ class NLISoftmaxAttention(BaseAttention):
         self.dropout = nn.Dropout(_cfg_get(cfg, "attention_probs_dropout_prob", 0.1))
         self.output_scale = nn.Parameter(torch.ones(1))
 
-        self.q_proj = nn.Linear(self.d_model, self.all_head_size)
-        self.k_proj = nn.Linear(self.d_model, self.all_head_size)
-        self.v_proj = nn.Linear(self.d_model, self.all_head_size)
-        self.out_proj = nn.Linear(self.all_head_size, self.d_model)
+        lora_r = int(kwargs.get("lora_rank", _cfg_get(cfg, "lora_rank", 16)))
+        lora_a = float(kwargs.get("lora_alpha", _cfg_get(cfg, "lora_alpha", 32.0)))
+        self.lora_rank = lora_r
+        self.lora_alpha = lora_a
+
+        self.q_proj = LoRALinear(self.d_model, self.all_head_size, lora_rank=lora_r, lora_alpha=lora_a, freeze_base=True)
+        self.k_proj = LoRALinear(self.d_model, self.all_head_size, lora_rank=lora_r, lora_alpha=lora_a, freeze_base=True)
+        self.v_proj = LoRALinear(self.d_model, self.all_head_size, lora_rank=lora_r, lora_alpha=lora_a, freeze_base=True)
+        self.out_proj = LoRALinear(self.all_head_size, self.d_model, lora_rank=lora_r, lora_alpha=lora_a, freeze_base=True)
 
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
         if old_attn is not None:
             self.copy_weights(old_attn)
+
+    def freeze_base_weights(self) -> None:
+        """Freeze base weights of all projections so only LoRA parameters adapt."""
+        for proj in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
+            if hasattr(proj, "freeze_base_weights"):
+                proj.freeze_base_weights()
 
     @property
     def query(self) -> nn.Module:
@@ -212,7 +303,7 @@ class NLISoftmaxAttention(BaseAttention):
             if hasattr(src, "o_proj"):
                 w_o, b_o = _unpack(src.o_proj)
 
-        def _copy_param(target_linear: nn.Linear, w: Optional[torch.Tensor], b: Optional[torch.Tensor]):
+        def _copy_param(target_linear: Any, w: Optional[torch.Tensor], b: Optional[torch.Tensor]):
             if w is None:
                 return
             with torch.no_grad():
@@ -223,16 +314,20 @@ class NLISoftmaxAttention(BaseAttention):
                     min_r = min(tw.shape[0], w.shape[0])
                     min_c = min(tw.shape[1], w.shape[1])
                     tw[:min_r, :min_c].copy_(w[:min_r, :min_c])
-                if b is not None and target_linear.bias is not None:
+                if b is not None and getattr(target_linear, "bias", None) is not None:
                     tb = target_linear.bias
                     min_b = min(tb.shape[0], b.shape[0])
                     tb[:min_b].copy_(b[:min_b])
+            if hasattr(target_linear, "freeze_base_weights"):
+                target_linear.freeze_base_weights()
 
         _copy_param(self.q_proj, w_q, b_q)
         _copy_param(self.k_proj, w_k, b_k)
         _copy_param(self.v_proj, w_v, b_v)
         if not self.is_nested_encoder and w_o is not None:
             _copy_param(self.out_proj, w_o, b_o)
+
+        self.freeze_base_weights()
 
         for name, p in [("q_proj", self.q_proj), ("k_proj", self.k_proj), ("v_proj", self.v_proj)]:
             fnorm = float(torch.linalg.norm(p.weight.float()))
@@ -560,6 +655,7 @@ def nli_softmax_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> A
 
 
 __all__ = [
+    "LoRALinear",
     "NLISoftmaxFunction",
     "nli_softmax",
     "NLISoftmax",

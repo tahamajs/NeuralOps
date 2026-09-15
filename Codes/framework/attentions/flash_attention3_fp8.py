@@ -328,7 +328,9 @@ class FlashAttention3FP8(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
-        if (
+        if has_out_lin:
+            is_nested = False
+        elif (
             hasattr(src, "self")
             and hasattr(getattr(src, "self"), "query")
             and hasattr(src, "output")
@@ -340,10 +342,8 @@ class FlashAttention3FP8(BaseAttention):
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ):
             is_nested = True
-        elif has_out_lin:
+        else:
             is_nested = False
-        elif self.is_nested_encoder:
-            is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
         if hasattr(src, "rotary_emb"):
