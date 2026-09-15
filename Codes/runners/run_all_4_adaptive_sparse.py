@@ -380,7 +380,7 @@ try:
     if master_json.exists(): add_files.append(str(master_json))
     subprocess.run(["git", "add"] + add_files, check=True)
     subprocess.run(["git", "commit", "-m", "Add unified 4-model benchmark results and documentation for Adaptive Sparse Attention"], check=True)
-    subprocess.run(["git", "push", "origin", branch_name], check=True)
+#     subprocess.run(["git", "push", "origin", branch_name], check=True)
     print(f"[+] Successfully committed and pushed results to GitHub branch '{branch_name}'.")
     subprocess.run(["git", "checkout", "main"], check=False)
 except Exception as e:
