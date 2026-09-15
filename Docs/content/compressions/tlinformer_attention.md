@@ -418,4 +418,3 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 | DISTILBERT | 90.83% | 0.9119 | 0.9855 | 0 | 335.97 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-tlinformer) |
 | ROBERTA | 50.92% | 0.6748 | 0.9323 | 0 | 664.64 | `PASS_LOW` | N/A |
 | GPT2 | 51.03% | 0.6753 | 0.9784 | 0 | 574.72 | `PASS_LOW` | N/A |
-| QWEN3_5 | 0.00% | N/A | 1.00 | N/A | N/A | `FAIL` | N/A |
