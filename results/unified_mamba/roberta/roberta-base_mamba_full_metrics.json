@@ -1,23 +1,23 @@
 {
     "model": "roberta-base_mamba",
     "performance": {
-        "accuracy_pct": 49.08,
-        "f1_score": 0.0,
-        "f1_macro": 0.3292,
-        "precision": 0.2454,
+        "accuracy_pct": 50.92,
+        "f1_score": 0.6748,
+        "f1_macro": 0.3374,
+        "precision": 0.2546,
         "recall": 0.5,
-        "val_loss": 0.6994,
-        "status": "PASS_LOW",
-        "elapsed_s": 13.75
+        "val_loss": 0.6931,
+        "status": "PASS_NO_COMPRESSION",
+        "elapsed_s": 23.14
     },
     "efficiency": {
         "total_params_before": 124647170,
         "total_params_after": 125393702,
         "trainable_recovery_params": 737280,
-        "compression_rate": 0.994,
-        "compression_ratio_pct": -0.6,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
         "flops_reduction_pct": 0.0,
-        "num_compressed_layers": 24,
+        "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 0,
         "lora_params": 737280,
@@ -40,8 +40,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 842.27,
-        "tokens_per_sec": 11264.88
+        "peak_vram_mb": 852.09,
+        "tokens_per_sec": 11475.19
     },
     "architecture": {
         "span_distribution": {},
@@ -49,10 +49,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 824.21,
-        "L_256_vram_mb": "OOM or unsupported (CUDA out of memory. Tried to allocate 192.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 5.85 GiB is free. Of the allocated memory 969.04 MiB is allocated by PyTorch, and 52.96 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables))",
-        "L_512_vram_mb": "OOM or unsupported (CUDA out of memory. Tried to allocate 768.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 6.23 GiB is free. Of the allocated memory 590.10 MiB is allocated by PyTorch, and 45.90 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables))",
+        "L_128_vram_mb": 834.03,
+        "L_256_vram_mb": 1557.44,
+        "L_512_vram_mb": 4445.44,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-15T04:41:16.541868"
+    "timestamp": "2026-09-15T21:47:29.098203"
 }

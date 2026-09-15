@@ -10,7 +10,7 @@
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "300.7 MB",
-    "Time (s)": "30.0"
+    "Time (s)": "28.1"
   },
   {
     "Model": "roberta",
@@ -23,7 +23,7 @@
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "520.2 MB",
-    "Time (s)": "40.5"
+    "Time (s)": "41.5"
   },
   {
     "Model": "gpt2",
@@ -36,6 +36,6 @@
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "627.2 MB",
-    "Time (s)": "38.7"
+    "Time (s)": "39.6"
   }
 ]

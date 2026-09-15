@@ -1,26 +1,26 @@
 {
     "model": "gpt2_hymba_transx",
     "performance": {
-        "accuracy_pct": 77.87,
-        "f1_score": 0.8025,
-        "f1_macro": 0.7754,
-        "precision": 0.791,
-        "recall": 0.7767,
-        "val_loss": 0.4616,
-        "status": "PASS",
-        "elapsed_s": 99.95
+        "accuracy_pct": 70.07,
+        "f1_score": 0.729,
+        "f1_macro": 0.6974,
+        "precision": 0.7064,
+        "recall": 0.699,
+        "val_loss": 0.5815,
+        "status": "PASS_NO_COMPRESSION",
+        "elapsed_s": 95.79
     },
     "efficiency": {
-        "total_params_before": 126800640,
-        "total_params_after": 171378576,
-        "trainable_recovery_params": 1794120,
-        "compression_rate": 0.7399,
-        "compression_ratio_pct": -35.16,
+        "total_params_before": 124441344,
+        "total_params_after": 169903884,
+        "trainable_recovery_params": 2801676,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
         "flops_reduction_pct": 0.0,
-        "num_compressed_layers": 132,
+        "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 0,
-        "lora_params": 4276224,
+        "lora_params": 2801664,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -40,8 +40,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 631.96,
-        "tokens_per_sec": 4294.4
+        "peak_vram_mb": 808.48,
+        "tokens_per_sec": 4594.53
     },
     "architecture": {
         "span_distribution": {},
@@ -49,10 +49,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 548.98,
-        "L_256_vram_mb": 565.6,
-        "L_512_vram_mb": 614.81,
+        "L_128_vram_mb": 728.01,
+        "L_256_vram_mb": 743.43,
+        "L_512_vram_mb": 795.14,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-14T06:16:29.578746"
+    "timestamp": "2026-09-15T21:05:06.437674"
 }

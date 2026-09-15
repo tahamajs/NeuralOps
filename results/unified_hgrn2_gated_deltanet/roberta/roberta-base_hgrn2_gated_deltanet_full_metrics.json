@@ -7,8 +7,8 @@
         "precision": 0.531,
         "recall": 0.5262,
         "val_loss": 0.7219,
-        "status": "PASS_LOW",
-        "elapsed_s": 334.25
+        "status": "SKIP_ROBERTA_TIMEOUT",
+        "elapsed_s": 2063.77
     },
     "efficiency": {
         "total_params_before": 124647170,
