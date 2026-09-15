@@ -59,3 +59,4 @@ progressive_token_pruning,run_all_4_progressive_token_pruning.py,0,167.86,PASS,,
 projection_factorized_attn,run_all_4_projection_factorized_attn.py,0,190.71,PASS,,2026-09-15T22:55:03.067694
 rala,run_all_4_rala.py,0,684.16,PASS,,2026-09-15T23:06:28.685804
 reap_moe,run_all_4_reap_moe.py,0,261.88,PASS,,2026-09-15T23:10:52.117955
+regla,run_all_4_regla.py,0,222.12,PASS,,2026-09-15T23:14:36.355176
