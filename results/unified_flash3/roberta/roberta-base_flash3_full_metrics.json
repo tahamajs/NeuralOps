@@ -1,23 +1,23 @@
 {
     "model": "roberta-base_flash3",
     "performance": {
-        "accuracy_pct": 62.61,
-        "f1_score": 0.6472,
-        "f1_macro": 0.6248,
-        "precision": 0.6265,
-        "recall": 0.6253,
-        "val_loss": 0.7936,
-        "status": "PASS",
-        "elapsed_s": 16.8
+        "accuracy_pct": 62.73,
+        "f1_score": 0.6494,
+        "f1_macro": 0.6258,
+        "precision": 0.6278,
+        "recall": 0.6263,
+        "val_loss": 0.7891,
+        "status": "PASS_NO_COMPRESSION",
+        "elapsed_s": 17.95
     },
     "efficiency": {
         "total_params_before": 124647170,
         "total_params_after": 132913922,
         "trainable_recovery_params": 1179648,
-        "compression_rate": 0.9378,
-        "compression_ratio_pct": -6.63,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
         "flops_reduction_pct": 0.0,
-        "num_compressed_layers": 48,
+        "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
         "lora_params": 1179648,
@@ -40,8 +40,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 645.51,
-        "tokens_per_sec": 17994.64
+        "peak_vram_mb": 648.38,
+        "tokens_per_sec": 16184.88
     },
     "architecture": {
         "span_distribution": {},
@@ -49,10 +49,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 630.44,
-        "L_256_vram_mb": 633.01,
-        "L_512_vram_mb": 638.14,
+        "L_128_vram_mb": 633.01,
+        "L_256_vram_mb": 635.57,
+        "L_512_vram_mb": 641.2,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-15T03:25:18.953376"
+    "timestamp": "2026-09-15T12:28:41.467480"
 }

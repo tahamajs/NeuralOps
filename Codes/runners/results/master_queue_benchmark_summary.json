@@ -421,5 +421,140 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T12:03:39.191879"
+  },
+  {
+    "module": "eat",
+    "runner": "run_all_4_eat.py",
+    "exit_code": 0,
+    "elapsed_s": 134.28,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:05:55.700215"
+  },
+  {
+    "module": "enlighten",
+    "runner": "run_all_4_enlighten.py",
+    "exit_code": 0,
+    "elapsed_s": 130.98,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:08:08.831924"
+  },
+  {
+    "module": "entropy_budget",
+    "runner": "run_all_4_entropy_budget.py",
+    "exit_code": 0,
+    "elapsed_s": 122.06,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:10:12.914831"
+  },
+  {
+    "module": "erc",
+    "runner": "run_all_4_erc.py",
+    "exit_code": 0,
+    "elapsed_s": 115.34,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:12:10.328719"
+  },
+  {
+    "module": "expert_choice_moe",
+    "runner": "run_all_4_expert_choice_moe.py",
+    "exit_code": 0,
+    "elapsed_s": 224.63,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:15:57.112847"
+  },
+  {
+    "module": "factorised_matrix_state",
+    "runner": "run_all_4_factorised_matrix_state.py",
+    "exit_code": 0,
+    "elapsed_s": 170.12,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:18:49.215954"
+  },
+  {
+    "module": "faq",
+    "runner": "run_all_4_faq.py",
+    "exit_code": 0,
+    "elapsed_s": 188.73,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:22:00.115379"
+  },
+  {
+    "module": "fasa",
+    "runner": "run_all_4_fasa.py",
+    "exit_code": 0,
+    "elapsed_s": 143.92,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:24:26.074588"
+  },
+  {
+    "module": "flap",
+    "runner": "run_all_4_flap.py",
+    "exit_code": 0,
+    "elapsed_s": 172.75,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:27:20.868998"
+  },
+  {
+    "module": "flash3",
+    "runner": "run_all_4_flash3.py",
+    "exit_code": 0,
+    "elapsed_s": 130.73,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:29:33.628161"
+  },
+  {
+    "module": "flash3_fp8",
+    "runner": "run_all_4_flash3_fp8.py",
+    "exit_code": 0,
+    "elapsed_s": 128.77,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:31:44.476018"
+  },
+  {
+    "module": "flat_llm",
+    "runner": "run_all_4_flat_llm.py",
+    "exit_code": 0,
+    "elapsed_s": 108.0,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:33:34.455414"
+  },
+  {
+    "module": "fms",
+    "runner": "run_all_4_fms.py",
+    "exit_code": 0,
+    "elapsed_s": 164.07,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:36:20.629245"
+  },
+  {
+    "module": "frandi",
+    "runner": "run_all_4_frandi.py",
+    "exit_code": 0,
+    "elapsed_s": 112.04,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:38:14.866187"
+  },
+  {
+    "module": "full",
+    "runner": "run_all_4_full.py",
+    "exit_code": 0,
+    "elapsed_s": 111.16,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:40:08.243229"
   }
 ]

@@ -58,3 +58,14 @@ Notes:
 2026-09-15 12:05:41,770 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.3856 (bs=8, micro_bs=8)
 2026-09-15 12:05:42,852 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.4602 (bs=8, micro_bs=8)
 2026-09-15 12:05:51,795 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_eat\gpt2\gpt2_eat_full_metrics.json
+2026-09-15 12:05:51,890 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_eat\gpt2\checkpoints\eat\weights.pt (module_params=0, lora_params=97)
+2026-09-15 12:05:52,701 [INFO] QwenQualitySweep: [2/2] eat -> PASS_NO_COMPRESSION 79.24% (F1: 0.7969, Peak VRAM: 567.91 MB)
+2026-09-15 12:05:52,701 [WARNING] QwenQualitySweep: Module 'eat' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 12:05:52,702 [INFO] QwenQualitySweep: [Quality Guard] Module 'eat' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=79.24%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 12:05:52,952 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 12:05:52,952 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 12:05:52,957 [INFO] QwenQualitySweep: 
+              Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                full                PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.02              4.61
+eat (efficient-attn) PASS_NO_COMPRESSION   79.24%       -0.12% 0.7969                  0            1.00x  567.9 MB               8.71              9.99
+2026-09-15 12:05:52,957 [INFO] QwenQualitySweep: ================================================================================

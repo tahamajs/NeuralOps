@@ -577,3 +577,11 @@ The `FRanDICompressor` architecture incorporates telemetry hooks for tracking si
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (FRanDI)
+Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured sparsity, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.71% | 0.9099 | 1.0 | 0 | 301.18 | `PASS_NO_COMPRESSION` | N/A |
+| ROBERTA | 78.56% | 0.8124 | 1.0 | 0 | 520.68 | `PASS_NO_COMPRESSION` | N/A |
+| GPT2 | 79.36% | 0.7978 | 1.0 | 0 | 627.16 | `PASS_NO_COMPRESSION` | N/A |

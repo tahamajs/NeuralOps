@@ -1,26 +1,26 @@
 {
     "model": "roberta-base_factorised_matrix_state",
     "performance": {
-        "accuracy_pct": 74.77,
-        "f1_score": 0.7727,
-        "f1_macro": 0.7446,
-        "precision": 0.7563,
-        "recall": 0.7459,
-        "val_loss": 0.5126,
-        "status": "PASS",
-        "elapsed_s": 64.53
+        "accuracy_pct": 52.87,
+        "f1_score": 0.5136,
+        "f1_macro": 0.5282,
+        "precision": 0.5296,
+        "recall": 0.5294,
+        "val_loss": 0.7261,
+        "status": "PASS_NO_COMPRESSION",
+        "elapsed_s": 36.06
     },
     "efficiency": {
-        "total_params_before": 127325954,
-        "total_params_after": 135297986,
-        "trainable_recovery_params": 3563712,
-        "compression_rate": 0.9411,
-        "compression_ratio_pct": -6.26,
+        "total_params_before": 124647170,
+        "total_params_after": 133503938,
+        "trainable_recovery_params": 1769664,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
         "flops_reduction_pct": 0.0,
-        "num_compressed_layers": 85,
+        "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
-        "lora_params": 2973696,
+        "lora_params": 1179648,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -40,8 +40,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 410.26,
-        "tokens_per_sec": 6820.9
+        "peak_vram_mb": 672.35,
+        "tokens_per_sec": 7844.34
     },
     "architecture": {
         "span_distribution": {},
@@ -49,10 +49,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 373.28,
-        "L_256_vram_mb": 386.32,
-        "L_512_vram_mb": 426.76,
+        "L_128_vram_mb": 637.25,
+        "L_256_vram_mb": 647.91,
+        "L_512_vram_mb": 692.35,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
     },
-    "timestamp": "2026-09-14T11:18:09.223484"
+    "timestamp": "2026-09-15T12:17:45.341175"
 }

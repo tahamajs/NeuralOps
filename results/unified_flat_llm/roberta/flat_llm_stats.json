@@ -1,7 +1,7 @@
 {
   "compressor_name": "flat_llm",
-  "original_parameters": 127325954,
-  "compressed_parameters": 127325954,
+  "original_parameters": 124647170,
+  "compressed_parameters": 124647170,
   "saved_parameters": 0,
   "compression_ratio": 1.0,
   "reduction_percentage": 0.0,
@@ -129,7 +129,7 @@
     "roberta.encoder.layer.7.attention.self.value": 0.5627828134834333,
     "roberta.encoder.layer.7.attention.output.dense": 0.5294931080471172,
     "roberta.encoder.layer.7.intermediate.dense": 0.5526663855152963,
-    "roberta.encoder.layer.7.output.dense": 0.5231989151927425,
+    "roberta.encoder.layer.7.output.dense": 0.524426411055563,
     "roberta.encoder.layer.8.attention.self.query": 0.5474589434670835,
     "roberta.encoder.layer.8.attention.self.key": 0.5454838735098068,
     "roberta.encoder.layer.8.attention.self.value": 0.5475032849230957,
@@ -141,7 +141,7 @@
     "roberta.encoder.layer.9.attention.self.value": 0.5789217200578,
     "roberta.encoder.layer.9.attention.output.dense": 0.5301037495666887,
     "roberta.encoder.layer.9.intermediate.dense": 0.5430975141591224,
-    "roberta.encoder.layer.9.output.dense": 0.530241995023255,
+    "roberta.encoder.layer.9.output.dense": 0.5291312117878981,
     "roberta.encoder.layer.10.attention.self.query": 0.5430404535258238,
     "roberta.encoder.layer.10.attention.self.key": 0.5439175943042216,
     "roberta.encoder.layer.10.attention.self.value": 0.515404219276337,
@@ -240,6 +240,6 @@
   "num_fallback": 72,
   "num_skipped": 0,
   "effective_parameter_ratio": 1.0,
-  "forward_check_success": false,
+  "forward_check_success": true,
   "method": "flat_llm_eigen_pruning"
 }
