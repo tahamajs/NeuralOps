@@ -7,7 +7,7 @@ datasets:
 - sst2
 ---
 # MINIMAL_SVD - distilbert
-- Benchmark Accuracy: 88.88%
+- Benchmark Accuracy: 88.19%
 - F1 Score: 0.0000
 - Status: PASS
 - Architecture: distilbert

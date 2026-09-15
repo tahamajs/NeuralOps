@@ -7,7 +7,7 @@ datasets:
 - sst2
 ---
 # MINIMAL_SVD - gpt2
-- Benchmark Accuracy: 80.85%
+- Benchmark Accuracy: 59.75%
 - F1 Score: 0.0000
 - Status: PASS
 - Architecture: gpt2
