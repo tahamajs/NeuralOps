@@ -236,9 +236,5 @@ temp_modules_docs/
 
 
 results/*.log
-<<<<<<< HEAD
 */**/*.log
-=======
-
 *.pdf
->>>>>>> 61a5d734a2a928a8c411b9adc9d6a16d1b38c0b0
