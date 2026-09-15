@@ -67,3 +67,15 @@ Notes:
 2026-09-15 22:24:49,398 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=1.3787 (bs=8, micro_bs=8)
 2026-09-15 22:24:50,419 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6307 (bs=8, micro_bs=8)
 2026-09-15 22:24:51,441 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6706 (bs=8, micro_bs=8)
+2026-09-15 22:25:01,186 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nsa_attention\roberta\roberta-base_nsa_attention_full_metrics.json
+2026-09-15 22:25:01,270 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nsa_attention\roberta\checkpoints\nsa_attention\weights.pt (module_params=0, lora_params=172)
+2026-09-15 22:25:02,107 [INFO] QwenQualitySweep: [2/2] nsa_attention -> PASS_NO_COMPRESSION 81.19% (F1: 0.8233, Peak VRAM: 664.43 MB)
+2026-09-15 22:25:02,108 [WARNING] QwenQualitySweep: Module 'nsa_attention' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 22:25:02,108 [INFO] QwenQualitySweep: [Quality Guard] Module 'nsa_attention' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=81.19%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 22:25:02,364 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 22:25:02,365 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-15 22:25:02,369 [INFO] QwenQualitySweep: 
+                        Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                          full                PASS   78.56% 0.00% (base) 0.8124                  0            1.00x  712.3 MB               3.99              4.58
+nsa_attention (efficient-attn) PASS_NO_COMPRESSION   81.19%       +2.63% 0.8233                  0            1.00x  664.4 MB               9.45             10.84
+2026-09-15 22:25:02,369 [INFO] QwenQualitySweep: ================================================================================

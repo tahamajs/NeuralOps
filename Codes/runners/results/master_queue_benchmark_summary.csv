@@ -44,3 +44,6 @@ mixattention_moska,run_all_4_mixattention_moska.py,0,157.24,PASS,,2026-09-15T22:
 mla,run_all_4_mla.py,0,135.62,PASS,,2026-09-15T22:05:04.898461
 moba,run_all_4_moba.py,0,164.5,PASS,,2026-09-15T22:07:50.930381
 moe_deltakv_paged,run_all_4_moe_deltakv_paged.py,0,168.91,PASS,,2026-09-15T22:10:41.324402
+nasc_attention,run_all_4_nasc_attention.py,0,281.29,PASS,,2026-09-15T22:15:24.037924
+nexus,run_all_4_nexus.py,0,244.67,PASS,,2026-09-15T22:19:30.616266
+nha,run_all_4_nha.py,0,234.75,PASS,,2026-09-15T22:23:31.576804
