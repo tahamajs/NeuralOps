@@ -373,10 +373,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 69.50% | 0.7569 | 0.9975 | 0 | 427.0 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa39d42-0ed64d4c61c0be423db2d2c5;07d87c53-a98a-48af-a3e1-82eeb54e5a34)
-
-403 Forbidden: You don't have the rights to create a model under the namespace "Hooshaai".
-Cannot access content at: https://huggingface.co/api/repos/create.
-Make sure your token has the correct permissions.) |
+| DISTILBERT | 69.50% | 0.7569 | 0.9975 | 0 | 427.0 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-tomoe) |
 | ROBERTA | 50.92% | 0.6748 | 0.9973 | 0 | 571.84 | `PASS_LOW` | N/A |
 | GPT2 | 54.24% | 0.678 | 0.9979 | 0 | 874.64 | `PASS_LOW` | N/A |
