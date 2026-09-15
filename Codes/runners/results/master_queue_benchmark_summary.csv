@@ -50,3 +50,4 @@ nha,run_all_4_nha.py,0,234.75,PASS,,2026-09-15T22:23:31.576804
 nsa_attention,run_all_4_nsa_attention.py,0,151.46,PASS,,2026-09-15T22:26:04.999251
 nystrom,run_all_4_nystrom.py,0,141.64,PASS,,2026-09-15T22:28:28.244444
 optimized_hybrid_attention,run_all_4_optimized_hybrid_attention.py,0,175.28,PASS,,2026-09-15T22:31:25.028051
+orion,run_all_4_orion.py,0,312.51,PASS,,2026-09-15T22:36:38.974032
