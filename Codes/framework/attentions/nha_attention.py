@@ -535,44 +535,50 @@ class NativeHybridAttention(BaseAttention):
         phi_Q = phi_Q * pad
         V_masked = V * pad
 
-        if is_causal:
-            chunk_size = min(64, N)
-            num_chunks = (N + chunk_size - 1) // chunk_size
-            m = phi_Q.shape[-1]
-            S = torch.zeros(B, H, m, d, dtype=torch.float32, device=Q.device)
-            Z = torch.zeros(B, H, m, dtype=torch.float32, device=Q.device)
-            out_list = []
+        dev_type = Q.device.type if Q.device.type in ("cuda", "cpu") else "cpu"
+        with torch.autocast(device_type=dev_type, enabled=False):
+            phi_Q_f = phi_Q.float()
+            phi_K_f = phi_K.float()
+            V_f = V_masked.float()
 
-            for c in range(num_chunks):
-                start = c * chunk_size
-                end = min(start + chunk_size, N)
-                L = end - start
+            if is_causal:
+                chunk_size = min(64, N)
+                num_chunks = (N + chunk_size - 1) // chunk_size
+                m = phi_Q_f.shape[-1]
+                S = torch.zeros(B, H, m, d, dtype=torch.float32, device=Q.device)
+                Z = torch.zeros(B, H, m, dtype=torch.float32, device=Q.device)
+                out_list = []
 
-                q_c = phi_Q[:, :, start:end].float()
-                k_c = phi_K[:, :, start:end].float()
-                v_c = V_masked[:, :, start:end].float()
+                for c in range(num_chunks):
+                    start = c * chunk_size
+                    end = min(start + chunk_size, N)
+                    L = end - start
 
-                causal_mask = torch.tril(torch.ones(L, L, device=Q.device, dtype=torch.float32))
-                intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
-                intra_num = torch.matmul(intra_attn, v_c)
-                inter_num = torch.matmul(q_c, S)
+                    q_c = phi_Q_f[:, :, start:end]
+                    k_c = phi_K_f[:, :, start:end]
+                    v_c = V_f[:, :, start:end]
 
-                intra_den = intra_attn.sum(dim=-1, keepdim=True)
-                inter_den = torch.matmul(q_c, Z.unsqueeze(-1))
+                    causal_mask = torch.tril(torch.ones(L, L, device=Q.device, dtype=torch.float32))
+                    intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
+                    intra_num = torch.matmul(intra_attn, v_c)
+                    inter_num = torch.matmul(q_c, S)
 
-                den = (intra_den + inter_den).clamp(min=1e-6)
-                out_list.append(((intra_num + inter_num) / den).to(Q.dtype))
+                    intra_den = intra_attn.sum(dim=-1, keepdim=True)
+                    inter_den = torch.matmul(q_c, Z.unsqueeze(-1))
 
-                S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
-                Z = Z + k_c.sum(dim=2)
+                    den = (intra_den + inter_den).clamp(min=1e-6)
+                    out_list.append(((intra_num + inter_num) / den).to(Q.dtype))
 
-            out = torch.cat(out_list, dim=2) * pad
-        else:
-            KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
-            Z = phi_K.sum(dim=-2, keepdim=True)
-            num = torch.matmul(phi_Q, KV)
-            den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=1e-6)
-            out = (num / den) * pad
+                    S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+                    Z = Z + k_c.sum(dim=2)
+
+                out = torch.cat(out_list, dim=2) * pad
+            else:
+                KV = torch.matmul(phi_K_f.transpose(-2, -1), V_f)
+                Z = phi_K_f.sum(dim=-2, keepdim=True)
+                num = torch.matmul(phi_Q_f, KV)
+                den = torch.matmul(phi_Q_f, Z.transpose(-2, -1)).clamp(min=1e-6)
+                out = (num / den).to(Q.dtype) * pad
 
         return out
 
