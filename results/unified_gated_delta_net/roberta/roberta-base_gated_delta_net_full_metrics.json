@@ -8,7 +8,7 @@
         "recall": 0.5006,
         "val_loss": 0.8732,
         "status": "SKIP_ROBERTA_TIMEOUT",
-        "elapsed_s": 1801.35
+        "elapsed_s": 1801.12
     },
     "efficiency": {
         "total_params_before": 124647170,
