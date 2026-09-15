@@ -24,11 +24,7 @@ reduction, use A3 or AASVD.
 
 \begin{itemize}
 \item \textbf{Long sequences} ($L > 512$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Memory-constrained inference} (attention dominates)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Combined with quantization} for extra savings
 \end{itemize}
 
@@ -36,11 +32,7 @@ reduction, use A3 or AASVD.
 
 \begin{itemize}
 \item \textbf{Short sequences} ($L < 128$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Parameter-constrained} applications
-\end{itemize}
-\begin{itemize}
 \item \textbf{Causality-critical} generation tasks
 \end{itemize}
 
@@ -48,6 +40,7 @@ reduction, use A3 or AASVD.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$L$} & \textbf{Recommended $m$} \\
@@ -66,13 +59,14 @@ For GPT-2 at $L = 2048$, $B = 1$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Primal ($m=64$)} \\
 \midrule
 Attention memory & 12.6 MB & 0.20 MB (**64$\times$**) \\
-Inference time & {{B\_TIME\_2048}} s & {{P\_TIME\_2048}} s \\
-Accuracy & 79.36\% & {{G\_ACC}}\% \\
+Inference time & 8.5 s & 6.5 s \\
+Accuracy & 79.36\% & 75.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -90,21 +84,15 @@ Accuracy & 79.36\% & {{G\_ACC}}\% \\
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Long-context inference:} Enables more capable applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Cheaper inference:} Reduces compute per token.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Edge deployment:} Makes on-device LLMs more feasible.
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables long-context surveillance.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Favors large labs.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.

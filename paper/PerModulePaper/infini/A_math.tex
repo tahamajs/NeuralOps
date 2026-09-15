@@ -34,34 +34,18 @@ per layer (assuming $H = H_{kv}$).
 \textbf{Proof.} 
 \begin{itemize}
 \item Memory: $H d_c d_h$.
-\end{itemize}
-\begin{itemize}
 \item Gate: 1.
-\end{itemize}
-\begin{itemize}
 \item LoRA Q: $r(d + H d_h)$.
-\end{itemize}
-\begin{itemize}
 \item LoRA K: $r(d + H d_h)$.
-\end{itemize}
-\begin{itemize}
 \item LoRA V: $r(d + H d_h)$.
-\end{itemize}
-\begin{itemize}
 \item LoRA O: $r(H d_h + d) = r(d + H d_h)$.
-\end{itemize}
-\begin{itemize}
 \item Total LoRA: $4 r(d + H d_h)$.
 \end{itemize}
 
 For DistilBERT ($H = 12$, $d_h = 64$, $d_c = 128$, $d = 768$, $r = 16$):
 \begin{itemize}
 \item Memory: $12 \cdot 128 \cdot 64 = 98,304$.
-\end{itemize}
-\begin{itemize}
 \item LoRA: $4 \cdot 16 \cdot (768 + 768) = 98,304$.
-\end{itemize}
-\begin{itemize}
 \item Total per layer: $196,609$.
 \end{itemize}
 

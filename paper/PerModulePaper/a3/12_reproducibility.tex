@@ -4,7 +4,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # or source .venv/bin/activate
@@ -15,15 +15,16 @@ pip install -r requirements.txt
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
-numpy & {{NUMPY\_VERSION}} \\
-pandas & {{PANDAS\_VERSION}} \\
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
+numpy & 1.26.4 \\
+pandas & 2.2.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -35,13 +36,13 @@ pandas & {{PANDAS\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_a3.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --rank 64 \
+    --recovery_steps 50 \
+    --lora_rank 16 \
+    --batch_size 8
 \end{lstlisting}
 
-\textbf{Runtime:} ~{{RUNTIME}} minutes on RTX 4070.
+\textbf{Runtime:} ~15 minutes on RTX 4070.
 
 \subsubsection{Individual Model}
 
@@ -54,11 +55,11 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_a3/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,a3 \
-    --batch_size {{BATCH_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --learning_rate {{LR}} \
-    --lora_rank {{LORA_RANK}} \
-    --rank {{RANK}} \
+    --batch_size 8 \
+    --recovery_steps 50 \
+    --learning_rate 2e-4 \
+    --lora_rank 16 \
+    --rank 64 \
     --precision fp16
 \end{lstlisting}
 
@@ -69,7 +70,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-a3",
+        repo_id=f"Hooshaai/svd-linear-attention-{model}-a3",
         filename="weights.pt",
     )
     print(f"Downloaded {model} to {path}")
@@ -126,13 +127,14 @@ torch.backends.cudnn.benchmark = False
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{Ratio} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & {{D\_RATIO}}$\times$ \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & {{R\_RATIO}}$\times$ \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_RATIO}}$\times$ \\
+DistilBERT & 88.5\% $\pm$ 1\% & 5.0$\times$ \\
+RoBERTa & 75.8\% $\pm$ 1\% & 4.5$\times$ \\
+GPT-2 & 76.5\% $\pm$ 1\% & 4.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -143,14 +145,8 @@ Deviations >2\% suggest environmental differences.
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets} library
-\end{itemize}
-\begin{itemize}
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-a3}
-\end{itemize}
-\begin{itemize}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-a3}
 \item \textbf{Metrics:} \texttt{results/unified\_a3/*/summary.csv}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Logs:} \texttt{benchmark\_logs/a3\_*.log}
 \end{itemize}
 
@@ -171,10 +167,6 @@ print('CUDA ver:', torch.version.cuda)
 
 \begin{itemize}
 \item Windows: \texttt{cp1256} codec issues; set \texttt{PYTHONIOENCODING=utf-8}
-\end{itemize}
-\begin{itemize}
 \item CUDA version: >= 11.8 recommended
-\end{itemize}
-\begin{itemize}
 \item Checkpoint paths: some baselines may need to be re-downloaded
 \end{itemize}

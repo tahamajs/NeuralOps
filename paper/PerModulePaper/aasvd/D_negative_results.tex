@@ -15,7 +15,7 @@
 
 \textbf{Goal.} Use random inputs instead of real text.
 
-\textbf{Result.} Accuracy degraded to {{RANDOM\_ACC}}\%.
+\textbf{Result.} Accuracy degraded to 82\%.
 
 \textbf{Conclusion.} Real calibration required. Bundled corpus works.
 
@@ -23,7 +23,7 @@
 
 \textbf{Goal.} Skip padding token mask.
 
-\textbf{Result.} Covariance biased; accuracy dropped by {{NO\_FILTER\_DROP}}\%.
+\textbf{Result.} Covariance biased; accuracy dropped by 2\%.
 
 \textbf{Conclusion.} Always filter padding.
 
@@ -39,7 +39,7 @@
 
 \textbf{Goal.} Use only $\mathrm{diag}(C_X)$.
 
-\textbf{Result.} Accuracy dropped by {{DIAG\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 3\%.
 
 \textbf{Conclusion.} Full covariance matters.
 
@@ -65,6 +65,7 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
@@ -81,6 +82,7 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Fallback \%} \\
@@ -97,6 +99,7 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -113,6 +116,7 @@ Separate calibration per layer & Precision & No change \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\

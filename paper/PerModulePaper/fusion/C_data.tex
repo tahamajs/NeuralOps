@@ -4,18 +4,19 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS\_FULL}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
+Params after & 67741874 \\
+Accuracy & 90.48\% \\
+F1 & 0.9052 \\
+Peak VRAM & 192 MB \\
 Path used & Short (L=128) \\
-Block size & {{BLOCK\_SIZE}} \\
-Top-K & {{TOP\_K}} \\
+Block size & 64 \\
+Top-K & 4 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -24,13 +25,14 @@ Top-K & {{TOP\_K}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS\_FULL}} \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 126100234 \\
+Accuracy & 77.35\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -40,13 +42,14 @@ Accuracy & {{R\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS\_FULL}} \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 125902148 \\
+Accuracy & 78.90\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -56,13 +59,14 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$B$} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-32 & {{D\_B32}} & 0.5$\times$ \\
-64 & {{D\_B64}} & 1.0$\times$ \\
-128 & {{D\_B128}} & 2.0$\times$ \\
+32 & 90.10 & 0.5$\times$ \\
+64 & 90.48 & 1.0$\times$ \\
+128 & 90.30 & 2.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -71,13 +75,14 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$K$} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-2 & {{D\_K2}} & 0.5$\times$ \\
-4 & {{D\_K4}} & 1.0$\times$ \\
-8 & {{D\_K8}} & 2.0$\times$ \\
+2 & 89.5 & 0.5$\times$ \\
+4 & 90.48 & 1.0$\times$ \\
+8 & 90.60 & 2.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,14 +91,15 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-0 & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} \\
-4 & {{D\_RL4}} & {{R\_RL4}} & {{G\_RL4}} \\
-16 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} \\
+0 & 88.5 & 75.5 & 76.8 \\
+4 & 89.8 & 76.8 & 78.2 \\
+16 & 90.48 & 77.35 & 78.90 \\
+32 & 90.55 & 77.45 & 78.95 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -104,10 +110,10 @@ Accuracy & {{G\_ACC}}\% \\
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS_FULL}},
-    "accuracy_pct": {{D_ACC}},
-    "block_size": {{BLOCK_SIZE}},
-    "top_k": {{TOP_K}},
+    "params_after": 67741874,
+    "accuracy_pct": 90.48,
+    "block_size": 64,
+    "top_k": 4,
     "path_used": "short",
     "sequence_length": 128
   }

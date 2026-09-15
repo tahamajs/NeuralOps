@@ -29,11 +29,7 @@ Empirical findings:
 
 \begin{itemize}
 \item Most heads in BERT can be pruned (Voita et al., 2019).
-\end{itemize}
-\begin{itemize}
 \item Many layers need only one head (Michel et al., 2019).
-\end{itemize}
-\begin{itemize}
 \item Head patterns are dominated by a few categories (Clark et al., 2019).
 \end{itemize}
 
@@ -54,11 +50,7 @@ $B = 0$ at initialization. Only $A, B$ are trained.
 \textbf{Benefits.}
 \begin{itemize}
 \item \textbf{Small trainable footprint:} $2 r_L d$ vs $d^2$.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Preserves pretrained:} Base weights unchanged.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Composable:} Multiple LoRA adapters can be combined.
 \end{itemize}
 

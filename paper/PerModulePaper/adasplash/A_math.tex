@@ -68,8 +68,6 @@ tokens does not violate causality.
 \textbf{Proof.} For query $i$, attention mask includes key $j$ if:
 \begin{itemize}
 \item $j < S$ (sink) OR
-\end{itemize}
-\begin{itemize}
 \item $0 \leq i - j \leq W$ (local window)
 \end{itemize}
 

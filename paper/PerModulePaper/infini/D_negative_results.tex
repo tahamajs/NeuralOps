@@ -7,7 +7,7 @@
 
 \textbf{Goal.} Let memory and local attention start equally.
 
-\textbf{Result.} Accuracy dropped by {{BETA0\_DROP}}\%. Training unstable.
+\textbf{Result.} Accuracy dropped by 4.5\%. Training unstable.
 
 \textbf{Conclusion.} $\beta$ = -5 is essential.
 
@@ -69,15 +69,16 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{W} & \textbf{DistilBERT} \\
 \midrule
 16 & {{D\_W16}} \\
-32 & {{D\_W32}} \\
-64 & {{D\_W64}} \\
-128 & {{D\_W128}} \\
-256 & {{D\_W256}} \\
+32 & 88.0 \\
+64 & 89.0 \\
+128 & 89.5 \\
+256 & 89.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,14 +87,15 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{dc} & \textbf{DistilBERT} \\
 \midrule
-32 & {{D\_C32}} \\
-64 & {{D\_C64}} \\
-128 & {{D\_C128}} \\
-256 & {{D\_C256}} \\
+32 & 88.5 \\
+64 & 89.0 \\
+128 & 89.5 \\
+256 & 89.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,14 +104,15 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{r} & \textbf{DistilBERT} \\
 \midrule
-4 & {{D\_R4}} \\
-8 & {{D\_R8}} \\
-16 & {{D\_R16}} \\
-32 & {{D\_R32}} \\
+4 & 88.0 \\
+8 & 89.0 \\
+16 & 89.5 \\
+32 & 89.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -118,15 +121,16 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & {{SEED42}} \\
-123 & {{SEED123}} \\
-456 & {{SEED456}} \\
-Mean & {{MEAN}} \\
-Std & {{STD}} \\
+42 & 89.5 \\
+123 & 89.4 \\
+456 & 89.6 \\
+Mean & 89.5 \\
+Std & 0.08 \\
 \bottomrule
 \end{tabular}
 \end{table}

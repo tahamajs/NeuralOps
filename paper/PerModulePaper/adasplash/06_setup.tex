@@ -5,6 +5,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} & \textbf{Attention} \\
@@ -24,6 +25,7 @@ Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
@@ -41,15 +43,16 @@ Majority baseline: 50.92\%. Sequence length: 128.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-$\alpha$ (entmax) & {{ALPHA}} & Sparsity parameter \\
-$W$ (splash radius) & {{SPLASH\_RADIUS}} & Window size \\
+$\alpha$ (entmax) & 1.5 & Sparsity parameter \\
+$W$ (splash radius) & 32 & Window size \\
 $S$ (sink count) & 4 & Fixed \\
 $n_\text{iter}$ (bisection) & 25 & Fixed \\
-$r_L$ (LoRA rank) & {{LORA\_RANK}} & Adapter rank \\
+$r_L$ (LoRA rank) & 16 & Adapter rank \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -58,15 +61,16 @@ $r_L$ (LoRA rank) & {{LORA\_RANK}} & Adapter rank \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
-Recovery steps & {{RECOVERY\_STEPS}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Learning rate & 2e-4 \\
+Weight decay & 1e-2 \\
+Recovery steps & 50 \\
+Batch size & 8 \\
 Precision & FP16 \\
 Trainable params & LoRA only \\
 \bottomrule
@@ -81,39 +85,23 @@ layers = 8$N_l$ tensors.
 \subsubsection{Quality}
 \begin{itemize}
 \item Accuracy
-\end{itemize}
-\begin{itemize}
 \item F1 (binary, macro)
-\end{itemize}
-\begin{itemize}
 \item Precision, Recall
-\end{itemize}
-\begin{itemize}
 \item Validation loss
 \end{itemize}
 
 \subsubsection{Efficiency}
 \begin{itemize}
 \item Total parameters (before/after)
-\end{itemize}
-\begin{itemize}
 \item Peak VRAM
-\end{itemize}
-\begin{itemize}
 \item Inference time (median of 20 runs)
-\end{itemize}
-\begin{itemize}
 \item Attention sparsity (\% zero weights)
 \end{itemize}
 
 \subsubsection{Interpretability}
 \begin{itemize}
 \item Attention entropy
-\end{itemize}
-\begin{itemize}
 \item Effective support size
-\end{itemize}
-\begin{itemize}
 \item Sink token mass
 \end{itemize}
 
@@ -121,6 +109,7 @@ layers = 8$N_l$ tensors.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Status} & \textbf{Accuracy} \\
@@ -136,15 +125,16 @@ FAIL & < 50.92\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Specification} \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
-Transformers & {{HF\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
+Transformers & 4.44.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -154,16 +144,16 @@ Transformers & {{HF\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_adasplash.py \
     --models distilbert,roberta,gpt2 \
-    --alpha {{ALPHA}} \
-    --splash_radius {{SPLASH_RADIUS}} \
-    --lora_rank {{LORA_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --alpha 1.5 \
+    --splash_radius 32 \
+    --lora_rank 16 \
+    --recovery_steps 50
 \end{lstlisting}
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~20 minutes.
 
 \subsection{6.9 Seeds}
 
-All experiments with seed {{SEED}}.
+All experiments with seed 42.
 
 \subsection{6.10 Baselines}

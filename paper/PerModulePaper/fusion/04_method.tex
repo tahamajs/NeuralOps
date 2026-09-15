@@ -6,8 +6,6 @@ FUSIONATTN has two execution paths selected by sequence length:
 
 \begin{itemize}
 \item \textbf{Short path ($L \leq L_\text{threshold}$):} Standard softmax attention.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Long path ($L > L_\text{threshold}$):} MoBA-style block-sparse attention.
 \end{itemize}
 
@@ -180,6 +178,7 @@ Output: Y, attn_weights
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Path} & \textbf{Time} & \textbf{Memory} \\
@@ -194,11 +193,7 @@ For $L = 512, B = 64, K = 4$:
 
 \begin{itemize}
 \item Short: $512^2 = 262$K
-\end{itemize}
-\begin{itemize}
 \item Long: $4 \times 512 \times 64 = 131$K
-\end{itemize}
-\begin{itemize}
 \item \textbf{Reduction: 2$\times$}
 \end{itemize}
 
@@ -206,11 +201,7 @@ For $L = 4096, B = 64, K = 4$:
 
 \begin{itemize}
 \item Short: $16.7$M
-\end{itemize}
-\begin{itemize}
 \item Long: $1.05$M
-\end{itemize}
-\begin{itemize}
 \item \textbf{Reduction: 16$\times$}
 \end{itemize}
 
@@ -218,6 +209,7 @@ For $L = 4096, B = 64, K = 4$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Parameters} \\
@@ -234,18 +226,12 @@ For DistilBERT ($d=768$, $r_L=16$, $d_h=64$):
 
 \begin{itemize}
 \item LoRA: $8 \times 16 \times 768 = 98{,}304$ per layer
-\end{itemize}
-\begin{itemize}
 \item Gate: $2 \times 4 \times 64^2 = 32{,}768$ per layer
-\end{itemize}
-\begin{itemize}
 \item Total: $131{,}072$ per layer
-\end{itemize}
-\begin{itemize}
 \item \textbf{6 layers: +786,432 params}
 \end{itemize}
 
-\textbf{FUSIONATTN increases parameter count by ~{{PARAM\_CHANGE}}\%.}
+\textbf{FUSIONATTN increases parameter count by ~1.17\%.}
 
 \subsection{4.9 Theoretical Notes}
 

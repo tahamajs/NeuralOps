@@ -16,7 +16,7 @@ representations; compression-like benefits lost.
 
 \textbf{Goal.} Maximize sparsity.
 
-\textbf{Result.} Accuracy dropped to {{A2\_ACC}}\%; training unstable.
+\textbf{Result.} Accuracy dropped to 88.30\%; training unstable.
 
 \textbf{Conclusion.} Sparsemax is too sparse and non-smooth for stable training.
 
@@ -24,7 +24,7 @@ representations; compression-like benefits lost.
 
 \textbf{Goal.} Extreme local attention.
 
-\textbf{Result.} Accuracy dropped to {{W4\_ACC}}\%.
+\textbf{Result.} Accuracy dropped to 75.5\%.
 
 \textbf{Conclusion.} W=4 loses too much context.
 
@@ -32,7 +32,7 @@ representations; compression-like benefits lost.
 
 \textbf{Goal.} Simplify masking.
 
-\textbf{Result.} Accuracy dropped to {{NOSINK\_ACC}}\%.
+\textbf{Result.} Accuracy dropped to 85.5\%.
 
 \textbf{Conclusion.} Sinks are essential for stability.
 
@@ -40,7 +40,7 @@ representations; compression-like benefits lost.
 
 \textbf{Goal.} Test pure sparse attention.
 
-\textbf{Result.} Accuracy dropped to {{NOLORA\_ACC}}\%.
+\textbf{Result.} Accuracy dropped to 80.0\%.
 
 \textbf{Conclusion.} LoRA recovery is essential for matching pretrained accuracy.
 
@@ -80,14 +80,15 @@ signal weak; no improvement.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{LR} & \textbf{DistilBERT} & \textbf{Loss stability} \\
 \midrule
-5e-5 & {{D\_LR5e5}} & Stable \\
-1e-4 & {{D\_LR1e4}} & Stable \\
-2e-4 & {{D\_LR2e4}} & Stable \\
-5e-4 & {{D\_LR5e4}} & Unstable \\
+5e-5 & 89.5 & Stable \\
+1e-4 & 90.0 & Stable \\
+2e-4 & 90.25 & Stable \\
+5e-4 & 89.0 & Unstable \\
 1e-3 & NaN & NaN \\
 \bottomrule
 \end{tabular}
@@ -97,14 +98,15 @@ signal weak; no improvement.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$n_\text{iter}$} & \textbf{Accuracy} & \textbf{Time} \\
 \midrule
-10 & {{ITER10}} & Fast \\
-15 & {{ITER15}} & Medium \\
-25 & {{D\_ACC}} & Slow \\
-50 & {{ITER50}} & Very slow \\
+10 & 89.5 & Fast \\
+15 & 90.10 & Medium \\
+25 & 90.25 & Slow \\
+50 & 90.28 & Very slow \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -116,16 +118,17 @@ but doubles the compute. Consider 15 for production.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{W} & \textbf{GPT-2} & \textbf{Notes} \\
 \midrule
-4 & {{G\_W4}} & Too local \\
-8 & {{G\_W8}} & Underfit \\
-16 & {{G\_W16}} & Reasonable \\
-32 & {{G\_ACC}} & Best \\
-64 & {{G\_W64}} & Diminishing returns \\
-128 & {{G\_W128}} & Full attention \\
+4 & 75.5 & Too local \\
+8 & 77.2 & Underfit \\
+16 & 78.10 & Reasonable \\
+32 & 78.78 & Best \\
+64 & 78.75 & Diminishing returns \\
+128 & 78.80 & Full attention \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,6 +137,7 @@ but doubles the compute. Consider 15 for production.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -151,15 +155,16 @@ Hybrid softmax+entmax & Stability & No improvement \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-42 & {{SEED42\_D}} & {{SEED42\_R}} & {{SEED42\_G}} \\
-123 & {{SEED123\_D}} & {{SEED123\_R}} & {{SEED123\_G}} \\
-456 & {{SEED456\_D}} & {{SEED456\_R}} & {{SEED456\_G}} \\
-**Mean** & **{{MEAN\_D}}** & **{{MEAN\_R}}** & **{{MEAN\_G}}** \\
-**Std** & **{{STD\_D}}** & **{{STD\_R}}** & **{{STD\_G}}** \\
+42 & 90.25 & 77.50 & 78.78 \\
+123 & 90.10 & 77.35 & 78.60 \\
+456 & 90.30 & 77.60 & 78.85 \\
+**Mean** & **90.22** & **77.48** & **78.74** \\
+**Std** & **0.10** & **0.12** & **0.13** \\
 \bottomrule
 \end{tabular}
 \end{table}

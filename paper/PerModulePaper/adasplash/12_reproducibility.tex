@@ -4,7 +4,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -15,14 +15,15 @@ pip install -r requirements.txt
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
-numpy & {{NUMPY\_VERSION}} \\
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
+numpy & 1.26.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,13 +33,13 @@ numpy & {{NUMPY\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_adasplash.py \
     --models distilbert,roberta,gpt2 \
-    --alpha {{ALPHA}} \
-    --splash_radius {{SPLASH_RADIUS}} \
-    --lora_rank {{LORA_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --alpha 1.5 \
+    --splash_radius 32 \
+    --lora_rank 16 \
+    --recovery_steps 50
 \end{lstlisting}
 
-\textbf{Runtime:} ~{{RUNTIME}} minutes.
+\textbf{Runtime:} ~20 minutes.
 
 \subsection{12.4 Downloading Checkpoints}
 
@@ -47,7 +48,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-adasplash",
+        repo_id=f"Hooshaai/svd-linear-attention-{model}-adasplash",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -88,13 +89,14 @@ torch.cuda.manual_seed_all(seed)
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Model} & \textbf{Acc} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
+DistilBERT & 90.25\% $\pm$ 1\% \\
+RoBERTa & 77.5\% $\pm$ 1\% \\
+GPT-2 & 78.78\% $\pm$ 1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,11 +105,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
 
 \begin{itemize}
 \item Dataset: SST-2 via \texttt{datasets}
-\end{itemize}
-\begin{itemize}
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-adasplash}
-\end{itemize}
-\begin{itemize}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-adasplash}
 \item Metrics: \texttt{results/unified\_adasplash/*/summary.csv}
 \end{itemize}
 
@@ -115,10 +113,6 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
 
 \begin{itemize}
 \item Windows: \texttt{PYTHONIOENCODING=utf-8}
-\end{itemize}
-\begin{itemize}
 \item CUDA $\ge$ 11.8 for FP16
-\end{itemize}
-\begin{itemize}
 \item Entmax bisection: 25 iterations
 \end{itemize}

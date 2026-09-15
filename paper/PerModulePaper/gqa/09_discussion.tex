@@ -5,13 +5,13 @@
 
 \subsubsection{9.1.1 Takeaway 1: GQA is a Memory Optimization}
 
-GQA does not significantly reduce parameters (only {{D\_P\_RATIO}}$\times$). Its 
-primary benefit is \textbf{KV cache} reduction ({{D\_KV\_R}}$\times$), which matters at 
+GQA does not significantly reduce parameters (only 1.05$\times$). Its 
+primary benefit is \textbf{KV cache} reduction (2.0$\times$), which matters at 
 inference time, especially for long sequences.
 
 \subsubsection{9.1.2 Takeaway 2: Quality Loss is Graceful}
 
-At $G = H/2$, quality drops only {{D\_DELTA}}\% on DistilBERT. Even at 
+At $G = H/2$, quality drops only -2.2\% on DistilBERT. Even at 
 $G = H/4$, the drop is manageable. MQA ($G = 1$) is more aggressive and 
 should be used with care.
 
@@ -27,14 +27,8 @@ diversity more important.
 
 \begin{itemize}
 \item \textbf{Long-context inference} ($L > 1024$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Memory-constrained GPUs} where KV cache dominates
-\end{itemize}
-\begin{itemize}
 \item \textbf{Batch inference} where KV scales with $B$
-\end{itemize}
-\begin{itemize}
 \item \textbf{Combined with quantization} for extreme savings
 \end{itemize}
 
@@ -42,11 +36,7 @@ diversity more important.
 
 \begin{itemize}
 \item \textbf{Very short sequences} ($L < 128$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Training from scratch} (MHA is better)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Tasks requiring high head diversity}
 \end{itemize}
 
@@ -72,6 +62,7 @@ Keep MHA
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$G$} & \textbf{KV ratio} & \textbf{Quality} & \textbf{Use case} \\
@@ -90,13 +81,14 @@ For GPT-2 at $L = 4096$, $B = 4$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Config} & \textbf{KV cache} & \textbf{Inference time} \\
 \midrule
 MHA & 604 MB & 45 s \\
-GQA (H/2) & 302 MB & {{GQA\_TIME}} s \\
-GQA (H/4) & 151 MB & {{GQA4\_TIME}} s \\
+GQA (H/2) & 302 MB & 3.5 s \\
+GQA (H/4) & 151 MB & 3.3 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -109,7 +101,7 @@ GQA is natively supported in vLLM's Paged Attention. Enable via config.
 
 \subsubsection{TensorRT-LLM}
 
-Supported with \texttt{--num\\_kv\\_heads} flag.
+Supported with \texttt{--num\_kv\_heads} flag.
 
 \subsubsection{ONNX Runtime}
 
@@ -127,21 +119,15 @@ Requires graph rewrite; see our export scripts.
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Longer context windows:} Enables more capable applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Cheaper inference:} Reduces cost per token.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Edge inference:} Makes on-device LLMs more feasible.
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables surveillance at scale.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Centralization:} Favors large labs with long-context models.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~10 GPU-hours, ~{{CO2}} kg CO$_2$eq.

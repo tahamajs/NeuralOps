@@ -131,7 +131,7 @@ We add the Switch/GShard load-balancing loss:
 
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is 
 the mean router probability. This is added to the task loss with weight 
-$\lambda_\text{aux} = {{AUX_WEIGHT}}$ (default 0.01).
+$\lambda_\text{aux} = 0.01$ (default 0.01).
 
 \subsubsection{4.3.5 Value Integration}
 
@@ -229,6 +229,7 @@ Output: Y $\in$ R^{B$\times$L$\times$d}, aux_loss
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Time} \\
@@ -253,6 +254,7 @@ For \texttt{UnifiedMoE(dim=d, num\_experts=E, output\_dim=d)}:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Parameters} \\

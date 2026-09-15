@@ -1,37 +1,109 @@
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
+% --- Typography & Geometry ---
 \usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{microtype}
+\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
+
+% --- Math & Symbols ---
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{bm}
+
+% --- Tables & Arrays ---
 \usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+
+% --- Graphics & Floats ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% --- Code Listings ---
 \usepackage{xcolor}
 \usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
 
 \definecolor{codebg}{HTML}{F8F9FA}
+\definecolor{codeframe}{HTML}{D0D7DE}
+\definecolor{keywordcolor}{HTML}{0550AE}
+\definecolor{stringcolor}{HTML}{0A3069}
+\definecolor{commentcolor}{HTML}{57606A}
+
 \lstset{
     backgroundcolor=\color{codebg},
     basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
+    keywordstyle=\color{keywordcolor}\bfseries,
+    stringstyle=\color{stringcolor},
+    commentstyle=\color{commentcolor}\itshape,
     frame=single,
+    rulecolor=\color{codeframe},
     breaklines=true,
     breakatwhitespace=true,
-    extendedchars=true
+    extendedchars=true,
+    xleftmargin=6pt,
+    xrightmargin=6pt,
+    aboveskip=8pt,
+    belowskip=8pt
 }
 
+% --- Hyperlinks ---
+\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
 }
+
+% --- Input Title & Authors ---
+\input{00_meta.tex}
 
 \begin{document}
 
-\input{00_meta.tex}
+\maketitle
+
+% --- Abstract & Keywords Block ---
+\begin{abstract}
+Multi-head attention is the dominant parameter and compute cost in modern 
+transformers, yet many heads are redundant: prior work (Voita et al., 2019; 
+Michel et al., 2019) shows that a small fraction of heads carries most of 
+the task-relevant information. Standard approaches to head compression 
+either drop entire heads (which loses the head's information) or fine-tune 
+the full model (which is expensive).
+
+We present **Squeezing Heads**, a wrapper-based attention module for head 
+knowledge distillation. Each projection is wrapped with a frozen base and a 
+trainable LoRA adapter, and the effective head dimension can be reduced at 
+deployment time while the LoRA path recovers the lost capacity. The wrapper 
+supports four architectures (DistilBERT, RoBERTa, GPT-2, Qwen) and 
+preserves RoPE, GQA, and causal masking. Crucially, it is a **drop-in 
+wrapper** -- the pretrained weights are copied verbatim; only LoRA parameters 
+are trainable.
+
+We evaluate Squeezing Heads on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. 
+With LoRA rank 16, Squeezing Heads achieves **90.25\%**, 
+**76.8\%**, and **77.5\%** accuracy, within **-0.46\%**, 
+**-1.8\%**, and **-1.9\%** of the respective baselines. When 
+combined with head-dimension reduction to **64\%** of the original, 
+parameters drop by **2$\times$** with only **{{DIM\_DELTA}}\%** 
+accuracy loss. The LoRA adapters recover a substantial portion of the 
+information lost by dimension reduction, outperforming direct fine-tuning by 
+**0.5\%**.
+
+**Keywords:** knowledge distillation, head compression, LoRA, attention, 
+efficient transformer
+
+---
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} knowledge distillation, head compression, LoRA, attention,
+\end{abstract}
+
+\vspace{1em}
+
+% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -46,7 +118,12 @@
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
+% --- Appendices ---
+\clearpage
 \appendix
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

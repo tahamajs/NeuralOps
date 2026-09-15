@@ -1,37 +1,115 @@
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
+% --- Typography & Geometry ---
 \usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{microtype}
+\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
+
+% --- Math & Symbols ---
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{bm}
+
+% --- Tables & Arrays ---
 \usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+
+% --- Graphics & Floats ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% --- Code Listings ---
 \usepackage{xcolor}
 \usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
 
 \definecolor{codebg}{HTML}{F8F9FA}
+\definecolor{codeframe}{HTML}{D0D7DE}
+\definecolor{keywordcolor}{HTML}{0550AE}
+\definecolor{stringcolor}{HTML}{0A3069}
+\definecolor{commentcolor}{HTML}{57606A}
+
 \lstset{
     backgroundcolor=\color{codebg},
     basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
+    keywordstyle=\color{keywordcolor}\bfseries,
+    stringstyle=\color{stringcolor},
+    commentstyle=\color{commentcolor}\itshape,
     frame=single,
+    rulecolor=\color{codeframe},
     breaklines=true,
     breakatwhitespace=true,
-    extendedchars=true
+    extendedchars=true,
+    xleftmargin=6pt,
+    xrightmargin=6pt,
+    aboveskip=8pt,
+    belowskip=8pt
 }
 
+% --- Hyperlinks ---
+\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
 }
+
+% --- Input Title & Authors ---
+\input{00_meta.tex}
 
 \begin{document}
 
-\input{00_meta.tex}
+\maketitle
+
+% --- Abstract & Keywords Block ---
+\begin{abstract}
+Standard self-attention has quadratic complexity in sequence length, 
+$\mathcal{O}(L^2 d)$, which dominates the cost of transformer inference 
+beyond a few hundred tokens. Existing linear attention methods achieve 
+$\mathcal{O}(L d)$ complexity but sacrifice representational capacity by 
+either restricting attention to local windows (Longformer) or approximating 
+softmax via random features (Performer). We introduce **ClusterFormer**, a 
+**differentiable K-means clustering attention** that groups queries into 
+$K$ semantic cluster centroids, evaluates **centroid-to-key cross-attention**, 
+and returns to individual queries via a soft assignment. This yields 
+$\mathcal{O}(K L d)$ complexity while preserving **global context**, 
+unlike local-only methods.
+
+ClusterFormer combines four components:
+
+1. **Differentiable K-means** over query representations with padding-aware 
+   initialization and 3 Lloyd iterations.
+2. **Centroid-to-key global cross-attention** producing $K$ context vectors 
+   at cost $\mathcal{O}(K L d)$.
+3. **Learnable soft assignment** with a temperature parameter to redistribute 
+   centroid contexts back to individual queries.
+4. **Local sliding window residual** blended with the global branch via a 
+   learnable gate, capturing nearby syntactic structure that clustering may 
+   miss.
+
+Base Q/K/V/O projections are frozen and copied from the pretrained model; 
+LoRA rank-16 adapters and learnable temperature/blend scalars provide the 
+only trainable capacity. On DistilBERT, RoBERTa-base, and GPT-2 with SST-2 
+as the evaluation task, ClusterFormer maintains accuracy within 
+**-0.80\%---0.38\%** of the baseline after 50 
+recovery steps while reducing attention FLOPs by **2.7$\times$** at 
+sequence length $L = 128$ with $K = 16$ clusters.
+
+**Keywords:** linear attention, differentiable clustering, token routing, 
+sliding window, efficient transformers
+
+---
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} linear attention, differentiable clustering, token routing,
+\end{abstract}
+
+\vspace{1em}
+
+% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -46,7 +124,12 @@
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
+% --- Appendices ---
+\clearpage
 \appendix
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

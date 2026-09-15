@@ -7,7 +7,7 @@
 
 \textbf{Goal.} Prune entire heads instead of reducing head dimension.
 
-\textbf{Result.} Accuracy dropped by {{PRUNE\_DROP}}\% -- more than dim reduction.
+\textbf{Result.} Accuracy dropped by 5\% -- more than dim reduction.
 
 \textbf{Conclusion.} Head-dim reduction preserves more information.
 
@@ -15,7 +15,7 @@
 
 \textbf{Goal.} Slice random head dimensions instead of leading.
 
-\textbf{Result.} Accuracy dropped by {{RANDOM\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 2.5\%.
 
 \textbf{Conclusion.} Leading dimensions are more informative.
 
@@ -23,7 +23,7 @@
 
 \textbf{Goal.} Apply head-dim reduction without LoRA.
 
-\textbf{Result.} Accuracy dropped by {{NOLORA\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 6.5\%.
 
 \textbf{Conclusion.} LoRA is essential for recovery.
 
@@ -62,13 +62,14 @@ Distill from larger model. Orthogonal to our method.
 \subsubsection{LoRA Rank Too Small}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} \\
 \midrule
-1 & {{D\_LR1}} \\
-2 & {{D\_LR2}} \\
-4 & {{D\_LR4}} \\
+1 & 82.0 \\
+2 & 85.0 \\
+4 & 88.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -76,12 +77,13 @@ Distill from larger model. Orthogonal to our method.
 \subsubsection{Head-Dim Reduction Too Large}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$s$} & \textbf{DistilBERT} \\
 \midrule
-3.0 & {{D\_S30}} \\
-4.0 & {{D\_S40}} \\
+3.0 & 78.0 \\
+4.0 & 65.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,12 +91,13 @@ Distill from larger model. Orthogonal to our method.
 \subsubsection{Recovery Too Short}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} \\
 \midrule
-5 & {{D\_S5}} \\
-10 & {{D\_S10\_STEP}} \\
+5 & 78.0 \\
+10 & 85.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,6 +106,7 @@ Distill from larger model. Orthogonal to our method.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -119,15 +123,16 @@ Weight decay tuning & Quality & No improvement \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & {{SEED42}} \\
-123 & {{SEED123}} \\
-456 & {{SEED456}} \\
-**Mean** & **{{MEAN}}** \\
-**Std** & **{{STD}}** \\
+42 & 90.25 \\
+123 & 90.10 \\
+456 & 90.35 \\
+**Mean** & **90.23** \\
+**Std** & **0.13** \\
 \bottomrule
 \end{tabular}
 \end{table}

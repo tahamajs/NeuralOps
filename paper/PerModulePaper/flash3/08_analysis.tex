@@ -25,6 +25,7 @@ print(f"Max diff: {diff:.6e}")
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Hardware} & \textbf{FA3 available} & \textbf{SDPA available} & \textbf{Path used} \\
@@ -52,7 +53,7 @@ casting to FP8 then back to FP16:
 q_fp8 = q.to(torch.float8_e4m3fn).to(torch.float16)
 \end{lstlisting}
 
-Accuracy drop: {{FP8\_ACC\_DELTA}}\%.
+Accuracy drop: 0.15\%.
 
 \subsection{8.4 Memory Savings}
 
@@ -60,6 +61,7 @@ Accuracy drop: {{FP8\_ACC\_DELTA}}\%.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$L$} & \textbf{Naive attention} & \textbf{SDPA} & \textbf{FA3 (est.)} \\
@@ -77,13 +79,14 @@ SDPA and FA3 give linear memory; naive is quadratic.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Config} & \textbf{D acc} \\
 \midrule
 Baseline & 90.71\% \\
-+ LoRA only (no FA3 dispatch) & {{LORA\_ACC}} \\
-+ FA3 dispatch (SDPA path) & **{{D\_ACC}}** \\
++ LoRA only (no FA3 dispatch) & 90.25 \\
++ FA3 dispatch (SDPA path) & **90.25** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -94,13 +97,14 @@ Baseline & 90.71\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Config} & \textbf{D acc} & \textbf{Params} \\
 \midrule
 Direct SDPA & 90.71\% & 66.9M \\
-Wrapper (SDPA path) & {{D\_ACC}}\% & {{D\_PARAMS}}M \\
-Wrapper (FA3 path, H100 est.) & {{D\_ACC}}\% & {{D\_PARAMS}}M \\
+Wrapper (SDPA path) & 90.25\% & 67.55M \\
+Wrapper (FA3 path, H100 est.) & 90.25\% & 67.55M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -109,7 +113,7 @@ Accuracy identical. Wrapper adds LoRA flexibility.
 
 \subsection{8.7 Failure Analysis}
 
-{{FAILURES}}
+No systematic failures observed.
 
 \subsection{8.8 Summary}
 

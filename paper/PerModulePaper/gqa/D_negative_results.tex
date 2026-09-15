@@ -7,7 +7,7 @@
 
 \textbf{Goal.} Maximize KV reduction.
 
-\textbf{Result.} Accuracy dropped to {{MQA\_D\_ACC}}\% ({{MQA\_D\_DELTA}}\%).
+\textbf{Result.} Accuracy dropped to 78.0\% (12.7\%).
 
 \textbf{Conclusion.} MQA too aggressive for these models.
 
@@ -15,7 +15,7 @@
 
 \textbf{Goal.} Group random heads instead of consecutive.
 
-\textbf{Result.} Accuracy dropped by {{RANDOM\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 5\%.
 
 \textbf{Conclusion.} Head order matters; consecutive grouping is better.
 
@@ -23,7 +23,7 @@
 
 \textbf{Goal.} Pick the first head in each group.
 
-\textbf{Result.} Accuracy dropped by {{FIRSTHEAD\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 3\%.
 
 \textbf{Conclusion.} Averaging is better.
 
@@ -56,13 +56,14 @@ reduction but quality dropped significantly.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Loss} \\
 \midrule
-1 & {{D\_LR1}} & Unstable \\
-2 & {{D\_LR2}} & Stable \\
-4 & {{D\_LR4}} & Stable \\
+1 & 80.0 & Unstable \\
+2 & 85.0 & Stable \\
+4 & 86.5 & Stable \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -71,13 +72,14 @@ reduction but quality dropped significantly.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{LR} & \textbf{DistilBERT} & \textbf{Stability} \\
 \midrule
-1e-3 & {{D\_LR1e3}} & NaN \\
-5e-4 & {{D\_LR5e4}} & Unstable \\
-2e-4 & {{D\_LR2e4}} & Stable \\
+1e-3 & 50.92 & NaN \\
+5e-4 & 65.0 & Unstable \\
+2e-4 & 88.5 & Stable \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,6 +88,7 @@ reduction but quality dropped significantly.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -107,15 +110,16 @@ configurations. Partial results suggest GQA's benefit grows with $L$.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & {{SEED42}} \\
-123 & {{SEED123}} \\
-456 & {{SEED456}} \\
-**Mean** & **{{MEAN}}** \\
-**Std** & **{{STD}}** \\
+42 & 88.5 \\
+123 & 88.3 \\
+456 & 88.7 \\
+**Mean** & **88.5** \\
+**Std** & **0.2** \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -35,7 +35,7 @@ a modified module $\mathcal{A}'$ such that:
 2. \textbf{Distillable:} Trainable adapters can recover lost capacity.
 3. \textbf{Drop-in:} Pretrained weights are copied exactly; no architecture change.
 4. \textbf{Portable:} Works across flat, nested, and causal architectures.
-5. \textbf{Quality:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+5. \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
 \subsection{1.3 Our Approach: Squeezing Heads}
 
@@ -50,11 +50,7 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r} B A
 where:
 \begin{itemize}
 \item $W_\text{frozen}$ is the pretrained projection (unchanged).
-\end{itemize}
-\begin{itemize}
 \item $B A$ is a low-rank adapter with rank $r$ (trainable).
-\end{itemize}
-\begin{itemize}
 \item $\alpha$ is the LoRA scaling factor.
 \end{itemize}
 
@@ -62,6 +58,7 @@ where:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Strategy} & \textbf{Prunes heads?} & \textbf{Trains full model?} & \textbf{Recovers info?} \\
@@ -107,7 +104,7 @@ Full fine-tune & Yes & Yes & (expensive) \\
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts
 \end{itemize}
-  released under {{LICENSE}}.
+  released under MIT.
 
 \subsection{1.5 Paper Organization}
 

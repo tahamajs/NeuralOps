@@ -105,8 +105,6 @@ to precision $(\tau_\text{hi} - \tau_\text{lo}) / 2^{n_\text{iter}}$. With
 
 \begin{itemize}
 \item \textbf{Time:} $O(n_\text{iter} \cdot L^2)$ for sequence length $L$.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Memory:} $O(L^2)$ for the attention matrix.
 \end{itemize}
 
@@ -119,11 +117,7 @@ For $\alpha = 1.5$, the support size depends on the score distribution:
 
 \begin{itemize}
 \item \textbf{Uniform scores:} ~50\% sparsity (barely sparse).
-\end{itemize}
-\begin{itemize}
 \item \textbf{Peaked scores:} ~80\% sparsity.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Real attention scores:} ~40\% sparsity empirically.
 \end{itemize}
 
@@ -172,8 +166,6 @@ attention module. The exact copy procedure depends on the architecture:
 
 \begin{itemize}
 \item \textbf{DistilBERT:} Direct copy from \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}.
-\end{itemize}
-\begin{itemize}
 \item \textbf{RoBERTa:} Copy from \texttt{self.query}, \texttt{self.key}, \texttt{self.value}; leave
 \end{itemize}
   \texttt{out\_proj} identity (outer \texttt{output.dense} applies it).
@@ -225,6 +217,7 @@ pretrained model exactly.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Configuration} & \textbf{Parameters} \\
@@ -310,6 +303,7 @@ Output: output Y $\in$ R^{B$\times$L$\times$d}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Phase} & \textbf{Time} \\
@@ -325,7 +319,7 @@ Output projection & $O(L d^2)$ \\
 \end{table}
 
 \textbf{Compared to softmax:} AdaSplash adds $n_\text{iter} \times L^2$ operations 
-for entmax bisection. For $n_\text{iter} = 25$, this is ~{{ENTMAX\_OVERHEAD}}$\times$ 
+for entmax bisection. For $n_\text{iter} = 25$, this is ~25$\times$ 
 slower attention.
 
 \textbf{For causal decoders with splash masking,} the mask restricts nonzero 
@@ -340,6 +334,7 @@ this is not leveraged by PyTorch dense matmul.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Config} & \textbf{Parameters} \\
@@ -389,6 +384,7 @@ determined by $\alpha$, $W$, and the interaction with LoRA recovery.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Default} & \textbf{Effect} \\
@@ -405,17 +401,9 @@ $r_L$ (LoRA rank) & 16 & Higher = more recovery capacity \\
 
 \begin{itemize}
 \item $\alpha = 1.0$: softmax (no sparsity, baseline)
-\end{itemize}
-\begin{itemize}
 \item $\alpha = 1.2$: mild sparsity
-\end{itemize}
-\begin{itemize}
 \item $\alpha = 1.5$: balanced (default)
-\end{itemize}
-\begin{itemize}
 \item $\alpha = 1.8$: sparse, may destabilize
-\end{itemize}
-\begin{itemize}
 \item $\alpha = 2.0$: sparsemax, sparse but non-smooth
 \end{itemize}
 
@@ -423,14 +411,8 @@ $r_L$ (LoRA rank) & 16 & Higher = more recovery capacity \\
 
 \begin{itemize}
 \item $W = 16$: very local (encoder-only)
-\end{itemize}
-\begin{itemize}
 \item $W = 32$: balanced (default)
-\end{itemize}
-\begin{itemize}
 \item $W = 64$: broader context
-\end{itemize}
-\begin{itemize}
 \item $W = L$: no windowing (baseline attention)
 \end{itemize}
 

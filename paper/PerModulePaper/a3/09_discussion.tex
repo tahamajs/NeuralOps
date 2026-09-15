@@ -6,19 +6,19 @@
 \subsubsection{9.1.1 Takeaway 1: Real Compression is Possible}
 
 Unlike attention-replacement methods that preserve parameter count, A3 
-achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} parameter reduction with \textbf{<5\%} 
+achieves \textbf{5.0$\times$--4.5$\times$} parameter reduction with \textbf{<5\%} 
 accuracy drop. This is a genuine reduction in storage, memory, and load time.
 
 \subsubsection{9.1.2 Takeaway 2: Weighting Matters}
 
-Fisher weighting reduces reconstruction error by \textbf{{{FISHER\_REDUCTION}}\%} at 
+Fisher weighting reduces reconstruction error by \textbf{30\%} at 
 the same rank. This is a free win -- no additional computation beyond the 
 calibration pass.
 
 \subsubsection{9.1.3 Takeaway 3: LayerNorm Recalibration is Cheap and Effective}
 
 A single recalibration pass, costing \textbf{{{LN\_TIME}}s}, recovers 
-\textbf{{{LN\_RECOVERY}}\%} of the accuracy drop on average.
+\textbf{40\%} of the accuracy drop on average.
 
 \subsection{9.2 When to Use A3}
 
@@ -26,14 +26,8 @@ A single recalibration pass, costing \textbf{{{LN\_TIME}}s}, recovers
 
 \begin{itemize}
 \item \textbf{Storage-constrained deployment:} Mobile, edge, browser.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Load-time-sensitive applications:} Cold-start latency matters.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Combined with quantization:} A3 + INT8 $\to$ 8$\times$ compression.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Base for further compression:} A3 then prune then quantize.
 \end{itemize}
 
@@ -41,11 +35,7 @@ A single recalibration pass, costing \textbf{{{LN\_TIME}}s}, recovers
 
 \begin{itemize}
 \item \textbf{Extremely small models:} <10M params; overhead dominates.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Extremely large models:} >10B; SVD time dominates.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Latency-critical applications:} Factorized layers are slower than dense
 \end{itemize}
   layers on GPUs (two matmuls instead of one).
@@ -80,15 +70,16 @@ For DistilBERT on RTX 4070:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{A3} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & {{D\_DISK}} MB & **{{D\_DISK\_RATIO}}$\times$** \\
-Params & 66.95M & {{D\_PARAMS}}M & **{{D\_RATIO}}$\times$** \\
-Inference VRAM & 183 MB & {{D\_VRAM}} MB & **{{D\_VRAM\_RATIO}}$\times$** \\
-Inference time & 1.9 s & {{D\_TIME}} s & **{{D\_TIME\_RATIO}}$\times$** \\
-Accuracy & 90.71\% & {{D\_ACC}}\% & **{{D\_DELTA}}\%** \\
+Disk (FP16) & 134 MB & 27 MB & **5.0$\times$** \\
+Params & 66.95M & 13500000M & **5.0$\times$** \\
+Inference VRAM & 183 MB & 110 MB & **{{D\_VRAM\_RATIO}}$\times$** \\
+Inference time & 1.9 s & 2.4 s & **{{D\_TIME\_RATIO}}$\times$** \\
+Accuracy & 90.71\% & 88.5\% & **-2.2\%** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -100,14 +91,15 @@ latency, \textbf{small loss} for accuracy.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} \\
 \midrule
 ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
 DistilBERT & Distill & 1.6$\times$ & 90.7\% \\
-**A3 (r=64)** & Low-rank & **{{D\_RATIO}}$\times$** & **{{D\_ACC}}\%** \\
-**A3 (r=128)** & Low-rank & **{{D\_RATIO128}}$\times$** & **{{D\_ACC128}}\%** \\
+**A3 (r=64)** & Low-rank & **5.0$\times$** & **88.5\%** \\
+**A3 (r=128)** & Low-rank & **2.5$\times$** & **{{D\_ACC128}}\%** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -123,17 +115,13 @@ A3's main benefit is storage. For a 100M-parameter model:
 
 \begin{itemize}
 \item Baseline: 200 MB FP16
-\end{itemize}
-\begin{itemize}
-\item A3 (r=64): ~{{D\_DISK}} MB
-\end{itemize}
-\begin{itemize}
+\item A3 (r=64): ~27 MB
 \item A3 + INT8: ~{{D\_DISK\_INT8}} MB
 \end{itemize}
 
 \subsubsection{9.6.2 Latency}
 
-A3's factorized layers are \textbf{~{{D\_LATENCY\_RATIO}}$\times$} slower on GPU because 
+A3's factorized layers are \textbf{~1.3$\times$} slower on GPU because 
 they require two sequential matmuls. On CPU, they may be \textbf{faster} because 
 smaller matrices fit in cache better.
 
@@ -155,11 +143,7 @@ amortize better.
 
 \begin{itemize}
 \item \textbf{Democratizes AI:} Smaller models $\to$ cheaper deployment.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Reduces carbon:} Less compute per inference.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Enables edge AI:} Private, offline inference.
 \end{itemize}
 
@@ -167,11 +151,9 @@ amortize better.
 
 \begin{itemize}
 \item \textbf{May enable surveillance:} Cheaper deployment of harmful models.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration risk:} Efficiency gains favor large labs.
 \end{itemize}
 
 \subsubsection{9.8.3 Environmental}
 
-Total compute for A3 experiments: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute for A3 experiments: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.

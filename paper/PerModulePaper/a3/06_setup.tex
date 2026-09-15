@@ -7,6 +7,7 @@ We evaluate on three pretrained backbones:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Params} & \textbf{Attention} \\
@@ -26,6 +27,7 @@ Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
@@ -48,29 +50,26 @@ source. This is legitimate because:
 
 \begin{itemize}
 \item The calibration pass is a forward-only pass (no gradient)
-\end{itemize}
-\begin{itemize}
 \item It uses unlabeled inputs (labels not required)
-\end{itemize}
-\begin{itemize}
 \item It is not a form of test set leakage
 \end{itemize}
 
-We use \textbf{{{N\_CALIB}} examples} (a subsample of the training set) for 
+We use \textbf{1000 examples} (a subsample of the training set) for 
 calibration to keep memory bounded.
 
 \subsection{6.4 Compression Hyperparameters}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-Rank $r$ & {{RANK}} & Target rank \\
+Rank $r$ & 64 & Target rank \\
 `use\_fisher` & True & Activation-aware weighting \\
 `recalibrate\_ln` & True & LayerNorm recalibration \\
-`max\_error` $\tau$ & {{MAX\_ERROR}} & Frobenius threshold \\
+`max\_error` $\tau$ & 0.20 & Frobenius threshold \\
 `max\_retries` & 3 & Adaptive escalation steps \\
 `fallback\_to\_original` & True & Safe fallback \\
 `normalize\_scale` & True & Clamp weights \\
@@ -85,17 +84,18 @@ After A3 compression, we train LoRA adapters:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
-Recovery steps & {{RECOVERY\_STEPS}} \\
-LoRA rank & {{LORA\_RANK}} \\
-LoRA alpha & {{LORA\_ALPHA}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Learning rate & 2e-4 \\
+Weight decay & 1e-2 \\
+Recovery steps & 50 \\
+LoRA rank & 16 \\
+LoRA alpha & 32 \\
+Batch size & 8 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -107,11 +107,7 @@ Precision & FP16 \\
 
 \begin{itemize}
 \item \textbf{Accuracy:} $\text{Acc} = \frac{\text{correct}}{\text{total}}$
-\end{itemize}
-\begin{itemize}
 \item \textbf{F1:} Binary and macro-averaged
-\end{itemize}
-\begin{itemize}
 \item \textbf{Precision, Recall}
 \end{itemize}
 
@@ -119,17 +115,9 @@ Precision & FP16 \\
 
 \begin{itemize}
 \item \textbf{Total parameters:} \texttt{sum(p.numel() for p in model.parameters())}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Trainable parameters}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Peak VRAM:} \texttt{torch.cuda.max\_memory\_allocated()}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Inference time:} Median of 20 forward passes
-\end{itemize}
-\begin{itemize}
 \item \textbf{Throughput:} Tokens/sec
 \end{itemize}
 
@@ -137,14 +125,8 @@ Precision & FP16 \\
 
 \begin{itemize}
 \item \textbf{Compression ratio:} Baseline params / compressed params
-\end{itemize}
-\begin{itemize}
 \item \textbf{Reconstruction error:} $\|W - UV\|_F / \|W\|_F$
-\end{itemize}
-\begin{itemize}
 \item \textbf{Compressed layers:} Count of successfully factorized layers
-\end{itemize}
-\begin{itemize}
 \item \textbf{Fallback layers:} Count of layers preserved
 \end{itemize}
 
@@ -152,6 +134,7 @@ Precision & FP16 \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Level} & \textbf{Accuracy threshold} \\
@@ -169,15 +152,16 @@ FAIL & < 50.92\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Specification} \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
-Transformers & {{HF\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
+Transformers & 4.44.0 \\
 OS & Windows / Linux \\
 \bottomrule
 \end{tabular}
@@ -193,11 +177,11 @@ python run_all_4_a3.py \
     --lora_rank 16
 \end{lstlisting}
 
-Expected runtime: ~{{RUNTIME}} minutes.
+Expected runtime: ~15 minutes.
 
 \subsection{6.10 Seeds}
 
-All experiments use seed {{SEED}}. No multi-seed runs due to compute budget.
+All experiments use seed 42. No multi-seed runs due to compute budget.
 
 \subsection{6.11 Baselines}
 

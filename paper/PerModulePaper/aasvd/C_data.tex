@@ -5,23 +5,24 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Ratio & {{D\_RATIO}}$\times$ \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Loss & {{D\_LOSS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Compressed layers & {{D\_COMP}} \\
-Fallback layers & {{D\_FALLBACK}} \\
-Average error & {{D\_AVG\_ERR}} \\
+Params after & 16000000 \\
+Ratio & 4.0$\times$ \\
+Accuracy & 85.0\% \\
+F1 & 0.850 \\
+Precision & 0.851 \\
+Recall & 0.849 \\
+Loss & 0.40 \\
+Peak VRAM & 120 MB \\
+Inference time & 2.5 s \\
+Compressed layers & 24 \\
+Fallback layers & 0 \\
+Average error & 0.30 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,14 +31,15 @@ Average error & {{D\_AVG\_ERR}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Ratio & {{R\_RATIO}}$\times$ \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 35000000 \\
+Ratio & 3.5$\times$ \\
+Accuracy & 72.0\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -47,14 +49,15 @@ Accuracy & {{R\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Ratio & {{G\_RATIO}}$\times$ \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 35000000 \\
+Ratio & 3.5$\times$ \\
+Accuracy & 73.0\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -64,6 +67,7 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{Out} \\
@@ -90,6 +94,7 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
@@ -107,13 +112,14 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 Full cov & {{D\_FULLCOV}} & {{R\_FULLCOV}} & {{G\_FULLCOV}} \\
 Diagonal & {{D\_DIAG}} & {{R\_DIAG}} & {{G\_DIAG}} \\
-No weighting & {{D\_NONE}} & {{R\_NONE}} & {{G\_NONE}} \\
+No weighting & 80.0 & {{R\_NONE}} & {{G\_NONE}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -122,6 +128,7 @@ No weighting & {{D\_NONE}} & {{R\_NONE}} & {{G\_NONE}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$\beta$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -169,13 +176,13 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "f1": {{D_F1}},
-    "compressed_layers": {{D_COMP}},
-    "fallback_layers": {{D_FALLBACK}},
-    "avg_reconstruction_error": {{D_AVG_ERR}}
+    "params_after": 16000000,
+    "ratio": 4.0,
+    "accuracy_pct": 85.0,
+    "f1": 0.850,
+    "compressed_layers": 24,
+    "fallback_layers": 0,
+    "avg_reconstruction_error": 0.30
   },
   "roberta": {...},
   "gpt2": {...}

@@ -7,6 +7,7 @@ A3 supports any transformer with linear or Conv1D layers:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{FFN} & \textbf{Conv1D?} & \textbf{Verified} \\
@@ -25,6 +26,7 @@ A3 compresses all linear layers by default, with the following protections:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Layer type} & \textbf{Compressed?} & \textbf{Reason} \\
@@ -200,8 +202,6 @@ For decoder models, A3's calibration is causal-compatible:
 
 \begin{itemize}
 \item Forward hooks capture activations as they occur
-\end{itemize}
-\begin{itemize}
 \item No future-token leakage because hooks run during the standard causal forward pass
 \end{itemize}
 
@@ -212,6 +212,7 @@ input at position $j > i$ is zero, both before and after injection.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\

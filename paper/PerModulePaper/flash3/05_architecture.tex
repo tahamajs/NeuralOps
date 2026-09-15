@@ -4,6 +4,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Cross-attn?} \\
@@ -83,11 +84,7 @@ causal_flag = bool(self.is_decoder and not is_cross_attention and L == kv_len)
 
 \begin{itemize}
 \item If decoder self-attention with L == kv\_len: apply causal.
-\end{itemize}
-\begin{itemize}
 \item Cross-attention: no causal mask.
-\end{itemize}
-\begin{itemize}
 \item Encoder self-attention: no causal mask.
 \end{itemize}
 
@@ -113,6 +110,7 @@ class FlashAttention3(BaseAttention):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
@@ -142,11 +140,3 @@ if out is None:
 \end{lstlisting}
 
 \subsection{5.10 Numerical Precision}
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/flash3_architecture.png}
-\caption{Architectural overview of flash3.}
-\label{fig:arch_flash3}
-\end{figure}

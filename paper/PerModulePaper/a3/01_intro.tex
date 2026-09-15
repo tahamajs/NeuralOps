@@ -53,7 +53,7 @@ where $|\theta(\cdot)|$ denotes parameter count.
 We impose the following constraints:
 
 1. \textbf{Strict reconstruction bound.} For each compressed layer, 
-   $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = {{MAX_ERROR}}$.
+   $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = 0.20$.
 2. \textbf{No retraining of base weights.} Only LoRA adapters may be trained.
 3. \textbf{Memory-bounded calibration.} Activation statistics must be collected in 
    $\mathcal{O}(d^2)$ memory, not $\mathcal{O}(Nd^2)$.
@@ -105,7 +105,7 @@ We make the following contributions:
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts are
 \end{itemize}
-  released under {{LICENSE}}.
+  released under MIT.
 
 \subsection{1.5 Paper Organization}
 

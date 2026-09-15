@@ -4,7 +4,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -16,9 +16,9 @@ pip install -r requirements.txt
 \begin{lstlisting}
 python run_all_4_squeezing_heads.py \
     --models distilbert,roberta,gpt2 \
-    --lora_rank {{LORA_RANK}} \
-    --head_dim_reduction {{HEAD_DIM_REDUCTION}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --lora_rank 16 \
+    --head_dim_reduction 1.0 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{12.3 Reproducing Tables}
@@ -57,13 +57,14 @@ torch.cuda.manual_seed_all(seed)
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Trainable} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & ~{{D\_LORA}} \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & ~{{R\_LORA}} \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_LORA}} \\
+DistilBERT & 90.25\% $\pm$ 1\% & ~589824 \\
+RoBERTa & 76.8\% $\pm$ 1\% & ~1179648 \\
+GPT-2 & 77.5\% $\pm$ 1\% & ~1179648 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -72,22 +73,14 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_LORA}} \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\end{itemize}
-\begin{itemize}
-\item \textbf{Checkpoints:} \texttt{{{HF\\_ORG}}/svd-linear-attention-*-squeezing\\_heads}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified\\_squeezing\\_heads/*/summary.csv}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-squeezing\_heads}
+\item \textbf{Metrics:} \texttt{results/unified\_squeezing\_heads/*/summary.csv}
 \end{itemize}
 
 \subsection{12.7 Known Issues}
 
 \begin{itemize}
 \item FP32 attention scores for stability
-\end{itemize}
-\begin{itemize}
 \item LoRA folding required for speedup
-\end{itemize}
-\begin{itemize}
 \item Very small head-dim loses information irrecoverably
 \end{itemize}

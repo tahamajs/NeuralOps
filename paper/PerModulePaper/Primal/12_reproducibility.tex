@@ -4,7 +4,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -16,9 +16,9 @@ pip install -r requirements.txt
 \begin{lstlisting}
 python run_all_4_primal.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --pinv_iters {{PINV_ITERS}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 64 \
+    --pinv_iters 4 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{12.3 Reproducing Tables}
@@ -57,13 +57,14 @@ torch.cuda.manual_seed_all(seed)
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Note} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & -- \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & -- \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & -- \\
+DistilBERT & 86.5\% $\pm$ 1\% & -- \\
+RoBERTa & 74.0\% $\pm$ 1\% & -- \\
+GPT-2 & 75.0\% $\pm$ 1\% & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -72,22 +73,14 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & -- \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\end{itemize}
-\begin{itemize}
-\item \textbf{Checkpoints:} \texttt{{{HF\\_ORG}}/svd-linear-attention-*-primal}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified\\_primal/*/summary.csv}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-primal}
+\item \textbf{Metrics:} \texttt{results/unified\_primal/*/summary.csv}
 \end{itemize}
 
 \subsection{12.7 Known Issues}
 
 \begin{itemize}
 \item FP32 required for stable pseudoinverse
-\end{itemize}
-\begin{itemize}
 \item Long sequences may OOM on 8 GB GPU
-\end{itemize}
-\begin{itemize}
 \item Causal approximation not strict
 \end{itemize}

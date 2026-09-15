@@ -12,13 +12,14 @@ preserving pretrained behavior at start.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param $\Delta$ \%} & \textbf{Time ratio (L=128)} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_TIME\_RATIO}}$\times$ \\
-RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_TIME\_RATIO}}$\times$ \\
-GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_RATIO}}$\times$ \\
+DistilBERT & -1.21\% & +1.82\% & 2.4$\times$ \\
+RoBERTa & -2.06\% & +1.89\% & 2.2$\times$ \\
+GPT-2 & -1.86\% & +1.89\% & 2.2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -37,22 +38,14 @@ At longer sequences, the efficiency benefit dominates.
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Cross-attention support
-\end{itemize}
-\begin{itemize}
 \item Multi-memory variant
-\end{itemize}
-\begin{itemize}
 \item Fused Triton kernels
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical analysis
-\end{itemize}
-\begin{itemize}
 \item Needle-in-haystack evaluation
-\end{itemize}
-\begin{itemize}
 \item Scaling to >1B models
 \end{itemize}
 

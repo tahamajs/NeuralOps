@@ -23,11 +23,7 @@ Parameter count increases by LoRA + gate MLP. Not for size reduction.
 
 \begin{itemize}
 \item \textbf{Long-context inference} ($L \geq 512$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Content-dependent attention patterns}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Multi-paradigm research}
 \end{itemize}
 
@@ -35,11 +31,7 @@ Parameter count increases by LoRA + gate MLP. Not for size reduction.
 
 \begin{itemize}
 \item \textbf{Short sequences} ($L < 256$) -- no benefit, more parameters
-\end{itemize}
-\begin{itemize}
 \item \textbf{Model size reduction} -- use compression methods
-\end{itemize}
-\begin{itemize}
 \item \textbf{Strict latency requirements} -- gate adds overhead
 \end{itemize}
 
@@ -64,13 +56,14 @@ For DistilBERT at $L = 512$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{FUSIONATTN} & \textbf{Change} \\
 \midrule
 Attention FLOPs & 262K & 65K & **4$\times$ reduction** \\
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
+Accuracy & 90.71\% & 90.48\% & -0.23\% \\
+Params & 66.9M & 67.74M & +786864M \\
 Gate overhead & 0 & ~32K params & +0.05\% \\
 \bottomrule
 \end{tabular}
@@ -80,6 +73,7 @@ Gate overhead & 0 & ~32K params & +0.05\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Complexity} & \textbf{Length-aware} \\
@@ -97,22 +91,18 @@ MoBA & Block sparse & $O(KL)$ & No \\
 \subsubsection{Latency}
 \begin{itemize}
 \item Short path: same as baseline.
-\end{itemize}
-\begin{itemize}
 \item Long path: $K/B \times$ faster.
 \end{itemize}
 
 \subsubsection{Memory}
 \begin{itemize}
 \item Short path: same.
-\end{itemize}
-\begin{itemize}
 \item Long path: $O(K \cdot L \cdot B)$ instead of $O(L^2)$.
 \end{itemize}
 
 \subsubsection{Parameter Overhead}
 \begin{itemize}
-\item +{{PARAM\_CHANGE}}\% via LoRA + gate.
+\item +1.17\% via LoRA + gate.
 \end{itemize}
 
 \subsection{9.7 Open Questions}
@@ -127,24 +117,16 @@ MoBA & Block sparse & $O(KL)$ & No \\
 \subsubsection{Positive}
 \begin{itemize}
 \item Long-context efficiency
-\end{itemize}
-\begin{itemize}
 \item Content-aware sparsity
-\end{itemize}
-\begin{itemize}
 \item Composable with other efficiency methods
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
 \item Parameter overhead
-\end{itemize}
-\begin{itemize}
 \item Zero benefit at L $\le$ 128
-\end{itemize}
-\begin{itemize}
 \item Dual-use
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.

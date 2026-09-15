@@ -7,14 +7,8 @@
 
 \begin{itemize}
 \item \textbf{Lower deployment cost:} A3 reduces model size and VRAM.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Democratization:} Smaller models fit on consumer hardware.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Environmental:} Less compute per inference.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Edge AI:} Enables offline, private inference.
 \end{itemize}
 
@@ -22,11 +16,7 @@
 
 \begin{itemize}
 \item \textbf{Dual-use:} Efficiency gains benefit both beneficial and harmful applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Large labs may benefit more.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Rebound effect:} Cheaper inference may increase total usage.
 \end{itemize}
 
@@ -35,12 +25,8 @@
 \subsubsection{E.2.1 Training Cost}
 
 \begin{itemize}
-\item \textbf{Total GPU-hours:} ~{{COMPUTE\_HOURS}}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Estimated CO$_2$:} {{CO2\_KG}} kg CO$_2$eq
-\end{itemize}
-\begin{itemize}
+\item \textbf{Total GPU-hours:} ~12
+\item \textbf{Estimated CO$_2$:} 0.8 kg CO$_2$eq
 \item \textbf{Methodology:} ML CO2 Impact calculator
 \end{itemize}
 
@@ -48,12 +34,13 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Method} & \textbf{GPU-hours} & \textbf{CO$_2$ (kg)} \\
 \midrule
 Full training & {{FULL\_TRAIN\_HOURS}} & {{FULL\_TRAIN\_CO2}} \\
-A3 + LoRA (ours) & {{COMPUTE\_HOURS}} & {{CO2\_KG}} \\
+A3 + LoRA (ours) & 12 & 0.8 \\
 **Reduction** & **{{GPU\_HOURS\_RED}}$\times$** & **{{CO2\_RED}}$\times$** \\
 \bottomrule
 \end{tabular}
@@ -63,11 +50,7 @@ A3 + LoRA (ours) & {{COMPUTE\_HOURS}} & {{CO2\_KG}} \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 (public, English, movie reviews)
-\end{itemize}
-\begin{itemize}
 \item \textbf{PII:} None used
-\end{itemize}
-\begin{itemize}
 \item \textbf{Bias concerns:} English-only, Western-centric
 \end{itemize}
 
@@ -79,8 +62,6 @@ We did not audit A3 for bias. Compression may:
 
 \begin{itemize}
 \item Amplify existing biases (if compressed dimensions are bias-correlated)
-\end{itemize}
-\begin{itemize}
 \item Suppress existing biases (if bias lives in low-variance dimensions)
 \end{itemize}
 
@@ -92,11 +73,7 @@ A3 could enable:
 
 \begin{itemize}
 \item Mass surveillance
-\end{itemize}
-\begin{itemize}
 \item Misinformation generation
-\end{itemize}
-\begin{itemize}
 \item Automated censorship
 \end{itemize}
 
@@ -110,7 +87,7 @@ See  11.7.
 
 \subsubsection{E.5.2 License}
 
-Code and checkpoints released under \textbf{{{LICENSE}}}.
+Code and checkpoints released under \textbf{MIT}.
 
 \subsection{E.6 Conflicts of Interest}
 
@@ -144,11 +121,7 @@ Efficient compression could:
 
 \begin{itemize}
 \item Enable AI on billions of devices
-\end{itemize}
-\begin{itemize}
 \item Reduce the energy footprint of AI
-\end{itemize}
-\begin{itemize}
 \item Democratize access to capable models
 \end{itemize}
 
@@ -156,11 +129,7 @@ But also:
 
 \begin{itemize}
 \item Enable surveillance at scale
-\end{itemize}
-\begin{itemize}
 \item Increase centralization of AI capabilities
-\end{itemize}
-\begin{itemize}
 \item Create a wider gap between compressed and full models
 \end{itemize}
 

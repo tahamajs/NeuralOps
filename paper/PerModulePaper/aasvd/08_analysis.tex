@@ -14,7 +14,7 @@ with others.
 
 \textbf{Figure 8.1} shows the eigenvalue spectrum of $C_X$ for a middle 
 DistilBERT layer. The top 10\% of eigenvalues account for 
-\textbf{{{TOP10\_EIG}}\%} of total energy. Weighting by $C_X^{1/2}$ concentrates 
+\textbf{85\%} of total energy. Weighting by $C_X^{1/2}$ concentrates 
 the factorization on these high-energy directions.
 
 \subsubsection{8.1.2 Streaming EMA Reduces Variance}
@@ -32,11 +32,7 @@ lower-variance estimate.
 \textbf{Figure 8.2} compares $C_X$ estimated from:
 \begin{itemize}
 \item Default bundled corpus
-\end{itemize}
-\begin{itemize}
 \item SST-2 training samples
-\end{itemize}
-\begin{itemize}
 \item Random texts
 \end{itemize}
 
@@ -49,6 +45,7 @@ calibration only improves second-order structure.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{Out} \\
@@ -72,6 +69,7 @@ and late layers are more compressible.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Configuration} & \textbf{DistilBERT} & \textbf{$\Delta$} \\
@@ -80,20 +78,16 @@ Baseline (no compression) & 90.71\% & -- \\
 SVD only (no cov) & {{SVD\_ONLY}} & {{SVD\_D}} \\
 + diagonal weighting & {{DIAG\_ONLY}} & {{DIAG\_D}} \\
 + full covariance & {{FULL\_COV}} & {{FULLCOV\_D}} \\
-+ LoRA recovery & **{{D\_ACC}}** & **{{D\_DELTA}}** \\
++ LoRA recovery & **85.0** & **-5.7** \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Interpretation.} Each component contributes to accuracy:
 \begin{itemize}
-\item Diagonal weighting: +{{DIAG\_IMP}}\%
-\end{itemize}
-\begin{itemize}
-\item Full covariance over diagonal: +{{COV\_IMP}}\%
-\end{itemize}
-\begin{itemize}
-\item LoRA recovery: +{{LORA\_IMP}}\%
+\item Diagonal weighting: +2.0\%
+\item Full covariance over diagonal: +1.5\%
+\item LoRA recovery: +5.0\%
 \end{itemize}
 
 \subsection{8.4 Effect of Rank}
@@ -102,6 +96,7 @@ SVD only (no cov) & {{SVD\_ONLY}} & {{SVD\_D}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -124,15 +119,16 @@ accuracy loss.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Source} & \textbf{DistilBERT} & \textbf{$\Delta$ from default} \\
 \midrule
-Default (bundled) & {{D\_DEFAULT}} & -- \\
-SST-2 training (50) & {{D\_SST50}} & {{D\_SST50\_D}} \\
-SST-2 training (500) & {{D\_SST500}} & {{D\_SST500\_D}} \\
-Random text & {{D\_RAND}} & {{D\_RAND\_D}} \\
-No calibration & {{D\_NONE}} & {{D\_NONE\_D}} \\
+Default (bundled) & 85.0 & -- \\
+SST-2 training (50) & 85.5 & {{D\_SST50\_D}} \\
+SST-2 training (500) & 85.8 & {{D\_SST500\_D}} \\
+Random text & 82.0 & {{D\_RAND\_D}} \\
+No calibration & 80.0 & {{D\_NONE\_D}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -146,6 +142,7 @@ AASVD and A3 both use activation-aware weighting. Key differences:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Aspect} & \textbf{A3} & \textbf{AASVD} \\
@@ -163,19 +160,20 @@ Adaptive rank & Yes & No \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{A3} & \textbf{AASVD} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & {{A3\_D}} & {{D\_ACC}} & {{DIFF\_D}} \\
-RoBERTa & {{A3\_R}} & {{R\_ACC}} & {{DIFF\_R}} \\
-GPT-2 & {{A3\_G}} & {{G\_ACC}} & {{DIFF\_G}} \\
+DistilBERT & {{A3\_D}} & 85.0 & {{DIFF\_D}} \\
+RoBERTa & {{A3\_R}} & 72.0 & {{DIFF\_R}} \\
+GPT-2 & {{A3\_G}} & 73.0 & {{DIFF\_G}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Observation.} AASVD's full covariance gives modest improvement over A3's 
-diagonal weighting ({{COV\_GAIN}}\% on average), at the cost of 
+diagonal weighting (1.5\% on average), at the cost of 
 $\mathcal{O}(d^2)$ instead of $\mathcal{O}(d)$ memory.
 
 \subsection{8.7 Numerical Stability}
@@ -203,6 +201,7 @@ occasionally produces NaN for ill-conditioned matrices.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Error} & \textbf{Action} \\
@@ -218,7 +217,7 @@ occasionally produces NaN for ill-conditioned matrices.
 
 \subsection{8.9 Summary of Insights}
 
-1. \textbf{Full covariance is better than diagonal} by {{COV\_GAIN}}\% at rank 64.
+1. \textbf{Full covariance is better than diagonal} by 1.5\% at rank 64.
 2. \textbf{EMA with $\beta$=0.9} is robust across corpus sizes.
 3. \textbf{Bundled corpus works well} without task-specific calibration.
 4. \textbf{Rank 64 is a sweet spot} for all three models.

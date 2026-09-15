@@ -24,14 +24,8 @@ Parameter count increases by LoRA overhead. ClusterFormer targets
 
 \begin{itemize}
 \item \textbf{Long sequences} ($L \geq 256$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Attention-bound workloads}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Research on clustering attention}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Multi-architecture pipelines}
 \end{itemize}
 
@@ -39,14 +33,8 @@ Parameter count increases by LoRA overhead. ClusterFormer targets
 
 \begin{itemize}
 \item \textbf{Short sequences} ($L < 100$) -- overhead exceeds savings
-\end{itemize}
-\begin{itemize}
 \item \textbf{Model size reduction} -- use compression methods
-\end{itemize}
-\begin{itemize}
 \item \textbf{Strict causal generation} -- decoder uses exact attention anyway
-\end{itemize}
-\begin{itemize}
 \item \textbf{Interpretability-first} -- attention maps are cluster-level
 \end{itemize}
 
@@ -71,13 +59,14 @@ For DistilBERT at $L=256$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{Change} \\
 \midrule
 Attention FLOPs & 6.7M & 2.4M & **2.8$\times$ reduction** \\
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
+Accuracy & 90.71\% & 89.91\% & -0.80\% \\
+Params & 66.9M & 67.55M & +589826M \\
 Wall time & 4.2 ms & 3.8 ms & 1.10$\times$ \\
 \bottomrule
 \end{tabular}
@@ -87,6 +76,7 @@ Wall time & 4.2 ms & 3.8 ms & 1.10$\times$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Complexity} & \textbf{Global} & \textbf{Local} \\
@@ -127,24 +117,16 @@ not directly accessible.
 \subsubsection{Positive}
 \begin{itemize}
 \item Compute reduction for long-context inference
-\end{itemize}
-\begin{itemize}
 \item Democratizes long-context models
-\end{itemize}
-\begin{itemize}
 \item Complements other efficiency methods
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
 \item Modest parameter increase
-\end{itemize}
-\begin{itemize}
 \item Clustering opacity
-\end{itemize}
-\begin{itemize}
 \item Dual-use
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~15 GPU-hours, ~{{CO2}} kg CO$_2$eq.

@@ -79,14 +79,8 @@ class UnifiedMoE(nn.Module):
 
 \begin{itemize}
 \item \textbf{FP32 scores.} Attention scores in FP32 to avoid FP16 overflow.
-\end{itemize}
-\begin{itemize}
 \item \textbf{MoE clamp.} Expert outputs clamped to $\pm$65000 (FP16 max).
-\end{itemize}
-\begin{itemize}
 \item \textbf{NaN guards.} \texttt{torch.nan\_to\_num} on all intermediate outputs.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Noise masking.} Training-time noise added only to logits, not expert
 \end{itemize}
   outputs.

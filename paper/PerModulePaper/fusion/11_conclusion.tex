@@ -11,13 +11,14 @@ not exercise its sparsity machinery at that length.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Path at L=128} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_DELTA}}M & Short \\
-RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_DELTA}}M & Short \\
-GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_DELTA}}M & Short \\
+DistilBERT & -0.23\% & +786864M & Short \\
+RoBERTa & -1.21\% & +1453064M & Short \\
+GPT-2 & -0.46\% & +1460804M & Short \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -34,29 +35,21 @@ GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_DELTA}}M & Short \\
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Test at $L \geq 512$
-\end{itemize}
-\begin{itemize}
 \item Analyze learned gate patterns
-\end{itemize}
-\begin{itemize}
 \item Fused Triton kernel for block attention
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Learned dispatch threshold
-\end{itemize}
-\begin{itemize}
 \item Dynamic block sizes
-\end{itemize}
-\begin{itemize}
 \item Cross-task transfer
 \end{itemize}
 
 \subsection{11.5 Closing Remarks}
 
 FUSIONATTN is a hybrid attention for long-context inference. We release 
-code under {{LICENSE}}.
+code under MIT.
 
 \subsection{11.6 Acknowledgments}
 
@@ -66,8 +59,6 @@ code under {{LICENSE}}.
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
-\end{itemize}
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided feedback.
 \end{itemize}
 

@@ -7,6 +7,7 @@ AdaSplash supports the following attention variants:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
@@ -14,8 +15,8 @@ AdaSplash supports the following attention variants:
 DistilBERT & `MultiHeadSelfAttention` & No & No & No & No &  \\
 RoBERTa & `BertSelfAttention` & Yes & No & No & No &  \\
 GPT-2 & `GPT2Attention` & No & No & No & No &  \\
-Qwen3.5 & `Qwen3Attention` & No & Yes & Yes & No & {{QWEN\_VERIFIED}} \\
-T5 & `T5Attention` & No & No & No & Yes & {{T5\_VERIFIED}} \\
+Qwen3.5 & `Qwen3Attention` & No & Yes & Yes & No & partial \\
+T5 & `T5Attention` & No & No & No & Yes & not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -189,6 +190,7 @@ class AdaSplashAttention(BaseAttention):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
@@ -206,6 +208,7 @@ NaN in scores & `torch.isnan` & Mask to -10000 \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Precision} \\
@@ -230,10 +233,3 @@ For T5, the same class handles encoder (bidirectional, no splash) and decoder
 
 If the source module is a \texttt{LoRALinear}, AdaSplash unwraps to \texttt{base\_layer} and 
 preserves the outer LoRA.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/adasplash_attention_architecture.png}
-\caption{Architectural overview of adasplash.}
-\label{fig:arch_adasplash}
-\end{figure}

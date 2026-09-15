@@ -3,7 +3,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -24,8 +24,8 @@ pip install flash-attn --no-build-isolation
 \begin{lstlisting}
 python run_all_4_flash3.py \
     --models distilbert,roberta,gpt2 \
-    --use_fp8 {{USE_FP8}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --use_fp8 False \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{12.4 Verifying Path Selection}
@@ -63,13 +63,14 @@ torch.cuda.manual_seed_all(seed)
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Model} & \textbf{Acc} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
+DistilBERT & 90.25\% $\pm$ 1\% \\
+RoBERTa & 77.50\% $\pm$ 1\% \\
+GPT-2 & 78.98\% $\pm$ 1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -78,11 +79,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
 
 \begin{itemize}
 \item Dataset: SST-2
-\end{itemize}
-\begin{itemize}
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-flash3}
-\end{itemize}
-\begin{itemize}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-flash3}
 \item Metrics: \texttt{results/unified\_flash3/*/summary.csv}
 \end{itemize}
 
@@ -90,10 +87,6 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
 
 \begin{itemize}
 \item No FA3 on non-Hopper GPUs
-\end{itemize}
-\begin{itemize}
 \item FP8 not tested on Hopper
-\end{itemize}
-\begin{itemize}
 \item Some paths auto-fallback silently (see logs)
 \end{itemize}

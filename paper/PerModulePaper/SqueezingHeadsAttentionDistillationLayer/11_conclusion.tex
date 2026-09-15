@@ -11,13 +11,14 @@ and allows head-dim reduction with LoRA recovery.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Trainable} & \textbf{Head-dim reduction} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & {{D\_LORA\_R}}$\times$ & {{HEAD\_DIM\_REDUCTION}}$\times$ \\
-RoBERTa & {{R\_DELTA}}\% & {{R\_LORA\_R}}$\times$ & {{HEAD\_DIM\_REDUCTION}}$\times$ \\
-GPT-2 & {{G\_DELTA}}\% & {{G\_LORA\_R}}$\times$ & {{HEAD\_DIM\_REDUCTION}}$\times$ \\
+DistilBERT & -0.46\% & 113$\times$ & 1.0$\times$ \\
+RoBERTa & -1.8\% & 105$\times$ & 1.0$\times$ \\
+GPT-2 & -1.9\% & 105$\times$ & 1.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -35,25 +36,15 @@ GPT-2 & {{G\_DELTA}}\% & {{G\_LORA\_R}}$\times$ & {{HEAD\_DIM\_REDUCTION}}$\time
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Per-head LoRA rank
-\end{itemize}
-\begin{itemize}
 \item Combine with pruning
-\end{itemize}
-\begin{itemize}
 \item Teacher-student distillation
-\end{itemize}
-\begin{itemize}
 \item Inference-time folding
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical bound on recovery
-\end{itemize}
-\begin{itemize}
 \item Cross-task adapter transfer
-\end{itemize}
-\begin{itemize}
 \item Integration with MoE
 \end{itemize}
 
@@ -70,8 +61,6 @@ We thank {{ACKNOWLEDGMENTS}}.
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed SH, implemented the code, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
 \end{itemize}
 

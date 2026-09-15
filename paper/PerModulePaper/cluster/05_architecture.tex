@@ -4,6 +4,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
@@ -11,7 +12,7 @@
 DistilBERT & Flat & No & No & No &  \\
 RoBERTa & Nested & Yes & No & No &  \\
 GPT-2 & Causal & No & No & No &  \\
-Qwen3.5 & GQA+RoPE & No & Yes & Yes & {{QWEN\_VERIFIED}} \\
+Qwen3.5 & GQA+RoPE & No & Yes & Yes & partial \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,7 +86,7 @@ use standard exact attention for decoder paths.
 \subsection{5.5 RoPE}
 
 Partial RoPE (Qwen3.5 with rotary\_dim < head\_dim) is supported via slicing 
-the first \texttt{rotary\\_dim} coordinates.
+the first \texttt{rotary\_dim} coordinates.
 
 \subsection{5.6 GQA}
 
@@ -108,6 +109,7 @@ class ClusterAttention(BaseAttention):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
@@ -121,11 +123,3 @@ Zero Frobenius & Check < 1e-4 & Raise error \\
 \end{table}
 
 \subsection{5.9 Numerical Stability}
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/cluster_attention_architecture.png}
-\caption{Architectural overview of cluster.}
-\label{fig:arch_cluster}
-\end{figure}

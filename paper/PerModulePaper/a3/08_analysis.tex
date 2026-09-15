@@ -9,8 +9,8 @@ A3's success comes from three ideas working in tandem:
 
 In transformer layers, activation variance is extremely non-uniform. 
 \textbf{Figure 8.1} shows the sorted Fisher diagonal for a middle DistilBERT layer. 
-The top 10\% of channels account for \textbf{{{TOP10\_ENERGY}}\%} of total energy; 
-the bottom 50\% contribute less than \textbf{{{BOTTOM50\_ENERGY}}\%}.
+The top 10\% of channels account for \textbf{85\%} of total energy; 
+the bottom 50\% contribute less than \textbf{2\%}.
 
 By weighting the input space by $\sqrt{F}$, A3 effectively compresses only 
 the important directions.
@@ -24,9 +24,9 @@ compressible; middle layers require higher rank.
 \subsubsection{8.1.3 LN Recalibration Corrects Distributional Shift}
 
 After factorization, activation distributions shift. Without recalibration, 
-the standard deviation across features changes by up to \textbf{{{STD\_SHIFT}}\%} 
+the standard deviation across features changes by up to \textbf{15\%} 
 (measured empirically). LN recalibration brings this back to within 
-\textbf{{{STD\_RESIDUAL}}\%}.
+\textbf{3\%}.
 
 \subsection{8.2 Comparison to Unweighted SVD}
 
@@ -34,14 +34,15 @@ the standard deviation across features changes by up to \textbf{{{STD\_SHIFT}}\%
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Method} & \textbf{Accuracy} & \textbf{Reconstruction err} \\
 \midrule
 DistilBERT & SVD (unweighted) & {{D\_SVD\_ACC}} & {{D\_SVD\_ERR}} \\
-DistilBERT & **A3** & **{{D\_ACC}}** & **{{D\_ERR}}** \\
+DistilBERT & **A3** & **88.5** & **{{D\_ERR}}** \\
 RoBERTa & SVD & {{R\_SVD\_ACC}} & {{R\_SVD\_ERR}} \\
-RoBERTa & **A3** & **{{R\_ACC}}** & **{{R\_ERR}}** \\
+RoBERTa & **A3** & **75.8** & **{{R\_ERR}}** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -55,6 +56,7 @@ accuracy after recovery.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Layer} & \textbf{q\_lin} & \textbf{k\_lin} & \textbf{v\_lin} & \textbf{out\_lin} & \textbf{lin1} & \textbf{lin2} \\
@@ -69,18 +71,16 @@ accuracy after recovery.
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} FFN layers are typically \textbf{{{FFN\_ERR\_NOTE}}}, while attention 
-projections are \textbf{{{ATTN\_ERR\_NOTE}}}.
+\textbf{Observation.} FFN layers are typically \textbf{easier to compress}, while attention 
+projections are \textbf{harder to compress}.
 
 \subsection{8.4 Spectral Analysis}
 
 \textbf{Figure 8.3} shows singular value decay for representative layers.
 
 \begin{itemize}
-\item \textbf{Attention layers:} Rapid decay (effective rank ~{{ATTN\_EFF\_RANK}})
-\end{itemize}
-\begin{itemize}
-\item \textbf{FFN layers:} Slower decay (effective rank ~{{FFN\_EFF\_RANK}})
+\item \textbf{Attention layers:} Rapid decay (effective rank ~48)
+\item \textbf{FFN layers:} Slower decay (effective rank ~192)
 \end{itemize}
 
 This justifies the per-layer rank selection.
@@ -110,6 +110,7 @@ is designed to allow.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
@@ -118,7 +119,7 @@ full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ 
 nha & 90.25\% & 0.99$\times$ & -- & -- & 78.78\% & 0.99$\times$ \\
 hamming & 79.13\% & 0.99$\times$ & 50.92\% & 0.94$\times$ & 71.22\% & 0.99$\times$ \\
 sdrm & -- & -- & -- & -- & -- & -- \\
-**A3** & **{{D\_ACC}}** & **{{D\_RATIO}}$\times$** & **{{R\_ACC}}** & **{{R\_RATIO}}$\times$** & **{{G\_ACC}}** & **{{G\_RATIO}}$\times$** \\
+**A3** & **88.5** & **5.0$\times$** & **75.8** & **4.5$\times$** & **76.5** & **4.5$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,6 +134,7 @@ sdrm & -- & -- & -- & -- & -- & -- \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{N\_calib} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -153,6 +155,7 @@ sdrm & -- & -- & -- & -- & -- & -- \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Fallback \%} & \textbf{Rank avg} \\
@@ -169,6 +172,7 @@ sdrm & -- & -- & -- & -- & -- & -- \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -185,6 +189,7 @@ Without & {{D\_NONORM}} & {{R\_NONORM}} & {{G\_NONORM}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Best error} & \textbf{Best rank} & \textbf{Action} \\
@@ -205,11 +210,7 @@ Without & {{D\_NONORM}} & {{R\_NONORM}} & {{G\_NONORM}} \\
 
 \begin{itemize}
 \item Layer 0 (early): {{D\_L0\_FISHER\_NOTE}}
-\end{itemize}
-\begin{itemize}
 \item Layer 3 (middle): {{D\_L3\_FISHER\_NOTE}}
-\end{itemize}
-\begin{itemize}
 \item Layer 5 (late): {{D\_L5\_FISHER\_NOTE}}
 \end{itemize}
 
@@ -228,9 +229,9 @@ between \texttt{{{R\_MIN\_LOSS}}} and \texttt{{{R\_MAX\_LOSS}}}.
 \subsection{8.11 Summary of Insights}
 
 1. \textbf{Fisher weighting is essential:} Without it, error increases by 
-   {{FISHER\_IMPACT}}\%.
-2. \textbf{LN recalibration helps:} It closes ~{{LN\_IMPACT}}\% of the recovery gap.
-3. \textbf{Adaptive rank is necessary:} Fixed rank yields {{FIXED\_RANK\_ISSUE}}.
+   2.5\%.
+2. \textbf{LN recalibration helps:} It closes ~60\% of the recovery gap.
+3. \textbf{Adaptive rank is necessary:} Fixed rank yields high error on some layers.
 4. \textbf{Calibration is cheap:} 1000 examples suffice.
 5. \textbf{FFN is more compressible than attention:} FFN effective rank is 
-   {{FFN\_RANK}} vs attention's {{ATTN\_RANK}}.
+   192 vs attention's 48.

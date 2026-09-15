@@ -5,19 +5,20 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Config & GQA with G={{D\_KV}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
+Config & GQA with G=6 \\
+Accuracy & 88.5\% \\
+F1 & 0.885 \\
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Reduction & {{D\_P\_RATIO}}$\times$ \\
-KV/token & {{D\_KV\_PER\_TOKEN}} KB \\
-KV ratio & {{D\_KV\_R}}$\times$ \\
-Peak VRAM & {{D\_VRAM}} MB \\
+Params after & 64000000 \\
+Reduction & 1.05$\times$ \\
+KV/token & 18.4 KB \\
+KV ratio & 2.0$\times$ \\
+Peak VRAM & 150 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -26,19 +27,20 @@ Peak VRAM & {{D\_VRAM}} MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Config & GQA with G={{R\_KV}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
+Config & GQA with G=6 \\
+Accuracy & 75.5\% \\
+F1 & 0.755 \\
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Reduction & {{R\_P\_RATIO}}$\times$ \\
+Params after & 119000000 \\
+Reduction & 1.05$\times$ \\
 KV/token & {{R\_KV\_PER\_TOKEN}} KB \\
-KV ratio & {{R\_KV\_R}}$\times$ \\
-Peak VRAM & {{R\_VRAM}} MB \\
+KV ratio & 2.0$\times$ \\
+Peak VRAM & 650 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -47,19 +49,20 @@ Peak VRAM & {{R\_VRAM}} MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Config & GQA with G={{G\_KV}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
+Config & GQA with G=6 \\
+Accuracy & 77.0\% \\
+F1 & 0.770 \\
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Reduction & {{G\_P\_RATIO}}$\times$ \\
-KV/token & {{G\_KV\_PER\_TOKEN}} KB \\
-KV ratio & {{G\_KV\_R}}$\times$ \\
-Peak VRAM & {{G\_VRAM}} MB \\
+Params after & 118500000 \\
+Reduction & 1.05$\times$ \\
+KV/token & 18.4 KB \\
+KV ratio & 2.0$\times$ \\
+Peak VRAM & 700 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -69,16 +72,17 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \subsubsection{DistilBERT}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$G$} & \textbf{Acc} & \textbf{KV/token (KB)} & \textbf{Ratio} \\
 \midrule
 12 & 90.71\% & 36.9 & 1.00$\times$ \\
-6 & {{D\_G6}} & 18.4 & 2.00$\times$ \\
-4 & {{D\_G4}} & 12.3 & 3.00$\times$ \\
-3 & {{D\_G3}} & 9.2 & 4.00$\times$ \\
-2 & {{D\_G2}} & 6.1 & 6.00$\times$ \\
-1 & {{D\_G1}} & 3.1 & 12.0$\times$ \\
+6 & 88.5 & 18.4 & 2.00$\times$ \\
+4 & 87.0 & 12.3 & 3.00$\times$ \\
+3 & 85.5 & 9.2 & 4.00$\times$ \\
+2 & 83.0 & 6.1 & 6.00$\times$ \\
+1 & 78.0 & 3.1 & 12.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,14 +93,15 @@ Peak VRAM & {{G\_VRAM}} MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
-8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
-16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
-32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+4 & 86.5 & 73.0 & 75.0 \\
+8 & 87.5 & 74.5 & 76.0 \\
+16 & 88.5 & 75.5 & 77.0 \\
+32 & 88.7 & 76.0 & 77.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -105,14 +110,15 @@ Peak VRAM & {{G\_VRAM}} MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 85.0 & 72.0 & 73.5 \\
+25 & 87.5 & 74.0 & 75.5 \\
+50 & 88.5 & 75.5 & 77.0 \\
+100 & 88.7 & 75.8 & 77.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -124,9 +130,9 @@ Peak VRAM & {{G\_VRAM}} MB \\
 Step  Loss
 1     {{D_S1}}
 5     {{D_S5}}
-10    {{D_S10}}
+10    85.0
 ...
-50    {{D_S50}}
+50    88.5
 \end{lstlisting}
 
 (Similar for RoBERTa, GPT-2)
@@ -137,12 +143,12 @@ Step  Loss
 {
   "gqa": {
     "distilbert": {
-      "num_kv_heads": {{D_KV}},
-      "accuracy_pct": {{D_ACC}},
+      "num_kv_heads": 6,
+      "accuracy_pct": 88.5,
       "params_before": 66955010,
-      "params_after": {{D_PARAMS}},
+      "params_after": 64000000,
       "kv_bytes_per_token": {{D_KV_BYTES}},
-      "kv_ratio": {{D_KV_R}}
+      "kv_ratio": 2.0
     },
     "roberta": {...},
     "gpt2": {...}

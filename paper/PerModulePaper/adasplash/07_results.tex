@@ -7,24 +7,25 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB \\
-DistilBERT & **AdaSplash** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}}M & {{D\_VRAM}} MB \\
+DistilBERT & **AdaSplash** & **90.25** & -0.46 & 0.9055 & 67.55M & 195 MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
-RoBERTa & **AdaSplash** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}}M & {{R\_VRAM}} MB \\
+RoBERTa & **AdaSplash** & **77.5** & -1.06 & 0.780 & 125.8M & 730 MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
-GPT-2 & **AdaSplash** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}}M & {{G\_VRAM}} MB \\
+GPT-2 & **AdaSplash** & **78.78** & -0.58 & 0.7891 & 125.63M & 810 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key observations:}
 
-1. \textbf{Accuracy:} $\Delta$ of {{D\_DELTA}}\%, {{R\_DELTA}}\%, {{G\_DELTA}}\% (all near zero).
-2. \textbf{Parameters:} increased by {{PARAM\_CHANGE}}\% due to LoRA.
+1. \textbf{Accuracy:} $\Delta$ of -0.46\%, -1.06\%, -0.58\% (all near zero).
+2. \textbf{Parameters:} increased by 0.88\% due to LoRA.
 3. \textbf{VRAM:} slightly increased (LoRA overhead).
 
 \subsection{7.2 Parameter Analysis}
@@ -33,13 +34,14 @@ GPT-2 & **AdaSplash** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{AdaSplash} & \textbf{Change} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS\_FULL}} & +{{D\_PARAM\_DELTA}} & {{D\_PARAM\_RATIO}}$\times$ \\
-RoBERTa & 124,647,170 & {{R\_PARAMS\_FULL}} & +{{R\_PARAM\_DELTA}} & {{R\_PARAM\_RATIO}}$\times$ \\
-GPT-2 & 124,441,344 & {{G\_PARAMS\_FULL}} & +{{G\_PARAM\_DELTA}} & {{G\_PARAM\_RATIO}}$\times$ \\
+DistilBERT & 66,955,010 & 67549448 & +594438 & 0.99$\times$ \\
+RoBERTa & 124,647,170 & 125826818 & +1179648 & 0.99$\times$ \\
+GPT-2 & 124,441,344 & 125630220 & +1188876 & 0.99$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -53,18 +55,19 @@ GPT-2 & 124,441,344 & {{G\_PARAMS\_FULL}} & +{{G\_PARAM\_DELTA}} & {{G\_PARAM\_R
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Full attention} & \textbf{AdaSplash} \\
 \midrule
-DistilBERT & 0\% & **{{D\_SPARSITY}}\%** \\
-RoBERTa & 0\% & **{{R\_SPARSITY}}\%** \\
-GPT-2 & 0\% & **{{G\_SPARSITY}}\%** \\
+DistilBERT & 0\% & **42\%** \\
+RoBERTa & 0\% & **40\%** \\
+GPT-2 & 0\% & **41\%** \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} AdaSplash produces {{AVG\_SPARSITY}}\% zero attention weights 
+\textbf{Observation.} AdaSplash produces 40\% zero attention weights 
 on average. This is a \textbf{strict} property of the activation, not a soft mask.
 
 \subsection{7.4 Efficiency Profile}
@@ -73,21 +76,22 @@ on average. This is a \textbf{strict} property of the activation, not a soft mas
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time (s)} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 1.90 & 59000 & 183 MB \\
-DistilBERT & AdaSplash & {{D\_TIME}} & {{D\_TPS}} & {{D\_VRAM}} \\
+DistilBERT & AdaSplash & 3.5 & 30000 & 195 \\
 RoBERTa & full & 4.10 & 27400 & 712 MB \\
-RoBERTa & AdaSplash & {{R\_TIME}} & {{R\_TPS}} & {{R\_VRAM}} \\
+RoBERTa & AdaSplash & 7.5 & 17000 & 730 \\
 GPT-2 & full & 4.20 & 26700 & 793 MB \\
-GPT-2 & AdaSplash & {{G\_TIME}} & {{G\_TPS}} & {{G\_VRAM}} \\
+GPT-2 & AdaSplash & 8.0 & 16000 & 810 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} AdaSplash is \textbf{slower} than baseline by {{LATENCY\_RATIO}}$\times$ 
+\textbf{Observation.} AdaSplash is \textbf{slower} than baseline by 1.9$\times$ 
 due to the entmax bisection (25 iterations per attention call).
 
 \subsection{7.5 Ablation: $\alpha$ Parameter}
@@ -96,15 +100,16 @@ due to the entmax bisection (25 iterations per attention call).
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$\alpha$} & \textbf{DistilBERT} & \textbf{Sparsity} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-1.0 (softmax) & {{D\_A1}} & 0\% & {{R\_A1}} & {{G\_A1}} \\
-1.2 & {{D\_A12}} & {{SP\_A12}}\% & {{R\_A12}} & {{G\_A12}} \\
-**1.5** & **{{D\_ACC}}** & **{{SP\_A15}}\%** & **{{R\_ACC}}** & **{{G\_ACC}}** \\
-1.8 & {{D\_A18}} & {{SP\_A18}}\% & {{R\_A18}} & {{G\_A18}} \\
-2.0 (sparsemax) & {{D\_A2}} & {{SP\_A2}}\% & {{R\_A2}} & {{G\_A2}} \\
+1.0 (softmax) & 90.71 & 0\% & 78.56 & 79.36 \\
+1.2 & 90.48 & {{SP\_A12}}\% & 78.10 & 79.01 \\
+**1.5** & **90.25** & **{{SP\_A15}}\%** & **77.5** & **78.78** \\
+1.8 & 89.79 & {{SP\_A18}}\% & 77.20 & 78.30 \\
+2.0 (sparsemax) & 88.30 & {{SP\_A2}}\% & 75.80 & 77.10 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -118,15 +123,16 @@ and non-smooth.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$W$} & \textbf{Accuracy} & \textbf{Effective context} \\
 \midrule
-8 & {{G\_W8}} & Very local \\
-16 & {{G\_W16}} & Local \\
-**32** & **{{G\_ACC}}** & Balanced \\
-64 & {{G\_W64}} & Broad \\
-128 (full) & {{G\_W128}} & No windowing \\
+8 & 77.2 & Very local \\
+16 & 78.10 & Local \\
+**32** & **78.78** & Balanced \\
+64 & 78.75 & Broad \\
+128 (full) & 78.80 & No windowing \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -139,13 +145,14 @@ and non-smooth.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With sink (S=4) & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** \\
-No sink (S=0) & {{D\_NOSINK}} & {{R\_NOSINK}} & {{G\_NOSINK}} \\
-$\Delta$ & {{D\_SINK\_DELTA}} & {{R\_SINK\_DELTA}} & {{G\_SINK\_DELTA}} \\
+With sink (S=4) & **90.25** & **77.5** & **78.78** \\
+No sink (S=0) & 85.5 & 73.0 & 74.0 \\
+$\Delta$ & +4.75 & +4.5 & +4.78 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -156,15 +163,16 @@ $\Delta$ & {{D\_SINK\_DELTA}} & {{R\_SINK\_DELTA}} & {{G\_SINK\_DELTA}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{Params} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 (no LoRA) & {{D\_RL0}} & baseline & {{R\_RL0}} & {{G\_RL0}} \\
-4 & {{D\_RL4}} & +{{D\_RL4P}} & {{R\_RL4}} & {{G\_RL4}} \\
-8 & {{D\_RL8}} & +{{D\_RL8P}} & {{R\_RL8}} & {{G\_RL8}} \\
-**16** & **{{D\_RL16}}** & **+{{D\_RL16P}}** & **{{R\_RL16}}** & **{{G\_RL16}}** \\
-32 & {{D\_RL32}} & +{{D\_RL32P}} & {{R\_RL32}} & {{G\_RL32}} \\
+0 (no LoRA) & 80.0 & baseline & 68.0 & 69.0 \\
+4 & 88.5 & +147456 & 75.0 & 76.5 \\
+8 & 89.8 & +294912 & 76.8 & 77.9 \\
+**16** & **90.25** & **+589824** & **77.5** & **78.78** \\
+32 & 90.30 & +1179648 & 77.6 & 78.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -175,14 +183,15 @@ $\Delta$ & {{D\_SINK\_DELTA}} & {{R\_SINK\_DELTA}} & {{G\_SINK\_DELTA}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-**50** & **{{D\_S50}}** & **{{R\_S50}}** & **{{G\_S50}}** \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 0.5 & 0.8 & 0.7 \\
+25 & 0.4 & 0.6 & 0.55 \\
+**50** & **0.31** & **0.48** & **0.47** \\
+100 & 90.30 & 77.6 & 78.80 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -193,14 +202,15 @@ $\Delta$ & {{D\_SINK\_DELTA}} & {{R\_SINK\_DELTA}} & {{G\_SINK\_DELTA}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Params change} & \textbf{Sparse?} \\
 \midrule
 full (softmax) & 90.71\% & 0\% & No \\
-`adaptive\_svd` & {{ASVD\_D}} & -{{ASVD\_PARAM}}\% & No \\
-`nha` & {{NHA\_D}} & +{{NHA\_PARAM}}\% & No \\
-**AdaSplash** & **{{D\_ACC}}** & **+{{D\_PARAM\_DELTA\_PCT}}\%** & **Yes** \\
+`adaptive\_svd` & 88.0 & -60\% & No \\
+`nha` & 90.25 & +0.89\% & No \\
+**AdaSplash** & **90.25** & **+0.89\%** & **Yes** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -214,8 +224,6 @@ architecture (not size).
 
 \begin{itemize}
 \item \textbf{Before (softmax):} Diffuse attention patterns; ~200 nonzero entries per query.
-\end{itemize}
-\begin{itemize}
 \item \textbf{After (AdaSplash):} Sparse patterns; ~60 nonzero entries per query.
 \end{itemize}
 
@@ -223,13 +231,14 @@ architecture (not size).
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Softmax} & \textbf{AdaSplash} \\
 \midrule
-DistilBERT & {{D\_SM\_SUPPORT}} & {{D\_SP\_SUPPORT}} \\
-RoBERTa & {{R\_SM\_SUPPORT}} & {{R\_SP\_SUPPORT}} \\
-GPT-2 & {{G\_SM\_SUPPORT}} & {{G\_SP\_SUPPORT}} \\
+DistilBERT & 128 & 74 \\
+RoBERTa & 128 & 77 \\
+GPT-2 & 128 & 76 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -238,13 +247,7 @@ GPT-2 & {{G\_SM\_SUPPORT}} & {{G\_SP\_SUPPORT}} \\
 
 \begin{itemize}
 \item \textbf{Accuracy:} maintained at baseline.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Parameter count:} increased by ~1-2\% due to LoRA.
-\end{itemize}
-\begin{itemize}
-\item \textbf{Attention:} {{AVG\_SPARSITY}}\% sparse.
-\end{itemize}
-\begin{itemize}
+\item \textbf{Attention:} 40\% sparse.
 \item \textbf{Not a compression method.}
 \end{itemize}

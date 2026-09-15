@@ -4,6 +4,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Cross-attn?} \\
@@ -85,6 +86,7 @@ class BAMUMoEBlock(BaseAttention):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
@@ -98,11 +100,3 @@ Cross-attention MoE & Skip MoE branch & Preserve alignment \\
 \end{table}
 
 \subsection{5.8 Numerical Stability}
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/bam_umoe_architecture.png}
-\caption{Architectural overview of bam_umoe.}
-\label{fig:arch_bam_umoe}
-\end{figure}

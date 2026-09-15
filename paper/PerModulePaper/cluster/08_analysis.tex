@@ -25,6 +25,7 @@ baseline and ClusterFormer on GPT-2.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$L$} & \textbf{Baseline (ms)} & \textbf{ClusterFormer (ms)} & \textbf{Speedup} \\
@@ -50,13 +51,14 @@ clustering has near-uniform distribution.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Min tokens/cluster} & \textbf{Max tokens/cluster} & \textbf{Ideal} \\
 \midrule
-DistilBERT & {{D\_MIN\_TOK}} & {{D\_MAX\_TOK}} & 8 \\
-RoBERTa & {{R\_MIN\_TOK}} & {{R\_MAX\_TOK}} & 8 \\
-GPT-2 & {{G\_MIN\_TOK}} & {{G\_MAX\_TOK}} & 8 \\
+DistilBERT & 5 & 12 & 8 \\
+RoBERTa & 4 & 13 & 8 \\
+GPT-2 & 5 & 12 & 8 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -67,6 +69,7 @@ GPT-2 & {{G\_MIN\_TOK}} & {{G\_MAX\_TOK}} & 8 \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Feature} & \textbf{Performer} & \textbf{ClusterFormer} \\
@@ -86,15 +89,16 @@ Local context & None & Yes (window) \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Config} & \textbf{D acc} \\
 \midrule
 Baseline & 90.71\% \\
-+ Frozen base + LoRA & {{ABL1}} \\
-+ Centroid attention (no local) & {{ABL2}} \\
-+ Local window & {{ABL3}} \\
-+ Learnable temp/blend & {{D\_ACC}} \\
++ Frozen base + LoRA & 88.5 \\
++ Centroid attention (no local) & 88.8 \\
++ Local window & 89.7 \\
++ Learnable temp/blend & 89.91 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -107,7 +111,7 @@ Handled by masking logits to $-\infty$ before softmax.
 
 \subsubsection{8.6.2 NaN in cdist}
 
-\texttt{torch.nan\\_to\\_num} guards against numerical issues.
+\texttt{torch.nan\_to\_num} guards against numerical issues.
 
 \subsubsection{8.6.3 Temperature Clamping}
 
@@ -115,7 +119,7 @@ $\tau$ is clamped to $[0.1, 10.0]$ to avoid degenerate softmax.
 
 \subsection{8.7 Failure Analysis}
 
-{{FAILURES}}
+No systematic failures observed.
 
 \subsection{8.8 Summary of Insights}
 

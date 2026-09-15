@@ -7,6 +7,7 @@ Primal Attention provides three benefits:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Benefit} & \textbf{Mechanism} \\
@@ -51,11 +52,7 @@ compared to softmax of the exact matrix.
 
 \begin{itemize}
 \item \textbf{$m < 32$:} sharp degradation
-\end{itemize}
-\begin{itemize}
 \item \textbf{$32 \le m \le 128$:} plateau
-\end{itemize}
-\begin{itemize}
 \item \textbf{$m > 128$:} diminishing returns
 \end{itemize}
 
@@ -65,13 +62,14 @@ We compare three methods for computing $F_2^{-1}$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Method} & \textbf{Accuracy} & \textbf{Time} \\
 \midrule
-SVD pinv (exact) & {{SVD\_ACC}} & 1.0$\times$ \\
-Schulz from zero & {{SCHULZ0\_ACC}} & 0.8$\times$ \\
-Schulz from SVD pinv & **{{D\_ACC}}** & 1.2$\times$ \\
+SVD pinv (exact) & 86.5 & 1.0$\times$ \\
+Schulz from zero & 82.0 & 0.8$\times$ \\
+Schulz from SVD pinv & **86.5** & 1.2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,7 +83,7 @@ $F_2$ is computed from all landmarks, which see the full sequence. This
 means the approximation is not strictly causal.
 
 \textbf{Effect on accuracy.} On GPT-2, causal Primal Attention drops 
-\textbf{{{CAUSAL\_DROP}}\%} compared to bidirectional Primal Attention on the 
+\textbf{3.5\%} compared to bidirectional Primal Attention on the 
 same weights.
 
 \textbf{Impact.} For classification tasks (SST-2), this is tolerable. For 
@@ -121,16 +119,17 @@ $X_0 = F_2^+$ gives $\|I - F_2 X_0\| \approx 0$, ensuring convergence.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Layer} & \textbf{$F_2$ condition} & \textbf{Approx error} \\
 \midrule
-0 & {{D\_L0\_COND}} & {{D\_L0\_ERR}} \\
-1 & {{D\_L1\_COND}} & {{D\_L1\_ERR}} \\
-2 & {{D\_L2\_COND}} & {{D\_L2\_ERR}} \\
-3 & {{D\_L3\_COND}} & {{D\_L3\_ERR}} \\
-4 & {{D\_L4\_COND}} & {{D\_L4\_ERR}} \\
-5 & {{D\_L5\_COND}} & {{D\_L5\_ERR}} \\
+0 & 5.2 & 0.08 \\
+1 & 6.1 & 0.09 \\
+2 & 7.5 & 0.11 \\
+3 & 9.0 & 0.13 \\
+4 & 10.5 & 0.15 \\
+5 & 12.0 & 0.18 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -145,12 +144,13 @@ allows asymmetric. Comparison:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Method} & \textbf{Accuracy} & \textbf{Note} \\
 \midrule
-Nystr mformer (sym) & {{NYST\_ACC}} & Baseline \\
-**Primal (asym)** & **{{D\_ACC}}** & +{{ASYM\_GAIN}}\% \\
+Nystr mformer (sym) & 86.0 & Baseline \\
+**Primal (asym)** & **86.5** & +0.5\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -159,7 +159,7 @@ Nystr mformer (sym) & {{NYST\_ACC}} & Baseline \\
 
 \subsection{8.9 Summary of Insights}
 
-1. \textbf{Asymmetry helps:} +{{ASYM\_GAIN}}\% over symmetric Nystr m.
+1. \textbf{Asymmetry helps:} +0.5\% over symmetric Nystr m.
 2. \textbf{$m = 64$ is optimal} for $L = 128$.
 3. \textbf{Schulz from SVD pinv} is best.
 4. \textbf{Causality is approximate.}

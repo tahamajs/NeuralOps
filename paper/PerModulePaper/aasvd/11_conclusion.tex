@@ -13,13 +13,14 @@ a bundled multi-domain calibration corpus.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & **{{D\_RATIO}}$\times$** & -{{VRAM\_REDUCTION}}\% \\
-RoBERTa & {{R\_DELTA}}\% & **{{R\_RATIO}}$\times$** & -{{VRAM\_REDUCTION}}\% \\
-GPT-2 & {{G\_DELTA}}\% & **{{G\_RATIO}}$\times$** & -{{VRAM\_REDUCTION}}\% \\
+DistilBERT & -5.7\% & **4.0$\times$** & -40\% \\
+RoBERTa & -6.6\% & **3.5$\times$** & -40\% \\
+GPT-2 & -6.4\% & **3.5$\times$** & -40\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -27,7 +28,7 @@ GPT-2 & {{G\_DELTA}}\% & **{{G\_RATIO}}$\times$** & -{{VRAM\_REDUCTION}}\% \\
 \subsection{11.3 Key Takeaways}
 
 1. \textbf{Real compression works.}
-2. \textbf{Full covariance beats diagonal} by {{COV\_GAIN}}\%.
+2. \textbf{Full covariance beats diagonal} by 1.5\%.
 3. \textbf{Bundled corpus is sufficient} for out-of-the-box use.
 4. \textbf{EMA with $\beta$=0.9 is robust.}
 
@@ -36,25 +37,15 @@ GPT-2 & {{G\_DELTA}}\% & **{{G\_RATIO}}$\times$** & -{{VRAM\_REDUCTION}}\% \\
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Fused Triton kernels
-\end{itemize}
-\begin{itemize}
 \item Multi-task calibration
-\end{itemize}
-\begin{itemize}
 \item INT8 combined with AASVD
-\end{itemize}
-\begin{itemize}
 \item Learned rank schedule
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical error propagation bounds
-\end{itemize}
-\begin{itemize}
 \item Cross-lingual calibration
-\end{itemize}
-\begin{itemize}
 \item Recursive factorization
 \end{itemize}
 

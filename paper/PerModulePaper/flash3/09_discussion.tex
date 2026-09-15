@@ -22,22 +22,14 @@ FA3 increases parameter count via LoRA. Its value is throughput, not size.
 \subsubsection{Recommended}
 \begin{itemize}
 \item \textbf{H100/H200 inference} -- FA3 gives 2-4$\times$ throughput
-\end{itemize}
-\begin{itemize}
 \item \textbf{Long sequences} ($L \geq 2048$) -- memory savings substantial
-\end{itemize}
-\begin{itemize}
 \item \textbf{Production serving} -- stable, exact attention
 \end{itemize}
 
 \subsubsection{Not Recommended}
 \begin{itemize}
 \item \textbf{Non-Hopper GPUs} -- SDPA is just as good
-\end{itemize}
-\begin{itemize}
 \item \textbf{Model size reduction} -- use compression methods
-\end{itemize}
-\begin{itemize}
 \item \textbf{Research on attention algorithms} -- this is a kernel, not an algorithm
 \end{itemize}
 
@@ -62,14 +54,15 @@ For DistilBERT on RTX 4070 (SDPA path):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Wrapper} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
-Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
-VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & 90.25\% & -0.46\% \\
+Params & 66.9M & 67.55M & +589826M \\
+Time & 1.90 s & 1.95 s & 1.03$\times$ \\
+VRAM & 183 MB & 190 MB & 1.04$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -78,6 +71,7 @@ VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Wrapper} & \textbf{Hardware} & \textbf{Exact?} & \textbf{Fallback} \\
@@ -101,21 +95,15 @@ TensorRT & NVIDIA & Yes & No \\
 \subsubsection{Positive}
 \begin{itemize}
 \item Faster inference $\to$ cheaper deployment
-\end{itemize}
-\begin{itemize}
 \item Memory savings $\to$ enables longer context
-\end{itemize}
-\begin{itemize}
 \item Exact $\to$ no accuracy trade-off
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
 \item Hopper-only optimization $\to$ hardware lock-in
-\end{itemize}
-\begin{itemize}
 \item Marginal on consumer GPUs
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~10 GPU-hours, ~{{CO2}} kg CO$_2$eq.

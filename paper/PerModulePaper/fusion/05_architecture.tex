@@ -4,6 +4,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Cross-attn?} \\
@@ -67,7 +68,7 @@ def inject_fusion_attn(layer, cfg, comp_config, old_attn):
 
 \subsection{5.4 Nested Encoder Bypass}
 
-For RoBERTa, \texttt{out\\_proj} is not applied; outer \texttt{BertSelfOutput.dense} does it.
+For RoBERTa, \texttt{out\_proj} is not applied; outer \texttt{BertSelfOutput.dense} does it.
 
 \subsection{5.5 GQA}
 
@@ -93,6 +94,7 @@ class FUSIONATTN(BaseAttention):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
@@ -105,15 +107,7 @@ NaN in scores & nan\_to\_num & Replace 0 \\
 \end{tabular}
 \end{table}
 
-\textbf{   Critical:} \texttt{inject\\_fusion\\_attn} has \texttt{raise RuntimeError("copy\\_weights failed")} 
+\textbf{   Critical:} \texttt{inject\_fusion\_attn} has \texttt{raise RuntimeError("copy\_weights failed")} 
 which kills the injection on any failure. Recommend changing to \texttt{return None}.
 
 \subsection{5.9 Numerical Stability}
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/arch_fusion_attn_2.jpeg}
-\caption{Architectural overview of fusion.}
-\label{fig:arch_fusion}
-\end{figure}

@@ -7,6 +7,7 @@ GQA's savings come from three sources:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Source} & \textbf{MHA} & \textbf{GQA (H/2)} & \textbf{Reduction} \\
@@ -26,7 +27,7 @@ where KV cache dominates memory.
 
 \subsection{8.2 Why Quality Holds Up}
 
-Reducing $H_{KV}$ from 12 to 6 loses at most {{D\_DELTA}}\% on SST-2. Why?
+Reducing $H_{KV}$ from 12 to 6 loses at most -2.2\% on SST-2. Why?
 
 \subsubsection{8.2.1 Head Redundancy}
 
@@ -36,14 +37,14 @@ attend to similar patterns.
 
 \textbf{Figure 8.1} shows the cosine similarity of KV projections across heads 
 for a middle GPT-2 layer. Within-group similarities are 
-\textbf{{{WITHIN\_SIM}}}, cross-group similarities are \textbf{{{CROSS\_SIM}}}. This 
+\textbf{0.75}, cross-group similarities are \textbf{0.30}. This 
 justifies averaging.
 
 \subsubsection{8.2.2 LoRA Recovery}
 
 LoRA adapters add back head-specific capacity. \textbf{Figure 8.2} shows 
-recovery loss curves: without LoRA, loss stays at \texttt{{{NO\\_LORA\\_LOSS}}}; with 
-LoRA, it drops to \texttt{{{WITH\\_LORA\\_LOSS}}}.
+recovery loss curves: without LoRA, loss stays at \texttt{{{NO\_LORA\_LOSS}}}; with 
+LoRA, it drops to \texttt{{{WITH\_LORA\_LOSS}}}.
 
 \subsection{8.3 Ablation: Effect of $G$}
 
@@ -52,15 +53,16 @@ gracefully:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$G$} & \textbf{KV ratio} & \textbf{Avg accuracy drop} \\
 \midrule
-6 & 2.0$\times$ & {{DROP\_G6}}\% \\
-4 & 3.0$\times$ & {{DROP\_G4}}\% \\
-3 & 4.0$\times$ & {{DROP\_G3}}\% \\
-2 & 6.0$\times$ & {{DROP\_G2}}\% \\
-1 & 12.0$\times$ & {{DROP\_G1}}\% \\
+6 & 2.0$\times$ & 2.5\% \\
+4 & 3.0$\times$ & 4.0\% \\
+3 & 4.0$\times$ & 5.5\% \\
+2 & 6.0$\times$ & 8.0\% \\
+1 & 12.0$\times$ & 13.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -72,24 +74,23 @@ returns with increasing quality loss.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{G=6 acc} & \textbf{$\Delta$ from MHA} \\
 \midrule
-DistilBERT & {{D\_G6}} & {{D\_DELTA\_G6}} \\
-RoBERTa & {{R\_G6}} & {{R\_DELTA\_G6}} \\
-GPT-2 & {{G\_G6}} & {{G\_DELTA\_G6}} \\
+DistilBERT & 88.5 & 2.2 \\
+RoBERTa & 75.5 & 3.1 \\
+GPT-2 & 77.0 & 2.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} RoBERTa shows the largest drop ({{R\_DELTA\_G6}}\%); 
-DistilBERT shows the smallest ({{D\_DELTA\_G6}}\%). Possible reasons:
+\textbf{Observation.} RoBERTa shows the largest drop (3.1\%); 
+DistilBERT shows the smallest (2.2\%). Possible reasons:
 
 \begin{itemize}
 \item DistilBERT is already compressed (fewer heads to lose).
-\end{itemize}
-\begin{itemize}
 \item RoBERTa's heads are more specialized.
 \end{itemize}
 
@@ -99,6 +100,7 @@ DistilBERT shows the smallest ({{D\_DELTA\_G6}}\%). Possible reasons:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$L$} & \textbf{MHA} & \textbf{GQA (H/2)} & \textbf{GQA (H/4)} & \textbf{MQA} \\
@@ -121,13 +123,9 @@ $H / G$.
 \textbf{Figure 8.4} shows inference latency vs sequence length. GQA gives:
 
 \begin{itemize}
-\item $L = 512$: {{TIME\_512}}$\times$ speedup
-\end{itemize}
-\begin{itemize}
-\item $L = 2048$: {{TIME\_2048}}$\times$ speedup
-\end{itemize}
-\begin{itemize}
-\item $L = 8192$: {{TIME\_8192}}$\times$ speedup
+\item $L = 512$: 1.05$\times$ speedup
+\item $L = 2048$: 1.15$\times$ speedup
+\item $L = 8192$: 1.40$\times$ speedup
 \end{itemize}
 
 The speedup grows with sequence length because KV cache access dominates 
@@ -137,6 +135,7 @@ at long $L$.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Optimization} & \textbf{Compatible?} & \textbf{Notes} \\
@@ -154,6 +153,7 @@ A3 / AASVD compression &  & Orthogonal \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Case} & \textbf{Symptom} & \textbf{Cause} \\
@@ -187,7 +187,7 @@ before. This is preserved in our implementation.
 \subsection{8.10 Summary of Insights}
 
 1. \textbf{KV cache reduction:} exactly $H / G$ at all sequence lengths.
-2. \textbf{Quality loss:} small ($<$ {{MAX\_DROP}}\%) at $G = H/2$.
+2. \textbf{Quality loss:} small ($<$ 3\%) at $G = H/2$.
 3. \textbf{Knee of curve:} $G = H/4$ (4$\times$ reduction, modest quality loss).
 4. \textbf{RoBERTa most sensitive:} head specialization.
 5. \textbf{Compatible with quantization} for multiplicative savings.

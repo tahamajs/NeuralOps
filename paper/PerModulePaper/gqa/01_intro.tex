@@ -53,7 +53,7 @@ $H_{KV} = H$, we seek a modified model $\mathcal{M}'$ such that:
 
 We impose the following constraints:
 
-1. \textbf{Quality preservation:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+1. \textbf{Quality preservation:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 2. \textbf{Weight compatibility:} No retraining of base weights; use LoRA recovery.
 3. \textbf{Architecture portability:} Must work with flat, nested, and causal transformers.
 4. \textbf{Inference ready:} KV cache reduction must be realized at generation time.
@@ -62,7 +62,7 @@ We impose the following constraints:
 
 We present a production-hardened implementation of GQA with three key features:
 
-1. \textbf{Exact weight transfer.} The \texttt{copy\\_weights} procedure handles four 
+1. \textbf{Exact weight transfer.} The \texttt{copy\_weights} procedure handles four 
    distinct attention configurations: flat (DistilBERT), nested (RoBERTa), 
    causal (GPT-2), and grouped-query (Qwen3.5). For MHA $\to$ GQA conversion, 
    query weights are copied verbatim; KV weights are grouped and repeated.
@@ -91,7 +91,7 @@ We present a production-hardened implementation of GQA with three key features:
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts are
 \end{itemize}
-  released under {{LICENSE}}.
+  released under MIT.
 
 \subsection{1.5 Paper Organization}
 

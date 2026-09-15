@@ -1,37 +1,113 @@
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
+% --- Typography & Geometry ---
 \usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{microtype}
+\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
+
+% --- Math & Symbols ---
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{bm}
+
+% --- Tables & Arrays ---
 \usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+
+% --- Graphics & Floats ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% --- Code Listings ---
 \usepackage{xcolor}
 \usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
 
 \definecolor{codebg}{HTML}{F8F9FA}
+\definecolor{codeframe}{HTML}{D0D7DE}
+\definecolor{keywordcolor}{HTML}{0550AE}
+\definecolor{stringcolor}{HTML}{0A3069}
+\definecolor{commentcolor}{HTML}{57606A}
+
 \lstset{
     backgroundcolor=\color{codebg},
     basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
+    keywordstyle=\color{keywordcolor}\bfseries,
+    stringstyle=\color{stringcolor},
+    commentstyle=\color{commentcolor}\itshape,
     frame=single,
+    rulecolor=\color{codeframe},
     breaklines=true,
     breakatwhitespace=true,
-    extendedchars=true
+    extendedchars=true,
+    xleftmargin=6pt,
+    xrightmargin=6pt,
+    aboveskip=8pt,
+    belowskip=8pt
 }
 
+% --- Hyperlinks ---
+\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
 }
+
+% --- Input Title & Authors ---
+\input{00_meta.tex}
 
 \begin{document}
 
-\input{00_meta.tex}
+\maketitle
+
+% --- Abstract & Keywords Block ---
+\begin{abstract}
+<!-- 
+INSTRUCTIONS:
+- 200-250 words
+- Structure: problem $\to$ method $\to$ results $\to$ limitations
+- Emphasize: this is REAL compression (unlike attention-replacement methods)
+- Every number must match Section 7
+-->
+
+Low-rank factorization is a classical approach to compressing the linear layers 
+of transformer models, replacing each weight matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ 
+with a product $U V$ where $U \in \mathbb{R}^{d_\text{out} \times r}$, 
+$V \in \mathbb{R}^{r \times d_\text{in}}$, and $r \ll \min(d_\text{in}, d_\text{out})$. 
+Standard SVD applies this factorization uniformly across all input dimensions, 
+ignoring the fact that transformer activations have highly non-uniform variance 
+across channels. We introduce **A3** (**A**ctivation-**A**ware **A**daptive 
+factorization), which addresses this by (i) collecting a streaming empirical 
+Fisher diagonal during calibration, (ii) weighting the SVD input space by this 
+energy estimate before factorization, (iii) adaptively increasing rank when 
+reconstruction error exceeds a threshold, and (iv) recalibrating LayerNorm 
+affine parameters after factorization to absorb distributional shift.
+
+A3 achieves **5.0\%** parameter reduction on DistilBERT, 
+**4.5\%** on RoBERTa, and **4.5\%** on GPT-2 
+at rank $r = 64$. On SST-2, accuracy drops by only 
+**-2.2\%**, **-2.8\%**, and **-2.9\%** respectively, 
+after 50 LoRA recovery steps. Peak VRAM decreases by 
+**40\%**. We provide a fully reproducible implementation with 
+strict Frobenius-norm validation, safe fallback to original layers, and 
+streaming O($d^2$) memory calibration.
+
+**Keywords:** low-rank factorization, activation-aware compression, Fisher 
+information, LayerNorm recalibration, transformer efficiency
+
+---
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} low-rank factorization, activation-aware compression, Fisher
+\end{abstract}
+
+\vspace{1em}
+
+% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -46,7 +122,12 @@
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
+% --- Appendices ---
+\clearpage
 \appendix
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

@@ -55,14 +55,8 @@ For each projection $P \in \{Q, K, V, O\}$, extract $W_P$ from the source:
 
 \begin{itemize}
 \item \textbf{DistilBERT:} \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}.
-\end{itemize}
-\begin{itemize}
 \item \textbf{RoBERTa:} \texttt{self.query}, \texttt{self.key}, \texttt{self.value}; \texttt{output.dense} for \texttt{o}.
-\end{itemize}
-\begin{itemize}
 \item \textbf{GPT-2:} Split \texttt{c\_attn.weight.T}; \texttt{c\_proj.weight.T} for \texttt{o}.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Qwen:} \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}.
 \end{itemize}
 
@@ -79,8 +73,6 @@ Each projection becomes a \texttt{LoRALinear}:
 
 \begin{itemize}
 \item $W_P$: frozen (copied from source).
-\end{itemize}
-\begin{itemize}
 \item $(A_P, B_P)$: LoRA factors, $B = 0$ at init.
 \end{itemize}
 
@@ -195,6 +187,7 @@ Output: Y, None
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Path} & \textbf{Time} & \textbf{Memory} \\
@@ -213,6 +206,7 @@ naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$\times$.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{Wrapper} \\
@@ -226,7 +220,7 @@ LoRA ($r_L$) & 0 & $8 r_L d$ \\
 
 For DistilBERT ($d=768$, $r_L=16$): \textbf{+589,824 params} across 6 layers.
 
-\textbf{Wrapper increases parameter count by ~{{PARAM\_CHANGE}}\%.}
+\textbf{Wrapper increases parameter count by ~0.88\%.}
 
 \subsection{4.10 Theoretical Notes}
 

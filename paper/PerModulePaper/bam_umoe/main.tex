@@ -1,37 +1,112 @@
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
+% --- Typography & Geometry ---
 \usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{microtype}
+\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
+
+% --- Math & Symbols ---
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{bm}
+
+% --- Tables & Arrays ---
 \usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+
+% --- Graphics & Floats ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% --- Code Listings ---
 \usepackage{xcolor}
 \usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
 
 \definecolor{codebg}{HTML}{F8F9FA}
+\definecolor{codeframe}{HTML}{D0D7DE}
+\definecolor{keywordcolor}{HTML}{0550AE}
+\definecolor{stringcolor}{HTML}{0A3069}
+\definecolor{commentcolor}{HTML}{57606A}
+
 \lstset{
     backgroundcolor=\color{codebg},
     basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
+    keywordstyle=\color{keywordcolor}\bfseries,
+    stringstyle=\color{stringcolor},
+    commentstyle=\color{commentcolor}\itshape,
     frame=single,
+    rulecolor=\color{codeframe},
     breaklines=true,
     breakatwhitespace=true,
-    extendedchars=true
+    extendedchars=true,
+    xleftmargin=6pt,
+    xrightmargin=6pt,
+    aboveskip=8pt,
+    belowskip=8pt
 }
 
+% --- Hyperlinks ---
+\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
 }
+
+% --- Input Title & Authors ---
+\input{00_meta.tex}
 
 \begin{document}
 
-\input{00_meta.tex}
+\maketitle
+
+% --- Abstract & Keywords Block ---
+\begin{abstract}
+Mixture of Experts (MoE) layers increase transformer capacity without 
+proportional compute increases, but applying MoE to **attention value 
+refinement** post-hoc is non-trivial: random initialization perturbs the 
+pretrained representation, destabilizing recovery. We introduce **BAM-UMoE** 
+(**B**idirectional **A**ttention **M**odulation with **U**nified **M**ixture 
+**of E**xperts), which appends a top-2 MoE branch to the value pathway of 
+each attention block with a **three-part step-0 preservation mechanism**:
+
+1. **Zero-initialized final expert layers.** Every expert's output projection 
+   starts at exactly zero, so the MoE branch contributes nothing at step 0.
+2. **Negative gating bias.** A learnable gate with bias initialized to $-3.0$ 
+   produces $\sigma(-3) \approx 0.047$, gently ramping up MoE contribution.
+3. **Frozen base attention.** The original $W_Q, W_K, W_V, W_O$ projections 
+   are copied exactly and frozen; only LoRA adapters and the MoE branch train.
+
+The combination guarantees that **the initial forward pass is mathematically 
+identical to the pretrained model**, allowing MoE capacity to be added without 
+catastrophic drift.
+
+BAM-UMoE supports flat (DistilBERT), nested (RoBERTa/BERT), causal (GPT-2), 
+and GQA+RoPE (Qwen/LLaMA) architectures without modification. It additionally 
+supports **cross-attention** for encoder-decoder models, and handles Conv1D 
+fusions, nested encoders, and padding-aware masking natively.
+
+**Important disclosure.** BAM-UMoE is **not** a compression method. Adding 
+8 experts per layer increases parameter count substantially (see Table 7.2); 
+we report all costs transparently. The method's value lies in **capacity 
+expansion** rather than size reduction.
+
+**Keywords:** mixture of experts, attention refinement, step-0 preservation, 
+LoRA, multi-architecture
+
+---
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} mixture of experts, attention refinement, step-0 preservation,
+\end{abstract}
+
+\vspace{1em}
+
+% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -46,7 +121,12 @@
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
+% --- Appendices ---
+\clearpage
 \appendix
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

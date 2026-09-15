@@ -33,8 +33,6 @@ The number of KV heads $G$ satisfies $1 \le G \le H$. Two natural choices:
 
 \begin{itemize}
 \item \textbf{Default:} $G = H / 2$ (2$\times$ KV cache reduction).
-\end{itemize}
-\begin{itemize}
 \item \textbf{Aggressive:} $G = H / 4$ or $G = 1$ (MQA).
 \end{itemize}
 
@@ -93,7 +91,7 @@ If $G_\text{tgt} = G_\text{src}$, the copy is exact.
 
 \subsubsection{4.4.3 Copy Procedure Pseudocode}
 
-\textbf{Algorithm 1:} \texttt{copy\\_weights} for GQA
+\textbf{Algorithm 1:} \texttt{copy\_weights} for GQA
 \begin{lstlisting}
 Input:  src_attn (MHA or GQA)
         H, G, d_h
@@ -184,6 +182,7 @@ For GPT-2 ($N_l = 12$, $H = 12$, $d_h = 64$, FP16):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Config} & \textbf{$H_{KV}$} & \textbf{KV/token (KB)} & \textbf{KV at L=1024 (MB)} & \textbf{KV at L=8192 (MB)} \\
@@ -200,6 +199,7 @@ MQA & 1 & 3.1 & 3.1 & 25 \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{MHA} & \textbf{GQA} \\

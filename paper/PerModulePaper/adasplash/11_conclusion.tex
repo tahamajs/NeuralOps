@@ -6,7 +6,7 @@
 We presented \textbf{AdaSplash}, an adaptive splash attention mechanism that 
 combines \textbf{$\alpha$-entmax sparse activations} with \textbf{local sliding-window masking} 
 and \textbf{attention sink preservation}. AdaSplash is \textbf{not} a compression 
-method -- it \textbf{increases} parameter count by ~{{PARAM\_CHANGE}}\% due to LoRA 
+method -- it \textbf{increases} parameter count by ~0.88\% due to LoRA 
 adapters. Its value is in producing \textbf{~40\% sparse attention} without 
 accuracy loss.
 
@@ -14,13 +14,14 @@ accuracy loss.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Sparsity} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_DELTA}} & {{D\_SPARSITY}}\% \\
-RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_DELTA}} & {{R\_SPARSITY}}\% \\
-GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_DELTA}} & {{G\_SPARSITY}}\% \\
+DistilBERT & -0.46\% & +594438 & 42\% \\
+RoBERTa & -1.06\% & +1179648 & 40\% \\
+GPT-2 & -0.58\% & +1188876 & 41\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -38,25 +39,15 @@ GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_DELTA}} & {{G\_SPARSITY}}\% \\
 \subsubsection{Short-Term}
 \begin{itemize}
 \item \textbf{Fused CUDA kernel} for entmax bisection
-\end{itemize}
-\begin{itemize}
 \item \textbf{Learned $\alpha$} per layer
-\end{itemize}
-\begin{itemize}
 \item \textbf{Sparse matmul} to exploit sparsity
-\end{itemize}
-\begin{itemize}
 \item \textbf{T5 verification}
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item \textbf{Long-context inference} with splash masking
-\end{itemize}
-\begin{itemize}
 \item \textbf{Sparse hardware} deployment (2:4 sparsity)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Attention pattern analysis} as a research tool
 \end{itemize}
 

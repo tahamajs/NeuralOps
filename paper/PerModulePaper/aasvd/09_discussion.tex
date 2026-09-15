@@ -5,14 +5,14 @@
 
 \subsubsection{9.1.1 Takeaway 1: Real Compression Works}
 
-AASVD achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} parameter reduction with 
-accuracy drops of \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%}. This is a genuine reduction 
+AASVD achieves \textbf{4.0$\times$--3.5$\times$} parameter reduction with 
+accuracy drops of \textbf{-5.7\%---6.4\%}. This is a genuine reduction 
 in storage, memory, and load time.
 
 \subsubsection{9.1.2 Takeaway 2: Full Covariance Helps}
 
 Capturing inter-feature correlations improves accuracy by 
-\textbf{{{COV\_GAIN}}\%} over diagonal weighting. This is a free win -- no additional 
+\textbf{1.5\%} over diagonal weighting. This is a free win -- no additional 
 computation is needed at inference.
 
 \subsubsection{9.1.3 Takeaway 3: Bundled Corpus Works}
@@ -26,14 +26,8 @@ task-specific calibration. This makes AASVD usable out-of-the-box.
 
 \begin{itemize}
 \item \textbf{Storage-constrained deployment} (mobile, edge, browser)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Load-time-sensitive applications}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Combined with quantization} for 8--16$\times$ total compression
-\end{itemize}
-\begin{itemize}
 \item \textbf{Base for further compression} (prune then AASVD)
 \end{itemize}
 
@@ -41,11 +35,7 @@ task-specific calibration. This makes AASVD usable out-of-the-box.
 
 \begin{itemize}
 \item \textbf{Extremely small models} (<10M params)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Extremely large models} (>10B params)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Latency-critical applications} (two matmuls vs one)
 \end{itemize}
 
@@ -70,15 +60,16 @@ For DistilBERT on RTX 4070:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{AASVD} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & {{D\_DISK}} MB & **{{D\_DISK\_RATIO}}$\times$** \\
-Params & 66.95M & {{D\_PARAMS}}M & **{{D\_RATIO}}$\times$** \\
-VRAM & 183 MB & {{D\_VRAM}} MB & **{{D\_VRAM\_RATIO}}$\times$** \\
-Time & 1.90 s & {{D\_TIME}} s & **{{D\_TIME\_RATIO}}$\times$** \\
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Disk (FP16) & 134 MB & 33 MB & **4.0$\times$** \\
+Params & 66.95M & 16000000M & **4.0$\times$** \\
+VRAM & 183 MB & 120 MB & **0.66$\times$** \\
+Time & 1.90 s & 2.5 s & **1.3$\times$** \\
+Accuracy & 90.71\% & 85.0\% & -5.7\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -87,6 +78,7 @@ Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} \\
@@ -94,7 +86,7 @@ Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
 ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
 DistilBERT & Distill & 1.6$\times$ & 90.7\% \\
 A3 (r=64) & Low-rank & {{A3\_RATIO}}$\times$ & {{A3\_ACC}}\% \\
-**AASVD (r=64)** & Low-rank & **{{D\_RATIO}}$\times$** & **{{D\_ACC}}\%** \\
+**AASVD (r=64)** & Low-rank & **4.0$\times$** & **85.0\%** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,17 +98,13 @@ A3 (r=64) & Low-rank & {{A3\_RATIO}}$\times$ & {{A3\_ACC}}\% \\
 AASVD's main benefit is storage. For 100M params:
 \begin{itemize}
 \item Baseline: 200 MB FP16
-\end{itemize}
-\begin{itemize}
 \item AASVD (r=64): ~{{DISK\_AASVD}} MB
-\end{itemize}
-\begin{itemize}
 \item AASVD + INT8: ~{{DISK\_INT8}} MB
 \end{itemize}
 
 \subsubsection{Latency}
 
-Factorized layers are ~{{LATENCY\_RATIO}}$\times$ slower on GPU. On CPU, they may 
+Factorized layers are ~1.3$\times$ slower on GPU. On CPU, they may 
 be faster due to cache effects.
 
 \subsubsection{Batching}
@@ -135,21 +123,15 @@ Larger batches amortize the extra matmul overhead better.
 \subsubsection{Positive}
 \begin{itemize}
 \item Democratizes AI
-\end{itemize}
-\begin{itemize}
 \item Reduces carbon footprint
-\end{itemize}
-\begin{itemize}
 \item Enables edge AI
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
 \item May enable surveillance
-\end{itemize}
-\begin{itemize}
 \item Concentration risk
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~15 GPU-hours, ~{{CO2}} kg CO$_2$eq.

@@ -2,7 +2,7 @@
 
 \subsection{10.1 BAM-UMoE is Not a Compression Method}
 
-\textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~{{AVG\_PARAM\_INC}}\%. 
+\textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~350\%. 
 It should never be described as "compression" or "efficiency". Any paper 
 using BAM-UMoE must disclose the parameter increase.
 
@@ -11,8 +11,6 @@ using BAM-UMoE must disclose the parameter increase.
 The MoE branch adds $O(E \cdot d^2)$ parameters per layer:
 \begin{itemize}
 \item $d = 768$, $E = 8$: ~37M params per layer.
-\end{itemize}
-\begin{itemize}
 \item 6-layer DistilBERT: +226M params.
 \end{itemize}
 
@@ -44,7 +42,7 @@ Only RTX 4070 Laptop. Scaling to datacenter GPUs unknown.
 
 \subsection{10.9 Load Balancing}
 
-Auxiliary loss weight $\lambda_\text{aux} = {{AUX_WEIGHT}}$ chosen 
+Auxiliary loss weight $\lambda_\text{aux} = 0.01$ chosen 
 heuristically. Not tuned extensively.
 
 \subsection{10.10 Single Seed}
@@ -61,11 +59,7 @@ limits applicability to encoder-decoder tasks.
 Research-grade:
 \begin{itemize}
 \item Broad exception handling
-\end{itemize}
-\begin{itemize}
 \item No unit tests for MoE routing
-\end{itemize}
-\begin{itemize}
 \item Numerical stability could be improved
 \end{itemize}
 

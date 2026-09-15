@@ -9,11 +9,7 @@
 1. \textbf{K-means.} Each iteration costs:
 \begin{itemize}
 \item Assignment: \texttt{cdist} between $Q \in \mathbb{R}^{BHLd}$ and $C \in \mathbb{R}^{BH K d}$, cost $\mathcal{O}(BHLKd)$.
-\end{itemize}
-\begin{itemize}
 \item Update: gather $Q$ by cluster id, cost $\mathcal{O}(BHLd)$.
-\end{itemize}
-\begin{itemize}
 \item Three iterations: $\mathcal{O}(3 BHLKd)$.
 \end{itemize}
 
@@ -79,8 +75,6 @@ Only keys with $j \leq i$ contribute. Causality is preserved. $\square$
 For each layer, LoRA adds:
 \begin{itemize}
 \item $r_L \times d$ for $A_Q, A_K, A_V, A_O$
-\end{itemize}
-\begin{itemize}
 \item $d \times r_L$ for $B_Q, B_K, B_V, B_O$
 \end{itemize}
 

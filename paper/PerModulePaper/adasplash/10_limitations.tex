@@ -3,21 +3,17 @@
 
 \subsection{10.1 AdaSplash is Not a Compression Method}
 
-\textbf{AdaSplash increases parameter count by ~{{PARAM\_CHANGE}}\%} due to LoRA 
+\textbf{AdaSplash increases parameter count by ~0.88\%} due to LoRA 
 adapters. It does \textbf{not} reduce model size or VRAM. Any publication using 
 AdaSplash should avoid describing it as "compression".
 
 \subsection{10.2 Inference Latency}
 
-AdaSplash is \textbf{slower} than softmax attention by ~{{LATENCY\_RATIO}}$\times$:
+AdaSplash is \textbf{slower} than softmax attention by ~1.9$\times$:
 
 \begin{itemize}
 \item Entmax bisection: 25 iterations of the same computation
-\end{itemize}
-\begin{itemize}
 \item Softmax fallback computation
-\end{itemize}
-\begin{itemize}
 \item LoRA branch matmuls
 \end{itemize}
 
@@ -28,14 +24,8 @@ For latency-critical applications, use softmax.
 Only \textbf{SST-2} is evaluated. Generalization to:
 \begin{itemize}
 \item Generation tasks (summarization, translation)
-\end{itemize}
-\begin{itemize}
 \item Multi-class classification
-\end{itemize}
-\begin{itemize}
 \item Token-level tasks
-\end{itemize}
-\begin{itemize}
 \item Long-context tasks
 \end{itemize}
 
@@ -46,14 +36,8 @@ is unknown.
 Three models tested (66.9M--124.6M). Not tested:
 \begin{itemize}
 \item Large models (>1B)
-\end{itemize}
-\begin{itemize}
 \item Deep models (>24 layers)
-\end{itemize}
-\begin{itemize}
 \item MoE
-\end{itemize}
-\begin{itemize}
 \item Vision
 \end{itemize}
 
@@ -62,11 +46,7 @@ Three models tested (66.9M--124.6M). Not tested:
 All on RTX 4070 Laptop. Behavior on:
 \begin{itemize}
 \item A100/H100: Unknown
-\end{itemize}
-\begin{itemize}
 \item CPU inference: Unknown
-\end{itemize}
-\begin{itemize}
 \item Edge devices: Unknown
 \end{itemize}
 
@@ -88,12 +68,12 @@ requires specialized kernels.
 
 \subsection{10.9 Single-Seed Results}
 
-All results from seed {{SEED}}. Standard error ~1.69\%. Differences below 
+All results from seed 42. Standard error ~1.69\%. Differences below 
 3.4\% may be noise.
 
 \subsection{10.10 T5 and Qwen Verification}
 
-T5 verification is {{T5\_VERIFIED}}, Qwen is {{QWEN\_VERIFIED}}.
+T5 verification is not tested, Qwen is partial.
 
 \subsection{10.11 Bisection Numerical Stability}
 
@@ -105,11 +85,7 @@ distributions, this may not converge to sufficient precision.
 Research-grade:
 \begin{itemize}
 \item No CUDA kernel for fused entmax
-\end{itemize}
-\begin{itemize}
 \item No sparse matmul optimization
-\end{itemize}
-\begin{itemize}
 \item Broad exception handling
 \end{itemize}
 

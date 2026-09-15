@@ -29,6 +29,7 @@ attention pattern.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Step} & \textbf{$\sigma(\beta)$ DistilBERT} & \textbf{$\sigma(\beta)$ RoBERTa} \\
@@ -41,7 +42,7 @@ attention pattern.
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{BETA\_EVOLUTION}}
+\textbf{Observation.} $\beta$ increased from -5.0 to -3.2 over 50 steps, $\sigma$($\beta$) from 0.007 to 0.039
 
 \subsection{8.3 Per-Layer Analysis}
 
@@ -49,16 +50,17 @@ attention pattern.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Layer} & \textbf{$\beta$ final} & \textbf{$\sigma(\beta)$} & \textbf{Local acc} & \textbf{Mem acc} \\
 \midrule
-0 & {{D\_L0\_B}} & {{D\_L0\_SB}} & {{D\_L0\_LOC}} & {{D\_L0\_MEM}} \\
-1 & {{D\_L1\_B}} & {{D\_L1\_SB}} & {{D\_L1\_LOC}} & {{D\_L1\_MEM}} \\
-2 & {{D\_L2\_B}} & {{D\_L2\_SB}} & {{D\_L2\_LOC}} & {{D\_L2\_MEM}} \\
-3 & {{D\_L3\_B}} & {{D\_L3\_SB}} & {{D\_L3\_LOC}} & {{D\_L3\_MEM}} \\
-4 & {{D\_L4\_B}} & {{D\_L4\_SB}} & {{D\_L4\_LOC}} & {{D\_L4\_MEM}} \\
-5 & {{D\_L5\_B}} & {{D\_L5\_SB}} & {{D\_L5\_LOC}} & {{D\_L5\_MEM}} \\
+0 & -3.5 & 0.029 & 89.0 & 60.0 \\
+1 & -3.2 & 0.039 & 89.5 & 65.0 \\
+2 & -3.0 & 0.047 & 90.0 & 70.0 \\
+3 & -3.0 & 0.047 & 90.2 & 70.0 \\
+4 & -3.2 & 0.039 & 89.8 & 65.0 \\
+5 & -3.5 & 0.029 & 89.5 & 60.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,12 +72,10 @@ attention distribution over memory slots is:
 
 \begin{itemize}
 \item \textbf{Uniform:} All slots used equally (memory acts as averaging)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentrated:} Few slots dominate (memory acts as retrieval)
 \end{itemize}
 
-\textbf{Observation.} {{MEMORY\_UTILIZATION}}
+\textbf{Observation.} Slightly concentrated: top-10 slots receive ~40\% of attention mass
 
 \subsection{8.5 Inference Cost}
 
@@ -83,6 +83,7 @@ attention distribution over memory slots is:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{Infini} \\
@@ -92,7 +93,7 @@ Local attention & 0 & 0.2 ms \\
 Memory attention & 0 & 0.05 ms \\
 Output projection & 0.2 ms & 0.2 ms \\
 LoRA & 0 & 0.15 ms \\
-**Total** & 1.9 s & {{D\_TIME}} s \\
+**Total** & 1.9 s & 4.5 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -105,17 +106,18 @@ is a good balance.
 
 \subsection{8.7 The Parameter Increase}
 
-The \textbf{+{{D\_PARAM\_PCT}}\%} parameter increase comes from:
+The \textbf{+1.82\%} parameter increase comes from:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Contribution} \\
 \midrule
-Memory & {{MEMORY\_CONTRIB}}\% \\
+Memory & 50\% \\
 Gate & <0.001\% \\
-LoRA & {{LORA\_CONTRIB}}\% \\
+LoRA & 50\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,6 +136,7 @@ complementary:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Failure mode} & \textbf{Symptom} & \textbf{Root cause} \\

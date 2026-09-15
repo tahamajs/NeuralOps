@@ -12,20 +12,21 @@ is computed via differentiable Schulz iteration.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attn mem ratio} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & **{{MEM\_REDUCTION}}$\times$** \\
-RoBERTa & {{R\_DELTA}}\% & **{{MEM\_REDUCTION}}$\times$** \\
-GPT-2 & {{G\_DELTA}}\% & **{{MEM\_REDUCTION}}$\times$** \\
+DistilBERT & -4.2\% & **4$\times$** \\
+RoBERTa & -4.6\% & **4$\times$** \\
+GPT-2 & -4.4\% & **4$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{11.3 Key Takeaways}
 
-1. \textbf{Asymmetric landmarks} give +{{ASYM\_GAIN}}\% over symmetric Nystr m.
+1. \textbf{Asymmetric landmarks} give +0.5\% over symmetric Nystr m.
 2. \textbf{$m = 64$} is optimal for $L = 128$.
 3. \textbf{Schulz from SVD pinv} is best practice.
 4. \textbf{Long $L$ benefits most.}
@@ -36,25 +37,15 @@ GPT-2 & {{G\_DELTA}}\% & **{{MEM\_REDUCTION}}$\times$** \\
 \subsubsection{Short-Term}
 \begin{itemize}
 \item True causal approximation
-\end{itemize}
-\begin{itemize}
 \item Learned landmark pooling
-\end{itemize}
-\begin{itemize}
 \item Fused kernels
-\end{itemize}
-\begin{itemize}
 \item Long-context evaluation
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical error bounds
-\end{itemize}
-\begin{itemize}
 \item Integration with MoE
-\end{itemize}
-\begin{itemize}
 \item Cross-task transfer
 \end{itemize}
 
@@ -71,8 +62,6 @@ We thank {{ACKNOWLEDGMENTS}}.
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed Primal Attention, implemented the code, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
 \end{itemize}
 

@@ -94,11 +94,7 @@ Empirically, 3 iterations are enough for attention clustering:
 
 \begin{itemize}
 \item More iterations increase cost $\mathcal{O}(K L d)$ per iteration.
-\end{itemize}
-\begin{itemize}
 \item The soft-assignment step (Phase 4) corrects for imperfect centroids.
-\end{itemize}
-\begin{itemize}
 \item We ablate this in Section 7.6.
 \end{itemize}
 
@@ -236,6 +232,7 @@ Output: Y, attn_weights
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Complexity} \\
@@ -257,6 +254,7 @@ For $K, W \ll L$, this is effectively \textbf{linear in $L$}.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Config} & \textbf{Attention cost} \\
@@ -273,6 +271,7 @@ ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d_h)$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Parameters} \\
@@ -289,7 +288,7 @@ Learnable blend & 1 \\
 For DistilBERT ($d=768$, $r_L=16$, $N_l=6$): \textbf{+294,916 params}.
 
 \textbf{ClusterFormer is not a compression method.} Parameter count increases 
-by \textbf{{{PARAM\_CHANGE}}\%}.
+by \textbf{0.88\%}.
 
 \subsection{4.8 Theoretical Notes}
 
@@ -337,6 +336,7 @@ See Appendix A.5 for details.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Default} & \textbf{Effect} \\
@@ -354,13 +354,7 @@ $\alpha$ (blend) & learnable & Higher = more local \\
 
 \begin{itemize}
 \item $K = 8$: aggressive clustering, faster
-\end{itemize}
-\begin{itemize}
 \item $K = 16$: balanced (default)
-\end{itemize}
-\begin{itemize}
 \item $K = 32$: more fidelity, slower
-\end{itemize}
-\begin{itemize}
 \item $K = L$: no compression (full attention)
 \end{itemize}

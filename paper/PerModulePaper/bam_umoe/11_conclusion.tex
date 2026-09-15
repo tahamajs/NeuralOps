@@ -12,13 +12,14 @@ initialization.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_DELTA}}M \\
-RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_DELTA}}M \\
-GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_DELTA}}M \\
+DistilBERT & -1.2\% & +226M \\
+RoBERTa & -2.1\% & +445M \\
+GPT-2 & -1.6\% & +445M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -35,22 +36,14 @@ GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_DELTA}}M \\
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Sparse MoE (1 expert per token)
-\end{itemize}
-\begin{itemize}
 \item Interaction with compression
-\end{itemize}
-\begin{itemize}
 \item Multi-task evaluation
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical step-0 bounds
-\end{itemize}
-\begin{itemize}
 \item Multi-modal extension
-\end{itemize}
-\begin{itemize}
 \item Sparse hardware deployment
 \end{itemize}
 
@@ -68,8 +61,6 @@ reproducibility.
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
-\end{itemize}
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided methodological feedback and edited the manuscript.
 \end{itemize}
 

@@ -6,16 +6,17 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB \\
-DistilBERT & **BAM-UMoE** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}}M & {{D\_VRAM}} MB \\
+DistilBERT & **BAM-UMoE** & **89.5** & -1.2 & 0.895 & 293M & 800 MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
-RoBERTa & **BAM-UMoE** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}}M & {{R\_VRAM}} MB \\
+RoBERTa & **BAM-UMoE** & **76.5** & -2.1 & 0.765 & 570M & {{R\_VRAM}} MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
-GPT-2 & **BAM-UMoE** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}}M & {{G\_VRAM}} MB \\
+GPT-2 & **BAM-UMoE** & **77.8** & -1.6 & 0.778 & 570M & {{G\_VRAM}} MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -26,18 +27,19 @@ GPT-2 & **BAM-UMoE** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{BAM-UMoE} & \textbf{Increase} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M & {{D\_PARAM\_RATIO}}$\times$ \\
-RoBERTa & 124.6M & {{R\_PARAMS}}M & +{{R\_PARAM\_DELTA}}M & {{R\_PARAM\_RATIO}}$\times$ \\
-GPT-2 & 124.4M & {{G\_PARAMS}}M & +{{G\_PARAM\_DELTA}}M & {{G\_PARAM\_RATIO}}$\times$ \\
+DistilBERT & 66.9M & 293M & +226M & 4.4$\times$ \\
+RoBERTa & 124.6M & 570M & +445M & 4.6$\times$ \\
+GPT-2 & 124.4M & 570M & +445M & 4.6$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~{{AVG\_PARAM\_INC}}\%. 
+\textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~350\%. 
 It is \textbf{not a compression method}.
 
 \subsection{7.3 MoE Load Balancing}
@@ -46,18 +48,19 @@ It is \textbf{not a compression method}.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Min utilization} & \textbf{Max utilization} & \textbf{Ideal (1/E)} \\
 \midrule
-DistilBERT & {{D\_MIN\_UTIL}} & {{D\_MAX\_UTIL}} & 0.125 \\
-RoBERTa & {{R\_MIN\_UTIL}} & {{R\_MAX\_UTIL}} & 0.125 \\
-GPT-2 & {{G\_MIN\_UTIL}} & {{G\_MAX\_UTIL}} & 0.125 \\
+DistilBERT & 0.10 & 0.15 & 0.125 \\
+RoBERTa & 0.10 & 0.16 & 0.125 \\
+GPT-2 & 0.10 & 0.16 & 0.125 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Well-balanced: min/max within $\pm${{IMBALANCE}}\% of ideal.
+Well-balanced: min/max within $\pm$25\% of ideal.
 
 \subsection{7.4 Efficiency}
 
@@ -65,12 +68,13 @@ Well-balanced: min/max within $\pm${{IMBALANCE}}\% of ideal.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 1.90 s & 183 MB \\
-DistilBERT & BAM-UMoE & {{D\_TIME}} s & {{D\_VRAM}} MB \\
+DistilBERT & BAM-UMoE & 4.5 s & 800 MB \\
 GPT-2 & full & 4.20 s & 793 MB \\
 GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
 \bottomrule
@@ -83,14 +87,15 @@ GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$E$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-2 & {{D\_E2}} & {{R\_E2}} & {{G\_E2}} \\
-4 & {{D\_E4}} & {{R\_E4}} & {{G\_E4}} \\
-**8** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** \\
-16 & {{D\_E16}} & {{R\_E16}} & {{G\_E16}} \\
+2 & 89.0 & 75.5 & 77.0 \\
+4 & 89.3 & 76.0 & 77.4 \\
+**8** & **89.5** & **76.5** & **77.8** \\
+16 & 89.5 & 76.4 & 77.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -101,13 +106,14 @@ GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$k$} & \textbf{D acc} & \textbf{Time overhead} \\
 \midrule
-1 & {{D\_K1}} & 1$\times$ \\
-**2** & **{{D\_ACC}}** & **2$\times$** \\
-4 & {{D\_K4}} & 4$\times$ \\
+1 & 88.5 & 1$\times$ \\
+**2** & **89.5** & **2$\times$** \\
+4 & 89.3 & 4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -118,14 +124,15 @@ GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$b_g$} & \textbf{D acc} & \textbf{Notes} \\
 \midrule
-0.0 & {{D\_BG0}} & Unstable ramp \\
--1.0 & {{D\_BG1}} & Faster ramp \\
-**-3.0** & **{{D\_ACC}}** & **Default** \\
--5.0 & {{D\_BG5}} & Very slow ramp \\
+0.0 & 84.5 & Unstable ramp \\
+-1.0 & 88.8 & Faster ramp \\
+**-3.0** & **89.5** & **Default** \\
+-5.0 & 88.5 & Very slow ramp \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,14 +140,8 @@ GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
 \subsection{7.8 Summary}
 
 \begin{itemize}
-\item \textbf{Accuracy:} {{D\_DELTA}}\%--{{G\_DELTA}}\% change.
-\end{itemize}
-\begin{itemize}
-\item \textbf{Parameters:} +{{AVG\_PARAM\_INC}}\% (expansion).
-\end{itemize}
-\begin{itemize}
+\item \textbf{Accuracy:} -1.2\%---1.6\% change.
+\item \textbf{Parameters:} +350\% (expansion).
 \item \textbf{Load balancing:} well-behaved.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Step-0 preservation:} verified (see Section 8.1).
 \end{itemize}

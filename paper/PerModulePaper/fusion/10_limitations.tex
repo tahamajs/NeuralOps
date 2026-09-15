@@ -13,11 +13,11 @@ behavior is extrapolated.
 
 \subsection{10.3 Not a Compression Method}
 
-Parameter count increases by ~{{PARAM\_CHANGE}}\%.
+Parameter count increases by ~1.17\%.
 
 \subsection{10.4 Gate MLP Overhead}
 
-The gate MLP adds ~{{GATE\_PARAMS}}M parameters per model but is unused at 
+The gate MLP adds ~0.20M parameters per model but is unused at 
 L $\le$ 128.
 
 \subsection{10.5 Task Coverage}
@@ -48,7 +48,7 @@ Standard error ~1.69\%.
 
 \subsection{10.11 Critical Bug: `raise RuntimeError` in inject}
 
-The \texttt{inject\\_fusion\\_attn} function has:
+The \texttt{inject\_fusion\_attn} function has:
 
 \begin{lstlisting}
 except Exception:
@@ -61,11 +61,7 @@ This kills injection on any failure. Recommend changing to \texttt{return None}.
 
 \begin{itemize}
 \item Research-grade
-\end{itemize}
-\begin{itemize}
 \item No unit tests for edge cases
-\end{itemize}
-\begin{itemize}
 \item Broad exception handling
 \end{itemize}
 

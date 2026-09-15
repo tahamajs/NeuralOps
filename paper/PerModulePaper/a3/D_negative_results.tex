@@ -26,11 +26,7 @@
 \textbf{Result.} 
 \begin{itemize}
 \item Memory: O(batch $\times$ d) instead of O(d)
-\end{itemize}
-\begin{itemize}
 \item Time: 3$\times$ slower
-\end{itemize}
-\begin{itemize}
 \item Accuracy improvement: <0.5\%
 \end{itemize}
 
@@ -43,8 +39,6 @@
 \textbf{Result.}
 \begin{itemize}
 \item Time: 20$\times$ slower than adaptive escalation
-\end{itemize}
-\begin{itemize}
 \item Accuracy improvement: <1\%
 \end{itemize}
 
@@ -81,6 +75,7 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{LR} & \textbf{DistilBERT acc} & \textbf{Loss stability} \\
@@ -98,6 +93,7 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Rank} & \textbf{Ratio} & \textbf{DistilBERT} \\
@@ -116,6 +112,7 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem targeted} & \textbf{Result} \\
@@ -139,6 +136,7 @@ We ran 3 seeds on DistilBERT:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{Acc} \\

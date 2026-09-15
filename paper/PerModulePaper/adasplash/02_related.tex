@@ -60,6 +60,7 @@ components. Compatible with AdaSplash.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Complexity} & \textbf{Sparse?} & \textbf{Sinks?} \\
@@ -92,12 +93,8 @@ specific combination on small pretrained models with LoRA recovery.
 Unlike low-rank compression methods (A3, AASVD, Adaptive SVD), AdaSplash:
 \begin{itemize}
 \item Does \textbf{not} reduce parameter count.
-\end{itemize}
-\begin{itemize}
 \item Does \textbf{not} compress weights.
-\end{itemize}
-\begin{itemize}
-\item \textbf{Increases} parameter count by ~{{PARAM\_CHANGE}}\% via LoRA.
+\item \textbf{Increases} parameter count by ~0.88\% via LoRA.
 \end{itemize}
 
 Its value is in \textbf{sparsity} and \textbf{interpretability}, not size.

@@ -6,11 +6,7 @@
 Only SST-2 evaluated. GQA may behave differently on:
 \begin{itemize}
 \item Generation tasks (summarization, translation)
-\end{itemize}
-\begin{itemize}
 \item Long-context tasks (retrieval, QA)
-\end{itemize}
-\begin{itemize}
 \item Multi-lingual tasks
 \end{itemize}
 
@@ -19,11 +15,7 @@ Only SST-2 evaluated. GQA may behave differently on:
 Tested on models with $H = 8$--$12$. Not tested on:
 \begin{itemize}
 \item Very wide models ($H = 32+$)
-\end{itemize}
-\begin{itemize}
 \item Models with $H$ prime (limits $G$ choices)
-\end{itemize}
-\begin{itemize}
 \item Mixture-of-Experts
 \end{itemize}
 
@@ -32,11 +24,7 @@ Tested on models with $H = 8$--$12$. Not tested on:
 RTX 4070 Laptop only. Not tested on:
 \begin{itemize}
 \item A100/H100
-\end{itemize}
-\begin{itemize}
 \item CPU
-\end{itemize}
-\begin{itemize}
 \item Edge devices
 \end{itemize}
 
@@ -61,7 +49,7 @@ We provide no formal bound on expressiveness loss or task accuracy loss.
 
 \subsection{10.8 Single Seed}
 
-All results from seed {{SEED}}. Differences below 3.4\% may be noise.
+All results from seed 42. Differences below 3.4\% may be noise.
 
 \subsection{10.9 Weight Averaging Choice}
 
@@ -73,11 +61,7 @@ learned pooling) may work better but are not explored.
 We do not compare with:
 \begin{itemize}
 \item Ainslie et al.'s original GQA
-\end{itemize}
-\begin{itemize}
 \item MLA (DeepSeek-V2)
-\end{itemize}
-\begin{itemize}
 \item Other recent variants
 \end{itemize}
 
@@ -90,8 +74,6 @@ We do not compare with:
 Research-grade implementation:
 \begin{itemize}
 \item No unit tests for edge cases
-\end{itemize}
-\begin{itemize}
 \item Some paths use broad exception handling
 \end{itemize}
 

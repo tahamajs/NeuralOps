@@ -4,7 +4,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # Windows
@@ -21,7 +21,7 @@ python run_all_4_gqa.py \
     --lora_rank 16
 \end{lstlisting}
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~15 minutes.
 
 \subsection{12.3 Reproducing Tables}
 
@@ -62,13 +62,14 @@ torch.cuda.manual_seed_all(seed)
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{KV ratio} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & 2.0$\times$ \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & 2.0$\times$ \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & 2.0$\times$ \\
+DistilBERT & 88.5\% $\pm$ 1\% & 2.0$\times$ \\
+RoBERTa & 75.5\% $\pm$ 1\% & 2.0$\times$ \\
+GPT-2 & 77.0\% $\pm$ 1\% & 2.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -77,22 +78,14 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & 2.0$\times$ \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\end{itemize}
-\begin{itemize}
-\item \textbf{Checkpoints:} \texttt{{{HF\\_ORG}}/svd-linear-attention-*-gqa}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified\\_gqa/*/summary.csv}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-gqa}
+\item \textbf{Metrics:} \texttt{results/unified\_gqa/*/summary.csv}
 \end{itemize}
 
 \subsection{12.7 Known Issues}
 
 \begin{itemize}
 \item Head count must divide cleanly
-\end{itemize}
-\begin{itemize}
 \item RoPE applies to $K$ before repetition
-\end{itemize}
-\begin{itemize}
 \item Windows: use UTF-8 encoding
 \end{itemize}

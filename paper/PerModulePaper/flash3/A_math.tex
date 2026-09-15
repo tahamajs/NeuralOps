@@ -21,11 +21,7 @@ For numerical stability, subtract $\max_j s_j$:
 \textbf{Online.} Process scores in blocks. Maintain:
 \begin{itemize}
 \item $m$: running max
-\end{itemize}
-\begin{itemize}
 \item $\ell$: running sum $\sum_j e^{s_j - m}$
-\end{itemize}
-\begin{itemize}
 \item $O$: running weighted sum $\sum_j e^{s_j - m} v_j$
 \end{itemize}
 

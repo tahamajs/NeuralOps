@@ -60,11 +60,7 @@ For a query block $i$ with selected key block $j$:
 
 \begin{itemize}
 \item If $j < i$: all keys are causally valid.
-\end{itemize}
-\begin{itemize}
 \item If $j = i$: within-block causal masking applied.
-\end{itemize}
-\begin{itemize}
 \item If $j > i$: no keys are valid (but block 0 always selected if $i > 0$,
 \end{itemize}
   and $j = 0$ for $i > 0$ is always causally valid).
@@ -82,6 +78,7 @@ For layer with $d$ hidden, $d_h$ head\_dim, $r_L$ LoRA rank:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Component} & \textbf{Parameters} \\

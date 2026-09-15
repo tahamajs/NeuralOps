@@ -3,7 +3,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,13 +14,14 @@ pip install -r requirements.txt
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,9 +31,9 @@ datasets & {{DATASETS\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_fusion_attn.py \
     --models distilbert,roberta,gpt2 \
-    --block_size {{BLOCK_SIZE}} \
-    --top_k_blocks {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --block_size 64 \
+    --top_k_blocks 4 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{12.4 Reproducing Tables}
@@ -66,13 +67,14 @@ torch.cuda.manual_seed_all(seed)
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Path} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & Short \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & Short \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & Short \\
+DistilBERT & 90.48\% $\pm$ 1\% & Short \\
+RoBERTa & 77.35\% $\pm$ 1\% & Short \\
+GPT-2 & 78.90\% $\pm$ 1\% & Short \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,22 +83,14 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & Short \\
 
 \begin{itemize}
 \item Dataset: SST-2
-\end{itemize}
-\begin{itemize}
-\item Checkpoints: \texttt{{{HF\\_ORG}}/svd-linear-attention-*-fusion\\_attn}
-\end{itemize}
-\begin{itemize}
-\item Metrics: \texttt{results/unified\\_fusion\\_attn/*/summary.csv}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-fusion\_attn}
+\item Metrics: \texttt{results/unified\_fusion\_attn/*/summary.csv}
 \end{itemize}
 
 \subsection{12.8 Known Issues}
 
 \begin{itemize}
 \item Windows: \texttt{PYTHONIOENCODING=utf-8}
-\end{itemize}
-\begin{itemize}
 \item CUDA $\ge$ 11.8 for FP16
-\end{itemize}
-\begin{itemize}
-\item \texttt{inject\\_fusion\\_attn} raises on copy failure (recommend changing to return None)
+\item \texttt{inject\_fusion\_attn} raises on copy failure (recommend changing to return None)
 \end{itemize}

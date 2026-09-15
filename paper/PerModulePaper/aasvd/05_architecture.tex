@@ -5,6 +5,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Architecture} & \textbf{Target layers} & \textbf{Conv1D?} & \textbf{Nested?} \\
@@ -18,7 +19,7 @@ Qwen3.5-0.8B & `q\_proj, k\_proj, v\_proj, o\_proj` & No & No \\
 \end{table}
 
 By default, AASVD targets \textbf{attention projections only} 
-(\texttt{target\\_attention\\_only = True}). Set \texttt{target\\_attention\\_only = False} to 
+(\texttt{target\_attention\_only = True}). Set \texttt{target\_attention\_only = False} to 
 also compress FFN layers.
 
 \subsection{5.2 Layer Targeting Rules}
@@ -27,6 +28,7 @@ AASVD protects the following layers from compression:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Pattern} & \textbf{Reason} \\
@@ -41,7 +43,7 @@ AASVD protects the following layers from compression:
 \end{tabular}
 \end{table}
 
-The default targeting uses \texttt{should\\_compress\\_linear} for additional checks.
+The default targeting uses \texttt{should\_compress\_linear} for additional checks.
 
 \subsection{5.3 Handling Conv1D (GPT-2)}
 
@@ -74,19 +76,19 @@ rest of the model's forward pass works unchanged.
 \subsection{5.4 Handling LoRA-Wrapped Modules}
 
 When the model has been wrapped with LoRA adapters (\texttt{LoRALinear}), AASVD 
-extracts the \texttt{base\\_layer}:
+extracts the \texttt{base\_layer}:
 
 \begin{lstlisting}
 target_mod = getattr(module, "base_layer", module)
 \end{lstlisting}
 
-The factorized layer replaces \texttt{module.base\\_layer}, preserving the outer 
+The factorized layer replaces \texttt{module.base\_layer}, preserving the outer 
 LoRA parameters. This ensures that any existing LoRA adapters remain 
 attached and trainable.
 
 \subsection{5.5 Replacing a Layer}
 
-Replacement uses \texttt{replace\\_module} from the framework:
+Replacement uses \texttt{replace\_module} from the framework:
 
 \begin{lstlisting}
 if hasattr(module, "base_layer"):
@@ -96,7 +98,7 @@ else:
 \end{lstlisting}
 
 After replacement, all parameters in fallback layers are frozen 
-(\texttt{requires\\_grad = False}) to prevent accidental training.
+(\texttt{requires\_grad = False}) to prevent accidental training.
 
 \subsection{5.6 Causality and Streaming}
 
@@ -105,8 +107,6 @@ causal forward passes:
 
 \begin{itemize}
 \item Forward hooks fire during the standard causal forward pass.
-\end{itemize}
-\begin{itemize}
 \item No future-token leakage occurs because the model's own attention
 \end{itemize}
   masking is respected.
@@ -186,12 +186,12 @@ class SVDLinear(nn.Module):
 After AASVD compression, the model is passed to the LoRA recovery pipeline:
 
 1. \textbf{AASVD} compresses $\to$ factorized \texttt{SVDLinear} layers.
-2. \textbf{Framework} attaches LoRA adapters (\texttt{lora\\_A}, \texttt{lora\\_B}).
+2. \textbf{Framework} attaches LoRA adapters (\texttt{lora\_A}, \texttt{lora\_B}).
 3. \textbf{Recovery} trains only LoRA parameters.
 4. \textbf{Evaluation} uses the fine-tuned model.
 
 \textbf{Note.} AASVD can also instantiate LoRA adapters \textit{inside} the \texttt{SVDLinear} 
-module (via the \texttt{lora\\_rank} parameter). This is used when the framework 
+module (via the \texttt{lora\_rank} parameter). This is used when the framework 
 expects LoRA to be part of the compression module.
 
 \subsection{5.10 Registry}

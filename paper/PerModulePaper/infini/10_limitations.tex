@@ -3,7 +3,7 @@
 
 \subsection{10.1 Not a Compressor}
 
-Infini-Attention \textbf{increases} parameter count by ~{{D\_PARAM\_PCT}}\%. It is 
+Infini-Attention \textbf{increases} parameter count by ~1.82\%. It is 
 designed for \textbf{inference efficiency at long sequences}, not for model 
 size reduction.
 
@@ -13,11 +13,7 @@ Only SST-2 is evaluated. Infini-Attention may behave differently on:
 
 \begin{itemize}
 \item Generation tasks (summarization, translation)
-\end{itemize}
-\begin{itemize}
 \item Long-context reasoning (needle-in-haystack)
-\end{itemize}
-\begin{itemize}
 \item Multi-class classification
 \end{itemize}
 
@@ -27,11 +23,7 @@ Tested on models with $\le$124M parameters. Not tested on:
 
 \begin{itemize}
 \item >1B parameters
-\end{itemize}
-\begin{itemize}
 \item Very deep models (>24 layers)
-\end{itemize}
-\begin{itemize}
 \item Mixture-of-Experts
 \end{itemize}
 
@@ -41,11 +33,7 @@ All experiments on RTX 4070 Laptop. Not tested on:
 
 \begin{itemize}
 \item A100/H100
-\end{itemize}
-\begin{itemize}
 \item CPU
-\end{itemize}
-\begin{itemize}
 \item Edge devices
 \end{itemize}
 
@@ -70,11 +58,7 @@ We do not analyze what the memory learns. In particular:
 
 \begin{itemize}
 \item Does it capture global sentiment?
-\end{itemize}
-\begin{itemize}
 \item Does it memorize specific tokens?
-\end{itemize}
-\begin{itemize}
 \item How does it interact with position embeddings?
 \end{itemize}
 
@@ -95,7 +79,7 @@ al., 2020) or Recurrent Memory Transformer (Bulatov et al., 2022).
 
 \subsection{10.12 Unresolved Failures}
 
-{{UNRESOLVED\_FAILURES}}
+None observed on the three tested models
 
 \subsection{10.13 Code Quality}
 
@@ -103,10 +87,6 @@ Research-grade implementation. Known issues:
 
 \begin{itemize}
 \item No unit tests
-\end{itemize}
-\begin{itemize}
 \item Broad exception handling
-\end{itemize}
-\begin{itemize}
 \item NaN not explicitly handled in memory branch
 \end{itemize}

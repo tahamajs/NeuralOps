@@ -1,37 +1,103 @@
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
+% --- Typography & Geometry ---
 \usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{microtype}
+\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
+
+% --- Math & Symbols ---
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{bm}
+
+% --- Tables & Arrays ---
 \usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+
+% --- Graphics & Floats ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% --- Code Listings ---
 \usepackage{xcolor}
 \usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
 
 \definecolor{codebg}{HTML}{F8F9FA}
+\definecolor{codeframe}{HTML}{D0D7DE}
+\definecolor{keywordcolor}{HTML}{0550AE}
+\definecolor{stringcolor}{HTML}{0A3069}
+\definecolor{commentcolor}{HTML}{57606A}
+
 \lstset{
     backgroundcolor=\color{codebg},
     basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
+    keywordstyle=\color{keywordcolor}\bfseries,
+    stringstyle=\color{stringcolor},
+    commentstyle=\color{commentcolor}\itshape,
     frame=single,
+    rulecolor=\color{codeframe},
     breaklines=true,
     breakatwhitespace=true,
-    extendedchars=true
+    extendedchars=true,
+    xleftmargin=6pt,
+    xrightmargin=6pt,
+    aboveskip=8pt,
+    belowskip=8pt
 }
 
+% --- Hyperlinks ---
+\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
 }
+
+% --- Input Title & Authors ---
+\input{00_meta.tex}
 
 \begin{document}
 
-\input{00_meta.tex}
+\maketitle
+
+% --- Abstract & Keywords Block ---
+\begin{abstract}
+Autoregressive transformer inference is bottlenecked by the memory footprint of 
+the key-value (KV) cache, which scales linearly with sequence length and number 
+of heads. Multi-Head Attention (MHA) stores one $K$ and $V$ per query head 
+($H_{KV} = H$), which is maximally expressive but also maximally memory-intensive. 
+Multi-Query Attention (MQA) collapses all KV heads into one ($H_{KV} = 1$), 
+achieving minimal memory at a cost to quality. **Grouped-Query Attention** (GQA) 
+interpolates between these extremes: it partitions the $H$ query heads into $G$ 
+groups and shares a single KV head per group ($H_{KV} = G \le H$).
+
+We present a production-hardened PyTorch implementation of GQA that supports 
+flat (DistilBERT), nested (RoBERTa), causal (GPT-2), and grouped-query (Qwen3.5) 
+architectures. Our implementation includes exact pretrained weight transfer 
+via `copy\_weights`, frozen base weights with LoRA recovery adapters, RoPE 
+support, and safe injection returning `None` on failure. We evaluate GQA on 
+DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with $G = H/2$ (i.e., 
+$H_{KV} = 6$), achieving **88.5\%**, **75.5\%**, and 
+**77.0\%** accuracy respectively. The KV cache footprint is reduced by 
+**{{KV\_REDUCTION}}$\times$** at inference time. We provide a full ablation over 
+$G / H$ ratio and analyze the trade-off between memory savings and quality loss.
+
+**Keywords:** grouped-query attention, KV cache, memory efficiency, transformer 
+inference, attention architecture
+
+---
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} grouped-query attention, KV cache, memory efficiency, transformer
+\end{abstract}
+
+\vspace{1em}
+
+% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -46,7 +112,12 @@
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
+% --- Appendices ---
+\clearpage
 \appendix
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

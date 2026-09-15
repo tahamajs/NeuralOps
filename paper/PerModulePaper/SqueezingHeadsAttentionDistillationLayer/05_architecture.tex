@@ -5,6 +5,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
@@ -12,7 +13,7 @@
 DistilBERT & Flat & No & No &  \\
 RoBERTa & Nested & No & No &  \\
 GPT-2 & Causal & No & No &  \\
-Qwen3.5 & Causal + RoPE & Yes & Yes & {{Q\_VERIFIED}} \\
+Qwen3.5 & Causal + RoPE & Yes & Yes & not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,7 +26,7 @@ Qwen3.5 & Causal + RoPE & Yes & Yes & {{Q\_VERIFIED}} \\
 q_lin, k_lin, v_lin, out_lin
 \end{lstlisting}
 
-Direct copy with head-dim slicing. \texttt{is\\_nested\\_encoder = False}.
+Direct copy with head-dim slicing. \texttt{is\_nested\_encoder = False}.
 
 \subsubsection{5.2.2 RoBERTa (Nested)}
 
@@ -34,7 +35,7 @@ attention.self.query, attention.self.key, attention.self.value
 attention.output.dense
 \end{lstlisting}
 
-Extract from inner \texttt{self}. \texttt{is\\_nested\\_encoder = True}; skip own \texttt{out\\_proj}.
+Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}; skip own \texttt{out\_proj}.
 
 \subsubsection{5.2.3 GPT-2 (Causal)}
 
@@ -42,7 +43,7 @@ Extract from inner \texttt{self}. \texttt{is\\_nested\\_encoder = True}; skip ow
 c_attn (fused), c_proj
 \end{lstlisting}
 
-Split fused \texttt{c\\_attn}:
+Split fused \texttt{c\_attn}:
 
 \begin{lstlisting}
 w = src.c_attn.weight.t()  # Conv1D transpose
@@ -61,11 +62,9 @@ if w_k.shape[0] > self.kv_head_size:
 
 \subsection{5.3 Handling Nested Encoders}
 
-For RoBERTa/BERT, \texttt{is\\_nested\\_encoder = True}:
+For RoBERTa/BERT, \texttt{is\_nested\_encoder = True}:
 \begin{itemize}
-\item No \texttt{out\\_proj} applied inside Squeezing Heads.
-\end{itemize}
-\begin{itemize}
+\item No \texttt{out\_proj} applied inside Squeezing Heads.
 \item Outer \texttt{attention.output.dense} applies output.
 \end{itemize}
 
@@ -80,7 +79,7 @@ scores = scores + causal_mask
 
 \subsection{5.5 GQA Handling}
 
-For Qwen/LLaMA with $H_{kv} < H$, use \texttt{repeat\\_kv}:
+For Qwen/LLaMA with $H_{kv} < H$, use \texttt{repeat\_kv}:
 
 \begin{lstlisting}
 if self.num_kv_heads < self.num_heads:
@@ -115,7 +114,7 @@ Output: M with LoRA-wrapped attention
 
 \subsection{5.8 Failure Handling}
 
-\texttt{inject\\_squeezing\\_heads} returns \texttt{None} on failure:
+\texttt{inject\_squeezing\_heads} returns \texttt{None} on failure:
 
 \begin{lstlisting}
 try:
@@ -129,6 +128,7 @@ except Exception as e:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{Squeezing Heads} \\

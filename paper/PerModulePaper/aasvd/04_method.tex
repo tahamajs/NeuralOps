@@ -99,6 +99,7 @@ We ship a \textbf{default multi-domain corpus} of 5 documents:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{\#} & \textbf{Domain} & \textbf{Approximate length} \\
@@ -116,7 +117,7 @@ Total: ~215 tokens. The corpus is designed to activate diverse subspaces
 of the residual stream, providing a broad calibration signal even without 
 access to the target task.
 
-If user-supplied \texttt{calibration\\_texts} are provided, they \textbf{replace} the 
+If user-supplied \texttt{calibration\_texts} are provided, they \textbf{replace} the 
 default corpus.
 
 \subsection{4.3 Phase 2: Weighted SVD}
@@ -220,11 +221,11 @@ After factorization, we compute:
 
 1. \textbf{err $\leq \tau$.} The factorization is accepted. \texttt{SVDLinear} replaces 
    the original layer.
-2. \textbf{err $> \tau$.} If \texttt{fallback\\_to\\_original = True}, the original layer 
+2. \textbf{err $> \tau$.} If \texttt{fallback\_to\_original = True}, the original layer 
    is preserved and logged. Otherwise, the factorization is applied anyway 
    with a warning.
 
-We default to \texttt{fallback\\_to\\_original = True} and \texttt{max\\_error = {{MAX\\_ERROR}}}.
+We default to \texttt{fallback\_to\_original = True} and \texttt{max\_error = 0.50}.
 
 \subsection{4.5 Phase 4: Structural Replacement}
 
@@ -241,14 +242,8 @@ where:
 
 \begin{itemize}
 \item $V \in \mathbb{R}^{r \times d_\text{in}}$: down-projection
-\end{itemize}
-\begin{itemize}
 \item $U \in \mathbb{R}^{d_\text{out} \times r}$: up-projection
-\end{itemize}
-\begin{itemize}
 \item $b \in \mathbb{R}^{d_\text{out}}$: bias (if original had one)
-\end{itemize}
-\begin{itemize}
 \item $\text{LoRA}(x) = (x A^\top) B^\top$: optional recovery adapter
 \end{itemize}
 
@@ -256,6 +251,7 @@ where:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Configuration} & \textbf{Parameters} \\
@@ -271,6 +267,7 @@ For a $768 \times 768$ matrix at $r = 64$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
@@ -291,7 +288,7 @@ adapters $A, B$ are trainable. This ensures that:
 2. The parameter reduction persists after fine-tuning.
 3. Gradient flow through $U, V$ is blocked to avoid drift.
 
-The freeze is implemented via \texttt{requires\\_grad = False} on $U, V$.
+The freeze is implemented via \texttt{requires\_grad = False} on $U, V$.
 
 \subsection{4.6 The Full Algorithm}
 
@@ -344,6 +341,7 @@ Output: compressed model M', statistics
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Phase} & \textbf{Time} & \textbf{GPU Memory} \\

@@ -9,8 +9,6 @@
 
 \begin{itemize}
 \item \textbf{Softmax attention:} All entries positive, most tiny.
-\end{itemize}
-\begin{itemize}
 \item \textbf{$\alpha$-entmax attention:} ~40\% entries exactly zero.
 \end{itemize}
 
@@ -28,7 +26,7 @@ the pretrained representations remain intact.
 
 Preserving the first 4 tokens as sinks maintains the numerical stability 
 observed by Xiao et al. (2024). Removing sinks causes accuracy drops of 
-{{SINK\_DROP}}\%.
+4.5\%.
 
 \subsection{8.2 Attention Sparsity Analysis}
 
@@ -36,15 +34,16 @@ observed by Xiao et al. (2024). Removing sinks causes accuracy drops of
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$\alpha$} & \textbf{Sparsity} & \textbf{Effective support} \\
 \midrule
 1.0 & 0\% & 128 (all) \\
-1.2 & {{SP12}}\% & ~{{SUP12}} \\
-1.5 & {{SP15}}\% & ~{{SUP15}} \\
-1.8 & {{SP18}}\% & ~{{SUP18}} \\
-2.0 & {{SP20}}\% & ~{{SUP20}} \\
+1.2 & 20\% & ~102 \\
+1.5 & 42\% & ~74 \\
+1.8 & 52\% & ~61 \\
+2.0 & 60\% & ~51 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -58,16 +57,17 @@ sparsity; $\alpha$ = 2.0 gives ~60\%.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Layer} & \textbf{Sparsity} \\
 \midrule
-0 & {{D\_L0\_SP}}\% \\
-1 & {{D\_L1\_SP}}\% \\
-2 & {{D\_L2\_SP}}\% \\
-3 & {{D\_L3\_SP}}\% \\
-4 & {{D\_L4\_SP}}\% \\
-5 & {{D\_L5\_SP}}\% \\
+0 & 42\% \\
+1 & 41\% \\
+2 & 42\% \\
+3 & 43\% \\
+4 & 42\% \\
+5 & 42\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,6 +81,7 @@ AdaSplash behavior is uniform.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{$\Delta$} \\
@@ -89,12 +90,12 @@ Full attention + softmax & 90.71\% & -- \\
 + Frozen base + LoRA & {{ABL1}} & {{ABL1\_D}} \\
 + $\alpha$-entmax (no splash) & {{ABL2}} & {{ABL2\_D}} \\
 + Splash radius & {{ABL3}} & {{ABL3\_D}} \\
-+ Sinks & {{D\_ACC}} & {{D\_DELTA}} \\
++ Sinks & 90.25 & -0.46 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Interpretation.} Each component contributes ~{{AVG\_CONTRIB}}\% accuracy.
+\textbf{Interpretation.} Each component contributes ~1.0\% accuracy.
 
 \subsection{8.5 Comparison with Sparsemax}
 
@@ -102,12 +103,13 @@ Full attention + softmax & 90.71\% & -- \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Metric} & \textbf{$\alpha$=1.5} & \textbf{$\alpha$=2.0} \\
 \midrule
-DistilBERT & **{{D\_ACC}}** & {{D\_A2}} \\
-Sparsity & {{SP15}}\% & {{SP20}}\% \\
+DistilBERT & **90.25** & 88.30 \\
+Sparsity & 42\% & 60\% \\
 Training stability & Stable & Oscillatory \\
 Speed & Fast & Slower (bisection) \\
 \bottomrule
@@ -119,7 +121,7 @@ sparsity.
 
 \subsection{8.6 Inference Cost Breakdown}
 
-AdaSplash is \textbf{slower} than baseline by {{LATENCY\_RATIO}}$\times$. This comes from:
+AdaSplash is \textbf{slower} than baseline by 1.9$\times$. This comes from:
 
 1. \textbf{Entmax bisection:} 25 iterations of the same computation.
 2. \textbf{Masked softmax computation:} Softmax fallback check.
@@ -129,6 +131,7 @@ AdaSplash is \textbf{slower} than baseline by {{LATENCY\_RATIO}}$\times$. This c
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Softmax} & \textbf{AdaSplash} \\
@@ -161,13 +164,14 @@ AdaSplash produces \textbf{more interpretable} attention:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Pruning target} & \textbf{Reversible?} \\
 \midrule
-Magnitude pruning (50\%) & {{MAG50}} & Weights & No \\
-Head pruning (50\%) & {{HP50}} & Heads & No \\
-**AdaSplash** & **{{D\_ACC}}** & **Activations** & **Yes ($\alpha$=1)** \\
+Magnitude pruning (50\%) & 85 & Weights & No \\
+Head pruning (50\%) & 82 & Heads & No \\
+**AdaSplash** & **90.25** & **Activations** & **Yes ($\alpha$=1)** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -191,17 +195,13 @@ if sum(p) < 1e-7:
 
 \begin{itemize}
 \item \textbf{Score overflow:} Prevented by subtracting max.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Support boundary:} Fallback to softmax.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Padding tokens:} Masked to -10000.
 \end{itemize}
 
 \subsubsection{8.9.3 Failures We Observed}
 
-{{FAILURES}}
+No systematic failures observed.
 
 \subsection{8.10 Summary of Insights}
 

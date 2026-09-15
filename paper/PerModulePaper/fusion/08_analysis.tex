@@ -26,6 +26,7 @@ $L = 128$, the module's sparsity machinery is silent.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$L$} & \textbf{Softmax (FLOPs)} & \textbf{FUSIONATTN (FLOPs)} & \textbf{Speedup} \\
@@ -48,11 +49,7 @@ FUSIONATTN's benefits \textbf{only appear at $L \geq 256$}.
 
 \begin{itemize}
 \item Gate consistently selects block 0 (attention sink).
-\end{itemize}
-\begin{itemize}
 \item Selected blocks tend to be \textbf{nearby} (local structure).
-\end{itemize}
-\begin{itemize}
 \item Some \textbf{distant blocks} are also selected (global context).
 \end{itemize}
 
@@ -62,13 +59,14 @@ FUSIONATTN's benefits \textbf{only appear at $L \geq 256$}.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Config} & \textbf{D acc} \\
 \midrule
 Baseline & 90.71\% \\
-+ LoRA only (no gate) & {{LORA\_ACC}} \\
-+ Gate MLP (unused) & **{{D\_ACC}}** \\
++ LoRA only (no gate) & 90.45 \\
++ Gate MLP (unused) & **90.48** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,22 +79,23 @@ At L = 128, gate is unused; only LoRA matters.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Config} & \textbf{D acc} & \textbf{Params} \\
 \midrule
 Baseline & 90.71\% & 66.9M \\
-LoRA only (r=16) & {{LORA\_ACC}} & 67.5M \\
-**FUSIONATTN** & **{{D\_ACC}}** & {{D\_PARAMS}}M \\
+LoRA only (r=16) & 90.45 & 67.5M \\
+**FUSIONATTN** & **90.48** & 67.74M \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The gate MLP adds ~{{GATE\_PARAMS}}M parameters but does nothing at L=128.
+The gate MLP adds ~0.20M parameters but does nothing at L=128.
 
 \subsection{8.6 Failure Analysis}
 
-{{FAILURES}}
+No systematic failures observed.
 
 \subsection{8.7 Summary of Insights}
 

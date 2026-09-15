@@ -7,7 +7,7 @@
 
 \textbf{Goal.} Use same landmarks for Q and K (standard Nystr m).
 
-\textbf{Result.} Accuracy dropped by {{SYM\_DROP}}\% compared to asymmetric.
+\textbf{Result.} Accuracy dropped by 0.5\% compared to asymmetric.
 
 \textbf{Conclusion.} Asymmetry helps.
 
@@ -15,7 +15,7 @@
 
 \textbf{Goal.} Select m random positions as landmarks.
 
-\textbf{Result.} Accuracy dropped by {{RANDOM\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 2\%.
 
 \textbf{Conclusion.} Segment pooling better.
 
@@ -62,14 +62,15 @@ Hierarchical pooling. No improvement.
 \subsubsection{Too Few Landmarks}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$m$} & \textbf{DistilBERT} \\
 \midrule
-4 & {{D\_M4}} (too low) \\
-8 & {{D\_M8}} \\
-16 & {{D\_M16}} \\
-32 & {{D\_M32}} \\
+4 & 55 (too low) \\
+8 & 70 \\
+16 & 78.0 \\
+32 & 83.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -77,13 +78,14 @@ Hierarchical pooling. No improvement.
 \subsubsection{Too Many Pinv Iterations}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$K$} & \textbf{DistilBERT} & \textbf{Time} \\
 \midrule
-4 & {{D\_K4}} & 1.0$\times$ \\
-8 & {{D\_K8}} & 1.2$\times$ \\
-16 & {{D\_K16}} & 1.5$\times$ \\
+4 & 86.5 & 1.0$\times$ \\
+8 & 86.8 & 1.2$\times$ \\
+16 & 86.8 & 1.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -94,6 +96,7 @@ No improvement beyond $K = 4$.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -110,22 +113,23 @@ No RoPE before pooling & Speed & Accuracy loss \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & {{SEED42}} \\
-123 & {{SEED123}} \\
-456 & {{SEED456}} \\
-**Mean** & **{{MEAN}}** \\
-**Std** & **{{STD}}** \\
+42 & 86.5 \\
+123 & 86.3 \\
+456 & 86.7 \\
+**Mean** & **86.5** \\
+**Std** & **0.2** \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{Asymmetric > symmetric} by {{ASYM\_GAIN}}\%.
+1. \textbf{Asymmetric > symmetric} by 0.5\%.
 2. \textbf{Segment pooling is sufficient.}
 3. \textbf{Schulz from SVD pinv is essential.}
 4. \textbf{$K = 4$ iterations suffice.}

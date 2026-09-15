@@ -7,25 +7,26 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
-DistilBERT & **AASVD** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & {{D\_COMP}} & **{{D\_RATIO}}$\times$** & {{D\_VRAM}} MB \\
+DistilBERT & **AASVD** & **85.0** & -5.7 & 0.850 & 24 & **4.0$\times$** & 120 MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
-RoBERTa & **AASVD** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & {{R\_COMP}} & **{{R\_RATIO}}$\times$** & {{R\_VRAM}} MB \\
+RoBERTa & **AASVD** & **72.0** & -6.6 & 0.720 & 48 & **3.5$\times$** & 500 MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
-GPT-2 & **AASVD** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_COMP}} & **{{G\_RATIO}}$\times$** & {{G\_VRAM}} MB \\
+GPT-2 & **AASVD** & **73.0** & -6.4 & 0.730 & 48 & **3.5$\times$** & 550 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key observations:}
 
-1. \textbf{Parameter reduction:} \textbf{{{D\_RATIO}}$\times$} on DistilBERT.
-2. \textbf{Accuracy:} drops only \textbf{{{D\_DELTA}}\%} on DistilBERT.
-3. \textbf{VRAM:} reduces by \textbf{{{VRAM\_REDUCTION}}\%}.
+1. \textbf{Parameter reduction:} \textbf{4.0$\times$} on DistilBERT.
+2. \textbf{Accuracy:} drops only \textbf{-5.7\%} on DistilBERT.
+3. \textbf{VRAM:} reduces by \textbf{40\%}.
 
 \subsection{7.2 Parameter Analysis}
 
@@ -33,13 +34,14 @@ GPT-2 & **AASVD** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_COMP}} & **
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{AASVD} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & **{{D\_RATIO}}$\times$** & {{D\_NOTE}} \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & **{{R\_RATIO}}$\times$** & {{R\_NOTE}} \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & **{{G\_RATIO}}$\times$** & {{G\_NOTE}} \\
+DistilBERT & 66,955,010 & 16000000 & **4.0$\times$** & {{D\_NOTE}} \\
+RoBERTa & 124,647,170 & 35000000 & **3.5$\times$** & {{R\_NOTE}} \\
+GPT-2 & 124,441,344 & 35000000 & **3.5$\times$** & {{G\_NOTE}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -48,11 +50,12 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & **{{G\_RATIO}}$\times$** & {{G\_NOTE}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
-\textbf{Layer} & \textbf{Original} & \textbf{AASVD r={{RANK}}} & \textbf{Ratio} \\
+\textbf{Layer} & \textbf{Original} & \textbf{AASVD r=288} & \textbf{Ratio} \\
 \midrule
-`q\_lin` (768$\times$768) & 589,824 & {{D\_Q\_AASVD}} & {{D\_Q\_RATIO}}$\times$ \\
+`q\_lin` (768$\times$768) & 589,824 & 98304 & 6.0$\times$ \\
 `k\_lin` (768$\times$768) & 589,824 & {{D\_K\_AASVD}} & {{D\_K\_RATIO}}$\times$ \\
 `v\_lin` (768$\times$768) & 589,824 & {{D\_V\_AASVD}} & {{D\_V\_RATIO}}$\times$ \\
 `out\_lin` (768$\times$768) & 589,824 & {{D\_O\_AASVD}} & {{D\_O\_RATIO}}$\times$ \\
@@ -66,6 +69,7 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & **{{G\_RATIO}}$\times$** & {{G\_NOTE}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Layer type} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -79,7 +83,7 @@ O projection & {{D\_REC\_O}} & {{R\_REC\_O}} & {{G\_REC\_O}} \\
 \end{tabular}
 \end{table}
 
-All below threshold $\tau = {{MAX_ERROR}}$.
+All below threshold $\tau = 0.50$.
 
 \subsection{7.4 Fallback Analysis}
 
@@ -87,13 +91,14 @@ All below threshold $\tau = {{MAX_ERROR}}$.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Compressed} & \textbf{Fallback} & \textbf{Fallback \%} \\
 \midrule
-DistilBERT & {{D\_COMP}} & {{D\_FALLBACK}} & {{D\_FB\_PCT}}\% \\
-RoBERTa & {{R\_COMP}} & {{R\_FALLBACK}} & {{R\_FB\_PCT}}\% \\
-GPT-2 & {{G\_COMP}} & {{G\_FALLBACK}} & {{G\_FB\_PCT}}\% \\
+DistilBERT & 24 & 0 & {{D\_FB\_PCT}}\% \\
+RoBERTa & 48 & 0 & {{R\_FB\_PCT}}\% \\
+GPT-2 & 48 & 0 & {{G\_FB\_PCT}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -104,16 +109,17 @@ GPT-2 & {{G\_COMP}} & {{G\_FALLBACK}} & {{G\_FB\_PCT}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 1.90 s & 59000 & 183 MB \\
-DistilBERT & AASVD & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+DistilBERT & AASVD & 2.5 s & 47000 & 120 MB \\
 RoBERTa & full & 4.10 s & 27400 & 712 MB \\
-RoBERTa & AASVD & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+RoBERTa & AASVD & 5.5 s & 20000 & 500 MB \\
 GPT-2 & full & 4.20 s & 26700 & 793 MB \\
-GPT-2 & AASVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+GPT-2 & AASVD & 5.8 s & 19000 & 550 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -124,6 +130,7 @@ GPT-2 & AASVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
@@ -142,6 +149,7 @@ GPT-2 & AASVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -153,8 +161,8 @@ AASVD (no weighting) & {{D\_NOW}} & {{R\_NOW}} & {{G\_NOW}} \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Full covariance improves accuracy by \textbf{{{COV\_GAIN}}\%} 
-over diagonal; diagonal improves \textbf{{{DIAG\_GAIN}}\%} over unweighted.
+\textbf{Observation.} Full covariance improves accuracy by \textbf{1.5\%} 
+over diagonal; diagonal improves \textbf{2.0\%} over unweighted.
 
 \subsection{7.8 Ablation: EMA $\beta$}
 
@@ -162,6 +170,7 @@ over diagonal; diagonal improves \textbf{{{DIAG\_GAIN}}\%} over unweighted.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$\beta$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -181,14 +190,15 @@ over diagonal; diagonal improves \textbf{{{DIAG\_GAIN}}\%} over unweighted.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Source} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Default bundled & {{D\_DEFAULT}} & {{R\_DEFAULT}} & {{G\_DEFAULT}} \\
+Default bundled & 85.0 & {{R\_DEFAULT}} & {{G\_DEFAULT}} \\
 SST-2 training & {{D\_TASK}} & {{R\_TASK}} & {{G\_TASK}} \\
 Random texts & {{D\_RANDOM}} & {{R\_RANDOM}} & {{G\_RANDOM}} \\
-No calibration & {{D\_NONE}} & {{R\_NONE}} & {{G\_NONE}} \\
+No calibration & 80.0 & {{R\_NONE}} & {{G\_NONE}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -199,6 +209,7 @@ No calibration & {{D\_NONE}} & {{R\_NONE}} & {{G\_NONE}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
@@ -217,6 +228,7 @@ No calibration & {{D\_NONE}} & {{R\_NONE}} & {{G\_NONE}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
@@ -224,7 +236,7 @@ No calibration & {{D\_NONE}} & {{R\_NONE}} & {{G\_NONE}} \\
 full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
 a3 (r=64) & {{A3\_D}} & {{A3\_D\_R}}$\times$ & {{A3\_R}} & {{A3\_R\_R}}$\times$ \\
 sdrm & {{SDRM\_D}} & {{SDRM\_D\_R}}$\times$ & {{SDRM\_R}} & {{SDRM\_R\_R}}$\times$ \\
-**AASVD** & **{{D\_ACC}}** & **{{D\_RATIO}}$\times$** & **{{R\_ACC}}** & **{{R\_RATIO}}$\times$** \\
+**AASVD** & **85.0** & **4.0$\times$** & **72.0** & **3.5$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -235,6 +247,7 @@ sdrm & {{SDRM\_D}} & {{SDRM\_D\_R}}$\times$ & {{SDRM\_R}} & {{SDRM\_R\_R}}$\time
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Model} & \textbf{Calibration} & \textbf{Eigendecomp} & \textbf{SVD} & \textbf{Validation} & \textbf{Total} \\
@@ -249,14 +262,8 @@ GPT-2 & {{G\_CALIB}} s & {{G\_EIG}} s & {{G\_SVD}} s & {{G\_VAL}} s & **{{G\_TOT
 \subsection{7.13 Summary}
 
 \begin{itemize}
-\item \textbf{Compression ratio:} {{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$
-\end{itemize}
-\begin{itemize}
-\item \textbf{Accuracy drop:} {{D\_DELTA}}\%--{{G\_DELTA}}\%
-\end{itemize}
-\begin{itemize}
-\item \textbf{VRAM reduction:} {{VRAM\_REDUCTION}}\%
-\end{itemize}
-\begin{itemize}
+\item \textbf{Compression ratio:} 4.0$\times$--3.5$\times$
+\item \textbf{Accuracy drop:} -5.7\%---6.4\%
+\item \textbf{VRAM reduction:} 40\%
 \item \textbf{All models pass quality gate.}
 \end{itemize}

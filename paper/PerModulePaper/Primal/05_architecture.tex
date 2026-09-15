@@ -5,6 +5,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention class} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
@@ -12,7 +13,7 @@
 DistilBERT & `MultiHeadSelfAttention` & No & No &  \\
 RoBERTa & `BertSelfAttention` & No & No &  \\
 GPT-2 & `GPT2Attention` & No & No &  \\
-Qwen3.5 & `Qwen3Attention` & Yes & Yes & {{Q\_VERIFIED}} \\
+Qwen3.5 & `Qwen3Attention` & Yes & Yes & not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -28,7 +29,7 @@ v_lin: Linear(768, 768)
 out_lin: Linear(768, 768)
 \end{lstlisting}
 
-\textbf{Copy:} Direct. \texttt{is\\_nested\\_encoder = False}.
+\textbf{Copy:} Direct. \texttt{is\_nested\_encoder = False}.
 
 \subsubsection{5.2.2 RoBERTa (Nested)}
 
@@ -39,8 +40,8 @@ attention.self.value: Linear(768, 768)
 attention.output.dense: Linear(768, 768)
 \end{lstlisting}
 
-\textbf{Copy:} Extract from inner \texttt{self}. \texttt{is\\_nested\\_encoder = True}, skip own 
-\texttt{out\\_proj}.
+\textbf{Copy:} Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}, skip own 
+\texttt{out\_proj}.
 
 \subsubsection{5.2.3 GPT-2 (Causal)}
 
@@ -49,7 +50,7 @@ attn.c_attn: Conv1D(768, 2304)   # fused Q, K, V
 attn.c_proj: Conv1D(768, 768)
 \end{lstlisting}
 
-\textbf{Copy:} Transpose and split. Direct for \texttt{c\\_proj}.
+\textbf{Copy:} Transpose and split. Direct for \texttt{c\_proj}.
 
 \subsubsection{5.2.4 Qwen3.5 (GQA + RoPE)}
 
@@ -60,7 +61,7 @@ v_proj: Linear(1024, 512)
 o_proj: Linear(2048, 1024)
 \end{lstlisting}
 
-\textbf{Copy:} Direct, then \texttt{repeat\\_kv} at runtime. RoPE applied to landmarks 
+\textbf{Copy:} Direct, then \texttt{repeat\_kv} at runtime. RoPE applied to landmarks 
 implicitly via the pooled $Q, K$ (see  5.5).
 
 \subsection{5.3 Injection Algorithm}
@@ -115,7 +116,7 @@ but empirically works for generation. See  8.5 for analysis.
 
 \subsection{5.7 Failure Handling}
 
-\texttt{inject\\_primal} returns \texttt{None} on failure and logs the error:
+\texttt{inject\_primal} returns \texttt{None} on failure and logs the error:
 
 \begin{lstlisting}
 try:
@@ -132,6 +133,7 @@ Primal Attention has the \textbf{same parameter count} as MHA:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Projection} & \textbf{Params} \\
@@ -155,11 +157,3 @@ class PrimalAttention(BaseAttention): ...
 \end{lstlisting}
 
 \subsection{5.10 Failure Modes}
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/arch_primal_attention.jpeg}
-\caption{Architectural overview of Primal.}
-\label{fig:arch_Primal}
-\end{figure}

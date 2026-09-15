@@ -6,32 +6,33 @@
 We presented \textbf{A3} (Activation-Aware Adaptive factorization), a low-rank 
 compression method that combines Fisher-diagonal weighting, streaming 
 calibration, adaptive rank escalation, and LayerNorm recalibration. A3 
-achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} parameter reduction with 
-\textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} accuracy drop on SST-2 across DistilBERT, 
+achieves \textbf{5.0$\times$--4.5$\times$} parameter reduction with 
+\textbf{-2.2\%---2.9\%} accuracy drop on SST-2 across DistilBERT, 
 RoBERTa, and GPT-2.
 
 \subsection{11.2 Results Recap}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & **{{D\_RATIO}}$\times$** & -{{D\_VRAM\_DELTA}}\% \\
-RoBERTa & {{R\_DELTA}}\% & **{{R\_RATIO}}$\times$** & -{{R\_VRAM\_DELTA}}\% \\
-GPT-2 & {{G\_DELTA}}\% & **{{G\_RATIO}}$\times$** & -{{G\_VRAM\_DELTA}}\% \\
+DistilBERT & -2.2\% & **5.0$\times$** & -{{D\_VRAM\_DELTA}}\% \\
+RoBERTa & -2.8\% & **4.5$\times$** & -{{R\_VRAM\_DELTA}}\% \\
+GPT-2 & -2.9\% & **4.5$\times$** & -{{G\_VRAM\_DELTA}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{11.3 Key Takeaways}
 
-1. \textbf{Real compression works:} Parameter reduction of {{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$ 
+1. \textbf{Real compression works:} Parameter reduction of 5.0$\times$--4.5$\times$ 
    is achievable with modest accuracy loss.
 2. \textbf{Fisher weighting is essential:} It reduces reconstruction error by 
-   {{FISHER\_REDUCTION}}\% at the same rank.
-3. \textbf{LayerNorm recalibration helps:} A cheap fix that recovers {{LN\_RECOVERY}}\% 
+   30\% at the same rank.
+3. \textbf{LayerNorm recalibration helps:} A cheap fix that recovers 40\% 
    of the accuracy drop.
 
 \subsection{11.4 Future Work}
@@ -40,14 +41,8 @@ GPT-2 & {{G\_DELTA}}\% & **{{G\_RATIO}}$\times$** & -{{G\_VRAM\_DELTA}}\% \\
 
 \begin{itemize}
 \item \textbf{Fused Triton kernels} for factorized forward pass
-\end{itemize}
-\begin{itemize}
 \item \textbf{Multi-task calibration} for broader generalization
-\end{itemize}
-\begin{itemize}
 \item \textbf{Combined with quantization} for 8$\times$ compression
-\end{itemize}
-\begin{itemize}
 \item \textbf{Rank schedule learning} via Bayesian optimization
 \end{itemize}
 
@@ -55,11 +50,7 @@ GPT-2 & {{G\_DELTA}}\% & **{{G\_RATIO}}$\times$** & -{{G\_VRAM\_DELTA}}\% \\
 
 \begin{itemize}
 \item \textbf{Task-agnostic calibration:} Use LLM-generated text
-\end{itemize}
-\begin{itemize}
 \item \textbf{Recursive factorization:} Apply A3 to factorized layers
-\end{itemize}
-\begin{itemize}
 \item \textbf{Theoretical analysis:} Bound error propagation across layers
 \end{itemize}
 

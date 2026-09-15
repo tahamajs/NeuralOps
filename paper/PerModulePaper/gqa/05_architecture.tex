@@ -5,6 +5,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention class} & \textbf{Heads (H)} & \textbf{KV heads} & \textbf{Config} \\
@@ -34,9 +35,9 @@ v_lin: Linear(768, 768)
 out_lin: Linear(768, 768)
 \end{lstlisting}
 
-\textbf{Extraction:} Direct. \texttt{q\\_lin.weight} copied to \texttt{query.weight}, etc.
+\textbf{Extraction:} Direct. \texttt{q\_lin.weight} copied to \texttt{query.weight}, etc.
 
-\textbf{Nested?} No. \texttt{out\\_lin} is inside attention, so \texttt{is\\_nested\\_encoder = False}.
+\textbf{Nested?} No. \texttt{out\_lin} is inside attention, so \texttt{is\_nested\_encoder = False}.
 
 \subsubsection{5.2.2 RoBERTa (Nested)}
 
@@ -48,7 +49,7 @@ attention.output.dense: Linear(768, 768)
 \end{lstlisting}
 
 \textbf{Extraction:} From inner \texttt{self}. \texttt{attention.output.dense} is outside, so 
-\texttt{is\\_nested\\_encoder = True} and we skip our own \texttt{out\\_proj}.
+\texttt{is\_nested\_encoder = True} and we skip our own \texttt{out\_proj}.
 
 \subsubsection{5.2.3 GPT-2 (Causal)}
 
@@ -110,7 +111,7 @@ we regroup. If $G_\text{tgt} \ge G_\text{src}$, we keep the source configuration
 \subsubsection{5.4.3 Nested Encoder}
 
 For RoBERTa, the outer \texttt{attention.output.dense} is preserved. Our GQA module 
-returns context without applying \texttt{out\\_proj}. The outer projection handles it.
+returns context without applying \texttt{out\_proj}. The outer projection handles it.
 
 \subsubsection{5.4.4 Causality}
 
@@ -125,7 +126,7 @@ RoPE is applied to $Q, K$ before KV repetition, preserving causality.
 
 \subsection{5.5 Safe Injection}
 
-The \texttt{inject\\_gqa} function returns \texttt{None} on failure:
+The \texttt{inject\_gqa} function returns \texttt{None} on failure:
 
 \begin{lstlisting}
 try:
@@ -139,7 +140,7 @@ This allows the caller to skip the layer and continue with subsequent layers.
 
 \subsection{5.6 Weight Transfer Correctness}
 
-After \texttt{copy\\_weights}, the following invariants hold:
+After \texttt{copy\_weights}, the following invariants hold:
 
 1. \textbf{Query weights:} $W_Q^{(\text{new})} = W_Q^{(\text{old})}$ (exact).
 2. \textbf{Output weights:} $W_O^{(\text{new})} = W_O^{(\text{old})}$ (exact).
@@ -153,6 +154,7 @@ flagging silently broken copies.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Configuration} & \textbf{Params ($W_Q + W_K + W_V + W_O$)} \\
@@ -168,6 +170,7 @@ For $d = 768$, $H = 12$, $d_h = 64$, $G = 6$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Reduction} \\
@@ -196,11 +199,3 @@ def inject_gqa(layer, model_config, ...):
 \end{lstlisting}
 
 \subsection{5.9 Failure Modes}
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/wgqa_attention_architecture.png}
-\caption{Architectural overview of gqa.}
-\label{fig:arch_gqa}
-\end{figure}

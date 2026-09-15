@@ -53,6 +53,7 @@ y = \text{Linear}(x, W_\text{frozen}, b) + \frac{\alpha}{r_L} \text{Linear}(\tex
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Params} & \textbf{FLOPs} \\
@@ -69,11 +70,7 @@ LoRA & $r_L (d_\text{in} + d_\text{out})$ & $B L r_L (d_\text{in} + d_\text{out}
 
 \begin{itemize}
 \item $W_\text{frozen}$: copied from pretrained weights.
-\end{itemize}
-\begin{itemize}
 \item $A$: Kaiming uniform.
-\end{itemize}
-\begin{itemize}
 \item $B$: zeros $\to$ initial forward pass matches the pretrained model exactly.
 \end{itemize}
 
@@ -162,6 +159,7 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{Squeezing Heads} \\

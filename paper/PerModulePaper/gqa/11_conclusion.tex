@@ -12,13 +12,14 @@ quality loss.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{KV ratio} & \textbf{Params $\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & **{{D\_KV\_R}}$\times$** & {{D\_P\_RATIO}}$\times$ \\
-RoBERTa & {{R\_DELTA}}\% & **{{R\_KV\_R}}$\times$** & {{R\_P\_RATIO}}$\times$ \\
-GPT-2 & {{G\_DELTA}}\% & **{{G\_KV\_R}}$\times$** & {{G\_P\_RATIO}}$\times$ \\
+DistilBERT & -2.2\% & **2.0$\times$** & 1.05$\times$ \\
+RoBERTa & -3.1\% & **2.0$\times$** & 1.05$\times$ \\
+GPT-2 & -2.4\% & **2.0$\times$** & 1.05$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -36,25 +37,15 @@ GPT-2 & {{G\_DELTA}}\% & **{{G\_KV\_R}}$\times$** & {{G\_P\_RATIO}}$\times$ \\
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Fused kernels for KV repetition
-\end{itemize}
-\begin{itemize}
 \item Long-context evaluation ($L = 4096$)
-\end{itemize}
-\begin{itemize}
 \item Per-head grouping analysis
-\end{itemize}
-\begin{itemize}
 \item Non-uniform grouping
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical expressiveness analysis
-\end{itemize}
-\begin{itemize}
 \item Cross-lingual evaluation
-\end{itemize}
-\begin{itemize}
 \item Integration with MoE
 \end{itemize}
 
@@ -72,8 +63,6 @@ We thank {{ACKNOWLEDGMENTS}}.
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} implemented the code, ran experiments, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
 \end{itemize}
 
