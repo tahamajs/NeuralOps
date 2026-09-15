@@ -7,6 +7,7 @@ and global linear kernel attention with adaptive gating.
 Hardened for multi-architecture deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
 """
 
+import logging
 import math
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
@@ -16,6 +17,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 from framework.core.attention_utils import repeat_kv
 
 
