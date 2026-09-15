@@ -592,20 +592,28 @@ class FusedSVDKernelAttention(BaseAttention):
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             has_out = hasattr(old_attn, "out_lin") or hasattr(old_attn, "dense") or hasattr(old_attn, "out_proj") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj")
 
-            if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
+            if hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj"):
+                self.is_nested_encoder = False
+            elif (hasattr(old_attn, "self") and hasattr(getattr(old_attn, "self"), "query")
+                  and hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense")):
+                self.is_nested_encoder = True
+            elif src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
                 hasattr(old_attn, "query") and not has_out
             ):
                 self.is_nested_encoder = True
+            else:
+                self.is_nested_encoder = False
 
             if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
+                self.is_nested_encoder = True
+                if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense") and hasattr(old_attn.output.dense, "weight"):
+                    w_o = old_attn.output.dense.weight.data
+                    b_o = getattr(old_attn.output.dense, "bias", None)
+                    b_o = b_o.data if b_o is not None else None
             src = old_attn
             while hasattr(src, "self") and not any(hasattr(src, attr) for attr in ("query", "key", "value", "q_proj", "k_proj", "v_proj")):
                 self.is_nested_encoder = True
                 src = src.self
-            if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense") and hasattr(old_attn.output.dense, "weight"):
-                w_o = old_attn.output.dense.weight.data
-                b_o = getattr(old_attn.output.dense, "bias", None)
-                b_o = b_o.data if b_o is not None else None
 
             # 1. GPT-2 Conv1D fused c_attn & c_proj
             if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -791,10 +799,17 @@ class FusedSVDKernelAttention(BaseAttention):
             if w_o is not None:
                 self.out_proj.decompose_from_weight(w_o, b_o)
             elif self.is_nested_encoder:
-                nn.init.eye_(self.out_proj.U.data)
-                nn.init.eye_(self.out_proj.V.data)
-                if self.out_proj.bias is not None:
-                    nn.init.zeros_(self.out_proj.bias)
+                with torch.no_grad():
+                    U = self.out_proj.U.data
+                    V = self.out_proj.V.data
+                    U.zero_()
+                    V.zero_()
+                    d = min(U.shape)
+                    U[:d, :d].fill_diagonal_(1.0)
+                    d2 = min(V.shape)
+                    V[:d2, :d2].fill_diagonal_(1.0)
+                    if self.out_proj.bias is not None:
+                        self.out_proj.bias.data.zero_()
 
     def forward(
         self,
