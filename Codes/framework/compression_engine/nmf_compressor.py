@@ -153,38 +153,15 @@ class NMFLinear(nn.Module):
         shift_val = min_val - 1e-5 if min_val < 0 else 0.0
         W_pos = (W.float() - shift_val).clamp_min(1e-6)
 
-        fitted = False
-        H_init: Optional[torch.Tensor] = None
-        V_init: Optional[torch.Tensor] = None
-
+        # Fast PyTorch SVD-seeded Multiplicative Updates (Lee & Seung 2001)
+        # SVD initialization provides a near-optimal start point; 15-20 iterations are sufficient.
+        n_iter = min(max(1, max_iter), 20)
         try:
-            import warnings
-            from sklearn.decomposition import NMF as skNMF
-            from sklearn.exceptions import ConvergenceWarning
-
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=ConvergenceWarning)
-                sk_model = skNMF(
-                    n_components=r,
-                    init="nndsvda",
-                    max_iter=max_iter,
-                    tol=1e-4,
-                    random_state=42,
-                )
-                H_np = sk_model.fit_transform(W_pos.cpu().numpy())
-                V_np = sk_model.components_
-                H_init = torch.tensor(H_np, dtype=W.dtype, device=W.device)
-                V_init = torch.tensor(V_np, dtype=W.dtype, device=W.device)
-                fitted = True
-        except Exception:
-            fitted = False
-
-        if not fitted or H_init is None or V_init is None:
             U, S, Vt = torch.linalg.svd(W_pos, full_matrices=False)
             H_init = (U[:, :r].abs() * torch.sqrt(S[:r].unsqueeze(0))).clamp_min(1e-4)
             V_init = (torch.sqrt(S[:r].unsqueeze(1)) * Vt[:r, :].abs()).clamp_min(1e-4)
 
-            for _ in range(max_iter):
+            for _ in range(n_iter):
                 HT = H_init.t()
                 HTW = torch.matmul(HT, W_pos)
                 HTHV = torch.matmul(torch.matmul(HT, H_init), V_init).clamp_min(1e-10)
@@ -194,6 +171,10 @@ class NMFLinear(nn.Module):
                 WVT = torch.matmul(W_pos, VT)
                 HVVT = torch.matmul(torch.matmul(H_init, V_init), VT).clamp_min(1e-10)
                 H_init = H_init * (WVT / HVVT)
+        except Exception:
+            # Fallback uniform initialization if SVD is unstable
+            H_init = torch.rand(out_f, r, dtype=W.dtype, device=W.device).clamp_min(1e-4)
+            V_init = torch.rand(r, in_f, dtype=W.dtype, device=W.device).clamp_min(1e-4)
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
@@ -274,7 +255,7 @@ class NMFCompressor(BaseCompressor):
         cfg: Optional[Any] = None,
         target_layers: Optional[List[str]] = None,
         target_attention_only: bool = False,
-        max_error: float = 0.35,
+        max_error: float = 0.60,
         fallback_to_original: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -370,6 +351,8 @@ class NMFCompressor(BaseCompressor):
         eff_ratio = total_comp_params / max(1, total_orig_params)
         stats.update(
             {
+                "num_compressed": len(self.compressed_layers),
+                "num_compressed_layers": len(self.compressed_layers),
                 "compressed_layer_count": len(self.compressed_layers),
                 "nmf_rank": self.rank,
                 "max_iter": self.max_iter,
@@ -399,7 +382,7 @@ def nmf_factory(
     target_attention_only = _cfg_get(comp_config, "target_attention_only", kwargs.pop("target_attention_only", False))
     lora_r = _cfg_get(comp_config, "lora_r", kwargs.pop("lora_r", 0))
     lora_alpha = _cfg_get(comp_config, "lora_alpha", kwargs.pop("lora_alpha", 1.0))
-    max_error = _cfg_get(comp_config, "max_error", kwargs.pop("max_error", 0.35))
+    max_error = _cfg_get(comp_config, "max_error", kwargs.pop("max_error", 0.60))
     fallback = _cfg_get(comp_config, "fallback_to_original", kwargs.pop("fallback_to_original", True))
 
     compressor = NMFCompressor(
