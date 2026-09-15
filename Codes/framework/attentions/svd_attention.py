@@ -589,9 +589,9 @@ class SVDLinearAttention(BaseAttention):
                 # kv_input: [B, kv_len, hidden_size] → scores: [B, kv_len, actual_r]
                 seq_scores = torch.matmul(kv_input.float(), proj.float())  # [B, kv_len, r]
                 try:
-                    U_r, _ = torch.linalg.qr(seq_scores, mode="reduced")  # [B, kv_len, r]
+                    U_r, _ = torch.linalg.qr(seq_scores.float(), mode="reduced")  # [B, kv_len, r]
                 except Exception:
-                    U_r, _ = torch.linalg.qr(seq_scores.cpu(), mode="reduced")
+                    U_r, _ = torch.linalg.qr(seq_scores.cpu().float(), mode="reduced")
                     U_r = U_r.to(device=device)
                 U_r = U_r.to(dtype)  # [B, kv_len, actual_r]
 
