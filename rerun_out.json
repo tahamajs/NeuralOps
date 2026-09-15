@@ -1,0 +1,254 @@
+[
+    {
+        "Module":  "gqa",
+        "DistilBERT":  "51.26% (PASS_LOW)",
+        "RoBERTa":  "49.08% (PASS_NO_COMPRESSION)",
+        "GPT2":  "46.79% (PASS_LOW)",
+        "LastTime":  "19:33:45"
+    },
+    {
+        "Module":  "adaptive_sparse_attention",
+        "DistilBERT":  "N/A",
+        "RoBERTa":  "N/A",
+        "GPT2":  "N/A",
+        "LastTime":  ""
+    },
+    {
+        "Module":  "squeezing_heads_distiller",
+        "DistilBERT":  "90.37% (PASS)",
+        "RoBERTa":  "51.49% (PASS_LOW)",
+        "GPT2":  "51.61% (PASS_LOW)",
+        "LastTime":  "08:47:32"
+    },
+    {
+        "Module":  "svd_mamba",
+        "DistilBERT":  "90.02% (PASS)",
+        "RoBERTa":  "50.92% (PASS_LOW)",
+        "GPT2":  "50.23% (PASS_LOW)",
+        "LastTime":  "09:30:47"
+    },
+    {
+        "Module":  "svd_linear",
+        "DistilBERT":  "90.71% (PASS_NO_COMPRESSION)",
+        "RoBERTa":  "54.7% (PASS_LOW)",
+        "GPT2":  "77.06% (PASS_NO_COMPRESSION)",
+        "LastTime":  "08:24:34"
+    },
+    {
+        "Module":  "minimal_nova",
+        "DistilBERT":  "88.19% (PASS)",
+        "RoBERTa":  "54.93% (PASS_LOW)",
+        "GPT2":  "58.83% (PASS)",
+        "LastTime":  "22:19:36"
+    },
+    {
+        "Module":  "minimal_prism",
+        "DistilBERT":  "88.19% (PASS)",
+        "RoBERTa":  "54.93% (PASS_LOW)",
+        "GPT2":  "58.83% (PASS)",
+        "LastTime":  "22:19:36"
+    },
+    {
+        "Module":  "svd_llm_v2",
+        "DistilBERT":  "81.88% (PASS)",
+        "RoBERTa":  "50.92% (PASS_LOW)",
+        "GPT2":  "50.92% (PASS_LOW)",
+        "LastTime":  "09:13:59"
+    },
+    {
+        "Module":  "mla",
+        "DistilBERT":  "51.61% (PASS_LOW)",
+        "RoBERTa":  "47.48% (PASS_LOW)",
+        "GPT2":  "54.7% (PASS_LOW)",
+        "LastTime":  "22:19:36"
+    },
+    {
+        "Module":  "dobi",
+        "DistilBERT":  "N/A",
+        "RoBERTa":  "N/A",
+        "GPT2":  "N/A",
+        "LastTime":  ""
+    },
+    {
+        "Module":  "unified_rope",
+        "DistilBERT":  "N/A",
+        "RoBERTa":  "N/A",
+        "GPT2":  "N/A",
+        "LastTime":  ""
+    },
+    {
+        "Module":  "hgrn2_gated_deltanet",
+        "DistilBERT":  "54.01% (PASS_NO_COMPRESSION)",
+        "RoBERTa":  "0.0% (SKIP_ROBERTA_TIMEOUT)",
+        "GPT2":  "0.0% (SKIP_GPT_TIMEOUT)",
+        "LastTime":  "20:54:26"
+    },
+    {
+        "Module":  "soafusedattention",
+        "DistilBERT":  "81.31% (PASS)",
+        "RoBERTa":  "50.92% (PASS_LOW)",
+        "GPT2":  "50.92% (PASS_LOW)",
+        "LastTime":  "08:32:48"
+    },
+    {
+        "Module":  "gated_delta_net",
+        "DistilBERT":  "49.08% (PASS_NO_COMPRESSION)",
+        "RoBERTa":  "0.0% (SKIP_ROBERTA_TIMEOUT)",
+        "GPT2":  "49.77% (PASS_NO_COMPRESSION)",
+        "LastTime":  "16:38:16"
+    },
+    {
+        "Module":  "gated_deltanet_block",
+        "DistilBERT":  "49.08% (PASS_NO_COMPRESSION)",
+        "RoBERTa":  "0.0% (SKIP_ROBERTA_TIMEOUT)",
+        "GPT2":  "50.92% (PASS_NO_COMPRESSION)",
+        "LastTime":  "19:28:30"
+    },
+    {
+        "Module":  "vspec",
+        "DistilBERT":  "77.52% (PASS)",
+        "RoBERTa":  "49.2% (PASS_LOW)",
+        "GPT2":  "55.96% (PASS_LOW)",
+        "LastTime":  "06:03:41"
+    },
+    {
+        "Module":  "leka_v1",
+        "DistilBERT":  "53.1% (PASS_NO_COMPRESSION)",
+        "RoBERTa":  "51.03% (PASS_NO_COMPRESSION)",
+        "GPT2":  "0.0% (SKIP_GPT_TIMEOUT)",
+        "LastTime":  "21:34:29"
+    },
+    {
+        "Module":  "tpa",
+        "DistilBERT":  "75.46% (PASS)",
+        "RoBERTa":  "59.75% (PASS)",
+        "GPT2":  "0.0% (FAIL)",
+        "LastTime":  "21:58:14"
+    },
+    {
+        "Module":  "mamba",
+        "DistilBERT":  "49.08% (PASS_LOW)",
+        "RoBERTa":  "50.92% (PASS_NO_COMPRESSION)",
+        "GPT2":  "48.85% (PASS_LOW)",
+        "LastTime":  "21:51:45"
+    },
+    {
+        "Module":  "orion",
+        "DistilBERT":  "75.23% (PASS)",
+        "RoBERTa":  "55.96% (PASS_LOW)",
+        "GPT2":  "55.05% (PASS_LOW)",
+        "LastTime":  "22:34:28"
+    },
+    {
+        "Module":  "padre",
+        "DistilBERT":  "89.91% (PASS_NO_COMPRESSION)",
+        "RoBERTa":  "64.56% (PASS)",
+        "GPT2":  "50.92% (PASS_LOW)",
+        "LastTime":  "22:46:27"
+    },
+    {
+        "Module":  "performer",
+        "DistilBERT":  "74.08% (PASS)",
+        "RoBERTa":  "60.32% (PASS)",
+        "GPT2":  "50.8% (PASS_LOW)",
+        "LastTime":  "22:46:27"
+    },
+    {
+        "Module":  "phantom",
+        "DistilBERT":  "72.59% (PASS)",
+        "RoBERTa":  "50.92% (PASS_LOW)",
+        "GPT2":  "50.92% (PASS_LOW)",
+        "LastTime":  "22:46:27"
+    },
+    {
+        "Module":  "projection_factorized_attn",
+        "DistilBERT":  "81.19% (PASS)",
+        "RoBERTa":  "62.73% (PASS)",
+        "GPT2":  "54.82% (PASS_LOW)",
+        "LastTime":  "22:54:57"
+    },
+    {
+        "Module":  "reap_moe",
+        "DistilBERT":  "90.71% (PASS_NO_COMPRESSION)",
+        "RoBERTa":  "80.5% (PASS_NO_COMPRESSION)",
+        "GPT2":  "71.44% (PASS_NO_COMPRESSION)",
+        "LastTime":  "23:10:47"
+    },
+    {
+        "Module":  "regla",
+        "DistilBERT":  "79.82% (PASS_NO_COMPRESSION)",
+        "RoBERTa":  "64.79% (PASS_NO_COMPRESSION)",
+        "GPT2":  "57.45% (PASS_NO_COMPRESSION)",
+        "LastTime":  "23:14:32"
+    },
+    {
+        "Module":  "routing",
+        "DistilBERT":  "53.21% (PASS_NO_COMPRESSION)",
+        "RoBERTa":  "50.92% (PASS_NO_COMPRESSION)",
+        "GPT2":  "54.36% (PASS_NO_COMPRESSION)",
+        "LastTime":  "23:25:42"
+    },
+    {
+        "Module":  "salt",
+        "DistilBERT":  "80.28% (PASS)",
+        "RoBERTa":  "50.92% (PASS_LOW)",
+        "GPT2":  "50.92% (PASS_LOW)",
+        "LastTime":  "08:10:58"
+    },
+    {
+        "Module":  "simple_ssm",
+        "DistilBERT":  "50.11% (PASS_LOW)",
+        "RoBERTa":  "49.08% (PASS_LOW)",
+        "GPT2":  "0.0% (FAIL)",
+        "LastTime":  "19:37:10"
+    },
+    {
+        "Module":  "svd_projection",
+        "DistilBERT":  "76.15% (PASS)",
+        "RoBERTa":  "50.92% (PASS_LOW)",
+        "GPT2":  "50.92% (PASS_LOW)",
+        "LastTime":  "09:35:23"
+    },
+    {
+        "Module":  "template_attention",
+        "DistilBERT":  "89.91% (PASS)",
+        "RoBERTa":  "58.37% (PASS)",
+        "GPT2":  "51.26% (PASS_LOW)",
+        "LastTime":  "09:41:21"
+    },
+    {
+        "Module":  "token_compressed",
+        "DistilBERT":  "78.21% (PASS)",
+        "RoBERTa":  "50.92% (PASS_LOW)",
+        "GPT2":  "51.38% (PASS_LOW)",
+        "LastTime":  "21:54:55"
+    },
+    {
+        "Module":  "compressed_mha",
+        "DistilBERT":  "50.92% (PASS_LOW)",
+        "RoBERTa":  "49.89% (PASS_LOW)",
+        "GPT2":  "50.92% (PASS_LOW)",
+        "LastTime":  "22:55:12"
+    },
+    {
+        "Module":  "svd_compressed",
+        "DistilBERT":  "0.0% (FAIL)",
+        "RoBERTa":  "0.0% (FAIL)",
+        "GPT2":  "76.15% (PASS)",
+        "LastTime":  "04:10:39"
+    },
+    {
+        "Module":  "spectron",
+        "DistilBERT":  "86.58% (PASS)",
+        "RoBERTa":  "50.92% (PASS_LOW)",
+        "GPT2":  "51.26% (PASS_LOW)",
+        "LastTime":  "21:05:45"
+    },
+    {
+        "Module":  "soa_module",
+        "DistilBERT":  "81.31% (PASS)",
+        "RoBERTa":  "50.92% (PASS_LOW)",
+        "GPT2":  "50.92% (PASS_LOW)",
+        "LastTime":  "08:31:29"
+    }
+]
