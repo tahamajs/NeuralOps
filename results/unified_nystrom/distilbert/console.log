@@ -1,113 +1,78 @@
+Skipping attention module 'fused_svd_kernel' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'projection_factorized_attn' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping compression_engine module 'svd_linear' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_attention' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_decay' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+2026-09-15 06:04:09,221 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
 
 Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 104/104 [00:00<00:00, 3787.45it/s]
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep: ================================================================================
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep:   family:            bert
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-14 07:21:30,423 [INFO] QwenQualitySweep: ================================================================================
-2026-09-14 07:21:30,425 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\unified_asvd\distilbert\finetuned_model.pt
-2026-09-14 07:21:30,501 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-14 07:21:31,291 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-Traceback (most recent call last):
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2563, in <module>
-    if __name__ == "__main__": main()
-                               ~~~~^^
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 1356, in main
-    base_benchmark_acc = round(evaluate(base, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
-                               ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
-    return func(*args, **kwargs)
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 514, in evaluate
-    res = evaluate_comprehensive(model, tokenizer, ds, name, seq_len, batch_size, device, fp16=fp16, precomputed_batches=precomputed_batches)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
-    return func(*args, **kwargs)
-  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 458, in evaluate_comprehensive
-    outputs = model(**x)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 876, in wrapper
-    output = func(self, *args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 588, in forward
-    distilbert_output = self.distilbert(
-        input_ids=input_ids,
-    ...<4 lines>...
-        **kwargs,
-    )
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\generic.py", line 952, in wrapper
-    output = func(self, *args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\output_capturing.py", line 248, in wrapper
-    outputs = func(self, *args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 421, in forward
-    return self.transformer(
-           ~~~~~~~~~~~~~~~~^
-        hidden_states=embeddings,
-        ^^^^^^^^^^^^^^^^^^^^^^^^^
-        attention_mask=attention_mask,
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        **kwargs,
-        ^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 280, in forward
-    hidden_states = layer_module(
-        hidden_states,
-        attention_mask,
-        **kwargs,
-    )
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\modeling_layers.py", line 93, in __call__
-    return super().__call__(*args, **kwargs)
-           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 252, in forward
-    attention_output, _ = self.attention(
-                          ~~~~~~~~~~~~~~^
-        hidden_states,
-        ^^^^^^^^^^^^^^
-        attention_mask=attention_mask,
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        **kwargs,
-        ^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\models\distilbert\modeling_distilbert.py", line 187, in forward
-    query_layer = self.q_lin(hidden_states).view(*hidden_shape).transpose(1, 2)
-                  ~~~~~~~~~~^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\nn\modules\linear.py", line 125, in forward
-    return F.linear(input, self.weight, self.bias)
-           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-RuntimeError: bad allocation
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 3167.08it/s]
+2026-09-15 06:04:09,941 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-15 06:04:09,941 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 06:04:09,942 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 06:04:09,942 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 06:04:09,942 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-15 06:04:09,942 [INFO] QwenQualitySweep:   family:            bert
+2026-09-15 06:04:09,942 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 06:04:09,942 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 06:04:09,943 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 06:04:09,943 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 06:04:09,943 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 06:04:09,943 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 06:04:09,943 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\distilbert\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-15 06:04:09,945 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-15 06:04:11,391 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0001
+2026-09-15 06:04:12,100 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0005
+2026-09-15 06:04:12,810 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1861
+2026-09-15 06:04:13,549 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0247
+2026-09-15 06:04:14,268 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0038
+2026-09-15 06:04:14,975 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0151
+2026-09-15 06:04:15,699 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0045
+2026-09-15 06:04:16,415 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0014
+2026-09-15 06:04:16,428 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_nystrom\distilbert\finetuned_model.pt
+2026-09-15 06:04:16,498 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 06:04:17,356 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 06:04:19,375 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.71%
+2026-09-15 06:04:19,425 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 06:04:19,425 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 06:04:19,425 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 06:04:19,425 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 06:04:19,426 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 06:04:19,426 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 06:04:19,426 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 06:04:19,426 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 06:04:19,427 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 06:04:21,865 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nystrom\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-15 06:04:21,875 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nystrom\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-15 06:04:22,047 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.71% (F1: 0.9099, Peak VRAM: 182.94 MB)
+2026-09-15 06:04:22,047 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_nystrom\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 06:04:22,279 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: nystrom (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 06:04:22,983 [INFO] framework.core.attention_utils: Successfully injected 'nystrom' into 6 transformer blocks.
+2026-09-15 06:04:22,992 [INFO] QwenQualitySweep: module=nystrom path=legacy_bert
+2026-09-15 06:04:22,993 [INFO] QwenQualitySweep: module=nystrom injection summary: 0 SVDLinear layers active
+2026-09-15 06:04:22,993 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for nystrom (lr=2.0e-04)
+2026-09-15 06:04:23,050 [INFO] framework.utils.compat: Recovery fine-tuning selected 589824 trainable parameters across 48 tensors.
+2026-09-15 06:04:23,050 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
+2026-09-15 06:04:23,057 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 06:04:23,244 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.0168 (bs=8, micro_bs=8)
+2026-09-15 06:04:23,645 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.0083 (bs=8, micro_bs=8)
+2026-09-15 06:04:24,189 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.0004 (bs=8, micro_bs=8)
+2026-09-15 06:04:24,692 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.0010 (bs=8, micro_bs=8)
+2026-09-15 06:04:25,206 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.0032 (bs=8, micro_bs=8)
+2026-09-15 06:04:25,717 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.0027 (bs=8, micro_bs=8)
+2026-09-15 06:04:26,268 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.0012 (bs=8, micro_bs=8)
+2026-09-15 06:04:26,783 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.0114 (bs=8, micro_bs=8)
+2026-09-15 06:04:27,284 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.1539 (bs=8, micro_bs=8)
+2026-09-15 06:04:27,774 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.0056 (bs=8, micro_bs=8)
+2026-09-15 06:04:28,304 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.0022 (bs=8, micro_bs=8)
+2026-09-15 06:04:32,698 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nystrom\distilbert\distilbert_sst2_nystrom_full_metrics.json
+2026-09-15 06:04:32,761 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nystrom\distilbert\checkpoints\nystrom\weights.pt (module_params=0, lora_params=52)
+2026-09-15 06:04:32,959 [INFO] QwenQualitySweep: [2/2] nystrom -> PASS 90.71% (F1: 0.9099, Peak VRAM: 192.98 MB)
+2026-09-15 06:04:32,959 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_nystrom\distilbert\checkpoints\nystrom. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 06:04:33,196 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 06:04:33,197 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-15 06:04:33,202 [INFO] QwenQualitySweep: 
+ Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+   full   PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  182.9 MB               1.90              2.17
+nystrom   PASS   90.71%       +0.00% 0.9099                  0            1.00x  193.0 MB               4.19              4.80
+2026-09-15 06:04:33,202 [INFO] QwenQualitySweep: ================================================================================

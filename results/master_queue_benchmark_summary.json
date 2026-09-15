@@ -34,5 +34,59 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T06:00:58.271091"
+  },
+  {
+    "module": "nsa",
+    "runner": "run_all_4_nsa.py",
+    "exit_code": 0,
+    "elapsed_s": 0.0,
+    "status": "SKIPPED_EXISTING",
+    "error": null,
+    "timestamp": "2026-09-15T06:00:58.309481"
+  },
+  {
+    "module": "nsa_attention",
+    "runner": "run_all_4_nsa_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 176.44,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T06:03:54.774637"
+  },
+  {
+    "module": "nystrom",
+    "runner": "run_all_4_nystrom.py",
+    "exit_code": 0,
+    "elapsed_s": 160.46,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T06:06:35.245684"
+  },
+  {
+    "module": "oats",
+    "runner": "run_all_4_oats.py",
+    "exit_code": 0,
+    "elapsed_s": 209.78,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T06:10:05.067962"
+  },
+  {
+    "module": "oha",
+    "runner": "run_all_4_oha.py",
+    "exit_code": 0,
+    "elapsed_s": 190.44,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T06:13:15.520598"
+  },
+  {
+    "module": "optimal_subspace_projection",
+    "runner": "run_all_4_optimal_subspace_projection.py",
+    "exit_code": 0,
+    "elapsed_s": 194.88,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T06:16:30.432920"
   }
 ]

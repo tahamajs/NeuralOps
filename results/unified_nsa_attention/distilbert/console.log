@@ -65,3 +65,14 @@ Loading weights: 100%|##########| 104/104 [00:00<00:00, 4540.85it/s]
 2026-09-15 06:01:31,859 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.1545 (bs=8, micro_bs=8)
 2026-09-15 06:01:32,531 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.0057 (bs=8, micro_bs=8)
 2026-09-15 06:01:33,204 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.0022 (bs=8, micro_bs=8)
+2026-09-15 06:01:38,740 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nsa_attention\distilbert\distilbert_sst2_nsa_attention_full_metrics.json
+2026-09-15 06:01:38,814 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nsa_attention\distilbert\checkpoints\nsa_attention\weights.pt (module_params=0, lora_params=88)
+2026-09-15 06:01:39,019 [INFO] QwenQualitySweep: [2/2] nsa_attention -> PASS 90.71% (F1: 0.9099, Peak VRAM: 208.94 MB)
+2026-09-15 06:01:39,020 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_nsa_attention\distilbert\checkpoints\nsa_attention. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 06:01:39,249 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 06:01:39,249 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-15 06:01:39,259 [INFO] QwenQualitySweep: 
+       Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+         full   PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  182.9 MB               2.06              2.36
+nsa_attention   PASS   90.71%       +0.00% 0.9099                  0            1.00x  208.9 MB               5.44              6.24
+2026-09-15 06:01:39,259 [INFO] QwenQualitySweep: ================================================================================
