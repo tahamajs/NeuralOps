@@ -630,3 +630,11 @@ The `ADMMMaskedLinear` architecture incorporates telemetry hooks for tracking si
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (ADMM Pruner with Distillation)
+Evaluated on SST-2 sentiment classification (FP16, 2:4 structured sparsity, $\lambda_{\text{distill}} = 0.1$, 200 recovery steps):
+
+| Model Architecture | Baseline Acc | Pruned + Distill Acc | Δ Acc | F1 Score | Actual Sparsity | Distill MSE | Avg Recon Error | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:------------:|:--------------------:|:-----:|:--------:|:---------------:|:-----------:|:---------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.48% | 84.29% | -6.19% | 0.8603 | 50.0% | 0.000242 | 0.3571 | 551.2 MB | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-admm-distill) |
+| ROBERTA | 88.76% | 80.62% | -8.14% | 0.7966 | 50.0% | 0.000374 | 0.3513 | 336.4 MB | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-admm-distill) |
+| GPT2 | 79.36% | 51.49% | -27.87% | 0.1278 | 50.0% | 0.002051 | 0.3565 | 628.4 MB | `PASS_LOW` | N/A |
