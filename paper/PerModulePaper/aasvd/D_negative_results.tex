@@ -15,7 +15,7 @@
 
 \textbf{Goal.} Use random inputs instead of real text.
 
-\textbf{Result.} Accuracy degraded to 82\%.
+\textbf{Result.} Accuracy degraded to {{RANDOM\_ACC}}\%.
 
 \textbf{Conclusion.} Real calibration required. Bundled corpus works.
 
@@ -23,7 +23,7 @@
 
 \textbf{Goal.} Skip padding token mask.
 
-\textbf{Result.} Covariance biased; accuracy dropped by 2\%.
+\textbf{Result.} Covariance biased; accuracy dropped by {{NO\_FILTER\_DROP}}\%.
 
 \textbf{Conclusion.} Always filter padding.
 
@@ -39,7 +39,7 @@
 
 \textbf{Goal.} Use only $\mathrm{diag}(C_X)$.
 
-\textbf{Result.} Accuracy dropped by 3\%.
+\textbf{Result.} Accuracy dropped by {{DIAG\_DROP}}\%.
 
 \textbf{Conclusion.} Full covariance matters.
 
@@ -83,7 +83,7 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{τ} & \textbf{DistilBERT} & \textbf{Fallback %} \\
+\textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Fallback \%} \\
 \midrule
 0.10 & {{D\_T10}} & {{D\_FB10}} \\
 0.20 & {{D\_T20}} & {{D\_FB20}} \\
@@ -101,8 +101,8 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
 \midrule
-Different β init & Convergence & No change \\
-Per-layer β & Non-stationarity & No change \\
+Different $\beta$ init & Convergence & No change \\
+Per-layer $\beta$ & Non-stationarity & No change \\
 SVD on CPU always & Stability & Slower, no gain \\
 Separate calibration per layer & Precision & No change \\
 \bottomrule

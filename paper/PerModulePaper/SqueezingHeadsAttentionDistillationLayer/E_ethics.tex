@@ -1,0 +1,106 @@
+
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item \textbf{Cheaper fine-tuning:} LoRA trains 1\% of parameters.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Preserves pretrained:} No catastrophic forgetting.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Democratizes adaptation:} Smaller compute for task adaptation.
+\end{itemize}
+
+\subsubsection{Negative}
+\begin{itemize}
+\item \textbf{Dual-use:} Fine-tuning benefits malicious applications.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Concentration:} Large labs benefit from efficient methods.
+\end{itemize}
+
+\subsection{E.2 Environmental Impact}
+
+\begin{itemize}
+\item \textbf{Total GPU-hours:} ~{{COMPUTE\_HOURS}}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Estimated CO$_2$:} {{CO2\_KG}} kg CO$_2$eq
+\end{itemize}
+
+LoRA reduces training compute significantly.
+
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 (public, English)
+\end{itemize}
+\begin{itemize}
+\item \textbf{PII:} None
+\end{itemize}
+\begin{itemize}
+\item \textbf{Bias:} Western-centric
+\end{itemize}
+
+\subsection{E.4 Model Ethics}
+
+\subsubsection{Bias}
+Not audited. LoRA may preserve or amplify existing biases.
+
+\subsubsection{Misuse}
+Not endorsed.
+
+\subsection{E.5 Authorship and Credit}
+
+See  11.7.
+
+\subsection{E.6 Conflicts of Interest}
+
+None.
+
+\subsection{E.7 Funding}
+
+{{FUNDING}}
+
+\subsection{E.8 Acknowledgements}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{E.9 LLM Usage}
+
+Parts drafted with LLM assistance.
+
+\subsection{E.10 Reproducibility Commitments}
+
+1. Release code
+2. Release checkpoints
+3. Report negative results
+4. Document all hyperparameters
+
+\subsection{E.11 Long-Term Considerations}
+
+Efficient fine-tuning could:
+
+\begin{itemize}
+\item Reduce barriers to model adaptation
+\end{itemize}
+\begin{itemize}
+\item Reduce compute costs
+\end{itemize}
+\begin{itemize}
+\item Enable personalization on consumer hardware
+\end{itemize}
+
+But also:
+
+\begin{itemize}
+\item Enable fine-tuning for harmful tasks at low cost
+\end{itemize}
+\begin{itemize}
+\item Concentrate capabilities
+\end{itemize}
+
+We encourage community discussion.

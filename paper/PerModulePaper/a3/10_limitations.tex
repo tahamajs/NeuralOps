@@ -20,7 +20,7 @@ Only SST-2 is evaluated. A3 may behave differently on:
 
 \subsection{10.2 Model Coverage}
 
-We test on models with ≤124M parameters. Not tested:
+We test on models with $\le$124M parameters. Not tested:
 
 \begin{itemize}
 \item Large models (>1B): SVD time grows quadratically
@@ -63,7 +63,7 @@ A3 requires a calibration pass. If calibration data is unavailable:
 \item LayerNorm recalibration is skipped
 \end{itemize}
 \begin{itemize}
-\item Accuracy may drop by up to 5\%
+\item Accuracy may drop by up to {{NO\_CALIB\_DROP}}\%
 \end{itemize}
 
 This is a real limitation for models whose deployment environment differs 
@@ -80,7 +80,7 @@ Factorized layers are slower at inference:
 \item Intermediate rank-$r$ tensor must be materialized
 \end{itemize}
 \begin{itemize}
-\item On GPU: ~1.3× slower
+\item On GPU: ~{{D\_LATENCY\_RATIO}}$\times$ slower
 \end{itemize}
 \begin{itemize}
 \item On CPU: potentially faster
@@ -91,7 +91,7 @@ This is a \textbf{trade-off}: smaller size for slower latency.
 \subsection{10.6 Single-Seed Results}
 
 All main results are from one seed. With N=872 validation examples, SE is 
-~1.69\%. Differences below 3.4\% (2×SE) may be noise.
+~1.69\%. Differences below 3.4\% (2$\times$SE) may be noise.
 
 \subsection{10.7 No Theoretical Guarantee}
 
@@ -136,7 +136,7 @@ This limits the paper's external validity.
 
 \subsection{10.11 Failure Modes Not Fully Diagnosed}
 
-{{UNRESOLVED_FAILURES}}
+{{UNRESOLVED\_FAILURES}}
 
 \subsection{10.12 Code Quality}
 

@@ -1,0 +1,127 @@
+
+\section{1. Introduction}
+
+\subsection{1.1 Motivation}
+
+The softmax attention mechanism (Vaswani et al., 2017) scales quadratically 
+with sequence length $L$:
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\tag{1.1}
+\]
+
+producing an $L \times L$ attention matrix that requires $\mathcal{O}(L^2)$ 
+memory and time. For a sequence of 4096 tokens at 12 heads, the attention 
+matrix alone occupies \textbf{200 MB at FP16}, dwarfing the model's own weight 
+footprint.
+
+\textbf{Low-rank approximation} reduces this to $\mathcal{O}(L m)$ by projecting 
+onto $m \ll L$ landmarks. The Nystr m method (Williams \& Seeger, 2001) does 
+this by:
+
+\[
+K \approx \tilde{K} = C W^{-1} C^\top
+\tag{1.2}
+\]
+
+where $C \in \mathbb{R}^{L \times m}$ is the query-landmark kernel and 
+$W \in \mathbb{R}^{m \times m}$ is the landmark-landmark kernel. The 
+Nystr mformer (Xiong et al., 2021) applies this to attention.
+
+\textbf{The problem with standard Nystr m.} It assumes a symmetric kernel, 
+requiring the same landmarks for queries and keys. In attention, however, 
+queries and keys play different roles: queries ask "what am I looking for?"; 
+keys answer "what am I?" Using the same landmarks ignores this asymmetry.
+
+\subsection{1.2 Problem Statement}
+
+Given query $Q \in \mathbb{R}^{L \times d}$, key $K \in \mathbb{R}^{L \times d}$, 
+and value $V \in \mathbb{R}^{L \times d}$, we seek a low-rank approximation 
+of the attention output:
+
+\[
+\text{Attn}(Q, K, V) \approx \text{Attn}_\text{low-rank}(Q, K, V)
+\tag{1.3}
+\]
+
+such that:
+
+1. \textbf{Complexity:} $\mathcal{O}(L m)$ instead of $\mathcal{O}(L^2)$, with $m \ll L$.
+2. \textbf{Asymmetry:} Independent landmark selection for $Q$ and $K$.
+3. \textbf{Differentiability:} End-to-end training.
+4. \textbf{Compatibility:} Works with pretrained models without retraining.
+5. \textbf{Stability:} Numerically robust for FP16 and long sequences.
+
+\subsection{1.3 Our Approach: Primal Attention}
+
+We propose \textbf{Primal Attention}, which decomposes the attention matrix 
+asymmetrically:
+
+\[
+A \approx F_1 F_2^{-1} F_3
+\tag{1.4}
+\]
+
+where:
+
+\begin{itemize}
+\item $F_1 = Q K_\text{land}^\top \in \mathbb{R}^{L \times m}$: query vs landmark keys
+\end{itemize}
+\begin{itemize}
+\item $F_2 = Q_\text{land} K_\text{land}^\top \in \mathbb{R}^{m \times m}$: landmark-landmark
+\end{itemize}
+\begin{itemize}
+\item $F_3 = Q_\text{land} K^\top \in \mathbb{R}^{m \times L}$: landmark queries vs keys
+\end{itemize}
+
+This is the \textbf{primal representation} of the asymmetric kernel (in contrast 
+to the dual representation which uses $L \times L$ kernels). The pseudoinverse 
+$F_2^{-1}$ is computed via \textbf{Schulz iteration}:
+
+\[
+X_{t+1} = X_t (2I - F_2 X_t)
+\tag{1.5}
+\]
+
+which converges quadratically to $F_2^{-1}$ in a few steps and is differentiable.
+
+\textbf{Landmark selection.} We use \textbf{segment pooling}: divide the sequence into 
+$m$ equal chunks and average each chunk. This gives uniform coverage 
+regardless of content.
+
+\subsection{1.4 Contributions}
+
+\begin{itemize}
+\item \textbf{An asymmetric kernel SVD formulation.} Primal Attention allows independent
+\end{itemize}
+  landmarks for queries and keys, generalizing standard Nystr m approximation.
+\begin{itemize}
+\item \textbf{A differentiable pseudoinverse.} Schulz iteration provides end-to-end
+\end{itemize}
+  trainable pseudoinverse without explicit eigendecomposition.
+\begin{itemize}
+\item \textbf{A production-hardened implementation.} Supports flat, nested, and causal
+\end{itemize}
+  architectures with GQA, RoPE, and safe injection.
+\begin{itemize}
+\item \textbf{A systematic evaluation.} Benchmarked on DistilBERT, RoBERTa, and GPT-2
+\end{itemize}
+  on SST-2 with ablations over landmark count and pseudoinverse iterations.
+\begin{itemize}
+\item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
+\end{itemize}
+  under {{LICENSE}}.
+
+\subsection{1.5 Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on softmax 
+attention, Nystr m approximation, and pseudoinverse. Section 4 presents 
+Primal Attention. Section 5 describes integration with four architectures. 
+Section 6 details the experimental setup. Section 7 reports results. Section 
+8 analyzes where the method succeeds and fails. Section 9 discusses practical 
+guidance. Section 10 lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}

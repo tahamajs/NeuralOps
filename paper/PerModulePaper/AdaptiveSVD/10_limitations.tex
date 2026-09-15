@@ -19,7 +19,7 @@ Only \textbf{SST-2} is evaluated. Adaptive SVD may behave differently on:
 
 \subsection{10.2 Model Coverage}
 
-We test on three models (66.9M–124.6M params). Not tested:
+We test on three models (66.9M--124.6M params). Not tested:
 \begin{itemize}
 \item Large models (>1B)
 \end{itemize}
@@ -62,7 +62,7 @@ Factorized layers are slower at inference:
 \item Adapter adds one more matmul
 \end{itemize}
 \begin{itemize}
-\item ~1.2× slower on GPU
+\item ~{{LATENCY\_RATIO}}$\times$ slower on GPU
 \end{itemize}
 
 \textbf{Mitigation.} The compressed model uses less memory, so larger batch sizes 
@@ -94,7 +94,7 @@ For $d = 768$ and $r_L = 16$:
 \text{Overhead per projection} = 16 \cdot 1536 = 24,576 \text{ params}
 \]
 
-vs. the compressed base of $r_P \cdot 1536$. This is ~12\% 
+vs. the compressed base of $r_P \cdot 1536$. This is ~{{ADAPTER\_OVERHEAD}}\% 
 of the base.
 
 \subsection{10.8 Single-Seed Results}
@@ -120,7 +120,7 @@ We do not compare with:
 
 \subsection{10.10 T5 and Qwen Verification}
 
-T5 support is not tested, Qwen support is partial. Full 
+T5 support is {{T5\_VERIFIED}}, Qwen support is {{QWEN\_VERIFIED}}. Full 
 verification on these architectures is deferred to future work.
 
 \subsection{10.11 Theoretical Guarantee on Per-Layer Optimality}

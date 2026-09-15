@@ -1,0 +1,64 @@
+
+\section{10. Limitations}
+
+\subsection{10.1 Task Coverage}
+
+Only SST-2 evaluated ($L = 128$). Primal Attention's advantage grows at 
+longer $L$; not tested at $L \ge 2048$.
+
+\subsection{10.2 Model Coverage}
+
+Tested on models with $H = 12$. Not tested on:
+\begin{itemize}
+\item Very wide models ($H = 32+$)
+\end{itemize}
+\begin{itemize}
+\item Mixture-of-Experts
+\end{itemize}
+\begin{itemize}
+\item Vision transformers
+\end{itemize}
+
+\subsection{10.3 Approximate Causality}
+
+Causal masking is applied to the approximate attention matrix. This is 
+not equivalent to true causal attention. We do not measure the impact on 
+autoregressive generation.
+
+\subsection{10.4 No True Speedup at Short $L$}
+
+At $L = 128$, Primal Attention is {{D\_TIME\_RATIO}}$\times$ slower. The overhead of 
+computing three factors ($F_1, F_2, F_3$) plus pseudoinverse exceeds the 
+savings from reduced attention matrix.
+
+\subsection{10.5 Segment Pooling Bias}
+
+Segment pooling is content-agnostic. Attention sinks and heavy hitters are 
+not explicitly preserved.
+
+\subsection{10.6 No Parameter Reduction}
+
+Primal Attention does \textbf{not} reduce parameter count. For storage savings, 
+use compression methods (A3, AASVD).
+
+\subsection{10.7 Single Seed}
+
+All results from seed {{SEED}}.
+
+\subsection{10.8 No Comparison with Performer / Linformer}
+
+We do not directly compare with other linear attention methods. This limits 
+external validity.
+
+\subsection{10.9 Failure Modes}
+
+{{UNRESOLVED\_FAILURES}}
+
+\subsection{10.10 Code Quality}
+
+Research-grade implementation. Some numerical stability issues may remain 
+at extreme $L$ or $m$.
+
+\subsection{10.11 Ethical Considerations}
+
+Dual-use. See Appendix E.

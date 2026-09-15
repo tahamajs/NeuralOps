@@ -38,30 +38,30 @@ Parameter count increases by LoRA overhead. ClusterFormer targets
 \subsubsection{Not Recommended}
 
 \begin{itemize}
-\item \textbf{Short sequences} ($L < 100$) — overhead exceeds savings
+\item \textbf{Short sequences} ($L < 100$) -- overhead exceeds savings
 \end{itemize}
 \begin{itemize}
-\item \textbf{Model size reduction} — use compression methods
+\item \textbf{Model size reduction} -- use compression methods
 \end{itemize}
 \begin{itemize}
-\item \textbf{Strict causal generation} — decoder uses exact attention anyway
+\item \textbf{Strict causal generation} -- decoder uses exact attention anyway
 \end{itemize}
 \begin{itemize}
-\item \textbf{Interpretability-first} — attention maps are cluster-level
+\item \textbf{Interpretability-first} -- attention maps are cluster-level
 \end{itemize}
 
 \subsection{9.3 Decision Flowchart}
 
 \begin{lstlisting}
-Need size reduction? ─── Yes ─── Use A3/AASVD/Adaptive SVD
-  │ No
-  ▼
-Sequence length > 128? ─── No ─── Use baseline softmax
-  │ Yes
-  ▼
-Latency critical? ─── Yes ─── Consider FlashAttention
-  │ No
-  ▼
+Need size reduction? --- Yes --- Use A3/AASVD/Adaptive SVD
+  | No
+   
+Sequence length > 128? --- No --- Use baseline softmax
+  | Yes
+   
+Latency critical? --- Yes --- Consider FlashAttention
+  | No
+   
 Use ClusterFormer
 \end{lstlisting}
 
@@ -75,10 +75,10 @@ For DistilBERT at $L=256$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 6.7M & 2.4M & **2.8× reduction** \\
-Accuracy & 90.71\% & 89.91\% & -0.80\% \\
-Params & 66.9M & 67.55M & +589826M \\
-Wall time & 4.2 ms & 3.8 ms & 1.10× \\
+Attention FLOPs & 6.7M & 2.4M & **2.8$\times$ reduction** \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
+Wall time & 4.2 ms & 3.8 ms & 1.10$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -117,10 +117,10 @@ not directly accessible.
 
 \subsection{9.7 Open Questions}
 
-1. \textbf{Optimal $K$ per layer} — could be learned dynamically?
-2. \textbf{Interaction with quantization} — INT8 + ClusterFormer?
-3. \textbf{Causal decoding} — can clustering work for generation?
-4. \textbf{Very long context} ($L > 4096$) — does the crossover hold?
+1. \textbf{Optimal $K$ per layer} -- could be learned dynamically?
+2. \textbf{Interaction with quantization} -- INT8 + ClusterFormer?
+3. \textbf{Causal decoding} -- can clustering work for generation?
+4. \textbf{Very long context} ($L > 4096$) -- does the crossover hold?
 
 \subsection{9.8 Broader Impact}
 
@@ -147,4 +147,4 @@ not directly accessible.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~15 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.

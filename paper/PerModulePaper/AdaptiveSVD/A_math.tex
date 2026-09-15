@@ -13,7 +13,7 @@ r^*(\tau) = \min\{r : \mathcal{E}(r) \geq \tau\}
 \tag{A.1}
 \]
 
-\textbf{Proof.} By the Eckart–Young theorem:
+\textbf{Proof.} By the Eckart--Young theorem:
 
 \[
 \|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2 = (1 - \mathcal{E}(r)) \|W\|_F^2
@@ -137,7 +137,7 @@ The factorized $Q, K, V$ projections do not affect the bias.
 \textbf{Claim.} After injection, the T5 bias is added to attention scores exactly 
 as before.
 
-\textbf{Proof.} The \texttt{compute_bias} method is unchanged; the \texttt{relative_attention_bias} 
+\textbf{Proof.} The \texttt{compute\\_bias} method is unchanged; the \texttt{relative\\_attention\\_bias} 
 module is the same. $\square$
 
 \subsection{A.9 Causality Preservation}

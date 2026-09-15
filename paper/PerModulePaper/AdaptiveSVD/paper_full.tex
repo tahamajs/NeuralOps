@@ -35,10 +35,10 @@
 
 \textbf{Authors:}
 \begin{itemize}
-\item Your Name¹ — you@university.edu
+\item Your Name¹ --- you@university.edu
 \end{itemize}
 \begin{itemize}
-\item Advisor Name² — advisor@university.edu
+\item Advisor Name² --- advisor@university.edu
 \end{itemize}
 
 \textbf{Affiliations:}
@@ -46,13 +46,13 @@
 \item ¹ University Name, Department of Computer Science
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+\item ² {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
 \end{itemize}
 
 \textbf{Corresponding author:} Your Name
 \textbf{Preprint date:} 2026-09-15
 \textbf{Version:} v1 (initial draft)
-\textbf{Code:} https://github.com/your-org/SVD_Project/tree/main/framework/attentions/adaptive_svd_attn.py
+\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/adaptive\_svd\_attn.py
 \textbf{Model weights:} https://huggingface.co/Hooshaai
 \textbf{License:} MIT
 
@@ -61,7 +61,7 @@
 \subsection{Abstract}
 
 Low-rank factorization is a widely used primitive for compressing transformer 
-attention, but the standard approach — truncated SVD at a fixed global rank — 
+attention, but the standard approach --- truncated SVD at a fixed global rank --- 
 treats all layers identically. This is suboptimal because attention projection 
 matrices exhibit highly heterogeneous spectral decay: some are well-approximated 
 by only 32 singular directions, while others require 200 or more. We introduce 
@@ -92,8 +92,8 @@ starting point for LoRA recovery.
 We evaluate on DistilBERT (6 layers, flat attention), RoBERTa-base (12 layers, 
 nested attention), and GPT-2 (12 layers, causal attention) on SST-2 with 
 50 LoRA recovery steps at residual rank 16. 
-Adaptive SVD achieves parameter reductions of \textbf{3.0×–2.5×} 
-with accuracy drops of only \textbf{-2.7\%–-3.9\%}. The method 
+Adaptive SVD achieves parameter reductions of \textbf{3.0$\times$--2.5$\times$} 
+with accuracy drops of only \textbf{-2.7\%---3.9\%}. The method 
 additionally supports \textbf{T5 relative attention bias}, \textbf{GQA}, and \textbf{RoPE}, 
 making it applicable across encoder-only, decoder-only, and encoder-decoder 
 architectures. Per-layer ranks range from 64 to 150, 
@@ -107,7 +107,7 @@ attention, residual adapters, transformer compression
 \subsection{Lay Summary}
 
 Every attention weight matrix in a transformer is a grid of numbers. Some 
-grids have a "flat" structure — their information concentrates in a few 
+grids have a "flat" structure --- their information concentrates in a few 
 directions, so they can be compressed heavily. Others have "sharp" structure 
 and need more directions to represent accurately. Standard compression uses 
 the same rank for every matrix, wasting space on some layers and losing 
@@ -115,42 +115,42 @@ accuracy on others. Adaptive SVD looks at each matrix individually and asks:
 "How many directions do I need to capture 92\% of this matrix's energy?" It 
 keeps exactly that many, plus a small trainable correction. On three 
 popular language models, Adaptive SVD removes over half the attention 
-parameters with under 3\% accuracy loss — and needs no example data to 
+parameters with under 3\% accuracy loss --- and needs no example data to 
 calibrate.
 
 
 
 \subsection{Table of Contents}
 
-1. [Introduction](01_intro.md)
-2. [Related Work](02_related.md)
-3. [Background](03_background.md)
-4. [Method](04_method.md)
-5. [Architecture Integration](05_architecture.md)
-6. [Experimental Setup](06_setup.md)
-7. [Results](07_results.md)
-8. [Analysis](08_analysis.md)
-9. [Discussion](09_discussion.md)
-10. [Limitations](10_limitations.md)
-11. [Conclusion](11_conclusion.md)
-12. [Reproducibility](12_reproducibility.md)
-13. [References](13_references.md)
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
 
 \textbf{Appendices:}
 \begin{itemize}
-\item [A. Mathematical Derivations](A_math.md)
+\item [A. Mathematical Derivations](A\_math.md)
 \end{itemize}
 \begin{itemize}
-\item [B. Implementation Details](B_implementation.md)
+\item [B. Implementation Details](B\_implementation.md)
 \end{itemize}
 \begin{itemize}
-\item [C. Full Experimental Data](C_data.md)
+\item [C. Full Experimental Data](C\_data.md)
 \end{itemize}
 \begin{itemize}
-\item [D. Negative Results](D_negative_results.md)
+\item [D. Negative Results](D\_negative\_results.md)
 \end{itemize}
 \begin{itemize}
-\item [E. Ethical Considerations](E_ethics.md)
+\item [E. Ethical Considerations](E\_ethics.md)
 \end{itemize}
 
 \clearpage
@@ -169,11 +169,11 @@ the four together contain ~2.36M parameters per layer.
 with the product $U V$ where $U \in \mathbb{R}^{d_\text{out} \times r}$ and 
 $V \in \mathbb{R}^{r \times d_\text{in}}$. Parameter count drops from 
 $d_\text{in} d_\text{out}$ to $r (d_\text{in} + d_\text{out})$. For 
-$768 \times 768$ at $r = 128$, this is a \textbf{3× reduction} in attention 
+$768 \times 768$ at $r = 128$, this is a \textbf{3$\times$ reduction} in attention 
 parameters.
 
 The \textbf{rank choice} is the central design decision. Truncated SVD gives the 
-best rank-$r$ approximation in Frobenius norm (Eckart–Young), but the theorem 
+best rank-$r$ approximation in Frobenius norm (Eckart--Young), but the theorem 
 says nothing about what $r$ should be. Existing approaches fall into three 
 categories:
 
@@ -253,7 +253,7 @@ This keeps $\|U_r\|_2 = \|V_r\|_2 = \sqrt{\sigma_\text{max}}$, avoiding FP16 ove
 \item \textbf{Symmetric SVD + residual adapter.} A factorization that keeps both
 \end{itemize}
   factors balanced in magnitude and adds zero-initialized residuals for 
-  recovery. Section 4.3–4.4.
+  recovery. Section 4.3--4.4.
 \begin{itemize}
 \item \textbf{Broad architecture support.} The method works on flat, nested, and causal
 \end{itemize}
@@ -293,7 +293,7 @@ practical usage. Section 10 lists limitations. Section 11 concludes.
 
 \subsection{2.1 Low-Rank Matrix Factorization}
 
-\textbf{Classical SVD.} The Eckart–Young theorem (Eckart \& Young, 1936) states 
+\textbf{Classical SVD.} The Eckart--Young theorem (Eckart \& Young, 1936) states 
 that the best rank-$r$ approximation of $W$ in Frobenius norm is the truncated 
 SVD $W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top$. Adaptive SVD builds 
 on this but selects $r$ via an energy threshold rather than a validation 
@@ -307,7 +307,7 @@ singular values under noise (Gavish \& Donoho, 2014). Our criterion is a
 \textbf{cumulative energy threshold}, distinct from per-singular-value thresholds.
 
 \textbf{Randomized SVD.} Halko et al. (2011) provide a randomized algorithm with 
-$\mathcal{O}(d r \log k)$ complexity. For our layer sizes (≤3072×768), exact 
+$\mathcal{O}(d r \log k)$ complexity. For our layer sizes ($\le$3072$\times$768), exact 
 SVD is faster and simpler.
 
 \subsection{2.2 Activation-Aware Compression}
@@ -461,7 +461,7 @@ so relative Frobenius error is $\leq \sqrt{1 - \tau}$.
 Attention projection matrices exhibit heterogeneous spectral decay:
 
 \begin{itemize}
-\item \textbf{Query projections:} Moderate decay. Effective rank ~40–80\% of full.
+\item \textbf{Query projections:} Moderate decay. Effective rank ~40--80\% of full.
 \end{itemize}
 \begin{itemize}
 \item \textbf{Key projections:} Slower decay (keys spread information across dimensions).
@@ -529,7 +529,7 @@ K, V \in \mathbb{R}^{B \times L \times H_{kv} d_h}, \quad H_\text{repeat} = H / 
 \tag{3.11}
 \]
 
-The KV heads are repeated via \texttt{repeat_kv} before attention. Adaptive SVD 
+The KV heads are repeated via \texttt{repeat\\_kv} before attention. Adaptive SVD 
 preserves GQA structure.
 
 \subsection{3.7 Rotary Position Embeddings (RoPE)}
@@ -572,8 +572,8 @@ Adaptive SVD compresses each attention projection in four steps:
                        ▼
     ┌──────────────────────────────────────────┐
     │  For each projection P:                  │
-    │    Phase 1: SVD(W_P) → U_P Σ_P V_P^T     │
-    │    Phase 2: Find r_P via τ               │
+    │    Phase 1: SVD(W_P) $\to$ U_P Σ_P V_P^T     │
+    │    Phase 2: Find r_P via $\tau$               │
     │    Phase 3: Truncate + distribute Σ^{1/2}│
     │    Phase 4: Add zero-init BA adapter     │
     └──────────────────┬───────────────────────┘
@@ -693,8 +693,8 @@ The compressed projection computes:
 \toprule
 \textbf{Configuration} & \textbf{Parameters} \\
 \midrule
-Original & $d\_\text{in}^{(P)} d\_\text{out}^{(P)}$ \\
-Adaptive SVD & $r\_P (d\_\text{in}^{(P)} + d\_\text{out}^{(P)})$ \\
+Original & $d_\text{in}^{(P)} d_\text{out}^{(P)}$ \\
+Adaptive SVD & $r_P (d_\text{in}^{(P)} + d_\text{out}^{(P)})$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -748,26 +748,26 @@ The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
 
 \textbf{Algorithm 1:} Adaptive SVD compression for one attention module
 \begin{lstlisting}
-Input:  pretrained attention A with projections P ∈ {Q, K, V, O}
-        energy threshold τ ∈ (0, 1)
+Input:  pretrained attention A with projections P $\in$ {Q, K, V, O}
+        energy threshold $\tau$ $\in$ (0, 1)
         residual rank r_L
         minimum rank r_min
 Output: compressed attention A'
 
 1:  for P in {Q, K, V, O} do
-2:      W_P ← weight(A.P)                            ▷ Extract
-3:      U_P, Σ_P, V_P^T ← svd(W_P)                   ▷ Full SVD in FP32
-4:      s ← Σ_P^2
-5:      E ← cumsum(s) / sum(s)                      ▷ Cumulative energy
-6:      idx ← first index where E ≥ τ
-7:      r_P ← max(idx + 1, r_min)                   ▷ Enforce min rank
+2:      W_P $\leftarrow$ weight(A.P)                            ▷ Extract
+3:      U_P, Σ_P, V_P^T $\leftarrow$ svd(W_P)                   ▷ Full SVD in FP32
+4:      s $\leftarrow$ Σ_P^2
+5:      E $\leftarrow$ cumsum(s) / sum(s)                      ▷ Cumulative energy
+6:      idx $\leftarrow$ first index where E $\ge$ $\tau$
+7:      r_P $\leftarrow$ max(idx + 1, r_min)                   ▷ Enforce min rank
 8:
-9:      Σ_r^{1/2} ← sqrt(Σ_P[:r_P])
-10:     U_r ← U_P[:, :r_P] @ diag(Σ_r^{1/2})        ▷ Symmetric split
-11:     V_r ← diag(Σ_r^{1/2}) @ V_P^T[:r_P, :]
+9:      Σ_r^{1/2} $\leftarrow$ sqrt(Σ_P[:r_P])
+10:     U_r $\leftarrow$ U_P[:, :r_P] @ diag(Σ_r^{1/2})        ▷ Symmetric split
+11:     V_r $\leftarrow$ diag(Σ_r^{1/2}) @ V_P^T[:r_P, :]
 12:
-13:     B_P ← zeros(d_out, r_L)                     ▷ Zero init
-14:     A_P ← kaiming_uniform(r_L, d_in)
+13:     B_P $\leftarrow$ zeros(d_out, r_L)                     ▷ Zero init
+14:     A_P $\leftarrow$ kaiming_uniform(r_L, d_in)
 15:
 16:     replace A.P with AdaptiveSVDLinear(U_r, V_r, A_P, B_P)
 17: end for
@@ -788,13 +788,13 @@ Output: compressed attention A'
 \toprule
 \textbf{Phase} & \textbf{Time} \\
 \midrule
-SVD per projection & $\mathcal{O}(d\_\text{in} d\_\text{out} \min(d\_\text{in}, d\_\text{out}))$ \\
-Rank selection & $\mathcal{O}(\min(d\_\text{in}, d\_\text{out}))$ \\
-Factor truncation & $\mathcal{O}(r\_P (d\_\text{in} + d\_\text{out}))$ \\
-Adapter init & $\mathcal{O}(r\_L (d\_\text{in} + d\_\text{out}))$ \\
-**Per projection** & $\mathcal{O}(d\_\text{in} d\_\text{out} \min(d\_\text{in}, d\_\text{out}))$ \\
+SVD per projection & $\mathcal{O}(d_\text{in} d_\text{out} \min(d_\text{in}, d_\text{out}))$ \\
+Rank selection & $\mathcal{O}(\min(d_\text{in}, d_\text{out}))$ \\
+Factor truncation & $\mathcal{O}(r_P (d_\text{in} + d_\text{out}))$ \\
+Adapter init & $\mathcal{O}(r_L (d_\text{in} + d_\text{out}))$ \\
+**Per projection** & $\mathcal{O}(d_\text{in} d_\text{out} \min(d_\text{in}, d_\text{out}))$ \\
 **Per attention module** & $\mathcal{O}(4 \cdot d^3)$ for square $d \times d$ \\
-**Total ($N\_l$ layers)** & $\mathcal{O}(4 N\_l d^3)$ \\
+**Total ($N_l$ layers)** & $\mathcal{O}(4 N_l d^3)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -832,8 +832,8 @@ For a square $d \times d$ projection:
 \textbf{Configuration} & \textbf{Parameters} \\
 \midrule
 Original & $d^2$ \\
-Adaptive SVD & $2 r\_P d$ \\
-Adaptive SVD + LoRA($r\_L$) & $2 d (r\_P + r\_L)$ \\
+Adaptive SVD & $2 r_P d$ \\
+Adaptive SVD + LoRA($r_L$) & $2 d (r_P + r_L)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -853,9 +853,9 @@ Adaptive SVD + LoRA($r\_L$) & $2 d (r\_P + r\_L)$ \\
 \toprule
 \textbf{Configuration} & \textbf{Parameters} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.00× \\
-Adaptive SVD (base) & 196,608 & 3.00× \\
-+ Adapter & 221,184 & 2.67× \\
+Original & 589,824 & 1.00$\times$ \\
+Adaptive SVD (base) & 196,608 & 3.00$\times$ \\
++ Adapter & 221,184 & 2.67$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -907,7 +907,7 @@ The parameter ratio per projection is:
 \tag{4.13}
 \]
 
-At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2× reduction).
+At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2$\times$ reduction).
 
 \subsection{4.10 Hyperparameter Guidance}
 
@@ -917,10 +917,10 @@ At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2×
 \toprule
 \textbf{Hyperparameter} & \textbf{Default} & \textbf{Range tested} \\
 \midrule
-$\tau$ & 0.92 & 0.85 – 0.99 \\
-$r\_L$ & 16 & 4 – 64 \\
-$r\_\text{min}$ & 16 & 8 – 32 \\
-Recovery steps & 50 & 10 – 200 \\
+$\tau$ & 0.92 & 0.85 -- 0.99 \\
+$r_L$ & 16 & 4 -- 64 \\
+$r_\text{min}$ & 16 & 8 -- 32 \\
+Recovery steps & 50 & 10 -- 200 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -992,7 +992,7 @@ W_V = src.v_lin.weight
 W_O = src.out_lin.weight
 \end{lstlisting}
 
-All four projections are inside \texttt{MultiHeadSelfAttention}. \texttt{is_nested_encoder = False}.
+All four projections are inside \texttt{MultiHeadSelfAttention}. \texttt{is\\_nested\\_encoder = False}.
 
 \subsubsection{5.2.2 RoBERTa (Nested)}
 
@@ -1002,11 +1002,11 @@ Extract from inner \texttt{BertSelfAttention}:
 W_Q = src.self.query.weight
 W_K = src.self.key.weight
 W_V = src.self.value.weight
-# W_O is not extracted — outer BertSelfOutput.dense applies it
+# W_O is not extracted --- outer BertSelfOutput.dense applies it
 \end{lstlisting}
 
-\texttt{is_nested_encoder = True}. During forward, the compressed \texttt{context} is 
-returned without applying \texttt{out_proj}; the outer \texttt{BertSelfOutput.dense} 
+\texttt{is\\_nested\\_encoder = True}. During forward, the compressed \texttt{context} is 
+returned without applying \texttt{out\\_proj}; the outer \texttt{BertSelfOutput.dense} 
 applies its own (unchanged) projection.
 
 \textbf{Consequence.} In RoBERTa, the output projection $W_O$ is \textbf{not compressed}, 
@@ -1014,7 +1014,7 @@ only $W_Q, W_K, W_V$.
 
 \subsubsection{5.2.3 GPT-2 (Fused Conv1D)}
 
-GPT-2 fuses Q, K, V into a single \texttt{c_attn} Conv1D:
+GPT-2 fuses Q, K, V into a single \texttt{c\\_attn} Conv1D:
 
 \begin{lstlisting}
 fused = src.c_attn.weight.T  # (3*768, 768) after transpose
@@ -1023,11 +1023,11 @@ W_O = src.c_proj.weight.T
 \end{lstlisting}
 
 The transpose handles the HuggingFace Conv1D layout: it stores weights as 
-\texttt{(in_features, out_features)} instead of the standard \texttt{(out_features, in_features)}.
+\texttt{(in\\_features, out\\_features)} instead of the standard \texttt{(out\\_features, in\\_features)}.
 
 \subsubsection{5.2.4 T5 (Relative Attention Bias)}
 
-T5 uses \texttt{relative_attention_bias} (an \texttt{nn.Embedding}) instead of learned 
+T5 uses \texttt{relative\\_attention\\_bias} (an \texttt{nn.Embedding}) instead of learned 
 position embeddings:
 
 \begin{lstlisting}
@@ -1106,13 +1106,13 @@ class AdaptiveSVDLinear(nn.Module):
 
 \textbf{Algorithm 2:} Inject Adaptive SVD into a full model
 \begin{lstlisting}
-Input:  model M, config c, hyperparameters τ, r_L
+Input:  model M, config c, hyperparameters $\tau$, r_L
 Output: M with attention replaced
 
 1:  for ℓ in transformer_layers(M) do
-2:      src ← find_attention(ℓ)                   ▷ Old attention
+2:      src $\leftarrow$ find_attention(ℓ)                   ▷ Old attention
 3:      if src is None: continue
-4:      new ← AdaptiveSVDAttention(c, τ, r_L, pretrained_attn=src)
+4:      new $\leftarrow$ AdaptiveSVDAttention(c, $\tau$, r_L, pretrained_attn=src)
 5:      new.copy_weights(src)                      ▷ SVD + adapter
 6:      replace_attention(ℓ, new)
 7: end for
@@ -1147,7 +1147,7 @@ if position_bias is None and self.has_relative_attention_bias:
     position_bias = self.compute_bias(N_q, N_k, device=hidden_states.device)
 \end{lstlisting}
 
-The \texttt{compute_bias} function uses \texttt{_relative_position_bucket} to map relative 
+The \texttt{compute\\_bias} function uses \texttt{\\_relative\\_position\\_bucket} to map relative 
 positions to buckets, then looks up the bias embedding.
 
 \subsubsection{5.5.2 GQA Expansion}
@@ -1222,7 +1222,7 @@ Adapter init & FP32 then cast \\
 \subsubsection{5.9.1 LoRA Wrappers}
 
 If the source module is a \texttt{LoRALinear} wrapper, Adaptive SVD extracts the 
-inner \texttt{base_layer} for SVD and preserves the outer LoRA parameters:
+inner \texttt{base\\_layer} for SVD and preserves the outer LoRA parameters:
 
 \begin{lstlisting}
 target_mod = getattr(module, "base_layer", module)
@@ -1231,7 +1231,7 @@ target_mod = getattr(module, "base_layer", module)
 \subsubsection{5.9.2 Encoder-Decoder}
 
 For T5, the same \texttt{AdaptiveSVDAttention} is used in both encoder and decoder 
-blocks. The decoder side has \texttt{is_decoder = True}, which enables causal masking.
+blocks. The decoder side has \texttt{is\\_decoder = True}, which enables causal masking.
 
 \clearpage
 
@@ -1253,7 +1253,7 @@ GPT-2 & 12 & 768 & 12 & 12 & 124.4M & Causal \\
 \end{tabular}
 \end{table}
 
-Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
+Base weights loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
 
 \subsection{6.2 Dataset}
 
@@ -1267,7 +1267,7 @@ Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
 \midrule
 Train & 67,349 & 33,807 & 33,542 \\
 Validation & 872 & 444 & 428 \\
-Test & 1,821 & — & — \\
+Test & 1,821 & --- & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1284,7 +1284,7 @@ Test & 1,821 & — & — \\
 \midrule
 `energy\_threshold` $\tau$ & 0.92 & Cumulative energy cutoff \\
 `svd\_rank` (cap) & 288 & Maximum rank (rarely hit) \\
-`residual\_rank` $r\_L$ & 16 & LoRA adapter rank \\
+`residual\_rank` $r_L$ & 16 & LoRA adapter rank \\
 `min\_rank` & 16 & Minimum rank floor \\
 `trainable\_svd` & False & Base frozen \\
 `target\_attention\_only` & True & Only attention projections \\
@@ -1315,13 +1315,13 @@ Warmup & 0 steps \\
 Recovery steps & 50 \\
 Batch size & 8 \\
 Precision & FP16 \\
-Trainable params & Only $A\_P, B\_P$ \\
+Trainable params & Only $A_P, B_P$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Trainable tensor count:} 96 (2 per projection × 4 per 
-layer × $N_l$).
+\textbf{Trainable tensor count:} 96 (2 per projection $\times$ 4 per 
+layer $\times$ $N_l$).
 
 \subsection{6.6 Evaluation Metrics}
 
@@ -1378,8 +1378,8 @@ layer × $N_l$).
 \toprule
 \textbf{Status} & \textbf{Accuracy} \\
 \midrule
-PASS & ≥ 56.0\% \\
-PASS\_LOW & 50.92\% – 56.0\% \\
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
 FAIL & < 50.92\% \\
 \bottomrule
 \end{tabular}
@@ -1437,25 +1437,25 @@ All experiments use seed 42. No multi-seed runs due to compute budget.
 \centering
 \begin{tabular}{llllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{Δ} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & — & 0.9099 & 0 & 1.00× & 183 MB \\
-DistilBERT & **Adaptive SVD** & **88.0** & -2.7 & 0.880 & 24 & **3.0×** & 130 MB \\
-RoBERTa & full & 78.56\% & — & 0.8124 & 0 & 1.00× & 712 MB \\
-RoBERTa & **Adaptive SVD** & **74.0** & -4.6 & 0.740 & 48 & **2.5×** & 550 MB \\
-GPT-2 & full & 79.36\% & — & 0.7978 & 0 & 1.00× & 793 MB \\
-GPT-2 & **Adaptive SVD** & **75.5** & -3.9 & 0.750 & 48 & **2.5×** & 600 MB \\
+DistilBERT & full & 90.71\% & --- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
+DistilBERT & **Adaptive SVD** & **88.0** & -2.7 & 0.880 & 24 & **3.0$\times$** & 130 MB \\
+RoBERTa & full & 78.56\% & --- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
+RoBERTa & **Adaptive SVD** & **74.0** & -4.6 & 0.740 & 48 & **2.5$\times$** & 550 MB \\
+GPT-2 & full & 79.36\% & --- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
+GPT-2 & **Adaptive SVD** & **75.5** & -3.9 & 0.750 & 48 & **2.5$\times$** & 600 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key observations:}
 
-1. \textbf{Parameter reduction:} 3.0× on DistilBERT, 2.5× on RoBERTa, 
-   2.5× on GPT-2.
+1. \textbf{Parameter reduction:} 3.0$\times$ on DistilBERT, 2.5$\times$ on RoBERTa, 
+   2.5$\times$ on GPT-2.
 2. \textbf{Accuracy:} drops of only -2.7\%, -4.6\%, -3.9\%.
 3. \textbf{VRAM:} reduces by 30\% on all models.
-4. \textbf{No calibration:} compression time is only 15–30 seconds.
+4. \textbf{No calibration:} compression time is only 15--30 seconds.
 
 \subsection{7.2 Parameter Analysis}
 
@@ -1467,9 +1467,9 @@ GPT-2 & **Adaptive SVD** & **75.5** & -3.9 & 0.750 & 48 & **2.5×** & 600 MB \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Adaptive SVD} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 22000000 & **3.0×** \\
-RoBERTa & 124,647,170 & 50000000 & **2.5×** \\
-GPT-2 & 124,441,344 & 50000000 & **2.5×** \\
+DistilBERT & 66,955,010 & 22000000 & **3.0$\times$** \\
+RoBERTa & 124,647,170 & 50000000 & **2.5$\times$** \\
+GPT-2 & 124,441,344 & 50000000 & **2.5$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1482,10 +1482,10 @@ GPT-2 & 124,441,344 & 50000000 & **2.5×** \\
 \toprule
 \textbf{Projection} & \textbf{Original} & \textbf{Compressed} & \textbf{Rank $r_P$} & \textbf{Reduction} \\
 \midrule
-$W\_Q$ & 589,824 & 196608 & 128 & 3.0× \\
-$W\_K$ & 589,824 & 196608 & 128 & 3.0× \\
-$W\_V$ & 589,824 & 98304 & 64 & 6.0× \\
-$W\_O$ & 589,824 & 98304 & 64 & 6.0× \\
+$W_Q$ & 589,824 & 196608 & 128 & 3.0$\times$ \\
+$W_K$ & 589,824 & 196608 & 128 & 3.0$\times$ \\
+$W_V$ & 589,824 & 98304 & 64 & 6.0$\times$ \\
+$W_O$ & 589,824 & 98304 & 64 & 6.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1516,7 +1516,7 @@ projections tend to have lower rank than query and key projections.
 
 \subsection{7.4 Reconstruction Error}
 
-\textbf{Table 7.4: Relative Frobenius error at energy threshold τ.}
+\textbf{Table 7.4: Relative Frobenius error at energy threshold $\tau$.}
 
 \begin{table}[H]
 \centering
@@ -1556,24 +1556,24 @@ GPT-2 & Adaptive SVD & 5.3 & 21000 & 600 \\
 
 \subsection{7.6 Ablation: Energy Threshold}
 
-\textbf{Table 7.6: Effect of energy threshold τ.}
+\textbf{Table 7.6: Effect of energy threshold $\tau$.}
 
 \begin{table}[H]
 \centering
 \begin{tabular}{llllll}
 \toprule
-\textbf{τ} & \textbf{Avg rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\textbf{$\tau$} & \textbf{Avg rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.85 & 64 & 85 & 5.0× & 70 & 71 \\
-0.90 & 90 & 87 & 3.5× & 72 & 74 \\
-**0.92** & **105** & **88** & **3.0×** & **74** & **75.5** \\
-0.95 & 160 & 89 & 2.0× & 75.5 & 77 \\
-0.99 & 350 & 90 & 1.2× & 77 & 78.5 \\
+0.85 & 64 & 85 & 5.0$\times$ & 70 & 71 \\
+0.90 & 90 & 87 & 3.5$\times$ & 72 & 74 \\
+**0.92** & **105** & **88** & **3.0$\times$** & **74** & **75.5** \\
+0.95 & 160 & 89 & 2.0$\times$ & 75.5 & 77 \\
+0.99 & 350 & 90 & 1.2$\times$ & 77 & 78.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} τ=0.92 is a sweet spot. τ=0.85 loses accuracy; τ=0.99 gives 
+\textbf{Observation.} $\tau$=0.92 is a sweet spot. $\tau$=0.85 loses accuracy; $\tau$=0.99 gives 
 minimal compression.
 
 \subsection{7.7 Ablation: Residual Rank}
@@ -1601,7 +1601,7 @@ collapses accuracy.
 
 \subsection{7.8 Ablation: Recovery Steps}
 
-\textbf{Table 7.8: Accuracy vs recovery steps (r_L = 16).}
+\textbf{Table 7.8: Accuracy vs recovery steps (r\_L = 16).}
 
 \begin{table}[H]
 \centering
@@ -1620,13 +1620,13 @@ collapses accuracy.
 
 \subsection{7.9 Ablation: SVD Rank Cap}
 
-\textbf{Table 7.9: Effect of maximum rank cap (τ=0.92).}
+\textbf{Table 7.9: Effect of maximum rank cap ($\tau$=0.92).}
 
 \begin{table}[H]
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Cap} & \textbf{DistilBERT} & \textbf{% Hit cap} & \textbf{Note} \\
+\textbf{Cap} & \textbf{DistilBERT} & \textbf{\% Hit cap} & \textbf{Note} \\
 \midrule
 64 & 85 & 20\% & Under-cap \\
 128 & 88 & 5\% & Some hit \\
@@ -1649,11 +1649,11 @@ that $\tau$ is the primary driver of rank selection.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-full & 90.71\% & 1.00× & 78.56\% & 79.36\% \\
-`svd\_linear` (r=128) & 84 & 3.0× & 70 & 72 \\
-`a3` & 85.5 & 2.8× & 72 & 74 \\
-`aasvd` & 85.0 & 3.0× & 72 & 73 \\
-**Adaptive SVD** & **88.0** & **3.0×** & **74.0** & **75.5** \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 79.36\% \\
+`svd\_linear` (r=128) & 84 & 3.0$\times$ & 70 & 72 \\
+`a3` & 85.5 & 2.8$\times$ & 72 & 74 \\
+`aasvd` & 85.0 & 3.0$\times$ & 72 & 73 \\
+**Adaptive SVD** & **88.0** & **3.0$\times$** & **74.0** & **75.5** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1675,22 +1675,22 @@ GPT-2 & 20 s & 4 s & 6 s & **30 s** \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} No calibration, so compression is 5–10× faster than 
+\textbf{Observation.} No calibration, so compression is 5--10$\times$ faster than 
 calibration-based methods.
 
 \subsection{7.12 Summary}
 
 \begin{itemize}
-\item \textbf{Compression ratio:} 3.0×–2.5×
+\item \textbf{Compression ratio:} 3.0$\times$--2.5$\times$
 \end{itemize}
 \begin{itemize}
-\item \textbf{Accuracy drop:} -2.7\%–-3.9\%
+\item \textbf{Accuracy drop:} -2.7\%---3.9\%
 \end{itemize}
 \begin{itemize}
 \item \textbf{VRAM reduction:} 30\%
 \end{itemize}
 \begin{itemize}
-\item \textbf{Compression time:} 15–30 s
+\item \textbf{Compression time:} 15--30 s
 \end{itemize}
 \begin{itemize}
 \item \textbf{Per-layer ranks:} 64 to 150
@@ -1709,8 +1709,8 @@ calibration-based methods.
 \subsubsection{8.1.1 Spectral Rank Captures Intrinsic Dimension}
 
 \textbf{Figure 8.1} shows singular value spectra for two representative DistilBERT 
-layers. Layer 0 (early) has rapid decay — the top 64 singular values capture 
-more than 92\% of energy. Layer 3 (middle) has slower decay — the same 92\% 
+layers. Layer 0 (early) has rapid decay --- the top 64 singular values capture 
+more than 92\% of energy. Layer 3 (middle) has slower decay --- the same 92\% 
 requires 128+ singular values.
 
 The energy threshold adapts automatically: fast-decaying layers get small $r$; 
@@ -1739,8 +1739,8 @@ for recovery: the first gradient step adjusts $B$ from a known baseline.
 \textbf{Rank bucket} & \textbf{Count} & \textbf{Notable layers} \\
 \midrule
 < 32 & 8 & V (all layers) \\
-32–64 & 6 & O, V (later) \\
-64–128 & 8 & Q, K \\
+32--64 & 6 & O, V (later) \\
+64--128 & 8 & Q, K \\
 > 128 & 2 & Q, K (middle) \\
 \bottomrule
 \end{tabular}
@@ -1761,10 +1761,10 @@ be more compressed without losing critical information.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Notes} \\
 \midrule
-Fixed rank 64 & 86 & 5.0× & Over-compress slow-decaying layers \\
-Fixed rank 128 & 87.5 & 3.5× & Moderate \\
-Fixed rank 192 & 88.5 & 1.7× & Under-compress fast-decaying \\
-**Adaptive (τ=0.92)** & **88.0** & **3.0×** & **Best** \\
+Fixed rank 64 & 86 & 5.0$\times$ & Over-compress slow-decaying layers \\
+Fixed rank 128 & 87.5 & 3.5$\times$ & Moderate \\
+Fixed rank 192 & 88.5 & 1.7$\times$ & Under-compress fast-decaying \\
+**Adaptive ($\tau$=0.92)** & **88.0** & **3.0$\times$** & **Best** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1800,13 +1800,13 @@ drops by \textbf{8\%}.
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{τ} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Notes} \\
+\textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Notes} \\
 \midrule
-0.85 & 85 & 5.0× & Aggressive, loses accuracy \\
-0.90 & 87 & 3.5× & Good balance \\
-0.92 & 88 & 3.0× & Default \\
-0.95 & 89 & 2.0× & Conservative \\
-0.99 & 90 & 1.2× & Near-lossless \\
+0.85 & 85 & 5.0$\times$ & Aggressive, loses accuracy \\
+0.90 & 87 & 3.5$\times$ & Good balance \\
+0.92 & 88 & 3.0$\times$ & Default \\
+0.95 & 89 & 2.0$\times$ & Conservative \\
+0.99 & 90 & 1.2$\times$ & Near-lossless \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1836,7 +1836,7 @@ RoBERTa acc & 72 & 72 & **74.0** \\
 \end{table}
 
 \textbf{Trade-off.} A3/AASVD may give slightly higher accuracy in-domain (with 
-calibration), but Adaptive SVD is \textbf{5×} faster and works in 
+calibration), but Adaptive SVD is \textbf{5$\times$} faster and works in 
 zero-data settings.
 
 \subsection{8.7 Numerical Stability}
@@ -1866,7 +1866,7 @@ exploding gradients.
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Params} & \textbf{Structured?} \\
 \midrule
 Head pruning (50\%) & {{HP50}} & 84\% & Hard (removes heads) \\
-**Adaptive SVD** & **88.0** & 3.0× & Soft (per-head low-rank) \\
+**Adaptive SVD** & **88.0** & 3.0$\times$ & Soft (per-head low-rank) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1897,9 +1897,9 @@ No failures observed in this configuration.
 
 1. \textbf{Energy threshold gives per-layer rank} without calibration.
 2. \textbf{Residual adapters recover 5.0\%} accuracy at negligible cost.
-3. \textbf{τ=0.92 is robust} across models and layers.
+3. \textbf{$\tau$=0.92 is robust} across models and layers.
 4. \textbf{Per-layer rank distribution} is bimodal: Q/K high, V low.
-5. \textbf{Faster than A3/AASVD} by 5× on compression time.
+5. \textbf{Faster than A3/AASVD} by 5$\times$ on compression time.
 
 \clearpage
 
@@ -1995,12 +1995,12 @@ For DistilBERT:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Adaptive SVD} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 45 MB & **3.0×** \\
-Params & 66.95M & 22000000M & **3.0×** \\
-VRAM & 183 MB & 130 MB & **{{D\_VRAM\_RATIO}}×** \\
-Inference time & 1.90 s & 2.3 s & 1.2× \\
+Disk (FP16) & 134 MB & 45 MB & **3.0$\times$** \\
+Params & 66.95M & 22000000M & **3.0$\times$** \\
+VRAM & 183 MB & 130 MB & **{{D\_VRAM\_RATIO}}$\times$** \\
+Inference time & 1.90 s & 2.3 s & 1.2$\times$ \\
 Accuracy & 90.71\% & 88.0\% & -2.7\% \\
-Compression time & — & 15 s & Fast \\
+Compression time & --- & 15 s & Fast \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2016,11 +2016,11 @@ compression speed.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} & \textbf{Calibration} \\
 \midrule
-ALBERT & Sharing & 3.5× & 89.4\% & Retrain \\
-DistilBERT & Distill & 1.6× & 90.7\% & Retrain \\
-A3 & Low-rank & {{A3\_RATIO}}× & 85.5 & Data \\
-AASVD & Low-rank & {{AASVD\_RATIO}}× & 85.0 & Data \\
-**Adaptive SVD** & Low-rank & **3.0×** & **88.0** & **None** \\
+ALBERT & Sharing & 3.5$\times$ & 89.4\% & Retrain \\
+DistilBERT & Distill & 1.6$\times$ & 90.7\% & Retrain \\
+A3 & Low-rank & {{A3\_RATIO}}$\times$ & 85.5 & Data \\
+AASVD & Low-rank & {{AASVD\_RATIO}}$\times$ & 85.0 & Data \\
+**Adaptive SVD** & Low-rank & **3.0$\times$** & **88.0** & **None** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2031,7 +2031,7 @@ AASVD & Low-rank & {{AASVD\_RATIO}}× & 85.0 & Data \\
 Same disk savings as A3/AASVD.
 
 \subsubsection{Latency}
-Two matmuls + adapter = ~1.2× slower than baseline. On CPU, 
+Two matmuls + adapter = ~1.2$\times$ slower than baseline. On CPU, 
 may be faster due to cache effects.
 
 \subsubsection{Compatibility}
@@ -2043,7 +2043,7 @@ tasks without re-compression.
 
 \subsection{9.7 Open Questions}
 
-1. \textbf{Optimal τ per layer:} Could a learned per-layer $\tau$ beat uniform 
+1. \textbf{Optimal $\tau$ per layer:} Could a learned per-layer $\tau$ beat uniform 
    $\tau = 0.92$?
 2. \textbf{Combined with calibration:} How does Adaptive SVD compare to A3/AASVD 
    when both have calibration data?
@@ -2055,7 +2055,7 @@ tasks without re-compression.
 
 \subsubsection{Positive}
 \begin{itemize}
-\item \textbf{Democratizes compression:} No calibration data → broader access
+\item \textbf{Democratizes compression:} No calibration data $\to$ broader access
 \end{itemize}
 \begin{itemize}
 \item \textbf{Faster iteration:} Compress in seconds, not minutes
@@ -2073,7 +2073,7 @@ tasks without re-compression.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~{{CO2}} kg CO$_2$eq.
 
 \clearpage
 
@@ -2098,7 +2098,7 @@ Only \textbf{SST-2} is evaluated. Adaptive SVD may behave differently on:
 
 \subsection{10.2 Model Coverage}
 
-We test on three models (66.9M–124.6M params). Not tested:
+We test on three models (66.9M--124.6M params). Not tested:
 \begin{itemize}
 \item Large models (>1B)
 \end{itemize}
@@ -2141,7 +2141,7 @@ Factorized layers are slower at inference:
 \item Adapter adds one more matmul
 \end{itemize}
 \begin{itemize}
-\item ~1.2× slower on GPU
+\item ~1.2$\times$ slower on GPU
 \end{itemize}
 
 \textbf{Mitigation.} The compressed model uses less memory, so larger batch sizes 
@@ -2246,11 +2246,11 @@ AASVD, no calibration data is required.
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{Ratio} & \textbf{Compression time} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{Compression time} \\
 \midrule
-DistilBERT & -2.7\% & **3.0×** & 15 s \\
-RoBERTa & -4.6\% & **2.5×** & 30 s \\
-GPT-2 & -3.9\% & **2.5×** & 30 s \\
+DistilBERT & -2.7\% & **3.0$\times$** & 15 s \\
+RoBERTa & -4.6\% & **2.5$\times$** & 30 s \\
+GPT-2 & -3.9\% & **2.5$\times$** & 30 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2305,11 +2305,11 @@ We thank {{ACKNOWLEDGMENTS}}.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments,
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments,
 \end{itemize}
   wrote the paper.
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided methodological feedback and edited the manuscript.
+\item \textbf{{{AUTHOR\_2}}} provided methodological feedback and edited the manuscript.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}
@@ -2397,7 +2397,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 
 \begin{lstlisting}
 python run_all_4_adaptive_svd.py --models distilbert,roberta,gpt2
-# → results/unified_adaptive_svd/{model}/summary.csv
+# $\to$ results/unified_adaptive_svd/{model}/summary.csv
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Energy Threshold)}
@@ -2445,9 +2445,9 @@ torch.backends.cudnn.benchmark = False
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} & \textbf{Compress time} \\
 \midrule
-DistilBERT & 88.0\% ± 1\% & 3.0× & 15 s \\
-RoBERTa & 74.0\% ± 1\% & 2.5× & 30 s \\
-GPT-2 & 75.5\% ± 1\% & 2.5× & 30 s \\
+DistilBERT & 88.0\% $\pm$ 1\% & 3.0$\times$ & 15 s \\
+RoBERTa & 74.0\% $\pm$ 1\% & 2.5$\times$ & 30 s \\
+GPT-2 & 75.5\% $\pm$ 1\% & 2.5$\times$ & 30 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2458,13 +2458,13 @@ GPT-2 & 75.5\% ± 1\% & 2.5× & 30 s \\
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive_svd}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive\\_svd}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified_adaptive_svd/*/summary.csv}
+\item \textbf{Metrics:} \texttt{results/unified\\_adaptive\\_svd/*/summary.csv}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Per-layer ranks:} in \texttt{metrics.json} under \texttt{layer_ranks}
+\item \textbf{Per-layer ranks:} in \texttt{metrics.json} under \texttt{layer\\_ranks}
 \end{itemize}
 
 \subsection{12.9 Randomness and Determinism}
@@ -2473,7 +2473,7 @@ GPT-2 & 75.5\% ± 1\% & 2.5× & 30 s \\
 \item \textbf{SVD:} Deterministic
 \end{itemize}
 \begin{itemize}
-\item \textbf{Rank selection:} Deterministic (given τ)
+\item \textbf{Rank selection:} Deterministic (given $\tau$)
 \end{itemize}
 \begin{itemize}
 \item \textbf{Adapter init:} Seeded random (default 42)
@@ -2488,7 +2488,7 @@ GPT-2 & 75.5\% ± 1\% & 2.5× & 30 s \\
 \item \textbf{Windows encoding:} Set \texttt{PYTHONIOENCODING=utf-8}
 \end{itemize}
 \begin{itemize}
-\item \textbf{CUDA version:} ≥ 11.8 for FP16 SVD
+\item \textbf{CUDA version:} $\ge$ 11.8 for FP16 SVD
 \end{itemize}
 \begin{itemize}
 \item \textbf{Checkpoint paths:} Some baselines auto-fallback
@@ -2514,7 +2514,7 @@ Run one model to verify:
 python run_all_4_adaptive_svd.py --models distilbert
 \end{lstlisting}
 
-Expected: DistilBERT passes quality gate (≥56\%).
+Expected: DistilBERT passes quality gate ($\ge$56\%).
 
 \clearpage
 
@@ -2543,7 +2543,7 @@ Expected: DistilBERT passes quality gate (≥56\%).
 }
 
 @article{gavish2014optimal,
-  title={The optimal hard threshold for singular values is 4/√3},
+  title={The optimal hard threshold for singular values is 4/$\sqrt{}$3},
   author={Gavish, Matan and Donoho, David L},
   journal={IEEE Transactions on Information Theory},
   volume={60},
@@ -2731,7 +2731,7 @@ r^*(\tau) = \min\{r : \mathcal{E}(r) \geq \tau\}
 \tag{A.1}
 \]
 
-\textbf{Proof.} By the Eckart–Young theorem:
+\textbf{Proof.} By the Eckart--Young theorem:
 
 \[
 \|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2 = (1 - \mathcal{E}(r)) \|W\|_F^2
@@ -2855,7 +2855,7 @@ The factorized $Q, K, V$ projections do not affect the bias.
 \textbf{Claim.} After injection, the T5 bias is added to attention scores exactly 
 as before.
 
-\textbf{Proof.} The \texttt{compute_bias} method is unchanged; the \texttt{relative_attention_bias} 
+\textbf{Proof.} The \texttt{compute\\_bias} method is unchanged; the \texttt{relative\\_attention\\_bias} 
 module is the same. $\square$
 
 \subsection{A.9 Causality Preservation}
@@ -2936,7 +2936,7 @@ def forward(self, x):
 \begin{lstlisting}
 def _compute_energy_rank(self, S, max_rank, min_rank=16):
     """
-    Find smallest rank r with cumulative energy >= τ.
+    Find smallest rank r with cumulative energy >= $\tau$.
     
     Args:
         S: Singular values (descending), 1D tensor
@@ -2944,7 +2944,7 @@ def _compute_energy_rank(self, S, max_rank, min_rank=16):
         min_rank: Lower bound on rank
     
     Returns:
-        Rank r ∈ [min_rank, max_rank]
+        Rank r $\in$ [min_rank, max_rank]
     """
     s_squared = S ** 2
     total_energy = s_squared.sum()
@@ -3144,13 +3144,13 @@ def apply_rotary(self, Q, K, cos, sin):
 
 \subsubsection{B.9.1 Forgetting to Freeze Base}
 
-Without \texttt{requires_grad=False} on U, V, the factors drift during recovery, 
+Without \texttt{requires\\_grad=False} on U, V, the factors drift during recovery, 
 undoing the compression.
 
 \subsubsection{B.9.2 Wrong Adapter Init}
 
-Both $A$ and $B$ zero → dead. Both random → initial forward differs from 
-pretrained. One zero, one random → correct.
+Both $A$ and $B$ zero $\to$ dead. Both random $\to$ initial forward differs from 
+pretrained. One zero, one random $\to$ correct.
 
 \subsubsection{B.9.3 Missing Conv1D Transpose}
 
@@ -3159,7 +3159,7 @@ for SVD.
 
 \subsubsection{B.9.4 T5 Bias Not Preserved}
 
-Without copying \texttt{relative_attention_bias}, T5 accuracy collapses.
+Without copying \texttt{relative\\_attention\\_bias}, T5 accuracy collapses.
 
 \subsubsection{B.9.5 RoPE Applied to Wrong Dim}
 
@@ -3194,13 +3194,13 @@ framework/attentions/adaptive_svd_attn.py
 
 Key entry points:
 \begin{itemize}
-\item \texttt{AdaptiveSVDLinear} — the factorized linear module
+\item \texttt{AdaptiveSVDLinear} --- the factorized linear module
 \end{itemize}
 \begin{itemize}
-\item \texttt{AdaptiveSVDAttention} — the attention wrapper
+\item \texttt{AdaptiveSVDAttention} --- the attention wrapper
 \end{itemize}
 \begin{itemize}
-\item \texttt{inject_adaptive_svd()} — injection hook
+\item \texttt{inject\\_adaptive\\_svd()} --- injection hook
 \end{itemize}
 
 \clearpage
@@ -3208,7 +3208,7 @@ Key entry points:
 
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT — Complete Metrics}
+\subsection{C.1 DistilBERT --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -3219,7 +3219,7 @@ Key entry points:
 Model & DistilBERT-base \\
 Params (before) & 66,955,010 \\
 Params (after) & 22000000 \\
-Compression ratio & 3.0× \\
+Compression ratio & 3.0$\times$ \\
 Accuracy & 88.0\% \\
 F1 (binary) & 0.880 \\
 F1 (macro) & 0.879 \\
@@ -3236,7 +3236,7 @@ Avg reconstruction error & 0.27 \\
 \end{tabular}
 \end{table}
 
-\subsection{C.2 RoBERTa — Complete Metrics}
+\subsection{C.2 RoBERTa --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -3246,14 +3246,14 @@ Avg reconstruction error & 0.27 \\
 \midrule
 Params (before) & 124,647,170 \\
 Params (after) & 50000000 \\
-Compression ratio & 2.5× \\
+Compression ratio & 2.5$\times$ \\
 Accuracy & 74.0\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.3 GPT-2 — Complete Metrics}
+\subsection{C.3 GPT-2 --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -3263,7 +3263,7 @@ Accuracy & 74.0\% \\
 \midrule
 Params (before) & 124,441,344 \\
 Params (after) & 50000000 \\
-Compression ratio & 2.5× \\
+Compression ratio & 2.5$\times$ \\
 Accuracy & 75.5\% \\
 ... & ... \\
 \bottomrule
@@ -3295,7 +3295,7 @@ Accuracy & 75.5\% \\
 
 \subsection{C.6 Per-Layer Rank Distribution (GPT-2)}
 
-(12 rows for 12 layers, only Q/K/V/O equivalents for c_attn/c_proj)
+(12 rows for 12 layers, only Q/K/V/O equivalents for c\_attn/c\_proj)
 
 \subsection{C.7 Per-Layer Reconstruction Errors}
 
@@ -3320,13 +3320,13 @@ Accuracy & 75.5\% \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{τ} & \textbf{DistilBERT acc} & \textbf{Avg rank} & \textbf{Ratio} \\
+\textbf{$\tau$} & \textbf{DistilBERT acc} & \textbf{Avg rank} & \textbf{Ratio} \\
 \midrule
-0.85 & 85 & 64 & 5.0× \\
-0.90 & 87 & 90 & 3.5× \\
-0.92 & 88 & 105 & 3.0× \\
-0.95 & 89 & 160 & 2.0× \\
-0.99 & 90 & 350 & 1.2× \\
+0.85 & 85 & 64 & 5.0$\times$ \\
+0.90 & 87 & 90 & 3.5$\times$ \\
+0.92 & 88 & 105 & 3.0$\times$ \\
+0.95 & 89 & 160 & 2.0$\times$ \\
+0.99 & 90 & 350 & 1.2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3372,7 +3372,7 @@ Accuracy & 75.5\% \\
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Cap} & \textbf{DistilBERT} & \textbf{% hit} \\
+\textbf{Cap} & \textbf{DistilBERT} & \textbf{\% hit} \\
 \midrule
 64 & 85 & 20\% \\
 128 & 88 & 5\% \\
@@ -3453,24 +3453,24 @@ We document failed experiments to help future work avoid dead ends.
 \textbf{Result.} Base factors drifted during recovery, undoing the compression. 
 Accuracy peaked early then collapsed.
 
-\textbf{Conclusion.} Keep base frozen (\texttt{requires_grad=False}).
+\textbf{Conclusion.} Keep base frozen (\texttt{requires\\_grad=False}).
 
-\subsubsection{D.1.2 Very Low Energy Threshold (τ=0.80)}
+\subsubsection{D.1.2 Very Low Energy Threshold ($\tau$=0.80)}
 
 \textbf{Goal.} Aggressive compression.
 
 \textbf{Result.} Accuracy dropped to 80\%.
 
-\textbf{Conclusion.} τ=0.80 too aggressive for attention weights.
+\textbf{Conclusion.} $\tau$=0.80 too aggressive for attention weights.
 
-\subsubsection{D.1.3 Very High Threshold (τ=0.99)}
+\subsubsection{D.1.3 Very High Threshold ($\tau$=0.99)}
 
 \textbf{Goal.} Near-lossless compression.
 
 \textbf{Result.} Accuracy was near-baseline but compression ratio was only 
-1.3×.
+1.3$\times$.
 
-\textbf{Conclusion.} τ=0.99 defeats the purpose.
+\textbf{Conclusion.} $\tau$=0.99 defeats the purpose.
 
 \subsubsection{D.1.4 No Residual Adapter (r\_L=0)}
 
@@ -3501,17 +3501,17 @@ degraded before recovery.
 
 \subsubsection{D.2.1 Per-Head Rank}
 
-We tested separate rank per head. Result: no improvement, 4× slower 
+We tested separate rank per head. Result: no improvement, 4$\times$ slower 
 (SVD per head).
 
-\subsubsection{D.2.2 Learned τ}
+\subsubsection{D.2.2 Learned $\tau$}
 
-Trained per-layer τ during recovery. Result: weak gradient signal, no 
+Trained per-layer $\tau$ during recovery. Result: weak gradient signal, no 
 improvement.
 
 \subsubsection{D.2.3 Per-Projection Threshold}
 
-Different τ for Q, K, V, O. Result: no clear pattern; uniform τ=0.92 
+Different $\tau$ for Q, K, V, O. Result: no clear pattern; uniform $\tau$=0.92 
 works.
 
 \subsubsection{D.2.4 Diagonal-Energy Rank}
@@ -3521,7 +3521,7 @@ slightly worse accuracy.
 
 \subsubsection{D.2.5 Fixed Rank Higher}
 
-Tested fixed rank 192. Result: better accuracy than adaptive at τ=0.92, 
+Tested fixed rank 192. Result: better accuracy than adaptive at $\tau$=0.92, 
 but worse compression. Trade-off.
 
 \subsection{D.3 Failed Hyperparameters}
@@ -3588,7 +3588,7 @@ but worse compression. Trade-off.
 \midrule
 Orthogonal adapter init & Slow convergence & No change \\
 Gradient clipping & Stability & No change \\
-Adaptive τ per layer & Rank quality & No improvement \\
+Adaptive $\tau$ per layer & Rank quality & No improvement \\
 Post-hoc base fine-tune & Accuracy & Drifted from compression \\
 Adding dropout to adapters & Overfitting & No improvement \\
 \bottomrule
@@ -3628,26 +3628,26 @@ are representative.
 
 \subsection{D.7 Lessons Learned}
 
-1. \textbf{Freeze base factors} — never train them.
-2. \textbf{Zero-init one adapter factor} — both zero or both random fails.
-3. \textbf{τ=0.92 is robust} — no need to tune extensively.
-4. \textbf{$r_L=16$ is sufficient} — diminishing returns above.
-5. \textbf{No calibration is a feature} — enables zero-data settings.
-6. \textbf{Per-layer rank matters} — fixed rank loses ~1.5\% accuracy.
+1. \textbf{Freeze base factors} --- never train them.
+2. \textbf{Zero-init one adapter factor} --- both zero or both random fails.
+3. \textbf{$\tau$=0.92 is robust} --- no need to tune extensively.
+4. \textbf{$r_L=16$ is sufficient} --- diminishing returns above.
+5. \textbf{No calibration is a feature} --- enables zero-data settings.
+6. \textbf{Per-layer rank matters} --- fixed rank loses ~1.5\% accuracy.
 
 \subsection{D.8 Recommendations}
 
 Based on our negative results:
 
-1. Start with default hyperparameters (τ=0.92, r_L=16).
-2. Tune τ only if accuracy is unacceptable.
-3. Increase r_L if recovery plateaus below target.
+1. Start with default hyperparameters ($\tau$=0.92, r\_L=16).
+2. Tune $\tau$ only if accuracy is unacceptable.
+3. Increase r\_L if recovery plateaus below target.
 4. Keep base frozen.
 5. Verify on one model before full sweep.
 
 \subsection{D.9 Unresolved Questions}
 
-1. \textbf{Optimal τ schedule:} Could per-layer τ beat uniform?
+1. \textbf{Optimal $\tau$ schedule:} Could per-layer $\tau$ beat uniform?
 2. \textbf{Combined with A3/AASVD:} Would activation-aware rank beat 
    energy-thresholded?
 3. \textbf{Interaction with quantization:} INT8 + Adaptive SVD?
@@ -3691,10 +3691,10 @@ energy savings.
 \item \textbf{Compression compute:} ~10 GPU-hours
 \end{itemize}
 \begin{itemize}
-\item \textbf{CO₂ estimate:} ~0.7 kg CO₂eq
+\item \textbf{CO$_2$ estimate:} ~0.7 kg CO$_2$eq
 \end{itemize}
 \begin{itemize}
-\item \textbf{Methodology:} [ML CO₂ Impact Calculator](https://mlco2.github.io/impact/)
+\item \textbf{Methodology:} [ML CO$_2$ Impact Calculator](https://mlco2.github.io/impact/)
 \end{itemize}
 
 \subsection{E.2 Data Ethics}
@@ -3755,11 +3755,11 @@ We do not endorse harmful uses.
 \subsubsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran
 \end{itemize}
   experiments, wrote the paper.
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided methodological feedback and edited the manuscript.
+\item \textbf{{{AUTHOR\_2}}} provided methodological feedback and edited the manuscript.
 \end{itemize}
 
 \subsubsection{License}
@@ -3832,7 +3832,7 @@ This work does not involve human subjects. No IRB approval was required.
 \subsection{E.12 Transparency}
 
 All experimental results (positive and negative) are reported in Sections 
-7–8 and Appendix D. Code and checkpoints are released. Hyperparameters are 
+7--8 and Appendix D. Code and checkpoints are released. Hyperparameters are 
 documented in Section 6 and Appendix B.
 
 \end{document}

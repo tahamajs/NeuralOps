@@ -8,7 +8,7 @@ learned projection matrices. Galerkin uses a \textbf{fixed DCT basis}, not learn
 \textbf{Performer.} Choromanski et al. (2021) approximate softmax via random 
 features. Galerkin computes \textbf{exact} attention in basis space.
 
-\textbf{Nyströmformer.} Xiong et al. (2021) use Nyström landmarks. Galerkin uses 
+\textbf{Nystr mformer.} Xiong et al. (2021) use Nystr m landmarks. Galerkin uses 
 a full DCT basis.
 
 \textbf{Linear Transformer.} Katharopoulos et al. (2020) reorder attention as 
@@ -49,7 +49,7 @@ strict sense).
 Linformer & Linear proj & Yes & Yes & Yes \\
 Performer & Random feats & No & Yes & Yes \\
 FNet & FFT & No & Yes & No \\
-Nyströmformer & Landmarks & Yes & Yes & Yes \\
+Nystr mformer & Landmarks & Yes & Yes & Yes \\
 **Galerkin** & **DCT (fixed)** & **No** & **Yes** & **Fallback** \\
 \bottomrule
 \end{tabular}

@@ -1,0 +1,128 @@
+
+\section{9. Discussion}
+
+\subsection{9.1 Key Takeaways}
+
+\subsubsection{9.1.1 Takeaway 1: LoRA is a Strong Distillation Target}
+
+Training only 1\% of parameters (LoRA) recovers most of the accuracy lost 
+by head-dim reduction.
+
+\subsubsection{9.1.2 Takeaway 2: Head-Dim Reduction Works}
+
+Reducing head dimension by 2$\times$ gives ~{{PARAM\_REDUCTION}}$\times$ parameter 
+reduction with acceptable loss.
+
+\subsubsection{9.1.3 Takeaway 3: Drop-In Wrapper}
+
+Squeezing Heads preserves pretrained weights exactly. It can be applied 
+to any model without retraining.
+
+\subsection{9.2 When to Use Squeezing Heads}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Model compression} where head pruning loses too much.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Continual learning} where you can't retrain from scratch.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Multi-task adaptation} -- one LoRA per task.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Research on head structure} -- study what's lost by dim reduction.
+\end{itemize}
+
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Inference speedup} -- SH adds LoRA overhead.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Very small models} -- LoRA overhead not worth it.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Training from scratch} -- LoRA is a fine-tuning technique.
+\end{itemize}
+
+\subsection{9.3 Choosing LoRA Rank}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Use case} & \textbf{Recommended $r_L$} \\
+\midrule
+Extreme compression & 4 \\
+Balanced & 8 \\
+Safe & 16 \\
+High quality & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.4 Choosing Head-Dim Reduction}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Use case} & \textbf{Recommended $s$} \\
+\midrule
+Safe & 1.0 (no reduction) \\
+Balanced & 1.5 \\
+Aggressive & 2.0 \\
+Extreme & 2.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.5 Cost-Benefit}
+
+For DistilBERT at $L = 128$:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{Trainable} & \textbf{Acc} & \textbf{$\Delta$} \\
+\midrule
+Full FT & 66.9M & 90.71\% & -- \\
+SH $r_L=16$ & {{D\_LORA}} & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+SH + $s=2$ & {{D\_LORA}} & {{D\_S20}}\% & {{D\_S20\_D}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.6 Open Questions}
+
+1. \textbf{Optimal per-head rank:} Can we allocate LoRA rank per head?
+2. \textbf{Combining with pruning:} SH + head pruning?
+3. \textbf{Distillation from teacher:} Can SH learn from a larger teacher?
+4. \textbf{Cross-task transfer:} Does one LoRA transfer to another task?
+
+\subsection{9.7 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item \textbf{Cheaper fine-tuning:} LoRA trains 1\% of parameters.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Preserves pretrained:} No catastrophic forgetting.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Multi-task:} One adapter per task.
+\end{itemize}
+
+\subsubsection{Negative}
+\begin{itemize}
+\item \textbf{Concentration:} Large labs benefit most.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Rebound effect:} Cheaper fine-tuning may increase total compute.
+\end{itemize}
+
+\subsubsection{Environmental}
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.

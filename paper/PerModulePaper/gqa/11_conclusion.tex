@@ -1,0 +1,82 @@
+
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented a production-hardened implementation of **Grouped-Query 
+Attention** (GQA) supporting flat, nested, causal, and GQA-native 
+architectures. GQA reduces KV cache by $H / G$ at inference with minimal 
+quality loss.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{KV ratio} & \textbf{Params $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & **{{D\_KV\_R}}$\times$** & {{D\_P\_RATIO}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & **{{R\_KV\_R}}$\times$** & {{R\_P\_RATIO}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & **{{G\_KV\_R}}$\times$** & {{G\_P\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{GQA reduces KV cache, not parameters.} For parameter reduction, use 
+   A3 or AASVD.
+2. \textbf{Quality loss is graceful.} At $G = H/2$, drops are small.
+3. \textbf{Long-context benefit is linear.} Savings grow with sequence length.
+4. \textbf{Compatible with quantization} for multiplicative savings.
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused kernels for KV repetition
+\end{itemize}
+\begin{itemize}
+\item Long-context evaluation ($L = 4096$)
+\end{itemize}
+\begin{itemize}
+\item Per-head grouping analysis
+\end{itemize}
+\begin{itemize}
+\item Non-uniform grouping
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical expressiveness analysis
+\end{itemize}
+\begin{itemize}
+\item Cross-lingual evaluation
+\end{itemize}
+\begin{itemize}
+\item Integration with MoE
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+GQA is a mature technique with wide adoption in industry (LLaMA, Mistral, 
+Qwen). Our implementation makes it accessible to researchers working with 
+diverse architectures. We release all code and checkpoints.
+
+\subsection{11.6 Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the code, ran experiments, wrote the paper.
+\end{itemize}
+\begin{itemize}
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

@@ -7,12 +7,12 @@ recomputation for attention, reducing memory from $\mathcal{O}(L^2)$ to
 $\mathcal{O}(L)$ while being faster due to reduced HBM traffic.
 
 \textbf{FlashAttention-2.} Dao (2023) improves parallelism and work partitioning, 
-achieving ~2× over v1.
+achieving ~2$\times$ over v1.
 
 \textbf{FlashAttention-3.} Dao et al. (2024) add TMA (Hopper), warp-specialized 
-asynchronous execution, and FP8 support, achieving ~2× over v2 on H100.
+asynchronous execution, and FP8 support, achieving ~2$\times$ over v2 on H100.
 
-\textbf{PyTorch SDPA.} PyTorch 2.0+ includes \texttt{F.scaled_dot_product_attention}, 
+\textbf{PyTorch SDPA.} PyTorch 2.0+ includes \texttt{F.scaled\\_dot\\_product\\_attention}, 
 which auto-selects between a math path, a memory-efficient path, and 
 FlashAttention-2 (if available). It's our fallback.
 
@@ -37,7 +37,7 @@ ClusterFormer & Approx. & $O(L K d)$ & $O(L K)$ \\
 \end{tabular}
 \end{table}
 
-FlashAttention is \textbf{exact} — the output is mathematically identical to 
+FlashAttention is \textbf{exact} -- the output is mathematically identical to 
 the naive implementation. Only the memory layout and compute order change.
 
 \subsection{2.3 Hardware-Aware Transformer Optimization}

@@ -34,24 +34,24 @@
 
 \textbf{Authors:}
 \begin{itemize}
-\item Your Name¹ — you@university.edu
+\item Your Name¹ --- you@university.edu
 \end{itemize}
 \begin{itemize}
-\item {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+\item {{AUTHOR\_2\_NAME}}² --- {{AUTHOR\_2\_EMAIL}}
 \end{itemize}
 
 \textbf{Affiliations:}
 \begin{itemize}
-\item ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
+\item ¹ {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+\item ² {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
 \end{itemize}
 
-\textbf{Corresponding author:} {{CORRESPONDING_AUTHOR}}
+\textbf{Corresponding author:} {{CORRESPONDING\_AUTHOR}}
 \textbf{Preprint date:} 2026-09-15
 \textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD_Project/tree/main/framework/attentions/flash_attention3.py
+\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/flash\_attention3.py
 \textbf{License:} MIT
 
 
@@ -70,11 +70,11 @@ architecture heterogeneity, and pretrained weight transfer. We present a
    Attention (SDPA)**, ensuring the wrapper works on any hardware.
 2. \textbf{Preserves exact attention semantics.} Unlike kernel methods (Performer) 
    or clustering (ClusterFormer), FlashAttention-3 computes **exact softmax 
-   attention** — the output is mathematically identical to the naive implementation.
+   attention** --- the output is mathematically identical to the naive implementation.
 3. \textbf{Transfers pretrained weights across four architectures}: GPT-2 Conv1D, 
    RoBERTa/BERT nested self-attention, DistilBERT flat, and Qwen/LLaMA 
    GQA+RoPE.
-4. \textbf{Supports FP8 precision} on Hopper GPUs (H100/H200) for 2× throughput.
+4. \textbf{Supports FP8 precision} on Hopper GPUs (H100/H200) for 2$\times$ throughput.
 5. \textbf{Adds trainable LoRA adapters} for parameter-efficient recovery.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
@@ -82,7 +82,7 @@ We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with
 on DistilBERT, \textbf{77.50\%} on RoBERTa, and \textbf{78.98\%} on GPT-2, 
 matching or slightly exceeding the SDPA baseline.
 
-\textbf{Important disclosure.} This wrapper is \textbf{not} a compression method — it 
+\textbf{Important disclosure.} This wrapper is \textbf{not} a compression method --- it 
 \textbf{increases} parameter count by ~0.88\% via LoRA adapters. Its 
 value lies in \textbf{hardware-optimized inference} (memory and throughput) on 
 modern GPUs, not size reduction. On our RTX 4070 test machine, the 
@@ -99,8 +99,8 @@ Hopper GPU, FP8, SDPA fallback
 Attention is the most expensive part of transformer computation. 
 FlashAttention-3 is a fast, exact attention algorithm that uses special 
 hardware features on NVIDIA Hopper GPUs to avoid materializing the large 
-attention matrix, using less memory and running 2-4× faster. Our work is a 
-"wrapper" — a piece of code that lets you use FlashAttention-3 with any 
+attention matrix, using less memory and running 2-4$\times$ faster. Our work is a 
+"wrapper" --- a piece of code that lets you use FlashAttention-3 with any 
 pretrained transformer (like BERT, GPT-2, or LLaMA) without retraining. 
 If your GPU doesn't support FlashAttention-3, the wrapper automatically 
 falls back to PyTorch's built-in fast attention. We test on three models 
@@ -111,35 +111,35 @@ access to a faster inference path.
 
 \subsection{Table of Contents}
 
-1. [Introduction](01_intro.md)
-2. [Related Work](02_related.md)
-3. [Background](03_background.md)
-4. [Method](04_method.md)
-5. [Architecture Integration](05_architecture.md)
-6. [Experimental Setup](06_setup.md)
-7. [Results](07_results.md)
-8. [Analysis](08_analysis.md)
-9. [Discussion](09_discussion.md)
-10. [Limitations](10_limitations.md)
-11. [Conclusion](11_conclusion.md)
-12. [Reproducibility](12_reproducibility.md)
-13. [References](13_references.md)
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
 
 \textbf{Appendices:}
 \begin{itemize}
-\item [A. Mathematical Derivations](A_math.md)
+\item [A. Mathematical Derivations](A\_math.md)
 \end{itemize}
 \begin{itemize}
-\item [B. Implementation Details](B_implementation.md)
+\item [B. Implementation Details](B\_implementation.md)
 \end{itemize}
 \begin{itemize}
-\item [C. Full Experimental Data](C_data.md)
+\item [C. Full Experimental Data](C\_data.md)
 \end{itemize}
 \begin{itemize}
-\item [D. Negative Results](D_negative_results.md)
+\item [D. Negative Results](D\_negative\_results.md)
 \end{itemize}
 \begin{itemize}
-\item [E. Ethical Considerations](E_ethics.md)
+\item [E. Ethical Considerations](E\_ethics.md)
 \end{itemize}
 
 \clearpage
@@ -157,7 +157,7 @@ Attention dominates the compute and memory cost of transformer inference:
 
 The naive implementation materializes the $L \times L$ attention matrix, 
 requiring $\mathcal{O}(L^2)$ memory. For $L = 8192$ and $d_h = 128$, this 
-is 2 GB \textbf{per head, per layer} in FP16 — infeasible for most GPUs.
+is 2 GB \textbf{per head, per layer} in FP16 --- infeasible for most GPUs.
 
 \textbf{FlashAttention-3} (Dao et al., 2024) solves this via \textbf{tiling} and 
 \textbf{recomputation}: the attention matrix is computed in blocks that fit in 
@@ -168,11 +168,11 @@ backward rather than stored. This gives:
 \item \textbf{Memory:} $\mathcal{O}(L)$ instead of $\mathcal{O}(L^2)$.
 \end{itemize}
 \begin{itemize}
-\item \textbf{Throughput:} 2-4× faster than standard attention on Hopper GPUs.
+\item \textbf{Throughput:} 2-4$\times$ faster than standard attention on Hopper GPUs.
 \end{itemize}
 
 \textbf{FP8 support.} FlashAttention-3 adds FP8 (e4m3) tensor core utilization, 
-achieving another 2× on H100/H200.
+achieving another 2$\times$ on H100/H200.
 
 \subsection{1.2 The Deployment Problem}
 
@@ -194,7 +194,7 @@ Our wrapper addresses all three:
 \end{itemize}
   PyTorch's SDPA kernel (which itself may use FlashAttention-2 internally).
 \begin{itemize}
-\item \textbf{Multi-architecture weight copy.} A single \texttt{copy_weights} handles
+\item \textbf{Multi-architecture weight copy.} A single \texttt{copy\\_weights} handles
 \end{itemize}
   GPT-2 Conv1D, RoBERTa/BERT nested, DistilBERT flat, and Qwen/LLaMA GQA.
 \begin{itemize}
@@ -227,7 +227,7 @@ We provide a wrapper class \texttt{FlashAttention3} that:
 1. \textbf{Extracts pretrained weights} from the source attention module.
 2. \textbf{Freezes base weights} and adds trainable LoRA adapters.
 3. \textbf{Dispatches} to FlashAttention-3 if available, otherwise to SDPA.
-4. \textbf{Supports GQA} via \texttt{repeat_kv} before the attention call.
+4. \textbf{Supports GQA} via \texttt{repeat\\_kv} before the attention call.
 5. \textbf{Applies RoPE} (with partial-dim support) before the attention call.
 6. \textbf{Handles causal masking} for decoder models.
 7. \textbf{Supports cross-attention} for encoder-decoder models.
@@ -281,12 +281,12 @@ recomputation for attention, reducing memory from $\mathcal{O}(L^2)$ to
 $\mathcal{O}(L)$ while being faster due to reduced HBM traffic.
 
 \textbf{FlashAttention-2.} Dao (2023) improves parallelism and work partitioning, 
-achieving ~2× over v1.
+achieving ~2$\times$ over v1.
 
 \textbf{FlashAttention-3.} Dao et al. (2024) add TMA (Hopper), warp-specialized 
-asynchronous execution, and FP8 support, achieving ~2× over v2 on H100.
+asynchronous execution, and FP8 support, achieving ~2$\times$ over v2 on H100.
 
-\textbf{PyTorch SDPA.} PyTorch 2.0+ includes \texttt{F.scaled_dot_product_attention}, 
+\textbf{PyTorch SDPA.} PyTorch 2.0+ includes \texttt{F.scaled\\_dot\\_product\\_attention}, 
 which auto-selects between a math path, a memory-efficient path, and 
 FlashAttention-2 (if available). It's our fallback.
 
@@ -311,7 +311,7 @@ ClusterFormer & Approx. & $O(L K d)$ & $O(L K)$ \\
 \end{tabular}
 \end{table}
 
-FlashAttention is \textbf{exact} — the output is mathematically identical to 
+FlashAttention is \textbf{exact} --- the output is mathematically identical to 
 the naive implementation. Only the memory layout and compute order change.
 
 \subsection{2.3 Hardware-Aware Transformer Optimization}
@@ -407,13 +407,13 @@ Over FlashAttention-2, v3 adds:
    from HBM to shared memory, freeing the SM for computation.
 2. \textbf{Warp specialization.} Producer-consumer model where some warps handle 
    memory while others compute.
-3. \textbf{FP8 support.} Tensor cores can process FP8 (e4m3) at 2× throughput.
+3. \textbf{FP8 support.} Tensor cores can process FP8 (e4m3) at 2$\times$ throughput.
 
-\textbf{Result.} ~2× throughput over v2 on H100.
+\textbf{Result.} ~2$\times$ throughput over v2 on H100.
 
 \subsection{3.4 PyTorch SDPA}
 
-\texttt{F.scaled_dot_product_attention} auto-selects one of three backends:
+\texttt{F.scaled\\_dot\\_product\\_attention} auto-selects one of three backends:
 
 \begin{itemize}
 \item \textbf{Math path:} naive implementation.
@@ -423,7 +423,7 @@ Over FlashAttention-2, v3 adds:
 \end{itemize}
   to FlashAttention-1.
 \begin{itemize}
-\item \textbf{FlashAttention-2 (if available):} uses the \texttt{flash_attn} library.
+\item \textbf{FlashAttention-2 (if available):} uses the \texttt{flash\\_attn} library.
 \end{itemize}
 
 The wrapper dispatches to SDPA when FlashAttention-3 is unavailable.
@@ -453,7 +453,7 @@ RoPE rotates $Q, K$ by position-dependent angles:
 \tag{3.8}
 \]
 
-Partial RoPE rotates only the first \texttt{rotary_dim} coordinates.
+Partial RoPE rotates only the first \texttt{rotary\\_dim} coordinates.
 
 \subsection{3.7 LoRA}
 
@@ -520,16 +520,16 @@ provides three execution paths:
 For each projection $P \in \{Q, K, V, O\}$, extract $W_P$ from the source:
 
 \begin{itemize}
-\item \textbf{DistilBERT:} \texttt{q_lin}, \texttt{k_lin}, \texttt{v_lin}, \texttt{out_lin}.
+\item \textbf{DistilBERT:} \texttt{q\\_lin}, \texttt{k\\_lin}, \texttt{v\\_lin}, \texttt{out\\_lin}.
 \end{itemize}
 \begin{itemize}
 \item \textbf{RoBERTa:} \texttt{self.query}, \texttt{self.key}, \texttt{self.value}; \texttt{output.dense} for \texttt{o}.
 \end{itemize}
 \begin{itemize}
-\item \textbf{GPT-2:} Split \texttt{c_attn.weight.T}; \texttt{c_proj.weight.T} for \texttt{o}.
+\item \textbf{GPT-2:} Split \texttt{c\\_attn.weight.T}; \texttt{c\\_proj.weight.T} for \texttt{o}.
 \end{itemize}
 \begin{itemize}
-\item \textbf{Qwen:} \texttt{q_proj}, \texttt{k_proj}, \texttt{v_proj}, \texttt{o_proj}.
+\item \textbf{Qwen:} \texttt{q\\_proj}, \texttt{k\\_proj}, \texttt{v\\_proj}, \texttt{o\\_proj}.
 \end{itemize}
 
 Frobenius norms verified $\geq 10^{-4}$.
@@ -564,7 +564,7 @@ Q, K \leftarrow \text{RoPE}(Q, K, \text{cos}, \text{sin})
 \tag{4.2}
 \]
 
-Supports partial RoPE (rotary_dim < head_dim) via coordinate slicing.
+Supports partial RoPE (rotary\_dim < head\_dim) via coordinate slicing.
 
 \subsubsection{GQA}
 
@@ -580,7 +580,7 @@ V \leftarrow \text{repeat\_kv}(V, H/H_{kv})
 
 \subsubsection{Path A: FlashAttention-3}
 
-If \texttt{FLASH_ATTN_AVAILABLE} and \texttt{hidden_states.is_cuda}:
+If \texttt{FLASH\\_ATTN\\_AVAILABLE} and \texttt{hidden\\_states.is\\_cuda}:
 
 \begin{lstlisting}
 q_fa = q.transpose(1, 2).contiguous()  # (B, L, H, d_h)
@@ -595,7 +595,7 @@ if use_fp8 and hasattr(torch, "float8_e4m3fn"):
 out = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag).to(dtype)
 \end{lstlisting}
 
-\textbf{FP8.} If \texttt{use_fp8=True} and Hopper, casts Q/K/V to FP8.
+\textbf{FP8.} If \texttt{use\\_fp8=True} and Hopper, casts Q/K/V to FP8.
 
 \subsubsection{Path B: SDPA Fallback}
 
@@ -617,42 +617,42 @@ Y = \text{Attn}(Q, K, V) W_O^\top + b_O
 \tag{4.4}
 \]
 
-\textbf{Nested bypass.} For RoBERTa/BERT, \texttt{out_proj} is not applied; the outer 
+\textbf{Nested bypass.} For RoBERTa/BERT, \texttt{out\\_proj} is not applied; the outer 
 \texttt{BertSelfOutput.dense} performs it.
 
 \subsection{4.7 The Full Algorithm}
 
 \textbf{Algorithm 1:} FlashAttention-3 wrapper forward
 \begin{lstlisting}
-Input:  X ∈ R^{B×L×d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
 Output: Y, None
 
-1:  Q ← LoRALinear_Q(X)
-2:  K ← LoRALinear_K(X)
-3:  V ← LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear_Q(X)
+2:  K $\leftarrow$ LoRALinear_K(X)
+3:  V $\leftarrow$ LoRALinear_V(X)
 4:
-5:  if RoPE: (Q, K) ← apply_rope(Q, K, cos, sin)
-6:  if GQA: K, V ← repeat_kv(K, V, H/H_kv)
+5:  if RoPE: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V, H/H_kv)
 7:
-8:  causal_flag ← is_decoder AND not cross_attention AND L == kv_len
+8:  causal_flag $\leftarrow$ is_decoder AND not cross_attention AND L == kv_len
 9:
 10: if FA3_AVAILABLE and is_cuda:
 11:     try:
 12:         if use_fp8 and fp8_supported:
-13:             Q, K, V ← cast_to_fp8(Q, K, V)
-14:         Y_ctx ← flash_attn_func(Q, K, V, causal=causal_flag)
+13:             Q, K, V $\leftarrow$ cast_to_fp8(Q, K, V)
+14:         Y_ctx $\leftarrow$ flash_attn_func(Q, K, V, causal=causal_flag)
 15:     except:
-16:         Y_ctx ← None
+16:         Y_ctx $\leftarrow$ None
 17: else:
-18:     Y_ctx ← None
+18:     Y_ctx $\leftarrow$ None
 19:
 20: if Y_ctx is None:                                ▷ Fallback
-21:     attn_mask ← build_mask(attention_mask, causal_flag)
-22:     Y_ctx ← SDPA(Q, K, V, attn_mask)
+21:     attn_mask $\leftarrow$ build_mask(attention_mask, causal_flag)
+22:     Y_ctx $\leftarrow$ SDPA(Q, K, V, attn_mask)
 23:
-24: Y_ctx ← Y_ctx.reshape(B, L, H·d_h)
-25: if nested: Y ← Y_ctx
-26: else: Y ← LoRALinear_O(Y_ctx)
+24: Y_ctx $\leftarrow$ Y_ctx.reshape(B, L, H·d_h)
+25: if nested: Y $\leftarrow$ Y_ctx
+26: else: Y $\leftarrow$ LoRALinear_O(Y_ctx)
 27:
 28: return Y
 \end{lstlisting}
@@ -665,15 +665,15 @@ Output: Y, None
 \toprule
 \textbf{Path} & \textbf{Time} & \textbf{Memory} \\
 \midrule
-FA3 & $\mathcal{O}(L^2 d\_h)$ + HBM savings & $\mathcal{O}(L d\_h)$ \\
-SDPA (mem-efficient) & $\mathcal{O}(L^2 d\_h)$ & $\mathcal{O}(L d\_h)$ \\
-SDPA (math) & $\mathcal{O}(L^2 d\_h)$ & $\mathcal{O}(L^2)$ \\
+FA3 & $\mathcal{O}(L^2 d_h)$ + HBM savings & $\mathcal{O}(L d_h)$ \\
+SDPA (mem-efficient) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L d_h)$ \\
+SDPA (math) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4× over 
-naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2×.
+\textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4$\times$ over 
+naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$\times$.
 
 \subsection{4.9 Parameter Analysis}
 
@@ -684,8 +684,8 @@ naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2×.
 \textbf{Component} & \textbf{Baseline} & \textbf{Wrapper} \\
 \midrule
 Base weights & $4 d^2$ & $4 d^2$ (frozen) \\
-LoRA ($r\_L$) & 0 & $8 r\_L d$ \\
-**Total per layer** & $4 d^2$ & $4 d^2 + 8 r\_L d$ \\
+LoRA ($r_L$) & 0 & $8 r_L d$ \\
+**Total per layer** & $4 d^2$ & $4 d^2 + 8 r_L d$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -781,7 +781,7 @@ num_kv_heads = config.num_key_value_heads
 
 \subsection{5.3 Nested Encoder Handling}
 
-For RoBERTa/BERT, \texttt{is_nested_encoder = True}:
+For RoBERTa/BERT, \texttt{is\\_nested\\_encoder = True}:
 
 \begin{lstlisting}
 if self.is_nested_encoder:
@@ -794,7 +794,7 @@ The outer \texttt{BertSelfOutput.dense} applies its projection.
 
 \subsection{5.4 Partial RoPE}
 
-For Qwen3.5 with rotary_dim < head_dim:
+For Qwen3.5 with rotary\_dim < head\_dim:
 
 \begin{lstlisting}
 q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
@@ -809,7 +809,7 @@ causal_flag = bool(self.is_decoder and not is_cross_attention and L == kv_len)
 \end{lstlisting}
 
 \begin{itemize}
-\item If decoder self-attention with L == kv_len: apply causal.
+\item If decoder self-attention with L == kv\_len: apply causal.
 \end{itemize}
 \begin{itemize}
 \item Cross-attention: no causal mask.
@@ -965,7 +965,7 @@ FlashAttention & not installed (SDPA fallback) \\
 
 \subsection{6.7 Quality Gate}
 
-PASS ≥ 56\%, PASS_LOW 50.92\%–56\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
 
 \subsection{6.8 Reproduction}
 
@@ -992,13 +992,13 @@ python run_all_4_flash3.py \
 \centering
 \begin{tabular}{llllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{Δ} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} & \textbf{Time} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & — & 0.9099 & 66.9M & 183 MB & 1.90 s \\
+DistilBERT & full & 90.71\% & --- & 0.9099 & 66.9M & 183 MB & 1.90 s \\
 DistilBERT & **Flash3** & **90.25** & -0.46 & 0.9055 & 67.55M & 190 & 1.95 \\
-RoBERTa & full & 78.56\% & — & 0.8124 & 124.6M & 712 MB & 4.10 s \\
+RoBERTa & full & 78.56\% & --- & 0.8124 & 124.6M & 712 MB & 4.10 s \\
 RoBERTa & **Flash3** & **77.50** & -1.06 & 0.780 & 125.83M & 720 & 4.20 \\
-GPT-2 & full & 79.36\% & — & 0.7978 & 124.4M & 793 MB & 4.20 s \\
+GPT-2 & full & 79.36\% & --- & 0.7978 & 124.4M & 793 MB & 4.20 s \\
 GPT-2 & **Flash3** & **78.98** & -0.38 & 0.789 & 125.63M & 800 & 4.30 \\
 \bottomrule
 \end{tabular}
@@ -1010,7 +1010,7 @@ GPT-2 & **Flash3** & **78.98** & -0.38 & 0.789 & 125.63M & 800 & 4.30 \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Baseline} & \textbf{Flash3} & \textbf{Δ} \\
+\textbf{Model} & \textbf{Baseline} & \textbf{Flash3} & \textbf{$\Delta$} \\
 \midrule
 DistilBERT & 66.9M & 67.55M & +589826M \\
 RoBERTa & 124.6M & 125.83M & +1179648M \\
@@ -1093,7 +1093,7 @@ FP8 (simulated) & 90.10 & Simulated on Ada \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Module} & \textbf{D acc} & \textbf{Params Δ} & \textbf{Note} \\
+\textbf{Module} & \textbf{D acc} & \textbf{Params $\Delta$} & \textbf{Note} \\
 \midrule
 full & 90.71\% & 0 & Baseline \\
 `adaptive\_svd` & 88.0\% & -60\% & Compression \\
@@ -1116,7 +1116,7 @@ full & 90.71\% & 0 & Baseline \\
 \item \textbf{Runtime on RTX 4070:} SDPA fallback (no FA3).
 \end{itemize}
 \begin{itemize}
-\item \textbf{Runtime on H100:} estimated 2-4× faster (not tested).
+\item \textbf{Runtime on H100:} estimated 2-4$\times$ faster (not tested).
 \end{itemize}
 
 \clearpage
@@ -1267,24 +1267,24 @@ FA3 increases parameter count via LoRA. Its value is throughput, not size.
 
 \subsubsection{Recommended}
 \begin{itemize}
-\item \textbf{H100/H200 inference} — FA3 gives 2-4× throughput
+\item \textbf{H100/H200 inference} --- FA3 gives 2-4$\times$ throughput
 \end{itemize}
 \begin{itemize}
-\item \textbf{Long sequences} ($L \geq 2048$) — memory savings substantial
+\item \textbf{Long sequences} ($L \geq 2048$) --- memory savings substantial
 \end{itemize}
 \begin{itemize}
-\item \textbf{Production serving} — stable, exact attention
+\item \textbf{Production serving} --- stable, exact attention
 \end{itemize}
 
 \subsubsection{Not Recommended}
 \begin{itemize}
-\item \textbf{Non-Hopper GPUs} — SDPA is just as good
+\item \textbf{Non-Hopper GPUs} --- SDPA is just as good
 \end{itemize}
 \begin{itemize}
-\item \textbf{Model size reduction} — use compression methods
+\item \textbf{Model size reduction} --- use compression methods
 \end{itemize}
 \begin{itemize}
-\item \textbf{Research on attention algorithms} — this is a kernel, not an algorithm
+\item \textbf{Research on attention algorithms} --- this is a kernel, not an algorithm
 \end{itemize}
 
 \subsection{9.3 Deployment Decision}
@@ -1314,8 +1314,8 @@ For DistilBERT on RTX 4070 (SDPA path):
 \midrule
 Accuracy & 90.71\% & 90.25\% & -0.46\% \\
 Params & 66.9M & 67.55M & +589826M \\
-Time & 1.90 s & 1.95 s & 1.03× \\
-VRAM & 183 MB & 190 MB & 1.04× \\
+Time & 1.90 s & 1.95 s & 1.03$\times$ \\
+VRAM & 183 MB & 190 MB & 1.04$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1337,34 +1337,34 @@ TensorRT & NVIDIA & Yes & No \\
 
 \subsection{9.6 Open Questions}
 
-1. \textbf{H100 benchmarks} — we did not have access.
-2. \textbf{FP8 accuracy} — simulated only.
-3. \textbf{Very long context} ($L > 8192$) — untested.
-4. \textbf{Training vs inference} — we tested inference only.
+1. \textbf{H100 benchmarks} --- we did not have access.
+2. \textbf{FP8 accuracy} --- simulated only.
+3. \textbf{Very long context} ($L > 8192$) --- untested.
+4. \textbf{Training vs inference} --- we tested inference only.
 
 \subsection{9.7 Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
-\item Faster inference → cheaper deployment
+\item Faster inference $\to$ cheaper deployment
 \end{itemize}
 \begin{itemize}
-\item Memory savings → enables longer context
+\item Memory savings $\to$ enables longer context
 \end{itemize}
 \begin{itemize}
-\item Exact → no accuracy trade-off
+\item Exact $\to$ no accuracy trade-off
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
-\item Hopper-only optimization → hardware lock-in
+\item Hopper-only optimization $\to$ hardware lock-in
 \end{itemize}
 \begin{itemize}
 \item Marginal on consumer GPUs
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~{{CO2}} kg CO$_2$eq.
 
 \clearpage
 
@@ -1398,7 +1398,7 @@ Only SST-2 evaluated. Generation tasks, QA, NLI untested.
 
 \subsection{10.6 Model Coverage}
 
-Three models (66.9M–124.6M). Larger models untested.
+Three models (66.9M--124.6M). Larger models untested.
 
 \subsection{10.7 Cross-Attention}
 
@@ -1441,7 +1441,7 @@ and transfers pretrained weights across four architectures.
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{Params Δ} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} \\
 \midrule
 DistilBERT & -0.46\% & +589826M \\
 RoBERTa & -1.06\% & +1179648M \\
@@ -1493,10 +1493,10 @@ models. We release code under MIT.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the wrapper, implemented the code, ran experiments.
+\item \textbf{{{AUTHOR\_1}}} designed the wrapper, implemented the code, ran experiments.
 \end{itemize}
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided feedback.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}
@@ -1574,9 +1574,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} \\
 \midrule
-DistilBERT & 90.25\% ± 1\% \\
-RoBERTa & 77.50\% ± 1\% \\
-GPT-2 & 78.98\% ± 1\% \\
+DistilBERT & 90.25\% $\pm$ 1\% \\
+RoBERTa & 77.50\% $\pm$ 1\% \\
+GPT-2 & 78.98\% $\pm$ 1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1590,7 +1590,7 @@ GPT-2 & 78.98\% ± 1\% \\
 \item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-flash3}
 \end{itemize}
 \begin{itemize}
-\item Metrics: \texttt{results/unified_flash3/*/summary.csv}
+\item Metrics: \texttt{results/unified\\_flash3/*/summary.csv}
 \end{itemize}
 
 \subsection{12.9 Known Issues}
@@ -1815,7 +1815,7 @@ where $n = H / H_{kv}$. This gives $H$ heads from $H_{kv}$.
 
 \subsection{A.6 Partial RoPE}
 
-For head_dim = 256 and rotary_dim = 64:
+For head\_dim = 256 and rotary\_dim = 64:
 
 \[
 \tilde{Q}_i = [\text{RoPE}(Q_{i, :64}), \ Q_{i, 64:}]
@@ -1938,16 +1938,16 @@ except ImportError:
 \end{lstlisting}
 
 \subsubsection{B.5.2 Wrong contiguity}
-FlashAttention requires contiguous tensors in \texttt{(B, L, H, d_h)} layout:
+FlashAttention requires contiguous tensors in \texttt{(B, L, H, d\\_h)} layout:
 \begin{lstlisting}
 q_fa = q.transpose(1, 2).contiguous()
 \end{lstlisting}
 
 \subsubsection{B.5.3 FP8 without Hopper}
-\texttt{torch.float8_e4m3fn} exists on any CUDA, but tensor cores only on Hopper.
+\texttt{torch.float8\\_e4m3fn} exists on any CUDA, but tensor cores only on Hopper.
 
 \subsubsection{B.5.4 Nested encoder double projection}
-For RoBERTa: \texttt{is_nested_encoder = True} skips \texttt{out_proj}.
+For RoBERTa: \texttt{is\\_nested\\_encoder = True} skips \texttt{out\\_proj}.
 
 \subsection{B.6 Verification}
 
@@ -1965,7 +1965,7 @@ print((out_sdpa - out_naive).abs().max())  # < 1e-5
 
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT — Complete Metrics}
+\subsection{C.1 DistilBERT --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -1986,7 +1986,7 @@ FA3 available & False \\
 \end{tabular}
 \end{table}
 
-\subsection{C.2 RoBERTa — Complete Metrics}
+\subsection{C.2 RoBERTa --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -2002,7 +2002,7 @@ Accuracy & 77.50\% \\
 \end{tabular}
 \end{table}
 
-\subsection{C.3 GPT-2 — Complete Metrics}
+\subsection{C.3 GPT-2 --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -2108,8 +2108,8 @@ H100 & Yes & **Yes** & **Yes** \\
 
 \subsection{D.3 Lessons Learned}
 
-1. \textbf{Fallback is essential} — not all GPUs support FA3.
-2. \textbf{FP8 requires Hopper} — no benefit on consumer GPUs.
+1. \textbf{Fallback is essential} --- not all GPUs support FA3.
+2. \textbf{FP8 requires Hopper} --- no benefit on consumer GPUs.
 3. \textbf{Multi-arch weight extraction} required for portability.
 4. \textbf{Nested encoder handling} critical for RoBERTa.
 5. \textbf{Exactness verified} across all paths.
@@ -2133,7 +2133,7 @@ Std & 0.08 & 0.05 & 0.08 \\
 
 \subsection{D.5 Unresolved Questions}
 
-1. \textbf{H100 benchmarks:} Would FA3 be 2-4× faster?
+1. \textbf{H100 benchmarks:} Would FA3 be 2-4$\times$ faster?
 2. \textbf{FP8 accuracy:} Real vs simulated?
 3. \textbf{Long context:} $L > 8192$ untested?
 4. \textbf{Training:} FA3 backward path untested?
@@ -2146,13 +2146,13 @@ Std & 0.08 & 0.05 & 0.08 \\
 
 \subsubsection{Positive}
 \begin{itemize}
-\item Faster inference → cheaper deployment
+\item Faster inference $\to$ cheaper deployment
 \end{itemize}
 \begin{itemize}
-\item Memory savings → enables long context
+\item Memory savings $\to$ enables long context
 \end{itemize}
 \begin{itemize}
-\item Exact attention → no accuracy trade-off
+\item Exact attention $\to$ no accuracy trade-off
 \end{itemize}
 \begin{itemize}
 \item Broad hardware support via fallback
@@ -2160,7 +2160,7 @@ Std & 0.08 & 0.05 & 0.08 \\
 
 \subsubsection{Negative}
 \begin{itemize}
-\item Hopper-only optimization → hardware lock-in
+\item Hopper-only optimization $\to$ hardware lock-in
 \end{itemize}
 \begin{itemize}
 \item Marginal benefits on consumer GPUs
@@ -2175,7 +2175,7 @@ Std & 0.08 & 0.05 & 0.08 \\
 \item Total compute: ~10 GPU-hours
 \end{itemize}
 \begin{itemize}
-\item CO₂: ~{{CO2}} kg CO₂eq
+\item CO$_2$: ~{{CO2}} kg CO$_2$eq
 \end{itemize}
 
 \subsection{E.3 Data Ethics}

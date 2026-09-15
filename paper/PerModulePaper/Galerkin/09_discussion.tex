@@ -45,12 +45,12 @@ Parameter count increases via LoRA. Not for size reduction.
 \subsection{9.3 Decision Flowchart}
 
 \begin{lstlisting}
-Encoder or decoder? ─── Decoder ─── Use standard attention or other method
-  │ Encoder
-  ▼
-Sequence > 256? ─── No ─── Galerkin benefit marginal
-  │ Yes
-  ▼
+Encoder or decoder? --- Decoder --- Use standard attention or other method
+  | Encoder
+   
+Sequence > 256? --- No --- Galerkin benefit marginal
+  | Yes
+   
 Use Galerkin
 \end{lstlisting}
 
@@ -64,9 +64,9 @@ For DistilBERT at $N = 256$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 262K & 131K & **2× reduction** \\
-Accuracy & 90.71\% & 89.91\% & -0.80\% \\
-Params & 66.9M & 67.54M & +589824M \\
+Attention FLOPs & 262K & 131K & **2$\times$ reduction** \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -90,7 +90,7 @@ FNet & $O(N\log N)$ & N/A & No \\
 \subsection{9.6 Deployment Considerations}
 
 \subsubsection{Encoder latency}
-2× faster at $N=128$, 8× at $N=512$.
+2$\times$ faster at $N=128$, 8$\times$ at $N=512$.
 
 \subsubsection{Decoder latency}
 No benefit.
@@ -100,10 +100,10 @@ Encoder: $O(Nr)$ vs $O(N^2)$. Substantial savings for long sequences.
 
 \subsection{9.7 Open Questions}
 
-1. \textbf{Learned basis} — would a data-adaptive basis beat DCT?
-2. \textbf{Causal Galerkin} — is there a causal-compatible basis?
-3. \textbf{Higher-order DCT} — does adding derivatives help?
-4. \textbf{Cross-attention} — does Galerkin work for encoder-decoder cross-attention?
+1. \textbf{Learned basis} -- would a data-adaptive basis beat DCT?
+2. \textbf{Causal Galerkin} -- is there a causal-compatible basis?
+3. \textbf{Higher-order DCT} -- does adding derivatives help?
+4. \textbf{Cross-attention} -- does Galerkin work for encoder-decoder cross-attention?
 
 \subsection{9.8 Broader Impact}
 
@@ -130,4 +130,4 @@ Encoder: $O(Nr)$ vs $O(N^2)$. Substantial savings for long sequences.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.

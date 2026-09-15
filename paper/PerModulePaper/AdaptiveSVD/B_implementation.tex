@@ -57,7 +57,7 @@ def forward(self, x):
 \begin{lstlisting}
 def _compute_energy_rank(self, S, max_rank, min_rank=16):
     """
-    Find smallest rank r with cumulative energy >= τ.
+    Find smallest rank r with cumulative energy >= $\tau$.
     
     Args:
         S: Singular values (descending), 1D tensor
@@ -65,7 +65,7 @@ def _compute_energy_rank(self, S, max_rank, min_rank=16):
         min_rank: Lower bound on rank
     
     Returns:
-        Rank r ∈ [min_rank, max_rank]
+        Rank r $\in$ [min_rank, max_rank]
     """
     s_squared = S ** 2
     total_energy = s_squared.sum()
@@ -265,13 +265,13 @@ def apply_rotary(self, Q, K, cos, sin):
 
 \subsubsection{B.9.1 Forgetting to Freeze Base}
 
-Without \texttt{requires_grad=False} on U, V, the factors drift during recovery, 
+Without \texttt{requires\\_grad=False} on U, V, the factors drift during recovery, 
 undoing the compression.
 
 \subsubsection{B.9.2 Wrong Adapter Init}
 
-Both $A$ and $B$ zero → dead. Both random → initial forward differs from 
-pretrained. One zero, one random → correct.
+Both $A$ and $B$ zero $\to$ dead. Both random $\to$ initial forward differs from 
+pretrained. One zero, one random $\to$ correct.
 
 \subsubsection{B.9.3 Missing Conv1D Transpose}
 
@@ -280,7 +280,7 @@ for SVD.
 
 \subsubsection{B.9.4 T5 Bias Not Preserved}
 
-Without copying \texttt{relative_attention_bias}, T5 accuracy collapses.
+Without copying \texttt{relative\\_attention\\_bias}, T5 accuracy collapses.
 
 \subsubsection{B.9.5 RoPE Applied to Wrong Dim}
 
@@ -315,11 +315,11 @@ framework/attentions/adaptive_svd_attn.py
 
 Key entry points:
 \begin{itemize}
-\item \texttt{AdaptiveSVDLinear} — the factorized linear module
+\item \texttt{AdaptiveSVDLinear} -- the factorized linear module
 \end{itemize}
 \begin{itemize}
-\item \texttt{AdaptiveSVDAttention} — the attention wrapper
+\item \texttt{AdaptiveSVDAttention} -- the attention wrapper
 \end{itemize}
 \begin{itemize}
-\item \texttt{inject_adaptive_svd()} — injection hook
+\item \texttt{inject\\_adaptive\\_svd()} -- injection hook
 \end{itemize}

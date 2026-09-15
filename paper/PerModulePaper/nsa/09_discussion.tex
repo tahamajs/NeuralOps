@@ -1,0 +1,146 @@
+
+\section{9. Discussion}
+
+\subsection{9.1 Key Takeaways}
+
+\subsubsection{9.1.1 Takeaway 1: Union of Local + Global}
+
+NSA's union of a fixed window and dynamic top-$k$ captures both regimes. 
+Neither alone matches the union's accuracy.
+
+\subsubsection{9.1.2 Takeaway 2: Attention Density is Low}
+
+Even at 63\% density (short sequences), NSA preserves 95\% of the attention 
+mass. At long sequences, density drops below 10\%.
+
+\subsubsection{9.1.3 Takeaway 3: Zero Parameters Added}
+
+NSA adds no parameters. Its benefit is \textbf{attention sparsity}, realized as 
+lower memory and (with the right kernels) lower time.
+
+\subsection{9.2 When to Use NSA}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Long-context inference} where sparse kernels are available
+\end{itemize}
+\begin{itemize}
+\item \textbf{Streaming / KV cache} deployment (natural fit)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Interpretability studies} of head specialization
+\end{itemize}
+\begin{itemize}
+\item \textbf{Base for kernel development} (sparse matmul)
+\end{itemize}
+
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Short sequences} where density is high
+\end{itemize}
+\begin{itemize}
+\item \textbf{Parameter-constrained} applications
+\end{itemize}
+\begin{itemize}
+\item \textbf{Environments without sparse kernels}
+\end{itemize}
+
+\subsection{9.3 Choosing Window Size}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Sequence length} & \textbf{Recommended $w$} \\
+\midrule
+128 & 16 \\
+512 & 32 \\
+2048 & 64 \\
+8192 & 128 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.4 Choosing Top-K}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Use case} & \textbf{Recommended $k$} \\
+\midrule
+Memory-efficient & 4 \\
+Balanced & 8 \\
+High quality & 16 \\
+Aggressive capture & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.5 Cost-Benefit}
+
+For DistilBERT at $L = 128$:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Accuracy} & \textbf{Density} \\
+\midrule
+Baseline & 90.71\% & 100\% \\
+NSA ($w=16, k=8$) & {{D\_W16K8}} & {{D\_DENS\_W16K8}}\% \\
+NSA ($w=32, k=16$) & {{D\_ACC}} & {{D\_DENSITY}}\% \\
+NSA ($w=64, k=32$) & {{D\_W64K32}} & {{D\_DENS\_W64K32}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.6 Interaction with Other Methods}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Method} & \textbf{NSA-compatible?} \\
+\midrule
+GQA & (multiplicative KV reduction) \\
+RoPE & (RoPE before NSA) \\
+Quantization & (INT8 NSA) \\
+KV cache & (NSA reduces cache size) \\
+MoE & (orthogonal) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.7 Open Questions}
+
+1. \textbf{Learned window and top-k:} Can we learn $w$ and $k$ per head?
+2. \textbf{Sparse kernels:} When will they be widely available?
+3. \textbf{Cross-layer selection transfer:} Do top-$k$ sets overlap across layers?
+4. \textbf{Long-context evaluation:} How does NSA scale at $L > 8192$?
+
+\subsection{9.8 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item \textbf{Long-context inference:} Enables more capable applications.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Cheaper inference:} Reduces compute per token (with sparse kernels).
+\end{itemize}
+\begin{itemize}
+\item \textbf{Interpretability:} Selection analysis reveals structure.
+\end{itemize}
+
+\subsubsection{Negative}
+\begin{itemize}
+\item \textbf{Dual-use:} Efficiency gains benefit malicious applications.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Concentration:} Favors large labs.
+\end{itemize}
+
+\subsubsection{Environmental}
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.

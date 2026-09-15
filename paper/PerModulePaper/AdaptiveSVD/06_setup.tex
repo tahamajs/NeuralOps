@@ -16,7 +16,7 @@ GPT-2 & 12 & 768 & 12 & 12 & 124.4M & Causal \\
 \end{tabular}
 \end{table}
 
-Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
+Base weights loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
 
 \subsection{6.2 Dataset}
 
@@ -30,7 +30,7 @@ Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
 \midrule
 Train & 67,349 & 33,807 & 33,542 \\
 Validation & 872 & 444 & 428 \\
-Test & 1,821 & — & — \\
+Test & 1,821 & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -45,10 +45,10 @@ Test & 1,821 & — & — \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-`energy\_threshold` $\tau$ & 0.92 & Cumulative energy cutoff \\
-`svd\_rank` (cap) & 288 & Maximum rank (rarely hit) \\
-`residual\_rank` $r\_L$ & 16 & LoRA adapter rank \\
-`min\_rank` & 16 & Minimum rank floor \\
+`energy\_threshold` $\tau$ & {{ENERGY\_THRESHOLD}} & Cumulative energy cutoff \\
+`svd\_rank` (cap) & {{SVD\_RANK}} & Maximum rank (rarely hit) \\
+`residual\_rank` $r_L$ & {{RESIDUAL\_RANK}} & LoRA adapter rank \\
+`min\_rank` & {{MIN\_RANK}} & Minimum rank floor \\
 `trainable\_svd` & False & Base frozen \\
 `target\_attention\_only` & True & Only attention projections \\
 \bottomrule
@@ -71,20 +71,20 @@ After compression, adapters are trained:
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & 2e-4 \\
-Weight decay & 1e-2 \\
+Learning rate & {{LR}} \\
+Weight decay & {{WD}} \\
 LR schedule & Constant \\
 Warmup & 0 steps \\
-Recovery steps & 50 \\
-Batch size & 8 \\
+Recovery steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
-Trainable params & Only $A\_P, B\_P$ \\
+Trainable params & Only $A_P, B_P$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Trainable tensor count:} 96 (2 per projection × 4 per 
-layer × $N_l$).
+\textbf{Trainable tensor count:} {{TRAINABLE\_TENSORS}} (2 per projection $\times$ 4 per 
+layer $\times$ $N_l$).
 
 \subsection{6.6 Evaluation Metrics}
 
@@ -141,14 +141,14 @@ layer × $N_l$).
 \toprule
 \textbf{Status} & \textbf{Accuracy} \\
 \midrule
-PASS & ≥ 56.0\% \\
-PASS\_LOW & 50.92\% – 56.0\% \\
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
 FAIL & < 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-56\% = majority + 3·SE. SE is $\sqrt{p(1-p)/N} \approx 1.69\%$ at $N = 872$.
+56\% = majority + 3 SE. SE is $\sqrt{p(1-p)/N} \approx 1.69\%$ at $N = 872$.
 
 \subsection{6.8 Hardware}
 
@@ -160,9 +160,9 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
-CUDA & 12.1 \\
-PyTorch & 2.4.0 \\
-Transformers & 4.44.0 \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
+Transformers & {{HF\_VERSION}} \\
 OS & Windows / Linux \\
 \bottomrule
 \end{tabular}
@@ -173,15 +173,15 @@ OS & Windows / Linux \\
 \begin{lstlisting}
 python run_all_4_adaptive_svd.py \
     --models distilbert,roberta,gpt2 \
-    --energy_threshold 0.92 \
-    --residual_rank 16 \
-    --recovery_steps 50
+    --energy_threshold {{ENERGY_THRESHOLD}} \
+    --residual_rank {{RESIDUAL_RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}}
 \end{lstlisting}
 
-\textbf{Expected runtime:} ~15 minutes on RTX 4070.
+\textbf{Expected runtime:} ~{{RUNTIME}} minutes on RTX 4070.
 
 \subsection{6.10 Seeds}
 
-All experiments use seed 42. No multi-seed runs due to compute budget.
+All experiments use seed {{SEED}}. No multi-seed runs due to compute budget.
 
 \subsection{6.11 Baselines}

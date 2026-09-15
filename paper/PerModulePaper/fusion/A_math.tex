@@ -78,7 +78,7 @@ Causality is enforced by:
 
 \subsection{A.6 Parameter Count}
 
-For layer with $d$ hidden, $d_h$ head_dim, $r_L$ LoRA rank:
+For layer with $d$ hidden, $d_h$ head\_dim, $r_L$ LoRA rank:
 
 \begin{table}[H]
 \centering
@@ -86,15 +86,15 @@ For layer with $d$ hidden, $d_h$ head_dim, $r_L$ LoRA rank:
 \toprule
 \textbf{Component} & \textbf{Parameters} \\
 \midrule
-LoRA Q & $2 r\_L d$ \\
-LoRA K & $2 r\_L d$ \\
-LoRA V & $2 r\_L d$ \\
-LoRA O & $2 r\_L d$ \\
-Gate MLP $W\_1$ & $4 d\_h^2$ \\
-Gate MLP $W\_2$ & $4 d\_h$ \\
-Gate bias & $4 d\_h + 1$ \\
+LoRA Q & $2 r_L d$ \\
+LoRA K & $2 r_L d$ \\
+LoRA V & $2 r_L d$ \\
+LoRA O & $2 r_L d$ \\
+Gate MLP $W_1$ & $4 d_h^2$ \\
+Gate MLP $W_2$ & $4 d_h$ \\
+Gate bias & $4 d_h + 1$ \\
 Gate temp & 1 \\
-**Total per layer** & $8 r\_L d + 4 d\_h^2 + O(d\_h)$ \\
+**Total per layer** & $8 r_L d + 4 d_h^2 + O(d_h)$ \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -5,35 +5,35 @@
 
 Adaptive SVD compresses each attention projection in four steps:
 
-1. \textbf{Full SVD} (§4.2): compute $U \Sigma V^\top$ in FP32.
-2. \textbf{Energy-thresholded rank} (§4.3): find smallest $r$ with $\mathcal{E}(r) \geq \tau$.
-3. \textbf{Symmetric factorization} (§4.4): set $U_r = U_{:, :r} \Sigma^{1/2}$, 
+1. \textbf{Full SVD} ( 4.2): compute $U \Sigma V^\top$ in FP32.
+2. \textbf{Energy-thresholded rank} ( 4.3): find smallest $r$ with $\mathcal{E}(r) \geq \tau$.
+3. \textbf{Symmetric factorization} ( 4.4): set $U_r = U_{:, :r} \Sigma^{1/2}$, 
    $V_r = \Sigma^{1/2} V_{:r, :}^\top$.
-4. \textbf{Residual adapter} (§4.5): attach zero-initialized $B A$ for recovery.
+4. \textbf{Residual adapter} ( 4.5): attach zero-initialized $B A$ for recovery.
 
 \textbf{Figure 4.1} shows the pipeline. There is no calibration phase.
 
 \begin{lstlisting}
-    ┌──────────────────────────────────────────┐
-    │  Pretrained attention module A           │
-    │  with projections W_Q, W_K, W_V, W_O     │
-    └──────────────────┬───────────────────────┘
-                       │
-                       ▼
-    ┌──────────────────────────────────────────┐
-    │  For each projection P:                  │
-    │    Phase 1: SVD(W_P) → U_P Σ_P V_P^T     │
-    │    Phase 2: Find r_P via τ               │
-    │    Phase 3: Truncate + distribute Σ^{1/2}│
-    │    Phase 4: Add zero-init BA adapter     │
-    └──────────────────┬───────────────────────┘
-                       │
-                       ▼
-    ┌──────────────────────────────────────────┐
-    │  Compressed attention A' with:           │
-    │    - Frozen U_P, V_P for each P          │
-    │    - Trainable A_P, B_P for each P       │
-    └──────────────────────────────────────────┘
+    +------------------------------------------+
+    |  Pretrained attention module A           |
+    |  with projections W_Q, W_K, W_V, W_O     |
+    +------------------+-----------------------+
+                       |
+                        
+    +------------------------------------------+
+    |  For each projection P:                  |
+    |    Phase 1: SVD(W_P) $\to$ U_P  _P V_P^T     |
+    |    Phase 2: Find r_P via $\tau$               |
+    |    Phase 3: Truncate + distribute  ^{1/2}|
+    |    Phase 4: Add zero-init BA adapter     |
+    +------------------+-----------------------+
+                       |
+                        
+    +------------------------------------------+
+    |  Compressed attention A' with:           |
+    |    - Frozen U_P, V_P for each P          |
+    |    - Trainable A_P, B_P for each P       |
+    +------------------------------------------+
 \end{lstlisting}
 
 \subsection{4.2 Phase 1: Full SVD}
@@ -88,7 +88,7 @@ def _compute_energy_rank(self, S, max_rank, min_rank=16):
 
 \subsubsection{4.3.3 Minimum Rank Constraint}
 
-We impose $r_P \geq r_\text{min}$ (default 16) to prevent numerical 
+We impose $r_P \geq r_\text{min}$ (default {{MIN\_RANK}}) to prevent numerical 
 instability in very low-rank layers. This bounds $r_P$ from below, but for 
 $\tau = 0.92$ and typical attention weights, the natural rank is far above 
 $r_\text{min}$.
@@ -143,8 +143,8 @@ The compressed projection computes:
 \toprule
 \textbf{Configuration} & \textbf{Parameters} \\
 \midrule
-Original & $d\_\text{in}^{(P)} d\_\text{out}^{(P)}$ \\
-Adaptive SVD & $r\_P (d\_\text{in}^{(P)} + d\_\text{out}^{(P)})$ \\
+Original & $d_\text{in}^{(P)} d_\text{out}^{(P)}$ \\
+Adaptive SVD & $r_P (d_\text{in}^{(P)} + d_\text{out}^{(P)})$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -198,32 +198,32 @@ The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
 
 \textbf{Algorithm 1:} Adaptive SVD compression for one attention module
 \begin{lstlisting}
-Input:  pretrained attention A with projections P ∈ {Q, K, V, O}
-        energy threshold τ ∈ (0, 1)
+Input:  pretrained attention A with projections P $\in$ {Q, K, V, O}
+        energy threshold $\tau$ $\in$ (0, 1)
         residual rank r_L
         minimum rank r_min
 Output: compressed attention A'
 
 1:  for P in {Q, K, V, O} do
-2:      W_P ← weight(A.P)                            ▷ Extract
-3:      U_P, Σ_P, V_P^T ← svd(W_P)                   ▷ Full SVD in FP32
-4:      s ← Σ_P^2
-5:      E ← cumsum(s) / sum(s)                      ▷ Cumulative energy
-6:      idx ← first index where E ≥ τ
-7:      r_P ← max(idx + 1, r_min)                   ▷ Enforce min rank
+2:      W_P $\leftarrow$ weight(A.P)                              Extract
+3:      U_P,  _P, V_P^T $\leftarrow$ svd(W_P)                     Full SVD in FP32
+4:      s $\leftarrow$  _P^2
+5:      E $\leftarrow$ cumsum(s) / sum(s)                        Cumulative energy
+6:      idx $\leftarrow$ first index where E $\ge$ $\tau$
+7:      r_P $\leftarrow$ max(idx + 1, r_min)                     Enforce min rank
 8:
-9:      Σ_r^{1/2} ← sqrt(Σ_P[:r_P])
-10:     U_r ← U_P[:, :r_P] @ diag(Σ_r^{1/2})        ▷ Symmetric split
-11:     V_r ← diag(Σ_r^{1/2}) @ V_P^T[:r_P, :]
+9:       _r^{1/2} $\leftarrow$ sqrt( _P[:r_P])
+10:     U_r $\leftarrow$ U_P[:, :r_P] @ diag( _r^{1/2})          Symmetric split
+11:     V_r $\leftarrow$ diag( _r^{1/2}) @ V_P^T[:r_P, :]
 12:
-13:     B_P ← zeros(d_out, r_L)                     ▷ Zero init
-14:     A_P ← kaiming_uniform(r_L, d_in)
+13:     B_P $\leftarrow$ zeros(d_out, r_L)                       Zero init
+14:     A_P $\leftarrow$ kaiming_uniform(r_L, d_in)
 15:
 16:     replace A.P with AdaptiveSVDLinear(U_r, V_r, A_P, B_P)
 17: end for
 18:
-19: freeze(U_r, V_r) for all P                      ▷ Base frozen
-20: unfreeze(A_P, B_P) for all P                    ▷ Adapters trainable
+19: freeze(U_r, V_r) for all P                        Base frozen
+20: unfreeze(A_P, B_P) for all P                      Adapters trainable
 21:
 22: return A'
 \end{lstlisting}
@@ -238,13 +238,13 @@ Output: compressed attention A'
 \toprule
 \textbf{Phase} & \textbf{Time} \\
 \midrule
-SVD per projection & $\mathcal{O}(d\_\text{in} d\_\text{out} \min(d\_\text{in}, d\_\text{out}))$ \\
-Rank selection & $\mathcal{O}(\min(d\_\text{in}, d\_\text{out}))$ \\
-Factor truncation & $\mathcal{O}(r\_P (d\_\text{in} + d\_\text{out}))$ \\
-Adapter init & $\mathcal{O}(r\_L (d\_\text{in} + d\_\text{out}))$ \\
-**Per projection** & $\mathcal{O}(d\_\text{in} d\_\text{out} \min(d\_\text{in}, d\_\text{out}))$ \\
+SVD per projection & $\mathcal{O}(d_\text{in} d_\text{out} \min(d_\text{in}, d_\text{out}))$ \\
+Rank selection & $\mathcal{O}(\min(d_\text{in}, d_\text{out}))$ \\
+Factor truncation & $\mathcal{O}(r_P (d_\text{in} + d_\text{out}))$ \\
+Adapter init & $\mathcal{O}(r_L (d_\text{in} + d_\text{out}))$ \\
+**Per projection** & $\mathcal{O}(d_\text{in} d_\text{out} \min(d_\text{in}, d_\text{out}))$ \\
 **Per attention module** & $\mathcal{O}(4 \cdot d^3)$ for square $d \times d$ \\
-**Total ($N\_l$ layers)** & $\mathcal{O}(4 N\_l d^3)$ \\
+**Total ($N_l$ layers)** & $\mathcal{O}(4 N_l d^3)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -282,8 +282,8 @@ For a square $d \times d$ projection:
 \textbf{Configuration} & \textbf{Parameters} \\
 \midrule
 Original & $d^2$ \\
-Adaptive SVD & $2 r\_P d$ \\
-Adaptive SVD + LoRA($r\_L$) & $2 d (r\_P + r\_L)$ \\
+Adaptive SVD & $2 r_P d$ \\
+Adaptive SVD + LoRA($r_L$) & $2 d (r_P + r_L)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -303,9 +303,9 @@ Adaptive SVD + LoRA($r\_L$) & $2 d (r\_P + r\_L)$ \\
 \toprule
 \textbf{Configuration} & \textbf{Parameters} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.00× \\
-Adaptive SVD (base) & 196,608 & 3.00× \\
-+ Adapter & 221,184 & 2.67× \\
+Original & 589,824 & 1.00$\times$ \\
+Adaptive SVD (base) & 196,608 & 3.00$\times$ \\
++ Adapter & 221,184 & 2.67$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -357,7 +357,7 @@ The parameter ratio per projection is:
 \tag{4.13}
 \]
 
-At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2× reduction).
+At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2$\times$ reduction).
 
 \subsection{4.10 Hyperparameter Guidance}
 
@@ -367,10 +367,10 @@ At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2×
 \toprule
 \textbf{Hyperparameter} & \textbf{Default} & \textbf{Range tested} \\
 \midrule
-$\tau$ & 0.92 & 0.85 – 0.99 \\
-$r\_L$ & 16 & 4 – 64 \\
-$r\_\text{min}$ & 16 & 8 – 32 \\
-Recovery steps & 50 & 10 – 200 \\
+$\tau$ & 0.92 & 0.85 -- 0.99 \\
+$r_L$ & 16 & 4 -- 64 \\
+$r_\text{min}$ & 16 & 8 -- 32 \\
+Recovery steps & 50 & 10 -- 200 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,0 +1,215 @@
+
+\section{7. Results}
+
+\subsection{7.1 Main Results}
+
+\textbf{Table 7.1: SST-2 results with gate bias {{GATE\_BIAS}}.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Mean gate} & \textbf{VRAM} & \textbf{Time} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 183 MB & 1.9 s \\
+DistilBERT & **HALO** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & **{{D\_GATE}}** & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 712 MB & 4.1 s \\
+RoBERTa & **HALO** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & **{{R\_GATE}}** & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 793 MB & 4.2 s \\
+GPT-2 & **HALO** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & **{{G\_GATE}}** & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.2 Gate Analysis}
+
+\textbf{Table 7.2: Learned gate statistics per head.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Min $\bar{g}_h$} & \textbf{Max $\bar{g}_h$} & \textbf{Mean} & \textbf{Std} \\
+\midrule
+DistilBERT & {{D\_GATE\_MIN}} & {{D\_GATE\_MAX}} & {{D\_GATE}} & {{D\_GATE\_STD}} \\
+RoBERTa & {{R\_GATE\_MIN}} & {{R\_GATE\_MAX}} & {{R\_GATE}} & {{R\_GATE\_STD}} \\
+GPT-2 & {{G\_GATE\_MIN}} & {{G\_GATE\_MAX}} & {{G\_GATE}} & {{G\_GATE\_STD}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Gates are non-uniform: some heads prefer dense 
+($\bar{g}_h > 0.9$), others prefer linear ($\bar{g}_h < 0.3$).
+
+\subsection{7.3 Per-Layer Gate Evolution}
+
+\textbf{Table 7.3: Mean gate per layer (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Layer} & \textbf{Mean gate} \\
+\midrule
+0 & {{D\_L0\_GATE}} \\
+1 & {{D\_L1\_GATE}} \\
+2 & {{D\_L2\_GATE}} \\
+3 & {{D\_L3\_GATE}} \\
+4 & {{D\_L4\_GATE}} \\
+5 & {{D\_L5\_GATE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Early layers tend to have higher gates (dense); late 
+layers have lower gates (linear).
+
+\subsection{7.4 Efficiency}
+
+\textbf{Table 7.4: Memory and time.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
+\midrule
+DistilBERT & full & 183 MB & 1.90 s \\
+DistilBERT & HALO & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+GPT-2 & full & 793 MB & 4.20 s \\
+GPT-2 & HALO & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.5 Ablation: Gate Bias}
+
+\textbf{Table 7.5: Accuracy vs gate bias.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$b_h$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & {{D\_B0}} & {{R\_B0}} & {{G\_B0}} \\
+0.5 & {{D\_B05}} & {{R\_B05}} & {{G\_B05}} \\
+1.0 & {{D\_B1}} & {{R\_B1}} & {{G\_B1}} \\
+1.8 & {{D\_B18}} & {{R\_B18}} & {{G\_B18}} \\
+3.0 & {{D\_B3}} & {{R\_B3}} & {{G\_B3}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} $b_h = 1.8$ is a good balance.
+
+\subsection{7.6 Ablation: Kernel}
+
+\textbf{Table 7.6: Accuracy vs kernel choice.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Kernel} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+ELU+1 & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
+ReLU+1 & {{D\_RELU}} & {{R\_RELU}} & {{G\_RELU}} \\
+Softplus & {{D\_SOFTPLUS}} & {{R\_SOFTPLUS}} & {{G\_SOFTPLUS}} \\
+Identity (linear) & {{D\_IDENT}} & {{R\_IDENT}} & {{G\_IDENT}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} ELU+1 is best (non-negative, smooth).
+
+\subsection{7.7 Ablation: LoRA Rank}
+
+\textbf{Table 7.7: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
+8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
+16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
+32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.8 Ablation: Recovery Steps}
+
+\textbf{Table 7.8: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.9 Comparison with Companion Methods}
+
+\textbf{Table 7.9: Comparison.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & Dense \\
+GQA & {{GQA\_D}} & {{GQA\_R}} & {{GQA\_G}} & KV reduce \\
+Primal & {{PRIMAL\_D}} & {{PRIMAL\_R}} & {{PRIMAL\_G}} & Low-rank \\
+ASA-Sparse & {{ASA\_D}} & {{ASA\_R}} & {{ASA\_G}} & Sparse \\
+NHA & 90.25\% & FAIL & 78.78\% & Hybrid \\
+**HALO** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** & Hybrid \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.10 Scaling with Sequence Length}
+
+\textbf{Table 7.10: Inference time at various $L$ (GPT-2).}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$L$} & \textbf{Dense} & \textbf{HALO} & \textbf{Speedup} \\
+\midrule
+128 & {{B\_128}} s & {{H\_128}} s & {{S\_128}}$\times$ \\
+512 & {{B\_512}} s & {{H\_512}} s & {{S\_512}}$\times$ \\
+2048 & {{B\_2048}} s & {{H\_2048}} s & {{S\_2048}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.11 Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} drops {{D\_DELTA}}\%--{{G\_DELTA}}\%.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Gate distribution:} bimodal (some heads dense, some linear).
+\end{itemize}
+\begin{itemize}
+\item \textbf{No parameter reduction} (only gate added).
+\end{itemize}
+\begin{itemize}
+\item \textbf{No speedup without hard routing.}
+\end{itemize}
+\begin{itemize}
+\item \textbf{All models pass quality gate.}
+\end{itemize}

@@ -1,0 +1,129 @@
+
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 $G = 1$ (MQA)}
+
+\textbf{Goal.} Maximize KV reduction.
+
+\textbf{Result.} Accuracy dropped to {{MQA\_D\_ACC}}\% ({{MQA\_D\_DELTA}}\%).
+
+\textbf{Conclusion.} MQA too aggressive for these models.
+
+\subsubsection{D.1.2 Random Group Assignment}
+
+\textbf{Goal.} Group random heads instead of consecutive.
+
+\textbf{Result.} Accuracy dropped by {{RANDOM\_DROP}}\%.
+
+\textbf{Conclusion.} Head order matters; consecutive grouping is better.
+
+\subsubsection{D.1.3 First-Head Only (No Averaging)}
+
+\textbf{Goal.} Pick the first head in each group.
+
+\textbf{Result.} Accuracy dropped by {{FIRSTHEAD\_DROP}}\%.
+
+\textbf{Conclusion.} Averaging is better.
+
+\subsubsection{D.1.4 Learned Pooling}
+
+\textbf{Goal.} Train a linear layer to combine heads.
+
+\textbf{Result.} No improvement over averaging, 3$\times$ slower.
+
+\textbf{Conclusion.} Averaging is sufficient.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Non-Uniform Grouping}
+
+We tested grouping heads by similarity. No improvement over uniform.
+
+\subsubsection{D.2.2 GQA with Different $G$ per Layer}
+
+We tested different $G$ for early vs late layers. No clear pattern.
+
+\subsubsection{D.2.3 GQA + AASVD Together}
+
+Combining GQA with AASVD compression. Result: multiplicative parameter 
+reduction but quality dropped significantly.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{LoRA Rank Too Small}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{Loss} \\
+\midrule
+1 & {{D\_LR1}} & Unstable \\
+2 & {{D\_LR2}} & Stable \\
+4 & {{D\_LR4}} & Stable \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Learning Rate Too High}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{LR} & \textbf{DistilBERT} & \textbf{Stability} \\
+\midrule
+1e-3 & {{D\_LR1e3}} & NaN \\
+5e-4 & {{D\_LR5e4}} & Unstable \\
+2e-4 & {{D\_LR2e4}} & Stable \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Fixes That Didn't Help}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
+\midrule
+Group by similarity & Quality & No change \\
+Learn pooling & Quality & No change \\
+Per-layer $G$ & Quality & No pattern \\
+Non-uniform group size & Quality & Worse \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Long-Context Test (Not Fully Done)}
+
+We attempted $L = 4096$ but ran out of memory on RTX 4070 for some 
+configurations. Partial results suggest GQA's benefit grows with $L$.
+
+\subsection{D.6 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+**Mean** & **{{MEAN}}** \\
+**Std** & **{{STD}}** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.7 Lessons Learned}
+
+1. \textbf{Averaging is the right choice} for grouping.
+2. \textbf{Consecutive grouping works} without loss.
+3. \textbf{$G = H/2$ is a safe default.}
+4. \textbf{$G = H/4$ is aggressive but viable.}
+5. \textbf{$G = 1$ (MQA) is too aggressive.}

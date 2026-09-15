@@ -1,0 +1,222 @@
+
+\section{4. Method}
+
+\subsection{4.1 Overview}
+
+Squeezing Heads replaces each pretrained attention projection with a 
+\textbf{LoRA-wrapped linear layer}:
+
+\[
+\text{Projection}_{W} = \text{LoRALinear}(W_\text{frozen}, r_L, \alpha)
+\tag{4.1}
+\]
+
+The forward pass is:
+
+\[
+y = x W_\text{frozen}^\top + \frac{\alpha}{r_L} x A^\top B^\top + b
+\tag{4.2}
+\]
+
+where $W_\text{frozen}$ is the pretrained weight (frozen), $A, B$ are LoRA 
+adapters (trainable), and $b$ is the bias (frozen).
+
+\textbf{Figure 4.1} illustrates the pipeline.
+
+\begin{lstlisting}
+    Input X
+       |
+       +--------------------+
+                             
+  +----------+        +----------+
+  | Frozen   |        | LoRA     |
+  | W_frozen |        | BA       |
+  +----+-----+        +----+-----+
+       |                   |
+       +---------+---------+
+                  
+           y = Wx + ($\alpha$/r)BAx + b
+\end{lstlisting}
+
+\subsection{4.2 LoRA-Wrapped Projection}
+
+\subsubsection{4.2.1 Forward Pass}
+
+For input $x \in \mathbb{R}^{B \times L \times d_\text{in}}$:
+
+\[
+y = \text{Linear}(x, W_\text{frozen}, b) + \frac{\alpha}{r_L} \text{Linear}(\text{Linear}(x, A), B)
+\tag{4.3}
+\]
+
+\textbf{Complexity.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Params} & \textbf{FLOPs} \\
+\midrule
+Frozen & $d_\text{out} d_\text{in}$ & $B L d_\text{out} d_\text{in}$ \\
+LoRA & $r_L (d_\text{in} + d_\text{out})$ & $B L r_L (d_\text{in} + d_\text{out})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Total trainable:} $r_L (d_\text{in} + d_\text{out})$ per projection.
+
+\subsubsection{4.2.2 Initialization}
+
+\begin{itemize}
+\item $W_\text{frozen}$: copied from pretrained weights.
+\end{itemize}
+\begin{itemize}
+\item $A$: Kaiming uniform.
+\end{itemize}
+\begin{itemize}
+\item $B$: zeros $\to$ initial forward pass matches the pretrained model exactly.
+\end{itemize}
+
+\subsection{4.3 Head Dimension Reduction}
+
+To reduce head dimension from $d_h$ to $d_h'$, we slice the leading rows 
+of $W_Q, W_K, W_V$:
+
+\[
+W_Q^{(\text{new})} = W_Q^{(\text{old})}_{:d_h' H, :}
+\tag{4.4}
+\]
+
+Similarly for $W_K, W_V$. For $W_O$, we slice the leading columns:
+
+\[
+W_O^{(\text{new})} = W_O^{(\text{old})}_{:, :d_h' H}
+\tag{4.5}
+\]
+
+\textbf{Why leading?} The leading dimensions correspond to the principal 
+components of the learned representation, based on the order of head 
+initialization in pretrained models.
+
+\textbf{Note.} This is a \textbf{distillation} operation: the LoRA adapter learns to 
+recover the discarded directions.
+
+\subsection{4.4 GQA Pooling}
+
+When the source attention has $H_\text{source}$ KV heads and the target has 
+$H_\text{target} < H_\text{source}$:
+
+\[
+W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
+\tag{4.6}
+\]
+
+where $r = H_\text{source} / H_\text{target}$ and the mean is over the 
+heads in group $g$.
+
+\subsection{4.5 The Wrapper Class}
+
+\textbf{Algorithm 1:} Squeezing Heads initialization
+\begin{lstlisting}
+Input:  config c, pretrained attention A
+        head_dim target d_h', lora_rank r_L
+Output: SqueezingHeadsDistiller instance
+
+ 1: Extract d_h, H, H_kv from A
+ 2: Create LoRALinear projections for Q, K, V, O
+ 3: Call copy_weights(A):
+ 4:     - Slice source W_Q to leading d_h' * H rows
+ 5:     - Pool source W_K to H_kv target heads
+ 6:     - Slice source W_V to leading d_h' * H_kv rows
+ 7:     - Slice source W_O to leading d_h' * H columns
+ 8:     - Copy bias where shapes match
+ 9:     - Freeze base weights; keep LoRA trainable
+10: return wrapper
+\end{lstlisting}
+
+\subsection{4.6 Forward Pass}
+
+\textbf{Algorithm 2:} Squeezing Heads forward
+\begin{lstlisting}
+Input:  hidden_states $\in$ R^{B $\times$ L $\times$ d}
+        attention_mask, position_embeddings
+Output: output $\in$ R^{B $\times$ L $\times$ d}
+
+ 1: Q $\leftarrow$ LoRALinear_q(hidden_states)
+ 2: K $\leftarrow$ LoRALinear_k(hidden_states)
+ 3: V $\leftarrow$ LoRALinear_v(hidden_states)
+ 4: Reshape to (B, H, L, d_h')
+ 5: if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K)
+ 6: if GQA: K, V $\leftarrow$ repeat_kv(K, V, H/H_kv)
+ 7: S $\leftarrow$ Q K^T / sqrt(d_h')
+ 8: if causal: S $\leftarrow$ S + causal_mask
+ 9: if mask: S $\leftarrow$ apply_mask(S, mask)
+10: P $\leftarrow$ softmax(S)
+11: O $\leftarrow$ P V
+12: Merge heads $\to$ (B, L, H * d_h')
+13: if nested_encoder: return O
+14: else: return LoRALinear_o(O)
+\end{lstlisting}
+
+\subsection{4.7 Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{Squeezing Heads} \\
+\midrule
+Frozen params & 0 (implicit) & $4 d^2$ \\
+Trainable params & $4 d^2$ & $4 r_L d$ \\
+Forward FLOPs & $B L d^2$ & $B L d^2$ + small LoRA \\
+Storage & $4 d^2$ & $4 d^2$ + $4 r_L d$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Squeezing Heads does not reduce frozen parameter count.} It reduces 
+\textbf{trainable} parameter count and enables head-dim compression.
+
+\subsection{4.8 Head-Dim Reduction Trade-off}
+
+If we reduce head dimension from $d_h$ to $d_h'$:
+
+\[
+\text{Params reduction} = \frac{d_h}{d_h'} \cdot \left(1 + O(r_L / d_h)\right)
+\tag{4.7}
+\]
+
+\textbf{Example.} $d_h = 64 \to d_h' = 32$, $r_L = 16$:
+
+\[
+\text{Reduction} \approx 2 \cdot (1 + 0.25) = 2.5
+\tag{4.8}
+\]
+
+but accuracy drops from head-dim reduction. LoRA recovers most of it.
+
+\subsection{4.9 Theoretical Notes}
+
+\subsubsection{4.9.1 Exact Recovery When $B = 0$}
+
+\textbf{Claim.} At initialization ($B = 0$), Squeezing Heads is exactly 
+equivalent to the pretrained attention.
+
+\textbf{Proof.} Forward pass: $y = x W_\text{frozen}^\top + (x A^\top) \cdot 0 + b = x W_\text{frozen}^\top + b$. The LoRA path contributes nothing. $\square$
+
+\subsubsection{4.9.2 Expressiveness}
+
+\textbf{Claim.} With head-dim reduction to $d_h'$, the maximum achievable 
+accuracy is bounded by the information retained in the leading $d_h'$ 
+dimensions.
+
+\textbf{Sketch.} The discarded $d_h - d_h'$ dimensions cannot be recovered by 
+LoRA (which has rank $r_L \ll d_h$ in the worst case). $\square$
+
+\subsubsection{4.9.3 LoRA Recovery Bound}
+
+\textbf{Claim.} If the discarded information lies in a subspace of dimension 
+$\leq r_L$, LoRA can fully recover it.
+
+\textbf{Proof sketch.} LoRA adds a rank-$r_L$ update. If the missing subspace 
+has dimension $\leq r_L$, the update can reconstruct it. $\square$

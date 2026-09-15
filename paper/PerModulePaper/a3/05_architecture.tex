@@ -11,10 +11,10 @@ A3 supports any transformer with linear or Conv1D layers:
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{FFN} & \textbf{Conv1D?} & \textbf{Verified} \\
 \midrule
-DistilBERT-base & `q\_lin, k\_lin, v\_lin, out\_lin` & `lin1, lin2` & No & ✅ \\
-RoBERTa-base & `query, key, value, output.dense` & `intermediate.dense, output.dense` & No & ✅ \\
-GPT-2 & `c\_attn` (fused), `c\_proj` & `c\_fc, c\_proj` & Yes & ✅ \\
-Qwen3.5-0.8B & `q\_proj, k\_proj, v\_proj, o\_proj` & `gate\_proj, up\_proj, down\_proj` & No & ✅ \\
+DistilBERT-base & `q\_lin, k\_lin, v\_lin, out\_lin` & `lin1, lin2` & No &  \\
+RoBERTa-base & `query, key, value, output.dense` & `intermediate.dense, output.dense` & No &  \\
+GPT-2 & `c\_attn` (fused), `c\_proj` & `c\_fc, c\_proj` & Yes &  \\
+Qwen3.5-0.8B & `q\_proj, k\_proj, v\_proj, o\_proj` & `gate\_proj, up\_proj, down\_proj` & No &  \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -29,16 +29,16 @@ A3 compresses all linear layers by default, with the following protections:
 \toprule
 \textbf{Layer type} & \textbf{Compressed?} & \textbf{Reason} \\
 \midrule
-`classifier`, `score`, `lm\_head` & ❌ Never & Small and critical \\
-`pooler`, `embedding` & ❌ Never & Not linear \\
-Attention projections & ✅ Yes & Target of interest \\
-FFN layers & ✅ Yes (if `target\_attention\_only = False`) & Large parameter share \\
-LayerNorm & ❌ Never & Not factorizable \\
+`classifier`, `score`, `lm\_head` & Never & Small and critical \\
+`pooler`, `embedding` & Never & Not linear \\
+Attention projections & Yes & Target of interest \\
+FFN layers & Yes (if `target\_attention\_only = False`) & Large parameter share \\
+LayerNorm & Never & Not factorizable \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The \texttt{should_compress_linear} helper enforces these rules.
+The \texttt{should\\_compress\\_linear} helper enforces these rules.
 
 \subsection{5.3 Handling Different Architectures}
 
@@ -75,10 +75,10 @@ roberta.encoder.layer.0.output.dense          # Linear(3072, 768)
 \subsubsection{5.3.3 GPT-2 (Conv1D)}
 
 GPT-2 uses \texttt{Conv1D} from HuggingFace, which stores weights as 
-\texttt{(in_features, out_features)} instead of \texttt{(out_features, in_features)}:
+\texttt{(in\\_features, out\\_features)} instead of \texttt{(out\\_features, in\\_features)}:
 
 \begin{lstlisting}
-transformer.h.0.attn.c_attn  # Conv1D(768, 2304) — fused Q,K,V
+transformer.h.0.attn.c_attn  # Conv1D(768, 2304) -- fused Q,K,V
 transformer.h.0.attn.c_proj  # Conv1D(768, 768)
 transformer.h.0.mlp.c_fc     # Conv1D(768, 3072)
 transformer.h.0.mlp.c_proj   # Conv1D(3072, 768)
@@ -88,7 +88,7 @@ transformer.h.0.mlp.c_proj   # Conv1D(3072, 768)
 
 \begin{lstlisting}
 if "conv1d" in cls_name or hasattr(module, "nf"):
-    W = raw_w.t()  # (in, out) → (out, in)
+    W = raw_w.t()  # (in, out) $\to$ (out, in)
 \end{lstlisting}
 
 The factorized layer replaces the Conv1D. Because the factorized layer 
@@ -100,8 +100,8 @@ for compatibility.
 Standard PyTorch Linear layers with GQA structure:
 
 \begin{lstlisting}
-model.layers.0.self_attn.q_proj  # Linear(1024, 2048) — H * d_h
-model.layers.0.self_attn.k_proj  # Linear(1024, 512)  — H_kv * d_h
+model.layers.0.self_attn.q_proj  # Linear(1024, 2048) -- H * d_h
+model.layers.0.self_attn.k_proj  # Linear(1024, 512)  -- H_kv * d_h
 model.layers.0.self_attn.v_proj  # Linear(1024, 512)
 model.layers.0.self_attn.o_proj  # Linear(2048, 1024)
 \end{lstlisting}
@@ -116,21 +116,21 @@ A3 supports models wrapped with LoRA-style adapters (\texttt{LoRALinear}, etc.):
 \begin{lstlisting}
 class LoRALinear(nn.Module):
     def __init__(...):
-        self.base_layer = nn.Linear(...)  # ← A3 targets this
+        self.base_layer = nn.Linear(...)  # $\leftarrow$ A3 targets this
         self.lora_A = nn.Parameter(...)
         self.lora_B = nn.Parameter(...)
 \end{lstlisting}
 
 \textbf{Injection procedure:}
 
-1. Extract \texttt{target_mod = getattr(module, "base_layer", module)}.
-2. Factorize \texttt{target_mod}.
-3. Replace \texttt{module.base_layer} with the factorized layer.
-4. \textbf{Preserve} the outer LoRA parameters (\texttt{module.lora_A}, \texttt{module.lora_B}).
+1. Extract \texttt{target\\_mod = getattr(module, "base\\_layer", module)}.
+2. Factorize \texttt{target\\_mod}.
+3. Replace \texttt{module.base\\_layer} with the factorized layer.
+4. \textbf{Preserve} the outer LoRA parameters (\texttt{module.lora\\_A}, \texttt{module.lora\\_B}).
 
 If the original module had LoRA, A3 optionally instantiates LoRA inside the 
 factorized layer to maintain trainability. This is controlled by 
-\texttt{lora_rank > 0}.
+\texttt{lora\\_rank > 0}.
 
 \subsection{5.5 Injection Algorithm}
 
@@ -139,28 +139,28 @@ factorized layer to maintain trainability. This is controlled by
 Input:  model M, config c, calibration data D
 Output: compressed model M'
 
-1: hooks ← []
-2: for ℓ in linear_modules(M) do
-3:     hooks.append(register_forward_hook(ℓ, accumulate_F_C))
+1: hooks $\leftarrow$ []
+2: for   in linear_modules(M) do
+3:     hooks.append(register_forward_hook( , accumulate_F_C))
 4: end for
 5: run_calibration(M, D)
 6: for h in hooks: h.remove()
 7:
-8: F_map ← finalized_statistics()
-9: for ℓ in linear_modules(M) do
-10:     if not should_compress(ℓ): continue
-11:     U, V, err ← weighted_svd(ℓ.weight, F_map[ℓ], r, τ)
-12:     if err ≤ τ:
-13:         replace(ℓ, A3FactorizedLinear(U, V))
+8: F_map $\leftarrow$ finalized_statistics()
+9: for   in linear_modules(M) do
+10:     if not should_compress( ): continue
+11:     U, V, err $\leftarrow$ weighted_svd( .weight, F_map[ ], r, $\tau$)
+12:     if err $\le$ $\tau$:
+13:         replace( , A3FactorizedLinear(U, V))
 14:     else:
-15:         mark_fallback(ℓ)
+15:         mark_fallback( )
 16: end for
 17:
 18: if recalibrate_ln:
-19:     σ_target ← record_LN_before(M, D)  ▷ pre-computed
-20:     σ_current ← record_LN_after(M', D)
-21:     for γ in layer_norms(M') do
-22:         γ ← γ · σ_target / σ_current
+19:     $\sigma$_target $\leftarrow$ record_LN_before(M, D)    pre-computed
+20:     $\sigma$_current $\leftarrow$ record_LN_after(M', D)
+21:     for $\gamma$ in layer_norms(M') do
+22:         $\gamma$ $\leftarrow$ $\gamma$   $\sigma$_target / $\sigma$_current
 23:     end for
 24: end if
 25: return M'
@@ -192,7 +192,7 @@ class A3FactorizedLinear(nn.Module):
         return out
 \end{lstlisting}
 
-\textbf{Parameter count:} \texttt{r \textit{ (d_in + d_out)} vs \texttt{d_in } d_out} for the original.
+\textbf{Parameter count:} \texttt{r \textit{ (d\\_in + d\\_out)} vs \texttt{d\\_in } d\\_out} for the original.
 
 \subsection{5.7 Causality and Streaming}
 
@@ -216,7 +216,7 @@ input at position $j > i$ is zero, both before and after injection.
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Reconstruction error > τ & Frobenius check & Fallback to original \\
+Reconstruction error > $\tau$ & Frobenius check & Fallback to original \\
 Weight shape mismatch & Assertion in `from\_linear` & Skip layer \\
 SVD convergence failure & Try/except & Retry on CPU \\
 No calibration data & `F\_map` empty & Unweighted SVD \\
@@ -239,7 +239,7 @@ def a3_compressor_factory(model, comp_config, ...):
 
 A3 integrates cleanly with the LoRA recovery pipeline:
 
-1. \textbf{A3 compresses} the base model → factorized layers.
+1. \textbf{A3 compresses} the base model $\to$ factorized layers.
 2. \textbf{LoRA adapters} are attached to the factorized layers.
 3. \textbf{Recovery fine-tuning} trains only the LoRA parameters.
 4. \textbf{Evaluation} uses the fine-tuned model.

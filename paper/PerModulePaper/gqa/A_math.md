@@ -1,0 +1,144 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: A_math.md
+     PURPOSE: Mathematical derivations
+     DEPENDENCIES: 04_method.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix A. Mathematical Derivations
+
+## A.1 KV Cache Size
+
+### A.1.1 MHA
+
+For a single layer at sequence position $t$, the KV cache stores:
+
+$$
+K^{(t)}, V^{(t)} \in \mathbb{R}^{B \times H \times d_h}
+\tag{A.1}
+$$
+
+Total bytes per token per layer:
+
+$$
+\text{KV}^{(t)}_\text{MHA} = 2 \cdot B \cdot H \cdot d_h \cdot \text{bytes}
+\tag{A.2}
+$$
+
+For $B = 1$, FP16 ($2$ bytes): $2 \cdot H \cdot d_h \cdot 2 = 4 H d_h$ bytes.
+
+### A.1.2 GQA
+
+$$
+K^{(t)}, V^{(t)} \in \mathbb{R}^{B \times G \times d_h}
+\tag{A.3}
+$$
+
+$$
+\text{KV}^{(t)}_\text{GQA} = 2 \cdot B \cdot G \cdot d_h \cdot \text{bytes}
+\tag{A.4}
+$$
+
+**Reduction:**
+
+$$
+\frac{\text{KV}_\text{MHA}}{\text{KV}_\text{GQA}} = \frac{H}{G}
+\tag{A.5}
+$$
+
+## A.2 Weight Averaging
+
+### A.2.1 Motivation
+
+Given $r = H / G$ heads in a group, we produce one KV head by averaging:
+
+$$
+W_K^{(\text{new})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{old})}_h
+\tag{A.6}
+$$
+
+### A.2.2 Expressiveness Loss
+
+The averaged head approximates the mean behavior of the original heads. 
+For any input $x$:
+
+$$
+W_K^{(\text{new})}_g x = \frac{1}{r} \sum_{h \in g} W_K^{(\text{old})}_h x = \mathbb{E}_{h \in g}[W_K^{(\text{old})}_h x]
+\tag{A.7}
+$$
+
+The variance of the approximation error is:
+
+$$
+\text{Var}[W_K^{(\text{new})}_g x - W_K^{(\text{old})}_h x] = \text{Var}_{h \in g}[W_K^{(\text{old})}_h x]
+\tag{A.8}
+$$
+
+If heads within a group are similar (low intra-group variance), the 
+approximation is close. If they are diverse, error is large.
+
+## A.3 Head Repetition
+
+The `repeat_kv` operation:
+
+$$
+\tilde{K} = \text{repeat\_kv}(K, r) \in \mathbb{R}^{B \times H \times L \times d_h}
+\tag{A.9}
+$$
+
+Implementation:
+
+$$
+\tilde{K}_{b, g \cdot r + i, l, :} = K_{b, g, l, :}, \quad i \in [0, r)
+\tag{A.10}
+$$
+
+This is a memory-free operation via `expand` and `reshape`.
+
+## A.4 Causal Masking
+
+For decoder models, the causal mask is:
+
+$$
+M_{ij} = \begin{cases} 0 & \text{if } j \le i \\ -\infty & \text{otherwise} \end{cases}
+\tag{A.11}
+$$
+
+Applied **after** KV repetition:
+
+$$
+\text{scores} = \text{softmax}\!\left(\frac{Q \tilde{K}^\top}{\sqrt{d_h}} + M\right)
+\tag{A.12}
+$$
+
+Note: applying the mask **before** repetition gives the same result 
+(softmax is invariant to identical row additions), but our implementation 
+applies it after for simplicity.
+
+## A.5 Group Count Divisibility
+
+For $H$ heads and target $G$, we require $G \mid H$. If not, we snap:
+
+$$
+G^* = \max\{g \le G : g \mid H\}
+\tag{A.13}
+$$
+
+For $H = 12$ and $G = 5$, $G^* = 4$ (largest divisor $\le 5$).
+
+## A.6 LoRA Recovery Error
+
+After GQA injection with LoRA recovery at rank $r_L$:
+
+$$
+\Delta W = W_\text{GQA} - W_\text{MHA} + \frac{\alpha}{r_L} B A
+\tag{A.14}
+$$
+
+The recovery objective minimizes:
+
+$$
+\mathcal{L} = \mathcal{L}_\text{task} + \lambda \|\Delta W\|_F^2
+\tag{A.15}
+$$
+
+In our setup, $\lambda = 0$ (no regularization).

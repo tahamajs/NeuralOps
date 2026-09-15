@@ -1,0 +1,139 @@
+
+\section{6. Experimental Setup}
+
+\subsection{6.1 Models}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M & Flat \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M & Nested \\
+GPT-2 & 12 & 768 & 12 & 124.4M & Causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
+
+\subsection{6.2 Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+Test & 1,821 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Sequence length: 128.
+
+\subsection{6.3 Primal Attention Configuration}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Landmark count $m$ & {{RANK}} \\
+Pseudoinverse iterations $K$ & {{PINV\_ITERS}} \\
+LoRA rank & {{LORA\_RANK}} \\
+LoRA alpha & {{LORA\_ALPHA}} \\
+Dropout & 0.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.4 Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & {{LR}} \\
+Weight decay & {{WD}} \\
+Steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.5 Evaluation}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+\end{itemize}
+
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Attention matrix memory (bytes)
+\end{itemize}
+\begin{itemize}
+\item Peak VRAM (MB)
+\end{itemize}
+\begin{itemize}
+\item Inference time (median of 20 runs)
+\end{itemize}
+
+\subsubsection{Approximation Quality}
+\begin{itemize}
+\item Frobenius error: $\|A - \tilde{A}\|_F / \|A\|_F$
+\end{itemize}
+
+\subsection{6.6 Quality Gate}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.7 Hardware}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.8 Reproduction}
+
+\begin{lstlisting}
+python run_all_4_primal.py \
+    --models distilbert,roberta,gpt2 \
+    --rank {{RANK}} \
+    --pinv_iters {{PINV_ITERS}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{6.9 Ablations}

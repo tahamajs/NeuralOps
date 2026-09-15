@@ -1,0 +1,113 @@
+
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item \textbf{Long-context inference:} Enables more capable applications.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Cheaper inference:} Reduces compute cost per token.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Edge deployment:} Makes on-device LLMs more feasible.
+\end{itemize}
+
+\subsubsection{Negative}
+\begin{itemize}
+\item \textbf{Dual-use:} Long-context enables surveillance at scale.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Concentration:} Favors large labs.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Environmental:} Efficiency gains may increase total usage.
+\end{itemize}
+
+\subsection{E.2 Environmental Impact}
+
+\begin{itemize}
+\item \textbf{Total GPU-hours:} ~{{COMPUTE\_HOURS}}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Estimated CO$_2$:} {{CO2\_KG}} kg CO$_2$eq
+\end{itemize}
+
+Primal Attention reduces compute at long $L$ but increases it at short $L$ 
+(overhead of $F_1, F_2, F_3$).
+
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 (public, English)
+\end{itemize}
+\begin{itemize}
+\item \textbf{PII:} None
+\end{itemize}
+\begin{itemize}
+\item \textbf{Bias:} Western-centric
+\end{itemize}
+
+\subsection{E.4 Model Ethics}
+
+\subsubsection{Bias}
+
+Primal Attention may amplify or suppress biases depending on which directions 
+landmarks capture.
+
+\subsubsection{Misuse}
+
+Could enable surveillance, misinformation. Not endorsed.
+
+\subsection{E.5 Authorship and Credit}
+
+See  11.7.
+
+\subsection{E.6 Conflicts of Interest}
+
+None.
+
+\subsection{E.7 Funding}
+
+{{FUNDING}}
+
+\subsection{E.8 Acknowledgements}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{E.9 LLM Usage}
+
+Parts drafted with LLM assistance.
+
+\subsection{E.10 Reproducibility Commitments}
+
+1. Release code
+2. Release checkpoints
+3. Report negative results
+4. Document all hyperparameters
+
+\subsection{E.11 Long-Term Considerations}
+
+Efficient attention could:
+
+\begin{itemize}
+\item Enable long-context AI on consumer hardware
+\end{itemize}
+\begin{itemize}
+\item Reduce AI's carbon footprint
+\end{itemize}
+\begin{itemize}
+\item Democratize access
+\end{itemize}
+
+But also:
+
+\begin{itemize}
+\item Enable surveillance at scale
+\end{itemize}
+\begin{itemize}
+\item Concentrate AI capabilities
+\end{itemize}
+
+We encourage community discussion.

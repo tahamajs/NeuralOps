@@ -10,18 +10,18 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & 16000000 \\
-Ratio & 4.0× \\
-Accuracy & 85.0\% \\
-F1 & 0.850 \\
-Precision & 0.851 \\
-Recall & 0.849 \\
-Loss & 0.40 \\
-Peak VRAM & 120 MB \\
-Inference time & 2.5 s \\
-Compressed layers & 24 \\
-Fallback layers & 0 \\
-Average error & 0.30 \\
+Params after & {{D\_PARAMS}} \\
+Ratio & {{D\_RATIO}}$\times$ \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Precision & {{D\_PREC}} \\
+Recall & {{D\_REC}} \\
+Loss & {{D\_LOSS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Compressed layers & {{D\_COMP}} \\
+Fallback layers & {{D\_FALLBACK}} \\
+Average error & {{D\_AVG\_ERR}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -35,9 +35,9 @@ Average error & 0.30 \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & 35000000 \\
-Ratio & 3.5× \\
-Accuracy & 72.0\% \\
+Params after & {{R\_PARAMS}} \\
+Ratio & {{R\_RATIO}}$\times$ \\
+Accuracy & {{R\_ACC}}\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -52,9 +52,9 @@ Accuracy & 72.0\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & 35000000 \\
-Ratio & 3.5× \\
-Accuracy & 73.0\% \\
+Params after & {{G\_PARAMS}} \\
+Ratio & {{G\_RATIO}}$\times$ \\
+Accuracy & {{G\_ACC}}\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -80,11 +80,11 @@ Accuracy & 73.0\% \\
 
 \subsection{C.5 Per-Layer Reconstruction Error (RoBERTa)}
 
-(12 layers × 4 projections)
+(12 layers $\times$ 4 projections)
 
 \subsection{C.6 Per-Layer Reconstruction Error (GPT-2)}
 
-(12 layers × 2 projections)
+(12 layers $\times$ 2 projections)
 
 \subsection{C.7 Rank Ablation}
 
@@ -94,11 +94,11 @@ Accuracy & 73.0\% \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-16 & {{D\_R16}} & {{D\_RATIO16}}× & {{R\_R16}} & {{R\_RATIO16}}× & {{G\_R16}} & {{G\_RATIO16}}× \\
-32 & {{D\_R32}} & {{D\_RATIO32}}× & {{R\_R32}} & {{R\_RATIO32}}× & {{G\_R32}} & {{G\_RATIO32}}× \\
-64 & {{D\_R64}} & {{D\_RATIO64}}× & {{R\_R64}} & {{R\_RATIO64}}× & {{G\_R64}} & {{G\_RATIO64}}× \\
-128 & {{D\_R128}} & {{D\_RATIO128}}× & {{R\_R128}} & {{R\_RATIO128}}× & {{G\_R128}} & {{G\_RATIO128}}× \\
-256 & {{D\_R256}} & {{D\_RATIO256}}× & {{R\_R256}} & {{R\_RATIO256}}× & {{G\_R256}} & {{G\_RATIO256}}× \\
+16 & {{D\_R16}} & {{D\_RATIO16}}$\times$ & {{R\_R16}} & {{R\_RATIO16}}$\times$ & {{G\_R16}} & {{G\_RATIO16}}$\times$ \\
+32 & {{D\_R32}} & {{D\_RATIO32}}$\times$ & {{R\_R32}} & {{R\_RATIO32}}$\times$ & {{G\_R32}} & {{G\_RATIO32}}$\times$ \\
+64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{R\_R64}} & {{R\_RATIO64}}$\times$ & {{G\_R64}} & {{G\_RATIO64}}$\times$ \\
+128 & {{D\_R128}} & {{D\_RATIO128}}$\times$ & {{R\_R128}} & {{R\_RATIO128}}$\times$ & {{G\_R128}} & {{G\_RATIO128}}$\times$ \\
+256 & {{D\_R256}} & {{D\_RATIO256}}$\times$ & {{R\_R256}} & {{R\_RATIO256}}$\times$ & {{G\_R256}} & {{G\_RATIO256}}$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -113,18 +113,18 @@ Accuracy & 73.0\% \\
 \midrule
 Full cov & {{D\_FULLCOV}} & {{R\_FULLCOV}} & {{G\_FULLCOV}} \\
 Diagonal & {{D\_DIAG}} & {{R\_DIAG}} & {{G\_DIAG}} \\
-No weighting & 80.0 & {{R\_NONE}} & {{G\_NONE}} \\
+No weighting & {{D\_NONE}} & {{R\_NONE}} & {{G\_NONE}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.9 EMA β Ablation}
+\subsection{C.9 EMA $\beta$ Ablation}
 
 \begin{table}[H]
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{β} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\textbf{$\beta$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 0.5 & {{D\_B5}} & {{R\_B5}} & {{G\_B5}} \\
 0.7 & {{D\_B7}} & {{R\_B7}} & {{G\_B7}} \\
@@ -169,13 +169,13 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": 16000000,
-    "ratio": 4.0,
-    "accuracy_pct": 85.0,
-    "f1": 0.850,
-    "compressed_layers": 24,
-    "fallback_layers": 0,
-    "avg_reconstruction_error": 0.30
+    "params_after": {{D_PARAMS}},
+    "ratio": {{D_RATIO}},
+    "accuracy_pct": {{D_ACC}},
+    "f1": {{D_F1}},
+    "compressed_layers": {{D_COMP}},
+    "fallback_layers": {{D_FALLBACK}},
+    "avg_reconstruction_error": {{D_AVG_ERR}}
   },
   "roberta": {...},
   "gpt2": {...}

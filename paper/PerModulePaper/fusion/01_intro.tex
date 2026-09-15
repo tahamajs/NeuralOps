@@ -11,7 +11,7 @@ every key:
 \]
 
 requiring $\mathcal{O}(L^2 d)$ time and $\mathcal{O}(L^2)$ memory. For 
-$L = 4096$, this is 32 MB per head, per layer, in FP16 — 100 GB+ for a 
+$L = 4096$, this is 32 MB per head, per layer, in FP16 -- 100 GB+ for a 
 typical model. Even with memory-efficient kernels like FlashAttention, the 
 attention matrix's computational cost is still quadratic.
 
@@ -56,7 +56,7 @@ by the LoRA adapters and gate MLP.
 
 FUSIONATTN dispatches based on sequence length:
 
-\subsubsection{Short Path (L ≤ 128)}
+\subsubsection{Short Path (L $\le$ 128)}
 
 Standard softmax attention. No sparsity, no overhead. Mathematically 
 identical to the pretrained model (given base weights copied exactly).
@@ -106,11 +106,11 @@ task-specific sparsity patterns.
 \item \textbf{Honest reporting.} We disclose that at $L = 128$ (our test length), the
 \end{itemize}
   module takes the short path and provides \textbf{no sparsity benefit}. We 
-  report this transparently. Sections 7–8.
+  report this transparently. Sections 7--8.
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code and evaluation scripts released under
 \end{itemize}
-  MIT.
+  {{LICENSE}}.
 
 \subsection{1.5 Paper Organization}
 

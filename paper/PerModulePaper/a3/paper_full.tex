@@ -36,10 +36,10 @@
 
 \textbf{Authors:}
 \begin{itemize}
-\item Your Name¹ — you@university.edu
+\item Your Name¹ --- you@university.edu
 \end{itemize}
 \begin{itemize}
-\item Advisor Name² — advisor@university.edu
+\item Advisor Name² --- advisor@university.edu
 \end{itemize}
 
 \textbf{Affiliations:}
@@ -47,13 +47,13 @@
 \item ¹ University Name, Department of Computer Science
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+\item ² {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
 \end{itemize}
 
 \textbf{Corresponding author:} Your Name
 \textbf{Preprint date:} 2026-09-15
 \textbf{Version:} v1 (initial draft)
-\textbf{Code:} https://github.com/your-org/SVD_Project/tree/main/framework/compression_engine/a3_compressor.py
+\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/compression\_engine/a3\_compressor.py
 \textbf{Model weights:} https://huggingface.co/Hooshaai
 \textbf{License:} MIT
 
@@ -94,46 +94,46 @@ information, LayerNorm recalibration, transformer efficiency
 
 Large language models contain millions of numbers. Many of these numbers are 
 redundant. A3 finds redundancy by looking at which input features actually 
-matter — those that get "activated" most during real examples. It then 
+matter --- those that get "activated" most during real examples. It then 
 compresses the model along those directions, using a mathematical technique 
 called SVD, but weighted by importance. We test A3 on three pretrained models 
 and find that it removes about half the parameters while keeping accuracy 
-within 1–2\%. This makes models smaller, faster to load, and cheaper to 
+within 1--2\%. This makes models smaller, faster to load, and cheaper to 
 deploy.
 
 
 
 \subsection{Table of Contents}
 
-1. [Introduction](01_intro.md)
-2. [Related Work](02_related.md)
-3. [Background](03_background.md)
-4. [Method](04_method.md)
-5. [Architecture Integration](05_architecture.md)
-6. [Experimental Setup](06_setup.md)
-7. [Results](07_results.md)
-8. [Analysis](08_analysis.md)
-9. [Discussion](09_discussion.md)
-10. [Limitations](10_limitations.md)
-11. [Conclusion](11_conclusion.md)
-12. [Reproducibility](12_reproducibility.md)
-13. [References](13_references.md)
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
 
 \textbf{Appendices:}
 \begin{itemize}
-\item [A. Mathematical Derivations](A_math.md)
+\item [A. Mathematical Derivations](A\_math.md)
 \end{itemize}
 \begin{itemize}
-\item [B. Implementation Details](B_implementation.md)
+\item [B. Implementation Details](B\_implementation.md)
 \end{itemize}
 \begin{itemize}
-\item [C. Full Experimental Data](C_data.md)
+\item [C. Full Experimental Data](C\_data.md)
 \end{itemize}
 \begin{itemize}
-\item [D. Negative Results](D_negative_results.md)
+\item [D. Negative Results](D\_negative\_results.md)
 \end{itemize}
 \begin{itemize}
-\item [E. Ethical Considerations](E_ethics.md)
+\item [E. Ethical Considerations](E\_ethics.md)
 \end{itemize}
 
 \clearpage
@@ -157,8 +157,8 @@ where $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times
 $r \ll \min(d_\text{in}, d_\text{out})$. The parameter count decreases from 
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$, achieving 
 compression ratio $\frac{r(d_\text{in} + d_\text{out})}{d_\text{in} d_\text{out}}$. 
-For a $768 \times 768$ matrix at rank $r = 64$, this is a 5.9× reduction 
-(589,824 → 98,304 parameters).
+For a $768 \times 768$ matrix at rank $r = 64$, this is a 5.9$\times$ reduction 
+(589,824 $\to$ 98,304 parameters).
 
 Classical SVD is optimal in an unweighted Frobenius norm sense:
 
@@ -173,7 +173,7 @@ variance** across channels. Some input dimensions carry most of the signal;
 others are nearly constant. Reconstructing the near-constant dimensions as 
 faithfully as the high-variance ones wastes capacity.
 
-{{MOTIVATION_PARAGRAPH_3}}
+{{MOTIVATION\_PARAGRAPH\_3}}
 
 
 \subsection{1.2 Problem Statement}
@@ -269,7 +269,7 @@ Section 10 lists limitations. Section 11 concludes.
 
 \subsection{2.1 Low-Rank Matrix Factorization}
 
-\textbf{Classical SVD.} The Eckart–Young theorem (Eckart \& Young, 1936) guarantees 
+\textbf{Classical SVD.} The Eckart--Young theorem (Eckart \& Young, 1936) guarantees 
 that the best rank-$r$ approximation of $W$ in Frobenius norm is the truncated 
 SVD:
 
@@ -303,13 +303,13 @@ without retraining. A3 differs by factorizing rather than zeroing.
 
 DistilBERT (Sanh et al., 2019), TinyBERT (Jiao et al., 2020), and MiniLM 
 (Wang et al., 2020) train smaller models to mimic larger ones. A3 is 
-orthogonal — it can compress an already-distilled model.
+orthogonal --- it can compress an already-distilled model.
 
 \subsubsection{2.2.3 Quantization}
 
 8-bit (Dettmers et al., 2022) and 4-bit (Dettmers et al., 2023) quantization 
 reduces bit-width. GPTQ (Frantar et al., 2023) uses second-order 
-information. A3 is orthogonal to quantization — the two can be combined.
+information. A3 is orthogonal to quantization --- the two can be combined.
 
 \subsubsection{2.2.4 Low-Rank Factorization}
 
@@ -526,7 +526,7 @@ A3 compresses a pretrained transformer in \textbf{five phases}:
 5. \textbf{LayerNorm recalibration} (§4.5): absorb distributional shift.
 
 \textbf{Figure 4.1} shows the pipeline. Phase 1 runs once on the whole model; 
-phases 2–4 run per layer; phase 5 runs once at the end.
+phases 2--4 run per layer; phase 5 runs once at the end.
 
 \begin{lstlisting}
     ┌──────────────────────────────────────────────────┐
@@ -540,14 +540,14 @@ phases 2–4 run per layer; phase 5 runs once at the end.
     │  For each layer ℓ:                               │
     │    Phase 2: Weighted SVD at rank r               │
     │    Phase 3: Frobenius validation                 │
-    │    Phase 4: If err > τ: escalate rank, retry     │
-    │    If err > τ after max retries: fallback        │
+    │    Phase 4: If err > $\tau$: escalate rank, retry     │
+    │    If err > $\tau$ after max retries: fallback        │
     └──────────────────────┬───────────────────────────┘
                            │
                            ▼
     ┌──────────────────────────────────────────────────┐
     │  Phase 5: LayerNorm recalibration (global)       │
-    │  Rescale γ to match target σ                     │
+    │  Rescale $\gamma$ to match target $\sigma$                     │
     └──────────────────────────────────────────────────┘
 \end{lstlisting}
 
@@ -595,8 +595,8 @@ For $d = 768$ and $N_l = 12$, this is $\sim 8.5$M values, or 17 MB at FP32.
 
 We support three sources, in priority order:
 
-1. \textbf{Explicit \texttt{calibration_loader}.} A \texttt{DataLoader} of input batches.
-2. \textbf{\texttt{calibration_texts}.} A list of strings; tokenized on-the-fly.
+1. \textbf{Explicit \texttt{calibration\\_loader}.} A \texttt{DataLoader} of input batches.
+2. \textbf{\texttt{calibration\\_texts}.} A list of strings; tokenized on-the-fly.
 3. \textbf{Default.} Random inputs of the appropriate shape (weak calibration).
 
 If none are provided, A3 falls back to unweighted SVD (see §4.3.4).
@@ -664,7 +664,7 @@ F_\text{norm} = \frac{F}{\|F\|_2 / \sqrt{d_\text{in}}}
 \]
 
 and clamp the square root to $[10^{-3}, 10^3]$. This is controlled by the 
-\texttt{normalize_scale} flag.
+\texttt{normalize\\_scale} flag.
 
 \subsubsection{4.3.4 Fallback to Unweighted SVD}
 
@@ -706,10 +706,10 @@ the original** (no compression), and we log the failure.
 Choosing rank upfront is a trade-off:
 
 \begin{itemize}
-\item Too high → poor compression
+\item Too high $\to$ poor compression
 \end{itemize}
 \begin{itemize}
-\item Too low → excessive error
+\item Too low $\to$ excessive error
 \end{itemize}
 
 Our approach defers the decision to per-layer validation, which handles the 
@@ -749,39 +749,39 @@ $\sigma_\text{current}$ is the post-compression one.
 2. After compression, run another calibration pass to compute $\sigma_\text{current}^{(\ell)}$.
 3. For each LayerNorm, update $\gamma$ via (4.13).
 
-This is applied only if \texttt{recalibrate_ln = True} and calibration sources are 
+This is applied only if \texttt{recalibrate\\_ln = True} and calibration sources are 
 available.
 
 \subsection{4.6 Combined Algorithm}
 
 \textbf{Algorithm 1:} A3 compression
 \begin{lstlisting}
-Input:  model M, rank r₀, threshold τ, calibration data D
+Input:  model M, rank r₀, threshold $\tau$, calibration data D
 Output: compressed model M', statistics
 
  1: for ℓ in linear_layers(M) do
- 2:     F^(ℓ), C_X^(ℓ) ← running_accumulate(ℓ, D)
+ 2:     F^(ℓ), C_X^(ℓ) $\leftarrow$ running_accumulate(ℓ, D)
  3: end for
- 4: σ_target ← record_layernorm_scales(M, D)
+ 4: $\sigma$_target $\leftarrow$ record_layernorm_scales(M, D)
  5:
  6: for ℓ in linear_layers(M) do
- 7:     W ← weight(ℓ)
- 8:     r ← r₀
+ 7:     W $\leftarrow$ weight(ℓ)
+ 8:     r $\leftarrow$ r₀
  9:     for attempt in 0..K do
-10:         W_weighted ← W · diag(√(F^(ℓ) + ε))
-11:         U_r, Σ_r, V_r ← svd(W_weighted, r)
-12:         V_r ← unweight(V_r, F^(ℓ))
-13:         err ← ‖W - U_r V_r‖_F / ‖W‖_F
-14:         if err ≤ τ: break
-15:         r ← escalate(r, K, attempt)
+10:         W_weighted $\leftarrow$ W · diag($\sqrt{}$(F^(ℓ) + $\epsilon$))
+11:         U_r, Σ_r, V_r $\leftarrow$ svd(W_weighted, r)
+12:         V_r $\leftarrow$ unweight(V_r, F^(ℓ))
+13:         err $\leftarrow$ ‖W - U_r V_r‖_F / ‖W‖_F
+14:         if err $\le$ $\tau$: break
+15:         r $\leftarrow$ escalate(r, K, attempt)
 16:     end for
-17:     if err > τ: fallback(ℓ) else: replace(ℓ, U_r, V_r)
+17:     if err > $\tau$: fallback(ℓ) else: replace(ℓ, U_r, V_r)
 18: end for
 19:
 20: if recalibrate_ln:
-21:     σ_current ← record_layernorm_scales(M', D)
+21:     $\sigma$_current $\leftarrow$ record_layernorm_scales(M', D)
 22:     for ln in layernorms(M') do
-23:         ln.γ ← ln.γ · σ_target[ln] / σ_current[ln]
+23:         ln.$\gamma$ $\leftarrow$ ln.$\gamma$ · $\sigma$_target[ln] / $\sigma$_current[ln]
 24:     end for
 25: end if
 26: return M'
@@ -795,10 +795,10 @@ Output: compressed model M', statistics
 \toprule
 \textbf{Phase} & \textbf{Time} & \textbf{Memory} \\
 \midrule
-Calibration & $\mathcal{O}(N \sum\_\ell d\_\ell^2)$ & $\mathcal{O}(N\_l d^2)$ \\
-Weighted SVD & $\mathcal{O}(\sum\_\ell d\_\text{out}^{(\ell)} d\_\text{in}^{(\ell)} \min(d\_\text{out}, d\_\text{in}))$ & $\mathcal{O}(d\_\text{max}^2)$ \\
-Validation & $\mathcal{O}(\sum\_\ell r d\_\text{out} d\_\text{in})$ & $\mathcal{O}(d\_\text{out} d\_\text{in})$ \\
-LN recalibration & $\mathcal{O}(N)$ & $\mathcal{O}(N\_l d)$ \\
+Calibration & $\mathcal{O}(N \sum_\ell d_\ell^2)$ & $\mathcal{O}(N_l d^2)$ \\
+Weighted SVD & $\mathcal{O}(\sum_\ell d_\text{out}^{(\ell)} d_\text{in}^{(\ell)} \min(d_\text{out}, d_\text{in}))$ & $\mathcal{O}(d_\text{max}^2)$ \\
+Validation & $\mathcal{O}(\sum_\ell r d_\text{out} d_\text{in})$ & $\mathcal{O}(d_\text{out} d_\text{in})$ \\
+LN recalibration & $\mathcal{O}(N)$ & $\mathcal{O}(N_l d)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -816,10 +816,10 @@ For a layer with weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 \toprule
 \textbf{Configuration} & \textbf{Parameters} \\
 \midrule
-Original & $d\_\text{out} \cdot d\_\text{in}$ \\
-A3 at rank $r$ & $r(d\_\text{out} + d\_\text{in})$ \\
-A3 at rank $r$ + LoRA($r\_L$) & $r(d\_\text{out} + d\_\text{in}) + r\_L(d\_\text{out} + d\_\text{in})$ \\
-Reduction factor & $\frac{d\_\text{out} d\_\text{in}}{r(d\_\text{out} + d\_\text{in})}$ \\
+Original & $d_\text{out} \cdot d_\text{in}$ \\
+A3 at rank $r$ & $r(d_\text{out} + d_\text{in})$ \\
+A3 at rank $r$ + LoRA($r_L$) & $r(d_\text{out} + d_\text{in}) + r_L(d_\text{out} + d_\text{in})$ \\
+Reduction factor & $\frac{d_\text{out} d_\text{in}}{r(d_\text{out} + d_\text{in})}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -835,7 +835,7 @@ Reduction factor & $\frac{d\_\text{out} d\_\text{in}}{r(d\_\text{out} + d\_\text
 Original & 589,824 \\
 A3 rank 64 & 98,304 \\
 A3 rank 64 + LoRA rank 16 & 122,880 \\
-Reduction & **4.8×** \\
+Reduction & **4.8$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -848,7 +848,7 @@ Reduction & **4.8×** \\
 minimizes $\|(W - W_r) \mathrm{diag}(\sqrt{F})\|_F$ over all rank-$r$ matrices 
 $W_r$.
 
-\textbf{Proof.} This follows directly from Eckart–Young applied to the matrix 
+\textbf{Proof.} This follows directly from Eckart--Young applied to the matrix 
 $W_\text{weighted}$. $\square$
 
 \subsubsection{4.9.2 Relation to Standard SVD}
@@ -912,7 +912,7 @@ LayerNorm & ❌ Never & Not factorizable \\
 \end{tabular}
 \end{table}
 
-The \texttt{should_compress_linear} helper enforces these rules.
+The \texttt{should\\_compress\\_linear} helper enforces these rules.
 
 \subsection{5.3 Handling Different Architectures}
 
@@ -949,10 +949,10 @@ roberta.encoder.layer.0.output.dense          # Linear(3072, 768)
 \subsubsection{5.3.3 GPT-2 (Conv1D)}
 
 GPT-2 uses \texttt{Conv1D} from HuggingFace, which stores weights as 
-\texttt{(in_features, out_features)} instead of \texttt{(out_features, in_features)}:
+\texttt{(in\\_features, out\\_features)} instead of \texttt{(out\\_features, in\\_features)}:
 
 \begin{lstlisting}
-transformer.h.0.attn.c_attn  # Conv1D(768, 2304) — fused Q,K,V
+transformer.h.0.attn.c_attn  # Conv1D(768, 2304) --- fused Q,K,V
 transformer.h.0.attn.c_proj  # Conv1D(768, 768)
 transformer.h.0.mlp.c_fc     # Conv1D(768, 3072)
 transformer.h.0.mlp.c_proj   # Conv1D(3072, 768)
@@ -962,7 +962,7 @@ transformer.h.0.mlp.c_proj   # Conv1D(3072, 768)
 
 \begin{lstlisting}
 if "conv1d" in cls_name or hasattr(module, "nf"):
-    W = raw_w.t()  # (in, out) → (out, in)
+    W = raw_w.t()  # (in, out) $\to$ (out, in)
 \end{lstlisting}
 
 The factorized layer replaces the Conv1D. Because the factorized layer 
@@ -974,8 +974,8 @@ for compatibility.
 Standard PyTorch Linear layers with GQA structure:
 
 \begin{lstlisting}
-model.layers.0.self_attn.q_proj  # Linear(1024, 2048) — H * d_h
-model.layers.0.self_attn.k_proj  # Linear(1024, 512)  — H_kv * d_h
+model.layers.0.self_attn.q_proj  # Linear(1024, 2048) --- H * d_h
+model.layers.0.self_attn.k_proj  # Linear(1024, 512)  --- H_kv * d_h
 model.layers.0.self_attn.v_proj  # Linear(1024, 512)
 model.layers.0.self_attn.o_proj  # Linear(2048, 1024)
 \end{lstlisting}
@@ -990,21 +990,21 @@ A3 supports models wrapped with LoRA-style adapters (\texttt{LoRALinear}, etc.):
 \begin{lstlisting}
 class LoRALinear(nn.Module):
     def __init__(...):
-        self.base_layer = nn.Linear(...)  # ← A3 targets this
+        self.base_layer = nn.Linear(...)  # $\leftarrow$ A3 targets this
         self.lora_A = nn.Parameter(...)
         self.lora_B = nn.Parameter(...)
 \end{lstlisting}
 
 \textbf{Injection procedure:}
 
-1. Extract \texttt{target_mod = getattr(module, "base_layer", module)}.
-2. Factorize \texttt{target_mod}.
-3. Replace \texttt{module.base_layer} with the factorized layer.
-4. \textbf{Preserve} the outer LoRA parameters (\texttt{module.lora_A}, \texttt{module.lora_B}).
+1. Extract \texttt{target\\_mod = getattr(module, "base\\_layer", module)}.
+2. Factorize \texttt{target\\_mod}.
+3. Replace \texttt{module.base\\_layer} with the factorized layer.
+4. \textbf{Preserve} the outer LoRA parameters (\texttt{module.lora\\_A}, \texttt{module.lora\\_B}).
 
 If the original module had LoRA, A3 optionally instantiates LoRA inside the 
 factorized layer to maintain trainability. This is controlled by 
-\texttt{lora_rank > 0}.
+\texttt{lora\\_rank > 0}.
 
 \subsection{5.5 Injection Algorithm}
 
@@ -1013,28 +1013,28 @@ factorized layer to maintain trainability. This is controlled by
 Input:  model M, config c, calibration data D
 Output: compressed model M'
 
-1: hooks ← []
+1: hooks $\leftarrow$ []
 2: for ℓ in linear_modules(M) do
 3:     hooks.append(register_forward_hook(ℓ, accumulate_F_C))
 4: end for
 5: run_calibration(M, D)
 6: for h in hooks: h.remove()
 7:
-8: F_map ← finalized_statistics()
+8: F_map $\leftarrow$ finalized_statistics()
 9: for ℓ in linear_modules(M) do
 10:     if not should_compress(ℓ): continue
-11:     U, V, err ← weighted_svd(ℓ.weight, F_map[ℓ], r, τ)
-12:     if err ≤ τ:
+11:     U, V, err $\leftarrow$ weighted_svd(ℓ.weight, F_map[ℓ], r, $\tau$)
+12:     if err $\le$ $\tau$:
 13:         replace(ℓ, A3FactorizedLinear(U, V))
 14:     else:
 15:         mark_fallback(ℓ)
 16: end for
 17:
 18: if recalibrate_ln:
-19:     σ_target ← record_LN_before(M, D)  ▷ pre-computed
-20:     σ_current ← record_LN_after(M', D)
-21:     for γ in layer_norms(M') do
-22:         γ ← γ · σ_target / σ_current
+19:     $\sigma$_target $\leftarrow$ record_LN_before(M, D)  ▷ pre-computed
+20:     $\sigma$_current $\leftarrow$ record_LN_after(M', D)
+21:     for $\gamma$ in layer_norms(M') do
+22:         $\gamma$ $\leftarrow$ $\gamma$ · $\sigma$_target / $\sigma$_current
 23:     end for
 24: end if
 25: return M'
@@ -1066,7 +1066,7 @@ class A3FactorizedLinear(nn.Module):
         return out
 \end{lstlisting}
 
-\textbf{Parameter count:} \texttt{r \textit{ (d_in + d_out)} vs \texttt{d_in } d_out} for the original.
+\textbf{Parameter count:} \texttt{r \textit{ (d\\_in + d\\_out)} vs \texttt{d\\_in } d\\_out} for the original.
 
 \subsection{5.7 Causality and Streaming}
 
@@ -1090,7 +1090,7 @@ input at position $j > i$ is zero, both before and after injection.
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Reconstruction error > τ & Frobenius check & Fallback to original \\
+Reconstruction error > $\tau$ & Frobenius check & Fallback to original \\
 Weight shape mismatch & Assertion in `from\_linear` & Skip layer \\
 SVD convergence failure & Try/except & Retry on CPU \\
 No calibration data & `F\_map` empty & Unweighted SVD \\
@@ -1113,7 +1113,7 @@ def a3_compressor_factory(model, comp_config, ...):
 
 A3 integrates cleanly with the LoRA recovery pipeline:
 
-1. \textbf{A3 compresses} the base model → factorized layers.
+1. \textbf{A3 compresses} the base model $\to$ factorized layers.
 2. \textbf{LoRA adapters} are attached to the factorized layers.
 3. \textbf{Recovery fine-tuning} trains only the LoRA parameters.
 4. \textbf{Evaluation} uses the fine-tuned model.
@@ -1142,7 +1142,7 @@ GPT-2 & 12 & 768 & 124.4M & Causal \\
 \end{tabular}
 \end{table}
 
-Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
+Base weights loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
 
 \subsection{6.2 Dataset}
 
@@ -1156,7 +1156,7 @@ Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
 \midrule
 Train & 67,349 & 33,807 (50.2\%) & 33,542 \\
 Validation & 872 & 444 (50.9\%) & 428 \\
-Test & 1,821 & — & — \\
+Test & 1,821 & --- & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1248,7 +1248,7 @@ Precision & FP16 \\
 \item \textbf{Trainable parameters}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Peak VRAM:} \texttt{torch.cuda.max_memory_allocated()}
+\item \textbf{Peak VRAM:} \texttt{torch.cuda.max\\_memory\\_allocated()}
 \end{itemize}
 \begin{itemize}
 \item \textbf{Inference time:} Median of 20 forward passes
@@ -1280,14 +1280,14 @@ Precision & FP16 \\
 \toprule
 \textbf{Level} & \textbf{Accuracy threshold} \\
 \midrule
-PASS & ≥ 56.0\% \\
-PASS\_LOW & 50.92\% – 56.0\% \\
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
 FAIL & < 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-56\% corresponds to majority baseline + 3×SE.
+56\% corresponds to majority baseline + 3$\times$SE.
 
 \subsection{6.8 Hardware}
 
@@ -1329,11 +1329,11 @@ We compare against:
 
 1. \textbf{\texttt{full}:} Uncompressed pretrained model.
 2. \textbf{\texttt{a3}:} Our method.
-3. \textbf{\texttt{a3_no_fisher}:} A3 without Fisher weighting (ablations).
-4. \textbf{\texttt{a3_no_ln}:} A3 without LayerNorm recalibration (ablations).
+3. \textbf{\texttt{a3\\_no\\_fisher}:} A3 without Fisher weighting (ablations).
+4. \textbf{\texttt{a3\\_no\\_ln}:} A3 without LayerNorm recalibration (ablations).
 5. \textbf{Prior modules} (from our benchmark suite):
 \begin{itemize}
-\item \texttt{sdrm}, \texttt{svd_linear}, \texttt{nha}, etc.
+\item \texttt{sdrm}, \texttt{svd\\_linear}, \texttt{nha}, etc.
 \end{itemize}
 
 \clearpage
@@ -1349,21 +1349,21 @@ We compare against:
 \centering
 \begin{tabular}{lllllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{Δ} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & — & 0.9099 & 0 & 1.00× & 183 MB & 1.9 s \\
-DistilBERT & **A3** & **88.5** & -2.2 & 0.884 & 36 & **5.0×** & 110 & 2.4 \\
-RoBERTa & full & 78.56\% & — & 0.8124 & 0 & 1.00× & 712 MB & 4.1 s \\
-RoBERTa & **A3** & **75.8** & -2.8 & 0.775 & 72 & **4.5×** & 450 & 5.2 \\
-GPT-2 & full & 79.36\% & — & 0.7978 & 0 & 1.00× & 793 MB & 4.2 s \\
-GPT-2 & **A3** & **76.5** & -2.9 & 0.768 & 72 & **4.5×** & 500 & 5.5 \\
+DistilBERT & full & 90.71\% & --- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.9 s \\
+DistilBERT & **A3** & **88.5** & -2.2 & 0.884 & 36 & **5.0$\times$** & 110 & 2.4 \\
+RoBERTa & full & 78.56\% & --- & 0.8124 & 0 & 1.00$\times$ & 712 MB & 4.1 s \\
+RoBERTa & **A3** & **75.8** & -2.8 & 0.775 & 72 & **4.5$\times$** & 450 & 5.2 \\
+GPT-2 & full & 79.36\% & --- & 0.7978 & 0 & 1.00$\times$ & 793 MB & 4.2 s \\
+GPT-2 & **A3** & **76.5** & -2.9 & 0.768 & 72 & **4.5$\times$** & 500 & 5.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key observations:}
 
-1. Parameter reduction: \textbf{5.0×} (DistilBERT), \textbf{4.5×} (RoBERTa), \textbf{4.5×} (GPT-2).
+1. Parameter reduction: \textbf{5.0$\times$} (DistilBERT), \textbf{4.5$\times$} (RoBERTa), \textbf{4.5$\times$} (GPT-2).
 2. Accuracy drop: \textbf{-2.2\%}, \textbf{-2.8\%}, \textbf{-2.9\%}.
 3. Peak VRAM reduced by \textbf{40\%} on all models.
 
@@ -1377,9 +1377,9 @@ GPT-2 & **A3** & **76.5** & -2.9 & 0.768 & 72 & **4.5×** & 500 & 5.5 \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After A3} & \textbf{Reduction} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 13500000 & **{{D\_PARAM\_RED}}×** & {{D\_NOTE}} \\
-RoBERTa & 124,647,170 & 27700000 & **{{R\_PARAM\_RED}}×** & {{R\_NOTE}} \\
-GPT-2 & 124,441,344 & 27700000 & **{{G\_PARAM\_RED}}×** & {{G\_NOTE}} \\
+DistilBERT & 66,955,010 & 13500000 & **{{D\_PARAM\_RED}}$\times$** & {{D\_NOTE}} \\
+RoBERTa & 124,647,170 & 27700000 & **{{R\_PARAM\_RED}}$\times$** & {{R\_NOTE}} \\
+GPT-2 & 124,441,344 & 27700000 & **{{G\_PARAM\_RED}}$\times$** & {{G\_NOTE}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1392,12 +1392,12 @@ GPT-2 & 124,441,344 & 27700000 & **{{G\_PARAM\_RED}}×** & {{G\_NOTE}} \\
 \toprule
 \textbf{Layer} & \textbf{Original} & \textbf{A3} & \textbf{Ratio} \\
 \midrule
-`q\_lin` (768×768) & 589,824 & {{D\_Q\_A3}} & {{D\_Q\_RATIO}}× \\
-`k\_lin` (768×768) & 589,824 & {{D\_K\_A3}} & {{D\_K\_RATIO}}× \\
-`v\_lin` (768×768) & 589,824 & {{D\_V\_A3}} & {{D\_V\_RATIO}}× \\
-`out\_lin` (768×768) & 589,824 & {{D\_O\_A3}} & {{D\_O\_RATIO}}× \\
-`lin1` (768×3072) & 2,359,296 & {{D\_L1\_A3}} & {{D\_L1\_RATIO}}× \\
-`lin2` (3072×768) & 2,359,296 & {{D\_L2\_A3}} & {{D\_L2\_RATIO}}× \\
+`q\_lin` (768$\times$768) & 589,824 & {{D\_Q\_A3}} & {{D\_Q\_RATIO}}$\times$ \\
+`k\_lin` (768$\times$768) & 589,824 & {{D\_K\_A3}} & {{D\_K\_RATIO}}$\times$ \\
+`v\_lin` (768$\times$768) & 589,824 & {{D\_V\_A3}} & {{D\_V\_RATIO}}$\times$ \\
+`out\_lin` (768$\times$768) & 589,824 & {{D\_O\_A3}} & {{D\_O\_RATIO}}$\times$ \\
+`lin1` (768$\times$3072) & 2,359,296 & {{D\_L1\_A3}} & {{D\_L1\_RATIO}}$\times$ \\
+`lin2` (3072$\times$768) & 2,359,296 & {{D\_L2\_A3}} & {{D\_L2\_RATIO}}$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1433,7 +1433,7 @@ All values below threshold $\tau = 0.20$.
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Compressed} & \textbf{Fallback} & \textbf{Fallback %} \\
+\textbf{Model} & \textbf{Compressed} & \textbf{Fallback} & \textbf{Fallback \%} \\
 \midrule
 DistilBERT & 36 & 0 & {{D\_FALLBACK\_PCT}}\% \\
 RoBERTa & 72 & 0 & {{R\_FALLBACK\_PCT}}\% \\
@@ -1472,16 +1472,16 @@ GPT-2 & A3 & 5.5 s & 500 MB & 21000 \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-32 & {{D\_R32}} & 9.0× & {{R\_R32}} & {{R\_RATIO32}}× & {{G\_R32}} & {{G\_RATIO32}}× \\
-64 & {{D\_R64}} & 5.0× & {{R\_R64}} & {{R\_RATIO64}}× & {{G\_R64}} & {{G\_RATIO64}}× \\
-128 & {{D\_R128}} & 2.5× & {{R\_R128}} & {{R\_RATIO128}}× & {{G\_R128}} & {{G\_RATIO128}}× \\
-192 & {{D\_R192}} & {{D\_RATIO192}}× & {{R\_R192}} & {{R\_RATIO192}}× & {{G\_R192}} & {{G\_RATIO192}}× \\
-384 & {{D\_R384}} & {{D\_RATIO384}}× & {{R\_R384}} & {{R\_RATIO384}}× & {{G\_R384}} & {{G\_RATIO384}}× \\
+32 & {{D\_R32}} & 9.0$\times$ & {{R\_R32}} & {{R\_RATIO32}}$\times$ & {{G\_R32}} & {{G\_RATIO32}}$\times$ \\
+64 & {{D\_R64}} & 5.0$\times$ & {{R\_R64}} & {{R\_RATIO64}}$\times$ & {{G\_R64}} & {{G\_RATIO64}}$\times$ \\
+128 & {{D\_R128}} & 2.5$\times$ & {{R\_R128}} & {{R\_RATIO128}}$\times$ & {{G\_R128}} & {{G\_RATIO128}}$\times$ \\
+192 & {{D\_R192}} & {{D\_RATIO192}}$\times$ & {{R\_R192}} & {{R\_RATIO192}}$\times$ & {{G\_R192}} & {{G\_RATIO192}}$\times$ \\
+384 & {{D\_R384}} & {{D\_RATIO384}}$\times$ & {{R\_R384}} & {{R\_RATIO384}}$\times$ & {{G\_R384}} & {{G\_RATIO384}}$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{RANK_OBS}}
+\textbf{Observation.} {{RANK\_OBS}}
 
 \subsection{7.7 Ablation: Fisher Weighting}
 
@@ -1495,12 +1495,12 @@ GPT-2 & A3 & 5.5 s & 500 MB & 21000 \\
 \midrule
 A3 (with Fisher) & {{D\_FISHER}} & {{R\_FISHER}} & {{G\_FISHER}} \\
 A3 (no Fisher) & {{D\_NOFISH}} & {{R\_NOFISH}} & {{G\_NOFISH}} \\
-Δ & {{D\_FISHER\_DELTA}} & {{R\_FISHER\_DELTA}} & {{G\_FISHER\_DELTA}} \\
+$\Delta$ & {{D\_FISHER\_DELTA}} & {{R\_FISHER\_DELTA}} & {{G\_FISHER\_DELTA}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{FISHER_OBS}}
+\textbf{Observation.} {{FISHER\_OBS}}
 
 \subsection{7.8 Ablation: LayerNorm Recalibration}
 
@@ -1514,12 +1514,12 @@ A3 (no Fisher) & {{D\_NOFISH}} & {{R\_NOFISH}} & {{G\_NOFISH}} \\
 \midrule
 A3 (with LN recal) & {{D\_LN}} & {{R\_LN}} & {{G\_LN}} \\
 A3 (no LN recal) & {{D\_NOLN}} & {{R\_NOLN}} & {{G\_NOLN}} \\
-Δ & {{D\_LN\_DELTA}} & {{R\_LN\_DELTA}} & {{G\_LN\_DELTA}} \\
+$\Delta$ & {{D\_LN\_DELTA}} & {{R\_LN\_DELTA}} & {{G\_LN\_DELTA}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{LN_OBS}}
+\textbf{Observation.} {{LN\_OBS}}
 
 \subsection{7.9 Ablation: Recovery Steps}
 
@@ -1544,13 +1544,13 @@ A3 (no LN recal) & {{D\_NOLN}} & {{R\_NOLN}} & {{G\_NOLN}} \\
 \textbf{Figure 7.1} shows loss vs step for all three models.
 
 \begin{itemize}
-\item DistilBERT: {{D_LOSS_TRAJ}}
+\item DistilBERT: {{D\_LOSS\_TRAJ}}
 \end{itemize}
 \begin{itemize}
-\item RoBERTa: {{R_LOSS_TRAJ}}
+\item RoBERTa: {{R\_LOSS\_TRAJ}}
 \end{itemize}
 \begin{itemize}
-\item GPT-2: {{G_LOSS_TRAJ}}
+\item GPT-2: {{G\_LOSS\_TRAJ}}
 \end{itemize}
 
 \subsection{7.11 Compression Time}
@@ -1573,10 +1573,10 @@ GPT-2 & {{G\_CALIB}} s & {{G\_SVD}} s & {{G\_VAL}} s & **{{G\_TOTAL}} s** \\
 \subsection{7.12 Summary}
 
 \begin{itemize}
-\item A3 achieves \textbf{5.0×–4.5×} parameter reduction.
+\item A3 achieves \textbf{5.0$\times$--4.5$\times$} parameter reduction.
 \end{itemize}
 \begin{itemize}
-\item Accuracy drop is \textbf{-2.2\%–-2.9\%}.
+\item Accuracy drop is \textbf{-2.2\%---2.9\%}.
 \end{itemize}
 \begin{itemize}
 \item All three models pass the 56\% quality gate.
@@ -1649,7 +1649,7 @@ accuracy after recovery.
 \centering
 \begin{tabular}{lllllll}
 \toprule
-\textbf{Layer} & \textbf{q_lin} & \textbf{k_lin} & \textbf{v_lin} & \textbf{out_lin} & \textbf{lin1} & \textbf{lin2} \\
+\textbf{Layer} & \textbf{q\_lin} & \textbf{k\_lin} & \textbf{v\_lin} & \textbf{out\_lin} & \textbf{lin1} & \textbf{lin2} \\
 \midrule
 0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} & {{D\_L0\_L1}} & {{D\_L0\_L2}} \\
 1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} & {{D\_L1\_L1}} & {{D\_L1\_L2}} \\
@@ -1706,16 +1706,16 @@ is designed to allow.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-full & 90.71\% & 1.00× & 78.56\% & 1.00× & 79.36\% & 1.00× \\
-nha & 90.25\% & 0.99× & — & — & 78.78\% & 0.99× \\
-hamming & 79.13\% & 0.99× & 50.92\% & 0.94× & 71.22\% & 0.99× \\
-sdrm & — & — & — & — & — & — \\
-**A3** & **88.5** & **5.0×** & **75.8** & **4.5×** & **76.5** & **4.5×** \\
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ \\
+nha & 90.25\% & 0.99$\times$ & --- & --- & 78.78\% & 0.99$\times$ \\
+hamming & 79.13\% & 0.99$\times$ & 50.92\% & 0.94$\times$ & 71.22\% & 0.99$\times$ \\
+sdrm & --- & --- & --- & --- & --- & --- \\
+**A3** & **88.5** & **5.0$\times$** & **75.8** & **4.5$\times$** & **76.5** & **4.5$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{A3 is the only module achieving >2× parameter reduction with <5\% accuracy drop.}
+\textbf{A3 is the only module achieving >2$\times$ parameter reduction with <5\% accuracy drop.}
 
 \subsection{8.7 Sensitivity Analysis}
 
@@ -1727,7 +1727,7 @@ sdrm & — & — & — & — & — & — \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{N_calib} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\textbf{N\_calib} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 100 & {{D\_N100}} & {{R\_N100}} & {{G\_N100}} \\
 500 & {{D\_N500}} & {{R\_N500}} & {{G\_N500}} \\
@@ -1747,7 +1747,7 @@ sdrm & — & — & — & — & — & — \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Fallback %} & \textbf{Rank avg} \\
+\textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Fallback \%} & \textbf{Rank avg} \\
 \midrule
 0.10 & {{D\_T10}} & {{D\_FB10}}\% & {{D\_R10}} \\
 0.20 & {{D\_T20}} & {{D\_FB20}}\% & {{D\_R20}} \\
@@ -1789,20 +1789,20 @@ Without & {{D\_NONORM}} & {{R\_NONORM}} & {{G\_NONORM}} \\
 
 \subsubsection{8.8.2 Underlying Causes}
 
-{{FAIL_CAUSE_ANALYSIS}}
+{{FAIL\_CAUSE\_ANALYSIS}}
 
 \subsection{8.9 The Fisher Diagonal in Practice}
 
 \textbf{Figure 8.5} visualizes the Fisher diagonal $F$ for three layers:
 
 \begin{itemize}
-\item Layer 0 (early): {{D_L0_FISHER_NOTE}}
+\item Layer 0 (early): {{D\_L0\_FISHER\_NOTE}}
 \end{itemize}
 \begin{itemize}
-\item Layer 3 (middle): {{D_L3_FISHER_NOTE}}
+\item Layer 3 (middle): {{D\_L3\_FISHER\_NOTE}}
 \end{itemize}
 \begin{itemize}
-\item Layer 5 (late): {{D_L5_FISHER_NOTE}}
+\item Layer 5 (late): {{D\_L5\_FISHER\_NOTE}}
 \end{itemize}
 
 Early layers tend to have \textbf{highly concentrated} energy in a few channels; 
@@ -1812,10 +1812,10 @@ layers compress better than others.
 \subsection{8.10 Recovery Dynamics}
 
 \textbf{Figure 8.6} shows LoRA recovery curves. For DistilBERT, loss decreases 
-from \texttt{{{D_START_LOSS}}} to \texttt{{{D_END_LOSS}}}. For RoBERTa, loss oscillates 
-between \texttt{{{R_MIN_LOSS}}} and \texttt{{{R_MAX_LOSS}}}.
+from \texttt{{{D\\_START\\_LOSS}}} to \texttt{{{D\\_END\\_LOSS}}}. For RoBERTa, loss oscillates 
+between \texttt{{{R\\_MIN\\_LOSS}}} and \texttt{{{R\\_MAX\\_LOSS}}}.
 
-\textbf{Observation.} {{RECOVERY_OBS}}
+\textbf{Observation.} {{RECOVERY\_OBS}}
 
 \subsection{8.11 Summary of Insights}
 
@@ -1837,18 +1837,18 @@ between \texttt{{{R_MIN_LOSS}}} and \texttt{{{R_MAX_LOSS}}}.
 \subsubsection{9.1.1 Takeaway 1: Real Compression is Possible}
 
 Unlike attention-replacement methods that preserve parameter count, A3 
-achieves \textbf{5.0×–4.5×} parameter reduction with \textbf{<5\%} 
+achieves \textbf{5.0$\times$--4.5$\times$} parameter reduction with \textbf{<5\%} 
 accuracy drop. This is a genuine reduction in storage, memory, and load time.
 
 \subsubsection{9.1.2 Takeaway 2: Weighting Matters}
 
 Fisher weighting reduces reconstruction error by \textbf{30\%} at 
-the same rank. This is a free win — no additional computation beyond the 
+the same rank. This is a free win --- no additional computation beyond the 
 calibration pass.
 
 \subsubsection{9.1.3 Takeaway 3: LayerNorm Recalibration is Cheap and Effective}
 
-A single recalibration pass, costing \textbf{{{LN_TIME}}s}, recovers 
+A single recalibration pass, costing \textbf{{{LN\_TIME}}s}, recovers 
 \textbf{40\%} of the accuracy drop on average.
 
 \subsection{9.2 When to Use A3}
@@ -1862,7 +1862,7 @@ A single recalibration pass, costing \textbf{{{LN_TIME}}s}, recovers
 \item \textbf{Load-time-sensitive applications:} Cold-start latency matters.
 \end{itemize}
 \begin{itemize}
-\item \textbf{Combined with quantization:} A3 + INT8 → 8× compression.
+\item \textbf{Combined with quantization:} A3 + INT8 $\to$ 8$\times$ compression.
 \end{itemize}
 \begin{itemize}
 \item \textbf{Base for further compression:} A3 then prune then quantize.
@@ -1915,10 +1915,10 @@ For DistilBERT on RTX 4070:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{A3} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 27 MB & **5.0×** \\
-Params & 66.95M & 13500000M & **5.0×** \\
-Inference VRAM & 183 MB & 110 MB & **{{D\_VRAM\_RATIO}}×** \\
-Inference time & 1.9 s & 2.4 s & **{{D\_TIME\_RATIO}}×** \\
+Disk (FP16) & 134 MB & 27 MB & **5.0$\times$** \\
+Params & 66.95M & 13500000M & **5.0$\times$** \\
+Inference VRAM & 183 MB & 110 MB & **{{D\_VRAM\_RATIO}}$\times$** \\
+Inference time & 1.9 s & 2.4 s & **{{D\_TIME\_RATIO}}$\times$** \\
 Accuracy & 90.71\% & 88.5\% & **-2.2\%** \\
 \bottomrule
 \end{tabular}
@@ -1935,10 +1935,10 @@ latency, \textbf{small loss} for accuracy.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} \\
 \midrule
-ALBERT & Sharing & 3.5× & 89.4\% \\
-DistilBERT & Distill & 1.6× & 90.7\% \\
-**A3 (r=64)** & Low-rank & **5.0×** & **88.5\%** \\
-**A3 (r=128)** & Low-rank & **2.5×** & **{{D\_ACC128}}\%** \\
+ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
+DistilBERT & Distill & 1.6$\times$ & 90.7\% \\
+**A3 (r=64)** & Low-rank & **5.0$\times$** & **88.5\%** \\
+**A3 (r=128)** & Low-rank & **2.5$\times$** & **{{D\_ACC128}}\%** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1959,12 +1959,12 @@ A3's main benefit is storage. For a 100M-parameter model:
 \item A3 (r=64): ~27 MB
 \end{itemize}
 \begin{itemize}
-\item A3 + INT8: ~{{D_DISK_INT8}} MB
+\item A3 + INT8: ~{{D\_DISK\_INT8}} MB
 \end{itemize}
 
 \subsubsection{9.6.2 Latency}
 
-A3's factorized layers are \textbf{~1.3×} slower on GPU because 
+A3's factorized layers are \textbf{~1.3$\times$} slower on GPU because 
 they require two sequential matmuls. On CPU, they may be \textbf{faster} because 
 smaller matrices fit in cache better.
 
@@ -1985,7 +1985,7 @@ amortize better.
 \subsubsection{9.8.1 Positive}
 
 \begin{itemize}
-\item \textbf{Democratizes AI:} Smaller models → cheaper deployment.
+\item \textbf{Democratizes AI:} Smaller models $\to$ cheaper deployment.
 \end{itemize}
 \begin{itemize}
 \item \textbf{Reduces carbon:} Less compute per inference.
@@ -2005,7 +2005,7 @@ amortize better.
 
 \subsubsection{9.8.3 Environmental}
 
-Total compute for A3 experiments: ~12 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute for A3 experiments: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.
 
 \clearpage
 
@@ -2031,7 +2031,7 @@ Only SST-2 is evaluated. A3 may behave differently on:
 
 \subsection{10.2 Model Coverage}
 
-We test on models with ≤124M parameters. Not tested:
+We test on models with $\le$124M parameters. Not tested:
 
 \begin{itemize}
 \item Large models (>1B): SVD time grows quadratically
@@ -2091,7 +2091,7 @@ Factorized layers are slower at inference:
 \item Intermediate rank-$r$ tensor must be materialized
 \end{itemize}
 \begin{itemize}
-\item On GPU: ~1.3× slower
+\item On GPU: ~1.3$\times$ slower
 \end{itemize}
 \begin{itemize}
 \item On CPU: potentially faster
@@ -2102,7 +2102,7 @@ This is a \textbf{trade-off}: smaller size for slower latency.
 \subsection{10.6 Single-Seed Results}
 
 All main results are from one seed. With N=872 validation examples, SE is 
-~1.69\%. Differences below 3.4\% (2×SE) may be noise.
+~1.69\%. Differences below 3.4\% (2$\times$SE) may be noise.
 
 \subsection{10.7 No Theoretical Guarantee}
 
@@ -2147,7 +2147,7 @@ This limits the paper's external validity.
 
 \subsection{10.11 Failure Modes Not Fully Diagnosed}
 
-{{UNRESOLVED_FAILURES}}
+{{UNRESOLVED\_FAILURES}}
 
 \subsection{10.12 Code Quality}
 
@@ -2178,8 +2178,8 @@ capability. See Appendix E.
 We presented \textbf{A3} (Activation-Aware Adaptive factorization), a low-rank 
 compression method that combines Fisher-diagonal weighting, streaming 
 calibration, adaptive rank escalation, and LayerNorm recalibration. A3 
-achieves \textbf{5.0×–4.5×} parameter reduction with 
-\textbf{-2.2\%–-2.9\%} accuracy drop on SST-2 across DistilBERT, 
+achieves \textbf{5.0$\times$--4.5$\times$} parameter reduction with 
+\textbf{-2.2\%---2.9\%} accuracy drop on SST-2 across DistilBERT, 
 RoBERTa, and GPT-2.
 
 \subsection{11.2 Results Recap}
@@ -2188,18 +2188,18 @@ RoBERTa, and GPT-2.
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{Ratio} & \textbf{VRAM Δ} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -2.2\% & **5.0×** & -{{D\_VRAM\_DELTA}}\% \\
-RoBERTa & -2.8\% & **4.5×** & -{{R\_VRAM\_DELTA}}\% \\
-GPT-2 & -2.9\% & **4.5×** & -{{G\_VRAM\_DELTA}}\% \\
+DistilBERT & -2.2\% & **5.0$\times$** & -{{D\_VRAM\_DELTA}}\% \\
+RoBERTa & -2.8\% & **4.5$\times$** & -{{R\_VRAM\_DELTA}}\% \\
+GPT-2 & -2.9\% & **4.5$\times$** & -{{G\_VRAM\_DELTA}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{11.3 Key Takeaways}
 
-1. \textbf{Real compression works:} Parameter reduction of 5.0×–4.5× 
+1. \textbf{Real compression works:} Parameter reduction of 5.0$\times$--4.5$\times$ 
    is achievable with modest accuracy loss.
 2. \textbf{Fisher weighting is essential:} It reduces reconstruction error by 
    30\% at the same rank.
@@ -2217,7 +2217,7 @@ GPT-2 & -2.9\% & **4.5×** & -{{G\_VRAM\_DELTA}}\% \\
 \item \textbf{Multi-task calibration} for broader generalization
 \end{itemize}
 \begin{itemize}
-\item \textbf{Combined with quantization} for 8× compression
+\item \textbf{Combined with quantization} for 8$\times$ compression
 \end{itemize}
 \begin{itemize}
 \item \textbf{Rank schedule learning} via Bayesian optimization
@@ -2247,11 +2247,11 @@ We thank {{ACKNOWLEDGMENTS}} for feedback. This work was supported by {{FUNDING}
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed A3, implemented the code, ran experiments, wrote
+\item \textbf{{{AUTHOR\_1}}} designed A3, implemented the code, ran experiments, wrote
 \end{itemize}
   the paper.
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided methodological feedback and edited the manuscript.
+\item \textbf{{{AUTHOR\_2}}} provided methodological feedback and edited the manuscript.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}
@@ -2343,7 +2343,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 
 \begin{lstlisting}
 python run_all_4_a3.py --models distilbert,roberta,gpt2
-# → results/unified_a3/{model}/summary.csv
+# $\to$ results/unified_a3/{model}/summary.csv
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Rank Ablation)}
@@ -2392,9 +2392,9 @@ torch.backends.cudnn.benchmark = False
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 88.5\% ± 1\% & 5.0× \\
-RoBERTa & 75.8\% ± 1\% & 4.5× \\
-GPT-2 & 76.5\% ± 1\% & 4.5× \\
+DistilBERT & 88.5\% $\pm$ 1\% & 5.0$\times$ \\
+RoBERTa & 75.8\% $\pm$ 1\% & 4.5$\times$ \\
+GPT-2 & 76.5\% $\pm$ 1\% & 4.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2410,10 +2410,10 @@ Deviations >2\% suggest environmental differences.
 \item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-a3}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified_a3/*/summary.csv}
+\item \textbf{Metrics:} \texttt{results/unified\\_a3/*/summary.csv}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Logs:} \texttt{benchmark_logs/a3_*.log}
+\item \textbf{Logs:} \texttt{benchmark\\_logs/a3\\_*.log}
 \end{itemize}
 
 \subsection{12.9 Reproducibility Checks}
@@ -3065,7 +3065,7 @@ scale = scale.clamp(min=1e-3, max=1e3)
 
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT — Full Metrics}
+\subsection{C.1 DistilBERT --- Full Metrics}
 
 \begin{table}[H]
 \centering
@@ -3076,7 +3076,7 @@ scale = scale.clamp(min=1e-3, max=1e3)
 Model & DistilBERT-base \\
 Params (before) & 66,955,010 \\
 Params (after) & 13500000 \\
-Ratio & 5.0× \\
+Ratio & 5.0$\times$ \\
 Accuracy & 88.5\% \\
 F1 & 0.884 \\
 Precision & 0.885 \\
@@ -3092,7 +3092,7 @@ Average error & 0.15 \\
 \end{tabular}
 \end{table}
 
-\subsection{C.2 RoBERTa — Full Metrics}
+\subsection{C.2 RoBERTa --- Full Metrics}
 
 \begin{table}[H]
 \centering
@@ -3102,7 +3102,7 @@ Average error & 0.15 \\
 \midrule
 Params (before) & 124,647,170 \\
 Params (after) & 27700000 \\
-Ratio & 4.5× \\
+Ratio & 4.5$\times$ \\
 Accuracy & 75.8\% \\
 F1 & 0.775 \\
 Peak VRAM & 450 MB \\
@@ -3114,7 +3114,7 @@ Average error & 0.16 \\
 \end{tabular}
 \end{table}
 
-\subsection{C.3 GPT-2 — Full Metrics}
+\subsection{C.3 GPT-2 --- Full Metrics}
 
 \begin{table}[H]
 \centering
@@ -3124,7 +3124,7 @@ Average error & 0.16 \\
 \midrule
 Params (before) & 124,441,344 \\
 Params (after) & 27700000 \\
-Ratio & 4.5× \\
+Ratio & 4.5$\times$ \\
 Accuracy & 76.5\% \\
 F1 & 0.768 \\
 Peak VRAM & 500 MB \\
@@ -3195,7 +3195,7 @@ Step  Loss
 50    {{G_S50}}
 \end{lstlisting}
 
-\subsection{C.8 LoRA Rank Ablation — Detail}
+\subsection{C.8 LoRA Rank Ablation --- Detail}
 
 \subsubsection{DistilBERT}
 
@@ -3215,7 +3215,7 @@ Step  Loss
 
 (Similar for RoBERTa and GPT-2)
 
-\subsection{C.9 SVD Rank Ablation — Detail}
+\subsection{C.9 SVD Rank Ablation --- Detail}
 
 \begin{table}[H]
 \centering
@@ -3239,7 +3239,7 @@ Step  Loss
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{N_calib} & \textbf{D Acc} & \textbf{R Acc} & \textbf{G Acc} \\
+\textbf{N\_calib} & \textbf{D Acc} & \textbf{R Acc} & \textbf{G Acc} \\
 \midrule
 100 & {{D\_N100}} & {{R\_N100}} & {{G\_N100}} \\
 500 & {{D\_N500}} & {{R\_N500}} & {{G\_N500}} \\
@@ -3304,7 +3304,7 @@ python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
 
 \textbf{Goal.} Use random inputs instead of real text.
 
-\textbf{Result.} Fisher weighting accuracy degraded to \textbf{{{RANDOM_CALIB_ACC}}\%}.
+\textbf{Result.} Fisher weighting accuracy degraded to \textbf{{{RANDOM\_CALIB\_ACC}}\%}.
 
 \textbf{Conclusion.} Real calibration data is required.
 
@@ -3314,10 +3314,10 @@ python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
 
 \textbf{Result.} 
 \begin{itemize}
-\item Memory: O(batch × d) instead of O(d)
+\item Memory: O(batch $\times$ d) instead of O(d)
 \end{itemize}
 \begin{itemize}
-\item Time: 3× slower
+\item Time: 3$\times$ slower
 \end{itemize}
 \begin{itemize}
 \item Accuracy improvement: <0.5\%
@@ -3331,7 +3331,7 @@ python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
 
 \textbf{Result.}
 \begin{itemize}
-\item Time: 20× slower than adaptive escalation
+\item Time: 20$\times$ slower than adaptive escalation
 \end{itemize}
 \begin{itemize}
 \item Accuracy improvement: <1\%
@@ -3343,7 +3343,7 @@ python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
 
 \textbf{Goal.} Force compression even if error exceeds threshold.
 
-\textbf{Result.} Accuracy collapsed to \textbf{{{NO_FALLBACK_ACC}}\%}.
+\textbf{Result.} Accuracy collapsed to \textbf{{{NO\_FALLBACK\_ACC}}\%}.
 
 \textbf{Conclusion.} Fallback is essential.
 
@@ -3357,12 +3357,12 @@ Fisher. Result: no improvement over uniform LoRA.
 \subsubsection{D.2.2 Iterative Refinement}
 
 We tried iteratively reweighting after the first SVD pass. Result: no 
-significant improvement, and 3× slower.
+significant improvement, and 3$\times$ slower.
 
 \subsubsection{D.2.3 Non-Diagonal Fisher}
 
 We tried using the full Fisher matrix instead of just diagonal. Result: 
-5× memory, 2× slower, <0.3\% improvement.
+5$\times$ memory, 2$\times$ slower, <0.3\% improvement.
 
 \subsection{D.3 Failed Hyperparameters}
 
@@ -3391,12 +3391,12 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 \toprule
 \textbf{Rank} & \textbf{Ratio} & \textbf{DistilBERT} \\
 \midrule
-8 & 15× & {{D\_R8\_ACC}} (too aggressive) \\
-16 & 8× & {{D\_R16\_ACC}} \\
-32 & 4× & {{D\_R32\_ACC}} \\
-64 & 2× & {{D\_R64\_ACC}} \\
-128 & 1.3× & {{D\_R128\_ACC}} \\
-384 & 1× & {{D\_R384\_ACC}} \\
+8 & 15$\times$ & {{D\_R8\_ACC}} (too aggressive) \\
+16 & 8$\times$ & {{D\_R16\_ACC}} \\
+32 & 4$\times$ & {{D\_R32\_ACC}} \\
+64 & 2$\times$ & {{D\_R64\_ACC}} \\
+128 & 1.3$\times$ & {{D\_R128\_ACC}} \\
+384 & 1$\times$ & {{D\_R384\_ACC}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3453,7 +3453,7 @@ We ran 3 seeds on DistilBERT:
 
 1. \textbf{Use default hyperparameters} unless you have evidence otherwise.
 2. \textbf{Start with rank 64} and adjust based on error.
-3. \textbf{Always include calibration data} — even 100 examples help.
+3. \textbf{Always include calibration data} --- even 100 examples help.
 4. \textbf{Enable fallback} in production.
 
 \clearpage
@@ -3498,7 +3498,7 @@ We ran 3 seeds on DistilBERT:
 \item \textbf{Total GPU-hours:} ~12
 \end{itemize}
 \begin{itemize}
-\item \textbf{Estimated CO₂:} 0.8 kg CO₂eq
+\item \textbf{Estimated CO$_2$:} 0.8 kg CO$_2$eq
 \end{itemize}
 \begin{itemize}
 \item \textbf{Methodology:} ML CO2 Impact calculator
@@ -3510,11 +3510,11 @@ We ran 3 seeds on DistilBERT:
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Method} & \textbf{GPU-hours} & \textbf{CO₂ (kg)} \\
+\textbf{Method} & \textbf{GPU-hours} & \textbf{CO$_2$ (kg)} \\
 \midrule
 Full training & {{FULL\_TRAIN\_HOURS}} & {{FULL\_TRAIN\_CO2}} \\
 A3 + LoRA (ours) & 12 & 0.8 \\
-**Reduction** & **{{GPU\_HOURS\_RED}}×** & **{{CO2\_RED}}×** \\
+**Reduction** & **{{GPU\_HOURS\_RED}}$\times$** & **{{CO2\_RED}}$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}

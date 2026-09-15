@@ -1,0 +1,133 @@
+
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Hard Window Mask}
+
+\textbf{Goal.} Replace soft ramp with hard window.
+
+\textbf{Result.} Zero gradient w.r.t. span; training diverged.
+
+\textbf{Conclusion.} Soft ramp is necessary for differentiability.
+
+\subsubsection{D.1.2 Initial Span Small}
+
+\textbf{Goal.} Initialize span to $S_\text{max}/4$ to save compute from start.
+
+\textbf{Result.} Accuracy dropped from epoch 0.
+
+\textbf{Conclusion.} Start fully open; let model shrink.
+
+\subsubsection{D.1.3 Learned Ramp Size}
+
+\textbf{Goal.} Learn $R$ per-head via a second logit.
+
+\textbf{Result.} High variance; unstable.
+
+\textbf{Conclusion.} Keep $R$ as hyperparameter.
+
+\subsubsection{D.1.4 Per-Layer Span Logits}
+
+\textbf{Goal.} Use different logits per (layer, head) instead of per-head shared.
+
+\textbf{Result.} Similar accuracy, more parameters.
+
+\textbf{Conclusion.} Per-head is sufficient.
+
+\subsubsection{D.1.5 Content-Aware Span}
+
+\textbf{Goal.} Modulate span by content (query-specific).
+
+\textbf{Result.} No improvement, 2$\times$ slower.
+
+\textbf{Conclusion.} Distance-based span is sufficient.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Exponential Ramp}
+
+Instead of linear ramp, use exponential decay. No improvement.
+
+\subsubsection{D.2.2 Two-Sided Ramp}
+
+Ramp on both sides of span. No improvement.
+
+\subsubsection{D.2.3 Multi-Span (Multiple Windows)}
+
+Multiple disjoint windows per head. No improvement.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Ramp Size Too Small}
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{$R$} & \textbf{DistilBERT} & \textbf{Note} \\
+\midrule
+0.5 & {{D\_R05}} & Near hard \\
+1 & {{D\_R1}} & Sharp \\
+8 & {{D\_R8}} & OK \\
+32 & {{D\_R32}} & Best \\
+64 & {{D\_R64}} & Too smooth \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{L1 Too Aggressive}
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{$\lambda$} & \textbf{DistilBERT} \\
+\midrule
+0.1 & {{D\_L1}} \\
+0.5 & {{D\_L5}} \\
+1.0 & {{D\_L10}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Aggressive L1 collapses spans; accuracy drops.
+
+\subsection{D.4 Fixes That Didn't Help}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
+\midrule
+Hard truncation during training & Speed & Accuracy loss \\
+Gradient clipping on span & Stability & No improvement \\
+Warmup on span & Convergence & No improvement \\
+Per-layer $\lambda$ & Quality & No improvement \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+**Mean** & **{{MEAN}}** \\
+**Std** & **{{STD}}** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 Lessons Learned}
+
+1. \textbf{Start fully open, shrink via L1.}
+2. \textbf{Soft ramp is essential} for differentiability.
+3. \textbf{$R = 32$} is a good default.
+4. \textbf{$\lambda = 0.01$} balances compression and accuracy.
+5. \textbf{Learned spans are interpretable.}

@@ -1,0 +1,94 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: A_math.md
+     PURPOSE: Formal derivations
+     DEPENDENCIES: 04_method.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix A. Mathematical Derivations
+
+## A.1 LoRA Decomposition
+
+For a pretrained weight $W_0 \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
+
+$$
+W = W_0 + \frac{\alpha}{r_L} B A
+\tag{A.1}
+$$
+
+where $B \in \mathbb{R}^{d_\text{out} \times r_L}$, $A \in \mathbb{R}^{r_L \times d_\text{in}}$, and $B = 0$ at initialization.
+
+**Forward:**
+
+$$
+y = W x = W_0 x + \frac{\alpha}{r_L} B A x
+\tag{A.2}
+$$
+
+**Parameter count:** $r_L (d_\text{in} + d_\text{out})$.
+
+## A.2 Exact Recovery at Initialization
+
+**Claim.** When $B = 0$, the Squeezing Heads forward pass is identical to 
+the pretrained attention.
+
+**Proof.** The LoRA path contributes $B A x = 0$. The output is $W_0 x + b$, 
+matching the baseline. $\square$
+
+## A.3 Head-Dim Reduction Loss
+
+**Claim.** Reducing head dimension from $d_h$ to $d_h'$ discards the 
+information in the last $d_h - d_h'$ dimensions.
+
+**Proof sketch.** The output of a head is:
+$$
+o = \text{softmax}(\ldots) V
+$$
+where $V$ has dimension $d_h$. Truncating to $d_h'$ reduces the output to 
+a $d_h'$-dim subspace. $\square$
+
+## A.4 LoRA Recovery Bound
+
+**Claim.** If the discarded head-dim subspace has effective rank $\leq r_L$, 
+LoRA can fully recover it.
+
+**Proof.** The LoRA update $B A$ adds rank $\leq r_L$ to $W_0$. If the 
+information is contained in a rank-$r_L$ subspace, it can be reconstructed. 
+$\square$
+
+## A.5 GQA Pooling
+
+Given $H_\text{source}$ source KV heads with $H_\text{source} > H_\text{target}$:
+
+$$
+W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
+\tag{A.3}
+$$
+
+where $r = H_\text{source} / H_\text{target}$.
+
+**Interpretation.** The pooled head is the average behavior of the group. 
+If heads within a group are similar, the pooling is accurate.
+
+## A.6 Parameter Reduction
+
+Reducing head dimension from $d_h$ to $d_h' = d_h / s$:
+
+| Component | Before | After |
+|---|---|---|
+| $W_Q$ | $d_h H \cdot d$ | $d_h' H \cdot d$ |
+| $W_K$ | $d_h H_{kv} \cdot d$ | $d_h' H_{kv} \cdot d$ |
+| $W_V$ | $d_h H_{kv} \cdot d$ | $d_h' H_{kv} \cdot d$ |
+| $W_O$ | $d_h H \cdot d$ | $d_h' H \cdot d$ |
+
+**Reduction factor:** $s \times$.
+
+## A.7 Numerical Stability
+
+Attention scores computed in FP32:
+
+$$
+S = \frac{Q_\text{FP32} K_\text{FP32}^\top}{\sqrt{d_h}}
+\tag{A.4}
+$$
+
+Softmax in FP32, then cast back to model dtype.

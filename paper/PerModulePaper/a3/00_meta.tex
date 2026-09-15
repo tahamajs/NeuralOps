@@ -4,26 +4,26 @@
 
 \textbf{Authors:}
 \begin{itemize}
-\item Your Name¹ — you@university.edu
+\item {{AUTHOR\_1\_NAME}}  -- {{AUTHOR\_1\_EMAIL}}
 \end{itemize}
 \begin{itemize}
-\item Advisor Name² — advisor@university.edu
+\item {{AUTHOR\_2\_NAME}}  -- {{AUTHOR\_2\_EMAIL}}
 \end{itemize}
 
 \textbf{Affiliations:}
 \begin{itemize}
-\item ¹ University Name, Department of Computer Science
+\item   {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+\item   {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
 \end{itemize}
 
-\textbf{Corresponding author:} Your Name
-\textbf{Preprint date:} 2026-09-15
-\textbf{Version:} v1 (initial draft)
-\textbf{Code:} https://github.com/your-org/SVD_Project/tree/main/framework/compression_engine/a3_compressor.py
-\textbf{Model weights:} https://huggingface.co/Hooshaai
-\textbf{License:} MIT
+\textbf{Corresponding author:} {{CORRESPONDING\_AUTHOR}}
+\textbf{Preprint date:} {{DATE}}
+\textbf{Version:} v{{VERSION}} ({{CHANGELOG}})
+\textbf{Code:} https://github.com/{{ORG}}/SVD\_Project/tree/main/framework/compression\_engine/a3\_compressor.py
+\textbf{Model weights:} https://huggingface.co/{{HF\_ORG}}
+\textbf{License:} {{LICENSE}}
 
 
 
@@ -43,12 +43,12 @@ energy estimate before factorization, (iii) adaptively increasing rank when
 reconstruction error exceeds a threshold, and (iv) recalibrating LayerNorm 
 affine parameters after factorization to absorb distributional shift.
 
-A3 achieves \textbf{5.0\%} parameter reduction on DistilBERT, 
-\textbf{4.5\%} on RoBERTa, and \textbf{4.5\%} on GPT-2 
-at rank $r = 64$. On SST-2, accuracy drops by only 
-\textbf{-2.2\%}, \textbf{-2.8\%}, and \textbf{-2.9\%} respectively, 
-after 50 LoRA recovery steps. Peak VRAM decreases by 
-\textbf{40\%}. We provide a fully reproducible implementation with 
+A3 achieves \textbf{{{PARAM\_REDUCTION}}\%} parameter reduction on DistilBERT, 
+\textbf{{{PARAM\_REDUCTION\_R}}\%} on RoBERTa, and \textbf{{{PARAM\_REDUCTION\_G}}\%} on GPT-2 
+at rank $r = {{RANK}}$. On SST-2, accuracy drops by only 
+\textbf{{{D\_DELTA}}\%}, \textbf{{{R\_DELTA}}\%}, and \textbf{{{G\_DELTA}}\%} respectively, 
+after {{RECOVERY\_STEPS}} LoRA recovery steps. Peak VRAM decreases by 
+\textbf{{{VRAM\_REDUCTION}}\%}. We provide a fully reproducible implementation with 
 strict Frobenius-norm validation, safe fallback to original layers, and 
 streaming O($d^2$) memory calibration.
 
@@ -62,44 +62,44 @@ information, LayerNorm recalibration, transformer efficiency
 
 Large language models contain millions of numbers. Many of these numbers are 
 redundant. A3 finds redundancy by looking at which input features actually 
-matter — those that get "activated" most during real examples. It then 
+matter -- those that get "activated" most during real examples. It then 
 compresses the model along those directions, using a mathematical technique 
 called SVD, but weighted by importance. We test A3 on three pretrained models 
 and find that it removes about half the parameters while keeping accuracy 
-within 1–2\%. This makes models smaller, faster to load, and cheaper to 
+within 1--2\%. This makes models smaller, faster to load, and cheaper to 
 deploy.
 
 
 
 \subsection{Table of Contents}
 
-1. [Introduction](01_intro.md)
-2. [Related Work](02_related.md)
-3. [Background](03_background.md)
-4. [Method](04_method.md)
-5. [Architecture Integration](05_architecture.md)
-6. [Experimental Setup](06_setup.md)
-7. [Results](07_results.md)
-8. [Analysis](08_analysis.md)
-9. [Discussion](09_discussion.md)
-10. [Limitations](10_limitations.md)
-11. [Conclusion](11_conclusion.md)
-12. [Reproducibility](12_reproducibility.md)
-13. [References](13_references.md)
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
 
 \textbf{Appendices:}
 \begin{itemize}
-\item [A. Mathematical Derivations](A_math.md)
+\item [A. Mathematical Derivations](A\_math.md)
 \end{itemize}
 \begin{itemize}
-\item [B. Implementation Details](B_implementation.md)
+\item [B. Implementation Details](B\_implementation.md)
 \end{itemize}
 \begin{itemize}
-\item [C. Full Experimental Data](C_data.md)
+\item [C. Full Experimental Data](C\_data.md)
 \end{itemize}
 \begin{itemize}
-\item [D. Negative Results](D_negative_results.md)
+\item [D. Negative Results](D\_negative\_results.md)
 \end{itemize}
 \begin{itemize}
-\item [E. Ethical Considerations](E_ethics.md)
+\item [E. Ethical Considerations](E\_ethics.md)
 \end{itemize}

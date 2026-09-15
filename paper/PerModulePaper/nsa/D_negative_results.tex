@@ -1,0 +1,137 @@
+
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Top-K Before Causal}
+
+\textbf{Goal.} Compute top-$k$ without causal mask.
+
+\textbf{Result.} Decoder outputs leaked future information.
+
+\textbf{Conclusion.} Always mask before top-$k$.
+
+\subsubsection{D.1.2 Top-K Before Local Mask}
+
+\textbf{Goal.} Compute top-$k$ on all scores, then add local window.
+
+\textbf{Result.} Top-$k$ selections duplicated window entries; wasted budget.
+
+\textbf{Conclusion.} Mask local window before top-$k$.
+
+\subsubsection{D.1.3 Learned Top-K}
+
+\textbf{Goal.} Learn $k$ per head via gradient.
+
+\textbf{Result.} Non-differentiable; unstable.
+
+\textbf{Conclusion.} Keep $k$ fixed.
+
+\subsubsection{D.1.4 Adaptive Window}
+
+\textbf{Goal.} Learn window size per head.
+
+\textbf{Result.} No improvement; complexity.
+
+\textbf{Conclusion.} Fixed window.
+
+\subsubsection{D.1.5 Clustering-Based Selection}
+
+\textbf{Goal.} Replace top-$k$ with K-means selection.
+
+\textbf{Result.} Slower, no improvement.
+
+\textbf{Conclusion.} Top-$k$ is sufficient.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Two-Sided Top-K}
+
+Select top-$k$ on both past and future. Not applicable to causal.
+
+\subsubsection{D.2.2 Sink-Preserved Top-K}
+
+Force first token always selected. Marginal improvement.
+
+\subsubsection{D.2.3 Per-Layer Window}
+
+Different $w$ per layer. Marginal improvement.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Window Too Small}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{$w$} & \textbf{DistilBERT} \\
+\midrule
+2 & {{D\_W2}} \\
+4 & {{D\_W4}} \\
+8 & {{D\_W8}} \\
+16 & {{D\_W16}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Top-K Too Small}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{$k$} & \textbf{DistilBERT} \\
+\midrule
+1 & {{D\_K1}} \\
+2 & {{D\_K2}} \\
+4 & {{D\_K4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Density Too High}
+
+Even at density 100\% (large $w + k$), accuracy doesn't exceed baseline 
+(because the mask is trivial).
+
+\subsection{D.4 Fixes That Didn't Help}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
+\midrule
+Learned selection threshold & Quality & No improvement \\
+Two-pass selection & Quality & Slower \\
+Sparse tensor mask & Memory & Slower in Python \\
+Cached top-k indices & Speed & Not applicable at inference \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+**Mean** & **{{MEAN}}** \\
+**Std** & **{{STD}}** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 Lessons Learned}
+
+1. \textbf{Mask order matters:} local $\to$ causal $\to$ top-$k$.
+2. \textbf{Short sequences skip top-$k$.}
+3. \textbf{Fixed $w, k$ suffices.}
+4. \textbf{No time speedup without sparse kernels.}
+5. \textbf{Density decreases with $L$.}

@@ -5,33 +5,33 @@
 
 AASVD compresses each targeted \texttt{nn.Linear} (or \texttt{Conv1D}) layer in four phases:
 
-1. \textbf{Calibration} (§4.2): collect $C_X$ per layer via streaming EMA.
-2. \textbf{Weighted SVD} (§4.3): factorize $W C_X^{1/2}$, then unweight.
-3. \textbf{Validation} (§4.4): compute Frobenius reconstruction error.
-4. \textbf{Replacement} (§4.5): substitute \texttt{SVDLinear} if error is within threshold.
+1. \textbf{Calibration} ( 4.2): collect $C_X$ per layer via streaming EMA.
+2. \textbf{Weighted SVD} ( 4.3): factorize $W C_X^{1/2}$, then unweight.
+3. \textbf{Validation} ( 4.4): compute Frobenius reconstruction error.
+4. \textbf{Replacement} ( 4.5): substitute \texttt{SVDLinear} if error is within threshold.
 
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-   ┌───────────────────────────────────────────┐
-   │  Phase 1: Streaming EMA Calibration       │
-   │  Input: bundled or user texts             │
-   │  Output: C_X^(ℓ) for each target layer    │
-   └────────────────┬──────────────────────────┘
-                    │
-                    ▼
-   ┌───────────────────────────────────────────┐
-   │  For each layer ℓ:                        │
-   │    Phase 2: Weighted SVD at rank r        │
-   │    Phase 3: Frobenius validation          │
-   │    Phase 4: Replace or fallback           │
-   └────────────────┬──────────────────────────┘
-                    │
-                    ▼
-   ┌───────────────────────────────────────────┐
-   │  Compressed model with SVDLinear layers   │
-   │  Ready for LoRA recovery fine-tuning      │
-   └───────────────────────────────────────────┘
+   +-------------------------------------------+
+   |  Phase 1: Streaming EMA Calibration       |
+   |  Input: bundled or user texts             |
+   |  Output: C_X^( ) for each target layer    |
+   +----------------+--------------------------+
+                    |
+                     
+   +-------------------------------------------+
+   |  For each layer  :                        |
+   |    Phase 2: Weighted SVD at rank r        |
+   |    Phase 3: Frobenius validation          |
+   |    Phase 4: Replace or fallback           |
+   +----------------+--------------------------+
+                    |
+                     
+   +-------------------------------------------+
+   |  Compressed model with SVDLinear layers   |
+   |  Ready for LoRA recovery fine-tuning      |
+   +-------------------------------------------+
 \end{lstlisting}
 
 \subsection{4.2 Phase 1: Streaming Covariance Calibration}
@@ -101,7 +101,7 @@ We ship a \textbf{default multi-domain corpus} of 5 documents:
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{#} & \textbf{Domain} & \textbf{Approximate length} \\
+\textbf{\#} & \textbf{Domain} & \textbf{Approximate length} \\
 \midrule
 1 & Technical prose (attention mechanisms) & 45 tokens \\
 2 & Mathematical prose (SVD, activations) & 38 tokens \\
@@ -116,7 +116,7 @@ Total: ~215 tokens. The corpus is designed to activate diverse subspaces
 of the residual stream, providing a broad calibration signal even without 
 access to the target task.
 
-If user-supplied \texttt{calibration_texts} are provided, they \textbf{replace} the 
+If user-supplied \texttt{calibration\\_texts} are provided, they \textbf{replace} the 
 default corpus.
 
 \subsection{4.3 Phase 2: Weighted SVD}
@@ -220,11 +220,11 @@ After factorization, we compute:
 
 1. \textbf{err $\leq \tau$.} The factorization is accepted. \texttt{SVDLinear} replaces 
    the original layer.
-2. \textbf{err $> \tau$.} If \texttt{fallback_to_original = True}, the original layer 
+2. \textbf{err $> \tau$.} If \texttt{fallback\\_to\\_original = True}, the original layer 
    is preserved and logged. Otherwise, the factorization is applied anyway 
    with a warning.
 
-We default to \texttt{fallback_to_original = True} and \texttt{max_error = 0.50}.
+We default to \texttt{fallback\\_to\\_original = True} and \texttt{max\\_error = {{MAX\\_ERROR}}}.
 
 \subsection{4.5 Phase 4: Structural Replacement}
 
@@ -260,9 +260,9 @@ where:
 \toprule
 \textbf{Configuration} & \textbf{Parameters} \\
 \midrule
-Original & $d\_\text{in} d\_\text{out}$ \\
-AASVD at rank $r$ & $r(d\_\text{in} + d\_\text{out})$ \\
-AASVD + LoRA($r\_L$) & $r(d\_\text{in} + d\_\text{out}) + r\_L(d\_\text{in} + d\_\text{out})$ \\
+Original & $d_\text{in} d_\text{out}$ \\
+AASVD at rank $r$ & $r(d_\text{in} + d_\text{out})$ \\
+AASVD + LoRA($r_L$) & $r(d_\text{in} + d_\text{out}) + r_L(d_\text{in} + d_\text{out})$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -275,9 +275,9 @@ For a $768 \times 768$ matrix at $r = 64$:
 \toprule
 \textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-Original & 589,824 & 1.00× \\
-AASVD r=64 & 98,304 & **6.0×** \\
-AASVD r=64 + LoRA r=16 & 122,880 & **4.8×** \\
+Original & 589,824 & 1.00$\times$ \\
+AASVD r=64 & 98,304 & **6.0$\times$** \\
+AASVD r=64 + LoRA r=16 & 122,880 & **4.8$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -291,50 +291,50 @@ adapters $A, B$ are trainable. This ensures that:
 2. The parameter reduction persists after fine-tuning.
 3. Gradient flow through $U, V$ is blocked to avoid drift.
 
-The freeze is implemented via \texttt{requires_grad = False} on $U, V$.
+The freeze is implemented via \texttt{requires\\_grad = False} on $U, V$.
 
 \subsection{4.6 The Full Algorithm}
 
 \textbf{Algorithm 1:} AASVD compression
 \begin{lstlisting}
-Input:  model M, rank r, threshold τ, β=0.9
+Input:  model M, rank r, threshold $\tau$, $\beta$=0.9
         calibration texts D_calib
 Output: compressed model M', statistics
 
-1:  for ℓ in target_layers(M) do
-2:      register_forward_hook(ℓ, accumulate_C_X)
+1:  for   in target_layers(M) do
+2:      register_forward_hook( , accumulate_C_X)
 3:  end for
 4:
 5:  # Phase 1: Calibration
-6:  inputs ← tokenize(D_calib)
+6:  inputs $\leftarrow$ tokenize(D_calib)
 7:  forward(M, inputs)
 8:  remove_hooks()
 9:
 10: # Cache eigendecomposition per layer
-11: for ℓ in target_layers(M) do
-12:     Q, Λ ← eigh(C_X^(ℓ))
-13:     C_sqrt[ℓ] ← Q @ diag(√Λ) @ Q.T
-14:     C_inv_sqrt[ℓ] ← Q @ diag(1/√Λ) @ Q.T
+11: for   in target_layers(M) do
+12:     Q,   $\leftarrow$ eigh(C_X^( ))
+13:     C_sqrt[ ] $\leftarrow$ Q @ diag($\sqrt{}$ ) @ Q.T
+14:     C_inv_sqrt[ ] $\leftarrow$ Q @ diag(1/$\sqrt{}$ ) @ Q.T
 15: end for
 16:
 17: # Phase 2-4: Weighted SVD + validation
-18: for ℓ in target_layers(M) do
-19:     W ← weight(ℓ)
-20:     W_weighted ← W @ C_sqrt[ℓ]
-21:     U, Σ, V ← svd(W_weighted)
-22:     U_r, V_r ← truncate(U, Σ, V, r)
-23:     V_r ← V_r @ C_inv_sqrt[ℓ]
-24:     W_rec ← U_r @ V_r
-25:     err ← ‖W - W_rec‖_F / (‖W‖_F + ε)
+18: for   in target_layers(M) do
+19:     W $\leftarrow$ weight( )
+20:     W_weighted $\leftarrow$ W @ C_sqrt[ ]
+21:     U,  , V $\leftarrow$ svd(W_weighted)
+22:     U_r, V_r $\leftarrow$ truncate(U,  , V, r)
+23:     V_r $\leftarrow$ V_r @ C_inv_sqrt[ ]
+24:     W_rec $\leftarrow$ U_r @ V_r
+25:     err $\leftarrow$  W - W_rec _F / ( W _F + $\epsilon$)
 26:
-27:     if err ≤ τ:
-28:         replace(ℓ, SVDLinear(U_r, V_r))
+27:     if err $\le$ $\tau$:
+28:         replace( , SVDLinear(U_r, V_r))
 29:     elif fallback_to_original:
-30:         log_warning(ℓ, err)
-31:         mark_fallback(ℓ)
+30:         log_warning( , err)
+31:         mark_fallback( )
 32:     else:
-33:         log_warning(ℓ, err)
-34:         replace(ℓ, SVDLinear(U_r, V_r))
+33:         log_warning( , err)
+34:         replace( , SVDLinear(U_r, V_r))
 35: end for
 36:
 37: return M'
@@ -349,10 +349,10 @@ Output: compressed model M', statistics
 \textbf{Phase} & \textbf{Time} & \textbf{GPU Memory} \\
 \midrule
 Calibration & $\mathcal{O}(N B d^2)$ & $\mathcal{O}(B d)$ \\
-Eigendecomposition & $\mathcal{O}(N\_l d^3)$ & $\mathcal{O}(d^2)$ \\
-Weighted SVD & $\mathcal{O}(N\_l d^3)$ & $\mathcal{O}(d^2)$ \\
-Validation & $\mathcal{O}(N\_l r d^2)$ & $\mathcal{O}(d^2)$ \\
-**Total** & $\mathcal{O}(N\_l d^3)$ & $\mathcal{O}(N\_l d^2)$ \\
+Eigendecomposition & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(d^2)$ \\
+Weighted SVD & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(d^2)$ \\
+Validation & $\mathcal{O}(N_l r d^2)$ & $\mathcal{O}(d^2)$ \\
+**Total** & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(N_l d^2)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -367,7 +367,7 @@ DistilBERT ($N_l = 6$, $d = 768$): ~14M values, ~56 MB at FP32.
 \textbf{Proposition.} $W C_X^{1/2}$ truncated at rank $r$ minimizes $\|(W - W_r) C_X^{1/2}\|_F$ 
 over all rank-$r$ matrices $W_r$.
 
-\textbf{Proof.} This is a direct application of Eckart–Young to the matrix 
+\textbf{Proof.} This is a direct application of Eckart--Young to the matrix 
 $W C_X^{1/2}$. $\square$
 
 \subsubsection{4.8.2 Relation to Standard SVD}

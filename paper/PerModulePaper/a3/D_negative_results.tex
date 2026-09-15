@@ -15,7 +15,7 @@
 
 \textbf{Goal.} Use random inputs instead of real text.
 
-\textbf{Result.} Fisher weighting accuracy degraded to \textbf{{{RANDOM_CALIB_ACC}}\%}.
+\textbf{Result.} Fisher weighting accuracy degraded to \textbf{{{RANDOM\_CALIB\_ACC}}\%}.
 
 \textbf{Conclusion.} Real calibration data is required.
 
@@ -25,10 +25,10 @@
 
 \textbf{Result.} 
 \begin{itemize}
-\item Memory: O(batch × d) instead of O(d)
+\item Memory: O(batch $\times$ d) instead of O(d)
 \end{itemize}
 \begin{itemize}
-\item Time: 3× slower
+\item Time: 3$\times$ slower
 \end{itemize}
 \begin{itemize}
 \item Accuracy improvement: <0.5\%
@@ -42,7 +42,7 @@
 
 \textbf{Result.}
 \begin{itemize}
-\item Time: 20× slower than adaptive escalation
+\item Time: 20$\times$ slower than adaptive escalation
 \end{itemize}
 \begin{itemize}
 \item Accuracy improvement: <1\%
@@ -54,7 +54,7 @@
 
 \textbf{Goal.} Force compression even if error exceeds threshold.
 
-\textbf{Result.} Accuracy collapsed to \textbf{{{NO_FALLBACK_ACC}}\%}.
+\textbf{Result.} Accuracy collapsed to \textbf{{{NO\_FALLBACK\_ACC}}\%}.
 
 \textbf{Conclusion.} Fallback is essential.
 
@@ -68,12 +68,12 @@ Fisher. Result: no improvement over uniform LoRA.
 \subsubsection{D.2.2 Iterative Refinement}
 
 We tried iteratively reweighting after the first SVD pass. Result: no 
-significant improvement, and 3× slower.
+significant improvement, and 3$\times$ slower.
 
 \subsubsection{D.2.3 Non-Diagonal Fisher}
 
 We tried using the full Fisher matrix instead of just diagonal. Result: 
-5× memory, 2× slower, <0.3\% improvement.
+5$\times$ memory, 2$\times$ slower, <0.3\% improvement.
 
 \subsection{D.3 Failed Hyperparameters}
 
@@ -102,12 +102,12 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 \toprule
 \textbf{Rank} & \textbf{Ratio} & \textbf{DistilBERT} \\
 \midrule
-8 & 15× & {{D\_R8\_ACC}} (too aggressive) \\
-16 & 8× & {{D\_R16\_ACC}} \\
-32 & 4× & {{D\_R32\_ACC}} \\
-64 & 2× & {{D\_R64\_ACC}} \\
-128 & 1.3× & {{D\_R128\_ACC}} \\
-384 & 1× & {{D\_R384\_ACC}} \\
+8 & 15$\times$ & {{D\_R8\_ACC}} (too aggressive) \\
+16 & 8$\times$ & {{D\_R16\_ACC}} \\
+32 & 4$\times$ & {{D\_R32\_ACC}} \\
+64 & 2$\times$ & {{D\_R64\_ACC}} \\
+128 & 1.3$\times$ & {{D\_R128\_ACC}} \\
+384 & 1$\times$ & {{D\_R384\_ACC}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -164,5 +164,5 @@ We ran 3 seeds on DistilBERT:
 
 1. \textbf{Use default hyperparameters} unless you have evidence otherwise.
 2. \textbf{Start with rank 64} and adjust based on error.
-3. \textbf{Always include calibration data} — even 100 examples help.
+3. \textbf{Always include calibration data} -- even 100 examples help.
 4. \textbf{Enable fallback} in production.

@@ -5,50 +5,50 @@
 ClusterFormer replaces the standard attention operation with four 
 components:
 
-1. \textbf{Fast differentiable K-means} over queries (§4.2).
-2. \textbf{Centroid-to-key cross-attention} (§4.3).
-3. \textbf{Soft assignment with learned temperature} (§4.4).
-4. \textbf{Local sliding window residual} (§4.5).
+1. \textbf{Fast differentiable K-means} over queries ( 4.2).
+2. \textbf{Centroid-to-key cross-attention} ( 4.3).
+3. \textbf{Soft assignment with learned temperature} ( 4.4).
+4. \textbf{Local sliding window residual} ( 4.5).
 
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    ┌─────────────────────────────────────────────┐
-    │  Input X → Q, K, V projections (frozen+LoRA) │
-    └─────────────────────┬───────────────────────┘
-                          │
-              ┌───────────┴───────────┐
-              ▼                       ▼
-        ┌───────────┐           ┌───────────┐
-        │ K-means   │           │ Local     │
-        │ on Q      │           │ Window    │
-        │ → C       │           │ Attention │
-        └─────┬─────┘           └─────┬─────┘
-              │                       │
-              ▼                       │
-        ┌───────────┐                 │
-        │ Centroid- │                 │
-        │ to-Key    │                 │
-        │ → V_cent  │                 │
-        └─────┬─────┘                 │
-              │                       │
-              ▼                       │
-        ┌───────────┐                 │
-        │ Soft      │                 │
-        │ Assign    │                 │
-        │ → Global  │                 │
-        └─────┬─────┘                 │
-              │                       │
-              └─────────┬─────────────┘
-                        ▼
-                ┌──────────────┐
-                │ Blend with α │
-                └──────┬───────┘
-                       │
-                       ▼
-                  ┌────────┐
-                  │ out    │
-                  └────────┘
+    +---------------------------------------------+
+    |  Input X $\to$ Q, K, V projections (frozen+LoRA) |
+    +---------------------+-----------------------+
+                          |
+              +-----------+-----------+
+                                       
+        +-----------+           +-----------+
+        | K-means   |           | Local     |
+        | on Q      |           | Window    |
+        | $\to$ C       |           | Attention |
+        +-----+-----+           +-----+-----+
+              |                       |
+                                      |
+        +-----------+                 |
+        | Centroid- |                 |
+        | to-Key    |                 |
+        | $\to$ V_cent  |                 |
+        +-----+-----+                 |
+              |                       |
+                                      |
+        +-----------+                 |
+        | Soft      |                 |
+        | Assign    |                 |
+        | $\to$ Global  |                 |
+        +-----+-----+                 |
+              |                       |
+              +---------+-------------+
+                         
+                +--------------+
+                | Blend with $\alpha$ |
+                +------+-------+
+                       |
+                        
+                  +--------+
+                  | out    |
+                  +--------+
 \end{lstlisting}
 
 \subsection{4.2 Phase 1: Fast Differentiable K-Means}
@@ -85,7 +85,7 @@ C_{b,h,k} = \frac{\sum_{i: a_{b,h,i} = k} Q_{b,h,i}}{\sum_{i: a_{b,h,i} = k} 1}
 \tag{4.2}
 \]
 
-Counts are clamped to ≥1 to avoid division by zero. Empty clusters keep 
+Counts are clamped to $\ge$1 to avoid division by zero. Empty clusters keep 
 their previous centroid.
 
 \subsubsection{4.2.3 Why 3 Iterations?}
@@ -121,7 +121,7 @@ V_{\text{cent}, b,h,k} = \sum_j \alpha_{b,h,k,j} V_{b,h,j}
 \tag{4.5}
 \]
 
-\textbf{Complexity.} $\mathcal{O}(K \cdot L \cdot d_h)$ — linear in $L$!
+\textbf{Complexity.} $\mathcal{O}(K \cdot L \cdot d_h)$ -- linear in $L$!
 
 \textbf{Padding.} Invalid keys are masked with $-\infty$ before softmax.
 
@@ -189,43 +189,43 @@ negative or >1 weights.
 
 \textbf{Algorithm 1:} ClusterFormer forward pass
 \begin{lstlisting}
-Input:  X ∈ R^{B×L×d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
 Output: Y, attn_weights
 
- 1: Q ← LoRALinear_Q(X)                       ▷ Frozen base + LoRA
- 2: K ← LoRALinear_K(X)
- 3: V ← LoRALinear_V(X)
+ 1: Q $\leftarrow$ LoRALinear_Q(X)                         Frozen base + LoRA
+ 2: K $\leftarrow$ LoRALinear_K(X)
+ 3: V $\leftarrow$ LoRALinear_V(X)
  4:
- 5: (Q, K) ← apply_rope(Q, K, cos, sin)
- 6: if GQA: K, V ← repeat_kv(K, V)
+ 5: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
+ 6: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
  7:
- 8: if decoder:                                 ▷ Exact causal path
- 9:     S ← QK^T / √d_h
-10:     S ← causal_mask(S)
-11:     A ← softmax(S)
-12:     Y_ctx ← A @ V
-13: else:                                        ▷ Cluster path
-14:     C, ids, counts ← kmeans(Q, K, iters=3)   ▷ Cluster queries
-15:     S_cent ← C K^T / √d_h
-16:     A_cent ← softmax(S_cent)
-17:     V_cent ← A_cent @ V                       ▷ Centroid contexts
-18:     S_assign ← Q C^T / (√d_h · τ)
-19:     A_assign ← softmax(S_assign)
-20:     Y_global ← A_assign @ V_cent
+ 8: if decoder:                                   Exact causal path
+ 9:     S $\leftarrow$ QK^T / $\sqrt{}$d_h
+10:     S $\leftarrow$ causal_mask(S)
+11:     A $\leftarrow$ softmax(S)
+12:     Y_ctx $\leftarrow$ A @ V
+13: else:                                          Cluster path
+14:     C, ids, counts $\leftarrow$ kmeans(Q, K, iters=3)     Cluster queries
+15:     S_cent $\leftarrow$ C K^T / $\sqrt{}$d_h
+16:     A_cent $\leftarrow$ softmax(S_cent)
+17:     V_cent $\leftarrow$ A_cent @ V                         Centroid contexts
+18:     S_assign $\leftarrow$ Q C^T / ($\sqrt{}$d_h   $\tau$)
+19:     A_assign $\leftarrow$ softmax(S_assign)
+20:     Y_global $\leftarrow$ A_assign @ V_cent
 21:
 22:     if W > 0:
-23:         S_local ← QK^T / √d_h
-24:         S_local ← window_mask(S_local, W)
-25:         A_local ← softmax(S_local)
-26:         Y_local ← A_local @ V
-27:         α ← σ(learned_scalar)
-28:         Y_ctx ← (1-α) Y_global + α Y_local
+23:         S_local $\leftarrow$ QK^T / $\sqrt{}$d_h
+24:         S_local $\leftarrow$ window_mask(S_local, W)
+25:         A_local $\leftarrow$ softmax(S_local)
+26:         Y_local $\leftarrow$ A_local @ V
+27:         $\alpha$ $\leftarrow$ $\sigma$(learned_scalar)
+28:         Y_ctx $\leftarrow$ (1-$\alpha$) Y_global + $\alpha$ Y_local
 29:     else:
-30:         Y_ctx ← Y_global
+30:         Y_ctx $\leftarrow$ Y_global
 31:
-32: Y ← Y_ctx.reshape(B, L, H·d_h)
-33: if nested: Y_out ← Y
-34: else: Y_out ← LoRALinear_O(Y)
+32: Y $\leftarrow$ Y_ctx.reshape(B, L, H d_h)
+33: if nested: Y_out $\leftarrow$ Y
+34: else: Y_out $\leftarrow$ LoRALinear_O(Y)
 35:
 36: return Y_out
 \end{lstlisting}
@@ -241,12 +241,12 @@ Output: Y, attn_weights
 \textbf{Component} & \textbf{Complexity} \\
 \midrule
 Q/K/V projections & $\mathcal{O}(L d^2)$ \\
-K-means (3 iters) & $\mathcal{O}(K L d\_h)$ \\
-Centroid-to-key & $\mathcal{O}(K L d\_h)$ \\
-Soft assignment & $\mathcal{O}(K L d\_h)$ \\
-Local window & $\mathcal{O}(L W d\_h)$ \\
+K-means (3 iters) & $\mathcal{O}(K L d_h)$ \\
+Centroid-to-key & $\mathcal{O}(K L d_h)$ \\
+Soft assignment & $\mathcal{O}(K L d_h)$ \\
+Local window & $\mathcal{O}(L W d_h)$ \\
 Output projection & $\mathcal{O}(L d^2)$ \\
-**Total** & $\mathcal{O}(L d^2 + L K d\_h + L W d\_h)$ \\
+**Total** & $\mathcal{O}(L d^2 + L K d_h + L W d_h)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -261,8 +261,8 @@ For $K, W \ll L$, this is effectively \textbf{linear in $L$}.
 \toprule
 \textbf{Config} & \textbf{Attention cost} \\
 \midrule
-Baseline & $\mathcal{O}(L^2 d\_h)$ \\
-ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d\_h)$ \\
+Baseline & $\mathcal{O}(L^2 d_h)$ \\
+ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d_h)$ \\
 **Reduction at $L=128$** & **$\approx 2.7\times$** \\
 **Reduction at $L=512$** & **$\approx 10.7\times$** \\
 \bottomrule
@@ -277,11 +277,11 @@ ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d\_h)$ \\
 \toprule
 \textbf{Component} & \textbf{Parameters} \\
 \midrule
-LoRA ($r\_L=16$) & $4 \times r\_L \times d$ per layer \\
+LoRA ($r_L=16$) & $4 \times r_L \times d$ per layer \\
 Learnable temperature & 1 \\
 Learnable blend & 1 \\
-**Per layer** & $4 r\_L d + 2$ \\
-**Total ($N\_l$ layers)** & $4 r\_L d N\_l + 2 N\_l$ \\
+**Per layer** & $4 r_L d + 2$ \\
+**Total ($N_l$ layers)** & $4 r_L d N_l + 2 N_l$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -289,7 +289,7 @@ Learnable blend & 1 \\
 For DistilBERT ($d=768$, $r_L=16$, $N_l=6$): \textbf{+294,916 params}.
 
 \textbf{ClusterFormer is not a compression method.} Parameter count increases 
-by \textbf{0.88\%}.
+by \textbf{{{PARAM\_CHANGE}}\%}.
 
 \subsection{4.8 Theoretical Notes}
 

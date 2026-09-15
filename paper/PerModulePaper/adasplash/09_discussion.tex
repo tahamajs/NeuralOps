@@ -3,7 +3,7 @@
 
 \subsection{9.1 Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Sparsity ≠ Compression}
+\subsubsection{9.1.1 Takeaway 1: Sparsity $\ne$ Compression}
 
 AdaSplash produces sparse attention but \textbf{increases} parameter count. 
 It is not a compression method. Its value is in:
@@ -17,60 +17,60 @@ It is not a compression method. Its value is in:
 \item \textbf{Attention pattern analysis}
 \end{itemize}
 
-\subsubsection{9.1.2 Takeaway 2: α = 1.5 is a Good Default}
+\subsubsection{9.1.2 Takeaway 2: $\alpha$ = 1.5 is a Good Default}
 
-Empirically, α = 1.5 balances sparsity and accuracy. α = 2.0 (sparsemax) 
+Empirically, $\alpha$ = 1.5 balances sparsity and accuracy. $\alpha$ = 2.0 (sparsemax) 
 is too sparse for stable training.
 
 \subsubsection{9.1.3 Takeaway 3: Attention Sinks Matter}
 
 Preserving the first 4 tokens is critical. Without them, accuracy drops by 
-4.5\%.
+{{SINK\_DROP}}\%.
 
 \subsection{9.2 When to Use AdaSplash}
 
 \subsubsection{Recommended}
 
 \begin{itemize}
-\item \textbf{Interpretability research} — sparse attention is easier to analyze
+\item \textbf{Interpretability research} -- sparse attention is easier to analyze
 \end{itemize}
 \begin{itemize}
-\item \textbf{Attention pattern analysis} — sparsity reveals structure
+\item \textbf{Attention pattern analysis} -- sparsity reveals structure
 \end{itemize}
 \begin{itemize}
-\item \textbf{Sparse hardware deployment} — 2:4 sparsity can be leveraged
+\item \textbf{Sparse hardware deployment} -- 2:4 sparsity can be leveraged
 \end{itemize}
 \begin{itemize}
-\item \textbf{Long-context inference} — splash masking reduces KV cache
+\item \textbf{Long-context inference} -- splash masking reduces KV cache
 \end{itemize}
 
 \subsubsection{Not Recommended}
 
 \begin{itemize}
-\item \textbf{Model size reduction} — AdaSplash increases size
+\item \textbf{Model size reduction} -- AdaSplash increases size
 \end{itemize}
 \begin{itemize}
-\item \textbf{Latency-critical inference} — bisection is slow
+\item \textbf{Latency-critical inference} -- bisection is slow
 \end{itemize}
 \begin{itemize}
-\item \textbf{Extreme compression} — use A3/AASVD instead
+\item \textbf{Extreme compression} -- use A3/AASVD instead
 \end{itemize}
 \begin{itemize}
-\item \textbf{Simple classification} — softmax already works
+\item \textbf{Simple classification} -- softmax already works
 \end{itemize}
 
 \subsection{9.3 Decision Flowchart}
 
 \begin{lstlisting}
-Need size reduction? ─── Yes ─── Use A3/AASVD/Adaptive SVD
-  │ No
-  ▼
-Need interpretable attention? ─── Yes ─── AdaSplash
-  │ No
-  ▼
-Need latency reduction? ─── Yes ─── Use quantized attention
-  │ No
-  ▼
+Need size reduction? --- Yes --- Use A3/AASVD/Adaptive SVD
+  | No
+   
+Need interpretable attention? --- Yes --- AdaSplash
+  | No
+   
+Need latency reduction? --- Yes --- Use quantized attention
+  | No
+   
 Consider AdaSplash for research
 \end{lstlisting}
 
@@ -84,11 +84,11 @@ For DistilBERT on SST-2:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{AdaSplash} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & 90.25\% & -0.46\% \\
-Params & 66.95M & 67549448M & +594438 \\
-VRAM & 183 MB & 195 MB & +12 \\
-Inference time & 1.90 s & 3.5 s & 1.84× \\
-Attention sparsity & 0\% & 42\% & +40\% \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & {{D\_PARAMS\_FULL}}M & +{{D\_PARAM\_DELTA}} \\
+VRAM & 183 MB & {{D\_VRAM}} MB & +{{D\_VRAM\_DELTA}} \\
+Inference time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Attention sparsity & 0\% & {{D\_SPARSITY}}\% & +40\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,11 +103,11 @@ Attention sparsity & 0\% & 42\% & +40\% \\
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Params} & \textbf{Sparse} & \textbf{Latency} \\
 \midrule
-Softmax & Baseline & 0\% & No & 1× \\
-Longformer & Local & 0\% & No & ~1× \\
-Performer & Kernel & +linear & No & ~1× \\
-Sparsemax & Activation & 0\% & Yes & ~5× \\
-**AdaSplash** & **Activation + Local** & **+1\%** & **Yes** & **~1.9×** \\
+Softmax & Baseline & 0\% & No & 1$\times$ \\
+Longformer & Local & 0\% & No & ~1$\times$ \\
+Performer & Kernel & +linear & No & ~1$\times$ \\
+Sparsemax & Activation & 0\% & Yes & ~5$\times$ \\
+**AdaSplash** & **Activation + Local** & **+1\%** & **Yes** & **~1.9$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -118,7 +118,7 @@ Sparsemax & Activation & 0\% & Yes & ~5× \\
 AdaSplash increases storage slightly due to LoRA.
 
 \subsubsection{Latency}
-~1.9× slower. Acceptable for research; not for production.
+~{{LATENCY\_RATIO}}$\times$ slower. Acceptable for research; not for production.
 
 \subsubsection{Interpretability}
 Sparse attention maps can be visualized directly.
@@ -130,7 +130,7 @@ AdaSplash's sparse outputs can be exploited for actual speedup.
 \subsection{9.7 Open Questions}
 
 1. \textbf{Fused kernels:} Would a Triton kernel for bisection speed it up?
-2. \textbf{Learned α:} Would per-layer learned α help?
+2. \textbf{Learned $\alpha$:} Would per-layer learned $\alpha$ help?
 3. \textbf{Sparse hardware:} Actual speedup on Ampere 2:4 sparsity?
 4. \textbf{Long context:} How does AdaSplash scale to L = 4096?
 
@@ -149,7 +149,7 @@ AdaSplash's sparse outputs can be exploited for actual speedup.
 
 \subsubsection{Negative}
 \begin{itemize}
-\item \textbf{Not a compression method} — may mislead
+\item \textbf{Not a compression method} -- may mislead
 \end{itemize}
 \begin{itemize}
 \item \textbf{Slower inference}
@@ -159,4 +159,4 @@ AdaSplash's sparse outputs can be exploited for actual speedup.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~12 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.

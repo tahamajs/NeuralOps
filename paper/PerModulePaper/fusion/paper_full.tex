@@ -34,24 +34,24 @@
 
 \textbf{Authors:}
 \begin{itemize}
-\item Your Name¹ — you@university.edu
+\item Your Name¹ --- you@university.edu
 \end{itemize}
 \begin{itemize}
-\item {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+\item {{AUTHOR\_2\_NAME}}² --- {{AUTHOR\_2\_EMAIL}}
 \end{itemize}
 
 \textbf{Affiliations:}
 \begin{itemize}
-\item ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
+\item ¹ {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+\item ² {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
 \end{itemize}
 
-\textbf{Corresponding author:} {{CORRESPONDING_AUTHOR}}
+\textbf{Corresponding author:} {{CORRESPONDING\_AUTHOR}}
 \textbf{Preprint date:} 2026-09-15
 \textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD_Project/tree/main/framework/attentions/fusion_attn.py
+\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/fusion\_attn.py
 \textbf{License:} MIT
 
 
@@ -60,7 +60,7 @@
 
 Long-context attention in transformers is quadratic in sequence length, 
 $\mathcal{O}(L^2 d)$, which makes inference prohibitively expensive at 
-$L \geq 4096$. Existing sparse methods — Longformer, BigBird, MoBA — reduce 
+$L \geq 4096$. Existing sparse methods --- Longformer, BigBird, MoBA --- reduce 
 this to $\mathcal{O}(L \cdot W \cdot d)$ or $\mathcal{O}(K \cdot L \cdot d)$ 
 but often apply the same sparsity pattern regardless of sequence length. 
 We introduce \textbf{FUSIONATTN}, a \textbf{multi-paradigm hybrid attention} that 
@@ -111,35 +111,35 @@ sequences.
 
 \subsection{Table of Contents}
 
-1. [Introduction](01_intro.md)
-2. [Related Work](02_related.md)
-3. [Background](03_background.md)
-4. [Method](04_method.md)
-5. [Architecture Integration](05_architecture.md)
-6. [Experimental Setup](06_setup.md)
-7. [Results](07_results.md)
-8. [Analysis](08_analysis.md)
-9. [Discussion](09_discussion.md)
-10. [Limitations](10_limitations.md)
-11. [Conclusion](11_conclusion.md)
-12. [Reproducibility](12_reproducibility.md)
-13. [References](13_references.md)
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
 
 \textbf{Appendices:}
 \begin{itemize}
-\item [A. Mathematical Derivations](A_math.md)
+\item [A. Mathematical Derivations](A\_math.md)
 \end{itemize}
 \begin{itemize}
-\item [B. Implementation Details](B_implementation.md)
+\item [B. Implementation Details](B\_implementation.md)
 \end{itemize}
 \begin{itemize}
-\item [C. Full Experimental Data](C_data.md)
+\item [C. Full Experimental Data](C\_data.md)
 \end{itemize}
 \begin{itemize}
-\item [D. Negative Results](D_negative_results.md)
+\item [D. Negative Results](D\_negative\_results.md)
 \end{itemize}
 \begin{itemize}
-\item [E. Ethical Considerations](E_ethics.md)
+\item [E. Ethical Considerations](E\_ethics.md)
 \end{itemize}
 
 \clearpage
@@ -157,7 +157,7 @@ every key:
 \]
 
 requiring $\mathcal{O}(L^2 d)$ time and $\mathcal{O}(L^2)$ memory. For 
-$L = 4096$, this is 32 MB per head, per layer, in FP16 — 100 GB+ for a 
+$L = 4096$, this is 32 MB per head, per layer, in FP16 --- 100 GB+ for a 
 typical model. Even with memory-efficient kernels like FlashAttention, the 
 attention matrix's computational cost is still quadratic.
 
@@ -202,7 +202,7 @@ by the LoRA adapters and gate MLP.
 
 FUSIONATTN dispatches based on sequence length:
 
-\subsubsection{Short Path (L ≤ 128)}
+\subsubsection{Short Path (L $\le$ 128)}
 
 Standard softmax attention. No sparsity, no overhead. Mathematically 
 identical to the pretrained model (given base weights copied exactly).
@@ -252,7 +252,7 @@ task-specific sparsity patterns.
 \item \textbf{Honest reporting.} We disclose that at $L = 128$ (our test length), the
 \end{itemize}
   module takes the short path and provides \textbf{no sparsity benefit}. We 
-  report this transparently. Sections 7–8.
+  report this transparently. Sections 7--8.
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code and evaluation scripts released under
 \end{itemize}
@@ -415,7 +415,7 @@ GQA uses $H_{kv} < H$ KV heads, repeated to match query heads:
 \subsection{3.5 Rotary Position Embeddings}
 
 RoPE rotates Q, K by position-dependent angles. Partial RoPE (Qwen3.5) 
-rotates only the first \texttt{rotary_dim} coordinates.
+rotates only the first \texttt{rotary\\_dim} coordinates.
 
 \subsection{3.6 LoRA}
 
@@ -448,7 +448,7 @@ FUSIONATTN has two execution paths selected by sequence length:
 
 \begin{lstlisting}
     ┌──────────────────────────────────────┐
-    │  Input X → Q/K/V projections         │
+    │  Input X $\to$ Q/K/V projections         │
     │  (frozen base + LoRA)                │
     └────────────────┬─────────────────────┘
                      │
@@ -459,7 +459,7 @@ FUSIONATTN has two execution paths selected by sequence length:
                      │
                      ▼
     ┌──────────────────────────────────────┐
-    │  Is L ≤ 128?                          │
+    │  Is L $\le$ 128?                          │
     └────┬──────────────────────┬──────────┘
          │ Yes                  │ No
          ▼                      ▼
@@ -571,40 +571,40 @@ with causal masking if decoder, and padding masking.
 Input:  X, attention_mask, position_embeddings
 Output: Y, attn_weights
 
-1:  Q ← LoRALinear_Q(X)
-2:  K ← LoRALinear_K(X)
-3:  V ← LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear_Q(X)
+2:  K $\leftarrow$ LoRALinear_K(X)
+3:  V $\leftarrow$ LoRALinear_V(X)
 4:
-5:  if RoPE: (Q, K) ← apply_rope(Q, K, cos, sin)
-6:  if GQA: K, V ← repeat_kv(K, V)
+5:  if RoPE: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V)
 7:
-8:  if L ≤ 128 or cross_attention:                  ▷ SHORT PATH
-9:      S ← QK^T / √d_h
-10:     S ← causal_mask(S) if decoder
-11:     S ← padding_mask(S, attention_mask)
-12:     A ← softmax(S)
-13:     Y_ctx ← A @ V
+8:  if L $\le$ 128 or cross_attention:                  ▷ SHORT PATH
+9:      S $\leftarrow$ QK^T / $\sqrt{}$d_h
+10:     S $\leftarrow$ causal_mask(S) if decoder
+11:     S $\leftarrow$ padding_mask(S, attention_mask)
+12:     A $\leftarrow$ softmax(S)
+13:     Y_ctx $\leftarrow$ A @ V
 14:
 15: else:                                              ▷ LONG PATH
-16:     Q_blocks ← partition(Q, block_size)
-17:     K_blocks ← partition(K, block_size)
-18:     Q_means ← mean(Q_blocks, dim=-2)
-19:     K_means ← mean(K_blocks, dim=-2)
-20:     g ← GateMLP(Q_means) @ GateMLP(K_means)^T / τ
-21:     top_idx ← topk(g, K)
-22:     top_idx[..., 0] ← 0                          ▷ Always include block 0
+16:     Q_blocks $\leftarrow$ partition(Q, block_size)
+17:     K_blocks $\leftarrow$ partition(K, block_size)
+18:     Q_means $\leftarrow$ mean(Q_blocks, dim=-2)
+19:     K_means $\leftarrow$ mean(K_blocks, dim=-2)
+20:     g $\leftarrow$ GateMLP(Q_means) @ GateMLP(K_means)^T / $\tau$
+21:     top_idx $\leftarrow$ topk(g, K)
+22:     top_idx[..., 0] $\leftarrow$ 0                          ▷ Always include block 0
 23:     for each query block i:
-24:         K_sel ← gather(K_blocks, top_idx[i])
-25:         V_sel ← gather(V_blocks, top_idx[i])
-26:         S ← Q_blocks[i] @ K_sel^T / √d_h
-27:         S ← causal_mask + padding_mask
-28:         A ← softmax(S)
-29:         Out[i] ← A @ V_sel
-30:     Y_ctx ← concat(Out) and crop to L
+24:         K_sel $\leftarrow$ gather(K_blocks, top_idx[i])
+25:         V_sel $\leftarrow$ gather(V_blocks, top_idx[i])
+26:         S $\leftarrow$ Q_blocks[i] @ K_sel^T / $\sqrt{}$d_h
+27:         S $\leftarrow$ causal_mask + padding_mask
+28:         A $\leftarrow$ softmax(S)
+29:         Out[i] $\leftarrow$ A @ V_sel
+30:     Y_ctx $\leftarrow$ concat(Out) and crop to L
 31:
-32: Y_ctx ← Y_ctx.reshape(B, L, H·d_h)
-33: if nested: Y ← Y_ctx
-34: else: Y ← LoRALinear_O(Y_ctx)
+32: Y_ctx $\leftarrow$ Y_ctx.reshape(B, L, H·d_h)
+33: if nested: Y $\leftarrow$ Y_ctx
+34: else: Y $\leftarrow$ LoRALinear_O(Y_ctx)
 35:
 36: return Y
 \end{lstlisting}
@@ -617,8 +617,8 @@ Output: Y, attn_weights
 \toprule
 \textbf{Path} & \textbf{Time} & \textbf{Memory} \\
 \midrule
-Short ($L \leq 128$) & $\mathcal{O}(L^2 d\_h)$ & $\mathcal{O}(L^2)$ \\
-Long ($L > 128$) & $\mathcal{O}(K \cdot L \cdot B \cdot d\_h)$ & $\mathcal{O}(K \cdot B \cdot L)$ \\
+Short ($L \leq 128$) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2)$ \\
+Long ($L > 128$) & $\mathcal{O}(K \cdot L \cdot B \cdot d_h)$ & $\mathcal{O}(K \cdot B \cdot L)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -632,7 +632,7 @@ For $L = 512, B = 64, K = 4$:
 \item Long: $4 \times 512 \times 64 = 131$K
 \end{itemize}
 \begin{itemize}
-\item \textbf{Reduction: 2×}
+\item \textbf{Reduction: 2$\times$}
 \end{itemize}
 
 For $L = 4096, B = 64, K = 4$:
@@ -644,7 +644,7 @@ For $L = 4096, B = 64, K = 4$:
 \item Long: $1.05$M
 \end{itemize}
 \begin{itemize}
-\item \textbf{Reduction: 16×}
+\item \textbf{Reduction: 16$\times$}
 \end{itemize}
 
 \subsection{4.8 Parameter Analysis}
@@ -655,8 +655,8 @@ For $L = 4096, B = 64, K = 4$:
 \toprule
 \textbf{Component} & \textbf{Parameters} \\
 \midrule
-LoRA ($r\_L$) & $8 r\_L d$ per layer \\
-Gate MLP & $2 \times 4 d\_h^2$ per layer \\
+LoRA ($r_L$) & $8 r_L d$ per layer \\
+Gate MLP & $2 \times 4 d_h^2$ per layer \\
 Gate temperature & 1 \\
 output\_scale & 1 per projection \\
 \bottomrule
@@ -784,7 +784,7 @@ def inject_fusion_attn(layer, cfg, comp_config, old_attn):
 
 \subsection{5.4 Nested Encoder Bypass}
 
-For RoBERTa, \texttt{out_proj} is not applied; outer \texttt{BertSelfOutput.dense} does it.
+For RoBERTa, \texttt{out\\_proj} is not applied; outer \texttt{BertSelfOutput.dense} does it.
 
 \subsection{5.5 GQA}
 
@@ -796,7 +796,7 @@ if self.kv_repeat > 1:
 
 \subsection{5.6 RoPE}
 
-Supports partial RoPE (Qwen3.5 with rotary_dim < head_dim).
+Supports partial RoPE (Qwen3.5 with rotary\_dim < head\_dim).
 
 \subsection{5.7 Registry}
 
@@ -822,7 +822,7 @@ NaN in scores & nan\_to\_num & Replace 0 \\
 \end{tabular}
 \end{table}
 
-\textbf{⚠️ Critical:} \texttt{inject_fusion_attn} has \texttt{raise RuntimeError("copy_weights failed")} 
+\textbf{⚠️ Critical:} \texttt{inject\\_fusion\\_attn} has \texttt{raise RuntimeError("copy\\_weights failed")} 
 which kills the injection on any failure. Recommend changing to \texttt{return None}.
 
 \subsection{5.9 Numerical Stability}
@@ -889,7 +889,7 @@ Precision & FP16 \\
 
 \subsection{6.5 Quality Gate}
 
-PASS ≥ 56\%, PASS_LOW 50.92\%–56\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
 
 \subsection{6.6 Hardware}
 
@@ -920,13 +920,13 @@ python run_all_4_fusion_attn.py \
 \centering
 \begin{tabular}{lllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{Δ} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & — & 0.9099 & 66.9M & 183 MB \\
+DistilBERT & full & 90.71\% & --- & 0.9099 & 66.9M & 183 MB \\
 DistilBERT & **FUSIONATTN** & **90.48** & -0.23 & 0.9052 & 67.74M & 192 MB \\
-RoBERTa & full & 78.56\% & — & 0.8124 & 124.6M & 712 MB \\
+RoBERTa & full & 78.56\% & --- & 0.8124 & 124.6M & 712 MB \\
 RoBERTa & **FUSIONATTN** & **77.35** & -1.21 & 0.778 & 126.10M & 720 MB \\
-GPT-2 & full & 79.36\% & — & 0.7978 & 124.4M & 793 MB \\
+GPT-2 & full & 79.36\% & --- & 0.7978 & 124.4M & 793 MB \\
 GPT-2 & **FUSIONATTN** & **78.90** & -0.46 & 0.788 & 125.90M & 800 MB \\
 \bottomrule
 \end{tabular}
@@ -938,7 +938,7 @@ GPT-2 & **FUSIONATTN** & **78.90** & -0.46 & 0.788 & 125.90M & 800 MB \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Baseline} & \textbf{FUSIONATTN} & \textbf{Δ} \\
+\textbf{Model} & \textbf{Baseline} & \textbf{FUSIONATTN} & \textbf{$\Delta$} \\
 \midrule
 DistilBERT & 66.9M & 67.74M & +786864M \\
 RoBERTa & 124.6M & 126.10M & +1453064M \\
@@ -1027,11 +1027,11 @@ GPT-2 & 124.4M & 125.90M & +1460804M \\
 \centering
 \begin{tabular}{lllll}
 \toprule
-\textbf{Method} & \textbf{D acc} & \textbf{Params Δ} & \textbf{Sparse?} & \textbf{Path at L=128} \\
+\textbf{Method} & \textbf{D acc} & \textbf{Params $\Delta$} & \textbf{Sparse?} & \textbf{Path at L=128} \\
 \midrule
-full & 90.71\% & 0 & No & — \\
-`adasplash` & 90.25\% & +0.89\% & Yes (α-entmax) & — \\
-`nha` & 90.25\% & +0.89\% & No & — \\
+full & 90.71\% & 0 & No & --- \\
+`adasplash` & 90.25\% & +0.89\% & Yes ($\alpha$-entmax) & --- \\
+`nha` & 90.25\% & +0.89\% & No & --- \\
 **`fusion\_attn`** & **90.48** & **+1.17\%** & **Block** & **Short** \\
 \bottomrule
 \end{tabular}
@@ -1073,7 +1073,7 @@ if N <= 128 or is_cross_attention:
 3. \textbf{Only LoRA contributes trainable capacity.}
 4. \textbf{The model is effectively just a LoRA-wrapped baseline.}
 
-This is not a flaw of FUSIONATTN — it's the intended behavior. But at 
+This is not a flaw of FUSIONATTN --- it's the intended behavior. But at 
 $L = 128$, the module's sparsity machinery is silent.
 
 \subsection{8.2 Where FUSIONATTN Matters}
@@ -1086,12 +1086,12 @@ $L = 128$, the module's sparsity machinery is silent.
 \toprule
 \textbf{$L$} & \textbf{Softmax (FLOPs)} & \textbf{FUSIONATTN (FLOPs)} & \textbf{Speedup} \\
 \midrule
-64 & 4096 & 4096 (short) & 1× \\
-128 & 16384 & 16384 (short) & 1× \\
-256 & 65536 & 32768 & 2× \\
-512 & 262144 & 65536 & 4× \\
-1024 & 1.05M & 131K & 8× \\
-4096 & 16.8M & 1.05M & **16×** \\
+64 & 4096 & 4096 (short) & 1$\times$ \\
+128 & 16384 & 16384 (short) & 1$\times$ \\
+256 & 65536 & 32768 & 2$\times$ \\
+512 & 262144 & 65536 & 4$\times$ \\
+1024 & 1.05M & 131K & 8$\times$ \\
+4096 & 16.8M & 1.05M & **16$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1156,11 +1156,11 @@ No systematic failures observed.
 
 \subsection{8.7 Summary of Insights}
 
-1. \textbf{Short path is silent at L=128} — no sparsity benefit.
-2. \textbf{Long path untested} — requires L > 128.
-3. \textbf{Parameter count increases} — LoRA + gate.
+1. \textbf{Short path is silent at L=128} --- no sparsity benefit.
+2. \textbf{Long path untested} --- requires L > 128.
+3. \textbf{Parameter count increases} --- LoRA + gate.
 4. \textbf{Not a compression method.}
-5. \textbf{Theoretical speedup} exists for L ≥ 256.
+5. \textbf{Theoretical speedup} exists for L $\ge$ 256.
 
 \clearpage
 
@@ -1200,13 +1200,13 @@ Parameter count increases by LoRA + gate MLP. Not for size reduction.
 \subsubsection{Not Recommended}
 
 \begin{itemize}
-\item \textbf{Short sequences} ($L < 256$) — no benefit, more parameters
+\item \textbf{Short sequences} ($L < 256$) --- no benefit, more parameters
 \end{itemize}
 \begin{itemize}
-\item \textbf{Model size reduction} — use compression methods
+\item \textbf{Model size reduction} --- use compression methods
 \end{itemize}
 \begin{itemize}
-\item \textbf{Strict latency requirements} — gate adds overhead
+\item \textbf{Strict latency requirements} --- gate adds overhead
 \end{itemize}
 
 \subsection{9.3 Decision Flowchart}
@@ -1234,7 +1234,7 @@ For DistilBERT at $L = 512$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{FUSIONATTN} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 262K & 65K & **4× reduction** \\
+Attention FLOPs & 262K & 65K & **4$\times$ reduction** \\
 Accuracy & 90.71\% & 90.48\% & -0.23\% \\
 Params & 66.9M & 67.74M & +786864M \\
 Gate overhead & 0 & ~32K params & +0.05\% \\
@@ -1284,7 +1284,7 @@ MoBA & Block sparse & $O(KL)$ & No \\
 \subsection{9.7 Open Questions}
 
 1. \textbf{Optimal threshold} for various tasks?
-2. \textbf{Gate training} — does it learn meaningful patterns?
+2. \textbf{Gate training} --- does it learn meaningful patterns?
 3. \textbf{Very long context} ($L > 8192$) behavior?
 4. \textbf{Combination with quantization}?
 
@@ -1306,14 +1306,14 @@ MoBA & Block sparse & $O(KL)$ & No \\
 \item Parameter overhead
 \end{itemize}
 \begin{itemize}
-\item Zero benefit at L ≤ 128
+\item Zero benefit at L $\le$ 128
 \end{itemize}
 \begin{itemize}
 \item Dual-use
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~12 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.
 
 \clearpage
 
@@ -1322,7 +1322,7 @@ Total compute: ~12 GPU-hours, ~{{CO2}} kg CO₂eq.
 \subsection{10.1 Short-Sequence Silencing}
 
 At $L = 128$ (our test length), FUSIONATTN uses the \textbf{short path} and 
-provides no sparsity benefit. All our reported results reflect this — they 
+provides no sparsity benefit. All our reported results reflect this --- they 
 are essentially LoRA-only results.
 
 \subsection{10.2 Long Path Untested}
@@ -1337,7 +1337,7 @@ Parameter count increases by ~1.17\%.
 \subsection{10.4 Gate MLP Overhead}
 
 The gate MLP adds ~0.20M parameters per model but is unused at 
-L ≤ 128.
+L $\le$ 128.
 
 \subsection{10.5 Task Coverage}
 
@@ -1346,7 +1346,7 @@ untested.
 
 \subsection{10.6 Model Coverage}
 
-Three models (66.9M–124.6M).
+Three models (66.9M--124.6M).
 
 \subsection{10.7 Hardware}
 
@@ -1367,7 +1367,7 @@ Standard error ~1.69\%.
 
 \subsection{10.11 Critical Bug: `raise RuntimeError` in inject}
 
-The \texttt{inject_fusion_attn} function has:
+The \texttt{inject\\_fusion\\_attn} function has:
 
 \begin{lstlisting}
 except Exception:
@@ -1409,7 +1409,7 @@ not exercise its sparsity machinery at that length.
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{Params Δ} & \textbf{Path at L=128} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Path at L=128} \\
 \midrule
 DistilBERT & -0.23\% & +786864M & Short \\
 RoBERTa & -1.21\% & +1453064M & Short \\
@@ -1461,10 +1461,10 @@ code under MIT.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments.
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
 \end{itemize}
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided feedback.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}
@@ -1545,9 +1545,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Path} \\
 \midrule
-DistilBERT & 90.48\% ± 1\% & Short \\
-RoBERTa & 77.35\% ± 1\% & Short \\
-GPT-2 & 78.90\% ± 1\% & Short \\
+DistilBERT & 90.48\% $\pm$ 1\% & Short \\
+RoBERTa & 77.35\% $\pm$ 1\% & Short \\
+GPT-2 & 78.90\% $\pm$ 1\% & Short \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1558,10 +1558,10 @@ GPT-2 & 78.90\% ± 1\% & Short \\
 \item Dataset: SST-2
 \end{itemize}
 \begin{itemize}
-\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-fusion_attn}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-fusion\\_attn}
 \end{itemize}
 \begin{itemize}
-\item Metrics: \texttt{results/unified_fusion_attn/*/summary.csv}
+\item Metrics: \texttt{results/unified\\_fusion\\_attn/*/summary.csv}
 \end{itemize}
 
 \subsection{12.8 Known Issues}
@@ -1570,10 +1570,10 @@ GPT-2 & 78.90\% ± 1\% & Short \\
 \item Windows: \texttt{PYTHONIOENCODING=utf-8}
 \end{itemize}
 \begin{itemize}
-\item CUDA ≥ 11.8 for FP16
+\item CUDA $\ge$ 11.8 for FP16
 \end{itemize}
 \begin{itemize}
-\item \texttt{inject_fusion_attn} raises on copy failure (recommend changing to return None)
+\item \texttt{inject\\_fusion\\_attn} raises on copy failure (recommend changing to return None)
 \end{itemize}
 
 \clearpage
@@ -1790,7 +1790,7 @@ Causality is enforced by:
 
 \subsection{A.6 Parameter Count}
 
-For layer with $d$ hidden, $d_h$ head_dim, $r_L$ LoRA rank:
+For layer with $d$ hidden, $d_h$ head\_dim, $r_L$ LoRA rank:
 
 \begin{table}[H]
 \centering
@@ -1798,15 +1798,15 @@ For layer with $d$ hidden, $d_h$ head_dim, $r_L$ LoRA rank:
 \toprule
 \textbf{Component} & \textbf{Parameters} \\
 \midrule
-LoRA Q & $2 r\_L d$ \\
-LoRA K & $2 r\_L d$ \\
-LoRA V & $2 r\_L d$ \\
-LoRA O & $2 r\_L d$ \\
-Gate MLP $W\_1$ & $4 d\_h^2$ \\
-Gate MLP $W\_2$ & $4 d\_h$ \\
-Gate bias & $4 d\_h + 1$ \\
+LoRA Q & $2 r_L d$ \\
+LoRA K & $2 r_L d$ \\
+LoRA V & $2 r_L d$ \\
+LoRA O & $2 r_L d$ \\
+Gate MLP $W_1$ & $4 d_h^2$ \\
+Gate MLP $W_2$ & $4 d_h$ \\
+Gate bias & $4 d_h + 1$ \\
 Gate temp & 1 \\
-**Total per layer** & $8 r\_L d + 4 d\_h^2 + O(d\_h)$ \\
+**Total per layer** & $8 r_L d + 4 d_h^2 + O(d_h)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1917,7 +1917,7 @@ If threshold > test L, sparsity never activates.
 
 \subsubsection{B.4.2 Gate Temperature Collapse}
 
-Clamp gate_temp to avoid division by zero.
+Clamp gate\_temp to avoid division by zero.
 
 \subsubsection{B.4.3 Padding Mask Shape}
 
@@ -1929,11 +1929,11 @@ GPT-2 Conv1D stores (in, out). Must transpose.
 
 \subsubsection{B.4.5 Nested Encoder Bypass}
 
-RoBERTa: do not apply out_proj.
+RoBERTa: do not apply out\_proj.
 
 \subsection{B.5 Critical Bug}
 
-\texttt{inject_fusion_attn} has:
+\texttt{inject\\_fusion\\_attn} has:
 
 \begin{lstlisting}
 except Exception:
@@ -1951,7 +1951,7 @@ except Exception:
 
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT — Complete Metrics}
+\subsection{C.1 DistilBERT --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -1971,7 +1971,7 @@ Top-K & 4 \\
 \end{tabular}
 \end{table}
 
-\subsection{C.2 RoBERTa — Complete Metrics}
+\subsection{C.2 RoBERTa --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -1987,7 +1987,7 @@ Accuracy & 77.35\% \\
 \end{tabular}
 \end{table}
 
-\subsection{C.3 GPT-2 — Complete Metrics}
+\subsection{C.3 GPT-2 --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -2011,9 +2011,9 @@ Accuracy & 78.90\% \\
 \toprule
 \textbf{$B$} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-32 & 90.10 & 0.5× \\
-64 & 90.48 & 1.0× \\
-128 & 90.30 & 2.0× \\
+32 & 90.10 & 0.5$\times$ \\
+64 & 90.48 & 1.0$\times$ \\
+128 & 90.30 & 2.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2026,9 +2026,9 @@ Accuracy & 78.90\% \\
 \toprule
 \textbf{$K$} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-2 & 89.5 & 0.5× \\
-4 & 90.48 & 1.0× \\
-8 & 90.60 & 2.0× \\
+2 & 89.5 & 0.5$\times$ \\
+4 & 90.48 & 1.0$\times$ \\
+8 & 90.60 & 2.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2073,7 +2073,7 @@ Accuracy & 78.90\% \\
 
 \subsubsection{D.1.1 Threshold = 32}
 
-\textbf{Result.} 89.5\%. Too aggressive — long path used at L=64.
+\textbf{Result.} 89.5\%. Too aggressive --- long path used at L=64.
 
 \subsubsection{D.1.2 Block Size = 16}
 
@@ -2144,8 +2144,8 @@ Std & 0.08 & 0.05 & 0.05 \\
 
 \subsection{D.6 Unresolved Questions}
 
-1. \textbf{Long-path results} — untested at L > 128.
-2. \textbf{Gate learning} — do gates learn meaningful patterns?
+1. \textbf{Long-path results} --- untested at L > 128.
+2. \textbf{Gate learning} --- do gates learn meaningful patterns?
 3. \textbf{Optimal threshold} for various tasks?
 4. \textbf{Fused kernel} for block attention?
 
@@ -2186,7 +2186,7 @@ Std & 0.08 & 0.05 & 0.05 \\
 \item Total compute: ~12 GPU-hours
 \end{itemize}
 \begin{itemize}
-\item CO₂: ~{{CO2}} kg CO₂eq
+\item CO$_2$: ~{{CO2}} kg CO$_2$eq
 \end{itemize}
 
 \subsection{E.3 Data Ethics}

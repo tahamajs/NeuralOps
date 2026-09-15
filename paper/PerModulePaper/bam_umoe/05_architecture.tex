@@ -44,16 +44,16 @@ o_w = src.c_proj.weight.T
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA + RoPE)}
-Direct copy from \texttt{q_proj}, \texttt{k_proj}, \texttt{v_proj}, \texttt{o_proj}.
+Direct copy from \texttt{q\\_proj}, \texttt{k\\_proj}, \texttt{v\\_proj}, \texttt{o\\_proj}.
 
 \subsection{5.3 Nested Encoder Bypass}
 
-For RoBERTa, BAM-UMoE's \texttt{out_lin} is not applied; the outer 
+For RoBERTa, BAM-UMoE's \texttt{out\\_lin} is not applied; the outer 
 \texttt{BertSelfOutput.dense} performs the projection. This avoids double projection.
 
 \subsection{5.4 Partial RoPE}
 
-For Qwen3.5 with \texttt{head_dim=256} and \texttt{rotary_dim=64}:
+For Qwen3.5 with \texttt{head\\_dim=256} and \texttt{rotary\\_dim=64}:
 \begin{lstlisting}
 q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
 q_rot = (q_rot * cos) + (rotate_half(q_rot) * sin)
@@ -91,7 +91,7 @@ class BAMUMoEBlock(BaseAttention):
 \midrule
 Missing weights & `copy\_weights` raises & Return None \\
 NaN in scores & `torch.nan\_to\_num` & Replace with 0 \\
-MoE overflow & `torch.clamp` & Clamp to ±65000 \\
+MoE overflow & `torch.clamp` & Clamp to $\pm$65000 \\
 Cross-attention MoE & Skip MoE branch & Preserve alignment \\
 \bottomrule
 \end{tabular}

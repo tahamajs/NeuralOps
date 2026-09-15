@@ -15,35 +15,35 @@ Galerkin Attention has two execution paths:
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    ┌───────────────────────────────────────────┐
-    │  Input X → Q/K/V projections (frozen+LoRA)│
-    └─────────────────────┬─────────────────────┘
-                          │
-                          ▼
-    ┌───────────────────────────────────────────┐
-    │  Apply RoPE, GQA repeat_kv                │
-    └─────────────────────┬─────────────────────┘
-                          │
-                          ▼
-    ┌───────────────────────────────────────────┐
-    │  Is decoder?                              │
-    └────┬─────────────────────┬────────────────┘
-         │ Yes                 │ No
-         ▼                     ▼
-    ┌──────────────┐    ┌──────────────────────┐
-    │  Standard    │    │  1. Build DCT basis  │
-    │  causal      │    │  2. Project Q/K/V    │
-    │  softmax     │    │  3. Attention in r   │
-    │  attention   │    │  4. Reconstruct + √  │
-    └──────┬───────┘    └──────────┬───────────┘
-           │                       │
-           └───────────┬───────────┘
-                       ▼
-              ┌────────────────┐
-              │  out_proj      │
-              └────────┬───────┘
-                       │
-                       ▼
+    +-------------------------------------------+
+    |  Input X $\to$ Q/K/V projections (frozen+LoRA)|
+    +---------------------+---------------------+
+                          |
+                           
+    +-------------------------------------------+
+    |  Apply RoPE, GQA repeat_kv                |
+    +---------------------+---------------------+
+                          |
+                           
+    +-------------------------------------------+
+    |  Is decoder?                              |
+    +----+---------------------+----------------+
+         | Yes                 | No
+                                
+    +--------------+    +----------------------+
+    |  Standard    |    |  1. Build DCT basis  |
+    |  causal      |    |  2. Project Q/K/V    |
+    |  softmax     |    |  3. Attention in r   |
+    |  attention   |    |  4. Reconstruct + $\sqrt{}$  |
+    +------+-------+    +----------+-----------+
+           |                       |
+           +-----------+-----------+
+                        
+              +----------------+
+              |  out_proj      |
+              +--------+-------+
+                       |
+                        
                       Y
 \end{lstlisting}
 
@@ -164,41 +164,41 @@ Input:  X, attention_mask, position_embeddings
         is_decoder, rank r
 Output: Y, probs
 
-1:  Q ← LoRALinear_Q(X)
-2:  K ← LoRALinear_K(X)
-3:  V ← LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear_Q(X)
+2:  K $\leftarrow$ LoRALinear_K(X)
+3:  V $\leftarrow$ LoRALinear_V(X)
 4:
-5:  if RoPE: (Q, K) ← apply_rope(Q, K, cos, sin)
-6:  if GQA: K, V ← repeat_kv(K, V)
+5:  if RoPE: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V)
 7:
-8:  if is_decoder:                              ▷ DECODER FALLBACK
-9:      S ← Q K^T / √d_h
-10:     S ← S + causal_mask
-11:     S ← S + padding_mask
-12:     P ← softmax(S)
-13:     Y_ctx ← P @ V
+8:  if is_decoder:                                DECODER FALLBACK
+9:      S $\leftarrow$ Q K^T / $\sqrt{}$d_h
+10:     S $\leftarrow$ S + causal_mask
+11:     S $\leftarrow$ S + padding_mask
+12:     P $\leftarrow$ softmax(S)
+13:     Y_ctx $\leftarrow$ P @ V
 14:
-15: else:                                        ▷ ENCODER GALERKIN
-16:     mask ← valid_token_mask(attention_mask)
-17:     K_masked ← K ⊙ mask
-18:     V_masked ← V ⊙ mask
+15: else:                                          ENCODER GALERKIN
+16:     mask $\leftarrow$ valid_token_mask(attention_mask)
+17:     K_masked $\leftarrow$ K   mask
+18:     V_masked $\leftarrow$ V   mask
 19:
-20:     Φ ← DCT_basis(N, r)                        ▷ Orthonormalize via QR
-21:     Q_Φ ← Φ^T Q
-22:     K_Φ ← Φ^T K_masked
-23:     V_Φ ← Φ^T V_masked
+20:       $\leftarrow$ DCT_basis(N, r)                          Orthonormalize via QR
+21:     Q_  $\leftarrow$  ^T Q
+22:     K_  $\leftarrow$  ^T K_masked
+23:     V_  $\leftarrow$  ^T V_masked
 24:
-25:     S ← Q_Φ K_Φ^T / √d_h                       ▷ (B, H, r, r)
-26:     P ← softmax(S)
-27:     O_Φ ← P @ V_Φ
+25:     S $\leftarrow$ Q_  K_ ^T / $\sqrt{}$d_h                         (B, H, r, r)
+26:     P $\leftarrow$ softmax(S)
+27:     O_  $\leftarrow$ P @ V_ 
 28:
-29:     Y_ctx ← Φ @ O_Φ                             ▷ Reconstruct
-30:     Y_ctx ← Y_ctx · √(N/r)                      ▷ Energy correction
-31:     Y_ctx ← Y_ctx ⊙ mask                        ▷ Zero padded positions
+29:     Y_ctx $\leftarrow$   @ O_                                Reconstruct
+30:     Y_ctx $\leftarrow$ Y_ctx   $\sqrt{}$(N/r)                        Energy correction
+31:     Y_ctx $\leftarrow$ Y_ctx   mask                          Zero padded positions
 32:
-33: Y_ctx ← reshape(B, N, H · d_h)
-34: if nested: Y ← Y_ctx
-35: else: Y ← LoRALinear_O(Y_ctx)
+33: Y_ctx $\leftarrow$ reshape(B, N, H   d_h)
+34: if nested: Y $\leftarrow$ Y_ctx
+35: else: Y $\leftarrow$ LoRALinear_O(Y_ctx)
 36:
 37: return Y
 \end{lstlisting}
@@ -225,7 +225,7 @@ For $N = 128$ and $r = 64$:
 \item Decoder: $\sim 4 \times 10^6$ FLOPs per head
 \end{itemize}
 \begin{itemize}
-\item \textbf{Encoder speedup: ~2×}
+\item \textbf{Encoder speedup: ~2$\times$}
 \end{itemize}
 
 For $N = 512$ and $r = 64$:
@@ -236,7 +236,7 @@ For $N = 512$ and $r = 64$:
 \item Decoder: $\sim 6.4 \times 10^7$
 \end{itemize}
 \begin{itemize}
-\item \textbf{Encoder speedup: ~8×}
+\item \textbf{Encoder speedup: ~8$\times$}
 \end{itemize}
 
 \subsection{4.8 Parameter Analysis}
@@ -248,8 +248,8 @@ For $N = 512$ and $r = 64$:
 \textbf{Component} & \textbf{Baseline} & \textbf{Galerkin} \\
 \midrule
 Base weights & $4 d^2$ & $4 d^2$ (frozen) \\
-LoRA ($r\_L$) & 0 & $8 r\_L d$ \\
-**Total per layer** & $4 d^2$ & $4 d^2 + 8 r\_L d$ \\
+LoRA ($r_L$) & 0 & $8 r_L d$ \\
+**Total per layer** & $4 d^2$ & $4 d^2 + 8 r_L d$ \\
 \bottomrule
 \end{tabular}
 \end{table}

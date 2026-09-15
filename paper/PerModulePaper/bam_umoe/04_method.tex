@@ -5,53 +5,53 @@
 BAM-UMoE augments attention with an MoE refinement of the value pathway. 
 The forward pass:
 
-1. \textbf{Standard QKV projections} with frozen base weights (§4.2).
-2. \textbf{MoE value refinement} applied additively to V (§4.3).
-3. \textbf{Gated scaling} for controlled ramp-up (§4.4).
-4. \textbf{Output projection} with nested bypass (§4.5).
+1. \textbf{Standard QKV projections} with frozen base weights ( 4.2).
+2. \textbf{MoE value refinement} applied additively to V ( 4.3).
+3. \textbf{Gated scaling} for controlled ramp-up ( 4.4).
+4. \textbf{Output projection} with nested bypass ( 4.5).
 
 \textbf{Figure 4.1} shows the architecture.
 
 \begin{lstlisting}
-    ┌──────────────────────────────────────────┐
-    │  Input X                                  │
-    └──────────────────┬───────────────────────┘
-                       │
-        ┌──────────────┼──────────────┐
-        │              │              │
-        ▼              ▼              ▼
-    ┌───────┐      ┌───────┐      ┌───────┐
-    │ Q     │      │ K     │      │ V     │   ← frozen base
-    │ proj  │      │ proj  │      │ proj  │   + LoRA
-    └───┬───┘      └───┬───┘      └───┬───┘
-        │              │              │
-        │              │              ▼
-        │              │      ┌──────────────┐
-        │              │      │  MoE Branch  │
-        │              │      │  (8 experts, │
-        │              │      │   top-2)     │
-        │              │      └──────┬───────┘
-        │              │             │
-        │              │             ▼  × 0.1 × σ(gate)
-        │              │        ┌─────────┐
-        │              │        │ Add     │
-        │              │        │ to V    │
-        │              │        └────┬────┘
-        │              │             │
-        └──────────────┼─────────────┘
-                       │
-                       ▼
-              ┌────────────────┐
-              │  Attention     │
-              │  (softmax)     │
-              └────────┬───────┘
-                       │
-                       ▼
-              ┌────────────────┐
-              │ Output proj    │
-              └────────┬───────┘
-                       │
-                       ▼
+    +------------------------------------------+
+    |  Input X                                  |
+    +------------------+-----------------------+
+                       |
+        +--------------+--------------+
+        |              |              |
+                                       
+    +-------+      +-------+      +-------+
+    | Q     |      | K     |      | V     |   $\leftarrow$ frozen base
+    | proj  |      | proj  |      | proj  |   + LoRA
+    +---+---+      +---+---+      +---+---+
+        |              |              |
+        |              |               
+        |              |      +--------------+
+        |              |      |  MoE Branch  |
+        |              |      |  (8 experts, |
+        |              |      |   top-2)     |
+        |              |      +------+-------+
+        |              |             |
+        |              |                $\times$ 0.1 $\times$ $\sigma$(gate)
+        |              |        +---------+
+        |              |        | Add     |
+        |              |        | to V    |
+        |              |        +----+----+
+        |              |             |
+        +--------------+-------------+
+                       |
+                        
+              +----------------+
+              |  Attention     |
+              |  (softmax)     |
+              +--------+-------+
+                       |
+                        
+              +----------------+
+              | Output proj    |
+              +--------+-------+
+                       |
+                        
                       Y
 \end{lstlisting}
 
@@ -68,7 +68,7 @@ where $W_P$ is the frozen base, $(A_P, B_P)$ are LoRA factors, and
 $s = \alpha/r_L$ is the LoRA scaling.
 
 Base weights are copied exactly from the pretrained attention via 
-\texttt{copy_weights} (see Section 5).
+\texttt{copy\\_weights} (see Section 5).
 
 \subsection{4.3 Phase 2: MoE Value Refinement}
 
@@ -131,7 +131,7 @@ We add the Switch/GShard load-balancing loss:
 
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is 
 the mean router probability. This is added to the task loss with weight 
-$\lambda_\text{aux} = 0.01$ (default 0.01).
+$\lambda_\text{aux} = {{AUX_WEIGHT}}$ (default 0.01).
 
 \subsubsection{4.3.5 Value Integration}
 
@@ -143,7 +143,7 @@ V' = V + \alpha \cdot \text{MoE}(X)
 \]
 
 with $\alpha = 0.1$ (fixed). The 0.1 scaling keeps the MoE contribution 
-conservative — even after training, the MoE never dominates the base.
+conservative -- even after training, the MoE never dominates the base.
 
 \subsection{4.4 Phase 3: Gated Ramp-Up}
 
@@ -191,34 +191,34 @@ Y = \text{Attn}(Q, K, V') W_O^\top + b_O
 \tag{4.11}
 \]
 
-with nested encoder bypass: for RoBERTa/BERT, \texttt{out_lin} is not applied 
+with nested encoder bypass: for RoBERTa/BERT, \texttt{out\\_lin} is not applied 
 (the outer \texttt{output.dense} performs it).
 
 \subsection{4.6 The Full Algorithm}
 
 \textbf{Algorithm 1:} BAM-UMoE forward pass
 \begin{lstlisting}
-Input:  X ∈ R^{B×L×d}, mask, position_embeddings
-Output: Y ∈ R^{B×L×d}, aux_loss
+Input:  X $\in$ R^{B$\times$L$\times$d}, mask, position_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}, aux_loss
 
-1:  Q ← LoRALinear_Q(X)                        ▷ Frozen base + LoRA
-2:  K ← LoRALinear_K(X)
-3:  V ← LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear_Q(X)                          Frozen base + LoRA
+2:  K $\leftarrow$ LoRALinear_K(X)
+3:  V $\leftarrow$ LoRALinear_V(X)
 4:
-5:  if RoPE: (Q, K) ← apply_rotary(Q, K, cos, sin)
-6:  if GQA: K, V ← repeat_kv(K, V, H/H_kv)
+5:  if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V, H/H_kv)
 7:
 8:  if not cross_attention:
-9:      MoE_out ← UnifiedMoE(X)                ▷ Top-2 MoE
-10:     V ← V + 0.1 · MoE_out                  ▷ MoE refinement
+9:      MoE_out $\leftarrow$ UnifiedMoE(X)                  Top-2 MoE
+10:     V $\leftarrow$ V + 0.1   MoE_out                    MoE refinement
 11:
-12: S ← (Q @ K^T) / √d_h                       ▷ FP32
-13: S ← apply_mask(S, causal, padding)
-14: A ← softmax(S)
-15: C ← A @ V
+12: S $\leftarrow$ (Q @ K^T) / $\sqrt{}$d_h                         FP32
+13: S $\leftarrow$ apply_mask(S, causal, padding)
+14: A $\leftarrow$ softmax(S)
+15: C $\leftarrow$ A @ V
 16:
-17: if nested_encoder: Y ← C
-18: else: Y ← LoRALinear_O(C)
+17: if nested_encoder: Y $\leftarrow$ C
+18: else: Y $\leftarrow$ LoRALinear_O(C)
 19:
 20: return Y, MoE.aux_loss
 \end{lstlisting}
@@ -236,20 +236,20 @@ Output: Y ∈ R^{B×L×d}, aux_loss
 QKV projections & $O(L d^2)$ \\
 MoE router & $O(L d E)$ \\
 Expert forward (top-2) & $O(2 L d \cdot 2 d)$ \\
-Attention scores & $O(L^2 d\_h)$ \\
-Context & $O(L^2 d\_h)$ \\
+Attention scores & $O(L^2 d_h)$ \\
+Context & $O(L^2 d_h)$ \\
 Output proj & $O(L d^2)$ \\
-**Total** & $O(L^2 d\_h + L d^2 + L d^2)$ \\
+**Total** & $O(L^2 d_h + L d^2 + L d^2)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The MoE branch adds $O(L d^2)$ per layer (since 2 experts × 2-layer MLP 
+The MoE branch adds $O(L d^2)$ per layer (since 2 experts $\times$ 2-layer MLP 
 of width $2d$), comparable to the base attention cost.
 
 \subsubsection{4.7.2 Parameter Count}
 
-For \texttt{UnifiedMoE(dim=d, num_experts=E, output_dim=d)}:
+For \texttt{UnifiedMoE(dim=d, num\\_experts=E, output\\_dim=d)}:
 
 \begin{table}[H]
 \centering
@@ -266,9 +266,9 @@ Total experts & $8 d^2 E$ \\
 \end{tabular}
 \end{table}
 
-For $d = 768$, $E = 8$: \textbf{8 × 768² × 8 ≈ 37.7M params per layer}.
+For $d = 768$, $E = 8$: \textbf{8 $\times$ 768  $\times$ 8 $\approx$ 37.7M params per layer}.
 
 \textbf{This is enormous.} For DistilBERT (6 layers): \textbf{+226M params} on a 
-66.9M model. Parameter count \textbf{increases by ~4.4×}.
+66.9M model. Parameter count \textbf{increases by ~4.4$\times$}.
 
 \textbf{BAM-UMoE is not a compression method.}

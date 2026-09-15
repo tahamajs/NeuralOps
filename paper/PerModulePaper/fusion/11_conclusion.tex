@@ -13,11 +13,11 @@ not exercise its sparsity machinery at that length.
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{Params Δ} & \textbf{Path at L=128} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Path at L=128} \\
 \midrule
-DistilBERT & -0.23\% & +786864M & Short \\
-RoBERTa & -1.21\% & +1453064M & Short \\
-GPT-2 & -0.46\% & +1460804M & Short \\
+DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_DELTA}}M & Short \\
+RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_DELTA}}M & Short \\
+GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_DELTA}}M & Short \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -56,7 +56,7 @@ GPT-2 & -0.46\% & +1460804M & Short \\
 \subsection{11.5 Closing Remarks}
 
 FUSIONATTN is a hybrid attention for long-context inference. We release 
-code under MIT.
+code under {{LICENSE}}.
 
 \subsection{11.6 Acknowledgments}
 
@@ -65,10 +65,10 @@ code under MIT.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments.
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
 \end{itemize}
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided feedback.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}

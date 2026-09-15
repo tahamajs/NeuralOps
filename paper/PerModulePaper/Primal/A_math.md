@@ -1,0 +1,143 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: A_math.md
+     PURPOSE: Formal derivations
+     DEPENDENCIES: 04_method.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix A. Mathematical Derivations
+
+## A.1 Derivation of the Asymmetric Decomposition
+
+Let $A = \sigma(Q K^\top / \sqrt{d_h})$ be the softmax attention matrix (for 
+simplicity, drop $\sigma$; the derivation applies before softmax). We seek 
+a low-rank approximation of $QK^\top$.
+
+### A.1.1 Low-Rank Structure
+
+Assume $\text{rank}(QK^\top) = r \le m \ll L$. Then there exists 
+$U \in \mathbb{R}^{L \times m}$, $W \in \mathbb{R}^{m \times m}$, 
+$V \in \mathbb{R}^{m \times L}$ such that:
+
+$$
+QK^\top = U W^{-1} V
+\tag{A.1}
+$$
+
+### A.1.2 Choosing Landmarks
+
+Select $m$ query landmarks $Q_\text{land}$ and $m$ key landmarks $K_\text{land}$. 
+Define:
+
+$$
+F_1 = Q K_\text{land}^\top, \quad
+F_2 = Q_\text{land} K_\text{land}^\top, \quad
+F_3 = Q_\text{land} K^\top
+\tag{A.2}
+$$
+
+### A.1.3 Exactness
+
+If the landmarks span the row and column spaces of $QK^\top$, then:
+
+$$
+Q K^\top = F_1 F_2^{-1} F_3
+\tag{A.3}
+$$
+
+**Proof.** Let $Q = Q_\text{land} P_Q + Q_\perp$ where $P_Q$ is a 
+projection matrix. Similarly for $K$. Under the span assumption, 
+$Q_\perp$ and $K_\perp$ are in the null space of $QK^\top$. Then:
+
+$$
+QK^\top = (Q_\text{land} P_Q)(K_\text{land} P_K)^\top = Q_\text{land} P_Q P_K^\top K_\text{land}^\top
+\tag{A.4}
+$$
+
+Since $Q_\text{land} = Q_\text{land} P_Q$ (landmarks are in span), we have 
+$Q_\text{land} = Q_\text{land} (Q_\text{land}^\top Q_\text{land})^{-1} Q_\text{land}^\top Q$... 
+(standard projection argument). Combined with the definition of $F_2$, this 
+gives $P_Q P_K^\top = F_2^{-1}$ appropriately scaled. $\square$
+
+## A.2 Schulz Iteration Convergence
+
+**Claim.** $X_{t+1} = X_t (2I - F_2 X_t)$ converges quadratically to $F_2^{-1}$ 
+if $\|I - F_2 X_0\| < 1$.
+
+**Proof.** Define $E_t = I - F_2 X_t$. Then:
+
+$$
+E_{t+1} = I - F_2 X_{t+1} = I - F_2 X_t (2I - F_2 X_t)
+$$
+
+Substituting $X_t = F_2^{-1}(I - E_t)$:
+
+$$
+E_{t+1} = I - F_2 F_2^{-1}(I - E_t) (2I - F_2 F_2^{-1}(I - E_t))
+$$
+$$
+= I - (I - E_t)(2I - (I - E_t)) = I - (I - E_t)(I + E_t) = I - (I - E_t^2) = E_t^2
+$$
+
+So $E_{t+1} = E_t^2$. By induction, $E_K = E_0^{2^K}$. If $\|E_0\| \le \rho < 1$:
+
+$$
+\|E_K\| \le \rho^{2^K}
+\tag{A.5}
+$$
+
+which decays double-exponentially. $\square$
+
+## A.3 Associativity for Linear Cost
+
+**Claim.** $\tilde{A} V = F_1 (F_2^{-1} (F_3 V))$ can be computed in 
+$\mathcal{O}(L m d_h)$ instead of $\mathcal{O}(L^2 d_h)$.
+
+**Proof.** Compute in order:
+
+1. $F_3 V \in \mathbb{R}^{m \times d_h}$: cost $\mathcal{O}(m L d_h)$
+2. $F_2^{-1} (F_3 V) \in \mathbb{R}^{m \times d_h}$: cost $\mathcal{O}(m^2 d_h)$
+3. $F_1 (\cdots) \in \mathbb{R}^{L \times d_h}$: cost $\mathcal{O}(L m d_h)$
+
+Total: $\mathcal{O}(L m d_h + m^2 d_h)$, linear in $L$. $\square$
+
+## A.4 Approximation Error
+
+**Proposition.** For $A = QK^\top$ with singular values $\sigma_1 \ge \sigma_2 \ge \cdots$:
+
+$$
+\|A - \tilde{A}\|_F \leq \sqrt{\sum_{i > m} \sigma_i^2} + \epsilon_\text{landmark}
+\tag{A.6}
+$$
+
+where $\epsilon_\text{landmark}$ depends on how well the landmarks span the 
+principal subspaces.
+
+**Proof sketch.** Decompose $A = A_m + A_\perp$ where $A_m$ is the top-$m$ 
+SVD truncation. Then $\|A_\perp\|_F = \sqrt{\sum_{i>m} \sigma_i^2}$. If 
+landmarks span the top-$m$ subspace, $\tilde{A} = A_m$ exactly. Otherwise, 
+$\tilde{A}$ approximates $A_m$ with error bounded by the landmark residual. 
+$\square$
+
+## A.5 Causality Bound
+
+For causal attention with mask $M$:
+
+$$
+\|A_\text{causal} - \tilde{A}_\text{causal}\|_F \leq \|A - \tilde{A}\|_F + \|\tilde{A}_\text{upper}\|_F
+\tag{A.7}
+$$
+
+where $\tilde{A}_\text{upper}$ is the upper-triangular part of $\tilde{A}$ 
+(before masking). This bounds the error introduced by approximate causality.
+
+## A.6 Softmax Error Propagation
+
+Applying softmax to $\tilde{A}$ instead of $A$ introduces additional error:
+
+$$
+\|\sigma(\tilde{A}) - \sigma(A)\| \le \|\tilde{A} - A\|
+\tag{A.8}
+$$
+
+by Lipschitz continuity of softmax with constant 1 (in Frobenius norm under 
+suitable conditions).

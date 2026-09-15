@@ -1,0 +1,66 @@
+
+\section{2. Related Work}
+
+\subsection{2.1 Head Pruning}
+
+\textbf{Voita et al. (2019):} Layer-wise relevance propagation to rank heads. 
+Prune 38 heads (of 48) in BERT with small loss.
+
+\textbf{Michel et al. (2019):} Show that a single head suffices for many tasks. 
+Gradient-based importance.
+
+\textbf{Clark et al. (2019):} Analyze attention patterns. Categorize heads as 
+positional, syntactic, rare-word, or non-specialized.
+
+\textbf{Squeezing Heads differs} by \textbf{not pruning} -- instead, all heads are 
+kept but their dimensionality is reduced, and LoRA adapters learn to 
+compensate.
+
+\subsection{2.2 Knowledge Distillation}
+
+\textbf{Hinton et al. (2015):} Original KD. Train a small student to match a 
+large teacher's logits.
+
+\textbf{DistilBERT (Sanh et al., 2019):} Distill BERT into 6 layers with soft 
+targets and cosine loss.
+
+\textbf{TinyBERT (Jiao et al., 2020):} Distill both logits and hidden states.
+
+\textbf{Squeezing Heads is orthogonal} -- it can be combined with any of these.
+
+\subsection{2.3 Parameter-Efficient Fine-Tuning}
+
+\textbf{LoRA (Hu et al., 2021):} Freeze base weights, add rank-$r$ adapters.
+
+\textbf{AdaLoRA (Zhang et al., 2023):} Adaptive rank allocation.
+
+\textbf{DoRA (Liu et al., 2024):} Magnitude-direction decomposition.
+
+\textbf{Squeezing Heads uses LoRA} as the recovery mechanism.
+
+\subsection{2.4 Attention Distillation}
+
+\textbf{TinyBERT:} Attention transfer loss.
+
+\textbf{MiniLM (Wang et al., 2020):} Self-attention distillation.
+
+\textbf{Squeezing Heads differs} by using LoRA adapters as the distillation 
+target -- the objective is on the wrapped attention, not on logits.
+
+\subsection{2.5 Position of Our Work}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Axis} & \textbf{Head Pruning} & \textbf{KD} & \textbf{LoRA} & \textbf{Squeezing Heads} \\
+\midrule
+Preserves all heads &  &  & -- &  \\
+Trains LoRA only &  &  &  &  \\
+Multi-architecture & Varies &  &  &  \\
+GQA-aware &  &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{2.6 Comparison Table}

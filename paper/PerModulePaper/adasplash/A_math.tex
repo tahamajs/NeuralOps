@@ -1,7 +1,7 @@
 
 \section{Appendix A. Mathematical Derivations}
 
-\subsection{A.1 Derivation of α-Entmax Closed Form}
+\subsection{A.1 Derivation of $\alpha$-Entmax Closed Form}
 
 \textbf{Problem.} Solve:
 
@@ -53,7 +53,7 @@ iterations, precision is $O(2^{-25}) = O(10^{-7.5})$. $\square$
 
 \subsection{A.3 Support Sparsity Bound}
 
-\textbf{Claim.} At convergence, the support of α-entmax is:
+\textbf{Claim.} At convergence, the support of $\alpha$-entmax is:
 \[
 S = \{i : (\alpha - 1) s_i > \tau^*\}
 \]
@@ -105,7 +105,7 @@ For DistilBERT ($d = 768$, $r_L = 16$, $N_l = 6$): $+589{,}824$ params.
 
 \subsection{A.6 Entmax vs Softmax Sparsity}
 
-\textbf{Claim.} For scores with high variance, α-entmax produces more zeros 
+\textbf{Claim.} For scores with high variance, $\alpha$-entmax produces more zeros 
 than softmax.
 
 \textbf{Proof sketch.} Softmax assigns $p_i > 0$ for all $i$. Entmax assigns 
@@ -122,7 +122,7 @@ distribution.
 
 \subsection{A.8 Causality of Entmax}
 
-\textbf{Claim.} α-entmax preserves causality under causal masking.
+\textbf{Claim.} $\alpha$-entmax preserves causality under causal masking.
 
 \textbf{Proof.} Entmax is a row-wise operation on the score matrix. Masking with 
 $-\infty$ ensures that masked entries receive zero weight in the output. 

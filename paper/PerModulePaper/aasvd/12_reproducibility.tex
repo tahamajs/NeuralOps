@@ -4,7 +4,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
+git clone https://github.com/{{ORG}}/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # Windows
@@ -19,10 +19,10 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & 2.4.0 \\
-transformers & 4.44.0 \\
-datasets & 2.20.0 \\
-numpy & 1.26.4 \\
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+numpy & {{NUMPY\_VERSION}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,13 +32,13 @@ numpy & 1.26.4 \\
 \begin{lstlisting}
 python run_all_4_aasvd.py \
     --models distilbert,roberta,gpt2 \
-    --rank 288 \
-    --recovery_steps 50 \
-    --lora_rank 16 \
-    --batch_size 8
+    --rank {{RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}} \
+    --batch_size {{BATCH_SIZE}}
 \end{lstlisting}
 
-\textbf{Runtime:} ~20 minutes on RTX 4070.
+\textbf{Runtime:} ~{{RUNTIME}} minutes on RTX 4070.
 
 \subsection{12.4 Individual Model}
 
@@ -50,8 +50,8 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_aasvd/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,aasvd \
-    --rank 288 \
-    --lora_rank 16
+    --rank {{RANK}} \
+    --lora_rank {{LORA_RANK}}
 \end{lstlisting}
 
 \subsection{12.5 Reproducing Tables}
@@ -77,7 +77,7 @@ python run_all_4_aasvd.py --use_covariance true --output_suffix fullcov
 python run_all_4_aasvd.py --use_covariance false --output_suffix noweight
 \end{lstlisting}
 
-\subsubsection{Table 7.8 (EMA β Ablation)}
+\subsubsection{Table 7.8 (EMA $\beta$ Ablation)}
 
 \begin{lstlisting}
 for beta in 0.5 0.7 0.9 0.95 0.99; do
@@ -105,9 +105,9 @@ torch.backends.cudnn.deterministic = True
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 85.0\% ± 1\% & 4.0× \\
-RoBERTa & 72.0\% ± 1\% & 3.5× \\
-GPT-2 & 73.0\% ± 1\% & 3.5× \\
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & {{D\_RATIO}}$\times$ \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & {{R\_RATIO}}$\times$ \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_RATIO}}$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -118,13 +118,13 @@ GPT-2 & 73.0\% ± 1\% & 3.5× \\
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-aasvd}
+\item \textbf{Checkpoints:} \texttt{{{HF\\_ORG}}/svd-linear-attention-*-aasvd}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified_aasvd/*/summary.csv}
+\item \textbf{Metrics:} \texttt{results/unified\\_aasvd/*/summary.csv}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Calibration corpus:} bundled in \texttt{aasvd_compressor.py}
+\item \textbf{Calibration corpus:} bundled in \texttt{aasvd\\_compressor.py}
 \end{itemize}
 
 \subsection{12.9 Known Issues}
@@ -133,7 +133,7 @@ GPT-2 & 73.0\% ± 1\% & 3.5× \\
 \item Windows: \texttt{PYTHONIOENCODING=utf-8} recommended
 \end{itemize}
 \begin{itemize}
-\item CUDA ≥ 11.8 for FP16 SVD
+\item CUDA $\ge$ 11.8 for FP16 SVD
 \end{itemize}
 \begin{itemize}
 \item Some baselines may need re-download

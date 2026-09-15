@@ -18,7 +18,7 @@ Qwen3.5-0.8B & `q\_proj, k\_proj, v\_proj, o\_proj` & No & No \\
 \end{table}
 
 By default, AASVD targets \textbf{attention projections only} 
-(\texttt{target_attention_only = True}). Set \texttt{target_attention_only = False} to 
+(\texttt{target\\_attention\\_only = True}). Set \texttt{target\\_attention\\_only = False} to 
 also compress FFN layers.
 
 \subsection{5.2 Layer Targeting Rules}
@@ -41,7 +41,7 @@ AASVD protects the following layers from compression:
 \end{tabular}
 \end{table}
 
-The default targeting uses \texttt{should_compress_linear} for additional checks.
+The default targeting uses \texttt{should\\_compress\\_linear} for additional checks.
 
 \subsection{5.3 Handling Conv1D (GPT-2)}
 
@@ -74,19 +74,19 @@ rest of the model's forward pass works unchanged.
 \subsection{5.4 Handling LoRA-Wrapped Modules}
 
 When the model has been wrapped with LoRA adapters (\texttt{LoRALinear}), AASVD 
-extracts the \texttt{base_layer}:
+extracts the \texttt{base\\_layer}:
 
 \begin{lstlisting}
 target_mod = getattr(module, "base_layer", module)
 \end{lstlisting}
 
-The factorized layer replaces \texttt{module.base_layer}, preserving the outer 
+The factorized layer replaces \texttt{module.base\\_layer}, preserving the outer 
 LoRA parameters. This ensures that any existing LoRA adapters remain 
 attached and trainable.
 
 \subsection{5.5 Replacing a Layer}
 
-Replacement uses \texttt{replace_module} from the framework:
+Replacement uses \texttt{replace\\_module} from the framework:
 
 \begin{lstlisting}
 if hasattr(module, "base_layer"):
@@ -96,7 +96,7 @@ else:
 \end{lstlisting}
 
 After replacement, all parameters in fallback layers are frozen 
-(\texttt{requires_grad = False}) to prevent accidental training.
+(\texttt{requires\\_grad = False}) to prevent accidental training.
 
 \subsection{5.6 Causality and Streaming}
 
@@ -118,33 +118,33 @@ input at position $j > i$ is zero, both before and after injection.
 
 \textbf{Algorithm 2:} Inject AASVD into a full model
 \begin{lstlisting}
-Input:  model M, rank r, threshold τ
+Input:  model M, rank r, threshold $\tau$
         calibration_texts D
 Output: compressed model M'
 
-1:  targets ← [(name, module) for name, module in M if is_target(module)]
-2:  hooks ← []
+1:  targets $\leftarrow$ [(name, module) for name, module in M if is_target(module)]
+2:  hooks $\leftarrow$ []
 3:  for (name, module) in targets do
 4:      hooks.append(register_hook(module, accumulate_C_X(name)))
 5:  end for
 6:
 7:  # Calibration forward pass
-8:  tok_inputs ← tokenize(D)
+8:  tok_inputs $\leftarrow$ tokenize(D)
 9:  M.eval()
 10: with no_grad(): M(tok_inputs)
 11:
 12: for h in hooks: h.remove()
 13:
 14: # Precompute C_X^{1/2}, C_X^{-1/2} for each layer
-15: cov_cache ← {}
+15: cov_cache $\leftarrow$ {}
 16: for (name, module) in targets do
-17:     cov_cache[name] ← compute_sqrt_and_inv(C_X[name])
+17:     cov_cache[name] $\leftarrow$ compute_sqrt_and_inv(C_X[name])
 18: end for
 19:
 20: # Compress each layer
 21: for (name, module) in targets do
-22:     svd_layer, err, r_eff ← compress_linear(module, cov_cache[name])
-23:     if svd_layer is not None and err ≤ τ:
+22:     svd_layer, err, r_eff $\leftarrow$ compress_linear(module, cov_cache[name])
+23:     if svd_layer is not None and err $\le$ $\tau$:
 24:         replace(module, svd_layer)
 25:     else:
 26:         freeze_all(module)
@@ -185,13 +185,13 @@ class SVDLinear(nn.Module):
 
 After AASVD compression, the model is passed to the LoRA recovery pipeline:
 
-1. \textbf{AASVD} compresses → factorized \texttt{SVDLinear} layers.
-2. \textbf{Framework} attaches LoRA adapters (\texttt{lora_A}, \texttt{lora_B}).
+1. \textbf{AASVD} compresses $\to$ factorized \texttt{SVDLinear} layers.
+2. \textbf{Framework} attaches LoRA adapters (\texttt{lora\\_A}, \texttt{lora\\_B}).
 3. \textbf{Recovery} trains only LoRA parameters.
 4. \textbf{Evaluation} uses the fine-tuned model.
 
 \textbf{Note.} AASVD can also instantiate LoRA adapters \textit{inside} the \texttt{SVDLinear} 
-module (via the \texttt{lora_rank} parameter). This is used when the framework 
+module (via the \texttt{lora\\_rank} parameter). This is used when the framework 
 expects LoRA to be part of the compression module.
 
 \subsection{5.10 Registry}

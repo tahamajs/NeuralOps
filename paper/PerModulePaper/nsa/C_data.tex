@@ -1,0 +1,166 @@
+
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Window $w$ & {{WINDOW\_SIZE}} \\
+Top-$k$ & {{TOP\_K}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Density & {{D\_DENSITY}}\% \\
+Preserved mass & {{D\_MASS}}\% \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Density & {{R\_DENSITY}}\% \\
+Preserved mass & {{R\_MASS}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Density & {{G\_DENSITY}}\% \\
+Preserved mass & {{G\_MASS}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Window Size Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{$w$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
+\midrule
+8 & {{D\_W8}} & {{R\_W8}} & {{G\_W8}} & {{DENS8}}\% \\
+16 & {{D\_W16}} & {{R\_W16}} & {{G\_W16}} & {{DENS16}}\% \\
+32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} & {{DENS32}}\% \\
+64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} & {{DENS64}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Top-K Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{$k$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
+\midrule
+4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} & {{DENSK4}}\% \\
+8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} & {{DENSK8}}\% \\
+16 & {{D\_K16}} & {{R\_K16}} & {{G\_K16}} & {{DENSK16}}\% \\
+32 & {{D\_K32}} & {{R\_K32}} & {{G\_K32}} & {{DENSK32}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 LoRA Rank Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
+8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
+16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
+32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Recovery Steps Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Per-Layer Density (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Layer} & \textbf{Density} \\
+\midrule
+0 & {{D\_L0\_DENS}}\% \\
+1 & {{D\_L1\_DENS}}\% \\
+2 & {{D\_L2\_DENS}}\% \\
+3 & {{D\_L3\_DENS}}\% \\
+4 & {{D\_L4\_DENS}}\% \\
+5 & {{D\_L5\_DENS}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Raw JSON}
+
+\begin{lstlisting}
+{
+  "nsa": {
+    "distilbert": {
+      "window_size": {{WINDOW_SIZE}},
+      "top_k": {{TOP_K}},
+      "accuracy_pct": {{D_ACC}},
+      "density_pct": {{D_DENSITY}},
+      "peak_vram_mb": {{D_VRAM}}
+    },
+    "roberta": {...},
+    "gpt2": {...}
+  }
+}
+\end{lstlisting}
+
+\subsection{C.10 Reproduction Commands}
+
+\begin{lstlisting}
+# Main
+python run_all_4_nsa.py --window_size 32 --top_k 16
+
+# Window sweep
+for w in 8 16 32 64; do
+    python run_all_4_nsa.py --window_size $w
+done
+\end{lstlisting}

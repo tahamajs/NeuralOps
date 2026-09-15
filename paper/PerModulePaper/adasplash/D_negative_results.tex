@@ -12,11 +12,11 @@ representations; compression-like benefits lost.
 
 \textbf{Conclusion.} Keep base frozen.
 
-\subsubsection{D.1.2 α = 2.0 (Sparsemax)}
+\subsubsection{D.1.2 $\alpha$ = 2.0 (Sparsemax)}
 
 \textbf{Goal.} Maximize sparsity.
 
-\textbf{Result.} Accuracy dropped to 88.30\%; training unstable.
+\textbf{Result.} Accuracy dropped to {{A2\_ACC}}\%; training unstable.
 
 \textbf{Conclusion.} Sparsemax is too sparse and non-smooth for stable training.
 
@@ -24,7 +24,7 @@ representations; compression-like benefits lost.
 
 \textbf{Goal.} Extreme local attention.
 
-\textbf{Result.} Accuracy dropped to 75.5\%.
+\textbf{Result.} Accuracy dropped to {{W4\_ACC}}\%.
 
 \textbf{Conclusion.} W=4 loses too much context.
 
@@ -32,7 +32,7 @@ representations; compression-like benefits lost.
 
 \textbf{Goal.} Simplify masking.
 
-\textbf{Result.} Accuracy dropped to 85.5\%.
+\textbf{Result.} Accuracy dropped to {{NOSINK\_ACC}}\%.
 
 \textbf{Conclusion.} Sinks are essential for stability.
 
@@ -40,17 +40,17 @@ representations; compression-like benefits lost.
 
 \textbf{Goal.} Test pure sparse attention.
 
-\textbf{Result.} Accuracy dropped to 80.0\%.
+\textbf{Result.} Accuracy dropped to {{NOLORA\_ACC}}\%.
 
 \textbf{Conclusion.} LoRA recovery is essential for matching pretrained accuracy.
 
-\subsubsection{D.1.6 Fused Bisection with Different α per Head}
+\subsubsection{D.1.6 Fused Bisection with Different $\alpha$ per Head}
 
 \textbf{Goal.} Adaptive sparsity per head.
 
-\textbf{Result.} No improvement over uniform α = 1.5; 2× slower.
+\textbf{Result.} No improvement over uniform $\alpha$ = 1.5; 2$\times$ slower.
 
-\textbf{Conclusion.} Uniform α is sufficient.
+\textbf{Conclusion.} Uniform $\alpha$ is sufficient.
 
 \subsection{D.2 Abandoned Variants}
 
@@ -69,9 +69,9 @@ distribution became too sparse.
 Applied entmax only on some layers. Result: no clear pattern; uniform 
 entmax is simpler.
 
-\subsubsection{D.2.4 Learned α via Straight-Through}
+\subsubsection{D.2.4 Learned $\alpha$ via Straight-Through}
 
-Attempted to learn α via straight-through estimator. Result: gradient 
+Attempted to learn $\alpha$ via straight-through estimator. Result: gradient 
 signal weak; no improvement.
 
 \subsection{D.3 Failed Hyperparameters}
@@ -84,10 +84,10 @@ signal weak; no improvement.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} & \textbf{Loss stability} \\
 \midrule
-5e-5 & 89.5 & Stable \\
-1e-4 & 90.0 & Stable \\
-2e-4 & 90.25 & Stable \\
-5e-4 & 89.0 & Unstable \\
+5e-5 & {{D\_LR5e5}} & Stable \\
+1e-4 & {{D\_LR1e4}} & Stable \\
+2e-4 & {{D\_LR2e4}} & Stable \\
+5e-4 & {{D\_LR5e4}} & Unstable \\
 1e-3 & NaN & NaN \\
 \bottomrule
 \end{tabular}
@@ -101,10 +101,10 @@ signal weak; no improvement.
 \toprule
 \textbf{$n_\text{iter}$} & \textbf{Accuracy} & \textbf{Time} \\
 \midrule
-10 & 89.5 & Fast \\
-15 & 90.10 & Medium \\
-25 & 90.25 & Slow \\
-50 & 90.28 & Very slow \\
+10 & {{ITER10}} & Fast \\
+15 & {{ITER15}} & Medium \\
+25 & {{D\_ACC}} & Slow \\
+50 & {{ITER50}} & Very slow \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -120,12 +120,12 @@ but doubles the compute. Consider 15 for production.
 \toprule
 \textbf{W} & \textbf{GPT-2} & \textbf{Notes} \\
 \midrule
-4 & 75.5 & Too local \\
-8 & 77.2 & Underfit \\
-16 & 78.10 & Reasonable \\
-32 & 78.78 & Best \\
-64 & 78.75 & Diminishing returns \\
-128 & 78.80 & Full attention \\
+4 & {{G\_W4}} & Too local \\
+8 & {{G\_W8}} & Underfit \\
+16 & {{G\_W16}} & Reasonable \\
+32 & {{G\_ACC}} & Best \\
+64 & {{G\_W64}} & Diminishing returns \\
+128 & {{G\_W128}} & Full attention \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -140,7 +140,7 @@ but doubles the compute. Consider 15 for production.
 \midrule
 Gradient clipping & Stability & No change \\
 Different LoRA init & Convergence & No change \\
-Layer-wise α & Rank & No improvement \\
+Layer-wise $\alpha$ & Rank & No improvement \\
 Position-relative splash & Flexibility & No improvement \\
 Hybrid softmax+entmax & Stability & No improvement \\
 \bottomrule
@@ -155,11 +155,11 @@ Hybrid softmax+entmax & Stability & No improvement \\
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-42 & 90.25 & 77.50 & 78.78 \\
-123 & 90.10 & 77.35 & 78.60 \\
-456 & 90.30 & 77.60 & 78.85 \\
-**Mean** & **90.22** & **77.48** & **78.74** \\
-**Std** & **0.10** & **0.12** & **0.13** \\
+42 & {{SEED42\_D}} & {{SEED42\_R}} & {{SEED42\_G}} \\
+123 & {{SEED123\_D}} & {{SEED123\_R}} & {{SEED123\_G}} \\
+456 & {{SEED456\_D}} & {{SEED456\_R}} & {{SEED456\_G}} \\
+**Mean** & **{{MEAN\_D}}** & **{{MEAN\_R}}** & **{{MEAN\_G}}** \\
+**Std** & **{{STD\_D}}** & **{{STD\_R}}** & **{{STD\_G}}** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -168,17 +168,17 @@ Hybrid softmax+entmax & Stability & No improvement \\
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{Freeze base weights} — always.
-2. \textbf{α = 1.5 is optimal} — α = 2.0 is too sparse.
-3. \textbf{Sinks are essential} — removing them causes 3-5\% drop.
-4. \textbf{LoRA is essential} — without it, accuracy drops 5-10\%.
+1. \textbf{Freeze base weights} -- always.
+2. \textbf{$\alpha$ = 1.5 is optimal} -- $\alpha$ = 2.0 is too sparse.
+3. \textbf{Sinks are essential} -- removing them causes 3-5\% drop.
+4. \textbf{LoRA is essential} -- without it, accuracy drops 5-10\%.
 5. \textbf{25 bisection iterations} is a reasonable default.
-6. \textbf{Not a compression method} — parameter count increases.
+6. \textbf{Not a compression method} -- parameter count increases.
 
 \subsection{D.7 Unresolved Questions}
 
-1. \textbf{Fused CUDA kernel:} Would speedup by 10-20×?
-2. \textbf{Learned α per head:} Would it help?
+1. \textbf{Fused CUDA kernel:} Would speedup by 10-20$\times$?
+2. \textbf{Learned $\alpha$ per head:} Would it help?
 3. \textbf{Sparse hardware:} Real 2:4 speedup?
 4. \textbf{Long context:} Does AdaSplash scale to L = 4096?
 5. \textbf{Other tasks:} Generation, QA, NLI?

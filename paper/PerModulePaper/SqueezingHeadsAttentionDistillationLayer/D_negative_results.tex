@@ -1,0 +1,141 @@
+
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Head Pruning Instead of Dim Reduction}
+
+\textbf{Goal.} Prune entire heads instead of reducing head dimension.
+
+\textbf{Result.} Accuracy dropped by {{PRUNE\_DROP}}\% -- more than dim reduction.
+
+\textbf{Conclusion.} Head-dim reduction preserves more information.
+
+\subsubsection{D.1.2 Random Head-Dim Slice}
+
+\textbf{Goal.} Slice random head dimensions instead of leading.
+
+\textbf{Result.} Accuracy dropped by {{RANDOM\_DROP}}\%.
+
+\textbf{Conclusion.} Leading dimensions are more informative.
+
+\subsubsection{D.1.3 No LoRA Recovery}
+
+\textbf{Goal.} Apply head-dim reduction without LoRA.
+
+\textbf{Result.} Accuracy dropped by {{NOLORA\_DROP}}\%.
+
+\textbf{Conclusion.} LoRA is essential for recovery.
+
+\subsubsection{D.1.4 Per-Head LoRA}
+
+\textbf{Goal.} Separate LoRA adapter per head.
+
+\textbf{Result.} No improvement over shared LoRA; more parameters.
+
+\textbf{Conclusion.} Shared LoRA suffices.
+
+\subsubsection{D.1.5 Full Fine-Tuning}
+
+\textbf{Goal.} Train full model after head-dim reduction.
+
+\textbf{Result.} Similar to LoRA but 100$\times$ more compute.
+
+\textbf{Conclusion.} LoRA is more efficient.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Learned Head-Dim}
+
+Instead of fixed reduction, learn per-head dimension. Complexity not worth it.
+
+\subsubsection{D.2.2 Adaptive LoRA Rank}
+
+Per-layer rank allocation. Marginal improvement.
+
+\subsubsection{D.2.3 Teacher Distillation}
+
+Distill from larger model. Orthogonal to our method.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{LoRA Rank Too Small}
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{$r_L$} & \textbf{DistilBERT} \\
+\midrule
+1 & {{D\_LR1}} \\
+2 & {{D\_LR2}} \\
+4 & {{D\_LR4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Head-Dim Reduction Too Large}
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{$s$} & \textbf{DistilBERT} \\
+\midrule
+3.0 & {{D\_S30}} \\
+4.0 & {{D\_S40}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Recovery Too Short}
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} \\
+\midrule
+5 & {{D\_S5}} \\
+10 & {{D\_S10\_STEP}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Fixes That Didn't Help}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
+\midrule
+Per-head LoRA & Quality & No improvement \\
+Adaptive rank & Quality & No improvement \\
+Random slice & Quality & Worse \\
+Weight decay tuning & Quality & No improvement \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+**Mean** & **{{MEAN}}** \\
+**Std** & **{{STD}}** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 Lessons Learned}
+
+1. \textbf{Head-dim reduction > head pruning.}
+2. \textbf{Leading dimensions are best.}
+3. \textbf{LoRA is essential.}
+4. \textbf{Rank 16 suffices.}
+5. \textbf{Shared LoRA is sufficient.}

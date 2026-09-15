@@ -25,7 +25,7 @@ Only SST-2 is evaluated. AASVD may behave differently on:
 \toprule
 \textbf{Constraint} & \textbf{Status} \\
 \midrule
-≤124M parameters & Tested \\
+$\le$124M parameters & Tested \\
 >1B parameters & Not tested \\
 >24 layers & Not tested \\
 Mixture-of-Experts & Not tested \\
@@ -57,7 +57,7 @@ Factorized layers are slower:
 \item Intermediate $r$-dim tensor materialized
 \end{itemize}
 \begin{itemize}
-\item ~1.3× slower on GPU
+\item ~{{LATENCY\_RATIO}}$\times$ slower on GPU
 \end{itemize}
 
 \subsection{10.5 Calibration Dependency}
@@ -67,7 +67,7 @@ AASVD requires calibration. Without it:
 \item Covariance weighting degrades to unweighted SVD
 \end{itemize}
 \begin{itemize}
-\item Accuracy drops by up to 8\%
+\item Accuracy drops by up to {{NO\_CALIB\_DROP}}\%
 \end{itemize}
 
 \subsection{10.6 Single-Seed Results}
@@ -83,8 +83,8 @@ task accuracy is not characterized.
 
 \subsection{10.8 EMA Bias}
 
-EMA with β=0.9 has a bias toward recent batches. For a 5-batch calibration 
-run, the first batch contributes β⁴ ≈ 0.66 weight (via $C_1 \cdot \beta^{K-1}$). 
+EMA with $\beta$=0.9 has a bias toward recent batches. For a 5-batch calibration 
+run, the first batch contributes $\beta$  $\approx$ 0.66 weight (via $C_1 \cdot \beta^{K-1}$). 
 This is a limitation for very small calibration sets.
 
 \subsection{10.9 Regularization Choice}
@@ -107,7 +107,7 @@ We do not directly compare with:
 
 \subsection{10.11 Failure Modes Not Fully Diagnosed}
 
-{{UNRESOLVED_FAILURES}}
+{{UNRESOLVED\_FAILURES}}
 
 \subsection{10.12 Code Quality}
 

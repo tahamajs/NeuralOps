@@ -1,0 +1,81 @@
+
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{Adaptive Span Attention} (ASA-Span), a learnable per-head 
+window mechanism for transformer attention. Each head maintains a scalar 
+logit that controls its span, masked via a continuous soft ramp. An L1 penalty 
+encourages span shrinkage, achieving automatic pruning.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Learned span} & \textbf{Reduction} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & **{{D\_SPAN}}** & {{D\_SPAN\_REDUCTION}}\% \\
+RoBERTa & {{R\_DELTA}}\% & **{{R\_SPAN}}** & {{R\_SPAN\_REDUCTION}}\% \\
+GPT-2 & {{G\_DELTA}}\% & **{{G\_SPAN}}** & {{G\_SPAN\_REDUCTION}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Learned spans are bimodal}: local vs global heads.
+2. \textbf{Layer depth correlates with span}: early = larger, late = smaller.
+3. \textbf{L1 regularization shrinks spans} to the minimum needed.
+4. \textbf{No speedup without hard truncation.}
+5. \textbf{Interpretability is the main benefit.}
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Learn ramp size per-head
+\end{itemize}
+\begin{itemize}
+\item Hard truncation + sparse kernels
+\end{itemize}
+\begin{itemize}
+\item Combine with content-based sparsity
+\end{itemize}
+\begin{itemize}
+\item Long-context evaluation
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical bounds on span vs accuracy
+\end{itemize}
+\begin{itemize}
+\item Cross-task span transfer
+\end{itemize}
+\begin{itemize}
+\item Integration with compression
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+ASA-Span provides an interpretable mechanism for learning per-head attention 
+windows. We release code and checkpoints.
+
+\subsection{11.6 Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed the implementation, ran experiments, wrote the paper.
+\end{itemize}
+\begin{itemize}
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

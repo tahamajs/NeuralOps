@@ -14,11 +14,11 @@ temperature and blend scalars.
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{FLOPs reduction ($L=256$)} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{FLOPs reduction ($L=256$)} \\
 \midrule
-DistilBERT & -0.80\% & ~2.7× \\
-RoBERTa & -1.06\% & ~2.7× \\
-GPT-2 & -0.38\% & ~2.7× \\
+DistilBERT & {{D\_DELTA}}\% & ~{{D\_FLOP\_RED}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & ~{{R\_FLOP\_RED}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & ~{{G\_FLOP\_RED}}$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -27,8 +27,8 @@ GPT-2 & -0.38\% & ~2.7× \\
 
 1. \textbf{Linear attention without random features} is possible via clustering.
 2. \textbf{Global + local blending} is essential.
-3. \textbf{Learnable hyperparameters} (τ, α) improve results marginally.
-4. \textbf{Not a compression method} — parameter count increases.
+3. \textbf{Learnable hyperparameters} ($\tau$, $\alpha$) improve results marginally.
+4. \textbf{Not a compression method} -- parameter count increases.
 
 \subsection{11.4 Future Work}
 
@@ -57,7 +57,7 @@ GPT-2 & -0.38\% & ~2.7× \\
 \subsection{11.5 Closing Remarks}
 
 ClusterFormer is a practical linear attention method for long sequences. 
-We release code and checkpoints under MIT.
+We release code and checkpoints under {{LICENSE}}.
 
 \subsection{11.6 Acknowledgments}
 
@@ -66,10 +66,10 @@ We release code and checkpoints under MIT.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments.
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
 \end{itemize}
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided feedback and edited the manuscript.
+\item \textbf{{{AUTHOR\_2}}} provided feedback and edited the manuscript.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}

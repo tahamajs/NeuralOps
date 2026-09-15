@@ -12,11 +12,11 @@ the four together contain ~2.36M parameters per layer.
 with the product $U V$ where $U \in \mathbb{R}^{d_\text{out} \times r}$ and 
 $V \in \mathbb{R}^{r \times d_\text{in}}$. Parameter count drops from 
 $d_\text{in} d_\text{out}$ to $r (d_\text{in} + d_\text{out})$. For 
-$768 \times 768$ at $r = 128$, this is a \textbf{3× reduction} in attention 
+$768 \times 768$ at $r = 128$, this is a \textbf{3$\times$ reduction} in attention 
 parameters.
 
 The \textbf{rank choice} is the central design decision. Truncated SVD gives the 
-best rank-$r$ approximation in Frobenius norm (Eckart–Young), but the theorem 
+best rank-$r$ approximation in Frobenius norm (Eckart--Young), but the theorem 
 says nothing about what $r$ should be. Existing approaches fall into three 
 categories:
 
@@ -42,7 +42,7 @@ r^*(\tau) = \min\{r : \mathcal{E}(r) \geq \tau\}
 \tag{1.1}
 \]
 
-with default $\tau = 0.92$. Fast-decaying projections get 
+with default $\tau = {{ENERGY_THRESHOLD}}$. Fast-decaying projections get 
 small $r$, slow-decaying ones get large $r$, all determined automatically.
 
 \subsection{1.2 Problem Statement}
@@ -96,7 +96,7 @@ This keeps $\|U_r\|_2 = \|V_r\|_2 = \sqrt{\sigma_\text{max}}$, avoiding FP16 ove
 \item \textbf{Symmetric SVD + residual adapter.} A factorization that keeps both
 \end{itemize}
   factors balanced in magnitude and adds zero-initialized residuals for 
-  recovery. Section 4.3–4.4.
+  recovery. Section 4.3--4.4.
 \begin{itemize}
 \item \textbf{Broad architecture support.} The method works on flat, nested, and causal
 \end{itemize}
@@ -112,7 +112,7 @@ This keeps $\|U_r\|_2 = \|V_r\|_2 = \sqrt{\sigma_\text{max}}$, avoiding FP16 ove
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
 \end{itemize}
-  under MIT.
+  under {{LICENSE}}.
 
 \subsection{1.5 Paper Organization}
 

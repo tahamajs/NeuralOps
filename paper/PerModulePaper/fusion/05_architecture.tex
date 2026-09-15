@@ -67,7 +67,7 @@ def inject_fusion_attn(layer, cfg, comp_config, old_attn):
 
 \subsection{5.4 Nested Encoder Bypass}
 
-For RoBERTa, \texttt{out_proj} is not applied; outer \texttt{BertSelfOutput.dense} does it.
+For RoBERTa, \texttt{out\\_proj} is not applied; outer \texttt{BertSelfOutput.dense} does it.
 
 \subsection{5.5 GQA}
 
@@ -79,7 +79,7 @@ if self.kv_repeat > 1:
 
 \subsection{5.6 RoPE}
 
-Supports partial RoPE (Qwen3.5 with rotary_dim < head_dim).
+Supports partial RoPE (Qwen3.5 with rotary\_dim < head\_dim).
 
 \subsection{5.7 Registry}
 
@@ -105,7 +105,7 @@ NaN in scores & nan\_to\_num & Replace 0 \\
 \end{tabular}
 \end{table}
 
-\textbf{⚠️ Critical:} \texttt{inject_fusion_attn} has \texttt{raise RuntimeError("copy_weights failed")} 
+\textbf{   Critical:} \texttt{inject\\_fusion\\_attn} has \texttt{raise RuntimeError("copy\\_weights failed")} 
 which kills the injection on any failure. Recommend changing to \texttt{return None}.
 
 \subsection{5.9 Numerical Stability}

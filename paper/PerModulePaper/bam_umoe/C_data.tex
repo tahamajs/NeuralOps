@@ -1,6 +1,6 @@
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT — Complete Metrics}
+\subsection{C.1 DistilBERT -- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -9,20 +9,20 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 66,955,010 \\
-Params (after) & 293000000 \\
-Parameter increase & +226M \\
-Ratio & 4.4× \\
-Accuracy & 89.5\% \\
-F1 & 0.895 \\
-Peak VRAM & 800 MB \\
-Inference time & 4.5 s \\
-Step-0 diff & 1.2e-6 \\
-Expert utilization entropy & 2.95 bits \\
+Params (after) & {{D\_PARAMS\_FULL}} \\
+Parameter increase & +{{D\_PARAM\_DELTA}}M \\
+Ratio & {{D\_PARAM\_RATIO}}$\times$ \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Step-0 diff & {{STEP0\_DIFF}} \\
+Expert utilization entropy & {{D\_UTIL\_ENTROPY}} bits \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.2 RoBERTa — Complete Metrics}
+\subsection{C.2 RoBERTa -- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -31,15 +31,15 @@ Expert utilization entropy & 2.95 bits \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 124,647,170 \\
-Params (after) & 570000000 \\
-Parameter increase & +445M \\
-Accuracy & 76.5\% \\
+Params (after) & {{R\_PARAMS\_FULL}} \\
+Parameter increase & +{{R\_PARAM\_DELTA}}M \\
+Accuracy & {{R\_ACC}}\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.3 GPT-2 — Complete Metrics}
+\subsection{C.3 GPT-2 -- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -48,9 +48,9 @@ Accuracy & 76.5\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 124,441,344 \\
-Params (after) & 570000000 \\
-Parameter increase & +445M \\
-Accuracy & 77.8\% \\
+Params (after) & {{G\_PARAMS\_FULL}} \\
+Parameter increase & +{{G\_PARAM\_DELTA}}M \\
+Accuracy & {{G\_ACC}}\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -64,10 +64,10 @@ Accuracy & 77.8\% \\
 \toprule
 \textbf{E} & \textbf{D acc} & \textbf{Params delta} \\
 \midrule
-2 & 89.0 & +56M \\
-4 & 89.3 & +113M \\
-8 & 89.5 & +226M \\
-16 & 89.5 & +452M \\
+2 & {{D\_E2}} & +{{D\_E2P}}M \\
+4 & {{D\_E4}} & +{{D\_E4P}}M \\
+8 & {{D\_ACC}} & +{{D\_PARAM\_DELTA}}M \\
+16 & {{D\_E16}} & +{{D\_E16P}}M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -80,9 +80,9 @@ Accuracy & 77.8\% \\
 \toprule
 \textbf{k} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-1 & 88.5 & 1.0× \\
-2 & 89.5 & 1.5× \\
-4 & 89.3 & 2.5× \\
+1 & {{D\_K1}} & 1.0$\times$ \\
+2 & {{D\_ACC}} & 1.5$\times$ \\
+4 & {{D\_K4}} & 2.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -95,10 +95,10 @@ Accuracy & 77.8\% \\
 \toprule
 \textbf{$b_g$} & \textbf{D acc} & \textbf{Notes} \\
 \midrule
-0.0 & 84.5 & Unstable \\
--1.0 & 88.8 & Faster ramp \\
--3.0 & 89.5 & Default \\
--5.0 & 88.5 & Slow ramp \\
+0.0 & {{D\_BG0}} & Unstable \\
+-1.0 & {{D\_BG1}} & Faster ramp \\
+-3.0 & {{D\_ACC}} & Default \\
+-5.0 & {{D\_BG5}} & Slow ramp \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -109,11 +109,11 @@ Accuracy & 77.8\% \\
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": 293000000,
-    "accuracy_pct": 89.5,
-    "num_experts": 8,
-    "top_k": 2,
-    "step0_diff": 1.2e-6
+    "params_after": {{D_PARAMS_FULL}},
+    "accuracy_pct": {{D_ACC}},
+    "num_experts": {{NUM_EXPERTS}},
+    "top_k": {{TOP_K}},
+    "step0_diff": {{STEP0_DIFF}}
   }
 }
 \end{lstlisting}

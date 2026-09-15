@@ -1,0 +1,100 @@
+
+\section{10. Limitations}
+
+\subsection{10.1 Task Coverage}
+
+Only SST-2 evaluated. GQA may behave differently on:
+\begin{itemize}
+\item Generation tasks (summarization, translation)
+\end{itemize}
+\begin{itemize}
+\item Long-context tasks (retrieval, QA)
+\end{itemize}
+\begin{itemize}
+\item Multi-lingual tasks
+\end{itemize}
+
+\subsection{10.2 Model Coverage}
+
+Tested on models with $H = 8$--$12$. Not tested on:
+\begin{itemize}
+\item Very wide models ($H = 32+$)
+\end{itemize}
+\begin{itemize}
+\item Models with $H$ prime (limits $G$ choices)
+\end{itemize}
+\begin{itemize}
+\item Mixture-of-Experts
+\end{itemize}
+
+\subsection{10.3 Hardware Coverage}
+
+RTX 4070 Laptop only. Not tested on:
+\begin{itemize}
+\item A100/H100
+\end{itemize}
+\begin{itemize}
+\item CPU
+\end{itemize}
+\begin{itemize}
+\item Edge devices
+\end{itemize}
+
+\subsection{10.4 No Long-Context Evaluation}
+
+We test with $L = 128$. Real GQA benefit is at $L = 4096+$. We do not 
+measure accuracy at long contexts.
+
+\subsection{10.5 Quality Loss Not Analyzed Per-Head}
+
+We do not report which heads benefit most from grouping. A per-head analysis 
+would reveal whether some heads should not be grouped.
+
+\subsection{10.6 Only Uniform Grouping}
+
+We use uniform grouping (each group same size). Non-uniform grouping 
+(e.g., grouping similar heads) is not explored.
+
+\subsection{10.7 No Theoretical Bound}
+
+We provide no formal bound on expressiveness loss or task accuracy loss.
+
+\subsection{10.8 Single Seed}
+
+All results from seed {{SEED}}. Differences below 3.4\% may be noise.
+
+\subsection{10.9 Weight Averaging Choice}
+
+We average KV weights within a group. Other strategies (e.g., pick first, 
+learned pooling) may work better but are not explored.
+
+\subsection{10.10 Comparison Limited}
+
+We do not compare with:
+\begin{itemize}
+\item Ainslie et al.'s original GQA
+\end{itemize}
+\begin{itemize}
+\item MLA (DeepSeek-V2)
+\end{itemize}
+\begin{itemize}
+\item Other recent variants
+\end{itemize}
+
+\subsection{10.11 Failure Modes Not Fully Diagnosed}
+
+{{UNRESOLVED\_FAILURES}}
+
+\subsection{10.12 Code Quality}
+
+Research-grade implementation:
+\begin{itemize}
+\item No unit tests for edge cases
+\end{itemize}
+\begin{itemize}
+\item Some paths use broad exception handling
+\end{itemize}
+
+\subsection{10.13 Ethical Considerations}
+
+Compression is dual-use. See Appendix E.

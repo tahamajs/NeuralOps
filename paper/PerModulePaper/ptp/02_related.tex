@@ -1,0 +1,62 @@
+
+\section{2. Related Work}
+
+\subsection{2.1 Token Pruning}
+
+\textbf{PoWER-BERT} (Goyal et al., 2020): Progressive word elimination based on 
+attention scores. Fixed heuristic.
+
+\textbf{TR-BERT} (Ye et al., 2021): Reinforcement learning for token selection. 
+Requires RL training.
+
+\textbf{LTP} (Kim \& Cho, 2021): Learned threshold pruning. Task-specific.
+
+\textbf{SparseBERT} (Xia et al., 2022): Distilled sparsity patterns.
+
+\textbf{PTP differs} by using a \textbf{learnable MLP} for scoring, retaining 
+\textbf{[CLS] unconditionally}, and being \textbf{drop-in} for pretrained models.
+
+\subsection{2.2 Attention Sparsity}
+
+\textbf{Longformer} (Beltagy et al., 2020): Fixed window + global tokens.
+
+\textbf{BigBird} (Zaheer et al., 2020): Adds random connections.
+
+\textbf{Sparse Transformer} (Child et al., 2019): Strided patterns.
+
+\textbf{PTP differs} by pruning \textbf{tokens} (dense per remaining token), not 
+\textbf{connections}.
+
+\subsection{2.3 Token Merging}
+
+\textbf{Token Merging} (Bolya et al., 2022): Merges similar tokens via bipartite 
+matching.
+
+\textbf{PTP differs} by \textbf{hard pruning} rather than merging.
+
+\subsection{2.4 Head Pruning}
+
+\textbf{Voita et al. (2019):} Prune attention heads. Redundant heads dropped.
+
+\textbf{Michel et al. (2019):} Single head suffices for many tasks.
+
+\textbf{PTP operates orthogonally} -- it prunes tokens, not heads. Can be combined.
+
+\subsection{2.5 Position of Our Work}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Axis} & \textbf{PoWER-BERT} & \textbf{TR-BERT} & \textbf{LTP} & \textbf{PTP} \\
+\midrule
+Learnable &  & (RL) &  & (supervised) \\
+[CLS] preserved &  &  &  &  \\
+Drop-in &  &  &  &  \\
+Multi-architecture &  &  &  &  \\
+Causal-aware &  &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{2.6 Comparison Table}

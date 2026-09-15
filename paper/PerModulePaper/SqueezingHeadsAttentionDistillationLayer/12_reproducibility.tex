@@ -1,0 +1,93 @@
+
+\section{12. Reproducibility Statement}
+
+\subsection{12.1 Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{12.2 Running}
+
+\begin{lstlisting}
+python run_all_4_squeezing_heads.py \
+    --models distilbert,roberta,gpt2 \
+    --lora_rank {{LORA_RANK}} \
+    --head_dim_reduction {{HEAD_DIM_REDUCTION}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{12.3 Reproducing Tables}
+
+\subsubsection{Main (Table 7.1)}
+\begin{lstlisting}
+python run_all_4_squeezing_heads.py --lora_rank 16
+\end{lstlisting}
+
+\subsubsection{LoRA Rank Ablation (Table 7.4)}
+\begin{lstlisting}
+for r in 4 8 16 32; do
+    python run_all_4_squeezing_heads.py --lora_rank $r --output_suffix r$r
+done
+\end{lstlisting}
+
+\subsubsection{Head-Dim Reduction (Table 7.2)}
+\begin{lstlisting}
+for s in 1.0 1.5 2.0 2.5; do
+    python run_all_4_squeezing_heads.py --head_dim_reduction $s --output_suffix s$s
+done
+\end{lstlisting}
+
+\subsection{12.4 Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{12.5 Expected Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Trainable} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & ~{{D\_LORA}} \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & ~{{R\_LORA}} \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_LORA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.6 Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2
+\end{itemize}
+\begin{itemize}
+\item \textbf{Checkpoints:} \texttt{{{HF\\_ORG}}/svd-linear-attention-*-squeezing\\_heads}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Metrics:} \texttt{results/unified\\_squeezing\\_heads/*/summary.csv}
+\end{itemize}
+
+\subsection{12.7 Known Issues}
+
+\begin{itemize}
+\item FP32 attention scores for stability
+\end{itemize}
+\begin{itemize}
+\item LoRA folding required for speedup
+\end{itemize}
+\begin{itemize}
+\item Very small head-dim loses information irrecoverably
+\end{itemize}

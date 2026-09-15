@@ -1,7 +1,7 @@
 
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT — Complete Metrics}
+\subsection{C.1 DistilBERT -- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -11,23 +11,23 @@
 \midrule
 Model & DistilBERT-base \\
 Params (before) & 66,955,010 \\
-Params (after) & 67549448 \\
-Parameter change & +594438 (+0.89\%) \\
-Accuracy & 90.25\% \\
-F1 (binary) & 0.9055 \\
-F1 (macro) & 0.9024 \\
-Precision & 0.9029 \\
-Recall & 0.9023 \\
-Loss & 0.31 \\
-Peak VRAM & 195 MB \\
-Inference time & 3.5 s \\
-Attention sparsity & 42\% \\
-Effective support & 74 \\
+Params (after) & {{D\_PARAMS\_FULL}} \\
+Parameter change & +{{D\_PARAM\_DELTA}} (+{{D\_PARAM\_DELTA\_PCT}}\%) \\
+Accuracy & {{D\_ACC}}\% \\
+F1 (binary) & {{D\_F1}} \\
+F1 (macro) & {{D\_F1\_MACRO}} \\
+Precision & {{D\_PREC}} \\
+Recall & {{D\_REC}} \\
+Loss & {{D\_LOSS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Attention sparsity & {{D\_SPARSITY}}\% \\
+Effective support & {{D\_SUPPORT}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.2 RoBERTa — Complete Metrics}
+\subsection{C.2 RoBERTa -- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -36,15 +36,15 @@ Effective support & 74 \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 124,647,170 \\
-Params (after) & 125826818 \\
-Parameter change & +1179648 (+0.95\%) \\
-Accuracy & 77.5\% \\
+Params (after) & {{R\_PARAMS\_FULL}} \\
+Parameter change & +{{R\_PARAM\_DELTA}} (+{{R\_PARAM\_DELTA\_PCT}}\%) \\
+Accuracy & {{R\_ACC}}\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.3 GPT-2 — Complete Metrics}
+\subsection{C.3 GPT-2 -- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -53,15 +53,15 @@ Accuracy & 77.5\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 124,441,344 \\
-Params (after) & 125630220 \\
-Parameter change & +1188876 (+0.96\%) \\
-Accuracy & 78.78\% \\
+Params (after) & {{G\_PARAMS\_FULL}} \\
+Parameter change & +{{G\_PARAM\_DELTA}} (+{{G\_PARAM\_DELTA\_PCT}}\%) \\
+Accuracy & {{G\_ACC}}\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.4 Attention Sparsity by Layer (DistilBERT, α = 1.5)}
+\subsection{C.4 Attention Sparsity by Layer (DistilBERT, $\alpha$ = 1.5)}
 
 \begin{table}[H]
 \centering
@@ -69,29 +69,29 @@ Accuracy & 78.78\% \\
 \toprule
 \textbf{Layer} & \textbf{Sparsity} & \textbf{Effective support} \\
 \midrule
-0 & 42\% & 74 \\
-1 & 41\% & 76 \\
-2 & 42\% & 74 \\
-3 & 43\% & 73 \\
-4 & 42\% & 74 \\
-5 & 42\% & 74 \\
+0 & {{D\_L0\_SP}}\% & {{D\_L0\_SUP}} \\
+1 & {{D\_L1\_SP}}\% & {{D\_L1\_SUP}} \\
+2 & {{D\_L2\_SP}}\% & {{D\_L2\_SUP}} \\
+3 & {{D\_L3\_SP}}\% & {{D\_L3\_SUP}} \\
+4 & {{D\_L4\_SP}}\% & {{D\_L4\_SUP}} \\
+5 & {{D\_L5\_SP}}\% & {{D\_L5\_SUP}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.5 α Ablation — Full Data}
+\subsection{C.5 $\alpha$ Ablation -- Full Data}
 
 \begin{table}[H]
 \centering
 \begin{tabular}{lllllll}
 \toprule
-\textbf{α} & \textbf{D acc} & \textbf{Sparsity} & \textbf{R acc} & \textbf{Sparsity} & \textbf{G acc} & \textbf{Sparsity} \\
+\textbf{$\alpha$} & \textbf{D acc} & \textbf{Sparsity} & \textbf{R acc} & \textbf{Sparsity} & \textbf{G acc} & \textbf{Sparsity} \\
 \midrule
-1.0 & 90.71 & 0\% & 78.56 & 0\% & 79.36 & 0\% \\
-1.2 & 90.48 & 20\% & 78.10 & 18\% & 79.01 & 19\% \\
-1.5 & 90.25 & 42\% & 77.5 & 40\% & 78.78 & 41\% \\
-1.8 & 89.79 & 52\% & 77.20 & 50\% & 78.30 & 51\% \\
-2.0 & 88.30 & 60\% & 75.80 & 58\% & 77.10 & 59\% \\
+1.0 & {{D\_A1}} & 0\% & {{R\_A1}} & 0\% & {{G\_A1}} & 0\% \\
+1.2 & {{D\_A12}} & {{SP12}}\% & {{R\_A12}} & {{R\_SP12}}\% & {{G\_A12}} & {{G\_SP12}}\% \\
+1.5 & {{D\_ACC}} & {{SP15}}\% & {{R\_ACC}} & {{R\_SP15}}\% & {{G\_ACC}} & {{G\_SP15}}\% \\
+1.8 & {{D\_A18}} & {{SP18}}\% & {{R\_A18}} & {{R\_SP18}}\% & {{G\_A18}} & {{G\_SP18}}\% \\
+2.0 & {{D\_A2}} & {{SP20}}\% & {{R\_A2}} & {{R\_SP20}}\% & {{G\_A2}} & {{G\_SP20}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -104,11 +104,11 @@ Accuracy & 78.78\% \\
 \toprule
 \textbf{W} & \textbf{Acc} & \textbf{Effective context} \\
 \midrule
-8 & 77.2 & 8 \\
-16 & 78.10 & 16 \\
-32 & 78.78 & 32 \\
-64 & 78.75 & 64 \\
-128 & 78.80 & 128 (full) \\
+8 & {{G\_W8}} & 8 \\
+16 & {{G\_W16}} & 16 \\
+32 & {{G\_ACC}} & 32 \\
+64 & {{G\_W64}} & 64 \\
+128 & {{G\_W128}} & 128 (full) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -119,11 +119,11 @@ Accuracy & 78.78\% \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{With sink} & \textbf{No sink} & \textbf{Δ} \\
+\textbf{Model} & \textbf{With sink} & \textbf{No sink} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & 90.25 & 85.5 & +4.75 \\
-RoBERTa & 77.5 & 73.0 & +4.5 \\
-GPT-2 & 78.78 & 74.0 & +4.78 \\
+DistilBERT & {{D\_ACC}} & {{D\_NOSINK}} & {{D\_SINK\_DELTA}} \\
+RoBERTa & {{R\_ACC}} & {{R\_NOSINK}} & {{R\_SINK\_DELTA}} \\
+GPT-2 & {{G\_ACC}} & {{G\_NOSINK}} & {{G\_SINK\_DELTA}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -136,11 +136,11 @@ GPT-2 & 78.78 & 74.0 & +4.78 \\
 \toprule
 \textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-0 & 80.0 & 68.0 & 69.0 \\
-4 & 88.5 & 75.0 & 76.5 \\
-8 & 89.8 & 76.8 & 77.9 \\
-16 & 90.25 & 77.5 & 78.78 \\
-32 & 90.30 & 77.6 & 78.85 \\
+0 & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} \\
+4 & {{D\_RL4}} & {{R\_RL4}} & {{G\_RL4}} \\
+8 & {{D\_RL8}} & {{R\_RL8}} & {{G\_RL8}} \\
+16 & {{D\_RL16}} & {{R\_RL16}} & {{G\_RL16}} \\
+32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -153,10 +153,10 @@ GPT-2 & 78.78 & 74.0 & +4.78 \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & 0.5 & 0.8 & 0.7 \\
-25 & 0.4 & 0.6 & 0.55 \\
-50 & 0.31 & 0.48 & 0.47 \\
-100 & 90.30 & 77.6 & 78.80 \\
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -166,11 +166,11 @@ GPT-2 & 78.78 & 74.0 & +4.78 \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     1.5
-5     0.8
-10    0.5
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
 ...
-50    0.31
+50    {{D_S50}}
 \end{lstlisting}
 
 (Similar for RoBERTa, GPT-2)
@@ -181,13 +181,13 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": 67549448,
-    "parameter_change": "0.89%",
-    "accuracy_pct": 90.25,
-    "sparsity_pct": 42,
-    "alpha": 1.5,
-    "splash_radius": 32,
-    "lora_rank": 16
+    "params_after": {{D_PARAMS_FULL}},
+    "parameter_change": "{{D_PARAM_DELTA_PCT}}%",
+    "accuracy_pct": {{D_ACC}},
+    "sparsity_pct": {{D_SPARSITY}},
+    "alpha": {{ALPHA}},
+    "splash_radius": {{SPLASH_RADIUS}},
+    "lora_rank": {{LORA_RANK}}
   },
   "roberta": {...},
   "gpt2": {...}

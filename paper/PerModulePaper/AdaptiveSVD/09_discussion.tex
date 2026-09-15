@@ -21,14 +21,14 @@ in settings where:
 \subsubsection{9.1.2 Takeaway 2: Per-Layer Rank is Important}
 
 The energy threshold gives each projection its own rank, ranging from 
-64 to 150. Fixed-rank at matched compression loses 
-\textbf{1.5\%} accuracy.
+{{MIN\_RANK\_OBS}} to {{MAX\_RANK\_OBS}}. Fixed-rank at matched compression loses 
+\textbf{{{FIXED\_RANK\_LOSS}}\%} accuracy.
 
 \subsubsection{9.1.3 Takeaway 3: Adapters are Essential}
 
-Without residual adapters, accuracy drops by \textbf{8\%}. With 
-adapters, the drop is only \textbf{2.7\%}. The adapter overhead is 
-~12\% of the compressed base.
+Without residual adapters, accuracy drops by \textbf{{{NO\_ADAPT\_LOSS}}\%}. With 
+adapters, the drop is only \textbf{{{WITH\_ADAPT\_DROP}}\%}. The adapter overhead is 
+~{{ADAPTER\_OVERHEAD}}\% of the compressed base.
 
 \subsection{9.2 When to Use Adaptive SVD}
 
@@ -68,15 +68,15 @@ adapters, the drop is only \textbf{2.7\%}. The adapter overhead is
 \subsection{9.3 Decision Flowchart}
 
 \begin{lstlisting}
-Have calibration data? ─── Yes ─── Consider A3/AASVD
-  │ No
-  ▼
-Need fast compression? ─── Yes ─── Adaptive SVD
-  │ No
-  ▼
-Latency critical? ─── Yes ─── Consider other methods
-  │ No
-  ▼
+Have calibration data? --- Yes --- Consider A3/AASVD
+  | No
+   
+Need fast compression? --- Yes --- Adaptive SVD
+  | No
+   
+Latency critical? --- Yes --- Consider other methods
+  | No
+   
 Adaptive SVD
 \end{lstlisting}
 
@@ -90,12 +90,12 @@ For DistilBERT:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Adaptive SVD} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 45 MB & **3.0×** \\
-Params & 66.95M & 22000000M & **3.0×** \\
-VRAM & 183 MB & 130 MB & **{{D\_VRAM\_RATIO}}×** \\
-Inference time & 1.90 s & 2.3 s & 1.2× \\
-Accuracy & 90.71\% & 88.0\% & -2.7\% \\
-Compression time & — & 15 s & Fast \\
+Disk (FP16) & 134 MB & {{D\_DISK}} MB & **{{D\_DISK\_RATIO}}$\times$** \\
+Params & 66.95M & {{D\_PARAMS}}M & **{{D\_RATIO}}$\times$** \\
+VRAM & 183 MB & {{D\_VRAM}} MB & **{{D\_VRAM\_RATIO}}$\times$** \\
+Inference time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Compression time & -- & {{D\_TOTAL}} s & Fast \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -111,11 +111,11 @@ compression speed.
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} & \textbf{Calibration} \\
 \midrule
-ALBERT & Sharing & 3.5× & 89.4\% & Retrain \\
-DistilBERT & Distill & 1.6× & 90.7\% & Retrain \\
-A3 & Low-rank & {{A3\_RATIO}}× & 85.5 & Data \\
-AASVD & Low-rank & {{AASVD\_RATIO}}× & 85.0 & Data \\
-**Adaptive SVD** & Low-rank & **3.0×** & **88.0** & **None** \\
+ALBERT & Sharing & 3.5$\times$ & 89.4\% & Retrain \\
+DistilBERT & Distill & 1.6$\times$ & 90.7\% & Retrain \\
+A3 & Low-rank & {{A3\_RATIO}}$\times$ & {{A3\_D}} & Data \\
+AASVD & Low-rank & {{AASVD\_RATIO}}$\times$ & {{AASVD\_D}} & Data \\
+**Adaptive SVD** & Low-rank & **{{D\_RATIO}}$\times$** & **{{D\_ACC}}** & **None** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -126,7 +126,7 @@ AASVD & Low-rank & {{AASVD\_RATIO}}× & 85.0 & Data \\
 Same disk savings as A3/AASVD.
 
 \subsubsection{Latency}
-Two matmuls + adapter = ~1.2× slower than baseline. On CPU, 
+Two matmuls + adapter = ~{{LATENCY\_RATIO}}$\times$ slower than baseline. On CPU, 
 may be faster due to cache effects.
 
 \subsubsection{Compatibility}
@@ -138,7 +138,7 @@ tasks without re-compression.
 
 \subsection{9.7 Open Questions}
 
-1. \textbf{Optimal τ per layer:} Could a learned per-layer $\tau$ beat uniform 
+1. \textbf{Optimal $\tau$ per layer:} Could a learned per-layer $\tau$ beat uniform 
    $\tau = 0.92$?
 2. \textbf{Combined with calibration:} How does Adaptive SVD compare to A3/AASVD 
    when both have calibration data?
@@ -150,7 +150,7 @@ tasks without re-compression.
 
 \subsubsection{Positive}
 \begin{itemize}
-\item \textbf{Democratizes compression:} No calibration data → broader access
+\item \textbf{Democratizes compression:} No calibration data $\to$ broader access
 \end{itemize}
 \begin{itemize}
 \item \textbf{Faster iteration:} Compress in seconds, not minutes
@@ -168,4 +168,4 @@ tasks without re-compression.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.

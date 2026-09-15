@@ -35,10 +35,10 @@
 \subsubsection{E.2.1 Training Cost}
 
 \begin{itemize}
-\item \textbf{Total GPU-hours:} ~12
+\item \textbf{Total GPU-hours:} ~{{COMPUTE\_HOURS}}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Estimated CO₂:} 0.8 kg CO₂eq
+\item \textbf{Estimated CO$_2$:} {{CO2\_KG}} kg CO$_2$eq
 \end{itemize}
 \begin{itemize}
 \item \textbf{Methodology:} ML CO2 Impact calculator
@@ -50,11 +50,11 @@
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Method} & \textbf{GPU-hours} & \textbf{CO₂ (kg)} \\
+\textbf{Method} & \textbf{GPU-hours} & \textbf{CO$_2$ (kg)} \\
 \midrule
 Full training & {{FULL\_TRAIN\_HOURS}} & {{FULL\_TRAIN\_CO2}} \\
-A3 + LoRA (ours) & 12 & 0.8 \\
-**Reduction** & **{{GPU\_HOURS\_RED}}×** & **{{CO2\_RED}}×** \\
+A3 + LoRA (ours) & {{COMPUTE\_HOURS}} & {{CO2\_KG}} \\
+**Reduction** & **{{GPU\_HOURS\_RED}}$\times$** & **{{CO2\_RED}}$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,11 +106,11 @@ We do not endorse these uses.
 
 \subsubsection{E.5.1 Contributions}
 
-See §11.7.
+See  11.7.
 
 \subsubsection{E.5.2 License}
 
-Code and checkpoints released under \textbf{MIT}.
+Code and checkpoints released under \textbf{{{LICENSE}}}.
 
 \subsection{E.6 Conflicts of Interest}
 

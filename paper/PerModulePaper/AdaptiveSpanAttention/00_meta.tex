@@ -1,0 +1,113 @@
+
+\section{Adaptive Span Attention: Learned Per-Head Attention Windows via Differentiable Soft Ramps}
+
+
+\textbf{Authors:}
+\begin{itemize}
+\item {{AUTHOR\_1\_NAME}}  -- {{AUTHOR\_1\_EMAIL}}
+\end{itemize}
+\begin{itemize}
+\item {{AUTHOR\_2\_NAME}}  -- {{AUTHOR\_2\_EMAIL}}
+\end{itemize}
+
+\textbf{Affiliations:}
+\begin{itemize}
+\item   {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
+\end{itemize}
+\begin{itemize}
+\item   {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
+\end{itemize}
+
+\textbf{Corresponding author:} {{CORRESPONDING\_AUTHOR}}
+\textbf{Preprint date:} {{DATE}}
+\textbf{Version:} v{{VERSION}}
+\textbf{Code:} https://github.com/{{ORG}}/SVD\_Project/tree/main/framework/attentions/adaptive\_span\_attention.py
+\textbf{Model weights:} https://huggingface.co/{{HF\_ORG}}
+\textbf{License:} {{LICENSE}}
+
+
+
+\subsection{Abstract}
+
+Standard self-attention allows every query to attend to every key, requiring 
+$\mathcal{O}(L^2)$ time and memory regardless of whether long-range dependencies 
+are actually needed. Fixed-window attention (Longformer, Mistral) truncates 
+attention to a sliding window, but the window size is a static hyperparameter 
+that cannot adapt to the differing needs of individual heads.
+
+We present \textbf{Adaptive Span Attention} (ASA-Span), which learns a per-head 
+attention span via a single scalar logit per head. Given a head's span 
+$z_h \in [0, S_\text{max}]$ and a ramp size $R$, we mask attention scores by 
+the \textbf{continuous piecewise-linear ramp}:
+
+\[
+g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
+\]
+
+where $d$ is the distance between query and key positions. The mask is 
+\textbf{differentiable} in $z_h$, allowing end-to-end training. An \textbf{L1 penalty} 
+on the total span encourages the model to shrink windows when they are not 
+needed, achieving automatic context pruning.
+
+We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At initialization 
+span $S_\text{max} = {{MAX_SPAN}}$, learned spans converge to 
+\textbf{{{D\_SPAN}}} on DistilBERT ({{D\_SPAN\_REDUCTION}}\% reduction from max), 
+\textbf{{{R\_SPAN}}} on RoBERTa, and \textbf{{{G\_SPAN}}} on GPT-2. Accuracy drops by 
+only \textbf{{{D\_DELTA}}\%}, \textbf{{{R\_DELTA}}\%}, and \textbf{{{G\_DELTA}}\%} respectively. 
+Attention memory is reduced by \textbf{{{MEM\_REDUCTION}}$\times$} at convergence. The 
+learned spans show systematic head heterogeneity, with some heads converging 
+to local (span $\approx$ 16) and others to global (span $\approx$ max) behavior.
+
+\textbf{Keywords:} adaptive attention, learned span, differentiable masking, 
+per-head budgets, efficient transformer
+
+
+
+\subsection{Lay Summary}
+
+Transformers read sequences by "attending" to all previous tokens. For a 
+1000-word article, each word looks at 1000 others -- expensive. Existing 
+methods limit this to a fixed window (e.g., last 512 tokens), but this 
+window is the same for all attention heads. In practice, some heads only 
+need nearby context while others need long-range context.
+
+Our method lets each head \textbf{learn its own window size}. A single trainable 
+number per head controls the window. As training progresses, the windows 
+shrink automatically to the smallest size that preserves quality. Some heads 
+converge to tiny windows (16 tokens) and others to large ones (128 tokens), 
+revealing that heads have very different contextual needs.
+
+
+
+\subsection{Table of Contents}
+
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
+
+\textbf{Appendices:}
+\begin{itemize}
+\item [A. Mathematical Derivations](A\_math.md)
+\end{itemize}
+\begin{itemize}
+\item [B. Implementation Details](B\_implementation.md)
+\end{itemize}
+\begin{itemize}
+\item [C. Full Experimental Data](C\_data.md)
+\end{itemize}
+\begin{itemize}
+\item [D. Negative Results](D\_negative\_results.md)
+\end{itemize}
+\begin{itemize}
+\item [E. Ethical Considerations](E\_ethics.md)
+\end{itemize}

@@ -1,0 +1,92 @@
+
+\section{12. Reproducibility Statement}
+
+\subsection{12.1 Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{12.2 Running}
+
+\begin{lstlisting}
+python run_all_4_halo_regla.py \
+    --models distilbert,roberta,gpt2 \
+    --gate_init_bias {{GATE_BIAS}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{12.3 Reproducing Tables}
+
+\subsubsection{Main (Table 7.1)}
+\begin{lstlisting}
+python run_all_4_halo_regla.py --gate_init_bias 1.8
+\end{lstlisting}
+
+\subsubsection{Gate Bias Ablation (Table 7.5)}
+\begin{lstlisting}
+for b in 0 0.5 1.0 1.8 3.0; do
+    python run_all_4_halo_regla.py --gate_init_bias $b --output_suffix b$b
+done
+\end{lstlisting}
+
+\subsubsection{Kernel Ablation (Table 7.6)}
+\begin{lstlisting}
+for k in elu relu softplus identity; do
+    python run_all_4_halo_regla.py --kernel $k --output_suffix $k
+done
+\end{lstlisting}
+
+\subsection{12.4 Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{12.5 Expected Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Mean gate} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & ~{{D\_GATE}} \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & ~{{R\_GATE}} \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_GATE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.6 Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2
+\end{itemize}
+\begin{itemize}
+\item \textbf{Checkpoints:} \texttt{{{HF\\_ORG}}/svd-linear-attention-*-halo\\_regla}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Metrics:} \texttt{results/unified\\_halo\\_regla/*/summary.csv}
+\end{itemize}
+
+\subsection{12.7 Known Issues}
+
+\begin{itemize}
+\item FP32 needed for cumsum stability
+\end{itemize}
+\begin{itemize}
+\item Long sequences may OOM due to cumsum memory
+\end{itemize}
+\begin{itemize}
+\item RoPE may fail on some models
+\end{itemize}

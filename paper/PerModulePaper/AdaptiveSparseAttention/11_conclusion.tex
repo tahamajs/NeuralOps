@@ -1,0 +1,82 @@
+
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{Adaptive Sparse Attention} (ASA), a per-head learnable 
+sparsification mechanism for transformer attention. Each head maintains a 
+scalar logit that controls its retention budget, and top-$k$ selection is 
+made differentiable via a sigmoid soft mask. Chunked computation bounds 
+peak memory.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Sparsity} & \textbf{VRAM $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & {{D\_SP}} & -{{MEM\_REDUCTION}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & {{R\_SP}} & -{{MEM\_REDUCTION}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & {{G\_SP}} & -{{MEM\_REDUCTION}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Learned per-head budgets are bimodal}: dense vs sparse.
+2. \textbf{Soft top-$k$ is differentiable and effective.}
+3. \textbf{Chunking bounds memory} without hurting quality.
+4. \textbf{No parameter reduction} -- compute-only optimization.
+5. \textbf{Attention is highly concentrated}: top 10\% of keys captures {{MASS10}}\%.
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Learned chunk size
+\end{itemize}
+\begin{itemize}
+\item Cross-layer sparsity transfer
+\end{itemize}
+\begin{itemize}
+\item Fused kernels for sparse matmul
+\end{itemize}
+\begin{itemize}
+\item Long-context evaluation
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical error bounds
+\end{itemize}
+\begin{itemize}
+\item Integration with GQA and compression
+\end{itemize}
+\begin{itemize}
+\item Cross-task transfer
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+ASA provides a flexible, interpretable sparsity mechanism for transformer 
+attention. We release code and checkpoints.
+
+\subsection{11.6 Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed ASA, implemented the code, wrote the paper.
+\end{itemize}
+\begin{itemize}
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

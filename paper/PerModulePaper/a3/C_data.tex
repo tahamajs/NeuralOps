@@ -1,7 +1,7 @@
 
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT — Full Metrics}
+\subsection{C.1 DistilBERT -- Full Metrics}
 
 \begin{table}[H]
 \centering
@@ -11,24 +11,24 @@
 \midrule
 Model & DistilBERT-base \\
 Params (before) & 66,955,010 \\
-Params (after) & 13500000 \\
-Ratio & 5.0× \\
-Accuracy & 88.5\% \\
-F1 & 0.884 \\
-Precision & 0.885 \\
-Recall & 0.884 \\
-Loss & 0.35 \\
-Peak VRAM & 110 MB \\
-Inference time & 2.4 s \\
+Params (after) & {{D\_PARAMS}} \\
+Ratio & {{D\_RATIO}}$\times$ \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Precision & {{D\_PREC}} \\
+Recall & {{D\_REC}} \\
+Loss & {{D\_LOSS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
 Compression time & {{D\_COMP\_TIME}} s \\
-Compressed layers & 36 \\
-Fallback layers & 0 \\
-Average error & 0.15 \\
+Compressed layers & {{D\_COMP}} \\
+Fallback layers & {{D\_FALLBACK}} \\
+Average error & {{D\_AVG\_ERR}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.2 RoBERTa — Full Metrics}
+\subsection{C.2 RoBERTa -- Full Metrics}
 
 \begin{table}[H]
 \centering
@@ -37,20 +37,20 @@ Average error & 0.15 \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 124,647,170 \\
-Params (after) & 27700000 \\
-Ratio & 4.5× \\
-Accuracy & 75.8\% \\
-F1 & 0.775 \\
-Peak VRAM & 450 MB \\
-Inference time & 5.2 s \\
-Compressed layers & 72 \\
-Fallback layers & 0 \\
-Average error & 0.16 \\
+Params (after) & {{R\_PARAMS}} \\
+Ratio & {{R\_RATIO}}$\times$ \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Inference time & {{R\_TIME}} s \\
+Compressed layers & {{R\_COMP}} \\
+Fallback layers & {{R\_FALLBACK}} \\
+Average error & {{R\_AVG\_ERR}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.3 GPT-2 — Full Metrics}
+\subsection{C.3 GPT-2 -- Full Metrics}
 
 \begin{table}[H]
 \centering
@@ -59,15 +59,15 @@ Average error & 0.16 \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 124,441,344 \\
-Params (after) & 27700000 \\
-Ratio & 4.5× \\
-Accuracy & 76.5\% \\
-F1 & 0.768 \\
-Peak VRAM & 500 MB \\
-Inference time & 5.5 s \\
-Compressed layers & 72 \\
-Fallback layers & 0 \\
-Average error & 0.17 \\
+Params (after) & {{G\_PARAMS}} \\
+Ratio & {{G\_RATIO}}$\times$ \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Inference time & {{G\_TIME}} s \\
+Compressed layers & {{G\_COMP}} \\
+Fallback layers & {{G\_FALLBACK}} \\
+Average error & {{G\_AVG\_ERR}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -131,7 +131,7 @@ Step  Loss
 50    {{G_S50}}
 \end{lstlisting}
 
-\subsection{C.8 LoRA Rank Ablation — Detail}
+\subsection{C.8 LoRA Rank Ablation -- Detail}
 
 \subsubsection{DistilBERT}
 
@@ -151,7 +151,7 @@ Step  Loss
 
 (Similar for RoBERTa and GPT-2)
 
-\subsection{C.9 SVD Rank Ablation — Detail}
+\subsection{C.9 SVD Rank Ablation -- Detail}
 
 \begin{table}[H]
 \centering
@@ -175,7 +175,7 @@ Step  Loss
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{N_calib} & \textbf{D Acc} & \textbf{R Acc} & \textbf{G Acc} \\
+\textbf{N\_calib} & \textbf{D Acc} & \textbf{R Acc} & \textbf{G Acc} \\
 \midrule
 100 & {{D\_N100}} & {{R\_N100}} & {{G\_N100}} \\
 500 & {{D\_N500}} & {{R\_N500}} & {{G\_N500}} \\
@@ -191,14 +191,14 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": 13500000,
-    "accuracy_pct": 88.5,
-    "f1": 0.884,
-    "compression_ratio": 5.0,
-    "peak_vram_mb": 110,
-    "compressed_layers": 36,
-    "fallback_layers": 0,
-    "avg_reconstruction_error": 0.15
+    "params_after": {{D_PARAMS}},
+    "accuracy_pct": {{D_ACC}},
+    "f1": {{D_F1}},
+    "compression_ratio": {{D_RATIO}},
+    "peak_vram_mb": {{D_VRAM}},
+    "compressed_layers": {{D_COMP}},
+    "fallback_layers": {{D_FALLBACK}},
+    "avg_reconstruction_error": {{D_AVG_ERR}}
   },
   "roberta": {...},
   "gpt2": {...}

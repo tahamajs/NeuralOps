@@ -4,9 +4,9 @@
 \subsection{11.1 Summary}
 
 We presented \textbf{AdaSplash}, an adaptive splash attention mechanism that 
-combines \textbf{α-entmax sparse activations} with \textbf{local sliding-window masking} 
+combines \textbf{$\alpha$-entmax sparse activations} with \textbf{local sliding-window masking} 
 and \textbf{attention sink preservation}. AdaSplash is \textbf{not} a compression 
-method — it \textbf{increases} parameter count by ~0.88\% due to LoRA 
+method -- it \textbf{increases} parameter count by ~{{PARAM\_CHANGE}}\% due to LoRA 
 adapters. Its value is in producing \textbf{~40\% sparse attention} without 
 accuracy loss.
 
@@ -16,21 +16,21 @@ accuracy loss.
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{Params Δ} & \textbf{Sparsity} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Sparsity} \\
 \midrule
-DistilBERT & -0.46\% & +594438 & 42\% \\
-RoBERTa & -1.06\% & +1179648 & 40\% \\
-GPT-2 & -0.58\% & +1188876 & 41\% \\
+DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_DELTA}} & {{D\_SPARSITY}}\% \\
+RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_DELTA}} & {{R\_SPARSITY}}\% \\
+GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_DELTA}} & {{G\_SPARSITY}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{11.3 Key Takeaways}
 
-1. \textbf{α-entmax produces exact zeros} without accuracy loss.
+1. \textbf{$\alpha$-entmax produces exact zeros} without accuracy loss.
 2. \textbf{Attention sinks are essential} for stability.
 3. \textbf{Splash masking} works for causal decoders.
-4. \textbf{Not a compression method} — parameter count increases.
+4. \textbf{Not a compression method} -- parameter count increases.
 5. \textbf{Slower than baseline} due to bisection.
 
 \subsection{11.4 Future Work}
@@ -40,7 +40,7 @@ GPT-2 & -0.58\% & +1188876 & 41\% \\
 \item \textbf{Fused CUDA kernel} for entmax bisection
 \end{itemize}
 \begin{itemize}
-\item \textbf{Learned α} per layer
+\item \textbf{Learned $\alpha$} per layer
 \end{itemize}
 \begin{itemize}
 \item \textbf{Sparse matmul} to exploit sparsity
@@ -73,11 +73,11 @@ for reproducibility.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments,
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments,
 \end{itemize}
   wrote the paper.
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided methodological feedback and edited the manuscript.
+\item \textbf{{{AUTHOR\_2}}} provided methodological feedback and edited the manuscript.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}

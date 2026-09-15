@@ -14,37 +14,37 @@ FUSIONATTN has two execution paths selected by sequence length:
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
-    ┌──────────────────────────────────────┐
-    │  Input X → Q/K/V projections         │
-    │  (frozen base + LoRA)                │
-    └────────────────┬─────────────────────┘
-                     │
-                     ▼
-    ┌──────────────────────────────────────┐
-    │  Apply RoPE, repeat_kv (GQA)         │
-    └────────────────┬─────────────────────┘
-                     │
-                     ▼
-    ┌──────────────────────────────────────┐
-    │  Is L ≤ 128?                          │
-    └────┬──────────────────────┬──────────┘
-         │ Yes                  │ No
-         ▼                      ▼
-    ┌────────────┐      ┌────────────────────┐
-    │  Full      │      │  Block partition   │
-    │  softmax   │      │  + Gate scoring    │
-    │  attention │      │  + Top-K selection │
-    └─────┬──────┘      │  + Block attention │
-          │             └─────────┬──────────┘
-          │                       │
-          └───────────┬───────────┘
-                      ▼
-              ┌────────────────┐
-              │  out_proj      │
-              │  (frozen + LoRA)│
-              └────────┬───────┘
-                       │
-                       ▼
+    +--------------------------------------+
+    |  Input X $\to$ Q/K/V projections         |
+    |  (frozen base + LoRA)                |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Apply RoPE, repeat_kv (GQA)         |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Is L $\le$ 128?                          |
+    +----+----------------------+----------+
+         | Yes                  | No
+                                 
+    +------------+      +--------------------+
+    |  Full      |      |  Block partition   |
+    |  softmax   |      |  + Gate scoring    |
+    |  attention |      |  + Top-K selection |
+    +-----+------+      |  + Block attention |
+          |             +---------+----------+
+          |                       |
+          +-----------+-----------+
+                       
+              +----------------+
+              |  out_proj      |
+              |  (frozen + LoRA)|
+              +--------+-------+
+                       |
+                        
                       Y
 \end{lstlisting}
 
@@ -138,40 +138,40 @@ with causal masking if decoder, and padding masking.
 Input:  X, attention_mask, position_embeddings
 Output: Y, attn_weights
 
-1:  Q ← LoRALinear_Q(X)
-2:  K ← LoRALinear_K(X)
-3:  V ← LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear_Q(X)
+2:  K $\leftarrow$ LoRALinear_K(X)
+3:  V $\leftarrow$ LoRALinear_V(X)
 4:
-5:  if RoPE: (Q, K) ← apply_rope(Q, K, cos, sin)
-6:  if GQA: K, V ← repeat_kv(K, V)
+5:  if RoPE: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V)
 7:
-8:  if L ≤ 128 or cross_attention:                  ▷ SHORT PATH
-9:      S ← QK^T / √d_h
-10:     S ← causal_mask(S) if decoder
-11:     S ← padding_mask(S, attention_mask)
-12:     A ← softmax(S)
-13:     Y_ctx ← A @ V
+8:  if L $\le$ 128 or cross_attention:                    SHORT PATH
+9:      S $\leftarrow$ QK^T / $\sqrt{}$d_h
+10:     S $\leftarrow$ causal_mask(S) if decoder
+11:     S $\leftarrow$ padding_mask(S, attention_mask)
+12:     A $\leftarrow$ softmax(S)
+13:     Y_ctx $\leftarrow$ A @ V
 14:
-15: else:                                              ▷ LONG PATH
-16:     Q_blocks ← partition(Q, block_size)
-17:     K_blocks ← partition(K, block_size)
-18:     Q_means ← mean(Q_blocks, dim=-2)
-19:     K_means ← mean(K_blocks, dim=-2)
-20:     g ← GateMLP(Q_means) @ GateMLP(K_means)^T / τ
-21:     top_idx ← topk(g, K)
-22:     top_idx[..., 0] ← 0                          ▷ Always include block 0
+15: else:                                                LONG PATH
+16:     Q_blocks $\leftarrow$ partition(Q, block_size)
+17:     K_blocks $\leftarrow$ partition(K, block_size)
+18:     Q_means $\leftarrow$ mean(Q_blocks, dim=-2)
+19:     K_means $\leftarrow$ mean(K_blocks, dim=-2)
+20:     g $\leftarrow$ GateMLP(Q_means) @ GateMLP(K_means)^T / $\tau$
+21:     top_idx $\leftarrow$ topk(g, K)
+22:     top_idx[..., 0] $\leftarrow$ 0                            Always include block 0
 23:     for each query block i:
-24:         K_sel ← gather(K_blocks, top_idx[i])
-25:         V_sel ← gather(V_blocks, top_idx[i])
-26:         S ← Q_blocks[i] @ K_sel^T / √d_h
-27:         S ← causal_mask + padding_mask
-28:         A ← softmax(S)
-29:         Out[i] ← A @ V_sel
-30:     Y_ctx ← concat(Out) and crop to L
+24:         K_sel $\leftarrow$ gather(K_blocks, top_idx[i])
+25:         V_sel $\leftarrow$ gather(V_blocks, top_idx[i])
+26:         S $\leftarrow$ Q_blocks[i] @ K_sel^T / $\sqrt{}$d_h
+27:         S $\leftarrow$ causal_mask + padding_mask
+28:         A $\leftarrow$ softmax(S)
+29:         Out[i] $\leftarrow$ A @ V_sel
+30:     Y_ctx $\leftarrow$ concat(Out) and crop to L
 31:
-32: Y_ctx ← Y_ctx.reshape(B, L, H·d_h)
-33: if nested: Y ← Y_ctx
-34: else: Y ← LoRALinear_O(Y_ctx)
+32: Y_ctx $\leftarrow$ Y_ctx.reshape(B, L, H d_h)
+33: if nested: Y $\leftarrow$ Y_ctx
+34: else: Y $\leftarrow$ LoRALinear_O(Y_ctx)
 35:
 36: return Y
 \end{lstlisting}
@@ -184,8 +184,8 @@ Output: Y, attn_weights
 \toprule
 \textbf{Path} & \textbf{Time} & \textbf{Memory} \\
 \midrule
-Short ($L \leq 128$) & $\mathcal{O}(L^2 d\_h)$ & $\mathcal{O}(L^2)$ \\
-Long ($L > 128$) & $\mathcal{O}(K \cdot L \cdot B \cdot d\_h)$ & $\mathcal{O}(K \cdot B \cdot L)$ \\
+Short ($L \leq 128$) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2)$ \\
+Long ($L > 128$) & $\mathcal{O}(K \cdot L \cdot B \cdot d_h)$ & $\mathcal{O}(K \cdot B \cdot L)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -199,7 +199,7 @@ For $L = 512, B = 64, K = 4$:
 \item Long: $4 \times 512 \times 64 = 131$K
 \end{itemize}
 \begin{itemize}
-\item \textbf{Reduction: 2×}
+\item \textbf{Reduction: 2$\times$}
 \end{itemize}
 
 For $L = 4096, B = 64, K = 4$:
@@ -211,7 +211,7 @@ For $L = 4096, B = 64, K = 4$:
 \item Long: $1.05$M
 \end{itemize}
 \begin{itemize}
-\item \textbf{Reduction: 16×}
+\item \textbf{Reduction: 16$\times$}
 \end{itemize}
 
 \subsection{4.8 Parameter Analysis}
@@ -222,8 +222,8 @@ For $L = 4096, B = 64, K = 4$:
 \toprule
 \textbf{Component} & \textbf{Parameters} \\
 \midrule
-LoRA ($r\_L$) & $8 r\_L d$ per layer \\
-Gate MLP & $2 \times 4 d\_h^2$ per layer \\
+LoRA ($r_L$) & $8 r_L d$ per layer \\
+Gate MLP & $2 \times 4 d_h^2$ per layer \\
 Gate temperature & 1 \\
 output\_scale & 1 per projection \\
 \bottomrule
@@ -245,7 +245,7 @@ For DistilBERT ($d=768$, $r_L=16$, $d_h=64$):
 \item \textbf{6 layers: +786,432 params}
 \end{itemize}
 
-\textbf{FUSIONATTN increases parameter count by ~1.17\%.}
+\textbf{FUSIONATTN increases parameter count by ~{{PARAM\_CHANGE}}\%.}
 
 \subsection{4.9 Theoretical Notes}
 

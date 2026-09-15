@@ -31,14 +31,14 @@
 \begin{document}
 
 
-\section{AdaSplash: Adaptive Splash Attention with α-Entmax Sparse Activations and Local Sliding-Window Masking}
+\section{AdaSplash: Adaptive Splash Attention with $\alpha$-Entmax Sparse Activations and Local Sliding-Window Masking}
 
 \textbf{Authors:}
 \begin{itemize}
-\item Your Name¹ — you@university.edu
+\item Your Name¹ --- you@university.edu
 \end{itemize}
 \begin{itemize}
-\item Advisor Name² — advisor@university.edu
+\item Advisor Name² --- advisor@university.edu
 \end{itemize}
 
 \textbf{Affiliations:}
@@ -46,13 +46,13 @@
 \item ¹ University Name, Department of Computer Science
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+\item ² {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
 \end{itemize}
 
 \textbf{Corresponding author:} Your Name
 \textbf{Preprint date:} 2026-09-15
 \textbf{Version:} v1 (initial draft)
-\textbf{Code:} https://github.com/your-org/SVD_Project/tree/main/framework/attentions/adasplash.py
+\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/adasplash.py
 \textbf{Model weights:} https://huggingface.co/Hooshaai
 \textbf{License:} MIT
 
@@ -61,20 +61,20 @@
 \subsection{Abstract}
 
 Standard transformer attention produces \textbf{dense} probability distributions 
-over all keys via softmax, forcing every query to attend — at least weakly — 
+over all keys via softmax, forcing every query to attend --- at least weakly --- 
 to every token. This has two consequences: attention weights are rarely 
 interpretable (mass is spread over thousands of tokens), and the operation 
 cannot exploit token sparsity for compute savings. We introduce \textbf{AdaSplash} 
-(\textbf{Ada}ptive \textbf{Splash} Attention), which replaces softmax with \textbf{α-entmax} 
+(\textbf{Ada}ptive \textbf{Splash} Attention), which replaces softmax with \textbf{$\alpha$-entmax} 
 (Peters et al., 2019), a family of sparse activation functions parameterized 
 by $\alpha \in (1, 2]$ that produce \textbf{exact zeros} for low-scoring keys. 
-When $\alpha = 1.5$, α-entmax is 1.5-entmax, which interpolates between 
+When $\alpha = 1.5$, $\alpha$-entmax is 1.5-entmax, which interpolates between 
 softmax ($\alpha = 1$) and sparsemax ($\alpha = 2$), yielding ~40\% zero 
 entries in practice.
 
 AdaSplash combines three ideas:
 
-1. \textbf{α-entmax normalization} via a numerically stabilized bisection algorithm 
+1. \textbf{$\alpha$-entmax normalization} via a numerically stabilized bisection algorithm 
    over valid tokens only, with softmax fallback when the support is empty.
 2. \textbf{Local splash radius masking.} For causal decoders, keys outside a 
    sliding window of radius $W$ are masked to $-\infty$, restricting attention 
@@ -92,14 +92,14 @@ achieves \textbf{90.25\%} on DistilBERT, \textbf{77.5\%} on RoBERTa, and
 \textbf{78.78\%} on GPT-2 with zero-mean accuracy drops and no weight updates 
 to the base model.
 
-\textbf{Keywords:} sparse attention, α-entmax, sliding window, attention sinks, 
+\textbf{Keywords:} sparse attention, $\alpha$-entmax, sliding window, attention sinks, 
 local-global attention, LoRA
 
 
 
 \subsection{Lay Summary}
 
-Standard attention in transformers is "soft" — every token considers every 
+Standard attention in transformers is "soft" --- every token considers every 
 other token, even if only briefly. This is wasteful: studies show that most 
 attention weight goes to a few important tokens, and the rest is noise. 
 AdaSplash replaces the standard "softmax" with a "sparse" alternative that 
@@ -113,35 +113,35 @@ accuracy on sentiment analysis while using cleaner attention patterns.
 
 \subsection{Table of Contents}
 
-1. [Introduction](01_intro.md)
-2. [Related Work](02_related.md)
-3. [Background](03_background.md)
-4. [Method](04_method.md)
-5. [Architecture Integration](05_architecture.md)
-6. [Experimental Setup](06_setup.md)
-7. [Results](07_results.md)
-8. [Analysis](08_analysis.md)
-9. [Discussion](09_discussion.md)
-10. [Limitations](10_limitations.md)
-11. [Conclusion](11_conclusion.md)
-12. [Reproducibility](12_reproducibility.md)
-13. [References](13_references.md)
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
 
 \textbf{Appendices:}
 \begin{itemize}
-\item [A. Mathematical Derivations](A_math.md)
+\item [A. Mathematical Derivations](A\_math.md)
 \end{itemize}
 \begin{itemize}
-\item [B. Implementation Details](B_implementation.md)
+\item [B. Implementation Details](B\_implementation.md)
 \end{itemize}
 \begin{itemize}
-\item [C. Full Experimental Data](C_data.md)
+\item [C. Full Experimental Data](C\_data.md)
 \end{itemize}
 \begin{itemize}
-\item [D. Negative Results](D_negative_results.md)
+\item [D. Negative Results](D\_negative\_results.md)
 \end{itemize}
 \begin{itemize}
-\item [E. Ethical Considerations](E_ethics.md)
+\item [E. Ethical Considerations](E\_ethics.md)
 \end{itemize}
 
 \clearpage
@@ -164,7 +164,7 @@ for interpretation and sparse computation:
 
 1. \textbf{Dense output.} Every attention weight $A_{ij}$ is strictly positive. 
    Softmax never produces exact zeros. This makes attention patterns hard 
-   to interpret — a query spreads mass across all $L$ keys even when only 
+   to interpret --- a query spreads mass across all $L$ keys even when only 
    a few are relevant.
 
 2. \textbf{No sparsity leverage.} Because every weight is nonzero, the attention 
@@ -180,13 +180,13 @@ over 85\% of attention weight, while the bottom 50\% receive less than 2\%.
 This discrepancy motivates \textbf{sparse attention activations}: replacing softmax 
 with a function that produces \textbf{exact zeros} for low-scoring keys.
 
-\subsection{1.2 The α-Entmax Family}
+\subsection{1.2 The $\alpha$-Entmax Family}
 
-Peters et al. (2019) introduce \textbf{α-entmax}, a family of activation functions 
+Peters et al. (2019) introduce \textbf{$\alpha$-entmax}, a family of activation functions 
 parameterized by $\alpha \in [1, 2]$:
 
 \[
-\text{α-entmax}(s) = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H_\alpha^T(p)
+\text{$\alpha$-entmax}(s) = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H_\alpha^T(p)
 \tag{1.2}
 \]
 
@@ -215,7 +215,7 @@ enough to train stably.
 \subsection{1.3 Attention Sinks and Local Windows}
 
 \textbf{Attention sinks.} Xiao et al. (2024) and others observe that the first 
-few tokens in a sequence — regardless of content — receive disproportionate 
+few tokens in a sequence --- regardless of content --- receive disproportionate 
 attention. This is an artifact of how transformers initialize positional 
 information; preserving these tokens is critical for stability.
 
@@ -225,7 +225,7 @@ local syntax while keeping complexity $\mathcal{O}(L \cdot W)$ instead of
 $\mathcal{O}(L^2)$.
 
 AdaSplash combines both: \textbf{local splash} attention keeps a window of radius 
-$W$ around each query, plus the first 4 "sink" tokens, plus α-entmax 
+$W$ around each query, plus the first 4 "sink" tokens, plus $\alpha$-entmax 
 sparsity on top.
 
 \subsection{1.4 Problem Statement}
@@ -251,7 +251,7 @@ attention sparsity and interpretability.
 
 \textbf{AdaSplash} combines four components:
 
-1. \textbf{α-Entmax bisection.} We solve the entmax equation via bisection on 
+1. \textbf{$\alpha$-Entmax bisection.} We solve the entmax equation via bisection on 
    $\tau$, the Lagrange multiplier. The procedure runs for 25 iterations, 
    producing a numerically stable approximation with softmax fallback.
 
@@ -262,16 +262,16 @@ attention sparsity and interpretability.
    weights. LoRA rank-$r_L$ adapters with $B = 0$ initialization provide 
    trainable capacity.
 
-4. \textbf{Multi-architecture weight transfer.} A comprehensive \texttt{copy_weights} 
+4. \textbf{Multi-architecture weight transfer.} A comprehensive \texttt{copy\\_weights} 
    handles GPT-2 Conv1D, RoBERTa/BERT nested, DistilBERT flat, and Qwen 
    GQA patterns.
 
 \subsection{1.6 Contributions}
 
 \begin{itemize}
-\item \textbf{A stabilized α-entmax implementation.} We provide a numerically robust
+\item \textbf{A stabilized $\alpha$-entmax implementation.} We provide a numerically robust
 \end{itemize}
-  bisection algorithm for α-entmax with valid-token masking and softmax 
+  bisection algorithm for $\alpha$-entmax with valid-token masking and softmax 
   fallback, available for $\alpha \in (1, 2]$. Section 4.2.
 \begin{itemize}
 \item \textbf{Local splash masking with sink preservation.} We combine sliding-window
@@ -289,7 +289,7 @@ attention sparsity and interpretability.
 \item \textbf{Honest disclosure.} We clearly state that AdaSplash \textbf{increases}
 \end{itemize}
   parameter count due to LoRA, and report when the method is worth using. 
-  Sections 8–9.
+  Sections 8--9.
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
 \end{itemize}
@@ -297,7 +297,7 @@ attention sparsity and interpretability.
 
 \subsection{1.7 Paper Organization}
 
-Section 2 reviews related work. Section 3 provides background on α-entmax, 
+Section 2 reviews related work. Section 3 provides background on $\alpha$-entmax, 
 attention sinks, and LoRA. Section 4 presents AdaSplash. Section 5 describes 
 architecture integration. Section 6 details the experimental setup. Section 7 
 reports results. Section 8 analyzes attention sparsity and ablation 
@@ -322,11 +322,11 @@ producing the sparsest possible distribution consistent with the scores. It
 has sparse outputs but is non-smooth at the support boundary, which can slow 
 training.
 
-\textbf{α-entmax.} Peters et al. (2019) generalize sparsemax to a one-parameter 
+\textbf{$\alpha$-entmax.} Peters et al. (2019) generalize sparsemax to a one-parameter 
 family. $\alpha = 1.5$ is the most commonly used value, balancing sparsity 
 and smoothness. They provide forward and backward algorithms via bisection.
 
-\textbf{Adaptive entmax.} Correia et al. (2019) extend α-entmax to allow 
+\textbf{Adaptive entmax.} Correia et al. (2019) extend $\alpha$-entmax to allow 
 $\alpha$ to be \textbf{learned per head}. We use fixed $\alpha = 1.5$ as default 
 for simplicity, but the mechanism supports learned $\alpha$.
 
@@ -337,7 +337,7 @@ fused CUDA kernels for entmax. Our implementation is a reference bisection.
 
 \textbf{Longformer.} Beltagy et al. (2020) introduce a sliding-window attention 
 of width $W$, giving $\mathcal{O}(L \cdot W)$ complexity. AdaSplash uses the 
-same window but with α-entmax activations.
+same window but with $\alpha$-entmax activations.
 
 \textbf{BigBird.} Zaheer et al. (2020) combine local, random, and global attention. 
 Their window is fixed-size; AdaSplash uses a dynamic splash radius.
@@ -391,13 +391,13 @@ StreamingLLM & Sink + window & $\mathcal{O}(L W)$ & No & Yes \\
 \subsection{2.6 Position of Our Work}
 
 AdaSplash is unique in combining:
-1. \textbf{α-entmax sparsity} at the activation level (not mask level).
+1. \textbf{$\alpha$-entmax sparsity} at the activation level (not mask level).
 2. \textbf{Local splash radius} with sink preservation.
 3. \textbf{Multi-architecture support} including GQA and RoPE.
 4. \textbf{Frozen base + LoRA} for parameter-efficient adaptation.
 
 The closest prior work is the \textbf{combination} of Longformer (local window) 
-with α-entmax (sparsity). To our knowledge, no published work evaluates this 
+with $\alpha$-entmax (sparsity). To our knowledge, no published work evaluates this 
 specific combination on small pretrained models with LoRA recovery.
 
 \subsection{2.7 Important Distinction}
@@ -442,7 +442,7 @@ Two properties matter here:
 where $H$ is Shannon entropy. The entropy regularization spreads mass 
 uniformly.
 
-\subsection{3.2 The α-Entmax Family}
+\subsection{3.2 The $\alpha$-Entmax Family}
 
 Replacing Shannon entropy with \textbf{Tsallis entropy} $H_\alpha^T$:
 
@@ -454,17 +454,17 @@ H_\alpha^T(p) = \begin{cases}
 \tag{3.3}
 \]
 
-gives the α-entmax family:
+gives the $\alpha$-entmax family:
 
 \[
-\text{α-entmax}(s) = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H_\alpha^T(p)
+\text{$\alpha$-entmax}(s) = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H_\alpha^T(p)
 \tag{3.4}
 \]
 
 \textbf{Closed form.} For $\alpha > 1$:
 
 \[
-\text{α-entmax}(s)_i = \max\!\left(0, (\alpha - 1) s_i - \tau\right)^{1/(\alpha - 1)}
+\text{$\alpha$-entmax}(s)_i = \max\!\left(0, (\alpha - 1) s_i - \tau\right)^{1/(\alpha - 1)}
 \tag{3.5}
 \]
 
@@ -479,7 +479,7 @@ S = \{i : (\alpha - 1) s_i > \tau\}
 
 For $\alpha = 1.5$: $p_i \propto \max(0, 0.5 s_i - \tau)^2$.
 
-\subsection{3.3 Bisection for τ}
+\subsection{3.3 Bisection for $\tau$}
 
 Solving for $\tau$ is a one-dimensional root-finding problem:
 
@@ -570,7 +570,7 @@ initial forward pass equals the pretrained model (since $B = 0$).
 AdaSplash replaces the attention mechanism of a pretrained transformer with 
 four modifications:
 
-1. \textbf{α-Entmax normalization} (§4.2) replaces softmax.
+1. \textbf{$\alpha$-Entmax normalization} (§4.2) replaces softmax.
 2. \textbf{Local splash masking} (§4.3) restricts attention to a sliding window 
    plus sink tokens.
 3. \textbf{Frozen base weights + LoRA} (§4.4) preserves pretrained representations 
@@ -589,7 +589,7 @@ four modifications:
     │  AdaSplash attention A':                 │
     │    1. Project with frozen base + LoRA    │
     │    2. Apply splash mask                  │
-    │    3. Apply α-entmax                     │
+    │    3. Apply $\alpha$-entmax                     │
     │    4. Compute context, apply out_proj    │
     └──────────────────┬───────────────────────┘
                        │
@@ -598,12 +598,12 @@ four modifications:
     │  Compressed attention with:              │
     │    - Frozen base weights (exact copy)    │
     │    - Trainable LoRA adapters (rank r_L)  │
-    │    - α-entmax sparse activations         │
+    │    - $\alpha$-entmax sparse activations         │
     │    - Local splash window                 │
     └──────────────────────────────────────────┘
 \end{lstlisting}
 
-\subsection{4.2 Phase 1: α-Entmax Normalization}
+\subsection{4.2 Phase 1: $\alpha$-Entmax Normalization}
 
 \subsubsection{4.2.1 Problem Statement}
 
@@ -618,38 +618,38 @@ with $\tau$ chosen so that $\sum_i p_i = 1$.
 
 \subsubsection{4.2.2 Bisection Algorithm}
 
-\textbf{Algorithm 1:} α-Entmax via bisection
+\textbf{Algorithm 1:} $\alpha$-Entmax via bisection
 \begin{lstlisting}
-Input: scores s ∈ R^{B×H×L_q×L_k}, α, valid_mask, n_iter
-Output: p ∈ R^{B×H×L_q×L_k} with sum_i p_i = 1
+Input: scores s $\in$ R^{B$\times$H$\times$L_q$\times$L_k}, $\alpha$, valid_mask, n_iter
+Output: p $\in$ R^{B$\times$H$\times$L_q$\times$L_k} with sum_i p_i = 1
 
-1:  if |α - 1| < ε:                        ▷ Softmax case
+1:  if |$\alpha$ - 1| < $\epsilon$:                        ▷ Softmax case
 2:      return softmax(s, masked)
 3:
-4:  s_masked ← mask_invalid(s, -10000)
-5:  s_shift ← s_masked - max(s_masked)
-6:  scaled ← s_shift * (α - 1)
+4:  s_masked $\leftarrow$ mask_invalid(s, -10000)
+5:  s_shift $\leftarrow$ s_masked - max(s_masked)
+6:  scaled $\leftarrow$ s_shift * ($\alpha$ - 1)
 7:
-8:  τ_lo ← min(scaled) - 1
-9:  τ_hi ← 0
+8:  $\tau$_lo $\leftarrow$ min(scaled) - 1
+9:  $\tau$_hi $\leftarrow$ 0
 10:
 11: for _ in range(n_iter):
-12:     τ ← (τ_lo + τ_hi) / 2
-13:     p ← max(0, scaled - τ)^{1/(α-1)}
-14:     p ← mask_invalid(p, 0)
-15:     sum_p ← sum(p)
+12:     $\tau$ $\leftarrow$ ($\tau$_lo + $\tau$_hi) / 2
+13:     p $\leftarrow$ max(0, scaled - $\tau$)^{1/($\alpha$-1)}
+14:     p $\leftarrow$ mask_invalid(p, 0)
+15:     sum_p $\leftarrow$ sum(p)
 16:     if sum_p > 1:
-17:         τ_lo ← τ
+17:         $\tau$_lo $\leftarrow$ $\tau$
 18:     else:
-19:         τ_hi ← τ
+19:         $\tau$_hi $\leftarrow$ $\tau$
 20:
-21: τ ← (τ_lo + τ_hi) / 2
-22: p ← max(0, scaled - τ)^{1/(α-1)}
-23: p ← mask_invalid(p, 0)
-24: p ← p / sum(p)                          ▷ Normalize
+21: $\tau$ $\leftarrow$ ($\tau$_lo + $\tau$_hi) / 2
+22: p $\leftarrow$ max(0, scaled - $\tau$)^{1/($\alpha$-1)}
+23: p $\leftarrow$ mask_invalid(p, 0)
+24: p $\leftarrow$ p / sum(p)                          ▷ Normalize
 25:
-26: if sum(p) < ε:                           ▷ Support empty
-27:     p ← softmax(s_masked)                 ▷ Fallback
+26: if sum(p) < $\epsilon$:                           ▷ Support empty
+27:     p $\leftarrow$ softmax(s_masked)                 ▷ Fallback
 28:
 29: return p
 \end{lstlisting}
@@ -662,7 +662,7 @@ to precision $(\tau_\text{hi} - \tau_\text{lo}) / 2^{n_\text{iter}}$. With
 
 1. \textbf{Shift scores.} Subtract $\max_i s_i$ to bound $(\alpha - 1) s_i$.
 2. \textbf{Mask invalid keys.} Set to $-10000$ before the algorithm.
-3. \textbf{Softmax fallback.} If the support is empty (all p_i = 0), fall back 
+3. \textbf{Softmax fallback.} If the support is empty (all p\_i = 0), fall back 
    to softmax.
 
 \subsubsection{4.2.3 Complexity}
@@ -714,11 +714,11 @@ Keys outside the splash mask are set to $-10000$ before entmax.
 \subsubsection{4.3.2 Non-Causal Models}
 
 For bidirectional encoders (DistilBERT, RoBERTa), we \textbf{do not} apply 
-splash masking. The full attention is used with α-entmax. This preserves 
+splash masking. The full attention is used with $\alpha$-entmax. This preserves 
 global context.
 
 \textbf{Rationale.} Splash masking is a \textbf{decoder-specific} technique for 
-long-context inference. On short sequences (L ≤ 128), the window radius 
+long-context inference. On short sequences (L $\le$ 128), the window radius 
 $W = 32$ would restrict attention unnecessarily for encoders.
 
 \subsubsection{4.3.3 Interaction with Attention Sinks}
@@ -735,23 +735,23 @@ For each projection $P \in \{Q, K, V, O\}$, we copy $W_P$ from the pretrained
 attention module. The exact copy procedure depends on the architecture:
 
 \begin{itemize}
-\item \textbf{DistilBERT:} Direct copy from \texttt{q_lin}, \texttt{k_lin}, \texttt{v_lin}, \texttt{out_lin}.
+\item \textbf{DistilBERT:} Direct copy from \texttt{q\\_lin}, \texttt{k\\_lin}, \texttt{v\\_lin}, \texttt{out\\_lin}.
 \end{itemize}
 \begin{itemize}
 \item \textbf{RoBERTa:} Copy from \texttt{self.query}, \texttt{self.key}, \texttt{self.value}; leave
 \end{itemize}
-  \texttt{out_proj} identity (outer \texttt{output.dense} applies it).
+  \texttt{out\\_proj} identity (outer \texttt{output.dense} applies it).
 \begin{itemize}
-\item \textbf{GPT-2:} Split fused \texttt{c_attn.weight} (transposed) into Q, K, V; copy
+\item \textbf{GPT-2:} Split fused \texttt{c\\_attn.weight} (transposed) into Q, K, V; copy
 \end{itemize}
-  \texttt{c_proj.weight}.
+  \texttt{c\\_proj.weight}.
 \begin{itemize}
-\item \textbf{Qwen:} Direct copy from \texttt{q_proj}, \texttt{k_proj}, \texttt{v_proj}, \texttt{o_proj}.
+\item \textbf{Qwen:} Direct copy from \texttt{q\\_proj}, \texttt{k\\_proj}, \texttt{v\\_proj}, \texttt{o\\_proj}.
 \end{itemize}
 
 \subsubsection{4.4.2 Freezing Base}
 
-After copying, base weights are frozen (\texttt{requires_grad = False}). Biases are 
+After copying, base weights are frozen (\texttt{requires\\_grad = False}). Biases are 
 also frozen if present.
 
 \subsubsection{4.4.3 LoRA Adapters}
@@ -793,16 +793,16 @@ pretrained model exactly.
 \toprule
 \textbf{Configuration} & \textbf{Parameters} \\
 \midrule
-Original & $d\_\text{in} d\_\text{out}$ \\
-AdaSplash base (frozen) & $d\_\text{in} d\_\text{out}$ (same) \\
-AdaSplash + LoRA & $d\_\text{in} d\_\text{out} + r\_L (d\_\text{in} + d\_\text{out})$ \\
-**Parameter change** & **+$r\_L (d\_\text{in} + d\_\text{out})$** \\
+Original & $d_\text{in} d_\text{out}$ \\
+AdaSplash base (frozen) & $d_\text{in} d_\text{out}$ (same) \\
+AdaSplash + LoRA & $d_\text{in} d_\text{out} + r_L (d_\text{in} + d_\text{out})$ \\
+**Parameter change** & **+$r_L (d_\text{in} + d_\text{out})$** \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 For $d = 768$, $r_L = 16$: each projection adds $16 \times 1536 = 24{,}576$ 
-parameters. Across 4 projections × $N_l$ layers: significant addition.
+parameters. Across 4 projections $\times$ $N_l$ layers: significant addition.
 
 \textbf{AdaSplash is not a compression method.}
 
@@ -819,7 +819,7 @@ is_nested = (
 \end{lstlisting}
 
 For nested encoders, we extract $Q, K, V$ from \texttt{src.self} and set 
-\texttt{out_proj} to identity (the outer \texttt{output.dense} applies the projection).
+\texttt{out\\_proj} to identity (the outer \texttt{output.dense} applies the projection).
 
 \subsubsection{4.5.2 Frobenius Validation}
 
@@ -836,34 +836,34 @@ If a projection has near-zero norm, we raise an error and skip injection.
 
 \textbf{Algorithm 2:} AdaSplash forward pass
 \begin{lstlisting}
-Input:  hidden_states X ∈ R^{B×L×d}
+Input:  hidden_states X $\in$ R^{B$\times$L$\times$d}
         attention_mask, position_embeddings
-        hyperparameters α, W, S, r_L
-Output: output Y ∈ R^{B×L×d}
+        hyperparameters $\alpha$, W, S, r_L
+Output: output Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q ← X W_Q^T + (X A_Q^T) B_Q^T
- 2: K ← X W_K^T + (X A_K^T) B_K^T
- 3: V ← X W_V^T + (X A_V^T) B_V^T
+ 1: Q $\leftarrow$ X W_Q^T + (X A_Q^T) B_Q^T
+ 2: K $\leftarrow$ X W_K^T + (X A_K^T) B_K^T
+ 3: V $\leftarrow$ X W_V^T + (X A_V^T) B_V^T
  4:
- 5: if position_embeddings: (Q, K) ← apply_rotary(Q, K, cos, sin)
- 6: if H_kv < H: K, V ← repeat_kv(K, V)
+ 5: if position_embeddings: (Q, K) $\leftarrow$ apply_rotary(Q, K, cos, sin)
+ 6: if H_kv < H: K, V $\leftarrow$ repeat_kv(K, V)
  7:
- 8: S ← (Q @ K^T) / √d_h
- 9: S ← apply_attention_mask(S, mask)
+ 8: S $\leftarrow$ (Q @ K^T) / $\sqrt{}$d_h
+ 9: S $\leftarrow$ apply_attention_mask(S, mask)
 10:
 11: if is_decoder:
-12:     causal_mask ← tril(ones(L, L))
-13:     splash_mask ← (0 ≤ i - j ≤ W) | (j < S)
-14:     S ← S.masked_fill(~(causal & splash), -10000)
+12:     causal_mask $\leftarrow$ tril(ones(L, L))
+13:     splash_mask $\leftarrow$ (0 $\le$ i - j $\le$ W) | (j < S)
+14:     S $\leftarrow$ S.masked_fill(~(causal & splash), -10000)
 15:
-16: A ← α_entmax(S, α)
-17: A ← dropout(A)
+16: A $\leftarrow$ $\alpha$_entmax(S, $\alpha$)
+17: A $\leftarrow$ dropout(A)
 18:
-19: C ← A @ V
-20: C ← C.view(B, L, H · d_h)
+19: C $\leftarrow$ A @ V
+20: C $\leftarrow$ C.view(B, L, H · d_h)
 21:
-22: if is_nested: Y ← C
-23: else:        Y ← C W_O^T + (C A_O^T) B_O^T + b_O
+22: if is_nested: Y $\leftarrow$ C
+23: else:        Y $\leftarrow$ C W_O^T + (C A_O^T) B_O^T + b_O
 24:
 25: return Y
 \end{lstlisting}
@@ -879,17 +879,17 @@ Output: output Y ∈ R^{B×L×d}
 \textbf{Phase} & \textbf{Time} \\
 \midrule
 Q/K/V projection & $O(L d^2)$ \\
-Attention scores & $O(L^2 d\_h)$ \\
-α-entmax & $O(n\_\text{iter} L^2)$ \\
-Context & $O(L^2 d\_h)$ \\
+Attention scores & $O(L^2 d_h)$ \\
+$\alpha$-entmax & $O(n_\text{iter} L^2)$ \\
+Context & $O(L^2 d_h)$ \\
 Output projection & $O(L d^2)$ \\
-**Total** & $O(L^2 d\_h + n\_\text{iter} L^2 + L d^2)$ \\
+**Total** & $O(L^2 d_h + n_\text{iter} L^2 + L d^2)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Compared to softmax:} AdaSplash adds $n_\text{iter} \times L^2$ operations 
-for entmax bisection. For $n_\text{iter} = 25$, this is ~25× 
+for entmax bisection. For $n_\text{iter} = 25$, this is ~25$\times$ 
 slower attention.
 
 \textbf{For causal decoders with splash masking,} the mask restricts nonzero 
@@ -898,7 +898,7 @@ this is not leveraged by PyTorch dense matmul.
 
 \subsubsection{4.7.2 Space Complexity}
 
-\textbf{Attention matrix:} $O(L^2)$ — same as softmax attention.
+\textbf{Attention matrix:} $O(L^2)$ --- same as softmax attention.
 
 \subsubsection{4.7.3 Parameter Count}
 
@@ -909,8 +909,8 @@ this is not leveraged by PyTorch dense matmul.
 \textbf{Config} & \textbf{Parameters} \\
 \midrule
 Original & $4 d^2$ per layer \\
-AdaSplash + LoRA($r\_L$) & $4 d^2 + 4 r\_L (d + d)$ \\
-**Change** & **+$8 r\_L d$** \\
+AdaSplash + LoRA($r_L$) & $4 d^2 + 4 r_L (d + d)$ \\
+**Change** & **+$8 r_L d$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -920,9 +920,9 @@ For $d = 768$, $r_L = 16$: +98,304 params per layer. Across 6 layers
 
 \subsection{4.8 Theoretical Notes}
 
-\subsubsection{4.8.1 α-Entmax Support Sparsity}
+\subsubsection{4.8.1 $\alpha$-Entmax Support Sparsity}
 
-\textbf{Claim.} For $\alpha > 1$, the support of α-entmax output has size at most 
+\textbf{Claim.} For $\alpha > 1$, the support of $\alpha$-entmax output has size at most 
 $L - k$ where $k$ is the number of scores below the threshold $\tau^*$.
 
 \textbf{Proof.} Any score $s_i$ with $(\alpha - 1) s_i < \tau^*$ yields $p_i = 0$. 
@@ -930,7 +930,7 @@ The support is exactly $S = \{i : (\alpha - 1) s_i \geq \tau^*\}$. $\square$
 
 \subsubsection{4.8.2 Entmax vs Softmax on Peaked Distributions}
 
-\textbf{Claim.} For scores with high variance, α-entmax with $\alpha = 1.5$ 
+\textbf{Claim.} For scores with high variance, $\alpha$-entmax with $\alpha = 1.5$ 
 produces sparser outputs than softmax.
 
 \textbf{Proof sketch.} The Tsallis entropy with $\alpha > 1$ penalizes spread 
@@ -960,7 +960,7 @@ determined by $\alpha$, $W$, and the interaction with LoRA recovery.
 $\alpha$ & 1.5 & Higher = sparser (up to 2.0 = sparsemax) \\
 $W$ (splash radius) & 32 & Higher = more context, less sparsity \\
 $S$ (sink count) & 4 & Higher = more global context \\
-$r\_L$ (LoRA rank) & 16 & Higher = more recovery capacity \\
+$r_L$ (LoRA rank) & 16 & Higher = more recovery capacity \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1038,7 +1038,7 @@ W_V = src.v_lin.weight
 W_O = src.out_lin.weight
 \end{lstlisting}
 
-\texttt{is_nested_encoder = False}. All four projections compressed.
+\texttt{is\\_nested\\_encoder = False}. All four projections compressed.
 
 \subsubsection{5.2.2 RoBERTa (Nested)}
 
@@ -1048,15 +1048,15 @@ Extract from \texttt{self}:
 W_Q = src.self.query.weight
 W_K = src.self.key.weight
 W_V = src.self.value.weight
-# W_O is not extracted — outer output.dense applies it
+# W_O is not extracted --- outer output.dense applies it
 \end{lstlisting}
 
-\texttt{is_nested_encoder = True}. During forward, \texttt{context} is returned without 
-\texttt{out_proj}; the outer \texttt{BertSelfOutput.dense} applies its projection.
+\texttt{is\\_nested\\_encoder = True}. During forward, \texttt{context} is returned without 
+\texttt{out\\_proj}; the outer \texttt{BertSelfOutput.dense} applies its projection.
 
 \subsubsection{5.2.3 GPT-2 (Fused Conv1D)}
 
-Split the fused \texttt{c_attn} weight:
+Split the fused \texttt{c\\_attn} weight:
 
 \begin{lstlisting}
 fused = src.c_attn.weight.T  # (2304, 768)
@@ -1077,7 +1077,7 @@ W_V = src.v_proj.weight
 W_O = src.o_proj.weight
 \end{lstlisting}
 
-RoPE applied after projection via \texttt{position_embeddings}.
+RoPE applied after projection via \texttt{position\\_embeddings}.
 
 \subsection{5.3 The `AdaSplashLinear` Module}
 
@@ -1121,13 +1121,13 @@ class AdaSplashLinear(nn.Module):
 
 \textbf{Algorithm 3:} Inject AdaSplash into a model
 \begin{lstlisting}
-Input:  model M, config c, hyperparameters α, W, r_L
+Input:  model M, config c, hyperparameters $\alpha$, W, r_L
 Output: M with attention replaced
 
 1:  for ℓ in transformer_layers(M) do
-2:      src ← find_attention(ℓ)
+2:      src $\leftarrow$ find_attention(ℓ)
 3:      if src is None: continue
-4:      new ← AdaSplashAttention(c, α, W, r_L, pretrained_attn=src)
+4:      new $\leftarrow$ AdaSplashAttention(c, $\alpha$, W, r_L, pretrained_attn=src)
 5:      new.copy_weights(src)
 6:      replace_attention(ℓ, new)
 7: end for
@@ -1229,11 +1229,11 @@ LoRA & Model dtype \\
 \subsubsection{5.9.1 Encoder-Decoder Models}
 
 For T5, the same class handles encoder (bidirectional, no splash) and decoder 
-(causal, splash). The \texttt{is_decoder} flag switches behavior.
+(causal, splash). The \texttt{is\\_decoder} flag switches behavior.
 
 \subsubsection{5.9.2 LoRA Wrappers}
 
-If the source module is a \texttt{LoRALinear}, AdaSplash unwraps to \texttt{base_layer} and 
+If the source module is a \texttt{LoRALinear}, AdaSplash unwraps to \texttt{base\\_layer} and 
 preserves the outer LoRA.
 
 \clearpage
@@ -1256,7 +1256,7 @@ GPT-2 & 12 & 768 & 12 & 12 & 124.4M & Causal \\
 \end{tabular}
 \end{table}
 
-Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
+Base weights loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
 
 \subsection{6.2 Dataset}
 
@@ -1270,7 +1270,7 @@ Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
 \midrule
 Train & 67,349 & 33,807 & 33,542 \\
 Validation & 872 & 444 & 428 \\
-Test & 1,821 & — & — \\
+Test & 1,821 & --- & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1288,8 +1288,8 @@ Majority baseline: 50.92\%. Sequence length: 128.
 $\alpha$ (entmax) & 1.5 & Sparsity parameter \\
 $W$ (splash radius) & 32 & Window size \\
 $S$ (sink count) & 4 & Fixed \\
-$n\_\text{iter}$ (bisection) & 25 & Fixed \\
-$r\_L$ (LoRA rank) & 16 & Adapter rank \\
+$n_\text{iter}$ (bisection) & 25 & Fixed \\
+$r_L$ (LoRA rank) & 16 & Adapter rank \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1313,7 +1313,7 @@ Trainable params & LoRA only \\
 \end{tabular}
 \end{table}
 
-\textbf{Trainable tensor count:} 2 tensors per projection × 4 projections × $N_l$ 
+\textbf{Trainable tensor count:} 2 tensors per projection $\times$ 4 projections $\times$ $N_l$ 
 layers = 8$N_l$ tensors.
 
 \subsection{6.5 Evaluation Metrics}
@@ -1365,8 +1365,8 @@ layers = 8$N_l$ tensors.
 \toprule
 \textbf{Status} & \textbf{Accuracy} \\
 \midrule
-PASS & ≥ 56.0\% \\
-PASS\_LOW & 50.92\% – 56.0\% \\
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
 FAIL & < 50.92\% \\
 \bottomrule
 \end{tabular}
@@ -1422,13 +1422,13 @@ All experiments with seed 42.
 \centering
 \begin{tabular}{lllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{Δ} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & — & 0.9099 & 66.9M & 183 MB \\
+DistilBERT & full & 90.71\% & --- & 0.9099 & 66.9M & 183 MB \\
 DistilBERT & **AdaSplash** & **90.25** & -0.46 & 0.9055 & 67.55M & 195 MB \\
-RoBERTa & full & 78.56\% & — & 0.8124 & 124.6M & 712 MB \\
+RoBERTa & full & 78.56\% & --- & 0.8124 & 124.6M & 712 MB \\
 RoBERTa & **AdaSplash** & **77.5** & -1.06 & 0.780 & 125.8M & 730 MB \\
-GPT-2 & full & 79.36\% & — & 0.7978 & 124.4M & 793 MB \\
+GPT-2 & full & 79.36\% & --- & 0.7978 & 124.4M & 793 MB \\
 GPT-2 & **AdaSplash** & **78.78** & -0.58 & 0.7891 & 125.63M & 810 MB \\
 \bottomrule
 \end{tabular}
@@ -1436,7 +1436,7 @@ GPT-2 & **AdaSplash** & **78.78** & -0.58 & 0.7891 & 125.63M & 810 MB \\
 
 \textbf{Key observations:}
 
-1. \textbf{Accuracy:} Δ of -0.46\%, -1.06\%, -0.58\% (all near zero).
+1. \textbf{Accuracy:} $\Delta$ of -0.46\%, -1.06\%, -0.58\% (all near zero).
 2. \textbf{Parameters:} increased by 0.88\% due to LoRA.
 3. \textbf{VRAM:} slightly increased (LoRA overhead).
 
@@ -1450,9 +1450,9 @@ GPT-2 & **AdaSplash** & **78.78** & -0.58 & 0.7891 & 125.63M & 810 MB \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{AdaSplash} & \textbf{Change} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 67549448 & +594438 & 0.99× \\
-RoBERTa & 124,647,170 & 125826818 & +1179648 & 0.99× \\
-GPT-2 & 124,441,344 & 125630220 & +1188876 & 0.99× \\
+DistilBERT & 66,955,010 & 67549448 & +594438 & 0.99$\times$ \\
+RoBERTa & 124,647,170 & 125826818 & +1179648 & 0.99$\times$ \\
+GPT-2 & 124,441,344 & 125630220 & +1188876 & 0.99$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1462,7 +1462,7 @@ GPT-2 & 124,441,344 & 125630220 & +1188876 & 0.99× \\
 
 \subsection{7.3 Attention Sparsity}
 
-\textbf{Table 7.3: Attention sparsity (\% zero weights) for α = 1.5.}
+\textbf{Table 7.3: Attention sparsity (\% zero weights) for $\alpha$ = 1.5.}
 
 \begin{table}[H]
 \centering
@@ -1500,18 +1500,18 @@ GPT-2 & AdaSplash & 8.0 & 16000 & 810 \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} AdaSplash is \textbf{slower} than baseline by 1.9× 
+\textbf{Observation.} AdaSplash is \textbf{slower} than baseline by 1.9$\times$ 
 due to the entmax bisection (25 iterations per attention call).
 
-\subsection{7.5 Ablation: α Parameter}
+\subsection{7.5 Ablation: $\alpha$ Parameter}
 
-\textbf{Table 7.5: Effect of α on accuracy and sparsity.}
+\textbf{Table 7.5: Effect of $\alpha$ on accuracy and sparsity.}
 
 \begin{table}[H]
 \centering
 \begin{tabular}{lllll}
 \toprule
-\textbf{α} & \textbf{DistilBERT} & \textbf{Sparsity} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\textbf{$\alpha$} & \textbf{DistilBERT} & \textbf{Sparsity} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 1.0 (softmax) & 90.71 & 0\% & 78.56 & 79.36 \\
 1.2 & 90.48 & {{SP\_A12}}\% & 78.10 & 79.01 \\
@@ -1522,7 +1522,7 @@ due to the entmax bisection (25 iterations per attention call).
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} α = 1.5 is a good balance. α = 2.0 (sparsemax) is too sparse 
+\textbf{Observation.} $\alpha$ = 1.5 is a good balance. $\alpha$ = 2.0 (sparsemax) is too sparse 
 and non-smooth.
 
 \subsection{7.6 Ablation: Splash Radius}
@@ -1558,7 +1558,7 @@ and non-smooth.
 \midrule
 With sink (S=4) & **90.25** & **77.5** & **78.78** \\
 No sink (S=0) & 85.5 & 73.0 & 74.0 \\
-Δ & +4.75 & +4.5 & +4.78 \\
+$\Delta$ & +4.75 & +4.5 & +4.78 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1584,7 +1584,7 @@ No sink (S=0) & 85.5 & 73.0 & 74.0 \\
 
 \subsection{7.9 Ablation: Recovery Steps}
 
-\textbf{Table 7.9: Accuracy vs recovery steps (r_L = 16).}
+\textbf{Table 7.9: Accuracy vs recovery steps (r\_L = 16).}
 
 \begin{table}[H]
 \centering
@@ -1677,7 +1677,7 @@ GPT-2 & 128 & 76 \\
 \item \textbf{Softmax attention:} All entries positive, most tiny.
 \end{itemize}
 \begin{itemize}
-\item \textbf{α-entmax attention:} ~40\% entries exactly zero.
+\item \textbf{$\alpha$-entmax attention:} ~40\% entries exactly zero.
 \end{itemize}
 
 The zero entries are precisely those that softmax would assign near-zero 
@@ -1704,7 +1704,7 @@ observed by Xiao et al. (2024). Removing sinks causes accuracy drops of
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{α} & \textbf{Sparsity} & \textbf{Effective support} \\
+\textbf{$\alpha$} & \textbf{Sparsity} & \textbf{Effective support} \\
 \midrule
 1.0 & 0\% & 128 (all) \\
 1.2 & 20\% & ~102 \\
@@ -1715,12 +1715,12 @@ observed by Xiao et al. (2024). Removing sinks causes accuracy drops of
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Sparsity grows monotonically with α. α = 1.5 gives ~40\% 
-sparsity; α = 2.0 gives ~60\%.
+\textbf{Observation.} Sparsity grows monotonically with $\alpha$. $\alpha$ = 1.5 gives ~40\% 
+sparsity; $\alpha$ = 2.0 gives ~60\%.
 
 \subsection{8.3 Per-Layer Sparsity Distribution}
 
-\textbf{Table 8.1: Sparsity by layer (DistilBERT, α = 1.5).}
+\textbf{Table 8.1: Sparsity by layer (DistilBERT, $\alpha$ = 1.5).}
 
 \begin{table}[H]
 \centering
@@ -1749,11 +1749,11 @@ AdaSplash behavior is uniform.
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Config} & \textbf{DistilBERT} & \textbf{Δ} \\
+\textbf{Config} & \textbf{DistilBERT} & \textbf{$\Delta$} \\
 \midrule
-Full attention + softmax & 90.71\% & — \\
+Full attention + softmax & 90.71\% & --- \\
 + Frozen base + LoRA & {{ABL1}} & {{ABL1\_D}} \\
-+ α-entmax (no splash) & {{ABL2}} & {{ABL2\_D}} \\
++ $\alpha$-entmax (no splash) & {{ABL2}} & {{ABL2\_D}} \\
 + Splash radius & {{ABL3}} & {{ABL3\_D}} \\
 + Sinks & 90.25 & -0.46 \\
 \bottomrule
@@ -1764,13 +1764,13 @@ Full attention + softmax & 90.71\% & — \\
 
 \subsection{8.5 Comparison with Sparsemax}
 
-\textbf{Table 8.3: Entmax α=1.5 vs Sparsemax α=2.0.}
+\textbf{Table 8.3: Entmax $\alpha$=1.5 vs Sparsemax $\alpha$=2.0.}
 
 \begin{table}[H]
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Metric} & \textbf{α=1.5} & \textbf{α=2.0} \\
+\textbf{Metric} & \textbf{$\alpha$=1.5} & \textbf{$\alpha$=2.0} \\
 \midrule
 DistilBERT & **90.25** & 88.30 \\
 Sparsity & 42\% & 60\% \\
@@ -1780,12 +1780,12 @@ Speed & Fast & Slower (bisection) \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} α = 1.5 is faster and more stable while giving similar 
+\textbf{Observation.} $\alpha$ = 1.5 is faster and more stable while giving similar 
 sparsity.
 
 \subsection{8.6 Inference Cost Breakdown}
 
-AdaSplash is \textbf{slower} than baseline by 1.9×. This comes from:
+AdaSplash is \textbf{slower} than baseline by 1.9$\times$. This comes from:
 
 1. \textbf{Entmax bisection:} 25 iterations of the same computation.
 2. \textbf{Masked softmax computation:} Softmax fallback check.
@@ -1833,13 +1833,13 @@ AdaSplash produces \textbf{more interpretable} attention:
 \midrule
 Magnitude pruning (50\%) & 85 & Weights & No \\
 Head pruning (50\%) & 82 & Heads & No \\
-**AdaSplash** & **90.25** & **Activations** & **Yes (α=1)** \\
+**AdaSplash** & **90.25** & **Activations** & **Yes ($\alpha$=1)** \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key advantage.} AdaSplash's sparsity is \textbf{dynamic} (per-query) and 
-\textbf{reversible} (setting α=1 recovers softmax).
+\textbf{reversible} (setting $\alpha$=1 recovers softmax).
 
 \subsection{8.9 Failure Analysis}
 
@@ -1871,11 +1871,11 @@ No systematic failures observed.
 
 \subsection{8.10 Summary of Insights}
 
-1. \textbf{α = 1.5 gives ~40\% sparsity} with no accuracy loss.
+1. \textbf{$\alpha$ = 1.5 gives ~40\% sparsity} with no accuracy loss.
 2. \textbf{Attention sinks are essential} for stability.
-3. \textbf{Entmax bisection is the slowdown} (25× overhead vs softmax).
-4. \textbf{Sparsity is uniform across layers} — no layer-specific tuning needed.
-5. \textbf{Parameter count increases} due to LoRA — this is not compression.
+3. \textbf{Entmax bisection is the slowdown} (25$\times$ overhead vs softmax).
+4. \textbf{Sparsity is uniform across layers} --- no layer-specific tuning needed.
+5. \textbf{Parameter count increases} due to LoRA --- this is not compression.
 
 \clearpage
 
@@ -1884,7 +1884,7 @@ No systematic failures observed.
 
 \subsection{9.1 Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Sparsity ≠ Compression}
+\subsubsection{9.1.1 Takeaway 1: Sparsity $\ne$ Compression}
 
 AdaSplash produces sparse attention but \textbf{increases} parameter count. 
 It is not a compression method. Its value is in:
@@ -1898,9 +1898,9 @@ It is not a compression method. Its value is in:
 \item \textbf{Attention pattern analysis}
 \end{itemize}
 
-\subsubsection{9.1.2 Takeaway 2: α = 1.5 is a Good Default}
+\subsubsection{9.1.2 Takeaway 2: $\alpha$ = 1.5 is a Good Default}
 
-Empirically, α = 1.5 balances sparsity and accuracy. α = 2.0 (sparsemax) 
+Empirically, $\alpha$ = 1.5 balances sparsity and accuracy. $\alpha$ = 2.0 (sparsemax) 
 is too sparse for stable training.
 
 \subsubsection{9.1.3 Takeaway 3: Attention Sinks Matter}
@@ -1913,31 +1913,31 @@ Preserving the first 4 tokens is critical. Without them, accuracy drops by
 \subsubsection{Recommended}
 
 \begin{itemize}
-\item \textbf{Interpretability research} — sparse attention is easier to analyze
+\item \textbf{Interpretability research} --- sparse attention is easier to analyze
 \end{itemize}
 \begin{itemize}
-\item \textbf{Attention pattern analysis} — sparsity reveals structure
+\item \textbf{Attention pattern analysis} --- sparsity reveals structure
 \end{itemize}
 \begin{itemize}
-\item \textbf{Sparse hardware deployment} — 2:4 sparsity can be leveraged
+\item \textbf{Sparse hardware deployment} --- 2:4 sparsity can be leveraged
 \end{itemize}
 \begin{itemize}
-\item \textbf{Long-context inference} — splash masking reduces KV cache
+\item \textbf{Long-context inference} --- splash masking reduces KV cache
 \end{itemize}
 
 \subsubsection{Not Recommended}
 
 \begin{itemize}
-\item \textbf{Model size reduction} — AdaSplash increases size
+\item \textbf{Model size reduction} --- AdaSplash increases size
 \end{itemize}
 \begin{itemize}
-\item \textbf{Latency-critical inference} — bisection is slow
+\item \textbf{Latency-critical inference} --- bisection is slow
 \end{itemize}
 \begin{itemize}
-\item \textbf{Extreme compression} — use A3/AASVD instead
+\item \textbf{Extreme compression} --- use A3/AASVD instead
 \end{itemize}
 \begin{itemize}
-\item \textbf{Simple classification} — softmax already works
+\item \textbf{Simple classification} --- softmax already works
 \end{itemize}
 
 \subsection{9.3 Decision Flowchart}
@@ -1968,7 +1968,7 @@ For DistilBERT on SST-2:
 Accuracy & 90.71\% & 90.25\% & -0.46\% \\
 Params & 66.95M & 67549448M & +594438 \\
 VRAM & 183 MB & 195 MB & +12 \\
-Inference time & 1.90 s & 3.5 s & 1.84× \\
+Inference time & 1.90 s & 3.5 s & 1.84$\times$ \\
 Attention sparsity & 0\% & 42\% & +40\% \\
 \bottomrule
 \end{tabular}
@@ -1984,11 +1984,11 @@ Attention sparsity & 0\% & 42\% & +40\% \\
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Params} & \textbf{Sparse} & \textbf{Latency} \\
 \midrule
-Softmax & Baseline & 0\% & No & 1× \\
-Longformer & Local & 0\% & No & ~1× \\
-Performer & Kernel & +linear & No & ~1× \\
-Sparsemax & Activation & 0\% & Yes & ~5× \\
-**AdaSplash** & **Activation + Local** & **+1\%** & **Yes** & **~1.9×** \\
+Softmax & Baseline & 0\% & No & 1$\times$ \\
+Longformer & Local & 0\% & No & ~1$\times$ \\
+Performer & Kernel & +linear & No & ~1$\times$ \\
+Sparsemax & Activation & 0\% & Yes & ~5$\times$ \\
+**AdaSplash** & **Activation + Local** & **+1\%** & **Yes** & **~1.9$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1999,7 +1999,7 @@ Sparsemax & Activation & 0\% & Yes & ~5× \\
 AdaSplash increases storage slightly due to LoRA.
 
 \subsubsection{Latency}
-~1.9× slower. Acceptable for research; not for production.
+~1.9$\times$ slower. Acceptable for research; not for production.
 
 \subsubsection{Interpretability}
 Sparse attention maps can be visualized directly.
@@ -2011,7 +2011,7 @@ AdaSplash's sparse outputs can be exploited for actual speedup.
 \subsection{9.7 Open Questions}
 
 1. \textbf{Fused kernels:} Would a Triton kernel for bisection speed it up?
-2. \textbf{Learned α:} Would per-layer learned α help?
+2. \textbf{Learned $\alpha$:} Would per-layer learned $\alpha$ help?
 3. \textbf{Sparse hardware:} Actual speedup on Ampere 2:4 sparsity?
 4. \textbf{Long context:} How does AdaSplash scale to L = 4096?
 
@@ -2030,7 +2030,7 @@ AdaSplash's sparse outputs can be exploited for actual speedup.
 
 \subsubsection{Negative}
 \begin{itemize}
-\item \textbf{Not a compression method} — may mislead
+\item \textbf{Not a compression method} --- may mislead
 \end{itemize}
 \begin{itemize}
 \item \textbf{Slower inference}
@@ -2040,7 +2040,7 @@ AdaSplash's sparse outputs can be exploited for actual speedup.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~12 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.
 
 \clearpage
 
@@ -2055,7 +2055,7 @@ AdaSplash should avoid describing it as "compression".
 
 \subsection{10.2 Inference Latency}
 
-AdaSplash is \textbf{slower} than softmax attention by ~1.9×:
+AdaSplash is \textbf{slower} than softmax attention by ~1.9$\times$:
 
 \begin{itemize}
 \item Entmax bisection: 25 iterations of the same computation
@@ -2089,7 +2089,7 @@ is unknown.
 
 \subsection{10.4 Model Coverage}
 
-Three models tested (66.9M–124.6M). Not tested:
+Three models tested (66.9M--124.6M). Not tested:
 \begin{itemize}
 \item Large models (>1B)
 \end{itemize}
@@ -2171,9 +2171,9 @@ Compression is dual-use. See Appendix E.
 \subsection{11.1 Summary}
 
 We presented \textbf{AdaSplash}, an adaptive splash attention mechanism that 
-combines \textbf{α-entmax sparse activations} with \textbf{local sliding-window masking} 
+combines \textbf{$\alpha$-entmax sparse activations} with \textbf{local sliding-window masking} 
 and \textbf{attention sink preservation}. AdaSplash is \textbf{not} a compression 
-method — it \textbf{increases} parameter count by ~0.88\% due to LoRA 
+method --- it \textbf{increases} parameter count by ~0.88\% due to LoRA 
 adapters. Its value is in producing \textbf{~40\% sparse attention} without 
 accuracy loss.
 
@@ -2183,7 +2183,7 @@ accuracy loss.
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{Params Δ} & \textbf{Sparsity} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Sparsity} \\
 \midrule
 DistilBERT & -0.46\% & +594438 & 42\% \\
 RoBERTa & -1.06\% & +1179648 & 40\% \\
@@ -2194,10 +2194,10 @@ GPT-2 & -0.58\% & +1188876 & 41\% \\
 
 \subsection{11.3 Key Takeaways}
 
-1. \textbf{α-entmax produces exact zeros} without accuracy loss.
+1. \textbf{$\alpha$-entmax produces exact zeros} without accuracy loss.
 2. \textbf{Attention sinks are essential} for stability.
 3. \textbf{Splash masking} works for causal decoders.
-4. \textbf{Not a compression method} — parameter count increases.
+4. \textbf{Not a compression method} --- parameter count increases.
 5. \textbf{Slower than baseline} due to bisection.
 
 \subsection{11.4 Future Work}
@@ -2207,7 +2207,7 @@ GPT-2 & -0.58\% & +1188876 & 41\% \\
 \item \textbf{Fused CUDA kernel} for entmax bisection
 \end{itemize}
 \begin{itemize}
-\item \textbf{Learned α} per layer
+\item \textbf{Learned $\alpha$} per layer
 \end{itemize}
 \begin{itemize}
 \item \textbf{Sparse matmul} to exploit sparsity
@@ -2240,11 +2240,11 @@ for reproducibility.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments,
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments,
 \end{itemize}
   wrote the paper.
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided methodological feedback and edited the manuscript.
+\item \textbf{{{AUTHOR\_2}}} provided methodological feedback and edited the manuscript.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}
@@ -2314,7 +2314,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 python run_all_4_adasplash.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
-\subsubsection{Table 7.5 (α ablation)}
+\subsubsection{Table 7.5 ($\alpha$ ablation)}
 \begin{lstlisting}
 for alpha in 1.0 1.2 1.5 1.8 2.0; do
     python run_all_4_adasplash.py --alpha $alpha --output_suffix a$alpha
@@ -2347,9 +2347,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} \\
 \midrule
-DistilBERT & 90.25\% ± 1\% \\
-RoBERTa & 77.5\% ± 1\% \\
-GPT-2 & 78.78\% ± 1\% \\
+DistilBERT & 90.25\% $\pm$ 1\% \\
+RoBERTa & 77.5\% $\pm$ 1\% \\
+GPT-2 & 78.78\% $\pm$ 1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2363,7 +2363,7 @@ GPT-2 & 78.78\% ± 1\% \\
 \item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-adasplash}
 \end{itemize}
 \begin{itemize}
-\item Metrics: \texttt{results/unified_adasplash/*/summary.csv}
+\item Metrics: \texttt{results/unified\\_adasplash/*/summary.csv}
 \end{itemize}
 
 \subsection{12.9 Known Issues}
@@ -2372,7 +2372,7 @@ GPT-2 & 78.78\% ± 1\% \\
 \item Windows: \texttt{PYTHONIOENCODING=utf-8}
 \end{itemize}
 \begin{itemize}
-\item CUDA ≥ 11.8 for FP16
+\item CUDA $\ge$ 11.8 for FP16
 \end{itemize}
 \begin{itemize}
 \item Entmax bisection: 25 iterations
@@ -2546,7 +2546,7 @@ GPT-2 & 78.78\% ± 1\% \\
 
 \section{Appendix A. Mathematical Derivations}
 
-\subsection{A.1 Derivation of α-Entmax Closed Form}
+\subsection{A.1 Derivation of $\alpha$-Entmax Closed Form}
 
 \textbf{Problem.} Solve:
 
@@ -2598,7 +2598,7 @@ iterations, precision is $O(2^{-25}) = O(10^{-7.5})$. $\square$
 
 \subsection{A.3 Support Sparsity Bound}
 
-\textbf{Claim.} At convergence, the support of α-entmax is:
+\textbf{Claim.} At convergence, the support of $\alpha$-entmax is:
 \[
 S = \{i : (\alpha - 1) s_i > \tau^*\}
 \]
@@ -2650,7 +2650,7 @@ For DistilBERT ($d = 768$, $r_L = 16$, $N_l = 6$): $+589{,}824$ params.
 
 \subsection{A.6 Entmax vs Softmax Sparsity}
 
-\textbf{Claim.} For scores with high variance, α-entmax produces more zeros 
+\textbf{Claim.} For scores with high variance, $\alpha$-entmax produces more zeros 
 than softmax.
 
 \textbf{Proof sketch.} Softmax assigns $p_i > 0$ for all $i$. Entmax assigns 
@@ -2667,7 +2667,7 @@ distribution.
 
 \subsection{A.8 Causality of Entmax}
 
-\textbf{Claim.} α-entmax preserves causality under causal masking.
+\textbf{Claim.} $\alpha$-entmax preserves causality under causal masking.
 
 \textbf{Proof.} Entmax is a row-wise operation on the score matrix. Masking with 
 $-\infty$ ensures that masked entries receive zero weight in the output. 
@@ -2872,7 +2872,7 @@ def copy_weights(self, src):
 
 \subsubsection{B.5.1 Support Empty}
 
-If bisection fails to find valid τ, softmax fallback is essential.
+If bisection fails to find valid $\tau$, softmax fallback is essential.
 
 \subsubsection{B.5.2 NaN in Scores}
 
@@ -2888,7 +2888,7 @@ GPT-2 Conv1D stores \texttt{(in, out)}. Must transpose.
 
 \subsubsection{B.5.5 Attention Sinks}
 
-Preserving first 4 tokens is not optional — accuracy drops without it.
+Preserving first 4 tokens is not optional --- accuracy drops without it.
 
 \subsection{B.6 Diagnostics}
 
@@ -2912,7 +2912,7 @@ for name, mod in model.named_modules():
 
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT — Complete Metrics}
+\subsection{C.1 DistilBERT --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -2938,7 +2938,7 @@ Effective support & 74 \\
 \end{tabular}
 \end{table}
 
-\subsection{C.2 RoBERTa — Complete Metrics}
+\subsection{C.2 RoBERTa --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -2955,7 +2955,7 @@ Accuracy & 77.5\% \\
 \end{tabular}
 \end{table}
 
-\subsection{C.3 GPT-2 — Complete Metrics}
+\subsection{C.3 GPT-2 --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -2972,7 +2972,7 @@ Accuracy & 78.78\% \\
 \end{tabular}
 \end{table}
 
-\subsection{C.4 Attention Sparsity by Layer (DistilBERT, α = 1.5)}
+\subsection{C.4 Attention Sparsity by Layer (DistilBERT, $\alpha$ = 1.5)}
 
 \begin{table}[H]
 \centering
@@ -2990,13 +2990,13 @@ Accuracy & 78.78\% \\
 \end{tabular}
 \end{table}
 
-\subsection{C.5 α Ablation — Full Data}
+\subsection{C.5 $\alpha$ Ablation --- Full Data}
 
 \begin{table}[H]
 \centering
 \begin{tabular}{lllllll}
 \toprule
-\textbf{α} & \textbf{D acc} & \textbf{Sparsity} & \textbf{R acc} & \textbf{Sparsity} & \textbf{G acc} & \textbf{Sparsity} \\
+\textbf{$\alpha$} & \textbf{D acc} & \textbf{Sparsity} & \textbf{R acc} & \textbf{Sparsity} & \textbf{G acc} & \textbf{Sparsity} \\
 \midrule
 1.0 & 90.71 & 0\% & 78.56 & 0\% & 79.36 & 0\% \\
 1.2 & 90.48 & 20\% & 78.10 & 18\% & 79.01 & 19\% \\
@@ -3030,7 +3030,7 @@ Accuracy & 78.78\% \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{With sink} & \textbf{No sink} & \textbf{Δ} \\
+\textbf{Model} & \textbf{With sink} & \textbf{No sink} & \textbf{$\Delta$} \\
 \midrule
 DistilBERT & 90.25 & 85.5 & +4.75 \\
 RoBERTa & 77.5 & 73.0 & +4.5 \\
@@ -3138,7 +3138,7 @@ representations; compression-like benefits lost.
 
 \textbf{Conclusion.} Keep base frozen.
 
-\subsubsection{D.1.2 α = 2.0 (Sparsemax)}
+\subsubsection{D.1.2 $\alpha$ = 2.0 (Sparsemax)}
 
 \textbf{Goal.} Maximize sparsity.
 
@@ -3170,13 +3170,13 @@ representations; compression-like benefits lost.
 
 \textbf{Conclusion.} LoRA recovery is essential for matching pretrained accuracy.
 
-\subsubsection{D.1.6 Fused Bisection with Different α per Head}
+\subsubsection{D.1.6 Fused Bisection with Different $\alpha$ per Head}
 
 \textbf{Goal.} Adaptive sparsity per head.
 
-\textbf{Result.} No improvement over uniform α = 1.5; 2× slower.
+\textbf{Result.} No improvement over uniform $\alpha$ = 1.5; 2$\times$ slower.
 
-\textbf{Conclusion.} Uniform α is sufficient.
+\textbf{Conclusion.} Uniform $\alpha$ is sufficient.
 
 \subsection{D.2 Abandoned Variants}
 
@@ -3195,9 +3195,9 @@ distribution became too sparse.
 Applied entmax only on some layers. Result: no clear pattern; uniform 
 entmax is simpler.
 
-\subsubsection{D.2.4 Learned α via Straight-Through}
+\subsubsection{D.2.4 Learned $\alpha$ via Straight-Through}
 
-Attempted to learn α via straight-through estimator. Result: gradient 
+Attempted to learn $\alpha$ via straight-through estimator. Result: gradient 
 signal weak; no improvement.
 
 \subsection{D.3 Failed Hyperparameters}
@@ -3266,7 +3266,7 @@ but doubles the compute. Consider 15 for production.
 \midrule
 Gradient clipping & Stability & No change \\
 Different LoRA init & Convergence & No change \\
-Layer-wise α & Rank & No improvement \\
+Layer-wise $\alpha$ & Rank & No improvement \\
 Position-relative splash & Flexibility & No improvement \\
 Hybrid softmax+entmax & Stability & No improvement \\
 \bottomrule
@@ -3294,17 +3294,17 @@ Hybrid softmax+entmax & Stability & No improvement \\
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{Freeze base weights} — always.
-2. \textbf{α = 1.5 is optimal} — α = 2.0 is too sparse.
-3. \textbf{Sinks are essential} — removing them causes 3-5\% drop.
-4. \textbf{LoRA is essential} — without it, accuracy drops 5-10\%.
+1. \textbf{Freeze base weights} --- always.
+2. \textbf{$\alpha$ = 1.5 is optimal} --- $\alpha$ = 2.0 is too sparse.
+3. \textbf{Sinks are essential} --- removing them causes 3-5\% drop.
+4. \textbf{LoRA is essential} --- without it, accuracy drops 5-10\%.
 5. \textbf{25 bisection iterations} is a reasonable default.
-6. \textbf{Not a compression method} — parameter count increases.
+6. \textbf{Not a compression method} --- parameter count increases.
 
 \subsection{D.7 Unresolved Questions}
 
-1. \textbf{Fused CUDA kernel:} Would speedup by 10-20×?
-2. \textbf{Learned α per head:} Would it help?
+1. \textbf{Fused CUDA kernel:} Would speedup by 10-20$\times$?
+2. \textbf{Learned $\alpha$ per head:} Would it help?
 3. \textbf{Sparse hardware:} Real 2:4 speedup?
 4. \textbf{Long context:} Does AdaSplash scale to L = 4096?
 5. \textbf{Other tasks:} Generation, QA, NLI?
@@ -3350,7 +3350,7 @@ Hybrid softmax+entmax & Stability & No improvement \\
 \item \textbf{Total compute:} ~12 GPU-hours
 \end{itemize}
 \begin{itemize}
-\item \textbf{CO₂ estimate:} ~0.8 kg CO₂eq
+\item \textbf{CO$_2$ estimate:} ~0.8 kg CO$_2$eq
 \end{itemize}
 
 \subsection{E.2 Data Ethics}
@@ -3378,11 +3378,11 @@ these uses.
 \subsubsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments,
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments,
 \end{itemize}
   wrote the paper.
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided feedback and edited the manuscript.
+\item \textbf{{{AUTHOR\_2}}} provided feedback and edited the manuscript.
 \end{itemize}
 
 \subsubsection{License}

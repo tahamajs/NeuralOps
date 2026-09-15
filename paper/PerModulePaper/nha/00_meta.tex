@@ -1,0 +1,112 @@
+
+\section{NHA: Native Hybrid Attention with Local Windows and Global Random Fourier Features}
+
+
+\textbf{Authors:}
+\begin{itemize}
+\item {{AUTHOR\_1\_NAME}}  -- {{AUTHOR\_1\_EMAIL}}
+\end{itemize}
+\begin{itemize}
+\item {{AUTHOR\_2\_NAME}}  -- {{AUTHOR\_2\_EMAIL}}
+\end{itemize}
+
+\textbf{Affiliations:}
+\begin{itemize}
+\item   {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
+\end{itemize}
+\begin{itemize}
+\item   {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
+\end{itemize}
+
+\textbf{Corresponding author:} {{CORRESPONDING\_AUTHOR}}
+\textbf{Preprint date:} {{DATE}}
+\textbf{Version:} v{{VERSION}}
+\textbf{Code:} https://github.com/{{ORG}}/SVD\_Project/tree/main/framework/attentions/nha\_attention.py
+\textbf{Model weights:} https://huggingface.co/{{HF\_ORG}}
+\textbf{License:} {{LICENSE}}
+
+
+
+\subsection{Abstract}
+
+Self-attention has two regimes: local patterns that dominate syntactic 
+structure, and global patterns that carry long-range dependencies. Existing 
+methods commit to one: sliding-window attention (Longformer, Mistral) 
+handles the local regime cheaply but truncates global context; linear 
+attention (Performer, Linear Transformer) approximates the global regime in 
+$\mathcal{O}(L)$ but loses local precision.
+
+We present \textbf{Native Hybrid Attention} (NHA), a mechanism that runs a 
+\textbf{local sliding-window stream} and a **global Random Fourier Features (RFF) 
+stream in parallel\textbf{ within each layer, and combines them with a }learned 
+token-level gate**. The gate is a scalar per token, computed by a linear 
+projection of the input hidden state, and initialized to $3.0$ (bias), 
+biasing the model toward the local stream at initialization. The RFF stream 
+uses an \textbf{orthogonal projection matrix} built from block QR factorization, 
+giving variance-reduced kernel approximation. For causal models, the RFF 
+stream uses a \textbf{chunked prefix scan} with cumulative state $S \in 
+\mathbb{R}^{m \times d\_h}$ and $Z \in \mathbb{R}^m$, preserving strict 
+causality.
+
+We evaluate NHA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. With LoRA 
+recovery at rank {{LORA\_RANK}}, NHA achieves \textbf{{{D\_ACC}}\%}, \textbf{{{R\_ACC}}\%}, 
+and \textbf{{{G\_ACC}}\%} accuracy, within \textbf{{{D\_DELTA}}\%}, \textbf{{{R\_DELTA}}\%}, and 
+\textbf{{{G\_DELTA}}\%} of the respective dense baselines. Attention memory is 
+reduced by up to \textbf{{{MEM\_REDUCTION}}$\times$} for long sequences. Learned gates 
+show systematic token-level structure that correlates with attention entropy.
+
+\textbf{Keywords:} hybrid attention, local window, Random Fourier Features, 
+learnable gating, efficient transformer
+
+
+
+\subsection{Lay Summary}
+
+Attention is the operation that lets a language model "look at" all previous 
+tokens. It has two modes: \textbf{local attention} (efficient, looks only at 
+nearby tokens) and \textbf{global attention} (looks everywhere, expensive). Real 
+text often needs both.
+
+NHA runs both at once -- a local window and a global summary -- and lets each 
+token decide how much to trust each. A single trainable number per token 
+controls the mix. Initially, the model trusts the local window; during 
+training, it learns to shift toward global where needed.
+
+On three pretrained models, NHA retains most of the original accuracy while 
+reducing attention memory. The learned gates reveal which positions need 
+global context -- a useful signal for understanding what the model is doing.
+
+
+
+\subsection{Table of Contents}
+
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
+
+\textbf{Appendices:}
+\begin{itemize}
+\item [A. Mathematical Derivations](A\_math.md)
+\end{itemize}
+\begin{itemize}
+\item [B. Implementation Details](B\_implementation.md)
+\end{itemize}
+\begin{itemize}
+\item [C. Full Experimental Data](C\_data.md)
+\end{itemize}
+\begin{itemize}
+\item [D. Negative Results](D\_negative\_results.md)
+\end{itemize}
+\begin{itemize}
+\item [E. Ethical Considerations](E\_ethics.md)
+\end{itemize}

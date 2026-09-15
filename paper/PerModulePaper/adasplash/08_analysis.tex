@@ -11,7 +11,7 @@
 \item \textbf{Softmax attention:} All entries positive, most tiny.
 \end{itemize}
 \begin{itemize}
-\item \textbf{α-entmax attention:} ~40\% entries exactly zero.
+\item \textbf{$\alpha$-entmax attention:} ~40\% entries exactly zero.
 \end{itemize}
 
 The zero entries are precisely those that softmax would assign near-zero 
@@ -28,7 +28,7 @@ the pretrained representations remain intact.
 
 Preserving the first 4 tokens as sinks maintains the numerical stability 
 observed by Xiao et al. (2024). Removing sinks causes accuracy drops of 
-4.5\%.
+{{SINK\_DROP}}\%.
 
 \subsection{8.2 Attention Sparsity Analysis}
 
@@ -38,23 +38,23 @@ observed by Xiao et al. (2024). Removing sinks causes accuracy drops of
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{α} & \textbf{Sparsity} & \textbf{Effective support} \\
+\textbf{$\alpha$} & \textbf{Sparsity} & \textbf{Effective support} \\
 \midrule
 1.0 & 0\% & 128 (all) \\
-1.2 & 20\% & ~102 \\
-1.5 & 42\% & ~74 \\
-1.8 & 52\% & ~61 \\
-2.0 & 60\% & ~51 \\
+1.2 & {{SP12}}\% & ~{{SUP12}} \\
+1.5 & {{SP15}}\% & ~{{SUP15}} \\
+1.8 & {{SP18}}\% & ~{{SUP18}} \\
+2.0 & {{SP20}}\% & ~{{SUP20}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Sparsity grows monotonically with α. α = 1.5 gives ~40\% 
-sparsity; α = 2.0 gives ~60\%.
+\textbf{Observation.} Sparsity grows monotonically with $\alpha$. $\alpha$ = 1.5 gives ~40\% 
+sparsity; $\alpha$ = 2.0 gives ~60\%.
 
 \subsection{8.3 Per-Layer Sparsity Distribution}
 
-\textbf{Table 8.1: Sparsity by layer (DistilBERT, α = 1.5).}
+\textbf{Table 8.1: Sparsity by layer (DistilBERT, $\alpha$ = 1.5).}
 
 \begin{table}[H]
 \centering
@@ -62,12 +62,12 @@ sparsity; α = 2.0 gives ~60\%.
 \toprule
 \textbf{Layer} & \textbf{Sparsity} \\
 \midrule
-0 & 42\% \\
-1 & 41\% \\
-2 & 42\% \\
-3 & 43\% \\
-4 & 42\% \\
-5 & 42\% \\
+0 & {{D\_L0\_SP}}\% \\
+1 & {{D\_L1\_SP}}\% \\
+2 & {{D\_L2\_SP}}\% \\
+3 & {{D\_L3\_SP}}\% \\
+4 & {{D\_L4\_SP}}\% \\
+5 & {{D\_L5\_SP}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -83,43 +83,43 @@ AdaSplash behavior is uniform.
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Config} & \textbf{DistilBERT} & \textbf{Δ} \\
+\textbf{Config} & \textbf{DistilBERT} & \textbf{$\Delta$} \\
 \midrule
-Full attention + softmax & 90.71\% & — \\
+Full attention + softmax & 90.71\% & -- \\
 + Frozen base + LoRA & {{ABL1}} & {{ABL1\_D}} \\
-+ α-entmax (no splash) & {{ABL2}} & {{ABL2\_D}} \\
++ $\alpha$-entmax (no splash) & {{ABL2}} & {{ABL2\_D}} \\
 + Splash radius & {{ABL3}} & {{ABL3\_D}} \\
-+ Sinks & 90.25 & -0.46 \\
++ Sinks & {{D\_ACC}} & {{D\_DELTA}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Interpretation.} Each component contributes ~1.0\% accuracy.
+\textbf{Interpretation.} Each component contributes ~{{AVG\_CONTRIB}}\% accuracy.
 
 \subsection{8.5 Comparison with Sparsemax}
 
-\textbf{Table 8.3: Entmax α=1.5 vs Sparsemax α=2.0.}
+\textbf{Table 8.3: Entmax $\alpha$=1.5 vs Sparsemax $\alpha$=2.0.}
 
 \begin{table}[H]
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Metric} & \textbf{α=1.5} & \textbf{α=2.0} \\
+\textbf{Metric} & \textbf{$\alpha$=1.5} & \textbf{$\alpha$=2.0} \\
 \midrule
-DistilBERT & **90.25** & 88.30 \\
-Sparsity & 42\% & 60\% \\
+DistilBERT & **{{D\_ACC}}** & {{D\_A2}} \\
+Sparsity & {{SP15}}\% & {{SP20}}\% \\
 Training stability & Stable & Oscillatory \\
 Speed & Fast & Slower (bisection) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} α = 1.5 is faster and more stable while giving similar 
+\textbf{Observation.} $\alpha$ = 1.5 is faster and more stable while giving similar 
 sparsity.
 
 \subsection{8.6 Inference Cost Breakdown}
 
-AdaSplash is \textbf{slower} than baseline by 1.9×. This comes from:
+AdaSplash is \textbf{slower} than baseline by {{LATENCY\_RATIO}}$\times$. This comes from:
 
 1. \textbf{Entmax bisection:} 25 iterations of the same computation.
 2. \textbf{Masked softmax computation:} Softmax fallback check.
@@ -165,15 +165,15 @@ AdaSplash produces \textbf{more interpretable} attention:
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Pruning target} & \textbf{Reversible?} \\
 \midrule
-Magnitude pruning (50\%) & 85 & Weights & No \\
-Head pruning (50\%) & 82 & Heads & No \\
-**AdaSplash** & **90.25** & **Activations** & **Yes (α=1)** \\
+Magnitude pruning (50\%) & {{MAG50}} & Weights & No \\
+Head pruning (50\%) & {{HP50}} & Heads & No \\
+**AdaSplash** & **{{D\_ACC}}** & **Activations** & **Yes ($\alpha$=1)** \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key advantage.} AdaSplash's sparsity is \textbf{dynamic} (per-query) and 
-\textbf{reversible} (setting α=1 recovers softmax).
+\textbf{reversible} (setting $\alpha$=1 recovers softmax).
 
 \subsection{8.9 Failure Analysis}
 
@@ -201,12 +201,12 @@ if sum(p) < 1e-7:
 
 \subsubsection{8.9.3 Failures We Observed}
 
-No systematic failures observed.
+{{FAILURES}}
 
 \subsection{8.10 Summary of Insights}
 
-1. \textbf{α = 1.5 gives ~40\% sparsity} with no accuracy loss.
+1. \textbf{$\alpha$ = 1.5 gives ~40\% sparsity} with no accuracy loss.
 2. \textbf{Attention sinks are essential} for stability.
-3. \textbf{Entmax bisection is the slowdown} (25× overhead vs softmax).
-4. \textbf{Sparsity is uniform across layers} — no layer-specific tuning needed.
-5. \textbf{Parameter count increases} due to LoRA — this is not compression.
+3. \textbf{Entmax bisection is the slowdown} (25$\times$ overhead vs softmax).
+4. \textbf{Sparsity is uniform across layers} -- no layer-specific tuning needed.
+5. \textbf{Parameter count increases} due to LoRA -- this is not compression.

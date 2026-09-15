@@ -53,13 +53,13 @@ Over FlashAttention-2, v3 adds:
    from HBM to shared memory, freeing the SM for computation.
 2. \textbf{Warp specialization.} Producer-consumer model where some warps handle 
    memory while others compute.
-3. \textbf{FP8 support.} Tensor cores can process FP8 (e4m3) at 2× throughput.
+3. \textbf{FP8 support.} Tensor cores can process FP8 (e4m3) at 2$\times$ throughput.
 
-\textbf{Result.} ~2× throughput over v2 on H100.
+\textbf{Result.} ~2$\times$ throughput over v2 on H100.
 
 \subsection{3.4 PyTorch SDPA}
 
-\texttt{F.scaled_dot_product_attention} auto-selects one of three backends:
+\texttt{F.scaled\\_dot\\_product\\_attention} auto-selects one of three backends:
 
 \begin{itemize}
 \item \textbf{Math path:} naive implementation.
@@ -69,7 +69,7 @@ Over FlashAttention-2, v3 adds:
 \end{itemize}
   to FlashAttention-1.
 \begin{itemize}
-\item \textbf{FlashAttention-2 (if available):} uses the \texttt{flash_attn} library.
+\item \textbf{FlashAttention-2 (if available):} uses the \texttt{flash\\_attn} library.
 \end{itemize}
 
 The wrapper dispatches to SDPA when FlashAttention-3 is unavailable.
@@ -99,7 +99,7 @@ RoPE rotates $Q, K$ by position-dependent angles:
 \tag{3.8}
 \]
 
-Partial RoPE rotates only the first \texttt{rotary_dim} coordinates.
+Partial RoPE rotates only the first \texttt{rotary\\_dim} coordinates.
 
 \subsection{3.7 LoRA}
 

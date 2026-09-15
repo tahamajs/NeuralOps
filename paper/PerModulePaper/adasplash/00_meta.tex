@@ -1,48 +1,48 @@
 
-\section{AdaSplash: Adaptive Splash Attention with α-Entmax Sparse Activations and Local Sliding-Window Masking}
+\section{AdaSplash: Adaptive Splash Attention with $\alpha$-Entmax Sparse Activations and Local Sliding-Window Masking}
 
 \textbf{Authors:}
 \begin{itemize}
-\item Your Name¹ — you@university.edu
+\item {{AUTHOR\_1\_NAME}}  -- {{AUTHOR\_1\_EMAIL}}
 \end{itemize}
 \begin{itemize}
-\item Advisor Name² — advisor@university.edu
+\item {{AUTHOR\_2\_NAME}}  -- {{AUTHOR\_2\_EMAIL}}
 \end{itemize}
 
 \textbf{Affiliations:}
 \begin{itemize}
-\item ¹ University Name, Department of Computer Science
+\item   {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+\item   {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
 \end{itemize}
 
-\textbf{Corresponding author:} Your Name
-\textbf{Preprint date:} 2026-09-15
-\textbf{Version:} v1 (initial draft)
-\textbf{Code:} https://github.com/your-org/SVD_Project/tree/main/framework/attentions/adasplash.py
-\textbf{Model weights:} https://huggingface.co/Hooshaai
-\textbf{License:} MIT
+\textbf{Corresponding author:} {{CORRESPONDING\_AUTHOR}}
+\textbf{Preprint date:} {{DATE}}
+\textbf{Version:} v{{VERSION}} ({{CHANGELOG}})
+\textbf{Code:} https://github.com/{{ORG}}/SVD\_Project/tree/main/framework/attentions/adasplash.py
+\textbf{Model weights:} https://huggingface.co/{{HF\_ORG}}
+\textbf{License:} {{LICENSE}}
 
 
 
 \subsection{Abstract}
 
 Standard transformer attention produces \textbf{dense} probability distributions 
-over all keys via softmax, forcing every query to attend — at least weakly — 
+over all keys via softmax, forcing every query to attend -- at least weakly -- 
 to every token. This has two consequences: attention weights are rarely 
 interpretable (mass is spread over thousands of tokens), and the operation 
 cannot exploit token sparsity for compute savings. We introduce \textbf{AdaSplash} 
-(\textbf{Ada}ptive \textbf{Splash} Attention), which replaces softmax with \textbf{α-entmax} 
+(\textbf{Ada}ptive \textbf{Splash} Attention), which replaces softmax with \textbf{$\alpha$-entmax} 
 (Peters et al., 2019), a family of sparse activation functions parameterized 
 by $\alpha \in (1, 2]$ that produce \textbf{exact zeros} for low-scoring keys. 
-When $\alpha = 1.5$, α-entmax is 1.5-entmax, which interpolates between 
+When $\alpha = 1.5$, $\alpha$-entmax is 1.5-entmax, which interpolates between 
 softmax ($\alpha = 1$) and sparsemax ($\alpha = 2$), yielding ~40\% zero 
 entries in practice.
 
 AdaSplash combines three ideas:
 
-1. \textbf{α-entmax normalization} via a numerically stabilized bisection algorithm 
+1. \textbf{$\alpha$-entmax normalization} via a numerically stabilized bisection algorithm 
    over valid tokens only, with softmax fallback when the support is empty.
 2. \textbf{Local splash radius masking.} For causal decoders, keys outside a 
    sliding window of radius $W$ are masked to $-\infty$, restricting attention 
@@ -52,22 +52,22 @@ AdaSplash combines three ideas:
    is added for task adaptation.
 
 AdaSplash is \textbf{not} a compression method: parameter count \textbf{increases} by 
-\textbf{0.88\%} due to LoRA adapters. It is a sparse attention mechanism 
+\textbf{{{PARAM\_CHANGE}}\%} due to LoRA adapters. It is a sparse attention mechanism 
 that trades a small parameter overhead for interpretable attention and potential 
 compute savings on specialized hardware. We evaluate on DistilBERT, RoBERTa-base, 
-and GPT-2 on SST-2 with 50 LoRA recovery steps. AdaSplash 
-achieves \textbf{90.25\%} on DistilBERT, \textbf{77.5\%} on RoBERTa, and 
-\textbf{78.78\%} on GPT-2 with zero-mean accuracy drops and no weight updates 
+and GPT-2 on SST-2 with {{RECOVERY\_STEPS}} LoRA recovery steps. AdaSplash 
+achieves \textbf{{{D\_ACC}}\%} on DistilBERT, \textbf{{{R\_ACC}}\%} on RoBERTa, and 
+\textbf{{{G\_ACC}}\%} on GPT-2 with zero-mean accuracy drops and no weight updates 
 to the base model.
 
-\textbf{Keywords:} sparse attention, α-entmax, sliding window, attention sinks, 
+\textbf{Keywords:} sparse attention, $\alpha$-entmax, sliding window, attention sinks, 
 local-global attention, LoRA
 
 
 
 \subsection{Lay Summary}
 
-Standard attention in transformers is "soft" — every token considers every 
+Standard attention in transformers is "soft" -- every token considers every 
 other token, even if only briefly. This is wasteful: studies show that most 
 attention weight goes to a few important tokens, and the rest is noise. 
 AdaSplash replaces the standard "softmax" with a "sparse" alternative that 
@@ -81,33 +81,33 @@ accuracy on sentiment analysis while using cleaner attention patterns.
 
 \subsection{Table of Contents}
 
-1. [Introduction](01_intro.md)
-2. [Related Work](02_related.md)
-3. [Background](03_background.md)
-4. [Method](04_method.md)
-5. [Architecture Integration](05_architecture.md)
-6. [Experimental Setup](06_setup.md)
-7. [Results](07_results.md)
-8. [Analysis](08_analysis.md)
-9. [Discussion](09_discussion.md)
-10. [Limitations](10_limitations.md)
-11. [Conclusion](11_conclusion.md)
-12. [Reproducibility](12_reproducibility.md)
-13. [References](13_references.md)
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
 
 \textbf{Appendices:}
 \begin{itemize}
-\item [A. Mathematical Derivations](A_math.md)
+\item [A. Mathematical Derivations](A\_math.md)
 \end{itemize}
 \begin{itemize}
-\item [B. Implementation Details](B_implementation.md)
+\item [B. Implementation Details](B\_implementation.md)
 \end{itemize}
 \begin{itemize}
-\item [C. Full Experimental Data](C_data.md)
+\item [C. Full Experimental Data](C\_data.md)
 \end{itemize}
 \begin{itemize}
-\item [D. Negative Results](D_negative_results.md)
+\item [D. Negative Results](D\_negative\_results.md)
 \end{itemize}
 \begin{itemize}
-\item [E. Ethical Considerations](E_ethics.md)
+\item [E. Ethical Considerations](E\_ethics.md)
 \end{itemize}

@@ -10,7 +10,7 @@ requiring calibration data. This makes compression accessible to researchers
 and practitioners who lack access to target-task data or extensive compute.
 
 \textbf{Environmental benefits.} Smaller models consume less energy at inference. 
-The compression process itself uses ~10 GPU-hours, minimal 
+The compression process itself uses ~{{COMPUTE\_HOURS}} GPU-hours, minimal 
 compared to training.
 
 \textbf{Edge deployment.} Compressed models fit on consumer hardware, enabling 
@@ -30,13 +30,13 @@ energy savings.
 \subsubsection{E.1.3 Environmental Cost}
 
 \begin{itemize}
-\item \textbf{Compression compute:} ~10 GPU-hours
+\item \textbf{Compression compute:} ~{{COMPUTE\_HOURS}} GPU-hours
 \end{itemize}
 \begin{itemize}
-\item \textbf{CO₂ estimate:} ~0.7 kg CO₂eq
+\item \textbf{CO$_2$ estimate:} ~{{CO2\_KG}} kg CO$_2$eq
 \end{itemize}
 \begin{itemize}
-\item \textbf{Methodology:} [ML CO₂ Impact Calculator](https://mlco2.github.io/impact/)
+\item \textbf{Methodology:} [ML CO$_2$ Impact Calculator](https://mlco2.github.io/impact/)
 \end{itemize}
 
 \subsection{E.2 Data Ethics}
@@ -97,16 +97,16 @@ We do not endorse harmful uses.
 \subsubsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran
 \end{itemize}
   experiments, wrote the paper.
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided methodological feedback and edited the manuscript.
+\item \textbf{{{AUTHOR\_2}}} provided methodological feedback and edited the manuscript.
 \end{itemize}
 
 \subsubsection{License}
 
-Code, weights, and this paper released under \textbf{MIT}.
+Code, weights, and this paper released under \textbf{{{LICENSE}}}.
 
 \subsection{E.5 Conflicts of Interest}
 
@@ -129,7 +129,7 @@ edited by the authors.
 \subsection{E.9 Reproducibility Commitments}
 
 We commit to:
-1. Releasing all code under MIT
+1. Releasing all code under {{LICENSE}}
 2. Releasing checkpoints on HuggingFace
 3. Reporting negative results (Appendix D)
 4. Documenting all hyperparameters
@@ -174,5 +174,5 @@ This work does not involve human subjects. No IRB approval was required.
 \subsection{E.12 Transparency}
 
 All experimental results (positive and negative) are reported in Sections 
-7–8 and Appendix D. Code and checkpoints are released. Hyperparameters are 
+7--8 and Appendix D. Code and checkpoints are released. Hyperparameters are 
 documented in Section 6 and Appendix B.

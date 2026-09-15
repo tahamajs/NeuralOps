@@ -1,0 +1,150 @@
+
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+LoRA rank & {{LORA\_RANK}} \\
+Head-dim reduction & {{HEAD\_DIM\_REDUCTION}}$\times$ \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Trainable params & {{D\_LORA}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Trainable params & {{R\_LORA}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Trainable params & {{G\_LORA}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 LoRA Rank Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
+8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
+16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
+32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Head-Dim Reduction Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$s$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+1.0 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+1.5 & {{D\_S15}} & {{R\_S15}} & {{G\_S15}} \\
+2.0 & {{D\_S20}} & {{R\_S20}} & {{G\_S20}} \\
+2.5 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Recovery Steps Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10\_STEP}} & {{R\_S10\_STEP}} & {{G\_S10\_STEP}} \\
+25 & {{D\_S25\_STEP}} & {{R\_S25\_STEP}} & {{G\_S25\_STEP}} \\
+50 & {{D\_S50\_STEP}} & {{R\_S50\_STEP}} & {{G\_S50\_STEP}} \\
+100 & {{D\_S100\_STEP}} & {{R\_S100\_STEP}} & {{G\_S100\_STEP}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Per-Layer Analysis}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Layer} & \textbf{DistilBERT drop} & \textbf{RoBERTa drop} \\
+\midrule
+0 & {{D\_L0\_DROP}} & {{R\_L0\_DROP}} \\
+1 & {{D\_L1\_DROP}} & {{R\_L1\_DROP}} \\
+... & ... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Raw JSON}
+
+\begin{lstlisting}
+{
+  "squeezing_heads": {
+    "distilbert": {
+      "lora_rank": {{LORA_RANK}},
+      "head_dim_reduction": {{HEAD_DIM_REDUCTION}},
+      "accuracy_pct": {{D_ACC}},
+      "trainable_params": {{D_LORA}}
+    },
+    "roberta": {...},
+    "gpt2": {...}
+  }
+}
+\end{lstlisting}
+
+\subsection{C.9 Reproduction Commands}
+
+\begin{lstlisting}
+# Main
+python run_all_4_squeezing_heads.py --lora_rank 16
+
+# Rank sweep
+for r in 4 8 16 32; do
+    python run_all_4_squeezing_heads.py --lora_rank $r
+done
+
+# Head-dim reduction sweep
+for s in 1.0 1.5 2.0 2.5; do
+    python run_all_4_squeezing_heads.py --head_dim_reduction $s
+done
+\end{lstlisting}

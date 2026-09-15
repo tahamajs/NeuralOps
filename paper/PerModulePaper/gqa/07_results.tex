@@ -1,0 +1,163 @@
+
+\section{7. Results}
+
+\subsection{7.1 Main Results}
+
+\textbf{Table 7.1: SST-2 accuracy with $G = H/2$.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{$H_{KV}$} & \textbf{KV ratio} & \textbf{VRAM} \\
+\midrule
+DistilBERT & MHA & 90.71\% & -- & 0.9099 & 12 & 1.00$\times$ & 183 MB \\
+DistilBERT & **GQA** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & {{D\_KV}} & **{{D\_KV\_R}}$\times$** & {{D\_VRAM}} MB \\
+RoBERTa & MHA & 78.56\% & -- & 0.8124 & 12 & 1.00$\times$ & 712 MB \\
+RoBERTa & **GQA** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & {{R\_KV}} & **{{R\_KV\_R}}$\times$** & {{R\_VRAM}} MB \\
+GPT-2 & MHA & 79.36\% & -- & 0.7978 & 12 & 1.00$\times$ & 793 MB \\
+GPT-2 & **GQA** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_KV}} & **{{G\_KV\_R}}$\times$** & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.2 KV Cache Analysis}
+
+\textbf{Table 7.2: KV cache at inference.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Per-token (KB)} & \textbf{At L=1024 (MB)} & \textbf{At L=8192 (MB)} \\
+\midrule
+GPT-2 & MHA & 36.9 & 37.7 & 302 \\
+GPT-2 & **GQA (H/2)** & **{{KV\_PER\_TOKEN}}** & **{{KV\_L1024}}** & **{{KV\_L8192}}** \\
+GPT-2 & GQA (H/4) & 9.2 & 9.4 & 75 \\
+GPT-2 & MQA & 3.1 & 3.1 & 25 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.3 Parameter Analysis}
+
+\textbf{Table 7.3: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{MHA params} & \textbf{GQA params} & \textbf{Reduction} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & {{D\_P\_RATIO}}$\times$ \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & {{R\_P\_RATIO}}$\times$ \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & {{G\_P\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.4 Efficiency}
+
+\textbf{Table 7.4: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{Peak VRAM} \\
+\midrule
+DistilBERT & MHA & 1.90 s & 59000 & 183 MB \\
+DistilBERT & GQA & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+GPT-2 & MHA & 4.20 s & 26700 & 793 MB \\
+GPT-2 & GQA & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.5 Ablation: Number of KV Heads}
+
+\textbf{Table 7.5: Accuracy vs $G$.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{$G$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{KV ratio} \\
+\midrule
+12 (MHA) & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+6 (H/2) & {{D\_G6}} & {{R\_G6}} & {{G\_G6}} & 2.00$\times$ \\
+4 (H/3) & {{D\_G4}} & {{R\_G4}} & {{G\_G4}} & 3.00$\times$ \\
+3 (H/4) & {{D\_G3}} & {{R\_G3}} & {{G\_G3}} & 4.00$\times$ \\
+2 (H/6) & {{D\_G2}} & {{R\_G2}} & {{G\_G2}} & 6.00$\times$ \\
+1 (MQA) & {{D\_G1}} & {{R\_G1}} & {{G\_G1}} & 12.0$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.6 Ablation: LoRA Rank}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
+8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
+16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
+32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.7 Ablation: Recovery Steps}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.8 Comparison with Companion Methods}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} \\
+\midrule
+full (MHA) & 90.71\% & 78.56\% & 79.36\% & Baseline \\
+AASVD & {{AASVD\_D}} & {{AASVD\_R}} & {{AASVD\_G}} & Compression \\
+A3 & {{A3\_D}} & {{A3\_R}} & {{A3\_G}} & Compression \\
+NHA & 90.25\% & FAIL & 78.78\% & Attention \\
+**GQA** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** & **KV cache** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.9 Training Loss Curves}
+
+\textbf{Figure 7.1} shows recovery loss for all three models.
+
+\subsection{7.10 Summary}
+
+\begin{itemize}
+\item \textbf{KV cache:} reduced by {{D\_KV\_R}}$\times$--{{G\_KV\_R}}$\times$.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Accuracy:} drops only {{D\_DELTA}}\%--{{G\_DELTA}}\%.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Parameter reduction:} modest ({{D\_P\_RATIO}}$\times$--{{G\_P\_RATIO}}$\times$).
+\end{itemize}
+\begin{itemize}
+\item \textbf{All models pass quality gate.}
+\end{itemize}

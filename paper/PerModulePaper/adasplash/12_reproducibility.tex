@@ -4,7 +4,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
+git clone https://github.com/{{ORG}}/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -19,10 +19,10 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & 2.4.0 \\
-transformers & 4.44.0 \\
-datasets & 2.20.0 \\
-numpy & 1.26.4 \\
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+numpy & {{NUMPY\_VERSION}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,13 +32,13 @@ numpy & 1.26.4 \\
 \begin{lstlisting}
 python run_all_4_adasplash.py \
     --models distilbert,roberta,gpt2 \
-    --alpha 1.5 \
-    --splash_radius 32 \
-    --lora_rank 16 \
-    --recovery_steps 50
+    --alpha {{ALPHA}} \
+    --splash_radius {{SPLASH_RADIUS}} \
+    --lora_rank {{LORA_RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}}
 \end{lstlisting}
 
-\textbf{Runtime:} ~20 minutes.
+\textbf{Runtime:} ~{{RUNTIME}} minutes.
 
 \subsection{12.4 Downloading Checkpoints}
 
@@ -47,7 +47,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"Hooshaai/svd-linear-attention-{model}-adasplash",
+        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-adasplash",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -59,7 +59,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 python run_all_4_adasplash.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
-\subsubsection{Table 7.5 (α ablation)}
+\subsubsection{Table 7.5 ($\alpha$ ablation)}
 \begin{lstlisting}
 for alpha in 1.0 1.2 1.5 1.8 2.0; do
     python run_all_4_adasplash.py --alpha $alpha --output_suffix a$alpha
@@ -92,9 +92,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} \\
 \midrule
-DistilBERT & 90.25\% ± 1\% \\
-RoBERTa & 77.5\% ± 1\% \\
-GPT-2 & 78.78\% ± 1\% \\
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -105,10 +105,10 @@ GPT-2 & 78.78\% ± 1\% \\
 \item Dataset: SST-2 via \texttt{datasets}
 \end{itemize}
 \begin{itemize}
-\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-adasplash}
+\item Checkpoints: \texttt{{{HF\\_ORG}}/svd-linear-attention-*-adasplash}
 \end{itemize}
 \begin{itemize}
-\item Metrics: \texttt{results/unified_adasplash/*/summary.csv}
+\item Metrics: \texttt{results/unified\\_adasplash/*/summary.csv}
 \end{itemize}
 
 \subsection{12.9 Known Issues}
@@ -117,7 +117,7 @@ GPT-2 & 78.78\% ± 1\% \\
 \item Windows: \texttt{PYTHONIOENCODING=utf-8}
 \end{itemize}
 \begin{itemize}
-\item CUDA ≥ 11.8 for FP16
+\item CUDA $\ge$ 11.8 for FP16
 \end{itemize}
 \begin{itemize}
 \item Entmax bisection: 25 iterations

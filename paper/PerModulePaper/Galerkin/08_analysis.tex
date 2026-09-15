@@ -13,7 +13,7 @@ projected keys mix future information.
 \subsection{8.2 Basis Approximation Quality}
 
 \textbf{Figure 8.1} shows the spectrum of DCT coefficients for a sample attention 
-output. The top 64 coefficients capture ~92\% of the energy, 
+output. The top 64 coefficients capture ~{{DCT\_ENERGY}}\% of the energy, 
 justifying $r = 64$.
 
 \subsection{8.3 Per-Layer Reconstruction Error}
@@ -26,12 +26,12 @@ justifying $r = 64$.
 \toprule
 \textbf{Layer} & \textbf{Relative error} \\
 \midrule
-0 & 0.05 \\
-1 & 0.08 \\
-2 & 0.12 \\
-3 & 0.15 \\
-4 & 0.18 \\
-5 & 0.22 \\
+0 & {{D\_L0\_ERR}} \\
+1 & {{D\_L1\_ERR}} \\
+2 & {{D\_L2\_ERR}} \\
+3 & {{D\_L3\_ERR}} \\
+4 & {{D\_L4\_ERR}} \\
+5 & {{D\_L5\_ERR}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -49,8 +49,8 @@ We verify that the $\sqrt{N/r}$ scaling preserves activation magnitudes:
 \textbf{Config} & \textbf{Mean activation std} \\
 \midrule
 Baseline & 1.00 \\
-Without scaling & 0.72 \\
-With scaling & 1.00 \\
+Without scaling & {{STD\_NO\_SCALE}} \\
+With scaling & {{STD\_WITH\_SCALE}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -65,8 +65,8 @@ With scaling & 1.00 \\
 \toprule
 \textbf{Basis} & \textbf{D acc} & \textbf{R acc} \\
 \midrule
-Random orthonormal & 87.0 & 74.0 \\
-**DCT** & **89.91** & **77.35** \\
+Random orthonormal & {{RAND\_D}} & {{RAND\_R}} \\
+**DCT** & **{{D\_ACC}}** & **{{R\_ACC}}** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -75,12 +75,12 @@ DCT's smoothness assumption matches attention better.
 
 \subsection{8.6 Failure Analysis}
 
-No systematic failures observed.
+{{FAILURES}}
 
 \subsection{8.7 Summary of Insights}
 
-1. \textbf{Encoder benefit is real} — 2× speedup at $N=128$.
-2. \textbf{Decoder fallback necessary} — no benefit for GPT-2.
-3. \textbf{DCT basis optimal} — beats random orthonormal.
-4. \textbf{Energy scaling works} — preserves activation magnitude.
-5. \textbf{Parameter count increases} — not a compression method.
+1. \textbf{Encoder benefit is real} -- 2$\times$ speedup at $N=128$.
+2. \textbf{Decoder fallback necessary} -- no benefit for GPT-2.
+3. \textbf{DCT basis optimal} -- beats random orthonormal.
+4. \textbf{Energy scaling works} -- preserves activation magnitude.
+5. \textbf{Parameter count increases} -- not a compression method.

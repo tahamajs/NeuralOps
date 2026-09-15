@@ -16,7 +16,7 @@ GPT-2 & 12 & 768 & 12 & 12 & 124.4M & Causal \\
 \end{tabular}
 \end{table}
 
-Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
+Base weights loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
 
 \subsection{6.2 Dataset}
 
@@ -30,7 +30,7 @@ Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
 \midrule
 Train & 67,349 & 33,807 & 33,542 \\
 Validation & 872 & 444 & 428 \\
-Test & 1,821 & — & — \\
+Test & 1,821 & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -45,11 +45,11 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-$\alpha$ (entmax) & 1.5 & Sparsity parameter \\
-$W$ (splash radius) & 32 & Window size \\
+$\alpha$ (entmax) & {{ALPHA}} & Sparsity parameter \\
+$W$ (splash radius) & {{SPLASH\_RADIUS}} & Window size \\
 $S$ (sink count) & 4 & Fixed \\
-$n\_\text{iter}$ (bisection) & 25 & Fixed \\
-$r\_L$ (LoRA rank) & 16 & Adapter rank \\
+$n_\text{iter}$ (bisection) & 25 & Fixed \\
+$r_L$ (LoRA rank) & {{LORA\_RANK}} & Adapter rank \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -63,17 +63,17 @@ $r\_L$ (LoRA rank) & 16 & Adapter rank \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & 2e-4 \\
-Weight decay & 1e-2 \\
-Recovery steps & 50 \\
-Batch size & 8 \\
+Learning rate & {{LR}} \\
+Weight decay & {{WD}} \\
+Recovery steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
 Trainable params & LoRA only \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Trainable tensor count:} 2 tensors per projection × 4 projections × $N_l$ 
+\textbf{Trainable tensor count:} 2 tensors per projection $\times$ 4 projections $\times$ $N_l$ 
 layers = 8$N_l$ tensors.
 
 \subsection{6.5 Evaluation Metrics}
@@ -125,8 +125,8 @@ layers = 8$N_l$ tensors.
 \toprule
 \textbf{Status} & \textbf{Accuracy} \\
 \midrule
-PASS & ≥ 56.0\% \\
-PASS\_LOW & 50.92\% – 56.0\% \\
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
 FAIL & < 50.92\% \\
 \bottomrule
 \end{tabular}
@@ -142,9 +142,9 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
-CUDA & 12.1 \\
-PyTorch & 2.4.0 \\
-Transformers & 4.44.0 \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
+Transformers & {{HF\_VERSION}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -154,16 +154,16 @@ Transformers & 4.44.0 \\
 \begin{lstlisting}
 python run_all_4_adasplash.py \
     --models distilbert,roberta,gpt2 \
-    --alpha 1.5 \
-    --splash_radius 32 \
-    --lora_rank 16 \
-    --recovery_steps 50
+    --alpha {{ALPHA}} \
+    --splash_radius {{SPLASH_RADIUS}} \
+    --lora_rank {{LORA_RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}}
 \end{lstlisting}
 
-Runtime: ~20 minutes.
+Runtime: ~{{RUNTIME}} minutes.
 
 \subsection{6.9 Seeds}
 
-All experiments with seed 42.
+All experiments with seed {{SEED}}.
 
 \subsection{6.10 Baselines}

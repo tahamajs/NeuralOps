@@ -2,7 +2,7 @@
 
 \subsection{10.1 BAM-UMoE is Not a Compression Method}
 
-\textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~350\%. 
+\textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~{{AVG\_PARAM\_INC}}\%. 
 It should never be described as "compression" or "efficiency". Any paper 
 using BAM-UMoE must disclose the parameter increase.
 
@@ -24,11 +24,11 @@ attention. Total compute roughly doubles.
 \subsection{10.4 VRAM Overhead}
 
 The MoE branch's expert weights and activations are stored in VRAM, 
-increasing peak memory by ~{{VRAM_INC}}×.
+increasing peak memory by ~{{VRAM\_INC}}$\times$.
 
 \subsection{10.5 Inference Latency}
 
-Two matmuls + router overhead = ~{{LATENCY_RATIO}}× slower.
+Two matmuls + router overhead = ~{{LATENCY\_RATIO}}$\times$ slower.
 
 \subsection{10.6 Task Coverage}
 
@@ -36,7 +36,7 @@ Only SST-2 evaluated. Generation, QA, NLI untested.
 
 \subsection{10.7 Model Coverage}
 
-Three models tested (66.9M–124.6M). Larger models untested.
+Three models tested (66.9M--124.6M). Larger models untested.
 
 \subsection{10.8 Hardware}
 
@@ -44,7 +44,7 @@ Only RTX 4070 Laptop. Scaling to datacenter GPUs unknown.
 
 \subsection{10.9 Load Balancing}
 
-Auxiliary loss weight $\lambda_\text{aux} = 0.01$ chosen 
+Auxiliary loss weight $\lambda_\text{aux} = {{AUX_WEIGHT}}$ chosen 
 heuristically. Not tuned extensively.
 
 \subsection{10.10 Single Seed}

@@ -66,7 +66,7 @@ def make_hook(name):
 
 1. \textbf{FP32 compute:} We cast to FP32 inside the hook to avoid numerical issues.
 2. \textbf{Padding filter:} Mask tokens with $\|x_i\|_1 < 10^{-5}$.
-3. \textbf{CPU transfer:} \texttt{batch_cov.cpu()} prevents GPU memory accumulation.
+3. \textbf{CPU transfer:} \texttt{batch\\_cov.cpu()} prevents GPU memory accumulation.
 
 \subsection{B.3 Eigendecomposition with Regularization}
 
@@ -138,7 +138,7 @@ guaranteeing at least 25\% parameter reduction per layer.
 
 \begin{lstlisting}
 if "conv1d" in cls_name or hasattr(module, "nf"):
-    W = raw_w.t().float()  # (in, out) → (out, in)
+    W = raw_w.t().float()  # (in, out) $\to$ (out, in)
 else:
     W = raw_w.float()
 \end{lstlisting}

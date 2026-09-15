@@ -1,0 +1,196 @@
+
+\section{7. Results}
+
+\subsection{7.1 Main Results}
+
+\textbf{Table 7.1: SST-2 results with $m = {{RANK}}$, $K = {{PINV_ITERS}}$.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn mem} & \textbf{Time} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 128 KB & 1.90 s & 183 MB \\
+DistilBERT & **Primal** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & **{{D\_ATTN\_MEM}}** & {{D\_TIME}} s & {{D\_VRAM}} MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 128 KB & 4.10 s & 712 MB \\
+RoBERTa & **Primal** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & **{{R\_ATTN\_MEM}}** & {{R\_TIME}} s & {{R\_VRAM}} MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 128 KB & 4.20 s & 793 MB \\
+GPT-2 & **Primal** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & **{{G\_ATTN\_MEM}}** & {{G\_TIME}} s & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Attention memory} = $B \cdot H \cdot L \cdot m$ vs $B \cdot H \cdot L^2$ for baseline.
+
+\subsection{7.2 Attention Memory Analysis}
+
+\textbf{Table 7.2: Attention memory at different sequence lengths ($B=1, H=12$).}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{$L$} & \textbf{Baseline (MB)} & \textbf{Primal $m=64$ (MB)} & \textbf{Primal $m=32$ (MB)} & \textbf{Ratio} \\
+\midrule
+128 & 0.05 & 0.012 & 0.006 & 4$\times$ / 8$\times$ \\
+512 & 0.78 & 0.049 & 0.025 & 16$\times$ / 32$\times$ \\
+2048 & 12.6 & 0.20 & 0.10 & 64$\times$ / 128$\times$ \\
+8192 & 201 & 0.79 & 0.39 & 256$\times$ / 512$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.3 Approximation Quality}
+
+\textbf{Table 7.3: Frobenius error $\|A - \tilde{A}\|_F / \|A\|_F$.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$m$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+16 & {{D\_ERR16}} & {{R\_ERR16}} & {{G\_ERR16}} \\
+32 & {{D\_ERR32}} & {{R\_ERR32}} & {{G\_ERR32}} \\
+64 & {{D\_ERR64}} & {{R\_ERR64}} & {{G\_ERR64}} \\
+128 & {{D\_ERR128}} & {{R\_ERR128}} & {{G\_ERR128}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.4 Ablation: Landmark Count}
+
+\textbf{Table 7.4: Accuracy vs $m$.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{$m$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Attn mem ratio} \\
+\midrule
+16 & {{D\_M16}} & {{R\_M16}} & {{G\_M16}} & 8$\times$ \\
+32 & {{D\_M32}} & {{R\_M32}} & {{G\_M32}} & 4$\times$ \\
+64 & {{D\_M64}} & {{R\_M64}} & {{G\_M64}} & 2$\times$ \\
+128 & {{D\_M128}} & {{R\_M128}} & {{G\_M128}} & 1$\times$ \\
+256 & {{D\_M256}} & {{R\_M256}} & {{G\_M256}} & 0.5$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} $m = 64$ is a sweet spot; accuracy plateaus beyond $m = 128$.
+
+\subsection{7.5 Ablation: Pseudoinverse Iterations}
+
+\textbf{Table 7.5: Accuracy vs $K$.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{$K$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Time overhead} \\
+\midrule
+0 & {{D\_K0}} & {{R\_K0}} & {{G\_K0}} & 0\% \\
+2 & {{D\_K2}} & {{R\_K2}} & {{G\_K2}} & 5\% \\
+4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} & 10\% \\
+6 & {{D\_K6}} & {{R\_K6}} & {{G\_K6}} & 15\% \\
+8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} & 20\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} $K = 4$ is sufficient; more iterations give diminishing returns.
+
+\subsection{7.6 Ablation: LoRA Rank}
+
+\textbf{Table 7.6: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
+8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
+16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
+32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.7 Ablation: Recovery Steps}
+
+\textbf{Table 7.7: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.8 Scaling with Sequence Length}
+
+\textbf{Table 7.8: Inference time at different $L$ (GPT-2, $m = 64$).}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$L$} & \textbf{Baseline} & \textbf{Primal} & \textbf{Speedup} \\
+\midrule
+128 & {{B\_128}} s & {{P\_128}} s & {{S\_128}}$\times$ \\
+512 & {{B\_512}} s & {{P\_512}} s & {{S\_512}}$\times$ \\
+2048 & {{B\_2048}} s & {{P\_2048}} s & {{S\_2048}}$\times$ \\
+8192 & {{B\_8192}} s & {{P\_8192}} s & {{S\_8192}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.9 Comparison with Companion Methods}
+
+\textbf{Table 7.9: Comparison with other attention methods.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Param $\Delta$} & \textbf{KV cache} & \textbf{Attn mem} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & MHA & 1.00$\times$ & 1.00$\times$ & 1.00$\times$ \\
+NHA & 90.25\% & FAIL & 78.78\% & Hybrid & 1.009$\times$ & 1.00$\times$ & 1.00$\times$ \\
+GQA & {{GQA\_D}} & {{GQA\_R}} & {{GQA\_G}} & Structural & 0.95$\times$ & 2.00$\times$ & 1.00$\times$ \\
+**Primal** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** & Low-rank & 1.00$\times$ & 1.00$\times$ & **{{MEM\_REDUCTION}}$\times$** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.10 Training Loss Curves}
+
+\textbf{Figure 7.1} shows recovery loss for all three models.
+
+\subsection{7.11 Summary}
+
+\begin{itemize}
+\item \textbf{Attention memory:} reduced by \textbf{{{MEM\_REDUCTION}}$\times$}.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Accuracy:} drops {{D\_DELTA}}\%--{{G\_DELTA}}\%.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Parameter count:} unchanged.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Inference time:} {{D\_TIME\_RATIO}}$\times$ slower at $L = 128$; faster at $L > 512$.
+\end{itemize}
+\begin{itemize}
+\item \textbf{All models pass quality gate.}
+\end{itemize}

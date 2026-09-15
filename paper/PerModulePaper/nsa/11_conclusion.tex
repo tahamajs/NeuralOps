@@ -1,0 +1,78 @@
+
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{Native Sparse Attention} (NSA), which combines a fixed 
+sliding window with dynamic top-$k$ global routing. The mask is a union of 
+the two, applied before softmax. The implementation is fully vectorized, 
+parameter-free, and compatible with four pretrained architectures.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Density} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & {{D\_DENSITY}}\% \\
+RoBERTa & {{R\_DELTA}}\% & {{R\_DENSITY}}\% \\
+GPT-2 & {{G\_DELTA}}\% & {{G\_DENSITY}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Union of local + global} captures both regimes.
+2. \textbf{Zero parameters added.}
+3. \textbf{Density drops with sequence length.}
+4. \textbf{Selection is content-dependent.}
+5. \textbf{No time speedup without sparse kernels.}
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Triton kernels for sparse matmul
+\end{itemize}
+\begin{itemize}
+\item Learned window and top-k per head
+\end{itemize}
+\begin{itemize}
+\item Long-context evaluation
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical error bounds
+\end{itemize}
+\begin{itemize}
+\item Cross-layer selection transfer
+\end{itemize}
+\begin{itemize}
+\item Integration with quantization and MoE
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+NSA provides a simple, effective, and parameter-free sparse attention 
+mechanism for long-context inference.
+
+\subsection{11.6 Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed NSA, implemented the code, wrote the paper.
+\end{itemize}
+\begin{itemize}
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

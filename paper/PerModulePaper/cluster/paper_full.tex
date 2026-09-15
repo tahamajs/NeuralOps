@@ -34,10 +34,10 @@
 
 \textbf{Authors:}
 \begin{itemize}
-\item Your Name¹ — you@university.edu
+\item Your Name¹ --- you@university.edu
 \end{itemize}
 \begin{itemize}
-\item {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+\item {{AUTHOR\_2\_NAME}}² --- {{AUTHOR\_2\_EMAIL}}
 \end{itemize}
 
 \textbf{Affiliations:}
@@ -45,13 +45,13 @@
 \item ¹ University, CS
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+\item ² {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
 \end{itemize}
 
 \textbf{Corresponding author:} Your Name
 \textbf{Preprint date:} 2026-09-15
 \textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD_Project/tree/main/framework/attentions/cluster_attention.py
+\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/cluster\_attention.py
 \textbf{Model weights:} https://huggingface.co/Hooshaai
 \textbf{License:} MIT
 
@@ -87,8 +87,8 @@ Base Q/K/V/O projections are frozen and copied from the pretrained model;
 LoRA rank-16 adapters and learnable temperature/blend scalars provide the 
 only trainable capacity. On DistilBERT, RoBERTa-base, and GPT-2 with SST-2 
 as the evaluation task, ClusterFormer maintains accuracy within 
-\textbf{-0.80\%–-0.38\%} of the baseline after 50 
-recovery steps while reducing attention FLOPs by \textbf{2.7×} at 
+\textbf{-0.80\%---0.38\%} of the baseline after 50 
+recovery steps while reducing attention FLOPs by \textbf{2.7$\times$} at 
 sequence length $L = 128$ with $K = 16$ clusters.
 
 \textbf{Keywords:} linear attention, differentiable clustering, token routing, 
@@ -103,7 +103,7 @@ which becomes slow when the sequence gets long. ClusterFormer takes a
 different approach: it groups similar tokens into a small number of 
 "clusters" (like sorting people by hometown at a conference) and then 
 lets each cluster attend to all tokens at once. This is much faster, and 
-it still keeps global context — every cluster sees the whole sequence. 
+it still keeps global context --- every cluster sees the whole sequence. 
 To capture fine-grained local structure, we also add a small sliding window 
 that attends to nearby tokens. The two signals are mixed together with a 
 learnable gate. On three popular language models, ClusterFormer matches 
@@ -114,35 +114,35 @@ of the attention computation.
 
 \subsection{Table of Contents}
 
-1. [Introduction](01_intro.md)
-2. [Related Work](02_related.md)
-3. [Background](03_background.md)
-4. [Method](04_method.md)
-5. [Architecture Integration](05_architecture.md)
-6. [Experimental Setup](06_setup.md)
-7. [Results](07_results.md)
-8. [Analysis](08_analysis.md)
-9. [Discussion](09_discussion.md)
-10. [Limitations](10_limitations.md)
-11. [Conclusion](11_conclusion.md)
-12. [Reproducibility](12_reproducibility.md)
-13. [References](13_references.md)
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
 
 \textbf{Appendices:}
 \begin{itemize}
-\item [A. Mathematical Derivations](A_math.md)
+\item [A. Mathematical Derivations](A\_math.md)
 \end{itemize}
 \begin{itemize}
-\item [B. Implementation Details](B_implementation.md)
+\item [B. Implementation Details](B\_implementation.md)
 \end{itemize}
 \begin{itemize}
-\item [C. Full Experimental Data](C_data.md)
+\item [C. Full Experimental Data](C\_data.md)
 \end{itemize}
 \begin{itemize}
-\item [D. Negative Results](D_negative_results.md)
+\item [D. Negative Results](D\_negative\_results.md)
 \end{itemize}
 \begin{itemize}
-\item [E. Ethical Considerations](E_ethics.md)
+\item [E. Ethical Considerations](E\_ethics.md)
 \end{itemize}
 
 \clearpage
@@ -232,7 +232,7 @@ V_{\text{cent}} = \text{softmax}\!\left(\frac{C K^\top}{\sqrt{d_h}}\right) V \in
 \tag{1.2}
 \]
 
-This costs $\mathcal{O}(K L d_h)$ — linear in $L$.
+This costs $\mathcal{O}(K L d_h)$ --- linear in $L$.
 
 \textbf{Step 3: Redistribute.} Assign each query to its nearest centroid and 
 collect the corresponding context:
@@ -430,7 +430,7 @@ end-to-end training:
 
 ClusterFormer is fully differentiable:
 \begin{itemize}
-\item Centroid updates use one-hot (non-differentiable) — this is fine since
+\item Centroid updates use one-hot (non-differentiable) --- this is fine since
 \end{itemize}
   centroids are deterministic functions of $Q$.
 \begin{itemize}
@@ -482,7 +482,7 @@ components:
 
 \begin{lstlisting}
     ┌─────────────────────────────────────────────┐
-    │  Input X → Q, K, V projections (frozen+LoRA) │
+    │  Input X $\to$ Q, K, V projections (frozen+LoRA) │
     └─────────────────────┬───────────────────────┘
                           │
               ┌───────────┴───────────┐
@@ -490,27 +490,27 @@ components:
         ┌───────────┐           ┌───────────┐
         │ K-means   │           │ Local     │
         │ on Q      │           │ Window    │
-        │ → C       │           │ Attention │
+        │ $\to$ C       │           │ Attention │
         └─────┬─────┘           └─────┬─────┘
               │                       │
               ▼                       │
         ┌───────────┐                 │
         │ Centroid- │                 │
         │ to-Key    │                 │
-        │ → V_cent  │                 │
+        │ $\to$ V_cent  │                 │
         └─────┬─────┘                 │
               │                       │
               ▼                       │
         ┌───────────┐                 │
         │ Soft      │                 │
         │ Assign    │                 │
-        │ → Global  │                 │
+        │ $\to$ Global  │                 │
         └─────┬─────┘                 │
               │                       │
               └─────────┬─────────────┘
                         ▼
                 ┌──────────────┐
-                │ Blend with α │
+                │ Blend with $\alpha$ │
                 └──────┬───────┘
                        │
                        ▼
@@ -553,7 +553,7 @@ C_{b,h,k} = \frac{\sum_{i: a_{b,h,i} = k} Q_{b,h,i}}{\sum_{i: a_{b,h,i} = k} 1}
 \tag{4.2}
 \]
 
-Counts are clamped to ≥1 to avoid division by zero. Empty clusters keep 
+Counts are clamped to $\ge$1 to avoid division by zero. Empty clusters keep 
 their previous centroid.
 
 \subsubsection{4.2.3 Why 3 Iterations?}
@@ -589,7 +589,7 @@ V_{\text{cent}, b,h,k} = \sum_j \alpha_{b,h,k,j} V_{b,h,j}
 \tag{4.5}
 \]
 
-\textbf{Complexity.} $\mathcal{O}(K \cdot L \cdot d_h)$ — linear in $L$!
+\textbf{Complexity.} $\mathcal{O}(K \cdot L \cdot d_h)$ --- linear in $L$!
 
 \textbf{Padding.} Invalid keys are masked with $-\infty$ before softmax.
 
@@ -657,43 +657,43 @@ negative or >1 weights.
 
 \textbf{Algorithm 1:} ClusterFormer forward pass
 \begin{lstlisting}
-Input:  X ∈ R^{B×L×d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
 Output: Y, attn_weights
 
- 1: Q ← LoRALinear_Q(X)                       ▷ Frozen base + LoRA
- 2: K ← LoRALinear_K(X)
- 3: V ← LoRALinear_V(X)
+ 1: Q $\leftarrow$ LoRALinear_Q(X)                       ▷ Frozen base + LoRA
+ 2: K $\leftarrow$ LoRALinear_K(X)
+ 3: V $\leftarrow$ LoRALinear_V(X)
  4:
- 5: (Q, K) ← apply_rope(Q, K, cos, sin)
- 6: if GQA: K, V ← repeat_kv(K, V)
+ 5: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
+ 6: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
  7:
  8: if decoder:                                 ▷ Exact causal path
- 9:     S ← QK^T / √d_h
-10:     S ← causal_mask(S)
-11:     A ← softmax(S)
-12:     Y_ctx ← A @ V
+ 9:     S $\leftarrow$ QK^T / $\sqrt{}$d_h
+10:     S $\leftarrow$ causal_mask(S)
+11:     A $\leftarrow$ softmax(S)
+12:     Y_ctx $\leftarrow$ A @ V
 13: else:                                        ▷ Cluster path
-14:     C, ids, counts ← kmeans(Q, K, iters=3)   ▷ Cluster queries
-15:     S_cent ← C K^T / √d_h
-16:     A_cent ← softmax(S_cent)
-17:     V_cent ← A_cent @ V                       ▷ Centroid contexts
-18:     S_assign ← Q C^T / (√d_h · τ)
-19:     A_assign ← softmax(S_assign)
-20:     Y_global ← A_assign @ V_cent
+14:     C, ids, counts $\leftarrow$ kmeans(Q, K, iters=3)   ▷ Cluster queries
+15:     S_cent $\leftarrow$ C K^T / $\sqrt{}$d_h
+16:     A_cent $\leftarrow$ softmax(S_cent)
+17:     V_cent $\leftarrow$ A_cent @ V                       ▷ Centroid contexts
+18:     S_assign $\leftarrow$ Q C^T / ($\sqrt{}$d_h · $\tau$)
+19:     A_assign $\leftarrow$ softmax(S_assign)
+20:     Y_global $\leftarrow$ A_assign @ V_cent
 21:
 22:     if W > 0:
-23:         S_local ← QK^T / √d_h
-24:         S_local ← window_mask(S_local, W)
-25:         A_local ← softmax(S_local)
-26:         Y_local ← A_local @ V
-27:         α ← σ(learned_scalar)
-28:         Y_ctx ← (1-α) Y_global + α Y_local
+23:         S_local $\leftarrow$ QK^T / $\sqrt{}$d_h
+24:         S_local $\leftarrow$ window_mask(S_local, W)
+25:         A_local $\leftarrow$ softmax(S_local)
+26:         Y_local $\leftarrow$ A_local @ V
+27:         $\alpha$ $\leftarrow$ $\sigma$(learned_scalar)
+28:         Y_ctx $\leftarrow$ (1-$\alpha$) Y_global + $\alpha$ Y_local
 29:     else:
-30:         Y_ctx ← Y_global
+30:         Y_ctx $\leftarrow$ Y_global
 31:
-32: Y ← Y_ctx.reshape(B, L, H·d_h)
-33: if nested: Y_out ← Y
-34: else: Y_out ← LoRALinear_O(Y)
+32: Y $\leftarrow$ Y_ctx.reshape(B, L, H·d_h)
+33: if nested: Y_out $\leftarrow$ Y
+34: else: Y_out $\leftarrow$ LoRALinear_O(Y)
 35:
 36: return Y_out
 \end{lstlisting}
@@ -709,12 +709,12 @@ Output: Y, attn_weights
 \textbf{Component} & \textbf{Complexity} \\
 \midrule
 Q/K/V projections & $\mathcal{O}(L d^2)$ \\
-K-means (3 iters) & $\mathcal{O}(K L d\_h)$ \\
-Centroid-to-key & $\mathcal{O}(K L d\_h)$ \\
-Soft assignment & $\mathcal{O}(K L d\_h)$ \\
-Local window & $\mathcal{O}(L W d\_h)$ \\
+K-means (3 iters) & $\mathcal{O}(K L d_h)$ \\
+Centroid-to-key & $\mathcal{O}(K L d_h)$ \\
+Soft assignment & $\mathcal{O}(K L d_h)$ \\
+Local window & $\mathcal{O}(L W d_h)$ \\
 Output projection & $\mathcal{O}(L d^2)$ \\
-**Total** & $\mathcal{O}(L d^2 + L K d\_h + L W d\_h)$ \\
+**Total** & $\mathcal{O}(L d^2 + L K d_h + L W d_h)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -729,8 +729,8 @@ For $K, W \ll L$, this is effectively \textbf{linear in $L$}.
 \toprule
 \textbf{Config} & \textbf{Attention cost} \\
 \midrule
-Baseline & $\mathcal{O}(L^2 d\_h)$ \\
-ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d\_h)$ \\
+Baseline & $\mathcal{O}(L^2 d_h)$ \\
+ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d_h)$ \\
 **Reduction at $L=128$** & **$\approx 2.7\times$** \\
 **Reduction at $L=512$** & **$\approx 10.7\times$** \\
 \bottomrule
@@ -745,11 +745,11 @@ ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d\_h)$ \\
 \toprule
 \textbf{Component} & \textbf{Parameters} \\
 \midrule
-LoRA ($r\_L=16$) & $4 \times r\_L \times d$ per layer \\
+LoRA ($r_L=16$) & $4 \times r_L \times d$ per layer \\
 Learnable temperature & 1 \\
 Learnable blend & 1 \\
-**Per layer** & $4 r\_L d + 2$ \\
-**Total ($N\_l$ layers)** & $4 r\_L d N\_l + 2 N\_l$ \\
+**Per layer** & $4 r_L d + 2$ \\
+**Total ($N_l$ layers)** & $4 r_L d N_l + 2 N_l$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -921,8 +921,8 @@ use standard exact attention for decoder paths.
 
 \subsection{5.5 RoPE}
 
-Partial RoPE (Qwen3.5 with rotary_dim < head_dim) is supported via slicing 
-the first \texttt{rotary_dim} coordinates.
+Partial RoPE (Qwen3.5 with rotary\_dim < head\_dim) is supported via slicing 
+the first \texttt{rotary\\_dim} coordinates.
 
 \subsection{5.6 GQA}
 
@@ -1040,7 +1040,7 @@ Precision & FP16 \\
 
 \subsection{6.6 Quality Gate}
 
-PASS ≥ 56\%, PASS_LOW 50.92\%–56\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
 
 \subsection{6.7 Hardware}
 
@@ -1068,13 +1068,13 @@ python run_all_4_cluster.py \
 \centering
 \begin{tabular}{lllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{Δ} & \textbf{F1} & \textbf{VRAM} & \textbf{Time} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & — & 0.9099 & 183 MB & 1.90 s \\
+DistilBERT & full & 90.71\% & --- & 0.9099 & 183 MB & 1.90 s \\
 DistilBERT & **ClusterFormer** & **89.91** & -0.80 & 0.900 & 195 & 2.10 \\
-RoBERTa & full & 78.56\% & — & 0.8124 & 712 MB & 4.10 s \\
+RoBERTa & full & 78.56\% & --- & 0.8124 & 712 MB & 4.10 s \\
 RoBERTa & **ClusterFormer** & **77.50** & -1.06 & 0.780 & 720 & 4.50 \\
-GPT-2 & full & 79.36\% & — & 0.7978 & 793 MB & 4.20 s \\
+GPT-2 & full & 79.36\% & --- & 0.7978 & 793 MB & 4.20 s \\
 GPT-2 & **ClusterFormer** & **78.98** & -0.38 & 0.789 & 800 & 4.80 \\
 \bottomrule
 \end{tabular}
@@ -1086,11 +1086,11 @@ GPT-2 & **ClusterFormer** & **78.98** & -0.38 & 0.789 & 800 & 4.80 \\
 \centering
 \begin{tabular}{lllll}
 \toprule
-\textbf{Model} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{Δ} & \textbf{Ratio} \\
+\textbf{Model} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{$\Delta$} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66.9M & 67.55M & +589826M & 0.99× \\
-RoBERTa & 124.6M & 125.83M & +1179648M & 0.99× \\
-GPT-2 & 124.4M & 125.63M & +1188876M & 0.99× \\
+DistilBERT & 66.9M & 67.55M & +589826M & 0.99$\times$ \\
+RoBERTa & 124.6M & 125.83M & +1179648M & 0.99$\times$ \\
+GPT-2 & 124.4M & 125.63M & +1188876M & 0.99$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1108,9 +1108,9 @@ GPT-2 & 124.4M & 125.63M & +1188876M & 0.99× \\
 \toprule
 \textbf{Config} & \textbf{FLOPs formula} & \textbf{$L=128$} & \textbf{$L=512$} \\
 \midrule
-Baseline & $2L^2 d\_h$ & 2.1M & 33.6M \\
-ClusterFormer & $2KLd\_h + 2LWd\_h$ & **0.79M** & **7.1M** \\
-**Speedup** & — & **2.7×** & **4.7×** \\
+Baseline & $2L^2 d_h$ & 2.1M & 33.6M \\
+ClusterFormer & $2KLd_h + 2LWd_h$ & **0.79M** & **7.1M** \\
+**Speedup** & --- & **2.7$\times$** & **4.7$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1123,11 +1123,11 @@ ClusterFormer & $2KLd\_h + 2LWd\_h$ & **0.79M** & **7.1M** \\
 \toprule
 \textbf{$K$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{FLOPs ratio} \\
 \midrule
-4 & 88.5 & 75.8 & 77.2 & 6× \\
-8 & 89.5 & 77.0 & 78.5 & 4× \\
-**16** & **89.91** & **77.50** & **78.98** & **2.7×** \\
-32 & 90.05 & 77.6 & 79.0 & 1.9× \\
-64 & 90.15 & 77.7 & 79.05 & 1.4× \\
+4 & 88.5 & 75.8 & 77.2 & 6$\times$ \\
+8 & 89.5 & 77.0 & 78.5 & 4$\times$ \\
+**16** & **89.91** & **77.50** & **78.98** & **2.7$\times$** \\
+32 & 90.05 & 77.6 & 79.0 & 1.9$\times$ \\
+64 & 90.15 & 77.7 & 79.05 & 1.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1156,10 +1156,10 @@ ClusterFormer & $2KLd\_h + 2LWd\_h$ & **0.79M** & **7.1M** \\
 \toprule
 \textbf{Iters} & \textbf{D acc} & \textbf{Time overhead} \\
 \midrule
-1 & 89.0 & 1× \\
-**3** & **89.91** & **3×** \\
-5 & 89.95 & 5× \\
-10 & 89.98 & 10× \\
+1 & 89.0 & 1$\times$ \\
+**3** & **89.91** & **3$\times$** \\
+5 & 89.95 & 5$\times$ \\
+10 & 89.98 & 10$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1201,11 +1201,11 @@ ClusterFormer & $2KLd\_h + 2LWd\_h$ & **0.79M** & **7.1M** \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Method} & \textbf{D acc} & \textbf{Params Δ} & \textbf{Sparse?} \\
+\textbf{Method} & \textbf{D acc} & \textbf{Params $\Delta$} & \textbf{Sparse?} \\
 \midrule
 full (baseline) & 90.71\% & 0 & No \\
 `nha` & 90.25\% & +0.89\% & No \\
-`adasplash` & 90.25\% & +0.89\% & Yes (α-entmax) \\
+`adasplash` & 90.25\% & +0.89\% & Yes ($\alpha$-entmax) \\
 **ClusterFormer** & **89.91** & **+0.88\%** & **Cluster** \\
 \bottomrule
 \end{tabular}
@@ -1263,11 +1263,11 @@ baseline and ClusterFormer on GPT-2.
 \toprule
 \textbf{$L$} & \textbf{Baseline (ms)} & \textbf{ClusterFormer (ms)} & \textbf{Speedup} \\
 \midrule
-64 & 2.1 & 2.4 & 0.88× \\
-128 & 4.2 & 3.8 & 1.10× \\
-256 & 12.5 & 6.9 & 1.81× \\
-512 & 44.2 & 15.3 & **2.89×** \\
-1024 & 172.8 & 32.1 & **5.38×** \\
+64 & 2.1 & 2.4 & 0.88$\times$ \\
+128 & 4.2 & 3.8 & 1.10$\times$ \\
+256 & 12.5 & 6.9 & 1.81$\times$ \\
+512 & 44.2 & 15.3 & **2.89$\times$** \\
+1024 & 172.8 & 32.1 & **5.38$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1341,7 +1341,7 @@ Handled by masking logits to $-\infty$ before softmax.
 
 \subsubsection{8.6.2 NaN in cdist}
 
-\texttt{torch.nan_to_num} guards against numerical issues.
+\texttt{torch.nan\\_to\\_num} guards against numerical issues.
 
 \subsubsection{8.6.3 Temperature Clamping}
 
@@ -1353,11 +1353,11 @@ No systematic failures observed.
 
 \subsection{8.8 Summary of Insights}
 
-1. \textbf{Semantic clustering works} — tokens group meaningfully.
-2. \textbf{Global + local is essential} — either alone underperforms.
-3. \textbf{Crossover at $L \approx 100$} — beneficial for long sequences.
-4. \textbf{Learned $\tau$ and $\alpha$ help} — small gains from learnable scalars.
-5. \textbf{Not a compression method} — parameter count increases.
+1. \textbf{Semantic clustering works} --- tokens group meaningfully.
+2. \textbf{Global + local is essential} --- either alone underperforms.
+3. \textbf{Crossover at $L \approx 100$} --- beneficial for long sequences.
+4. \textbf{Learned $\tau$ and $\alpha$ help} --- small gains from learnable scalars.
+5. \textbf{Not a compression method} --- parameter count increases.
 
 \clearpage
 
@@ -1401,16 +1401,16 @@ Parameter count increases by LoRA overhead. ClusterFormer targets
 \subsubsection{Not Recommended}
 
 \begin{itemize}
-\item \textbf{Short sequences} ($L < 100$) — overhead exceeds savings
+\item \textbf{Short sequences} ($L < 100$) --- overhead exceeds savings
 \end{itemize}
 \begin{itemize}
-\item \textbf{Model size reduction} — use compression methods
+\item \textbf{Model size reduction} --- use compression methods
 \end{itemize}
 \begin{itemize}
-\item \textbf{Strict causal generation} — decoder uses exact attention anyway
+\item \textbf{Strict causal generation} --- decoder uses exact attention anyway
 \end{itemize}
 \begin{itemize}
-\item \textbf{Interpretability-first} — attention maps are cluster-level
+\item \textbf{Interpretability-first} --- attention maps are cluster-level
 \end{itemize}
 
 \subsection{9.3 Decision Flowchart}
@@ -1438,10 +1438,10 @@ For DistilBERT at $L=256$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 6.7M & 2.4M & **2.8× reduction** \\
+Attention FLOPs & 6.7M & 2.4M & **2.8$\times$ reduction** \\
 Accuracy & 90.71\% & 89.91\% & -0.80\% \\
 Params & 66.9M & 67.55M & +589826M \\
-Wall time & 4.2 ms & 3.8 ms & 1.10× \\
+Wall time & 4.2 ms & 3.8 ms & 1.10$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1480,10 +1480,10 @@ not directly accessible.
 
 \subsection{9.7 Open Questions}
 
-1. \textbf{Optimal $K$ per layer} — could be learned dynamically?
-2. \textbf{Interaction with quantization} — INT8 + ClusterFormer?
-3. \textbf{Causal decoding} — can clustering work for generation?
-4. \textbf{Very long context} ($L > 4096$) — does the crossover hold?
+1. \textbf{Optimal $K$ per layer} --- could be learned dynamically?
+2. \textbf{Interaction with quantization} --- INT8 + ClusterFormer?
+3. \textbf{Causal decoding} --- can clustering work for generation?
+4. \textbf{Very long context} ($L > 4096$) --- does the crossover hold?
 
 \subsection{9.8 Broader Impact}
 
@@ -1510,7 +1510,7 @@ not directly accessible.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~15 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~15 GPU-hours, ~{{CO2}} kg CO$_2$eq.
 
 \clearpage
 
@@ -1550,7 +1550,7 @@ Only SST-2. Generation, QA, NLI, and long-context tasks are untested.
 
 \subsection{10.7 Model Coverage}
 
-Three models (66.9M–124.6M). Larger models untested.
+Three models (66.9M--124.6M). Larger models untested.
 
 \subsection{10.8 Hardware}
 
@@ -1605,11 +1605,11 @@ temperature and blend scalars.
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{FLOPs reduction ($L=256$)} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{FLOPs reduction ($L=256$)} \\
 \midrule
-DistilBERT & -0.80\% & ~2.7× \\
-RoBERTa & -1.06\% & ~2.7× \\
-GPT-2 & -0.38\% & ~2.7× \\
+DistilBERT & -0.80\% & ~2.7$\times$ \\
+RoBERTa & -1.06\% & ~2.7$\times$ \\
+GPT-2 & -0.38\% & ~2.7$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1618,8 +1618,8 @@ GPT-2 & -0.38\% & ~2.7× \\
 
 1. \textbf{Linear attention without random features} is possible via clustering.
 2. \textbf{Global + local blending} is essential.
-3. \textbf{Learnable hyperparameters} (τ, α) improve results marginally.
-4. \textbf{Not a compression method} — parameter count increases.
+3. \textbf{Learnable hyperparameters} ($\tau$, $\alpha$) improve results marginally.
+4. \textbf{Not a compression method} --- parameter count increases.
 
 \subsection{11.4 Future Work}
 
@@ -1657,10 +1657,10 @@ We release code and checkpoints under MIT.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments.
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
 \end{itemize}
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided feedback and edited the manuscript.
+\item \textbf{{{AUTHOR\_2}}} provided feedback and edited the manuscript.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}
@@ -1739,11 +1739,11 @@ torch.cuda.manual_seed_all(seed)
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Model} & \textbf{Acc} & \textbf{Params Δ} \\
+\textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} \\
 \midrule
-DistilBERT & 89.91\% ± 1\% & +589826M \\
-RoBERTa & 77.50\% ± 1\% & +1179648M \\
-GPT-2 & 78.98\% ± 1\% & +1188876M \\
+DistilBERT & 89.91\% $\pm$ 1\% & +589826M \\
+RoBERTa & 77.50\% $\pm$ 1\% & +1179648M \\
+GPT-2 & 78.98\% $\pm$ 1\% & +1188876M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1757,7 +1757,7 @@ GPT-2 & 78.98\% ± 1\% & +1188876M \\
 \item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-cluster}
 \end{itemize}
 \begin{itemize}
-\item Metrics: \texttt{results/unified_cluster/*/summary.csv}
+\item Metrics: \texttt{results/unified\\_cluster/*/summary.csv}
 \end{itemize}
 
 \subsection{12.8 Known Issues}
@@ -1766,7 +1766,7 @@ GPT-2 & 78.98\% ± 1\% & +1188876M \\
 \item Windows: \texttt{PYTHONIOENCODING=utf-8}
 \end{itemize}
 \begin{itemize}
-\item CUDA ≥ 11.8 for FP16
+\item CUDA $\ge$ 11.8 for FP16
 \end{itemize}
 \begin{itemize}
 \item K-means cdist may be slow for very long sequences
@@ -2114,7 +2114,7 @@ Without padding mask, K-means will pull centroids toward padding.
 
 \subsubsection{B.5.2 Forgetting to Clamp Counts}
 
-Empty clusters cause division by zero. Clamp counts to ≥1.
+Empty clusters cause division by zero. Clamp counts to $\ge$1.
 
 \subsubsection{B.5.3 Forgetting Temperature Clamp}
 
@@ -2130,13 +2130,13 @@ GPT-2 Conv1D stores weights as \texttt{(in, out)}. Must transpose.
 
 \subsubsection{B.5.6 Nested Encoder Bypass}
 
-For RoBERTa, do not apply \texttt{out_proj} — the outer layer does.
+For RoBERTa, do not apply \texttt{out\\_proj} --- the outer layer does.
 
 \clearpage
 
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT — Complete Metrics}
+\subsection{C.1 DistilBERT --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -2153,13 +2153,13 @@ Peak VRAM & 195 MB \\
 Inference time & 2.10 s \\
 K & 16 \\
 Window & 32 \\
-Learned τ & 0.087 \\
-Learned α & 0.48 \\
+Learned $\tau$ & 0.087 \\
+Learned $\alpha$ & 0.48 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.2 RoBERTa — Complete Metrics}
+\subsection{C.2 RoBERTa --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -2175,7 +2175,7 @@ Accuracy & 77.50\% \\
 \end{tabular}
 \end{table}
 
-\subsection{C.3 GPT-2 — Complete Metrics}
+\subsection{C.3 GPT-2 --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -2191,7 +2191,7 @@ Accuracy & 78.98\% \\
 \end{tabular}
 \end{table}
 
-\subsection{C.4 K Ablation — Full Data}
+\subsection{C.4 K Ablation --- Full Data}
 
 \begin{table}[H]
 \centering
@@ -2199,11 +2199,11 @@ Accuracy & 78.98\% \\
 \toprule
 \textbf{K} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{FLOPs ratio} \\
 \midrule
-4 & 88.5 & 75.8 & 77.2 & 6.4× \\
-8 & 89.5 & 77.0 & 78.5 & 3.2× \\
-16 & 89.91 & 77.50 & 78.98 & 1.6× \\
-32 & 90.05 & 77.6 & 79.0 & 0.8× \\
-64 & 90.15 & 77.7 & 79.05 & 0.4× \\
+4 & 88.5 & 75.8 & 77.2 & 6.4$\times$ \\
+8 & 89.5 & 77.0 & 78.5 & 3.2$\times$ \\
+16 & 89.91 & 77.50 & 78.98 & 1.6$\times$ \\
+32 & 90.05 & 77.6 & 79.0 & 0.8$\times$ \\
+64 & 90.15 & 77.7 & 79.05 & 0.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2232,10 +2232,10 @@ Accuracy & 78.98\% \\
 \toprule
 \textbf{Iters} & \textbf{D acc} & \textbf{Time} \\
 \midrule
-1 & 89.0 & 1× \\
-3 & 89.91 & 3× \\
-5 & 89.95 & 5× \\
-10 & 89.98 & 10× \\
+1 & 89.0 & 1$\times$ \\
+3 & 89.91 & 3$\times$ \\
+5 & 89.95 & 5$\times$ \\
+10 & 89.98 & 10$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2284,7 +2284,7 @@ Accuracy & 78.98\% \\
 
 \subsubsection{D.1.6 10+ K-Means Iterations}
 
-\textbf{Result.} No improvement, 3× slower. 3 iterations suffice.
+\textbf{Result.} No improvement, 3$\times$ slower. 3 iterations suffice.
 
 \subsection{D.2 Failed Hyperparameters}
 
@@ -2361,7 +2361,7 @@ Std & 0.05 & 0.05 & 0.05 \\
 \item Total compute: ~15 GPU-hours
 \end{itemize}
 \begin{itemize}
-\item CO₂: ~{{CO2}} kg CO₂eq
+\item CO$_2$: ~{{CO2}} kg CO$_2$eq
 \end{itemize}
 
 \subsection{E.3 Data Ethics}

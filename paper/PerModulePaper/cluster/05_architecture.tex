@@ -8,10 +8,10 @@
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
 \midrule
-DistilBERT & Flat & No & No & No & ✅ \\
-RoBERTa & Nested & Yes & No & No & ✅ \\
-GPT-2 & Causal & No & No & No & ✅ \\
-Qwen3.5 & GQA+RoPE & No & Yes & Yes & partial \\
+DistilBERT & Flat & No & No & No &  \\
+RoBERTa & Nested & Yes & No & No &  \\
+GPT-2 & Causal & No & No & No &  \\
+Qwen3.5 & GQA+RoPE & No & Yes & Yes & {{QWEN\_VERIFIED}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -84,8 +84,8 @@ use standard exact attention for decoder paths.
 
 \subsection{5.5 RoPE}
 
-Partial RoPE (Qwen3.5 with rotary_dim < head_dim) is supported via slicing 
-the first \texttt{rotary_dim} coordinates.
+Partial RoPE (Qwen3.5 with rotary\_dim < head\_dim) is supported via slicing 
+the first \texttt{rotary\\_dim} coordinates.
 
 \subsection{5.6 GQA}
 

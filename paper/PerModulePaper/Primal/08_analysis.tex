@@ -1,0 +1,166 @@
+
+\section{8. Analysis}
+
+\subsection{8.1 Where Does Primal Attention Win?}
+
+Primal Attention provides three benefits:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Benefit} & \textbf{Mechanism} \\
+\midrule
+**Attention memory reduction** & $L \times L \to L \times m$ attention matrix \\
+**Inference speedup at long $L$** & $\mathcal{O}(L m)$ instead of $\mathcal{O}(L^2)$ \\
+**VRAM reduction** & Fewer intermediate activations \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At $L = 128$, the overhead of computing $F_1, F_2, F_3$ dominates; at 
+$L = 2048$, the $\mathcal{O}(L^2)$ term dominates baseline and Primal 
+wins.
+
+\subsection{8.2 Where Does It Lose?}
+
+\subsubsection{8.2.1 Landmark Selection Bias}
+
+Segment pooling is \textbf{content-agnostic}: it treats all positions equally. 
+If important content is concentrated in a few positions, pooling dilutes it.
+
+\textbf{Figure 8.1} shows attention weight distributions. For layers where 
+attention concentrates on a few tokens, Primal Attention's approximation 
+is worse.
+
+\subsubsection{8.2.2 Asymmetry Overhead}
+
+The asymmetric formulation computes three factors ($F_1, F_2, F_3$) instead 
+of one. This is $3 \times$ the matmul count, offsetting the memory savings 
+at short $L$.
+
+\subsubsection{8.2.3 Softmax Over Approximate Scores}
+
+Primal Attention applies softmax to $\tilde{A}$, which is not a proper 
+attention matrix. The softmax of an approximate matrix may amplify errors 
+compared to softmax of the exact matrix.
+
+\subsection{8.3 Ablation: Landmark Count}
+
+\textbf{Figure 8.2} shows accuracy vs $m$. The curve has three regimes:
+
+\begin{itemize}
+\item \textbf{$m < 32$:} sharp degradation
+\end{itemize}
+\begin{itemize}
+\item \textbf{$32 \le m \le 128$:} plateau
+\end{itemize}
+\begin{itemize}
+\item \textbf{$m > 128$:} diminishing returns
+\end{itemize}
+
+\subsection{8.4 Ablation: Pseudoinverse Method}
+
+We compare three methods for computing $F_2^{-1}$:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{Accuracy} & \textbf{Time} \\
+\midrule
+SVD pinv (exact) & {{SVD\_ACC}} & 1.0$\times$ \\
+Schulz from zero & {{SCHULZ0\_ACC}} & 0.8$\times$ \\
+Schulz from SVD pinv & **{{D\_ACC}}** & 1.2$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Initializing from SVD pinv is essential for stability.
+
+\subsection{8.5 Causality Analysis}
+
+For decoder models, we apply causal masking to $\tilde{A}$. However, 
+$F_2$ is computed from all landmarks, which see the full sequence. This 
+means the approximation is not strictly causal.
+
+\textbf{Effect on accuracy.} On GPT-2, causal Primal Attention drops 
+\textbf{{{CAUSAL\_DROP}}\%} compared to bidirectional Primal Attention on the 
+same weights.
+
+\textbf{Impact.} For classification tasks (SST-2), this is tolerable. For 
+generation tasks, it may be more problematic.
+
+\subsection{8.6 Numerical Stability}
+
+\subsubsection{8.6.1 Pseudoinverse Conditioning}
+
+The condition number of $F_2$ can be large when landmarks are 
+insufficient. We regularize via:
+
+\[
+F_2^{-1} = \text{pinv}(F_2, \text{rcond}=10^{-4})
+\tag{8.1}
+\]
+
+The \texttt{rcond} threshold zeros out singular values below $10^{-4} \sigma_\text{max}$.
+
+\subsubsection{8.6.2 FP16 vs FP32}
+
+All attention factors are computed in FP32 for stability. The final softmax 
+is cast back to the model's dtype.
+
+\subsubsection{8.6.3 Schulz Stability}
+
+The Schulz iteration diverges if $\|I - F_2 X_0\| > 1$. Starting from 
+$X_0 = F_2^+$ gives $\|I - F_2 X_0\| \approx 0$, ensuring convergence.
+
+\subsection{8.7 Per-Layer Analysis}
+
+\textbf{Table 8.1: Reconstruction error per layer (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Layer} & \textbf{$F_2$ condition} & \textbf{Approx error} \\
+\midrule
+0 & {{D\_L0\_COND}} & {{D\_L0\_ERR}} \\
+1 & {{D\_L1\_COND}} & {{D\_L1\_ERR}} \\
+2 & {{D\_L2\_COND}} & {{D\_L2\_ERR}} \\
+3 & {{D\_L3\_COND}} & {{D\_L3\_ERR}} \\
+4 & {{D\_L4\_COND}} & {{D\_L4\_ERR}} \\
+5 & {{D\_L5\_COND}} & {{D\_L5\_ERR}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Later layers have larger condition numbers and worse 
+approximation.
+
+\subsection{8.8 Comparison to Nystr mformer}
+
+Nystr mformer uses symmetric landmarks (same for $Q, K$). Primal Attention 
+allows asymmetric. Comparison:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{Accuracy} & \textbf{Note} \\
+\midrule
+Nystr mformer (sym) & {{NYST\_ACC}} & Baseline \\
+**Primal (asym)** & **{{D\_ACC}}** & +{{ASYM\_GAIN}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Asymmetry gives a small but consistent gain.
+
+\subsection{8.9 Summary of Insights}
+
+1. \textbf{Asymmetry helps:} +{{ASYM\_GAIN}}\% over symmetric Nystr m.
+2. \textbf{$m = 64$ is optimal} for $L = 128$.
+3. \textbf{Schulz from SVD pinv} is best.
+4. \textbf{Causality is approximate.}
+5. \textbf{Long $L$ benefits most.}

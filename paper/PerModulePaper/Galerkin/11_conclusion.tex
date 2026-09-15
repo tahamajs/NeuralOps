@@ -12,11 +12,11 @@ complexity for encoder models. Decoders fall back to standard softmax.
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{Params Δ} & \textbf{Path} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Path} \\
 \midrule
-DistilBERT & -0.80\% & +589824M & Galerkin \\
-RoBERTa & -1.21\% & +1179648M & Galerkin \\
-GPT-2 & 0.00\% & +1188876M & Fallback \\
+DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_DELTA}}M & Galerkin \\
+RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_DELTA}}M & Galerkin \\
+GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_DELTA}}M & Fallback \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -55,7 +55,7 @@ GPT-2 & 0.00\% & +1188876M & Fallback \\
 \subsection{11.5 Closing Remarks}
 
 Galerkin Attention is a mathematically principled encoder efficiency method. 
-We release code under MIT.
+We release code under {{LICENSE}}.
 
 \subsection{11.6 Acknowledgments}
 
@@ -64,10 +64,10 @@ We release code under MIT.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments.
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
 \end{itemize}
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided feedback.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}

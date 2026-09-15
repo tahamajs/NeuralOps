@@ -2,24 +2,24 @@
 
 \textbf{Authors:}
 \begin{itemize}
-\item Your Name¹ — you@university.edu
+\item {{AUTHOR\_1\_NAME}}  -- {{AUTHOR\_1\_EMAIL}}
 \end{itemize}
 \begin{itemize}
-\item {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+\item {{AUTHOR\_2\_NAME}}  -- {{AUTHOR\_2\_EMAIL}}
 \end{itemize}
 
 \textbf{Affiliations:}
 \begin{itemize}
-\item ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
+\item   {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+\item   {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
 \end{itemize}
 
-\textbf{Preprint date:} 2026-09-15
-\textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD_Project/tree/main/framework/attentions/bam_umoe.py
-\textbf{License:} MIT
+\textbf{Preprint date:} {{DATE}}
+\textbf{Version:} v{{VERSION}}
+\textbf{Code:} https://github.com/{{ORG}}/SVD\_Project/tree/main/framework/attentions/bam\_umoe.py
+\textbf{License:} {{LICENSE}}
 
 
 
@@ -69,40 +69,40 @@ initialization perturbs the model and destroys its pretrained knowledge.
 BAM-UMoE solves this by carefully initializing the MoE branch so that at 
 training step 0, the model behaves exactly like the pretrained model. Then, 
 during fine-tuning, the MoE branch gradually "wakes up" and learns to add 
-value. The trade-off is a substantial increase in model size — this is a 
+value. The trade-off is a substantial increase in model size -- this is a 
 capacity expansion method, not a compression method.
 
 
 
 \subsection{Table of Contents}
 
-1. [Introduction](01_intro.md)
-2. [Related Work](02_related.md)
-3. [Background](03_background.md)
-4. [Method](04_method.md)
-5. [Architecture Integration](05_architecture.md)
-6. [Experimental Setup](06_setup.md)
-7. [Results](07_results.md)
-8. [Analysis](08_analysis.md)
-9. [Discussion](09_discussion.md)
-10. [Limitations](10_limitations.md)
-11. [Conclusion](11_conclusion.md)
-12. [Reproducibility](12_reproducibility.md)
-13. [References](13_references.md)
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
 
 \textbf{Appendices:}
 \begin{itemize}
-\item [A. Mathematical Derivations](A_math.md)
+\item [A. Mathematical Derivations](A\_math.md)
 \end{itemize}
 \begin{itemize}
-\item [B. Implementation Details](B_implementation.md)
+\item [B. Implementation Details](B\_implementation.md)
 \end{itemize}
 \begin{itemize}
-\item [C. Full Experimental Data](C_data.md)
+\item [C. Full Experimental Data](C\_data.md)
 \end{itemize}
 \begin{itemize}
-\item [D. Negative Results](D_negative_results.md)
+\item [D. Negative Results](D\_negative\_results.md)
 \end{itemize}
 \begin{itemize}
-\item [E. Ethical Considerations](E_ethics.md)
+\item [E. Ethical Considerations](E\_ethics.md)
 \end{itemize}

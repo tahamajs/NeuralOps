@@ -9,11 +9,11 @@ producing the sparsest possible distribution consistent with the scores. It
 has sparse outputs but is non-smooth at the support boundary, which can slow 
 training.
 
-\textbf{α-entmax.} Peters et al. (2019) generalize sparsemax to a one-parameter 
+\textbf{$\alpha$-entmax.} Peters et al. (2019) generalize sparsemax to a one-parameter 
 family. $\alpha = 1.5$ is the most commonly used value, balancing sparsity 
 and smoothness. They provide forward and backward algorithms via bisection.
 
-\textbf{Adaptive entmax.} Correia et al. (2019) extend α-entmax to allow 
+\textbf{Adaptive entmax.} Correia et al. (2019) extend $\alpha$-entmax to allow 
 $\alpha$ to be \textbf{learned per head}. We use fixed $\alpha = 1.5$ as default 
 for simplicity, but the mechanism supports learned $\alpha$.
 
@@ -24,7 +24,7 @@ fused CUDA kernels for entmax. Our implementation is a reference bisection.
 
 \textbf{Longformer.} Beltagy et al. (2020) introduce a sliding-window attention 
 of width $W$, giving $\mathcal{O}(L \cdot W)$ complexity. AdaSplash uses the 
-same window but with α-entmax activations.
+same window but with $\alpha$-entmax activations.
 
 \textbf{BigBird.} Zaheer et al. (2020) combine local, random, and global attention. 
 Their window is fixed-size; AdaSplash uses a dynamic splash radius.
@@ -78,13 +78,13 @@ StreamingLLM & Sink + window & $\mathcal{O}(L W)$ & No & Yes \\
 \subsection{2.6 Position of Our Work}
 
 AdaSplash is unique in combining:
-1. \textbf{α-entmax sparsity} at the activation level (not mask level).
+1. \textbf{$\alpha$-entmax sparsity} at the activation level (not mask level).
 2. \textbf{Local splash radius} with sink preservation.
 3. \textbf{Multi-architecture support} including GQA and RoPE.
 4. \textbf{Frozen base + LoRA} for parameter-efficient adaptation.
 
 The closest prior work is the \textbf{combination} of Longformer (local window) 
-with α-entmax (sparsity). To our knowledge, no published work evaluates this 
+with $\alpha$-entmax (sparsity). To our knowledge, no published work evaluates this 
 specific combination on small pretrained models with LoRA recovery.
 
 \subsection{2.7 Important Distinction}
@@ -97,7 +97,7 @@ Unlike low-rank compression methods (A3, AASVD, Adaptive SVD), AdaSplash:
 \item Does \textbf{not} compress weights.
 \end{itemize}
 \begin{itemize}
-\item \textbf{Increases} parameter count by ~0.88\% via LoRA.
+\item \textbf{Increases} parameter count by ~{{PARAM\_CHANGE}}\% via LoRA.
 \end{itemize}
 
 Its value is in \textbf{sparsity} and \textbf{interpretability}, not size.

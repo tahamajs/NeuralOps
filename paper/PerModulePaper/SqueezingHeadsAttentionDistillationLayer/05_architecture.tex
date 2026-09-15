@@ -1,0 +1,151 @@
+
+\section{5. Architecture Integration}
+
+\subsection{5.1 Model Support}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & Flat & No & No &  \\
+RoBERTa & Nested & No & No &  \\
+GPT-2 & Causal & No & No &  \\
+Qwen3.5 & Causal + RoPE & Yes & Yes & {{Q\_VERIFIED}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{5.2 Weight Transfer}
+
+\subsubsection{5.2.1 DistilBERT (Flat)}
+
+\begin{lstlisting}
+q_lin, k_lin, v_lin, out_lin
+\end{lstlisting}
+
+Direct copy with head-dim slicing. \texttt{is\\_nested\\_encoder = False}.
+
+\subsubsection{5.2.2 RoBERTa (Nested)}
+
+\begin{lstlisting}
+attention.self.query, attention.self.key, attention.self.value
+attention.output.dense
+\end{lstlisting}
+
+Extract from inner \texttt{self}. \texttt{is\\_nested\\_encoder = True}; skip own \texttt{out\\_proj}.
+
+\subsubsection{5.2.3 GPT-2 (Causal)}
+
+\begin{lstlisting}
+c_attn (fused), c_proj
+\end{lstlisting}
+
+Split fused \texttt{c\\_attn}:
+
+\begin{lstlisting}
+w = src.c_attn.weight.t()  # Conv1D transpose
+q_w, k_w, v_w = w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{5.2.4 Qwen3.5 (GQA + RoPE)}
+
+GQA with pooling:
+
+\begin{lstlisting}
+if w_k.shape[0] > self.kv_head_size:
+    rep = w_k.shape[0] // self.kv_head_size
+    w_k_pooled = w_k.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1)
+\end{lstlisting}
+
+\subsection{5.3 Handling Nested Encoders}
+
+For RoBERTa/BERT, \texttt{is\\_nested\\_encoder = True}:
+\begin{itemize}
+\item No \texttt{out\\_proj} applied inside Squeezing Heads.
+\end{itemize}
+\begin{itemize}
+\item Outer \texttt{attention.output.dense} applies output.
+\end{itemize}
+
+\subsection{5.4 Causality}
+
+Standard causal masking in forward:
+
+\begin{lstlisting}
+causal_mask = torch.triu(torch.full((L, L), -inf), diagonal=1)
+scores = scores + causal_mask
+\end{lstlisting}
+
+\subsection{5.5 GQA Handling}
+
+For Qwen/LLaMA with $H_{kv} < H$, use \texttt{repeat\\_kv}:
+
+\begin{lstlisting}
+if self.num_kv_heads < self.num_heads:
+    k = repeat_kv(k, self.kv_repeat)
+    v = repeat_kv(v, self.kv_repeat)
+\end{lstlisting}
+
+\subsection{5.6 Head-Dim Reduction}
+
+If the target head\_dim $d_h' < d_h$, slice the leading rows of $W_Q, W_K, W_V$ 
+and leading columns of $W_O$:
+
+\begin{lstlisting}
+m_q_out = min(self.q_head_size, w_q.shape[0])  # = d_h' * H
+self.q_proj.weight[:m_q_out, :m_q_in].copy_(w_q[:m_q_out, :m_q_in])
+\end{lstlisting}
+
+\subsection{5.7 Injection Algorithm}
+
+\textbf{Algorithm 3:} Inject Squeezing Heads
+\begin{lstlisting}
+Input:  model M, config c
+Output: M with LoRA-wrapped attention
+
+1:  for   in transformer_layers(M) do
+2:      src $\leftarrow$ extract_attention( )
+3:      if src is None: continue
+4:      new $\leftarrow$ SqueezingHeadsDistiller(config=c, old_attn=src)
+5:      replace_attention( , new)
+6: end for
+\end{lstlisting}
+
+\subsection{5.8 Failure Handling}
+
+\texttt{inject\\_squeezing\\_heads} returns \texttt{None} on failure:
+
+\begin{lstlisting}
+try:
+    new_attn = SqueezingHeadsDistiller(...)
+except Exception as e:
+    logger.error("Failed to instantiate at layer %d: %s", layer_idx, e)
+    return None
+\end{lstlisting}
+
+\subsection{5.9 Parameter Count}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{Squeezing Heads} \\
+\midrule
+Frozen $W_Q, W_K, W_V, W_O$ & $4 d^2$ & $4 d^2$ (same) \\
+LoRA adapters & 0 & $4 r_L d$ \\
+**Trainable** & $4 d^2$ & **$4 r_L d$** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{5.10 Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("squeezing_heads")
+@ATTENTION_REGISTRY.register("squeezing_heads_distiller")
+class SqueezingHeadsDistiller(BaseAttention): ...
+\end{lstlisting}
+
+\subsection{5.11 Failure Modes}

@@ -21,38 +21,38 @@ FA3 increases parameter count via LoRA. Its value is throughput, not size.
 
 \subsubsection{Recommended}
 \begin{itemize}
-\item \textbf{H100/H200 inference} — FA3 gives 2-4× throughput
+\item \textbf{H100/H200 inference} -- FA3 gives 2-4$\times$ throughput
 \end{itemize}
 \begin{itemize}
-\item \textbf{Long sequences} ($L \geq 2048$) — memory savings substantial
+\item \textbf{Long sequences} ($L \geq 2048$) -- memory savings substantial
 \end{itemize}
 \begin{itemize}
-\item \textbf{Production serving} — stable, exact attention
+\item \textbf{Production serving} -- stable, exact attention
 \end{itemize}
 
 \subsubsection{Not Recommended}
 \begin{itemize}
-\item \textbf{Non-Hopper GPUs} — SDPA is just as good
+\item \textbf{Non-Hopper GPUs} -- SDPA is just as good
 \end{itemize}
 \begin{itemize}
-\item \textbf{Model size reduction} — use compression methods
+\item \textbf{Model size reduction} -- use compression methods
 \end{itemize}
 \begin{itemize}
-\item \textbf{Research on attention algorithms} — this is a kernel, not an algorithm
+\item \textbf{Research on attention algorithms} -- this is a kernel, not an algorithm
 \end{itemize}
 
 \subsection{9.3 Deployment Decision}
 
 \begin{lstlisting}
-Have H100/H200? ─── Yes ─── Use FA3 directly
-  │ No
-  ▼
-Have A100? ─── Yes ─── Use SDPA (FA2 path)
-  │ No
-  ▼
-Have consumer GPU? ─── Yes ─── Use SDPA (memory-efficient)
-  │ No
-  ▼
+Have H100/H200? --- Yes --- Use FA3 directly
+  | No
+   
+Have A100? --- Yes --- Use SDPA (FA2 path)
+  | No
+   
+Have consumer GPU? --- Yes --- Use SDPA (memory-efficient)
+  | No
+   
 Use CPU attention (slow)
 \end{lstlisting}
 
@@ -66,10 +66,10 @@ For DistilBERT on RTX 4070 (SDPA path):
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Wrapper} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & 90.25\% & -0.46\% \\
-Params & 66.9M & 67.55M & +589826M \\
-Time & 1.90 s & 1.95 s & 1.03× \\
-VRAM & 183 MB & 190 MB & 1.04× \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
+Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -91,31 +91,31 @@ TensorRT & NVIDIA & Yes & No \\
 
 \subsection{9.6 Open Questions}
 
-1. \textbf{H100 benchmarks} — we did not have access.
-2. \textbf{FP8 accuracy} — simulated only.
-3. \textbf{Very long context} ($L > 8192$) — untested.
-4. \textbf{Training vs inference} — we tested inference only.
+1. \textbf{H100 benchmarks} -- we did not have access.
+2. \textbf{FP8 accuracy} -- simulated only.
+3. \textbf{Very long context} ($L > 8192$) -- untested.
+4. \textbf{Training vs inference} -- we tested inference only.
 
 \subsection{9.7 Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
-\item Faster inference → cheaper deployment
+\item Faster inference $\to$ cheaper deployment
 \end{itemize}
 \begin{itemize}
-\item Memory savings → enables longer context
+\item Memory savings $\to$ enables longer context
 \end{itemize}
 \begin{itemize}
-\item Exact → no accuracy trade-off
+\item Exact $\to$ no accuracy trade-off
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
-\item Hopper-only optimization → hardware lock-in
+\item Hopper-only optimization $\to$ hardware lock-in
 \end{itemize}
 \begin{itemize}
 \item Marginal on consumer GPUs
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.

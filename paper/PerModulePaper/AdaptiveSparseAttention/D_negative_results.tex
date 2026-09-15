@@ -1,0 +1,133 @@
+
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Hard Top-$k$}
+
+\textbf{Goal.} Replace soft mask with hard top-$k$.
+
+\textbf{Result.} Zero gradient; training diverged.
+
+\textbf{Conclusion.} Soft mask is necessary for end-to-end training.
+
+\subsubsection{D.1.2 Gumbel Softmax}
+
+\textbf{Goal.} Use Gumbel-softmax for stochastic sampling.
+
+\textbf{Result.} High variance; unstable.
+
+\textbf{Conclusion.} Deterministic sigmoid mask is better.
+
+\subsubsection{D.1.3 Learned Chunk Size}
+
+\textbf{Goal.} Learn chunk size via gradient.
+
+\textbf{Result.} No clear optimum; stuck at initial value.
+
+\textbf{Conclusion.} Chunk size remains a hyperparameter.
+
+\subsubsection{D.1.4 Per-Layer Sparsity Logits}
+
+\textbf{Goal.} Use different logits per (layer, head) pair.
+
+\textbf{Result.} No improvement over per-head logits.
+
+\textbf{Conclusion.} Per-head is sufficient.
+
+\subsubsection{D.1.5 Per-Query Sparsity}
+
+\textbf{Goal.} Different $k_h$ per query position.
+
+\textbf{Result.} Extra parameters; no improvement.
+
+\textbf{Conclusion.} Per-head uniform budget is best.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Learned Landmarks}
+
+Learned sampling of keys instead of top-$k$. Slower, no improvement.
+
+\subsubsection{D.2.2 Content-Aware Threshold}
+
+Learned threshold instead of top-$k$ position. No improvement.
+
+\subsubsection{D.2.3 Multi-Stage Sparsity}
+
+Sparsity at multiple attention layers. Marginal improvement.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Temperature Too Small}
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{$T$} & \textbf{DistilBERT} & \textbf{Note} \\
+\midrule
+0.001 & {{D\_T001}} & Near hard top-k \\
+0.01 & {{D\_T01}} & Very aggressive \\
+0.1 & {{D\_T1}} & Best \\
+1.0 & {{D\_T10}} & Too soft \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Chunk Size Too Small}
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{$C$} & \textbf{DistilBERT} & \textbf{Time} \\
+\midrule
+8 & {{D\_C8}} & {{D\_C8\_T}} \\
+16 & {{D\_C16}} & {{D\_C16\_T}} \\
+32 & {{D\_C32}} & {{D\_C32\_T}} \\
+64 & {{D\_C64}} & {{D\_C64\_T}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Very small chunks add overhead.
+
+\subsection{D.4 Fixes That Didn't Help}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
+\midrule
+Straight-through hard mask & Gradient & Unstable \\
+Learned temperature & Quality & No improvement \\
+Per-head K/V & Quality & No improvement \\
+Multi-chunk gradients & Quality & No improvement \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+**Mean** & **{{MEAN}}** \\
+**Std** & **{{STD}}** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 Lessons Learned}
+
+1. \textbf{Soft mask is essential} for differentiability.
+2. \textbf{$T = 0.1$} is the optimal temperature.
+3. \textbf{Per-head logits suffice;} per-layer not needed.
+4. \textbf{Chunk size remains a hyperparameter.}
+5. \textbf{Learned budgets are interpretable and bimodal.}

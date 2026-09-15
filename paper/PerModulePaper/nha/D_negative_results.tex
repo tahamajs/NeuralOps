@@ -1,0 +1,131 @@
+
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Per-Head Gate}
+
+\textbf{Goal.} Replace token-level gate with per-head gate.
+
+\textbf{Result.} No improvement, 3$\times$ more parameters.
+
+\textbf{Conclusion.} Token-level is sufficient.
+
+\subsubsection{D.1.2 i.i.d. Gaussian RFF}
+
+\textbf{Goal.} Use i.i.d. Gaussian instead of orthogonal.
+
+\textbf{Result.} Accuracy dropped by {{IID\_DROP}}\%.
+
+\textbf{Conclusion.} Orthogonal matters.
+
+\subsubsection{D.1.3 ReLU Feature}
+
+\textbf{Goal.} Use ReLU instead of ELU.
+
+\textbf{Result.} Not smooth; unstable gradients.
+
+\textbf{Conclusion.} ELU is better.
+
+\subsubsection{D.1.4 Gate Bias = 0}
+
+\textbf{Goal.} Start balanced.
+
+\textbf{Result.} Model drifted toward global; accuracy dropped.
+
+\textbf{Conclusion.} Start local-biased.
+
+\subsubsection{D.1.5 Full Cumsum (No Chunking)}
+
+\textbf{Goal.} Compute global RFF with full cumsum.
+
+\textbf{Result.} OOM for $L > 512$.
+
+\textbf{Conclusion.} Chunked is necessary.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Two-Level Fusion}
+
+Hierarchical gating. No improvement.
+
+\subsubsection{D.2.2 Learned Window Size}
+
+Learn $w$ per head. No improvement, unstable.
+
+\subsubsection{D.2.3 Learned RFF Count}
+
+Learn $m$ per head. No improvement.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Window Size Too Small}
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{$w$} & \textbf{DistilBERT} \\
+\midrule
+4 & {{D\_W4}} \\
+8 & {{D\_W8}} \\
+16 & {{D\_W16}} \\
+32 & {{D\_W32}} \\
+64 & {{D\_W64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{RFF Count Too Small}
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{$m$} & \textbf{DistilBERT} \\
+\midrule
+16 & {{D\_M16}} \\
+32 & {{D\_M32}} \\
+64 & {{D\_M64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Fixes That Didn't Help}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
+\midrule
+Gradient clip on gate & Stability & No improvement \\
+Learned chunk size & Speed & No improvement \\
+Per-layer window & Quality & No improvement \\
+Separate projection for Q, K & Quality & No improvement \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+**Mean** & **{{MEAN}}** \\
+**Std** & **{{STD}}** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 Lessons Learned}
+
+1. \textbf{Orthogonal RFF matters.}
+2. \textbf{Token-level gate suffices.}
+3. \textbf{Bias 3.0 at init is essential.}
+4. \textbf{Chunked scan is necessary.}
+5. \textbf{ELU > ReLU for stability.}

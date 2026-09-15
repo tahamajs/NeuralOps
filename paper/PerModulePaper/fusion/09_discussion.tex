@@ -34,27 +34,27 @@ Parameter count increases by LoRA + gate MLP. Not for size reduction.
 \subsubsection{Not Recommended}
 
 \begin{itemize}
-\item \textbf{Short sequences} ($L < 256$) — no benefit, more parameters
+\item \textbf{Short sequences} ($L < 256$) -- no benefit, more parameters
 \end{itemize}
 \begin{itemize}
-\item \textbf{Model size reduction} — use compression methods
+\item \textbf{Model size reduction} -- use compression methods
 \end{itemize}
 \begin{itemize}
-\item \textbf{Strict latency requirements} — gate adds overhead
+\item \textbf{Strict latency requirements} -- gate adds overhead
 \end{itemize}
 
 \subsection{9.3 Decision Flowchart}
 
 \begin{lstlisting}
-Need size reduction? ─── Yes ─── Use A3/AASVD
-  │ No
-  ▼
-Sequence length > 256? ─── No ─── Use baseline (or LoRA-only)
-  │ Yes
-  ▼
-Content-dependent sparsity needed? ─── No ─── Use Longformer
-  │ Yes
-  ▼
+Need size reduction? --- Yes --- Use A3/AASVD
+  | No
+   
+Sequence length > 256? --- No --- Use baseline (or LoRA-only)
+  | Yes
+   
+Content-dependent sparsity needed? --- No --- Use Longformer
+  | Yes
+   
 Use FUSIONATTN
 \end{lstlisting}
 
@@ -68,9 +68,9 @@ For DistilBERT at $L = 512$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{FUSIONATTN} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 262K & 65K & **4× reduction** \\
-Accuracy & 90.71\% & 90.48\% & -0.23\% \\
-Params & 66.9M & 67.74M & +786864M \\
+Attention FLOPs & 262K & 65K & **4$\times$ reduction** \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
 Gate overhead & 0 & ~32K params & +0.05\% \\
 \bottomrule
 \end{tabular}
@@ -112,13 +112,13 @@ MoBA & Block sparse & $O(KL)$ & No \\
 
 \subsubsection{Parameter Overhead}
 \begin{itemize}
-\item +1.17\% via LoRA + gate.
+\item +{{PARAM\_CHANGE}}\% via LoRA + gate.
 \end{itemize}
 
 \subsection{9.7 Open Questions}
 
 1. \textbf{Optimal threshold} for various tasks?
-2. \textbf{Gate training} — does it learn meaningful patterns?
+2. \textbf{Gate training} -- does it learn meaningful patterns?
 3. \textbf{Very long context} ($L > 8192$) behavior?
 4. \textbf{Combination with quantization}?
 
@@ -140,11 +140,11 @@ MoBA & Block sparse & $O(KL)$ & No \\
 \item Parameter overhead
 \end{itemize}
 \begin{itemize}
-\item Zero benefit at L ≤ 128
+\item Zero benefit at L $\le$ 128
 \end{itemize}
 \begin{itemize}
 \item Dual-use
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~12 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.

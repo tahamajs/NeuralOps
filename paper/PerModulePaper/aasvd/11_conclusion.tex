@@ -15,11 +15,11 @@ a bundled multi-domain calibration corpus.
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{Ratio} & \textbf{VRAM Δ} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -5.7\% & **4.0×** & -40\% \\
-RoBERTa & -6.6\% & **3.5×** & -40\% \\
-GPT-2 & -6.4\% & **3.5×** & -40\% \\
+DistilBERT & {{D\_DELTA}}\% & **{{D\_RATIO}}$\times$** & -{{VRAM\_REDUCTION}}\% \\
+RoBERTa & {{R\_DELTA}}\% & **{{R\_RATIO}}$\times$** & -{{VRAM\_REDUCTION}}\% \\
+GPT-2 & {{G\_DELTA}}\% & **{{G\_RATIO}}$\times$** & -{{VRAM\_REDUCTION}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -27,9 +27,9 @@ GPT-2 & -6.4\% & **3.5×** & -40\% \\
 \subsection{11.3 Key Takeaways}
 
 1. \textbf{Real compression works.}
-2. \textbf{Full covariance beats diagonal} by 1.5\%.
+2. \textbf{Full covariance beats diagonal} by {{COV\_GAIN}}\%.
 3. \textbf{Bundled corpus is sufficient} for out-of-the-box use.
-4. \textbf{EMA with β=0.9 is robust.}
+4. \textbf{EMA with $\beta$=0.9 is robust.}
 
 \subsection{11.4 Future Work}
 
@@ -70,11 +70,11 @@ We thank {{ACKNOWLEDGMENTS}}.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed AASVD, implemented the code, ran experiments,
+\item \textbf{{{AUTHOR\_1}}} designed AASVD, implemented the code, ran experiments,
 \end{itemize}
   wrote the paper.
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided feedback, edited the manuscript.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}

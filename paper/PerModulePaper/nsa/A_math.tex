@@ -1,0 +1,91 @@
+
+\section{Appendix A. Mathematical Derivations}
+
+\subsection{A.1 Union Mask Correctness}
+
+\textbf{Claim.} Applying the union mask before softmax is equivalent to 
+restricting softmax to the union set.
+
+\textbf{Proof.} 
+
+\[
+P_{ij} = \frac{\mathcal{S}_{ij} \exp(s_{ij})}{\sum_{j'} \mathcal{S}_{ij'} \exp(s_{ij'})}
+\tag{A.1}
+\]
+
+is the standard softmax restricted to $\mathcal{S}_i$. When $\mathcal{S}_{ij} = 0$, the numerator is 0, so $P_{ij} = 0$. When $\mathcal{S}_{ij} = 1$, $P_{ij}$ is the relative probability. $\square$
+
+\subsection{A.2 Top-K on Masked Scores}
+
+\textbf{Claim.} Top-$k$ on masked scores $\tilde{s}$ equals top-$k$ on $s$ restricted 
+to the unmasked set.
+
+\textbf{Proof.} Let $\mathcal{M}$ be the mask set (positions with $-10^4$). For 
+$j \notin \mathcal{M}$, $\tilde{s}_{ij} = s_{ij}$. For $j \in \mathcal{M}$, 
+$\tilde{s}_{ij} = -10^4$, which is smaller than any real score. So top-$k$ 
+selects from the non-masked set. $\square$
+
+\subsection{A.3 Causality Preservation}
+
+\textbf{Claim.} NSA on decoder models never attends to future positions.
+
+\textbf{Proof.} Two mechanisms:
+
+1. \textbf{Local mask} ensures $j \leq i$ within the window.
+2. \textbf{Top-$k$ mask} computed on causal-masked scores, selecting only 
+   $j \leq i$.
+3. \textbf{Final AND with causal} ensures no leakage.
+
+Therefore, for all selected $j$: $j \leq i$. $\square$
+
+\subsection{A.4 Coverage Bound}
+
+\textbf{Claim.} $|\mathcal{S}_i| \leq 2w + 1 + k$.
+
+\textbf{Proof.} The local window contributes at most $2w + 1$ keys. The top-$k$ 
+adds at most $k$ more. The union is bounded by the sum. $\square$
+
+\subsection{A.5 Density Formula}
+
+The attention density is:
+
+\[
+\rho = \frac{\mathbb{E}_i[|\mathcal{S}_i|]}{L} \leq \frac{2w + 1 + k}{L}
+\tag{A.2}
+\]
+
+For long $L$, density decreases as $\mathcal{O}((w + k) / L)$.
+
+\subsection{A.6 Attention Mass Preservation}
+
+For an attention distribution $P$ and a subset $\mathcal{S}$:
+
+\[
+\text{Preserved mass} = \sum_{j \in \mathcal{S}} P_j
+\tag{A.3}
+\]
+
+\textbf{Empirical observation.} For real attention, this is $> 95\%$ even when 
+$\rho < 0.4$.
+
+\subsection{A.7 Complexity}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Operation} & \textbf{Complexity} \\
+\midrule
+Score matrix $S$ & $\mathcal{O}(B H L^2)$ \\
+Local mask & $\mathcal{O}(B H L^2)$ \\
+Padding mask & $\mathcal{O}(B H L)$ \\
+Top-$k$ & $\mathcal{O}(B H L \cdot k)$ \\
+Mask union & $\mathcal{O}(B H L^2)$ \\
+Softmax + $P V$ & $\mathcal{O}(B H L^2 d_h)$ \\
+**Total** & $\mathcal{O}(B H L^2 d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{NSA does not reduce asymptotic complexity.} The benefit is mask density, 
+realized via sparse kernels in future work.

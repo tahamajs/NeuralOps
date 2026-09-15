@@ -11,11 +11,11 @@ Adaptive SVD supports the following attention variants:
 \toprule
 \textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT & `MultiHeadSelfAttention` & No & No & No & No & ✅ \\
-RoBERTa & `BertSelfAttention` & Yes & No & No & No & ✅ \\
-GPT-2 & `GPT2Attention` & No & No & No & No & ✅ \\
-Qwen3.5 & `Qwen3Attention` & No & Yes & Yes & No & partial \\
-T5 & `T5Attention` & No & No & No & **Yes** & not tested \\
+DistilBERT & `MultiHeadSelfAttention` & No & No & No & No &  \\
+RoBERTa & `BertSelfAttention` & Yes & No & No & No &  \\
+GPT-2 & `GPT2Attention` & No & No & No & No &  \\
+Qwen3.5 & `Qwen3Attention` & No & Yes & Yes & No & {{QWEN\_VERIFIED}} \\
+T5 & `T5Attention` & No & No & No & **Yes** & {{T5\_VERIFIED}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,7 +33,7 @@ W_V = src.v_lin.weight
 W_O = src.out_lin.weight
 \end{lstlisting}
 
-All four projections are inside \texttt{MultiHeadSelfAttention}. \texttt{is_nested_encoder = False}.
+All four projections are inside \texttt{MultiHeadSelfAttention}. \texttt{is\\_nested\\_encoder = False}.
 
 \subsubsection{5.2.2 RoBERTa (Nested)}
 
@@ -43,11 +43,11 @@ Extract from inner \texttt{BertSelfAttention}:
 W_Q = src.self.query.weight
 W_K = src.self.key.weight
 W_V = src.self.value.weight
-# W_O is not extracted — outer BertSelfOutput.dense applies it
+# W_O is not extracted -- outer BertSelfOutput.dense applies it
 \end{lstlisting}
 
-\texttt{is_nested_encoder = True}. During forward, the compressed \texttt{context} is 
-returned without applying \texttt{out_proj}; the outer \texttt{BertSelfOutput.dense} 
+\texttt{is\\_nested\\_encoder = True}. During forward, the compressed \texttt{context} is 
+returned without applying \texttt{out\\_proj}; the outer \texttt{BertSelfOutput.dense} 
 applies its own (unchanged) projection.
 
 \textbf{Consequence.} In RoBERTa, the output projection $W_O$ is \textbf{not compressed}, 
@@ -55,7 +55,7 @@ only $W_Q, W_K, W_V$.
 
 \subsubsection{5.2.3 GPT-2 (Fused Conv1D)}
 
-GPT-2 fuses Q, K, V into a single \texttt{c_attn} Conv1D:
+GPT-2 fuses Q, K, V into a single \texttt{c\\_attn} Conv1D:
 
 \begin{lstlisting}
 fused = src.c_attn.weight.T  # (3*768, 768) after transpose
@@ -64,11 +64,11 @@ W_O = src.c_proj.weight.T
 \end{lstlisting}
 
 The transpose handles the HuggingFace Conv1D layout: it stores weights as 
-\texttt{(in_features, out_features)} instead of the standard \texttt{(out_features, in_features)}.
+\texttt{(in\\_features, out\\_features)} instead of the standard \texttt{(out\\_features, in\\_features)}.
 
 \subsubsection{5.2.4 T5 (Relative Attention Bias)}
 
-T5 uses \texttt{relative_attention_bias} (an \texttt{nn.Embedding}) instead of learned 
+T5 uses \texttt{relative\\_attention\\_bias} (an \texttt{nn.Embedding}) instead of learned 
 position embeddings:
 
 \begin{lstlisting}
@@ -147,15 +147,15 @@ class AdaptiveSVDLinear(nn.Module):
 
 \textbf{Algorithm 2:} Inject Adaptive SVD into a full model
 \begin{lstlisting}
-Input:  model M, config c, hyperparameters τ, r_L
+Input:  model M, config c, hyperparameters $\tau$, r_L
 Output: M with attention replaced
 
-1:  for ℓ in transformer_layers(M) do
-2:      src ← find_attention(ℓ)                   ▷ Old attention
+1:  for   in transformer_layers(M) do
+2:      src $\leftarrow$ find_attention( )                     Old attention
 3:      if src is None: continue
-4:      new ← AdaptiveSVDAttention(c, τ, r_L, pretrained_attn=src)
-5:      new.copy_weights(src)                      ▷ SVD + adapter
-6:      replace_attention(ℓ, new)
+4:      new $\leftarrow$ AdaptiveSVDAttention(c, $\tau$, r_L, pretrained_attn=src)
+5:      new.copy_weights(src)                        SVD + adapter
+6:      replace_attention( , new)
 7: end for
 8: return M
 \end{lstlisting}
@@ -188,7 +188,7 @@ if position_bias is None and self.has_relative_attention_bias:
     position_bias = self.compute_bias(N_q, N_k, device=hidden_states.device)
 \end{lstlisting}
 
-The \texttt{compute_bias} function uses \texttt{_relative_position_bucket} to map relative 
+The \texttt{compute\\_bias} function uses \texttt{\\_relative\\_position\\_bucket} to map relative 
 positions to buckets, then looks up the bias embedding.
 
 \subsubsection{5.5.2 GQA Expansion}
@@ -263,7 +263,7 @@ Adapter init & FP32 then cast \\
 \subsubsection{5.9.1 LoRA Wrappers}
 
 If the source module is a \texttt{LoRALinear} wrapper, Adaptive SVD extracts the 
-inner \texttt{base_layer} for SVD and preserves the outer LoRA parameters:
+inner \texttt{base\\_layer} for SVD and preserves the outer LoRA parameters:
 
 \begin{lstlisting}
 target_mod = getattr(module, "base_layer", module)
@@ -272,4 +272,4 @@ target_mod = getattr(module, "base_layer", module)
 \subsubsection{5.9.2 Encoder-Decoder}
 
 For T5, the same \texttt{AdaptiveSVDAttention} is used in both encoder and decoder 
-blocks. The decoder side has \texttt{is_decoder = True}, which enables causal masking.
+blocks. The decoder side has \texttt{is\\_decoder = True}, which enables causal masking.

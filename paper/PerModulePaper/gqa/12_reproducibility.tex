@@ -1,0 +1,98 @@
+
+\section{12. Reproducibility Statement}
+
+\subsection{12.1 Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{12.2 Running GQA}
+
+\begin{lstlisting}
+python run_all_4_gqa.py \
+    --models distilbert,roberta,gpt2 \
+    --num_kv_heads 6 \
+    --recovery_steps 50 \
+    --lora_rank 16
+\end{lstlisting}
+
+Runtime: ~{{RUNTIME}} minutes.
+
+\subsection{12.3 Reproducing Tables}
+
+\subsubsection{Main (Table 7.1)}
+
+\begin{lstlisting}
+python run_all_4_gqa.py --num_kv_heads 6
+\end{lstlisting}
+
+\subsubsection{KV Heads Ablation (Table 7.5)}
+
+\begin{lstlisting}
+for kv in 1 2 3 4 6 12; do
+    python run_all_4_gqa.py --num_kv_heads $kv --output_suffix kv$kv
+done
+\end{lstlisting}
+
+\subsubsection{LoRA Rank Ablation (Table 7.6)}
+
+\begin{lstlisting}
+for r in 4 8 16 32; do
+    python run_all_4_gqa.py --lora_rank $r --output_suffix lr$r
+done
+\end{lstlisting}
+
+\subsection{12.4 Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{12.5 Expected Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{KV ratio} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & 2.0$\times$ \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & 2.0$\times$ \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & 2.0$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.6 Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2
+\end{itemize}
+\begin{itemize}
+\item \textbf{Checkpoints:} \texttt{{{HF\\_ORG}}/svd-linear-attention-*-gqa}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Metrics:} \texttt{results/unified\\_gqa/*/summary.csv}
+\end{itemize}
+
+\subsection{12.7 Known Issues}
+
+\begin{itemize}
+\item Head count must divide cleanly
+\end{itemize}
+\begin{itemize}
+\item RoPE applies to $K$ before repetition
+\end{itemize}
+\begin{itemize}
+\item Windows: use UTF-8 encoding
+\end{itemize}

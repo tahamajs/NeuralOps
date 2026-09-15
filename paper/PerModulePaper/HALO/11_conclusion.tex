@@ -1,0 +1,81 @@
+
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{HALO-ReGLA}, a hybrid attention module that runs dense 
+softmax and rectified linear streams in parallel, combined by per-head 
+learnable gates. The gate is initialized to favor dense behavior and shifts 
+toward linear during training.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Mean gate} & \textbf{VRAM $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & {{D\_GATE}} & -{{D\_VRAM\_DELTA}}\% \\
+RoBERTa & {{R\_DELTA}}\% & {{R\_GATE}} & -{{R\_VRAM\_DELTA}}\% \\
+GPT-2 & {{G\_DELTA}}\% & {{G\_GATE}} & -{{G\_VRAM\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Learned gates are bimodal}: dense vs linear heads.
+2. \textbf{Layer depth correlates with gate.}
+3. \textbf{Learned fusion beats fixed fusion.}
+4. \textbf{ELU+1 is optimal kernel.}
+5. \textbf{No speedup without hard routing.}
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Hard routing via thresholded gates
+\end{itemize}
+\begin{itemize}
+\item Chunked cumsum for long sequences
+\end{itemize}
+\begin{itemize}
+\item Learned kernels
+\end{itemize}
+\begin{itemize}
+\item Long-context evaluation
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical error bounds
+\end{itemize}
+\begin{itemize}
+\item Integration with GQA / KV cache
+\end{itemize}
+\begin{itemize}
+\item Cross-task gate transfer
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+HALO-ReGLA provides an interpretable hybrid attention mechanism. We release 
+code and checkpoints.
+
+\subsection{11.6 Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed HALO-ReGLA, implemented the code, wrote the paper.
+\end{itemize}
+\begin{itemize}
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

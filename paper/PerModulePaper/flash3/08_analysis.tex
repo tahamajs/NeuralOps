@@ -52,7 +52,7 @@ casting to FP8 then back to FP16:
 q_fp8 = q.to(torch.float8_e4m3fn).to(torch.float16)
 \end{lstlisting}
 
-Accuracy drop: 0.15\%.
+Accuracy drop: {{FP8\_ACC\_DELTA}}\%.
 
 \subsection{8.4 Memory Savings}
 
@@ -82,8 +82,8 @@ SDPA and FA3 give linear memory; naive is quadratic.
 \textbf{Config} & \textbf{D acc} \\
 \midrule
 Baseline & 90.71\% \\
-+ LoRA only (no FA3 dispatch) & 90.25 \\
-+ FA3 dispatch (SDPA path) & **90.25** \\
++ LoRA only (no FA3 dispatch) & {{LORA\_ACC}} \\
++ FA3 dispatch (SDPA path) & **{{D\_ACC}}** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -99,8 +99,8 @@ Baseline & 90.71\% \\
 \textbf{Config} & \textbf{D acc} & \textbf{Params} \\
 \midrule
 Direct SDPA & 90.71\% & 66.9M \\
-Wrapper (SDPA path) & 90.25\% & 67.55M \\
-Wrapper (FA3 path, H100 est.) & 90.25\% & 67.55M \\
+Wrapper (SDPA path) & {{D\_ACC}}\% & {{D\_PARAMS}}M \\
+Wrapper (FA3 path, H100 est.) & {{D\_ACC}}\% & {{D\_PARAMS}}M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -109,7 +109,7 @@ Accuracy identical. Wrapper adds LoRA flexibility.
 
 \subsection{8.7 Failure Analysis}
 
-No systematic failures observed.
+{{FAILURES}}
 
 \subsection{8.8 Summary}
 

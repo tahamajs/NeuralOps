@@ -5,36 +5,36 @@
 
 A3 compresses a pretrained transformer in \textbf{five phases}:
 
-1. \textbf{Calibration} (§4.2): collect activation statistics via streaming hooks.
-2. \textbf{Weighted SVD} (§4.3): factorize each weight matrix in weighted space.
-3. \textbf{Validation} (§4.4): compute Frobenius reconstruction error.
-4. \textbf{Adaptive escalation} (§4.4.2): increase rank if error exceeds $\tau$.
-5. \textbf{LayerNorm recalibration} (§4.5): absorb distributional shift.
+1. \textbf{Calibration} ( 4.2): collect activation statistics via streaming hooks.
+2. \textbf{Weighted SVD} ( 4.3): factorize each weight matrix in weighted space.
+3. \textbf{Validation} ( 4.4): compute Frobenius reconstruction error.
+4. \textbf{Adaptive escalation} ( 4.4.2): increase rank if error exceeds $\tau$.
+5. \textbf{LayerNorm recalibration} ( 4.5): absorb distributional shift.
 
 \textbf{Figure 4.1} shows the pipeline. Phase 1 runs once on the whole model; 
-phases 2–4 run per layer; phase 5 runs once at the end.
+phases 2--4 run per layer; phase 5 runs once at the end.
 
 \begin{lstlisting}
-    ┌──────────────────────────────────────────────────┐
-    │  Phase 1: Calibration (streaming)                │
-    │  Input: unlabeled text                           │
-    │  Output: {F^(ℓ), C_X^(ℓ)} per layer              │
-    └──────────────────────┬───────────────────────────┘
-                           │
-                           ▼
-    ┌──────────────────────────────────────────────────┐
-    │  For each layer ℓ:                               │
-    │    Phase 2: Weighted SVD at rank r               │
-    │    Phase 3: Frobenius validation                 │
-    │    Phase 4: If err > τ: escalate rank, retry     │
-    │    If err > τ after max retries: fallback        │
-    └──────────────────────┬───────────────────────────┘
-                           │
-                           ▼
-    ┌──────────────────────────────────────────────────┐
-    │  Phase 5: LayerNorm recalibration (global)       │
-    │  Rescale γ to match target σ                     │
-    └──────────────────────────────────────────────────┘
+    +--------------------------------------------------+
+    |  Phase 1: Calibration (streaming)                |
+    |  Input: unlabeled text                           |
+    |  Output: {F^( ), C_X^( )} per layer              |
+    +----------------------+---------------------------+
+                           |
+                            
+    +--------------------------------------------------+
+    |  For each layer  :                               |
+    |    Phase 2: Weighted SVD at rank r               |
+    |    Phase 3: Frobenius validation                 |
+    |    Phase 4: If err > $\tau$: escalate rank, retry     |
+    |    If err > $\tau$ after max retries: fallback        |
+    +----------------------+---------------------------+
+                           |
+                            
+    +--------------------------------------------------+
+    |  Phase 5: LayerNorm recalibration (global)       |
+    |  Rescale $\gamma$ to match target $\sigma$                     |
+    +--------------------------------------------------+
 \end{lstlisting}
 
 \subsection{4.2 Phase 1: Streaming Calibration}
@@ -81,11 +81,11 @@ For $d = 768$ and $N_l = 12$, this is $\sim 8.5$M values, or 17 MB at FP32.
 
 We support three sources, in priority order:
 
-1. \textbf{Explicit \texttt{calibration_loader}.} A \texttt{DataLoader} of input batches.
-2. \textbf{\texttt{calibration_texts}.} A list of strings; tokenized on-the-fly.
+1. \textbf{Explicit \texttt{calibration\\_loader}.} A \texttt{DataLoader} of input batches.
+2. \textbf{\texttt{calibration\\_texts}.} A list of strings; tokenized on-the-fly.
 3. \textbf{Default.} Random inputs of the appropriate shape (weak calibration).
 
-If none are provided, A3 falls back to unweighted SVD (see §4.3.4).
+If none are provided, A3 falls back to unweighted SVD (see  4.3.4).
 
 \subsection{4.3 Phase 2: Weighted SVD}
 
@@ -150,7 +150,7 @@ F_\text{norm} = \frac{F}{\|F\|_2 / \sqrt{d_\text{in}}}
 \]
 
 and clamp the square root to $[10^{-3}, 10^3]$. This is controlled by the 
-\texttt{normalize_scale} flag.
+\texttt{normalize\\_scale} flag.
 
 \subsubsection{4.3.4 Fallback to Unweighted SVD}
 
@@ -192,10 +192,10 @@ the original** (no compression), and we log the failure.
 Choosing rank upfront is a trade-off:
 
 \begin{itemize}
-\item Too high → poor compression
+\item Too high $\to$ poor compression
 \end{itemize}
 \begin{itemize}
-\item Too low → excessive error
+\item Too low $\to$ excessive error
 \end{itemize}
 
 Our approach defers the decision to per-layer validation, which handles the 
@@ -235,39 +235,39 @@ $\sigma_\text{current}$ is the post-compression one.
 2. After compression, run another calibration pass to compute $\sigma_\text{current}^{(\ell)}$.
 3. For each LayerNorm, update $\gamma$ via (4.13).
 
-This is applied only if \texttt{recalibrate_ln = True} and calibration sources are 
+This is applied only if \texttt{recalibrate\\_ln = True} and calibration sources are 
 available.
 
 \subsection{4.6 Combined Algorithm}
 
 \textbf{Algorithm 1:} A3 compression
 \begin{lstlisting}
-Input:  model M, rank r₀, threshold τ, calibration data D
+Input:  model M, rank r , threshold $\tau$, calibration data D
 Output: compressed model M', statistics
 
- 1: for ℓ in linear_layers(M) do
- 2:     F^(ℓ), C_X^(ℓ) ← running_accumulate(ℓ, D)
+ 1: for   in linear_layers(M) do
+ 2:     F^( ), C_X^( ) $\leftarrow$ running_accumulate( , D)
  3: end for
- 4: σ_target ← record_layernorm_scales(M, D)
+ 4: $\sigma$_target $\leftarrow$ record_layernorm_scales(M, D)
  5:
- 6: for ℓ in linear_layers(M) do
- 7:     W ← weight(ℓ)
- 8:     r ← r₀
+ 6: for   in linear_layers(M) do
+ 7:     W $\leftarrow$ weight( )
+ 8:     r $\leftarrow$ r 
  9:     for attempt in 0..K do
-10:         W_weighted ← W · diag(√(F^(ℓ) + ε))
-11:         U_r, Σ_r, V_r ← svd(W_weighted, r)
-12:         V_r ← unweight(V_r, F^(ℓ))
-13:         err ← ‖W - U_r V_r‖_F / ‖W‖_F
-14:         if err ≤ τ: break
-15:         r ← escalate(r, K, attempt)
+10:         W_weighted $\leftarrow$ W   diag($\sqrt{}$(F^( ) + $\epsilon$))
+11:         U_r,  _r, V_r $\leftarrow$ svd(W_weighted, r)
+12:         V_r $\leftarrow$ unweight(V_r, F^( ))
+13:         err $\leftarrow$  W - U_r V_r _F /  W _F
+14:         if err $\le$ $\tau$: break
+15:         r $\leftarrow$ escalate(r, K, attempt)
 16:     end for
-17:     if err > τ: fallback(ℓ) else: replace(ℓ, U_r, V_r)
+17:     if err > $\tau$: fallback( ) else: replace( , U_r, V_r)
 18: end for
 19:
 20: if recalibrate_ln:
-21:     σ_current ← record_layernorm_scales(M', D)
+21:     $\sigma$_current $\leftarrow$ record_layernorm_scales(M', D)
 22:     for ln in layernorms(M') do
-23:         ln.γ ← ln.γ · σ_target[ln] / σ_current[ln]
+23:         ln.$\gamma$ $\leftarrow$ ln.$\gamma$   $\sigma$_target[ln] / $\sigma$_current[ln]
 24:     end for
 25: end if
 26: return M'
@@ -281,15 +281,15 @@ Output: compressed model M', statistics
 \toprule
 \textbf{Phase} & \textbf{Time} & \textbf{Memory} \\
 \midrule
-Calibration & $\mathcal{O}(N \sum\_\ell d\_\ell^2)$ & $\mathcal{O}(N\_l d^2)$ \\
-Weighted SVD & $\mathcal{O}(\sum\_\ell d\_\text{out}^{(\ell)} d\_\text{in}^{(\ell)} \min(d\_\text{out}, d\_\text{in}))$ & $\mathcal{O}(d\_\text{max}^2)$ \\
-Validation & $\mathcal{O}(\sum\_\ell r d\_\text{out} d\_\text{in})$ & $\mathcal{O}(d\_\text{out} d\_\text{in})$ \\
-LN recalibration & $\mathcal{O}(N)$ & $\mathcal{O}(N\_l d)$ \\
+Calibration & $\mathcal{O}(N \sum_\ell d_\ell^2)$ & $\mathcal{O}(N_l d^2)$ \\
+Weighted SVD & $\mathcal{O}(\sum_\ell d_\text{out}^{(\ell)} d_\text{in}^{(\ell)} \min(d_\text{out}, d_\text{in}))$ & $\mathcal{O}(d_\text{max}^2)$ \\
+Validation & $\mathcal{O}(\sum_\ell r d_\text{out} d_\text{in})$ & $\mathcal{O}(d_\text{out} d_\text{in})$ \\
+LN recalibration & $\mathcal{O}(N)$ & $\mathcal{O}(N_l d)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Full compression time} on DistilBERT (66.9M params): ~45 
+\textbf{Full compression time} on DistilBERT (66.9M params): ~{{COMPRESS\_TIME}} 
 seconds on RTX 4070.
 
 \subsection{4.8 Parameter Analysis}
@@ -302,10 +302,10 @@ For a layer with weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 \toprule
 \textbf{Configuration} & \textbf{Parameters} \\
 \midrule
-Original & $d\_\text{out} \cdot d\_\text{in}$ \\
-A3 at rank $r$ & $r(d\_\text{out} + d\_\text{in})$ \\
-A3 at rank $r$ + LoRA($r\_L$) & $r(d\_\text{out} + d\_\text{in}) + r\_L(d\_\text{out} + d\_\text{in})$ \\
-Reduction factor & $\frac{d\_\text{out} d\_\text{in}}{r(d\_\text{out} + d\_\text{in})}$ \\
+Original & $d_\text{out} \cdot d_\text{in}$ \\
+A3 at rank $r$ & $r(d_\text{out} + d_\text{in})$ \\
+A3 at rank $r$ + LoRA($r_L$) & $r(d_\text{out} + d_\text{in}) + r_L(d_\text{out} + d_\text{in})$ \\
+Reduction factor & $\frac{d_\text{out} d_\text{in}}{r(d_\text{out} + d_\text{in})}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -321,7 +321,7 @@ Reduction factor & $\frac{d\_\text{out} d\_\text{in}}{r(d\_\text{out} + d\_\text
 Original & 589,824 \\
 A3 rank 64 & 98,304 \\
 A3 rank 64 + LoRA rank 16 & 122,880 \\
-Reduction & **4.8×** \\
+Reduction & **4.8$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -334,7 +334,7 @@ Reduction & **4.8×** \\
 minimizes $\|(W - W_r) \mathrm{diag}(\sqrt{F})\|_F$ over all rank-$r$ matrices 
 $W_r$.
 
-\textbf{Proof.} This follows directly from Eckart–Young applied to the matrix 
+\textbf{Proof.} This follows directly from Eckart--Young applied to the matrix 
 $W_\text{weighted}$. $\square$
 
 \subsubsection{4.9.2 Relation to Standard SVD}

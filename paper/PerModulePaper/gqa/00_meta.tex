@@ -1,0 +1,109 @@
+
+\section{GQA: Grouped-Query Attention for Memory-Efficient Transformer Inference}
+
+
+\textbf{Authors:}
+\begin{itemize}
+\item {{AUTHOR\_1\_NAME}}  -- {{AUTHOR\_1\_EMAIL}}
+\end{itemize}
+\begin{itemize}
+\item {{AUTHOR\_2\_NAME}}  -- {{AUTHOR\_2\_EMAIL}}
+\end{itemize}
+
+\textbf{Affiliations:}
+\begin{itemize}
+\item   {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
+\end{itemize}
+\begin{itemize}
+\item   {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
+\end{itemize}
+
+\textbf{Corresponding author:} {{CORRESPONDING\_AUTHOR}}
+\textbf{Preprint date:} {{DATE}}
+\textbf{Version:} v{{VERSION}}
+\textbf{Code:} https://github.com/{{ORG}}/SVD\_Project/tree/main/framework/attentions/gqa.py
+\textbf{Model weights:} https://huggingface.co/{{HF\_ORG}}
+\textbf{License:} {{LICENSE}}
+
+
+
+\subsection{Abstract}
+
+Autoregressive transformer inference is bottlenecked by the memory footprint of 
+the key-value (KV) cache, which scales linearly with sequence length and number 
+of heads. Multi-Head Attention (MHA) stores one $K$ and $V$ per query head 
+($H_{KV} = H$), which is maximally expressive but also maximally memory-intensive. 
+Multi-Query Attention (MQA) collapses all KV heads into one ($H_{KV} = 1$), 
+achieving minimal memory at a cost to quality. \textbf{Grouped-Query Attention} (GQA) 
+interpolates between these extremes: it partitions the $H$ query heads into $G$ 
+groups and shares a single KV head per group ($H_{KV} = G \le H$).
+
+We present a production-hardened PyTorch implementation of GQA that supports 
+flat (DistilBERT), nested (RoBERTa), causal (GPT-2), and grouped-query (Qwen3.5) 
+architectures. Our implementation includes exact pretrained weight transfer 
+via \texttt{copy\\_weights}, frozen base weights with LoRA recovery adapters, RoPE 
+support, and safe injection returning \texttt{None} on failure. We evaluate GQA on 
+DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with $G = H/2$ (i.e., 
+$H_{KV} = {{KV_HEADS}}$), achieving \textbf{{{D\_ACC}}\%}, \textbf{{{R\_ACC}}\%}, and 
+\textbf{{{G\_ACC}}\%} accuracy respectively. The KV cache footprint is reduced by 
+\textbf{{{KV\_REDUCTION}}$\times$} at inference time. We provide a full ablation over 
+$G / H$ ratio and analyze the trade-off between memory savings and quality loss.
+
+\textbf{Keywords:} grouped-query attention, KV cache, memory efficiency, transformer 
+inference, attention architecture
+
+
+
+\subsection{Lay Summary}
+
+When a chatbot generates text, it needs to remember the previous tokens it 
+has seen. This "memory" is called the KV cache, and it grows linearly with 
+the length of the conversation. For long conversations, this memory can 
+become the bottleneck -- not the model's weights, but the activations it 
+stores per token.
+
+GQA solves this by sharing memory between groups of attention heads. Instead 
+of storing a separate memory per head (as MHA does) or a single shared memory 
+for all heads (as MQA does), it stores one memory per group of heads. This 
+gives a smooth trade-off: fewer groups means less memory but slightly lower 
+quality.
+
+Our implementation supports four popular architectures and includes 
+production-hardened features like fallback on failure and exact weight 
+transfer from pretrained models. On three benchmark models, GQA achieves 
+near-baseline accuracy while cutting KV cache memory by ~2$\times$.
+
+
+
+\subsection{Table of Contents}
+
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
+
+\textbf{Appendices:}
+\begin{itemize}
+\item [A. Mathematical Derivations](A\_math.md)
+\end{itemize}
+\begin{itemize}
+\item [B. Implementation Details](B\_implementation.md)
+\end{itemize}
+\begin{itemize}
+\item [C. Full Experimental Data](C\_data.md)
+\end{itemize}
+\begin{itemize}
+\item [D. Negative Results](D\_negative\_results.md)
+\end{itemize}
+\begin{itemize}
+\item [E. Ethical Considerations](E\_ethics.md)
+\end{itemize}

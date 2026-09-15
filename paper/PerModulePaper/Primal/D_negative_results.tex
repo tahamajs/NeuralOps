@@ -1,0 +1,132 @@
+
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Symmetric Landmarks}
+
+\textbf{Goal.} Use same landmarks for Q and K (standard Nystr m).
+
+\textbf{Result.} Accuracy dropped by {{SYM\_DROP}}\% compared to asymmetric.
+
+\textbf{Conclusion.} Asymmetry helps.
+
+\subsubsection{D.1.2 Random Landmarks}
+
+\textbf{Goal.} Select m random positions as landmarks.
+
+\textbf{Result.} Accuracy dropped by {{RANDOM\_DROP}}\%.
+
+\textbf{Conclusion.} Segment pooling better.
+
+\subsubsection{D.1.3 Learned Pooling}
+
+\textbf{Goal.} Add trainable projection for pooling weights.
+
+\textbf{Result.} No improvement, 2$\times$ slower.
+
+\textbf{Conclusion.} Mean pooling is sufficient.
+
+\subsubsection{D.1.4 Schulz from Zero}
+
+\textbf{Goal.} Initialize $X_0 = 0$ or $X_0 = F_2^\top / \|F_2\|$.
+
+\textbf{Result.} Often diverges or oscillates.
+
+\textbf{Conclusion.} Initialize from SVD pinv.
+
+\subsubsection{D.1.5 K-means Landmarks}
+
+\textbf{Goal.} Use k-means clustering to select landmarks.
+
+\textbf{Result.} Accuracy similar to segment pooling, but 10$\times$ slower.
+
+\textbf{Conclusion.} Segment pooling is a good trade-off.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Per-Head Landmark Count}
+
+Different $m$ per head. No improvement.
+
+\subsubsection{D.2.2 Adaptive $m$}
+
+Adjust $m$ based on sequence length. Marginal improvement.
+
+\subsubsection{D.2.3 Multi-Scale Landmarks}
+
+Hierarchical pooling. No improvement.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Too Few Landmarks}
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{$m$} & \textbf{DistilBERT} \\
+\midrule
+4 & {{D\_M4}} (too low) \\
+8 & {{D\_M8}} \\
+16 & {{D\_M16}} \\
+32 & {{D\_M32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Too Many Pinv Iterations}
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{$K$} & \textbf{DistilBERT} & \textbf{Time} \\
+\midrule
+4 & {{D\_K4}} & 1.0$\times$ \\
+8 & {{D\_K8}} & 1.2$\times$ \\
+16 & {{D\_K16}} & 1.5$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+No improvement beyond $K = 4$.
+
+\subsection{D.4 Fixes That Didn't Help}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
+\midrule
+FP16 pinv & Speed & NaN \\
+Approx pinv & Speed & Accuracy loss \\
+Fewer F factors & Speed & Accuracy loss \\
+No RoPE before pooling & Speed & Accuracy loss \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+**Mean** & **{{MEAN}}** \\
+**Std** & **{{STD}}** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 Lessons Learned}
+
+1. \textbf{Asymmetric > symmetric} by {{ASYM\_GAIN}}\%.
+2. \textbf{Segment pooling is sufficient.}
+3. \textbf{Schulz from SVD pinv is essential.}
+4. \textbf{$K = 4$ iterations suffice.}
+5. \textbf{FP32 required for stability.}

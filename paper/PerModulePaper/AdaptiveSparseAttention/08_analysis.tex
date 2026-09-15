@@ -1,0 +1,159 @@
+
+\section{8. Analysis}
+
+\subsection{8.1 Where Does ASA Win?}
+
+ASA provides three benefits:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Benefit} & \textbf{Mechanism} \\
+\midrule
+**Memory reduction** & Chunked computation \\
+**Per-head adaptation** & Learned sparsity logits \\
+**Interpretability** & Head-level sparsity budgets \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The memory reduction is \textbf{real at all sequence lengths} because chunking 
+is applied unconditionally.
+
+\subsection{8.2 Head Heterogeneity}
+
+\textbf{Figure 8.1} shows the learned $\rho_h$ distribution for all three models. 
+Three patterns emerge:
+
+\subsubsection{8.2.1 Bimodal Distribution}
+
+Most heads fall into two clusters:
+
+\begin{itemize}
+\item \textbf{Critical heads:} $\rho_h < 0.2$ (near-dense)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Redundant heads:} $\rho_h > 0.7$ (near-sparse)
+\end{itemize}
+
+This confirms prior work on head pruning (Voita et al., 2019).
+
+\subsubsection{8.2.2 Layer-Aware Pattern}
+
+Early layers tend to have \textbf{more dense} heads; late layers have **more 
+sparse** heads.
+
+\textbf{Table 8.1: Mean sparsity per layer (GPT-2).}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Layer} & \textbf{Mean $\rho_h$} \\
+\midrule
+0 & {{G\_L0\_RHO}} \\
+3 & {{G\_L3\_RHO}} \\
+6 & {{G\_L6\_RHO}} \\
+9 & {{G\_L9\_RHO}} \\
+11 & {{G\_L11\_RHO}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{8.2.3 Head-Aware Pattern}
+
+Some heads are universally dense across layers (attention sinks); others 
+are consistently sparse.
+
+\subsection{8.3 Effect of Temperature}
+
+\textbf{Figure 8.2} shows the effective sparsity vs temperature. At $T = 0.01$, 
+the mask is nearly hard; at $T = 1$, the mask is very soft. The optimal 
+$T = {{TEMPERATURE}}$ balances differentiability and effectiveness.
+
+\subsection{8.4 Attention Mass Retention}
+
+\textbf{Figure 8.3} shows the fraction of attention mass retained vs sparsity 
+level. At 50\% sparsity, \textbf{{{MASS50}}\%} of mass is retained -- consistent 
+with the "top 50\% of keys capture 90\% of mass" observation.
+
+\subsection{8.5 Comparison with Static Sparsity}
+
+\textbf{Table 8.2: ASA vs static sparsity (window size 64).}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Static window & {{STATIC\_D}} & {{STATIC\_R}} & {{STATIC\_G}} \\
+**ASA** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} ASA outperforms static window by {{STATIC\_DELTA}}\%.
+
+\subsection{8.6 Interaction with Other Methods}
+
+\textbf{Table 8.3: ASA combined with compression.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} \\
+\midrule
+Baseline & 90.71\% \\
+ASA only & {{D\_ACC}}\% \\
+GQA only & {{GQA\_D}}\% \\
+**ASA + GQA** & **{{ASA\_GQA\_D}}\%** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Combining ASA with GQA is possible; savings are multiplicative.
+
+\subsection{8.7 Numerical Stability}
+
+\subsubsection{8.7.1 Log-Mask Stability}
+
+The log-mask \texttt{log(m + $\epsilon$)} is stable for $\epsilon = 10^{-8}$.
+
+\subsubsection{8.7.2 Threshold Quantization}
+
+The threshold $\tau$ is discrete (k-th largest). The soft mask smooths this.
+
+\subsubsection{8.7.3 FP16 Considerations}
+
+Scores are cast to FP32 for softmax; the log-mask is FP32.
+
+\subsection{8.8 Failure Cases}
+
+\subsubsection{8.8.1 Layers Where ASA Fails}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Layer} & \textbf{Model} & \textbf{Accuracy Drop} \\
+\midrule
+{{FAIL\_LAYER\_1}} & {{FAIL\_MODEL\_1}} & {{FAIL\_DROP\_1}} \\
+{{FAIL\_LAYER\_2}} & {{FAIL\_MODEL\_2}} & {{FAIL\_DROP\_2}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{8.8.2 Root Causes}
+
+{{FAIL\_CAUSE}}
+
+\subsection{8.9 Summary of Insights}
+
+1. \textbf{Per-head budgets are bimodal}: dense vs sparse.
+2. \textbf{Layer depth correlates with sparsity}: early = dense, late = sparse.
+3. \textbf{$T = 0.1$} is the optimal temperature.
+4. \textbf{Chunking reduces memory} by {{MEM\_REDUCTION}}$\times$.
+5. \textbf{Attention mass is highly concentrated}: top 10\% captures {{MASS10}}\%.

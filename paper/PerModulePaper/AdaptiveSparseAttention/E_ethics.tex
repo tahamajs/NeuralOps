@@ -1,0 +1,116 @@
+
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item \textbf{Efficient inference:} Reduces memory and compute per token.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Longer context:} Enables more capable applications.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Interpretability:} Head budgets reveal attention structure.
+\end{itemize}
+
+\subsubsection{Negative}
+\begin{itemize}
+\item \textbf{Dual-use:} Efficiency gains benefit both beneficial and harmful
+\end{itemize}
+  applications.
+\begin{itemize}
+\item \textbf{Concentration:} Favors large labs.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Rebound effect:} Cheaper inference may increase total usage.
+\end{itemize}
+
+\subsection{E.2 Environmental Impact}
+
+\begin{itemize}
+\item \textbf{Total GPU-hours:} ~{{COMPUTE\_HOURS}}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Estimated CO$_2$:} {{CO2\_KG}} kg CO$_2$eq
+\end{itemize}
+
+Sparse attention reduces compute at inference.
+
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 (public, English movie reviews)
+\end{itemize}
+\begin{itemize}
+\item \textbf{PII:} None
+\end{itemize}
+\begin{itemize}
+\item \textbf{Bias:} Western-centric
+\end{itemize}
+
+\subsection{E.4 Model Ethics}
+
+\subsubsection{Bias}
+
+Learned sparsity may amplify or suppress biases depending on which heads 
+are retained. Future work should audit.
+
+\subsubsection{Misuse}
+
+Could enable surveillance at scale. Not endorsed.
+
+\subsection{E.5 Authorship and Credit}
+
+See  11.7.
+
+\subsection{E.6 Conflicts of Interest}
+
+None.
+
+\subsection{E.7 Funding}
+
+{{FUNDING}}
+
+\subsection{E.8 Acknowledgements}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{E.9 LLM Usage}
+
+Parts drafted with LLM assistance.
+
+\subsection{E.10 Reproducibility Commitments}
+
+1. Release code
+2. Release checkpoints
+3. Report negative results
+4. Document all hyperparameters
+
+\subsection{E.11 Long-Term Considerations}
+
+Sparse attention could:
+
+\begin{itemize}
+\item Enable efficient LLM inference on consumer hardware
+\end{itemize}
+\begin{itemize}
+\item Reduce AI's carbon footprint
+\end{itemize}
+\begin{itemize}
+\item Reveal structural properties of attention
+\end{itemize}
+
+But also:
+
+\begin{itemize}
+\item Enable widespread AI deployment
+\end{itemize}
+\begin{itemize}
+\item Concentrate capabilities
+\end{itemize}
+\begin{itemize}
+\item Widen the digital divide
+\end{itemize}
+
+We encourage community discussion.

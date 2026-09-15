@@ -1,0 +1,80 @@
+
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{Squeezing Heads}, a LoRA-wrapped attention module for head 
+knowledge distillation. The wrapper preserves pretrained weights exactly 
+and allows head-dim reduction with LoRA recovery.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Trainable} & \textbf{Head-dim reduction} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & {{D\_LORA\_R}}$\times$ & {{HEAD\_DIM\_REDUCTION}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & {{R\_LORA\_R}}$\times$ & {{HEAD\_DIM\_REDUCTION}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & {{G\_LORA\_R}}$\times$ & {{HEAD\_DIM\_REDUCTION}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{LoRA recovers most accuracy} lost by head-dim reduction.
+2. \textbf{Trainable params reduced by ~100$\times$.}
+3. \textbf{Drop-in wrapper} -- no architecture change.
+4. \textbf{Multi-architecture support} with RoPE, GQA, causality.
+5. \textbf{Beats head pruning} by not discarding information.
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Per-head LoRA rank
+\end{itemize}
+\begin{itemize}
+\item Combine with pruning
+\end{itemize}
+\begin{itemize}
+\item Teacher-student distillation
+\end{itemize}
+\begin{itemize}
+\item Inference-time folding
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical bound on recovery
+\end{itemize}
+\begin{itemize}
+\item Cross-task adapter transfer
+\end{itemize}
+\begin{itemize}
+\item Integration with MoE
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+Squeezing Heads provides a practical, drop-in wrapper for head-dim 
+distillation. We release code and checkpoints.
+
+\subsection{11.6 Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed SH, implemented the code, wrote the paper.
+\end{itemize}
+\begin{itemize}
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

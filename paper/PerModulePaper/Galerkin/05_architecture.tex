@@ -45,7 +45,7 @@ o_w = src.c_proj.weight.T
 \end{lstlisting}
 
 \subsubsection{Qwen}
-Direct copy from \texttt{q_proj}, \texttt{k_proj}, \texttt{v_proj}, \texttt{o_proj}.
+Direct copy from \texttt{q\\_proj}, \texttt{k\\_proj}, \texttt{v\\_proj}, \texttt{o\\_proj}.
 
 \subsection{5.3 Nested Encoder Detection}
 
@@ -61,7 +61,7 @@ if (
 \end{lstlisting}
 
 For nested encoders, the outer \texttt{output.dense} applies the projection. We 
-return raw \texttt{context} and bypass \texttt{out_proj}.
+return raw \texttt{context} and bypass \texttt{out\\_proj}.
 
 \subsection{5.4 GQA Support}
 

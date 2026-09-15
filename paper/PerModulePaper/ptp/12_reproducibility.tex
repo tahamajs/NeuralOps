@@ -1,0 +1,91 @@
+
+\section{12. Reproducibility Statement}
+
+\subsection{12.1 Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{12.2 Running}
+
+\begin{lstlisting}
+python run_all_4_ptp.py \
+    --models distilbert,roberta,gpt2 \
+    --keep_ratio {{KEEP_RATIO}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{12.3 Reproducing Tables}
+
+\subsubsection{Main (Table 7.1)}
+\begin{lstlisting}
+python run_all_4_ptp.py --keep_ratio 0.8
+\end{lstlisting}
+
+\subsubsection{Keep Ratio Ablation (Table 7.3)}
+\begin{lstlisting}
+for rho in 0.5 0.7 0.8 0.9 0.95; do
+    python run_all_4_ptp.py --keep_ratio $rho --output_suffix rho$rho
+done
+\end{lstlisting}
+
+\subsubsection{[CLS] Ablation (Table 7.4)}
+\begin{lstlisting}
+python run_all_4_ptp.py --preserve_cls true --output_suffix cls
+python run_all_4_ptp.py --preserve_cls false --output_suffix nopcls
+\end{lstlisting}
+
+\subsection{12.4 Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{12.5 Expected Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Kept} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & ~{{D\_KEPT}}\% \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & ~{{R\_KEPT}}\% \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_KEPT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.6 Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2
+\end{itemize}
+\begin{itemize}
+\item \textbf{Checkpoints:} \texttt{{{HF\\_ORG}}/svd-linear-attention-*-ptp}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Metrics:} \texttt{results/unified\\_ptp/*/summary.csv}
+\end{itemize}
+
+\subsection{12.7 Known Issues}
+
+\begin{itemize}
+\item Score network sees future tokens (not for generation)
+\end{itemize}
+\begin{itemize}
+\item Very short sequences lose accuracy
+\end{itemize}
+\begin{itemize}
+\item Shared selection across queries
+\end{itemize}

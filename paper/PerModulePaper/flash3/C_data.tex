@@ -1,6 +1,6 @@
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT — Complete Metrics}
+\subsection{C.1 DistilBERT -- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -10,18 +10,18 @@
 \midrule
 Model & DistilBERT-base \\
 Params before & 66,955,010 \\
-Params after & 67549448 \\
-Accuracy & 90.25\% \\
-F1 & 0.9055 \\
-Peak VRAM & 190 MB \\
-Inference time & 1.95 s \\
+Params after & {{D\_PARAMS\_FULL}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
 Path used & SDPA (RTX 4070) \\
-FA3 available & False \\
+FA3 available & {{FA3\_AVAILABLE}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.2 RoBERTa — Complete Metrics}
+\subsection{C.2 RoBERTa -- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -30,14 +30,14 @@ FA3 available & False \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & 125826818 \\
-Accuracy & 77.50\% \\
+Params after & {{R\_PARAMS\_FULL}} \\
+Accuracy & {{R\_ACC}}\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{C.3 GPT-2 — Complete Metrics}
+\subsection{C.3 GPT-2 -- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -46,8 +46,8 @@ Accuracy & 77.50\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & 125630220 \\
-Accuracy & 78.98\% \\
+Params after & {{G\_PARAMS\_FULL}} \\
+Accuracy & {{G\_ACC}}\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -61,11 +61,11 @@ Accuracy & 78.98\% \\
 \toprule
 \textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{Params delta} \\
 \midrule
-0 & 88.5 & 75.5 & 76.5 & 0 \\
-4 & 89.5 & 76.8 & 78.0 & +147K \\
-8 & 90.0 & 77.2 & 78.5 & +295K \\
-16 & 90.25 & 77.50 & 78.98 & +590K \\
-32 & 90.30 & 77.55 & 79.00 & +1.2M \\
+0 & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} & 0 \\
+4 & {{D\_RL4}} & {{R\_RL4}} & {{G\_RL4}} & +147K \\
+8 & {{D\_RL8}} & {{R\_RL8}} & {{G\_RL8}} & +295K \\
+16 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} & +590K \\
+32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} & +1.2M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,10 +93,10 @@ All below 1e-5 threshold.
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": 67549448,
-    "accuracy_pct": 90.25,
+    "params_after": {{D_PARAMS_FULL}},
+    "accuracy_pct": {{D_ACC}},
     "path_used": "SDPA",
-    "flash_attn_available": False
+    "flash_attn_available": {{FA3_AVAILABLE}}
   }
 }
 \end{lstlisting}

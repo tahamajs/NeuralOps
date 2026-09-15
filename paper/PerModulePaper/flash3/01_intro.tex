@@ -11,7 +11,7 @@ Attention dominates the compute and memory cost of transformer inference:
 
 The naive implementation materializes the $L \times L$ attention matrix, 
 requiring $\mathcal{O}(L^2)$ memory. For $L = 8192$ and $d_h = 128$, this 
-is 2 GB \textbf{per head, per layer} in FP16 — infeasible for most GPUs.
+is 2 GB \textbf{per head, per layer} in FP16 -- infeasible for most GPUs.
 
 \textbf{FlashAttention-3} (Dao et al., 2024) solves this via \textbf{tiling} and 
 \textbf{recomputation}: the attention matrix is computed in blocks that fit in 
@@ -22,11 +22,11 @@ backward rather than stored. This gives:
 \item \textbf{Memory:} $\mathcal{O}(L)$ instead of $\mathcal{O}(L^2)$.
 \end{itemize}
 \begin{itemize}
-\item \textbf{Throughput:} 2-4× faster than standard attention on Hopper GPUs.
+\item \textbf{Throughput:} 2-4$\times$ faster than standard attention on Hopper GPUs.
 \end{itemize}
 
 \textbf{FP8 support.} FlashAttention-3 adds FP8 (e4m3) tensor core utilization, 
-achieving another 2× on H100/H200.
+achieving another 2$\times$ on H100/H200.
 
 \subsection{1.2 The Deployment Problem}
 
@@ -48,7 +48,7 @@ Our wrapper addresses all three:
 \end{itemize}
   PyTorch's SDPA kernel (which itself may use FlashAttention-2 internally).
 \begin{itemize}
-\item \textbf{Multi-architecture weight copy.} A single \texttt{copy_weights} handles
+\item \textbf{Multi-architecture weight copy.} A single \texttt{copy\\_weights} handles
 \end{itemize}
   GPT-2 Conv1D, RoBERTa/BERT nested, DistilBERT flat, and Qwen/LLaMA GQA.
 \begin{itemize}
@@ -81,7 +81,7 @@ We provide a wrapper class \texttt{FlashAttention3} that:
 1. \textbf{Extracts pretrained weights} from the source attention module.
 2. \textbf{Freezes base weights} and adds trainable LoRA adapters.
 3. \textbf{Dispatches} to FlashAttention-3 if available, otherwise to SDPA.
-4. \textbf{Supports GQA} via \texttt{repeat_kv} before the attention call.
+4. \textbf{Supports GQA} via \texttt{repeat\\_kv} before the attention call.
 5. \textbf{Applies RoPE} (with partial-dim support) before the attention call.
 6. \textbf{Handles causal masking} for decoder models.
 7. \textbf{Supports cross-attention} for encoder-decoder models.
@@ -108,7 +108,7 @@ We provide a wrapper class \texttt{FlashAttention3} that:
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code and evaluation scripts released under
 \end{itemize}
-  MIT.
+  {{LICENSE}}.
 
 \subsection{1.6 Paper Organization}
 

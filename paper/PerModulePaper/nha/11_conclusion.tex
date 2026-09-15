@@ -1,0 +1,80 @@
+
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{NHA} (Native Hybrid Attention), a module that runs local 
+sliding-window attention and global RFF attention in parallel, combined via 
+a learned token-level gate.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Complexity} & \textbf{Mean gate} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & $\mathcal{O}(L(w+m))$ & {{D\_GATE}} \\
+RoBERTa & {{R\_DELTA}}\% & $\mathcal{O}(L(w+m))$ & {{R\_GATE}} \\
+GPT-2 & {{G\_DELTA}}\% & $\mathcal{O}(L(w+m))$ & {{G\_GATE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Linear complexity} in $L$ for both streams.
+2. \textbf{Learned gates} outperform fixed fusion.
+3. \textbf{Orthogonal RFF} stabilizes training.
+4. \textbf{Chunked scan} preserves causality with bounded memory.
+5. \textbf{No parameter reduction} -- compute-only optimization.
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Learned window size
+\end{itemize}
+\begin{itemize}
+\item Per-head RFF count
+\end{itemize}
+\begin{itemize}
+\item Fused kernels for local + RFF
+\end{itemize}
+\begin{itemize}
+\item Long-context evaluation
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical error bounds
+\end{itemize}
+\begin{itemize}
+\item Cross-task gate transfer
+\end{itemize}
+\begin{itemize}
+\item Integration with quantization
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+NHA provides an interpretable hybrid attention mechanism for linear-time 
+inference. We release code and checkpoints.
+
+\subsection{11.6 Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed NHA, implemented the code, wrote the paper.
+\end{itemize}
+\begin{itemize}
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

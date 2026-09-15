@@ -3,7 +3,7 @@
 \subsection{10.1 Short-Sequence Silencing}
 
 At $L = 128$ (our test length), FUSIONATTN uses the \textbf{short path} and 
-provides no sparsity benefit. All our reported results reflect this — they 
+provides no sparsity benefit. All our reported results reflect this -- they 
 are essentially LoRA-only results.
 
 \subsection{10.2 Long Path Untested}
@@ -13,12 +13,12 @@ behavior is extrapolated.
 
 \subsection{10.3 Not a Compression Method}
 
-Parameter count increases by ~1.17\%.
+Parameter count increases by ~{{PARAM\_CHANGE}}\%.
 
 \subsection{10.4 Gate MLP Overhead}
 
-The gate MLP adds ~0.20M parameters per model but is unused at 
-L ≤ 128.
+The gate MLP adds ~{{GATE\_PARAMS}}M parameters per model but is unused at 
+L $\le$ 128.
 
 \subsection{10.5 Task Coverage}
 
@@ -27,7 +27,7 @@ untested.
 
 \subsection{10.6 Model Coverage}
 
-Three models (66.9M–124.6M).
+Three models (66.9M--124.6M).
 
 \subsection{10.7 Hardware}
 
@@ -48,7 +48,7 @@ Standard error ~1.69\%.
 
 \subsection{10.11 Critical Bug: `raise RuntimeError` in inject}
 
-The \texttt{inject_fusion_attn} function has:
+The \texttt{inject\\_fusion\\_attn} function has:
 
 \begin{lstlisting}
 except Exception:

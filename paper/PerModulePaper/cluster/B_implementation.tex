@@ -105,7 +105,7 @@ Without padding mask, K-means will pull centroids toward padding.
 
 \subsubsection{B.5.2 Forgetting to Clamp Counts}
 
-Empty clusters cause division by zero. Clamp counts to ≥1.
+Empty clusters cause division by zero. Clamp counts to $\ge$1.
 
 \subsubsection{B.5.3 Forgetting Temperature Clamp}
 
@@ -121,4 +121,4 @@ GPT-2 Conv1D stores weights as \texttt{(in, out)}. Must transpose.
 
 \subsubsection{B.5.6 Nested Encoder Bypass}
 
-For RoBERTa, do not apply \texttt{out_proj} — the outer layer does.
+For RoBERTa, do not apply \texttt{out\\_proj} -- the outer layer does.

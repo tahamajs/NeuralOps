@@ -1,0 +1,193 @@
+
+\section{7. Results}
+
+\subsection{7.1 Main Results}
+
+\textbf{Table 7.1: SST-2 results with $w = {{WINDOW_SIZE}}$, $k = {{TOP_K}}$.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Density} & \textbf{VRAM} & \textbf{Time} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 100\% & 183 MB & 1.9 s \\
+DistilBERT & **NSA** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & **{{D\_DENSITY}}\%** & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 100\% & 712 MB & 4.1 s \\
+RoBERTa & **NSA** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & **{{R\_DENSITY}}\%** & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 100\% & 793 MB & 4.2 s \\
+GPT-2 & **NSA** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & **{{G\_DENSITY}}\%** & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Density} is the average fraction of attended keys per query.
+
+\subsection{7.2 Attention Mass Preservation}
+
+\textbf{Table 7.2: Retained attention mass.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Preserved mass} \\
+\midrule
+DistilBERT & {{D\_MASS}}\% \\
+RoBERTa & {{R\_MASS}}\% \\
+GPT-2 & {{G\_MASS}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.3 Efficiency}
+
+\textbf{Table 7.3: Memory and time.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
+\midrule
+DistilBERT & full & 183 MB & 1.90 s \\
+DistilBERT & NSA & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+GPT-2 & full & 793 MB & 4.20 s \\
+GPT-2 & NSA & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.4 Ablation: Window Size}
+
+\textbf{Table 7.4: Accuracy vs window size ($k = {{TOP_K}}$).}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{$w$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
+\midrule
+8 & {{D\_W8}} & {{R\_W8}} & {{G\_W8}} & {{DENS8}}\% \\
+16 & {{D\_W16}} & {{R\_W16}} & {{G\_W16}} & {{DENS16}}\% \\
+32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} & {{DENS32}}\% \\
+64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} & {{DENS64}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.5 Ablation: Top-K}
+
+\textbf{Table 7.5: Accuracy vs top-$k$ ($w = {{WINDOW_SIZE}}$).}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{$k$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
+\midrule
+4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} & {{DENSK4}}\% \\
+8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} & {{DENSK8}}\% \\
+16 & {{D\_K16}} & {{R\_K16}} & {{G\_K16}} & {{DENSK16}}\% \\
+32 & {{D\_K32}} & {{R\_K32}} & {{G\_K32}} & {{DENSK32}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.6 Ablation: LoRA Rank}
+
+\textbf{Table 7.6: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
+8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
+16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
+32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.7 Ablation: Recovery Steps}
+
+\textbf{Table 7.7: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.8 Comparison with Companion Methods}
+
+\textbf{Table 7.8: Comparison.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Density} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & Dense & 100\% \\
+GQA & {{GQA\_D}} & {{GQA\_R}} & {{GQA\_G}} & KV reduce & 100\% \\
+Primal & {{PRIMAL\_D}} & {{PRIMAL\_R}} & {{PRIMAL\_G}} & Low-rank & 100\% \\
+ASA-Sparse & {{ASA\_D}} & {{ASA\_R}} & {{ASA\_G}} & Top-k only & {{ASA\_DENS}}\% \\
+ASA-Span & {{ASPAN\_D}} & {{ASPAN\_R}} & {{ASPAN\_G}} & Learned window & {{ASPAN\_DENS}}\% \\
+NHA & {{NHA\_D}} & {{NHA\_R}} & {{NHA\_G}} & Hybrid RFF & 100\% \\
+HALO & {{HALO\_D}} & {{HALO\_R}} & {{HALO\_G}} & Hybrid linear & 100\% \\
+**NSA** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** & **Hybrid top-k** & **{{D\_DENSITY}}\%** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.9 Scaling with Sequence Length}
+
+\textbf{Table 7.9: Density vs sequence length ($w = {{WINDOW_SIZE}}$, $k = {{TOP_K}}$).}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{$L$} & \textbf{Attended keys} & \textbf{Density} \\
+\midrule
+128 & {{KEYS\_128}} & {{DENS\_128}}\% \\
+512 & {{KEYS\_512}} & {{DENS\_512}}\% \\
+2048 & {{KEYS\_2048}} & {{DENS\_2048}}\% \\
+8192 & {{KEYS\_8192}} & {{DENS\_8192}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.10 Training Loss Curves}
+
+\textbf{Figure 7.1} shows loss curves for all three models.
+
+\subsection{7.11 Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} drops {{D\_DELTA}}\%--{{G\_DELTA}}\%.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Density:} reduced to {{D\_DENSITY}}\% (at $L = 128$); lower at longer $L$.
+\end{itemize}
+\begin{itemize}
+\item \textbf{No parameter reduction.}
+\end{itemize}
+\begin{itemize}
+\item \textbf{No time speedup} without sparse kernels.
+\end{itemize}
+\begin{itemize}
+\item \textbf{All models pass quality gate.}
+\end{itemize}

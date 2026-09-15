@@ -1,0 +1,125 @@
+
+\section{5. Architecture Integration}
+
+\subsection{5.1 Model Support}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & Flat & No & No &  \\
+RoBERTa & Nested & No & No & {{R\_VERIFIED}} \\
+GPT-2 & Causal & No & No & {{G\_VERIFIED}} \\
+Qwen3.5 & Causal + RoPE & Yes & Yes & {{Q\_VERIFIED}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{5.2 Weight Transfer}
+
+\subsubsection{5.2.1 DistilBERT (Flat)}
+
+Direct copy of \texttt{q\\_lin, k\\_lin, v\\_lin, out\\_lin}.
+
+\subsubsection{5.2.2 RoBERTa (Nested)}
+
+Extract from inner \texttt{self}. \texttt{is\\_nested\\_encoder = True}; skip own \texttt{out\\_proj}.
+
+\subsubsection{5.2.3 GPT-2 (Causal)}
+
+Split fused \texttt{c\\_attn}:
+
+\begin{lstlisting}
+w = src.c_attn.weight.t()  # Conv1D transpose
+q_w, k_w, v_w = w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{5.2.4 Qwen3.5 (GQA + RoPE)}
+
+Direct copy with \texttt{repeat\\_kv}.
+
+\subsection{5.3 Handling Nested Encoders}
+
+For RoBERTa/BERT, \texttt{is\\_nested\\_encoder = True}:
+\begin{itemize}
+\item No \texttt{out\\_proj} applied inside NSA.
+\end{itemize}
+\begin{itemize}
+\item Outer \texttt{attention.output.dense} applies output.
+\end{itemize}
+
+\subsection{5.4 Causality}
+
+For decoders:
+1. Local mask: $(i - j \leq w) \land (j \leq i)$.
+2. Top-$k$ on causal-masked scores.
+3. Final AND with causal.
+
+\subsection{5.5 Padding Handling}
+
+Padding keys are excluded from both local window and top-$k$:
+
+\begin{lstlisting}
+key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
+non_local_scores = non_local_scores.masked_fill(~key_valid_4d, -1e4)
+\end{lstlisting}
+
+\subsection{5.6 RoPE Integration}
+
+RoPE applied to Q, K \textbf{before} score computation and top-$k$ selection.
+
+\subsection{5.7 Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject NSA into a full model
+\begin{lstlisting}
+Input:  model M, config c, w, k
+Output: M with NSA attention
+
+1:  for   in transformer_layers(M) do
+2:      src $\leftarrow$ extract_attention( )
+3:      if src is None: continue
+4:      new $\leftarrow$ NativeSparseAttention(config=c, pretrained_attn=src, w, k)
+5:      replace_attention( , new)
+6: end for
+\end{lstlisting}
+
+\subsection{5.8 Failure Handling}
+
+\texttt{inject\\_nsa} returns \texttt{None} on failure:
+
+\begin{lstlisting}
+try:
+    new_attn = NativeSparseAttention(...)
+except Exception as e:
+    logger.error(f"NSA injection failed: {e}")
+    return None
+\end{lstlisting}
+
+\subsection{5.9 Parameter Count}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{NSA} \\
+\midrule
+$W_Q, W_K, W_V, W_O$ & Standard & Same \\
+Extra & 0 & **0** \\
+LoRA & 0 & $2 r (\cdots)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{NSA adds zero parameters.}
+
+\subsection{5.10 Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("nsa")
+@ATTENTION_REGISTRY.register("nsa_attention")
+class NativeSparseAttention(BaseAttention): ...
+\end{lstlisting}
+
+\subsection{5.11 Failure Modes}

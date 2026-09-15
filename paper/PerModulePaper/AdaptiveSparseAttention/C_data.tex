@@ -1,0 +1,179 @@
+
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Sparsity (learned mean) & {{D\_SP}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+$\rho_\text{min}$ & {{D\_RHO\_MIN}} \\
+$\rho_\text{max}$ & {{D\_RHO\_MAX}} \\
+$\rho_\text{std}$ & {{D\_RHO\_STD}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Sparsity & {{R\_SP}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Inference time & {{R\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Sparsity & {{G\_SP}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Inference time & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Sparsity Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$\rho$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.1 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+0.3 & {{D\_S30}} & {{R\_S30}} & {{G\_S30}} \\
+0.5 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+0.7 & {{D\_S70}} & {{R\_S70}} & {{G\_S70}} \\
+0.9 & {{D\_S90}} & {{R\_S90}} & {{G\_S90}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Temperature Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$T$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.01 & {{D\_T01}} & {{R\_T01}} & {{G\_T01}} \\
+0.1 & {{D\_T1}} & {{R\_T1}} & {{G\_T1}} \\
+0.5 & {{D\_T5}} & {{R\_T5}} & {{G\_T5}} \\
+1.0 & {{D\_T10}} & {{R\_T10}} & {{G\_T10}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 LoRA Rank Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
+8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
+16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
+32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Recovery Steps Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10\_R}} & {{R\_S10\_R}} & {{G\_S10\_R}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50\_R}} & {{R\_S50\_R}} & {{G\_S50\_R}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Head Budget Distribution}
+
+\subsubsection{DistilBERT}
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Head} & \textbf{Layer 0} & \textbf{Layer 3} & \textbf{Layer 5} \\
+\midrule
+0 & {{D\_H0\_L0}} & {{D\_H0\_L3}} & {{D\_H0\_L5}} \\
+1 & {{D\_H1\_L0}} & {{D\_H1\_L3}} & {{D\_H1\_L5}} \\
+... & ... & ... & ... \\
+11 & {{D\_H11\_L0}} & {{D\_H11\_L3}} & {{D\_H11\_L5}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss  Sparsity
+1     {{D_S1}}  {{D_SP1}}
+5     {{D_S5}}  {{D_SP5}}
+10    {{D_S10}} {{D_SP10}}
+...
+50    {{D_S50}} {{D_SP50}}
+\end{lstlisting}
+
+\subsection{C.10 Raw JSON}
+
+\begin{lstlisting}
+{
+  "adaptive_sparse": {
+    "distilbert": {
+      "accuracy_pct": {{D_ACC}},
+      "learned_sparsity": {{D_SP}},
+      "peak_vram_mb": {{D_VRAM}},
+      "inference_time_s": {{D_TIME}}
+    },
+    "roberta": {...},
+    "gpt2": {...}
+  }
+}
+\end{lstlisting}
+
+\subsection{C.11 Reproduction Commands}
+
+\begin{lstlisting}
+# Main
+python run_all_4_adaptive_sparse.py --sparsity_ratio 0.5
+
+# Sparsity sweep
+for rho in 0.1 0.3 0.5 0.7 0.9; do
+    python run_all_4_adaptive_sparse.py --sparsity_ratio $rho
+done
+\end{lstlisting}

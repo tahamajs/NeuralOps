@@ -1,0 +1,126 @@
+
+\section{9. Discussion}
+
+\subsection{9.1 Key Takeaways}
+
+\subsubsection{9.1.1 Takeaway 1: Token Pruning is Effective}
+
+At $\rho = {{KEEP_RATIO}}$, PTP achieves \textbf{{{D\_SPEEDUP}}$\times$} speedup with 
+only \textbf{{{D\_DELTA}}\%} accuracy drop.
+
+\subsubsection{9.1.2 Takeaway 2: [CLS] Preservation is Essential}
+
+Without [CLS] preservation, accuracy drops by \textbf{{{CLS\_GAIN}}\%}.
+
+\subsubsection{9.1.3 Takeaway 3: Learned Scores Reveal Structure}
+
+The MLP learns a task-specific importance measure that correlates with 
+content-word importance.
+
+\subsection{9.2 When to Use PTP}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Long-sequence classification} (document sentiment, topic)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Retrieval-augmented generation} (prune retrieved passages)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Edge deployment} where latency matters
+\end{itemize}
+
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Very short sequences} ($L < 32$)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Generation tasks} (token order matters)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Tasks requiring full context} (long-form QA)
+\end{itemize}
+
+\subsection{9.3 Choosing Keep Ratio}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Use case} & \textbf{Recommended $\rho$} \\
+\midrule
+Aggressive compression & 0.5 \\
+Balanced & 0.7 \\
+Safe & 0.8 \\
+Very safe & 0.9 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.4 Cost-Benefit}
+
+For DistilBERT at $L = 128$:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{Acc} & \textbf{Speedup} & \textbf{VRAM} \\
+\midrule
+Baseline & 90.71\% & 1.00$\times$ & 183 MB \\
+$\rho = 0.5$ & {{D\_R50}}\% & 2.00$\times$ & {{VRAM50}} MB \\
+$\rho = 0.7$ & {{D\_R70}}\% & 1.43$\times$ & {{VRAM70}} MB \\
+$\rho = 0.8$ & **{{D\_ACC}}\%** & **{{D\_SPEEDUP}}$\times$** & {{D\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.5 Interaction with Other Methods}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Method} & \textbf{PTP-compatible?} \\
+\midrule
+GQA & (repeat then prune) \\
+RoPE & (apply then prune) \\
+Quantization & (prune then quantize) \\
+KV cache & (PTP reduces cache) \\
+MoE & (orthogonal) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.6 Open Questions}
+
+1. \textbf{Per-head scoring:} Should each head have its own score network?
+2. \textbf{Learned $\rho$:} Can we learn the keep ratio?
+3. \textbf{Cross-layer sharing:} Share the score network across layers?
+4. \textbf{Long-context scaling:} How does PTP scale at $L = 4096$?
+
+\subsection{9.7 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item \textbf{Faster inference:} Reduces compute per token.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Lower memory:} Attention memory scales with $k$.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Interpretability:} Token importance is visible.
+\end{itemize}
+
+\subsubsection{Negative}
+\begin{itemize}
+\item \textbf{Dual-use:} Efficiency gains benefit malicious applications.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Concentration:} Favors large labs.
+\end{itemize}
+
+\subsubsection{Environmental}
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.

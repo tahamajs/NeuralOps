@@ -67,10 +67,10 @@ context = context * mask_expanded
 \subsection{B.5 Common Pitfalls}
 
 \subsubsection{B.5.1 DCT Dimension Mismatch}
-Basis is (N, r), Q is (B, H, N, d_h). Einsum "bhnd,nr->bhrd" handles this.
+Basis is (N, r), Q is (B, H, N, d\_h). Einsum "bhnd,nr->bhrd" handles this.
 
-\subsubsection{B.5.2 Forgetting √(N/r) Scaling}
-Without scaling, output magnitude drops by √(r/N) ≈ 0.7 for typical 
+\subsubsection{B.5.2 Forgetting $\sqrt{}$(N/r) Scaling}
+Without scaling, output magnitude drops by $\sqrt{}$(r/N) $\approx$ 0.7 for typical 
 configurations.
 
 \subsubsection{B.5.3 QR Numerical Stability}
@@ -78,10 +78,10 @@ QR on (N, r) matrix with N > r adds no rank; regularization via \texttt{epsilon 
 prevents degenerate cases.
 
 \subsubsection{B.5.4 Decoder Fallback Detection}
-Use \texttt{model_type.startswith(prefix)} for robustness.
+Use \texttt{model\\_type.startswith(prefix)} for robustness.
 
 \subsubsection{B.5.5 Nested Encoder}
-For RoBERTa: \texttt{src = src.self} after setting \texttt{is_nested_encoder = True}.
+For RoBERTa: \texttt{src = src.self} after setting \texttt{is\\_nested\\_encoder = True}.
 
 \subsection{B.6 Diagnostics}
 

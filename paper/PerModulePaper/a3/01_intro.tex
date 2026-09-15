@@ -17,8 +17,8 @@ where $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times
 $r \ll \min(d_\text{in}, d_\text{out})$. The parameter count decreases from 
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$, achieving 
 compression ratio $\frac{r(d_\text{in} + d_\text{out})}{d_\text{in} d_\text{out}}$. 
-For a $768 \times 768$ matrix at rank $r = 64$, this is a 5.9× reduction 
-(589,824 → 98,304 parameters).
+For a $768 \times 768$ matrix at rank $r = 64$, this is a 5.9$\times$ reduction 
+(589,824 $\to$ 98,304 parameters).
 
 Classical SVD is optimal in an unweighted Frobenius norm sense:
 
@@ -33,7 +33,7 @@ variance** across channels. Some input dimensions carry most of the signal;
 others are nearly constant. Reconstructing the near-constant dimensions as 
 faithfully as the high-variance ones wastes capacity.
 
-{{MOTIVATION_PARAGRAPH_3}}
+{{MOTIVATION\_PARAGRAPH\_3}}
 
 
 \subsection{1.2 Problem Statement}
@@ -53,7 +53,7 @@ where $|\theta(\cdot)|$ denotes parameter count.
 We impose the following constraints:
 
 1. \textbf{Strict reconstruction bound.} For each compressed layer, 
-   $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = 0.20$.
+   $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = {{MAX_ERROR}}$.
 2. \textbf{No retraining of base weights.} Only LoRA adapters may be trained.
 3. \textbf{Memory-bounded calibration.} Activation statistics must be collected in 
    $\mathcal{O}(d^2)$ memory, not $\mathcal{O}(Nd^2)$.
@@ -105,7 +105,7 @@ We make the following contributions:
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts are
 \end{itemize}
-  released under MIT.
+  released under {{LICENSE}}.
 
 \subsection{1.5 Paper Organization}
 

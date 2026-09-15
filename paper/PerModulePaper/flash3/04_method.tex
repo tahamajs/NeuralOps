@@ -12,40 +12,40 @@ provides three execution paths:
 \textbf{Figure 4.1} shows the dispatch logic.
 
 \begin{lstlisting}
-    ┌──────────────────────────────────┐
-    │  Input X                          │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │  Q/K/V projection (frozen + LoRA)│
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │  Apply RoPE (if applicable)       │
-    │  Apply GQA repeat_kv (if needed)  │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │  Is FA3 available AND CUDA?       │
-    └──────┬─────────────────┬──────────┘
-           │ Yes             │ No
-           ▼                 ▼
-    ┌─────────────┐   ┌─────────────────┐
-    │ flash_attn  │   │ SDPA fallback   │
-    │ _func call  │   │ (F.scaled_...)  │
-    └──────┬──────┘   └────────┬────────┘
-           │                   │
-           └─────────┬─────────┘
-                     ▼
-              ┌─────────────┐
-              │ out_proj    │
-              │ (frozen+LoRA)│
-              └──────┬──────┘
-                     │
-                     ▼
+    +----------------------------------+
+    |  Input X                          |
+    +--------------+-------------------+
+                   |
+                    
+    +----------------------------------+
+    |  Q/K/V projection (frozen + LoRA)|
+    +--------------+-------------------+
+                   |
+                    
+    +----------------------------------+
+    |  Apply RoPE (if applicable)       |
+    |  Apply GQA repeat_kv (if needed)  |
+    +--------------+-------------------+
+                   |
+                    
+    +----------------------------------+
+    |  Is FA3 available AND CUDA?       |
+    +------+-----------------+----------+
+           | Yes             | No
+                              
+    +-------------+   +-----------------+
+    | flash_attn  |   | SDPA fallback   |
+    | _func call  |   | (F.scaled_...)  |
+    +------+------+   +--------+--------+
+           |                   |
+           +---------+---------+
+                      
+              +-------------+
+              | out_proj    |
+              | (frozen+LoRA)|
+              +------+------+
+                     |
+                      
                     Y
 \end{lstlisting}
 
@@ -54,16 +54,16 @@ provides three execution paths:
 For each projection $P \in \{Q, K, V, O\}$, extract $W_P$ from the source:
 
 \begin{itemize}
-\item \textbf{DistilBERT:} \texttt{q_lin}, \texttt{k_lin}, \texttt{v_lin}, \texttt{out_lin}.
+\item \textbf{DistilBERT:} \texttt{q\\_lin}, \texttt{k\\_lin}, \texttt{v\\_lin}, \texttt{out\\_lin}.
 \end{itemize}
 \begin{itemize}
 \item \textbf{RoBERTa:} \texttt{self.query}, \texttt{self.key}, \texttt{self.value}; \texttt{output.dense} for \texttt{o}.
 \end{itemize}
 \begin{itemize}
-\item \textbf{GPT-2:} Split \texttt{c_attn.weight.T}; \texttt{c_proj.weight.T} for \texttt{o}.
+\item \textbf{GPT-2:} Split \texttt{c\\_attn.weight.T}; \texttt{c\\_proj.weight.T} for \texttt{o}.
 \end{itemize}
 \begin{itemize}
-\item \textbf{Qwen:} \texttt{q_proj}, \texttt{k_proj}, \texttt{v_proj}, \texttt{o_proj}.
+\item \textbf{Qwen:} \texttt{q\\_proj}, \texttt{k\\_proj}, \texttt{v\\_proj}, \texttt{o\\_proj}.
 \end{itemize}
 
 Frobenius norms verified $\geq 10^{-4}$.
@@ -98,7 +98,7 @@ Q, K \leftarrow \text{RoPE}(Q, K, \text{cos}, \text{sin})
 \tag{4.2}
 \]
 
-Supports partial RoPE (rotary_dim < head_dim) via coordinate slicing.
+Supports partial RoPE (rotary\_dim < head\_dim) via coordinate slicing.
 
 \subsubsection{GQA}
 
@@ -114,7 +114,7 @@ V \leftarrow \text{repeat\_kv}(V, H/H_{kv})
 
 \subsubsection{Path A: FlashAttention-3}
 
-If \texttt{FLASH_ATTN_AVAILABLE} and \texttt{hidden_states.is_cuda}:
+If \texttt{FLASH\\_ATTN\\_AVAILABLE} and \texttt{hidden\\_states.is\\_cuda}:
 
 \begin{lstlisting}
 q_fa = q.transpose(1, 2).contiguous()  # (B, L, H, d_h)
@@ -129,7 +129,7 @@ if use_fp8 and hasattr(torch, "float8_e4m3fn"):
 out = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag).to(dtype)
 \end{lstlisting}
 
-\textbf{FP8.} If \texttt{use_fp8=True} and Hopper, casts Q/K/V to FP8.
+\textbf{FP8.} If \texttt{use\\_fp8=True} and Hopper, casts Q/K/V to FP8.
 
 \subsubsection{Path B: SDPA Fallback}
 
@@ -151,42 +151,42 @@ Y = \text{Attn}(Q, K, V) W_O^\top + b_O
 \tag{4.4}
 \]
 
-\textbf{Nested bypass.} For RoBERTa/BERT, \texttt{out_proj} is not applied; the outer 
+\textbf{Nested bypass.} For RoBERTa/BERT, \texttt{out\\_proj} is not applied; the outer 
 \texttt{BertSelfOutput.dense} performs it.
 
 \subsection{4.7 The Full Algorithm}
 
 \textbf{Algorithm 1:} FlashAttention-3 wrapper forward
 \begin{lstlisting}
-Input:  X ∈ R^{B×L×d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
 Output: Y, None
 
-1:  Q ← LoRALinear_Q(X)
-2:  K ← LoRALinear_K(X)
-3:  V ← LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear_Q(X)
+2:  K $\leftarrow$ LoRALinear_K(X)
+3:  V $\leftarrow$ LoRALinear_V(X)
 4:
-5:  if RoPE: (Q, K) ← apply_rope(Q, K, cos, sin)
-6:  if GQA: K, V ← repeat_kv(K, V, H/H_kv)
+5:  if RoPE: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V, H/H_kv)
 7:
-8:  causal_flag ← is_decoder AND not cross_attention AND L == kv_len
+8:  causal_flag $\leftarrow$ is_decoder AND not cross_attention AND L == kv_len
 9:
 10: if FA3_AVAILABLE and is_cuda:
 11:     try:
 12:         if use_fp8 and fp8_supported:
-13:             Q, K, V ← cast_to_fp8(Q, K, V)
-14:         Y_ctx ← flash_attn_func(Q, K, V, causal=causal_flag)
+13:             Q, K, V $\leftarrow$ cast_to_fp8(Q, K, V)
+14:         Y_ctx $\leftarrow$ flash_attn_func(Q, K, V, causal=causal_flag)
 15:     except:
-16:         Y_ctx ← None
+16:         Y_ctx $\leftarrow$ None
 17: else:
-18:     Y_ctx ← None
+18:     Y_ctx $\leftarrow$ None
 19:
-20: if Y_ctx is None:                                ▷ Fallback
-21:     attn_mask ← build_mask(attention_mask, causal_flag)
-22:     Y_ctx ← SDPA(Q, K, V, attn_mask)
+20: if Y_ctx is None:                                  Fallback
+21:     attn_mask $\leftarrow$ build_mask(attention_mask, causal_flag)
+22:     Y_ctx $\leftarrow$ SDPA(Q, K, V, attn_mask)
 23:
-24: Y_ctx ← Y_ctx.reshape(B, L, H·d_h)
-25: if nested: Y ← Y_ctx
-26: else: Y ← LoRALinear_O(Y_ctx)
+24: Y_ctx $\leftarrow$ Y_ctx.reshape(B, L, H d_h)
+25: if nested: Y $\leftarrow$ Y_ctx
+26: else: Y $\leftarrow$ LoRALinear_O(Y_ctx)
 27:
 28: return Y
 \end{lstlisting}
@@ -199,15 +199,15 @@ Output: Y, None
 \toprule
 \textbf{Path} & \textbf{Time} & \textbf{Memory} \\
 \midrule
-FA3 & $\mathcal{O}(L^2 d\_h)$ + HBM savings & $\mathcal{O}(L d\_h)$ \\
-SDPA (mem-efficient) & $\mathcal{O}(L^2 d\_h)$ & $\mathcal{O}(L d\_h)$ \\
-SDPA (math) & $\mathcal{O}(L^2 d\_h)$ & $\mathcal{O}(L^2)$ \\
+FA3 & $\mathcal{O}(L^2 d_h)$ + HBM savings & $\mathcal{O}(L d_h)$ \\
+SDPA (mem-efficient) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L d_h)$ \\
+SDPA (math) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4× over 
-naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2×.
+\textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4$\times$ over 
+naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$\times$.
 
 \subsection{4.9 Parameter Analysis}
 
@@ -218,15 +218,15 @@ naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2×.
 \textbf{Component} & \textbf{Baseline} & \textbf{Wrapper} \\
 \midrule
 Base weights & $4 d^2$ & $4 d^2$ (frozen) \\
-LoRA ($r\_L$) & 0 & $8 r\_L d$ \\
-**Total per layer** & $4 d^2$ & $4 d^2 + 8 r\_L d$ \\
+LoRA ($r_L$) & 0 & $8 r_L d$ \\
+**Total per layer** & $4 d^2$ & $4 d^2 + 8 r_L d$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 For DistilBERT ($d=768$, $r_L=16$): \textbf{+589,824 params} across 6 layers.
 
-\textbf{Wrapper increases parameter count by ~0.88\%.}
+\textbf{Wrapper increases parameter count by ~{{PARAM\_CHANGE}}\%.}
 
 \subsection{4.10 Theoretical Notes}
 

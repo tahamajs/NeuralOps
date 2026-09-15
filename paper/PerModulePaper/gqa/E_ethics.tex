@@ -1,0 +1,116 @@
+
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item \textbf{Longer context:} Enables more capable language applications.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Cheaper inference:} Reduces compute cost per token.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Edge deployment:} Makes on-device LLMs feasible.
+\end{itemize}
+
+\subsubsection{Negative}
+\begin{itemize}
+\item \textbf{Dual-use:} Long-context enables surveillance at scale.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Concentration:} Favors large labs with long-context models.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Environmental:} Cheaper inference may increase total usage (Jevons paradox).
+\end{itemize}
+
+\subsection{E.2 Environmental Impact}
+
+\begin{itemize}
+\item \textbf{Total GPU-hours:} ~{{COMPUTE\_HOURS}}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Estimated CO$_2$:} {{CO2\_KG}} kg CO$_2$eq
+\end{itemize}
+
+Compression methods generally reduce emissions per inference.
+
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 (public, English movie reviews)
+\end{itemize}
+\begin{itemize}
+\item \textbf{PII:} None
+\end{itemize}
+\begin{itemize}
+\item \textbf{Bias:} Western-centric
+\end{itemize}
+
+\subsection{E.4 Model Ethics}
+
+\subsubsection{Bias}
+
+We do not audit GQA for bias. Compression may affect head specialization 
+and could amplify or suppress existing biases.
+
+\subsubsection{Misuse}
+
+Could enable surveillance, misinformation. Not endorsed.
+
+\subsection{E.5 Authorship and Credit}
+
+See  11.7.
+
+\subsection{E.6 Conflicts of Interest}
+
+None.
+
+\subsection{E.7 Funding}
+
+{{FUNDING}}
+
+\subsection{E.8 Acknowledgements}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{E.9 LLM Usage}
+
+Parts drafted with LLM assistance.
+
+\subsection{E.10 Reproducibility Commitments}
+
+1. Release code
+2. Release checkpoints
+3. Report negative results
+4. Document all hyperparameters
+5. Respond to replication attempts
+
+\subsection{E.11 Long-Term Considerations}
+
+Efficient inference could:
+
+\begin{itemize}
+\item Democratize LLM deployment
+\end{itemize}
+\begin{itemize}
+\item Reduce AI carbon footprint
+\end{itemize}
+\begin{itemize}
+\item Enable edge applications
+\end{itemize}
+
+But also:
+
+\begin{itemize}
+\item Enable long-context surveillance
+\end{itemize}
+\begin{itemize}
+\item Concentrate AI capabilities
+\end{itemize}
+\begin{itemize}
+\item Widen the digital divide
+\end{itemize}
+
+We encourage community discussion of these trade-offs.

@@ -34,23 +34,23 @@
 
 \textbf{Authors:}
 \begin{itemize}
-\item Your Name¹ — you@university.edu
+\item Your Name¹ --- you@university.edu
 \end{itemize}
 \begin{itemize}
-\item {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+\item {{AUTHOR\_2\_NAME}}² --- {{AUTHOR\_2\_EMAIL}}
 \end{itemize}
 
 \textbf{Affiliations:}
 \begin{itemize}
-\item ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
+\item ¹ {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+\item ² {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
 \end{itemize}
 
 \textbf{Preprint date:} 2026-09-15
 \textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD_Project/tree/main/framework/attentions/bam_umoe.py
+\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/bam\_umoe.py
 \textbf{License:} MIT
 
 
@@ -101,42 +101,42 @@ initialization perturbs the model and destroys its pretrained knowledge.
 BAM-UMoE solves this by carefully initializing the MoE branch so that at 
 training step 0, the model behaves exactly like the pretrained model. Then, 
 during fine-tuning, the MoE branch gradually "wakes up" and learns to add 
-value. The trade-off is a substantial increase in model size — this is a 
+value. The trade-off is a substantial increase in model size --- this is a 
 capacity expansion method, not a compression method.
 
 
 
 \subsection{Table of Contents}
 
-1. [Introduction](01_intro.md)
-2. [Related Work](02_related.md)
-3. [Background](03_background.md)
-4. [Method](04_method.md)
-5. [Architecture Integration](05_architecture.md)
-6. [Experimental Setup](06_setup.md)
-7. [Results](07_results.md)
-8. [Analysis](08_analysis.md)
-9. [Discussion](09_discussion.md)
-10. [Limitations](10_limitations.md)
-11. [Conclusion](11_conclusion.md)
-12. [Reproducibility](12_reproducibility.md)
-13. [References](13_references.md)
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
 
 \textbf{Appendices:}
 \begin{itemize}
-\item [A. Mathematical Derivations](A_math.md)
+\item [A. Mathematical Derivations](A\_math.md)
 \end{itemize}
 \begin{itemize}
-\item [B. Implementation Details](B_implementation.md)
+\item [B. Implementation Details](B\_implementation.md)
 \end{itemize}
 \begin{itemize}
-\item [C. Full Experimental Data](C_data.md)
+\item [C. Full Experimental Data](C\_data.md)
 \end{itemize}
 \begin{itemize}
-\item [D. Negative Results](D_negative_results.md)
+\item [D. Negative Results](D\_negative\_results.md)
 \end{itemize}
 \begin{itemize}
-\item [E. Ethical Considerations](E_ethics.md)
+\item [E. Ethical Considerations](E\_ethics.md)
 \end{itemize}
 
 \clearpage
@@ -272,7 +272,7 @@ top-k. BAM-UMoE uses hard top-2 for simplicity.
 \subsection{2.2 Post-Hoc MoE}
 
 \textbf{MoEfication.} Zhang et al. (2022) split pretrained FFN layers into 
-multiple experts without retraining. BAM-UMoE is orthogonal — it adds new 
+multiple experts without retraining. BAM-UMoE is orthogonal --- it adds new 
 capacity rather than partitioning existing capacity.
 
 \textbf{Sparse Upcycling.} Komatsuzaki et al. (2023) initialize MoE from a dense 
@@ -400,8 +400,8 @@ preserves GQA structure.
 \subsection{3.6 Rotary Position Embeddings}
 
 RoPE rotates Q, K by position-dependent angles. BAM-UMoE supports **partial 
-RoPE** (Qwen3.5 with rotary_dim < head_dim) by rotating the first 
-\texttt{rotary_dim} coordinates.
+RoPE** (Qwen3.5 with rotary\_dim < head\_dim) by rotating the first 
+\texttt{rotary\\_dim} coordinates.
 
 \subsection{3.7 Notation Summary}
 
@@ -431,7 +431,7 @@ The forward pass:
         │              │              │
         ▼              ▼              ▼
     ┌───────┐      ┌───────┐      ┌───────┐
-    │ Q     │      │ K     │      │ V     │   ← frozen base
+    │ Q     │      │ K     │      │ V     │   $\leftarrow$ frozen base
     │ proj  │      │ proj  │      │ proj  │   + LoRA
     └───┬───┘      └───┬───┘      └───┬───┘
         │              │              │
@@ -442,7 +442,7 @@ The forward pass:
         │              │      │   top-2)     │
         │              │      └──────┬───────┘
         │              │             │
-        │              │             ▼  × 0.1 × σ(gate)
+        │              │             ▼  $\times$ 0.1 $\times$ $\sigma$(gate)
         │              │        ┌─────────┐
         │              │        │ Add     │
         │              │        │ to V    │
@@ -478,7 +478,7 @@ where $W_P$ is the frozen base, $(A_P, B_P)$ are LoRA factors, and
 $s = \alpha/r_L$ is the LoRA scaling.
 
 Base weights are copied exactly from the pretrained attention via 
-\texttt{copy_weights} (see Section 5).
+\texttt{copy\\_weights} (see Section 5).
 
 \subsection{4.3 Phase 2: MoE Value Refinement}
 
@@ -553,7 +553,7 @@ V' = V + \alpha \cdot \text{MoE}(X)
 \]
 
 with $\alpha = 0.1$ (fixed). The 0.1 scaling keeps the MoE contribution 
-conservative — even after training, the MoE never dominates the base.
+conservative --- even after training, the MoE never dominates the base.
 
 \subsection{4.4 Phase 3: Gated Ramp-Up}
 
@@ -601,34 +601,34 @@ Y = \text{Attn}(Q, K, V') W_O^\top + b_O
 \tag{4.11}
 \]
 
-with nested encoder bypass: for RoBERTa/BERT, \texttt{out_lin} is not applied 
+with nested encoder bypass: for RoBERTa/BERT, \texttt{out\\_lin} is not applied 
 (the outer \texttt{output.dense} performs it).
 
 \subsection{4.6 The Full Algorithm}
 
 \textbf{Algorithm 1:} BAM-UMoE forward pass
 \begin{lstlisting}
-Input:  X ∈ R^{B×L×d}, mask, position_embeddings
-Output: Y ∈ R^{B×L×d}, aux_loss
+Input:  X $\in$ R^{B$\times$L$\times$d}, mask, position_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}, aux_loss
 
-1:  Q ← LoRALinear_Q(X)                        ▷ Frozen base + LoRA
-2:  K ← LoRALinear_K(X)
-3:  V ← LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear_Q(X)                        ▷ Frozen base + LoRA
+2:  K $\leftarrow$ LoRALinear_K(X)
+3:  V $\leftarrow$ LoRALinear_V(X)
 4:
-5:  if RoPE: (Q, K) ← apply_rotary(Q, K, cos, sin)
-6:  if GQA: K, V ← repeat_kv(K, V, H/H_kv)
+5:  if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V, H/H_kv)
 7:
 8:  if not cross_attention:
-9:      MoE_out ← UnifiedMoE(X)                ▷ Top-2 MoE
-10:     V ← V + 0.1 · MoE_out                  ▷ MoE refinement
+9:      MoE_out $\leftarrow$ UnifiedMoE(X)                ▷ Top-2 MoE
+10:     V $\leftarrow$ V + 0.1 · MoE_out                  ▷ MoE refinement
 11:
-12: S ← (Q @ K^T) / √d_h                       ▷ FP32
-13: S ← apply_mask(S, causal, padding)
-14: A ← softmax(S)
-15: C ← A @ V
+12: S $\leftarrow$ (Q @ K^T) / $\sqrt{}$d_h                       ▷ FP32
+13: S $\leftarrow$ apply_mask(S, causal, padding)
+14: A $\leftarrow$ softmax(S)
+15: C $\leftarrow$ A @ V
 16:
-17: if nested_encoder: Y ← C
-18: else: Y ← LoRALinear_O(C)
+17: if nested_encoder: Y $\leftarrow$ C
+18: else: Y $\leftarrow$ LoRALinear_O(C)
 19:
 20: return Y, MoE.aux_loss
 \end{lstlisting}
@@ -646,20 +646,20 @@ Output: Y ∈ R^{B×L×d}, aux_loss
 QKV projections & $O(L d^2)$ \\
 MoE router & $O(L d E)$ \\
 Expert forward (top-2) & $O(2 L d \cdot 2 d)$ \\
-Attention scores & $O(L^2 d\_h)$ \\
-Context & $O(L^2 d\_h)$ \\
+Attention scores & $O(L^2 d_h)$ \\
+Context & $O(L^2 d_h)$ \\
 Output proj & $O(L d^2)$ \\
-**Total** & $O(L^2 d\_h + L d^2 + L d^2)$ \\
+**Total** & $O(L^2 d_h + L d^2 + L d^2)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The MoE branch adds $O(L d^2)$ per layer (since 2 experts × 2-layer MLP 
+The MoE branch adds $O(L d^2)$ per layer (since 2 experts $\times$ 2-layer MLP 
 of width $2d$), comparable to the base attention cost.
 
 \subsubsection{4.7.2 Parameter Count}
 
-For \texttt{UnifiedMoE(dim=d, num_experts=E, output_dim=d)}:
+For \texttt{UnifiedMoE(dim=d, num\\_experts=E, output\\_dim=d)}:
 
 \begin{table}[H]
 \centering
@@ -676,10 +676,10 @@ Total experts & $8 d^2 E$ \\
 \end{tabular}
 \end{table}
 
-For $d = 768$, $E = 8$: \textbf{8 × 768² × 8 ≈ 37.7M params per layer}.
+For $d = 768$, $E = 8$: \textbf{8 $\times$ 768² $\times$ 8 $\approx$ 37.7M params per layer}.
 
 \textbf{This is enormous.} For DistilBERT (6 layers): \textbf{+226M params} on a 
-66.9M model. Parameter count \textbf{increases by ~4.4×}.
+66.9M model. Parameter count \textbf{increases by ~4.4$\times$}.
 
 \textbf{BAM-UMoE is not a compression method.}
 
@@ -731,16 +731,16 @@ o_w = src.c_proj.weight.T
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA + RoPE)}
-Direct copy from \texttt{q_proj}, \texttt{k_proj}, \texttt{v_proj}, \texttt{o_proj}.
+Direct copy from \texttt{q\\_proj}, \texttt{k\\_proj}, \texttt{v\\_proj}, \texttt{o\\_proj}.
 
 \subsection{5.3 Nested Encoder Bypass}
 
-For RoBERTa, BAM-UMoE's \texttt{out_lin} is not applied; the outer 
+For RoBERTa, BAM-UMoE's \texttt{out\\_lin} is not applied; the outer 
 \texttt{BertSelfOutput.dense} performs the projection. This avoids double projection.
 
 \subsection{5.4 Partial RoPE}
 
-For Qwen3.5 with \texttt{head_dim=256} and \texttt{rotary_dim=64}:
+For Qwen3.5 with \texttt{head\\_dim=256} and \texttt{rotary\\_dim=64}:
 \begin{lstlisting}
 q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
 q_rot = (q_rot * cos) + (rotate_half(q_rot) * sin)
@@ -778,7 +778,7 @@ class BAMUMoEBlock(BaseAttention):
 \midrule
 Missing weights & `copy\_weights` raises & Return None \\
 NaN in scores & `torch.nan\_to\_num` & Replace with 0 \\
-MoE overflow & `torch.clamp` & Clamp to ±65000 \\
+MoE overflow & `torch.clamp` & Clamp to $\pm$65000 \\
 Cross-attention MoE & Skip MoE branch & Preserve alignment \\
 \bottomrule
 \end{tabular}
@@ -823,7 +823,7 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
 `lora\_rank` & 16 \\
 `lora\_alpha` & 32 \\
 MoE scale $\alpha$ & 0.1 \\
-Gate bias $b\_g$ & -3.0 \\
+Gate bias $b_g$ & -3.0 \\
 Noise std (training) & 0.1 \\
 Expert multiplier & 2 \\
 \bottomrule
@@ -868,7 +868,7 @@ Precision & FP16 \\
 
 \subsection{6.6 Quality Gate}
 
-PASS ≥ 56\%, PASS_LOW 50.92\%–56\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
 
 \subsection{6.7 Hardware}
 
@@ -896,13 +896,13 @@ python run_all_4_bam_umoe.py \
 \centering
 \begin{tabular}{lllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{Δ} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
-DistilBERT & full & 90.71\% & — & 0.9099 & 66.9M & 183 MB \\
+DistilBERT & full & 90.71\% & --- & 0.9099 & 66.9M & 183 MB \\
 DistilBERT & **BAM-UMoE** & **89.5** & -1.2 & 0.895 & 293M & 800 MB \\
-RoBERTa & full & 78.56\% & — & 0.8124 & 124.6M & 712 MB \\
+RoBERTa & full & 78.56\% & --- & 0.8124 & 124.6M & 712 MB \\
 RoBERTa & **BAM-UMoE** & **76.5** & -2.1 & 0.765 & 570M & {{R\_VRAM}} MB \\
-GPT-2 & full & 79.36\% & — & 0.7978 & 124.4M & 793 MB \\
+GPT-2 & full & 79.36\% & --- & 0.7978 & 124.4M & 793 MB \\
 GPT-2 & **BAM-UMoE** & **77.8** & -1.6 & 0.778 & 570M & {{G\_VRAM}} MB \\
 \bottomrule
 \end{tabular}
@@ -918,9 +918,9 @@ GPT-2 & **BAM-UMoE** & **77.8** & -1.6 & 0.778 & 570M & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{BAM-UMoE} & \textbf{Increase} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66.9M & 293M & +226M & 4.4× \\
-RoBERTa & 124.6M & 570M & +445M & 4.6× \\
-GPT-2 & 124.4M & 570M & +445M & 4.6× \\
+DistilBERT & 66.9M & 293M & +226M & 4.4$\times$ \\
+RoBERTa & 124.6M & 570M & +445M & 4.6$\times$ \\
+GPT-2 & 124.4M & 570M & +445M & 4.6$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -945,7 +945,7 @@ GPT-2 & 0.10 & 0.16 & 0.125 \\
 \end{tabular}
 \end{table}
 
-Well-balanced: min/max within ±25\% of ideal.
+Well-balanced: min/max within $\pm$25\% of ideal.
 
 \subsection{7.4 Efficiency}
 
@@ -993,9 +993,9 @@ GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$k$} & \textbf{D acc} & \textbf{Time overhead} \\
 \midrule
-1 & 88.5 & 1× \\
-**2** & **89.5** & **2×** \\
-4 & 89.3 & 4× \\
+1 & 88.5 & 1$\times$ \\
+**2** & **89.5** & **2$\times$** \\
+4 & 89.3 & 4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1021,7 +1021,7 @@ GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
 \subsection{7.8 Summary}
 
 \begin{itemize}
-\item \textbf{Accuracy:} -1.2\%–-1.6\% change.
+\item \textbf{Accuracy:} -1.2\%---1.6\% change.
 \end{itemize}
 \begin{itemize}
 \item \textbf{Parameters:} +350\% (expansion).
@@ -1138,7 +1138,7 @@ LoRA only (r=16) & 88.9 & 66.9M+0.6M \\
 \end{table}
 
 \textbf{Observation.} MoE adds 0.6\% accuracy at cost of 
-4.4× parameters.
+4.4$\times$ parameters.
 
 \subsection{8.6 Failure Analysis}
 
@@ -1146,9 +1146,9 @@ No systematic failures.
 
 \subsection{8.7 Summary of Insights}
 
-1. \textbf{Step-0 preservation works} — forward diff < 1.2e-6.
-2. \textbf{Load balancing is stable} — entropy near max.
-3. \textbf{MoE adds capacity} — but at high parameter cost.
+1. \textbf{Step-0 preservation works} --- forward diff < 1.2e-6.
+2. \textbf{Load balancing is stable} --- entropy near max.
+3. \textbf{MoE adds capacity} --- but at high parameter cost.
 4. \textbf{Not a compression method.}
 
 \clearpage
@@ -1188,16 +1188,16 @@ A3, AASVD, Adaptive SVD, or other compression methods on parameter count.
 
 \subsubsection{Not Recommended}
 \begin{itemize}
-\item \textbf{Model size reduction} — use compression methods
+\item \textbf{Model size reduction} --- use compression methods
 \end{itemize}
 \begin{itemize}
-\item \textbf{Latency-critical} — MoE adds compute
+\item \textbf{Latency-critical} --- MoE adds compute
 \end{itemize}
 \begin{itemize}
-\item \textbf{VRAM-constrained} — MoE increases VRAM
+\item \textbf{VRAM-constrained} --- MoE increases VRAM
 \end{itemize}
 \begin{itemize}
-\item \textbf{Simple classification} — overkill
+\item \textbf{Simple classification} --- overkill
 \end{itemize}
 
 \subsection{9.3 Cost-Benefit Analysis}
@@ -1211,7 +1211,7 @@ A3, AASVD, Adaptive SVD, or other compression methods on parameter count.
 Accuracy & 90.71\% & 89.5\% & -1.2\% \\
 Params & 66.9M & 293M & +226M \\
 VRAM & 183 MB & 800 MB & +617 MB \\
-Time & 1.90 s & 4.5 s & 2.4× \\
+Time & 1.90 s & 4.5 s & 2.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1234,9 +1234,9 @@ Full fine-tune & Retrain & 0 & 90.9 \\
 \subsection{9.5 Open Questions}
 
 1. \textbf{Optimal E and k} for different tasks?
-2. \textbf{Interaction with compression} — can BAM-UMoE be combined with A3?
-3. \textbf{Sparse MoE} — would 1-expert-per-token reduce cost?
-4. \textbf{Long context} — does MoE help?
+2. \textbf{Interaction with compression} --- can BAM-UMoE be combined with A3?
+3. \textbf{Sparse MoE} --- would 1-expert-per-token reduce cost?
+4. \textbf{Long context} --- does MoE help?
 
 \subsection{9.6 Broader Impact}
 
@@ -1250,14 +1250,14 @@ Full fine-tune & Retrain & 0 & 90.9 \\
 
 \subsubsection{Negative}
 \begin{itemize}
-\item \textbf{Parameter overhead} — not for edge
+\item \textbf{Parameter overhead} --- not for edge
 \end{itemize}
 \begin{itemize}
-\item \textbf{Compute overhead} — not for latency-critical
+\item \textbf{Compute overhead} --- not for latency-critical
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~20 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~20 GPU-hours, ~{{CO2}} kg CO$_2$eq.
 
 \clearpage
 
@@ -1287,11 +1287,11 @@ attention. Total compute roughly doubles.
 \subsection{10.4 VRAM Overhead}
 
 The MoE branch's expert weights and activations are stored in VRAM, 
-increasing peak memory by ~{{VRAM_INC}}×.
+increasing peak memory by ~{{VRAM\_INC}}$\times$.
 
 \subsection{10.5 Inference Latency}
 
-Two matmuls + router overhead = ~{{LATENCY_RATIO}}× slower.
+Two matmuls + router overhead = ~{{LATENCY\_RATIO}}$\times$ slower.
 
 \subsection{10.6 Task Coverage}
 
@@ -1299,7 +1299,7 @@ Only SST-2 evaluated. Generation, QA, NLI untested.
 
 \subsection{10.7 Model Coverage}
 
-Three models tested (66.9M–124.6M). Larger models untested.
+Three models tested (66.9M--124.6M). Larger models untested.
 
 \subsection{10.8 Hardware}
 
@@ -1354,7 +1354,7 @@ initialization.
 \centering
 \begin{tabular}{lll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{Params Δ} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} \\
 \midrule
 DistilBERT & -1.2\% & +226M \\
 RoBERTa & -2.1\% & +445M \\
@@ -1365,9 +1365,9 @@ GPT-2 & -1.6\% & +445M \\
 
 \subsection{11.3 Key Takeaways}
 
-1. \textbf{Step-0 preservation works} — verified empirically.
-2. \textbf{Load balancing is stable} — auxiliary loss effective.
-3. \textbf{Parameter cost is high} — inherent to MoE.
+1. \textbf{Step-0 preservation works} --- verified empirically.
+2. \textbf{Load balancing is stable} --- auxiliary loss effective.
+3. \textbf{Parameter cost is high} --- inherent to MoE.
 4. \textbf{Not a compression method.}
 
 \subsection{11.4 Future Work}
@@ -1407,10 +1407,10 @@ reproducibility.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments.
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
 \end{itemize}
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided methodological feedback and edited the manuscript.
+\item \textbf{{{AUTHOR\_2}}} provided methodological feedback and edited the manuscript.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}
@@ -1493,9 +1493,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Params} \\
 \midrule
-DistilBERT & 89.5\% ± 1\% & 293M \\
-RoBERTa & 76.5\% ± 1\% & 570M \\
-GPT-2 & 77.8\% ± 1\% & 570M \\
+DistilBERT & 89.5\% $\pm$ 1\% & 293M \\
+RoBERTa & 76.5\% $\pm$ 1\% & 570M \\
+GPT-2 & 77.8\% $\pm$ 1\% & 570M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1506,10 +1506,10 @@ GPT-2 & 77.8\% ± 1\% & 570M \\
 \item Dataset: SST-2 via \texttt{datasets}
 \end{itemize}
 \begin{itemize}
-\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-bam_umoe}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-bam\\_umoe}
 \end{itemize}
 \begin{itemize}
-\item Metrics: \texttt{results/unified_bam_umoe/*/summary.csv}
+\item Metrics: \texttt{results/unified\\_bam\\_umoe/*/summary.csv}
 \end{itemize}
 
 \subsection{12.8 Known Issues}
@@ -1518,7 +1518,7 @@ GPT-2 & 77.8\% ± 1\% & 570M \\
 \item Windows: \texttt{PYTHONIOENCODING=utf-8}
 \end{itemize}
 \begin{itemize}
-\item CUDA ≥ 11.8 for FP16
+\item CUDA $\ge$ 11.8 for FP16
 \end{itemize}
 \begin{itemize}
 \item Large parameter count may OOM on small GPUs
@@ -1745,7 +1745,7 @@ So $\mathcal{L}_\text{aux} \in [1, E]$.
 
 \subsection{A.4 MoE Parameter Count}
 
-For \texttt{UnifiedMoE(dim=d, num_experts=E, output_dim=d)}:
+For \texttt{UnifiedMoE(dim=d, num\\_experts=E, output\\_dim=d)}:
 
 \begin{table}[H]
 \centering
@@ -1770,7 +1770,7 @@ For $d = 768$, $E = 8$:
 \tag{A.8}
 \]
 
-Wait — hidden = \texttt{output_dim \textit{ expert_multiplier = 768 } 2 = 1536}. Each 
+Wait --- hidden = \texttt{output\\_dim \textit{ expert\\_multiplier = 768 } 2 = 1536}. Each 
 expert: $d \cdot 1536 + 1536 \cdot d = 2 \cdot 768 \cdot 1536 = 2{,}359{,}296$. 
 For 8 experts: \textbf{18.9M per layer}.
 
@@ -1867,10 +1867,10 @@ class UnifiedMoE(nn.Module):
 \item \textbf{FP32 scores.} Attention scores in FP32 to avoid FP16 overflow.
 \end{itemize}
 \begin{itemize}
-\item \textbf{MoE clamp.} Expert outputs clamped to ±65000 (FP16 max).
+\item \textbf{MoE clamp.} Expert outputs clamped to $\pm$65000 (FP16 max).
 \end{itemize}
 \begin{itemize}
-\item \textbf{NaN guards.} \texttt{torch.nan_to_num} on all intermediate outputs.
+\item \textbf{NaN guards.} \texttt{torch.nan\\_to\\_num} on all intermediate outputs.
 \end{itemize}
 \begin{itemize}
 \item \textbf{Noise masking.} Training-time noise added only to logits, not expert
@@ -1898,13 +1898,13 @@ GPT-2 Conv1D stores \texttt{(in, out)}. Must transpose.
 
 \subsubsection{B.3.5 Nested Encoder Bypass}
 
-For RoBERTa, do NOT apply \texttt{out_lin} — the outer layer does it.
+For RoBERTa, do NOT apply \texttt{out\\_lin} --- the outer layer does it.
 
 \clearpage
 
 \section{Appendix C. Full Experimental Data}
 
-\subsection{C.1 DistilBERT — Complete Metrics}
+\subsection{C.1 DistilBERT --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -1915,7 +1915,7 @@ For RoBERTa, do NOT apply \texttt{out_lin} — the outer layer does it.
 Params (before) & 66,955,010 \\
 Params (after) & 293000000 \\
 Parameter increase & +226M \\
-Ratio & 4.4× \\
+Ratio & 4.4$\times$ \\
 Accuracy & 89.5\% \\
 F1 & 0.895 \\
 Peak VRAM & 800 MB \\
@@ -1926,7 +1926,7 @@ Expert utilization entropy & 2.95 bits \\
 \end{tabular}
 \end{table}
 
-\subsection{C.2 RoBERTa — Complete Metrics}
+\subsection{C.2 RoBERTa --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -1943,7 +1943,7 @@ Accuracy & 76.5\% \\
 \end{tabular}
 \end{table}
 
-\subsection{C.3 GPT-2 — Complete Metrics}
+\subsection{C.3 GPT-2 --- Complete Metrics}
 
 \begin{table}[H]
 \centering
@@ -1984,9 +1984,9 @@ Accuracy & 77.8\% \\
 \toprule
 \textbf{k} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-1 & 88.5 & 1.0× \\
-2 & 89.5 & 1.5× \\
-4 & 89.3 & 2.5× \\
+1 & 88.5 & 1.0$\times$ \\
+2 & 89.5 & 1.5$\times$ \\
+4 & 89.3 & 2.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2120,7 +2120,7 @@ Std & 0.10 \\
 
 \subsubsection{Negative}
 \begin{itemize}
-\item \textbf{Not a compression method} — may mislead
+\item \textbf{Not a compression method} --- may mislead
 \end{itemize}
 \begin{itemize}
 \item Large parameter overhead (edge deployment impossible)
@@ -2135,7 +2135,7 @@ Std & 0.10 \\
 \item Total compute: ~20 GPU-hours
 \end{itemize}
 \begin{itemize}
-\item CO₂: ~{{CO2}} kg CO₂eq
+\item CO$_2$: ~{{CO2}} kg CO$_2$eq
 \end{itemize}
 
 \subsection{E.3 Data Ethics}

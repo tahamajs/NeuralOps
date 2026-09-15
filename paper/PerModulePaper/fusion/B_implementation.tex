@@ -100,7 +100,7 @@ If threshold > test L, sparsity never activates.
 
 \subsubsection{B.4.2 Gate Temperature Collapse}
 
-Clamp gate_temp to avoid division by zero.
+Clamp gate\_temp to avoid division by zero.
 
 \subsubsection{B.4.3 Padding Mask Shape}
 
@@ -112,11 +112,11 @@ GPT-2 Conv1D stores (in, out). Must transpose.
 
 \subsubsection{B.4.5 Nested Encoder Bypass}
 
-RoBERTa: do not apply out_proj.
+RoBERTa: do not apply out\_proj.
 
 \subsection{B.5 Critical Bug}
 
-\texttt{inject_fusion_attn} has:
+\texttt{inject\\_fusion\\_attn} has:
 
 \begin{lstlisting}
 except Exception:

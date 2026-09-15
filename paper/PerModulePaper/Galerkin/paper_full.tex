@@ -34,24 +34,24 @@
 
 \textbf{Authors:}
 \begin{itemize}
-\item Your Name¹ — you@university.edu
+\item Your Name¹ --- you@university.edu
 \end{itemize}
 \begin{itemize}
-\item {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+\item {{AUTHOR\_2\_NAME}}² --- {{AUTHOR\_2\_EMAIL}}
 \end{itemize}
 
 \textbf{Affiliations:}
 \begin{itemize}
-\item ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
+\item ¹ {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+\item ² {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
 \end{itemize}
 
-\textbf{Corresponding author:} {{CORRESPONDING_AUTHOR}}
+\textbf{Corresponding author:} {{CORRESPONDING\_AUTHOR}}
 \textbf{Preprint date:} 2026-09-15
 \textbf{Version:} v1
-\textbf{Code:} https://github.com/your-org/SVD_Project/tree/main/framework/attentions/galerkin.py
+\textbf{Code:} https://github.com/your-org/SVD\_Project/tree/main/framework/attentions/galerkin.py
 \textbf{License:} MIT
 
 
@@ -73,8 +73,8 @@ projection** onto an orthonormal basis (a discrete cosine transform variant)
 of dimension $r \ll N$. Queries, keys, and values are projected into this 
 basis, attention is computed at rank $r$ in basis space, and the output is 
 reconstructed to the original sequence grid via basis synthesis. Complexity 
-reduces from $\mathcal{O}(N^2 d)$ to $\mathcal{O}(N r d)$ — **linear in 
-sequence length** — for encoder models.
+reduces from $\mathcal{O}(N^2 d)$ to $\mathcal{O}(N r d)$ --- **linear in 
+sequence length** --- for encoder models.
 
 For \textbf{decoder models} (GPT-2, Qwen), the projection-based formulation is 
 incompatible with causal masking. We therefore fall back to **standard 
@@ -89,7 +89,7 @@ of the SDPA baseline. On GPT-2, it matches the baseline exactly
 (\textbf{79.36\%}) because it uses the standard attention fallback.
 
 \textbf{Important disclosure.} Galerkin Attention is \textbf{not} a compression 
-method — parameter count increases by ~0.88\% via LoRA. It is 
+method --- parameter count increases by ~0.88\% via LoRA. It is 
 a \textbf{compute-efficiency} method for encoder attention.
 
 \textbf{Keywords:} Petrov-Galerkin projection, integral operator attention, 
@@ -113,35 +113,35 @@ trade-off: faster compute for encoder models, no benefit for decoder models.
 
 \subsection{Table of Contents}
 
-1. [Introduction](01_intro.md)
-2. [Related Work](02_related.md)
-3. [Background](03_background.md)
-4. [Method](04_method.md)
-5. [Architecture Integration](05_architecture.md)
-6. [Experimental Setup](06_setup.md)
-7. [Results](07_results.md)
-8. [Analysis](08_analysis.md)
-9. [Discussion](09_discussion.md)
-10. [Limitations](10_limitations.md)
-11. [Conclusion](11_conclusion.md)
-12. [Reproducibility](12_reproducibility.md)
-13. [References](13_references.md)
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
 
 \textbf{Appendices:}
 \begin{itemize}
-\item [A. Mathematical Derivations](A_math.md)
+\item [A. Mathematical Derivations](A\_math.md)
 \end{itemize}
 \begin{itemize}
-\item [B. Implementation Details](B_implementation.md)
+\item [B. Implementation Details](B\_implementation.md)
 \end{itemize}
 \begin{itemize}
-\item [C. Full Experimental Data](C_data.md)
+\item [C. Full Experimental Data](C\_data.md)
 \end{itemize}
 \begin{itemize}
-\item [D. Negative Results](D_negative_results.md)
+\item [D. Negative Results](D\_negative\_results.md)
 \end{itemize}
 \begin{itemize}
-\item [E. Ethical Considerations](E_ethics.md)
+\item [E. Ethical Considerations](E\_ethics.md)
 \end{itemize}
 
 \clearpage
@@ -188,7 +188,7 @@ Applying this to attention:
 3. Compute attention in basis space at rank $r$.
 4. Reconstruct via basis synthesis: $Y = \Phi \cdot O_\Phi$.
 
-This gives $\mathcal{O}(N r d)$ complexity — \textbf{linear in $N$}.
+This gives $\mathcal{O}(N r d)$ complexity --- \textbf{linear in $N$}.
 
 \subsection{1.2 The Decoder Problem}
 
@@ -258,7 +258,7 @@ Standard causal softmax attention (no projection).
 \item \textbf{Multi-architecture weight transfer.} GPT-2 Conv1D, RoBERTa nested, DistilBERT flat, Qwen GQA. Section 5.
 \end{itemize}
 \begin{itemize}
-\item \textbf{Honest reporting.} We disclose that GPT-2 uses the fallback and gains no benefit. Sections 7–8.
+\item \textbf{Honest reporting.} We disclose that GPT-2 uses the fallback and gains no benefit. Sections 7--8.
 \end{itemize}
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code under MIT.
@@ -444,7 +444,7 @@ to compensate.
 
 \subsection{3.6 Grouped Query Attention}
 
-GQA uses $H_{kv} < H$ KV heads. Galerkin preserves GQA structure via \texttt{repeat_kv}.
+GQA uses $H_{kv} < H$ KV heads. Galerkin preserves GQA structure via \texttt{repeat\\_kv}.
 
 \subsection{3.7 Rotary Position Embeddings}
 
@@ -474,7 +474,7 @@ Galerkin Attention has two execution paths:
 
 \begin{lstlisting}
     ┌───────────────────────────────────────────┐
-    │  Input X → Q/K/V projections (frozen+LoRA)│
+    │  Input X $\to$ Q/K/V projections (frozen+LoRA)│
     └─────────────────────┬─────────────────────┘
                           │
                           ▼
@@ -492,7 +492,7 @@ Galerkin Attention has two execution paths:
     │  Standard    │    │  1. Build DCT basis  │
     │  causal      │    │  2. Project Q/K/V    │
     │  softmax     │    │  3. Attention in r   │
-    │  attention   │    │  4. Reconstruct + √  │
+    │  attention   │    │  4. Reconstruct + $\sqrt{}$  │
     └──────┬───────┘    └──────────┬───────────┘
            │                       │
            └───────────┬───────────┘
@@ -622,41 +622,41 @@ Input:  X, attention_mask, position_embeddings
         is_decoder, rank r
 Output: Y, probs
 
-1:  Q ← LoRALinear_Q(X)
-2:  K ← LoRALinear_K(X)
-3:  V ← LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear_Q(X)
+2:  K $\leftarrow$ LoRALinear_K(X)
+3:  V $\leftarrow$ LoRALinear_V(X)
 4:
-5:  if RoPE: (Q, K) ← apply_rope(Q, K, cos, sin)
-6:  if GQA: K, V ← repeat_kv(K, V)
+5:  if RoPE: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V)
 7:
 8:  if is_decoder:                              ▷ DECODER FALLBACK
-9:      S ← Q K^T / √d_h
-10:     S ← S + causal_mask
-11:     S ← S + padding_mask
-12:     P ← softmax(S)
-13:     Y_ctx ← P @ V
+9:      S $\leftarrow$ Q K^T / $\sqrt{}$d_h
+10:     S $\leftarrow$ S + causal_mask
+11:     S $\leftarrow$ S + padding_mask
+12:     P $\leftarrow$ softmax(S)
+13:     Y_ctx $\leftarrow$ P @ V
 14:
 15: else:                                        ▷ ENCODER GALERKIN
-16:     mask ← valid_token_mask(attention_mask)
-17:     K_masked ← K ⊙ mask
-18:     V_masked ← V ⊙ mask
+16:     mask $\leftarrow$ valid_token_mask(attention_mask)
+17:     K_masked $\leftarrow$ K ⊙ mask
+18:     V_masked $\leftarrow$ V ⊙ mask
 19:
-20:     Φ ← DCT_basis(N, r)                        ▷ Orthonormalize via QR
-21:     Q_Φ ← Φ^T Q
-22:     K_Φ ← Φ^T K_masked
-23:     V_Φ ← Φ^T V_masked
+20:     Φ $\leftarrow$ DCT_basis(N, r)                        ▷ Orthonormalize via QR
+21:     Q_Φ $\leftarrow$ Φ^T Q
+22:     K_Φ $\leftarrow$ Φ^T K_masked
+23:     V_Φ $\leftarrow$ Φ^T V_masked
 24:
-25:     S ← Q_Φ K_Φ^T / √d_h                       ▷ (B, H, r, r)
-26:     P ← softmax(S)
-27:     O_Φ ← P @ V_Φ
+25:     S $\leftarrow$ Q_Φ K_Φ^T / $\sqrt{}$d_h                       ▷ (B, H, r, r)
+26:     P $\leftarrow$ softmax(S)
+27:     O_Φ $\leftarrow$ P @ V_Φ
 28:
-29:     Y_ctx ← Φ @ O_Φ                             ▷ Reconstruct
-30:     Y_ctx ← Y_ctx · √(N/r)                      ▷ Energy correction
-31:     Y_ctx ← Y_ctx ⊙ mask                        ▷ Zero padded positions
+29:     Y_ctx $\leftarrow$ Φ @ O_Φ                             ▷ Reconstruct
+30:     Y_ctx $\leftarrow$ Y_ctx · $\sqrt{}$(N/r)                      ▷ Energy correction
+31:     Y_ctx $\leftarrow$ Y_ctx ⊙ mask                        ▷ Zero padded positions
 32:
-33: Y_ctx ← reshape(B, N, H · d_h)
-34: if nested: Y ← Y_ctx
-35: else: Y ← LoRALinear_O(Y_ctx)
+33: Y_ctx $\leftarrow$ reshape(B, N, H · d_h)
+34: if nested: Y $\leftarrow$ Y_ctx
+35: else: Y $\leftarrow$ LoRALinear_O(Y_ctx)
 36:
 37: return Y
 \end{lstlisting}
@@ -683,7 +683,7 @@ For $N = 128$ and $r = 64$:
 \item Decoder: $\sim 4 \times 10^6$ FLOPs per head
 \end{itemize}
 \begin{itemize}
-\item \textbf{Encoder speedup: ~2×}
+\item \textbf{Encoder speedup: ~2$\times$}
 \end{itemize}
 
 For $N = 512$ and $r = 64$:
@@ -694,7 +694,7 @@ For $N = 512$ and $r = 64$:
 \item Decoder: $\sim 6.4 \times 10^7$
 \end{itemize}
 \begin{itemize}
-\item \textbf{Encoder speedup: ~8×}
+\item \textbf{Encoder speedup: ~8$\times$}
 \end{itemize}
 
 \subsection{4.8 Parameter Analysis}
@@ -706,8 +706,8 @@ For $N = 512$ and $r = 64$:
 \textbf{Component} & \textbf{Baseline} & \textbf{Galerkin} \\
 \midrule
 Base weights & $4 d^2$ & $4 d^2$ (frozen) \\
-LoRA ($r\_L$) & 0 & $8 r\_L d$ \\
-**Total per layer** & $4 d^2$ & $4 d^2 + 8 r\_L d$ \\
+LoRA ($r_L$) & 0 & $8 r_L d$ \\
+**Total per layer** & $4 d^2$ & $4 d^2 + 8 r_L d$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -816,7 +816,7 @@ o_w = src.c_proj.weight.T
 \end{lstlisting}
 
 \subsubsection{Qwen}
-Direct copy from \texttt{q_proj}, \texttt{k_proj}, \texttt{v_proj}, \texttt{o_proj}.
+Direct copy from \texttt{q\\_proj}, \texttt{k\\_proj}, \texttt{v\\_proj}, \texttt{o\\_proj}.
 
 \subsection{5.3 Nested Encoder Detection}
 
@@ -832,7 +832,7 @@ if (
 \end{lstlisting}
 
 For nested encoders, the outer \texttt{output.dense} applies the projection. We 
-return raw \texttt{context} and bypass \texttt{out_proj}.
+return raw \texttt{context} and bypass \texttt{out\\_proj}.
 
 \subsection{5.4 GQA Support}
 
@@ -967,7 +967,7 @@ Precision & FP16 \\
 
 \subsection{6.5 Quality Gate}
 
-PASS ≥ 56\%, PASS_LOW 50.92\%–56\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
 
 \subsection{6.6 Hardware}
 
@@ -997,13 +997,13 @@ python run_all_4_galerkin.py \
 \centering
 \begin{tabular}{lllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{Δ} & \textbf{F1} & \textbf{Params} & \textbf{Path} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Path} \\
 \midrule
-DistilBERT & full & 90.71\% & — & 0.9099 & 66.9M & — \\
+DistilBERT & full & 90.71\% & --- & 0.9099 & 66.9M & --- \\
 DistilBERT & **Galerkin** & **89.91** & -0.80 & 0.900 & 67.54M & Galerkin \\
-RoBERTa & full & 78.56\% & — & 0.8124 & 124.6M & — \\
+RoBERTa & full & 78.56\% & --- & 0.8124 & 124.6M & --- \\
 RoBERTa & **Galerkin** & **77.35** & -1.21 & 0.778 & 125.83M & Galerkin \\
-GPT-2 & full & 79.36\% & — & 0.7978 & 124.4M & — \\
+GPT-2 & full & 79.36\% & --- & 0.7978 & 124.4M & --- \\
 GPT-2 & **Galerkin** & **79.36** & 0.00 & 0.7978 & 125.63M & Fallback \\
 \bottomrule
 \end{tabular}
@@ -1015,7 +1015,7 @@ GPT-2 & **Galerkin** & **79.36** & 0.00 & 0.7978 & 125.63M & Fallback \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{Δ} \\
+\textbf{Model} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{$\Delta$} \\
 \midrule
 DistilBERT & 66.9M & 67.54M & +589824M \\
 RoBERTa & 124.6M & 125.83M & +1179648M \\
@@ -1072,10 +1072,10 @@ GPT-2 & Fallback & $O(N^2 d)$ \\
 \toprule
 \textbf{$r$} & \textbf{D acc} & \textbf{R acc} & \textbf{FLOPs vs baseline} \\
 \midrule
-16 & 87.5 & 74.5 & 8× \\
-32 & 89.0 & 76.5 & 4× \\
-**64** & **89.91** & **77.35** & **2×** \\
-128 & 90.10 & 77.55 & 1× \\
+16 & 87.5 & 74.5 & 8$\times$ \\
+32 & 89.0 & 76.5 & 4$\times$ \\
+**64** & **89.91** & **77.35** & **2$\times$** \\
+128 & 90.10 & 77.55 & 1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1105,8 +1105,8 @@ GPT-2 & Fallback & $O(N^2 d)$ \\
 \textbf{Method} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% \\
-`nha` & 90.25\% & — & 78.78\% \\
-`adasplash` & 90.25\% & — & 78.78\% \\
+`nha` & 90.25\% & --- & 78.78\% \\
+`adasplash` & 90.25\% & --- & 78.78\% \\
 **Galerkin** & **89.91** & **77.35** & **79.36** \\
 \bottomrule
 \end{tabular}
@@ -1121,7 +1121,7 @@ full & 90.71\% & 78.56\% & 79.36\% \\
 \item \textbf{RoBERTa:} 77.35\% (encoder Galerkin)
 \end{itemize}
 \begin{itemize}
-\item \textbf{GPT-2:} 79.36\% (decoder fallback — same as baseline)
+\item \textbf{GPT-2:} 79.36\% (decoder fallback --- same as baseline)
 \end{itemize}
 
 \clearpage
@@ -1207,11 +1207,11 @@ No systematic failures observed.
 
 \subsection{8.7 Summary of Insights}
 
-1. \textbf{Encoder benefit is real} — 2× speedup at $N=128$.
-2. \textbf{Decoder fallback necessary} — no benefit for GPT-2.
-3. \textbf{DCT basis optimal} — beats random orthonormal.
-4. \textbf{Energy scaling works} — preserves activation magnitude.
-5. \textbf{Parameter count increases} — not a compression method.
+1. \textbf{Encoder benefit is real} --- 2$\times$ speedup at $N=128$.
+2. \textbf{Decoder fallback necessary} --- no benefit for GPT-2.
+3. \textbf{DCT basis optimal} --- beats random orthonormal.
+4. \textbf{Energy scaling works} --- preserves activation magnitude.
+5. \textbf{Parameter count increases} --- not a compression method.
 
 \clearpage
 
@@ -1281,7 +1281,7 @@ For DistilBERT at $N = 256$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 262K & 131K & **2× reduction** \\
+Attention FLOPs & 262K & 131K & **2$\times$ reduction** \\
 Accuracy & 90.71\% & 89.91\% & -0.80\% \\
 Params & 66.9M & 67.54M & +589824M \\
 \bottomrule
@@ -1307,7 +1307,7 @@ FNet & $O(N\log N)$ & N/A & No \\
 \subsection{9.6 Deployment Considerations}
 
 \subsubsection{Encoder latency}
-2× faster at $N=128$, 8× at $N=512$.
+2$\times$ faster at $N=128$, 8$\times$ at $N=512$.
 
 \subsubsection{Decoder latency}
 No benefit.
@@ -1317,10 +1317,10 @@ Encoder: $O(Nr)$ vs $O(N^2)$. Substantial savings for long sequences.
 
 \subsection{9.7 Open Questions}
 
-1. \textbf{Learned basis} — would a data-adaptive basis beat DCT?
-2. \textbf{Causal Galerkin} — is there a causal-compatible basis?
-3. \textbf{Higher-order DCT} — does adding derivatives help?
-4. \textbf{Cross-attention} — does Galerkin work for encoder-decoder cross-attention?
+1. \textbf{Learned basis} --- would a data-adaptive basis beat DCT?
+2. \textbf{Causal Galerkin} --- is there a causal-compatible basis?
+3. \textbf{Higher-order DCT} --- does adding derivatives help?
+4. \textbf{Cross-attention} --- does Galerkin work for encoder-decoder cross-attention?
 
 \subsection{9.8 Broader Impact}
 
@@ -1347,7 +1347,7 @@ Encoder: $O(Nr)$ vs $O(N^2)$. Substantial savings for long sequences.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~{{CO2}} kg CO$_2$eq.
 
 \clearpage
 
@@ -1382,7 +1382,7 @@ Only SST-2 at $N=128$. Generation, QA, long-context untested.
 
 \subsection{10.7 Model Coverage}
 
-Three models (66.9M–124.6M).
+Three models (66.9M--124.6M).
 
 \subsection{10.8 Hardware}
 
@@ -1407,7 +1407,7 @@ Not tested.
 \item Research-grade
 \end{itemize}
 \begin{itemize}
-\item Broad exception handling in \texttt{inject_galerkin} (returns None on any failure)
+\item Broad exception handling in \texttt{inject\\_galerkin} (returns None on any failure)
 \end{itemize}
 \begin{itemize}
 \item No unit tests
@@ -1433,7 +1433,7 @@ complexity for encoder models. Decoders fall back to standard softmax.
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Acc Δ} & \textbf{Params Δ} & \textbf{Path} \\
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Path} \\
 \midrule
 DistilBERT & -0.80\% & +589824M & Galerkin \\
 RoBERTa & -1.21\% & +1179648M & Galerkin \\
@@ -1485,10 +1485,10 @@ We release code under MIT.
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments.
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
 \end{itemize}
 \begin{itemize}
-\item \textbf{{{AUTHOR_2}}} provided feedback.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}
@@ -1563,9 +1563,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Path} \\
 \midrule
-DistilBERT & 89.91\% ± 1\% & Galerkin \\
-RoBERTa & 77.35\% ± 1\% & Galerkin \\
-GPT-2 & 79.36\% ± 1\% & Fallback \\
+DistilBERT & 89.91\% $\pm$ 1\% & Galerkin \\
+RoBERTa & 77.35\% $\pm$ 1\% & Galerkin \\
+GPT-2 & 79.36\% $\pm$ 1\% & Fallback \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1579,7 +1579,7 @@ GPT-2 & 79.36\% ± 1\% & Fallback \\
 \item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-galerkin}
 \end{itemize}
 \begin{itemize}
-\item Metrics: \texttt{results/unified_galerkin/*/summary.csv}
+\item Metrics: \texttt{results/unified\\_galerkin/*/summary.csv}
 \end{itemize}
 
 \subsection{12.8 Known Issues}
@@ -1588,7 +1588,7 @@ GPT-2 & 79.36\% ± 1\% & Fallback \\
 \item Windows: \texttt{PYTHONIOENCODING=utf-8}
 \end{itemize}
 \begin{itemize}
-\item CUDA ≥ 11.8 for FP16
+\item CUDA $\ge$ 11.8 for FP16
 \end{itemize}
 \begin{itemize}
 \item GPT-2 uses fallback (no Galerkin benefit)
@@ -1902,10 +1902,10 @@ context = context * mask_expanded
 \subsection{B.5 Common Pitfalls}
 
 \subsubsection{B.5.1 DCT Dimension Mismatch}
-Basis is (N, r), Q is (B, H, N, d_h). Einsum "bhnd,nr->bhrd" handles this.
+Basis is (N, r), Q is (B, H, N, d\_h). Einsum "bhnd,nr->bhrd" handles this.
 
-\subsubsection{B.5.2 Forgetting √(N/r) Scaling}
-Without scaling, output magnitude drops by √(r/N) ≈ 0.7 for typical 
+\subsubsection{B.5.2 Forgetting $\sqrt{}$(N/r) Scaling}
+Without scaling, output magnitude drops by $\sqrt{}$(r/N) $\approx$ 0.7 for typical 
 configurations.
 
 \subsubsection{B.5.3 QR Numerical Stability}
@@ -1913,10 +1913,10 @@ QR on (N, r) matrix with N > r adds no rank; regularization via \texttt{epsilon 
 prevents degenerate cases.
 
 \subsubsection{B.5.4 Decoder Fallback Detection}
-Use \texttt{model_type.startswith(prefix)} for robustness.
+Use \texttt{model\\_type.startswith(prefix)} for robustness.
 
 \subsubsection{B.5.5 Nested Encoder}
-For RoBERTa: \texttt{src = src.self} after setting \texttt{is_nested_encoder = True}.
+For RoBERTa: \texttt{src = src.self} after setting \texttt{is\\_nested\\_encoder = True}.
 
 \subsection{B.6 Diagnostics}
 
@@ -2108,9 +2108,9 @@ Std & 0.05 & 0.05 & 0.00 \\
 
 \subsection{D.5 Unresolved Questions}
 
-1. \textbf{Causal Galerkin} — is it possible?
-2. \textbf{Learned basis} — could it help for specific tasks?
-3. \textbf{Very long context} ($N > 4096$) — does DCT scaling hold?
+1. \textbf{Causal Galerkin} --- is it possible?
+2. \textbf{Learned basis} --- could it help for specific tasks?
+3. \textbf{Very long context} ($N > 4096$) --- does DCT scaling hold?
 
 \clearpage
 
@@ -2146,7 +2146,7 @@ Std & 0.05 & 0.05 & 0.00 \\
 \item Total compute: ~10 GPU-hours
 \end{itemize}
 \begin{itemize}
-\item CO₂: ~{{CO2}} kg CO₂eq
+\item CO$_2$: ~{{CO2}} kg CO$_2$eq
 \end{itemize}
 
 \subsection{E.3 Data Ethics}

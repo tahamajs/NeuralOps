@@ -8,14 +8,14 @@
 \centering
 \begin{tabular}{llllllll}
 \toprule
-\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{Δ} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} & \textbf{Time} \\
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
-DistilBERT & full & 90.71\% & — & 0.9099 & 66.9M & 183 MB & 1.90 s \\
-DistilBERT & **Flash3** & **90.25** & -0.46 & 0.9055 & 67.55M & 190 & 1.95 \\
-RoBERTa & full & 78.56\% & — & 0.8124 & 124.6M & 712 MB & 4.10 s \\
-RoBERTa & **Flash3** & **77.50** & -1.06 & 0.780 & 125.83M & 720 & 4.20 \\
-GPT-2 & full & 79.36\% & — & 0.7978 & 124.4M & 793 MB & 4.20 s \\
-GPT-2 & **Flash3** & **78.98** & -0.38 & 0.789 & 125.63M & 800 & 4.30 \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB & 1.90 s \\
+DistilBERT & **Flash3** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}}M & {{D\_VRAM}} & {{D\_TIME}} \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB & 4.10 s \\
+RoBERTa & **Flash3** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}}M & {{R\_VRAM}} & {{R\_TIME}} \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB & 4.20 s \\
+GPT-2 & **Flash3** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}}M & {{G\_VRAM}} & {{G\_TIME}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -26,16 +26,16 @@ GPT-2 & **Flash3** & **78.98** & -0.38 & 0.789 & 125.63M & 800 & 4.30 \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Model} & \textbf{Baseline} & \textbf{Flash3} & \textbf{Δ} \\
+\textbf{Model} & \textbf{Baseline} & \textbf{Flash3} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & 66.9M & 67.55M & +589826M \\
-RoBERTa & 124.6M & 125.83M & +1179648M \\
-GPT-2 & 124.4M & 125.63M & +1188876M \\
+DistilBERT & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
+RoBERTa & 124.6M & {{R\_PARAMS}}M & +{{R\_PARAM\_DELTA}}M \\
+GPT-2 & 124.4M & {{G\_PARAMS}}M & +{{G\_PARAM\_DELTA}}M \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Wrapper increases parameter count by ~0.88\%.}
+\textbf{Wrapper increases parameter count by ~{{PARAM\_CHANGE}}\%.}
 
 \subsection{7.3 Efficiency}
 
@@ -48,8 +48,8 @@ GPT-2 & 124.4M & 125.63M & +1188876M \\
 \textbf{Model} & \textbf{Path} & \textbf{Time} & \textbf{VRAM} \\
 \midrule
 DistilBERT & SDPA (baseline) & 1.90 s & 183 MB \\
-DistilBERT & SDPA (via wrapper) & 1.95 s & 190 MB \\
-DistilBERT & FA3 (H100, extrapolated) & 0.60 s & 120 MB \\
+DistilBERT & SDPA (via wrapper) & {{D\_TIME\_SDPA}} s & {{D\_VRAM\_SDPA}} MB \\
+DistilBERT & FA3 (H100, extrapolated) & {{D\_TIME\_FA3}} s & {{D\_VRAM\_FA3}} MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -62,11 +62,11 @@ DistilBERT & FA3 (H100, extrapolated) & 0.60 s & 120 MB \\
 \toprule
 \textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-0 & 88.5 & 75.5 & 76.5 \\
-4 & 89.5 & 76.8 & 78.0 \\
-8 & 90.0 & 77.2 & 78.5 \\
-**16** & **90.25** & **77.50** & **78.98** \\
-32 & 90.30 & 77.55 & 79.00 \\
+0 & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} \\
+4 & {{D\_RL4}} & {{R\_RL4}} & {{G\_RL4}} \\
+8 & {{D\_RL8}} & {{R\_RL8}} & {{G\_RL8}} \\
+**16** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** \\
+32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,8 +81,8 @@ DistilBERT & FA3 (H100, extrapolated) & 0.60 s & 120 MB \\
 \toprule
 \textbf{Config} & \textbf{Acc} & \textbf{Note} \\
 \midrule
-FP16 & 90.25 & Baseline \\
-FP8 (simulated) & 90.10 & Simulated on Ada \\
+FP16 & {{FP16\_ACC}} & Baseline \\
+FP8 (simulated) & {{FP8\_ACC}} & Simulated on Ada \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -95,10 +95,10 @@ FP8 (simulated) & 90.10 & Simulated on Ada \\
 \toprule
 \textbf{Steps} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-10 & 88.5 & 75.5 & 76.8 \\
-25 & 89.5 & 76.8 & 78.0 \\
-**50** & **90.25** & **77.50** & **78.98** \\
-100 & 90.30 & 77.55 & 79.00 \\
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+**50** & **{{D\_S50}}** & **{{R\_S50}}** & **{{G\_S50}}** \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -109,13 +109,13 @@ FP8 (simulated) & 90.10 & Simulated on Ada \\
 \centering
 \begin{tabular}{llll}
 \toprule
-\textbf{Module} & \textbf{D acc} & \textbf{Params Δ} & \textbf{Note} \\
+\textbf{Module} & \textbf{D acc} & \textbf{Params $\Delta$} & \textbf{Note} \\
 \midrule
 full & 90.71\% & 0 & Baseline \\
 `adaptive\_svd` & 88.0\% & -60\% & Compression \\
 `nha` & 90.25\% & +0.89\% & Attention replace \\
 `adasplash` & 90.25\% & +0.89\% & Sparse \\
-**`flash3`** & **90.25** & **+0.88\%** & **Hardware-opt** \\
+**`flash3`** & **{{D\_ACC}}** & **+{{D\_PARAM\_DELTA\_PCT}}\%** & **Hardware-opt** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -126,11 +126,11 @@ full & 90.71\% & 0 & Baseline \\
 \item \textbf{Accuracy:} matches baseline.
 \end{itemize}
 \begin{itemize}
-\item \textbf{Parameters:} +0.88\%.
+\item \textbf{Parameters:} +{{PARAM\_CHANGE}}\%.
 \end{itemize}
 \begin{itemize}
 \item \textbf{Runtime on RTX 4070:} SDPA fallback (no FA3).
 \end{itemize}
 \begin{itemize}
-\item \textbf{Runtime on H100:} estimated 2-4× faster (not tested).
+\item \textbf{Runtime on H100:} estimated 2-4$\times$ faster (not tested).
 \end{itemize}

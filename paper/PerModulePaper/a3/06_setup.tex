@@ -18,7 +18,7 @@ GPT-2 & 12 & 768 & 124.4M & Causal \\
 \end{tabular}
 \end{table}
 
-Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
+Base weights loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
 
 \subsection{6.2 Dataset}
 
@@ -32,7 +32,7 @@ Base weights loaded from \texttt{results/*_baseline/finetuned_model.pt}.
 \midrule
 Train & 67,349 & 33,807 (50.2\%) & 33,542 \\
 Validation & 872 & 444 (50.9\%) & 428 \\
-Test & 1,821 & — & — \\
+Test & 1,821 & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -56,7 +56,7 @@ source. This is legitimate because:
 \item It is not a form of test set leakage
 \end{itemize}
 
-We use \textbf{1000 examples} (a subsample of the training set) for 
+We use \textbf{{{N\_CALIB}} examples} (a subsample of the training set) for 
 calibration to keep memory bounded.
 
 \subsection{6.4 Compression Hyperparameters}
@@ -67,10 +67,10 @@ calibration to keep memory bounded.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-Rank $r$ & 64 & Target rank \\
+Rank $r$ & {{RANK}} & Target rank \\
 `use\_fisher` & True & Activation-aware weighting \\
 `recalibrate\_ln` & True & LayerNorm recalibration \\
-`max\_error` $\tau$ & 0.20 & Frobenius threshold \\
+`max\_error` $\tau$ & {{MAX\_ERROR}} & Frobenius threshold \\
 `max\_retries` & 3 & Adaptive escalation steps \\
 `fallback\_to\_original` & True & Safe fallback \\
 `normalize\_scale` & True & Clamp weights \\
@@ -90,12 +90,12 @@ After A3 compression, we train LoRA adapters:
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & 2e-4 \\
-Weight decay & 1e-2 \\
-Recovery steps & 50 \\
-LoRA rank & 16 \\
-LoRA alpha & 32 \\
-Batch size & 8 \\
+Learning rate & {{LR}} \\
+Weight decay & {{WD}} \\
+Recovery steps & {{RECOVERY\_STEPS}} \\
+LoRA rank & {{LORA\_RANK}} \\
+LoRA alpha & {{LORA\_ALPHA}} \\
+Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -124,7 +124,7 @@ Precision & FP16 \\
 \item \textbf{Trainable parameters}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Peak VRAM:} \texttt{torch.cuda.max_memory_allocated()}
+\item \textbf{Peak VRAM:} \texttt{torch.cuda.max\\_memory\\_allocated()}
 \end{itemize}
 \begin{itemize}
 \item \textbf{Inference time:} Median of 20 forward passes
@@ -156,14 +156,14 @@ Precision & FP16 \\
 \toprule
 \textbf{Level} & \textbf{Accuracy threshold} \\
 \midrule
-PASS & ≥ 56.0\% \\
-PASS\_LOW & 50.92\% – 56.0\% \\
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
 FAIL & < 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-56\% corresponds to majority baseline + 3×SE.
+56\% corresponds to majority baseline + 3$\times$SE.
 
 \subsection{6.8 Hardware}
 
@@ -175,9 +175,9 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
-CUDA & 12.1 \\
-PyTorch & 2.4.0 \\
-Transformers & 4.44.0 \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
+Transformers & {{HF\_VERSION}} \\
 OS & Windows / Linux \\
 \bottomrule
 \end{tabular}
@@ -193,11 +193,11 @@ python run_all_4_a3.py \
     --lora_rank 16
 \end{lstlisting}
 
-Expected runtime: ~15 minutes.
+Expected runtime: ~{{RUNTIME}} minutes.
 
 \subsection{6.10 Seeds}
 
-All experiments use seed 42. No multi-seed runs due to compute budget.
+All experiments use seed {{SEED}}. No multi-seed runs due to compute budget.
 
 \subsection{6.11 Baselines}
 
@@ -205,9 +205,9 @@ We compare against:
 
 1. \textbf{\texttt{full}:} Uncompressed pretrained model.
 2. \textbf{\texttt{a3}:} Our method.
-3. \textbf{\texttt{a3_no_fisher}:} A3 without Fisher weighting (ablations).
-4. \textbf{\texttt{a3_no_ln}:} A3 without LayerNorm recalibration (ablations).
+3. \textbf{\texttt{a3\\_no\\_fisher}:} A3 without Fisher weighting (ablations).
+4. \textbf{\texttt{a3\\_no\\_ln}:} A3 without LayerNorm recalibration (ablations).
 5. \textbf{Prior modules} (from our benchmark suite):
 \begin{itemize}
-\item \texttt{sdrm}, \texttt{svd_linear}, \texttt{nha}, etc.
+\item \texttt{sdrm}, \texttt{svd\\_linear}, \texttt{nha}, etc.
 \end{itemize}

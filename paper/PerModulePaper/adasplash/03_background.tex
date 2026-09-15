@@ -23,7 +23,7 @@ Two properties matter here:
 where $H$ is Shannon entropy. The entropy regularization spreads mass 
 uniformly.
 
-\subsection{3.2 The α-Entmax Family}
+\subsection{3.2 The $\alpha$-Entmax Family}
 
 Replacing Shannon entropy with \textbf{Tsallis entropy} $H_\alpha^T$:
 
@@ -35,17 +35,17 @@ H_\alpha^T(p) = \begin{cases}
 \tag{3.3}
 \]
 
-gives the α-entmax family:
+gives the $\alpha$-entmax family:
 
 \[
-\text{α-entmax}(s) = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H_\alpha^T(p)
+\text{$\alpha$-entmax}(s) = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H_\alpha^T(p)
 \tag{3.4}
 \]
 
 \textbf{Closed form.} For $\alpha > 1$:
 
 \[
-\text{α-entmax}(s)_i = \max\!\left(0, (\alpha - 1) s_i - \tau\right)^{1/(\alpha - 1)}
+\text{$\alpha$-entmax}(s)_i = \max\!\left(0, (\alpha - 1) s_i - \tau\right)^{1/(\alpha - 1)}
 \tag{3.5}
 \]
 
@@ -60,7 +60,7 @@ S = \{i : (\alpha - 1) s_i > \tau\}
 
 For $\alpha = 1.5$: $p_i \propto \max(0, 0.5 s_i - \tau)^2$.
 
-\subsection{3.3 Bisection for τ}
+\subsection{3.3 Bisection for $\tau$}
 
 Solving for $\tau$ is a one-dimensional root-finding problem:
 

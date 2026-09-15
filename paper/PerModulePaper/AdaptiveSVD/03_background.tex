@@ -78,7 +78,7 @@ so relative Frobenius error is $\leq \sqrt{1 - \tau}$.
 Attention projection matrices exhibit heterogeneous spectral decay:
 
 \begin{itemize}
-\item \textbf{Query projections:} Moderate decay. Effective rank ~40–80\% of full.
+\item \textbf{Query projections:} Moderate decay. Effective rank ~40--80\% of full.
 \end{itemize}
 \begin{itemize}
 \item \textbf{Key projections:} Slower decay (keys spread information across dimensions).
@@ -146,7 +146,7 @@ K, V \in \mathbb{R}^{B \times L \times H_{kv} d_h}, \quad H_\text{repeat} = H / 
 \tag{3.11}
 \]
 
-The KV heads are repeated via \texttt{repeat_kv} before attention. Adaptive SVD 
+The KV heads are repeated via \texttt{repeat\\_kv} before attention. Adaptive SVD 
 preserves GQA structure.
 
 \subsection{3.7 Rotary Position Embeddings (RoPE)}
