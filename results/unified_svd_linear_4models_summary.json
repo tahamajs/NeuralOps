@@ -3,13 +3,13 @@
     "Model": "distilbert",
     "Exit Code": 0,
     "Baseline Acc": "90.71%",
-    "SVD Linear Acc": "81.65%",
-    "Delta Acc": "-9.06%",
-    "F1": "0.8144",
+    "SVD Linear Acc": "83.94%",
+    "Delta Acc": "-6.77%",
+    "F1": "0.8478",
     "Status": "PASS",
     "Compressed Layers": "0",
-    "Comp Rate": "1.23x",
-    "Peak VRAM": "269.1 MB",
-    "Time (s)": "31.5"
+    "Comp Rate": "1.20x",
+    "Peak VRAM": "273.6 MB",
+    "Time (s)": "30.7"
   }
 ]
