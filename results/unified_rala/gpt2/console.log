@@ -56,3 +56,15 @@ Notes:
 2026-09-15 23:02:39,013 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.6962 (bs=8, micro_bs=8)
 2026-09-15 23:03:14,074 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.4185 (bs=8, micro_bs=8)
 2026-09-15 23:03:49,193 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.5476 (bs=8, micro_bs=8)
+2026-09-15 23:06:23,743 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_rala\gpt2\gpt2_rala_full_metrics.json
+2026-09-15 23:06:23,824 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_rala\gpt2\checkpoints\rala\weights.pt (module_params=36, lora_params=169)
+2026-09-15 23:06:24,767 [INFO] QwenQualitySweep: [2/2] rala -> PASS_NO_COMPRESSION 61.81% (F1: 0.6578, Peak VRAM: 567.73 MB)
+2026-09-15 23:06:24,768 [WARNING] QwenQualitySweep: Module 'rala' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 23:06:24,768 [INFO] QwenQualitySweep: [Quality Guard] Module 'rala' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=61.81%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 23:06:25,018 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 23:06:25,019 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 23:06:25,033 [INFO] QwenQualitySweep: 
+               Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                 full                PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               5.89              6.76
+rala (efficient-attn) PASS_NO_COMPRESSION   61.81%      -17.55% 0.6578                  0            1.00x  567.7 MB             144.82            166.08
+2026-09-15 23:06:25,033 [INFO] QwenQualitySweep: ================================================================================

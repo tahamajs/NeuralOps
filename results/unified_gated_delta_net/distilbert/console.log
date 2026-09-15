@@ -43,3 +43,21 @@ Loading weights: 100%|##########| 104/104 [00:00<00:00, 1996.09it/s]
 2026-09-15 23:01:30,501 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.8085 (bs=4, micro_bs=4)
 2026-09-15 23:02:55,365 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6739 (bs=4, micro_bs=4)
 2026-09-15 23:04:19,400 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6044 (bs=4, micro_bs=4)
+2026-09-15 23:05:43,526 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7825 (bs=4, micro_bs=4)
+2026-09-15 23:07:14,794 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6287 (bs=4, micro_bs=4)
+2026-09-15 23:08:45,136 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6901 (bs=4, micro_bs=4)
+2026-09-15 23:10:21,351 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.8651 (bs=4, micro_bs=4)
+2026-09-15 23:11:56,178 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.7815 (bs=4, micro_bs=4)
+2026-09-15 23:13:31,088 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.7119 (bs=4, micro_bs=4)
+2026-09-15 23:22:07,109 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_gated_delta_net\distilbert\distilbert_sst2_gated_delta_net_full_metrics.json
+2026-09-15 23:22:07,142 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_gated_delta_net\distilbert\checkpoints\gated_delta_net\weights.pt (module_params=0, lora_params=64)
+2026-09-15 23:22:07,448 [INFO] QwenQualitySweep: [2/2] gated_delta_net -> PASS_NO_COMPRESSION 49.08% (F1: 0.0, Peak VRAM: 389.68 MB)
+2026-09-15 23:22:07,448 [WARNING] QwenQualitySweep: Module 'gated_delta_net' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 23:22:07,449 [INFO] QwenQualitySweep: [Quality Guard] Module 'gated_delta_net' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=49.08%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 23:22:07,705 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 23:22:07,705 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-15 23:22:07,717 [INFO] QwenQualitySweep: 
+                          Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                            full                PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  379.9 MB               4.18              4.79
+gated_delta_net (efficient-attn) PASS_NO_COMPRESSION   49.08%      -41.63% 0.0000                  0            1.00x  389.7 MB             509.65            584.46
+2026-09-15 23:22:07,717 [INFO] QwenQualitySweep: ================================================================================
