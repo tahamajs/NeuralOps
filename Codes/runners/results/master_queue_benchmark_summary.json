@@ -538,5 +538,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T23:10:52.117955"
+  },
+  {
+    "module": "regla",
+    "runner": "run_all_4_regla.py",
+    "exit_code": 0,
+    "elapsed_s": 222.12,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T23:14:36.355176"
   }
 ]
