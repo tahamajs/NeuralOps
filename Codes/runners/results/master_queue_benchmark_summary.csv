@@ -62,3 +62,4 @@ reap_moe,run_all_4_reap_moe.py,0,261.88,PASS,,2026-09-15T23:10:52.117955
 regla,run_all_4_regla.py,0,222.12,PASS,,2026-09-15T23:14:36.355176
 res_svd,run_all_4_res_svd.py,0,259.58,PASS,,2026-09-15T23:18:57.722069
 routing,run_all_4_routing.py,0,406.8,PASS,,2026-09-15T23:25:46.101597
+rpc,run_all_4_rpc.py,0,190.08,PASS,,2026-09-15T23:28:58.186019
