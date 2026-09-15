@@ -1,0 +1,152 @@
+\chapter{مقایسهٔ جامع همهٔ ماژول‌ها}
+این فصل نتیجهٔ همهٔ ماژول‌های درج‌شده در فصل قبل را در یک چارچوب مشترک کنار هم قرار می‌دهد. مقایسه باید بر اساس چهار سؤال خوانده شود: کدام ماژول دقت بالاتری دارد؟ کدام‌یک حافظه و زمان کمتری مصرف می‌کند؟ کدام معماری برای توالی بلند مناسب‌تر است؟ و آیا نتیجهٔ آن واقعاً PASS شده است؟ هیچ معیار واحدی به‌تنهایی برندهٔ مطلق را تعیین نمی‌کند.
+در snapshot اصلی، 384 رکورد ثبت شده است: 333 PASS، 49 FAIL و 2 TIMEOUT. جدول زیر برای هر ورودی فصل، بهترین ردیف قابل‌مشاهده را نشان می‌دهد؛ اگر چند مدل یا وظیفه وجود داشته باشد، مدل/وظیفه در همان ردیف ذکر شده است.
+برای مقایسهٔ نسبی هر معیار از $\Delta m(\%)=100(m_m-m_{full})/m_{full}$ استفاده می‌شود؛ علامت منفی برای زمان/حافظه به معنی کاهش هزینه و برای Accuracy به معنی افت دقت است.
+نمودارهای این بخش فقط از ردیف‌های PASS مربوط به SST-2 در snapshot اصلی ساخته شده‌اند تا مدل و وظیفه با هم مخلوط نشوند. ماژول‌های بدون رکورد PASS در رتبه‌بندی وارد نشده‌اند و وضعیت آن‌ها در نمودار جداگانه دیده می‌شود.
+\section{نمودارهای مقایسه‌ای نتایج}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/accuracy_top20.png}
+\caption{رتبه‌بندی ۲۰ ماژول برتر از نظر Accuracy؛ فقط PASS در SST-2 اجرای اصلی.}
+\label{fig:comparison_accuracy_top20_png}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/f1_top20.png}
+\caption{رتبه‌بندی ۲۰ ماژول برتر از نظر F1؛ F1 معیار مکمل Accuracy برای توازن عملکرد کلاس‌هاست.}
+\label{fig:comparison_f1_top20_png}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/vram_low20.png}
+\caption{۲۰ ماژول با کمترین Peak VRAM؛ مقدار کمتر الزاماً به معنی Accuracy بهتر نیست.}
+\label{fig:comparison_vram_low20_png}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/throughput_top20.png}
+\caption{۲۰ ماژول با بالاترین Throughput؛ سرعت باید همراه با Accuracy تفسیر شود.}
+\label{fig:comparison_throughput_top20_png}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/pareto_accuracy_vram.png}
+\caption{موازنهٔ Accuracy و حافظه؛ نقاط نزدیک گوشهٔ بالا-چپ گزینه‌های نامغلوب احتمالی هستند.}
+\label{fig:comparison_pareto_accuracy_vram_png}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/pareto_accuracy_throughput.png}
+\caption{موازنهٔ Accuracy و سرعت؛ برتری واقعی باید هر دو محور را بهبود دهد.}
+\label{fig:comparison_pareto_accuracy_throughput_png}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/multicriteria_heatmap.png}
+\caption{Heatmap چندمعیاره؛ رنگ‌ها درون همان ۲۰ ماژول نرمال شده‌اند و metric جدید نیستند.}
+\label{fig:comparison_multicriteria_heatmap_png}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{img/comparison/status_counts.png}
+\caption{توزیع PASS، FAIL و TIMEOUT در رکوردهای ماژول‌های درج‌شده در snapshot اصلی.}
+\label{fig:comparison_status_counts_png}
+\end{figure}
+\clearpage
+\begin{center}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{@{}p{0.18\textwidth}p{0.17\textwidth}c r r r r@{}}
+\caption{مقایسهٔ فشردهٔ ماژول‌های فصل حاضر بر اساس بهترین رکورد قابل‌ردیابی}\label{tab:all_module_comparison}\\
+\toprule ماژول & مدل/وظیفه & وضعیت & Accuracy (\%) & F1 & VRAM (MB) & tok/s \\ \midrule\endfirsthead
+\toprule ماژول & مدل/وظیفه & وضعیت & Accuracy (\%) & F1 & VRAM (MB) & tok/s \\ \midrule\endhead
+fusion\_attn & DISTILBERT / SST2 & PASS & 90.02 & 0.9037 & 1419.9 & 46835.6 \\
+primal\_attention & DistilBERT / snapshot-specific & PASS & 90.14 & 0.9034 & 668.26 & 34906.84 \\
+gqa\_attention & DistilBERT / snapshot-specific & PASS & 89.91 & 0.9033 & 324.69 & 96233.27 \\
+adaptive\_sparse\_attention & DistilBERT / snapshot-specific & PASS & 89.91 & 0.9033 & 396.52 & 16770.04 \\
+adaptive\_span\_attention & DistilBERT / snapshot-specific & PASS & 89.91 & 0.9033 & 378.26 & 26524.2 \\
+adasplash\_attention & GPT-2 / snapshot-specific & PASS & 79.36 & None & None & None \\
+goldfinch\_ahn & DISTILBERT / SST2 & PASS & 90.37 & 0.9079 & 1523.6 & 37423.1 \\
+halo\_regla & DISTILBERT / SST2 & PASS & 49.08 & 0.0 & 1563.9 & 11153.7 \\
+nsa\_attention & DistilBERT / snapshot-specific & PASS & 90.83 & 0.9119 & 339.85 & 23129.04 \\
+nha\_attention & DistilBERT / snapshot-specific & PASS & 90.71 & 0.9107 & 335.47 & 18549.11 \\
+squeezing\_heads\_distiller & DISTILBERT / SST2 & PASS & 89.79 & 0.9003 & 1417.8 & 46868.2 \\
+progressive\_token\_pruning & DISTILBERT / SST2 & PASS & 86.35 & 0.8673 & 1421.7 & 47766.0 \\
+eat\_attention & DistilBERT / snapshot-specific & PASS & 89.91 & 0.9033 & 327.69 & 110050.03 \\
+infini\_attention & DistilBERT / snapshot-specific & PASS & 90.25 & 0.9069 & 352.72 & 86872.28 \\
+optimized\_hybrid\_attention & DISTILBERT / SST2 & PASS & 90.6 & 0.9087 & 1540.7 & 36184.6 \\
+asvd\_attention & DistilBERT / snapshot-specific & PASS & 90.37 & 0.9079 & 344.33 & 22010.38 \\
+rpc\_attention & DistilBERT / snapshot-specific & PASS & 87.84 & 0.8798 & 333.83 & 61913.25 \\
+svd\_mamba & DISTILBERT / SST2 & FAIL & 0.0 & 0.0 & 0.0 & 0.0 \\
+svd\_linear\_attention & DistilBERT / snapshot-specific & PASS & 86.58 & 0.8765 & 294.38 & 64874.54 \\
+res\_svd & DISTILBERT / SST2 & PASS & 86.7 & 0.8691 & 1231.8 & 39295.4 \\
+minimal\_aurora & DISTILBERT / SST2 & PASS & 85.21 & 0.8549 & 1235.3 & 50171.2 \\
+minimal\_nova & DISTILBERT / SST2 & PASS & 85.21 & 0.8571 & 1235.3 & 50154.7 \\
+minimal\_prism & DISTILBERT / SST2 & PASS & 84.17 & 0.8428 & 1235.3 & 50277.2 \\
+minimal\_svd & DISTILBERT / SST2 & PASS & 86.01 & 0.8635 & 1235.3 & 51244.3 \\
+svd\_llm\_v2\_attention & DistilBERT / snapshot-specific & PASS & 81.88 & 0.826 & 288.53 & 59614.2 \\
+mla\_attention & GPT-2 / snapshot-specific & PASS & 57.22 & 0.526 & 511.85 & 15261.31 \\
+dobi\_attention & DistilBERT / snapshot-specific & PASS & 83.6 & 0.8358 & 826.6 & 51690.7 \\
+nystrom\_attention & DistilBERT / snapshot-specific & PASS & 88.07 & 0.8834 & 335.21 & 15151.06 \\
+unified\_rope & DISTILBERT / SST2 & PASS & 90.02 & 0.9037 & 1431.4 & 42840.2 \\
+tt & DISTILBERT / SST2 & PASS & 82.45 & 0.8263 & 830.4 & 53790.6 \\
+hgrn2\_gated\_deltanet & DISTILBERT / SST2 & FAIL & 0.0 & 0.0 & 0.0 & 0.0 \\
+hgrn2\_layer & DISTILBERT / SST2 & FAIL & 0.0 & 0.0 & 0.0 & 0.0 \\
+SOAFusedAttention & DISTILBERT / SST2 & PASS & 83.83 & 0.8389 & 1293.4 & 45380.2 \\
+adaptive\_svd\_attention & DistilBERT / snapshot-specific & PASS & 88.88 & 0.8935 & 1283.2 & 38959.8 \\
+bam\_umoe & DISTILBERT / SST2 & FAIL & 0.0 & 0.0 & 0.0 & 0.0 \\
+block\_transformer\_hiba & DISTILBERT / SST2 & PASS & 91.17 & 0.9136 & 1419.3 & 44428.2 \\
+chela\_slay & DISTILBERT / SST2 & PASS & 89.11 & 0.8946 & 1838.5 & 17958.4 \\
+cluster\_attention & DistilBERT / snapshot-specific & PASS & 90.02 & 0.9039 & 331.87 & 3165.73 \\
+cosformer & DISTILBERT / SST2 & PASS & 49.08 & 0.0 & 1452.5 & 38313.9 \\
+decay\_linear\_attention & DistilBERT / snapshot-specific & PASS & 73.74 & 0.7572 & 5223.3 & 1409.1 \\
+expert\_choice\_moe & DISTILBERT / SST2 & PASS & 90.02 & 0.9037 & 4747.2 & 18606.9 \\
+flash\_attention3 & DISTILBERT / SST2 & PASS & 90.25 & 0.9065 & 1337.4 & 61694.9 \\
+flash\_attention3\_fp8 & DISTILBERT / SST2 & PASS & 89.79 & 0.9025 & 1337.4 & 61617.6 \\
+galerkin\_attention & Qwen / snapshot-specific & PASS & 50.92 & None & None & None \\
+gated\_delta\_net & DISTILBERT / SST2 & PASS & 86.93 & 0.8728 & 1775.5 & 20051.8 \\
+gated\_deltanet\_block & Qwen / snapshot-specific & PASS & 49.08 & None & None & None \\
+griffin\_ssd & DISTILBERT / SST2 & PASS & 89.68 & 0.8991 & 1563.6 & 25340.2 \\
+hymba\_transx & DISTILBERT / SST2 & FAIL & 0.0 & 0.0 & 0.0 & 0.0 \\
+jamba\_info & DISTILBERT / SST2 & FAIL & 0.0 & 0.0 & 0.0 & 0.0 \\
+vspec & DISTILBERT / SST2 & FAIL & 0.0 & 0.0 & 0.0 & 0.0 \\
+leka\_v1 & DISTILBERT / SST2 & PASS & 50.92 & 0.6748 & 1638.7 & 24706.3 \\
+leka\_v2 & DISTILBERT / SST2 & PASS & 90.48 & 0.9073 & 1748.5 & 24488.4 \\
+leka\_v3 & DISTILBERT / SST2 & PASS & 84.63 & 0.8488 & 1649.3 & 27732.1 \\
+linformer\_attention & Qwen / snapshot-specific & PASS & 50.92 & None & None & None \\
+tpa\_attention & Qwen / snapshot-specific & PASS & 51.49 & None & None & None \\
+lora\_attention & DistilBERT / snapshot-specific & PASS & 89.91 & 0.9033 & 334.37 & 86676.47 \\
+xattention & DISTILBERT / SST2 & PASS & 89.22 & 0.8956 & 1432.2 & 34895.0 \\
+mamba & DISTILBERT / SST2 & PASS & 50.92 & 0.6748 & 1250.0 & 69641.7 \\
+mixattention\_moska & DISTILBERT / SST2 & PASS & 90.37 & 0.9067 & 1389.4 & 45365.3 \\
+moe\_deltakv\_paged & DISTILBERT / SST2 & PASS & 88.3 & 0.8877 & 1476.6 & 15485.1 \\
+nasc\_attention & DistilBERT / snapshot-specific & PASS & 90.48 & 0.9075 & 323.33 & 19502.63 \\
+nexus & DISTILBERT / SST2 & PASS & 50.92 & 0.6748 & 1629.8 & 28499.0 \\
+orion & DISTILBERT / SST2 & PASS & 83.83 & 0.8439 & 1558.8 & 25266.2 \\
+padre & DistilBERT / snapshot-specific & PASS & 90.37 & 0.905 & 338.66 & 61064.72 \\
+performer\_attention & DistilBERT / snapshot-specific & PASS & 74.08 & 0.7396 & 327.67 & 19838.41 \\
+phantom & DISTILBERT / SST2 & PASS & 49.08 & 0.0 & 1978.6 & 10682.0 \\
+projection\_factorized\_attn & DISTILBERT / SST2 & PASS & 86.35 & 0.867 & 1235.2 & 45487.1 \\
+rala\_attention & DistilBERT / snapshot-specific & PASS & 60.09 & 0.6306 & 335.14 & 21401.49 \\
+reap\_moe & DISTILBERT / SST2 & PASS & 90.02 & 0.9051 & 4403.3 & 13419.8 \\
+regla\_attention & DistilBERT / snapshot-specific & PASS & 71.79 & 0.756 & 380.18 & 21188.07 \\
+routing\_attention & DistilBERT / snapshot-specific & PASS & 63.76 & 0.6708 & 334.35 & 14773.2 \\
+salt & DISTILBERT / SST2 & PASS & 86.24 & 0.8639 & 1243.9 & 41322.0 \\
+simple\_ssm & DISTILBERT / SST2 & FAIL & 0.0 & 0.0 & 0.0 & 0.0 \\
+span\_expanded\_attention & DistilBERT / snapshot-specific & PASS & 90.48 & 0.9075 & 329.46 & 88343.8 \\
+svd\_projection\_attention & DistilBERT / snapshot-specific & PASS & 86.47 & 0.8671 & 1235.0 & 51096.1 \\
+template\_attention & DistilBERT / snapshot-specific & PASS & 89.91 & 0.9033 & 329.61 & 71449.72 \\
+token\_compressed\_attention & Qwen / snapshot-specific & PASS & 50.46 & None & None & None \\
+moba & DISTILBERT / SST2 & PASS & 90.37 & 0.9056 & 1463.0 & 37621.0 \\
+spectra\_v2 & DISTILBERT / SST2 & PASS & 90.37 & 0.9081 & 1421.1 & 43144.2 \\
+compressed\_mha & DISTILBERT / SST2 & PASS & 87.61 & 0.88 & 1228.2 & 40899.9 \\
+svd\_compressed & DISTILBERT / SST2 & PASS & 88.99 & 0.8924 & 1259.2 & 50323.8 \\
+spectron & DISTILBERT / SST2 & PASS & 82.34 & 0.823 & 1259.2 & 50323.0 \\
+soa\_module & DistilBERT / snapshot-specific & PASS & 89.11 & 0.8962 & 293.12 & 25749.31 \\
+aegis\_v5 & DISTILBERT / SST2 & PASS & 82.68 & 0.8313 & 1382.6 & 31200.4 \\
+\bottomrule
+\end{longtable}
+\end{center}
+\section{جمع‌بندی تحلیلی مقایسه}
+ماژول‌های کم‌رتبه و SVD معمولاً با هدف کاهش تعداد پارامتر و هزینهٔ ضرب خطی وارد می‌شوند؛ در مقابل، GQA و روش‌های cache-aware بیشتر حافظهٔ کلید/مقدار را هدف می‌گیرند. روش‌های sparse، Top-K و landmark برای کوتاه‌کردن دامنهٔ تعامل توکن‌ها طراحی شده‌اند و روش‌های state-space یا recurrent تلاش می‌کنند وابستگی طولانی را با به‌روزرسانی ترتیبی مدل کنند. بنابراین مقایسهٔ آن‌ها باید در کنار نمودار معماری، طول توالی و مدل پایه خوانده شود.
+نتیجهٔ معتبر فقط رکوردی است که status آن PASS باشد. رکورد FAIL یا TIMEOUT برای تحلیل شکست ارزشمند است، اما نباید در رتبه‌بندی موفقیت قرار گیرد. همچنین Accuracy بالا همراه با VRAM یا زمان بسیار بیشتر الزاماً انتخاب بهتر برای کاربرد عملی نیست؛ تصمیم نهایی باید یک trade-off چندمعیاره میان دقت، حافظه، throughput و پایداری باشد.
