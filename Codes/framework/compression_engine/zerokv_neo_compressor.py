@@ -321,7 +321,9 @@ class ZeroKVNeoCompressor(BaseCompressor):
                 continue
 
             base_layer.weight.data.copy_(W_assigned)
-            new_layer = base_layer if 'zerokv_neo_compressor.py' in ['uniql_compressor.py', 'zerokv_neo_compressor.py'] else base_mod
+            # ZeroKV-Neo compresses in-place: base_layer already holds the pruned weight
+            new_layer = base_layer
+
             compressed_layer = new_layer
             # Preserve existing LoRA adapter weights if the source module has them
             if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
@@ -386,8 +388,29 @@ class ZeroKVNeoCompressor(BaseCompressor):
 
     @staticmethod
     def _is_attention_proj(name: str) -> bool:
-        """Check if module name corresponds to attention projection."""
-        attn_keywords = [
+        """Check if module name corresponds to a QKV attention projection (not output projection).
+
+        Explicitly excludes output projections first, then checks for QKV attention keywords.
+        This prevents generic keywords like 'attn'/'attention' from matching out_proj, c_proj, etc.
+        """
+        name_lower = name.lower()
+
+        # Exclusion list: output projections must never be treated as QKV targets
+        output_proj_keywords = [
+            "out_lin",
+            "out_proj",
+            "o_proj",
+            "c_proj",
+            "output.dense",
+            "self.output",
+            ".output",
+            "dense",
+        ]
+        if any(kw in name_lower for kw in output_proj_keywords):
+            return False
+
+        # Inclusion list: only match true QKV projections
+        qkv_keywords = [
             "q_lin",
             "k_lin",
             "v_lin",
@@ -399,10 +422,8 @@ class ZeroKVNeoCompressor(BaseCompressor):
             "value",
             "c_attn",
             "in_proj_qkv",
-            "attn",
-            "attention",
         ]
-        return any(kw in name.lower() for kw in attn_keywords)
+        return any(kw in name_lower for kw in qkv_keywords)
 
 
 @COMPRESSOR_REGISTRY.register("zerokv_neo_factory")
