@@ -574,4 +574,4 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| ROBERTA | 74.77% | 0.7897 | 1.0 | 0 | 666.78 | `PASS_NO_COMPRESSION` | N/A |
+| GPT2 | 48.39% | 0.1071 | 1.2697 | 0 | 460.69 | `PASS_LOW` | N/A |

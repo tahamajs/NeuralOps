@@ -1,15 +1,15 @@
 [
   {
-    "Model": "roberta",
+    "Model": "gpt2",
     "Exit Code": 0,
-    "Baseline Acc": "78.56%",
-    "SVD Linear Acc": "74.77%",
-    "Delta Acc": "-3.79%",
-    "F1": "0.7897",
-    "Status": "PASS_NO_COMPRESSION",
+    "Baseline Acc": "79.36%",
+    "SVD Linear Acc": "48.39%",
+    "Delta Acc": "-30.97%",
+    "F1": "0.1071",
+    "Status": "PASS_LOW",
     "Compressed Layers": "0",
-    "Comp Rate": "1.00x",
-    "Peak VRAM": "666.8 MB",
-    "Time (s)": "48.0"
+    "Comp Rate": "1.27x",
+    "Peak VRAM": "460.7 MB",
+    "Time (s)": "47.5"
   }
 ]
