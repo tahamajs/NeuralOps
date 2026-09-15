@@ -1,2 +1,2 @@
 Model,Exit Code,Baseline Acc,SVD Linear Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-gpt2,0,79.36%,50.34%,-29.02%,0.2573,PASS_LOW,0,1.25x,467.4 MB,48.4
+gpt2,0,79.36%,59.75%,-19.61%,0.5766,PASS,0,1.22x,476.4 MB,48.3
