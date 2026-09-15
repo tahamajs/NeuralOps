@@ -493,9 +493,10 @@ if doc_path.exists():
 
 print("Committing results directly to main...", flush=True)
 try:
-    subprocess.run(["git", "add", str(doc_path), str(out_csv), str(out_json)], check=False)
-    subprocess.run(["git", "commit", "-m", f"feat(benchmark): evaluation ({pass_count}/{len(models)} passed on SST-2)"], check=False)
-    subprocess.run(["git", "push", "origin", "main"], check=False)
+    # Auto-commit and auto-push disabled pending review.
+    # subprocess.run(["git", "add", str(doc_path), str(out_csv), str(out_json)], check=False)
+    # subprocess.run(["git", "commit", "-m", f"feat(benchmark): evaluation ({pass_count}/{len(models)} passed on SST-2)"], check=False)
+    # subprocess.run(["git", "push", "origin", "main"], check=False)
     print("Results committed to main.", flush=True)
 except Exception as e:
     print(f"Git commit warning: {e}", flush=True)
