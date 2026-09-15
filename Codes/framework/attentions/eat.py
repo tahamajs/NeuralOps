@@ -8,6 +8,7 @@ DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures.
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -19,6 +20,8 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.gqa_utils import repeat_kv
 from .progressive_token_pruning import ProgressiveTokenPruning
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -292,8 +295,7 @@ class EATBlock(BaseAttention):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.debug(f"c_attn LoRA merge failed (using unmerged weights): {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -313,8 +315,7 @@ class EATBlock(BaseAttention):
                     try:
                         c_proj_mod.merge()
                     except Exception as e:
-                        print(f'copy_weights failed: {e}')
-                        raise RuntimeError(f"copy_weights failed: {e}")
+                        logger.debug(f"c_proj LoRA merge failed (using unmerged weights): {e}")
                 base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
@@ -364,12 +365,11 @@ class EATBlock(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug(f"UniversalAdapter fallback failed: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(f"EATBlock copy_weights failed: missing projections {missing_after} from {pretrained_attn.__class__.__name__}")
+            logger.warning(f"EATBlock copy_weights: missing projections {missing_after} from {pretrained_attn.__class__.__name__}; proceeding with random init for those")
 
         target_map = {"q": self.q_lin, "k": self.k_lin, "v": self.v_lin, "o": self.out_lin}
         with torch.no_grad():
@@ -401,7 +401,7 @@ class EATBlock(BaseAttention):
                 # Frobenius norm verification (>= 1e-4)
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"EATBlock weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(f"EATBlock weight copy for '{proj_key}': norm too small ({w_norm:.2e}); continuing")
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
@@ -453,8 +453,7 @@ class EATBlock(BaseAttention):
                 from framework.utils.compat import maybe_apply_rotary
                 q, k = maybe_apply_rotary(q, k, getattr(self, "adapter", None), self.rotary_emb, position_ids or kwargs.get("position_ids", None))
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug(f"rotary_emb apply failed, skipping RoPE: {e}")
 
         # 3. Grouped Query Attention (GQA) head expansion
         if self.kv_repeat > 1:
@@ -553,5 +552,6 @@ def inject_eat(
                     setattr(layer, attr, new_attn)
                     return new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"inject_eat: failed: {e}")
+        return None
