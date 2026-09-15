@@ -61,6 +61,35 @@ class TTLinearLayer(nn.Module):
     with boundary ranks r_0 = r_d = 1.
     """
 
+    @staticmethod
+    def _max_rank_for_compression(
+        out_features: int,
+        in_features: int,
+        p_dims: Tuple[int, ...],
+        q_dims: Tuple[int, ...],
+        safety_margin: float = 0.9,
+    ) -> int:
+        """
+        Return the maximum TT-rank such that TT parameter count stays below
+        the original dense matrix count, with a safety margin.
+
+        Param count for TT cores with ranks r_0=1, r_1=r, ..., r_n=1:
+            params(r) = sum over cores of (p_i * q_i) * r
+        For a rank-uniform approximation:
+            params(r) ≈ r * sum_i (p_i * q_i)
+        Breakeven: r_max = out_features * in_features / sum_i (p_i * q_i)
+        """
+        if not p_dims or not q_dims or len(p_dims) != len(q_dims):
+            return 1
+
+        sum_pq = sum(p * q for p, q in zip(p_dims, q_dims))
+        if sum_pq <= 0:
+            return 1
+
+        breakeven = (out_features * in_features) / sum_pq
+        safe_max = int(breakeven * safety_margin)
+        return max(1, safe_max)
+
     def __init__(
         self,
         in_features: int,
@@ -209,7 +238,7 @@ class TTLinearLayer(nn.Module):
         fallback_to_svd: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "TTLinearLayer":
+    ) -> Optional["TTLinearLayer"]:
         """
         Decompose a pretrained nn.Linear, Conv1D, or LoRALinear layer into TT-cores using TT-SVD.
         Production-hardened with FP32 stability, Conv1D support, adaptive rank retry,
@@ -269,7 +298,11 @@ class TTLinearLayer(nn.Module):
             perm.append(k)      # q_k
         W_interleaved = W_tensor.permute(*perm).contiguous()
 
-        cur_tt_rank = max(1, min(int(tt_rank), in_f, out_f))
+        max_rank_for_compression = cls._max_rank_for_compression(
+            out_f, in_f, p_dims, q_dims, safety_margin=0.9
+        )
+
+        cur_tt_rank = min(max(1, int(tt_rank)), max_rank_for_compression)
         best_layer: Optional[TTLinearLayer] = None
         best_err = float("inf")
         best_rank = cur_tt_rank
@@ -337,33 +370,40 @@ class TTLinearLayer(nn.Module):
                     best_layer = layer
                     best_rank = cur_tt_rank
 
-                if rel_err <= max_error or cur_tt_rank >= min(in_f, out_f):
+                if rel_err <= max_error:
                     break
 
+                if cur_tt_rank >= max_rank_for_compression:
+                    # Cannot reach error threshold without exceeding parameter budget.
+                    # Fall back to the original module.
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        "TT: cannot achieve error < %.4f at max_rank=%d "
+                        "(param budget ceiling); falling back to original.",
+                        max_error, max_rank_for_compression,
+                    )
+                    return None  # signal caller to keep original
+
                 # Step up rank for retry
-                step = max(4, (min(in_f, out_f) - cur_tt_rank) // max(1, max_retries - attempt))
-                cur_tt_rank = min(cur_tt_rank + step, min(in_f, out_f))
+                step = max(4, (max_rank_for_compression - cur_tt_rank) // max(1, max_retries - attempt))
+                cur_tt_rank = min(cur_tt_rank + step, max_rank_for_compression)
 
             except Exception as e:
                 # If SVD or contraction fails, log and stop retries
                 break
 
         if best_layer is None:
-            # Fallback initialization: construct base layer with default initialization
-            best_layer = cls(
-                in_features=in_f,
-                out_features=out_f,
-                tt_rank=cur_tt_rank,
-                bias=bias is not None,
-                shape=(p_dims, q_dims),
-                dtype=orig_dtype,
-                device=orig_device,
-                lora_r=lora_r,
-                lora_alpha=lora_alpha,
+            return None
+
+        # Sanity check: TT params must be strictly less than dense params
+        tt_params = sum(p.numel() for p in best_layer.parameters())
+        orig_params = out_f * in_f
+        if tt_params >= orig_params:
+            raise RuntimeError(
+                f"TTLinearLayer has {tt_params} params >= original {orig_params}. "
+                f"This means the rank budget was exceeded. "
+                f"Check _max_rank_for_compression()."
             )
-            if bias is not None and best_layer.bias is not None:
-                best_layer.bias.data.copy_(bias.to(dtype=orig_dtype, device=orig_device))
-            best_err = 1.0
 
         best_layer.reconstruction_error = float(best_err)
         best_layer.tt_rank = best_rank
