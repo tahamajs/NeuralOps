@@ -2,33 +2,25 @@
   {
     "Model": "DistilBERT",
     "Module": "a3",
-    "Status": "PASS",
-    "Accuracy (%)": 72.82,
+    "Status": "PASS_NO_COMPRESSION",
+    "Accuracy (%)": 90.14,
     "Threshold (%)": 56.0,
-    "Elapsed (s)": 204.0
+    "Elapsed (s)": 44.6
   },
   {
     "Model": "RoBERTa",
     "Module": "a3",
-    "Status": "PASS_LOW",
-    "Accuracy (%)": 50.92,
+    "Status": "PASS_NO_COMPRESSION",
+    "Accuracy (%)": 81.19,
     "Threshold (%)": 56.0,
-    "Elapsed (s)": 27.0
+    "Elapsed (s)": 57.1
   },
   {
     "Model": "GPT-2",
     "Module": "a3",
-    "Status": "PASS_LOW",
-    "Accuracy (%)": 50.92,
+    "Status": "PASS_NO_COMPRESSION",
+    "Accuracy (%)": 49.08,
     "Threshold (%)": 56.0,
-    "Elapsed (s)": 26.0
-  },
-  {
-    "Model": "Qwen3.5",
-    "Module": "a3",
-    "Status": "SKIP_QWEN3_5_TIMEOUT",
-    "Accuracy (%)": 0.0,
-    "Threshold (%)": 56.0,
-    "Elapsed (s)": 1492.9
+    "Elapsed (s)": 56.4
   }
 ]

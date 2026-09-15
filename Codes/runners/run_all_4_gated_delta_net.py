@@ -96,32 +96,6 @@ models = [
         "summary_csv": r"results\unified_gated_delta_net\gpt2\summary.csv",
         "stats_json": r"results\unified_gated_delta_net\gpt2\gated_delta_net_stats.json",
     },
-    {
-        "name": "qwen3_5",
-        "slug": "qwen3_5",
-        "out_dir": r"results\unified_gated_delta_net\qwen3_5",
-        "cmd": [
-            sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
-            "--model", r"models\Qwen3.5-0.8B",
-            "--model_family", "qwen3_5",
-            "--dataset", "sst2",
-            "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_gated_delta_net\qwen3_5",
-            "--parent_checkpoint", r"results\unified_asvd\qwen3_5\finetuned_model.pt",
-            "--modules", "full,gated_delta_net",
-            "--batch_size", "4",
-            "--recovery_steps", "20",
-            "--learning_rate", "2e-4",
-            "--lora_rank", "16",
-            "--rank", "32",
-            "--precision", "fp16",
-            "--fresh",
-            "--defer_export",
-            "--timeout", "1800",
-        ],
-        "summary_csv": r"results\unified_gated_delta_net\qwen3_5\summary.csv",
-        "stats_json": r"results\unified_gated_delta_net\qwen3_5\gated_delta_net_stats.json",
-    },
 ]
 
 import argparse

@@ -1,0 +1,20 @@
+[
+  {
+    "module": "a3",
+    "runner": "run_all_4_a3.py",
+    "exit_code": 0,
+    "elapsed_s": 160.03,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T09:17:26.208467"
+  },
+  {
+    "module": "aasvd",
+    "runner": "run_all_4_aasvd.py",
+    "exit_code": 1,
+    "elapsed_s": 262.25,
+    "status": "FAIL",
+    "error": null,
+    "timestamp": "2026-09-15T09:21:51.783278"
+  }
+]
