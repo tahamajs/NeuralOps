@@ -313,12 +313,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 78.67% | 0.7822 | 0.9913 | 0 | 329.42 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa38d42-425639224b774b4272af0252;ab6f28f0-239d-46cc-a5b2-a755b2cc1666)
-
-429 Too Many Requests for url: https://huggingface.co/api/repos/create.
-You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 23 hours.) |
-| ROBERTA | 57.80% | 0.7023 | 0.9378 | 0 | 379.26 | `PASS` | [`roberta`](Upload error: (Request ID: Root=1-6aa38d42-7f2fd97258d8e01a5a5590a9;1776c6a6-386c-4291-8f47-9f82a9ab6e6d)
-
-429 Too Many Requests for url: https://huggingface.co/api/repos/create.
-You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 23 hours.) |
+| DISTILBERT | 78.67% | 0.7822 | 0.9913 | 0 | 329.42 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-spectraformer) |
+| ROBERTA | 57.80% | 0.7023 | 0.9378 | 0 | 379.26 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-spectraformer) |
 | GPT2 | 50.92% | 0.6748 | 0.9906 | 0 | 569.65 | `PASS_LOW` | N/A |
