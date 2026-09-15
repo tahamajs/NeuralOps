@@ -34,3 +34,17 @@ Notes:
 2026-09-15 23:54:45,358 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
 2026-09-15 23:54:45,358 [INFO] QwenQualitySweep: ================================================================================
 2026-09-15 23:54:45,359 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-15 23:55:04,628 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_gated_delta_net\gpt2\gpt2_full_full_metrics.json
+2026-09-15 23:55:04,645 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_gated_delta_net\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 23:55:06,092 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 728.04 MB)
+2026-09-15 23:55:06,092 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_gated_delta_net\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 23:55:06,556 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: gated_delta_net (recovery_steps=50, batch_size=4, optimizer=adamw)
+2026-09-15 23:55:09,972 [INFO] QwenQualitySweep: module=gated_delta_net path=adapted_gpt
+2026-09-15 23:55:09,975 [INFO] QwenQualitySweep: module=gated_delta_net injection summary: 0 SVDLinear layers active
+2026-09-15 23:55:09,975 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for gated_delta_net (lr=2.0e-04)
+2026-09-15 23:55:10,552 [INFO] framework.utils.compat: Recovery fine-tuning selected 1474560 trainable parameters across 120 tensors.
+2026-09-15 23:55:10,553 [INFO] framework.utils.compat: Discovered 120 trainable tensors (1474560 params)
+2026-09-15 23:55:10,560 [INFO] QwenQualitySweep: LoRA fine-tuning: 1474560 trainable parameters across 120 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 23:55:41,926 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6210 (bs=4, micro_bs=4)
+2026-09-15 23:57:58,216 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.5430 (bs=4, micro_bs=4)
+2026-09-16 00:00:47,566 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.5807 (bs=4, micro_bs=4)
