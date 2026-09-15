@@ -22,3 +22,11 @@ aegis_v3_module,run_all_4_aegis_v3_module.py,0,264.89,PASS,,2026-09-15T10:33:02.
 aegis_v4,run_all_4_aegis_v4.py,0,253.32,PASS,,2026-09-15T10:37:17.674650
 aegis_v4_module,run_all_4_aegis_v4_module.py,0,245.46,PASS,,2026-09-15T10:41:25.463037
 aegis_v5,run_all_4_aegis_v5.py,0,253.15,PASS,,2026-09-15T10:45:40.521925
+aegis_v5_module,run_all_4_aegis_v5_module.py,0,251.37,PASS,,2026-09-15T10:49:53.798435
+aegis_v6,run_all_4_aegis_v6.py,0,273.27,PASS,,2026-09-15T10:54:29.161728
+armor,run_all_4_armor.py,0,166.36,PASS,,2026-09-15T10:57:17.458724
+astro,run_all_4_astro.py,1,149.04,FAIL,,2026-09-15T10:59:48.460772
+asvd,run_all_4_asvd.py,0,225.08,PASS,,2026-09-15T11:03:35.693526
+bam_umoe,run_all_4_bam_umoe.py,0,259.85,PASS,,2026-09-15T11:07:57.669705
+block_transformer_hiba,run_all_4_block_transformer_hiba.py,0,193.98,PASS,,2026-09-15T11:11:14.525163
+cachenotes,run_all_4_cachenotes.py,1,165.89,FAIL,,2026-09-15T11:14:02.579936

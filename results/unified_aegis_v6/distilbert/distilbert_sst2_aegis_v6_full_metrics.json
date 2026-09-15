@@ -1,14 +1,14 @@
 {
     "model": "distilbert_sst2_aegis_v6",
     "performance": {
-        "accuracy_pct": 49.08,
-        "f1_score": 0.0,
-        "f1_macro": 0.3292,
-        "precision": 0.2454,
-        "recall": 0.5,
-        "val_loss": 0.723,
-        "status": "PASS_LOW",
-        "elapsed_s": 22.02
+        "accuracy_pct": 87.04,
+        "f1_score": 0.8791,
+        "f1_macro": 0.8697,
+        "precision": 0.8752,
+        "recall": 0.8694,
+        "val_loss": 0.336,
+        "status": "PASS",
+        "elapsed_s": 27.51
     },
     "efficiency": {
         "total_params_before": 66955010,
@@ -27,8 +27,8 @@
         "per_layer_ranks": {}
     },
     "hardware": {
-        "peak_vram_mb": 301.43,
-        "tokens_per_sec": 14634.37
+        "peak_vram_mb": 301.26,
+        "tokens_per_sec": 11663.21
     },
     "architecture": {
         "span_distribution": {},
@@ -36,10 +36,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 261.78,
-        "L_256_vram_mb": 267.29,
+        "L_128_vram_mb": 262.36,
+        "L_256_vram_mb": 267.87,
         "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
-    "timestamp": "2026-09-15T02:53:39.804261"
+    "timestamp": "2026-09-15T10:50:57.084632"
 }

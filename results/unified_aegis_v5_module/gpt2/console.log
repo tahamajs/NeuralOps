@@ -46,3 +46,26 @@ Notes:
 2026-09-15 10:49:21,201 [INFO] framework.utils.compat: Recovery fine-tuning selected 1573056 trainable parameters across 168 tensors.
 2026-09-15 10:49:21,203 [INFO] framework.utils.compat: Discovered 168 trainable tensors (1573056 params)
 2026-09-15 10:49:21,210 [INFO] QwenQualitySweep: LoRA fine-tuning: 1573056 trainable parameters across 168 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 10:49:21,671 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.8497 (bs=8, micro_bs=8)
+2026-09-15 10:49:23,214 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7691 (bs=8, micro_bs=8)
+2026-09-15 10:49:24,749 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.8383 (bs=8, micro_bs=8)
+2026-09-15 10:49:26,209 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5896 (bs=8, micro_bs=8)
+2026-09-15 10:49:27,653 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.9047 (bs=8, micro_bs=8)
+2026-09-15 10:49:29,098 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7858 (bs=8, micro_bs=8)
+2026-09-15 10:49:30,541 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.4575 (bs=8, micro_bs=8)
+2026-09-15 10:49:31,981 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.4258 (bs=8, micro_bs=8)
+2026-09-15 10:49:33,466 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.3528 (bs=8, micro_bs=8)
+2026-09-15 10:49:34,968 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.4539 (bs=8, micro_bs=8)
+2026-09-15 10:49:36,408 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.5522 (bs=8, micro_bs=8)
+2026-09-15 10:49:48,872 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v5_module\gpt2\gpt2_aegis_v5_module_full_metrics.json
+2026-09-15 10:49:48,917 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v5_module\gpt2\checkpoints\aegis_v5_module\weights.pt (module_params=0, lora_params=97)
+2026-09-15 10:49:49,880 [INFO] QwenQualitySweep: [2/2] aegis_v5_module -> PASS_NO_COMPRESSION 70.41% (F1: 0.7637, Peak VRAM: 591.65 MB)
+2026-09-15 10:49:49,880 [WARNING] QwenQualitySweep: Module 'aegis_v5_module' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 10:49:49,880 [INFO] QwenQualitySweep: [Quality Guard] Module 'aegis_v5_module' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=70.41%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 10:49:50,131 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 10:49:50,131 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 10:49:50,142 [INFO] QwenQualitySweep: 
+                          Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                            full                PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.87              5.58
+aegis_v5_module (efficient-attn) PASS_NO_COMPRESSION   70.41%       -8.95% 0.7637                  0            1.00x  591.6 MB              12.04             13.81
+2026-09-15 10:49:50,143 [INFO] QwenQualitySweep: ================================================================================
