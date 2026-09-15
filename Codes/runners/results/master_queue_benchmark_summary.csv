@@ -41,3 +41,8 @@ cur,run_all_4_cur.py,0,133.96,PASS,,2026-09-15T11:41:46.637463
 cur_linear,run_all_4_cur_linear.py,0,137.89,PASS,,2026-09-15T11:44:06.494932
 cur_moe,run_all_4_cur_moe.py,0,135.77,PASS,,2026-09-15T11:46:24.146125
 cure,run_all_4_cure.py,0,136.81,PASS,,2026-09-15T11:48:42.869378
+decay_linear_attention,run_all_4_decay_linear_attention.py,0,309.17,PASS,,2026-09-15T11:53:54.023074
+delta_kv,run_all_4_delta_kv.py,0,128.0,PASS,,2026-09-15T11:56:04.128781
+direct_svd,run_all_4_direct_svd.py,0,215.3,PASS,,2026-09-15T11:59:42.547402
+dobi,run_all_4_dobi.py,0,112.91,PASS,,2026-09-15T12:01:37.724386
+dynamic_entropy,run_all_4_dynamic_entropy.py,0,119.48,PASS,,2026-09-15T12:03:39.191879
