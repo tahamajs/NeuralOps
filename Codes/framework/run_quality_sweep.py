@@ -1587,7 +1587,11 @@ def main():
             "nasc": 8,
             "nasc_attention": 8,
         }
-        effective_batch_size = min(args.batch_size, _OOM_MODULE_BATCH_OVERRIDES[name]) if name in _OOM_MODULE_BATCH_OVERRIDES else args.batch_size
+        # Only apply OOM override on 12-layer models (roberta, gpt)
+        if name in _OOM_MODULE_BATCH_OVERRIDES and family in ("roberta", "gpt"):
+            effective_batch_size = min(args.batch_size, _OOM_MODULE_BATCH_OVERRIDES[name])
+        else:
+            effective_batch_size = args.batch_size
 
         total_params_before = sum(p.numel() for p in base.parameters())
         model_slug = Path(args.model).name.replace("/", "_").replace("\\", "_")
@@ -2414,7 +2418,6 @@ def main():
             # Module claimed compression but did not compress anything
             if (
                 name != "full"
-                and typ == "compressor"
                 and comp_metrics.get("num_compressed_layers", 0) == 0
                 and comp_metrics.get("total_params_after", 0) >= comp_metrics.get("total_params_before", 0)
             ):
