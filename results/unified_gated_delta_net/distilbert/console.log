@@ -44,3 +44,5 @@ Loading weights: 100%|##########| 104/104 [00:00<00:00, 2934.09it/s]
 2026-09-16 00:23:21,724 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6739 (bs=4, micro_bs=4)
 2026-09-16 00:24:52,086 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6044 (bs=4, micro_bs=4)
 2026-09-16 00:26:20,140 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7825 (bs=4, micro_bs=4)
+2026-09-16 00:27:47,673 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6287 (bs=4, micro_bs=4)
+2026-09-16 00:29:16,473 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6901 (bs=4, micro_bs=4)
