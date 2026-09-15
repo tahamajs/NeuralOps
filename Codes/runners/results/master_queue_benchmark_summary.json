@@ -7,5 +7,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T22:55:15.603203"
+  },
+  {
+    "module": "dobi",
+    "runner": "run_all_4_dobi.py",
+    "exit_code": 0,
+    "elapsed_s": 147.83,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:57:45.861161"
   }
 ]
