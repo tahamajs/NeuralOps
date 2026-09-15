@@ -601,5 +601,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T23:47:41.637643"
+  },
+  {
+    "module": "soafusedattention",
+    "runner": "run_all_4_soafusedattention.py",
+    "exit_code": 0,
+    "elapsed_s": 356.93,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T23:53:40.891814"
   }
 ]
