@@ -62,3 +62,13 @@ Notes:
 2026-09-15 23:37:00,183 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5299 (bs=4, micro_bs=4)
 2026-09-15 23:43:21,468 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7451 (bs=4, micro_bs=4)
 2026-09-15 23:48:58,746 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=2.3484 (bs=4, micro_bs=4)
+2026-09-15 23:53:01,822 [INFO] QwenQualitySweep: [2/2] gated_delta_net -> SKIP_ROBERTA_TIMEOUT 0.00% (F1: 0.8133, Peak VRAM: 699.18 MB)
+2026-09-15 23:53:01,825 [INFO] QwenQualitySweep: [Quality Guard] Module 'gated_delta_net' did not pass quality criteria (status=SKIP_ROBERTA_TIMEOUT, acc=0.00%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 23:53:02,272 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 23:53:02,275 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-15 23:53:02,308 [INFO] QwenQualitySweep: 
+                          Module               Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                            full                 PASS   78.67% 0.00% (base) 0.8133                  0            1.00x  699.2 MB               8.60              9.87
+gated_delta_net (efficient-attn) SKIP_ROBERTA_TIMEOUT    0.00%      -78.67% 0.8133                  0            1.00x  699.2 MB               8.60              9.87
+2026-09-15 23:53:02,310 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 23:53:32,119 [WARNING] QwenQualitySweep: Training step 34/50 exceeded timeout 1800s; aborting
