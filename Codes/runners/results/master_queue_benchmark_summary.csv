@@ -66,3 +66,4 @@ rpc,run_all_4_rpc.py,0,190.08,PASS,,2026-09-15T23:28:58.186019
 salt,run_all_4_salt.py,0,369.84,PASS,,2026-09-15T23:35:09.522768
 simple_ssm,run_all_4_simple_ssm.py,0,378.6,PASS,,2026-09-15T23:41:29.687620
 soa_module,run_all_4_soa_module.py,0,358.79,PASS,,2026-09-15T23:47:41.637643
+soafusedattention,run_all_4_soafusedattention.py,0,356.93,PASS,,2026-09-15T23:53:40.891814
