@@ -55,8 +55,12 @@ def plot_loss(steps, losses, out_path, title):
     ax.grid(True, alpha=0.3, linestyle='--')
     ax.legend(frameon=True, fontsize=8)
     plt.tight_layout()
-    fig.savefig(out_path, dpi=300, bbox_inches='tight')
+    plt.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
+    plt.close('all')
+    import gc
+    gc.collect()
 
 def plot_radar(metrics, out_path, title):
     categories = ['Accuracy', 'F1 Score', 'Precision', 'Recall']
@@ -81,8 +85,12 @@ def plot_radar(metrics, out_path, title):
     ax.set_ylim(0, 1.0)
     ax.set_title(title, fontsize=11, fontweight='bold', y=1.08)
     plt.tight_layout()
-    fig.savefig(out_path, dpi=300, bbox_inches='tight')
+    plt.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
+    plt.close('all')
+    import gc
+    gc.collect()
 
 def plot_ranks(ranks_dict, out_path, title):
     if not ranks_dict:
@@ -100,8 +108,12 @@ def plot_ranks(ranks_dict, out_path, title):
         ax.annotate(f'{h}', xy=(bar.get_x() + bar.get_width()/2, h),
                     xytext=(0, 2), textcoords="offset points", ha='center', va='bottom', fontsize=8, fontweight='bold')
     plt.tight_layout()
-    fig.savefig(out_path, dpi=300, bbox_inches='tight')
+    plt.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
+    plt.close('all')
+    import gc
+    gc.collect()
 
 # Scan all unified directories
 dirs = sorted(glob.glob(os.path.join(RESULTS_DIR, "unified_*")))
