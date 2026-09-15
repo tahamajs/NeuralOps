@@ -502,8 +502,9 @@ def inject_compressed_mha(
             else:
                 layer.attention = new_attn
         return new_attn
-    except Exception:
-        raise RuntimeError("copy_weights failed")
+    except Exception as e:
+        logger.error(f"inject_compressed_mha: failed: {e}")
+        return None
 
 
 @ATTENTION_REGISTRY.register("compressed_mha_fn")
