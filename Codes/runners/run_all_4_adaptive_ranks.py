@@ -67,14 +67,6 @@ models = [
         "parent_checkpoint": r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
         "out_dir": r"results\unified_adaptive_ranks\gpt2",
     },
-    {
-        "name": "qwen3_5",
-        "slug": "qwen3_5",
-        "model_path": r"models\Qwen3.5-0.8B",
-        "family": "qwen3_5",
-        "parent_checkpoint": None,
-        "out_dir": r"results\unified_adaptive_ranks\qwen3_5",
-    },
 ]
 
 print("=" * 85, flush=True)
