@@ -1,4 +1,4 @@
 Model,Exit Code,Baseline Acc,NLI Softmax Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.48%,90.94%,+0.46%,0.9123,PASS,0,1.00x,337.6 MB,16.6
-roberta,1,75.11%,0.00%,-75.11%,0.7586,FAIL,0,1.00x,298.7 MB,20.4
-gpt2,0,60.78%,62.04%,+1.26%,0.6783,PASS,0,1.00x,634.9 MB,21.9
+distilbert,0,90.71%,89.33%,-1.38%,0.8905,PASS,0,1.00x,187.6 MB,35.9
+roberta,3221225477,78.56%,0.00%,-78.56%,0.7586,FAIL,0,1.00x,298.7 MB,55.9
+gpt2,0,79.36%,55.28%,-24.08%,0.6782,PASS_LOW,0,1.00x,557.9 MB,46.4
