@@ -21,14 +21,14 @@ models = [
     {
         "name": "distilbert",
         "slug": "distilbert",
-        "out_dir": r"results\unified_sambam3\distilbert",
+        "out_dir": r"results\unified_samba_m3\distilbert",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
             "--model", r"models\distilbert_sst2",
             "--model_family", "bert",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_sambam3\distilbert",
+            "--output_dir", r"results\unified_samba_m3\distilbert",
             "--parent_checkpoint", r"results\unified_asvd\distilbert\finetuned_model.pt",
             "--modules", "full,samba_m3",
             "--batch_size", "8",
@@ -41,20 +41,20 @@ models = [
             "--defer_export",
             "--timeout", "180",
         ],
-        "summary_csv": r"results\unified_sambam3\distilbert\summary.csv",
-        "stats_json": r"results\unified_sambam3\distilbert\samba_m3_stats.json",
+        "summary_csv": r"results\unified_samba_m3\distilbert\summary.csv",
+        "stats_json": r"results\unified_samba_m3\distilbert\samba_m3_stats.json",
     },
     {
         "name": "roberta",
         "slug": "roberta",
-        "out_dir": r"results\unified_sambam3\roberta",
+        "out_dir": r"results\unified_samba_m3\roberta",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
             "--model", r"models\roberta-base",
             "--model_family", "roberta",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_sambam3\roberta",
+            "--output_dir", r"results\unified_samba_m3\roberta",
             "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,samba_m3",
             "--batch_size", "8",
@@ -67,20 +67,20 @@ models = [
             "--defer_export",
             "--timeout", "180",
         ],
-        "summary_csv": r"results\unified_sambam3\roberta\summary.csv",
-        "stats_json": r"results\unified_sambam3\roberta\samba_m3_stats.json",
+        "summary_csv": r"results\unified_samba_m3\roberta\summary.csv",
+        "stats_json": r"results\unified_samba_m3\roberta\samba_m3_stats.json",
     },
     {
         "name": "gpt2",
         "slug": "gpt2",
-        "out_dir": r"results\unified_sambam3\gpt2",
+        "out_dir": r"results\unified_samba_m3\gpt2",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
             "--model", r"models\gpt2",
             "--model_family", "gpt",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_sambam3\gpt2",
+            "--output_dir", r"results\unified_samba_m3\gpt2",
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,samba_m3",
             "--batch_size", "8",
@@ -93,8 +93,8 @@ models = [
             "--defer_export",
             "--timeout", "180",
         ],
-        "summary_csv": r"results\unified_sambam3\gpt2\summary.csv",
-        "stats_json": r"results\unified_sambam3\gpt2\samba_m3_stats.json",
+        "summary_csv": r"results\unified_samba_m3\gpt2\summary.csv",
+        "stats_json": r"results\unified_samba_m3\gpt2\samba_m3_stats.json",
     },
 ]
 
@@ -233,8 +233,8 @@ print("=" * 80, flush=True)
 
 out_dir = Path("results")
 out_dir.mkdir(parents=True, exist_ok=True)
-out_csv = out_dir / "unified_sambam3_4models_summary.csv"
-out_json = out_dir / "unified_sambam3_4models_summary.json"
+out_csv = out_dir / "unified_samba_m3_4models_summary.csv"
+out_json = out_dir / "unified_samba_m3_4models_summary.json"
 res_df.to_csv(out_csv, index=False)
 with open(out_json, "w", encoding="utf-8") as f:
     json.dump(final_stats, f, indent=2)
