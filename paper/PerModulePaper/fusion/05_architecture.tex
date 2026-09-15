@@ -1,0 +1,111 @@
+\section{5. Architecture Integration}
+
+\subsection{5.1 Model Support}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Cross-attn?} \\
+\midrule
+DistilBERT & Flat & No & No & No & No \\
+RoBERTa & Nested & Yes & No & No & No \\
+GPT-2 & Causal & No & No & No & No \\
+Qwen3.5 & GQA+RoPE & No & Yes & Yes & No \\
+T5 & Enc-Dec & No & No & No & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{5.2 Weight Extraction}
+
+\subsubsection{DistilBERT (Flat)}
+\begin{lstlisting}
+q_w = src.q_lin.weight
+k_w = src.k_lin.weight
+v_w = src.v_lin.weight
+o_w = src.out_lin.weight
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+\begin{lstlisting}
+q_w = src.self.query.weight
+k_w = src.self.key.weight
+v_w = src.self.value.weight
+o_w = src.output.dense.weight
+is_nested_encoder = True
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+\begin{lstlisting}
+w = src.c_attn.weight.T
+q_w, k_w, v_w = w.chunk(3, dim=0)
+o_w = src.c_proj.weight.T
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA + RoPE)}
+Direct copy with GQA-aware dims.
+
+\subsection{5.3 Injection}
+
+\begin{lstlisting}
+def inject_fusion_attn(layer, cfg, comp_config, old_attn):
+    new = FUSIONATTN(
+        config=cfg,
+        comp_config=comp_config,
+        old_attn=old_attn,
+        block_size=64,
+        top_k_blocks=4,
+    )
+    if hasattr(layer, "attention"):
+        if hasattr(layer.attention, "self"):
+            layer.attention.self = new
+        else:
+            layer.attention = new
+    return new
+\end{lstlisting}
+
+\subsection{5.4 Nested Encoder Bypass}
+
+For RoBERTa, \texttt{out_proj} is not applied; outer \texttt{BertSelfOutput.dense} does it.
+
+\subsection{5.5 GQA}
+
+\begin{lstlisting}
+if self.kv_repeat > 1:
+    k = repeat_kv(k, self.kv_repeat)
+    v = repeat_kv(v, self.kv_repeat)
+\end{lstlisting}
+
+\subsection{5.6 RoPE}
+
+Supports partial RoPE (Qwen3.5 with rotary_dim < head_dim).
+
+\subsection{5.7 Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("fusion_attn")
+class FUSIONATTN(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{5.8 Failure Modes}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & Frobenius < 1e-4 & **raise RuntimeError** \\
+Zero Frobenius & Same & **raise RuntimeError** \\
+Empty blocks & Padding mask & -inf \\
+NaN in scores & nan\_to\_num & Replace 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{⚠️ Critical:} \texttt{inject_fusion_attn} has \texttt{raise RuntimeError("copy_weights failed")} 
+which kills the injection on any failure. Recommend changing to \texttt{return None}.
+
+\subsection{5.9 Numerical Stability}

@@ -1,0 +1,107 @@
+\section{8. Analysis}
+
+\subsection{8.1 The Short-Path Problem}
+
+\textbf{Critical insight.} FUSIONATTN's dispatch threshold is $L_\text{threshold} = 128$. 
+Our test dataset (SST-2) uses $L = 128$. The condition:
+
+\begin{lstlisting}
+if N <= 128 or is_cross_attention:
+    # short path
+\end{lstlisting}
+
+\textbf{Always selects the short path.} Therefore:
+
+1. \textbf{No sparsity is applied.}
+2. \textbf{Gate MLP is never used.}
+3. \textbf{Only LoRA contributes trainable capacity.}
+4. \textbf{The model is effectively just a LoRA-wrapped baseline.}
+
+This is not a flaw of FUSIONATTN — it's the intended behavior. But at 
+$L = 128$, the module's sparsity machinery is silent.
+
+\subsection{8.2 Where FUSIONATTN Matters}
+
+\textbf{Figure 8.1} shows theoretical attention FLOPs vs $L$:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$L$} & \textbf{Softmax (FLOPs)} & \textbf{FUSIONATTN (FLOPs)} & \textbf{Speedup} \\
+\midrule
+64 & 4096 & 4096 (short) & 1× \\
+128 & 16384 & 16384 (short) & 1× \\
+256 & 65536 & 32768 & 2× \\
+512 & 262144 & 65536 & 4× \\
+1024 & 1.05M & 131K & 8× \\
+4096 & 16.8M & 1.05M & **16×** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+FUSIONATTN's benefits \textbf{only appear at $L \geq 256$}.
+
+\subsection{8.3 Block Gate Behavior (Simulated)}
+
+\textbf{Figure 8.2} shows gate scores for a simulated $L = 512$ input. 
+
+\begin{itemize}
+\item Gate consistently selects block 0 (attention sink).
+\end{itemize}
+\begin{itemize}
+\item Selected blocks tend to be \textbf{nearby} (local structure).
+\end{itemize}
+\begin{itemize}
+\item Some \textbf{distant blocks} are also selected (global context).
+\end{itemize}
+
+\subsection{8.4 Component Contributions}
+
+\textbf{Table 8.1: Ablation at L = 128.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{D acc} \\
+\midrule
+Baseline & 90.71\% \\
++ LoRA only (no gate) & 90.45 \\
++ Gate MLP (unused) & **90.48** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At L = 128, gate is unused; only LoRA matters.
+
+\subsection{8.5 Comparison with Pure LoRA}
+
+\textbf{Table 8.2.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{D acc} & \textbf{Params} \\
+\midrule
+Baseline & 90.71\% & 66.9M \\
+LoRA only (r=16) & 90.45 & 67.5M \\
+**FUSIONATTN** & **90.48** & 67.74M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The gate MLP adds ~0.20M parameters but does nothing at L=128.
+
+\subsection{8.6 Failure Analysis}
+
+No systematic failures observed.
+
+\subsection{8.7 Summary of Insights}
+
+1. \textbf{Short path is silent at L=128} — no sparsity benefit.
+2. \textbf{Long path untested} — requires L > 128.
+3. \textbf{Parameter count increases} — LoRA + gate.
+4. \textbf{Not a compression method.}
+5. \textbf{Theoretical speedup} exists for L ≥ 256.

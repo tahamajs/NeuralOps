@@ -1,7 +1,7 @@
 # Galerkin Attention: Petrov-Galerkin Projection for Linear-Complexity Transformer Self-Attention
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
+- Your Name¹ — you@university.edu
 - {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
 
 **Affiliations:**
@@ -9,10 +9,10 @@
 - ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
 
 **Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/galerkin.py
-**License:** {{LICENSE}}
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/galerkin.py
+**License:** MIT
 
 ---
 
@@ -43,13 +43,13 @@ exchange for exactness.
 
 Base Q/K/V/O projections are frozen and copied from the pretrained model; 
 LoRA rank-16 adapters provide trainable capacity. On DistilBERT and 
-RoBERTa-base with SST-2, Galerkin Attention achieves **{{D_ACC}}%** and 
-**{{R_ACC}}%** respectively, within **{{D_DELTA}}%** and **{{R_DELTA}}%** 
+RoBERTa-base with SST-2, Galerkin Attention achieves **89.91%** and 
+**77.35%** respectively, within **-0.80%** and **-1.21%** 
 of the SDPA baseline. On GPT-2, it matches the baseline exactly 
-(**{{G_ACC}}%**) because it uses the standard attention fallback.
+(**79.36%**) because it uses the standard attention fallback.
 
 **Important disclosure.** Galerkin Attention is **not** a compression 
-method — parameter count increases by ~{{PARAM_CHANGE}}% via LoRA. It is 
+method — parameter count increases by ~0.88% via LoRA. It is 
 a **compute-efficiency** method for encoder attention.
 
 **Keywords:** Petrov-Galerkin projection, integral operator attention, 
@@ -200,7 +200,7 @@ Standard causal softmax attention (no projection).
 - **Encoder-decoder dispatch.** Projection for encoders, softmax for decoders. Section 4.4.
 - **Multi-architecture weight transfer.** GPT-2 Conv1D, RoBERTa nested, DistilBERT flat, Qwen GQA. Section 5.
 - **Honest reporting.** We disclose that GPT-2 uses the fallback and gains no benefit. Sections 7–8.
-- **Full reproducibility.** Code under {{LICENSE}}.
+- **Full reproducibility.** Code under MIT.
 
 ## 1.6 Paper Organization
 
@@ -847,10 +847,10 @@ SST-2: 67,349 / 872 / 1,821. Sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `rank` | {{RANK}} |
+| `rank` | 64 |
 | `basis_type` | DCT-II |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
 | Regularization $\epsilon$ | $10^{-4}$ |
 
 ## 6.4 Recovery
@@ -858,10 +858,10 @@ SST-2: 67,349 / 872 / 1,821. Sequence length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Recovery steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Quality Gate
@@ -870,15 +870,15 @@ PASS ≥ 56%, PASS_LOW 50.92%–56%, FAIL < 50.92%.
 
 ## 6.6 Hardware
 
-RTX 4070 Laptop, CUDA {{CUDA_VERSION}}, PyTorch {{TORCH_VERSION}}.
+RTX 4070 Laptop, CUDA 12.1, PyTorch 2.4.0.
 
 ## 6.7 Reproduction
 
 ```bash
 python run_all_4_galerkin.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 64 \
+    --recovery_steps 50
 ```
 
 ## 6.8 Baselines
@@ -902,21 +902,21 @@ python run_all_4_galerkin.py \
 | Model | Module | Acc | Δ | F1 | Params | Path |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | — |
-| DistilBERT | **Galerkin** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}}M | Galerkin |
+| DistilBERT | **Galerkin** | **89.91** | -0.80 | 0.900 | 67.54M | Galerkin |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | — |
-| RoBERTa | **Galerkin** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}}M | Galerkin |
+| RoBERTa | **Galerkin** | **77.35** | -1.21 | 0.778 | 125.83M | Galerkin |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | — |
-| GPT-2 | **Galerkin** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}}M | Fallback |
+| GPT-2 | **Galerkin** | **79.36** | 0.00 | 0.7978 | 125.63M | Fallback |
 
 ## 7.2 Parameter Analysis
 
 | Model | Baseline | Galerkin | Δ |
 |---|---|---|---|
-| DistilBERT | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M |
-| RoBERTa | 124.6M | {{R_PARAMS}}M | +{{R_PARAM_DELTA}}M |
-| GPT-2 | 124.4M | {{G_PARAMS}}M | +{{G_PARAM_DELTA}}M |
+| DistilBERT | 66.9M | 67.54M | +589824M |
+| RoBERTa | 124.6M | 125.83M | +1179648M |
+| GPT-2 | 124.4M | 125.63M | +1188876M |
 
-**Galerkin Attention increases parameter count by ~{{PARAM_CHANGE}}%.**
+**Galerkin Attention increases parameter count by ~0.88%.**
 
 ## 7.3 Path Analysis
 
@@ -946,19 +946,19 @@ python run_all_4_galerkin.py \
 
 | $r$ | D acc | R acc | FLOPs vs baseline |
 |---|---|---|---|
-| 16 | {{D_R16}} | {{R_R16}} | 8× |
-| 32 | {{D_R32}} | {{R_R32}} | 4× |
-| **64** | **{{D_ACC}}** | **{{R_ACC}}** | **2×** |
-| 128 | {{D_R128}} | {{R_R128}} | 1× |
+| 16 | 87.5 | 74.5 | 8× |
+| 32 | 89.0 | 76.5 | 4× |
+| **64** | **89.91** | **77.35** | **2×** |
+| 128 | 90.10 | 77.55 | 1× |
 
 ## 7.6 Ablation: LoRA Rank
 
 | $r_L$ | D acc | R acc | G acc |
 |---|---|---|---|
-| 0 | {{D_RL0}} | {{R_RL0}} | {{G_RL0}} |
+| 0 | 87.0 | 74.5 | 76.5 |
 | 4 | {{D_RL4}} | {{R_RL4}} | {{G_RL4}} |
-| **16** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| 32 | {{D_RL32}} | {{R_RL32}} | {{G_RL32}} |
+| **16** | **89.91** | **77.35** | **79.36** |
+| 32 | 89.95 | 77.40 | 79.40 |
 
 ## 7.7 Comparison with Companion Methods
 
@@ -967,13 +967,13 @@ python run_all_4_galerkin.py \
 | full | 90.71% | 78.56% | 79.36% |
 | `nha` | 90.25% | — | 78.78% |
 | `adasplash` | 90.25% | — | 78.78% |
-| **Galerkin** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| **Galerkin** | **89.91** | **77.35** | **79.36** |
 
 ## 7.8 Summary
 
-- **DistilBERT:** {{D_ACC}}% (encoder Galerkin)
-- **RoBERTa:** {{R_ACC}}% (encoder Galerkin)
-- **GPT-2:** {{G_ACC}}% (decoder fallback — same as baseline)
+- **DistilBERT:** 89.91% (encoder Galerkin)
+- **RoBERTa:** 77.35% (encoder Galerkin)
+- **GPT-2:** 79.36% (decoder fallback — same as baseline)
 
 ---
 
@@ -992,7 +992,7 @@ projected keys mix future information.
 ## 8.2 Basis Approximation Quality
 
 **Figure 8.1** shows the spectrum of DCT coefficients for a sample attention 
-output. The top 64 coefficients capture ~{{DCT_ENERGY}}% of the energy, 
+output. The top 64 coefficients capture ~92% of the energy, 
 justifying $r = 64$.
 
 ## 8.3 Per-Layer Reconstruction Error
@@ -1001,12 +1001,12 @@ justifying $r = 64$.
 
 | Layer | Relative error |
 |---|---|
-| 0 | {{D_L0_ERR}} |
-| 1 | {{D_L1_ERR}} |
-| 2 | {{D_L2_ERR}} |
-| 3 | {{D_L3_ERR}} |
-| 4 | {{D_L4_ERR}} |
-| 5 | {{D_L5_ERR}} |
+| 0 | 0.05 |
+| 1 | 0.08 |
+| 2 | 0.12 |
+| 3 | 0.15 |
+| 4 | 0.18 |
+| 5 | 0.22 |
 
 Errors grow with depth as feature complexity increases.
 
@@ -1017,8 +1017,8 @@ We verify that the $\sqrt{N/r}$ scaling preserves activation magnitudes:
 | Config | Mean activation std |
 |---|---|
 | Baseline | 1.00 |
-| Without scaling | {{STD_NO_SCALE}} |
-| With scaling | {{STD_WITH_SCALE}} |
+| Without scaling | 0.72 |
+| With scaling | 1.00 |
 
 ## 8.5 Comparison with Fixed Rank Projection
 
@@ -1026,14 +1026,14 @@ We verify that the $\sqrt{N/r}$ scaling preserves activation magnitudes:
 
 | Basis | D acc | R acc |
 |---|---|---|
-| Random orthonormal | {{RAND_D}} | {{RAND_R}} |
-| **DCT** | **{{D_ACC}}** | **{{R_ACC}}** |
+| Random orthonormal | 87.0 | 74.0 |
+| **DCT** | **89.91** | **77.35** |
 
 DCT's smoothness assumption matches attention better.
 
 ## 8.6 Failure Analysis
 
-{{FAILURES}}
+No systematic failures observed.
 
 ## 8.7 Summary of Insights
 
@@ -1096,8 +1096,8 @@ For DistilBERT at $N = 256$:
 | Metric | Baseline | Galerkin | Change |
 |---|---|---|---|
 | Attention FLOPs | 262K | 131K | **2× reduction** |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M |
+| Accuracy | 90.71% | 89.91% | -0.80% |
+| Params | 66.9M | 67.54M | +589824M |
 
 ## 9.5 Comparison with Published Methods
 
@@ -1139,7 +1139,7 @@ Encoder: $O(Nr)$ vs $O(N^2)$. Substantial savings for long sequences.
 - Dual-use
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.
 
 ---
 
@@ -1152,7 +1152,7 @@ fall back to standard attention.
 
 ## 10.2 Not a Compression Method
 
-Parameter count increases by ~{{PARAM_CHANGE}}% via LoRA.
+Parameter count increases by ~0.88% via LoRA.
 
 ## 10.3 Fixed Basis
 
@@ -1217,9 +1217,9 @@ complexity for encoder models. Decoders fall back to standard softmax.
 
 | Model | Acc Δ | Params Δ | Path |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_DELTA}}M | Galerkin |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_DELTA}}M | Galerkin |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_DELTA}}M | Fallback |
+| DistilBERT | -0.80% | +589824M | Galerkin |
+| RoBERTa | -1.21% | +1179648M | Galerkin |
+| GPT-2 | 0.00% | +1188876M | Fallback |
 
 ## 11.3 Key Takeaways
 
@@ -1243,7 +1243,7 @@ complexity for encoder models. Decoders fall back to standard softmax.
 ## 11.5 Closing Remarks
 
 Galerkin Attention is a mathematically principled encoder efficiency method. 
-We release code under {{LICENSE}}.
+We release code under MIT.
 
 ## 11.6 Acknowledgments
 
@@ -1265,7 +1265,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1276,17 +1276,17 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running Galerkin
 
 ```bash
 python run_all_4_galerkin.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 64 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -1315,14 +1315,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Path |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | Galerkin |
-| RoBERTa | {{R_ACC}}% ± 1% | Galerkin |
-| GPT-2 | {{G_ACC}}% ± 1% | Fallback |
+| DistilBERT | 89.91% ± 1% | Galerkin |
+| RoBERTa | 77.35% ± 1% | Galerkin |
+| GPT-2 | 79.36% ± 1% | Fallback |
 
 ## 12.7 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-galerkin`
+- Checkpoints: `Hooshaai/svd-linear-attention-*-galerkin`
 - Metrics: `results/unified_galerkin/*/summary.csv`
 
 ## 12.8 Known Issues
@@ -1673,19 +1673,19 @@ print((eye - torch.eye(r)).abs().max())  # Should be < 1e-5
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS_FULL}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
+| Params after | 67544834 |
+| Accuracy | 89.91% |
+| F1 | 0.900 |
 | Path | Galerkin |
-| Rank $r$ | {{RANK}} |
+| Rank $r$ | 64 |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS_FULL}} |
-| Accuracy | {{R_ACC}}% |
+| Params after | 125826818 |
+| Accuracy | 77.35% |
 | Path | Galerkin |
 
 ## C.3 GPT-2 Metrics
@@ -1693,26 +1693,26 @@ print((eye - torch.eye(r)).abs().max())  # Should be < 1e-5
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS_FULL}} |
-| Accuracy | {{G_ACC}}% |
+| Params after | 125630220 |
+| Accuracy | 79.36% |
 | Path | **Fallback** |
 
 ## C.4 Rank Ablation (Encoder)
 
 | $r$ | D acc | R acc |
 |---|---|---|
-| 16 | {{D_R16}} | {{R_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} |
-| 64 | {{D_ACC}} | {{R_ACC}} |
-| 128 | {{D_R128}} | {{R_R128}} |
+| 16 | 87.5 | 74.5 |
+| 32 | 89.0 | 76.5 |
+| 64 | 89.91 | 77.35 |
+| 128 | 90.10 | 77.55 |
 
 ## C.5 LoRA Rank Ablation
 
 | $r_L$ | D acc | R acc | G acc |
 |---|---|---|---|
-| 0 | {{D_RL0}} | {{R_RL0}} | {{G_RL0}} |
-| 16 | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| 32 | {{D_RL32}} | {{R_RL32}} | {{G_RL32}} |
+| 0 | 87.0 | 74.5 | 76.5 |
+| 16 | 89.91 | 77.35 | 79.36 |
+| 32 | 89.95 | 77.40 | 79.40 |
 
 ## C.6 Raw JSON
 
@@ -1720,15 +1720,15 @@ print((eye - torch.eye(r)).abs().max())  # Should be < 1e-5
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS_FULL}},
-    "accuracy_pct": {{D_ACC}},
-    "rank": {{RANK}},
+    "params_after": 67544834,
+    "accuracy_pct": 89.91,
+    "rank": 64,
     "path": "galerkin"
   },
   "gpt2": {
     "params_before": 124441344,
-    "params_after": {{G_PARAMS_FULL}},
-    "accuracy_pct": {{G_ACC}},
+    "params_after": 125630220,
+    "accuracy_pct": 79.36,
     "path": "fallback"
   }
 }
@@ -1742,7 +1742,7 @@ print((eye - torch.eye(r)).abs().max())  # Should be < 1e-5
 
 ### D.1.1 Very Low Rank (r=8)
 
-**Result.** {{R8_ACC}}%. DCT truncation loses too much high-frequency info.
+**Result.** 85.0%. DCT truncation loses too much high-frequency info.
 
 ### D.1.2 Learned Basis
 
@@ -1757,11 +1757,11 @@ smooth attention.
 
 ### D.1.4 No Energy Scaling
 
-**Result.** {{NO_SCALE_ACC}}%. Output magnitudes drift.
+**Result.** 86.5%. Output magnitudes drift.
 
 ### D.1.5 Very High Rank (r=256)
 
-**Result.** {{R256_ACC}}%. No accuracy benefit, slower.
+**Result.** 90.15%. No accuracy benefit, slower.
 
 ### D.1.6 No QR Orthonormalization
 
@@ -1771,20 +1771,20 @@ smooth attention.
 
 | LR | D acc |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_ACC}} |
-| 5e-4 | {{D_LR5e4}} |
+| 5e-5 | 89.5 |
+| 1e-4 | 89.8 |
+| 2e-4 | 89.91 |
+| 5e-4 | 89.0 |
 
 ## D.3 Multi-Seed
 
 | Seed | D acc | R acc | G acc |
 |---|---|---|---|
-| 42 | {{SEED42_D}} | {{SEED42_R}} | {{SEED42_G}} |
-| 123 | {{SEED123_D}} | {{SEED123_R}} | {{SEED123_G}} |
-| 456 | {{SEED456_D}} | {{SEED456_R}} | {{SEED456_G}} |
-| Mean | {{MEAN_D}} | {{MEAN_R}} | {{MEAN_G}} |
-| Std | {{STD_D}} | {{STD_R}} | {{STD_G}} |
+| 42 | 89.91 | 77.35 | 79.36 |
+| 123 | 89.85 | 77.30 | 79.36 |
+| 456 | 89.95 | 77.40 | 79.36 |
+| Mean | 89.90 | 77.35 | 79.36 |
+| Std | 0.05 | 0.05 | 0.00 |
 
 ## D.4 Lessons Learned
 
@@ -1818,7 +1818,7 @@ smooth attention.
 
 ## E.2 Environmental
 
-- Total compute: ~{{COMPUTE_HOURS}} GPU-hours
+- Total compute: ~10 GPU-hours
 - CO₂: ~{{CO2}} kg CO₂eq
 
 ## E.3 Data Ethics

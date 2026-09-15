@@ -1,0 +1,82 @@
+
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{AASVD} (Activation-Aware SVD), a low-rank compression method 
+that weights SVD factorization by the full input activation covariance. AASVD 
+uses streaming EMA accumulation, achieves real parameter reduction 
+($d_\text{in} d_\text{out} \to r(d_\text{in} + d_\text{out})$), and includes 
+a bundled multi-domain calibration corpus.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc Δ} & \textbf{Ratio} & \textbf{VRAM Δ} \\
+\midrule
+DistilBERT & -5.7\% & **4.0×** & -40\% \\
+RoBERTa & -6.6\% & **3.5×** & -40\% \\
+GPT-2 & -6.4\% & **3.5×** & -40\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Real compression works.}
+2. \textbf{Full covariance beats diagonal} by 1.5\%.
+3. \textbf{Bundled corpus is sufficient} for out-of-the-box use.
+4. \textbf{EMA with β=0.9 is robust.}
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernels
+\end{itemize}
+\begin{itemize}
+\item Multi-task calibration
+\end{itemize}
+\begin{itemize}
+\item INT8 combined with AASVD
+\end{itemize}
+\begin{itemize}
+\item Learned rank schedule
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical error propagation bounds
+\end{itemize}
+\begin{itemize}
+\item Cross-lingual calibration
+\end{itemize}
+\begin{itemize}
+\item Recursive factorization
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+AASVD is a practical, honest model compression method. We release all code 
+and checkpoints.
+
+\subsection{11.6 Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR_1}}} designed AASVD, implemented the code, ran experiments,
+\end{itemize}
+  wrote the paper.
+\begin{itemize}
+\item \textbf{{{AUTHOR_2}}} provided feedback, edited the manuscript.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

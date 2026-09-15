@@ -1,0 +1,78 @@
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{BAM-UMoE}, a capacity expansion method for post-hoc MoE 
+application to pretrained transformers. The method introduces a three-part 
+step-0 preservation mechanism (zero-init experts, negative gating bias, 
+frozen base) that guarantees exact forward-pass equivalence at 
+initialization.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc Δ} & \textbf{Params Δ} \\
+\midrule
+DistilBERT & -1.2\% & +226M \\
+RoBERTa & -2.1\% & +445M \\
+GPT-2 & -1.6\% & +445M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Step-0 preservation works} — verified empirically.
+2. \textbf{Load balancing is stable} — auxiliary loss effective.
+3. \textbf{Parameter cost is high} — inherent to MoE.
+4. \textbf{Not a compression method.}
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Sparse MoE (1 expert per token)
+\end{itemize}
+\begin{itemize}
+\item Interaction with compression
+\end{itemize}
+\begin{itemize}
+\item Multi-task evaluation
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical step-0 bounds
+\end{itemize}
+\begin{itemize}
+\item Multi-modal extension
+\end{itemize}
+\begin{itemize}
+\item Sparse hardware deployment
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+BAM-UMoE is a \textbf{research tool} for post-hoc capacity expansion. It is 
+\textbf{not} a compression method. We release code and checkpoints for 
+reproducibility.
+
+\subsection{11.6 Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments.
+\end{itemize}
+\begin{itemize}
+\item \textbf{{{AUTHOR_2}}} provided methodological feedback and edited the manuscript.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

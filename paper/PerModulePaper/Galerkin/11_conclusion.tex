@@ -1,0 +1,75 @@
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{Galerkin Attention}, which formulates attention as a 
+Petrov-Galerkin projection onto a DCT basis, achieving $\mathcal{O}(Nrd)$ 
+complexity for encoder models. Decoders fall back to standard softmax.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc Δ} & \textbf{Params Δ} & \textbf{Path} \\
+\midrule
+DistilBERT & -0.80\% & +589824M & Galerkin \\
+RoBERTa & -1.21\% & +1179648M & Galerkin \\
+GPT-2 & 0.00\% & +1188876M & Fallback \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Encoder linear complexity} is achievable via basis projection.
+2. \textbf{DCT is the natural basis} for attention smoothness.
+3. \textbf{Decoder fallback} is necessary for causality.
+4. \textbf{Not a compression method.}
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Learned basis
+\end{itemize}
+\begin{itemize}
+\item Causal-compatible basis
+\end{itemize}
+\begin{itemize}
+\item Cross-attention evaluation
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Higher-order DCT variants
+\end{itemize}
+\begin{itemize}
+\item Adaptive rank per layer
+\end{itemize}
+\begin{itemize}
+\item Integration with FlashAttention
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+Galerkin Attention is a mathematically principled encoder efficiency method. 
+We release code under MIT.
+
+\subsection{11.6 Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments.
+\end{itemize}
+\begin{itemize}
+\item \textbf{{{AUTHOR_2}}} provided feedback.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

@@ -1,0 +1,87 @@
+\section{2. Related Work}
+
+\subsection{2.1 Sparse Attention}
+
+\textbf{Longformer.} Beltagy et al. (2020) combine a sliding window of radius $W$ 
+with a small set of global tokens. Complexity: $\mathcal{O}(L \cdot W)$. 
+Content-independent.
+
+\textbf{BigBird.} Zaheer et al. (2020) add random attention and prove Turing 
+completeness. Similar to Longformer in practice.
+
+\textbf{Sparse Transformer.} Child et al. (2019) use strided and fixed patterns. 
+Pre-dates most modern work.
+
+\textbf{Star-Transformer.} Guo et al. (2019) use a star topology. Rarely used 
+today.
+
+\subsection{2.2 Content-Based Sparse Attention}
+
+\textbf{Routing Transformer.} Roy et al. (2021) cluster tokens and restrict 
+attention within clusters. Complexity: $\mathcal{O}(L \cdot L/K)$.
+
+\textbf{Reformer.} Kitaev et al. (2020) use LSH to hash similar keys. Probabilistic 
+guarantees.
+
+\textbf{MoBA (Mixture of Block Attention).} Lu et al. (2024) introduce block-level 
+routing with top-$K$ selection. FUSIONATTN's long path uses MoBA-style 
+block selection.
+
+\textbf{NSA (Native Sparse Attention).} DeepSeek (2025) combines local, strided, 
+and compressed attention branches.
+
+\subsection{2.3 Hybrid Length-Aware Attention}
+
+\textbf{H-Transformer.} Zhu \& Soricut (2021) adapt pattern to sequence length. 
+FUSIONATTN uses a \textbf{discrete dispatch} based on a threshold.
+
+\textbf{Blockwise Parallel Transformer.} Liu \& Abbeel (2023) parallelize block 
+attention. Not length-aware.
+
+\subsection{2.4 Grouped Query Attention}
+
+\textbf{GQA.} Ainslie et al. (2023) reduce KV head count. FUSIONATTN preserves 
+GQA structure.
+
+\subsection{2.5 Position of Our Work}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Sparsity} & \textbf{Length-aware} & \textbf{Gate learned} \\
+\midrule
+Longformer & Fixed & No & No \\
+BigBird & Fixed + random & No & No \\
+Routing & Content & No & Yes \\
+MoBA & Content & No & Yes \\
+**FUSIONATTN** & **Content** & **Yes** & **Yes** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} FUSIONATTN is the only method that **dispatches to 
+dense attention for short sequences\textbf{ and }content-aware block sparsity 
+for long sequences**.
+
+\subsection{2.6 Comparison Table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Feature} & \textbf{Longformer} & \textbf{Routing} & \textbf{MoBA} & \textbf{FUSIONATTN} \\
+\midrule
+Short-seq overhead & Yes & Yes & Yes & **None** \\
+Long-seq complexity & $O(LW)$ & $O(L^2/K)$ & $O(KL)$ & $O(KL)$ \\
+Learned gate & No & Yes & Yes & Yes \\
+Multi-arch & Partial & Partial & Partial & Full \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{2.7 Not a Compression Method}
+
+FUSIONATTN \textbf{increases} parameter count via LoRA and the gate MLP. It 
+should not be confused with compression methods like A3, AASVD, or 
+Adaptive SVD.

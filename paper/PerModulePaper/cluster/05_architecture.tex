@@ -1,0 +1,123 @@
+\section{5. Architecture Integration}
+
+\subsection{5.1 Model Support}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & Flat & No & No & No & ✅ \\
+RoBERTa & Nested & Yes & No & No & ✅ \\
+GPT-2 & Causal & No & No & No & ✅ \\
+Qwen3.5 & GQA+RoPE & No & Yes & Yes & partial \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{5.2 Weight Extraction}
+
+\subsubsection{DistilBERT (Flat)}
+\begin{lstlisting}
+q_w = src.q_lin.weight
+k_w = src.k_lin.weight
+v_w = src.v_lin.weight
+o_w = src.out_lin.weight
+is_nested_encoder = False
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+\begin{lstlisting}
+q_w = src.self.query.weight
+k_w = src.self.key.weight
+v_w = src.self.value.weight
+# output.dense applied by outer module
+is_nested_encoder = True
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+\begin{lstlisting}
+w = src.c_attn.weight.T
+q_w, k_w, v_w = w.chunk(3, dim=0)
+o_w = src.c_proj.weight.T
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA + RoPE)}
+Direct copy with GQA-aware dims.
+
+\subsection{5.3 Injection}
+
+\begin{lstlisting}
+def inject_cluster(layer, cfg, comp_config, old_attn):
+    new = ClusterAttention(
+        config=cfg,
+        comp_config=comp_config,
+        pretrained_attn=old_attn,
+        num_clusters=16,
+        n_iters=3,
+        window_size=32,
+    )
+    if hasattr(layer, "attention"):
+        if hasattr(layer.attention, "self"):
+            layer.attention.self = new
+        else:
+            layer.attention = new
+    return new
+\end{lstlisting}
+
+\subsection{5.4 Causal Masking}
+
+For decoders, ClusterFormer uses \textbf{exact causal attention}, not clustering:
+
+\begin{lstlisting}
+if is_decoder:
+    scores = Q @ K.T / sqrt(d_h)
+    scores = scores.masked_fill(~causal_tril, -10000)
+    attn = softmax(scores)
+    out = attn @ V
+\end{lstlisting}
+
+\textbf{Rationale.} Clustering introduces a global mixing effect that can leak 
+future information even with causal masking on keys. For stability we 
+use standard exact attention for decoder paths.
+
+\subsection{5.5 RoPE}
+
+Partial RoPE (Qwen3.5 with rotary_dim < head_dim) is supported via slicing 
+the first \texttt{rotary_dim} coordinates.
+
+\subsection{5.6 GQA}
+
+\begin{lstlisting}
+if self.kv_repeat > 1:
+    K = repeat_kv(K, self.kv_repeat)
+    V = repeat_kv(V, self.kv_repeat)
+\end{lstlisting}
+
+\subsection{5.7 Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("cluster")
+@ATTENTION_REGISTRY.register("cluster_attention")
+class ClusterAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{5.8 Failure Modes}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & `copy\_weights` raises & Return None \\
+Empty clusters & `counts == 0` & Mask logit to -inf \\
+NaN in cdist & `torch.nan\_to\_num` & Replace with 0 \\
+Zero Frobenius & Check < 1e-4 & Raise error \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{5.9 Numerical Stability}

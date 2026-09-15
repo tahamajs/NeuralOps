@@ -1,0 +1,70 @@
+\section{2. Related Work}
+
+\subsection{2.1 Mixture of Experts}
+
+\textbf{Switch Transformer.} Fedus et al. (2022) simplify MoE to top-1 routing, 
+reducing communication overhead while maintaining capacity. BAM-UMoE uses 
+top-2 routing, which has been shown to give better quality per FLOP.
+
+\textbf{GShard.} Lepikhin et al. (2021) introduce top-2 gating with auxiliary 
+load-balancing loss. BAM-UMoE uses the same formulation for its MoE branch.
+
+\textbf{Expert Choice.} Zhou et al. (2022) reverse the routing direction: experts 
+choose tokens instead of tokens choosing experts. Orthogonal to our approach.
+
+\textbf{Soft MoE.} Puigcerver et al. (2023) use soft routing without discrete 
+top-k. BAM-UMoE uses hard top-2 for simplicity.
+
+\subsection{2.2 Post-Hoc MoE}
+
+\textbf{MoEfication.} Zhang et al. (2022) split pretrained FFN layers into 
+multiple experts without retraining. BAM-UMoE is orthogonal — it adds new 
+capacity rather than partitioning existing capacity.
+
+\textbf{Sparse Upcycling.} Komatsuzaki et al. (2023) initialize MoE from a dense 
+model by duplicating FFN weights. BAM-UMoE does not duplicate; it adds 
+a zero-initialized MoE branch.
+
+\textbf{Lifelong MoE.} Chen et al. (2023) adapt MoE to new tasks while preserving 
+old ones. Different motivation.
+
+\subsection{2.3 Parameter-Efficient Fine-Tuning}
+
+\textbf{LoRA.} Hu et al. (2021) parameterize a weight update with a low-rank 
+product $BA$, $B = 0$ at initialization. BAM-UMoE uses LoRA for base 
+attention adaptation alongside the MoE branch.
+
+\textbf{AdaLoRA.} Zhang et al. (2023) allocate LoRA rank adaptively. Orthogonal.
+
+\textbf{PiSSA.} Meng et al. (2024) initialize LoRA from principal components. 
+Compatible with BAM-UMoE.
+
+\subsection{2.4 Attention Augmentation}
+
+\textbf{Attention Refinement.} Many works augment attention with additional 
+branches. BAM-UMoE's specific contribution is applying \textbf{MoE} to the 
+value pathway.
+
+\textbf{Gated Attention.} Gating mechanisms in attention have been studied 
+(Parisotto et al., 2020; Bapna et al., 2021). BAM-UMoE uses gating to 
+control the MoE contribution's ramp-up.
+
+\subsection{2.5 Position of Our Work}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Feature} & \textbf{Prior MoE} & \textbf{BAM-UMoE} \\
+\midrule
+Application & Pretraining & Post-hoc \\
+Step-0 preservation & Not typically & **Explicit** \\
+Base weights & Trained & Frozen \\
+Target & FFN capacity & **Value pathway** \\
+LoRA integration & Rare & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+BAM-UMoE is unique in explicitly targeting the \textbf{value pathway} with MoE 
+and providing a \textbf{three-part step-0 preservation} mechanism.

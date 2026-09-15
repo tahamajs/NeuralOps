@@ -1,0 +1,136 @@
+
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{E.1.1 Positive}
+
+\begin{itemize}
+\item \textbf{Interpretability research.} Sparse attention is easier to analyze.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Attention visualization.} Clearer patterns for understanding model behavior.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Sparse hardware.} Potential for 2:4 sparsity speedup on specialized hardware.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Attention pattern analysis.} Enables research on attention mechanisms.
+\end{itemize}
+
+\subsubsection{E.1.2 Negative}
+
+\begin{itemize}
+\item \textbf{Not a compression method.} Users may mistakenly expect size savings.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Slower inference.} Not suitable for production.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Dual-use.} Sparsity techniques can be used for surveillance or harmful
+\end{itemize}
+  applications.
+
+\subsubsection{E.1.3 Environmental Cost}
+
+\begin{itemize}
+\item \textbf{Total compute:} ~12 GPU-hours
+\end{itemize}
+\begin{itemize}
+\item \textbf{CO₂ estimate:} ~0.8 kg CO₂eq
+\end{itemize}
+
+\subsection{E.2 Data Ethics}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 (public, English, movie reviews)
+\end{itemize}
+\begin{itemize}
+\item \textbf{PII:} None
+\end{itemize}
+\begin{itemize}
+\item \textbf{Bias:} English-only, Western-centric
+\end{itemize}
+
+\subsection{E.3 Model Ethics}
+
+\textbf{Bias.} We did not audit AdaSplash for bias. Sparsity may amplify or suppress 
+biases depending on which attention patterns are preserved.
+
+\textbf{Misuse.} Could enable surveillance or misinformation. We do not endorse 
+these uses.
+
+\subsection{E.4 Authorship and Credit}
+
+\subsubsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments,
+\end{itemize}
+  wrote the paper.
+\begin{itemize}
+\item \textbf{{{AUTHOR_2}}} provided feedback and edited the manuscript.
+\end{itemize}
+
+\subsubsection{License}
+
+Code and weights released under \textbf{MIT}.
+
+\subsection{E.5 Conflicts of Interest}
+
+None.
+
+\subsection{E.6 Funding}
+
+{{FUNDING}}
+
+\subsection{E.7 Acknowledgements}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{E.8 LLM Usage Disclosure}
+
+Parts of this paper were drafted with LLM assistance. All content reviewed 
+by authors.
+
+\subsection{E.9 Reproducibility Commitments}
+
+We commit to:
+1. Release code
+2. Release checkpoints
+3. Report negative results (Appendix D)
+4. Document hyperparameters
+5. Respond to replication attempts
+
+\subsection{E.10 Long-Term Considerations}
+
+AdaSplash could:
+
+\textbf{Enable:}
+\begin{itemize}
+\item Interpretability research
+\end{itemize}
+\begin{itemize}
+\item Sparse hardware deployment
+\end{itemize}
+\begin{itemize}
+\item Attention pattern analysis
+\end{itemize}
+
+\textbf{Risk:}
+\begin{itemize}
+\item Misleading claims about "compression"
+\end{itemize}
+\begin{itemize}
+\item Slower production systems
+\end{itemize}
+\begin{itemize}
+\item Concentration of research capabilities
+\end{itemize}
+
+We encourage honest reporting of AdaSplash as a \textbf{research tool}, not a 
+production method.
+
+\subsection{E.11 Institutional Review}
+
+No human subjects. No IRB required.

@@ -1,0 +1,86 @@
+
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{Adaptive SVD Attention}, an energy-thresholded low-rank 
+factorization method for transformer attention. The method selects per-projection 
+rank via cumulative squared singular value energy, uses symmetric factor 
+distribution, and attaches zero-initialized residual adapters. Unlike A3 and 
+AASVD, no calibration data is required.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc Δ} & \textbf{Ratio} & \textbf{Compression time} \\
+\midrule
+DistilBERT & -2.7\% & **3.0×** & 15 s \\
+RoBERTa & -4.6\% & **2.5×** & 30 s \\
+GPT-2 & -3.9\% & **2.5×** & 30 s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Energy threshold gives per-layer rank} without calibration.
+2. \textbf{Residual adapters} recover accuracy at minimal cost.
+3. \textbf{Faster compression} than calibration-based methods.
+4. \textbf{Broad architecture support} (flat, nested, causal, T5, GQA, RoPE).
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernels for factorized forward
+\end{itemize}
+\begin{itemize}
+\item Learned per-layer $\tau$
+\end{itemize}
+\begin{itemize}
+\item Combined with quantization
+\end{itemize}
+\begin{itemize}
+\item Full T5 verification
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical downstream error bounds
+\end{itemize}
+\begin{itemize}
+\item Cross-lingual evaluation
+\end{itemize}
+\begin{itemize}
+\item Integration with pruning
+\end{itemize}
+\begin{itemize}
+\item Combination with activation-aware methods
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+Adaptive SVD is a practical, fast, calibration-free compression method. We 
+release all code and checkpoints under MIT to enable replication 
+and incremental improvement.
+
+\subsection{11.6 Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments,
+\end{itemize}
+  wrote the paper.
+\begin{itemize}
+\item \textbf{{{AUTHOR_2}}} provided methodological feedback and edited the manuscript.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

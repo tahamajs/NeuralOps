@@ -1,0 +1,99 @@
+\section{12. Reproducibility Statement}
+
+\subsection{12.1 Environment}
+
+\begin{lstlisting}
+git clone https://github.com/your-org/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{12.2 Optional: FlashAttention Installation}
+
+\begin{lstlisting}
+# For Hopper (H100/H200):
+pip install flash-attn --no-build-isolation
+
+# For older GPUs, no installation needed (SDPA fallback works).
+\end{lstlisting}
+
+\subsection{12.3 Running the Wrapper}
+
+\begin{lstlisting}
+python run_all_4_flash3.py \
+    --models distilbert,roberta,gpt2 \
+    --use_fp8 False \
+    --recovery_steps 50
+\end{lstlisting}
+
+\subsection{12.4 Verifying Path Selection}
+
+\begin{lstlisting}
+from framework.attentions.flash_attention3 import FLASH_ATTN_AVAILABLE
+print("FlashAttention available:", FLASH_ATTN_AVAILABLE)
+\end{lstlisting}
+
+Expected: \texttt{True} on H100, \texttt{False} otherwise.
+
+\subsection{12.5 Reproducing Tables}
+
+\begin{lstlisting}
+# Main
+python run_all_4_flash3.py --models distilbert,roberta,gpt2
+
+# LoRA rank sweep
+for r in 0 4 8 16 32; do
+    python run_all_4_flash3.py --lora_rank $r --output_suffix r$r
+done
+\end{lstlisting}
+
+\subsection{12.6 Seeds}
+
+\begin{lstlisting}
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{12.7 Expected Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Acc} \\
+\midrule
+DistilBERT & 90.25\% ± 1\% \\
+RoBERTa & 77.50\% ± 1\% \\
+GPT-2 & 78.98\% ± 1\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.8 Data Availability}
+
+\begin{itemize}
+\item Dataset: SST-2
+\end{itemize}
+\begin{itemize}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-flash3}
+\end{itemize}
+\begin{itemize}
+\item Metrics: \texttt{results/unified_flash3/*/summary.csv}
+\end{itemize}
+
+\subsection{12.9 Known Issues}
+
+\begin{itemize}
+\item No FA3 on non-Hopper GPUs
+\end{itemize}
+\begin{itemize}
+\item FP8 not tested on Hopper
+\end{itemize}
+\begin{itemize}
+\item Some paths auto-fallback silently (see logs)
+\end{itemize}

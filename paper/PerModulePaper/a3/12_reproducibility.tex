@@ -1,0 +1,180 @@
+
+\section{12. Reproducibility Statement}
+
+\subsection{12.1 Environment}
+
+\begin{lstlisting}
+git clone https://github.com/your-org/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate  # or source .venv/bin/activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{12.2 Dependencies}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
+numpy & 1.26.4 \\
+pandas & 2.2.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.3 Running A3}
+
+\subsubsection{Full Benchmark}
+
+\begin{lstlisting}
+python run_all_4_a3.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 64 \
+    --recovery_steps 50 \
+    --lora_rank 16 \
+    --batch_size 8
+\end{lstlisting}
+
+\textbf{Runtime:} ~15 minutes on RTX 4070.
+
+\subsubsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --dataset sst2 \
+    --dataset_dir Codes/framework/data/glue_data/sst2 \
+    --output_dir results/unified_a3/distilbert \
+    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --modules full,a3 \
+    --batch_size 8 \
+    --recovery_steps 50 \
+    --learning_rate 2e-4 \
+    --lora_rank 16 \
+    --rank 64 \
+    --precision fp16
+\end{lstlisting}
+
+\subsection{12.4 Downloading Checkpoints}
+
+\begin{lstlisting}
+from huggingface_hub import hf_hub_download
+
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"Hooshaai/svd-linear-attention-{model}-a3",
+        filename="weights.pt",
+    )
+    print(f"Downloaded {model} to {path}")
+\end{lstlisting}
+
+\subsection{12.5 Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main Results)}
+
+\begin{lstlisting}
+python run_all_4_a3.py --models distilbert,roberta,gpt2
+# → results/unified_a3/{model}/summary.csv
+\end{lstlisting}
+
+\subsubsection{Table 7.6 (Rank Ablation)}
+
+\begin{lstlisting}
+for rank in 32 64 128 192 384; do
+    python run_all_4_a3.py --models distilbert,roberta,gpt2 --rank $rank
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.7 (Fisher Ablation)}
+
+\begin{lstlisting}
+python run_all_4_a3.py --use_fisher true  --output_suffix fisher
+python run_all_4_a3.py --use_fisher false --output_suffix nofisher
+\end{lstlisting}
+
+\subsubsection{Table 7.8 (LN Ablation)}
+
+\begin{lstlisting}
+python run_all_4_a3.py --recalibrate_ln true  --output_suffix ln
+python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
+\end{lstlisting}
+
+\subsection{12.6 Random Seeds}
+
+\begin{lstlisting}
+import random
+import numpy as np
+import torch
+
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+\end{lstlisting}
+
+\subsection{12.7 Expected Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 88.5\% ± 1\% & 5.0× \\
+RoBERTa & 75.8\% ± 1\% & 4.5× \\
+GPT-2 & 76.5\% ± 1\% & 4.5× \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Deviations >2\% suggest environmental differences.
+
+\subsection{12.8 Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets} library
+\end{itemize}
+\begin{itemize}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-a3}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Metrics:} \texttt{results/unified_a3/*/summary.csv}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Logs:} \texttt{benchmark_logs/a3_*.log}
+\end{itemize}
+
+\subsection{12.9 Reproducibility Checks}
+
+Before running, verify:
+
+\begin{lstlisting}
+python -c "
+import torch
+print('CUDA:', torch.cuda.is_available())
+print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')
+print('CUDA ver:', torch.version.cuda)
+"
+\end{lstlisting}
+
+\subsection{12.10 Known Issues}
+
+\begin{itemize}
+\item Windows: \texttt{cp1256} codec issues; set \texttt{PYTHONIOENCODING=utf-8}
+\end{itemize}
+\begin{itemize}
+\item CUDA version: >= 11.8 recommended
+\end{itemize}
+\begin{itemize}
+\item Checkpoint paths: some baselines may need to be re-downloaded
+\end{itemize}

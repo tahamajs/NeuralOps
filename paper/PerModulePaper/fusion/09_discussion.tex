@@ -1,0 +1,150 @@
+\section{9. Discussion}
+
+\subsection{9.1 Key Takeaways}
+
+\subsubsection{9.1.1 Takeaway 1: Short-Path Exactness}
+
+For $L \leq 128$, FUSIONATTN produces \textbf{exactly} the pretrained model's 
+output (with base weights copied and LoRA initially zero). This is a 
+desirable property but means no sparsity is active.
+
+\subsubsection{9.1.2 Takeaway 2: Sparsity is Length-Dependent}
+
+FUSIONATTN's benefits only manifest at $L \geq 256$. Below that, the 
+dispatch logic disables sparsity.
+
+\subsubsection{9.1.3 Takeaway 3: Not a Compression Method}
+
+Parameter count increases by LoRA + gate MLP. Not for size reduction.
+
+\subsection{9.2 When to Use FUSIONATTN}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Long-context inference} ($L \geq 512$)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Content-dependent attention patterns}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Multi-paradigm research}
+\end{itemize}
+
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Short sequences} ($L < 256$) — no benefit, more parameters
+\end{itemize}
+\begin{itemize}
+\item \textbf{Model size reduction} — use compression methods
+\end{itemize}
+\begin{itemize}
+\item \textbf{Strict latency requirements} — gate adds overhead
+\end{itemize}
+
+\subsection{9.3 Decision Flowchart}
+
+\begin{lstlisting}
+Need size reduction? ─── Yes ─── Use A3/AASVD
+  │ No
+  ▼
+Sequence length > 256? ─── No ─── Use baseline (or LoRA-only)
+  │ Yes
+  ▼
+Content-dependent sparsity needed? ─── No ─── Use Longformer
+  │ Yes
+  ▼
+Use FUSIONATTN
+\end{lstlisting}
+
+\subsection{9.4 Cost-Benefit}
+
+For DistilBERT at $L = 512$:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{FUSIONATTN} & \textbf{Change} \\
+\midrule
+Attention FLOPs & 262K & 65K & **4× reduction** \\
+Accuracy & 90.71\% & 90.48\% & -0.23\% \\
+Params & 66.9M & 67.74M & +786864M \\
+Gate overhead & 0 & ~32K params & +0.05\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.5 Comparison with Published Methods}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Complexity} & \textbf{Length-aware} \\
+\midrule
+Longformer & Fixed sparse & $O(LW)$ & No \\
+Routing & Content sparse & $O(L^2/K)$ & No \\
+MoBA & Block sparse & $O(KL)$ & No \\
+**FUSIONATTN** & **Hybrid** & **$O(L^2)$ or $O(KL)$** & **Yes** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.6 Deployment Considerations}
+
+\subsubsection{Latency}
+\begin{itemize}
+\item Short path: same as baseline.
+\end{itemize}
+\begin{itemize}
+\item Long path: $K/B \times$ faster.
+\end{itemize}
+
+\subsubsection{Memory}
+\begin{itemize}
+\item Short path: same.
+\end{itemize}
+\begin{itemize}
+\item Long path: $O(K \cdot L \cdot B)$ instead of $O(L^2)$.
+\end{itemize}
+
+\subsubsection{Parameter Overhead}
+\begin{itemize}
+\item +1.17\% via LoRA + gate.
+\end{itemize}
+
+\subsection{9.7 Open Questions}
+
+1. \textbf{Optimal threshold} for various tasks?
+2. \textbf{Gate training} — does it learn meaningful patterns?
+3. \textbf{Very long context} ($L > 8192$) behavior?
+4. \textbf{Combination with quantization}?
+
+\subsection{9.8 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Long-context efficiency
+\end{itemize}
+\begin{itemize}
+\item Content-aware sparsity
+\end{itemize}
+\begin{itemize}
+\item Composable with other efficiency methods
+\end{itemize}
+
+\subsubsection{Negative}
+\begin{itemize}
+\item Parameter overhead
+\end{itemize}
+\begin{itemize}
+\item Zero benefit at L ≤ 128
+\end{itemize}
+\begin{itemize}
+\item Dual-use
+\end{itemize}
+
+\subsubsection{Environmental}
+Total compute: ~12 GPU-hours, ~{{CO2}} kg CO₂eq.

@@ -1,0 +1,133 @@
+\section{9. Discussion}
+
+\subsection{9.1 Key Takeaways}
+
+\subsubsection{9.1.1 Takeaway 1: Encoder-Only Benefit}
+
+Galerkin provides linear complexity for \textbf{encoder} models. Decoders use 
+fallback.
+
+\subsubsection{9.1.2 Takeaway 2: DCT is the Right Basis}
+
+The smoothness of attention operators makes DCT the natural basis. Random 
+orthonormal bases underperform.
+
+\subsubsection{9.1.3 Takeaway 3: Not a Compression Method}
+
+Parameter count increases via LoRA. Not for size reduction.
+
+\subsection{9.2 When to Use Galerkin Attention}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Encoder models} (BERT, DistilBERT, RoBERTa)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Long sequences} ($N \geq 256$)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Smooth attention patterns}
+\end{itemize}
+
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Decoder models} (no benefit, uses fallback)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Size reduction} (use compression methods)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Sharp attention patterns} (DCT truncation loses high-frequency info)
+\end{itemize}
+
+\subsection{9.3 Decision Flowchart}
+
+\begin{lstlisting}
+Encoder or decoder? ─── Decoder ─── Use standard attention or other method
+  │ Encoder
+  ▼
+Sequence > 256? ─── No ─── Galerkin benefit marginal
+  │ Yes
+  ▼
+Use Galerkin
+\end{lstlisting}
+
+\subsection{9.4 Cost-Benefit}
+
+For DistilBERT at $N = 256$:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{Change} \\
+\midrule
+Attention FLOPs & 262K & 131K & **2× reduction** \\
+Accuracy & 90.71\% & 89.91\% & -0.80\% \\
+Params & 66.9M & 67.54M & +589824M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.5 Comparison with Published Methods}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Encoder} & \textbf{Decoder} & \textbf{Exact} \\
+\midrule
+Linformer & $O(Nr)$ & $O(Nr)$ & Approx. \\
+Performer & $O(Nm)$ & $O(Nm)$ & Approx. \\
+FNet & $O(N\log N)$ & N/A & No \\
+**Galerkin** & **$O(Nr)$** & **Fallback** & **Exact in basis** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.6 Deployment Considerations}
+
+\subsubsection{Encoder latency}
+2× faster at $N=128$, 8× at $N=512$.
+
+\subsubsection{Decoder latency}
+No benefit.
+
+\subsubsection{Memory}
+Encoder: $O(Nr)$ vs $O(N^2)$. Substantial savings for long sequences.
+
+\subsection{9.7 Open Questions}
+
+1. \textbf{Learned basis} — would a data-adaptive basis beat DCT?
+2. \textbf{Causal Galerkin} — is there a causal-compatible basis?
+3. \textbf{Higher-order DCT} — does adding derivatives help?
+4. \textbf{Cross-attention} — does Galerkin work for encoder-decoder cross-attention?
+
+\subsection{9.8 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Encoder efficiency
+\end{itemize}
+\begin{itemize}
+\item Mathematical elegance
+\end{itemize}
+\begin{itemize}
+\item Composable with quantization
+\end{itemize}
+
+\subsubsection{Negative}
+\begin{itemize}
+\item No benefit for decoders
+\end{itemize}
+\begin{itemize}
+\item Parameter overhead
+\end{itemize}
+\begin{itemize}
+\item Dual-use
+\end{itemize}
+
+\subsubsection{Environmental}
+Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.

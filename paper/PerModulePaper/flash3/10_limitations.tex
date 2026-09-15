@@ -1,0 +1,56 @@
+\section{10. Limitations}
+
+\subsection{10.1 Hardware Requirement for FA3 Kernel}
+
+FlashAttention-3 requires NVIDIA Hopper (H100/H200) for TMA and FP8. 
+On other GPUs, the wrapper uses SDPA fallback.
+
+\textbf{On our RTX 4070 test machine, FA3 was not available.}
+
+\subsection{10.2 Not a Compression Method}
+
+The wrapper \textbf{increases} parameter count by ~0.88\% via LoRA. 
+It is not suitable for size reduction.
+
+\subsection{10.3 FP8 Accuracy}
+
+FP8 introduces ~0.15\% accuracy drop in our simulation. Real 
+FP8 behavior on Hopper may differ.
+
+\subsection{10.4 No H100 Benchmarks}
+
+We did not have access to an H100/H200 GPU. All FA3 speedup claims are 
+extrapolated from the original paper.
+
+\subsection{10.5 Task Coverage}
+
+Only SST-2 evaluated. Generation tasks, QA, NLI untested.
+
+\subsection{10.6 Model Coverage}
+
+Three models (66.9M–124.6M). Larger models untested.
+
+\subsection{10.7 Cross-Attention}
+
+Supported but not benchmarked.
+
+\subsection{10.8 Single Seed}
+
+Standard error ~1.69\%.
+
+\subsection{10.9 Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling
+\end{itemize}
+\begin{itemize}
+\item FP8 simulation not real FP8
+\end{itemize}
+\begin{itemize}
+\item No H100 verification
+\end{itemize}
+
+\subsection{10.10 Ethical Considerations}
+
+Dual-use. See Appendix E.

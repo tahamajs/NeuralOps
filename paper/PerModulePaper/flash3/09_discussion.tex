@@ -1,0 +1,121 @@
+\section{9. Discussion}
+
+\subsection{9.1 Key Takeaways}
+
+\subsubsection{9.1.1 Takeaway 1: Hardware-Specific Optimization}
+
+FA3's benefits are \textbf{hardware-specific}. On non-Hopper GPUs, the wrapper 
+falls back to SDPA, which is also efficient but not as fast as FA3 on 
+Hopper.
+
+\subsubsection{9.1.2 Takeaway 2: Exactness is Preserved}
+
+Unlike Performer or ClusterFormer, FA3 computes \textbf{exact} attention. The 
+output is mathematically identical to naive attention.
+
+\subsubsection{9.1.3 Takeaway 3: Not a Compression Method}
+
+FA3 increases parameter count via LoRA. Its value is throughput, not size.
+
+\subsection{9.2 When to Use}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{H100/H200 inference} — FA3 gives 2-4× throughput
+\end{itemize}
+\begin{itemize}
+\item \textbf{Long sequences} ($L \geq 2048$) — memory savings substantial
+\end{itemize}
+\begin{itemize}
+\item \textbf{Production serving} — stable, exact attention
+\end{itemize}
+
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Non-Hopper GPUs} — SDPA is just as good
+\end{itemize}
+\begin{itemize}
+\item \textbf{Model size reduction} — use compression methods
+\end{itemize}
+\begin{itemize}
+\item \textbf{Research on attention algorithms} — this is a kernel, not an algorithm
+\end{itemize}
+
+\subsection{9.3 Deployment Decision}
+
+\begin{lstlisting}
+Have H100/H200? ─── Yes ─── Use FA3 directly
+  │ No
+  ▼
+Have A100? ─── Yes ─── Use SDPA (FA2 path)
+  │ No
+  ▼
+Have consumer GPU? ─── Yes ─── Use SDPA (memory-efficient)
+  │ No
+  ▼
+Use CPU attention (slow)
+\end{lstlisting}
+
+\subsection{9.4 Cost-Benefit}
+
+For DistilBERT on RTX 4070 (SDPA path):
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Wrapper} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & 90.25\% & -0.46\% \\
+Params & 66.9M & 67.55M & +589826M \\
+Time & 1.90 s & 1.95 s & 1.03× \\
+VRAM & 183 MB & 190 MB & 1.04× \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.5 Comparison with Related Wrappers}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Wrapper} & \textbf{Hardware} & \textbf{Exact?} & \textbf{Fallback} \\
+\midrule
+vLLM & NVIDIA & Yes & No \\
+TensorRT & NVIDIA & Yes & No \\
+**This wrapper** & Any CUDA & **Yes** & **SDPA** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.6 Open Questions}
+
+1. \textbf{H100 benchmarks} — we did not have access.
+2. \textbf{FP8 accuracy} — simulated only.
+3. \textbf{Very long context} ($L > 8192$) — untested.
+4. \textbf{Training vs inference} — we tested inference only.
+
+\subsection{9.7 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Faster inference → cheaper deployment
+\end{itemize}
+\begin{itemize}
+\item Memory savings → enables longer context
+\end{itemize}
+\begin{itemize}
+\item Exact → no accuracy trade-off
+\end{itemize}
+
+\subsubsection{Negative}
+\begin{itemize}
+\item Hopper-only optimization → hardware lock-in
+\end{itemize}
+\begin{itemize}
+\item Marginal on consumer GPUs
+\end{itemize}
+
+\subsubsection{Environmental}
+Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.

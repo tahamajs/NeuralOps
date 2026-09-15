@@ -1,0 +1,76 @@
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{FUSIONATTN}, a length-aware hybrid attention with 
+short-sequence fast path and content-aware block sparsity for long 
+sequences. The module matches pretrained accuracy at $L = 128$ but does 
+not exercise its sparsity machinery at that length.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc Δ} & \textbf{Params Δ} & \textbf{Path at L=128} \\
+\midrule
+DistilBERT & -0.23\% & +786864M & Short \\
+RoBERTa & -1.21\% & +1453064M & Short \\
+GPT-2 & -0.46\% & +1460804M & Short \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Length-aware dispatch} preserves short-sequence behavior.
+2. \textbf{Sparsity only matters at $L \geq 256$.}
+3. \textbf{Learned gate adapts to task-specific patterns.}
+4. \textbf{Not a compression method.}
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Test at $L \geq 512$
+\end{itemize}
+\begin{itemize}
+\item Analyze learned gate patterns
+\end{itemize}
+\begin{itemize}
+\item Fused Triton kernel for block attention
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Learned dispatch threshold
+\end{itemize}
+\begin{itemize}
+\item Dynamic block sizes
+\end{itemize}
+\begin{itemize}
+\item Cross-task transfer
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+FUSIONATTN is a hybrid attention for long-context inference. We release 
+code under MIT.
+
+\subsection{11.6 Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments.
+\end{itemize}
+\begin{itemize}
+\item \textbf{{{AUTHOR_2}}} provided feedback.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

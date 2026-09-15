@@ -1,0 +1,104 @@
+\section{12. Reproducibility Statement}
+
+\subsection{12.1 Environment}
+
+\begin{lstlisting}
+git clone https://github.com/your-org/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{12.2 Dependencies}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.3 Running BAM-UMoE}
+
+\begin{lstlisting}
+python run_all_4_bam_umoe.py \
+    --models distilbert,roberta,gpt2 \
+    --num_experts 8 \
+    --top_k 2 \
+    --lora_rank 16 \
+    --recovery_steps 50
+\end{lstlisting}
+
+\subsection{12.4 Reproducing Tables}
+
+\begin{lstlisting}
+# Main results
+python run_all_4_bam_umoe.py --models distilbert,roberta,gpt2
+
+# Expert count ablation
+for E in 2 4 8 16; do
+    python run_all_4_bam_umoe.py --num_experts $E --output_suffix E$E
+done
+
+# Top-k ablation
+for k in 1 2 4; do
+    python run_all_4_bam_umoe.py --top_k $k --output_suffix k$k
+done
+\end{lstlisting}
+
+\subsection{12.5 Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{12.6 Expected Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Params} \\
+\midrule
+DistilBERT & 89.5\% ± 1\% & 293M \\
+RoBERTa & 76.5\% ± 1\% & 570M \\
+GPT-2 & 77.8\% ± 1\% & 570M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.7 Data Availability}
+
+\begin{itemize}
+\item Dataset: SST-2 via \texttt{datasets}
+\end{itemize}
+\begin{itemize}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-bam_umoe}
+\end{itemize}
+\begin{itemize}
+\item Metrics: \texttt{results/unified_bam_umoe/*/summary.csv}
+\end{itemize}
+
+\subsection{12.8 Known Issues}
+
+\begin{itemize}
+\item Windows: \texttt{PYTHONIOENCODING=utf-8}
+\end{itemize}
+\begin{itemize}
+\item CUDA ≥ 11.8 for FP16
+\end{itemize}
+\begin{itemize}
+\item Large parameter count may OOM on small GPUs
+\end{itemize}

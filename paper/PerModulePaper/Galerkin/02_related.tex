@@ -1,0 +1,63 @@
+\section{2. Related Work}
+
+\subsection{2.1 Linear-Complexity Attention}
+
+\textbf{Linformer.} Wang et al. (2020) project $K, V$ to fixed low rank with 
+learned projection matrices. Galerkin uses a \textbf{fixed DCT basis}, not learned.
+
+\textbf{Performer.} Choromanski et al. (2021) approximate softmax via random 
+features. Galerkin computes \textbf{exact} attention in basis space.
+
+\textbf{Nyströmformer.} Xiong et al. (2021) use Nyström landmarks. Galerkin uses 
+a full DCT basis.
+
+\textbf{Linear Transformer.} Katharopoulos et al. (2020) reorder attention as 
+associative products. Different mathematical primitive.
+
+\subsection{2.2 Basis Projection Methods}
+
+\textbf{FNet.} Lee-Thorp et al. (2021) replace self-attention with an unparameterized 
+Fourier transform. Galerkin uses a truncated DCT basis plus a softmax 
+attention in basis space.
+
+\textbf{GFNet.} Rao et al. (2021) use global filter operations in Fourier space 
+for vision. Similar spirit, different domain.
+
+\textbf{AFNO.} Guibas et al. (2022) use adaptive Fourier neural operators for 
+PDEs. Galerkin is a Galerkin discretization of the attention operator.
+
+\subsection{2.3 Numerical Analysis of Attention}
+
+\textbf{Neural Operators.} Kovachki et al. (2023) formalize neural operators as 
+mappings between function spaces. Attention is a specific case.
+
+\textbf{Galerkin Methods.} Classical theory (Strang, 1973; Brenner \& Scott, 2008) 
+for variational discretization of PDEs.
+
+\textbf{Petrov-Galerkin.} Uses different test and trial bases. Galerkin Attention 
+uses a \textbf{single} orthonormal basis (Galerkin, not Petrov-Galerkin in the 
+strict sense).
+
+\subsection{2.4 Position of Our Work}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Basis} & \textbf{Learned} & \textbf{Encoder} & \textbf{Decoder} \\
+\midrule
+Linformer & Linear proj & Yes & Yes & Yes \\
+Performer & Random feats & No & Yes & Yes \\
+FNet & FFT & No & Yes & No \\
+Nyströmformer & Landmarks & Yes & Yes & Yes \\
+**Galerkin** & **DCT (fixed)** & **No** & **Yes** & **Fallback** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Galerkin is the only method that:
+1. Uses a \textbf{fixed orthonormal basis} (DCT).
+2. Dispatches encoder vs decoder.
+3. Provides an \textbf{exact} solution in basis space.
+
+\subsection{2.5 Comparison Table}

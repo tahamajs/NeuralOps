@@ -1,0 +1,102 @@
+\section{12. Reproducibility Statement}
+
+\subsection{12.1 Environment}
+
+\begin{lstlisting}
+git clone https://github.com/your-org/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{12.2 Dependencies}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.3 Running ClusterFormer}
+
+\begin{lstlisting}
+python run_all_4_cluster.py \
+    --models distilbert,roberta,gpt2 \
+    --num_clusters 16 \
+    --window_size 32 \
+    --recovery_steps 50
+\end{lstlisting}
+
+\subsection{12.4 Reproducing Tables}
+
+\begin{lstlisting}
+# Main results
+python run_all_4_cluster.py --models distilbert,roberta,gpt2
+
+# K ablation
+for K in 4 8 16 32 64; do
+    python run_all_4_cluster.py --num_clusters $K --output_suffix K$K
+done
+
+# Window ablation
+for W in 0 8 32 64; do
+    python run_all_4_cluster.py --window_size $W --output_suffix W$W
+done
+\end{lstlisting}
+
+\subsection{12.5 Seeds}
+
+\begin{lstlisting}
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{12.6 Expected Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Params Δ} \\
+\midrule
+DistilBERT & 89.91\% ± 1\% & +589826M \\
+RoBERTa & 77.50\% ± 1\% & +1179648M \\
+GPT-2 & 78.98\% ± 1\% & +1188876M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.7 Data Availability}
+
+\begin{itemize}
+\item Dataset: SST-2 via \texttt{datasets}
+\end{itemize}
+\begin{itemize}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-cluster}
+\end{itemize}
+\begin{itemize}
+\item Metrics: \texttt{results/unified_cluster/*/summary.csv}
+\end{itemize}
+
+\subsection{12.8 Known Issues}
+
+\begin{itemize}
+\item Windows: \texttt{PYTHONIOENCODING=utf-8}
+\end{itemize}
+\begin{itemize}
+\item CUDA ≥ 11.8 for FP16
+\end{itemize}
+\begin{itemize}
+\item K-means cdist may be slow for very long sequences
+\end{itemize}

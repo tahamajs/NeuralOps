@@ -1,0 +1,100 @@
+\section{5. Architecture Integration}
+
+\subsection{5.1 Model Support}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Cross-attn?} \\
+\midrule
+DistilBERT & Flat & No & No & No & No \\
+RoBERTa & Nested & Yes & No & No & No \\
+GPT-2 & Causal & No & No & No & No \\
+Qwen3.5 & GQA+RoPE & No & Yes & Yes & No \\
+T5 & Enc-Dec & No & No & No & **Yes** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{5.2 Weight Extraction}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+q_w = src.q_lin.weight
+k_w = src.k_lin.weight
+v_w = src.v_lin.weight
+o_w = src.out_lin.weight
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+\begin{lstlisting}
+q_w = src.self.query.weight
+k_w = src.self.key.weight
+v_w = src.self.value.weight
+o_w = src.output.dense.weight  # For reference, not applied
+is_nested_encoder = True
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Fused Conv1D)}
+\begin{lstlisting}
+fused = src.c_attn.weight.T
+q_w, k_w, v_w = fused.chunk(3, dim=0)
+o_w = src.c_proj.weight.T
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA + RoPE)}
+Direct copy from \texttt{q_proj}, \texttt{k_proj}, \texttt{v_proj}, \texttt{o_proj}.
+
+\subsection{5.3 Nested Encoder Bypass}
+
+For RoBERTa, BAM-UMoE's \texttt{out_lin} is not applied; the outer 
+\texttt{BertSelfOutput.dense} performs the projection. This avoids double projection.
+
+\subsection{5.4 Partial RoPE}
+
+For Qwen3.5 with \texttt{head_dim=256} and \texttt{rotary_dim=64}:
+\begin{lstlisting}
+q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+q_rot = (q_rot * cos) + (rotate_half(q_rot) * sin)
+q = torch.cat([q_rot, q_pass], dim=-1)
+\end{lstlisting}
+
+\subsection{5.5 Cross-Attention}
+
+For encoder-decoder models, the MoE branch is \textbf{not applied} to 
+cross-attention. The reason: cross-attention V is projected from encoder 
+states, and pretrained cross-attention weights are highly calibrated. 
+Injecting unaligned MoE there would disrupt alignment.
+
+\begin{lstlisting}
+if not is_cross_attention:
+    moe_delta_v = self.qkv_moe(hidden_states).view(B, L, H, d_h)
+    v = v + 0.1 * moe_delta_v
+\end{lstlisting}
+
+\subsection{5.6 Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("bam_umoe")
+class BAMUMoEBlock(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{5.7 Failure Modes}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & `copy\_weights` raises & Return None \\
+NaN in scores & `torch.nan\_to\_num` & Replace with 0 \\
+MoE overflow & `torch.clamp` & Clamp to ±65000 \\
+Cross-attention MoE & Skip MoE branch & Preserve alignment \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{5.8 Numerical Stability}

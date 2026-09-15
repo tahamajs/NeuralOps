@@ -1,0 +1,149 @@
+
+\section{10. Limitations}
+
+\subsection{10.1 Task Coverage}
+
+Only \textbf{SST-2} is evaluated. Adaptive SVD may behave differently on:
+\begin{itemize}
+\item Generation tasks (summarization, translation)
+\end{itemize}
+\begin{itemize}
+\item Multi-class classification (MNLI, AG News)
+\end{itemize}
+\begin{itemize}
+\item Token-level tasks (NER, POS)
+\end{itemize}
+\begin{itemize}
+\item Long-context tasks (>512 tokens)
+\end{itemize}
+
+\subsection{10.2 Model Coverage}
+
+We test on three models (66.9M–124.6M params). Not tested:
+\begin{itemize}
+\item Large models (>1B)
+\end{itemize}
+\begin{itemize}
+\item Deep models (>24 layers)
+\end{itemize}
+\begin{itemize}
+\item Mixture-of-Experts
+\end{itemize}
+\begin{itemize}
+\item Vision transformers
+\end{itemize}
+\begin{itemize}
+\item Multimodal transformers
+\end{itemize}
+
+\subsection{10.3 Hardware}
+
+All experiments on \textbf{RTX 4070 Laptop (8 GB)}. Behavior on:
+\begin{itemize}
+\item A100/H100: SVD faster, method should scale
+\end{itemize}
+\begin{itemize}
+\item CPU inference: Two matmuls may be slower
+\end{itemize}
+\begin{itemize}
+\item Edge devices (Jetson): Untested
+\end{itemize}
+
+\subsection{10.4 Inference Latency}
+
+Factorized layers are slower at inference:
+\begin{itemize}
+\item Two matmuls instead of one
+\end{itemize}
+\begin{itemize}
+\item Intermediate $r$-dim tensor materialized
+\end{itemize}
+\begin{itemize}
+\item Adapter adds one more matmul
+\end{itemize}
+\begin{itemize}
+\item ~1.2× slower on GPU
+\end{itemize}
+
+\textbf{Mitigation.} The compressed model uses less memory, so larger batch sizes 
+may fit, potentially offsetting latency.
+
+\subsection{10.5 Per-Projection Rank is Heuristic}
+
+The energy threshold is a \textbf{principled heuristic}, not an optimization. The 
+optimal rank for downstream task may differ from the energy-thresholded rank.
+
+\subsection{10.6 No Downstream Error Bound}
+
+We provide:
+\begin{itemize}
+\item \textbf{Reconstruction error bound} (Prop 4.9.1)
+\end{itemize}
+\begin{itemize}
+\item \textbf{No bound} on downstream task accuracy
+\end{itemize}
+
+The gap between reconstruction and task accuracy is not characterized.
+
+\subsection{10.7 Residual Adapter Overhead}
+
+The adapter adds $r_L (d_\text{in} + d_\text{out})$ parameters per projection. 
+For $d = 768$ and $r_L = 16$:
+
+\[
+\text{Overhead per projection} = 16 \cdot 1536 = 24,576 \text{ params}
+\]
+
+vs. the compressed base of $r_P \cdot 1536$. This is ~12\% 
+of the base.
+
+\subsection{10.8 Single-Seed Results}
+
+All results from a single seed. Standard error $\approx 1.69\%$ at $N = 872$. 
+Differences below 3.4\% may be noise.
+
+\subsection{10.9 No Comparison with All Baselines}
+
+We do not compare with:
+\begin{itemize}
+\item DistilBERT / TinyBERT (distillation)
+\end{itemize}
+\begin{itemize}
+\item Performer / Linformer (attention replacement)
+\end{itemize}
+\begin{itemize}
+\item SparseGPT / Wanda (pruning)
+\end{itemize}
+\begin{itemize}
+\item Direct head pruning
+\end{itemize}
+
+\subsection{10.10 T5 and Qwen Verification}
+
+T5 support is not tested, Qwen support is partial. Full 
+verification on these architectures is deferred to future work.
+
+\subsection{10.11 Theoretical Guarantee on Per-Layer Optimality}
+
+The energy threshold is not provably optimal. Alternatives (learned $\tau$, 
+per-layer $\tau$, activation-aware $\tau$) are not tested.
+
+\subsection{10.12 Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling
+\end{itemize}
+\begin{itemize}
+\item No unit tests for edge cases
+\end{itemize}
+\begin{itemize}
+\item Numerical stability could be improved
+\end{itemize}
+\begin{itemize}
+\item T5 bias path untested on decoder side
+\end{itemize}
+
+\subsection{10.13 Ethical Considerations}
+
+Compression is dual-use. See Appendix E.

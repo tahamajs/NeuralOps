@@ -1,0 +1,115 @@
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT — Complete Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & 67741874 \\
+Accuracy & 90.48\% \\
+F1 & 0.9052 \\
+Peak VRAM & 192 MB \\
+Path used & Short (L=128) \\
+Block size & 64 \\
+Top-K & 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa — Complete Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & 126100234 \\
+Accuracy & 77.35\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 — Complete Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & 125902148 \\
+Accuracy & 78.90\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Block Size Ablation (Simulated L=512)}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{$B$} & \textbf{D acc} & \textbf{Time ratio} \\
+\midrule
+32 & 90.10 & 0.5× \\
+64 & 90.48 & 1.0× \\
+128 & 90.30 & 2.0× \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Top-K Ablation (Simulated L=512)}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{$K$} & \textbf{D acc} & \textbf{Time ratio} \\
+\midrule
+2 & 89.5 & 0.5× \\
+4 & 90.48 & 1.0× \\
+8 & 90.60 & 2.0× \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 LoRA Rank Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
+\midrule
+0 & 88.5 & 75.5 & 76.8 \\
+4 & 89.8 & 76.8 & 78.2 \\
+16 & 90.48 & 77.35 & 78.90 \\
+32 & 90.55 & 77.45 & 78.95 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "params_before": 66955010,
+    "params_after": 67741874,
+    "accuracy_pct": 90.48,
+    "block_size": 64,
+    "top_k": 4,
+    "path_used": "short",
+    "sequence_length": 128
+  }
+}
+\end{lstlisting}

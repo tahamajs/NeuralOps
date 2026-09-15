@@ -1,0 +1,55 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{hyperref}
+
+\definecolor{codebg}{HTML}{F8F9FA}
+\lstset{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\scriptsize\color{black},
+    numbers=none,
+    frame=single,
+    breaklines=true,
+    breakatwhitespace=true
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+\begin{document}
+
+\input{00_meta.tex}
+\input{01_intro.tex}
+\input{02_related.tex}
+\input{03_background.tex}
+\input{04_method.tex}
+\input{05_architecture.tex}
+\input{06_setup.tex}
+\input{07_results.tex}
+\input{08_analysis.tex}
+\input{09_discussion.tex}
+\input{10_limitations.tex}
+\input{11_conclusion.tex}
+\input{12_reproducibility.tex}
+\input{13_references.tex}
+
+\appendix
+\input{A_math.tex}
+\input{B_implementation.tex}
+\input{C_data.tex}
+\input{D_negative_results.tex}
+\input{E_ethics.tex}
+
+\end{document}

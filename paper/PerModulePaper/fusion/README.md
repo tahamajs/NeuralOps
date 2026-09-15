@@ -34,6 +34,18 @@ Each section corresponds to a specific chapter/appendix of the paper draft:
 - [`build.py`](build.py) — Utility script (`build.py` compiles the full paper; `apply_vars.py` substitutes placeholders)
 - [`variables.json`](variables.json) — Parameter and benchmark metrics dictionary for templating
 
+
+### 📜 LaTeX Source Files (.tex)
+This package includes a ready-to-compile modular LaTeX setup:
+- [`main.tex`](main.tex) — Master LaTeX file importing all sections
+- [`paper_full.tex`](paper_full.tex) — Self-contained standalone `.tex` document
+- `00_meta.tex` through `13_references.tex` + Appendices `A_math.tex` through `E_ethics.tex`
+
+Compile with `pdflatex` or `xelatex`:
+```bash
+pdflatex main.tex
+```
+
 ## 🚀 Quick Usage
 
 ### 1. Build the Full Paper

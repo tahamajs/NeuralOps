@@ -1,0 +1,68 @@
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Failed Attempts}
+
+\subsubsection{D.1.1 Too Few Clusters (K=2)}
+
+\textbf{Result.} Accuracy dropped to 85.0\%. Centroids too coarse.
+
+\subsubsection{D.1.2 No Local Window}
+
+\textbf{Result.} 88.2\%. Local structure lost.
+
+\subsubsection{D.1.3 No Global Clustering}
+
+\textbf{Result.} 87.0\%. Equivalent to local-only (Longformer-like).
+
+\subsubsection{D.1.4 Hard Assignment (no temperature)}
+
+\textbf{Result.} 85.5\%. Non-differentiable, unstable.
+
+\subsubsection{D.1.5 Very Small Window (W=2)}
+
+\textbf{Result.} 86.5\%. Local branch too narrow.
+
+\subsubsection{D.1.6 10+ K-Means Iterations}
+
+\textbf{Result.} No improvement, 3× slower. 3 iterations suffice.
+
+\subsection{D.2 Failed Hyperparameters}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{LR} & \textbf{D acc} \\
+\midrule
+5e-5 & 89.2 \\
+1e-4 & 89.8 \\
+2e-4 & 89.91 \\
+5e-4 & 88.5 (unstable) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.3 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Seed} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
+\midrule
+42 & 89.91 & 77.50 & 78.98 \\
+123 & 89.85 & 77.45 & 78.90 \\
+456 & 89.95 & 77.55 & 79.00 \\
+Mean & 89.90 & 77.50 & 78.96 \\
+Std & 0.05 & 0.05 & 0.05 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Lessons Learned}
+
+1. K=16 is a good default.
+2. Local window essential.
+3. Temperature clamp prevents collapse.
+4. 3 iterations sufficient.
+5. Causal decoders need exact attention (not clustering).

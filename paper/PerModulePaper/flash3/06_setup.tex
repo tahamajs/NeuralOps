@@ -1,0 +1,105 @@
+\section{6. Experimental Setup}
+
+\subsection{6.1 Models}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.2 Dataset}
+
+SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
+
+\subsection{6.3 Hyperparameters}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+`use\_fp8` & False \\
+`lora\_rank` & 16 \\
+`lora\_alpha` & 32 \\
+`dropout` & 0.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.4 Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 2e-4 \\
+Weight decay & 1e-2 \\
+Recovery steps & 50 \\
+Batch size & 8 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.5 Hardware}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU & RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
+FlashAttention & not installed (SDPA fallback) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical.} On RTX 4070 (Ada Lovelace), FlashAttention-3 is not available 
+(requires Hopper). Our wrapper uses SDPA fallback for all experiments.
+
+\subsection{6.6 Metrics}
+
+\begin{itemize}
+\item Accuracy, F1
+\end{itemize}
+\begin{itemize}
+\item Peak VRAM
+\end{itemize}
+\begin{itemize}
+\item Inference time
+\end{itemize}
+\begin{itemize}
+\item Parameter count
+\end{itemize}
+
+\subsection{6.7 Quality Gate}
+
+PASS ≥ 56\%, PASS_LOW 50.92\%–56\%, FAIL < 50.92\%.
+
+\subsection{6.8 Reproduction}
+
+\begin{lstlisting}
+python run_all_4_flash3.py \
+    --models distilbert,roberta,gpt2 \
+    --use_fp8 False \
+    --lora_rank 16 \
+    --recovery_steps 50
+\end{lstlisting}
+
+\subsection{6.9 Baselines}

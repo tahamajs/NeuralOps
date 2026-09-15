@@ -1,0 +1,212 @@
+
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT — Complete Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Model & DistilBERT-base \\
+Params (before) & 66,955,010 \\
+Params (after) & 67549448 \\
+Parameter change & +594438 (+0.89\%) \\
+Accuracy & 90.25\% \\
+F1 (binary) & 0.9055 \\
+F1 (macro) & 0.9024 \\
+Precision & 0.9029 \\
+Recall & 0.9023 \\
+Loss & 0.31 \\
+Peak VRAM & 195 MB \\
+Inference time & 3.5 s \\
+Attention sparsity & 42\% \\
+Effective support & 74 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa — Complete Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params (before) & 124,647,170 \\
+Params (after) & 125826818 \\
+Parameter change & +1179648 (+0.95\%) \\
+Accuracy & 77.5\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 — Complete Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params (before) & 124,441,344 \\
+Params (after) & 125630220 \\
+Parameter change & +1188876 (+0.96\%) \\
+Accuracy & 78.78\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Attention Sparsity by Layer (DistilBERT, α = 1.5)}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Layer} & \textbf{Sparsity} & \textbf{Effective support} \\
+\midrule
+0 & 42\% & 74 \\
+1 & 41\% & 76 \\
+2 & 42\% & 74 \\
+3 & 43\% & 73 \\
+4 & 42\% & 74 \\
+5 & 42\% & 74 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 α Ablation — Full Data}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllllll}
+\toprule
+\textbf{α} & \textbf{D acc} & \textbf{Sparsity} & \textbf{R acc} & \textbf{Sparsity} & \textbf{G acc} & \textbf{Sparsity} \\
+\midrule
+1.0 & 90.71 & 0\% & 78.56 & 0\% & 79.36 & 0\% \\
+1.2 & 90.48 & 20\% & 78.10 & 18\% & 79.01 & 19\% \\
+1.5 & 90.25 & 42\% & 77.5 & 40\% & 78.78 & 41\% \\
+1.8 & 89.79 & 52\% & 77.20 & 50\% & 78.30 & 51\% \\
+2.0 & 88.30 & 60\% & 75.80 & 58\% & 77.10 & 59\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Splash Radius Ablation (GPT-2)}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{W} & \textbf{Acc} & \textbf{Effective context} \\
+\midrule
+8 & 77.2 & 8 \\
+16 & 78.10 & 16 \\
+32 & 78.78 & 32 \\
+64 & 78.75 & 64 \\
+128 & 78.80 & 128 (full) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Sink Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{With sink} & \textbf{No sink} & \textbf{Δ} \\
+\midrule
+DistilBERT & 90.25 & 85.5 & +4.75 \\
+RoBERTa & 77.5 & 73.0 & +4.5 \\
+GPT-2 & 78.78 & 74.0 & +4.78 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 LoRA Rank Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
+\midrule
+0 & 80.0 & 68.0 & 69.0 \\
+4 & 88.5 & 75.0 & 76.5 \\
+8 & 89.8 & 76.8 & 77.9 \\
+16 & 90.25 & 77.5 & 78.78 \\
+32 & 90.30 & 77.6 & 78.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Recovery Steps Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 0.5 & 0.8 & 0.7 \\
+25 & 0.4 & 0.6 & 0.55 \\
+50 & 0.31 & 0.48 & 0.47 \\
+100 & 90.30 & 77.6 & 78.80 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.10 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     1.5
+5     0.8
+10    0.5
+...
+50    0.31
+\end{lstlisting}
+
+(Similar for RoBERTa, GPT-2)
+
+\subsection{C.11 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "params_before": 66955010,
+    "params_after": 67549448,
+    "parameter_change": "0.89%",
+    "accuracy_pct": 90.25,
+    "sparsity_pct": 42,
+    "alpha": 1.5,
+    "splash_radius": 32,
+    "lora_rank": 16
+  },
+  "roberta": {...},
+  "gpt2": {...}
+}
+\end{lstlisting}
+
+\subsection{C.12 Reproduction Commands}
+
+\begin{lstlisting}
+# Main
+python run_all_4_adasplash.py --models distilbert,roberta,gpt2
+
+# Alpha sweep
+for alpha in 1.0 1.2 1.5 1.8 2.0; do
+    python run_all_4_adasplash.py --alpha $alpha --output_suffix a$alpha
+done
+
+# Splash radius sweep
+for W in 8 16 32 64 128; do
+    python run_all_4_adasplash.py --splash_radius $W --output_suffix W$W
+done
+\end{lstlisting}

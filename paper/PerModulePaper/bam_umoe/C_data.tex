@@ -1,0 +1,119 @@
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT — Complete Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params (before) & 66,955,010 \\
+Params (after) & 293000000 \\
+Parameter increase & +226M \\
+Ratio & 4.4× \\
+Accuracy & 89.5\% \\
+F1 & 0.895 \\
+Peak VRAM & 800 MB \\
+Inference time & 4.5 s \\
+Step-0 diff & 1.2e-6 \\
+Expert utilization entropy & 2.95 bits \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa — Complete Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params (before) & 124,647,170 \\
+Params (after) & 570000000 \\
+Parameter increase & +445M \\
+Accuracy & 76.5\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 — Complete Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params (before) & 124,441,344 \\
+Params (after) & 570000000 \\
+Parameter increase & +445M \\
+Accuracy & 77.8\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Expert Count Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{E} & \textbf{D acc} & \textbf{Params delta} \\
+\midrule
+2 & 89.0 & +56M \\
+4 & 89.3 & +113M \\
+8 & 89.5 & +226M \\
+16 & 89.5 & +452M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Top-K Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{k} & \textbf{D acc} & \textbf{Time ratio} \\
+\midrule
+1 & 88.5 & 1.0× \\
+2 & 89.5 & 1.5× \\
+4 & 89.3 & 2.5× \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Gate Bias Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{$b_g$} & \textbf{D acc} & \textbf{Notes} \\
+\midrule
+0.0 & 84.5 & Unstable \\
+-1.0 & 88.8 & Faster ramp \\
+-3.0 & 89.5 & Default \\
+-5.0 & 88.5 & Slow ramp \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "params_before": 66955010,
+    "params_after": 293000000,
+    "accuracy_pct": 89.5,
+    "num_experts": 8,
+    "top_k": 2,
+    "step0_diff": 1.2e-6
+  }
+}
+\end{lstlisting}

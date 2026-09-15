@@ -1,0 +1,96 @@
+\section{12. Reproducibility Statement}
+
+\subsection{12.1 Environment}
+
+\begin{lstlisting}
+git clone https://github.com/your-org/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{12.2 Dependencies}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.3 Running Galerkin}
+
+\begin{lstlisting}
+python run_all_4_galerkin.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 64 \
+    --recovery_steps 50
+\end{lstlisting}
+
+\subsection{12.4 Reproducing Tables}
+
+\begin{lstlisting}
+# Main
+python run_all_4_galerkin.py --models distilbert,roberta,gpt2
+
+# Rank ablation
+for r in 16 32 64 128; do
+    python run_all_4_galerkin.py --rank $r --output_suffix r$r
+done
+\end{lstlisting}
+
+\subsection{12.5 Seeds}
+
+\begin{lstlisting}
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{12.6 Expected Results}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Path} \\
+\midrule
+DistilBERT & 89.91\% ± 1\% & Galerkin \\
+RoBERTa & 77.35\% ± 1\% & Galerkin \\
+GPT-2 & 79.36\% ± 1\% & Fallback \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{12.7 Data Availability}
+
+\begin{itemize}
+\item Dataset: SST-2
+\end{itemize}
+\begin{itemize}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-galerkin}
+\end{itemize}
+\begin{itemize}
+\item Metrics: \texttt{results/unified_galerkin/*/summary.csv}
+\end{itemize}
+
+\subsection{12.8 Known Issues}
+
+\begin{itemize}
+\item Windows: \texttt{PYTHONIOENCODING=utf-8}
+\end{itemize}
+\begin{itemize}
+\item CUDA ≥ 11.8 for FP16
+\end{itemize}
+\begin{itemize}
+\item GPT-2 uses fallback (no Galerkin benefit)
+\end{itemize}

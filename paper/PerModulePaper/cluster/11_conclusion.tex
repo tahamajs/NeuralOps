@@ -1,0 +1,77 @@
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{ClusterFormer}, a differentiable K-means clustering 
+attention mechanism that achieves $\mathcal{O}(KLd)$ complexity while 
+preserving global context. The method combines centroid-to-key 
+cross-attention with local sliding-window blending, controlled by learnable 
+temperature and blend scalars.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc Δ} & \textbf{FLOPs reduction ($L=256$)} \\
+\midrule
+DistilBERT & -0.80\% & ~2.7× \\
+RoBERTa & -1.06\% & ~2.7× \\
+GPT-2 & -0.38\% & ~2.7× \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Linear attention without random features} is possible via clustering.
+2. \textbf{Global + local blending} is essential.
+3. \textbf{Learnable hyperparameters} (τ, α) improve results marginally.
+4. \textbf{Not a compression method} — parameter count increases.
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernel for K-means
+\end{itemize}
+\begin{itemize}
+\item Learned K per layer
+\end{itemize}
+\begin{itemize}
+\item Long-context evaluation ($L \geq 4096$)
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Causal generation support
+\end{itemize}
+\begin{itemize}
+\item Theory: bound on approximation error
+\end{itemize}
+\begin{itemize}
+\item Combination with quantization
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+ClusterFormer is a practical linear attention method for long sequences. 
+We release code and checkpoints under MIT.
+
+\subsection{11.6 Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR_1}}} designed the method, implemented the code, ran experiments.
+\end{itemize}
+\begin{itemize}
+\item \textbf{{{AUTHOR_2}}} provided feedback and edited the manuscript.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

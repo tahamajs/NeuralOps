@@ -1,0 +1,184 @@
+
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Trainable Base Weights}
+
+\textbf{Goal.} Fine-tune base weights alongside LoRA.
+
+\textbf{Result.} Accuracy improved initially but model diverged from pretrained 
+representations; compression-like benefits lost.
+
+\textbf{Conclusion.} Keep base frozen.
+
+\subsubsection{D.1.2 α = 2.0 (Sparsemax)}
+
+\textbf{Goal.} Maximize sparsity.
+
+\textbf{Result.} Accuracy dropped to 88.30\%; training unstable.
+
+\textbf{Conclusion.} Sparsemax is too sparse and non-smooth for stable training.
+
+\subsubsection{D.1.3 Very Small Splash Window (W=4)}
+
+\textbf{Goal.} Extreme local attention.
+
+\textbf{Result.} Accuracy dropped to 75.5\%.
+
+\textbf{Conclusion.} W=4 loses too much context.
+
+\subsubsection{D.1.4 No Attention Sinks}
+
+\textbf{Goal.} Simplify masking.
+
+\textbf{Result.} Accuracy dropped to 85.5\%.
+
+\textbf{Conclusion.} Sinks are essential for stability.
+
+\subsubsection{D.1.5 No LoRA Adapters (r\_L=0)}
+
+\textbf{Goal.} Test pure sparse attention.
+
+\textbf{Result.} Accuracy dropped to 80.0\%.
+
+\textbf{Conclusion.} LoRA recovery is essential for matching pretrained accuracy.
+
+\subsubsection{D.1.6 Fused Bisection with Different α per Head}
+
+\textbf{Goal.} Adaptive sparsity per head.
+
+\textbf{Result.} No improvement over uniform α = 1.5; 2× slower.
+
+\textbf{Conclusion.} Uniform α is sufficient.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Block-Sparse Entmax}
+
+Tested block-structured entmax with fixed block size. Result: no improvement, 
+more complex.
+
+\subsubsection{D.2.2 Cascading Entmax}
+
+Applied entmax multiple times in sequence. Result: accuracy collapsed; 
+distribution became too sparse.
+
+\subsubsection{D.2.3 Entmax + Softmax Mix}
+
+Applied entmax only on some layers. Result: no clear pattern; uniform 
+entmax is simpler.
+
+\subsubsection{D.2.4 Learned α via Straight-Through}
+
+Attempted to learn α via straight-through estimator. Result: gradient 
+signal weak; no improvement.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Learning Rate}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{LR} & \textbf{DistilBERT} & \textbf{Loss stability} \\
+\midrule
+5e-5 & 89.5 & Stable \\
+1e-4 & 90.0 & Stable \\
+2e-4 & 90.25 & Stable \\
+5e-4 & 89.0 & Unstable \\
+1e-3 & NaN & NaN \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Bisection Iterations}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{$n_\text{iter}$} & \textbf{Accuracy} & \textbf{Time} \\
+\midrule
+10 & 89.5 & Fast \\
+15 & 90.10 & Medium \\
+25 & 90.25 & Slow \\
+50 & 90.28 & Very slow \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} 25 iterations gives marginal accuracy improvement over 15, 
+but doubles the compute. Consider 15 for production.
+
+\subsubsection{Splash Radius}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{W} & \textbf{GPT-2} & \textbf{Notes} \\
+\midrule
+4 & 75.5 & Too local \\
+8 & 77.2 & Underfit \\
+16 & 78.10 & Reasonable \\
+32 & 78.78 & Best \\
+64 & 78.75 & Diminishing returns \\
+128 & 78.80 & Full attention \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Fixes That Didn't Help}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
+\midrule
+Gradient clipping & Stability & No change \\
+Different LoRA init & Convergence & No change \\
+Layer-wise α & Rank & No improvement \\
+Position-relative splash & Flexibility & No improvement \\
+Hybrid softmax+entmax & Stability & No improvement \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+42 & 90.25 & 77.50 & 78.78 \\
+123 & 90.10 & 77.35 & 78.60 \\
+456 & 90.30 & 77.60 & 78.85 \\
+**Mean** & **90.22** & **77.48** & **78.74** \\
+**Std** & **0.10** & **0.12** & **0.13** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Standard deviation ~0.15\%. Results are reproducible.
+
+\subsection{D.6 Lessons Learned}
+
+1. \textbf{Freeze base weights} — always.
+2. \textbf{α = 1.5 is optimal} — α = 2.0 is too sparse.
+3. \textbf{Sinks are essential} — removing them causes 3-5\% drop.
+4. \textbf{LoRA is essential} — without it, accuracy drops 5-10\%.
+5. \textbf{25 bisection iterations} is a reasonable default.
+6. \textbf{Not a compression method} — parameter count increases.
+
+\subsection{D.7 Unresolved Questions}
+
+1. \textbf{Fused CUDA kernel:} Would speedup by 10-20×?
+2. \textbf{Learned α per head:} Would it help?
+3. \textbf{Sparse hardware:} Real 2:4 speedup?
+4. \textbf{Long context:} Does AdaSplash scale to L = 4096?
+5. \textbf{Other tasks:} Generation, QA, NLI?

@@ -1,0 +1,93 @@
+\section{6. Experimental Setup}
+
+\subsection{6.1 Models}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.2 Dataset}
+
+SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
+
+\subsection{6.3 Hyperparameters}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+`num\_clusters` & 16 \\
+`n\_iters` & 3 \\
+`window\_size` & 32 \\
+`lora\_rank` & 16 \\
+`lora\_alpha` & 32 \\
+Temperature init & 0.1 \\
+Blend init & 0.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.4 Recovery}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & 2e-4 \\
+Weight decay & 1e-2 \\
+Recovery steps & 50 \\
+Batch size & 8 \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.5 Metrics}
+
+\begin{itemize}
+\item Accuracy, F1
+\end{itemize}
+\begin{itemize}
+\item Attention FLOPs (theoretical)
+\end{itemize}
+\begin{itemize}
+\item Peak VRAM
+\end{itemize}
+\begin{itemize}
+\item Inference time
+\end{itemize}
+\begin{itemize}
+\item Cluster quality (silhouette-like metric)
+\end{itemize}
+
+\subsection{6.6 Quality Gate}
+
+PASS ≥ 56\%, PASS_LOW 50.92\%–56\%, FAIL < 50.92\%.
+
+\subsection{6.7 Hardware}
+
+RTX 4070 Laptop, CUDA 12.1, PyTorch 2.4.0.
+
+\subsection{6.8 Reproduction}
+
+\begin{lstlisting}
+python run_all_4_cluster.py \
+    --models distilbert,roberta,gpt2 \
+    --num_clusters 16 \
+    --window_size 32 \
+    --recovery_steps 50
+\end{lstlisting}

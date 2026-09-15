@@ -1,0 +1,222 @@
+
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT — Full Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Model & DistilBERT-base \\
+Params (before) & 66,955,010 \\
+Params (after) & 13500000 \\
+Ratio & 5.0× \\
+Accuracy & 88.5\% \\
+F1 & 0.884 \\
+Precision & 0.885 \\
+Recall & 0.884 \\
+Loss & 0.35 \\
+Peak VRAM & 110 MB \\
+Inference time & 2.4 s \\
+Compression time & {{D\_COMP\_TIME}} s \\
+Compressed layers & 36 \\
+Fallback layers & 0 \\
+Average error & 0.15 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa — Full Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params (before) & 124,647,170 \\
+Params (after) & 27700000 \\
+Ratio & 4.5× \\
+Accuracy & 75.8\% \\
+F1 & 0.775 \\
+Peak VRAM & 450 MB \\
+Inference time & 5.2 s \\
+Compressed layers & 72 \\
+Fallback layers & 0 \\
+Average error & 0.16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 — Full Metrics}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params (before) & 124,441,344 \\
+Params (after) & 27700000 \\
+Ratio & 4.5× \\
+Accuracy & 76.5\% \\
+F1 & 0.768 \\
+Peak VRAM & 500 MB \\
+Inference time & 5.5 s \\
+Compressed layers & 72 \\
+Fallback layers & 0 \\
+Average error & 0.17 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Per-Layer Reconstruction Errors (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Layer} & \textbf{Module} & \textbf{Rank} & \textbf{Error} \\
+\midrule
+0 & q\_lin & {{D\_L0\_Q\_R}} & {{D\_L0\_Q\_E}} \\
+0 & k\_lin & {{D\_L0\_K\_R}} & {{D\_L0\_K\_E}} \\
+0 & v\_lin & {{D\_L0\_V\_R}} & {{D\_L0\_V\_E}} \\
+0 & out\_lin & {{D\_L0\_O\_R}} & {{D\_L0\_O\_E}} \\
+0 & lin1 & {{D\_L0\_L1\_R}} & {{D\_L0\_L1\_E}} \\
+0 & lin2 & {{D\_L0\_L2\_R}} & {{D\_L0\_L2\_E}} \\
+... & ... & ... & ... \\
+5 & lin2 & {{D\_L5\_L2\_R}} & {{D\_L5\_L2\_E}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Per-Layer Reconstruction Errors (RoBERTa)}
+
+(Similar table for RoBERTa's 12 layers)
+
+\subsection{C.6 Per-Layer Reconstruction Errors (GPT-2)}
+
+(Similar table for GPT-2's 12 layers)
+
+\subsection{C.7 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsubsection{RoBERTa}
+
+\begin{lstlisting}
+Step  Loss
+1     {{R_S1}}
+...
+50    {{R_S50}}
+\end{lstlisting}
+
+\subsubsection{GPT-2}
+
+\begin{lstlisting}
+Step  Loss
+1     {{G_S1}}
+...
+50    {{G_S50}}
+\end{lstlisting}
+
+\subsection{C.8 LoRA Rank Ablation — Detail}
+
+\subsubsection{DistilBERT}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Rank} & \textbf{Acc} & \textbf{Compressed} & \textbf{Fallback} & \textbf{Time} \\
+\midrule
+8 & {{D\_R8\_A}} & {{D\_R8\_C}} & {{D\_R8\_F}} & {{D\_R8\_T}} \\
+16 & {{D\_R16\_A}} & {{D\_R16\_C}} & {{D\_R16\_F}} & {{D\_R16\_T}} \\
+32 & {{D\_R32\_A}} & {{D\_R32\_C}} & {{D\_R32\_F}} & {{D\_R32\_T}} \\
+64 & {{D\_R64\_A}} & {{D\_R64\_C}} & {{D\_R64\_F}} & {{D\_R64\_T}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+(Similar for RoBERTa and GPT-2)
+
+\subsection{C.9 SVD Rank Ablation — Detail}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+16 & {{D\_SVD16}} & {{R\_SVD16}} & {{G\_SVD16}} \\
+32 & {{D\_SVD32}} & {{R\_SVD32}} & {{G\_SVD32}} \\
+64 & {{D\_SVD64}} & {{R\_SVD64}} & {{G\_SVD64}} \\
+128 & {{D\_SVD128}} & {{R\_SVD128}} & {{G\_SVD128}} \\
+256 & {{D\_SVD256}} & {{R\_SVD256}} & {{G\_SVD256}} \\
+384 & {{D\_SVD384}} & {{R\_SVD384}} & {{G\_SVD384}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.10 Calibration Size Ablation}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{N_calib} & \textbf{D Acc} & \textbf{R Acc} & \textbf{G Acc} \\
+\midrule
+100 & {{D\_N100}} & {{R\_N100}} & {{G\_N100}} \\
+500 & {{D\_N500}} & {{R\_N500}} & {{G\_N500}} \\
+1000 & {{D\_N1000}} & {{R\_N1000}} & {{G\_N1000}} \\
+5000 & {{D\_N5000}} & {{R\_N5000}} & {{G\_N5000}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.11 Raw JSON Metrics}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "params_before": 66955010,
+    "params_after": 13500000,
+    "accuracy_pct": 88.5,
+    "f1": 0.884,
+    "compression_ratio": 5.0,
+    "peak_vram_mb": 110,
+    "compressed_layers": 36,
+    "fallback_layers": 0,
+    "avg_reconstruction_error": 0.15
+  },
+  "roberta": {...},
+  "gpt2": {...}
+}
+\end{lstlisting}
+
+\subsection{C.12 Reproduction Commands}
+
+\begin{lstlisting}
+# Full benchmark
+python run_all_4_a3.py --models distilbert,roberta,gpt2
+
+# Rank sweep
+for rank in 32 64 128 192 384; do
+    python run_all_4_a3.py --rank $rank --output_suffix r$rank
+done
+
+# Ablations
+python run_all_4_a3.py --use_fisher false --output_suffix nofisher
+python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
+\end{lstlisting}

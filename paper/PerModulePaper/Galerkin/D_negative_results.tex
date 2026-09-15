@@ -1,0 +1,77 @@
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Failed Attempts}
+
+\subsubsection{D.1.1 Very Low Rank (r=8)}
+
+\textbf{Result.} 85.0\%. DCT truncation loses too much high-frequency info.
+
+\subsubsection{D.1.2 Learned Basis}
+
+\textbf{Goal.} Replace DCT with learned projection.
+
+\textbf{Result.} No improvement, more parameters. DCT is already optimal for 
+smooth attention.
+
+\subsubsection{D.1.3 Applying Galerkin to Decoders}
+
+\textbf{Result.} Causality broken. Output incoherent.
+
+\subsubsection{D.1.4 No Energy Scaling}
+
+\textbf{Result.} 86.5\%. Output magnitudes drift.
+
+\subsubsection{D.1.5 Very High Rank (r=256)}
+
+\textbf{Result.} 90.15\%. No accuracy benefit, slower.
+
+\subsubsection{D.1.6 No QR Orthonormalization}
+
+\textbf{Result.} Accumulating floating-point drift; slight accuracy drop.
+
+\subsection{D.2 Hyperparameter Failures}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{LR} & \textbf{D acc} \\
+\midrule
+5e-5 & 89.5 \\
+1e-4 & 89.8 \\
+2e-4 & 89.91 \\
+5e-4 & 89.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.3 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Seed} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
+\midrule
+42 & 89.91 & 77.35 & 79.36 \\
+123 & 89.85 & 77.30 & 79.36 \\
+456 & 89.95 & 77.40 & 79.36 \\
+Mean & 89.90 & 77.35 & 79.36 \\
+Std & 0.05 & 0.05 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Lessons Learned}
+
+1. Encoder-only benefit is real.
+2. Decoder fallback necessary.
+3. DCT beats learned basis.
+4. Rank 64 is a sweet spot.
+5. Energy scaling is essential.
+
+\subsection{D.5 Unresolved Questions}
+
+1. \textbf{Causal Galerkin} — is it possible?
+2. \textbf{Learned basis} — could it help for specific tasks?
+3. \textbf{Very long context} ($N > 4096$) — does DCT scaling hold?

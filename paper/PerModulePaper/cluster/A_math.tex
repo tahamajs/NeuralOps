@@ -1,0 +1,91 @@
+\section{Appendix A. Mathematical Derivations}
+
+\subsection{A.1 Complexity Derivation}
+
+\textbf{Claim.} ClusterFormer's attention cost is $\mathcal{O}(K L d_h)$.
+
+\textbf{Proof.} Three components:
+
+1. \textbf{K-means.} Each iteration costs:
+\begin{itemize}
+\item Assignment: \texttt{cdist} between $Q \in \mathbb{R}^{BHLd}$ and $C \in \mathbb{R}^{BH K d}$, cost $\mathcal{O}(BHLKd)$.
+\end{itemize}
+\begin{itemize}
+\item Update: gather $Q$ by cluster id, cost $\mathcal{O}(BHLd)$.
+\end{itemize}
+\begin{itemize}
+\item Three iterations: $\mathcal{O}(3 BHLKd)$.
+\end{itemize}
+
+2. \textbf{Centroid-to-key.} Product $(BH K d) \times (BH d L)$ = $\mathcal{O}(BHKLd)$.
+
+3. \textbf{Soft assignment.} Product $(BH L d) \times (BH d K)$ = $\mathcal{O}(BH LKd)$.
+
+Sum is $\mathcal{O}(BHLKd)$. $\square$
+
+\subsection{A.2 K-Means Convergence}
+
+\textbf{Claim.} Lloyd's algorithm decreases the objective monotonically.
+
+\textbf{Proof.} Each iteration:
+
+1. \textbf{Assignment step:} For fixed centroids, assigning each point to 
+   nearest centroid minimizes the objective given centroids.
+2. \textbf{Update step:} For fixed assignments, the mean minimizes the sum of 
+   squared distances.
+
+Both steps decrease the objective or keep it unchanged. Since the objective 
+is bounded below by 0, the algorithm converges. $\square$
+
+\subsection{A.3 Soft Assignment Approximation}
+
+The soft assignment with temperature $\tau$:
+
+\[
+\text{assign}_{i,k} = \frac{\exp(Q_i \cdot C_k / (\sqrt{d_h} \tau))}{\sum_{k'} \exp(Q_i \cdot C_{k'} / (\sqrt{d_h} \tau))}
+\tag{A.1}
+\]
+
+\textbf{Limit.} As $\tau \to 0$, this becomes a hard assignment (one-hot). As 
+$\tau \to \infty$, it becomes uniform.
+
+\subsection{A.4 Approximation Error Bound}
+
+\textbf{Statement.} The approximation error of ClusterFormer satisfies:
+
+\[
+\|\text{Output}_\text{CF} - \text{Output}_\text{exact}\|_F \leq f(\text{K-means distortion})
+\tag{A.2}
+\]
+
+where $f$ is monotone increasing. We do not provide a tight bound; see 
+empirical analysis in Section 8.
+
+\subsection{A.5 Causality Preservation}
+
+\textbf{Claim.} For causal decoders, ClusterFormer preserves causality.
+
+\textbf{Proof.} We use exact causal attention for decoders (Section 5.4):
+
+\[
+\text{Attn}_i = \sum_{j \leq i} \alpha_{ij} V_j
+\tag{A.3}
+\]
+
+Only keys with $j \leq i$ contribute. Causality is preserved. $\square$
+
+\subsection{A.6 LoRA Parameter Count}
+
+For each layer, LoRA adds:
+\begin{itemize}
+\item $r_L \times d$ for $A_Q, A_K, A_V, A_O$
+\end{itemize}
+\begin{itemize}
+\item $d \times r_L$ for $B_Q, B_K, B_V, B_O$
+\end{itemize}
+
+Total per layer: $8 r_L d$.
+
+Across $N_l$ layers: $8 r_L d N_l$.
+
+For DistilBERT ($d=768$, $r_L=16$, $N_l=6$): $8 \times 16 \times 768 \times 6 = 589{,}824$.

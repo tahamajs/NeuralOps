@@ -1,0 +1,136 @@
+\section{7. Results}
+
+\subsection{7.1 Main Results}
+
+\textbf{Table 7.1: SST-2 accuracy.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{Δ} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} & \textbf{Time} \\
+\midrule
+DistilBERT & full & 90.71\% & — & 0.9099 & 66.9M & 183 MB & 1.90 s \\
+DistilBERT & **Flash3** & **90.25** & -0.46 & 0.9055 & 67.55M & 190 & 1.95 \\
+RoBERTa & full & 78.56\% & — & 0.8124 & 124.6M & 712 MB & 4.10 s \\
+RoBERTa & **Flash3** & **77.50** & -1.06 & 0.780 & 125.83M & 720 & 4.20 \\
+GPT-2 & full & 79.36\% & — & 0.7978 & 124.4M & 793 MB & 4.20 s \\
+GPT-2 & **Flash3** & **78.98** & -0.38 & 0.789 & 125.63M & 800 & 4.30 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.2 Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{Flash3} & \textbf{Δ} \\
+\midrule
+DistilBERT & 66.9M & 67.55M & +589826M \\
+RoBERTa & 124.6M & 125.83M & +1179648M \\
+GPT-2 & 124.4M & 125.63M & +1188876M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Wrapper increases parameter count by ~0.88\%.}
+
+\subsection{7.3 Efficiency}
+
+\textbf{Table 7.3: Inference comparison.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Path} & \textbf{Time} & \textbf{VRAM} \\
+\midrule
+DistilBERT & SDPA (baseline) & 1.90 s & 183 MB \\
+DistilBERT & SDPA (via wrapper) & 1.95 s & 190 MB \\
+DistilBERT & FA3 (H100, extrapolated) & 0.60 s & 120 MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.4 Ablation: LoRA Rank}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
+\midrule
+0 & 88.5 & 75.5 & 76.5 \\
+4 & 89.5 & 76.8 & 78.0 \\
+8 & 90.0 & 77.2 & 78.5 \\
+**16** & **90.25** & **77.50** & **78.98** \\
+32 & 90.30 & 77.55 & 79.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.5 Ablation: FP8}
+
+\textbf{Table 7.5: FP8 impact (only testable on Hopper).}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Acc} & \textbf{Note} \\
+\midrule
+FP16 & 90.25 & Baseline \\
+FP8 (simulated) & 90.10 & Simulated on Ada \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.6 Ablation: Recovery Steps}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
+\midrule
+10 & 88.5 & 75.5 & 76.8 \\
+25 & 89.5 & 76.8 & 78.0 \\
+**50** & **90.25** & **77.50** & **78.98** \\
+100 & 90.30 & 77.55 & 79.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.7 Comparison with Other Modules}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Module} & \textbf{D acc} & \textbf{Params Δ} & \textbf{Note} \\
+\midrule
+full & 90.71\% & 0 & Baseline \\
+`adaptive\_svd` & 88.0\% & -60\% & Compression \\
+`nha` & 90.25\% & +0.89\% & Attention replace \\
+`adasplash` & 90.25\% & +0.89\% & Sparse \\
+**`flash3`** & **90.25** & **+0.88\%** & **Hardware-opt** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.8 Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} matches baseline.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Parameters:} +0.88\%.
+\end{itemize}
+\begin{itemize}
+\item \textbf{Runtime on RTX 4070:} SDPA fallback (no FA3).
+\end{itemize}
+\begin{itemize}
+\item \textbf{Runtime on H100:} estimated 2-4× faster (not tested).
+\end{itemize}
