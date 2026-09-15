@@ -1,0 +1,312 @@
+
+\section{4. Method}
+
+\subsection{4.1 Overview}
+
+Infini-Attention replaces MHSA with a two-branch block:
+
+1. \textbf{Local branch:} sliding-window attention over the input sequence.
+2. \textbf{Memory branch:} attention to a learned compressive memory matrix.
+3. \textbf{Fusion:} additive gated combination.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +--------------------------------------------+
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
+    +----------------+---------------------------+
+                     |
+        +------------+------------+
+                                   
+    +----------+             +----------+
+    | Q/K/V    |             | Q        |
+    | proj     |             |          |
+    +----+-----+             +----+-----+
+         |                        |
+                                   
+    +--------------+      +--------------+
+    | Local        |      | Memory       |
+    | Sliding-     |      | attention    |
+    | window       |      | on M         |
+    +------+-------+      +------+-------+
+           |                     |
+           +----------+----------+
+                       
+              +---------------+
+              | out_local +   |
+              | $\sigma$($\beta$) out_mem  |
+              +-------+-------+
+                       
+              +---------------+
+              | out_proj      |
+              +---------------+
+\end{lstlisting}
+
+\subsection{4.2 Local Sliding-Window Branch}
+
+\subsubsection{4.2.1 Mask Construction}
+
+For causal models, the local mask is:
+
+\[
+M_{ij}^\text{local} = \begin{cases} 0 & j \leq i \text{ and } i - j < W \\ -\infty & \text{otherwise} \end{cases}
+\tag{4.1}
+\]
+
+For bidirectional models (encoders), the mask is symmetric:
+
+\[
+M_{ij}^\text{local} = \begin{cases} 0 & |i - j| < W \\ -\infty & \text{otherwise} \end{cases}
+\tag{4.2}
+\]
+
+\subsubsection{4.2.2 Local Attention}
+
+\[
+\text{LocalAttn}_i = \text{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d_h}} + M^\text{local}\right) V
+\tag{4.3}
+\]
+
+The softmax is computed in FP32 for stability, then cast back to the model 
+dtype.
+
+\subsubsection{4.2.3 Why Sliding Window?}
+
+The window captures \textbf{local syntax}: adjacent words, subword fragments, 
+short-range dependencies. Full attention over long sequences spends most 
+of its compute on long-range connections that are often rare.
+
+\subsection{4.3 Compressive Memory Branch}
+
+\subsubsection{4.3.1 The Memory Matrix}
+
+Each head has a learned memory:
+
+\[
+M_h \in \mathbb{R}^{d_c \times d_h}
+\tag{4.4}
+\]
+
+where $d_c$ is the compression dimension. The full memory is 
+$M \in \mathbb{R}^{H \times d_c \times d_h}$.
+
+\textbf{Interpretation.} $M_h$ acts as $d_c$ learned "virtual key-value pairs". 
+Since the same $M_h$ is used for every position, it captures global context 
+that is shared across the sequence.
+
+\subsubsection{4.3.2 Memory Attention}
+
+\[
+\text{MemAttn}_i = \text{softmax}\!\left(\frac{Q_i M^\top}{\sqrt{d_h}}\right) M
+\tag{4.5}
+\]
+
+The softmax is over the $d_c$ memory slots. This has complexity 
+$\mathcal{O}(L \cdot d_c \cdot d_h)$.
+
+\subsubsection{4.3.3 Memory Initialization}
+
+We initialize the memory with small random values:
+
+\[
+M \sim \mathcal{N}\!\left(0, \frac{1}{\sqrt{d_c}}\right) \cdot 0.001
+\tag{4.6}
+\]
+
+The scale factor $0.001$ ensures the memory output is small initially, 
+so the memory branch contributes minimally before training.
+
+\subsection{4.4 Gated Fusion}
+
+\subsubsection{4.4.1 The Formula}
+
+\[
+\text{output} = \text{LocalAttn} + \sigma(\beta) \cdot \text{MemAttn}
+\tag{4.7}
+\]
+
+with $\beta \in \mathbb{R}$ a learnable scalar.
+
+\subsubsection{4.4.2 Why Additive?}
+
+Additive fusion preserves the pretrained output magnitude at initialization. 
+Concatenation would change the output distribution. Multiplicative fusion 
+would zero out the local branch when $\sigma(\beta) \approx 0$.
+
+\subsubsection{4.4.3 Why Sigmoid Gate?}
+
+The sigmoid $\sigma(\beta) \in (0, 1)$ bounds the memory contribution. This 
+prevents the memory branch from dominating the output.
+
+\subsubsection{4.4.4 Initialization Strategy}
+
+We initialize $\beta = -5$. Then:
+
+\[
+\sigma(-5) \approx 0.0067
+\tag{4.8}
+\]
+
+The memory contributes less than 1\% at initialization. The model starts 
+by exactly reproducing local sliding-window attention (which itself 
+approximates the pretrained attention in the window).
+
+\textbf{Why not initialize $\beta = 0$?} $\sigma(0) = 0.5$ would make the memory 
+contribute 50\% at start, potentially disrupting the pretrained behavior. 
+$-\infty$ would freeze the memory. $-5$ is a good compromise.
+
+\subsection{4.5 Full Algorithm}
+
+\textbf{Algorithm 1:} Infini-Attention forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, window W
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)                  Frozen W + LoRA
+2:  K $\leftarrow$ W_K X + LoRA_K(X)
+3:  V $\leftarrow$ W_V X + LoRA_V(X)
+4:  if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+5:  if GQA:  K, V $\leftarrow$ repeat_kv(K, V)
+6:
+7:  # Local branch
+8:  S_local $\leftarrow$ Q K^T / $\sqrt{}$d_h
+9:  S_local $\leftarrow$ S_local + causal_mask + window_mask
+10: P_local $\leftarrow$ softmax(S_local)
+11: out_local $\leftarrow$ P_local V
+12:
+13: # Memory branch
+14: S_mem $\leftarrow$ Q M^T / $\sqrt{}$d_h
+15: P_mem $\leftarrow$ softmax(S_mem)
+16: out_mem $\leftarrow$ P_mem M
+17:
+18: # Gated fusion
+19: gate $\leftarrow$ sigmoid($\beta$)
+20: combined $\leftarrow$ out_local + gate   out_mem
+21:
+22: combined $\leftarrow$ concat_heads(combined)
+23: Y $\leftarrow$ W_O combined + LoRA_O(combined)
+24: return Y
+\end{lstlisting}
+
+\subsection{4.6 Weight Transfer}
+
+Infini-Attention transfers weights from the pretrained attention via the 
+same routine as NHA/EAT ( 5).
+
+\subsection{4.7 Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Space} \\
+\midrule
+Q/K/V projections & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Local attention & $\mathcal{O}(L W d_h H)$ & $\mathcal{O}(L W H)$ \\
+Memory attention & $\mathcal{O}(L d_c d_h H)$ & $\mathcal{O}(L d_c H)$ \\
+Output projection & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+**Total** & $\mathcal{O}(L W d + L d_c d)$ & $\mathcal{O}(L W + L d_c)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Comparison with full attention:}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{Time} & \textbf{Space} \\
+\midrule
+Full MHSA & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+Sliding window & $\mathcal{O}(L W d)$ & $\mathcal{O}(L W)$ \\
+**Infini-Attention** & $\mathcal{O}(L(W + d_c) d)$ & $\mathcal{O}(L(W + d_c))$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $W = d_c = 128$ and $L = 4096$:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Method} & \textbf{Relative time} \\
+\midrule
+Full MHSA & 1.00$\times$ \\
+Sliding window & 0.031$\times$ \\
+**Infini-Attention** & **0.062$\times$** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The memory roughly doubles the cost of pure sliding window, but is still 
+~16$\times$ cheaper than full attention.
+
+\subsection{4.8 Parameter Analysis}
+
+Infini-Attention \textbf{adds} parameters to the model. Per attention layer:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Parameters} \\
+\midrule
+Memory $M$ & $H \cdot d_c \cdot d_h$ \\
+Gate $\beta$ & 1 \\
+LoRA Q & $r(d + H d_h)$ \\
+LoRA K & $r(d + H_{kv} d_h)$ \\
+LoRA V & $r(d + H_{kv} d_h)$ \\
+LoRA O & $r(H d_h + d)$ \\
+**Total** & see below \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For DistilBERT ($H = 12$, $d_h = 64$, $d_c = 128$, $d = 768$, $r = 16$, 
+$N_\ell = 6$):
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
+\midrule
+Memory & 98,304 & 589,824 \\
+Gate & 1 & 6 \\
+LoRA (all 4) & 4 $\times$ 24,576 = 98,304 & 589,824 \\
+**Total** & **196,609** & **1,179,654** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This is a \textbf{+1.76\%} parameter increase on DistilBERT.
+
+\subsection{4.9 Theoretical Notes}
+
+\subsubsection{4.9.1 Effect of Gate Initialization}
+
+\textbf{Claim.} With $\beta = -5$, the memory contributes less than 1\% to the 
+output at initialization.
+
+\textbf{Proof.} $\sigma(-5) = \frac{1}{1 + e^5} \approx 0.0067$. Since 
+$\|\text{MemAttn}\|_2$ is bounded by $\|M\|_F$, the memory output is at 
+most $\sigma(-5) \|M\|_F \approx 0.007 \|M\|_F$. For small $\|M\|_F$ 
+(initialized at $0.001$ scale), the contribution is negligible. $\square$
+
+\subsubsection{4.9.2 Memory Complexity}
+
+\textbf{Claim.} The memory matrix $M$ has complexity $\mathcal{O}(H d_c d_h)$.
+
+\textbf{Proof.} Per head, $M_h \in \mathbb{R}^{d_c \times d_h}$ has $d_c d_h$ 
+parameters. There are $H$ heads, so total is $H d_c d_h$. $\square$
+
+\subsubsection{4.9.3 Fusion Preserves Pretrained Behavior}
+
+\textbf{Claim.} If the local branch reproduces the pretrained attention output 
+within the window and $\beta \to -\infty$, then Infini-Attention reduces to 
+sliding-window attention.
+
+\textbf{Proof.} As $\beta \to -\infty$, $\sigma(\beta) \to 0$, so 
+$\text{output} \to \text{LocalAttn}$. $\square$

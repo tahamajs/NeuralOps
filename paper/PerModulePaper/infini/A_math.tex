@@ -1,0 +1,82 @@
+
+\section{Appendix A. Mathematical Derivations}
+
+\subsection{A.1 Complexity Analysis}
+
+\textbf{Claim.} Infini-Attention is $\mathcal{O}(L(W + d_c) d)$ in time.
+
+\textbf{Proof.} 
+\begin{itemize}
+\item Local attention: $Q_i$ attends to $W$ keys $\to$ $\mathcal{O}(W)$ per query.
+\end{itemize}
+  Total: $\mathcal{O}(L W d_h)$.
+\begin{itemize}
+\item Memory attention: $Q_i$ attends to $d_c$ memory slots $\to$ $\mathcal{O}(d_c)$
+\end{itemize}
+  per query. Total: $\mathcal{O}(L d_c d_h)$.
+\begin{itemize}
+\item Sum over $H$ heads: $\mathcal{O}(L(W + d_c) H d_h) = \mathcal{O}(L(W + d_c) d)$.
+\end{itemize}
+
+\subsection{A.2 Gate Initialization Effect}
+
+\textbf{Claim.} At $\beta = -5$, memory contributes <1\%.
+
+\textbf{Proof.} $\sigma(-5) = \frac{1}{1 + e^5} \approx 0.0067$. If $\|M\|_F = O(0.001 \sqrt{d_c d_h})$, 
+then $\sigma(\beta) \|M\|_F = O(0.007 \cdot 0.001 \sqrt{d_c d_h})$. This is 
+negligible compared to local attention output (typically $O(1)$). $\square$
+
+\subsection{A.3 Parameter Count}
+
+\textbf{Claim.} Infini-Attention adds $H d_c d_h + 1 + 4 r(d + H d_h)$ parameters 
+per layer (assuming $H = H_{kv}$).
+
+\textbf{Proof.} 
+\begin{itemize}
+\item Memory: $H d_c d_h$.
+\end{itemize}
+\begin{itemize}
+\item Gate: 1.
+\end{itemize}
+\begin{itemize}
+\item LoRA Q: $r(d + H d_h)$.
+\end{itemize}
+\begin{itemize}
+\item LoRA K: $r(d + H d_h)$.
+\end{itemize}
+\begin{itemize}
+\item LoRA V: $r(d + H d_h)$.
+\end{itemize}
+\begin{itemize}
+\item LoRA O: $r(H d_h + d) = r(d + H d_h)$.
+\end{itemize}
+\begin{itemize}
+\item Total LoRA: $4 r(d + H d_h)$.
+\end{itemize}
+
+For DistilBERT ($H = 12$, $d_h = 64$, $d_c = 128$, $d = 768$, $r = 16$):
+\begin{itemize}
+\item Memory: $12 \cdot 128 \cdot 64 = 98,304$.
+\end{itemize}
+\begin{itemize}
+\item LoRA: $4 \cdot 16 \cdot (768 + 768) = 98,304$.
+\end{itemize}
+\begin{itemize}
+\item Total per layer: $196,609$.
+\end{itemize}
+
+\subsection{A.4 Causality}
+
+\textbf{Claim.} Infini-Attention preserves causality for decoder models.
+
+\textbf{Proof.} The local mask enforces $j \leq i$. The memory branch uses only 
+$Q_i$ (position-aware) and $M$ (position-independent). Therefore, output 
+at position $i$ depends only on inputs $1..i$. $\square$
+
+\subsection{A.5 Fusion Preserves Scale}
+
+\textbf{Claim.} Additive fusion with $\sigma(\beta) \approx 0$ preserves the 
+local branch's scale.
+
+\textbf{Proof.} $\|\text{output}\|_2 = \|\text{local} + \sigma(\beta) \text{mem}\|_2 \leq \|\text{local}\|_2 + \sigma(\beta)\|\text{mem}\|_2$. 
+For $\sigma(\beta) \to 0$, this is $\|\text{local}\|_2$. $\square$

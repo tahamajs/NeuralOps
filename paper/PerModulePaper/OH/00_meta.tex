@@ -1,0 +1,108 @@
+
+\section{OHA: Optimized Hybrid Attention with Sequence-Compressed Global Context}
+
+\textbf{Authors:}
+\begin{itemize}
+\item {{AUTHOR\_1\_NAME}}  -- {{AUTHOR\_1\_EMAIL}}
+\end{itemize}
+\begin{itemize}
+\item {{AUTHOR\_2\_NAME}}  -- {{AUTHOR\_2\_EMAIL}}
+\end{itemize}
+
+\textbf{Affiliations:}
+\begin{itemize}
+\item   {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
+\end{itemize}
+\begin{itemize}
+\item   {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
+\end{itemize}
+
+\textbf{Corresponding author:} {{CORRESPONDING\_AUTHOR}}
+\textbf{Preprint date:} {{DATE}}
+\textbf{Version:} v{{VERSION}}
+\textbf{Code:} https://github.com/{{ORG}}/SVD\_Project/tree/main/framework/attentions/oha\_attention.py
+\textbf{Model weights:} https://huggingface.co/{{HF\_ORG}}
+\textbf{License:} {{LICENSE}}
+
+
+
+\subsection{Abstract}
+
+Standard self-attention is $\mathcal{O}(L^2)$ in sequence length, which is 
+prohibitive for long-context inference. Sliding-window attention reduces 
+this to $\mathcal{O}(L \cdot W)$, but cannot capture long-range dependencies. 
+We introduce \textbf{OHA} (\textbf{O}ptimized \textbf{H}ybrid \textbf{A}ttention), a drop-in 
+replacement for multi-head self-attention that combines (i) local sliding-window 
+attention with (ii) \textbf{sequence-compressed global attention}, where the 
+global branch attends not to all $L$ tokens but to $d_c \ll L$ compressed 
+"summary" slots produced by learnable soft-attention weights. The two 
+branches are combined through a \textbf{head-wise gating} scalar initialized to 
+favor the local branch at start.
+
+OHA supports four attention families through a single weight-transfer routine: 
+flat (DistilBERT), nested (RoBERTa), causal Conv1D (GPT-2), and grouped-query 
+with rotary embeddings (Qwen/LLaMA). Base projections are frozen; only LoRA 
+adapters, the compression projections, and the gate are trained.
+
+We evaluate OHA on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
+{{RECOVERY\_STEPS}} LoRA recovery steps. OHA achieves \textbf{{{D\_ACC}}\%} on 
+DistilBERT ($\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), 
+and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}).
+
+OHA \textbf{increases} parameter count by \textbf{{{PARAM\_CHANGE\_PCT}}\%} on DistilBERT 
+due to three additions: (i) the compression projections 
+$W_k^\text{comp}, W_v^\text{comp} \in \mathbb{R}^{d \times d_c}$ 
+(ii) the gate $W_g \in \mathbb{R}^{d \times H}$, and (iii) LoRA adapters on 
+four projections. The "compression" in the name refers to the **sequence 
+length** of the global branch, not to model size reduction.
+
+\textbf{Keywords:} hybrid attention, sliding-window, sequence compression, 
+gated fusion, transformer efficiency
+
+
+
+\subsection{Lay Summary}
+
+Attention in transformers has a quadratic cost in sequence length, which 
+makes long contexts expensive. OHA splits attention into two parts: a 
+\textbf{local} part that looks only at nearby tokens (cheap), and a \textbf{global} 
+part that looks at a \textbf{compressed summary} of the entire sequence (also 
+cheap). The model learns to balance the two using a per-head gate that 
+initially favors the local branch. This works on four different model 
+families without retraining the base weights. The cost: OHA adds some 
+learned parameters that must be trained during fine-tuning.
+
+
+
+\subsection{Table of Contents}
+
+1. [Introduction](01\_intro.md)
+2. [Related Work](02\_related.md)
+3. [Background](03\_background.md)
+4. [Method](04\_method.md)
+5. [Architecture Integration](05\_architecture.md)
+6. [Experimental Setup](06\_setup.md)
+7. [Results](07\_results.md)
+8. [Analysis](08\_analysis.md)
+9. [Discussion](09\_discussion.md)
+10. [Limitations](10\_limitations.md)
+11. [Conclusion](11\_conclusion.md)
+12. [Reproducibility](12\_reproducibility.md)
+13. [References](13\_references.md)
+
+\textbf{Appendices:}
+\begin{itemize}
+\item [A. Mathematical Derivations](A\_math.md)
+\end{itemize}
+\begin{itemize}
+\item [B. Implementation Details](B\_implementation.md)
+\end{itemize}
+\begin{itemize}
+\item [C. Full Experimental Data](C\_data.md)
+\end{itemize}
+\begin{itemize}
+\item [D. Negative Results](D\_negative\_results.md)
+\end{itemize}
+\begin{itemize}
+\item [E. Ethical Considerations](E\_ethics.md)
+\end{itemize}

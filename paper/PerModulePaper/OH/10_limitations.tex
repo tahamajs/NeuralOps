@@ -1,0 +1,30 @@
+
+\section{10. Limitations}
+
+\subsection{10.1 Not a Compressor}
+
+OHA \textbf{increases} parameter count by ~{{D\_PARAM\_PCT}}\%. It is designed for 
+\textbf{inference efficiency at long sequences}, not for model size reduction.
+
+\subsection{10.2 Cross-Attention Not Supported}
+
+OHA does not implement cross-attention. Encoder-decoder models (T5, BART) 
+are excluded.
+
+\subsection{10.3 Inference Overhead at Short Sequences}
+
+At $L = 128$, OHA is slower than baseline due to extra matmuls and 
+compression projections. The benefit materializes only at $L \gg 256$.
+
+\subsection{10.4 Task Coverage}
+
+Only SST-2 is evaluated. OHA may behave differently on generation, 
+long-context reasoning, and multi-class tasks.
+
+\subsection{10.5 Model Coverage}
+
+Tested on $\le$124M parameter models. Not tested on >1B models.
+
+\subsection{10.6 Hardware}
+
+All experiments on RTX 4070 Laptop. Not tested on A100, CPU, or edge.

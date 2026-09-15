@@ -1,0 +1,132 @@
+
+\section{9. Discussion}
+
+\subsection{9.1 Key Takeaways}
+
+\subsubsection{9.1.1 Takeaway 1: OHA is Not a Compressor}
+
+Parameter count increases by ~{{D\_PARAM\_PCT}}\% due to compression 
+projections + gate + LoRA.
+
+\subsubsection{9.1.2 Takeaway 2: Long-Context Efficiency}
+
+For $L \gg W + d_c$, OHA is $\mathcal{O}(L(W + d_c))$ vs baseline 
+$\mathcal{O}(L^2)$. For $L = 4096$, $W = 64$, $d_c = 32$, this is 
+\textbf{~43$\times$ faster} in attention.
+
+\subsubsection{9.1.3 Takeaway 3: Data-Dependent Compression}
+
+Unlike Infini-Attention's learned memory, OHA's compressed summary is 
+\textbf{computed from the input}, making it adaptive.
+
+\subsection{9.2 When to Use OHA}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Long-context inference} ($L > 512$)
+\end{itemize}
+\begin{itemize}
+\item \textbf{Multi-architecture deployment}
+\end{itemize}
+\begin{itemize}
+\item \textbf{Tasks requiring global context}
+\end{itemize}
+
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Short sequences} ($L \leq 256$) -- no benefit
+\end{itemize}
+\begin{itemize}
+\item \textbf{Storage-constrained deployment} -- increases size
+\end{itemize}
+\begin{itemize}
+\item \textbf{Cross-attention tasks} -- not supported
+\end{itemize}
+
+\subsection{9.3 Decision Flowchart}
+
+\begin{lstlisting}
+Long sequence (L > 512)? --- Yes --- Use OHA
+  | No
+   
+Need global context? --- Yes --- Use OHA
+  | No
+   
+Use sliding-window only
+\end{lstlisting}
+
+\subsection{9.4 Cost-Benefit}
+
+For DistilBERT at L=128:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{OHA} & \textbf{Change} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M & +{{D\_PARAM\_PCT}}\% \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_DELTA}} \\
+Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{At longer sequences} (L=2048), OHA becomes a clear win:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{OHA} & \textbf{Change} \\
+\midrule
+Time (est.) & ~30 s & ~3 s & 10$\times$ faster \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{9.5 Interaction with Other Methods}
+
+\textbf{Compositional pipeline:}
+
+1. AASVD compresses base model.
+2. OHA adds long-context capability.
+3. Both recover with LoRA.
+
+\subsection{9.6 Open Questions}
+
+1. \textbf{Optimal $d_c$:} Depends on task and $L$?
+2. \textbf{Compression initialization:} Can we init \texttt{compress\_k}, \texttt{compress\_v} 
+   better?
+3. \textbf{Relation to Infini-Attention:} When is data-dependent compression 
+   better than learned memory?
+4. \textbf{Theory:} Can we bound the approximation error?
+
+\subsection{9.7 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Long-context AI on consumer hardware
+\end{itemize}
+\begin{itemize}
+\item Multi-architecture support
+\end{itemize}
+
+\subsubsection{Negative}
+\begin{itemize}
+\item Adds parameters
+\end{itemize}
+\begin{itemize}
+\item Long-context surveillance potential
+\end{itemize}
+
+\subsubsection{Environmental}
+\begin{itemize}
+\item Training: ~{{COMPUTE\_HOURS}} GPU-hours
+\end{itemize}
+\begin{itemize}
+\item Inference: {{INFERENCE\_CARBON}} g CO$_2$eq per 1000 queries
+\end{itemize}

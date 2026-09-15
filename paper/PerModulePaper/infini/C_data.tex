@@ -1,0 +1,189 @@
+
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Param $\Delta$ & +{{D\_PARAM\_DELTA}} \\
+Param $\Delta$ \% & +{{D\_PARAM\_PCT}}\% \\
+Memory params & {{D\_MEM\_PARAMS}} \\
+LoRA params & {{D\_LORA\_PARAMS}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Final $\beta$ & {{D\_FINAL\_BETA}} \\
+Final $\sigma$($\beta$) & {{D\_FINAL\_SIGMA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+Param $\Delta$ & +{{R\_PARAM\_DELTA}} \\
+Param $\Delta$ \% & +{{R\_PARAM\_PCT}}\% \\
+Accuracy & {{R\_ACC}}\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+Param $\Delta$ & +{{G\_PARAM\_DELTA}} \\
+Param $\Delta$ \% & +{{G\_PARAM\_PCT}}\% \\
+Accuracy & {{G\_ACC}}\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Ablation: Compression Dimension}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{$d_c$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params $\Delta$} \\
+\midrule
+32 & {{D\_C32}} & {{R\_C32}} & {{G\_C32}} & +{{M32}} \\
+64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} & +{{M64}} \\
+128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} & +{{M128}} \\
+256 & {{D\_C256}} & {{R\_C256}} & {{G\_C256}} & +{{M256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Ablation: Window Size}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$W$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} \\
+64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} \\
+128 & {{D\_W128}} & {{R\_W128}} & {{G\_W128}} \\
+256 & {{D\_W256}} & {{R\_W256}} & {{G\_W256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Ablation: $\beta$ Init}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{$\beta$ init} & \textbf{$\sigma$($\beta$) init} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+-10 & 0.00005 & {{D\_B10}} & {{R\_B10}} & {{G\_B10}} \\
+-5 & 0.0067 & {{D\_B5}} & {{R\_B5}} & {{G\_B5}} \\
+-2 & 0.12 & {{D\_B2}} & {{R\_B2}} & {{G\_B2}} \\
+0 & 0.50 & {{D\_B0}} & {{R\_B0}} & {{G\_B0}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 $\beta$ Evolution During Training}
+
+\subsubsection{DistilBERT}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Step} & \textbf{$\beta$} & \textbf{$\sigma$($\beta$)} \\
+\midrule
+0 & -5.0 & 0.0067 \\
+10 & {{D\_B10\_B}} & {{D\_B10\_S}} \\
+25 & {{D\_B25\_B}} & {{D\_B25\_S}} \\
+50 & {{D\_B50\_B}} & {{D\_B50\_S}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{RoBERTa}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Step} & \textbf{$\beta$} & \textbf{$\sigma$($\beta$)} \\
+\midrule
+0 & -5.0 & 0.0067 \\
+10 & {{R\_B10\_B}} & {{R\_B10\_S}} \\
+25 & {{R\_B25\_B}} & {{R\_B25\_S}} \\
+50 & {{R\_B50\_B}} & {{R\_B50\_S}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.9 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "params_before": 66955010,
+    "params_after": {{D_PARAMS}},
+    "param_delta": {{D_PARAM_DELTA}},
+    "accuracy_pct": {{D_ACC}},
+    "final_beta": {{D_FINAL_BETA}},
+    "final_sigma": {{D_FINAL_SIGMA}}
+  },
+  "roberta": {...},
+  "gpt2": {...}
+}
+\end{lstlisting}
+
+\subsection{C.10 Reproduction Commands}
+
+\begin{lstlisting}
+# Full benchmark
+python run_all_4_infini.py --models distilbert,roberta,gpt2
+
+# Compression dim sweep
+for dc in 32 64 128 256; do
+    python run_all_4_infini.py --compress_dim $dc --output_suffix dc$dc
+done
+
+# Window sweep
+for w in 32 64 128 256; do
+    python run_all_4_infini.py --local_window $w --output_suffix w$w
+done
+\end{lstlisting}

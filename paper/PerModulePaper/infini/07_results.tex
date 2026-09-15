@@ -1,0 +1,188 @@
+
+\section{7. Results}
+
+\subsection{7.1 Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{VRAM} & \textbf{Time} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 183 MB & 1.9 s \\
+DistilBERT & **Infini** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & {{D\_COMP}} & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 712 MB & 4.1 s \\
+RoBERTa & **Infini** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & {{R\_COMP}} & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 793 MB & 4.2 s \\
+GPT-2 & **Infini** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_COMP}} & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.2 Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After Infini} & \textbf{$\Delta$} & \textbf{$\Delta$ \%} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_DELTA}} & +{{D\_PARAM\_PCT}}\% \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_DELTA}} & +{{R\_PARAM\_PCT}}\% \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_DELTA}} & +{{G\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Breakdown (DistilBERT, per layer):}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
+\midrule
+Memory $M$ & 98,304 & 589,824 \\
+Gate $\beta$ & 1 & 6 \\
+LoRA (4 projections) & 98,304 & 589,824 \\
+**Total** & **196,609** & **1,179,654** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.3 Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & Infini & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 4.10 s & 27400 & 712 MB \\
+RoBERTa & Infini & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 4.20 s & 26700 & 793 MB \\
+GPT-2 & Infini & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.4 Ablation: Compression Dimension $d_c$}
+
+\textbf{Table 7.4: Accuracy vs compression dim.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{$d_c$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Memory $\Delta$} \\
+\midrule
+32 & {{D\_C32}} & {{R\_C32}} & {{G\_C32}} & +{{M32}} \\
+64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} & +{{M64}} \\
+128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} & +{{M128}} \\
+256 & {{D\_C256}} & {{R\_C256}} & {{G\_C256}} & +{{M256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{DC\_OBS}}
+
+\subsection{7.5 Ablation: Local Window $W$}
+
+\textbf{Table 7.5: Accuracy vs window size.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$W$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} \\
+64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} \\
+128 & {{D\_W128}} & {{R\_W128}} & {{G\_W128}} \\
+256 & {{D\_W256}} & {{R\_W256}} & {{G\_W256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.6 Ablation: $\beta$ Initialization}
+
+\textbf{Table 7.6: Accuracy vs initial $\beta$.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{$\beta$ init} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+-10 & {{D\_B10}} & {{R\_B10}} & {{G\_B10}} \\
+-5 & {{D\_B5}} & {{R\_B5}} & {{G\_B5}} \\
+-2 & {{D\_B2}} & {{R\_B2}} & {{G\_B2}} \\
+0 & {{D\_B0}} & {{R\_B0}} & {{G\_B0}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{BETA\_OBS}}
+
+\subsection{7.7 Ablation: LoRA Rank}
+
+\textbf{Table 7.7: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
+16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
+32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
+64 & {{D\_R64}} & {{R\_R64}} & {{G\_R64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.8 Comparison with Companion Methods}
+
+\textbf{Table 7.8: Infini vs prior modules.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
+eat & 90.25\% & 0.00\% & 78.78\% & 1.01$\times$ \\
+**infini** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** & **{{PARAM\_RATIO}}$\times$** \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.9 Failure Cases}
+
+\textbf{Table 7.9: Failures.}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Status} & \textbf{Accuracy} & \textbf{Reason} \\
+\midrule
+DistilBERT & {{D\_STATUS}} & {{D\_ACC}} & {{D\_REASON}} \\
+RoBERTa & {{R\_STATUS}} & {{R\_ACC}} & {{R\_REASON}} \\
+GPT-2 & {{G\_STATUS}} & {{G\_ACC}} & {{G\_REASON}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{7.10 Summary}

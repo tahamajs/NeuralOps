@@ -1,0 +1,107 @@
+# Pre-Submission Checklist — Infini-Attention
+
+## Setup
+- [ ] Copied `_TEMPLATE/` to `infini/`
+- [ ] Filled `variables.json`
+- [ ] Ran `python apply_vars.py --module infini`
+- [ ] Verified no `{{PLACEHOLDER}}` remains
+
+## Content
+
+### Abstract
+- [ ] Under 250 words
+- [ ] **Parameter increase stated**
+- [ ] **"Compressive" clarified** (memory, not model)
+- [ ] Accuracy drop stated
+
+### Introduction
+- [ ] Motivation concrete
+- [ ] Problem statement formal
+- [ ] Contributions verifiable
+- [ ] **Explicit statement that this is not a compressor**
+
+### Method
+- [ ] All formulas numbered
+- [ ] β init strategy explained
+- [ ] Memory init explained
+- [ ] Complexity analysis
+- [ ] Parameter analysis
+
+### Results
+- [ ] Main table complete
+- [ ] **Parameter analysis shows increase**
+- [ ] β init ablation
+- [ ] compress_dim ablation
+- [ ] window size ablation
+- [ ] LoRA rank ablation
+
+### Analysis
+- [ ] β evolution plot
+- [ ] Memory utilization
+- [ ] Per-layer analysis
+- [ ] Failure modes
+
+### Limitations
+- [ ] **Not a compressor**
+- [ ] Cross-attention not supported
+- [ ] Inference overhead at short L
+- [ ] Task coverage
+- [ ] Single-seed
+
+## Honesty
+- [ ] Parameter increase admitted
+- [ ] "Compressive" clarified
+- [ ] Failure cases documented
+- [ ] Negative results in Appendix D
+
+## Reproducibility
+- [ ] Code on GitHub
+- [ ] Checkpoints on HF
+- [ ] Hardware specified
+- [ ] Seeds documented
+
+## Final Pass
+- [ ] Read aloud
+- [ ] All numbers verified
+- [ ] Tables render
+- [ ] PDF compiles
+- [ ] External feedback
+
+## Quick Start
+
+```bash
+cp -r papers/_TEMPLATE papers/infini
+nano papers/infini/variables.json
+cd papers/infini
+python apply_vars.py --module infini
+grep -rn "{{" .
+python build.py --module infini --pdf
+```
+```
+
+---
+
+## 🚀 خلاصه استفاده
+
+### مرحله ۱: کپی
+
+```powershell
+cd D:\SVD_Project\papers
+Copy-Item -Recurse _TEMPLATE infini
+```
+
+### مرحله ۲: اجرای Infini-Attention
+
+```powershell
+cd D:\SVD_Project
+python run_all_4_infini.py --models distilbert,roberta,gpt2 --recovery_steps 50 --lora_rank 16 --compress_dim 128 --local_window 128
+```
+
+### مرحله ۳: پر کردن `variables.json` از `summary.csv`
+
+### مرحله ۴: Apply و Build
+
+```powershell
+cd D:\SVD_Project\papers\infini
+python apply_vars.py --module infini
+python build.py --module infini

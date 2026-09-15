@@ -1,0 +1,80 @@
+
+\section{11. Conclusion}
+
+\subsection{11.1 Summary}
+
+We presented \textbf{Infini-Attention}, a drop-in replacement for MHSA that 
+combines sliding-window local attention with a learned compressive memory 
+via a gated scalar $\beta$. The gate is initialized to $\sigma(-5) \approx 0.007$, 
+preserving pretrained behavior at start.
+
+\subsection{11.2 Results Recap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param $\Delta$ \%} & \textbf{Time ratio (L=128)} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_TIME\_RATIO}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_TIME\_RATIO}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At longer sequences, the efficiency benefit dominates.
+
+\subsection{11.3 Key Takeaways}
+
+1. \textbf{Not a compressor.} Parameters increase.
+2. \textbf{Long-context benefit.} $\mathcal{O}(L(W + d_c))$ vs $\mathcal{O}(L^2)$.
+3. \textbf{Multi-architecture.} Same code, four families.
+4. \textbf{$\beta$ init critical.} $-5$ works well.
+
+\subsection{11.4 Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Cross-attention support
+\end{itemize}
+\begin{itemize}
+\item Multi-memory variant
+\end{itemize}
+\begin{itemize}
+\item Fused Triton kernels
+\end{itemize}
+
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical analysis
+\end{itemize}
+\begin{itemize}
+\item Needle-in-haystack evaluation
+\end{itemize}
+\begin{itemize}
+\item Scaling to >1B models
+\end{itemize}
+
+\subsection{11.5 Closing Remarks}
+
+Infini-Attention is a practical tool for long-context inference. We release 
+all code and checkpoints.
+
+\subsection{11.6 Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{11.7 Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed Infini-Attention, implemented the code, ran
+\end{itemize}
+  experiments, wrote the paper.
+\begin{itemize}
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+\end{itemize}
+
+\subsection{11.8 Conflict of Interest}
+
+None.

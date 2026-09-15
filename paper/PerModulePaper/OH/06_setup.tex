@@ -1,0 +1,127 @@
+
+\section{6. Experimental Setup}
+
+\subsection{6.1 Models}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.2 Dataset}
+
+\textbf{SST-2}:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Split} & \textbf{Size} \\
+\midrule
+Train & 67,349 \\
+Validation & 872 \\
+Test & 1,821 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%.
+
+\subsection{6.3 OHA Hyperparameters}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+`window\_size` $W$ & {{WINDOW\_SIZE}} \\
+`compression\_rank` $d_c$ & {{COMPRESSION\_RANK}} \\
+`gate\_bias` & 2.0 \\
+`lora\_rank` & {{LORA\_RANK}} \\
+`lora\_alpha` & {{LORA\_ALPHA}} \\
+`rank` & {{RANK}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.4 Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & {{LR}} \\
+Weight decay & {{WD}} \\
+Recovery steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.5 Evaluation}
+
+\begin{itemize}
+\item \textbf{Quality:} Accuracy, F1
+\end{itemize}
+\begin{itemize}
+\item \textbf{Efficiency:} Total params, peak VRAM, inference time
+\end{itemize}
+\begin{itemize}
+\item \textbf{Compression:} Not applicable (OHA adds parameters)
+\end{itemize}
+
+\subsection{6.6 Quality Gate}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.7 Hardware}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{6.8 Reproduction}
+
+\begin{lstlisting}
+python run_all_4_oha.py \
+    --models distilbert,roberta,gpt2 \
+    --window_size {{WINDOW_SIZE}} \
+    --compression_rank {{COMPRESSION_RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{6.9 Baselines}

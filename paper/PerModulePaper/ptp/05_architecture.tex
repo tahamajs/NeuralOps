@@ -21,15 +21,15 @@ Qwen3.5 & Causal + RoPE & Yes & Yes & {{Q\_VERIFIED}} \\
 
 \subsubsection{5.2.1 DistilBERT (Flat)}
 
-Direct copy of \texttt{q\\_lin, k\\_lin, v\\_lin, out\\_lin}. \texttt{is\\_nested\\_encoder = False}.
+Direct copy of \texttt{q\_lin, k\_lin, v\_lin, out\_lin}. \texttt{is\_nested\_encoder = False}.
 
 \subsubsection{5.2.2 RoBERTa (Nested)}
 
-Extract from inner \texttt{self}. \texttt{is\\_nested\\_encoder = True}; skip own \texttt{out\\_lin}.
+Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}; skip own \texttt{out\_lin}.
 
 \subsubsection{5.2.3 GPT-2 (Causal)}
 
-Split fused \texttt{c\\_attn}:
+Split fused \texttt{c\_attn}:
 
 \begin{lstlisting}
 w = src.c_attn.weight.t()  # Conv1D transpose
@@ -38,13 +38,13 @@ q_w, k_w, v_w = w.chunk(3, dim=0)
 
 \subsubsection{5.2.4 Qwen3.5 (GQA + RoPE)}
 
-Direct copy with \texttt{repeat\\_kv} at runtime.
+Direct copy with \texttt{repeat\_kv} at runtime.
 
 \subsection{5.3 Handling Nested Encoders}
 
-For RoBERTa/BERT, \texttt{is\\_nested\\_encoder = True}:
+For RoBERTa/BERT, \texttt{is\_nested\_encoder = True}:
 \begin{itemize}
-\item No \texttt{out\\_lin} applied inside PTP.
+\item No \texttt{out\_lin} applied inside PTP.
 \end{itemize}
 \begin{itemize}
 \item Outer \texttt{attention.output.dense} applies output projection.
@@ -95,7 +95,7 @@ Output: M with PTP attention
 
 \subsection{5.8 Failure Handling}
 
-\texttt{inject\\_progressive\\_token\\_pruning} returns \texttt{None} on failure:
+\texttt{inject\_progressive\_token\_pruning} returns \texttt{None} on failure:
 
 \begin{lstlisting}
 try:
