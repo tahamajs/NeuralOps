@@ -2575,6 +2575,14 @@ def main():
     # -------------------------------------------------------------------------
     summary_rows = []
     for m_name, r in summary_dict.items():
+        display_name = m_name
+        try:
+            num_comp = int(r.get("num_compressed_layers", 0))
+        except (ValueError, TypeError):
+            num_comp = 0
+        if num_comp == 0 and m_name != "full":
+            display_name = f"{m_name} (efficient-attn)"
+
         acc_val = float(r.get("accuracy_pct", 0.0))
         delta_acc = acc_val - base_benchmark_acc if m_name != "full" else 0.0
         f1_val = r.get("f1_score", "N/A")
@@ -2596,7 +2604,7 @@ def main():
             vram_str = str(vram)
 
         summary_rows.append({
-            "Module": m_name,
+            "Module": display_name,
             "Status": r.get("status", "N/A"),
             "Accuracy": f"{acc_val:.2f}%",
             "Delta Acc": f"{delta_acc:+.2f}%" if m_name != "full" else "0.00% (base)",
