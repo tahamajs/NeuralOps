@@ -449,7 +449,7 @@ class SimpleSSM(BaseAttention):
         x_ssm, z = x_proj.chunk(2, dim=-1)
 
         # 1D conv with exact sequence length retention
-        x_ssm = self.conv1d(x_ssm.transpose(1, 2))[..., :L].transpose(1, 2)
+        x_ssm = self.conv1d(x_ssm.transpose(1, 2).contiguous())[..., :L].transpose(1, 2).contiguous()
         x_ssm = F.silu(x_ssm)
 
         # Discretization step size dt bounded to [0.001, 0.1]
