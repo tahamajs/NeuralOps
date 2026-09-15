@@ -30,3 +30,11 @@ asvd,run_all_4_asvd.py,0,225.08,PASS,,2026-09-15T11:03:35.693526
 bam_umoe,run_all_4_bam_umoe.py,0,259.85,PASS,,2026-09-15T11:07:57.669705
 block_transformer_hiba,run_all_4_block_transformer_hiba.py,0,193.98,PASS,,2026-09-15T11:11:14.525163
 cachenotes,run_all_4_cachenotes.py,1,165.89,FAIL,,2026-09-15T11:14:02.579936
+chela_slay,run_all_4_chela_slay.py,0,468.91,PASS,,2026-09-15T11:21:53.562784
+cluster,run_all_4_cluster.py,0,233.52,PASS,,2026-09-15T11:25:49.116216
+come,run_all_4_come.py,0,148.28,PASS,,2026-09-15T11:28:19.364195
+compressed_attention,run_all_4_compressed_attention.py,0,161.1,PASS,,2026-09-15T11:31:03.076038
+compressed_attention_layer,run_all_4_compressed_attention_layer.py,0,159.19,PASS,,2026-09-15T11:33:44.251036
+compressed_mha,run_all_4_compressed_mha.py,0,144.77,PASS,,2026-09-15T11:36:11.429461
+cosformer,run_all_4_cosformer.py,0,197.3,PASS,,2026-09-15T11:39:30.682527
+cur,run_all_4_cur.py,0,133.96,PASS,,2026-09-15T11:41:46.637463
