@@ -64,47 +64,10 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-Self-attention is fundamentally a \textbf{continuous non-local integral operator} 
-that maps query signals to context signals via a kernel:
-
-\[
-(\mathcal{K}Q)(s) = \int \kappa(s, t) V(t) \, dt
-\tag{1}
-\]
-
-Standard implementations discretize this operator on the raw token grid, 
-requiring $\mathcal{O}(N^2 d)$ computation for $N$ tokens. We propose 
-\textbf{Galerkin Attention}, which formulates self-attention as a **Petrov-Galerkin 
-projection** onto an orthonormal basis (a discrete cosine transform variant) 
-of dimension $r \ll N$. Queries, keys, and values are projected into this 
-basis, attention is computed at rank $r$ in basis space, and the output is 
-reconstructed to the original sequence grid via basis synthesis. Complexity 
-reduces from $\mathcal{O}(N^2 d)$ to $\mathcal{O}(N r d)$ -- **linear in 
-sequence length** -- for encoder models.
-
-For \textbf{decoder models} (GPT-2, Qwen), the projection-based formulation is 
-incompatible with causal masking. We therefore fall back to **standard 
-causal softmax attention**, sacrificing the linear-complexity benefit in 
-exchange for exactness.
-
-Base Q/K/V/O projections are frozen and copied from the pretrained model; 
-LoRA rank-16 adapters provide trainable capacity. On DistilBERT and 
-RoBERTa-base with SST-2, Galerkin Attention achieves \textbf{89.91\%} and 
-\textbf{77.35\%} respectively, within \textbf{-0.80\%} and \textbf{-1.21\%} 
-of the SDPA baseline. On GPT-2, it matches the baseline exactly 
-(\textbf{79.36\%}) because it uses the standard attention fallback.
-
-\textbf{Important disclosure.} Galerkin Attention is \textbf{not} a compression 
-method -- parameter count increases by ~0.88\% via LoRA. It is 
-a \textbf{compute-efficiency} method for encoder attention.
-
-\textbf{Keywords:} Petrov-Galerkin projection, integral operator attention, 
-linear-complexity attention, orthonormal basis, DCT
-
-
+This paper presents a formal derivation, hardware optimization, and empirical evaluation for the \texttt{galerkin} module within modern transformer architectures.
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} Petrov-Galerkin projection, integral operator attention,
+\noindent\textbf{Keywords:} galerkin, efficient attention, transformer compression, deep learning
 \end{abstract}
 
 \vspace{1em}

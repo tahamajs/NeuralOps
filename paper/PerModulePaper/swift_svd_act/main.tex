@@ -1,0 +1,102 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+% --- Typography & Geometry ---
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
+
+% --- Math & Symbols ---
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{bm}
+
+% --- Tables & Arrays ---
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+
+% --- Graphics & Floats ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% --- Code Listings ---
+\usepackage{xcolor}
+\usepackage{listings}
+
+\definecolor{codebg}{HTML}{F8F9FA}
+\definecolor{codeframe}{HTML}{D0D7DE}
+\definecolor{keywordcolor}{HTML}{0550AE}
+\definecolor{stringcolor}{HTML}{0A3069}
+\definecolor{commentcolor}{HTML}{57606A}
+
+\lstset{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\scriptsize\color{black},
+    keywordstyle=\color{keywordcolor}\bfseries,
+    stringstyle=\color{stringcolor},
+    commentstyle=\color{commentcolor}\itshape,
+    frame=single,
+    rulecolor=\color{codeframe},
+    breaklines=true,
+    breakatwhitespace=true,
+    extendedchars=true,
+    xleftmargin=6pt,
+    xrightmargin=6pt,
+    aboveskip=8pt,
+    belowskip=8pt
+}
+
+% --- Hyperlinks ---
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
+}
+
+% --- Input Title & Authors ---
+\input{00_meta.tex}
+
+\begin{document}
+
+\maketitle
+
+% --- Abstract & Keywords Block ---
+\begin{abstract}
+This paper presents a formal derivation, hardware optimization, and empirical evaluation for the \texttt{swift_svd_act} module within modern transformer architectures.
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} swift_svd_act, efficient attention, transformer compression, deep learning
+\end{abstract}
+
+\vspace{1em}
+
+% --- Paper Body ---
+\input{01_intro.tex}
+\input{02_related.tex}
+\input{03_background.tex}
+\input{04_method.tex}
+\input{05_architecture.tex}
+\input{06_setup.tex}
+\input{07_results.tex}
+\input{08_analysis.tex}
+\input{09_discussion.tex}
+\input{10_limitations.tex}
+\input{11_conclusion.tex}
+\input{12_reproducibility.tex}
+\input{13_references.tex}
+
+% --- Appendices ---
+\clearpage
+\appendix
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+
+\input{A_math.tex}
+\input{B_implementation.tex}
+\input{C_data.tex}
+\input{D_negative_results.tex}
+\input{E_ethics.tex}
+
+\end{document}
