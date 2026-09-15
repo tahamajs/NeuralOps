@@ -300,7 +300,7 @@ Continuously monitor output activation norms during inference to adjust $\eta$ d
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **distilbert** | sst2 | `PASS` | N/A | **90.14%** | N/A | 0.9051 | 1.00x | 0 | [svd-linear-attention-distilbert-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-adaptive-ranks) | 2026-09-10 |
 | **roberta** | sst2 | `PASS` | N/A | **66.97%** | N/A | 0.7338 | 1.00x | 0 | [svd-linear-attention-roberta-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-adaptive-ranks) | 2026-09-10 |
-| **gpt2** | sst2 | `PASS` | N/A | **59.06%** | N/A | 0.6490 | 1.00x | 1 | [svd-linear-attention-gpt2-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adaptive-ranks) | 2026-09-10 |
+| **gpt2** | sst2 | `PASS` | N/A | **76.95%** | N/A | 0.8016 | 1.00x | 1 | [svd-linear-attention-gpt2-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-adaptive-ranks) | 2026-09-15 |
 | **qwen3_5** | sst2 | `PASS` | N/A | **81.88%** | N/A | 0.7980 | 1.00x | 0 | [svd-linear-attention-qwen3_5-adaptive-ranks](https://huggingface.co/Hooshaai/svd-linear-attention-qwen3_5-adaptive-ranks) | 2026-09-10 |
 
 
