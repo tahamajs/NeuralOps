@@ -1,13 +1,13 @@
 """
 Tensor Train Compressor: replaces eligible nn.Linear and Conv1D layers with TTLinearLayer.
 Registered in COMPRESSOR_REGISTRY as "tt".
-Production-hardened with:
-- Relative Frobenius error validation
-- Adaptive rank retries
-- Conv1D support (GPT-2)
-- Protection of critical classifier/head layers
-- Shape verification and safe module replacement
-- Detailed per-layer stats logging
+
+NOTE (DEPRECATED):
+    Tensor-Train compression on 2D linear matrices is deprecated in this repository
+    and removed from the active benchmark queue (run_all_benchmarks_queue.py).
+    Due to mode scrambling and flattened singular value decay compared to 2D SVD, TT
+    requires very high ranks to achieve low error, yielding negligible parameter savings
+    and no FLOPs reduction. See Docs/content/compressions/tt.md.
 """
 
 from __future__ import annotations
@@ -39,6 +39,11 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 class TTCompressor(BaseCompressor):
     """
     Compressor that replaces nn.Linear/Conv1D layers with Tensor-Train (TTLinearLayer) modules.
+
+    .. deprecated::
+        Tensor-Train compression is deprecated on 2D linear layers in favor of SVD.
+        See Docs/content/compressions/tt.md for theoretical and empirical comparisons.
+        Excluded from run_all_benchmarks_queue.py.
 
     Args:
         model: PyTorch model to compress.

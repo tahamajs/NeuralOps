@@ -1,5 +1,10 @@
 # TTCompressor: Global Tensor-Train Factorization Framework Engine
 
+> [!WARNING]
+> **DEPRECATED & EXCLUDED FROM BENCHMARK QUEUE**
+> Tensor-Train compression has been removed from the active benchmark queue (`run_all_benchmarks_queue.py`). For detailed theoretical explanations of why TT on 2D matrices underperforms SVD, hardware execution bottlenecks, and empirical findings on pretrained weights, see [`Docs/content/compressions/tt.md`](file:///Users/tahamajs/Documents/uni/Project/Docs/content/compressions/tt.md).
+> Experimental runners are preserved in `Codes/experimental/runners/`.
+
 ## 1. Executive Abstract & Theoretical Motivation
 System-wide post-training compression across large transformer architectures requires unified structural transformation frameworks capable of replacing standard linear projections without breaking network topology. Standard SVD compression exhibits diminishing parameter returns for high-dimensional matrices, while unstructured pruning requires complex sparse index tracking.
 
