@@ -430,5 +430,32 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T22:23:31.576804"
+  },
+  {
+    "module": "nsa_attention",
+    "runner": "run_all_4_nsa_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 151.46,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:26:04.999251"
+  },
+  {
+    "module": "nystrom",
+    "runner": "run_all_4_nystrom.py",
+    "exit_code": 0,
+    "elapsed_s": 141.64,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:28:28.244444"
+  },
+  {
+    "module": "optimized_hybrid_attention",
+    "runner": "run_all_4_optimized_hybrid_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 175.28,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:31:25.028051"
   }
 ]
