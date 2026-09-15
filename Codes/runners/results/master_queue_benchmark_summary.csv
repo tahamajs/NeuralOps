@@ -37,3 +37,13 @@ linformer,run_all_4_linformer.py,0,143.28,PASS,,2026-09-15T21:43:43.299454
 lora_attention,run_all_4_lora_attention.py,0,141.29,PASS,,2026-09-15T21:46:06.029352
 mamba,run_all_4_mamba.py,0,137.5,PASS,,2026-09-15T21:48:24.982012
 minimal_aurora,run_all_4_minimal_aurora.py,0,197.07,PASS,,2026-09-15T21:51:44.056287
+minimal_nova,run_all_4_minimal_nova.py,0,163.27,PASS,,2026-09-15T21:54:29.243673
+minimal_prism,run_all_4_minimal_prism.py,0,163.04,PASS,,2026-09-15T21:57:14.149119
+minimal_svd,run_all_4_minimal_svd.py,0,170.26,PASS,,2026-09-15T22:00:09.054487
+mixattention_moska,run_all_4_mixattention_moska.py,0,157.24,PASS,,2026-09-15T22:02:47.787654
+mla,run_all_4_mla.py,0,135.62,PASS,,2026-09-15T22:05:04.898461
+moba,run_all_4_moba.py,0,164.5,PASS,,2026-09-15T22:07:50.930381
+moe_deltakv_paged,run_all_4_moe_deltakv_paged.py,0,168.91,PASS,,2026-09-15T22:10:41.324402
+nasc_attention,run_all_4_nasc_attention.py,0,281.29,PASS,,2026-09-15T22:15:24.037924
+nexus,run_all_4_nexus.py,0,244.67,PASS,,2026-09-15T22:19:30.616266
+nha,run_all_4_nha.py,0,234.75,PASS,,2026-09-15T22:23:31.576804
