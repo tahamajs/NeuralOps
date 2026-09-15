@@ -3,13 +3,13 @@
     "Model": "roberta",
     "Exit Code": 0,
     "Baseline Acc": "78.56%",
-    "SVD Linear Acc": "58.94%",
-    "Delta Acc": "-19.62%",
-    "F1": "0.5201",
-    "Status": "PASS",
+    "SVD Linear Acc": "51.95%",
+    "Delta Acc": "-26.61%",
+    "F1": "0.1253",
+    "Status": "PASS_LOW",
     "Compressed Layers": "0",
-    "Comp Rate": "1.09x",
-    "Peak VRAM": "579.3 MB",
-    "Time (s)": "44.2"
+    "Comp Rate": "1.01x",
+    "Peak VRAM": "615.3 MB",
+    "Time (s)": "42.6"
   }
 ]
