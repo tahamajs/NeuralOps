@@ -163,6 +163,7 @@ def modules() -> list[str]:
 def fields(name: str) -> tuple[str, str]:
     if name in {"sst2", "cola"}: return ("sentence", None)
     if name == "mrpc": return ("sentence1", "sentence2")
+    if name == "mnli": return ("premise", "hypothesis")
     return ("sentence1", "sentence2")
 
 
@@ -666,6 +667,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
     ap.add_argument("--dataset_dir", default=None); ap.add_argument("--dataset", default="sst2")
+    ap.add_argument("--num_labels", type=int, default=None, help="Number of classification labels (auto-detected if None)")
     ap.add_argument("--output_dir", default=None); ap.add_argument("--modules", default=["all"], nargs="*")
     ap.add_argument("--module_filter", dest="modules", nargs="*", help="Alias for --modules")
     ap.add_argument("--max_steps", type=int, default=1); ap.add_argument("--finetune_steps", type=int, default=200)
@@ -1174,11 +1176,23 @@ def main():
     torch.cuda.empty_cache()
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
+    num_classes = args.num_labels
+    if num_classes is None:
+        try:
+            if "label" in train.features and hasattr(train.features["label"], "num_classes"):
+                num_classes = train.features["label"].num_classes
+            elif "label" in train.column_names:
+                num_classes = len(set(train["label"][:500]))
+            else:
+                num_classes = 2
+        except Exception:
+            num_classes = 2
+    LOG.info("Configured dataset '%s' with num_labels=%d", args.dataset, num_classes)
     try:
         try:
-            base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, dtype=dtype).to(device)
+            base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=num_classes, ignore_mismatched_sizes=True, dtype=dtype).to(device)
         except TypeError:
-            base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=2, torch_dtype=dtype).to(device)
+            base = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=num_classes, ignore_mismatched_sizes=True, torch_dtype=dtype).to(device)
     except torch.OutOfMemoryError as e:
         LOG.critical("CUDA OOM while loading base model: %s", e)
         sys.exit(1)
@@ -1228,16 +1242,20 @@ def main():
             out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt",
             out.parent / f"{family}_{args.dataset}_full_sweep" / "finetuned_model.pt",
             out.parent / f"{family}_{args.dataset}_baseline" / "finetuned_model.pt",
-            out.parent / "unified_asvd" / family / "finetuned_model.pt",
-            out.parent / "unified_delta_kv" / family / "finetuned_model.pt",
-            out.parent / "unified_nsa" / family / "finetuned_model.pt",
-            out.parent / "unified_infini" / family / "finetuned_model.pt",
-            out.parent / "unified_rpc" / family / "finetuned_model.pt",
-            out.parent / "unified_res_svd" / family / "finetuned_model.pt",
             Path("results") / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt",
-            Path("results") / "unified_asvd" / family / "finetuned_model.pt",
-            Path("results") / "unified_delta_kv" / family / "finetuned_model.pt",
+            Path("results") / f"{family}_{args.dataset}_baseline" / "finetuned_model.pt",
         ]
+        if args.dataset == "sst2":
+            candidates.extend([
+                out.parent / "unified_asvd" / family / "finetuned_model.pt",
+                out.parent / "unified_delta_kv" / family / "finetuned_model.pt",
+                out.parent / "unified_nsa" / family / "finetuned_model.pt",
+                out.parent / "unified_infini" / family / "finetuned_model.pt",
+                out.parent / "unified_rpc" / family / "finetuned_model.pt",
+                out.parent / "unified_res_svd" / family / "finetuned_model.pt",
+                Path("results") / "unified_asvd" / family / "finetuned_model.pt",
+                Path("results") / "unified_delta_kv" / family / "finetuned_model.pt",
+            ])
         parent_checkpoint = next((c for c in candidates if c.exists()), Path("non_existent_placeholder.pt"))
 
     def _safe_load_state(target_model: nn.Module, raw_state: Any) -> None:
