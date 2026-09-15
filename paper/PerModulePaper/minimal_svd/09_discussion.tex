@@ -1,3 +1,140 @@
-\section{09 Discussion}
 
-Draft content for minimal_svd.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Real Compression}
+
+MinimalSVD reduces attention parameters by \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} with 
+accuracy drops of \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%}. Genuine reduction in model 
+size.
+
+\subsubsection{Takeaway 2: No Calibration Needed}
+
+Unlike A3 and AASVD, MinimalSVD is \textbf{training-free}. Rank selection is based 
+purely on the weight spectrum.
+
+\subsubsection{Takeaway 3: Minimal Baseline}
+
+MinimalSVD is the \textbf{shortest auditable implementation} of the energy-adaptive 
+family. It is designed as a reference for researchers who want to extend or 
+compare against the more complex variants.
+
+\subsection{When to Use MinimalSVD}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Research baseline} for energy-adaptive SVD compression
+\item \textbf{Storage-constrained deployment}
+\item \textbf{Calibration data unavailable}
+\item \textbf{When code auditability is a priority}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Production deployment requiring pre-test safety} $\to$ use MinimalPRISM
+\item \textbf{Complex model families} requiring whole-model traversal $\to$ use NOVA/PRISM
+\item \textbf{Extremely small models} (<10M params)
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need to reduce model size? --- Yes --- Continue
+  | No $\to$ other approaches
+
+  |
+   
+Production deployment? --- Yes --- Use MinimalPRISM (pre-test + safety)
+  | No
+   
+Research baseline? --- Yes --- Use MinimalSVD (minimal code)
+  | No
+   
+Use MinimalNOVA or MinimalPRISM
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT on RTX 4070:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{MinimalSVD} & \textbf{Change} \\
+\midrule
+Disk (FP16) & 134 MB & {{D\_DISK}} MB & \textbf{{{D\_DISK\_RATIO}}$\times$} \\
+Params & 66.95M & {{D\_PARAMS}}M & \textbf{{{D\_RATIO}}$\times$} \\
+VRAM & 183 MB & {{D\_VRAM}} MB & \textbf{{{D\_VRAM\_RATIO}}$\times$} \\
+Time & 1.90 s & {{D\_TIME}} s & \textbf{{{D\_TIME\_RATIO}}$\times$} \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Published Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Calibration} & \textbf{Ratio} & \textbf{SST-2 acc} \\
+\midrule
+ALBERT (from scratch) & -- & 3.5$\times$ & 89.4\% \\
+DistilBERT (distill) & -- & 1.6$\times$ & 90.7\% \\
+A3 & Required & {{A3\_RATIO}}$\times$ & {{A3\_ACC}}\% \\
+AASVD & Required & {{AASVD\_RATIO}}$\times$ & {{AASVD\_ACC}}\% \\
+MinimalNOVA & None & {{NOVA\_RATIO}}$\times$ & {{NOVA\_ACC}}\% \\
+MinimalPRISM & None & {{PRISM\_RATIO}}$\times$ & {{PRISM\_ACC}}\% \\
+\textbf{MinimalSVD} & \textbf{None} & \textbf{{{D\_RATIO}}$\times$} & \textbf{{{D\_ACC}}\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Deployment Considerations}
+
+\subsubsection{Storage}
+For 100M params:
+\begin{itemize}
+\item Baseline: 200 MB FP16
+\item MinimalSVD (r=128): ~{{D\_DISK}} MB
+\item MinimalSVD + INT8: ~{{D\_DISK\_INT8}} MB
+
+\end{itemize}
+\subsubsection{Latency}
+MinimalSVD is faster than dense attention on GPU due to fewer FLOPs.
+
+\subsubsection{Batching}
+Larger batches benefit more due to better cache utilization.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Interaction with quantization}
+\item \textbf{Rank schedule for generation tasks}
+\item \textbf{Cross-lingual generalization}
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Democratizes AI
+\item Reduces carbon footprint
+\item Enables edge AI
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Dual-use concerns
+\item Concentration risk
+
+\end{itemize}
+\subsubsection{Environmental}
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+

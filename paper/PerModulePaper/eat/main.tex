@@ -64,10 +64,43 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the eat module within modern transformer architectures.
+Transformer inference cost scales with sequence length, and every additional 
+token that survives through the attention stack contributes to both latency 
+and memory. Yet most tokens in a trained transformer carry little signal -- 
+they are padding, repeated function words, or otherwise uninformative for 
+the downstream task. We introduce \textbf{EAT} (\textbf{E}fficient \textbf{A}ttention 
+\textbf{T}ransformer), a drop-in replacement for multi-head self-attention that 
+combines (i) standard scaled dot-product attention over frozen projections 
+with trainable LoRA adapters, and (ii) an optional **progressive token 
+pruning** layer that reduces the active token count at inference time without 
+retraining the base model.
+
+EAT supports four attention families -- flat (DistilBERT), nested 
+(RoBERTa/BERT), causal (GPT-2), and grouped-query with rotary embeddings 
+(Qwen/LLaMA) -- through a single weight-transfer routine that handles fused 
+Conv1D, nested encoder, and standard linear projections. No base parameters 
+are updated; only LoRA adapters are trained.
+
+We evaluate EAT on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
+{{RECOVERY\_STEPS}} LoRA recovery steps at rank {{LORA\_RANK}}. EAT achieves 
+\textbf{{{D\_ACC}}\%} on DistilBERT ($\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa 
+($\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). 
+
+EAT does \textbf{not} reduce parameter count: the total number of parameters 
+increases by \textbf{{{PARAM\_CHANGE\_PCT}}\%} on DistilBERT, \textbf{{{PARAM\_CHANGE\_PCT\_R}}\%} 
+on RoBERTa, and \textbf{{{PARAM\_CHANGE\_PCT\_G}}\%} on GPT-2, because LoRA adapters 
+are added to every attention projection. The efficiency benefit of EAT 
+materializes only when progressive token pruning is enabled and only during 
+inference. We report this trade-off explicitly and do not claim parameter 
+compression.
+
+\textbf{Keywords:} efficient attention, token pruning, LoRA, multi-architecture 
+adaptation, transformer inference
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} eat, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} efficient attention, token pruning, LoRA, multi-architecture
 \end{abstract}
 
 \vspace{1em}

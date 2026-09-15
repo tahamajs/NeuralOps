@@ -1,3 +1,74 @@
-\section{11 Conclusion}
 
-Draft content for eat.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{EAT} (Efficient Attention Transformer), a drop-in replacement 
+for MHSA that combines frozen pretrained projections, trainable LoRA adapters, 
+and optional progressive token pruning. EAT works across four attention 
+architectures -- flat, nested, causal, and GQA+RoPE -- without code changes.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param $\Delta$} & \textbf{Time ratio} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_TIME\_RATIO}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_TIME\_RATIO}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{EAT is not a compressor.} It increases parameters to enable other
+  benefits.
+\item \textbf{Multi-architecture support works.} Same method, four families.
+\item \textbf{Pruning provides inference speedup.} But requires careful ratio
+  selection.
+\item \textbf{Silent weight transfer failure is a risk.} Always verify.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Add \texttt{strict\_weight\_transfer} flag
+\item Fused Triton kernels for LoRA
+\item Combined AASVD + EAT pipeline
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Task-agnostic pruning
+\item Theoretical bound on pruning error
+\item Token merging as alternative
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+EAT is a practical tool for inference-time optimization, not for model 
+compression. We release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed EAT, implemented the code, ran experiments,
+  wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

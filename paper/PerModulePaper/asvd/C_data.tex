@@ -1,3 +1,210 @@
-\section{C Data}
 
-Draft content for asvd.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Ratio & {{D\_RATIO}}$\times$ \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Avg reconstruction error & {{D\_AVG\_ERR}} \\
+Avg rank & {{D\_AVG\_RANK}} \\
+Compression time & {{D\_COMPRESS\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+Ratio & {{R\_RATIO}}$\times$ \\
+Accuracy & {{R\_ACC}}\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+Ratio & {{G\_RATIO}}$\times$ \\
+Accuracy & {{G\_ACC}}\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Per-Layer Reconstruction Error (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
+\midrule
+0 & {{D\_L0\_Q\_E}} & {{D\_L0\_K\_E}} & {{D\_L0\_V\_E}} & {{D\_L0\_O\_E}} \\
+1 & {{D\_L1\_Q\_E}} & {{D\_L1\_K\_E}} & {{D\_L1\_V\_E}} & {{D\_L1\_O\_E}} \\
+2 & {{D\_L2\_Q\_E}} & {{D\_L2\_K\_E}} & {{D\_L2\_V\_E}} & {{D\_L2\_O\_E}} \\
+3 & {{D\_L3\_Q\_E}} & {{D\_L3\_K\_E}} & {{D\_L3\_V\_E}} & {{D\_L3\_O\_E}} \\
+4 & {{D\_L4\_Q\_E}} & {{D\_L4\_K\_E}} & {{D\_L4\_V\_E}} & {{D\_L4\_O\_E}} \\
+5 & {{D\_L5\_Q\_E}} & {{D\_L5\_K\_E}} & {{D\_L5\_V\_E}} & {{D\_L5\_O\_E}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Per-Layer Selected Rank (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
+\midrule
+0 & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
+1 & {{D\_L1\_Q\_R}} & {{D\_L1\_K\_R}} & {{D\_L1\_V\_R}} & {{D\_L1\_O\_R}} \\
+... & ... & ... & ... & ... \\
+5 & {{D\_L5\_Q\_R}} & {{D\_L5\_K\_R}} & {{D\_L5\_V\_R}} & {{D\_L5\_O\_R}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
+\midrule
+16 & {{D\_R16}} & {{D\_RATIO16}}$\times$ & {{R\_R16}} & {{R\_RATIO16}}$\times$ & {{G\_R16}} & {{G\_RATIO16}}$\times$ \\
+32 & {{D\_R32}} & {{D\_RATIO32}}$\times$ & {{R\_R32}} & {{R\_RATIO32}}$\times$ & {{G\_R32}} & {{G\_RATIO32}}$\times$ \\
+64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{R\_R64}} & {{R\_RATIO64}}$\times$ & {{G\_R64}} & {{G\_RATIO64}}$\times$ \\
+128 & {{D\_R128}} & {{D\_RATIO128}}$\times$ & {{R\_R128}} & {{R\_RATIO128}}$\times$ & {{G\_R128}} & {{G\_RATIO128}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Energy Threshold Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$\varepsilon$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.90 & {{D\_E90}} & {{D\_E90\_R}}$\times$ & {{R\_E90}} & {{G\_E90}} \\
+0.95 & {{D\_E95}} & {{D\_E95\_R}}$\times$ & {{R\_E95}} & {{G\_E95}} \\
+0.99 & {{D\_E99}} & {{D\_E99\_R}}$\times$ & {{R\_E99}} & {{G\_E99}} \\
+0.995 & {{D\_E995}} & {{D\_E995\_R}}$\times$ & {{R\_E995}} & {{G\_E995}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Dynamic vs Fixed Rank}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Mode} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Dynamic & {{D\_DYN}} & {{R\_DYN}} & {{G\_DYN}} \\
+Fixed & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 LoRA Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & {{D\_LORA0}} & {{R\_LORA0}} & {{G\_LORA0}} \\
+8 & {{D\_LORA8}} & {{R\_LORA8}} & {{G\_LORA8}} \\
+16 & {{D\_LORA16}} & {{R\_LORA16}} & {{G\_LORA16}} \\
+32 & {{D\_LORA32}} & {{R\_LORA32}} & {{G\_LORA32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.10 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.11 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "params_before": 66955010,
+    "params_after": {{D_PARAMS}},
+    "ratio": {{D_RATIO}},
+    "accuracy_pct": {{D_ACC}},
+    "avg_rank": {{D_AVG_RANK}},
+    "avg_reconstruction_error": {{D_AVG_ERR}}
+  },
+  "roberta": {...},
+  "gpt2": {...}
+}
+\end{lstlisting}
+
+\subsection{C.12 Reproduction Commands}
+
+\begin{lstlisting}
+# Full benchmark
+python run_all_4_asvd.py --models distilbert,roberta,gpt2
+
+# Rank sweep
+for r in 16 32 64 128; do
+    python run_all_4_asvd.py --rank $r --output_suffix r$r
+done
+
+# Energy sweep
+for e in 0.90 0.95 0.99 0.995; do
+    python run_all_4_asvd.py --energy_threshold $e --output_suffix e$e
+done
+\end{lstlisting}
+

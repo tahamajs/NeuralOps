@@ -64,10 +64,47 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the minimal\_aurora module within modern transformer architectures.
+We present \textbf{MinimalAURORA}, a production-hardened low-rank attention 
+replacement that compresses each of the four attention projections 
+($W_Q, W_K, W_V, W_O$) using \textbf{energy-preserving truncated SVD}. Unlike 
+fixed-rank SVD factorization, MinimalAURORA selects each layer's rank 
+dynamically via a cumulative energy threshold $\varepsilon$:
+
+\[
+r^{(\ell)} = \min\left\{ r : \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{\min(m, n)} \sigma_i^2} \geq \varepsilon \right\}
+\tag{1}
+\]
+
+Each projection is stored as a product $W \approx U V^\top$ with $U \in 
+\mathbb{R}^{d\_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d\_\text{in}}$, 
+reducing parameters from $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$. 
+Trainable LoRA residual adapters are added on top with zero initialization, 
+providing task-specific capacity while keeping the SVD base frozen.
+
+MinimalAURORA supports four attention families -- flat (DistilBERT), 
+nested (RoBERTa/BERT), causal Conv1D (GPT-2), and grouped-query with 
+rotary embeddings (Qwen/LLaMA) -- via a single \texttt{copy\_weights} routine 
+with Frobenius validation and automatic nested-encoder detection.
+
+On SST-2 with {{RECOVERY\_STEPS}} LoRA recovery steps and energy threshold 
+$\varepsilon = {{ENERGY}}$, MinimalAURORA achieves \textbf{{{D\_ACC}}\%} on 
+DistilBERT ($\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), 
+and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). Total parameter count 
+decreases by \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$}. Peak VRAM drops by \textbf{{{VRAM\_REDUCTION}}\%}.
+
+MinimalAURORA \textbf{reduces} parameter count. The LoRA adapters add 
+$r_L(d_\text{in} + d_\text{out})$ trainable parameters but this is 
+offset by the SVD reduction. We note that a \texttt{pres\_gate} parameter is 
+defined in the implementation but **not currently used in the forward 
+pass** -- see  8.6.
+
+\textbf{Keywords:} SVD factorization, energy threshold, low-rank attention, 
+parameter-efficient fine-tuning, transformer compression
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} minimal\_aurora, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} SVD factorization, energy threshold, low-rank attention,
 \end{abstract}
 
 \vspace{1em}

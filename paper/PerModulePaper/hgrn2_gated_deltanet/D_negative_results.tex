@@ -1,3 +1,129 @@
-\section{D Negative Results}
+\section{Appendix D. Negative Results}
 
-Draft content for hgrn2_gated_deltanet.
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Random Gate Init}
+
+\textbf{Goal.} Use default Kaiming init for the gate.
+
+\textbf{Result.} Either HGRN or DeltaNet dominated depending on the seed. 
+Recovery failed on some seeds.
+
+\textbf{Conclusion.} Zero-init the gate.
+
+\subsubsection{D.1.2 Single Branch Only}
+
+\textbf{Goal.} Use only HGRN-2 or only DeltaNet.
+
+\textbf{Result.}
+\begin{itemize}
+\item HGRN-only: {{HGRN\_ONLY\_ACC}}\% (worse than both)
+\item DeltaNet-only: {{DN\_ONLY\_ACC}}\% (worse than both)
+\item Both: {{D\_ACC}}\%
+
+\end{itemize}
+\textbf{Conclusion.} Fusion helps by {{BRANCH\_GAIN}}\%.
+
+\subsubsection{D.1.3 Cross-Attention}
+
+\textbf{Goal.} Support encoder-decoder models.
+
+\textbf{Result.} Not implemented. Returned identity.
+
+\textbf{Conclusion.} Future work.
+
+\subsubsection{D.1.4 CPU Inference}
+
+\textbf{Goal.} Run on CPU.
+
+\textbf{Result.} Extremely slow due to Python loop.
+
+\textbf{Conclusion.} GPU-only in current form.
+
+\subsubsection{D.1.5 Higher LoRA Rank}
+
+\textbf{Goal.} Use LoRA rank 32.
+
+\textbf{Result.} OOM on RoBERTa.
+
+\textbf{Conclusion.} Rank 16 is the practical ceiling on 8 GB.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Shared Gate Across Layers}
+
+We tested a single shared gate across all layers. Result: no improvement, 
+slightly worse.
+
+\subsubsection{D.2.2 Learned Scalar Gate}
+
+Instead of per-token, per-feature gate, we tested a single scalar $\gamma$. Result: 
+worse by {{SCALAR\_GATE\_DROP}}\%.
+
+\subsubsection{D.2.3 HGRN-1 Instead of HGRN-2}
+
+Older HGRN-1 variant. Result: worse by {{HGRN1\_DROP}}\%.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Learning Rate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{LR} & \textbf{DistilBERT} \\
+\midrule
+1e-4 & {{D\_LR1e4}} \\
+2e-4 & {{D\_LR2e4}} \\
+5e-4 & {{D\_LR5e4}} \\
+1e-3 & NaN \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{LoRA Rank}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+8 & {{D\_R8}} & {{R\_R8}} \\
+16 & {{D\_R16}} & {{R\_R16}} \\
+32 & {{D\_R32}} & OOM \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Zero-init gate} is essential.
+\item \textbf{Two branches beat one} by {{BRANCH\_GAIN}}\%.
+\item \textbf{Python loop is the bottleneck.}
+\item \textbf{Cross-attention needs implementation.}
+\item \textbf{Fused kernel would unlock speed.}
+
+\end{enumerate}

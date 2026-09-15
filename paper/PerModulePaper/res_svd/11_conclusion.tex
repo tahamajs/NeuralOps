@@ -1,3 +1,69 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for res_svd.
+\subsection{Summary}
+
+We presented \textbf{Res-SVD Attention}, a two-level SVD factorization for 
+attention projections that combines frozen base SVD with trainable 
+spectral-init LoRA.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Real compression} of ~{{D\_RATIO}}$\times$.
+\item \textbf{Two-level decomposition} equivalent to equal-rank SVD at init.
+\item \textbf{Spectral initialization} ensures optimal start.
+\item \textbf{Silent injection failure} requires caller attention.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Activation-weighted Res-SVD
+\item Adaptive base rank
+\item Test long-context
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item The theoretical advantage of two-level structure
+\item Interaction with quantization
+\item Comparison with PiSSA
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+Res-SVD offers a principled approach to attention compression with 
+parameter-efficient fine-tuning. We release all code.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed Res-SVD, implemented the code, ran experiments.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

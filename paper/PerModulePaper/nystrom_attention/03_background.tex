@@ -1,3 +1,170 @@
-\section{03 Background}
 
-Draft content for nystrom_attention.
+\section{Background}
+
+\subsection{Standard Softmax Attention}
+
+For $Q, K, V \in \mathbb{R}^{N \times d_h}$:
+
+\[
+A = \mathrm{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) \in \mathbb{R}^{N \times N}, \qquad
+\text{Output} = A V \in \mathbb{R}^{N \times d_h}
+\tag{3.1}
+\]
+
+Cost: $\mathcal{O}(N^2 d_h)$ time and $\mathcal{O}(N^2)$ memory.
+
+\subsection{The Nystr m Method}
+
+For a symmetric positive semi-definite kernel matrix $K \in \mathbb{R}^{N \times N}$, 
+choose $m$ landmark indices $\{i_1, \dots, i_m\}$. Then:
+
+\[
+K \approx K_{:, m} K_{m, m}^{-1} K_{m, :}
+\tag{3.2}
+\]
+
+where:
+
+\begin{itemize}
+\item $K_{:, m} \in \mathbb{R}^{N \times m}$: columns at landmarks
+\item $K_{m, m} \in \mathbb{R}^{m \times m}$: submatrix at landmarks
+\item $K_{m, :} \in \mathbb{R}^{m \times N}$: rows at landmarks
+
+\end{itemize}
+The inverse $K_{m, m}^{-1}$ exists iff $K_{m, m}$ is invertible. For 
+numerical stability, use the \textbf{pseudoinverse} $K_{m, m}^+$.
+
+\textbf{Approximation error.} If $K$ has rank exactly $m$, the approximation is 
+exact. In practice, $K$ has low effective rank, making the approximation 
+useful.
+
+\subsection{Nystr m Attention}
+
+The softmax attention matrix $A = \mathrm{softmax}(Q K^\top / \sqrt{d_h})$ 
+is not symmetric, but the Nystr m structure still applies:
+
+\[
+\tilde{A} = \underbrace{\mathrm{softmax}(Q K_m^\top / \sqrt{d_h})}_{N \times m} \cdot \underbrace{\mathrm{pinv}(\mathrm{softmax}(Q_m K_m^\top / \sqrt{d_h}))}_{m \times m} \cdot \underbrace{\mathrm{softmax}(Q_m K^\top / \sqrt{d_h})}_{m \times N}
+\tag{3.3}
+\]
+
+Then output:
+
+\[
+\text{Output} = \tilde{A} V = \mathrm{softmax}(Q K_m^\top) \cdot \left[ \mathrm{pinv}(\mathrm{softmax}(Q_m K_m^\top)) \cdot \mathrm{softmax}(Q_m K^\top) V \right]
+\tag{3.4}
+\]
+
+\textbf{Associative multiplication.} The brackets can be computed left-to-right:
+
+\begin{enumerate}
+\item $\mathrm{softmax}(Q_m K^\top) V \in \mathbb{R}^{m \times d_h}$ -- cost $\mathcal{O}(N m d_h)$
+\item $\mathrm{pinv}(A_{mm}) \cdot \text{step1} \in \mathbb{R}^{m \times d_h}$ -- cost $\mathcal{O}(m^2 d_h)$
+\item $\mathrm{softmax}(Q K_m^\top) \cdot \text{step2} \in \mathbb{R}^{N \times d_h}$ -- cost $\mathcal{O}(N m d_h)$
+
+\end{enumerate}
+Total: $\mathcal{O}(N m d_h)$ instead of $\mathcal{O}(N^2 d_h)$.
+
+\subsection{Landmark Selection by Adaptive Pooling}
+
+Nystr mformer uses \texttt{adaptive\_avg\_pool1d} on $Q, K$:
+
+\[
+Q_m = \mathrm{AdaptiveAvgPool1d}(Q, m) \in \mathbb{R}^{m \times d_h}
+\tag{3.5}
+\]
+
+This partitions the sequence into $m$ contiguous segments and averages 
+each. It is:
+
+\begin{itemize}
+\item \textbf{Deterministic} -- no randomness.
+\item \textbf{Efficient} -- $\mathcal{O}(N d_h)$.
+\item \textbf{Locality-preserving} -- adjacent tokens share landmarks.
+
+\end{itemize}
+\subsection{Iterative Pseudoinverse (Newton-Schulz)}
+
+For a matrix $A$, the Moore-Penrose pseudoinverse $A^+$ satisfies:
+
+\[
+A A^+ A = A, \quad A^+ A A^+ = A^+, \quad (A A^+)^\top = A A^+, \quad (A^+ A)^\top = A^+ A
+\tag{3.6}
+\]
+
+The Newton-Schulz iteration:
+
+\[
+V_{k+1} = V_k (2 I - A V_k), \quad V_0 = \alpha A^\top
+\tag{3.7}
+\]
+
+converges to $A^+$ if $\|I - \alpha A A^\top\|_2 < 1$. Preconditioning 
+with $\alpha = 1 / (\|A\|_1 \|A\|_\infty + \epsilon)$ ensures this.
+
+\textbf{Convergence rate.} Quadratic -- each iteration roughly squares the error.
+
+\textbf{Iterations.} 3 iterations suffice for most matrices.
+
+\subsection{Causal Masking}
+
+For causal decoders, the attention matrix is lower-triangular:
+
+\[
+A_{ij} = \begin{cases} \text{valid} & i \geq j \\ 0 & i < j \end{cases}
+\tag{3.8}
+\]
+
+Nystr m approximation must respect this. **Nystr mformer is not naturally 
+causal** -- the landmark pooling averages across all tokens, including 
+future ones. Therefore, we fall back to dense causal attention for decoders.
+
+\subsection{Multi-Head Self-Attention}
+
+Standard MHSA:
+
+\[
+\text{MHSA}(X) = \mathrm{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+\tag{3.9}
+\]
+
+Nystr mformer applies the approximation per head.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+$H_{kv} < H$ KV heads, repeated $H / H_{kv}$ times via \texttt{repeat\_kv}.
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles.
+
+\subsection{LoRA Recovery}
+
+LoRA (Hu et al., 2021) adds trainable residuals:
+
+\[
+\Delta W = \frac{\alpha}{r_L} B A
+\tag{3.10}
+\]
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$N$ & Sequence length \\
+$m$ & Number of landmarks \\
+$Q, K, V$ & Query, Key, Value \\
+$Q_m, K_m$ & Landmark queries, keys \\
+$A_{mm}$ & Landmark attention matrix \\
+$\text{pinv}(\cdot)$ & Moore-Penrose pseudoinverse \\
+$\alpha$ & Pinv preconditioning scalar \\
+$d_h, H, H_{kv}$ & Model dims \\
+\bottomrule
+\end{tabular}
+\end{table}
+

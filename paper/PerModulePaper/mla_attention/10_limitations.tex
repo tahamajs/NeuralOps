@@ -1,3 +1,86 @@
-\section{10 Limitations}
 
-Draft content for mla_attention.
+\section{Limitations}
+
+\subsection{This is a Reproduction, Not a Novel Method}
+
+MLA is from DeepSeek-AI (2024). We do not claim to improve it. Our 
+contributions are the multi-architecture port and the portability study.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. MLA's KV-cache savings are most relevant for 
+long-context generation, which is \textbf{not} the task we evaluate. Our results 
+show it preserves classification accuracy, but we do not measure 
+long-context generation quality.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Constraint} & \textbf{Status} \\
+\midrule
+$\le$124M params & Tested \\
+>1B params & Not tested \\
+DeepSeek-V2 & Not tested \\
+MoE & Not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The original MLA was designed for models with $d \approx 5120$ and 
+$H = 128$. Our models have $d = 768$ and $H = 12$. Portability to 
+larger models is untested.
+
+\subsection{RoPE Handling Simplified}
+
+The original DeepSeek-V2 applies RoPE on a \textbf{decoupled} head dimension. We 
+apply it uniformly. This may lose accuracy on Qwen-style models.
+
+\subsection{Latent Dimension Not Auto-Selected}
+
+We use a fixed $c = {{RANK}}$. The original paper does not specify how to 
+choose $c$; ours is empirical.
+
+\subsection{Output Scale Not in Original}
+
+Our \texttt{output\_scale} trainable parameter is not in the original DeepSeek-V2. 
+It absorbs distributional shift but slightly deviates from the paper.
+
+\subsection{Cross-Attention Not Supported}
+
+Encoder-decoder models (T5, BART) are not supported.
+
+\subsection{Single-Seed Results}
+
+All main results from a single seed. SE ~1.69\%.
+
+\subsection{No Long-Context Evaluation}
+
+We do not test sequences beyond 128 tokens. The KV-cache savings are 
+largest for long contexts.
+
+\subsection{Inference Latency}
+
+MLA adds a down and up projection. For small batch and short sequence, this 
+can be slower than standard attention.
+
+\subsection{No Comparison with Original DeepSeek-V2}
+
+We do not run the original DeepSeek-V2 model due to compute constraints.
+
+\subsection{Code Quality}
+
+Research-grade. Known issues:
+\begin{itemize}
+\item Broad exception handling in \texttt{copy\_weights}
+\item \texttt{raise RuntimeError} in UniversalAdapter fallback (should log)
+\item No unit tests for edge cases
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+See Appendix E.
+

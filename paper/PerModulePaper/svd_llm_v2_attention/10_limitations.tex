@@ -1,3 +1,81 @@
-\section{10 Limitations}
 
-Draft content for svd_llm_v2_attention.
+\section{Limitations}
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Constraint} & \textbf{Status} \\
+\midrule
+$\le$124M params & Tested \\
+>1B params & Not tested \\
+>24 layers & Not tested \\
+MoE & Not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+Only tested on RTX 4070 Laptop (8 GB).
+
+\subsection{FP16 Numerical Sensitivity}
+
+Explicit storage of $\Sigma$ without distributing $\Sigma^{1/2}$ between 
+the factors can be \textbf{less numerically stable in FP16} than symmetric 
+storage. In our experiments, the difference is small (<0.3\% accuracy), 
+but for extreme FP16-only deployments, symmetric storage may be safer.
+
+\subsection{No Reconstruction Bound per Layer}
+
+SVD-LLM V2 does not enforce a Frobenius error threshold per layer. It relies 
+on the energy bound $\sqrt{1 - \eta}$.
+
+\subsection{Calibration-Free Trade-off}
+
+No calibration data used. A3 and AASVD achieve {{COV\_GAIN}}\% higher accuracy 
+at the same compression but require calibration.
+
+\subsection{Inference Latency on CPU}
+
+On CPU, factorized layers may be slower than dense due to sequential matmuls.
+
+\subsection{Cross-Attention Not Supported}
+
+SVD-LLM V2 raises errors for cross-attention.
+
+\subsection{Single-Seed Results}
+
+All main results from a single seed. SE ~1.69\%.
+
+\subsection{Heuristic Hyperparameters}
+
+$r_\text{max} = {{RANK}}$ and $\eta = {{ENERGY}}$ are empirical.
+
+\subsection{No Comparison with Some Baselines}
+
+We do not directly compare with:
+\begin{itemize}
+\item Performer / Linformer
+\item QLoRA
+
+\end{itemize}
+\subsection{Code Quality}
+
+Research-grade. Known issues:
+\begin{itemize}
+\item Broad exception handling
+\item No unit tests for edge cases
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+See Appendix E.
+

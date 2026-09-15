@@ -1,3 +1,104 @@
-\section{12 Reproducibility}
+\section{Reproducibility}
 
-Draft content for hgrn2_layer.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_hgrn2.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --modules full,hgrn2 \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+\begin{lstlisting}
+python run_all_4_hgrn2.py
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (Chunk Ablation)}
+\begin{lstlisting}
+python run_all_4_hgrn2.py --chunk_size 8
+python run_all_4_hgrn2.py --chunk_size 16
+python run_all_4_hgrn2.py --chunk_size 32
+python run_all_4_hgrn2.py --chunk_size 64
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (Bidirectional)}
+\begin{lstlisting}
+python run_all_4_hgrn2.py --is_decoder false  # bidirectional
+python run_all_4_hgrn2.py --is_decoder true   # causal
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & +{{D\_PARAM\_PCT}}\% \\
+RoBERTa & {{R\_ACC}}\% & +{{R\_PARAM\_PCT}}\% \\
+GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}.
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-hgrn2}.
+\item \textbf{Metrics:} \texttt{results/unified\_hgrn2/*/summary.csv}.
+
+\end{itemize}

@@ -1,3 +1,104 @@
-\section{12 Reproducibility}
+\section{Reproducibility}
 
-Draft content for token_compressed_attention.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running TCA}
+
+\begin{lstlisting}
+python run_all_4_token_compressed.py \
+    --models distilbert,roberta,gpt2 \
+    --compression_ratio {{RATIO}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --modules full,token_compressed \
+    --compression_ratio {{RATIO}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+\begin{lstlisting}
+python run_all_4_token_compressed.py
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (  Ablation)}
+\begin{lstlisting}
+for r in 0.9 0.7 0.5 0.3 0.1; do
+    python run_all_4_token_compressed.py --compression_ratio $r --output_suffix r$r
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (Score Net Ablation)}
+\begin{lstlisting}
+python run_all_4_token_compressed.py --use_score_net true  --output_suffix learn
+python run_all_4_token_compressed.py --use_score_net false --output_suffix norm
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{KV reduction} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{KV\_PCT}}\% \\
+RoBERTa & {{R\_ACC}}\% & {{KV\_PCT}}\% \\
+GPT-2 & {{G\_ACC}}\% & {{KV\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-token\_compressed}
+\item \textbf{Metrics:} \texttt{results/unified\_token\_compressed/*/summary.csv}
+
+\end{itemize}

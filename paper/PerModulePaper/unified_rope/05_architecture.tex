@@ -1,11 +1,221 @@
-\section{05 Architecture}
 
-Draft content for unified_rope.
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{$d$} & \textbf{$H$} & \textbf{$H_{kv}$} & \textbf{Nested?} & \textbf{Conv1D?} & \textbf{RoPE?} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & No & No & \textbf{Added} \\
+RoBERTa-base & 12 & 768 & 12 & 12 & Yes & No & \textbf{Added} \\
+GPT-2 & 12 & 768 & 12 & 12 & No & Yes & \textbf{Added} \\
+Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & No & No & Native \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} DistilBERT, RoBERTa, and GPT-2 use absolute position embeddings. 
+UnifiedRoPE \textbf{adds} RoPE on top, which may not match pretrained behavior.
+
+For Qwen, RoPE is native -- UnifiedRoPE simply preserves it.
+
+\subsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+distilbert.transformer.layer.0.attention
++-- q_lin  (Linear 768 $\to$ 768)
++-- k_lin  (Linear 768 $\to$ 768)
++-- v_lin  (Linear 768 $\to$ 768)
++-- out_lin (Linear 768 $\to$ 768)
+\end{lstlisting}
+
+\textbf{Weight extraction:}
+\begin{lstlisting}
+w_q = src.q_lin.weight.detach()
+w_k = src.k_lin.weight.detach()
+w_v = src.v_lin.weight.detach()
+w_o = src.out_lin.weight.detach()
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False}.
+
+\textbf{RoPE caveat.} DistilBERT was trained with absolute positions. Adding 
+RoPE changes the attention pattern. Accuracy may drop unless recovery 
+fine-tuning adapts.
+
+\subsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+roberta.encoder.layer.0.attention
++-- self
+|   +-- query, key, value
++-- output
+    +-- dense
+\end{lstlisting}
+
+\textbf{Nested detection:}
+\begin{lstlisting}
+if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
+    self.is_nested_encoder = True
+    src = old_attn.self
+    w_o = old_attn.output.dense.weight
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = True}. Forward returns raw context.
+
+\subsection{GPT-2 (Causal Conv1D)}
+
+\begin{lstlisting}
+transformer.h.0.attn
++-- c_attn  (Conv1D 768 $\to$ 2304)
++-- c_proj  (Conv1D 768 $\to$ 768)
+\end{lstlisting}
+
+\textbf{Split c\_attn:}
+\begin{lstlisting}
+c_attn_w = src.c_attn.weight.detach()
+if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
+    c_attn_w = c_attn_w.t()
+q_dim = self.q_head_size
+k_dim = self.kv_head_size
+v_dim = self.kv_head_size
+w_q = c_attn_w[:q_dim, :]
+w_k = c_attn_w[q_dim:q_dim+k_dim, :]
+w_v = c_attn_w[q_dim+k_dim:, :]
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False}. Causal mask applied in forward.
+
+\subsection{Qwen3.5 (GQA + RoPE)}
+
+\begin{lstlisting}
+model.layers.0.self_attn
++-- q_proj  (Linear 1024 $\to$ 2048)
++-- k_proj  (Linear 1024 $\to$ 512)
++-- v_proj  (Linear 1024 $\to$ 512)
++-- o_proj  (Linear 2048 $\to$ 1024)
+\end{lstlisting}
+
+\textbf{GQA expansion:}
+\begin{lstlisting}
+if self.num_kv_heads != self.num_heads:
+    k = repeat_kv(k, self.num_key_value_groups)
+    v = repeat_kv(v, self.num_key_value_groups)
+\end{lstlisting}
+
+\textbf{RoPE:} Either internal \texttt{\_apply\_rope} or external \texttt{position\_embeddings}.
+
+\texttt{is\_nested\_encoder = False}.
+
+\subsection{Injection Hook}
+
+\begin{lstlisting}
+def inject_unified_rope(layer, model_config=None, comp_config=None,
+                        old_attn=None, **kwargs):
+    src = old_attn
+    if src is None:
+        for attr in ("attention", "self_attn", "attn", "self"):
+            if hasattr(layer, attr):
+                src = getattr(layer, attr)
+                break
+    
+    if model_config is None and hasattr(layer, "config"):
+        model_config = layer.config
+    
+    lora_rank = kwargs.pop("lora_rank", 16)
+    rank = kwargs.pop("rank", 32)
+    
+    new_attn = UnifiedRoPE(
+        config=model_config, rank=rank, lora_rank=lora_rank,
+        pretrained_attn=src, **kwargs,
+    )
+    
+    # Replace
+    for attr in ("self_attn", "attn", "self"):
+        if hasattr(layer, attr):
+            setattr(layer, attr, new_attn)
+            return new_attn
+    if hasattr(layer, "attention"):
+        if hasattr(layer.attention, "self"):
+            layer.attention.self = new_attn
+        else:
+            layer.attention = new_attn
+        return new_attn
+    layer.attention = new_attn
+    return new_attn
+\end{lstlisting}
+
+\textbf{Safe injection.} Wraps in try/except. Logs errors. \textbf{Raises} 
+\texttt{RuntimeError} on failure (does not silently return None).
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & Validation & Raise RuntimeError \\
+Near-zero Frobenius & Norm check < 1e-4 & Raise RuntimeError \\
+Cross-attention & Not supported & Not implemented \\
+Conv1D wrong orientation & Shape check & Transpose \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("compression_unified_rope")
+@ATTENTION_REGISTRY.register("unified_rope")
+@ATTENTION_REGISTRY.register("unified_rope_attention")
+class UnifiedRoPE(BaseAttention):
+    ...
+
+@ATTENTION_REGISTRY.register("unified_rope_inject")
+@ATTENTION_REGISTRY.register("compression_unified_rope_inject")
+@ATTENTION_REGISTRY.register("inject_unified_rope")
+def inject_unified_rope(...):
+    ...
+\end{lstlisting}
+
+\subsection{LoRA Recovery Integration}
+
+UnifiedRoPE uses \texttt{LoRALinear} projections with \texttt{freeze\_base=True}. Base 
+weights are frozen; only LoRA adapters trained during recovery.
+
+\subsection{Comparison with Companion Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Purpose} \\
+\midrule
+MinimalSVD & Compression & Reduce params \\
+Dobi-SVD & Compression & Reduce params \\
+MLA & Compression & Reduce KV \\
+Nystr mformer & Compute & Reduce compute \\
+\textbf{UnifiedRoPE} & \textbf{Replacement} & \textbf{Portability} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{UnifiedRoPE is orthogonal} to all compression methods.
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/unified_rope_architecture.png}
-\caption{Architectural overview of unified_rope.}
-\label{fig:arch_unified_rope}
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of unified\_rope.}
+\label{fig:arch_unified-rope}
 \end{figure}
+

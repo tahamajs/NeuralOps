@@ -1,3 +1,147 @@
-\section{06 Setup}
 
-Draft content for svd_mamba.
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Split} & \textbf{Size} \\
+\midrule
+Train & 67,349 \\
+Validation & 872 \\
+Test & 1,821 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%.
+
+\subsection{SVD-Mamba Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{d\_state} & {{D\_STATE}} \\
+\texttt{d\_conv} & {{D\_CONV}} \\
+\texttt{expand} & {{EXPAND}} \\
+\texttt{dt\_rank} & {{DT\_RANK}} \\
+\texttt{global\_rank} & {{GLOBAL\_RANK}} \\
+\texttt{rank} (SVD) & {{RANK}} \\
+\texttt{lora\_rank} & {{LORA\_RANK}} \\
+Gate bias & -7.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & {{LR}} \\
+Weight decay & {{WD}} \\
+Recovery steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item \textbf{Quality:} Accuracy, F1, precision, recall
+\item \textbf{Efficiency:} Total params, peak VRAM, inference time
+\item \textbf{Gate:} Mean $\gamma$ before and after recovery
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_svd_mamba.py \
+    --models distilbert,roberta,gpt2 \
+    --d_state {{D_STATE}} \
+    --d_conv {{D_CONV}} \
+    --global_rank {{GLOBAL_RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Uncompressed model \\
+\texttt{svd\_mamba} & Our method \\
+Companion & \texttt{nha}, \texttt{eat}, \texttt{infini}, \texttt{oha}, \texttt{asvd} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

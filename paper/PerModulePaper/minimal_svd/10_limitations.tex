@@ -1,3 +1,110 @@
-\section{10 Limitations}
 
-Draft content for minimal_svd.
+\section{Limitations}
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. MinimalSVD may behave differently on:
+\begin{itemize}
+\item Generation tasks
+\item Multi-class classification
+\item Token-level tasks
+\item Long-context tasks
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Constraint} & \textbf{Status} \\
+\midrule
+$\le$124M params & Tested \\
+>1B params & Not tested \\
+>24 layers & Not tested \\
+MoE & Not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+Only tested on RTX 4070 Laptop (8 GB).
+
+\subsection{No Pre-Test Safety}
+
+MinimalSVD does \textbf{not} perform a pre-test on the first layer before mutating 
+the model. If \texttt{copy\_weights} fails on a middle layer, the model is left in a 
+partially-injected state. Callers requiring pre-test safety should use 
+MinimalPRISM instead.
+
+\subsection{No Whole-Model Traversal}
+
+MinimalSVD's injection hook targets a \textbf{single layer}. Whole-model 
+traversal is the caller's responsibility. This is intentional (minimality) 
+but requires more boilerplate in practice.
+
+\subsection{Calibration-Free Trade-off}
+
+MinimalSVD does not use calibration data. This means:
+\begin{itemize}
+\item No activation-aware weighting
+\item Rank is based on weight spectrum only
+
+\end{itemize}
+A3 and AASVD achieve {{COV\_GAIN}}\% higher accuracy at the same compression, 
+but require calibration.
+
+\subsection{No Explicit Reconstruction Bound per Layer}
+
+Unlike A3, MinimalSVD does \textbf{not} enforce a Frobenius error threshold per 
+layer. It relies on:
+\begin{itemize}
+\item Weight extraction checks (norm > 1e-4)
+\item Empirical accuracy after recovery
+\item Energy bound $\sqrt{1 - \eta}$ (theoretical, not enforced)
+
+\end{itemize}
+\subsection{Inference Latency on CPU}
+
+On CPU, factorized layers may be \textbf{slower} than dense due to two sequential 
+matmuls.
+
+\subsection{Cross-Attention Not Supported}
+
+MinimalSVD raises errors for cross-attention. Encoder-decoder models (T5, 
+BART) are not supported.
+
+\subsection{Single-Seed Results}
+
+All main results from a single seed. SE ~1.69\%. Differences below 3.4\% may 
+be noise.
+
+\subsection{Heuristic Hyperparameters}
+
+Default $r_\text{max} = {{RANK}}$ and $\eta = {{ENERGY}}$ are chosen 
+empirically. There is no principled way to pick them without ablation.
+
+\subsection{No Comparison with Some Baselines}
+
+We do not directly compare with:
+\begin{itemize}
+\item Performer / Linformer (attention replacement)
+\item SparseGPT / Wanda (pruning)
+\item QLoRA (quantization + LoRA)
+
+\end{itemize}
+\subsection{Code Quality}
+
+Research-grade implementation. Known issues:
+\begin{itemize}
+\item Broad exception handling
+\item No unit tests for edge cases
+\item No double-injection guard
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+See Appendix E.
+

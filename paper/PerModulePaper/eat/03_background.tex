@@ -1,3 +1,105 @@
-\section{03 Background}
 
-Draft content for eat.
+\section{Background}
+
+\subsection{Multi-Head Self-Attention}
+
+For $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
+\tag{3.1}
+\]
+
+with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
+
+\[
+\text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+\tag{3.2}
+\]
+
+\subsection{Grouped-Query Attention}
+
+For GQA with $H_{kv} < H$:
+
+\[
+K, V \in \mathbb{R}^{B \times L \times H_{kv} d_h}
+\tag{3.3}
+\]
+
+with $K, V$ repeated $H / H_{kv}$ times before attention.
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+RoPE (Su et al., 2021) rotates Q, K by position-dependent angles:
+
+\[
+\tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
+\tag{3.4}
+\]
+
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021) freezes $W$ and adds a low-rank update:
+
+\[
+W_\text{eff} = W + \frac{\alpha}{r} B A
+\tag{3.5}
+\]
+
+with $B = 0$ at initialization. Only $A, B$ are trainable.
+
+\textbf{Parameter cost.} LoRA adds $r(d_\text{in} + d_\text{out})$ parameters 
+per layer. For $d = 768$ and $r = 16$: 24,576 parameters.
+
+\subsection{Progressive Token Pruning}
+
+Given a sequence of $L$ tokens $x_1, \dots, x_L$ with importance scores 
+$s_1, \dots, s_L \in \mathbb{R}$, pruning retains the top-$k$ tokens:
+
+\[
+\text{Prune}(X; k) = X[\text{argsort}(s)[:k]]
+\tag{3.6}
+\]
+
+The output sequence has length $k \leq L$.
+
+\textbf{At inference time}, pruning reduces compute for downstream layers. 
+\textbf{At training time}, it is typically disabled because gradient flow through 
+\texttt{argsort} is undefined.
+
+\subsection{Weight Transfer}
+
+EAT transfers weights from the pretrained attention block. Four cases:
+
+\begin{enumerate}
+\item \textbf{DistilBERT (flat):} \texttt{q\_lin, k\_lin, v\_lin, out\_lin} copied directly.
+\item \textbf{RoBERTa (nested):} \texttt{self.query/key/value} copied; \texttt{out\_proj} skipped
+  (outer \texttt{output.dense} applies projection).
+\item \textbf{GPT-2 (Conv1D):} Fused \texttt{c\_attn} transposed, chunked into Q/K/V;
+  \texttt{c\_proj} copied directly.
+\item \textbf{Qwen (GQA + RoPE):} \texttt{q\_proj/k\_proj/v\_proj/o\_proj} copied; RoPE
+  preserved via \texttt{rotary\_emb}.
+
+\end{enumerate}
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$B$ & Batch size \\
+$L$ & Sequence length \\
+$d$ & Hidden size \\
+$H$ & Query head count \\
+$H_{kv}$ & KV head count \\
+$d_h$ & Per-head dimension \\
+$r$ & LoRA rank \\
+$k$ & Pruned sequence length \\
+$s_i$ & Token importance score \\
+\bottomrule
+\end{tabular}
+\end{table}
+

@@ -1,3 +1,149 @@
-\section{12 Reproducibility}
 
-Draft content for minimal_nova.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+numpy & {{NUMPY\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running MinimalNOVA}
+
+\begin{lstlisting}
+python run_all_4_minimal_nova.py \
+    --models distilbert,roberta,gpt2 \
+    --rank {{RANK}} \
+    --energy {{ENERGY}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}} \
+    --batch_size {{BATCH_SIZE}}
+\end{lstlisting}
+
+\textbf{Runtime:} ~{{RUNTIME}} minutes.
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --dataset sst2 \
+    --output_dir results/unified_minimal_nova/distilbert \
+    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --modules full,minimal_nova \
+    --rank {{RANK}} \
+    --energy {{ENERGY}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+
+\begin{lstlisting}
+python run_all_4_minimal_nova.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.6 (Rank cap ablation)}
+
+\begin{lstlisting}
+for r in 32 64 128 192 384; do
+    python run_all_4_minimal_nova.py --rank $r --output_suffix r$r
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.7 (Energy ablation)}
+
+\begin{lstlisting}
+for eta in 0.90 0.95 0.99; do
+    python run_all_4_minimal_nova.py --energy $eta --output_suffix e$eta
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.8 (LoRA rank ablation)}
+
+\begin{lstlisting}
+for lr in 4 8 16 32; do
+    python run_all_4_minimal_nova.py --lora_rank $lr --output_suffix lr$lr
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & {{D\_RATIO}}$\times$ \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & {{R\_RATIO}}$\times$ \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Checkpoints}
+
+\begin{lstlisting}
+from huggingface_hub import hf_hub_download
+
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-minimal_nova",
+        filename="weights.pt",
+    )
+    print(f"Downloaded {model}: {path}")
+\end{lstlisting}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-minimal\_nova}
+\item \textbf{Metrics:} \texttt{results/unified\_minimal\_nova/*/summary.csv}
+\item \textbf{Logs:} \texttt{benchmark\_logs/minimal\_nova\_*.log}
+
+\end{itemize}
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Windows: use \texttt{PYTHONIOENCODING=utf-8}
+\item CUDA $\ge$ 11.8 recommended
+\item Some baselines may need re-download
+
+\end{itemize}

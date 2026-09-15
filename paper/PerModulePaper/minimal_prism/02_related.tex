@@ -1,3 +1,120 @@
-\section{02 Related}
 
-Draft content for minimal_prism.
+\section{Related Work}
+
+\subsection{Low-Rank Matrix Factorization}
+
+\textbf{Classical SVD.} The Eckart--Young theorem (Eckart \& Young, 1936) states 
+that the best rank-$r$ approximation of $W$ in Frobenius norm is the 
+truncated SVD. MinimalPRISM builds on this foundation.
+
+\textbf{Randomized SVD.} Halko et al. (2011) provide randomized algorithms with 
+complexity $\mathcal{O}(dr \log k)$. For our layer sizes, exact SVD is 
+feasible within seconds.
+
+\textbf{Weighted low-rank.} Golub et al. (1987) and Srebro \& Jaakkola (2003) study 
+weighted variants. Activation-aware methods (Lin et al., 2023; Xiao et al., 
+2023) weight the factorization by activation statistics. MinimalPRISM uses 
+\textbf{unweighted} SVD but \textbf{adaptive rank}, offering a complementary axis of 
+improvement.
+
+\textbf{Tensor decomposition.} Novikov et al. (2015) use tensor-train 
+decomposition. MinimalPRISM uses matrix SVD, a simpler primitive.
+
+\subsection{Rank Selection Strategies}
+
+\textbf{Fixed rank.} Most low-rank methods use a fixed global rank (Yu et al., 
+2017). This is simple but ignores heterogeneity.
+
+\textbf{Adaptive rank in LoRA.} AdaLoRA (Zhang et al., 2023) learns per-layer 
+rank budgets via importance scores. MinimalPRISM uses \textbf{spectral energy}, a 
+fixed criterion without learning.
+
+\textbf{Energy-based truncation.} In signal processing, energy-based truncation 
+is standard. MinimalPRISM applies it to transformer attention projections.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\textbf{LoRA.} Hu et al. (2021) freeze base weights and train rank-$r$ adapters. 
+MinimalPRISM uses LoRA as the recovery mechanism after compression.
+
+\textbf{DoRA.} Liu et al. (2024) decompose weights into magnitude and direction. 
+Orthogonal to our work.
+
+\subsection{Attention Variants}
+
+\textbf{Standard MHSA.} Vaswani et al. (2017) introduce the four-projection 
+attention. MinimalPRISM preserves the four-projection structure but 
+factorizes each.
+
+\textbf{GQA.} Ainslie et al. (2023) use shared KV heads. MinimalPRISM supports 
+GQA via \texttt{repeat\_kv} at attention time.
+
+\textbf{MQA.} Shazeer (2019) uses a single KV head. Compatible with our approach.
+
+\subsection{Model Compression}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{Retrain} & \textbf{Calibration} \\
+\midrule
+DistilBERT & Distillation & 1.6$\times$ & Yes (from scratch) & -- \\
+TinyBERT & Distillation & 7$\times$ & Yes & -- \\
+SparseGPT & Pruning & 2-4$\times$ & No & Required \\
+Wanda & Pruning & 2$\times$ & No & Required \\
+AWQ & Quantization & 4$\times$ & No & Required \\
+GPTQ & Quantization & 4$\times$ & No & Required \\
+A3 & Low-rank + diagonal Fisher & 5$\times$ & LoRA & Required \\
+AASVD & Low-rank + full covariance & 5$\times$ & LoRA & Required \\
+\textbf{MinimalPRISM} & \textbf{Low-rank + spectral energy} & \textbf{{{D\_RATIO}}$\times$} & \textbf{LoRA} & \textbf{Not required} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Position of Our Work}
+
+MinimalPRISM differs from prior work along three axes:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior} & \textbf{MinimalPRISM} \\
+\midrule
+\textbf{Rank selection} & Fixed or learned & Spectral energy \\
+\textbf{Calibration} & Often required & Not required \\
+\textbf{Injection safety} & Rarely pre-tested & Pre-test on first layer \\
+\textbf{Nested encoder} & Often broken & Explicit at injection \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Unlike activation-aware methods (A3, AASVD), MinimalPRISM 
+does not require calibration data. Rank is chosen purely from the weight 
+spectrum, making it \textbf{training-free} and applicable where calibration data 
+is unavailable. Unlike prior SVD methods, MinimalPRISM uses a **per-layer 
+adaptive rank**, which requires only the weight matrix, not activations.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Adaptive rank} & \textbf{Calibration} & \textbf{Nested encoder} & \textbf{Pre-test} \\
+\midrule
+SVD (fixed) & No & No & Often broken & No \\
+A3 & Retry loop & Required & Buggy & No \\
+AASVD & No & Required & Buggy & No \\
+SDRM & Budget-based & No & Buggy & No \\
+\textbf{MinimalPRISM} & \textbf{Energy} & \textbf{No} & \textbf{Correct} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

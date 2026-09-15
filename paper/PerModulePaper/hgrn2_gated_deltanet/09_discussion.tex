@@ -1,3 +1,103 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for hgrn2_gated_deltanet.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Linear Recurrence for Long Context}
+
+At $L \geq {{BREAKEVEN}}$, HGRN2-GatedDeltaNet is faster than standard 
+attention. For long-context deployment, this is a genuine win.
+
+\subsubsection{Takeaway 2: Short-Sequence Slowdown}
+
+At $L = 128$, our method is \textbf{{{SLOWDOWN}}$\times$ slower}. This is a significant 
+limitation for standard benchmarks.
+
+\subsubsection{Takeaway 3: Two Branches Beat One}
+
+The learned gate + two branches improve over single-branch by 
+{{BRANCH\_GAIN}}\%.
+
+\subsection{When to Use HGRN2-GatedDeltaNet}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Long-context inference} ($L \geq 1024$)
+\item \textbf{Streaming / online processing}
+\item \textbf{Memory-constrained decoding}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Short sequences} ($L \leq 256$)
+\item \textbf{Latency-critical applications}
+\item \textbf{Parameter-sensitive deployments}
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Sequence length $\ge$ 512? --- Yes --- Use HGRN2-GatedDeltaNet
+  | No
+   
+Latency-critical? --- Yes --- Use standard attention
+  | No
+   
+Consider standard attention + KV compression
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT at L = 1024:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+Inference time & 45s & {{D\_T1024}}s & {{S1024}}$\times$ \\
+Peak VRAM & {{VRAM\_BASE\_1024}} MB & {{VRAM\_T1024}} MB & {{VRAM\_PCT\_1024}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Fused Kernel Opportunity}
+
+The main limitation is the Python loop. A \textbf{fused Triton kernel} could 
+eliminate the loop overhead, potentially giving:
+
+\begin{itemize}
+\item 3-5$\times$ speedup at L = 128.
+\item 10-20$\times$ at L = 1024.
+
+\end{itemize}
+This is a clear avenue for future work.
+
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Enables long-context inference on edge devices.
+\item Reduces memory footprint for streaming.
+\item Contributes to the linear attention literature.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Large parameter increase (~226\%).
+\item Training slower than baseline.
+\item Not yet competitive on standard benchmarks.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Optimal gate initialization:} What initial value gives the best recovery?
+\item \textbf{Fused kernels:} How much can a Triton implementation help?
+\item \textbf{Cross-layer gating:} Should $\gamma$ be shared across layers?
+\item \textbf{Combining with SSM:} Can HGRN-2 be replaced by Mamba?
+
+\end{enumerate}

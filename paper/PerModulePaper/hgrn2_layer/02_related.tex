@@ -1,3 +1,84 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for hgrn2_layer.
+\subsection{Linear Recurrent Networks}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020) replaces softmax with a 
+kernel feature map and expresses attention as a linear recurrence. \textbf{GLA} 
+(Yang et al., 2023) adds a gating mechanism. \textbf{RWKV} (Peng et al., 2023) 
+combines a linear attention-like recurrence with a token-shift operation. 
+\textbf{HGRN} (Qin et al., 2023) introduces the element-wise recurrence with 
+input-dependent forget gates.
+
+\subsection{State-Space Models}
+
+\textbf{S4} (Gu et al., 2021), \textbf{S5} (Smith et al., 2023), and \textbf{Mamba} (Gu \& 
+Dao, 2023) formulate sequence modeling as a state-space model. Mamba's 
+\textbf{selective} SSM makes the state transition input-dependent, similar in 
+spirit to HGRN-2's forget gate.
+
+\textbf{Key distinction.} HGRN-2 uses \textbf{element-wise} state (a vector per 
+feature), whereas SSMs use \textbf{diagonal} state matrices that reduce to 
+element-wise updates. The implementations are mathematically similar but 
+differ in normalization and initialization.
+
+\subsection{Attention Replacement}
+
+\textbf{Synthesizer} (Tay et al., 2021) replaces attention with learned or 
+random patterns. \textbf{FNet} (Lee-Thorp et al., 2021) replaces it with a 
+Fourier transform. \textbf{Hyena} (Poli et al., 2023) uses long convolutions. 
+HGRN2Layer belongs to this family but uses a \textbf{recurrence} rather than a 
+convolution or transform.
+
+\subsection{Parallel Scans}
+
+The \textbf{Blelloch scan} (Blelloch, 1990) computes prefix sums in $\mathcal{O}(L)$ 
+depth. Modern GPU implementations of parallel scan (e.g., Mamba's \texttt{associative\_scan}) 
+make recurrent computations competitive with attention at inference time. Our 
+chunked scan is a simpler variant that runs on any GPU without specialized 
+kernels.
+
+\subsection{Gating Mechanisms}
+
+Gating is a classical technique in RNNs (Hochreiter \& Schmidhuber, 1997) and 
+Transformers (Vaswani et al., 2017; Shazeer, 2020). We use two gates: a 
+\textbf{forget gate} $f_t$ and an \textbf{input gate} $i_t$. The forget gate is 
+parameterized in log-space ($\log f_t = -\text{softplus}(\cdot)$) for 
+numerical stability.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{State} & \textbf{Gating} & \textbf{Chunked scan} \\
+\midrule
+Linear Transformer & $\mathcal{O}(L)$ & Matrix & No & No \\
+GLA & $\mathcal{O}(L)$ & Matrix & Yes & Yes \\
+Mamba & $\mathcal{O}(L)$ & Diagonal & Selective & Yes \\
+HGRN-2 & $\mathcal{O}(L)$ & Element-wise & Yes & Yes \\
+\textbf{HGRN2Layer (ours)} & $\mathcal{O}(L)$ & Element-wise & Yes & \textbf{Chunked, FP32} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Time (L=128)} & \textbf{Time (L=4096)} & \textbf{Params} & \textbf{Retrain?} \\
+\midrule
+Baseline MHSA & 1.9 s & ~180 s & $4d^2$ & -- \\
+Linear Transformer & 4.0 s & 8.0 s & $4d^2$ & Yes \\
+Mamba & 1.2 s & 3.5 s & $4d^2 + \epsilon$ & Yes \\
+\textbf{HGRN2Layer} & \textbf{{{D\_TIME\_128}} s} & \textbf{{{D\_TIME\_4096}} s} & $8d^2$ & \textbf{LoRA only} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

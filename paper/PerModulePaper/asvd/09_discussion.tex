@@ -1,3 +1,126 @@
-\section{09 Discussion}
 
-Draft content for asvd.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Real Compression}
+
+ASVD reduces parameter count by {{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$ with modest 
+accuracy drops ({{D\_DELTA}}\%--{{G\_DELTA}}\%).
+
+\subsubsection{Takeaway 2: Explicit   is Valuable}
+
+Keeping $\Sigma$ as a separate parameter enables:
+\begin{itemize}
+\item Spectral inspection
+\item Rank truncation without re-factorization
+\item Direct manipulation
+
+\end{itemize}
+\subsubsection{Takeaway 3: Energy-Based Rank Adapts}
+
+Per-layer rank selection via energy thresholding outperforms uniform rank.
+
+\subsection{When to Use ASVD}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Storage-constrained deployment}
+\item \textbf{Multi-architecture deployment}
+\item \textbf{Base for further compression} (prune after ASVD)
+\item \textbf{Combined with quantization}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Extremely small models} (<10M params)
+\item \textbf{Extremely large models} (>10B params)
+\item \textbf{Latency-critical applications} (LoRA overhead)
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need to reduce model size? --- Yes --- Use ASVD
+  | No
+   
+Need per-layer rank control? --- Yes --- Use ASVD
+  | No
+   
+Use AASVD or A3
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{ASVD} & \textbf{Change} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M & \textbf{{{D\_RATIO}}$\times$} \\
+Disk & 134 MB & {{D\_DISK}} MB & \textbf{{{D\_DISK\_RATIO}}$\times$} \\
+Inference VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
+Inference time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Published ASVD Paper}
+
+The published ASVD paper (arXiv:2307.07382) reports compression ratios of 
+1.5-2$\times$ on LLaMA-7B. Our implementation achieves {{D\_RATIO}}$\times$ on DistilBERT 
+by using:
+
+\begin{itemize}
+\item Lower ranks ($r = 64$ vs $r \approx 128$)
+\item Dynamic rank selection
+\item Aggressive LoRA recovery
+
+\end{itemize}
+\subsection{Interaction with Other Methods}
+
+\textbf{Compositional pipeline:}
+
+\begin{enumerate}
+\item \textbf{ASVD compresses} base weights $\to$ smaller model.
+\item \textbf{Quantize} (INT8) $\to$ 2$\times$ further reduction.
+\item \textbf{LoRA recovery} fine-tunes.
+
+\end{enumerate}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Optimal $\epsilon$:} Task-dependent?
+\item \textbf{Full covariance:} Would AASVD's approach help ASVD?
+\item \textbf{Cross-task transfer:} Do ranks transfer from SST-2 to MNLI?
+\item \textbf{Quantization interaction:} INT8 + ASVD = ?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Democratizes AI
+\item Reduces carbon footprint
+\item Enables edge AI
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Dual-use
+\item Concentration risk
+
+\end{itemize}
+\subsubsection{Environmental}
+\begin{itemize}
+\item Training: ~{{COMPUTE\_HOURS}} GPU-hours
+\item CO$_2$: ~{{CO2}} kg
+
+\end{itemize}

@@ -1,11 +1,232 @@
-\section{05 Architecture}
 
-Draft content for asvd.
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & {{Q\_VERIFIED}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction -- Case by Case}
+
+\subsubsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+extracted["q"] = (src.q_lin.weight.data, src.q_lin.bias.data)
+extracted["k"] = (src.k_lin.weight.data, src.k_lin.bias.data)
+extracted["v"] = (src.v_lin.weight.data, src.v_lin.bias.data)
+extracted["o"] = (src.out_lin.weight.data, src.out_lin.bias.data)
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+
+Detection:
+
+\begin{lstlisting}
+if (hasattr(src, "self") and hasattr(src.self, "query")
+    and hasattr(src, "output") and hasattr(src.output, "dense")):
+    is_nested_encoder = True
+elif (cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
+      and not has_out_lin):
+    is_nested_encoder = True
+\end{lstlisting}
+
+Extraction:
+
+\begin{lstlisting}
+s = src.self
+extracted["q"] = (s.query.weight.data, s.query.bias.data)
+extracted["k"] = (s.key.weight.data, s.key.bias.data)
+extracted["v"] = (s.value.weight.data, s.value.bias.data)
+# out_proj is handled by set_identity -- outer attention.output.dense applies it
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight.data.clone()
+if "Conv1D" in type(src.c_attn).__name__:
+    c_w = c_w.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+extracted["q"] = (q_w, src.c_attn.bias.data[:768])
+extracted["k"] = (k_w, src.c_attn.bias.data[768:1536])
+extracted["v"] = (v_w, src.c_attn.bias.data[1536:2304])
+extracted["o"] = (src.c_proj.weight.data.t(), src.c_proj.bias.data)
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA + RoPE)}
+
+\begin{lstlisting}
+extracted["q"] = (src.q_proj.weight.data, src.q_proj.bias.data)
+extracted["k"] = (src.k_proj.weight.data, src.k_proj.bias.data)
+extracted["v"] = (src.v_proj.weight.data, src.v_proj.bias.data)
+extracted["o"] = (src.o_proj.weight.data, src.o_proj.bias.data)
+\end{lstlisting}
+
+\subsection{Nested Encoder Handling with `set\_identity`}
+
+RoBERTa and BERT nest attention: \texttt{BertAttention} has both \texttt{self} (Q/K/V) 
+and \texttt{output.dense} (output projection). If ASVD applies its own out\_proj 
+inside the attention module, and the outer \texttt{attention.output.dense} also 
+applies a projection, the result is a \textbf{double projection}.
+
+\textbf{Solution.} For nested encoders, ASVD's out\_proj is set to identity via 
+\texttt{set\_identity()}:
+
+\begin{lstlisting}
+if proj == "o" and self.is_nested_encoder:
+    self.out_proj.set_identity()
+\end{lstlisting}
+
+The identity configuration:
+
+\begin{lstlisting}
+def set_identity(self):
+    with torch.no_grad():
+        self.U.data.zero_()
+        self.V.data.zero_()
+        self.S.data.fill_(1.0)
+        r = min(self.rank, self.in_features, self.out_features)
+        self.U.data[:r, :r].fill_diagonal_(1.0)
+        self.V.data[:r, :r].fill_diagonal_(1.0)
+        if self.bias is not None:
+            self.bias.data.zero_()
+        self.freeze_base_weights()
+\end{lstlisting}
+
+Then, in \texttt{forward}:
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    out = context  # skip out_proj
+else:
+    out = self.out_proj(context)
+\end{lstlisting}
+
+\subsection{Injection with Pre-Flight Validation}
+
+The \texttt{inject\_asvd} hook performs a \textbf{pre-flight test}:
+
+\begin{lstlisting}
+def inject_asvd(model=None, layer=None, config=None, ...):
+    target_model = model or ...
+    if target_model is not None:
+        return inject_attention(target_model, "asvd", ...)
+    
+    old_attn = find_attention(layer)
+    target_config = config or old_attn.config
+    
+    if old_attn is not None:
+        try:
+            new_attn = ASVDAttention(target_config, rank=rank,
+                                      pretrained_attn=old_attn, **kwargs)
+            replace_attention(layer, new_attn)
+            return new_attn
+        except RuntimeError as err:
+            logger.warning(f"Pre-flight weight extraction failed: {err}. Aborting.")
+        except Exception as err:
+            logger.warning(f"Unexpected error: {err}. Aborting.")
+    
+    # Fallback to random initialization with warning
+    new_attn = ASVDAttention(target_config, rank=rank, **kwargs)
+    replace_attention(layer, new_attn)
+    return new_attn
+\end{lstlisting}
+
+\textbf{Key design choice.} ASVD attempts extraction \textbf{first} and aborts 
+cleanly on failure. This is safer than NHA/EAT (silent fallback) but 
+stricter than A3/AASVD (which log warnings).
+
+\subsection{The `ASVDLinear` Module Structure}
+
+\begin{lstlisting}
+class ASVDLinear(nn.Module):
+    def __init__(self, in_features, out_features, rank,
+                 bias=True, lora_rank=0, freeze_base=False):
+        super().__init__()
+        self.U = nn.Parameter(torch.empty(out_features, rank))
+        self.S = nn.Parameter(torch.empty(rank))
+        self.V = nn.Parameter(torch.empty(rank, in_features))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        if lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
+            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+\end{lstlisting}
+
+\textbf{Forward pass:}
+
+\begin{lstlisting}
+def forward(self, x):
+    Vx = F.linear(x, self.V)          # x @ V^T
+    SVx = Vx * self.S                  # scale by  
+    out = F.linear(SVx, self.U)        # @ U^T
+    if self.bias is not None:
+        out = out + self.bias
+    if self.lora_rank > 0:
+        lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
+        out = out + lora_out
+    return out * self.output_scale
+\end{lstlisting}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("asvd")
+@ATTENTION_REGISTRY.register("asvd_attention")
+class ASVDAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Causality}
+
+\textbf{Verification.} Gradient of output at position $i$ w.r.t. input at 
+position $j > i$ is zero.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing projection & \texttt{copy\_weights} raises & Pre-flight check aborts \\
+Small Frobenius norm & Explicit check & Raises RuntimeError \\
+Reconstruction error > $\tau$ & Validation & Aborts injection \\
+Cross-attention & Explicit check & Raises NotImplementedError \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cross-Attention Not Supported}
+
+\begin{lstlisting}
+if encoder_hidden_states is not None:
+    raise NotImplementedError("Cross-attention is not supported in ASVDAttention.")
+\end{lstlisting}
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/asvd_attention_architecture.png}
-\caption{Architectural overview of asvd.}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of asvd.}
 \label{fig:arch_asvd}
 \end{figure}
+

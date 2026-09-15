@@ -1,3 +1,110 @@
-\section{10 Limitations}
 
-Draft content for minimal_prism.
+\section{Limitations}
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. MinimalPRISM may behave differently on:
+\begin{itemize}
+\item Generation tasks
+\item Multi-class classification
+\item Token-level tasks
+\item Long-context tasks
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Constraint} & \textbf{Status} \\
+\midrule
+$\le$124M params & Tested \\
+>1B params & Not tested \\
+>24 layers & Not tested \\
+MoE & Not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+Only tested on RTX 4070 Laptop (8 GB). Scaling to other GPUs is unknown.
+
+\subsection{Calibration-Free Trade-off}
+
+MinimalPRISM does not use calibration data. This means:
+\begin{itemize}
+\item No activation-aware weighting
+\item Rank is based on weight spectrum only
+
+\end{itemize}
+A3 and AASVD achieve {{COV\_GAIN}}\% higher accuracy at the same compression, 
+but require calibration. This is a deliberate trade-off.
+
+\subsection{No Explicit Reconstruction Bound per Layer}
+
+Unlike A3, MinimalPRISM does \textbf{not} enforce a Frobenius error threshold 
+per layer. It relies on:
+\begin{itemize}
+\item Weight extraction checks (norm > 1e-4)
+\item Empirical accuracy after recovery
+\item Energy bound $\sqrt{1 - \eta}$ (theoretical, not enforced)
+
+\end{itemize}
+If a layer's energy-adaptive rank produces unexpectedly high error, this 
+will only be visible in downstream accuracy. We recommend adding explicit 
+Frobenius validation in future work.
+
+\subsection{Inference Latency on CPU}
+
+On CPU, factorized layers may be \textbf{slower} than dense due to:
+\begin{itemize}
+\item Two sequential matmuls
+\item Python overhead
+
+\end{itemize}
+On GPU, the situation is reversed (fewer FLOPs win).
+
+\subsection{Cross-Attention Not Supported}
+
+MinimalPRISM raises \texttt{NotImplementedError} for cross-attention. 
+Encoder-decoder models (T5, BART) are not supported.
+
+\subsection{Single-Seed Results}
+
+All main results from a single seed. SE ~1.69\%. Differences below 3.4\% may 
+be noise.
+
+\subsection{Rank Cap Heuristic}
+
+Default $r_\text{max} = {{RANK}}$ is chosen empirically. There is no 
+principled way to pick it without ablation.
+
+\subsection{Energy Threshold Heuristic}
+
+$\eta = {{ENERGY}}$ is a heuristic. Optimal values may differ per model.
+
+\subsection{No Comparison with Some Baselines}
+
+We do not directly compare with:
+\begin{itemize}
+\item Performer / Linformer (attention replacement)
+\item SparseGPT / Wanda (pruning)
+\item QLoRA (quantization + LoRA)
+
+\end{itemize}
+\subsection{Code Quality}
+
+Research-grade implementation. Known issues:
+\begin{itemize}
+\item Broad exception handling
+\item No unit tests for edge cases
+\item Numerical stability could be improved
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+See Appendix E.
+

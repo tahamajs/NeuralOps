@@ -1,3 +1,121 @@
-\section{02 Related}
 
-Draft content for minimal_nova.
+\section{Related Work}
+
+\subsection{Low-Rank Matrix Factorization}
+
+\textbf{Classical SVD.} The Eckart--Young theorem (Eckart \& Young, 1936) guarantees 
+that the best rank-$r$ approximation of $W$ in Frobenius norm is the truncated 
+SVD. MinimalNOVA uses truncated SVD as its core factorization primitive.
+
+\textbf{Randomized SVD.} Halko et al. (2011) provide randomized algorithms with 
+complexity $\mathcal{O}(dr \log k)$. For our layer sizes, exact SVD is 
+feasible and preferred.
+
+\textbf{Weighted low-rank.} Golub et al. (1987) and Srebro \& Jaakkola (2003) study 
+weighted variants. Related activation-aware approaches (Lin et al., 2023; 
+Xiao et al., 2023) weight the factorization by activation statistics. 
+MinimalNOVA uses unweighted SVD but adaptive rank.
+
+\textbf{Tensor decomposition.} Novikov et al. (2015) use tensor-train 
+decomposition for higher-order compression. MinimalNOVA uses matrix SVD, a 
+simpler primitive.
+
+\subsection{Rank Selection Strategies}
+
+\textbf{Fixed rank.} Most SVD-based compression methods use a fixed global rank 
+(Yu et al., 2017). This is simple but ignores heterogeneity.
+
+\textbf{Adaptive rank in LoRA.} AdaLoRA (Zhang et al., 2023) learns per-layer 
+rank budgets via importance scores. MinimalNOVA uses \textbf{spectral energy}, 
+a fixed criterion without learning.
+
+\textbf{Energy-based truncation.} In signal processing, energy-based truncation 
+is standard. Our contribution is applying it to **transformer attention 
+projections**.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\textbf{LoRA.} Hu et al. (2021) freeze base weights and train rank-$r$ adapters. 
+We use LoRA as the recovery mechanism after compression.
+
+\textbf{DoRA.} Liu et al. (2024) decompose weights into magnitude and direction. 
+Orthogonal to our work.
+
+\subsection{Attention Variants}
+
+\textbf{Standard MHSA.} Vaswani et al. (2017) introduce the four-projection 
+attention. MinimalNOVA preserves the four-projection structure but factorizes 
+each.
+
+\textbf{GQA.} Ainslie et al. (2023) use shared KV heads to reduce KV-cache size. 
+MinimalNOVA supports GQA via \texttt{repeat\_kv} at attention time.
+
+\textbf{MQA.} Shazeer (2019) uses a single KV head. Compatible with our approach.
+
+\subsection{Model Compression}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{Retrain} \\
+\midrule
+DistilBERT & Distillation & 1.6$\times$ & Yes (from scratch) \\
+TinyBERT & Distillation & 7$\times$ & Yes \\
+SparseGPT & Pruning & 2-4$\times$ & No \\
+Wanda & Pruning & 2$\times$ & No \\
+AWQ & Quantization & 4$\times$ & No \\
+GPTQ & Quantization & 4$\times$ & No \\
+A3 & Low-rank + diagonal & 5$\times$ & LoRA \\
+AASVD & Low-rank + full cov & 5$\times$ & LoRA \\
+\textbf{MinimalNOVA} & \textbf{Low-rank + energy-adaptive} & \textbf{{{D\_RATIO}}$\times$} & \textbf{LoRA} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Position of Our Work}
+
+MinimalNOVA differs from prior work in three ways:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior} & \textbf{MinimalNOVA} \\
+\midrule
+\textbf{Rank selection} & Fixed or learned & Energy-adaptive \\
+\textbf{Weighting} & Unweighted or activation-weighted & Unweighted (spectral) \\
+\textbf{Architectures} & Usually single family & Four families \\
+\textbf{Nested encoder} & Often broken & Explicit bypass \\
+\textbf{Conv1D (GPT-2)} & Often broken & Explicit transpose \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Unlike activation-aware methods (A3, AASVD), MinimalNOVA 
+does not require calibration data. Rank is chosen purely from the weight 
+spectrum, making it \textbf{training-free} and applicable to models where 
+calibration data is unavailable.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Calibration} & \textbf{Multi-arch} & \textbf{Adaptive rank} \\
+\midrule
+SVD (fixed) & None & Yes & No \\
+A3 & Required & Yes & Retry loop \\
+AASVD & Required & Yes & No \\
+SDRM & None & Yes & Budget-based \\
+\textbf{MinimalNOVA} & \textbf{None} & \textbf{4 families} & \textbf{Spectral energy} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

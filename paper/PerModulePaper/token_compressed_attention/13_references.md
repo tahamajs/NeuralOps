@@ -1,0 +1,141 @@
+# 13. References
+
+```bibtex
+@article{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@article{zhang2023h2o,
+  title={{H2O}: Heavy-hitter oracle for efficient generative inference},
+  author={Zhang, Zhenyu and others},
+  booktitle={NeurIPS},
+  year={2023}
+}
+
+@inproceedings{xiao2024efficient,
+  title={Efficient streaming language models with attention sinks},
+  author={Xiao, Guangxuan and others},
+  booktitle={ICLR},
+  year={2024}
+}
+
+@inproceedings{liu2024kivi,
+  title={{KIVI}: A tuning-free asymmetric 2bit quantization for KV cache},
+  author={Liu, Zirui and others},
+  booktitle={ICML},
+  year={2024}
+}
+
+@article{hooper2024kvquant,
+  title={{KVQuant}: Towards 10 million context length LLM inference},
+  author={Hooper, Coleman and others},
+  year={2024}
+}
+
+@inproceedings{li2024snapkv,
+  title={{SnapKV}: LLM knows what you are looking for before generation},
+  author={Li, Yuhong and others},
+  booktitle={NeurIPS},
+  year={2024}
+}
+
+@inproceedings{ainslie2023gqa,
+  title={{GQA}: Training generalized multi-query transformer models},
+  author={Ainslie, Joshua and others},
+  booktitle={EMNLP},
+  year={2023}
+}
+
+@article{shazeer2019fast,
+  title={Fast transformer decoding: One write-head is all you need},
+  author={Shazeer, Noam},
+  journal={arXiv:1911.02150},
+  year={2019}
+}
+
+@inproceedings{sukhbaatar2019adaptive,
+  title={Adaptive attention span in transformers},
+  author={Sukhbaatar, Sainbayar and others},
+  booktitle={ACL},
+  year={2019}
+}
+
+@inproceedings{roy2021efficient,
+  title={Efficient content-based sparse attention with routing transformers},
+  author={Roy, Aurko and others},
+  booktitle={TACL},
+  year={2021}
+}
+
+@inproceedings{rao2021dynamicvit,
+  title={{DynamicViT}: Efficient vision transformers with dynamic token sparsification},
+  author={Rao, Yongming and others},
+  booktitle={NeurIPS},
+  year={2021}
+}
+
+@inproceedings{yin2022avit,
+  title={{A-ViT}: Adaptive tokens for efficient vision transformer},
+  author={Yin, Hongxu and others},
+  booktitle={CVPR},
+  year={2022}
+}
+
+@inproceedings{liang2022evit,
+  title={{EViT}: Expediting vision transformers via token reorganizations},
+  author={Liang, Youwei and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}: Low-rank adaptation of large language models},
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{sanh2019distilbert,
+  title={{DistilBERT}, a distilled version of {BERT}},
+  author={Sanh, Victor and others},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title={{RoBERTa}: A robustly optimized BERT pretraining approach},
+  author={Liu, Yinhan and others},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality over a sentiment treebank},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{su2021roformer,
+  title={RoFormer: Enhanced transformer with rotary position embedding},
+  author={Su, Jianlin and others},
+  year={2021}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+```
+
+---

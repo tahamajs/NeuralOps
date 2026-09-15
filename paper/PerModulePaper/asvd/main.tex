@@ -64,10 +64,46 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the asvd module within modern transformer architectures.
+Low-rank factorization of transformer weight matrices reduces inference cost 
+by replacing each $d_\text{out} \times d_\text{in}$ weight matrix with two 
+small factors of rank $r$. Standard truncated SVD is optimal in an unweighted 
+Frobenius sense but ignores the fact that transformer activations are highly 
+non-uniform across both input dimensions and their correlations. 
+
+We present \textbf{ASVD} (\textbf{A}ctivation-aware \textbf{S}ingular \textbf{V}alue 
+\textbf{D}ecomposition), a production-hardened implementation of activation-aware 
+low-rank attention compression. ASVD factorizes the four attention projections 
+($W_Q, W_K, W_V, W_O$) into explicit $U \Sigma V^\top$ factors with rank 
+selected via \textbf{cumulative energy thresholding}, retries on error, and 
+\textbf{strict Frobenius-norm validation} that aborts injection if the reconstruction 
+error exceeds $\tau = {{ERROR_THRESHOLD}}$.
+
+ASVD replaces each \texttt{nn.Linear} with a structural \texttt{ASVDLinear} module computing:
+
+\[
+y = ((x V^\top) \odot \Sigma) U^\top + (x A^\top) B^\top \cdot s + b
+\]
+
+achieving genuine parameter reduction from $d_\text{in} d_\text{out}$ to 
+$r(d_\text{in} + d_\text{out}) + r(d_\text{in} + d_\text{out})_\text{LoRA}$. 
+On DistilBERT, RoBERTa-base, and GPT-2 with dynamic rank (energy threshold 
+$= {{ENERGY_THRESHOLD}}$), ASVD achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+parameter reduction at accuracy drops of \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} on 
+SST-2 after {{RECOVERY\_STEPS}} LoRA recovery steps. Peak VRAM decreases 
+by \textbf{{{VRAM\_REDUCTION}}\%}.
+
+Unlike A3 and AASVD, ASVD keeps the singular values $\Sigma$ explicit, 
+enabling per-rank inspection and rank reduction without re-factorization. We 
+provide a production-hardened implementation with four-architecture weight 
+transfer, GQA and RoPE support, and pre-flight extraction validation.
+
+\textbf{Keywords:} activation-aware compression, low-rank factorization, SVD, 
+attention, transformer efficiency
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} asvd, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} activation-aware compression, low-rank factorization, SVD,
 \end{abstract}
 
 \vspace{1em}

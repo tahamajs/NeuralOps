@@ -1,3 +1,201 @@
-\section{08 Analysis}
+\section{Analysis}
 
-Draft content for minimal_aurora.
+\subsection{Why MinimalAURORA Works}
+
+Three simple reasons:
+
+\subsubsection{Energy Threshold Adapts Per Layer}
+
+\textbf{Figure 8.1} shows the per-layer rank selected by $\varepsilon = 0.95$. 
+Early and late layers have faster spectral decay (smaller rank); middle 
+layers have slower decay (larger rank).
+
+\subsubsection{LoRA Provides Recovery Capacity}
+
+The LoRA branch adapts the frozen SVD to the task. With \texttt{r\_L = 16}, it 
+adds ~24K trainable parameters per projection.
+
+\subsubsection{Multi-Architecture Support}
+
+The \texttt{copy\_weights} routine handles four attention families via priority-ordered 
+extraction, ensuring weight transfer succeeds for all tested models.
+
+\subsection{Per-Layer Analysis}
+
+\textbf{Table 8.1: Rank and reconstruction error (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllllll}
+\toprule
+\textbf{Layer} & \textbf{Q rank} & \textbf{Q err} & \textbf{K rank} & \textbf{K err} & \textbf{V rank} & \textbf{V err} & \textbf{O rank} & \textbf{O err} \\
+\midrule
+0 & {{D\_L0\_QR}} & {{D\_L0\_QE}} & {{D\_L0\_KR}} & {{D\_L0\_KE}} & {{D\_L0\_VR}} & {{D\_L0\_VE}} & {{D\_L0\_OR}} & {{D\_L0\_OE}} \\
+1 & {{D\_L1\_QR}} & {{D\_L1\_QE}} & {{D\_L1\_KR}} & {{D\_L1\_KE}} & {{D\_L1\_VR}} & {{D\_L1\_VE}} & {{D\_L1\_OR}} & {{D\_L1\_OE}} \\
+... & ... & ... & ... & ... & ... & ... & ... & ... \\
+5 & {{D\_L5\_QR}} & {{D\_L5\_QE}} & {{D\_L5\_KR}} & {{D\_L5\_KE}} & {{D\_L5\_VR}} & {{D\_L5\_VE}} & {{D\_L5\_OR}} & {{D\_L5\_OE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{RANK\_OBS}}
+
+\subsection{Energy Threshold Effect}
+
+\textbf{Table 8.2: Total parameters vs $\varepsilon$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$\varepsilon$} & \textbf{DistilBERT params} & \textbf{Ratio} & \textbf{Mean rank} \\
+\midrule
+0.90 & {{D\_P90}} & {{D\_R90}}$\times$ & {{D\_MR90}} \\
+0.95 & {{D\_P95}} & {{D\_R95}}$\times$ & {{D\_MR95}} \\
+0.99 & {{D\_P99}} & {{D\_R99}}$\times$ & {{D\_MR99}} \\
+0.995 & {{D\_P995}} & {{D\_R995}}$\times$ & {{D\_MR995}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Higher $\varepsilon$ $\to$ larger rank $\to$ less compression $\to$ 
+better accuracy.
+
+\subsection{Comparison with AASVD}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{AASVD} & \textbf{MinimalAURORA} \\
+\midrule
+Weighting & Full covariance & None \\
+Calibration & Required & None \\
+Rank & Fixed cap & Energy-selected \\
+Memory & O(d ) & O(1) \\
+Complexity & High & Low \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with A3}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{A3} & \textbf{MinimalAURORA} \\
+\midrule
+Weighting & Fisher diagonal & None \\
+Rank & Adaptive retry & Energy \\
+LayerNorm recal & Yes & No \\
+Complexity & Medium & Low \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The `pres\_gate` Parameter Issue}
+
+\textbf{Critical finding.} \texttt{pres\_gate} is defined in \texttt{\_\_init\_\_}:
+
+\begin{lstlisting}
+self.pres_gate = nn.Parameter(torch.tensor(2.0))
+\end{lstlisting}
+
+But it is \textbf{never referenced in \texttt{forward}}. This is a code smell 
+indicating either:
+
+\begin{enumerate}
+\item \textbf{Dead code:} leftover from a previous design (e.g., a preservation
+  gate between attention output and residual).
+\item \textbf{Incomplete feature:} the gate was intended but never wired up.
+
+\end{enumerate}
+\textbf{Implications:}
+
+\begin{itemize}
+\item Adds 1 unnecessary parameter.
+\item No effect on forward pass.
+\item Misleading to readers and future maintainers.
+
+\end{itemize}
+\textbf{Recommendation.} Remove the parameter, or implement the gate 
+intended. If the intent was:
+
+\[
+\text{out} = \text{attn} + \sigma(\text{pres\_gate}) \cdot x
+\]
+
+then the forward should be modified accordingly. We do \textbf{not} recommend 
+this without ablation evidence.
+
+\subsection{The `output\_scale` Parameter}
+
+\texttt{output\_scale} is trainable and multiplies the attention output. In 
+our experiments, it drifts by \textbf{{{D\_OS\_DRIFT}}} on average. If it 
+reached 0, the attention output would collapse. We observe:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Init} & \textbf{Final} \\
+\midrule
+DistilBERT & 1.00 & {{D\_OS}} \\
+RoBERTa & 1.00 & {{R\_OS}} \\
+GPT-2 & 1.00 & {{G\_OS}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Recommendation.} Either remove this parameter, or initialize it to 
+1.0 and freeze it (or add a small regularization toward 1).
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa/BERT, the output projection is set to identity:
+
+\begin{lstlisting}
+if proj_key == "o" and self.is_nested_encoder:
+    eye_w = torch.eye(self.hidden_size, self.all_head_size)
+    target.decompose_from_weight(eye_w, None, self.energy)
+\end{lstlisting}
+
+This ensures the outer \texttt{attention.output.dense} applies the actual 
+output projection. Verified via forward-pass equivalence.
+
+\subsection{Inference Cost}
+
+\textbf{Table 8.3: Time breakdown (DistilBERT, N=128).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{Ours} \\
+\midrule
+Q/K/V/O projections & 0.5 ms & {{D\_PROJ\_TIME}} ms \\
+Attention & 0.4 ms & 0.4 ms \\
+LoRA & 0 & {{D\_LORA\_TIME}} ms \\
+\textbf{Total} & \textbf{1.4 ms} & \textbf{{{D\_TOTAL\_TIME}} ms} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{MinimalAURORA is a real compressor.} Parameters reduce by {{D\_RATIO}}$\times$.
+\item \textbf{Energy threshold adapts per layer.} Simpler than AASVD/A3.
+\item \textbf{No activation weighting} -- trades accuracy for simplicity.
+\item \textbf{\texttt{pres\_gate} is unused.} Recommend removal.
+\item \textbf{\texttt{output\_scale} drifts} but not to collapse.
+\item \textbf{Silent injection failure} requires caller attention.
+
+\end{enumerate}

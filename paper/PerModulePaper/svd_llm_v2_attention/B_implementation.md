@@ -1,0 +1,234 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: B_implementation.md
+     PURPOSE: Implementation details
+     DEPENDENCIES: 05_architecture.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix B. Implementation Details
+
+## B.1 The SVDLLMV2Attention Class
+
+```python
+class SVDLLMV2Attention(BaseAttention):
+    def __init__(self, config, old_attn=None, rank=64, energy_threshold=0.95,
+                 lora_rank=16, lora_alpha=32.0, **kwargs):
+        # Resolve dimensions
+        self.hidden_size = ...
+        self.num_heads = ...
+        self.head_dim = ...
+        self.num_kv_heads = ...
+        
+        # Explicit factor buffers
+        self.query_u  = nn.Parameter(...)   # (q_head_size, rank)
+        self.query_s  = nn.Parameter(...)   # (rank,)
+        self.query_vh = nn.Parameter(...)   # (rank, hidden_size)
+        self.query_bias = nn.Parameter(...)
+        # ... same for key, value, out_proj
+        
+        # LoRA per projection
+        if lora_rank > 0:
+            self.q_lora_A = nn.Parameter(...)
+            self.q_lora_B = nn.Parameter(...)
+            # ...
+        
+        self._init_random()
+        
+        # Freeze base weights
+        for p in (self.query_u, self.query_s, self.query_vh, self.query_bias,
+                  ...):
+            p.requires_grad = False
+        
+        if old_attn is not None:
+            self.copy_weights(old_attn)
+```
+
+## B.2 The `_project` Helper
+
+```python
+def _project(self, x, vh, s, u, b, lora_A, lora_B):
+    base_out = ((x @ vh.t()) * s.to(dtype=x.dtype)) @ u.t() + b
+    if self.lora_rank > 0 and lora_A is not None and lora_B is not None:
+        lora_out = F.linear(F.linear(x, lora_A), lora_B) * self.scaling
+        base_out = base_out + lora_out
+    return base_out
+```
+
+## B.3 The `_decompose_and_set` Method
+
+```python
+def _decompose_and_set(self, u_param, s_param, vh_param, bias_param,
+                       weight, bias):
+    with torch.no_grad():
+        W = weight.float()
+        # Pad or truncate to expected shape
+        if W.shape != (u_param.shape[0], vh_param.shape[1]):
+            padded_W = torch.zeros(u_param.shape[0], vh_param.shape[1], ...)
+            padded_W[:min(...), :min(...)] = W[:min(...), :min(...)]
+            W = padded_W
+        
+        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        total_energy = (S ** 2).sum().clamp(min=1e-12)
+        cum_energy = torch.cumsum(S ** 2, dim=0) / total_energy
+        r_energy = int((cum_energy < self.energy_threshold).sum().item()) + 1
+        r = max(1, min(r_energy, self.rank, len(S)))
+        
+        u_param.data.zero_()
+        s_param.data.zero_()
+        vh_param.data.zero_()
+        u_param.data[:, :r] = U[:, :r].to(u_param.dtype)
+        s_param.data[:r] = S[:r].to(s_param.dtype)
+        vh_param.data[:r, :] = Vt[:r, :].to(vh_param.dtype)
+        if bias is not None:
+            bias_param.data.copy_(bias.to(bias_param.dtype))
+```
+
+## B.4 Weight Transfer
+
+SVD-LLM V2 handles four patterns:
+
+```python
+def copy_weights(self, old_attn):
+    src = old_attn
+    if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
+        src = old_attn.self
+        if hasattr(old_attn.output, "dense"):
+            w_o, b_o = _unpack_weight_bias(old_attn.output.dense)
+    
+    # 1. GPT-2 Fused c_attn
+    if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
+        c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
+        split_size = c_attn_w.size(0) // 3
+        w_q = c_attn_w[:split_size, :]
+        w_k = c_attn_w[split_size:2*split_size, :]
+        w_v = c_attn_w[2*split_size:, :]
+        # ...
+    
+    # 2. RoBERTa / BERT
+    elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
+        w_q, b_q = _unpack_weight_bias(src.query)
+        # ...
+    
+    # 3. Qwen / LLaMA
+    elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
+        # ...
+    
+    # 4. DistilBERT
+    elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
+        # ...
+    
+    # Fallback: UniversalAdapter
+    if w_q is None or w_k is None or w_v is None:
+        adapter = UniversalAdapter(old_attn)
+        extracted = adapter.extract_qkv_out()
+        # ...
+    
+    # GQA pooling for K and V
+    if w_k.shape[0] != self.kv_head_size:
+        rep = w_k.shape[0] // self.kv_head_size
+        w_k_pooled = (
+            w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
+            .mean(dim=1)
+            .view(self.kv_head_size, -1)
+        )
+        # ...
+    
+    # Decompose and set
+    self._decompose_and_set(self.query_u, ..., w_q, b_q)
+    self._decompose_and_set(self.key_u, ..., w_k_pooled, b_k_pooled)
+    self._decompose_and_set(self.value_u, ..., w_v_pooled, b_v_pooled)
+    if w_o is not None and not self.is_nested_encoder:
+        self._decompose_and_set(self.out_proj_u, ..., w_o, b_o)
+```
+
+## B.5 Injection Hook
+
+```python
+def inject_svd_llm_v2(layer=None, model=None, model_config=None,
+                      comp_config=None, ...):
+    target = layer if layer is not None else model
+    
+    # Whole-model traversal
+    layer_list = ...
+    if layer_list is not None:
+        # Pre-test
+        test_src = getattr(layer_list[0], "attention", None)
+        if test_src is not None:
+            try:
+                SVDLLMV2Attention(cfg, old_attn=test_src, ...)
+            except Exception as e:
+                logger.warning(f"Pre-test failed: {e}")
+                return None
+        
+        # Inject each layer
+        count = 0
+        for idx, lyr in enumerate(layer_list):
+            res = inject_svd_llm_v2(layer=lyr, ...)
+            if res is not None:
+                count += 1
+        return target if count > 0 else None
+    
+    # Single-layer injection
+    src = get_attention(target)
+    
+    # Double-injection guard
+    if isinstance(src, SVDLLMV2Attention):
+        return None
+    
+    new_attn = SVDLLMV2Attention(cfg, old_attn=src, ...)
+    
+    # Set nested flag and replace
+    for attr in ("attention", "attn", "self_attn", "self"):
+        if hasattr(target, attr):
+            if attr == "attention" and hasattr(target.attention, "self"):
+                new_attn.is_nested_encoder = True
+                target.attention.self = new_attn
+            else:
+                new_attn.is_nested_encoder = False
+                setattr(target, attr, new_attn)
+            return new_attn
+```
+
+## B.6 Common Pitfalls
+
+### B.6.1 Conv1D Orientation
+
+`_unpack_weight_bias` handles this:
+
+```python
+if "Conv1D" in type(module).__name__ or hasattr(module, "nf"):
+    w = w.t()
+```
+
+### B.6.2 Nested Encoder Wrong Flag
+
+```python
+# WRONG (RoBERTa)
+self.is_nested_encoder = False   # out_proj applied twice
+
+# RIGHT
+if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+    self.is_nested_encoder = True
+```
+
+### B.6.3 LoRA B Not Zeroed
+
+```python
+for p_b in (self.q_lora_B, self.k_lora_B, self.v_lora_B, self.out_lora_B):
+    nn.init.zeros_(p_b)
+```
+
+### B.6.4 Missing GQA Pooling
+
+When `w_k.shape[0] != self.kv_head_size`, must mean-pool.
+
+## B.7 Comparison with Companion Methods
+
+| Feature | MinimalSVD | SVD-LLM V2 |
+|---|---|---|
+| Factorization | Symmetric | Explicit |
+| Storage | `U√Σ`, `√ΣV` | `U`, `Σ`, `V` |
+| Interpretable Σ | No | Yes |
+| GQA pooling | In `decompose` | In `copy_weights` |
+| Bias param | In `up.bias` | Separate |
+
+---

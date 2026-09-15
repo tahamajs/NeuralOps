@@ -1,3 +1,297 @@
-\section{04 Method}
+\section{Method}
 
-Draft content for hgrn2_layer.
+\subsection{Overview}
+
+HGRN2Layer replaces standard attention with a single element-wise recurrence. 
+The pipeline is:
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$\times$L$\times$d}
+              |
+       +------+------+
+                      
+    f_gate  i_gate  v_proj
+       |      |      |
+       +------+------+
+              |
+        g = (1-f) * i * v
+              |
+               
+    +-------------------+
+    | Chunked scan      |
+    | (FP32, chunk=32)  |
+    +---------+---------+
+              |
+               
+       h_ctx = scan(f, g)
+              |
+               
+    +-------------------+
+    | h_norm = LayerNorm|
+    | gated = (0.5v +   |
+    |   0.5h_norm)*silu(z)|
+    +---------+---------+
+              |
+               
+        out_proj
+              |
+               
+           Output Y
+\end{lstlisting}
+
+\subsection{Gate Computation}
+
+\textbf{Forget gate:}
+
+\[
+\log f_t = -\text{softplus}(W_f x_t + b_f)
+\tag{4.1}
+\]
+
+\[
+\log f_t \leftarrow \text{clamp}(\log f_t, -3, -10^{-4})
+\tag{4.2}
+\]
+
+\[
+f_t = \exp(\log f_t) \in [e^{-3}, 1] \approx [0.05, 1]
+\tag{4.3}
+\]
+
+\textbf{Initialization.} $W_f$ is normal $N(0, 0.01)$, $b_f = -2.5$ giving 
+$\text{softplus}(-2.5) \approx 0.076$, so $f_0 \approx e^{-0.076} \approx 0.93$ 
+-- a slow decay.
+
+\textbf{Input gate:}
+
+\[
+i_t = \sigma(W_i x_t + b_i)
+\tag{4.4}
+\]
+
+\textbf{Value:}
+
+\[
+v_t = W_v x_t
+\tag{4.5}
+\]
+
+\textbf{Input contribution:}
+
+\[
+g_t = (1 - f_t) \odot i_t \odot v_t
+\tag{4.6}
+\]
+
+\subsection{Chunked Parallel Scan}
+
+We partition the sequence into chunks of size $C = 32$. Within each chunk, 
+we compute the intra-chunk recurrence in parallel:
+
+\textbf{Step 1:} Compute cumulative log-forget within the chunk:
+
+\[
+A_k = \sum_{j=1}^{k} \log f_j
+\tag{4.7}
+\]
+
+\textbf{Step 2:} Compute pairwise decay:
+
+\[
+D_{k,j} = \exp(A_k - A_j) \quad \text{for } j \leq k
+\tag{4.8}
+\]
+
+Zero for $j > k$.
+
+\textbf{Step 3:} Intra-chunk state:
+
+\[
+h_k^\text{intra} = \sum_{j=1}^{k} D_{k,j} \cdot g_j
+\tag{4.9}
+\]
+
+\textbf{Step 4:} Combine with previous chunk state:
+
+\[
+h_k^\text{chunk} = h_\text{prev} \cdot \exp(A_k) + h_k^\text{intra}
+\tag{4.10}
+\]
+
+\textbf{Step 5:} Clip for stability:
+
+\[
+h_k^\text{chunk} \leftarrow \text{clamp}(h_k^\text{chunk}, -30, 30)
+\tag{4.11}
+\]
+
+\textbf{Step 6:} Update $h_\text{prev} = h_C^\text{chunk}$ and proceed to next chunk.
+
+\subsection{Bidirectional Recurrence}
+
+For encoders, we compute both forward and backward scans:
+
+\[
+h_t^\text{fwd} = \text{scan}(f_{1:L}, g_{1:L})_t
+\tag{4.12}
+\]
+
+\[
+h_t^\text{bwd} = \text{scan}(\text{flip}(f), \text{flip}(g))_{L-t+1}
+\tag{4.13}
+\]
+
+\[
+h_t = h_t^\text{fwd} + h_t^\text{bwd}
+\tag{4.14}
+\]
+
+For decoders (causal), we use only the forward scan.
+
+\subsection{Output Modulation}
+
+The raw state $h_t$ is normalized and gated:
+
+\[
+h_t^\text{norm} = \text{LayerNorm}(h_t)
+\tag{4.15}
+\]
+
+\[
+\text{combined}_t = 0.5 \cdot v_t + 0.5 \cdot h_t^\text{norm}
+\tag{4.16}
+\]
+
+\[
+\text{gated}_t = \text{combined}_t \odot \text{SiLU}(z_t)
+\tag{4.17}
+\]
+
+where $z_t = W_g x_t + b_g$ is a gating projection initialized with $b_g = 1.28$.
+
+\textbf{Why combine with $v_t$?} Directly using $h_t$ can cause the output to 
+drift far from the current value $v_t$. Averaging $0.5 v_t + 0.5 h_t$ 
+preserves a self-value path and stabilizes training.
+
+\textbf{Why SiLU gating?} A nonlinear gating on the combined signal allows the 
+model to suppress or amplify the recurrence.
+
+\subsection{Output Projection}
+
+\[
+\text{out} = W_o \text{gated} + b_o + \text{LoRA}(\text{gated})
+\tag{4.18}
+\]
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} HGRN2Layer forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+        chunk_size C = 32
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: f $\leftarrow$ exp(clamp(-softplus(W_f X + b_f), -3, -1e-4))
+ 2: i $\leftarrow$ sigmoid(W_i X + b_i)
+ 3: v $\leftarrow$ W_v X
+ 4: z $\leftarrow$ W_g X + b_g
+ 5: g $\leftarrow$ (1 - f)   i   v
+ 6: h_fwd $\leftarrow$ chunked_scan(f, g, C)
+ 7: if not is_decoder:
+ 8:     h_bwd $\leftarrow$ flip(chunked_scan(flip(f), flip(g), C))
+ 9:     h $\leftarrow$ h_fwd + h_bwd
+10: else:
+11:     h $\leftarrow$ h_fwd
+12: h_norm $\leftarrow$ LayerNorm(h)
+13: gated $\leftarrow$ (0.5 v + 0.5 h_norm)   SiLU(z)
+14: Y $\leftarrow$ W_o gated + b_o + LoRA(gated)
+15: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+For a single layer:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Forget gate & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Input gate & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Value & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Gate $z$ & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Chunked scan & $\mathcal{O}(L d)$ & $\mathcal{O}(C^2 + L d)$ \\
+Output & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+\textbf{Total} & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Compare to attention: $\mathcal{O}(L^2 d)$. Our method is \textbf{linear} in $L$.
+
+\subsection{Parameter Analysis}
+
+\textbf{HGRN2Layer does NOT reduce parameter count.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{HGRN2Layer} \\
+\midrule
+Attention Q/K/V/O & $4 d^2$ & 0 \\
+Forget gate & 0 & $d^2 + d$ \\
+Input gate & 0 & $d^2 + d$ \\
+Value & 0 & $d^2$ \\
+Gate $z$ & 0 & $d^2 + d$ \\
+StateNorm & 0 & $2d$ \\
+Output & 0 & $d^2 + d$ \\
+LoRA & 0 & $4 r_L d$ \\
+\textbf{Total per layer} & $4 d^2$ & $5 d^2 + \mathcal{O}(d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{Params} \\
+\midrule
+Baseline & 2,359,296 \\
+HGRN2Layer & ~2,949,120 \\
+\textbf{Increase} & \textbf{+25\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training}
+
+Trainable parameters:
+\begin{itemize}
+\item Forget gate $W_f, b_f$
+\item Input gate $W_i, b_i$
+\item Gate $W_g, b_g$
+\item LoRA on $W_v$ and $W_o$
+
+\end{itemize}
+Frozen:
+\begin{itemize}
+\item $W_v, W_o$ base weights
+\item All LoRA base weights from pretrained attention
+
+\end{itemize}
+\textbf{Trainable count:} for $d = 768$, $r_L = 16$:
+\begin{itemize}
+\item Gates: $\sim 2.4M$
+\item LoRA: $\sim 98K$
+\item Total: $\sim 2.5M$ per layer
+
+\end{itemize}

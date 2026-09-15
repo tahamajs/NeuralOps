@@ -1,3 +1,63 @@
-\section{A Math}
 
-Draft content for unified_rope.
+\section{Appendix A. Mathematical Derivations}
+
+\subsection{A.1 RoPE Norm Preservation}
+
+\textbf{Proposition.} The rotation operator preserves L2 norm.
+
+\textbf{Proof.} Rotation matrices $R(\theta)$ are orthogonal: $R R^\top = I$. 
+Therefore $\|R x\|_2 = \|x\|_2$. $\square$
+
+\subsection{A.2 RoPE Relative Position}
+
+\textbf{Proposition.} For $q_i$ at position $i$ and $k_j$ at position $j$:
+
+\[
+(R_i q_i)^\top (R_j k_j) = f(q_i, k_j, i - j)
+\tag{A.1}
+\]
+
+\textbf{Proof.} Classical (Su et al., 2021). The rotation angle difference 
+$R_i^\top R_j = R_{j-i}$ depends only on $j - i$. $\square$
+
+\subsection{A.3 Partial RoPE}
+
+For rotary dimension $r < d_h$:
+
+\[
+\tilde{q}_i = \begin{pmatrix} R_i^{(r)} q_i^{[:r]} \\ q_i^{[r:]} \end{pmatrix}
+\tag{A.2}
+\]
+
+The pass-through dimension $q_i^{[r:]}$ is unchanged.
+
+\subsection{A.4 GQA Expansion Correctness}
+
+\textbf{Claim.} GQA with \texttt{repeat\_kv} produces the same output as if KV heads 
+were explicitly duplicated.
+
+\textbf{Proof.} \texttt{repeat\_kv} duplicates heads. The attention output for each 
+query head uses its corresponding KV head. $\square$
+
+\subsection{A.5 Precomputed Cache Consistency}
+
+\textbf{Claim.} The cached \texttt{cos\_cached}, \texttt{sin\_cached} tables match recomputation 
+up to numerical precision.
+
+\textbf{Proof.} The cache is computed once via \texttt{einsum} and stored. Lookup is 
+exact. $\square$
+
+\subsection{A.6 Nested Encoder Output}
+
+\textbf{Claim.} For a nested encoder, the outer \texttt{output.dense} applies the 
+output projection; the inner attention returns raw context.
+
+\textbf{Proof.} By construction of \texttt{BertAttention}. $\square$
+
+\subsection{A.7 Parameter Count Unchanged}
+
+\textbf{Claim.} UnifiedRoPE does not change parameter count.
+
+\textbf{Proof.} The \texttt{LoRALinear} projections have the same parameter shapes as 
+the original \texttt{nn.Linear} projections. $\square$
+

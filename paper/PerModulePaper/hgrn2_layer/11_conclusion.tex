@@ -1,3 +1,73 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for hgrn2_layer.
+\subsection{Summary}
+
+We presented \textbf{HGRN2Layer}, an element-wise linear recurrent module that 
+replaces multi-head self-attention with a chunked parallel scan in 
+$\mathcal{O}(L d)$ time and $\mathcal{O}(d)$ memory per step. It supports 
+bidirectional (encoder) and causal (decoder) modes and transfers pretrained 
+weights from four architectures.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Speed @ L=128} & \textbf{Speed @ L=1024} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{SLOWDOWN}}$\times$ & {{S1024}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_SLOWDOWN}}$\times$ & {{R\_S1024}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_SLOWDOWN}}$\times$ & {{G\_S1024}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Element-wise recurrence works} at long L.
+\item \textbf{Bounded forget gate is essential.}
+\item \textbf{Input modulation prevents drift.}
+\item \textbf{Python loop limits short-sequence speed.}
+\item \textbf{Parameters increase} -- we are honest about this.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernel for chunked scan.
+\item Larger chunk size experiments.
+\item Cross-layer gate sharing.
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical bound on accuracy loss.
+\item Cross-task transferability.
+\item Integration with attention (hybrid layers).
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+HGRN2Layer is a practical, element-wise recurrent alternative to attention. 
+We release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed the module, implemented, ran experiments, wrote
+  the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

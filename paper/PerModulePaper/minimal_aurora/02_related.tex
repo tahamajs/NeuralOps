@@ -1,3 +1,103 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for minimal_aurora.
+\subsection{Low-Rank Matrix Factorization}
+
+\subsubsection{Classical SVD}
+
+Eckart-Young (1936): truncated SVD minimizes Frobenius error for a given 
+rank. MinimalAURORA uses SVD with \textbf{energy-based rank selection} rather 
+than fixed rank.
+
+\subsubsection{Randomized SVD}
+
+Halko et al. (2011): faster SVD via random projections. Not needed for 
+our layer sizes.
+
+\subsubsection{Weighted Low-Rank}
+
+Golub et al. (1987), Srebro \& Jaakkola (2003). MinimalAURORA uses 
+unweighted SVD (unlike A3/AASVD).
+
+\subsection{Transformer Compression}
+
+\subsubsection{ASVD / AASVD / A3}
+
+Companion modules:
+\begin{itemize}
+\item \textbf{ASVD}: activation-weighted SVD, fixed rank.
+\item \textbf{AASVD}: full covariance, streaming calibration.
+\item \textbf{A3}: Fisher diagonal, adaptive rank retry.
+
+\end{itemize}
+\textbf{MinimalAURORA differs:}
+\begin{itemize}
+\item No activation weighting (simpler).
+\item Energy threshold instead of error retry.
+\item Uses \texttt{nn.Linear} for factorization (not explicit U/S/V).
+
+\end{itemize}
+\subsubsection{SDRM}
+
+SDRM (companion): budget-proportional rank allocation. Uses parameter 
+ratio instead of energy threshold.
+
+\subsubsection{Res-SVD}
+
+Res-SVD (companion): two-level SVD with spectral LoRA initialization. 
+MinimalAURORA uses zero-init LoRA.
+
+\subsubsection{SVD-Linear}
+
+SVD-Linear (companion): SVD + kernelized linear attention. Combines 
+compression with complexity reduction. MinimalAURORA keeps softmax.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\subsubsection{LoRA}
+
+Hu et al. (2021): $B = 0$ init. MinimalAURORA uses standard LoRA.
+
+\subsubsection{PiSSA}
+
+Meng et al. (2024): LoRA init from principal directions. Complementary 
+to Res-SVD approach.
+
+\subsection{Energy-Based Rank Selection}
+
+\subsubsection{Energy Threshold}
+
+Common in PCA (Jolliffe, 2002): keep components explaining $\ge$95\% of 
+variance. MinimalAURORA applies this to SVD of weights.
+
+\subsubsection{Applications}
+
+\begin{itemize}
+\item \textbf{Image compression:} JPEG uses similar energy thresholding.
+\item \textbf{Recommender systems:} truncated SVD for latent factors.
+\item \textbf{NLP:} vocab projection.
+
+\end{itemize}
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Aspect} & \textbf{ASVD} & \textbf{AASVD} & \textbf{A3} & \textbf{Res-SVD} & \textbf{MinimalAURORA} \\
+\midrule
+Weighting & Activation & Full cov & Fisher diag & Unweighted & \textbf{Unweighted} \\
+Rank selection & Fixed & Fixed cap & Adaptive retry & Fixed & \textbf{Energy} \\
+LoRA init & Zero & Zero & Zero & Spectral & \textbf{Zero} \\
+Complexity & Simple & Complex & Medium & Medium & \textbf{Simple} \\
+Multi-arch & Yes & Yes & Yes & Yes & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Companion Modules}
+
+MinimalAURORA is a \textbf{baseline-quality} compression method with the 
+simplest possible machinery. It trades algorithmic sophistication for 
+implementation clarity and reliability.
+

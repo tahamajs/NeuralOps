@@ -64,10 +64,46 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal analysis and benchmark evaluation of the module.
+Self-attention computes an $L \times L$ score matrix from $Q, K \in \mathbb{R}^{L \times d_h}$, 
+dominated by the $\mathcal{O}(L^2 d_h)$ cost of the matrix product $Q K^\top$. 
+We introduce \textbf{RPC} (\textbf{R}andom \textbf{P}rojection \textbf{C}ompressed) attention, 
+which sketches $Q$ and $K$ into a lower-dimensional subspace before score 
+computation:
+
+\[
+\text{score}_{ij} = \frac{(Q_i \Omega)(K_j \Omega)^\top}{\sqrt{r}}, \qquad
+\Omega \in \mathbb{R}^{d_h \times r}, \; r < d_h
+\]
+
+where $\Omega$ is a \textbf{fixed head-wise Gaussian random matrix}, non-trainable. 
+By the Johnson--Lindenstrauss lemma, inner products are approximately preserved 
+under this projection with high probability, so the sketched attention 
+approximates the full attention while reducing score FLOPs from 
+$\mathcal{O}(L^2 d_h)$ to $\mathcal{O}(L d_h r + L^2 r)$.
+
+RPC supports four attention families through a single weight-transfer 
+routine: flat (DistilBERT), nested (RoBERTa/BERT), causal Conv1D (GPT-2), 
+and grouped-query with rotary embeddings (Qwen/LLaMA). Base projections 
+are frozen; only LoRA adapters are trained.
+
+We evaluate RPC on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
+{{RECOVERY\_STEPS}} LoRA recovery steps. RPC achieves \textbf{{{D\_ACC}}\%} on 
+DistilBERT ($\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), 
+and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}).
+
+RPC \textbf{increases} parameter count by \textbf{{{PARAM\_CHANGE\_PCT}}\%} due to LoRA 
+adapters on four projections. RPC \textbf{does not reduce memory}: the attention 
+score matrix remains $L \times L$, only its content is computed in a lower 
+dimension. The "compressed" in the name refers to the Q/K representations, 
+not to model or memory size.
+
+\textbf{Keywords:} random projection, Johnson-Lindenstrauss, attention sketching, 
+low-dimensional attention, transformer efficiency
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} Efficient Attention, Transformers, Deep Learning, Model Compression
+\noindent\textbf{Keywords:} random projection, Johnson-Lindenstrauss, attention sketching,
 \end{abstract}
 
 \vspace{1em}

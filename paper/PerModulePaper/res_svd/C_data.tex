@@ -1,3 +1,170 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for res_svd.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Ratio & {{D\_RATIO}}$\times$ \\
+Base rank & {{BASE\_RANK}} \\
+Residual rank & {{RESIDUAL\_RANK}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+Ratio & {{R\_RATIO}}$\times$ \\
+Accuracy & {{R\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+Ratio & {{G\_RATIO}}$\times$ \\
+Accuracy & {{G\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Base Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_b$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & {{D\_B8}} & {{R\_B8}} & {{G\_B8}} \\
+16 & {{D\_B16}} & {{R\_B16}} & {{G\_B16}} \\
+32 & {{D\_B32}} & {{R\_B32}} & {{G\_B32}} \\
+64 & {{D\_B64}} & {{R\_B64}} & {{G\_B64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Residual Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_r$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & {{D\_R0}} & {{R\_R0}} & {{G\_R0}} \\
+2 & {{D\_R2}} & {{R\_R2}} & {{G\_R2}} \\
+4 & {{D\_R4}} & {{R\_R4}} & {{G\_R4}} \\
+8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
+16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Scaling Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$\alpha$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.5 & {{D\_A05}} & {{R\_A05}} & {{G\_A05}} \\
+1.0 & {{D\_A10}} & {{R\_A10}} & {{G\_A10}} \\
+2.0 & {{D\_A20}} & {{R\_A20}} & {{G\_A20}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 vs Pure SVD}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+Pure SVD (r=20) & {{D\_SVD20}} & {{R\_SVD20}} \\
+Res-SVD (16,4) & {{D\_ACC}} & {{R\_ACC}} \\
+Difference & {{D\_DIFF}} & {{R\_DIFF}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.9 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "params_before": 66955010,
+    "params_after": {{D_PARAMS}},
+    "ratio": {{D_RATIO}},
+    "accuracy_pct": {{D_ACC}},
+    "base_rank": {{BASE_RANK}},
+    "residual_rank": {{RESIDUAL_RANK}}
+  },
+  "roberta": {...},
+  "gpt2": {...}
+}
+\end{lstlisting}
+
+\subsection{C.10 Reproduction Commands}
+
+\begin{lstlisting}
+# Full benchmark
+python run_all_4_res_svd.py --models distilbert,roberta,gpt2
+
+# Base rank sweep
+for rb in 8 16 32 64; do
+    python run_all_4_res_svd.py --base_rank $rb --output_suffix rb$rb
+done
+
+# Residual rank sweep
+for rr in 0 2 4 8 16; do
+    python run_all_4_res_svd.py --residual_rank $rr --output_suffix rr$rr
+done
+\end{lstlisting}
+

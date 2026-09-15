@@ -1,3 +1,93 @@
-\section{02 Related}
 
-Draft content for unified_rope.
+\section{Related Work}
+
+\subsection{Position Embeddings in Transformers}
+
+\subsubsection{Absolute Position Embeddings}
+
+Vaswani et al. (2017) proposed learned absolute position embeddings. Used 
+in GPT-1, BERT, RoBERTa, DistilBERT. Simple but do not generalize beyond 
+trained lengths.
+
+\subsubsection{Sinusoidal Position Embeddings}
+
+Vaswani et al. (2017) also proposed fixed sinusoidal embeddings. Used in 
+early transformers. Inferior to learned embeddings in practice.
+
+\subsubsection{Relative Position Embeddings}
+
+Shaw et al. (2018) introduced relative position embeddings conditioned on 
+$\Delta = i - j$. T5 (Raffel et al., 2020) uses relative position biases.
+
+\subsubsection{Rotary Position Embeddings (RoPE)}
+
+Su et al. (2021) rotate $Q, K$ by position-dependent angles:
+
+\[
+\tilde{q}_i = q_i \cos(\theta_i) + \mathrm{rot}(q_i) \sin(\theta_i)
+\tag{2.1}
+\]
+
+The resulting attention score depends only on $\Delta$. RoPE is now 
+standard in LLaMA, Qwen, Mistral, and Gemma.
+
+\subsubsection{ALiBi}
+
+Press et al. (2022) use a linear bias instead of position embeddings. 
+Alternative to RoPE.
+
+\subsection{Attention Variants}
+
+\subsubsection{Standard MHSA}
+
+Vaswani et al. (2017). Four projections: $W_Q, W_K, W_V, W_O$.
+
+\subsubsection{Multi-Query Attention (MQA)}
+
+Shazeer (2019). Single KV head shared across queries.
+
+\subsubsection{Grouped-Query Attention (GQA)}
+
+Ainslie et al. (2023). $H_{kv} < H$ KV heads, repeated $H / H_{kv}$ times.
+
+\subsubsection{Multi-Head Latent Attention (MLA)}
+
+DeepSeek-AI (2024). Shared latent for K, V.
+
+\subsection{Portability and Reproducibility}
+
+\subsubsection{FlashAttention}
+
+Dao et al. (2022) provide exact attention with IO-awareness. Ported to 
+multiple GPUs.
+
+\subsubsection{Reproducibility Studies}
+
+Chen et al. (2024) reproduce FlashAttention. Wang et al. (2024) reproduce 
+Performer. Our work is in the same spirit: we provide a portable RoPE 
+attention and document the portability challenges.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Su et al. 2021} & \textbf{This work} \\
+\midrule
+\textbf{RoPE formulation} & Novel & Reproduced \\
+\textbf{Architecture support} & LLaMA & Four families \\
+\textbf{Weight transfer} & Not addressed & Full support \\
+\textbf{Nested encoder} & Not addressed & Explicit bypass \\
+\textbf{Conv1D (GPT-2)} & Not addressed & Explicit transposition \\
+\textbf{LoRA preservation} & Not addressed & Full support \\
+\textbf{Purpose} & Novel method & Portability study \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} UnifiedRoPE does not introduce a new position encoding. 
+It provides a \textbf{single portable implementation} of RoPE attention that 
+works across four families. The contribution is engineering, not science.
+

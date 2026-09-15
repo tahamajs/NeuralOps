@@ -1,3 +1,92 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for token_compressed_attention.
+\subsection{KV Cache Compression}
+
+\subsubsection{Quantization}
+
+KIVI (Liu et al., 2024) applies asymmetric 2-bit quantization per channel. 
+KVQuant (Hooper et al., 2024) uses non-uniform quantization with outlier 
+handling. These methods are \textbf{orthogonal} to token selection: our 
+compression can be applied first, then quantized.
+
+\subsubsection{Token Eviction}
+
+H2O (Zhang et al., 2023) tracks accumulated attention scores and evicts 
+low-scoring tokens. StreamingLLM (Xiao et al., 2024) preserves initial 
+tokens as "attention sinks" plus a sliding window. Scissorhands (Liu et al., 
+2023) uses a similar paradigm.
+
+\textbf{Our distinction.} H2O and StreamingLLM use \textbf{fixed} criteria (attention 
+mass or position). TCA uses a \textbf{learnable} score, trained end-to-end with 
+the recovery fine-tuning.
+
+\subsubsection{Low-Rank Projection}
+
+Multi-Query Attention (Shazeer, 2019) and Grouped-Query Attention (Ainslie 
+et al., 2023) share KV heads across query heads. Multi-Head Latent Attention 
+(DeepSeek-V2, 2024) projects KV to a low-rank latent. These reduce KV size 
+per token but do not reduce the token count.
+
+\subsubsection{Hybrid Methods}
+
+SnapKV (Li et al., 2024) combines observation windows with token selection. 
+PyramidKV (Cai et al., 2024) applies different budgets per layer. Our method 
+is a single-layer module that can be stacked with these.
+
+\subsection{Learnable Sparsity}
+
+\textbf{Adaptive attention.} Adaptive Attention Span (Sukhbaatar et al., 2019) 
+learns per-head attention spans. Routing Transformer (Roy et al., 2021) 
+learns content-based token clusters. \textbf{TCA learns per-token importance}, 
+a finer granularity than per-head spans.
+
+\textbf{Dynamic token pruning.} Progressive Token Pruning (EAT) prunes at 
+intermediate layers. TCA prunes inside each attention block.
+
+\subsection{Compressed Attention for Vision}
+
+DynamicViT (Rao et al., 2021), A-ViT (Yin et al., 2022), and EViT (Liang 
+et al., 2022) prune tokens in vision transformers. These operate on the 
+residual stream, while TCA operates on K/V only.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Criterion} & \textbf{Learnable?} & \textbf{Preserves [CLS]?} & \textbf{Causal-safe?} \\
+\midrule
+H2O & Accumulated attn & No & Partial & Partial \\
+StreamingLLM & Position & No & Yes (sinks) & Yes \\
+SnapKV & Observation window & No & Partial & Partial \\
+\textbf{TCA} & \textbf{Score net + norm} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} TCA's selection criterion is learned. This is the first 
+KV token selection method to jointly learn the scoring function with LoRA 
+recovery.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Params} & \textbf{KV bytes} & \textbf{Learnable} \\
+\midrule
+Baseline & -- & $P$ & $2 H_{kv} L d_h$ & -- \\
+H2O & Eviction & $P$ & $2 H_{kv} k d_h$ & No \\
+StreamingLLM & Sink + window & $P$ & $2 H_{kv} (s + w) d_h$ & No \\
+KIVI (2-bit) & Quantization & $P$ & $\frac{1}{4} \cdot 2 H_{kv} L d_h$ & No \\
+\textbf{TCA} & \textbf{Learnable selection} & $P + \epsilon$ & $2 H_{kv} k d_h$ & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

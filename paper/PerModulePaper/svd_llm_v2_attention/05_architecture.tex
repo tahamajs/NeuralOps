@@ -1,11 +1,238 @@
-\section{05 Architecture}
 
-Draft content for svd_llm_v2_attention.
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{$d$} & \textbf{$H$} & \textbf{$H_{kv}$} & \textbf{Nested?} & \textbf{Conv1D?} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & No & No \\
+RoBERTa-base & 12 & 768 & 12 & 12 & Yes & No \\
+GPT-2 & 12 & 768 & 12 & 12 & No & Yes \\
+Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & No & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+distilbert.transformer.layer.0.attention
++-- q_lin  (Linear 768 $\to$ 768)
++-- k_lin  (Linear 768 $\to$ 768)
++-- v_lin  (Linear 768 $\to$ 768)
++-- out_lin (Linear 768 $\to$ 768)
+\end{lstlisting}
+
+All four are \texttt{nn.Linear}. Direct factorization.
+
+\texttt{is\_nested\_encoder = False} because \texttt{out\_lin} is inside the attention.
+
+\subsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+roberta.encoder.layer.0.attention
++-- self
+|   +-- query
+|   +-- key
+|   +-- value
++-- output
+    +-- dense  # $\leftarrow$ outside
+\end{lstlisting}
+
+\textbf{Critical:} \texttt{output.dense} sits outside. SVD-LLM V2 sets 
+\texttt{is\_nested\_encoder = True} and skips \texttt{out\_proj}.
+
+\textbf{Detection.} In \texttt{copy\_weights}:
+
+\begin{lstlisting}
+if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
+    src = old_attn.self
+    if hasattr(old_attn.output, "dense"):
+        w_o, b_o = _unpack_weight_bias(old_attn.output.dense)
+    # Note: even though we extract W_O, we set is_nested_encoder=True
+    # so it will NOT be used in forward.
+\end{lstlisting}
+
+Wait -- SVD-LLM V2 \textbf{does} extract \texttt{W\_O} from the outer layer but **skips 
+it** in forward if nested. This may seem redundant but keeps the code 
+uniform. In our experiments, this extraction is only used to validate 
+weight availability; the actual out projection is applied by the outer 
+\texttt{BertSelfOutput.dense}.
+
+\subsection{GPT-2 (Causal Conv1D)}
+
+\begin{lstlisting}
+transformer.h.0.attn
++-- c_attn  (Conv1D 768 $\to$ 2304)   # fused Q, K, V
++-- c_proj  (Conv1D 768 $\to$ 768)
+\end{lstlisting}
+
+\textbf{Split c\_attn:}
+
+\begin{lstlisting}
+c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
+split_size = c_attn_w.size(0) // 3
+w_q = c_attn_w[:split_size, :]
+w_k = c_attn_w[split_size : 2 * split_size, :]
+w_v = c_attn_w[2 * split_size :, :]
+\end{lstlisting}
+
+\textbf{Conv1D transposition:} \texttt{\_unpack\_weight\_bias} handles this automatically:
+
+\begin{lstlisting}
+if "Conv1D" in type(module).__name__ or hasattr(module, "nf"):
+    w = w.t()
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False} because \texttt{c\_proj} is inside the attention.
+
+\subsection{Qwen3.5 (GQA + RoPE)}
+
+\begin{lstlisting}
+model.layers.0.self_attn
++-- q_proj  (Linear 1024 $\to$ 2048)   # H * d_h
++-- k_proj  (Linear 1024 $\to$ 512)    # H_kv * d_h
++-- v_proj  (Linear 1024 $\to$ 512)
++-- o_proj  (Linear 2048 $\to$ 1024)
+\end{lstlisting}
+
+\textbf{GQA pooling.} When source \texttt{W\_K} has more rows than \texttt{self.kv\_head\_size}:
+
+\begin{lstlisting}
+rep = w_k.shape[0] // self.kv_head_size
+w_k_pooled = (
+    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
+    .mean(dim=1)
+    .view(self.kv_head_size, -1)
+)
+\end{lstlisting}
+
+\textbf{RoPE handling.} Qwen passes \texttt{position\_embeddings} in kwargs. SVD-LLM V2 
+applies RoPE after projection.
+
+\texttt{is\_nested\_encoder = False}.
+
+\subsection{Nested Encoder Bypass}
+
+When \texttt{is\_nested\_encoder = True}:
+
+\begin{lstlisting}
+context = torch.matmul(probs, V).transpose(1, 2).contiguous().view(...)
+
+if self.is_nested_encoder:
+    out = context       # $\leftarrow$ No out_proj
+else:
+    out = self._project(context, ...)   # $\leftarrow$ out_proj applied
+\end{lstlisting}
+
+The outer \texttt{BertSelfOutput.dense} then applies the projection.
+
+\subsection{Injection Protocol}
+
+SVD-LLM V2's injection hook has three safety layers:
+
+\subsubsection{Pre-Test}
+
+\begin{lstlisting}
+test_src = layer_list[0].attention
+try:
+    test_module = SVDLLMV2Attention(cfg, old_attn=test_src, ...)
+except Exception as e:
+    logger.warning(f"Pre-test failed: {e}")
+    return None
+\end{lstlisting}
+
+\subsubsection{Double-Injection Guard}
+
+\begin{lstlisting}
+if isinstance(src, SVDLLMV2Attention) or "SVDLLMV2" in src.__class__.__name__:
+    return None
+\end{lstlisting}
+
+\subsubsection{Frobenius Validation}
+
+\begin{lstlisting}
+for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
+    if torch.norm(w.float(), p="fro").item() < 1e-4:
+        raise RuntimeError(f"Near-zero norm on {name}")
+\end{lstlisting}
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & Pre-test or \texttt{copy\_weights} raises & Abort injection \\
+Near-zero Frobenius & Norm check < 1e-4 & Raise \\
+Shape mismatch & Padding in \texttt{\_decompose\_and\_set} & Warn \\
+Double injection & Class name guard & Skip \\
+Cross-attention & Not supported & Not implemented \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("svd_llm_v2")
+@ATTENTION_REGISTRY.register("svd_llm_v2_attention")
+class SVDLLMV2Attention(BaseAttention):
+    ...
+
+@ATTENTION_REGISTRY.register("svd_llm_v2_inject")
+@ATTENTION_REGISTRY.register("inject_svd_llm_v2")
+def inject_svd_llm_v2(...):
+    ...
+\end{lstlisting}
+
+\subsection{Interaction with LoRA Recovery Pipeline}
+
+SVD-LLM V2 integrates cleanly with the framework's LoRA recovery:
+
+\begin{enumerate}
+\item \textbf{Inject} SVD-LLM V2 $\to$ explicit factor buffers, frozen.
+\item \textbf{LoRA adapters} per projection (q/k/v/out) are trainable.
+\item \textbf{Recovery fine-tuning} trains only LoRA parameters.
+\item \textbf{Evaluation} uses the fine-tuned model.
+
+\end{enumerate}
+The framework's \texttt{get\_recovery\_params} finds \texttt{\textit{\_lora\_A}, \texttt{}\_lora\_B} 
+parameters by naming convention.
+
+\subsection{Comparison with Companion Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Feature} & \textbf{MinimalSVD} & \textbf{MinimalPRISM} & \textbf{SVD-LLM V2} \\
+\midrule
+Factorization & Symmetric & Symmetric & \textbf{Explicit} \\
+Rank per projection & Yes & Yes & Yes \\
+LoRA placement & Inside & Inside & \textbf{Separate per proj} \\
+Bias handling & In \texttt{up.bias} & In \texttt{up.bias} & \textbf{Separate parameter} \\
+GQA pooling & General & General & \textbf{Per-head mean-pool} \\
+Interpretable $\Sigma$ & No & No & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
-\caption{Architectural overview of svd_llm_v2_attention.}
-\label{fig:arch_svd_llm_v2_attention}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of svd\_llm\_v2\_attention.}
+\label{fig:arch_svd-llm-v2-attention}
 \end{figure}
+

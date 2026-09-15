@@ -1,3 +1,120 @@
-\section{01 Intro}
+\section{Introduction}
 
-Draft content for token_compressed_attention.
+\subsection{Motivation}
+
+Transformer inference on long sequences is dominated by two costs:
+
+\begin{enumerate}
+\item \textbf{Attention compute:} $\mathcal{O}(L^2)$ in sequence length $L$.
+\item \textbf{KV cache memory:} $\mathcal{O}(L)$ per layer per head.
+
+\end{enumerate}
+For a 12-layer model with 12 heads and head dimension 64, the KV cache 
+requires $12 \times 12 \times 2 \times L \times 64$ floats -- about **6 MB 
+per 1K tokens** at FP16. At 32K tokens, this grows to ~200 MB, exceeding 
+the footprint of the model itself.
+
+\textbf{KV cache compression} addresses this bottleneck. Existing approaches fall 
+into three categories:
+
+\begin{enumerate}
+\item \textbf{Quantization} (KIVI, KVQuant): reduce bit-width per element.
+\item \textbf{Eviction} (H2O, StreamingLLM): drop unimportant tokens.
+\item \textbf{Low-rank projection} (MLA, MQA): project to smaller subspaces.
+
+\end{enumerate}
+Our work belongs to the second category. We ask: **can we learn which tokens 
+to keep, rather than using a fixed heuristic?**
+
+\subsection{Problem Statement}
+
+Given a sequence of $L$ tokens, we seek a compressed KV sequence of length 
+$k = \lceil \rho L \rceil$ such that:
+
+\[
+\text{Attn}(q_i, K_c, V_c) \approx \text{Attn}(q_i, K, V)
+\tag{1.1}
+\]
+
+for all query positions $i$, where $K_c, V_c$ are the compressed KV tensors.
+
+We impose the following constraints:
+
+\begin{enumerate}
+\item \textbf{Preserve \texttt{[CLS]}:} The first token must always be retained.
+\item \textbf{Respect causality:} For decoders, query at position $i$ must not attend
+  to compressed keys whose original position is $> i$.
+\item \textbf{Learn the criterion:} The selection must be trainable, not a fixed rule.
+\item \textbf{Cross-architecture:} Must work for flat, nested, and causal attention.
+\item \textbf{No base retraining:} Only the scoring head and LoRA may be trained.
+
+\end{enumerate}
+\subsection{Our Approach}
+
+We introduce \textbf{TokenCompressedAttention} (TCA). Given projected $Q, K, V$, we:
+
+\begin{enumerate}
+\item Compute a per-token importance score combining:
+\end{enumerate}
+\begin{itemize}
+\item The $\ell_2$ norm of the token's hidden state (a proxy for activation energy).
+\item A learnable score predicted by a small MLP.
+\end{itemize}
+\begin{enumerate}
+\item Always retain \texttt{[CLS]} (position 0).
+\item Select the top-$k$ tokens by score.
+\item Gather the corresponding rows of $K$ and $V$.
+\item Apply standard attention with strict causal masking against the \textbf{original} positions.
+
+\end{enumerate}
+\textbf{Key innovation.} The learnable score is trained end-to-end with the recovery 
+LoRA. This lets the model discover which tokens matter, rather than relying 
+on a fixed norm-based heuristic.
+
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A learnable token-selection module.} We propose a lightweight
+  score\_net ({{SCORE\_NET\_PARAMS}} parameters) that learns to identify
+  important tokens.
+\item \textbf{Causal-safe selection.} We derive a strict causal mask over compressed
+  keys, ensuring decoder correctness.
+\item \textbf{\texttt{[CLS]} guarantee.} The first token is always retained -- critical for
+  classification tasks where \texttt{[CLS]} aggregates the sequence.
+\item \textbf{A production-hardened implementation.} Handles DistilBERT, RoBERTa
+  (nested), GPT-2 (Conv1D), and Qwen (GQA + RoPE).
+\item \textbf{Honest framing.} We do \textbf{not} claim parameter reduction; we reduce
+  inference compute and memory only.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on attention, 
+KV cache, and token selection. Section 4 presents TCA. Section 5 describes 
+integration. Section 6 details the setup. Section 7 reports results. 
+Section 8 analyzes the contribution of each component. Section 9 discusses 
+trade-offs. Section 10 lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Full sequence length \\
+$k$ & Compressed KV length \\
+$\rho$ & Compression ratio ($k = \lceil \rho L \rceil$) \\
+$H$ & Query heads \\
+$H_{kv}$ & KV heads \\
+$d_h$ & Head dimension \\
+$s_i$ & Importance score for token $i$ \\
+$\mathcal{S}$ & Set of selected token indices \\
+\bottomrule
+\end{tabular}
+\end{table}
+

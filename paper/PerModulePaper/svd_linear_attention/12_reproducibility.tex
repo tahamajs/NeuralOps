@@ -1,3 +1,117 @@
-\section{12 Reproducibility}
 
-Draft content for svd_linear_attention.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running SVD-Linear}
+
+\begin{lstlisting}
+python run_all_4_svd_linear_attention.py \
+    --models distilbert,roberta,gpt2 \
+    --rank {{RANK}} \
+    --mode {{MODE}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1}
+\begin{lstlisting}
+python run_all_4_svd_linear_attention.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.6 (rank)}
+\begin{lstlisting}
+for r in 8 16 32 64 128; do
+    python run_all_4_svd_linear_attention.py --rank $r --output_suffix r$r
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.7 (decay)}
+\begin{lstlisting}
+python run_all_4_svd_linear_attention.py --use_decay_gating false --output_suffix nodecay
+python run_all_4_svd_linear_attention.py --use_decay_gating true  --output_suffix decay
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_RATIO}}$\times$ \\
+RoBERTa & {{R\_ACC}}\% & {{R\_RATIO}}$\times$ \\
+GPT-2 & {{G\_ACC}}\% & {{G\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Dataset: SST-2
+\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-svd\_linear}
+\item Metrics: \texttt{results/unified\_svd\_linear\_attention/*/summary.csv}
+
+\end{itemize}
+\subsection{Streaming Example}
+
+\begin{lstlisting}
+from framework.attentions.svd_linear_attention import SVDLinearAttention
+
+# Initialize attention
+attn = SVDLinearAttention(config, old_attn=src)
+attn.eval()
+
+# Streaming inference
+state = None
+for token in sequence:
+    out, state = attn.step_recurrent(token, state)
+\end{lstlisting}
+
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Windows: \texttt{PYTHONIOENCODING=utf-8}
+\item Cross-attention not supported
+\item Chunk size fixed at 64
+\item Decay init is approximate
+
+\end{itemize}

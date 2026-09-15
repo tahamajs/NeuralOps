@@ -1,3 +1,328 @@
-\section{04 Method}
 
-Draft content for unified_rope.
+\section{Method}
+
+\subsection{Overview}
+
+UnifiedRoPE implements RoPE-based scaled dot-product attention with a 
+single \texttt{nn.Module}. It provides:
+
+\begin{enumerate}
+\item \textbf{LoRALinear projections} for Q, K, V, O.
+\item \textbf{Precomputed RoPE caches} for fast frequency lookup.
+\item \textbf{Robust weight transfer} across architectures.
+\item \textbf{GQA expansion} via \texttt{repeat\_kv}.
+\item \textbf{Nested encoder bypass} for RoBERTa-style models.
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+   +----------------------------------------------+
+   |  Input X $\in$ R^{B $\times$ L $\times$ d}                     |
+   +--------------------+-------------------------+
+                        |
+        +---------------+---------------+
+                                         
+   +---------+    +---------+    +---------+
+   | q_proj  |    | k_proj  |    | v_proj  |
+   | + LoRA  |    | + LoRA  |    | + LoRA  |
+   +----+----+    +----+----+    +----+----+
+        |              |              |
+                                      |
+   +---------+    +---------+         |
+   | Apply   |    | Apply   |         |
+   | RoPE    |    | RoPE    |         |
+   +----+----+    +----+----+         |
+        |              |              |
+        |                             |
+        |         +---------+         |
+        |         | GQA     |         |
+        |         | expand  |         |
+        |         +----+----+         |
+        |              |              |
+        +------+-------+--------------+
+                
+        +--------------+
+        |  Attention   |
+        |  softmax(QK) |
+        +------+-------+
+               |
+                
+        +--------------+
+        |  out_proj    |
+        |  + LoRA      |
+        +--------------+
+\end{lstlisting}
+
+\subsection{The `UnifiedRoPE` Module}
+
+\subsubsection{Initialization}
+
+\begin{lstlisting}
+class UnifiedRoPE(BaseAttention):
+    def __init__(self, config=None, rank=None, dim=None, num_heads=None,
+                 max_seq_len=4096, base=10000, dropout=0.1,
+                 pretrained_attn=None, lora_rank=16, lora_alpha=32.0,
+                 is_decoder=None, **kwargs):
+        # Resolve dimensions
+        self.hidden_size = ...
+        self.num_heads = ...
+        self.num_kv_heads = ...
+        self.head_dim = hidden_size // num_heads
+        
+        # LoRA projections
+        self.q_proj = LoRALinear(hidden_size, q_head_size, lora_rank=..., freeze_base=True)
+        self.k_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
+        self.v_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
+        self.out_proj = LoRALinear(q_head_size, hidden_size, lora_rank=..., freeze_base=True)
+        
+        # RoPE cache
+        self.rotary_dim = 2 * (head_dim // 2)
+        self.register_buffer("inv_freq", ..., persistent=False)
+        self._build_cache(max_seq_len)
+\end{lstlisting}
+
+\subsubsection{Precomputed RoPE Cache}
+
+\begin{lstlisting}
+def _build_cache(self, seq_len):
+    t = torch.arange(seq_len, dtype=self.inv_freq.dtype)
+    freqs = torch.einsum("i,j->ij", t, self.inv_freq)
+    emb = torch.cat((freqs, freqs), dim=-1)
+    self.register_buffer("cos_cached", emb.cos(), persistent=False)
+    self.register_buffer("sin_cached", emb.sin(), persistent=False)
+\end{lstlisting}
+
+\textbf{Note.} Buffers are \texttt{persistent=False}, so they are not stored in 
+\texttt{state\_dict()}. This avoids checkpoint pollution.
+
+\subsubsection{Applying RoPE}
+
+\begin{lstlisting}
+def _apply_rope(self, x, seq_len):
+    rotary_dim = min(self.rotary_dim, self.cos_cached.shape[-1], x.shape[-1])
+    rotary_dim = 2 * (rotary_dim // 2)
+    
+    cos = self.cos_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
+    sin = self.sin_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
+    
+    if rotary_dim < x.shape[-1]:
+        x_rot = x[..., :rotary_dim]
+        x_pass = x[..., rotary_dim:]
+        rotated = (x_rot * cos) + (_rotate_half(x_rot) * sin)
+        return torch.cat((rotated, x_pass), dim=-1)
+    else:
+        return (x * cos) + (_rotate_half(x) * sin)
+\end{lstlisting}
+
+\subsection{Weight Transfer}
+
+\subsubsection{Five Extraction Patterns}
+
+UnifiedRoPE's \texttt{copy\_weights} handles:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Pattern} & \textbf{Architecture} & \textbf{Weights extracted} \\
+\midrule
+1 & GPT-2 & Split \texttt{c\_attn}; \texttt{c\_proj} for output \\
+2 & RoBERTa & \texttt{self.query/key/value} + \texttt{output.dense} \\
+3 & Qwen & \texttt{q\_proj/k\_proj/v\_proj/o\_proj} \\
+4 & DistilBERT & \texttt{q\_lin/k\_lin/v\_lin/out\_lin} \\
+5 & Fallback & UniversalAdapter \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Conv1D Transposition}
+
+\begin{lstlisting}
+if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
+    c_attn_w = c_attn_w.t()
+\end{lstlisting}
+
+\subsubsection{Nested Encoder Detection}
+
+\begin{lstlisting}
+if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
+    self.is_nested_encoder = True
+    src = old_attn.self
+    if hasattr(old_attn.output, "dense"):
+        w_o = old_attn.output.dense.weight
+\end{lstlisting}
+
+When nested, \texttt{out\_proj} is \textbf{skipped} in forward; the outer layer applies.
+
+\subsubsection{LoRA Preservation}
+
+The \texttt{\_copy\_layer} helper preserves source LoRA adapters:
+
+\begin{lstlisting}
+def _copy_layer(target_layer, w, b, src_sub=None):
+    # Copy base weight
+    if w is not None: ...
+    # Copy bias
+    if b is not None: ...
+    # Preserve LoRA
+    if src_sub is not None and hasattr(src_sub, "lora_A"):
+        target_layer.lora_A.data.copy_(src_sub.lora_A.data)
+        target_layer.lora_B.data.copy_(src_sub.lora_B.data)
+\end{lstlisting}
+
+\subsection{Forward Pass}
+
+\begin{lstlisting}
+def forward(self, hidden_states, attention_mask=None, ...):
+    B, L, _ = hidden_states.shape
+    
+    # 1. Project
+    q = self.q_proj(hidden_states).view(B, L, H, d_h).transpose(1, 2)
+    k = self.k_proj(hidden_states).view(B, L, Hkv, d_h).transpose(1, 2)
+    v = self.v_proj(hidden_states).view(B, L, Hkv, d_h).transpose(1, 2)
+    
+    # 2. Apply RoPE
+    pos_emb = kwargs.get("position_embeddings")
+    if pos_emb is not None:
+        cos, sin = pos_emb
+        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    else:
+        q = self._apply_rope(q, L)
+        k = self._apply_rope(k, L)
+    
+    # 3. GQA expansion
+    if self.num_kv_heads != self.num_heads:
+        k = repeat_kv(k, self.num_key_value_groups)
+        v = repeat_kv(v, self.num_key_value_groups)
+    
+    # 4. Scaled dot-product attention
+    scores = q @ k^T / sqrt(d_h)
+    
+    # 5. Causal mask for decoders
+    if self.is_decoder and L > 1:
+        scores = scores + causal_mask
+    
+    # 6. Padding mask
+    if attention_mask is not None:
+        scores = apply_attention_mask(scores, attention_mask)
+    
+    # 7. Softmax, dropout, context
+    attn = softmax(scores)
+    context = attn @ v
+    
+    # 8. Output projection (skip if nested)
+    if self.is_nested_encoder:
+        output = context
+    else:
+        output = self.out_proj(context)
+    
+    return output, attn
+\end{lstlisting}
+
+\subsection{Two RoPE Entry Points}
+
+\subsubsection{Internal `\_apply\_rope`}
+
+Uses the cached \texttt{cos\_cached}, \texttt{sin\_cached} buffers. \textbf{Fast path} for models 
+that do not supply their own RoPE cache.
+
+\subsubsection{External `apply\_rotary\_pos\_emb`}
+
+Accepts \texttt{(cos, sin)} from HuggingFace models that precompute their own 
+RoPE. Used when \texttt{position\_embeddings} is passed in \texttt{forward}.
+
+\textbf{Why two paths?} Some models (Qwen) supply their RoPE cache; others do 
+not. UnifiedRoPE supports both.
+
+\subsection{GQA Expansion}
+
+For $H_{kv} < H$:
+
+\begin{lstlisting}
+if self.num_kv_heads != self.num_heads:
+    k = repeat_kv(k, self.num_key_value_groups)
+    v = repeat_kv(v, self.num_key_value_groups)
+\end{lstlisting}
+
+\texttt{repeat\_kv} broadcasts each KV head to \texttt{H / H\_{kv}} query heads.
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa-style models:
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    output = context   # Raw context
+else:
+    output = self.out_proj(context)
+\end{lstlisting}
+
+The outer \texttt{BertSelfOutput.dense} applies the projection.
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Projections & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+RoPE application & $\mathcal{O}(L H d_h)$ & $\mathcal{O}(L H d_h)$ \\
+GQA expansion & $\mathcal{O}(L H d_h)$ & $\mathcal{O}(L H d_h)$ \\
+Attention & $\mathcal{O}(L^2 H d_h)$ & $\mathcal{O}(L^2 H)$ \\
+Output projection & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+\textbf{Total} & $\mathcal{O}(L^2 H d_h + L d^2)$ & $\mathcal{O}(L^2 H + L d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Same as standard attention.} No compression.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{RoPE Rotation Correctness}
+
+\textbf{Proposition.} The rotation operator preserves L2 norm:
+
+\[
+\|\tilde{q}_i\|_2 = \|q_i\|_2
+\tag{4.1}
+\]
+
+\textbf{Proof.} Rotation matrices are orthogonal. $\square$
+
+\subsubsection{Relative Position Property}
+
+\textbf{Proposition.} The attention score satisfies:
+
+\[
+\tilde{q}_i^\top \tilde{k}_j = f(q_i, k_j, i - j)
+\tag{4.2}
+\]
+
+\textbf{Proof.} Classical (Su et al., 2021). $\square$
+
+\subsubsection{GQA Equivalence}
+
+\textbf{Proposition.} GQA with \texttt{repeat\_kv} produces the same output as if the 
+KV heads were duplicated.
+
+\textbf{Proof.} \texttt{repeat\_kv} literally duplicates. $\square$
+
+\subsection{Summary}
+
+UnifiedRoPE:
+\begin{enumerate}
+\item Implements RoPE-based attention.
+\item Works across four architectures.
+\item Preserves base weights.
+\item Supports LoRA.
+\item \textbf{Does not compress.}
+
+\end{enumerate}
+It is a \textbf{substrate} for other compression techniques.
+

@@ -1,3 +1,87 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for hgrn2_gated_deltanet.
+\subsection{Parameter Count}
+
+HGRN2-GatedDeltaNet \textbf{increases} parameter count by ~{{D\_PARAM\_PCT}}\% per 
+layer. This is a substantial limitation.
+
+\subsection{Short-Sequence Slowdown}
+
+At L = 128 (SST-2 standard), our method is \textbf{{{SLOWDOWN}}$\times$ slower} than 
+baseline. This limits applicability to standard benchmarks.
+
+\subsection{Python Loop}
+
+The DeltaNet branch uses a Python-level loop. This is the primary 
+performance bottleneck at short sequences.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Behavior on:
+\begin{itemize}
+\item Generation tasks: unknown
+\item Multi-class classification: unknown
+\item Token-level tasks: unknown
+\item Long-context tasks: we do not test L > 512 on SST-2.
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+All experiments on RTX 4070. Behavior on other hardware untested.
+
+\subsection{No Theoretical Guarantee}
+
+We provide no formal approximation bound relative to standard attention.
+
+\subsection{Training Instability on RoBERTa}
+
+RoBERTa's loss oscillates during recovery, suggesting the optimization 
+landscape is difficult. We do not fully characterize this.
+
+\subsection{Cross-Attention Not Implemented}
+
+If \texttt{encoder\_hidden\_states} is provided, we return identity. This breaks 
+encoder-decoder models.
+
+\subsection{Single-Seed Results}
+
+Single-seed. Multi-seed would strengthen conclusions.
+
+\subsection{No Comparison with Mamba}
+
+We do not directly compare with Mamba, Jamba, or other modern SSMs.
+
+\subsection{The `is\_nested\_encoder` Issue}
+
+For RoBERTa, we set \texttt{is\_nested\_encoder = True}, which bypasses the internal 
+output projection. If this is misconfigured, RoBERTa degrades. We do not 
+fully diagnose this.
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling
+\item No fused kernels
+\item No unit tests for edge cases
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Recurrent attention is dual-use. See Appendix E.
+

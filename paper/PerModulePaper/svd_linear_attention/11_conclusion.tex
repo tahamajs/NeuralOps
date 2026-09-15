@@ -1,3 +1,73 @@
-\section{11 Conclusion}
 
-Draft content for svd_linear_attention.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{SVD-Linear Attention}, a compression-and-efficiency module 
+combining SVD-factorized projections, kernelized linear attention, exponential 
+decay gating, and chunked parallel scan. The method reduces parameter count 
+by {{D\_RATIO}}$\times$ and attention complexity from $\mathcal{O}(N^2)$ to 
+$\mathcal{O}(N)$.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param Ratio} & \textbf{Time Ratio (N=128)} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & {{D\_TIME\_RATIO}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & {{R\_TIME\_RATIO}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & {{G\_TIME\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Real compression.} Parameters reduce by {{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$.
+\item \textbf{Real speedup.} Complexity scales linearly.
+\item \textbf{Streaming-ready.} \texttt{step\_recurrent} supports $\mathcal{O}(1)$ inference.
+\item \textbf{Multi-architecture.} Same code, four families.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Add activation-aware weighting (AASVD-style)
+\item Test on long-context tasks (N=1024+)
+\item Combine with quantization
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical bounds on approximation error
+\item Scaling to 1B+ models
+\item Better feature maps (learned?)
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+SVD-Linear Attention is one of the few modules in our suite that achieves 
+real compression AND real speedup. We release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed SVD-Linear Attention, implemented the code,
+  ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

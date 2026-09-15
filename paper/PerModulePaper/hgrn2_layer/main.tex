@@ -64,10 +64,43 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the hgrn2\_layer module within modern transformer architectures.
+Standard transformer self-attention scales quadratically with sequence 
+length, motivating a search for linear-time alternatives. We present 
+\textbf{HGRN2Layer}, an element-wise linear recurrent module that replaces 
+multi-head self-attention with a \textbf{log-space parallel chunked scan} over 
+input-dependent forget gates. The recurrence is expressed entirely in terms 
+of simple element-wise operations:
+
+\[
+f_t = \exp(-\text{softplus}(W_f x_t)), \quad
+s_t = f_t \odot s_{t-1} + (1 - f_t) \odot i_t \odot v_t
+\]
+
+where the forget gate $f_t$ is bounded to $[10^{-3}, 1]$ to prevent 
+saturation, and inputs are modulated by $(1 - f_t) \odot i_t$ to avoid 
+sign-flipping in the recurrent state. The scan is chunked (chunk size 
+{{CHUNK\_SIZE}}) and executed in FP32 for numerical stability.
+
+HGRN2Layer supports \textbf{bidirectional} recurrences for encoders and \textbf{causal} 
+recurrence for decoders, and transfers pretrained weights from DistilBERT, 
+RoBERTa, GPT-2, and Qwen3.5 via a robust \texttt{copy\_weights} procedure. We 
+evaluate on DistilBERT, RoBERTa-base, and GPT-2 with SST-2.
+
+\textbf{We are explicit that HGRN2Layer does not reduce parameter count.} In fact, 
+it \textbf{adds} approximately {{PARAM\_INCREASE}}\% more parameters per layer due 
+to the gate networks and LoRA adapters. Its benefit is **linear-time 
+inference** at long sequence lengths. On the SST-2 benchmark (L = 128), 
+HGRN2Layer is \textbf{{{SLOWDOWN}}$\times$ slower than baseline}; on longer sequences 
+($L \geq {{BREAKEVEN}}$), it is \textbf{{{SPEEDUP}}$\times$ faster}. We report both 
+regimes honestly.
+
+\textbf{Keywords:} linear recurrence, element-wise RNN, HGRN-2, parallel scan, 
+attention replacement
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} hgrn2\_layer, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} linear recurrence, element-wise RNN, HGRN-2, parallel scan,
 \end{abstract}
 
 \vspace{1em}

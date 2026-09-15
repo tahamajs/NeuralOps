@@ -1,3 +1,61 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for res_svd.
+\subsection{Silent Injection Failure}
+
+\texttt{inject\_res\_svd} catches exceptions and returns \texttt{None}. If the caller 
+ignores this, the model runs as baseline without warning.
+
+\subsection{Cross-Attention Not Supported}
+
+Raises \texttt{NotImplementedError} for \texttt{encoder\_hidden\_states}. Encoder-decoder 
+models (T5, BART) are excluded.
+
+\subsection{No Attention Complexity Reduction}
+
+Res-SVD keeps softmax attention ($\mathcal{O}(N^2)$). Only projections are 
+compressed.
+
+\subsection{Equivalence to Rank-$(r_b+r_r)$ SVD}
+
+As proven in  4.7.1, the two-level structure is mathematically equivalent 
+to single-level SVD of rank $r_b + r_r$. The advantage is the PEFT 
+structure, not the approximation quality.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated.
+
+\subsection{Model Coverage}
+
+Tested on $\le$124M parameter models.
+
+\subsection{Hardware}
+
+All experiments on RTX 4070 Laptop.
+
+\subsection{Single-Seed}
+
+All main results from a single seed.
+
+\subsection{No Activation Weighting}
+
+Unlike A3 and AASVD, Res-SVD uses unweighted SVD. Adding activation-aware 
+weighting could improve results.
+
+\subsection{Chunked Context}
+
+Only $N \leq 512$ tested. Long-context behavior unknown.
+
+\subsection{Unresolved Failures}
+
+{{UNRESOLVED\_FAILURES}}
+
+\subsection{Code Quality}
+
+Research-grade. Known issues:
+\begin{itemize}
+\item Silent injection fallback
+\item No unit tests
+\item \texttt{raise} in \texttt{copy\_weights} may be too strict
+
+\end{itemize}

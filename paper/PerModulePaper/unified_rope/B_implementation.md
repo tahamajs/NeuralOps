@@ -1,0 +1,185 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: B_implementation.md
+     PURPOSE: Implementation details
+     DEPENDENCIES: 05_architecture.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix B. Implementation Details
+
+## B.1 The `UnifiedRoPE` Class
+
+```python
+class UnifiedRoPE(BaseAttention):
+    def __init__(self, config=None, rank=None, dim=None, num_heads=None,
+                 max_seq_len=4096, base=10000, ...):
+        super().__init__(config=config, rank=rank)
+        
+        # Dimensions
+        self.hidden_size = ...
+        self.num_heads = ...
+        self.num_kv_heads = ...
+        self.head_dim = hidden_size // num_heads
+        
+        # Projections
+        self.q_proj = LoRALinear(hidden_size, q_head_size, lora_rank=..., freeze_base=True)
+        self.k_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
+        self.v_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
+        self.out_proj = LoRALinear(q_head_size, hidden_size, lora_rank=..., freeze_base=True)
+        
+        # RoPE cache
+        self.rotary_dim = 2 * (head_dim // 2)
+        inv_freq = 1.0 / (base ** (torch.arange(0, rotary_dim, 2).float() / rotary_dim))
+        self.register_buffer("inv_freq", inv_freq, persistent=False)
+        self._build_cache(max_seq_len)
+```
+
+## B.2 The `_build_cache` Method
+
+```python
+def _build_cache(self, seq_len):
+    t = torch.arange(seq_len, device=self.inv_freq.device, dtype=self.inv_freq.dtype)
+    freqs = torch.einsum("i,j->ij", t, self.inv_freq)
+    emb = torch.cat((freqs, freqs), dim=-1)
+    self.register_buffer("cos_cached", emb.cos(), persistent=False)
+    self.register_buffer("sin_cached", emb.sin(), persistent=False)
+```
+
+**Non-persistent.** The cache is not saved with `state_dict()`. On load, 
+it is rebuilt from `inv_freq`.
+
+## B.3 The `_apply_rope` Method
+
+```python
+def _apply_rope(self, x, seq_len):
+    if self.rotary_dim == 0 or self.cos_cached.shape[-1] == 0:
+        return x
+    
+    if seq_len > self.max_seq_len:
+        self._build_cache(seq_len)
+        self.max_seq_len = seq_len
+    
+    rotary_dim = min(self.rotary_dim, self.cos_cached.shape[-1], x.shape[-1])
+    rotary_dim = 2 * (rotary_dim // 2)
+    
+    cos = self.cos_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
+    sin = self.sin_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
+    
+    if rotary_dim < x.shape[-1]:
+        x_rot = x[..., :rotary_dim]
+        x_pass = x[..., rotary_dim:]
+        rotated = (x_rot * cos) + (_rotate_half(x_rot) * sin)
+        return torch.cat((rotated, x_pass), dim=-1)
+    else:
+        return (x * cos) + (_rotate_half(x) * sin)
+```
+
+## B.4 The `_copy_layer` Helper
+
+```python
+def _copy_layer(target_layer, w, b, src_sub=None):
+    # Copy weight
+    if w is not None:
+        if w.shape == target_layer.weight.shape:
+            target_layer.weight.copy_(w.to(target_layer.weight.dtype))
+        elif w.t().shape == target_layer.weight.shape:
+            target_layer.weight.copy_(w.t().to(target_layer.weight.dtype))
+        else:
+            # Padding/truncation
+            min_0 = min(target_layer.weight.shape[0], w.shape[0])
+            min_1 = min(target_layer.weight.shape[1], w.shape[1])
+            target_layer.weight.zero_()
+            target_layer.weight[:min_0, :min_1].copy_(w[:min_0, :min_1])
+    
+    # Copy bias
+    if b is not None and target_layer.bias is not None:
+        # Similar padding/truncation
+        ...
+    
+    # Preserve LoRA
+    if src_sub is not None and hasattr(src_sub, "lora_A"):
+        src_lA = getattr(src_sub.lora_A, "weight", src_sub.lora_A)
+        src_lB = getattr(src_sub.lora_B, "weight", src_sub.lora_B)
+        if hasattr(src_lA, "data") and hasattr(src_lB, "data"):
+            # Copy with truncation
+            r_min = min(target_layer.lora_A.shape[0], src_lA.shape[0])
+            in_min = min(target_layer.lora_A.shape[1], src_lA.shape[1])
+            target_layer.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
+            target_layer.lora_A.requires_grad = True
+            # Similar for lora_B
+```
+
+## B.5 The Injection Hook
+
+```python
+def inject_unified_rope(layer, model_config=None, comp_config=None,
+                        old_attn=None, **kwargs):
+    try:
+        src = old_attn
+        if src is None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr):
+                    src = getattr(layer, attr)
+                    break
+        
+        if src is None:
+            return None
+        
+        if model_config is None and hasattr(layer, "config"):
+            model_config = layer.config
+        
+        lora_rank = kwargs.pop("lora_rank", 16)
+        rank = kwargs.pop("rank", 32)
+        
+        new_attn = UnifiedRoPE(
+            config=model_config, rank=rank, lora_rank=lora_rank,
+            pretrained_attn=src, **kwargs,
+        )
+        
+        # Replace
+        for attr in ("self_attn", "attn", "self"):
+            if hasattr(layer, attr):
+                setattr(layer, attr, new_attn)
+                return new_attn
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
+            return new_attn
+        layer.attention = new_attn
+        return new_attn
+    except Exception as e:
+        logger.error("inject_unified_rope failed: %s", e)
+        raise RuntimeError("Injection failed")
+```
+
+## B.6 Common Pitfalls
+
+### B.6.1 Conv1D Not Transposed
+
+GPT-2's Conv1D stores `(in, out)`. Must transpose.
+
+### B.6.2 Nested Encoder Flag
+
+RoBERTa requires `is_nested_encoder = True`.
+
+### B.6.3 GQA Not Expanded
+
+Qwen requires `repeat_kv`.
+
+### B.6.4 Cache Not Rebuilt
+
+If sequence length exceeds `max_seq_len`, cache must be rebuilt.
+
+## B.7 Comparison with Companion Methods
+
+| Feature | UnifiedRoPE | MinimalSVD | MLA |
+|---|---|---|---|
+| Purpose | Portability | Compression | Compression |
+| Params | 1.00× | ↓ | 1.00× |
+| KV | 1.00× | 1.00× | ↓ |
+| Compute | 1.00× | 1.00× | 1.00× |
+| RoPE | ✅ | ❌ | ✅ |
+| Multi-arch | ✅ | ✅ | ✅ |
+
+---

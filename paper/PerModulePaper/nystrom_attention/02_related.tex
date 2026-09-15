@@ -1,3 +1,112 @@
-\section{02 Related}
 
-Draft content for nystrom_attention.
+\section{Related Work}
+
+\subsection{Efficient Attention Mechanisms}
+
+\subsubsection{Sparse Attention}
+
+Longformer (Beltagy et al., 2020) restricts attention to a sliding window 
+plus global tokens. BigBird (Zaheer et al., 2020) adds random attention. 
+These methods \textbf{sparsify} the attention pattern; Nystr mformer 
+\textbf{approximates} it.
+
+\subsubsection{Low-Rank Attention}
+
+Linformer (Wang et al., 2020) projects $K, V$ to a fixed low rank. Nystr mformer 
+uses landmark-based reconstruction -- a \textbf{different} low-rank strategy.
+
+\subsubsection{Kernel Attention}
+
+Performer (Choromanski et al., 2021) uses random features. Linear Transformer 
+(Katharopoulos et al., 2020) uses $\phi(x) = \mathrm{elu}(x) + 1$. Nystr mformer 
+uses landmarks instead of random features.
+
+\subsection{The Nystr m Method}
+
+The Nystr m method (Nystr m, 1930) approximates a kernel matrix $K \in \mathbb{R}^{N \times N}$ 
+using a subset of $m$ columns:
+
+\[
+K \approx K_{:, m} K_{m, m}^{-1} K_{m, :}
+\tag{2.1}
+\]
+
+This is exact if $K$ has rank $m$. In practice, kernel matrices are 
+approximately low-rank, making the approximation useful.
+
+\textbf{Application to transformers.} Nystr mformer (Xiong et al., 2021) applies 
+Nystr m to the softmax attention matrix.
+
+\subsection{Landmark Selection}
+
+\textbf{Random landmarks.} Simple but noisy.
+
+\textbf{K-means landmarks.} Better but expensive.
+
+\textbf{Adaptive pooling landmarks.} Nystr mformer uses \texttt{adaptive\_avg\_pool1d} 
+to select landmarks. This is efficient and deterministic.
+
+\subsection{Pseudoinverse Computation}
+
+\textbf{Direct pinv.} \texttt{torch.linalg.pinv} uses SVD. $\mathcal{O}(m^3)$.
+
+\textbf{Iterative Newton-Schulz.} For a matrix $A$ with $\|A\|_2 < 1$:
+
+\[
+V_{k+1} = V_k (2I - A V_k)
+\tag{2.2}
+\]
+
+converges to $A^{-1}$. Preconditioning with $\|A\|_1 \|A\|_\infty$ 
+extends to general matrices:
+
+\[
+\alpha = \frac{1}{\|A\|_1 \|A\|_\infty + \epsilon}
+\tag{2.3}
+\]
+
+Nystr mformer uses iterative pinv for efficiency.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Xiong et al. 2021} & \textbf{Our work} \\
+\midrule
+\textbf{Target architecture} & BERT & Four families \\
+\textbf{Landmark selection} & Adaptive pooling & Same \\
+\textbf{Pinv method} & Iterative & Same + fallback \\
+\textbf{Short sequence handling} & Dense fallback & Same + tuned threshold \\
+\textbf{Causal handling} & Not addressed & Explicit decoder path \\
+\textbf{Reproduction} & -- & This paper \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} We do not claim to improve Nystr mformer. We reproduce 
+it, port it to non-BERT architectures, and document the engineering effort.
+
+\subsection{Comparison with Companion Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{Reduces} & \textbf{Orthogonal to} \\
+\midrule
+MinimalSVD & Parameters & Nystr mformer \\
+SVD-LLM V2 & Parameters & Nystr mformer \\
+Dobi-SVD & Parameters & Nystr mformer \\
+MLA & KV cache & Nystr mformer \\
+\textbf{Nystr mformer} & \textbf{Attention compute} & All above \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{All methods are complementary.} Nystr mformer reduces compute; the others 
+reduce memory. They can be combined.
+

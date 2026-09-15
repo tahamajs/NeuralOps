@@ -64,10 +64,42 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the mla\_attention module within modern transformer architectures.
+\textbf{Multi-Head Latent Attention (MLA)} was introduced by DeepSeek-AI (2024) as 
+a key component of the DeepSeek-V2 architecture. MLA compresses the K and V 
+projections of standard multi-head attention into a **shared low-rank latent 
+vector**, reducing KV-cache memory from $\mathcal{O}(2 d_h H)$ per token to 
+$\mathcal{O}(c)$ where $c \ll 2 d_h H$ is the latent dimension. This is 
+particularly valuable for inference-time KV-cache compression.
+
+We present a \textbf{reproduction} of MLA, ported to four transformer families 
+that the original paper does not directly target: DistilBERT (flat), 
+RoBERTa/BERT (nested), GPT-2 (causal Conv1D), and Qwen3.5 (GQA + RoPE). 
+Our implementation:
+(i) initializes the latent down-projection from SVD of the concatenated 
+K and V weights,
+(ii) normalizes the singular values to preserve reconstruction scale,
+(iii) supports Conv1D transposition, nested encoder bypass, and GQA 
+expansion,
+(iv) uses LoRA adapters for recovery fine-tuning.
+
+On SST-2, MLA achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
+{{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
+{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
+{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}). The KV-cache latent dimension is 
+{{RANK}}, reducing per-token KV memory by a factor of 
+\textbf{{{KV\_REDUCTION}}$\times$} compared to standard attention.
+
+We release all code, weights, and evaluation scripts. This is a 
+\textbf{reproduction and portability study}, not a novel architecture.
+
+\textbf{Keywords:} Multi-Head Latent Attention, MLA, DeepSeek-V2, KV-cache 
+compression, low-rank attention, reproduction study, multi-architecture 
+transformers
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} mla\_attention, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} Multi-Head Latent Attention, MLA, DeepSeek-V2, KV-cache
 \end{abstract}
 
 \vspace{1em}

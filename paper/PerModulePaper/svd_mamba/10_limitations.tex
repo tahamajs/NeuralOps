@@ -1,3 +1,76 @@
-\section{10 Limitations}
 
-Draft content for svd_mamba.
+\section{Limitations}
+
+\subsection{Not a Compressor}
+
+SVD-Mamba \textbf{increases} parameter count by ~{{D\_PARAM\_PCT}}\%. While SVD 
+factorization reduces projection parameters, the SSM branch, global 
+mixing, gating, and LoRA add more.
+
+\subsection{Complex Architecture}
+
+SVD-Mamba has three paths (attention, SSM, global) fused by a gate. This 
+is much more complex than standard attention, making debugging and 
+deployment harder.
+
+\subsection{Unstable Recovery}
+
+The gate bias $-7$ keeps the SSM silent initially, but recovery training 
+may shift it. This creates training instability.
+
+\subsection{Numerical Sensitivity}
+
+The SSM scan requires multiple clamps to prevent overflow. Without careful 
+numerical handling, the branch produces NaN.
+
+\subsection{Inference Overhead}
+
+At short sequences ($L \leq 256$), SVD-Mamba is slower than baseline.
+
+\subsection{Cross-Attention Not Supported}
+
+If \texttt{encoder\_hidden\_states} is provided, SVD-Mamba returns the input 
+unchanged -- effectively a no-op. Encoder-decoder models (T5, BART) are 
+not supported.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Long-context tasks (where SSM should help) are 
+not tested.
+
+\subsection{Model Coverage}
+
+Tested on $\le$124M parameter models.
+
+\subsection{Hardware}
+
+All experiments on RTX 4070 Laptop.
+
+\subsection{Silent Injection Failure}
+
+The injection hook catches exceptions and returns \texttt{None}. If partially 
+successful, this can lead to broken models without explicit errors.
+
+\subsection{Single-Seed Results}
+
+All main results from a single seed.
+
+\subsection{No Theoretical Bound}
+
+No bound on approximation error vs the baseline attention.
+
+\subsection{Unresolved Failures}
+
+{{UNRESOLVED\_FAILURES}}
+
+\subsection{Code Quality}
+
+Research-grade implementation. Known issues:
+
+\begin{itemize}
+\item Complex forward with many clamps
+\item Python loop over chunks
+\item \texttt{raise} in \texttt{copy\_weights} but \texttt{return None} in \texttt{inject}
+\item No unit tests
+
+\end{itemize}

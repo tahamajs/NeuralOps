@@ -1,3 +1,68 @@
-\section{10 Limitations}
 
-Draft content for unified_rope.
+\section{Limitations}
+
+\subsection{No Compression}
+
+UnifiedRoPE is \textbf{not} a compression method. It does not reduce:
+\begin{itemize}
+\item Parameter count
+\item KV-cache size
+\item Attention compute
+
+\end{itemize}
+\subsection{Added RoPE Changes Behavior}
+
+For DistilBERT, RoBERTa, and GPT-2, RoPE is \textbf{added} to a model trained 
+with absolute positions. The attention pattern changes, and accuracy may 
+drop.
+
+\subsection{LoRA Recovery Needed}
+
+Adding RoPE requires recovery fine-tuning. Without it, accuracy drops 
+significantly.
+
+\subsection{Cross-Attention Not Supported}
+
+Encoder-decoder models (T5, BART) are not supported.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Long-context tasks may behave differently.
+
+\subsection{Model Coverage}
+
+Only four models tested. Larger models not tested.
+
+\subsection{Hardware}
+
+Only tested on RTX 4070 Laptop (8 GB).
+
+\subsection{Single-Seed Results}
+
+All main results from a single seed. SE ~1.69\%.
+
+\subsection{Heuristic Hyperparameters}
+
+\texttt{max\_seq\_len}, \texttt{base}, \texttt{rotary\_dim} are empirical.
+
+\subsection{Safe Injection Raises on Failure}
+
+\texttt{inject\_unified\_rope} raises \texttt{RuntimeError} on failure. Callers must 
+handle this.
+
+\subsection{No Comparison with Performer/Linformer}
+
+We do not compare with other efficient attention methods.
+
+\subsection{Code Quality}
+
+Research-grade. Known issues:
+\begin{itemize}
+\item Broad exception handling
+\item \texttt{raise} in some paths should log
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+See Appendix E.
+

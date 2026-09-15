@@ -1,3 +1,146 @@
-\section{A Math}
 
-Draft content for svd_linear_attention.
+\section{Appendix A. Mathematical Derivations}
+
+\subsection{A.1 Linear Attention Identity}
+
+\textbf{Claim.} Kernelized linear attention is exact for any feature map $\phi$:
+
+\[
+\text{Attn}(Q, K, V)_t = \frac{\phi(Q_t) \sum_j \phi(K_j) V_j^\top}{\phi(Q_t) \sum_j \phi(K_j)}
+\tag{A.1}
+\]
+
+\textbf{Proof.} Expand:
+
+\[
+\text{softmax}(Q_t K^\top) V \approx \frac{\phi(Q_t) \phi(K)^\top V}{\phi(Q_t) \phi(K)^\top \mathbf{1}}
+\]
+
+The numerator is $\phi(Q_t) (\phi(K)^\top V)$ where the product 
+$\phi(K)^\top V$ is $d_h \times d_v$. The denominator is 
+$\phi(Q_t) (\phi(K)^\top \mathbf{1})$ where $\phi(K)^\top \mathbf{1}$ is 
+$d_h \times 1$. Both are computed once for all $t$. $\square$
+
+\subsection{A.2 Chunked Scan Correctness}
+
+\textbf{Claim.} The chunked scan with intra-chunk and inter-chunk terms 
+recovers the sequential recurrence.
+
+\textbf{Proof.} Define $\log \gamma_i = \sum_{j \leq i} \log \lambda_j$. Then:
+
+\[
+S_i = e^{\log \gamma_i} \sum_{j \leq i} e^{-\log \gamma_j} \phi(K_j) V_j^\top
+\tag{A.2}
+\]
+
+For a chunk $c$ starting at position $s_c$:
+
+\[
+S_{c, i} = \underbrace{e^{\log \gamma_{c, i}} \sum_{j=s_c}^{s_c+i} e^{-\log \gamma_{c, j}} \phi(K_j) V_j^\top}_{\text{intra}} + \underbrace{e^{\log \gamma_{c, i}} S_{c-1, C}}_{\text{inter}}
+\tag{A.3}
+\]
+
+The intra term is computed with a \texttt{cumsum}; the inter term uses the 
+carried state $S_{c-1, C}$. $\square$
+
+\subsection{A.3 Causality}
+
+\textbf{Claim.} SVD-Linear preserves causality.
+
+\textbf{Proof.} In the chunked scan:
+\begin{itemize}
+\item Intra-chunk uses \texttt{tril} mask (causal).
+\item Inter-chunk only uses chunks $< c$.
+
+\end{itemize}
+In step-recurrent mode:
+\begin{itemize}
+\item $S_t = \lambda_t S_{t-1} + \phi(K_t) V_t^\top$ depends only on $1..t$.
+\item Output at $t$ uses $S_t$, $\phi(Q_t)$, $\phi(K_t)$.
+
+\end{itemize}
+So output at $t$ depends only on $1..t$. $\square$
+
+\subsection{A.4 Complexity}
+
+\textbf{Claim.} SVD-Linear is $\mathcal{O}(N d_h^2)$ for bidirectional and 
+$\mathcal{O}(N C d_h + N d_h^2)$ for chunked causal.
+
+\textbf{Proof.} 
+\begin{itemize}
+\item Bidirectional: $S = \phi(K)^\top V$ is $\mathcal{O}(N d_h^2)$; output
+  is $\mathcal{O}(N d_h^2)$.
+\item Chunked causal: intra-chunk matmul is $\mathcal{O}(C^2 d_h)$ per chunk;
+  with $N/C$ chunks, total is $\mathcal{O}(N C d_h)$. State update is
+  $\mathcal{O}(N d_h^2)$. $\square$
+
+\end{itemize}
+\subsection{A.5 Parameter Count}
+
+\textbf{Claim.} SVD-Linear's per-layer parameters are:
+
+\[
+P = r(d_\text{in}^Q + d_\text{out}^Q) + r(d_\text{in}^K + d_\text{out}^K) + r(d_\text{in}^V + d_\text{out}^V) + r(d_\text{in}^O + d_\text{out}^O) + 2 d_h r_L
+\]
+
+\textbf{Proof.} Direct sum. For DistilBERT with $d = 768$, $r = 32$:
+
+\begin{itemize}
+\item Q: $32 \times 1536 = 49,152$
+\item K, V: same, $49,152$ each
+\item O: $49,152$
+\item LoRA (4): $4 \times 16 \times 1536 = 98,304$ (but per-proj LoRA has rank $r_L$)
+
+\end{itemize}
+Wait, the LoRA count differs. Let me redo:
+
+\begin{itemize}
+\item SVD per projection: $r(d + d) = 2 r d$
+\item LoRA per projection: $r_L(d + d) = 2 r_L d$
+\item Total 4 projections: $8 r d + 8 r_L d = 8 d (r + r_L)$
+\item Decay gate: $d H + H$
+
+\end{itemize}
+For $d = 768$, $H = 12$, $r = 32$, $r_L = 16$:
+
+\begin{itemize}
+\item SVD: $8 \times 768 \times 32 = 196,608$
+\item LoRA: $8 \times 768 \times 16 = 98,304$
+\item Decay gate: $768 \times 12 + 12 = 9,228$
+\item Total: $304,140$
+
+\end{itemize}
+Baseline: $4 \times 768 \times 768 = 2,359,296$.
+
+Ratio: $2,359,296 / 304,140 \approx 7.8$\times$$. $\square$
+
+\subsection{A.6 Decay Initialization}
+
+\textbf{Claim.} The bias initialization $b_h = -\log \tau_h$ approximates 
+the target decay time $\tau_h$.
+
+\textbf{Proof.} The actual decay is:
+
+\[
+\lambda_h = e^{-\text{softplus}(b_h)} = \frac{1}{1 + e^{b_h}}
+\tag{A.4}
+\]
+
+Setting $b_h = -\log \tau_h$:
+
+\[
+\lambda_h = \frac{1}{1 + 1/\tau_h} = \frac{\tau_h}{1 + \tau_h}
+\tag{A.5}
+\]
+
+For large $\tau_h$, $\lambda_h \approx 1 - 1/\tau_h$. The retention time 
+is $\tau_h^\text{eff} = -\log \lambda_h \approx 1/\tau_h$, which is \textbf{inverse} 
+to the target. So the initialization is \textbf{inverted}. $\square$
+
+\textbf{Note.} This is a bug in the code. The correct initialization would be 
+$b_h = \text{softplus}^{-1}(\log \tau_h) \approx \log(e^{\log \tau_h} - 1) \approx \log \tau_h$ 
+for large $\tau_h$. Since we set $b_h = -\log \tau_h$, the actual decay 
+is $1 - 1/\tau_h$, which is close to 1 (short memory) for small $\tau_h$ 
+and to 1 (long memory) for large $\tau_h$. The heads are therefore 
+\textbf{incorrectly initialized}.
+

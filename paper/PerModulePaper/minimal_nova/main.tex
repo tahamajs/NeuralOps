@@ -64,10 +64,45 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the minimal\_nova module within modern transformer architectures.
+Transformer attention projections dominate the parameter budget of modern 
+language models. Standard multi-head attention stores four dense matrices 
+$W_Q, W_K, W_V, W_O \in \mathbb{R}^{d \times d}$, resulting in $4d^2$ parameters 
+per layer. We introduce \textbf{MinimalNOVA} (\textbf{Min}imal \textbf{N}ative \textbf{O}ptimized 
+\textbf{V}-low-rank \textbf{A}ttention), a drop-in replacement for attention projections 
+that factorizes each matrix as $W \approx U V$ with $U \in \mathbb{R}^{d \times r}$ 
+and $V \in \mathbb{R}^{r \times d}$, achieving parameter count 
+$r(d + d) = 2rd$ instead of $d^2$. For $d = 768$ and $r = 64$, this yields a 
+\textbf{6$\times$ parameter reduction per projection} while maintaining accuracy within 
+\textbf{{{D\_DELTA}}\%} on SST-2.
+
+Our key novelty is \textbf{energy-adaptive rank selection}: instead of fixing 
+$r$ uniformly across layers, MinimalNOVA computes the cumulative spectral 
+energy of each weight matrix $W = \sum_i \sigma_i u_i v_i^\top$ and selects 
+the smallest $r$ such that $\sum_{i \le r} \sigma_i^2 \geq \eta \cdot \sum_i \sigma_i^2$ 
+for threshold $\eta = 0.95$. This adapts rank per layer based on spectral 
+decay, concentrating compression where the spectrum is concentrated.
+
+We provide a production-hardened implementation supporting four transformer 
+families (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with:
+(i) nested encoder bypass for RoBERTa's \texttt{BertAttention},
+(ii) Conv1D handling for GPT-2's fused \texttt{c\_attn},
+(iii) GQA support via \texttt{repeat\_kv},
+(iv) RoPE position embeddings,
+(v) LoRA adapters initialized to zero for recovery fine-tuning.
+
+On DistilBERT, RoBERTa, and GPT-2 with rank cap $r = {{RANK}}$ and energy 
+$\eta = {{ENERGY}}$, MinimalNOVA achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+parameter reduction with accuracy drops of only \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} 
+after {{RECOVERY\_STEPS}} LoRA recovery steps. Peak inference VRAM decreases 
+by \textbf{{{VRAM\_REDUCTION}}\%}.
+
+\textbf{Keywords:} low-rank factorization, energy-adaptive rank, SVD, attention 
+compression, LoRA recovery, multi-architecture transformers
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} minimal\_nova, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} low-rank factorization, energy-adaptive rank, SVD, attention
 \end{abstract}
 
 \vspace{1em}

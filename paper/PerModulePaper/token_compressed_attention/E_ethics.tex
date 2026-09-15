@@ -1,3 +1,56 @@
-\section{E Ethics}
+\section{Appendix E. Ethical Considerations}
 
-Draft content for token_compressed_attention.
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Enables long-context inference on small GPUs
+\item Reduces memory footprint
+\item Complements quantization
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Small parameter increase
+\item Requires training
+
+\end{itemize}
+\subsection{E.2 Environmental}
+
+\begin{itemize}
+\item Total GPU-hours: ~{{COMPUTE\_HOURS}}
+\item CO$_2$: {{CO2\_KG}} kg
+
+\end{itemize}
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item SST-2 (public)
+\item No PII
+\item English-only
+
+\end{itemize}
+\subsection{E.4 Model Ethics}
+
+\subsubsection{Bias}
+Not audited. Compression may preserve or amplify bias.
+
+\subsubsection{Misuse}
+Could enable cheaper long-context models -- dual use.
+
+\subsection{E.5 Authorship}
+
+See  11.7.
+
+\subsection{E.6 Conflicts}
+
+None.
+
+\subsection{E.7 Funding}
+
+{{FUNDING}}
+
+\subsection{E.8 LLM Usage}
+
+Parts drafted with LLM assistance. Content reviewed by authors.
+

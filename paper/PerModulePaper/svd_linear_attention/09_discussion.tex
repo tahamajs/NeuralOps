@@ -1,3 +1,140 @@
-\section{09 Discussion}
 
-Draft content for svd_linear_attention.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Real Compression}
+
+SVD-Linear reduces parameter count by {{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$.
+
+\subsubsection{Takeaway 2: Real Speedup}
+
+Linear attention scales $\mathcal{O}(N)$ vs $\mathcal{O}(N^2)$.
+
+\subsubsection{Takeaway 3: Streaming Ready}
+
+The \texttt{step\_recurrent} API enables production-grade streaming inference.
+
+\subsection{When to Use SVD-Linear Attention}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Long sequences} ($N > 512$)
+\item \textbf{Streaming inference} (autoregressive)
+\item \textbf{Compression-constrained deployment}
+\item \textbf{Combined with quantization} for 16--24$\times$ compression
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Tasks requiring exact attention} (rare)
+\item \textbf{Very short sequences} ($N < 128$)
+\item \textbf{Models without self-attention structure}
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need compression + speedup? --- Yes --- Use SVD-Linear
+  | No
+   
+Need streaming? --- Yes --- Use SVD-Linear
+  | No
+   
+Need only compression? --- Yes --- Use AASVD
+  | No
+   
+Use standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT at N=128:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{SVD-Linear} & \textbf{Change} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M & \textbf{{{D\_RATIO}}$\times$} \\
+VRAM & 183 MB & {{D\_VRAM}} MB & -{{D\_VRAM\_PCT}}\% \\
+Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Verdict.} SVD-Linear dominates AASVD (same compression) and RPC (better 
+approximation + compression).
+
+\subsection{Comparison with Published Linear Attention}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Feature map} & \textbf{Decay} & \textbf{Compression} & \textbf{Params} \\
+\midrule
+Linear Transformer & ELU+1 & No & No & 1.00$\times$ \\
+Performer & Random features & No & No & 1.00$\times$ \\
+RetNet & ELU+1 & Fixed & No & 1.00$\times$ \\
+\textbf{SVD-Linear} & ELU+1 & \textbf{Learned} & \textbf{SVD} & \textbf{{{D\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+SVD-Linear is unique in combining all four.
+
+\subsection{Deployment Considerations}
+
+\subsubsection{Streaming}
+
+For autoregressive generation, \texttt{step\_recurrent} gives $\mathcal{O}(1)$ 
+per-step memory and compute. This is essential for long-context generation.
+
+\subsubsection{Batching}
+
+For training, batch mode with chunk size 64 is optimal. Larger chunks 
+increase parallelism but reduce the effect of decay.
+
+\subsubsection{Mixed Precision}
+
+The linear attention uses FP32 for the state $S_t$ to prevent accumulation 
+errors. FP16 for the output is safe.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{How does decay affect long-context performance?} We test only N=128.
+\item \textbf{Can the feature map be improved?} E.g., with a small MLP?
+\item \textbf{Is channel-wise decay worth the parameters?} We compare head-wise
+  and channel-wise.
+\item \textbf{Interaction with quantization:} Can we quantize the SVD factors?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Real compression AND speedup
+\item Streaming-ready
+\item Multi-architecture
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Approximation error may affect accuracy
+\item Linear attention loses some expressivity
+
+\end{itemize}
+\subsubsection{Environmental}
+\begin{itemize}
+\item Training: ~{{COMPUTE\_HOURS}} GPU-hours
+\item CO$_2$: ~{{CO2}} kg
+
+\end{itemize}

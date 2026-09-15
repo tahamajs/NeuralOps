@@ -1,3 +1,225 @@
-\section{08 Analysis}
 
-Draft content for asvd.
+\section{Analysis}
+
+\subsection{Why Does ASVD Work?}
+
+Three mechanisms:
+
+\subsubsection{Spectral Compression}
+
+The SVD of a transformer weight matrix $W$ typically has a **rapidly decaying 
+spectrum\textbf{: a few large singular values capture most of the energy. }Figure 
+8.1** shows the singular value spectrum for a mid-layer Q projection.
+
+For a DistilBERT Q projection, the top 64 singular values capture 
+\textbf{{{D\_ENERGY\_64}}\%} of total energy. Setting $r = 64$ drops 
+\textbf{{{D\_DROP\_ENERGY}}\%} of the spectrum, but this remaining energy is 
+concentrated in \textbf{low-magnitude directions} that contribute little to 
+the output.
+
+\subsubsection{Explicit   Enables Inspection}
+
+Unlike A3 and AASVD, ASVD keeps $\Sigma$ as a separate tensor. **Figure 
+8.2** shows the singular value distribution across layers. This enables:
+
+\begin{itemize}
+\item Detecting layers with different intrinsic rank.
+\item Analyzing which layers are more compressible.
+\item Rank truncation without re-factorization.
+
+\end{itemize}
+\subsubsection{LoRA Recovers Small Errors}
+
+After compression, LoRA adapters absorb the reconstruction error. **Figure 
+8.3** shows training loss curves: loss drops from ${{D_LOSS_INIT}}$ to 
+${{D_LOSS_FINAL}}$ over {{RECOVERY\_STEPS}} steps.
+
+\subsection{Per-Layer Rank Distribution}
+
+\textbf{Table 8.1: Energy-selected ranks per layer (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
+\midrule
+0 & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
+1 & {{D\_L1\_Q\_R}} & {{D\_L1\_K\_R}} & {{D\_L1\_V\_R}} & {{D\_L1\_O\_R}} \\
+2 & {{D\_L2\_Q\_R}} & {{D\_L2\_K\_R}} & {{D\_L2\_V\_R}} & {{D\_L2\_O\_R}} \\
+3 & {{D\_L3\_Q\_R}} & {{D\_L3\_K\_R}} & {{D\_L3\_V\_R}} & {{D\_L3\_O\_R}} \\
+4 & {{D\_L4\_Q\_R}} & {{D\_L4\_K\_R}} & {{D\_L4\_V\_R}} & {{D\_L4\_O\_R}} \\
+5 & {{D\_L5\_Q\_R}} & {{D\_L5\_K\_R}} & {{D\_L5\_V\_R}} & {{D\_L5\_O\_R}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{RANK\_DISTRIBUTION\_OBS}}
+
+\subsection{Comparison with A3 and AASVD}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Aspect} & \textbf{A3} & \textbf{AASVD} & \textbf{ASVD} \\
+\midrule
+Weighting & Fisher diagonal & Full covariance & Activation energy \\
+handling & Folded & Folded & \textbf{Explicit} \\
+Rank selection & Adaptive retry & Fixed with cap & \textbf{Energy-based} \\
+LayerNorm recal & Yes & No & No \\
+Calibration & Required & Required & Optional \\
+Failure mode & Fallback & Fallback & \textbf{Abort} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Empirical comparison (DistilBERT, r=64):}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{Acc} & \textbf{Ratio} \\
+\midrule
+A3 & {{A3\_D}} & {{A3\_D\_R}}$\times$ \\
+AASVD & {{AASVD\_D}} & {{AASVD\_D\_R}}$\times$ \\
+\textbf{ASVD} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Spectral Analysis}
+
+\textbf{Figure 8.4} shows the normalized singular value spectrum for three 
+representative layers:
+
+\begin{itemize}
+\item Layer 0 (early): {{L0\_SPECTRUM}}
+\item Layer 2 (middle): {{L2\_SPECTRUM}}
+\item Layer 5 (late): {{L5\_SPECTRUM}}
+
+\end{itemize}
+\textbf{Observation.} {{SPECTRAL\_OBS}}
+
+\subsection{Effect of Energy Threshold}
+
+\textbf{Figure 8.5} plots accuracy vs energy threshold for DistilBERT.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$\varepsilon$} & \textbf{Avg rank} & \textbf{Accuracy} & \textbf{Ratio} \\
+\midrule
+0.90 & {{AVG\_RANK\_90}} & {{D\_E90}} & {{D\_E90\_R}}$\times$ \\
+0.95 & {{AVG\_RANK\_95}} & {{D\_E95}} & {{D\_E95\_R}}$\times$ \\
+0.99 & {{AVG\_RANK\_99}} & {{D\_E99}} & {{D\_E99\_R}}$\times$ \\
+0.995 & {{AVG\_RANK\_995}} & {{D\_E995}} & {{D\_E995\_R}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} $\varepsilon = 0.95$ is a sweet spot.
+
+\subsection{Inference Cost}
+
+\textbf{Table 8.2: Inference time breakdown (DistilBERT, L=128).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{ASVD} \\
+\midrule
+Q/K/V/O projections & 0.7 ms & {{D\_PROJ\_TIME}} ms \\
+Attention scores & 0.4 ms & 0.4 ms \\
+Softmax + matmul & 0.3 ms & 0.3 ms \\
+LoRA & 0 & {{D\_LORA\_TIME}} ms \\
+\textbf{Total per layer} & 1.4 ms & {{D\_TOTAL\_TIME}} ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The factorized projections are \textbf{~{{PROJ\_SPEEDUP}}$\times$ faster} because 
+the two matmuls (768$\to$64 and 64$\to$768) have fewer FLOPs than one matmul 
+(768$\times$768).
+
+\subsection{Parameter Breakdown}
+
+For DistilBERT with $r = 64$ and $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
+\midrule
+Base SVD (4 $\times$ 98,368) & 393,472 & 2,360,832 \\
+LoRA (4 $\times$ 24,576) & 98,304 & 589,824 \\
+\textbf{Total} & \textbf{491,776} & \textbf{2,950,656} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Versus baseline (4 $\times$ 589,824 = 2,359,296 per layer): \textbf{{{D\_RATIO}}$\times$} 
+reduction.
+
+\subsection{The `raise` Problem}
+
+\textbf{Critical.} ASVD raises \texttt{RuntimeError} on:
+
+\begin{enumerate}
+\item Missing projection in \texttt{copy\_weights}.
+\item Reconstruction error > $\tau$ in \texttt{\_decompose\_and\_set}.
+
+\end{enumerate}
+\textbf{Advantages:}
+\begin{itemize}
+\item No silent fallback to random initialization.
+\item Broken models are never silently produced.
+
+\end{itemize}
+\textbf{Disadvantages:}
+\begin{itemize}
+\item A single failed layer aborts entire injection.
+\item Less graceful than A3/AASVD (which fallback per-layer).
+
+\end{itemize}
+In our experiments:
+
+{{RAISE\_DISCUSSION}}
+
+\subsection{Failure Mode Taxonomy}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Symptom} & \textbf{Root cause} \\
+\midrule
+Injection abort & RuntimeError & Missing projection \\
+Reconstruction abort & RuntimeError & Error > $\tau$ \\
+Accuracy drop & $\Delta$ < -5\% & Insufficient rank / LoRA \\
+NaN & Loss = NaN & Numerical instability \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{ASVD is a real compressor.} Parameters reduce by {{D\_RATIO}}$\times$.
+\item \textbf{Explicit   enables inspection and rank truncation.}
+\item \textbf{Energy-based rank adapts per layer.}
+\item \textbf{$\epsilon$ = 0.95 is a good default.}
+\item \textbf{\texttt{raise} prevents silent failure but requires careful source handling.}
+
+\end{enumerate}

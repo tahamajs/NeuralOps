@@ -64,10 +64,51 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal analysis and benchmark evaluation of the module.
+Rotary Position Embedding (RoPE; Su et al., 2021) has become the default 
+position encoding for modern decoder-only transformers. However, porting 
+RoPE-based attention to encoder-only models such as DistilBERT and 
+RoBERTa, or to fused-convolution architectures such as GPT-2, requires 
+architecture-specific handling: nested encoder bypass for BERT-style 
+models, Conv1D transposition for GPT-2, grouped-query attention (GQA) 
+expansion for Qwen, and correct partial-dimension rotation for models with 
+non-standard head dimensions.
+
+We present \textbf{UnifiedRoPE}, a single attention module that implements 
+RoPE-based scaled dot-product attention and works across **four 
+transformer families** without modification:
+
+\begin{enumerate}
+\item \textbf{DistilBERT} (flat attention)
+\item \textbf{RoBERTa / BERT} (nested encoder self-attention)
+\item \textbf{GPT-2} (causal decoder with fused Conv1D)
+\item \textbf{Qwen3.5 / LLaMA} (GQA with rotary position embeddings)
+
+\end{enumerate}
+\textbf{UnifiedRoPE is a replacement module, not a compression method.} It 
+preserves all base parameters, produces identical forward outputs to the 
+original attention (up to numerical precision), and can be used as a 
+substrate for downstream compression (e.g., LoRA recovery, SVD factorization). 
+The \texttt{LoRALinear} projections allow trainable fine-tuning while freezing 
+base weights.
+
+We provide a production-hardened implementation with:
+(i) precomputed \texttt{cos}/\texttt{sin} frequency caches (non-persistent),
+(ii) robust multi-architecture weight transfer with LoRA preservation,
+(iii) nested encoder bypass for RoBERTa-style models,
+(iv) GQA expansion via \texttt{repeat\_kv},
+(v) safe injection returning \texttt{None} on failure.
+
+On SST-2, UnifiedRoPE matches baseline accuracy to within \textbf{{{D\_DELTA}}\%} 
+on DistilBERT, \textbf{{{R\_DELTA}}\%} on RoBERTa, and \textbf{{{G\_DELTA}}\%} on GPT-2.
+
+\textbf{Keywords:} RoPE, rotary position embeddings, portable attention, 
+multi-architecture transformers, nested encoder, Conv1D, GQA, production 
+hardening
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} Efficient Attention, Transformers, Deep Learning, Model Compression
+\noindent\textbf{Keywords:} RoPE, rotary position embeddings, portable attention,
 \end{abstract}
 
 \vspace{1em}

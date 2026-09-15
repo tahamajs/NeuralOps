@@ -1,3 +1,68 @@
-\section{10 Limitations}
 
-Draft content for nystrom_attention.
+\section{Limitations}
+
+\subsection{This is a Reproduction}
+
+Nystr mformer is from Xiong et al. (2021). We do not claim to improve it.
+
+\subsection{Short Sequence Evaluation}
+
+At $N=128$ (SST-2), the Nystr m branch does not activate. Our main results 
+show \textbf{fallback behavior}, not Nystr m approximation.
+
+\subsection{Causal Decoder Not Supported}
+
+Nystr m approximation is not causal. GPT-2 and Qwen use dense causal 
+attention, gaining no benefit.
+
+\subsection{No Parameter Reduction}
+
+Nystr mformer does \textbf{not} reduce parameter count or KV-cache size.
+
+\subsection{Approximation Error}
+
+Nystr mformer introduces approximation error. For highly non-low-rank 
+attention matrices, error can be significant.
+
+\subsection{Landmark Selection Fixed}
+
+We use adaptive pooling. Other methods (k-means, random) might work better.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Long-context tasks (document classification, 
+QA) may show larger benefits.
+
+\subsection{Model Coverage}
+
+Only three models tested. Larger models (BERT-large, LLaMA) not tested.
+
+\subsection{Hardware}
+
+Only tested on RTX 4070 Laptop.
+
+\subsection{Single Seed}
+
+All results from a single seed. SE ~1.69\%.
+
+\subsection{Heuristic Hyperparameters}
+
+\texttt{num\_landmarks = 32}, short sequence threshold = 128 are empirical.
+
+\subsection{No Comparison with Performer/Linformer}
+
+We do not directly compare with other efficient attention methods.
+
+\subsection{Code Quality}
+
+Research-grade. Known issues:
+\begin{itemize}
+\item Broad exception handling
+\item \texttt{raise} in some paths should log
+\item No unit tests for edge cases
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+See Appendix E.
+

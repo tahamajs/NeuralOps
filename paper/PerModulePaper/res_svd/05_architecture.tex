@@ -1,11 +1,190 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Draft content for res_svd.
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+Res-SVD uses the same weight extraction as companion modules:
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+extracted["q"] = src.q_lin.weight
+extracted["k"] = src.k_lin.weight
+extracted["v"] = src.v_lin.weight
+extracted["o"] = src.out_lin.weight
+\end{lstlisting}
+
+\subsubsection{RoBERTa (nested)}
+
+\begin{lstlisting}
+s = src.self
+extracted["q"] = s.query.weight
+extracted["k"] = s.key.weight
+extracted["v"] = s.value.weight
+extracted["o"] = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+
+\begin{lstlisting}
+w = src.c_attn.weight.t()
+q_w, k_w, v_w = w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{Qwen}
+
+Direct extraction from named projections.
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa/BERT, the output projection is applied externally. 
+Res-SVD handles this via \textbf{identity initialization} of the output projection:
+
+\begin{lstlisting}
+if proj_key == "o" and self.is_nested_encoder:
+    temp_linear = nn.Linear(target.in_features, target.out_features)
+    nn.init.eye_(temp_linear.weight)
+    nn.init.zeros_(temp_linear.bias)
+    new_layer = ResSVDLinear.from_linear(temp_linear, ...)
+    target.load_state_dict(new_layer.state_dict())
+\end{lstlisting}
+
+Then in forward:
+\begin{lstlisting}
+if self.is_nested_encoder:
+    return context  # skip out_proj
+\end{lstlisting}
+
+\subsection{The `ResSVDLinear` Module}
+
+Located in \texttt{framework/compression\_engine/res\_svd.py}. Structure:
+
+\begin{lstlisting}
+class ResSVDLinear(nn.Module):
+    def __init__(self, in_features, out_features, base_rank, residual_rank,
+                 scaling=1.0, factorize_base=True, bias=True):
+        super().__init__()
+        self.V_base = nn.Parameter(torch.empty(base_rank, in_features))
+        self.U_base = nn.Parameter(torch.empty(out_features, base_rank))
+        self.lora_A = nn.Parameter(torch.empty(residual_rank, in_features))
+        self.lora_B = nn.Parameter(torch.empty(out_features, residual_rank))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        self.scaling = scaling
+    
+    @classmethod
+    def from_linear(cls, linear, base_rank, residual_rank, ...):
+        W = linear.weight.data.float()
+        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        
+        # Base
+        U_b = U[:, :base_rank]
+        S_b = S[:base_rank]
+        Vt_b = Vt[:base_rank, :]
+        
+        # Residual
+        W_b = (U_b * S_b) @ Vt_b
+        R = W - W_b
+        U_r, S_r, Vt_r = torch.linalg.svd(R, full_matrices=False)
+        
+        # LoRA init
+        S_r_sqrt = torch.sqrt(S_r[:residual_rank])
+        B_init = U_r[:, :residual_rank] * S_r_sqrt
+        A_init = S_r_sqrt[:, None] * Vt_r[:residual_rank, :]
+        
+        layer = cls(...)
+        layer.U_base.data = U_b
+        layer.V_base.data = Vt_b
+        layer.lora_B.data = B_init
+        layer.lora_A.data = A_init
+        return layer
+    
+    def forward(self, x):
+        h_b = F.linear(x, self.V_base)
+        y_b = F.linear(h_b, self.U_base)
+        h_r = F.linear(x, self.lora_A)
+        y_r = F.linear(h_r, self.lora_B)
+        return y_b + self.scaling * y_r + self.bias
+\end{lstlisting}
+
+\subsection{Freezing Base Weights}
+
+\begin{lstlisting}
+self.U_base.requires_grad = False
+self.V_base.requires_grad = False
+# lora_A, lora_B remain trainable
+\end{lstlisting}
+
+\subsection{Injection}
+
+The \texttt{inject\_res\_svd} hook:
+\begin{itemize}
+\item Handles whole-model traversal
+\item Finds attention modules
+\item Creates new \texttt{ResSVDAttention} with weight transfer
+\item \textbf{Returns \texttt{None} on failure} (silent fallback)
+
+\end{itemize}
+\begin{lstlisting}
+except Exception as e:
+    logger.error("inject_res_svd failed at layer %d: %s", layer_idx, e)
+    return None
+\end{lstlisting}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Failure} & \textbf{Response} \\
+\midrule
+Missing projection & \texttt{copy\_weights} raises RuntimeError \\
+Small Frobenius norm & Raises RuntimeError \\
+Injection error & Returns None (silent) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("res_svd")
+@ATTENTION_REGISTRY.register("spectral_residual_svd")
+class ResSVDAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Cross-Attention}
+
+\begin{lstlisting}
+if encoder_hidden_states is not None:
+    raise NotImplementedError(...)
+\end{lstlisting}
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_svd-mamba_4.jpeg}
-\caption{Architectural overview of res_svd.}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of res_svd.}
 \label{fig:arch_res_svd}
 \end{figure}
+

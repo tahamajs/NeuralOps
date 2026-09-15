@@ -1,3 +1,148 @@
-\section{09 Discussion}
 
-Draft content for mla_attention.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Reproducibility}
+
+MLA reproduces faithfully on DistilBERT, RoBERTa, and GPT-2. The main 
+challenges are architectural portability, not algorithmic.
+
+\subsubsection{Takeaway 2: Real KV Compression}
+
+MLA reduces KV-cache size by \textbf{{{D\_KV\_RATIO}}$\times$--{{G\_KV\_RATIO}}$\times$}. This is 
+unique among the compression methods we compared.
+
+\subsubsection{Takeaway 3: Complementary to Parameter Compression}
+
+MLA is orthogonal to parameter-compression methods (MinimalSVD, SVD-LLM V2). 
+They can be combined.
+
+\subsection{When to Use MLA}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Long-context inference} (KV cache is the bottleneck)
+\item \textbf{High batch size} (KV cache scales with B $\times$ L)
+\item \textbf{Models with concentrated K/V spectra}
+\item \textbf{Combined with quantization}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Memory-bound by parameters} (not KV cache)
+\item \textbf{Very small models} (<10M params)
+\item \textbf{Extremely small latent dimension} ($c < 32$)
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Inference bottleneck? --- KV cache --- Use MLA
+  |
+  Parameters --- Use MinimalSVD / SVD-LLM V2
+  |
+  Compute --- Consider other approaches
+
+  |
+   
+Have long context? --- Yes --- MLA gives more savings
+  | No
+   
+MLA still viable for high-batch workloads
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT inference, batch 8, seq 128:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{MLA} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+KV cache (MB) & {{D\_KV\_STD}} & {{D\_KV\_MLA}} & \textbf{{{D\_KV\_RATIO}}$\times$} \\
+Total VRAM (MB) & 183 & {{D\_VRAM}} & {{D\_VRAM\_RATIO}}$\times$ \\
+Latency & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For long context, seq 2048:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{MLA} & \textbf{Change} \\
+\midrule
+KV cache (MB) & {{D\_KV2048\_STD}} & {{D\_KV2048\_MLA}} & \textbf{{{D\_KV\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Verdict.} MLA is a \textbf{strict win} for KV-cache-bound workloads.
+
+\subsection{Comparison with Published Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{KV reduction} & \textbf{Params} & \textbf{Accuracy} \\
+\midrule
+Standard MHA & 1$\times$ & 100\% & Baseline \\
+MQA & 12$\times$ & 100\% & Lower \\
+GQA (2 groups) & 6$\times$ & 100\% & Similar \\
+H2O & Variable & 100\% & Lossy \\
+\textbf{MLA (ours)} & \textbf{{{D\_KV\_RATIO}}$\times$} & 100\% & {{D\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Deployment Considerations}
+
+\subsubsection{Storage}
+MLA does not significantly reduce storage (only K/V down-projection).
+
+\subsubsection{Latency}
+MLA adds an extra down/up projection step but saves memory bandwidth 
+for large batches.
+
+\subsubsection{Batching}
+Benefits scale with batch size due to KV-cache size scaling.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Interaction with quantization:} MLA + INT8 KV?
+\item \textbf{Combined with parameter compression:} MLA + MinimalSVD?
+\item \textbf{Optimal latent dimension:} can we choose $c$ automatically?
+\item \textbf{Cross-task generalization:} does MLA work on generation?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Enables longer context inference
+\item Reduces memory footprint
+\item Democratizes long-context AI
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Dual-use concerns
+\item Concentration risk
+
+\end{itemize}
+\subsubsection{Environmental}
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+

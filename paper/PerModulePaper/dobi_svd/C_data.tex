@@ -1,3 +1,207 @@
-\section{C Data}
 
-Formal architectural specifications for \texttt{dobi_svd}.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS\_FULL}} \\
+Effective ratio & {{D\_RATIO}}$\times$ \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Precision & {{D\_PREC}} \\
+Recall & {{D\_REC}} \\
+Loss & {{D\_LOSS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Nominal rank & {{RANK}} \\
+Effective rank ($\tau$\_g=0.5) & {{D\_REFF}} \\
+Compressed layers & {{D\_COMP}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS\_FULL}} \\
+Effective ratio & {{R\_RATIO}}$\times$ \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Nominal rank & {{RANK}} \\
+Effective rank & {{R\_EFF}} \\
+Compressed layers & {{R\_COMP}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS\_FULL}} \\
+Effective ratio & {{G\_RATIO}}$\times$ \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Nominal rank & {{RANK}} \\
+Effective rank & {{G\_EFF}} \\
+Compressed layers & {{G\_COMP}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Per-Layer Gate Statistics (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Layer} & \textbf{Projection} & \textbf{Mean $\sigma$($\alpha$)} & \textbf{Std} & \textbf{\% < 0.3} & \textbf{\% > 0.9} \\
+\midrule
+0 & q\_lin & {{D\_L0\_Q\_MEAN}} & {{D\_L0\_Q\_STD}} & {{D\_L0\_Q\_LOW}} & {{D\_L0\_Q\_HIGH}} \\
+0 & k\_lin & {{D\_L0\_K\_MEAN}} & {{D\_L0\_K\_STD}} & {{D\_L0\_K\_LOW}} & {{D\_L0\_K\_HIGH}} \\
+0 & v\_lin & {{D\_L0\_V\_MEAN}} & {{D\_L0\_V\_STD}} & {{D\_L0\_V\_LOW}} & {{D\_L0\_V\_HIGH}} \\
+0 & out\_lin & {{D\_L0\_O\_MEAN}} & {{D\_L0\_O\_STD}} & {{D\_L0\_O\_LOW}} & {{D\_L0\_O\_HIGH}} \\
+... & ... & ... & ... & ... & ... \\
+5 & out\_lin & {{D\_L5\_O\_MEAN}} & {{D\_L5\_O\_STD}} & {{D\_L5\_O\_LOW}} & {{D\_L5\_O\_HIGH}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Per-Layer Reconstruction Error}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Layer} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & {{D\_L0\_ERR}} & {{R\_L0\_ERR}} & {{G\_L0\_ERR}} \\
+1 & {{D\_L1\_ERR}} & {{R\_L1\_ERR}} & {{G\_L1\_ERR}} \\
+... & ... & ... & ... \\
+5/11 & {{D\_LL\_ERR}} & {{R\_LL\_ERR}} & {{G\_LL\_ERR}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{$r$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Effective $r_\text{eff}$} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{D\_R64\_REFF}} & {{R\_R64}} & {{G\_R64}} \\
+128 & {{D\_R128}} & {{D\_RATIO128}}$\times$ & {{D\_R128\_REFF}} & {{R\_R128}} & {{G\_R128}} \\
+192 & {{D\_R192}} & {{D\_RATIO192}}$\times$ & {{D\_R192\_REFF}} & {{R\_R192}} & {{G\_R192}} \\
+256 & {{D\_R256}} & {{D\_RATIO256}}$\times$ & {{D\_R256\_REFF}} & {{R\_R256}} & {{G\_R256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Init Gate Value Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$\alpha$\_init} & \textbf{$\sigma$($\alpha$\_init)} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+1.0 & 0.731 & {{D\_G1}} & {{R\_G1}} & {{G\_G1}} \\
+2.5 & 0.924 & {{D\_G25}} & {{R\_G25}} & {{G\_G25}} \\
+4.0 & 0.982 & {{D\_G4}} & {{R\_G4}} & {{G\_G4}} \\
+5.0 & 0.993 & {{D\_G5}} & {{R\_G5}} & {{G\_G5}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Pruning Threshold Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$\tau_g$} & \textbf{$r_\text{eff}$} & \textbf{Accuracy} & \textbf{$\Delta$ from unpruned} \\
+\midrule
+0.1 & {{D\_TAU1\_REFF}} & {{D\_TAU1\_ACC}} & {{D\_TAU1\_D}} \\
+0.3 & {{D\_TAU3\_REFF}} & {{D\_TAU3\_ACC}} & {{D\_TAU3\_D}} \\
+0.5 & {{D\_TAU5\_REFF}} & {{D\_TAU5\_ACC}} & {{D\_TAU5\_D}} \\
+0.7 & {{D\_TAU7\_REFF}} & {{D\_TAU7\_ACC}} & {{D\_TAU7\_D}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss  Mean gate
+1     {{D_S1}}  {{D_S1_GATE}}
+5     {{D_S5}}  {{D_S5_GATE}}
+10    {{D_S10}} {{D_S10_GATE}}
+...
+50    {{D_S50}} {{D_S50_GATE}}
+\end{lstlisting}
+
+\subsubsection{RoBERTa}
+\begin{lstlisting}
+Step  Loss  Mean gate
+1     {{R_S1}}  {{R_S1_GATE}}
+...
+50    {{R_S50}} {{R_S50_GATE}}
+\end{lstlisting}
+
+\subsubsection{GPT-2}
+\begin{lstlisting}
+Step  Loss  Mean gate
+1     {{G_S1}}  {{G_S1_GATE}}
+...
+50    {{G_S50}} {{G_S50_GATE}}
+\end{lstlisting}
+
+\subsection{C.10 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "params_before": 66955010,
+    "params_after": {{D_PARAMS_FULL}},
+    "effective_ratio": {{D_RATIO}},
+    "accuracy_pct": {{D_ACC}},
+    "f1": {{D_F1}},
+    "nominal_rank": {{RANK}},
+    "effective_rank": {{D_REFF}},
+    "mean_gate": {{D_GATE_MEAN}}
+  },
+  "roberta": {...},
+  "gpt2": {...}
+}
+\end{lstlisting}
+

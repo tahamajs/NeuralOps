@@ -1,3 +1,195 @@
-\section{07 Results}
+\section{Results}
 
-Draft content for res_svd.
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
+DistilBERT & \textbf{Res-SVD} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & \textbf{{{D\_RATIO}}$\times$} & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
+RoBERTa & \textbf{Res-SVD} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & \textbf{{{R\_RATIO}}$\times$} & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
+GPT-2 & \textbf{Res-SVD} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{{{G\_RATIO}}$\times$} & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After Res-SVD} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & \textbf{{{D\_RATIO}}$\times$} \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & \textbf{{{R\_RATIO}}$\times$} \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & \textbf{{{G\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Per-layer breakdown (DistilBERT, $r_b=16$, $r_r=4$):}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Base SVD & 24,592 \\
+Residual LoRA & 6,144 \\
+Bias & 768 \\
+\textbf{Total per projection} & \textbf{31,504} \\
+Baseline per projection & 589,824 \\
+\textbf{Ratio} & \textbf{18.7$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & Res-SVD & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 4.10 s & 27400 & 712 MB \\
+RoBERTa & Res-SVD & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 4.20 s & 26700 & 793 MB \\
+GPT-2 & Res-SVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Base Rank}
+
+\textbf{Table 7.4: Accuracy vs base rank ($r_r = 4$).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$r_b$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Ratio} \\
+\midrule
+8 & {{D\_B8}} & {{R\_B8}} & {{G\_B8}} & 25$\times$ \\
+16 & {{D\_B16}} & {{R\_B16}} & {{G\_B16}} & 18.7$\times$ \\
+32 & {{D\_B32}} & {{R\_B32}} & {{G\_B32}} & 14$\times$ \\
+64 & {{D\_B64}} & {{R\_B64}} & {{G\_B64}} & 8$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Residual Rank}
+
+\textbf{Table 7.5: Accuracy vs residual rank ($r_b = 16$).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_r$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & {{D\_R0}} & {{R\_R0}} & {{G\_R0}} \\
+2 & {{D\_R2}} & {{R\_R2}} & {{G\_R2}} \\
+4 & {{D\_R4}} & {{R\_R4}} & {{G\_R4}} \\
+8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
+16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} $r_r = 4$ is a good balance.
+
+\subsection{Ablation: Scaling $\alpha$}
+
+\textbf{Table 7.6: Accuracy vs $\alpha$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$\alpha$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.5 & {{D\_A05}} & {{R\_A05}} & {{G\_A05}} \\
+1.0 & {{D\_A10}} & {{R\_A10}} & {{G\_A10}} \\
+2.0 & {{D\_A20}} & {{R\_A20}} & {{G\_A20}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with SVD-Base Only}
+
+\textbf{Table 7.7: Res-SVD vs pure SVD at equal total rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Pure SVD ($r=20$) & {{D\_SVD20}} & {{R\_SVD20}} & {{G\_SVD20}} \\
+\textbf{Res-SVD ($r_b=16, r_r=4$)} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} As proven in  4.7.1, both are mathematically equivalent at 
+initialization. Differences arise during training.
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.8: Res-SVD vs prior compressors.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
+\midrule
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ \\
+asvd ($r=32$) & 88.5\% & 12$\times$ & 75.5\% & 11$\times$ & 76.8\% & 11$\times$ \\
+aasvd ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
+\textbf{res\_svd} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{{{R\_ACC}}} & \textbf{{{R\_RATIO}}$\times$} & \textbf{{{G\_ACC}}} & \textbf{{{G\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Cases}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Status} & \textbf{Accuracy} & \textbf{Reason} \\
+\midrule
+DistilBERT & {{D\_STATUS}} & {{D\_ACC}} & {{D\_REASON}} \\
+RoBERTa & {{R\_STATUS}} & {{R\_ACC}} & {{R\_REASON}} \\
+GPT-2 & {{G\_STATUS}} & {{G\_ACC}} & {{G\_REASON}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

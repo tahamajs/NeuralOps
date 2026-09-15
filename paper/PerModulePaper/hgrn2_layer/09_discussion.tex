@@ -1,3 +1,94 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for hgrn2_layer.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Element-Wise Recurrence Works}
+
+HGRN2Layer replaces attention with $\mathcal{O}(L d)$ element-wise recurrence, 
+achieving accuracy within {{D\_DELTA}}\% of baseline on DistilBERT.
+
+\subsubsection{Takeaway 2: Short Sequences are Slow}
+
+At L = 128, our method is \textbf{{{SLOWDOWN}}$\times$ slower} than baseline due to Python 
+chunk loops.
+
+\subsubsection{Takeaway 3: Parameters Increase}
+
+HGRN2Layer increases parameters by \textbf{{{D\_PARAM\_PCT}}\%} per layer. We are 
+honest about this.
+
+\subsection{When to Use HGRN2Layer}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Long-context inference} ($L \geq {{BREAKEVEN}}$).
+\item \textbf{Streaming / autoregressive decoding} with O(1) state.
+\item \textbf{Memory-constrained decoding} (state is O(d), not O(L)).
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Short sequences} ($L \leq 256$).
+\item \textbf{Latency-critical applications.}
+\item \textbf{Parameter-sensitive deployments.}
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Target L $\ge$ 512? --- Yes --- Consider HGRN2Layer
+  | No
+   
+Latency-critical? --- Yes --- Use standard attention
+  | No
+   
+Consider other methods
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT at L = 1024:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+Time & 45 s & {{D\_T1024}} s & {{S1024}}$\times$ \\
+VRAM & 1500 MB & {{VRAM\_1024}} MB & {{VRAM\_1024\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Fused Kernel Opportunity}
+
+A \textbf{fused Triton kernel} for the chunked scan could eliminate the Python 
+loop. Expected speedup: 3-5$\times$ at L = 128.
+
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Linear-time long-context inference.
+\item O(1) state for streaming.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Parameter increase.
+\item Training slower.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Optimal chunk size:} Is 32 best across all L?
+\item \textbf{Fused kernels:} How much can they help?
+\item \textbf{Chunk size scheduling:} Should it vary per layer?
+\item \textbf{Combining with attention:} Hybrid HGRN-attention?
+
+\end{enumerate}

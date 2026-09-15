@@ -1,3 +1,83 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for hgrn2_gated_deltanet.
+\subsection{Linear Attention}
+
+Linear Transformer (Katharopoulos et al., 2020) replaces softmax with a 
+kernel feature map, achieving $\mathcal{O}(L)$ complexity. Performer 
+(Choromanski et al., 2021) uses positive orthogonal random features. These 
+methods still require the full attention computation at training time 
+(unless a recurrence is exploited), limiting their practical benefit.
+
+\subsection{State-Space Models}
+
+S4 (Gu et al., 2021) and its successors -- S5, DSS, S4D -- formulate sequence 
+modeling as linear time-invariant state-space models. Mamba (Gu \& Dao, 2023) 
+introduces \textbf{selective} SSMs where the state transition depends on the 
+input. HGRN-2 (Qin et al., 2024) is closely related but uses a simpler 
+element-wise recurrence with bounded forget gates.
+
+\subsection{Delta-Rule Recurrences}
+
+The Delta rule is an old idea from associative memory (Hebb, 1949; Widrow \& 
+Hoff, 1960). Recently, it has been rediscovered as a \textbf{fast-weight} update 
+(Schmidhuber, 1992; Ba et al., 2016). Gated DeltaNet (Yang et al., 2024) 
+combines the Delta rule with gating, achieving strong performance on 
+language modeling. Our work uses Gated DeltaNet as one branch of a hybrid.
+
+\subsection{Hybrid Recurrences}
+
+\textbf{Jamba} (Lieber et al., 2024) interleaves transformer and Mamba layers. 
+\textbf{Griffin} (De et al., 2024) combines recurrent and local attention. 
+\textbf{Hymba} (Dong et al., 2024) fuses attention and SSM within a single layer. 
+Our work is closest to Hymba: we fuse two recurrences within a single 
+attention module.
+
+\subsection{Gated Fusion}
+
+\textbf{Mixture of Experts} (Shazeer et al., 2017) gates between different 
+feed-forward networks. \textbf{GLaM} (Du et al., 2022) extends this at scale. 
+\textbf{Flamingo} (Alayrac et al., 2022) gates between vision and language. 
+Our gate fuses two recurrent paths and is trained end-to-end with LoRA.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{State type} & \textbf{Gated fusion} \\
+\midrule
+HGRN-2 & $\mathcal{O}(L)$ & Element-wise & No \\
+DeltaNet & $\mathcal{O}(L)$ & Matrix & No \\
+Mamba & $\mathcal{O}(L)$ & Selective SSM & No \\
+Hymba & $\mathcal{O}(L)$ & Hybrid & Yes \\
+\textbf{HGRN2-GatedDeltaNet} & $\mathcal{O}(L)$ & \textbf{Element + Matrix} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} We fuse an element-wise recurrence (HGRN-2) with a 
+matrix recurrence (DeltaNet). The former handles fast decay; the latter 
+handles cross-feature interactions. The learned gate selects per token.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Expressivity} & \textbf{Speed (L=128)} & \textbf{Speed (L=4096)} \\
+\midrule
+Standard MHSA & $\mathcal{O}(L^2)$ & High & Fast & Very slow \\
+HGRN-2 & $\mathcal{O}(L)$ & Medium & Very fast & Fast \\
+DeltaNet & $\mathcal{O}(L)$ & High & Fast & Fast \\
+Mamba & $\mathcal{O}(L)$ & High & Fast & Fast \\
+\textbf{Ours} & $\mathcal{O}(L)$ & \textbf{High} & \textbf{Slow (Python loop)} & \textbf{Fast} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

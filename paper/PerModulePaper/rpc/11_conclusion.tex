@@ -1,3 +1,74 @@
-\section{11 Conclusion}
 
-Draft content for rpc.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{RPC} (Random Projection Compressed) attention, which sketches 
+$Q$ and $K$ into a lower-dimensional subspace before score computation. 
+By the Johnson--Lindenstrauss lemma, the sketched scores approximate the 
+full scores, reducing attention FLOPs.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param $\Delta$ \%} & \textbf{Time ratio (L=128)} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_TIME\_RATIO}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_TIME\_RATIO}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Not a compressor.} Parameters increase.
+\item \textbf{Not a memory saver.} Score matrix unchanged.
+\item \textbf{FLOPs reduction only at long sequences.}
+\item \textbf{Theoretical speedup $\ne$ actual speedup.}
+\item \textbf{Multi-architecture support works.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Test at L=1024, L=4096
+\item Combine with AASVD
+\item Sparse projections
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Learned projections with JL constraints
+\item Theoretical bounds on downstream accuracy
+\item Comparison with Performer
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+RPC provides a mathematically principled approach to reducing attention 
+FLOPs. It is not a compressor and does not reduce memory. We release all 
+code and checkpoints.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed RPC, implemented the code, ran experiments,
+  wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

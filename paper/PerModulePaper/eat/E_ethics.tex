@@ -1,3 +1,95 @@
-\section{E Ethics}
 
-Draft content for eat.
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item \textbf{Faster inference} for long-context applications
+\item \textbf{Multi-architecture support} simplifies deployment
+\item \textbf{LoRA recovery} preserves pretrained knowledge
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item \textbf{Not a compressor} -- adds parameters
+\item \textbf{Pruning may remove content} critical for fairness
+\item \textbf{Dual-use} -- efficiency enables both beneficial and harmful applications
+
+\end{itemize}
+\subsection{E.2 Environmental Impact}
+
+\begin{itemize}
+\item \textbf{Training:} ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq
+\item \textbf{Inference:} {{INFERENCE\_CARBON}} g CO$_2$eq per 1000 queries
+
+\end{itemize}
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 (public, English)
+\item \textbf{PII:} None
+\item \textbf{Bias:} English-only movie reviews
+
+\end{itemize}
+\subsection{E.4 Model Ethics}
+
+\subsubsection{Bias and Pruning}
+
+Token pruning may disproportionately remove tokens from certain dialects, 
+languages, or content types. We did not audit EAT for bias in pruning. 
+\textbf{Recommendation:} Measure per-subgroup accuracy when using EAT with 
+pruning.
+
+\subsubsection{Misuse}
+
+EAT could enable more efficient surveillance. We do not endorse this use.
+
+\subsection{E.5 Authorship and Credit}
+
+See  11.7.
+
+\subsection{E.6 Conflicts of Interest}
+
+None.
+
+\subsection{E.7 Funding}
+
+{{FUNDING}}
+
+\subsection{E.8 Acknowledgements}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{E.9 LLM Usage}
+
+Parts drafted with LLM assistance. All content reviewed by authors.
+
+\subsection{E.10 Reproducibility Commitments}
+
+\begin{enumerate}
+\item Release code
+\item Release checkpoints
+\item Report negative results
+\item Document hyperparameters
+\item Respond to replications
+
+\end{enumerate}
+\subsection{E.11 Long-Term Considerations}
+
+EAT's efficiency gains could:
+
+\begin{itemize}
+\item Make long-context models practical
+\item Reduce per-query cost
+
+\end{itemize}
+But also:
+
+\begin{itemize}
+\item Enable mass surveillance
+\item Concentrate AI capabilities
+
+\end{itemize}
+We encourage the community to weigh these trade-offs.
+

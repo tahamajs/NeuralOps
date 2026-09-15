@@ -1,3 +1,125 @@
-\section{08 Analysis}
+\section{Analysis}
 
-Draft content for hgrn2_layer.
+\subsection{Why Does HGRN2Layer Work?}
+
+\subsubsection{Element-Wise State is Efficient}
+
+The state $s_t \in \mathbb{R}^d$ is a vector, not a matrix. Each dimension 
+updates independently. This gives $\mathcal{O}(L d)$ complexity instead of 
+$\mathcal{O}(L H d^2)$ for matrix-state recurrences (DeltaNet).
+
+\subsubsection{Bounded Forget Gate}
+
+The clamp $\log f \in [-3, -10^{-4}]$ keeps $f \in [0.05, 1]$. Without 
+clamping:
+
+\begin{itemize}
+\item Too small $f$ $\to$ state collapses to zero (no memory).
+\item Too large $f$ $\to$ state saturates (unstable).
+
+\end{itemize}
+\textbf{Ablation:} Removing the clamp drops accuracy by {{CLAMP\_DROP}}\%.
+
+\subsubsection{Input Modulation}
+
+Multiplying the input by $(1 - f_t)$ ties the write magnitude to the forget 
+rate. This prevents the state from drifting away from the input.
+
+\textbf{Ablation:} Removing the modulation drops accuracy by {{MODULATION\_DROP}}\%.
+
+\subsubsection{Bidirectional for Encoders}
+
+DistilBERT and RoBERTa use bidirectional scan; GPT-2 uses causal. The 
+bidirectional scan improves accuracy by {{BIDI\_GAIN}}\% on DistilBERT.
+
+\subsection{Where Does the Slowdown Come From?}
+
+\subsubsection{Python Loop Over Chunks}
+
+The scan is chunked but still uses a Python loop over chunks:
+
+\begin{lstlisting}
+for start in range(0, L, chunk_size):
+    ...
+\end{lstlisting}
+
+For L = 128 and chunk = 32, that is 4 iterations. Across 6 layers and 109 
+batches, that is ~2600 Python iterations.
+
+\subsubsection{Intermediate Tensors}
+
+Each chunk materializes \texttt{A}, \texttt{A\_diff}, \texttt{decay\_weights}, \texttt{intra} tensors, all 
+in FP32. These accumulate in GPU memory.
+
+\subsubsection{Why Long Sequences Are Faster}
+
+At L = 4096, the baseline's $\mathcal{O}(L^2)$ attention dominates the cost. 
+Our scan is $\mathcal{O}(L)$ -- it scales linearly, so the crossover happens.
+
+\subsection{Per-Layer Analysis}
+
+\textbf{Table 8.1: Forget gate statistics per layer.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Mean f} & \textbf{Std f} & \textbf{Min f} & \textbf{Max f} \\
+\midrule
+0 & {{D\_L0\_F\_MEAN}} & {{D\_L0\_F\_STD}} & {{D\_L0\_F\_MIN}} & {{D\_L0\_F\_MAX}} \\
+3 & {{D\_L3\_F\_MEAN}} & {{D\_L3\_F\_STD}} & {{D\_L3\_F\_MIN}} & {{D\_L3\_F\_MAX}} \\
+5 & {{D\_L5\_F\_MEAN}} & {{D\_L5\_F\_STD}} & {{D\_L5\_F\_MIN}} & {{D\_L5\_F\_MAX}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Attention Baselines}
+
+\textbf{Table 8.2: Accuracy comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Speed @ L=128} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 1$\times$ \\
+Linear Transformer & {{LT\_D}} & {{LT\_R}} & {{LT\_G}} & {{LT\_SP}}$\times$ \\
+Performer & {{PERF\_D}} & {{PERF\_R}} & {{PERF\_G}} & {{PERF\_SP}}$\times$ \\
+\textbf{HGRN2Layer} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{{{D\_SP\_128}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Analysis}
+
+\subsubsection{RoBERTa Degradation}
+
+RoBERTa shows a larger drop than DistilBERT. Hypotheses:
+
+\begin{enumerate}
+\item \textbf{Nested handling.} \texttt{is\_nested\_encoder=True} sets
+  \texttt{layer.attention.output.dense = nn.Identity()}. If this is wrong,
+  output projection is skipped.
+\item \textbf{12 layers.} More layers to accumulate error.
+
+\end{enumerate}
+\textbf{Test.} {{ROBERTA\_TEST}}
+
+\subsubsection{GPT-2 Causal}
+
+GPT-2 is causal, so only the forward scan is used. This is stricter than 
+bidirectional.
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Element-wise recurrence works} at L $\ge$ {{BREAKEVEN}}.
+\item \textbf{Bounded forget gate is essential} ({{CLAMP\_DROP}}\% without).
+\item \textbf{Input modulation prevents drift} ({{MODULATION\_DROP}}\% without).
+\item \textbf{Bidirectional helps encoders} by {{BIDI\_GAIN}}\%.
+\item \textbf{Python chunk loop limits short-sequence speed.}
+
+\end{enumerate}

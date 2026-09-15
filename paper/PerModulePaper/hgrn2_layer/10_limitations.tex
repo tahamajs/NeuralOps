@@ -1,3 +1,77 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for hgrn2_layer.
+\subsection{Parameter Count}
+
+HGRN2Layer \textbf{increases} parameter count by ~{{D\_PARAM\_PCT}}\%.
+
+\subsection{Short-Sequence Slowdown}
+
+At L = 128, we are \textbf{{{SLOWDOWN}}$\times$ slower} than baseline.
+
+\subsection{Python Loop}
+
+The chunked scan still uses a Python loop over chunks, limiting parallelism.
+
+\subsection{Cross-Attention Not Implemented}
+
+Encoder-decoder models are not supported. We raise \texttt{NotImplementedError}.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Generation, long-context, and token-level tasks 
+are untested.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+All experiments on RTX 4070. Other hardware untested.
+
+\subsection{No Theoretical Guarantee}
+
+We provide no formal approximation bound relative to standard attention.
+
+\subsection{Training Instability on RoBERTa}
+
+RoBERTa's loss curve is less stable than DistilBERT's. We do not fully 
+diagnose this.
+
+\subsection{Single-Seed Results}
+
+Multi-seed analysis would strengthen conclusions.
+
+\subsection{No Comparison with Mamba}
+
+We do not compare with Mamba, GLA, or other modern SSMs.
+
+\subsection{`is\_nested\_encoder` Overreach}
+
+For RoBERTa, we set \texttt{layer.attention.output.dense = nn.Identity()}. If 
+this is wrong, the output projection is skipped, causing degradation.
+
+\subsection{Code Quality}
+
+Research-grade implementation:
+\begin{itemize}
+\item Broad exception handling
+\item No fused kernels
+\item No unit tests for edge cases
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Recurrent attention is dual-use. See Appendix E.
+

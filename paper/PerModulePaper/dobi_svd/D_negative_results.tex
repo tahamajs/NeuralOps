@@ -1,3 +1,156 @@
-\section{D Negative Results}
 
-Formal architectural specifications for \texttt{dobi_svd}.
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 No Gate Compensation}
+
+Without dividing $V$ by $\sigma(\alpha_0)$, the initial forward is scaled 
+by 0.924 (for $\alpha_0 = 2.5$). This causes:
+\begin{itemize}
+\item Initial accuracy drop of {{NO\_COMP\_DROP}}\%
+\item Slower convergence
+
+\end{itemize}
+\textbf{Conclusion.} Gate compensation is essential.
+
+\subsubsection{D.1.2 Very Low Init Gate Value}
+
+$\alpha_0 = 0.0$ $\to$ $\sigma = 0.5$. Initial forward is scaled down 50\%. 
+Accuracy: {{LOW\_GATE\_ACC}}\%.
+
+\textbf{Conclusion.} Use $\alpha_0 \geq 2.0$.
+
+\subsubsection{D.1.3 Very High Init Gate Value}
+
+$\alpha_0 = 8.0$ $\to$ $\sigma \approx 1.0$, gradients vanish. No pruning 
+observed.
+
+\textbf{Conclusion.} Use $\alpha_0 \leq 5.0$.
+
+\subsubsection{D.1.4 Zero Recovery Steps}
+
+Without recovery, gates remain at initialization. No pruning possible.
+
+\textbf{Conclusion.} At least 30 steps needed.
+
+\subsubsection{D.1.5 Aggressive Pruning}
+
+$\tau_g = 0.9$ removes too many components. Accuracy: {{AGGR\_ACC}}\%.
+
+\textbf{Conclusion.} Use $\tau_g \in [0.3, 0.7]$.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Hard Concrete Gates}
+
+We tested hard-concrete distribution (Louizos et al., 2018) instead of 
+sigmoid. Result: no improvement, more complex.
+
+\subsubsection{D.2.2 Per-Head Gates}
+
+We tested gates per attention head. Result: no improvement, complexity 
+increased.
+
+\subsubsection{D.2.3 Learnable Threshold}
+
+We tested making $\tau_g$ learnable. Result: threshold converges to 0.5 
+empirically, no benefit from making it learnable.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Learning Rate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{LR} & \textbf{DistilBERT} \\
+\midrule
+5e-5 & {{D\_LR5e5}} \\
+1e-4 & {{D\_LR1e4}} \\
+2e-4 & {{D\_LR2e4}} \\
+5e-4 & {{D\_LR5e4}} (unstable) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Max Error}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{err} & \textbf{Fallback \%} & \textbf{Accuracy} \\
+\midrule
+0.2 & {{D\_ERR20\_FB}}\% & {{D\_ERR20\_ACC}} \\
+0.35 & {{D\_ERR35\_FB}}\% & {{D\_ERR35\_ACC}} \\
+0.5 & {{D\_ERR50\_FB}}\% & {{D\_ERR50\_ACC}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Fixes That Didn't Help}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
+\midrule
+Orthogonal init for U/V & Slow convergence & No change \\
+LayerNorm recalibration & Distribution shift & <0.3\% gain \\
+Separate LR for gates & Training stability & No change \\
+Adaptive gate bias & Convergence & No change \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 Companion Method Comparison}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Learned rank?} \\
+\midrule
+MinimalSVD & {{MINSVD\_D}} & {{MINSVD\_RATIO}}$\times$ &  \\
+SVD-LLM V2 & {{SVDLLM\_D}} & {{SVDLLM\_RATIO}}$\times$ &  \\
+MLA & {{MLA\_D}} & {{MLA\_RATIO}}$\times$ &  \\
+\textbf{Dobi-SVD} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.7 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Gate compensation is essential.}
+\item \textbf{Init gate value 2.0--5.0 is optimal.}
+\item \textbf{At least 30 recovery steps needed.}
+\item \textbf{$\tau$\_g = 0.5 is the sweet spot.}
+\item \textbf{Learning rate 2e-4 works best.}
+
+\end{enumerate}

@@ -1,3 +1,228 @@
-\section{C Data}
 
-Draft content for nystrom_attention.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT (N=128)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Path & Dense \\
+Time & {{D\_TIME}} s \\
+VRAM & {{D\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 DistilBERT (N=512)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Nystr m} \\
+\midrule
+Accuracy & {{D\_L512\_BASE}}\% & {{D\_L512\_NYS}}\% \\
+Time & {{D\_T512\_D}} s & {{D\_T512\_N}} s \\
+Speedup & -- & \textbf{{{S512}}$\times$} \\
+VRAM & {{V512\_D}} MB & {{V512\_N}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 RoBERTa (N=128)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Path & Dense \\
+Time & {{R\_TIME}} s \\
+VRAM & {{R\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 GPT-2 (N=128)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Path & Dense causal \\
+Time & {{G\_TIME}} s \\
+VRAM & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Landmark Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$m$} & \textbf{DistilBERT (N=512)} & \textbf{Time} & \textbf{Speedup} \\
+\midrule
+16 & {{D\_M16}} & {{D\_M16\_T}} & {{D\_M16\_S}}$\times$ \\
+32 & {{D\_M32}} & {{D\_M32\_T}} & {{D\_M32\_S}}$\times$ \\
+64 & {{D\_M64}} & {{D\_M64\_T}} & {{D\_M64\_S}}$\times$ \\
+128 & {{D\_M128}} & {{D\_M128\_T}} & {{D\_M128\_S}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Pinv Iterations Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Iters} & \textbf{Accuracy} & \textbf{Time} \\
+\midrule
+1 & {{D\_I1}} & {{D\_I1\_T}} \\
+2 & {{D\_I2}} & {{D\_I2\_T}} \\
+3 & {{D\_I3}} & {{D\_I3\_T}} \\
+5 & {{D\_I5}} & {{D\_I5\_T}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Approximation Error vs N}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{$N$} & \textbf{Error} \\
+\midrule
+128 & N/A (dense) \\
+256 & {{E256}} \\
+512 & {{E512}} \\
+1024 & {{E1024}} \\
+2048 & {{E2048}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Speedup vs N}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$N$} & \textbf{Dense time} & \textbf{Nystr m time} & \textbf{Speedup} \\
+\midrule
+128 & {{D\_T128}} & Same & 1.0$\times$ \\
+256 & {{D\_T256}} & {{N\_T256}} & {{S256}}$\times$ \\
+512 & {{D\_T512}} & {{N\_T512}} & {{S512}}$\times$ \\
+1024 & {{D\_T1024}} & {{N\_T1024}} & {{S1024}}$\times$ \\
+2048 & {{D\_T2048}} & {{N\_T2048}} & {{S2048}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Memory vs N}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$N$} & \textbf{Dense VRAM} & \textbf{Nystr m VRAM} & \textbf{Reduction} \\
+\midrule
+128 & {{V128\_D}} & {{V128\_N}} & 1.0$\times$ \\
+512 & {{V512\_D}} & {{V512\_N}} & {{VR512}}$\times$ \\
+1024 & {{V1024\_D}} & {{V1024\_N}} & {{VR1024}}$\times$ \\
+2048 & {{V2048\_D}} & {{V2048\_N}} & {{VR2048}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.10 Newton-Schulz Convergence}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Iterations} & \textbf{$\|I - A V_k\|_F$} \\
+\midrule
+0 & {{NS0\_ERR}} \\
+1 & {{NS1\_ERR}} \\
+2 & {{NS2\_ERR}} \\
+3 & {{NS3\_ERR}} \\
+5 & {{NS5\_ERR}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.11 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsubsection{RoBERTa}
+\begin{lstlisting}
+Step  Loss
+1     {{R_S1}}
+...
+50    {{R_S50}}
+\end{lstlisting}
+
+\subsubsection{GPT-2}
+\begin{lstlisting}
+Step  Loss
+1     {{G_S1}}
+...
+50    {{G_S50}}
+\end{lstlisting}
+
+\subsection{C.12 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "n_128": {
+      "accuracy_pct": {{D_ACC}},
+      "path": "dense",
+      "time": {{D_TIME}}
+    },
+    "n_512": {
+      "baseline_accuracy_pct": {{D_L512_BASE}},
+      "nystrom_accuracy_pct": {{D_L512_NYS}},
+      "speedup": {{S512}}
+    }
+  },
+  "roberta": {...},
+  "gpt2": {...}
+}
+\end{lstlisting}
+

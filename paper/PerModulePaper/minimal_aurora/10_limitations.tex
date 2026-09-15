@@ -1,3 +1,66 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for minimal_aurora.
+\subsection{No Activation Weighting}
+
+MinimalAURORA uses unweighted SVD. A3 and AASVD achieve similar accuracy 
+with weighting but more complexity.
+
+\subsection{No LayerNorm Recalibration}
+
+Unlike A3, no LayerNorm rescaling is applied. The distributional shift 
+after compression is not corrected.
+
+\subsection{`pres\_gate` Unused}
+
+A \texttt{pres\_gate} parameter is defined but never used in \texttt{forward}. This is 
+a code smell and adds 1 parameter.
+
+\subsection{`output\_scale` Drift}
+
+\texttt{output\_scale} is trainable and drifts during recovery. If it reaches 0, 
+attention output collapses.
+
+\subsection{Silent Injection Failure}
+
+\texttt{inject\_minimal\_aurora} returns \texttt{None} on failure. Callers must check 
+the return value.
+
+\subsection{Cross-Attention Limited}
+
+Cross-attention is supported but not thoroughly tested.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated.
+
+\subsection{Model Coverage}
+
+Tested on $\le$124M parameter models.
+
+\subsection{Hardware}
+
+All experiments on RTX 4070 Laptop.
+
+\subsection{Single-Seed}
+
+All main results from a single seed.
+
+\subsection{No Theoretical Bound on Downstream Accuracy}
+
+We provide a bound on reconstruction error (A.1) but no bound on 
+downstream task error.
+
+\subsection{Unresolved Failures}
+
+{{UNRESOLVED\_FAILURES}}
+
+\subsection{Code Quality}
+
+Research-grade. Known issues:
+\begin{itemize}
+\item \texttt{pres\_gate} unused
+\item \texttt{output\_scale} drift
+\item Silent injection failure
+\item No unit tests
+
+\end{itemize}

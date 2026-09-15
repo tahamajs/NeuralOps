@@ -1,3 +1,62 @@
-\section{A Math}
+\section{Appendix A. Mathematical Derivations}
 
-Draft content for token_compressed_attention.
+\subsection{A.1 Score Function}
+
+Per-token score:
+
+\[
+s_i = \|x_i\|_2 + f_\theta(x_i)
+\tag{A.1}
+\]
+
+where $f_\theta(x_i) = w_2 \cdot \text{GELU}(W_1 x_i + b_1) + b_2$ for 
+$W_1 \in \mathbb{R}^{64 \times d}$, $w_2 \in \mathbb{R}^{1 \times 64}$.
+
+\subsection{A.2 Selection Guarantees}
+
+\textbf{Claim.} The selected set $\mathcal{S}$ always contains index 0.
+
+\textbf{Proof.} Since $s_0 = 10^4$ and $k \geq 1$, the top-k selection 
+includes index 0. $\square$
+
+\textbf{Claim.} Padding tokens are never selected.
+
+\textbf{Proof.} Since $s_i = -10^4$ for padding, they rank below all non-padding 
+tokens. $\square$
+
+\subsection{A.3 Causal Mask Correctness}
+
+\textbf{Claim.} Query at position $i$ attends only to compressed keys with 
+original position $\leq i$.
+
+\textbf{Proof.} The mask (4.8) sets $\text{mask}_{i,j'} = -\infty$ when 
+$\mathcal{S}_{j'} > i$. Softmax assigns zero weight to $-\infty$ entries. 
+$\square$
+
+\subsection{A.4 KV Cache Reduction}
+
+For sequence length $L$ and compression ratio $\rho$:
+
+\[
+k = \lceil \rho L \rceil, \quad \text{KV bytes} = 2 B H_{kv} k d_h \cdot s
+\tag{A.2}
+\]
+
+Reduction factor: $\rho$. At $\rho = 0.5$: \textbf{50\% reduction}.
+
+\subsection{A.5 Compute Reduction}
+
+Attention FLOPs:
+\begin{itemize}
+\item Baseline: $4 B H L^2 d_h$
+\item TCA: $4 B H L k d_h$
+\item Ratio: $k/L = \rho$
+
+\end{itemize}
+\subsection{A.6 Score Net Overhead}
+
+Score net FLOPs: $2 B L (d \cdot 64 + 64) = 2 B L \cdot 65 (d/65 + 1)$
+
+For $d = 768$, this is ~$10^5 B L$. Baseline attention: ~$4 B H L^2 d\_h = 
+4 \cdot 10^5 B L^2$. Overhead ratio: ~$0.25 / L$. At $L = 128$: \textbf{~0.2\% overhead}.
+

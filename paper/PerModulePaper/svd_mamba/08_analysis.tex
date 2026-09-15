@@ -1,3 +1,193 @@
-\section{08 Analysis}
 
-Draft content for svd_mamba.
+\section{Analysis}
+
+\subsection{Why SVD-Mamba Has a Hard Time}
+
+SVD-Mamba has three paths that must be jointly optimized:
+
+\begin{enumerate}
+\item Attention (initialized from pretrained).
+\item SSM (random initialization, silenced).
+\item Global mixing (random).
+
+\end{enumerate}
+\textbf{This creates a fundamental tension.} The SSM and global paths add 
+random noise that must be suppressed. The gate starts at 0.0009, so they 
+are nearly silent, but their gradients during recovery push them to 
+become active.
+
+\textbf{Result.} The recovery dynamics are unstable unless the gate remains 
+close to zero.
+
+\subsection{The Gate Dynamics}
+
+\textbf{Figure 8.1} shows $\gamma$ during recovery for all three models.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Step} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & 0.0009 & 0.0009 & 0.0009 \\
+10 & {{D\_G10}} & {{R\_G10}} & {{G\_G10}} \\
+25 & {{D\_G25}} & {{R\_G25}} & {{G\_G25}} \\
+50 & {{D\_G50}} & {{R\_G50}} & {{G\_G50}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{GATE\_OBS}}
+
+\subsection{Numerical Stability Analysis}
+
+The SSM scan is numerically delicate. We use multiple clamps:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Operation} & \textbf{Clamp} & \textbf{Why} \\
+\midrule
+\texttt{log\_alpha} cumsum & $[-25, 0]$ & Prevent explosion \\
+\texttt{h\_chunk} & $[-10^4, 10^4]$ & Prevent overflow \\
+\texttt{h\_den\_chunk} & $[0, 10^4]$ & Keep denom non-negative \\
+\texttt{decay\_inv} & $\leq 10^{10}$ & Prevent overflow \\
+\texttt{denom} & $\geq 10^{-4}$ & Prevent divide-by-zero \\
+\texttt{A\_log} & $[-20, 10]$ & Keep $A$ bounded \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Figure 8.2} shows the distribution of \texttt{h\_chunk} values. {{HCHUNK\_OBS}}
+
+\subsection{The Parameter Increase}
+
+\textbf{Table 8.1: Parameter breakdown per layer (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{SVD-Mamba} & \textbf{$\Delta$} \\
+\midrule
+Q proj & 589,824 & {{D\_Q\_SVD}} & {{D\_Q\_DELTA}} \\
+K proj & 589,824 & {{D\_K\_SVD}} & {{D\_K\_DELTA}} \\
+V proj & 589,824 & {{D\_V\_SVD}} & {{D\_V\_DELTA}} \\
+O proj & 589,824 & {{D\_O\_SVD}} & {{D\_O\_DELTA}} \\
+\textbf{Attn total} & 2,359,296 & {{D\_ATTN\_SVD}} & {{D\_ATTN\_DELTA}} \\
+SSM branch & 0 & {{D\_SSM}} & +{{D\_SSM}} \\
+Gating & 0 & {{D\_GATE}} & +{{D\_GATE}} \\
+Global & 0 & {{D\_GLOBAL}} & +{{D\_GLOBAL}} \\
+\textbf{Total} & \textbf{2,359,296} & \textbf{{{D\_TOTAL}}} & \textbf{+{{D\_TOTAL\_DELTA}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Net increase.} ~{{D\_PARAM\_PCT}}\% on DistilBERT.
+
+\subsection{Comparison with Pure Compression Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Params} & \textbf{Accuracy} & \textbf{Trade-off} \\
+\midrule
+AASVD (r=64) & 80\% & 2.2\% & Size  , acc slight \\
+ASVD (r=64) & 82\% & 2.2\% & Same \\
+\textbf{SVD-Mamba} & \textbf{+{{PARAM\_CHANGE}}\%} & {{D\_DELTA}}\% & Params  , new capability \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{SVD-Mamba is not a compressor.} It replaces attention with a hybrid 
+mechanism.
+
+\subsection{SSM Branch Contribution}
+
+\textbf{Figure 8.3} shows the output contribution of each path over training:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Step} & \textbf{Attn contribution} & \textbf{SSM contribution} \\
+\midrule
+0 & 99.9\% & 0.1\% \\
+25 & {{ATTN\_25}}\% & {{SSM\_25}}\% \\
+50 & {{ATTN\_50}}\% & {{SSM\_50}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{CONTRIBUTION\_OBS}}
+
+\subsection{Inference Cost Analysis}
+
+\textbf{Table 8.2: Time breakdown per layer (DistilBERT, L=128).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{SVD-Mamba} \\
+\midrule
+Q/K/V/O proj & 0.5 ms & {{D\_PROJ\_TIME}} ms \\
+Attention scores & 0.4 ms & 0.4 ms \\
+SSM branch & 0 & {{D\_SSM\_TIME}} ms \\
+Global & 0 & {{D\_GLOBAL\_TIME}} ms \\
+Gating & 0 & {{D\_GATE\_TIME}} ms \\
+LoRA & 0 & {{D\_LORA\_TIME}} ms \\
+\textbf{Total} & \textbf{1.4 ms} & \textbf{{{D\_TOTAL\_TIME}} ms} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Mode Taxonomy}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure mode} & \textbf{Symptom} & \textbf{Root cause} \\
+\midrule
+Collapse & Acc $\approx$ 50.92\% & Weight transfer failed \\
+NaN in SSM & Loss = NaN & Overflow in scan \\
+Slower than baseline & >3$\times$ latency & Extra paths \\
+Parameter bloat & +{{PARAM\_CHANGE}}\% & SSM + gating \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The `raise` Problem}
+
+SVD-Mamba uses \texttt{raise RuntimeError} on missing projections. Unlike 
+\texttt{inject\_rpc} (which also raises), the inject hook here catches the 
+exception and returns \texttt{None}:
+
+\begin{lstlisting}
+except Exception as e:
+    logger.error("inject_svd_mamba failed at layer %d: %s", layer_idx, e)
+    return None
+\end{lstlisting}
+
+This means \textbf{silent failure is possible} if injection partially succeeds.
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{SVD-Mamba is not a compressor.}
+\item \textbf{Three-path architecture is complex.}
+\item \textbf{Gate initialization is critical.}
+\item \textbf{SSM scan needs careful clamping.}
+\item \textbf{Recovery dynamics are unstable.}
+
+\end{enumerate}

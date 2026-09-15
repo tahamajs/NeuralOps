@@ -1,3 +1,162 @@
-\section{06 Setup}
 
-Formal architectural specifications for \texttt{dobi_svd}.
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M & Flat \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M & Nested \\
+GPT-2 & 12 & 768 & 12 & 124.4M & Causal Conv1D \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
+\midrule
+Train & 67,349 & 33,807 & 33,542 \\
+Validation & 872 & 444 & 428 \\
+Test & 1,821 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: \textbf{50.92\%}.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
+\midrule
+Rank $r$ & {{RANK}} & Nominal rank \\
+\texttt{init\_rank\_ratio} & {{INIT\_RANK\_RATIO}} & When \texttt{rank=None} \\
+\texttt{init\_gate\_val} & {{INIT\_GATE}} & Sigmoid init $\approx$ {{INIT\_SIGMA}} \\
+\texttt{max\_error} & {{MAX\_ERROR}} & Frobenius threshold \\
+\texttt{max\_retries} & 2 & Rank escalation \\
+\texttt{fallback\_to\_original} & True & Safe fallback \\
+\texttt{target\_attention\_only} & True & Only attention \\
+Rank cap & 128 & Maximum rank \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & {{LR}} \\
+Weight decay & {{WD}} \\
+Recovery steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
+Precision & FP16 \\
+Trainable & Gates + LoRA \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+
+\end{itemize}
+\subsubsection{Compression}
+\begin{itemize}
+\item Nominal rank $r$
+\item \textbf{Effective rank} $r_\text{eff} = \#\{i : \sigma(\alpha_i) > \tau_g\}$
+\item \textbf{Effective parameter ratio} (using $r_\text{eff}$)
+\item Reconstruction error
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Peak inference VRAM
+\item Inference time
+\item Total parameters
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
+Transformers & {{HF\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_dobi.py \
+    --models distilbert,roberta,gpt2 \
+    --rank {{RANK}} \
+    --init_gate_val {{INIT_GATE}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+Runtime: ~{{RUNTIME}} minutes.
+
+\subsection{Seeds}
+
+All experiments use seed {{SEED}}.
+
+\subsection{Baselines}
+
+\begin{enumerate}
+\item \textbf{\texttt{full}:} Uncompressed model.
+\item \textbf{\texttt{dobi}:} Our method with learning gates.
+\item \textbf{\texttt{dobi\_pruned}:} Dobi with post-hoc gate pruning at $\tau$\_g=0.5.
+\item \textbf{Companion methods:} \texttt{minimal\_svd}, \texttt{svd\_llm\_v2}, \texttt{mla}.
+
+\end{enumerate}

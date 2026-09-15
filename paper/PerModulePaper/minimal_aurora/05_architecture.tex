@@ -1,11 +1,199 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Draft content for minimal_aurora.
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+MinimalAURORA uses a \textbf{layered extraction strategy}:
+
+\subsubsection{Priority Order}
+
+\begin{enumerate}
+\item \textbf{UniversalAdapter} -- tried first, covers many cases.
+\item \textbf{GPT-2 fused \texttt{c\_attn}} -- transpose and split.
+\item \textbf{RoBERTa nested \texttt{self.query/key/value}} -- extract from inner block.
+\item \textbf{Named mappings} -- \texttt{q\_proj}, \texttt{q\_lin}, \texttt{query}, etc.
+
+\end{enumerate}
+\subsubsection{GPT-2 Conv1D Handling}
+
+\begin{lstlisting}
+if ("Conv1D" in p_cls or hasattr(base_c, "nf")
+    or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size)):
+    weight = weight.t()
+\end{lstlisting}
+
+The heuristic \texttt{weight.shape[1] == 3 * hidden} catches the case where 
+Conv1D stores weights as \texttt{(in, 3*out)}.
+
+\subsubsection{RoBERTa Nested Detection}
+
+Detection logic:
+
+\begin{lstlisting}
+if hasattr(src, "self") and hasattr(src.self, "query"):
+    is_nested = True
+elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention", ...)
+      or (cls_name.endswith("SelfAttention") and not has_out_proj)):
+    is_nested = True
+self.is_nested_encoder = is_nested
+\end{lstlisting}
+
+For DistilBERT: \texttt{MultiHeadSelfAttention} ends with "SelfAttention" but 
+has \texttt{out\_lin} $\to$ NOT nested. Good.
+
+For RoBERTa: \texttt{BertAttention} has \texttt{self} and \texttt{output} $\to$ nested. Good.
+
+\subsubsection{Nested Encoder Output Projection}
+
+For nested encoders, the output projection is set to \textbf{identity}:
+
+\begin{lstlisting}
+elif proj_key == "o" and self.is_nested_encoder:
+    eye_w = torch.eye(self.hidden_size, self.all_head_size)
+    target.decompose_from_weight(eye_w, None, self.energy)
+\end{lstlisting}
+
+And in forward:
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    output = context * self.output_scale
+else:
+    output = self.out_proj(context) * self.output_scale
+\end{lstlisting}
+
+\subsection{Injection}
+
+\begin{lstlisting}
+def inject_minimal_aurora(layer, model_config, old_attn=None, **kwargs):
+    new_attn = MinimalAURORAAttention(model_config=model_config, ...)
+    
+    src_attn = old_attn or find_attention(layer)
+    if src_attn is not None:
+        try:
+            new_attn.copy_weights(src_attn)
+        except Exception as e:
+            logger.error(f"copy_weights failed: {e}")
+            return None  # silent failure
+        # transfer device/dtype
+        p = next(src_attn.parameters())
+        new_attn.to(device=p.device, dtype=p.dtype)
+    
+    # replace attention
+    if hasattr(layer, "attention"):
+        if hasattr(layer.attention, "self"):
+            layer.attention.self = new_attn
+            new_attn.is_nested_encoder = True
+        else:
+            layer.attention = new_attn
+    elif hasattr(layer, "self"):
+        layer.self = new_attn
+        new_attn.is_nested_encoder = True
+    
+    return new_attn
+\end{lstlisting}
+
+\textbf{Note.} The injection returns \texttt{None} on failure, which is \textbf{silent}. 
+Unlike A3/AASVD (which raise), this requires the caller to check the 
+return value.
+
+\subsection{The `FactorisedLinear` Module}
+
+\begin{lstlisting}
+class FactorisedLinear(nn.Module):
+    def __init__(self, in_features, out_features, rank=64, bias=True,
+                 energy=0.95, lora_rank=16, lora_alpha=32.0):
+        super().__init__()
+        self.down = nn.Linear(in_features, rank, bias=False)
+        self.up = nn.Linear(rank, out_features, bias=bias)
+        
+        if lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.randn(lora_rank, in_features) * 0.01)
+            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+        
+        self.reset_parameters()
+\end{lstlisting}
+
+\subsection{The `output\_scale` Parameter}
+
+\begin{lstlisting}
+self.output_scale = nn.Parameter(torch.ones(1))
+\end{lstlisting}
+
+Applied in forward:
+
+\begin{lstlisting}
+output = self.out_proj(context) * self.output_scale
+\end{lstlisting}
+
+This is a new parameter not present in the base checkpoint. It 
+initializes to 1.0 and is trainable. During recovery training, it 
+may drift. If it reaches 0, the entire attention output collapses.
+
+\subsection{The `pres\_gate` Parameter (Unused)}
+
+\begin{lstlisting}
+self.pres_gate = nn.Parameter(torch.tensor(2.0))
+\end{lstlisting}
+
+\textbf{This parameter is defined but never used in the forward pass.} It 
+appears to be a leftover from a previous design (perhaps a preservation 
+gate between attention output and residual). We document this in  8.6 
+and recommend removal.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Failure} & \textbf{Response} \\
+\midrule
+Missing projection & \texttt{copy\_weights} raises RuntimeError \\
+Small Frobenius norm & Raises RuntimeError \\
+Injection error & Returns None (silent) \\
+\texttt{output\_scale} drift to 0 & Attention output collapses \\
+\texttt{pres\_gate} unused & No effect \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("minimal_aurora", supports_causal=True, supports_gqa=True)
+class MinimalAURORAAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Cross-Attention}
+
+Forward accepts \texttt{encoder\_hidden\_states} and supports cross-attention 
+(though GQA + cross-attention interaction may have edge cases).
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_minimal_svd.jpeg}
-\caption{Architectural overview of minimal_aurora.}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of minimal_aurora.}
 \label{fig:arch_minimal_aurora}
 \end{figure}
+

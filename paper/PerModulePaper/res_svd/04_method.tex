@@ -1,3 +1,245 @@
-\section{04 Method}
+\section{Method}
 
-Draft content for res_svd.
+\subsection{Overview}
+
+Res-SVD Attention replaces each projection with a two-level decomposition. 
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +--------------------------------------+
+    |  Original weight W $\in$ R^{m$\times$n}         |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Step 1: SVD of W                    |
+    |  W = U   V^T                         |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Step 2: Base = top r_b              |
+    |  W_base = U_b  _b V_b^T              |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Step 3: Residual = W - W_base       |
+    |  R = W - W_base                      |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Step 4: SVD of R                    |
+    |  R = U_r  _r V_r^T                   |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Step 5: Init LoRA from residual     |
+    |  B = U_r  _r^{1/2}, A =  _r^{1/2} V_r^T |
+    +----------------+---------------------+
+                     |
+                      
+    +--------------------------------------+
+    |  Frozen: U_b, V_b                    |
+    |  Trainable: B, A                     |
+    +--------------------------------------+
+\end{lstlisting}
+
+\subsection{Two-Level Decomposition}
+
+\subsubsection{Base SVD}
+
+Given $W \in \mathbb{R}^{m \times n}$:
+\[
+U, \Sigma, V^\top = \text{SVD}(W)
+\tag{4.1}
+\]
+
+Take top $r_b$:
+\[
+W_b = U_{:, :r_b} \Sigma_{:r_b} V_{:r_b, :}^\top
+\tag{4.2}
+\]
+
+Store $U_b = U_{:, :r_b}$, $V_b = V_{:r_b, :}$ as \textbf{frozen} parameters.
+
+\subsubsection{Residual SVD}
+
+\[
+R = W - W_b
+\tag{4.3}
+\]
+
+\[
+U_r, \Sigma_r, V_r^\top = \text{SVD}(R)
+\tag{4.4}
+\]
+
+Take top $r_r$:
+\[
+R_r = U_{r, :, :r_r} \Sigma_{r, :r_r} V_{r, :r_r, :}^\top
+\tag{4.5}
+\]
+
+\subsubsection{LoRA Initialization}
+
+Split $\Sigma_r^{1/2}$ symmetrically:
+\[
+B = U_{r, :, :r_r} \Sigma_{r, :r_r}^{1/2}, \quad
+A = \Sigma_{r, :r_r}^{1/2} V_{r, :r_r, :}^\top
+\tag{4.6}
+\]
+
+Store $B \in \mathbb{R}^{m \times r_r}$, $A \in \mathbb{R}^{r_r \times n}$ as 
+\textbf{trainable}.
+
+\subsection{Forward Pass}
+
+\[
+y = x (U_b V_b)^\top + \alpha x (B A)^\top + b
+\tag{4.7}
+\]
+
+where $\alpha$ is a scaling factor (default 1.0).
+
+\textbf{Alternative factorization for efficiency:}
+\begin{lstlisting}
+# Base
+h_b = x @ V_b.t()              # (B, L, r_b)
+y_b = h_b @ U_b.t()            # (B, L, m)
+
+# Residual
+h_r = x @ A.t()                 # (B, L, r_r)
+y_r = h_r @ B.t()               # (B, L, m)
+
+y = y_b + alpha * y_r + b
+\end{lstlisting}
+
+\subsection{Parameter Count}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Parameters} \\
+\midrule
+Base SVD & $r_b(m + n + 1)$ \\
+Residual LoRA & $r_r(m + n)$ \\
+Bias & $m$ \\
+\textbf{Total} & $(r_b + r_r)(m + n) + r_b + m$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Baseline:} $mn$.
+
+For $m = n = 768$, $r_b = 16$, $r_r = 4$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Base SVD & $16 \times 1537 = 24,592$ \\
+Residual LoRA & $4 \times 1536 = 6,144$ \\
+Bias & 768 \\
+\textbf{Total} & \textbf{31,504} \\
+Baseline & 589,824 \\
+\textbf{Ratio} & \textbf{~18.7$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} Res-SVD factorization
+\begin{lstlisting}
+Input:  Weight W $\in$ R^{m$\times$n}, ranks r_b, r_r, scaling $\alpha$
+Output: Base factors (U_b, V_b), Residual factors (B, A), bias b
+
+1:  U,  , V^T $\leftarrow$ SVD(W)
+2:  # Base
+3:  U_b $\leftarrow$ U[:, :r_b];   _b $\leftarrow$  [:r_b];  V_b^T $\leftarrow$ V^T[:r_b, :]
+4:  W_base $\leftarrow$ U_b @ diag( _b) @ V_b^T
+5:  # Residual
+6:  R $\leftarrow$ W - W_base
+7:  U_r,  _r, V_r^T $\leftarrow$ SVD(R)
+8:  # LoRA init
+9:   _r_sqrt $\leftarrow$ sqrt( _r[:r_r])
+10: B $\leftarrow$ U_r[:, :r_r] *  _r_sqrt[None, :]
+11: A $\leftarrow$  _r_sqrt[:, None] * V_r^T[:r_r, :]
+12: return (U_b, V_b, B, A, b)
+\end{lstlisting}
+
+\textbf{Algorithm 2:} Res-SVD forward pass
+\begin{lstlisting}
+Input:  x $\in$ R^{B$\times$L$\times$n}, base (U_b, V_b), residual (B, A), bias b, $\alpha$
+Output: y $\in$ R^{B$\times$L$\times$m}
+
+1: h_b $\leftarrow$ x @ V_b^T
+2: y_b $\leftarrow$ h_b @ U_b^T
+3: h_r $\leftarrow$ x @ A^T
+4: y_r $\leftarrow$ h_r @ B^T
+5: y $\leftarrow$ y_b + $\alpha$   y_r + b
+6: return y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Space} \\
+\midrule
+Base forward & $\mathcal{O}(L n r_b)$ & $\mathcal{O}(L r_b)$ \\
+Residual forward & $\mathcal{O}(L n r_r)$ & $\mathcal{O}(L r_r)$ \\
+Total & $\mathcal{O}(L n (r_b + r_r))$ & $\mathcal{O}(L (r_b + r_r))$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Baseline:} $\mathcal{O}(L n m)$.
+
+For $m = n = 768$, $r_b + r_r = 20$: \textbf{~38$\times$ reduction in projection FLOPs}.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Equivalence to Rank-$(r_b + r_r)$ SVD}
+
+\textbf{Claim.} Res-SVD with $(r_b, r_r)$ is mathematically equivalent to 
+truncated SVD of rank $r_b + r_r$.
+
+\textbf{Proof.} The columns of $U$ are orthogonal, so:
+\[
+U_{:, :r_b} \Sigma_{:r_b} V_{:r_b, :}^\top + U_{:, r_b:r_b+r_r} \Sigma_{:r_b+r_r} V_{:r_b+r_r, :}^\top = U_{:, :r_b+r_r} \Sigma_{:r_b+r_r} V_{:r_b+r_r, :}^\top
+\]
+$\square$
+
+\textbf{Implication:} Res-SVD does not offer a better approximation than 
+rank-$(r_b + r_r)$ SVD. Its advantage is \textbf{PEFT structure} -- the base 
+is frozen and the residual is trainable.
+
+\subsubsection{Optimality at Initialization}
+
+\textbf{Claim.} At initialization, the combined Res-SVD approximation has 
+reconstruction error $\|W - W_b - R_r\|_F = \sqrt{\sum_{i > r_b+r_r} \sigma_i^2}$.
+
+\textbf{Proof.} Direct consequence of 4.7.1. $\square$
+
+\subsubsection{Gradient Flow}
+
+\textbf{Claim.} Only the residual $B, A$ receives gradient during training.
+
+\textbf{Proof.} $U_b, V_b$ have \texttt{requires\_grad = False}. Only $B, A$ are updated. $\square$
+
+\subsubsection{Causality}
+
+\textbf{Proof.} Position-wise projections + causal attention mask. $\square$
+

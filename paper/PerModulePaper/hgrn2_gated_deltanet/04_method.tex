@@ -1,3 +1,250 @@
-\section{04 Method}
+\section{Method}
 
-Draft content for hgrn2_gated_deltanet.
+\subsection{Overview}
+
+HGRN2-GatedDeltaNet replaces standard attention with a **two-branch linear 
+recurrent module**. Both branches process the sequence sequentially with a 
+fixed-size state, giving $\mathcal{O}(L)$ complexity. A learned gate fuses 
+the two branches per token.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$\times$L$\times$d}
+              |
+       +------+------+
+                      
+    +------+    +----------+
+    | HGRN |    | DeltaNet |
+    | -2   |    |          |
+    +--+---+    +-----+----+
+       |              |
+       |  $\gamma$ = $\sigma$(W_g X)|
+       |     |        |
+                       
+       +-------------------+
+       | Y = $\gamma$ Y$_1$ + (1-$\gamma$) Y$_2$|
+       +---------+---------+
+                 |
+                  
+              out_proj
+                 |
+                  
+              Output Y
+\end{lstlisting}
+
+\subsection{HGRN-2 Branch}
+
+The HGRN-2 branch (Qin et al., 2024) computes:
+
+\[
+u_t = \text{SiLU}(W_u x_t + b_u)
+\tag{4.1}
+\]
+
+\[
+\alpha_t = \sigma(W_\alpha x_t + b_\alpha)
+\tag{4.2}
+\]
+
+\[
+s_t = \alpha_t \odot s_{t-1} + (1 - \alpha_t) \odot u_t
+\tag{4.3}
+\]
+
+The output is $y_t^\text{HGRN} = s_t$ (or optionally projected).
+
+\textbf{Initialization.} $s_0 = 0$. Gates $W_\alpha$ are initialized so that 
+$\alpha_t \approx 0.5$ initially.
+
+\subsection{Gated DeltaNet Branch}
+
+The Gated DeltaNet branch maintains a matrix state per head:
+
+\[
+S_t^h = \alpha_t S_{t-1}^h + \beta_t (v_t^h - S_{t-1}^h k_t^h) (k_t^h)^\top
+\tag{4.4}
+\]
+
+where:
+
+\begin{itemize}
+\item $k_t^h = W_k x_t / \|W_k x_t\|$ (normalized key).
+\item $v_t^h = W_v x_t$ (value).
+\item $\alpha_t, \beta_t \in (0, 1)$ are scalar gates.
+
+\end{itemize}
+The output is:
+
+\[
+y_t^{h, \text{Delta}} = S_t^h q_t^h
+\tag{4.5}
+\]
+
+where $q_t^h = W_q x_t$.
+
+\textbf{Why the Delta rule?} The update $\beta_t (v_t - S_{t-1} k_t)$ writes only 
+the \textbf{error} into memory, avoiding redundant writes.
+
+\subsection{Fusion Gate}
+
+The fusion gate is a linear projection:
+
+\[
+\gamma_t = \sigma(W_g x_t + b_g)
+\tag{4.6}
+\]
+
+with $W_g \in \mathbb{R}^{d \times d}$ and $b_g \in \mathbb{R}^d$.
+
+\textbf{Initialization.} We set $W_g = 0$ and $b_g = 0$, giving 
+$\gamma_t = 0.5$ initially (equal blend). During training, the gate learns 
+to prefer the branch that best fits each token.
+
+\textbf{Why the gate matters.} At initialization, both branches are 
+approximately equally weighted. If one branch's \texttt{copy\_weights} fails, we 
+bias the gate toward the surviving branch (see  4.6).
+
+\subsection{Combined Output}
+
+The final output is:
+
+\[
+Y = \gamma \odot Y^\text{HGRN} + (1 - \gamma) \odot Y^\text{Delta}
+\tag{4.7}
+\]
+
+followed by an output projection:
+
+\[
+\text{out} = W_o Y + b_o
+\tag{4.8}
+\]
+
+\subsection{Failure Handling}
+
+\subsubsection{Both Branches Fail}
+
+If both \texttt{copy\_weights} calls fail, we \textbf{abort} with \texttt{RuntimeError}. This 
+prevents injecting an untrained random module.
+
+\subsubsection{One Branch Fails}
+
+If only HGRN succeeds:
+\begin{lstlisting}
+self.gate.weight.zero_()
+self.gate.bias.fill_(4.0)  # sigmoid(4) $\approx$ 0.98
+\end{lstlisting}
+
+If only DeltaNet succeeds:
+\begin{lstlisting}
+self.gate.weight.zero_()
+self.gate.bias.fill_(-4.0)  # sigmoid(-4) $\approx$ 0.02
+\end{lstlisting}
+
+This ensures the gate leans toward the surviving branch.
+
+\subsubsection{Output Projection Fails}
+
+If \texttt{out\_proj} weights cannot be found, we \textbf{abort} with \texttt{RuntimeError}. 
+This prevents injecting a random output projection.
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} HGRN2-GatedDeltaNet forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Y_hgrn $\leftarrow$ HGRN2Branch(X)                   Sequential O(L)
+ 2: Y_delta $\leftarrow$ DeltaNetBranch(X)               Sequential O(L)
+ 3: $\gamma$ $\leftarrow$ $\sigma$(W_g X + b_g)                        (B, L, d)
+ 4: Y $\leftarrow$ $\gamma$   Y_hgrn + (1-$\gamma$)   Y_delta
+ 5: Y $\leftarrow$ out_proj(Y)
+ 6: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+HGRN-2 & $\mathcal{O}(L d)$ & $\mathcal{O}(d)$ \\
+DeltaNet & $\mathcal{O}(L H d^2)$ & $\mathcal{O}(H d^2)$ \\
+Gate & $\mathcal{O}(L d^2)$ & $\mathcal{O}(d)$ \\
+out\_proj & $\mathcal{O}(L d^2)$ & $\mathcal{O}(d^2)$ \\
+\textbf{Total} & $\mathcal{O}(L H d^2)$ & $\mathcal{O}(H d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Compare to standard attention: $\mathcal{O}(L^2 H d)$. Our method is 
+\textbf{linear} in $L$.
+
+\subsection{Parameter Analysis}
+
+\textbf{HGRN2-GatedDeltaNet does NOT reduce parameter count.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{Ours} \\
+\midrule
+Q projection & $d^2$ & $d^2$ (frozen) \\
+K projection & $d^2$ & $d^2$ (frozen) \\
+V projection & $d^2$ & $d^2$ (frozen) \\
+O projection & $d^2$ & $d^2$ (frozen) \\
+HGRN-2 params & 0 & $\sim 4d^2$ \\
+DeltaNet params & 0 & $\sim 4d^2$ \\
+Gate & 0 & $d^2$ \\
+LoRA & 0 & $8 r_L d$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Total increase:} ~9$d^2$ per layer.
+
+For $d = 768$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{Params per layer} \\
+\midrule
+Baseline & 2.36M \\
+HGRN2-GatedDeltaNet & ~7.7M \\
+\textbf{Increase} & \textbf{+226\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This is a significant parameter increase. We report it honestly.
+
+\subsection{Training}
+
+We train only:
+\begin{itemize}
+\item The gate $W_g, b_g$.
+\item LoRA adapters on Q, K, V, O, and the branch-specific projections.
+
+\end{itemize}
+All base weights from the pretrained attention and the two branches are 
+frozen.
+
+\textbf{Trainable params:} for $d = 768$, $r_L = 16$:
+\begin{itemize}
+\item LoRA: $8 \cdot 16 \cdot 768 = 98,304$
+\item Gate: $768^2 + 768 = 590,592$
+\item \textbf{Total:} ~689K per layer
+
+\end{itemize}
+For 12 layers: ~8.3M trainable.
+

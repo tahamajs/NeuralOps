@@ -1,3 +1,94 @@
-\section{02 Related}
 
-Draft content for rpc.
+\section{Related Work}
+
+\subsection{Random Projections}
+
+\subsubsection{Johnson--Lindenstrauss Lemma}
+
+Johnson \& Lindenstrauss (1984) proved that $N$ points in $\mathbb{R}^d$ can 
+be embedded into $\mathbb{R}^{\mathcal{O}(\log N / \epsilon^2)}$ with 
+pairwise distances preserved up to factor $(1 + \epsilon)$. The embedding 
+can be a random Gaussian matrix.
+
+\subsubsection{Applications}
+
+\begin{itemize}
+\item \textbf{Nearest neighbor search:} Indyk \& Motwani (1998) use JL for
+  locality-sensitive hashing.
+\item \textbf{Sketching:} Woodruff (2014) surveys sketching for numerical linear
+  algebra.
+\item \textbf{Kernel approximation:} Rahimi \& Recht (2007) use random features
+  for kernel machines.
+
+\end{itemize}
+\subsubsection{Sparse Random Projections}
+
+Achlioptas (2003) shows that sparse random matrices (entries in 
+$\{-1, 0, +1\}$) also preserve distances with similar guarantees, 
+often faster to apply. We use dense Gaussian in RPC.
+
+\subsection{Efficient Attention}
+
+\subsubsection{Sparse Attention}
+
+Longformer (Beltagy et al., 2020), BigBird (Zaheer et al., 2020). These 
+restrict attention patterns; RPC keeps dense attention but in a lower 
+dimension.
+
+\subsubsection{Linear Attention}
+
+Performer (Choromanski et al., 2021) uses random features to approximate 
+softmax. Linear Transformer (Katharopoulos et al., 2020) uses $\phi(x) = \text{elu}(x) + 1$. 
+RPC differs: it sketches Q and K but keeps softmax on the sketched scores.
+
+\subsubsection{Low-Rank Attention}
+
+Linformer (Wang et al., 2020) projects K, V along the sequence dimension. 
+Nystr mformer (Xiong et al., 2021) uses Nystr m landmarks. RPC projects 
+Q, K along the head dimension.
+
+\subsubsection{FlashAttention}
+
+Dao et al. (2022) avoids materializing the attention matrix but does not 
+reduce FLOPs. RPC reduces FLOPs directly.
+
+\subsection{Distinction from Companion Modules}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Module} & \textbf{Approach} & \textbf{Params} & \textbf{Memory} \\
+\midrule
+NHA & Hybrid local + RFF global & +LoRA & Same \\
+AASVD & Low-rank factorization & \textbf{ 50\%} & Less \\
+EAT & Token pruning & +LoRA & Less \\
+OHA & Compressed global branch & +compress+gate+LoRA & Same \\
+\textbf{RPC} & \textbf{Q/K sketching} & \textbf{+LoRA} & \textbf{Same} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} RPC is the only module that reduces attention FLOPs 
+\textbf{without reducing the score matrix size}. It trades inner-product 
+precision for compute.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{RPC} \\
+\midrule
+\textbf{Score matrix} & Full $L \times L$ & Full $L \times L$ \\
+\textbf{Score FLOPs} & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L d_h r + L^2 r)$ \\
+\textbf{Projection} & Fixed or learned & \textbf{Fixed random} \\
+\textbf{Memory} & Same as baseline & Same as baseline \\
+\textbf{Multi-architecture} & Usually one family & Four families \\
+\bottomrule
+\end{tabular}
+\end{table}
+

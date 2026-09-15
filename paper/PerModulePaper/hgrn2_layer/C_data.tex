@@ -1,3 +1,130 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for hgrn2_layer.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Params change & +{{D\_PARAM\_PCT}}\% \\
+Trainable & {{D\_TRAINABLE}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Time (L=128) & {{D\_T128}} s \\
+Time (L=1024) & {{D\_T1024}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Speed vs L}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{L} & \textbf{Baseline} & \textbf{Ours} \\
+\midrule
+128 & 1.90 s & {{D\_T128}} s \\
+256 & 3.50 s & {{D\_T256}} s \\
+512 & 12.0 s & {{D\_T512}} s \\
+1024 & 45.0 s & {{D\_T1024}} s \\
+2048 & 180.0 s & {{D\_T2048}} s \\
+4096 & 720.0 s & {{D\_T4096}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Chunk Size Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Chunk} & \textbf{DistilBERT} & \textbf{Time (L=512)} \\
+\midrule
+8 & {{D\_C8}} & {{D\_C8\_T}} s \\
+16 & {{D\_C16}} & {{D\_C16\_T}} s \\
+32 & {{D\_C32}} & {{D\_C32\_T}} s \\
+64 & {{D\_C64}} & {{D\_C64\_T}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Forget Gate Statistics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Layer} & \textbf{Mean f} & \textbf{Std f} \\
+\midrule
+0 & {{D\_L0\_F\_MEAN}} & {{D\_L0\_F\_STD}} \\
+3 & {{D\_L3\_F\_MEAN}} & {{D\_L3\_F\_STD}} \\
+5 & {{D\_L5\_F\_MEAN}} & {{D\_L5\_F\_STD}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+20    {{D_S20}}
+30    {{D_S30}}
+40    {{D_S40}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_hgrn2.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+

@@ -1,3 +1,135 @@
-\section{12 Reproducibility}
 
-Draft content for unified_rope.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+numpy & {{NUMPY\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running UnifiedRoPE}
+
+\begin{lstlisting}
+python run_all_4_unified_rope.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}} \
+    --batch_size {{BATCH_SIZE}}
+\end{lstlisting}
+
+\textbf{Runtime:} ~{{RUNTIME}} minutes.
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --dataset sst2 \
+    --output_dir results/unified_unified_rope/distilbert \
+    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --modules full,unified_rope \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+
+\begin{lstlisting}
+python run_all_4_unified_rope.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.6 (RoPE base ablation)}
+
+\begin{lstlisting}
+for b in 5000 10000 100000; do
+    python run_all_4_unified_rope.py --base $b --output_suffix b$b
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.7 (Rotary dimension)}
+
+\begin{lstlisting}
+for rd in 32 64 128; do
+    python run_all_4_unified_rope.py --rotary_dim $rd --output_suffix rd$rd
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Params} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & 1.00$\times$ \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & 1.00$\times$ \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & 1.00$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Checkpoints}
+
+\begin{lstlisting}
+from huggingface_hub import hf_hub_download
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-unified_rope",
+        filename="weights.pt",
+    )
+    print(f"Downloaded {model}: {path}")
+\end{lstlisting}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Dataset: SST-2 via \texttt{datasets}
+\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-unified\_rope}
+\item Metrics: \texttt{results/unified\_unified\_rope/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/unified\_rope\_*.log}
+
+\end{itemize}
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Windows: use \texttt{PYTHONIOENCODING=utf-8}
+\item CUDA $\ge$ 11.8 recommended
+\item RoPE cache is non-persistent, so checkpoints do not include it
+\item Encoder models need recovery fine-tuning
+
+\end{itemize}

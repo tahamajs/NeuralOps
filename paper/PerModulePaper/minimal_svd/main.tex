@@ -64,10 +64,42 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the minimal\_svd module within modern transformer architectures.
+We present \textbf{MinimalSVD}, a compact and reproducible method for compressing 
+the four attention projections of transformer language models. Each weight 
+matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ is factorized as 
+$W \approx U V$ via truncated SVD, with $U \in \mathbb{R}^{d_\text{out} \times r}$ 
+and $V \in \mathbb{R}^{r \times d_\text{in}}$. The parameter count drops from 
+$d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$, achieving 
+\textbf{{{D\_RATIO}}$\times$} reduction per projection on DistilBERT at rank $r = {{RANK}}$.
+
+The core novelty is \textbf{spectral energy-adaptive rank selection}: instead of 
+fixing $r$ uniformly across layers, MinimalSVD computes the cumulative 
+spectral energy $E(r) = \sum_{i \le r} \sigma_i^2 / \sum_i \sigma_i^2$ of 
+each weight matrix and selects the smallest rank such that $E(r) \ge \eta$, 
+with $\eta = {{ENERGY}}$ by default. This automatically adapts per-layer 
+rank based on spectral decay, avoiding the fixed-rank trade-off between 
+under- and over-parameterization.
+
+MinimalSVD is intentionally minimal: the injection protocol targets a single 
+transformer layer at a time, delegating whole-model traversal to the caller. 
+This makes the implementation easy to audit and extend. We nevertheless 
+support four transformer families -- DistilBERT (flat), RoBERTa (nested), 
+GPT-2 (causal with Conv1D), and Qwen3.5 (GQA + RoPE) -- via architecture-aware 
+weight extraction, Frobenius norm validation, and LoRA recovery.
+
+On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = {{RANK}}$ and 
+energy $\eta = {{ENERGY}}$, MinimalSVD achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+parameter reduction with accuracy drops of only \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} 
+after {{RECOVERY\_STEPS}} LoRA recovery steps. Peak inference VRAM decreases 
+by \textbf{{{VRAM\_REDUCTION}}\%}.
+
+\textbf{Keywords:} low-rank factorization, SVD, energy-adaptive rank, attention 
+compression, LoRA recovery, multi-architecture transformers
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} minimal\_svd, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} low-rank factorization, SVD, energy-adaptive rank, attention
 \end{abstract}
 
 \vspace{1em}

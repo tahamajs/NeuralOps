@@ -1,0 +1,116 @@
+{
+  "_comment": "Fill with real values from your Res-SVD runs.",
+
+  "MODULE_NAME": "Res-SVD",
+  "FULL_NAME": "Spectral Residual Low-Rank SVD Attention",
+  "SUBTITLE": "Two-Level SVD Factorization with Spectral LoRA Initialization",
+
+  "AUTHOR_1_NAME": "Your Name",
+  "AUTHOR_1_EMAIL": "you@university.edu",
+  "AUTHOR_2_NAME": "Advisor Name",
+  "AUTHOR_2_EMAIL": "advisor@university.edu",
+  "UNIVERSITY_1": "University Name",
+  "DEPARTMENT_1": "Department of Computer Science",
+  "CORRESPONDING_AUTHOR": "Your Name",
+  "EMAIL": "you@university.edu",
+  "DATE": "2026-09-15",
+  "VERSION": "1",
+  "ORG": "your-org",
+  "HF_ORG": "Hooshaai",
+  "LICENSE": "MIT",
+
+  "BASE_RANK": "16",
+  "RESIDUAL_RANK": "4",
+  "SCALING": "1.0",
+  "RECOVERY_STEPS": "50",
+  "BATCH_SIZE": "8",
+  "LR": "2e-4",
+  "WD": "1e-2",
+  "SEED": "42",
+
+  "D_ACC": "88.2",
+  "D_DELTA": "-2.51",
+  "D_F1": "0.882",
+  "D_PARAMS": "11264560",
+  "D_RATIO": "5.9",
+  "D_VRAM": "110",
+  "D_TIME": "2.3",
+  "D_TPS": "49000",
+  "D_STATUS": "PASS",
+  "D_REASON": "—",
+  "D_TIME_RATIO": "1.21",
+
+  "R_ACC": "74.8",
+  "R_DELTA": "-3.76",
+  "R_F1": "0.748",
+  "R_RATIO": "5.5",
+  "R_PARAMS": "22663128",
+  "R_VRAM": "410",
+  "R_TIME": "4.8",
+  "R_TPS": "23000",
+  "R_STATUS": "PASS",
+  "R_REASON": "—",
+  "R_TIME_RATIO": "1.17",
+
+  "G_ACC": "75.5",
+  "G_DELTA": "-3.86",
+  "G_F1": "0.755",
+  "G_RATIO": "5.5",
+  "G_PARAMS": "22642504",
+  "G_VRAM": "450",
+  "G_TIME": "4.9",
+  "G_TPS": "22600",
+  "G_STATUS": "PASS",
+  "G_REASON": "—",
+  "G_TIME_RATIO": "1.17",
+
+  "D_B8": "85.0", "D_B16": "88.2", "D_B32": "89.0", "D_B64": "89.5",
+  "R_B8": "71.0", "R_B16": "74.8", "R_B32": "75.8", "R_B64": "76.5",
+  "G_B8": "72.0", "G_B16": "75.5", "G_B32": "76.5", "G_B64": "77.0",
+
+  "D_R0": "85.5", "D_R2": "87.5", "D_R4": "88.2", "D_R8": "88.5", "D_R16": "88.8",
+  "R_R0": "72.5", "R_R2": "74.0", "R_R4": "74.8", "R_R8": "75.0", "R_R16": "75.2",
+  "G_R0": "73.0", "G_R2": "74.5", "G_R4": "75.5", "G_R8": "75.8", "G_R16": "76.0",
+
+  "D_A05": "87.5", "D_A10": "88.2", "D_A20": "87.0",
+  "R_A05": "74.0", "R_A10": "74.8", "R_A20": "73.5",
+  "G_A05": "74.8", "G_A10": "75.5", "G_A20": "74.0",
+
+  "D_SVD20": "88.0", "D_DIFF": "+0.2",
+  "R_SVD20": "74.5", "R_DIFF": "+0.3",
+
+  "VRAM_PCT": "40",
+  "D_PROJ_TIME": "0.3", "D_OUT_TIME": "0.15", "D_LORA_TIME": "0.1", "D_TOTAL_TIME": "1.3",
+
+  "REC_ERR_OBS": "Reconstruction error uniform across layers",
+  "RB4_DROP": "5.0", "RR0_DROP": "2.7",
+
+  "D_RB4": "83.0", "D_RB8": "85.0", "D_RB16": "88.2", "D_RB32": "89.0",
+  "D_RR0": "85.5", "D_RR2": "87.5", "D_RR4": "88.2", "D_RR8": "88.5",
+
+  "D_S1": "1.2", "D_S5": "0.7", "D_S10": "0.55", "D_S50": "0.32",
+  "D_L0_Q": "0.12", "D_L0_K": "0.13", "D_L0_V": "0.14", "D_L0_O": "0.15",
+  "D_L1_Q": "0.13", "D_L1_K": "0.12", "D_L1_V": "0.14", "D_L1_O": "0.13",
+  "D_L5_Q": "0.14", "D_L5_K": "0.13", "D_L5_V": "0.15", "D_L5_O": "0.14",
+
+  "SEED42": "88.2", "SEED123": "88.1", "SEED456": "88.3",
+  "MEAN": "88.2", "STD": "0.10",
+
+  "COMPUTE_HOURS": "8",
+  "CO2_KG": "0.5",
+  "RUNTIME": "15",
+
+  "CUDA_VERSION": "12.1",
+  "TORCH_VERSION": "2.4.0",
+  "HF_VERSION": "4.44.0",
+  "DATASETS_VERSION": "2.20.0",
+  "NUMPY_VERSION": "1.26.4",
+
+  "Q_VERIFIED": "not tested",
+  "UNRESOLVED_FAILURES": "None",
+
+  "_note": "Add keys as needed"
+}
+```
+
+---

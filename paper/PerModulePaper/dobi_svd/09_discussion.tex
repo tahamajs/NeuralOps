@@ -1,3 +1,131 @@
-\section{09 Discussion}
 
-Formal architectural specifications for \texttt{dobi_svd}.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Rank is Learnable}
+
+Unlike fixed or energy-selected rank, Dobi-SVD learns rank components 
+jointly with recovery. Gates provide a data-driven signal.
+
+\subsubsection{Takeaway 2: Lossless Initialization}
+
+Gate compensation ensures step 0 matches the truncated SVD -- no accuracy 
+loss at initialization.
+
+\subsubsection{Takeaway 3: Post-Hoc Pruning Works}
+
+After training, gates below $\tau$\_g = 0.5 identify removable components. This 
+yields \textbf{{{PRUNE\_GAIN}}\%} additional rank reduction without retraining.
+
+\subsection{When to Use Dobi-SVD}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Unknown optimal rank} -- Dobi learns it
+\item \textbf{Post-hoc pruning desired} -- gates provide a signal
+\item \textbf{Multi-architecture deployment} -- supported
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{When rank is known} -- MinimalSVD is simpler
+\item \textbf{When gates cannot be trained} -- need recovery steps
+\item \textbf{Extremely small models} (<10M params)
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need to compress linear layers? --- Yes --- Continue
+  | No $\to$ other approaches
+
+  |
+   
+Know optimal rank? --- Yes --- Use MinimalSVD
+  | No
+   
+Willing to train gates? --- Yes --- Use Dobi-SVD
+  | No
+   
+Use energy-based rank selection
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT on RTX 4070:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Dobi} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & {{D\_PARAMS}}M & \textbf{{{D\_RATIO}}$\times$} \\
+Effective rank & -- & {{D\_REFF}} & -- \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
+Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Published Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Rank selection} & \textbf{Retrain?} & \textbf{Post-hoc?} \\
+\midrule
+MinimalSVD & Energy & LoRA &  \\
+SVD-LLM V2 & Energy & LoRA &  \\
+AdaLoRA & Learned budget & Yes & Partial \\
+\textbf{Dobi-SVD} & \textbf{Learnable gates} & \textbf{Gates + LoRA} & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Deployment Considerations}
+
+\subsubsection{Storage}
+Same as symmetric SVD at nominal rank, but effective rank after pruning 
+is smaller.
+
+\subsubsection{Latency}
+Dobi-SVD adds an elementwise multiplication by gates, which is cheap.
+
+\subsubsection{Post-Hoc Pruning}
+After training, apply Algorithm 2 to physically remove pruned components.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Optimal $\tau$\_g} -- is 0.5 always best?
+\item \textbf{Gate dynamics} -- can we accelerate convergence?
+\item \textbf{Interaction with quantization} -- do gates survive quantization?
+\item \textbf{Cross-task transfer} -- do gates transfer across tasks?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Democratizes AI
+\item Reduces carbon footprint
+\item Enables edge AI
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Dual-use concerns
+\item Concentration risk
+
+\end{itemize}
+\subsubsection{Environmental}
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+

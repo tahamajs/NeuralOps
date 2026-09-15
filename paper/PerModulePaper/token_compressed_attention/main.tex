@@ -64,10 +64,37 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal analysis and benchmark evaluation of the module.
+The quadratic cost of transformer attention grows with sequence length because 
+every query attends to every key. For long-context inference, the KV cache 
+becomes the dominant memory bottleneck. We introduce \textbf{TokenCompressedAttention}, 
+a lightweight module that reduces the effective KV sequence length by selecting 
+a subset of tokens based on a learnable importance score, while always 
+preserving the special \texttt{[CLS]} token and respecting causal masking for 
+decoders.
+
+Our method adds a small scoring network ({{SCORE\_NET\_PARAMS}} parameters) on 
+top of a frozen pretrained attention. At compression ratio $\rho = {{RATIO}}$, 
+we reduce the effective KV sequence length by $1 - \rho$, translating to 
+\textbf{{{KV\_SAVINGS}}\%} lower attention compute and KV cache. On SST-2, 
+TokenCompressedAttention achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
+{{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and 
+\textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%), using only {{RECOVERY\_STEPS}} 
+LoRA recovery steps.
+
+Crucially, we are explicit that this method **does not reduce parameter 
+count** -- the base weights are preserved and LoRA adapters are added. What 
+it reduces is inference-time memory and compute. We provide a production-
+hardened implementation supporting flat, nested, and causal architectures, 
+with a built-in \texttt{[CLS]}-preservation guarantee and a numerically stable 
+causal mask for decoder models.
+
+\textbf{Keywords:} KV cache compression, token selection, efficient inference, 
+learnable saliency, long-context transformers
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} Efficient Attention, Transformers, Deep Learning, Model Compression
+\noindent\textbf{Keywords:} KV cache compression, token selection, efficient inference,
 \end{abstract}
 
 \vspace{1em}

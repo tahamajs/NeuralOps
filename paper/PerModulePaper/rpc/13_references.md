@@ -1,0 +1,144 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 13_references.md
+     PURPOSE: Bibliography
+     DEPENDENCIES: All sections
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# 13. References
+
+```bibtex
+@article{johnson1984extensions,
+  title={Extensions of Lipschitz mappings into a Hilbert space},
+  author={Johnson, William B and Lindenstrauss, Joram},
+  journal={Contemporary Mathematics},
+  volume={26},
+  pages={189--206},
+  year={1984}
+}
+
+@article{achlioptas2003database,
+  title={Database-friendly random projections: Johnson-Lindenstrauss with binary coins},
+  author={Achlioptas, Dimitris},
+  journal={Journal of Computer and System Sciences},
+  volume={66},
+  number={4},
+  pages={671--687},
+  year={2003}
+}
+
+@article{indyk1998approximate,
+  title={Approximate nearest neighbors: Towards removing the curse of dimensionality},
+  author={Indyk, Piotr and Motwani, Rajeev},
+  booktitle={STOC},
+  year={1998}
+}
+
+@article{woodruff2014sketching,
+  title={Sketching as a tool for numerical linear algebra},
+  author={Woodruff, David P},
+  journal={Foundations and Trends in Theoretical Computer Science},
+  year={2014}
+}
+
+@inproceedings{rahimi2007random,
+  title={Random features for large-scale kernel machines},
+  author={Rahimi, Ali and Recht, Benjamin},
+  booktitle={NeurIPS},
+  year={2007}
+}
+
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@inproceedings{dao2022flashattention,
+  title={FlashAttention: Fast and memory-efficient exact attention with IO-awareness},
+  author={Dao, Tri and others},
+  booktitle={NeurIPS},
+  year={2022}
+}
+
+@inproceedings{choromanski2021rethinking,
+  title={Rethinking attention with performers},
+  author={Choromanski, Krzysztof and others},
+  booktitle={ICLR},
+  year={2021}
+}
+
+@inproceedings{katharopoulos2020transformers,
+  title={Transformers are RNNs},
+  author={Katharopoulos, Angelos and others},
+  booktitle={ICML},
+  year={2020}
+}
+
+@inproceedings{wang2020linformer,
+  title={Linformer},
+  author={Wang, Sinong and others},
+  year={2020}
+}
+
+@inproceedings{xiong2021nystromformer,
+  title={Nystr{\"o}mformer},
+  author={Xiong, Yunyang and others},
+  booktitle={AAAI},
+  year={2021}
+}
+
+@inproceedings{beltagy2020longformer,
+  title={Longformer},
+  author={Beltagy, Iz and others},
+  year={2020}
+}
+
+@inproceedings{zaheer2020big,
+  title={Big Bird},
+  author={Zaheer, Manzil and others},
+  booktitle={NeurIPS},
+  year={2020}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}},
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{sanh2019distilbert,
+  title={{DistilBERT}},
+  author={Sanh, Victor and others},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title={{RoBERTa}},
+  author={Liu, Yinhan and others},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@article{su2021roformer,
+  title={Roformer},
+  author={Su, Jianlin and others},
+  year={2021}
+}
+```
+
+---

@@ -1,3 +1,171 @@
-\section{B Implementation}
+\section{Appendix B. Implementation Details}
 
-Draft content for hgrn2_gated_deltanet.
+\subsection{B.1 Core Module}
+
+\begin{lstlisting}
+class HGRN2GatedDeltaNet(BaseAttention):
+    def __init__(self, config, rank=None, ...):
+        super().__init__(config, rank)
+        
+        # Resolve dims
+        self.d_model = ...
+        self.num_heads = ...
+        self.is_decoder = ...
+        self.lora_rank = ...
+        
+        # Branches
+        self.hgrn = HGRN2Layer(...)
+        self.deltanet = GatedDeltaNet(...)
+        
+        # Gate
+        self.gate = nn.Linear(self.d_model, self.d_model)
+        with torch.no_grad():
+            self.gate.weight.zero_()
+            self.gate.bias.fill_(0.0)
+        
+        # Output
+        self.out_proj = LoRALinear(...)
+        
+        if old_attn is not None:
+            self.copy_weights(old_attn)
+\end{lstlisting}
+
+\subsection{B.2 The Gate Initialization}
+
+\begin{lstlisting}
+with torch.no_grad():
+    self.gate.weight.zero_()
+    self.gate.bias.fill_(0.0)
+\end{lstlisting}
+
+\textbf{Why?} Initializing to zero gives $\gamma = 0.5$, which is a neutral 
+starting point. Random initialization would cause one branch to dominate 
+arbitrarily.
+
+\subsection{B.3 Failure-Bias}
+
+\begin{lstlisting}
+if hgrn_ok and not deltanet_ok:
+    with torch.no_grad():
+        self.gate.weight.zero_()
+        self.gate.bias.fill_(4.0)  # sigmoid(4) $\approx$ 0.98
+\end{lstlisting}
+
+When one branch's weight copy fails, we bias the gate toward the surviving 
+branch. This prevents the failed branch from injecting random noise.
+
+\subsection{B.4 The `sub\_kwargs` Pattern}
+
+\begin{lstlisting}
+sub_kwargs = {k: v for k, v in kwargs.items() 
+              if k not in ("is_decoder", "is_causal", "lora_rank", "lora_alpha")}
+\end{lstlisting}
+
+This is essential to avoid the "multiple values for keyword argument" error 
+when the same \texttt{kwargs} dict is passed to nested constructors.
+
+\subsection{B.5 Output Projection Search}
+
+\begin{lstlisting}
+if w_o is None:
+    for cand in ("out_proj", "out_lin", "o_proj", "output", "proj", "c_proj", "dense"):
+        for target in (old_attn, old_attn.self, old_attn.attention, old_attn.output):
+            if target and hasattr(target, cand):
+                mod = getattr(target, cand)
+                if hasattr(mod, "dense"):
+                    mod = mod.dense
+                cw, cb = _unpack_weight_bias(mod)
+                if cw is not None:
+                    w_o, b_o = cw, cb
+                    break
+\end{lstlisting}
+
+This search handles:
+\begin{itemize}
+\item DistilBERT: \texttt{out\_lin}
+\item RoBERTa: \texttt{output.dense}
+\item GPT-2: \texttt{c\_proj}
+\item Qwen: \texttt{o\_proj}
+
+\end{itemize}
+\subsection{B.6 Double-Injection Guard}
+
+\begin{lstlisting}
+if isinstance(curr_attn, HGRN2GatedDeltaNet): return None
+if "HGRN2GatedDeltaNet" in curr_attn.__class__.__name__: return None
+if hasattr(curr_attn, "inner") and isinstance(curr_attn.inner, HGRN2GatedDeltaNet): return None
+if hasattr(curr_attn, "_wrapped_attention") and isinstance(curr_attn._wrapped_attention, HGRN2GatedDeltaNet): return None
+\end{lstlisting}
+
+Four checks cover:
+\begin{itemize}
+\item Direct instance.
+\item Class name match.
+\item Wrapped inside \texttt{inner}.
+\item Wrapped inside \texttt{\_wrapped\_attention}.
+
+\end{itemize}
+\subsection{B.7 Skip Hybrid Layers}
+
+\begin{lstlisting}
+if "DeltaNet" in c_name or "LinearAttention" in c_name:
+    return None
+\end{lstlisting}
+
+Qwen3.5 has some layers using \texttt{DeltaNet} or \texttt{LinearAttention}. We skip them 
+to avoid double-replacing recurrent modules.
+
+\subsection{B.8 Cross-Attention Warning}
+
+\begin{lstlisting}
+if encoder_hidden_states is not None:
+    logger.warning(
+        "HGRN2GatedDeltaNet received encoder_hidden_states but cross-attention "
+        "is not implemented. Returning raw hidden_states (identity)."
+    )
+    return hidden_states, None
+\end{lstlisting}
+
+\subsection{B.9 Forward Pass}
+
+\begin{lstlisting}
+def forward(self, hidden_states, attention_mask=None, **kwargs):
+    # 1. Branch forwards
+    hgrn_out = self.hgrn(hidden_states, attention_mask=attention_mask, **kwargs)[0]
+    delta_out = self.deltanet(hidden_states, attention_mask=attention_mask, **kwargs)[0]
+    
+    # 2. Shape align
+    if hgrn_out.shape != delta_out.shape:
+        # pad
+        ...
+    
+    # 3. Gate + fuse
+    gamma = torch.sigmoid(self.gate(hidden_states))
+    fused = gamma * hgrn_out + (1 - gamma) * delta_out
+    
+    # 4. Output
+    out = self.out_proj(fused)
+    
+    return out, None
+\end{lstlisting}
+
+\subsection{B.10 Common Pitfalls}
+
+\subsubsection{B.10.1 Forgetting `sub\_kwargs`}
+
+Passing the raw \texttt{kwargs} to branch constructors raises \texttt{TypeError}.
+
+\subsubsection{B.10.2 Random Gate Init}
+
+Initializing \texttt{gate.weight} with default Kaiming gives arbitrary bias.
+
+\subsubsection{B.10.3 Missing Out Projection Failure}
+
+Raising on out\_proj failure is essential -- otherwise the module has a 
+random output projection.
+
+\subsubsection{B.10.4 Double Injection}
+
+Without the guard, repeated calls to \texttt{inject\_hgrn2\_gated\_deltanet} wrap the 
+module multiple times.
+

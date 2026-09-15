@@ -1,3 +1,122 @@
-\section{02 Related}
 
-Draft content for minimal_svd.
+\section{Related Work}
+
+\subsection{Low-Rank Matrix Factorization}
+
+\textbf{Classical SVD.} The Eckart--Young theorem (Eckart \& Young, 1936) states 
+that the best rank-$r$ approximation of $W$ in Frobenius norm is the truncated 
+SVD. MinimalSVD builds on this foundation.
+
+\textbf{Randomized SVD.} Halko et al. (2011) provide randomized algorithms with 
+complexity $\mathcal{O}(dr \log k)$. For our layer sizes, exact SVD is 
+feasible within seconds.
+
+\textbf{Weighted low-rank.} Golub et al. (1987) and Srebro \& Jaakkola (2003) study 
+weighted variants. Activation-aware methods (Lin et al., 2023; Xiao et al., 
+2023) weight the factorization by activation statistics. MinimalSVD uses 
+\textbf{unweighted} SVD but \textbf{adaptive rank}, offering a complementary axis of 
+improvement.
+
+\textbf{Tensor decomposition.} Novikov et al. (2015) use tensor-train 
+decomposition. MinimalSVD uses matrix SVD, a simpler primitive.
+
+\subsection{Rank Selection Strategies}
+
+\textbf{Fixed rank.} Most low-rank methods use a fixed global rank (Yu et al., 
+2017). Simple but ignores heterogeneity.
+
+\textbf{Adaptive rank in LoRA.} AdaLoRA (Zhang et al., 2023) learns per-layer 
+rank budgets. MinimalSVD uses \textbf{spectral energy}, a fixed criterion 
+without learning.
+
+\textbf{Energy-based truncation.} Standard in signal processing. MinimalSVD 
+applies it to transformer attention projections.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\textbf{LoRA.} Hu et al. (2021) freeze base weights and train rank-$r$ adapters. 
+MinimalSVD uses LoRA as the recovery mechanism after compression.
+
+\textbf{DoRA.} Liu et al. (2024) decompose weights into magnitude and direction. 
+Orthogonal to our work.
+
+\subsection{Attention Variants}
+
+\textbf{Standard MHSA.} Vaswani et al. (2017) introduce the four-projection 
+attention. MinimalSVD preserves the four-projection structure but factorizes 
+each.
+
+\textbf{GQA.} Ainslie et al. (2023) share KV heads. MinimalSVD supports GQA via 
+\texttt{repeat\_kv}.
+
+\textbf{MQA.} Shazeer (2019) uses a single KV head. Compatible with our approach.
+
+\subsection{Model Compression}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{Retrain} & \textbf{Calibration} \\
+\midrule
+DistilBERT & Distillation & 1.6$\times$ & Yes & -- \\
+TinyBERT & Distillation & 7$\times$ & Yes & -- \\
+SparseGPT & Pruning & 2-4$\times$ & No & Required \\
+Wanda & Pruning & 2$\times$ & No & Required \\
+AWQ & Quantization & 4$\times$ & No & Required \\
+GPTQ & Quantization & 4$\times$ & No & Required \\
+A3 & Low-rank + diagonal Fisher & 5$\times$ & LoRA & Required \\
+AASVD & Low-rank + full covariance & 5$\times$ & LoRA & Required \\
+\textbf{MinimalSVD} & \textbf{Low-rank + energy} & \textbf{{{D\_RATIO}}$\times$} & \textbf{LoRA} & \textbf{Not required} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Position of Our Work}
+
+MinimalSVD differs from prior work along three axes:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior} & \textbf{MinimalSVD} \\
+\midrule
+\textbf{Rank selection} & Fixed or learned & Spectral energy \\
+\textbf{Calibration} & Often required & Not required \\
+\textbf{Code complexity} & High (framework) & Minimal (auditable) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} MinimalSVD is designed as a \textbf{reference baseline}. It 
+uses the same energy-adaptive rank criterion as MinimalNOVA and MinimalPRISM, 
+but without the injection-time safety protocols and whole-model traversal. 
+This makes the code shorter and easier to audit, at the cost of requiring 
+the caller to handle model traversal.
+
+
+
+\subsection{Comparison of the Minimal Family}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Feature} & \textbf{MinimalSVD} & \textbf{MinimalNOVA} & \textbf{MinimalPRISM} \\
+\midrule
+Energy-adaptive rank &  &  &  \\
+LoRA recovery &  &  &  \\
+Multi-architecture &  &  &  \\
+Whole-model traversal &  &  &  \\
+Pre-test on first layer &  &  &  \\
+Injection-time nested detection &  &  &  \\
+Double-injection guard &  &  &  \\
+Code lines & ~280 & ~500 & ~550 \\
+\bottomrule
+\end{tabular}
+\end{table}
+

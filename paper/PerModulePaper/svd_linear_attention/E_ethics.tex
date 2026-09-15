@@ -1,3 +1,100 @@
-\section{E Ethics}
 
-Draft content for svd_linear_attention.
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Real compression AND speedup
+\item Streaming-ready
+\item Multi-architecture support
+\item Reduced carbon footprint for inference
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Approximation error may affect fairness
+\item Dual-use
+\item Concentration risk
+
+\end{itemize}
+\subsection{E.2 Environmental Impact}
+
+\begin{itemize}
+\item \textbf{Training:} ~{{COMPUTE\_HOURS}} GPU-hours
+\item \textbf{CO$_2$:} ~{{CO2}} kg CO$_2$eq
+\item \textbf{Inference:} {{INFERENCE\_CARBON}} g CO$_2$eq per 1000 queries
+
+\end{itemize}
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 (public, English)
+\item \textbf{PII:} None
+\item \textbf{Bias:} English movie reviews
+
+\end{itemize}
+\subsection{E.4 Model Ethics}
+
+\subsubsection{Bias}
+
+The linear attention approximation may distort attention patterns in ways 
+that disproportionately affect minority inputs. We did not audit for bias.
+
+\subsubsection{Misuse}
+
+Efficient long-context models could enable:
+
+\begin{itemize}
+\item Mass surveillance
+\item Automated misinformation
+\item Censorship at scale
+
+\end{itemize}
+We do not endorse these uses.
+
+\subsection{E.5 Authorship and Credit}
+
+See  11.7.
+
+\subsection{E.6 Conflicts of Interest}
+
+None.
+
+\subsection{E.7 Funding}
+
+{{FUNDING}}
+
+\subsection{E.8 Acknowledgements}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{E.9 LLM Usage}
+
+Parts drafted with LLM assistance.
+
+\subsection{E.10 Reproducibility Commitments}
+
+\begin{enumerate}
+\item Release code
+\item Release checkpoints
+\item Report negative results
+\item Document the decay initialization issue
+\item Respond to replications
+
+\end{enumerate}
+\subsection{E.11 Long-Term Considerations}
+
+SVD-Linear Attention is a step toward efficient, deployable transformers. 
+It is one of the few modules that achieves both real compression and real 
+speedup. We hope it will be used for beneficial applications such as:
+
+\begin{itemize}
+\item On-device AI
+\item Privacy-preserving inference
+\item Green computing
+
+\end{itemize}
+But we acknowledge the dual-use potential and encourage responsible 
+deployment.
+

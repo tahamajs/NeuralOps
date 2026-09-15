@@ -1,11 +1,204 @@
-\section{05 Architecture}
 
-Formal architectural specifications for \texttt{dobi_svd}.
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{$d$} & \textbf{$H$} & \textbf{$H_{kv}$} & \textbf{Nested?} & \textbf{Conv1D?} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & No & No \\
+RoBERTa-base & 12 & 768 & 12 & 12 & Yes & No \\
+GPT-2 & 12 & 768 & 12 & 12 & No & Yes \\
+Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & No & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Target Module Selection}
+
+Dobi-SVD with \texttt{target\_attention\_only = True} (default) targets only 
+attention projections:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Pattern} & \textbf{Examples} \\
+\midrule
+\texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj} & Qwen \\
+\texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin} & DistilBERT \\
+\texttt{c\_attn}, \texttt{c\_proj} & GPT-2 \\
+\texttt{query}, \texttt{key}, \texttt{value} & RoBERTa \\
+Anything containing \texttt{attn} or \texttt{attention} & Any \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+With \texttt{target\_attention\_only = False}, all compressible layers are targeted 
+(including FFN). Non-target layers are frozen.
+
+\subsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+distilbert.transformer.layer.0.attention
++-- q_lin  (Linear 768 $\to$ 768)
++-- k_lin  (Linear 768 $\to$ 768)
++-- v_lin  (Linear 768 $\to$ 768)
++-- out_lin (Linear 768 $\to$ 768)
+\end{lstlisting}
+
+All four are targeted. Direct SVD, no special handling.
+
+\subsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+roberta.encoder.layer.0.attention
++-- self
+|   +-- query, key, value
++-- output
+    +-- dense
+\end{lstlisting}
+
+The \texttt{query, key, value} are targeted. \texttt{output.dense} may be targeted if 
+\texttt{target\_attention\_only = False}.
+
+Nested encoder detection is \textbf{not} required because Dobi-SVD operates on 
+\textbf{individual linear layers}, not on the attention module as a whole. It 
+simply replaces \texttt{query} $\to$ \texttt{DobiSVDLinearLayer(query)}.
+
+\subsection{GPT-2 (Causal Conv1D)}
+
+\begin{lstlisting}
+transformer.h.0.attn
++-- c_attn  (Conv1D 768 $\to$ 2304)
++-- c_proj  (Conv1D 768 $\to$ 768)
+\end{lstlisting}
+
+\textbf{Conv1D handling:} Dobi-SVD detects Conv1D by checking:
+
+\begin{lstlisting}
+is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+\end{lstlisting}
+
+and transposes weights before SVD. The output shape is preserved 
+(Conv1D stores \texttt{(in, out)}; Dobi-SVD expects \texttt{(out, in)}).
+
+\textbf{Attention-only filtering:} \texttt{c\_attn} and \texttt{c\_proj} are in the \texttt{\_ATTN\_NAMES} 
+set, so they are targeted.
+
+\subsection{Qwen3.5 (GQA + RoPE)}
+
+\begin{lstlisting}
+model.layers.0.self_attn
++-- q_proj  (Linear 1024 $\to$ 2048)
++-- k_proj  (Linear 1024 $\to$ 512)
++-- v_proj  (Linear 1024 $\to$ 512)
++-- o_proj  (Linear 2048 $\to$ 1024)
+\end{lstlisting}
+
+Each is targeted individually. GQA is handled at the \textbf{attention level}, 
+not by Dobi-SVD. The compressor just factorizes the linear layers.
+
+\subsection{LoRALinear Wrapping}
+
+When a target layer is inside a \texttt{LoRALinear} wrapper, Dobi-SVD preserves 
+the wrapper:
+
+\begin{lstlisting}
+if hasattr(module, "base_layer"):
+    module.base_layer = new_layer
+elif hasattr(module, "linear") and hasattr(module, "lora_A"):
+    module.linear = new_layer
+else:
+    replace_module(self.model, name, new_layer)
+\end{lstlisting}
+
+After replacement, LoRA parameters remain trainable:
+
+\begin{lstlisting}
+for p_name, p in module.named_parameters():
+    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+        p.requires_grad = True
+\end{lstlisting}
+
+\subsection{Injection Hook}
+
+Dobi-SVD uses a \textbf{compressor-level API} (not an attention-level one):
+
+\begin{lstlisting}
+def dobi_factory(model, comp_config, **kwargs):
+    compressor = DobiSVDCompressor(model, ...)
+    compressed_model, stats = compressor.compress()
+    return compressed_model
+
+@COMPRESSOR_REGISTRY.register("inject_dobi")
+def inject_dobi(model=None, layer=None, **kwargs):
+    target = layer if layer is not None else model
+    try:
+        return dobi_factory(target, **kwargs)
+    except Exception as e:
+        logger.error("inject_dobi failed: %s", e)
+        return None
+\end{lstlisting}
+
+\textbf{Note.} Dobi-SVD works on the \textbf{whole model} or on a \textbf{single layer}. 
+For whole-model, it traverses \texttt{named\_modules()}.
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing bias info & Shape check & Infer from weight \\
+Conv1D orientation & \texttt{hasattr(target, "nf")} & Transpose \\
+Reconstruction error high & Frobenius check & Retry, then fallback \\
+Near-zero Frobenius & Norm check & Skip layer \\
+SVD failure & Try/except & Skip layer \\
+LoRA wrapper & \texttt{hasattr(module, "base\_layer")} & Preserve wrapper \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@COMPRESSOR_REGISTRY.register("dobi")
+@COMPRESSOR_REGISTRY.register("dobi_svd")
+@COMPRESSOR_REGISTRY.register("dobi_compressor")
+@COMPRESSOR_REGISTRY.register("dobi_svd_compressor")
+@COMPRESSOR_REGISTRY.register("dobi_factory")
+@COMPRESSOR_REGISTRY.register("dobi_svd_factory")
+def dobi_factory(model, comp_config, **kwargs):
+    ...
+\end{lstlisting}
+
+\subsection{Interaction with LoRA Recovery Pipeline}
+
+Dobi-SVD integrates cleanly with the framework's LoRA recovery:
+
+\begin{enumerate}
+\item \textbf{Compress} target layers $\to$ \texttt{DobiSVDLinearLayer} with gates.
+\item \textbf{Gates} are trainable, LoRA adapters (if wrapped) are trainable.
+\item \textbf{Recovery fine-tuning} trains gates + LoRA.
+\item \textbf{Post-hoc pruning} (optional) removes near-zero gates.
+\item \textbf{Evaluation} uses the compressed model.
+
+\end{enumerate}
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_svd-mamba_4.jpeg}
-\caption{Architectural schematic of dobi_svd.}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of dobi_svd.}
 \label{fig:arch_dobi_svd}
 \end{figure}
+

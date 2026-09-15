@@ -1,3 +1,96 @@
-\section{E Ethics}
 
-Draft content for svd_mamba.
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Advances hybrid attention-SSM research
+\item Multi-architecture support simplifies deployment
+\item SSM provides linear-time recurrence for long contexts
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item \textbf{Increases parameter count} (opposite of compression)
+\item Adds inference overhead
+\item Complex to deploy
+\item Dual-use for surveillance
+
+\end{itemize}
+\subsection{E.2 Environmental Impact}
+
+\begin{itemize}
+\item \textbf{Training:} ~{{COMPUTE\_HOURS}} GPU-hours
+\item \textbf{CO$_2$:} ~{{CO2}} kg CO$_2$eq
+\item \textbf{Inference:} {{INFERENCE\_CARBON}} g CO$_2$eq per 1000 queries
+
+\end{itemize}
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 (public, English)
+\item \textbf{PII:} None
+\item \textbf{Bias:} English movie reviews
+
+\end{itemize}
+\subsection{E.4 Model Ethics}
+
+\subsubsection{Bias}
+
+The SSM branch may introduce bias through random initialization. We did 
+not audit for bias.
+
+\subsubsection{Misuse}
+
+Could enable more capable models for surveillance, misinformation.
+
+\subsection{E.5 Authorship and Credit}
+
+See  11.7.
+
+\subsection{E.6 Conflicts of Interest}
+
+None.
+
+\subsection{E.7 Funding}
+
+{{FUNDING}}
+
+\subsection{E.8 Acknowledgements}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{E.9 LLM Usage}
+
+Parts drafted with LLM assistance.
+
+\subsection{E.10 Reproducibility Commitments}
+
+\begin{enumerate}
+\item Release code
+\item Release checkpoints
+\item Report negative results
+\item Document SSM initialization
+\item Respond to replications
+
+\end{enumerate}
+\subsection{E.11 Long-Term Considerations}
+
+Hybrid attention-SSM models like SVD-Mamba could:
+
+\begin{itemize}
+\item Enable more capable long-context models
+\item Provide new research directions
+
+\end{itemize}
+But also:
+
+\begin{itemize}
+\item Increase model complexity
+\item Make interpretability harder
+\item Add deployment burden
+
+\end{itemize}
+We encourage future work to carefully evaluate the trade-offs.
+

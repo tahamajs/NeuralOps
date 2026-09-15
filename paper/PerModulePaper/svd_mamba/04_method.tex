@@ -1,3 +1,367 @@
-\section{04 Method}
 
-Draft content for svd_mamba.
+\section{Method}
+
+\subsection{Overview}
+
+SVD-Mamba replaces MHSA with a three-path block:
+
+\begin{enumerate}
+\item \textbf{Attention path} (SVD-factorized projections).
+\item \textbf{SSM path} (selective state space with chunked scan).
+\item \textbf{Global mixing path} (low-rank global aggregation).
+
+\end{enumerate}
+Fused by a gated combiner.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +-----------------------------------------------+
+    |  Input X $\in$ R^{B$\times$L$\times$d}                          |
+    +----------------+------------------------------+
+                     |
+        +------------+----------------+
+                                       
+    +--------+  +----------+    +----------+
+    | Attn   |  | SSM      |    | Global   |
+    | path   |  | branch   |    | mixing   |
+    | (SVD)  |  | (Mamba)  |    | (SVD)    |
+    +----+---+  +-----+----+    +-----+----+
+         |            |               |
+         |                            |
+         |      +----------+          |
+         |      | + Global |          |
+         |      +-----+----+          |
+         |            |               |
+         |                            |
+         |      +----------+          |
+         |      | out_proj |          |
+         |      +-----+----+          |
+         |            |               |
+         +------------+---------------+
+                       
+              +---------------+
+              | $\gamma$   SSM +     |
+              | (1-$\gamma$)   Attn  |
+              +-------+-------+
+                       
+                    Output
+\end{lstlisting}
+
+\subsection{SVD-Factorized Linear}
+
+Each projection is stored as:
+
+\[
+W = U \Sigma V^\top, \qquad
+U \in \mathbb{R}^{d_\text{out} \times r}, \; \Sigma \in \mathbb{R}^r, \;
+V \in \mathbb{R}^{d_\text{in} \times r}
+\tag{4.1}
+\]
+
+The forward pass is:
+
+\[
+y = ((x V) \odot \Sigma) U^\top + b
+\tag{4.2}
+\]
+
+\textbf{Parameter count:} $r(d_\text{in} + d_\text{out} + 1)$ vs $d_\text{in} d_\text{out}$.
+
+\textbf{LoRA recovery.} A residual LoRA path is added:
+
+\[
+y = ((x V) \odot \Sigma) U^\top + (x A^\top) B^\top \cdot s + b
+\tag{4.3}
+\]
+
+where $s = \alpha / r_L$ and only $A, B$ are trained.
+
+\subsection{Attention Path}
+
+Standard MHSA with SVD-factorized projections:
+
+\[
+Q = \text{SVDLinear}_Q(X), \quad
+K = \text{SVDLinear}_K(X), \quad
+V_a = \text{SVDLinear}_V(X)
+\tag{4.4}
+\]
+
+\[
+\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_{a,h}
+\tag{4.5}
+\]
+
+\[
+Y_\text{attn} = \text{SVDLinear}_O(\text{Concat}(\text{head}_1, \dots, \text{head}_H))
+\tag{4.6}
+\]
+
+\textbf{Causality.} For decoders, a triangular mask is applied to the score 
+matrix.
+
+\subsection{SSM Path}
+
+\subsubsection{Input Projection}
+
+The hidden states are projected to a gated 2$\times$inner dimension:
+
+\[
+[x; z] = \text{SVDLinear}_\text{in}(X) \in \mathbb{R}^{B \times L \times 2 d_\text{inner}}
+\tag{4.7}
+\]
+
+where $d_\text{inner} = \text{expand} \cdot d$.
+
+\subsubsection{Causal Convolution}
+
+A depthwise 1D convolution is applied:
+
+\[
+x_\text{conv} = \text{SiLU}(\text{Conv1d}(x))
+\tag{4.8}
+\]
+
+with kernel size $d_\text{conv}$ and no padding (causal).
+
+\subsubsection{Selective Parameters}
+
+The SSM parameters are computed:
+
+\[
+[\Delta; B; C] = \text{SVDLinear}_{x}(x_\text{conv})
+\tag{4.9}
+\]
+
+\[
+\Delta = \text{softplus}(\text{SVDLinear}_{\Delta}([\Delta; B; C]) + b_\Delta)
+\tag{4.10}
+\]
+
+\subsubsection{Discretization}
+
+With diagonal $A = -\exp(A_\text{log})$:
+
+\[
+\bar{A}_t = \exp(\Delta_t A), \qquad
+\bar{B}_t = \Delta_t B_t
+\tag{4.11}
+\]
+
+\subsubsection{Chunked Scan}
+
+For chunk size $C = 64$:
+
+Within a chunk, compute:
+
+\[
+\lambda_{c, i} = \sum_{j=1}^i \log \bar{A}_{c, j}
+\tag{4.12}
+\]
+
+Then:
+
+\[
+h_{c, i}^\text{intra} = e^{\lambda_{c, i}} \sum_{j=1}^i e^{-\lambda_{c, j}} \bar{B}_{c, j} x_{c, j}
+\tag{4.13}
+\]
+
+Plus inter-chunk state:
+
+\[
+h_{c, i} = h_{c, i}^\text{intra} + e^{\lambda_{c, i}} h_{c-1, C}
+\tag{4.14}
+\]
+
+\subsubsection{Output with Denominator}
+
+The output is:
+
+\[
+y_t = \frac{C_t \cdot h_t}{\max(|C_t| \cdot |h_t^\text{denom}|, 10^{-4})} + D x_t
+\tag{4.15}
+\]
+
+where $h_t^\text{denom}$ tracks $\sum |\bar{B}_j| x_j$.
+
+\subsubsection{Gating}
+
+\[
+Y_\text{SSM} = y \odot \text{SiLU}(z)
+\tag{4.16}
+\]
+
+\subsection{Global SVD Mixing}
+
+A low-rank global aggregation:
+
+\[
+\text{global}_\text{scores} = X V_g \in \mathbb{R}^{B \times L \times r_g}
+\tag{4.17}
+\]
+
+\[
+Y_\text{global} = \text{SVDLinear}_\text{global}(\text{global}_\text{scores})
+\tag{4.18}
+\]
+
+Added to $Y_\text{SSM}$:
+
+\[
+Y_\text{SSM}^\text{final} = Y_\text{SSM} + Y_\text{global}
+\tag{4.19}
+\]
+
+\subsection{Gated Fusion}
+
+The two main paths are fused:
+
+\[
+\gamma = \sigma(W_g X)
+\tag{4.20}
+\]
+
+\[
+Y = \gamma \odot Y_\text{SSM}^\text{final} + (1 - \gamma) \odot Y_\text{attn}
+\tag{4.21}
+\]
+
+\textbf{Initialization.} The gating bias is $b_g = -7$, so:
+
+\[
+\sigma(-7) \approx 9 \times 10^{-4}
+\tag{4.22}
+\]
+
+The SSM is silent at start; the model behaves like the pretrained attention.
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} SVD-Mamba forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: # Attention path
+ 2: Q $\leftarrow$ SVDLinear_Q(X); K $\leftarrow$ SVDLinear_K(X); V_a $\leftarrow$ SVDLinear_V(X)
+ 3: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+ 4: if GQA:  K, V_a $\leftarrow$ repeat_kv(K, V_a)
+ 5: scores $\leftarrow$ Q K^T / $\sqrt{}$d_h
+ 6: scores $\leftarrow$ scores + causal_mask + pad_mask
+ 7: Y_attn $\leftarrow$ SVDLinear_O(softmax(scores) V_a)
+ 8:
+ 9: # SSM path
+10: [x; z] $\leftarrow$ SVDLinear_in(X)
+11: x_conv $\leftarrow$ SiLU(Conv1d(x))
+12: [$\Delta$; B; C] $\leftarrow$ SVDLinear_x(x_conv)
+13: $\Delta$ $\leftarrow$ softplus(SVDLinear_$\Delta$([$\Delta$; B; C]) + b_$\Delta$)
+14:   $\leftarrow$ exp($\Delta$ A)
+15: for c in chunks:
+16:     h_c $\leftarrow$ scan( , B , x_conv) within chunk
+17:     h_c $\leftarrow$ h_c + carry_over
+18:     y_c $\leftarrow$ (C h_c) / (|C| |h_denom|)_clamp
+19: Y_ssm $\leftarrow$ y   SiLU(z)
+20: Y_ssm $\leftarrow$ Y_ssm + global_mix(X)
+21: Y_ssm $\leftarrow$ SVDLinear_out(Y_ssm)
+22:
+23: # Fusion
+24: $\gamma$ $\leftarrow$ $\sigma$(W_g X)
+25: Y $\leftarrow$ $\gamma$   Y_ssm + (1 - $\gamma$)   Y_attn
+26: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Path} & \textbf{Time} & \textbf{Space} \\
+\midrule
+Attention & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+SSM (scan) & $\mathcal{O}(L d_\text{inner} d_\text{state})$ & $\mathcal{O}(L d_\text{inner} d_\text{state})$ \\
+Global mixing & $\mathcal{O}(L d r_g)$ & $\mathcal{O}(L r_g)$ \\
+Fusion & $\mathcal{O}(L d)$ & $\mathcal{O}(L d)$ \\
+\textbf{Total} & $\mathcal{O}(L^2 d + L d_\text{inner} d_\text{state})$ & $\mathcal{O}(L^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $L \gg d$, the SSM cost dominates the linear part, and attention 
+dominates the quadratic part.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Formula} \\
+\midrule
+SVD projections & $r(d_\text{in} + d_\text{out} + 1)$ each \\
+SSM in\_proj & $r_\text{in}(d + 2 d_\text{inner} + 1)$ \\
+SSM x\_proj & $r_x(d_\text{inner} + d_\text{dt} + 2 d_\text{state} + 1)$ \\
+SSM dt\_proj & $r_\text{dt}(d_\text{dt} + d_\text{inner} + 1)$ \\
+SSM out\_proj & $r_\text{out}(d_\text{inner} + d + 1)$ \\
+Conv1d & $d_\text{inner} d_\text{conv}$ \\
+A\_log, D, dt\_bias & $d_\text{state} + 2 d_\text{inner}$ \\
+Global V & $d r_g$ \\
+Global out & $r_g(d_\text{inner} + r_g + 1)$ \\
+Gating & $d^2 + d$ \\
+LoRA (per projection) & $r_L(d_\text{in} + d_\text{out})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For DistilBERT ($d = 768$, $d_\text{state} = 16$, $d_\text{conv} = 4$, 
+$d_\text{inner} = 768$, $r = 192$, $r_L = 16$):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
+\midrule
+Q/K/V/O projections & ~600K & ~3.6M \\
+SSM branch & ~4M & ~24M \\
+Global mixing & ~50K & ~300K \\
+Gating & ~590K & ~3.5M \\
+LoRA & ~100K & ~600K \\
+\textbf{Total} & \textbf{~5.3M} & \textbf{~32M} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Net change:} baseline has ~1.77M per layer (Q/K/V/O). SVD-Mamba has 
+~5.3M. \textbf{~3$\times$ parameter increase.}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Gate Silence at Init}
+
+\textbf{Claim.} With $b_g = -7$, the SSM contributes < 0.1\% to the output at 
+initialization.
+
+\textbf{Proof.} $\sigma(-7) = \frac{1}{1 + e^7} \approx 9.1 \times 10^{-4}$. $\square$
+
+\subsubsection{Chunked Scan Equivalence}
+
+\textbf{Claim.} The chunked scan is mathematically equivalent to the sequential 
+recurrence.
+
+\textbf{Proof.} Within a chunk, the intra-chunk scan computes $h_{c,i}$ assuming 
+$h_{c,0} = 0$. The inter-chunk term adds $e^{\lambda_{c,i}} h_{c-1, C}$. 
+Summing gives the full recurrence. $\square$
+
+\subsubsection{Causality}
+
+\textbf{Claim.} SVD-Mamba preserves causality.
+
+\textbf{Proof.} The SSM is causal by construction (recurrence). The convolution 
+is causal (no padding on the right). The attention mask is causal. Therefore 
+the output at position $i$ depends only on inputs $1..i$. $\square$
+

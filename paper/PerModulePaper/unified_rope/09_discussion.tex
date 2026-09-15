@@ -1,3 +1,120 @@
-\section{09 Discussion}
 
-Draft content for unified_rope.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: One Module, Four Architectures}
+
+UnifiedRoPE works across DistilBERT, RoBERTa, GPT-2, and Qwen without 
+per-architecture modifications.
+
+\subsubsection{Takeaway 2: Replacement, Not Compression}
+
+UnifiedRoPE preserves parameter count, KV cache, and compute. It is a 
+\textbf{substrate} for other techniques.
+
+\subsubsection{Takeaway 3: LoRA Recovery Needed}
+
+Adding RoPE to models trained with absolute positions requires LoRA 
+recovery to adapt.
+
+\subsection{When to Use UnifiedRoPE}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{As a substrate} for compression (SVD, MLA, Nystr m)
+\item \textbf{For adding RoPE} to encoder models
+\item \textbf{For unified multi-architecture deployment}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{When compression is the goal} -- use MinimalSVD, Dobi, etc.
+\item \textbf{When accuracy is critical} -- RoPE addition may reduce accuracy
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Goal? --- Compression --- Use MinimalSVD / Dobi / MLA
+  |
+  Portability --- Use UnifiedRoPE
+  |
+  Add RoPE to encoder --- Use UnifiedRoPE
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{UnifiedRoPE} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & 66.95M & 1.00$\times$ \\
+Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Purpose} & \textbf{Params} & \textbf{KV} & \textbf{Compute} \\
+\midrule
+MinimalSVD & Params &  & -- & -- \\
+Dobi-SVD & Params &  & -- & -- \\
+MLA & KV & -- &  & -- \\
+Nystr m & Compute & -- & -- &  \\
+\textbf{UnifiedRoPE} & \textbf{Portability} & -- & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Deployment Considerations}
+
+\subsubsection{Storage}
+No change.
+
+\subsubsection{Latency}
+Slight overhead from RoPE application.
+
+\subsubsection{Batching}
+No change.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{RoPE for encoders:} does adding RoPE always help?
+\item \textbf{RoPE base:} what's the optimal base for encoder models?
+\item \textbf{Combined with compression:} does UnifiedRoPE + MinimalSVD work?
+\item \textbf{Long context:} how does UnifiedRoPE scale?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Unified API for multi-architecture deployment
+\item Enables RoPE for encoder models
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Dual-use concerns
+
+\end{itemize}
+\subsubsection{Environmental}
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+

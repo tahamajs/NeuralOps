@@ -1,3 +1,74 @@
-\section{11 Conclusion}
 
-Draft content for nystrom_attention.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We reproduced \textbf{Nystr mformer} (Xiong et al., 2021) and ported it to 
+four transformer families: DistilBERT, RoBERTa, GPT-2, and Qwen3.5. 
+The Nystr m approximation reduces attention compute via landmark pooling 
+and iterative pseudoinverse, achieving $\mathcal{O}(N m d)$ complexity.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{N=128} & \textbf{N=512} \\
+\midrule
+DistilBERT & Dense (baseline) & Nystr m ({{S512}}$\times$ speedup) \\
+RoBERTa & Dense (baseline) & Nystr m ({{S512}}$\times$ speedup) \\
+GPT-2 & Dense causal & Dense causal \\
+Qwen3.5 & Dense causal & Dense causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Short sequences don't benefit.}
+\item \textbf{Causal decoders don't benefit.}
+\item \textbf{Nystr mformer ports to all four architectures.}
+\item \textbf{Adaptive pooling + Newton-Schulz pinv} work as in the original.
+\item \textbf{Nystr mformer is orthogonal} to weight/KV compression.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Causal Nystr m variant
+\item Combined with weight/KV compression
+\item Alternative landmark selection
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical error bound
+\item Extension to cross-attention
+\item Long-context task evaluation
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+Nystr mformer is a viable compute-compression technique for long-sequence 
+encoders. We release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}. This work reproduces Xiong et al. (2021).
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the reproduction, ran experiments, wrote
+  the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

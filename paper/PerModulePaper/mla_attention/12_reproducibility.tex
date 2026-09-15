@@ -1,3 +1,146 @@
-\section{12 Reproducibility}
 
-Draft content for mla_attention.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+numpy & {{NUMPY\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running MLA}
+
+\begin{lstlisting}
+python run_all_4_mla.py \
+    --models distilbert,roberta,gpt2 \
+    --rank {{RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}} \
+    --batch_size {{BATCH_SIZE}}
+\end{lstlisting}
+
+\textbf{Runtime:} ~{{RUNTIME}} minutes.
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --dataset sst2 \
+    --output_dir results/unified_mla/distilbert \
+    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --modules full,mla \
+    --rank {{RANK}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+\begin{lstlisting}
+python run_all_4_mla.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.7 (Latent dimension)}
+\begin{lstlisting}
+for r in 64 128 256 512; do
+    python run_all_4_mla.py --rank $r --output_suffix r$r
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.8 (LoRA rank)}
+\begin{lstlisting}
+for lr in 4 8 16 32; do
+    python run_all_4_mla.py --lora_rank $lr --output_suffix lr$lr
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.10 (Normalization)}
+\begin{lstlisting}
+python run_all_4_mla.py --normalize_sv true --output_suffix norm
+python run_all_4_mla.py --normalize_sv false --output_suffix nonorm
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{KV ratio} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & {{D\_KV\_RATIO}}$\times$ \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & {{R\_KV\_RATIO}}$\times$ \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_KV\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Checkpoints}
+
+\begin{lstlisting}
+from huggingface_hub import hf_hub_download
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-mla",
+        filename="weights.pt",
+    )
+    print(f"Downloaded {model}: {path}")
+\end{lstlisting}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Dataset: SST-2 via \texttt{datasets}
+\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-mla}
+\item Metrics: \texttt{results/unified\_mla/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/mla\_*.log}
+
+\end{itemize}
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Windows: use \texttt{PYTHONIOENCODING=utf-8}
+\item CUDA $\ge$ 11.8 recommended
+\item MLA is single-layer injection only; whole-model traversal is caller's
+  responsibility
+\item Original DeepSeek-V2 not tested
+
+\end{itemize}
+\subsection{Original Paper}
+
+MLA is from DeepSeek-AI (2024), arXiv:2405.04434. We recommend reading 
+the original for the algorithmic details.
+

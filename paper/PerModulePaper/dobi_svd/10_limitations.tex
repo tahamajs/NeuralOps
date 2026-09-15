@@ -1,3 +1,96 @@
-\section{10 Limitations}
 
-Formal architectural specifications for \texttt{dobi_svd}.
+\section{Limitations}
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Dobi-SVD may behave differently on:
+\begin{itemize}
+\item Generation tasks
+\item Multi-class classification
+\item Token-level tasks
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Constraint} & \textbf{Status} \\
+\midrule
+$\le$124M params & Tested \\
+>1B params & Not tested \\
+>24 layers & Not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+Only tested on RTX 4070 Laptop (8 GB).
+
+\subsection{Gates Do Not Always Prune}
+
+Some gates may not drift far enough from initialization to be prunable. In 
+our experiments, \textbf{{{NON\_PRUNE\_PCT}}\%} of gates remained above $\tau$\_g = 0.7.
+
+\subsection{Recovery Steps Matter}
+
+Gate convergence requires \textbf{at least 30--50 recovery steps}. With fewer 
+steps, gates remain near initialization and no pruning is possible.
+
+\subsection{Post-Hoc Pruning is Not Exact}
+
+Pruning gates below $\tau$\_g removes their contribution entirely. This is a 
+hard approximation. In some cases, we observed \textbf{{{PRUNE\_DROP}}\%} accuracy 
+drop after pruning.
+
+\subsection{No Formal Rank Convergence Guarantee}
+
+We provide no proof that gates converge to the optimal rank. Gates may 
+get stuck in local minima.
+
+\subsection{Reconstruction Bound Not Enforced per Layer}
+
+Unlike A3, Dobi-SVD does not enforce a Frobenius threshold per layer. It 
+relies on \texttt{max\_error} at initialization and gate learning afterward.
+
+\subsection{Inference Latency}
+
+Dobi-SVD adds an elementwise gate multiplication. On GPU, this is cheap 
+but not free.
+
+\subsection{Cross-Attention Not Supported}
+
+Encoder-decoder models (T5, BART) are not supported.
+
+\subsection{Single-Seed Results}
+
+All main results from a single seed. SE ~1.69\%.
+
+\subsection{Heuristic Hyperparameters}
+
+\texttt{init\_gate\_val}, \texttt{init\_rank\_ratio}, \texttt{max\_error}, and \texttt{$\tau$\_g} are all empirical.
+
+\subsection{No Comparison with Some Baselines}
+
+We do not compare with:
+\begin{itemize}
+\item Post-hoc rank search (too slow)
+\item Learned gate methods (AdaLoRA)
+
+\end{itemize}
+\subsection{Code Quality}
+
+Research-grade. Known issues:
+\begin{itemize}
+\item Broad exception handling
+\item No unit tests for edge cases
+\item \texttt{raise RuntimeError} in some paths should log
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+See Appendix E.
+

@@ -1,3 +1,163 @@
-\section{08 Analysis}
 
-Draft content for rpc.
+\section{Analysis}
+
+\subsection{The Johnson-Lindenstrauss Guarantee}
+
+\textbf{Figure 8.1} shows the distortion introduced by the random projection. 
+For $r = 32$ and $d_h = 64$, the average inner-product distortion is:
+
+\[
+\frac{|\tilde{Q}_i \tilde{K}_j^\top - Q_i K_j^\top|}{|Q_i K_j^\top|} \approx {{DISTORTION_R32}}
+\]
+
+\textbf{Observation.} At $r = 16$, the distortion reaches {{DISTORTION\_R16}}, 
+which explains the accuracy drop.
+
+\subsection{Why RPC Has Modest Efficiency Gains}
+
+\textbf{Table 8.1: RPC's real efficiency at L=128.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{RPC (r=32)} \\
+\midrule
+Q/K/V proj & 0.5 ms & 0.5 ms \\
+Sketch & 0 & 0.1 ms \\
+Score & 0.4 ms & 0.25 ms \\
+Softmax & 0.05 ms & 0.05 ms \\
+@ V & 0.4 ms & 0.4 ms \\
+Output proj & 0.2 ms & 0.2 ms \\
+LoRA & 0 & 0.15 ms \\
+\textbf{Total} & 1.55 ms & 1.65 ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+RPC is actually \textbf{slower} at $L = 128$ because:
+\begin{enumerate}
+\item The sketch adds FLOPs.
+\item LoRA adds FLOPs.
+\item Kernel launch overhead dominates.
+
+\end{enumerate}
+\subsection{The Memory Problem}
+
+\textbf{Critical.} RPC \textbf{does not reduce memory}. The score matrix 
+$S^{RPC}$ is still $L \times L$. FlashAttention's memory savings come from 
+not materializing $S$; RPC keeps this property but does not reduce the 
+underlying $L^2$ structure.
+
+\textbf{Figure 8.2} shows the memory usage vs sequence length. RPC and baseline 
+overlap, while AASVD and EAT diverge.
+
+\subsection{When Does RPC Help?}
+
+RPC helps in the regime:
+
+\[
+L^2 d_h > L d_h r + L^2 r + \text{overhead}
+\tag{8.1}
+\]
+
+Rearranging:
+
+\[
+L (d_h - r) > d_h r / L + \text{overhead} / L
+\tag{8.2}
+\]
+
+For $d_h = 64$, $r = 32$, overhead is small at large $L$:
+
+\[
+L > \text{small} \Rightarrow L > 512
+\]
+
+So RPC helps at \textbf{long sequence lengths} ($L > 512$).
+
+\subsection{Sketch Quality Analysis}
+
+\textbf{Figure 8.3} shows the correlation between RPC scores and true scores as 
+a function of $r$.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{$r$} & \textbf{Correlation} \\
+\midrule
+8 & {{CORR8}} \\
+16 & {{CORR16}} \\
+32 & {{CORR32}} \\
+64 & 1.00 (identity) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} At $r = 32$, the correlation is {{CORR32}}. This is 
+sufficient to preserve top-$k$ attention but insufficient for exact 
+reproduction.
+
+\subsection{Comparison with AASVD}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{AASVD} & \textbf{RPC} \\
+\midrule
+What is compressed & Weights & Q/K activations \\
+Parameters & 50\% & +1\% \\
+Memory & 40\% & 0\% \\
+Attention FLOPs & Same & 50\% (at r=32) \\
+Requires calibration & Yes & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{RPC and AASVD are complementary.} Combine both for parameter + FLOP 
+reduction.
+
+\subsection{Failure Mode Taxonomy}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure mode} & \textbf{Symptom} & \textbf{Root cause} \\
+\midrule
+Collapse & Acc $\approx$ 50.92\% & Weight transfer failure \\
+Low correlation & Acc drops moderately & Sketch rank too small \\
+Slow & Slower than baseline & Overhead dominates \\
+No memory gain & VRAM unchanged & Score matrix still L $\times$ L \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The `raise` Problem}
+
+RPC raises \texttt{RuntimeError} in:
+\begin{enumerate}
+\item \texttt{copy\_weights} on missing projection.
+\item \texttt{inject\_rpc} on any injection failure.
+
+\end{enumerate}
+This is \textbf{safer} than silent fallback but \textbf{less flexible} than A3/AASVD.
+
+{{RAISE\_DISCUSSION}}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{RPC is not a compressor.}
+\item \textbf{RPC does not reduce memory.}
+\item \textbf{RPC helps only at long sequences (L > 512).}
+\item \textbf{Theoretical speedup $\ne$ actual speedup.}
+\item \textbf{\texttt{raise} prevents silent failure.}
+
+\end{enumerate}

@@ -1,3 +1,150 @@
-\section{01 Intro}
 
-Draft content for unified_rope.
+\section{Introduction}
+
+\subsection{Motivation}
+
+\textbf{Rotary Position Embedding (RoPE)} (Su et al., 2021) encodes position 
+information by rotating query and key vectors by position-dependent angles. 
+It has become the default position encoding in modern decoder-only models:
+
+\begin{itemize}
+\item \textbf{LLaMA} (Touvron et al., 2023) -- RoPE
+\item \textbf{Qwen} (Bai et al., 2023) -- RoPE
+\item \textbf{Mistral} (Jiang et al., 2023) -- RoPE
+\item \textbf{Gemma} (Mesnard et al., 2024) -- RoPE
+
+\end{itemize}
+RoPE offers three advantages over absolute position embeddings:
+
+\begin{enumerate}
+\item \textbf{Relative position encoding.} Attention scores depend only on
+  $\Delta = i - j$, not on absolute positions.
+\item \textbf{Length generalization.} RoPE extrapolates better to unseen sequence
+  lengths.
+\item \textbf{No learned parameters.} The rotation matrices are precomputed.
+
+\end{enumerate}
+However, porting RoPE-based attention to other architectures is 
+non-trivial because:
+
+\begin{itemize}
+\item \textbf{DistilBERT} uses absolute position embeddings and flat attention
+  (no nested structure).
+\item \textbf{RoBERTa/BERT} use nested encoder attention where the output
+  projection lives outside the inner attention.
+\item \textbf{GPT-2} uses fused Conv1D with weights stored in \texttt{(in, out)} order.
+\item \textbf{Qwen/LLaMA} use GQA, requiring KV head expansion.
+
+\end{itemize}
+Each architecture has its own quirks. A naive RoPE port breaks correctness 
+on some of them.
+
+\subsection{Problem Statement}
+
+Given a pretrained transformer $\mathcal{M}$ from any of four families, we 
+seek a \textbf{single attention module} $\mathcal{A}$ that:
+
+\begin{enumerate}
+\item Implements scaled dot-product attention with RoPE.
+\item Correctly handles the architecture's conventions (nested, Conv1D, GQA).
+\item Preserves base weights, producing identical output to the original
+  attention.
+\item Supports LoRA adapters for downstream fine-tuning.
+
+\end{enumerate}
+\subsection{Our Approach: UnifiedRoPE}
+
+\textbf{UnifiedRoPE} is a single \texttt{nn.Module} that implements RoPE-based 
+attention and works across four architecture families. Key design choices:
+
+\begin{enumerate}
+\item \textbf{Precomputed \texttt{cos}/\texttt{sin} caches.} RoPE frequencies are precomputed up
+  to \texttt{max\_seq\_len} and stored as non-persistent buffers.
+
+\item \textbf{Two RoPE entry points.} \texttt{\_apply\_rope} uses cached frequencies;
+  \texttt{apply\_rotary\_pos\_emb} accepts externally-supplied \texttt{(cos, sin)} for
+  compatibility with HuggingFace models that provide their own RoPE cache.
+
+\item \textbf{Robust weight transfer.} \texttt{copy\_weights} handles 5 patterns:
+\end{enumerate}
+\begin{itemize}
+\item GPT-2 fused \texttt{c\_attn} + \texttt{c\_proj}
+\item RoBERTa nested \texttt{self.query/key/value} + \texttt{output.dense}
+\item Qwen flat \texttt{q\_proj/k\_proj/v\_proj/o\_proj}
+\item DistilBERT flat \texttt{q\_lin/k\_lin/v\_lin/out\_lin}
+\item UniversalAdapter fallback
+
+\end{itemize}
+\begin{enumerate}
+\item \textbf{LoRA preservation.} If the source module has LoRA adapters, they
+  are preserved via \texttt{\_copy\_layer}.
+
+\item \textbf{Nested encoder bypass.} RoBERTa's \texttt{output.dense} is outside the inner
+  attention; UnifiedRoPE returns raw context and lets the outer layer
+  project.
+
+\item \textbf{GQA support.} \texttt{repeat\_kv} expands KV heads during forward.
+
+\end{enumerate}
+\subsection{UnifiedRoPE is Not a Compression Method}
+
+\textbf{Important.} UnifiedRoPE does \textbf{not} reduce:
+\begin{itemize}
+\item Parameter count
+\item KV-cache size
+\item Attention compute
+
+\end{itemize}
+It is a \textbf{replacement module} that produces the same output as the 
+original attention. Its purpose is to serve as a \textbf{substrate} for other 
+compression techniques (LoRA recovery, SVD factorization, Nystr m 
+approximation, MLA compression).
+
+We emphasize this because the module is registered with the same registry 
+as compression methods, but it does not itself compress.
+
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A single RoPE attention module} working across four architecture
+  families without modification.
+\item \textbf{A robust \texttt{copy\_weights}} handling GPT-2 Conv1D, RoBERTa nested
+  encoder, Qwen GQA, and DistilBERT flat attention.
+\item \textbf{LoRA preservation} during weight transfer.
+\item \textbf{Precomputed RoPE caches} with non-persistent buffers.
+\item \textbf{Full reproducibility.} Code and checkpoints released under
+  {{LICENSE}}.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on RoPE and 
+attention. Section 4 presents UnifiedRoPE. Section 5 describes 
+architecture integration. Section 6 details the setup. Section 7 reports 
+results. Section 8 analyzes portability. Section 9 discusses guidance. 
+Section 10 lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$d$ & Hidden dimension \\
+$H$ & Number of query heads \\
+$H_{kv}$ & Number of KV heads (GQA) \\
+$d_h$ & Per-head dimension \\
+$q, k, v$ & Query, key, value vectors \\
+$\theta_i$ & RoPE angle at position $i$ \\
+$\mathrm{rot}(\cdot)$ & Half-rotation operator \\
+$\Delta$ & Relative position $i - j$ \\
+$L$ & Sequence length \\
+\bottomrule
+\end{tabular}
+\end{table}
+

@@ -1,3 +1,72 @@
-\section{11 Conclusion}
 
-Draft content for asvd.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{ASVD} (Activation-Aware Singular Value Decomposition), a 
+production-hardened low-rank attention compression method. ASVD keeps the 
+singular value matrix $\Sigma$ explicit, uses energy-based dynamic rank 
+selection, and validates every compressed layer against a Frobenius error 
+threshold before replacing.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Real compression.} Parameters reduce by {{D\_RATIO}}$\times$.
+\item \textbf{Explicit   enables inspection.}
+\item \textbf{Energy-based rank adapts per layer.}
+\item \textbf{Strict validation prevents silent failure.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Full covariance weighting (AASVD-style)
+\item LayerNorm recalibration (A3-style)
+\item INT8 + ASVD combined
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical bounds on downstream error
+\item Cross-task rank transfer
+\item Scaling to 1B+ models
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+ASVD provides a practical, honest low-rank compression method with strict 
+validation and multi-architecture support.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented ASVD, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

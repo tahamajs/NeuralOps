@@ -1,3 +1,102 @@
-\section{09 Discussion}
 
-Draft content for svd_mamba.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Not a Compressor}
+
+SVD-Mamba increases parameter count by ~{{PARAM\_CHANGE}}\%.
+
+\subsubsection{Takeaway 2: New Capability}
+
+SVD-Mamba provides an SSM path for linear-time recurrence, which may 
+benefit long-context tasks.
+
+\subsubsection{Takeaway 3: Gate Init is Critical}
+
+The $-7$ bias keeps the SSM silent. Changing this destabilizes training.
+
+\subsection{When to Use SVD-Mamba}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Research exploration} of hybrid attention-SSM
+\item \textbf{Long-context tasks} (potential benefit)
+\item \textbf{Multi-architecture deployment}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Compression-constrained deployment}
+\item \textbf{Short-sequence tasks}
+\item \textbf{Latency-critical applications}
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need to reduce model size? --- Yes --- Use AASVD or ASVD
+  | No
+   
+Want to explore hybrid SSM? --- Yes --- Use SVD-Mamba
+  | No
+   
+Need long-context? --- Yes --- Consider SVD-Mamba
+  | No
+   
+Use standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT at L=128:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{SVD-Mamba} & \textbf{Change} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M & +{{D\_PARAM\_PCT}}\% \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_DELTA}} \\
+Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Verdict.} SVD-Mamba is not cost-effective at short sequences.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Is the SSM path useful?} Does the model actually use it?
+\item \textbf{Can the SSM be pre-trained?} Would pretraining the SSM branch
+  help?
+\item \textbf{Does gating reach a meaningful value?} Or does it stay at 0.001?
+\item \textbf{Interaction with AASVD:} Can we compress the SSM branch too?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Advances hybrid attention-SSM research
+\item Multi-architecture support
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Adds parameters
+\item Complex to deploy
+
+\end{itemize}
+\subsubsection{Environmental}
+\begin{itemize}
+\item Training: ~{{COMPUTE\_HOURS}} GPU-hours
+\item CO$_2$: ~{{CO2}} kg
+
+\end{itemize}

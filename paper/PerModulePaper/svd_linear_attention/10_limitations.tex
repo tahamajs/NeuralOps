@@ -1,3 +1,75 @@
-\section{10 Limitations}
 
-Draft content for svd_linear_attention.
+\section{Limitations}
+
+\subsection{Approximation Error}
+
+SVD-Linear uses the ELU+1 feature map, which approximates but does not equal 
+softmax attention. For tasks requiring exact attention (e.g., precise 
+retrieval), this is a limitation.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Long-context tasks and generation tasks are not 
+tested.
+
+\subsection{Model Coverage}
+
+Tested on $\le$124M parameter models. Not tested on >1B models.
+
+\subsection{Hardware}
+
+All experiments on RTX 4070 Laptop. Not tested on:
+\begin{itemize}
+\item A100/H100
+\item CPU
+\item Edge devices
+
+\end{itemize}
+\subsection{No Activation Weighting}
+
+Unlike A3 and AASVD, SVD-Linear uses unweighted SVD. Adding activation-aware 
+weighting could improve results.
+
+\subsection{Streaming Overhead}
+
+\texttt{step\_recurrent} has Python-level loop overhead. For very short sequences, 
+batch mode is faster.
+
+\subsection{Cross-Attention Not Supported}
+
+\texttt{forward} accepts \texttt{encoder\_hidden\_states} but does not use it. Cross-attention 
+is effectively unsupported.
+
+\subsection{Chunk Size Fixed at 64}
+
+The chunk size is not adaptive. Larger chunks give more parallelism but 
+reduce the effect of decay.
+
+\subsection{Decay Initialization Approximation}
+
+The bias initialization \texttt{b = -log(decay\_times)} is an approximation. The 
+actual decay is $\lambda = e^{-\text{softplus}(b)}$, which is not exactly 
+the target. We do not correct for this.
+
+\subsection{Single-Seed Results}
+
+All main results from a single seed.
+
+\subsection{No Theoretical Bound on Downstream Accuracy}
+
+We provide no bound on the approximation error vs softmax.
+
+\subsection{Unresolved Failures}
+
+{{UNRESOLVED\_FAILURES}}
+
+\subsection{Code Quality}
+
+Research-grade implementation. Known issues:
+\begin{itemize}
+\item Python loop in chunked scan
+\item \texttt{raise} in \texttt{copy\_weights}
+\item No unit tests for numerical edge cases
+\item Padding handling has multiple branches
+
+\end{itemize}

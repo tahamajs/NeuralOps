@@ -1,3 +1,316 @@
-\section{04 Method}
 
-Draft content for mla_attention.
+\section{Method}
+
+\subsection{Overview}
+
+This section describes our reproduction of MLA from DeepSeek-AI (2024). We 
+do not introduce novel components; the goal is to (a) faithfully implement 
+the original method and (b) generalize its weight-transfer to 
+non-DeepSeek architectures.
+
+\textbf{Figure 4.1} shows the MLA pipeline.
+
+\begin{lstlisting}
+   +----------------------------------------------+
+   |  Input hidden h_t $\in$ R^d                      |
+   +--------------------+-------------------------+
+                        |
+        +---------------+---------------+
+        |                               |
+                                         
+   +----------+                    +----------+
+   |  Q proj  |                    |  kv_down |  $\leftarrow$ latent down-projection
+   |  W^Q     |                    |  W^DKV   |
+   +----+-----+                    +----+-----+
+        |                               |
+        |                                
+        |                          c_t $\in$ R^c
+        |                               |
+        |                    +----------+----------+
+        |                    |                     |
+        |                                           
+        |              +----------+          +----------+
+        |              |  k_up    |          |  v_up    |
+        |              |  W^UK    |          |  W^UV    |
+        |              +----+-----+          +----+-----+
+        |                   |                     |
+        +-----------+-------+---------------------+
+                    |
+                     
+              Attention(Q, K, V)
+                    |
+                     
+              +----------+
+              |  out_proj|
+              |  W^O     |
+              +----+-----+
+                   |
+                    
+              Output Y
+\end{lstlisting}
+
+\subsection{Forward Pass}
+
+Given hidden states $h \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+\begin{aligned}
+q &= W^Q h \in \mathbb{R}^{B \times L \times H d_h} \\
+c &= W^{DKV} h \in \mathbb{R}^{B \times L \times c} \\
+k &= W^{UK} c \in \mathbb{R}^{B \times L \times H_{kv} d_h} \\
+v &= W^{UV} c \in \mathbb{R}^{B \times L \times H_{kv} d_h}
+\end{aligned}
+\tag{4.1}
+\]
+
+Then standard scaled dot-product attention with optional GQA repeat and 
+RoPE.
+
+\subsection{SVD-Based Initialization}
+
+The core of our reproduction is the SVD-based initialization of 
+$W^{DKV}, W^{UK}, W^{UV}$ from the concatenated pretrained $W^K, W^V$.
+
+\subsubsection{Concatenation}
+
+Given pretrained $W^K, W^V \in \mathbb{R}^{H_{kv} d_h \times d}$:
+
+\[
+W_\text{fused} = \begin{pmatrix} W^K \\ W^V \end{pmatrix} \in \mathbb{R}^{2 H_{kv} d_h \times d}
+\tag{4.2}
+\]
+
+\subsubsection{Truncated SVD}
+
+\[
+W_\text{fused} \approx U \Sigma V^\top
+\tag{4.3}
+\]
+
+where $U \in \mathbb{R}^{2 H_{kv} d_h \times r}$, $\Sigma \in \mathbb{R}^{r \times r}$, 
+$V^\top \in \mathbb{R}^{r \times d}$, and $r = \min(c, 2 H_{kv} d_h, d)$.
+
+\subsubsection{Setting the Parameters}
+
+\[
+W^{DKV} = V^\top, \qquad
+W^{UK} = U_{:H_{kv} d_h, :} \Sigma, \qquad
+W^{UV} = U_{H_{kv} d_h:, :} \Sigma
+\tag{4.4}
+\]
+
+\subsubsection{Singular Value Normalization}
+
+To preserve the total reconstruction scale, we compute:
+
+\[
+\gamma = \frac{\|W_\text{fused}\|_F}{\|\Sigma\|_F}
+\tag{4.5}
+\]
+
+and multiply both up-projections by $\gamma$:
+
+\[
+W^{UK} \leftarrow \gamma \cdot U_{:H_{kv} d_h, :} \Sigma, \qquad
+W^{UV} \leftarrow \gamma \cdot U_{H_{kv} d_h:, :} \Sigma
+\tag{4.6}
+\]
+
+This ensures:
+
+\[
+\|W^{UK} W^{DKV}\|_F \approx \|W^K\|_F, \qquad
+\|W^{UV} W^{DKV}\|_F \approx \|W^V\|_F
+\tag{4.7}
+\]
+
+\subsection{Weight Transfer from Pretrained Attention}
+
+\subsubsection{Architecture-Aware Extraction}
+
+We extract $(W^Q, W^K, W^V, W^O)$ differently per architecture:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Architecture} & \textbf{Extraction path} \\
+\midrule
+DistilBERT & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} \\
+RoBERTa & \texttt{self.query, self.key, self.value, output.dense} \\
+GPT-2 & Split \texttt{c\_attn}; \texttt{c\_proj} for output \\
+Qwen3.5 & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Q and O Projections}
+
+$W^Q$ and $W^O$ are copied directly (with LoRA adapters frozen at 
+initialization):
+
+\begin{lstlisting}
+self.q_proj.weight.data[:q_dim, :hidden].copy_(w_q[:q_dim, :hidden])
+self.out_proj.weight.data[:hidden, :q_dim].copy_(w_o[:hidden, :q_dim])
+\end{lstlisting}
+
+\subsubsection{K/V Concatenation and SVD}
+
+\begin{lstlisting}
+w_kv = torch.cat([w_k_f[:kv_dim, :hidden], w_v_f[:kv_dim, :hidden]], dim=0)
+u_kv, s_kv, vh_kv = torch.linalg.svd(w_kv, full_matrices=False)
+r = min(self.rank, s_kv.shape[0], kv_down.weight.shape[0], ...)
+
+orig_norm = torch.linalg.norm(w_kv)
+approx_norm = torch.linalg.norm(s_kv[:r])
+norm_scale = orig_norm / max(approx_norm, 1e-12)
+
+self.kv_down.weight.data[:r, :].copy_(vh_kv[:r, :])
+up = (u_kv[:, :r] * s_kv[:r].unsqueeze(0)) * norm_scale
+self.k_up.weight.data[:kv_dim, :r].copy_(up[:kv_dim, :r])
+self.v_up.weight.data[:kv_dim, :r].copy_(up[kv_dim:, :r])
+\end{lstlisting}
+
+\subsubsection{GQA Dimension Matching}
+
+When $H_{kv} < H$ in the pretrained model, K and V have larger output 
+dimension. We mean-pool before SVD:
+
+\begin{lstlisting}
+if w_k_f.shape[0] > self.kv_dim:
+    rep = w_k_f.shape[0] // self.kv_dim
+    w_k_f = w_k_f.view(self.kv_dim, rep, -1).mean(dim=1)
+\end{lstlisting}
+
+\subsubsection{GPT-2 Conv1D}
+
+Handled by transposing before SVD:
+
+\begin{lstlisting}
+if hasattr(src, "c_attn"):
+    if weight.shape[1] == 3 * self.hidden_size:
+        weight = weight.t()
+\end{lstlisting}
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, the output projection is outside the inner attention. When 
+nested, we set \texttt{is\_nested\_encoder = True} and skip \texttt{out\_proj} in forward.
+
+When initialization is nested but $W^O$ is not extracted, we set 
+\texttt{out\_proj} to an identity matrix:
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    min_d = min(self.out_proj.weight.shape[0], self.out_proj.weight.shape[1])
+    self.out_proj.weight.data.zero_()
+    self.out_proj.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
+\end{lstlisting}
+
+\subsection{Output Scale Calibration}
+
+We introduce a trainable scalar \texttt{output\_scale} initialized to 1.0:
+
+\begin{lstlisting}
+self.output_scale = nn.Parameter(torch.ones(1))
+\end{lstlisting}
+
+The forward pass multiplies the output by this scalar. This is \textbf{not} in 
+the original DeepSeek-V2 paper, but absorbs distributional shift from the 
+K/V factorization.
+
+\subsection{LoRA Recovery}
+
+We attach LoRA adapters to the Q and O projections:
+
+\begin{lstlisting}
+self.q_proj = LoRALinear(..., lora_rank=16, ...)
+self.out_proj = LoRALinear(..., lora_rank=16, ...)
+\end{lstlisting}
+
+Only LoRA parameters (and \texttt{output\_scale}) are trainable. Base weights 
+($W^{DKV}$, $W^{UK}$, $W^{UV}$, $W^Q$, $W^O$) are frozen.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} MLA initialization from pretrained attention
+\begin{lstlisting}
+Input:  pretrained attention module src
+        latent dimension c
+Output: MLA module with initialized weights
+
+1:  Extract W_Q, W_K, W_V, W_O from src
+2:  Orient to (out, in) form
+3:  Handle Conv1D transposition
+4:  GQA dimension match for K, V:
+5:      if W_K.shape[0] > H_kv * d_h: mean-pool
+6:
+7:  # Q and O direct copy
+8:  q_proj.weight[:q_dim, :hidden] $\leftarrow$ W_Q
+9:  out_proj.weight[:hidden, :q_dim] $\leftarrow$ W_O
+10:
+11: # K, V concatenate and SVD
+12: W_fused $\leftarrow$ concat([W_K, W_V], dim=0)
+13: U,  , V^T $\leftarrow$ svd(W_fused)
+14: r $\leftarrow$ min(c, len( ), ...)
+15: $\gamma$ $\leftarrow$  W_fused _F /   [:r] _F
+16:
+17: kv_down.weight[:r, :] $\leftarrow$ V^T[:r, :]
+18: up $\leftarrow$ U[:, :r]    [:r]   $\gamma$
+19: k_up.weight[:kv_dim, :r] $\leftarrow$ up[:kv_dim, :r]
+20: v_up.weight[:kv_dim, :r] $\leftarrow$ up[kv_dim:, :r]
+21:
+22: Freeze all base weights
+23: Initialize LoRA A/B (B = 0)
+24: return MLA module
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Extraction & $\mathcal{O}(N_l d^2)$ & $\mathcal{O}(d^2)$ \\
+SVD per layer & $\mathcal{O}((H d_h)^2 d)$ & $\mathcal{O}((H d_h) d)$ \\
+Initialization & $\mathcal{O}(N_l c d)$ & $\mathcal{O}(c d)$ \\
+Total & $\mathcal{O}(N_l (H d_h)^2 d)$ & $\mathcal{O}(N_l c d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{KV-Cache Reduction}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Standard KV} & \textbf{MLA KV} & \textbf{Reduction} \\
+\midrule
+DistilBERT & $2 \cdot 12 \cdot 64 = 1536$ & {{D\_KV}} & \textbf{{{D\_KV\_RATIO}}$\times$} \\
+RoBERTa & 1536 & {{R\_KV}} & \textbf{{{R\_KV\_RATIO}}$\times$} \\
+GPT-2 & 1536 & {{G\_KV}} & \textbf{{{G\_KV\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Per token per layer. Total reduction depends on sequence length and batch.
+
+\subsection{Summary}
+
+MLA reproduction:
+\begin{enumerate}
+\item Replaces separate K and V with a shared latent.
+\item Initializes from concatenated K/V via SVD.
+\item Normalizes singular values to preserve scale.
+\item Handles four architectures with Conv1D transposition, nested bypass, and
+  GQA expansion.
+\item Uses LoRA for recovery.
+\item Achieves \textbf{{{KV\_REDUCTION}}$\times$} KV-cache reduction.
+
+\end{enumerate}

@@ -1,3 +1,115 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for token_compressed_attention.
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Params change & +{{D\_PARAM\_PCT}}\% \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+KV length (baseline) & 128 \\
+KV length (TCA) & {{D\_KVLEN}} \\
+Attention FLOP reduction & {{FLOP\_PCT}}\% \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Score net params & 49,985 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+KV length (TCA) & {{R\_KVLEN}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+KV length (TCA) & {{G\_KVLEN}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4   Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.9 & {{D\_R09}} & {{R\_R09}} & {{G\_R09}} \\
+0.7 & {{D\_R07}} & {{R\_R07}} & {{G\_R07}} \\
+0.5 & {{D\_R05}} & {{R\_R05}} & {{G\_R05}} \\
+0.3 & {{D\_R03}} & {{R\_R03}} & {{G\_R03}} \\
+0.1 & {{D\_R01}} & {{R\_R01}} & {{G\_R01}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Score Net Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+norm + score\_net & {{D\_NL}} & {{R\_NL}} & {{G\_NL}} \\
+norm only & {{D\_N}} & {{R\_N}} & {{G\_N}} \\
+score\_net only & {{D\_L}} & {{R\_L}} & {{G\_L}} \\
+random & {{D\_R}} & {{R\_R}} & {{G\_R}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.7 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_token_compressed.py --compression_ratio 0.5
+\end{lstlisting}
+

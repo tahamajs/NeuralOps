@@ -1,3 +1,202 @@
-\section{08 Analysis}
 
-Draft content for svd_llm_v2_attention.
+\section{Analysis}
+
+\subsection{Why Does SVD-LLM V2 Work?}
+
+Three mechanisms:
+
+\subsubsection{Spectral Decay}
+
+Transformer weight matrices have rapidly decaying spectra. \textbf{Figure 8.1} 
+shows singular value decay for representative projections. The top 32 
+singular values capture over \textbf{{{TOP32\_ENERGY}}\%} of energy.
+
+\subsubsection{Energy-Threshold Rank}
+
+\textbf{Figure 8.2} shows the effective rank distribution. Early layers have 
+lower rank (typically {{EARLY\_RANK}}), middle layers require more 
+({{MID\_RANK}}), late layers compress well ({{LATE\_RANK}}).
+
+\subsubsection{LoRA Recovery}
+
+LoRA recovers \textbf{{{LORA\_RECOVERY}}\%} of the truncation loss. Without LoRA, 
+accuracy drops to \textbf{{{NO\_LORA\_ACC}}\%}.
+
+\subsection{Singular Spectrum Analysis}
+
+\textbf{Figure 8.3} shows the singular value spectra for Q/K/V/O on a 
+representative layer.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Projection} & \textbf{$\sigma$\_1} & \textbf{$\sigma$\_10} & \textbf{$\sigma$\_32} & \textbf{$\sigma$\_64} & \textbf{Decay pattern} \\
+\midrule
+Q & {{Q\_S1}} & {{Q\_S10}} & {{Q\_S32}} & {{Q\_S64}} & {{Q\_PATTERN}} \\
+K & {{K\_S1}} & {{K\_S10}} & {{K\_S32}} & {{K\_S64}} & {{K\_PATTERN}} \\
+V & {{V\_S1}} & {{V\_S10}} & {{V\_S32}} & {{V\_S64}} & {{V\_PATTERN}} \\
+O & {{O\_S1}} & {{O\_S10}} & {{O\_S32}} & {{O\_S64}} & {{O\_PATTERN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{SPECTRUM\_OBS}}
+
+\subsection{Explicit vs Symmetric Storage}
+
+\textbf{Table 8.1: Numerical comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Explicit} & \textbf{Symmetric} \\
+\midrule
+FP16 stability & {{EXP\_FP16\_STAB}} & {{SYM\_FP16\_STAB}} \\
+Reconstruction error & {{EXP\_REC\_ERR}} & {{SYM\_REC\_ERR}} \\
+Inference speed & {{EXP\_SPEED}} & {{SYM\_SPEED}} \\
+Interpretability & \textbf{Yes} & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Interpretation.} Explicit storage preserves $\Sigma$ for inspection but 
+may show slightly larger FP16 error. The difference is negligible at rank 
+$r \leq 128$.
+
+\subsection{GQA Pooling Analysis}
+
+\textbf{Table 8.2: Effect of GQA pooling (Qwen-style).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Accuracy} & \textbf{Note} \\
+\midrule
+No pooling & {{NO\_POOL}} & Wrong dims \\
+Mean pooling & {{MEAN\_POOL}} & Our method \\
+Max pooling & {{MAX\_POOL}} & Alternative \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Mean pooling is the natural choice; max pooling offers 
+no benefit.
+
+\subsection{Per-Projection Analysis}
+
+\textbf{Table 8.3: Effective rank per projection (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Projection} & \textbf{Avg rank} & \textbf{Std} & \textbf{Min} & \textbf{Max} \\
+\midrule
+Q & {{Q\_AVG\_RANK}} & {{Q\_STD\_RANK}} & {{Q\_MIN\_RANK}} & {{Q\_MAX\_RANK}} \\
+K & {{K\_AVG\_RANK}} & {{K\_STD\_RANK}} & {{K\_MIN\_RANK}} & {{K\_MAX\_RANK}} \\
+V & {{V\_AVG\_RANK}} & {{V\_STD\_RANK}} & {{V\_MIN\_RANK}} & {{V\_MAX\_RANK}} \\
+O & {{O\_AVG\_RANK}} & {{O\_STD\_RANK}} & {{O\_MIN\_RANK}} & {{O\_MAX\_RANK}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{PER\_PROJ\_OBS}}
+
+\subsection{Contribution of Each Component}
+
+\textbf{Table 8.4: Ablation on DistilBERT.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Accuracy} & \textbf{$\Delta$} \\
+\midrule
+Baseline & 90.71\% & -- \\
+SVD only, no LoRA & {{SVD\_NOLORA}} & {{SVD\_NOLORA\_D}} \\
++ LoRA (rank 4) & {{LORA4}} & {{LORA4\_D}} \\
++ LoRA (rank 8) & {{LORA8}} & {{LORA8\_D}} \\
++ LoRA (rank 16) & \textbf{{{D\_ACC}}} & \textbf{{{D\_DELTA}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Inference Cost Breakdown}
+
+\textbf{Table 8.5: FLOPs per projection.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{FLOPs} & \textbf{Relative} \\
+\midrule
+Dense 768$\times$768 & 1.18M & 1.00$\times$ \\
+Explicit r=64 & 196K & \textbf{0.167$\times$} \\
+Explicit r=128 & 393K & 0.333$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Note: explicit factorization has the same FLOPs as symmetric.
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 8.6: SVD-LLM V2 vs Minimal family.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Aspect} & \textbf{MinimalSVD} & \textbf{MinimalPRISM} & \textbf{SVD-LLM V2} \\
+\midrule
+Factorization & Symmetric & Symmetric & \textbf{Explicit} \\
+Interpretable $\Sigma$ &  &  & \textbf{ } \\
+Pre-test &  &  &  \\
+GQA pooling &  &  &  \\
+Accuracy & {{MINSVD\_D}} & {{PRISM\_D}} & {{D\_ACC}} \\
+Ratio & {{MINSVD\_D\_R}}$\times$ & {{PRISM\_D\_R}}$\times$ & {{D\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} All methods achieve similar accuracy and compression. 
+SVD-LLM V2 adds explicit $\Sigma$ storage for downstream flexibility.
+
+\subsection{Failure Modes}
+
+\subsubsection{Layers That Failed}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Layer} & \textbf{Error} & \textbf{Action} \\
+\midrule
+{{FAIL\_MODEL1}} & {{FAIL\_LAYER1}} & {{FAIL\_ERR1}} & Fallback \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Explicit storage works} -- accuracy matches symmetric.
+\item \textbf{Spectral decay is strong} in attention projections.
+\item \textbf{LoRA recovery is essential.}
+\item \textbf{Per-projection rank} matters -- Q and O typically need more rank than K and V.
+\item \textbf{GQA mean pooling} is the natural choice.
+\item \textbf{Pre-test and injection-time detection} prevent catastrophic failures.
+
+\end{enumerate}

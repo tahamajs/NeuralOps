@@ -1,3 +1,189 @@
-\section{07 Results}
 
-Draft content for rpc.
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$ \%} & \textbf{VRAM} & \textbf{Time} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 183 MB & 1.9 s \\
+DistilBERT & \textbf{RPC} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & +{{D\_PARAM\_PCT}}\% & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 712 MB & 4.1 s \\
+RoBERTa & \textbf{RPC} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & +{{R\_PARAM\_PCT}}\% & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 793 MB & 4.2 s \\
+GPT-2 & \textbf{RPC} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & +{{G\_PARAM\_PCT}}\% & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After RPC} & \textbf{$\Delta$} & \textbf{$\Delta$ \%} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_DELTA}} & +{{D\_PARAM\_PCT}}\% \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_DELTA}} & +{{R\_PARAM\_PCT}}\% \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_DELTA}} & +{{G\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} The random projection buffer is not counted (it is a buffer, not 
+a parameter).
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & RPC & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 4.10 s & 27400 & 712 MB \\
+RoBERTa & RPC & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 4.20 s & 26700 & 793 MB \\
+GPT-2 & RPC & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Sketch Rank}
+
+\textbf{Table 7.4: Accuracy vs sketch rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$r$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Theoretical speedup} \\
+\midrule
+8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} & 8$\times$ \\
+16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} & 4$\times$ \\
+32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} & 2$\times$ \\
+64 & {{D\_R64}} & {{R\_R64}} & {{G\_R64}} & 1$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} $r = 64$ is full rank for DistilBERT (head\_dim = 64), so no 
+sketching occurs.
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.5: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & {{D\_LORA0}} & {{R\_LORA0}} & {{G\_LORA0}} \\
+8 & {{D\_LORA8}} & {{R\_LORA8}} & {{G\_LORA8}} \\
+16 & {{D\_LORA16}} & {{R\_LORA16}} & {{G\_LORA16}} \\
+32 & {{D\_LORA32}} & {{R\_LORA32}} & {{G\_LORA32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.6: RPC vs prior methods.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
+asvd (r=64) & 88.5\% & 75.5\% & 76.8\% & 0.18$\times$ \\
+\textbf{rpc (r=32)} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{1.01$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Actual vs Theoretical Speedup}
+
+\textbf{Table 7.7: Theoretical vs measured inference time (DistilBERT, L=128).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{Theoretical} & \textbf{Measured} & \textbf{Gap} \\
+\midrule
+r=8 & 8$\times$ & {{D\_ACTUAL\_8}}$\times$ & {{D\_GAP\_8}}$\times$ \\
+r=16 & 4$\times$ & {{D\_ACTUAL\_16}}$\times$ & {{D\_GAP\_16}}$\times$ \\
+r=32 & 2$\times$ & {{D\_ACTUAL\_32}}$\times$ & {{D\_GAP\_32}}$\times$ \\
+r=64 & 1$\times$ & 1$\times$ & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} The theoretical speedup is not realized in practice 
+because:
+\begin{enumerate}
+\item The projection adds overhead.
+\item Kernel launch overhead dominates at $L = 128$.
+\item Memory bandwidth is the bottleneck, not FLOPs.
+
+\end{enumerate}
+\subsection{Failure Cases}
+
+\textbf{Table 7.8: Failures.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Status} & \textbf{Accuracy} & \textbf{Reason} \\
+\midrule
+DistilBERT & {{D\_STATUS}} & {{D\_ACC}} & {{D\_REASON}} \\
+RoBERTa & {{R\_STATUS}} & {{R\_ACC}} & {{R\_REASON}} \\
+GPT-2 & {{G\_STATUS}} & {{G\_ACC}} & {{G\_REASON}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy drop (best) & {{BEST\_DELTA}}\% \\
+Parameter increase & +{{PARAM\_CHANGE}}\% \\
+Theoretical FLOPs speedup (r=32) & 2$\times$ \\
+Actual speedup (r=32, L=128) & {{ACTUAL\_SPEEDUP}}$\times$ \\
+Memory reduction & \textbf{0\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

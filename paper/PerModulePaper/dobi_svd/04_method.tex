@@ -1,3 +1,357 @@
-\section{04 Method}
 
-Formal architectural specifications for \texttt{dobi_svd}.
+\section{Method}
+
+\subsection{Overview}
+
+Dobi-SVD replaces each target linear layer with a **differentiable 
+factorized module**:
+
+\[
+y = (x (V \odot \sigma(\alpha))^\top) U^\top + b
+\tag{4.1}
+\]
+
+where:
+
+\begin{itemize}
+\item $U \in \mathbb{R}^{d_\text{out} \times r}$ -- left factor (frozen initially, initialized from SVD)
+\item $V \in \mathbb{R}^{r \times d_\text{in}}$ -- right factor (frozen, gate-compensated)
+\item $\alpha \in \mathbb{R}^r$ -- learnable gate logits (trainable)
+\item $b \in \mathbb{R}^{d_\text{out}}$ -- bias
+
+\end{itemize}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+   +----------------------------------------------+
+   |  Input weight W $\in$ R^{d_out $\times$ d_in}           |
+   +--------------------+-------------------------+
+                        |
+                         
+   +----------------------------------------------+
+   |  SVD: W = U   V^T                             |
+   |  Rank r selected by energy threshold          |
+   |  U_r = U[:, :r]  [:r]^1/2                     |
+   |  V_r =  [:r]^1/2 V[:r, :]^T                   |
+   +--------------------+-------------------------+
+                        |
+                         
+   +----------------------------------------------+
+   |  Gate compensation:                           |
+   |  V_r $\leftarrow$ V_r / $\sigma$($\alpha$_init)                        |
+   +--------------------+-------------------------+
+                        |
+                         
+   +----------------------------------------------+
+   |  Create DobiSVDLinearLayer:                   |
+   |  U $\leftarrow$ U_r                                       |
+   |  V $\leftarrow$ V_r                                       |
+   |  $\alpha$ $\leftarrow$ init_gate_val (learnable)                |
+   +--------------------+-------------------------+
+                        |
+                         
+   +----------------------------------------------+
+   |  Recovery training:                            |
+   |  Train $\alpha$ and LoRA adapters                    |
+   +----------------------------------------------+
+\end{lstlisting}
+
+\subsection{The `DobiSVDLinearLayer`}
+
+\subsubsection{Module Structure}
+
+\begin{lstlisting}
+class DobiSVDLinearLayer(nn.Module):
+    def __init__(self, in_features, out_features, rank, bias=True,
+                 init_gate_val=2.5, ...):
+        self.V = nn.Parameter(torch.empty(rank, in_features))
+        self.U = nn.Parameter(torch.empty(out_features, rank))
+        self.gate = nn.Parameter(torch.full((rank,), fill_value=init_gate_val))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+\end{lstlisting}
+
+\subsubsection{Forward Pass}
+
+\begin{lstlisting}
+def forward(self, x):
+    g = torch.sigmoid(self.gate).unsqueeze(1)   # (rank, 1)
+    V_gated = self.V * g                         # (rank, in_features)
+    latent = F.linear(x, V_gated)                # (..., rank)
+    out = F.linear(latent, self.U, self.bias)    # (..., out_features)
+    return out
+\end{lstlisting}
+
+\subsubsection{Parameter Count}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} \\
+\midrule
+Original \texttt{nn.Linear} & $d_\text{in} d_\text{out}$ \\
+Dobi-SVD at rank $r$ & $r d_\text{in} + d_\text{out} r + r$ \\
+= & $r(d_\text{in} + d_\text{out} + 1)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Example} for a $768 \times 768$ projection at $r = 128$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
+\midrule
+Original & 589,824 & 1.00$\times$ \\
+Dobi-SVD $r=128$ & 196,736 & 3.00$\times$ \\
+Dobi-SVD $r=64$ & 98,368 & 6.00$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Initialization Procedure}
+
+\subsubsection{Step 1: SVD}
+
+\[
+W = U \Sigma V^\top
+\tag{4.2}
+\]
+
+\subsubsection{Step 2: Truncate at rank $r$}
+
+\[
+U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad
+V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
+\tag{4.3}
+\]
+
+\subsubsection{Step 3: Gate compensation}
+
+Let $\sigma_\text{init} = \sigma(\alpha_\text{init})$. Pre-scale $V_r$:
+
+\[
+V_r \leftarrow V_r / \sigma_\text{init}
+\tag{4.4}
+\]
+
+This ensures the initial forward equals the SVD reconstruction.
+
+\subsubsection{Step 4: Store}
+
+\begin{lstlisting}
+layer.U.data.copy_(U_r)
+layer.V.data.copy_(V_r)
+layer.gate.data.fill_(init_gate_val)
+\end{lstlisting}
+
+\subsection{Rank Selection}
+
+\subsubsection{Parameter Reduction Constraint}
+
+The rank must satisfy:
+
+\[
+r (d_\text{in} + d_\text{out} + 1) < d_\text{in} d_\text{out}
+\tag{4.5}
+\]
+
+For square matrices at $d = 768$:
+
+\[
+r < \frac{d^2}{2d + 1} \approx \frac{d}{2}
+\tag{4.6}
+\]
+
+Dobi-SVD uses an upper bound:
+
+\[
+r_\text{max} = \max\!\left(1, \min\!\left(d_\text{in} - 1, d_\text{out} - 1, \left\lfloor \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out}} \right\rfloor - 1, {{RANK\_CAP}}\right)\right)
+\tag{4.7}
+\]
+
+Default \texttt{RANK\_CAP = 128}.
+
+\subsubsection{Initial Rank}
+
+If \texttt{rank} is not specified, use:
+
+\[
+r_\text{init} = \max\!\left(1, \text{round}({{INIT\_RANK\_RATIO}} \cdot \min(d_\text{in}, d_\text{out}))\right)
+\tag{4.8}
+\]
+
+Default \texttt{INIT\_RANK\_RATIO = 0.5}.
+
+\subsubsection{Adaptive Retry}
+
+If reconstruction error exceeds \texttt{max\_error}, Dobi-SVD retries with:
+
+\[
+r_{k+1} = \min(1.5 \cdot r_k, r_\text{max})
+\tag{4.9}
+\]
+
+up to \texttt{max\_retries} (default 2).
+
+\subsection{Training}
+
+\subsubsection{Trainable Parameters}
+
+\begin{itemize}
+\item \textbf{Gates} $\alpha \in \mathbb{R}^r$ (one scalar per rank component)
+\item \textbf{LoRA adapters} (attached to the wrapped layer)
+\item \textbf{Non-target layers} are frozen
+
+\end{itemize}
+\subsubsection{Loss}
+
+Standard cross-entropy on the downstream task:
+
+\[
+\mathcal{L} = -\frac{1}{N} \sum_i \log p_\theta(y_i \mid x_i)
+\tag{4.10}
+\]
+
+Gradient flows through $\sigma(\alpha)$ to the gate logits.
+
+\subsection{Post-Hoc Rank Pruning}
+
+After training, gates are inspected. Let:
+
+\[
+r_\text{eff} = \left|\{i : \sigma(\alpha_i) > \tau_g\}\right|
+\tag{4.11}
+\]
+
+for a threshold $\tau_g$ (e.g., 0.5). Components with $\sigma(\alpha_i) \leq \tau_g$ 
+can be \textbf{removed} without retraining, at the cost of a small accuracy drop.
+
+\textbf{Algorithm 2:} Post-hoc rank pruning
+\begin{lstlisting}
+Input:  trained DobiSVDLinearLayer, threshold $\tau$_g
+Output: pruned layer with rank r_eff
+
+1:  gates $\leftarrow$ sigmoid(layer.gate)
+2:  keep_idx $\leftarrow$ where(gates > $\tau$_g)
+3:  r_eff $\leftarrow$ len(keep_idx)
+4:  V_pruned $\leftarrow$ layer.V[keep_idx, :]
+5:  U_pruned $\leftarrow$ layer.U[:, keep_idx]
+6:  gate_pruned $\leftarrow$ layer.gate[keep_idx]
+7:  return DobiSVDLinearLayer with (U_pruned, V_pruned, gate_pruned)
+\end{lstlisting}
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} Dobi-SVD compression
+\begin{lstlisting}
+Input:  model M, rank r, gate_init $\alpha$_0, threshold $\tau$
+Output: compressed model M'
+
+1:  for each target layer   in M do
+2:      W $\leftarrow$ weight( )
+3:      U,  , V^T $\leftarrow$ svd(W)
+4:      U_r $\leftarrow$ U[:, :r]    [:r]^1/2
+5:      V_r $\leftarrow$  [:r]^1/2   V^T[:r, :]
+6:      V_r $\leftarrow$ V_r / $\sigma$($\alpha$_0)               Gate compensation
+7:
+8:      # Reconstruction validation
+9:      W_recon $\leftarrow$ U_r   (V_r   $\sigma$($\alpha$_0))
+10:     err $\leftarrow$  W - W_recon _F /  W _F
+11:     if err > $\tau$:
+12:         if fallback: skip  
+13:         else: escalate r and retry
+14:
+15:     # Replace
+16:     layer_new $\leftarrow$ DobiSVDLinearLayer(U_r, V_r, gate=$\alpha$_0)
+17:     replace( , layer_new)
+18: end for
+19:
+20: # Recovery training (external)
+21: train_gates_and_lora(M)
+22:
+23: # Post-hoc pruning (optional)
+24: for each compressed layer:
+25:     prune_gates_below(layer, $\tau$_g)
+26: return M
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Extraction & $\mathcal{O}(N_l d^2)$ & $\mathcal{O}(d^2)$ \\
+SVD per layer & $\mathcal{O}(d^3)$ & $\mathcal{O}(d^2)$ \\
+Reconstruction & $\mathcal{O}(N_l r d^2)$ & $\mathcal{O}(d^2)$ \\
+Total & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Lossless Initialization}
+
+\textbf{Proposition.} If gates are initialized at $\alpha_0$ and $V$ is 
+pre-scaled by $1/\sigma(\alpha_0)$, then the initial forward pass equals 
+the truncated SVD:
+
+\[
+y_0 = (x (V_r / \sigma(\alpha_0) \odot \sigma(\alpha_0))^\top) U_r^\top = (x V_r^\top) U_r^\top
+\tag{4.12}
+\]
+
+$\square$
+
+\subsubsection{Gradient of Gate}
+
+The gradient of the loss with respect to $\alpha_i$:
+
+\[
+\frac{\partial \mathcal{L}}{\partial \alpha_i}
+= \frac{\partial \mathcal{L}}{\partial y} \cdot \frac{\partial y}{\partial \sigma(\alpha_i)} \cdot \sigma(\alpha_i)(1 - \sigma(\alpha_i))
+\tag{4.13}
+\]
+
+The $\sigma(1-\sigma)$ factor provides a natural gradient landscape 
+that can push gates toward 0 (pruning) or 1 (retention).
+
+\subsubsection{Rank Reduction Bound}
+
+If after training we prune all gates with $\sigma(\alpha_i) \leq \tau_g$, the 
+effective rank is:
+
+\[
+r_\text{eff} = \#\{i : \sigma(\alpha_i) > \tau_g\}
+\tag{4.14}
+\]
+
+and the parameter count is:
+
+\[
+|\theta_\text{eff}| = r_\text{eff}(d_\text{in} + d_\text{out} + 1)
+\tag{4.15}
+\]
+
+\subsection{Summary}
+
+Dobi-SVD:
+\begin{enumerate}
+\item Factorizes each target layer with SVD.
+\item Adds a learnable gate per rank component.
+\item Pre-scales $V$ for lossless initialization.
+\item Trains gates jointly with LoRA recovery.
+\item Optionally prunes gates post-hoc.
+\item Achieves \textbf{real parameter reduction} with \textbf{learnable rank}.
+
+\end{enumerate}

@@ -1,3 +1,201 @@
-\section{07 Results}
+\section{Results}
 
-Draft content for token_compressed_attention.
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{KV Len} & \textbf{} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 128 & -- & 183 MB \\
+DistilBERT & \textbf{TCA} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_KVLEN}} & {{RATIO}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 128 & -- & 712 MB \\
+RoBERTa & \textbf{TCA} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_KVLEN}} & {{RATIO}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 128 & -- & 793 MB \\
+GPT-2 & \textbf{TCA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_KVLEN}} & {{RATIO}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observations:}
+
+\begin{enumerate}
+\item KV sequence length reduced from 128 to \textbf{{{K\_NEW}}} (~{{RATIO}}$\times$ reduction).
+\item Attention compute reduced by \textbf{{{COMPUTE\_REDUCTION}}\%}.
+\item Accuracy drop of \textbf{{{D\_DELTA}}\%} on DistilBERT.
+
+\end{enumerate}
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts (per model).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{TCA} & \textbf{Change} & \textbf{Note} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% & LoRA + score\_net \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_PCT}}\% & LoRA + score\_net \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% & LoRA + score\_net \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{We state explicitly:} TCA does \textbf{not} reduce parameter count. The 
+increase is from LoRA adapters and the score network.
+
+\subsection{KV Cache and Compute}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{TCA} & \textbf{Savings} \\
+\midrule
+KV length & 128 & {{K\_NEW}} & {{KV\_PCT}}\% \\
+KV cache bytes & {{KV\_BASE}} & {{KV\_TCA}} & {{KV\_PCT}}\% \\
+Attention FLOPs & {{FLOP\_BASE}} & {{FLOP\_TCA}} & {{FLOP\_PCT}}\% \\
+Inference time & {{T\_BASE}} s & {{T\_TCA}} s & {{TIME\_PCT}}\% \\
+Peak VRAM & {{VRAM\_BASE}} MB & {{VRAM\_TCA}} MB & {{VRAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Compression Ratio}
+
+\textbf{Table 7.4: Accuracy vs compression ratio.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{} & \textbf{DistilBERT} & \textbf{KV Len} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.9 & {{D\_R09}} & 116 & {{R\_R09}} & {{G\_R09}} \\
+0.7 & {{D\_R07}} & 90 & {{R\_R07}} & {{G\_R07}} \\
+0.5 & {{D\_R05}} & 64 & {{R\_R05}} & {{G\_R05}} \\
+0.3 & {{D\_R03}} & 39 & {{R\_R03}} & {{G\_R03}} \\
+0.1 & {{D\_R01}} & 13 & {{R\_R01}} & {{G\_R01}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Score Net}
+
+\textbf{Table 7.5: Effect of score net.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+TCA (norm + score\_net) & {{D\_NORM\_LEARN}} & {{R\_NORM\_LEARN}} & {{G\_NORM\_LEARN}} \\
+TCA (norm only) & {{D\_NORM}} & {{R\_NORM}} & {{G\_NORM}} \\
+TCA (score\_net only) & {{D\_LEARN}} & {{R\_LEARN}} & {{G\_LEARN}} \\
+Random top-k & {{D\_RANDOM}} & {{R\_RANDOM}} & {{G\_RANDOM}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{SCORE\_NET\_OBS}}
+
+\subsection{Ablation: [CLS] Preservation}
+
+\textbf{Table 7.6: Effect of pinning token 0.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+With [CLS] pinned & {{D\_CLS}} & {{R\_CLS}} & {{G\_CLS}} \\
+Without pinning & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
+$\Delta$ & {{D\_CLS\_DELTA}} & {{R\_CLS\_DELTA}} & {{G\_CLS\_DELTA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.7: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scaling with Sequence Length}
+
+\textbf{Table 7.8: Inference time vs sequence length (GPT-2).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{L} & \textbf{Baseline} & \textbf{TCA ( =0.5)} & \textbf{Speedup} \\
+\midrule
+128 & {{B128}} s & {{T128}} s & {{S128}}$\times$ \\
+256 & {{B256}} s & {{T256}} s & {{S256}}$\times$ \\
+512 & {{B512}} s & {{T512}} s & {{S512}}$\times$ \\
+1024 & {{B1024}} s & {{T1024}} s & {{S1024}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Eviction Baselines}
+
+\textbf{Table 7.9: TCA vs H2O-style and StreamingLLM-style.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Learnable} \\
+\midrule
+Random top-k & {{RANDOM\_D}} & {{RANDOM\_R}} & {{RANDOM\_G}} & No \\
+H2O-style & {{H2O\_D}} & {{H2O\_R}} & {{H2O\_G}} & No \\
+StreamingLLM-style & {{SLM\_D}} & {{SLM\_R}} & {{SLM\_G}} & No \\
+\textbf{TCA} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Curves}
+
+\textbf{Figure 7.1} shows loss vs step. {{TRAINING\_CURVES\_DESC}}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{KV cache:} {{KV\_PCT}}\% reduction at   = {{RATIO}}.
+\item \textbf{Compute:} {{FLOP\_PCT}}\% attention FLOP reduction.
+\item \textbf{Accuracy:} {{D\_DELTA}}\% (DistilBERT), {{R\_DELTA}}\% (RoBERTa), {{G\_DELTA}}\% (GPT-2).
+\item \textbf{Parameters:} increase by {{D\_PARAM\_PCT}}\% due to LoRA + score\_net.
+
+\end{itemize}

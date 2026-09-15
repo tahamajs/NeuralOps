@@ -1,11 +1,224 @@
-\section{05 Architecture}
 
-Draft content for nystrom_attention.
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{$N$ tested} & \textbf{Nystr m path} & \textbf{Fallback} \\
+\midrule
+DistilBERT & 128 &  & Dense \\
+RoBERTa & 128 &  & Dense \\
+GPT-2 & 128 & (causal) & Dense causal \\
+Qwen3.5 & 128 & (causal) & Dense causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} At $N = 128$, all four models use the \textbf{dense fallback}. The 
+Nystr m branch only activates for $N > 128$.
+
+\subsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+distilbert.transformer.layer.0.attention
++-- q_lin
++-- k_lin
++-- v_lin
++-- out_lin
+\end{lstlisting}
+
+\textbf{Extraction:}
+\begin{lstlisting}
+w_q = src.q_lin.weight.data
+w_k = src.k_lin.weight.data
+w_v = src.v_lin.weight.data
+w_o = src.out_lin.weight.data
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False}.
+
+\subsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+roberta.encoder.layer.0.attention
++-- self
+|   +-- query, key, value
++-- output
+    +-- dense
+\end{lstlisting}
+
+\textbf{Nested detection:}
+\begin{lstlisting}
+if hasattr(src, "self") and hasattr(src, "output"):
+    is_nested = True
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = True}. The outer \texttt{output.dense} applies projection.
+
+\subsection{GPT-2 (Causal Conv1D)}
+
+\begin{lstlisting}
+transformer.h.0.attn
++-- c_attn  (Conv1D)
++-- c_proj  (Conv1D)
+\end{lstlisting}
+
+\textbf{Split c\_attn:}
+\begin{lstlisting}
+c_w = src.c_attn.weight.data
+if "Conv1D" in type(src.c_attn).__name__ or c_w.shape[0] < c_w.shape[1]:
+    c_w = c_w.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\textbf{Causal decoder detection:} \texttt{self.is\_decoder = True} $\to$ dense causal 
+attention.
+
+\subsection{Qwen3.5 (GQA + RoPE)}
+
+\begin{lstlisting}
+model.layers.0.self_attn
++-- q_proj
++-- k_proj
++-- v_proj
++-- o_proj
+\end{lstlisting}
+
+\textbf{GQA:} \texttt{repeat\_kv} during forward.
+
+\textbf{RoPE:} applied after projection via \texttt{position\_embeddings}.
+
+\textbf{Causal decoder detection:} \texttt{self.is\_decoder = True}.
+
+\subsection{Nested Encoder Bypass}
+
+\begin{lstlisting}
+context = torch.matmul(attn_weights, V)
+context = context.transpose(1, 2).contiguous().view(...)
+
+if self.is_nested_encoder:
+    return context, None    # Skip out_proj
+else:
+    return self.out_proj(context), None
+\end{lstlisting}
+
+\subsection{Injection Hook}
+
+\begin{lstlisting}
+def inject_nystrom(layer, model_config, comp_config, old_attn=None, **kwargs):
+    src_attn = old_attn or layer.attention...
+    
+    # Extract dimensions
+    hidden_size = getattr(src_attn, 'hidden_size', ...)
+    num_heads = getattr(src_attn, 'num_heads', ...)
+    
+    try:
+        landmarks = getattr(comp_config, "num_landmarks", 32) if comp_config else 32
+        new_attn = NystromAttention(
+            config=model_config,
+            num_landmarks=landmarks,
+            comp_config=comp_config,
+            old_attn=src_attn,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+        )
+        if src_attn is not None:
+            new_attn.copy_weights(src_attn)
+        
+        # Replace
+        if hasattr(layer, "attention"):
+            if hasattr(layer.attention, "self"):
+                layer.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                layer.attention = new_attn
+        elif hasattr(layer, "self"):
+            layer.self = new_attn
+        elif hasattr(layer, "attn"):
+            layer.attn = new_attn
+        return new_attn
+    except Exception as e:
+        logger.error(f"injection failed: {e}")
+        return None
+\end{lstlisting}
+
+\textbf{Safe injection:} returns \texttt{None} on failure. Caller can continue with 
+original attention.
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & \texttt{copy\_weights} raises & Abort \\
+Near-zero Frobenius & Norm check < 1e-4 & Raise \\
+Cross-attention & Not supported & Raise \\
+Short sequence & $N \leq 128$ & Dense \\
+Causal & \texttt{is\_decoder = True} & Dense causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("nystrom")
+@ATTENTION_REGISTRY.register("nystrom_attention")
+class NystromAttention(BaseAttention):
+    ...
+
+@ATTENTION_REGISTRY.register("nystrom_inject")
+@ATTENTION_REGISTRY.register("inject_nystrom")
+def inject_nystrom(...):
+    ...
+\end{lstlisting}
+
+\subsection{LoRA Recovery Integration}
+
+Nystr mformer uses LoRA adapters on all four projections:
+
+\begin{itemize}
+\item \texttt{query.lora\_A}, \texttt{query.lora\_B}
+\item \texttt{key.lora\_A}, \texttt{key.lora\_B}
+\item \texttt{value.lora\_A}, \texttt{value.lora\_B}
+\item \texttt{out\_proj.lora\_A}, \texttt{out\_proj.lora\_B}
+
+\end{itemize}
+Base weights ($W_Q, W_K, W_V, W_O$) are frozen. Only LoRA adapters trained.
+
+\subsection{Comparison with Original}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Original (2021)} & \textbf{Our reproduction} \\
+\midrule
+Target & BERT & Four families \\
+Landmarks & Adaptive pool & Same \\
+Pinv & Newton-Schulz & Direct pinv + NS fallback \\
+Causal & Not addressed & Explicit dense fallback \\
+Short seq & Not specified & Fallback at $N \leq 128$ \\
+Multi-arch & No & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
-\caption{Architectural overview of nystrom_attention.}
-\label{fig:arch_nystrom_attention}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of nystrom\_attention.}
+\label{fig:arch_nystrom-attention}
 \end{figure}
+

@@ -1,3 +1,124 @@
-\section{09 Discussion}
 
-Draft content for rpc.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: FLOPs, Not Memory}
+
+RPC reduces attention FLOPs but not memory. The $L \times L$ score matrix 
+is preserved.
+
+\subsubsection{Takeaway 2: Long Sequences Only}
+
+RPC's efficiency benefit appears at $L > 512$. Below that, overhead 
+dominates.
+
+\subsubsection{Takeaway 3: Not a Compressor}
+
+RPC does not reduce parameters. LoRA adds ~1\%.
+
+\subsection{When to Use RPC}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Long-context inference} ($L > 512$)
+\item \textbf{Tasks where exact attention is not critical}
+\item \textbf{Combined with AASVD} for parameter + FLOP reduction
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Short sequences} ($L \leq 256$)
+\item \textbf{Memory-constrained deployment}
+\item \textbf{Storage-constrained deployment}
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Long sequence (L > 512)? --- Yes --- Use RPC
+  | No
+   
+Memory-constrained? --- Yes --- Use AASVD or EAT
+  | No
+   
+Need parameter reduction? --- Yes --- Use AASVD or ASVD
+  | No
+   
+Use standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT at L=128:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{RPC} & \textbf{Change} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M & +{{D\_PARAM\_PCT}}\% \\
+VRAM & 183 MB & {{D\_VRAM}} MB & 0\% \\
+Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{At L=1024}, RPC becomes beneficial:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{RPC} & \textbf{Change} \\
+\midrule
+Time & ~15 s & ~8 s & 1.9$\times$ faster \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Interaction with Other Methods}
+
+\textbf{Compositional pipeline:}
+
+\begin{enumerate}
+\item \textbf{AASVD} compresses base weights $\to$ smaller model.
+\item \textbf{RPC} sketches Q/K $\to$ fewer score FLOPs.
+\item \textbf{LoRA recovery} fine-tunes both.
+
+\end{enumerate}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Optimal $r$:} Task-dependent?
+\item \textbf{Sparse projections:} Would Achlioptas-style sparse projections help?
+\item \textbf{Learned projections:} Would they break JL?
+\item \textbf{Long-context:} Actual speedup at L=4096?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Reduces compute for long sequences
+\item Multi-architecture support
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Does not reduce memory
+\item Adds parameters
+
+\end{itemize}
+\subsubsection{Environmental}
+\begin{itemize}
+\item Training: ~{{COMPUTE\_HOURS}} GPU-hours
+\item CO$_2$: ~{{CO2}} kg
+
+\end{itemize}

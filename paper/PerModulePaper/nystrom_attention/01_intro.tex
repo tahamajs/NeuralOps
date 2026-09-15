@@ -1,3 +1,134 @@
-\section{01 Intro}
 
-Draft content for nystrom_attention.
+\section{Introduction}
+
+\subsection{Motivation}
+
+Standard scaled dot-product attention (Vaswani et al., 2017) computes:
+
+\[
+\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\tag{1.1}
+\]
+
+The intermediate matrix $Q K^\top \in \mathbb{R}^{N \times N}$ has 
+$\mathcal{O}(N^2)$ time and memory. For long sequences ($N > 4096$), this 
+becomes the dominant cost.
+
+\textbf{Low-rank attention approximation} exploits the observation that softmax 
+attention matrices are often approximately low-rank. Nystr mformer (Xiong 
+et al., 2021) applies the \textbf{Nystr m method} from numerical linear algebra: 
+instead of computing the full attention matrix, use $m \ll N$ landmark 
+rows and columns to reconstruct it.
+
+The reconstruction takes the form:
+
+\[
+\tilde{A} = \text{softmax}(Q K_m^\top) \cdot \text{pinv}(\text{softmax}(Q_m K_m^\top)) \cdot \text{softmax}(Q_m K^\top)
+\tag{1.2}
+\]
+
+where $Q_m, K_m$ are landmark queries and keys. This gives the output:
+
+\[
+\text{Output} = \tilde{A} V = \underbrace{\text{softmax}(Q K_m^\top)}_{N \times m} \cdot \underbrace{\text{pinv}(A_{mm})}_{m \times m} \cdot \underbrace{\text{softmax}(Q_m K^\top) V}_{m \times d_h}
+\tag{1.3}
+\]
+
+Complexity: $\mathcal{O}(N m d)$ instead of $\mathcal{O}(N^2 d)$.
+
+\subsection{Why Reproduce Nystr mformer?}
+
+Nystr mformer was designed for BERT-like architectures. We ask: **can it 
+be ported to DistilBERT, RoBERTa, GPT-2, and Qwen3.5 without losing 
+accuracy?**
+
+Practical question because:
+
+\begin{enumerate}
+\item \textbf{Causal decoders.} Nystr m approximation assumes non-causal attention.
+  For causal decoders, we must fall back to dense attention or adapt the
+  algorithm.
+\item \textbf{Nested encoders.} RoBERTa's attention output projection lives outside
+  the inner attention, requiring nested encoder handling.
+\item \textbf{Fused Conv1D.} GPT-2's \texttt{c\_attn} fuses Q, K, V, requiring split-and-transpose.
+\item \textbf{GQA + RoPE.} Qwen uses GQA and rotary position embeddings, requiring
+  both \texttt{repeat\_kv} and RoPE handling.
+
+\end{enumerate}
+A successful reproduction would enable Nystr m approximation on any 
+transformer.
+
+\subsection{Our Contributions}
+
+We make the following contributions:
+
+\begin{itemize}
+\item \textbf{A faithful reproduction of Nystr mformer} with iterative
+  Newton-Schulz pinv, adaptive pooling landmarks, and associative
+  multiplication.
+\item \textbf{A multi-architecture portability study} covering four families.
+\item \textbf{Engineering hardening} including short-sequence dense fallback,
+  causal decoder path, and safe injection returning \texttt{None} on failure.
+\item \textbf{An honest empirical evaluation} on SST-2 (short sequence, dense
+  fallback) and analysis of when the Nystr m branch activates.
+\item \textbf{Full reproducibility.} Code, weights, and scripts released under
+  {{LICENSE}}.
+
+\end{itemize}
+We emphasize: \textbf{this paper is a reproduction, not a novel architecture.} 
+We do not claim to improve Nystr mformer.
+
+\subsection{What Nystr mformer Does and Does Not Do}
+
+\textbf{Does:}
+\begin{itemize}
+\item Reduces \textbf{attention compute} for long sequences ($N \gg m$).
+\item Achieves $\mathcal{O}(N m d)$ complexity.
+\item Preserves softmax attention for short sequences (fallback).
+
+\end{itemize}
+\textbf{Does not:}
+\begin{itemize}
+\item Reduce parameter count.
+\item Reduce KV-cache size.
+\item Help for short sequences ($N \leq 2m$).
+
+\end{itemize}
+This is important context: Nystr mformer is \textbf{orthogonal} to low-rank 
+weight compression (MinimalSVD, SVD-LLM V2) and KV-cache compression (MLA).
+
+\subsection{Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on the 
+Nystr m method. Section 4 formalizes the algorithm. Section 5 describes 
+multi-architecture integration. Section 6 details the setup. Section 7 
+reports results. Section 8 analyzes when the Nystr m branch activates. 
+Section 9 discusses guidance. Section 10 lists limitations. Section 11 
+concludes.
+
+
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$N$ & Sequence length \\
+$m$ & Number of landmarks \\
+$d_h$ & Per-head dimension \\
+$H$ & Number of heads \\
+$H_{kv}$ & Number of KV heads (GQA) \\
+$Q, K, V$ & Query, Key, Value ($N \times d_h$) \\
+$Q_m, K_m$ & Landmark queries, keys ($m \times d_h$) \\
+$A_{mm}$ & Landmark attention matrix ($m \times m$) \\
+$\text{pinv}(\cdot)$ & Moore-Penrose pseudoinverse \\
+$A$ & Full attention matrix ($N \times N$) \\
+$\tilde{A}$ & Nystr m approximation ($N \times N$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+

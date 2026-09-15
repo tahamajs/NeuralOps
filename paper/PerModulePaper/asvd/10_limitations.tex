@@ -1,3 +1,94 @@
-\section{10 Limitations}
 
-Draft content for asvd.
+\section{Limitations}
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. ASVD may behave differently on:
+\begin{itemize}
+\item Generation
+\item Multi-class classification
+\item Token-level tasks
+\item Long-context reasoning
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Constraint} & \textbf{Status} \\
+\midrule
+$\le$124M parameters & Tested \\
+>1B parameters & Not tested \\
+>24 layers & Not tested \\
+MoE & Not tested \\
+Vision transformers & Not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+All experiments on RTX 4070 Laptop. Not tested on:
+\begin{itemize}
+\item A100/H100
+\item CPU
+\item Edge devices
+
+\end{itemize}
+\subsection{Cross-Attention Not Supported}
+
+ASVD raises \texttt{NotImplementedError} for cross-attention. This excludes 
+encoder-decoder models (T5, BART).
+
+\subsection{`raise` on Failure}
+
+ASVD raises \texttt{RuntimeError} on:
+\begin{itemize}
+\item Missing projections
+\item Reconstruction error > $\tau$
+
+\end{itemize}
+Unlike A3/AASVD, which fallback per-layer, ASVD aborts injection entirely. 
+This is safer but less flexible.
+
+\subsection{Diagonal Weighting Only}
+
+ASVD uses diagonal weighting $\sqrt{F}$, ignoring inter-feature 
+correlations. AASVD uses full covariance, which may capture more 
+information.
+
+\subsection{No LayerNorm Recalibration}
+
+Unlike A3, ASVD does not recalibrate LayerNorms after compression. This 
+may leave a small distributional shift.
+
+\subsection{Single-Seed Results}
+
+All main results from a single seed. SE ~1.69\%.
+
+\subsection{No Theoretical Bound on Downstream Accuracy}
+
+We provide a reconstruction bound (Proposition 4.9.2) but no bound on 
+downstream task error.
+
+\subsection{Activation Weighting Optional}
+
+ASVD's activation-aware weighting is optional. Without it, ASVD reduces 
+to standard SVD. We report both settings.
+
+\subsection{Unresolved Failures}
+
+{{UNRESOLVED\_FAILURES}}
+
+\subsection{Code Quality}
+
+Research-grade implementation. Known issues:
+\begin{itemize}
+\item \texttt{raise} in \texttt{copy\_weights} may be too aggressive for unusual sources
+\item No unit tests for edge cases
+\item \texttt{output\_scale} parameter added but not used
+
+\end{itemize}

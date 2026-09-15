@@ -1,3 +1,168 @@
-\section{07 Results}
 
-Draft content for nystrom_attention.
+\section{Results}
+
+\subsection{Main Results (N = 128)}
+
+\textbf{Table 7.1: Accuracy on SST-2 validation.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Path} & \textbf{Time} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 1.90 s & 183 MB \\
+DistilBERT & \textbf{Nystr m} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & Dense & {{D\_TIME}} s & {{D\_VRAM}} MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 4.10 s & 712 MB \\
+RoBERTa & \textbf{Nystr m} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & Dense & {{R\_TIME}} s & {{R\_VRAM}} MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 4.20 s & 793 MB \\
+GPT-2 & \textbf{Nystr m} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & Dense causal & {{G\_TIME}} s & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observation.} At $N = 128$, all models use the dense fallback. Accuracy 
+and efficiency match the baseline. \textbf{The Nystr m branch is not activated.}
+
+\subsection{Long Sequence Results (N = 512)}
+
+\textbf{Table 7.2: Accuracy and efficiency at N = 512.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Acc} & \textbf{Time} & \textbf{VRAM} & \textbf{Path} \\
+\midrule
+DistilBERT & full & {{D\_L512\_FULL\_ACC}} & {{D\_L512\_FULL\_TIME}} & {{D\_L512\_FULL\_VRAM}} & Dense \\
+DistilBERT & Nystr m ($m=32$) & {{D\_L512\_NYS\_ACC}} & {{D\_L512\_NYS\_TIME}} & {{D\_L512\_NYS\_VRAM}} & \textbf{Nystr m} \\
+DistilBERT & Nystr m ($m=64$) & {{D\_L512\_NYS64\_ACC}} & {{D\_L512\_NYS64\_TIME}} & {{D\_L512\_NYS64\_VRAM}} & Nystr m \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{LONG\_OBS}}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency (N=128, dense).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & Nystr m & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 4.10 s & 27400 & 712 MB \\
+RoBERTa & Nystr m & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 4.20 s & 26700 & 793 MB \\
+GPT-2 & Nystr m & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Number of Landmarks}
+
+\textbf{Table 7.4: Accuracy vs num\_landmarks (N=512, DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$m$} & \textbf{Acc} & \textbf{Time} & \textbf{VRAM} & \textbf{Speedup} \\
+\midrule
+16 & {{D\_M16}} & {{D\_M16\_T}} & {{D\_M16\_V}} & {{D\_M16\_S}}$\times$ \\
+32 & {{D\_M32}} & {{D\_M32\_T}} & {{D\_M32\_V}} & {{D\_M32\_S}}$\times$ \\
+64 & {{D\_M64}} & {{D\_M64\_T}} & {{D\_M64\_V}} & {{D\_M64\_S}}$\times$ \\
+128 & {{D\_M128}} & {{D\_M128\_T}} & {{D\_M128\_V}} & {{D\_M128\_S}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Pinv Iterations}
+
+\textbf{Table 7.5: Accuracy vs pinv\_iterations (N=512, DistilBERT, m=32).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Iters} & \textbf{Acc} & \textbf{Time} \\
+\midrule
+1 & {{D\_I1}} & {{D\_I1\_T}} \\
+2 & {{D\_I2}} & {{D\_I2\_T}} \\
+3 & {{D\_I3}} & {{D\_I3\_T}} \\
+5 & {{D\_I5}} & {{D\_I5\_T}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Short Sequence Threshold}
+
+\textbf{Table 7.6: Path activation threshold.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Threshold} & \textbf{Path at N=128} & \textbf{Path at N=256} \\
+\midrule
+64 & Nystr m & Nystr m \\
+128 & Dense & Nystr m \\
+256 & Dense & Dense \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.7: Nystr m vs other methods (N=128).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{Reduces} \\
+\midrule
+full & 90.71\% & -- \\
+MinimalSVD & {{MINSVD\_D}} & Parameters \\
+SVD-LLM V2 & {{SVDLLM\_D}} & Parameters \\
+Dobi-SVD & {{DOBI\_D}} & Parameters \\
+MLA & {{MLA\_D}} & KV cache \\
+\textbf{Nystr m} & \textbf{{{D\_ACC}}} & \textbf{Attention compute} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} At $N=128$, Nystr m's benefits are not visible. All methods 
+appear similar in accuracy.
+
+\subsection{Training Curves}
+
+\textbf{Figure 7.1} shows LoRA recovery loss curves.
+
+\begin{itemize}
+\item DistilBERT: \texttt{{{D\_START\_LOSS}}} $\to$ \texttt{{{D\_END\_LOSS}}}
+\item RoBERTa: \texttt{{{R\_START\_LOSS}}} $\to$ \texttt{{{R\_END\_LOSS}}}
+\item GPT-2: \texttt{{{G\_START\_LOSS}}} $\to$ \texttt{{{G\_END\_LOSS}}}
+
+\end{itemize}
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{At N=128:} Nystr m uses dense fallback; matches baseline.
+\item \textbf{At N=512:} Nystr m branch activates; achieves \textbf{{{LONG\_SPEEDUP}}$\times$}
+  speedup at {{LONG\_ACC\_DROP}}\% accuracy cost.
+\item \textbf{Portability:} Nystr mformer ports to all four architectures.
+\item \textbf{No parameter or KV-cache reduction} -- compute only.
+
+\end{itemize}

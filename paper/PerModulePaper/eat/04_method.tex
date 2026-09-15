@@ -1,3 +1,331 @@
-\section{04 Method}
 
-Draft content for eat.
+\section{Method}
+
+\subsection{Overview}
+
+EAT replaces the standard MHSA block with a version that:
+
+\begin{enumerate}
+\item Uses \textbf{frozen base projections} transferred from the pretrained attention.
+\item Attaches \textbf{trainable LoRA adapters} to each projection.
+\item Optionally applies \textbf{progressive token pruning} at inference.
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +-------------------------------------------+
+    |  Input X $\in$ R^{B$\times$L$\times$d}                       |
+    +----------------+--------------------------+
+                     |
+                      
+    +-------------------------------------------+
+    |  Q/K/V projections (frozen W + LoRA)      |
+    +----------------+--------------------------+
+                     |
+                      
+    +-------------------------------------------+
+    |  Optional RoPE                            |
+    |  Optional GQA repeat_kv                   |
+    +----------------+--------------------------+
+                     |
+                      
+    +-------------------------------------------+
+    |  Scaled dot-product attention             |
+    |  + causal / padding mask                  |
+    +----------------+--------------------------+
+                     |
+                      
+    +-------------------------------------------+
+    |  Output projection (frozen W + LoRA)      |
+    +----------------+--------------------------+
+                     |
+                      
+    +-------------------------------------------+
+    |  Optional: Progressive token pruning       |
+    |  (inference only, not training)           |
+    +----------------+--------------------------+
+                     |
+                      
+    Output Y
+\end{lstlisting}
+
+\subsection{Projections with LoRA}
+
+\subsubsection{Base Weights}
+
+The base projections $W_Q, W_K, W_V, W_O$ are \textbf{frozen}. They are 
+transferred from the pretrained attention via \texttt{copy\_weights} ( 5).
+
+\subsubsection{LoRA Adapters}
+
+Each projection has trainable LoRA adapters:
+
+\[
+W_\text{eff} = W + \frac{\alpha}{r} B A
+\tag{4.1}
+\]
+
+with $A \in \mathbb{R}^{r \times d_\text{in}}$, $B \in \mathbb{R}^{d_\text{out} \times r}$, 
+$B = 0$ at initialization.
+
+For the four projections:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Projection} & \textbf{Shape} & \textbf{Base frozen} & \textbf{LoRA added} \\
+\midrule
+$W_Q$ & $d_h H \times d$ & Yes & Yes \\
+$W_K$ & $d_h H_{kv} \times d$ & Yes & Yes \\
+$W_V$ & $d_h H_{kv} \times d$ & Yes & Yes \\
+$W_O$ & $d \times d_h H$ & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Why LoRA?}
+
+LoRA provides three benefits:
+
+\begin{enumerate}
+\item \textbf{Parameter efficiency.} Only $r(d_\text{in} + d_\text{out})$ trainable
+  parameters per projection.
+\item \textbf{Identity at initialization.} Since $B = 0$, the initial forward pass
+  matches the pretrained attention exactly.
+\item \textbf{Recovery capacity.} LoRA can absorb distributional drift after
+  injection.
+
+\end{enumerate}
+\subsection{Attention Computation}
+
+The EAT forward pass is standard scaled dot-product attention:
+
+\[
+\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
+\tag{4.2}
+\]
+
+with $Q = W_Q X + \text{LoRA}_Q(X)$, etc.
+
+\textbf{Causal mask.} For decoders:
+
+\[
+M_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j > i \end{cases}
+\tag{4.3}
+\]
+
+\textbf{Padding mask.} For all architectures:
+
+\[
+M_{ij} = M_{ij} - \infty \cdot \mathbb{1}[\text{pad}(j)]
+\tag{4.4}
+\]
+
+\subsection{Progressive Token Pruning}
+
+\subsubsection{Motivation}
+
+At inference time, the sequence length $L$ drives cost. If we can reduce $L$ 
+for later layers, we save compute. The observation is that not all tokens 
+are equally important for the final prediction.
+
+\subsubsection{The Pruning Operator}
+
+Given the output of an attention block $Y \in \mathbb{R}^{B \times L \times d}$ 
+and a pruning module $\pi$:
+
+\[
+Y' = \pi(Y)
+\tag{4.5}
+\]
+
+where $\pi$ reduces the sequence dimension from $L$ to $k \leq L$.
+
+\subsubsection{Pruning Only at Inference}
+
+Pruning is \textbf{disabled during training}:
+
+\begin{lstlisting}
+if self.prune_layer is not None and not self.training:
+    out, _ = self.prune_layer(out)
+\end{lstlisting}
+
+This avoids gradient flow issues through \texttt{argsort}.
+
+\subsubsection{The Pruning Module}
+
+EAT delegates pruning to a \texttt{ProgressiveTokenPruning} module (see companion 
+documentation). The module learns token importance scores and retains the 
+top-$k$ tokens.
+
+\subsection{Weight Transfer}
+
+EAT relies on exact weight transfer from the pretrained attention. We 
+support four cases:
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+target.q_lin.weight.copy_(src.q_lin.weight)
+target.k_lin.weight.copy_(src.k_lin.weight)
+target.v_lin.weight.copy_(src.v_lin.weight)
+target.out_lin.weight.copy_(src.out_lin.weight)
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False} -- DistilBERT applies \texttt{out\_lin} internally.
+
+\subsubsection{RoBERTa}
+
+\begin{lstlisting}
+target.q_lin.weight.copy_(src.self.query.weight)
+target.k_lin.weight.copy_(src.self.key.weight)
+target.v_lin.weight.copy_(src.self.value.weight)
+# out_proj skipped -- outer `attention.output.dense` applies it
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = True}.
+
+\subsubsection{GPT-2}
+
+\begin{lstlisting}
+w = src.c_attn.weight.t()  # Conv1D transpose
+q_w, k_w, v_w = w.chunk(3, dim=0)
+target.q_lin.weight.copy_(q_w)
+target.k_lin.weight.copy_(k_w)
+target.v_lin.weight.copy_(v_w)
+target.out_lin.weight.copy_(src.c_proj.weight.t())
+\end{lstlisting}
+
+\subsubsection{Qwen}
+
+Direct copy from \texttt{q\_proj/k\_proj/v\_proj/o\_proj}. RoPE handled via \texttt{rotary\_emb} 
+preservation.
+
+\subsection{Silent Failure Modes}
+
+EAT's \texttt{copy\_weights} is deliberately defensive: on failure, it logs a 
+warning and \textbf{continues with random initialization}. This design was chosen 
+to prevent injection from crashing, but it has a \textbf{critical implication}:
+
+> If \texttt{copy\_weights} silently fails, the attention block keeps random 
+> weights, and the model's forward pass produces garbage. Recovery 
+> fine-tuning cannot recover from this because gradient signals are 
+> dominated by noise.
+
+We encountered this failure mode in practice (see  8.2). We discuss 
+mitigation in  5.8.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} EAT forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_ids
+Output: Y $\in$ R^{B$\times$L'$\times$d}
+
+1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)           Frozen W + trainable LoRA
+2:  K $\leftarrow$ W_K X + LoRA_K(X)
+3:  V $\leftarrow$ W_V X + LoRA_V(X)
+4:  if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+5:  if GQA:  K, V $\leftarrow$ repeat_kv(K, V)
+6:  S $\leftarrow$ Q K^T / $\sqrt{}$d_h
+7:  S $\leftarrow$ S + causal_mask + padding_mask
+8:  P $\leftarrow$ softmax(S)
+9:  A $\leftarrow$ P V
+10: A $\leftarrow$ concat_heads(A)
+11: Y $\leftarrow$ W_O A + LoRA_O(A)
+12: if inference and prune_layer:
+13:     Y $\leftarrow$ prune_layer(Y)
+14: return Y
+\end{lstlisting}
+
+\subsection{Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Space} \\
+\midrule
+Q/K/V projections & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+Attention & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+Output projection & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
+LoRA (all) & $\mathcal{O}(L d r)$ & $\mathcal{O}(L r)$ \\
+Pruning & $\mathcal{O}(L \log L)$ & $\mathcal{O}(L)$ \\
+\textbf{Total (baseline)} & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+\textbf{Total (EAT)} & $\mathcal{O}(L^2 d + L d r)$ & $\mathcal{O}(L^2 + L r)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{At inference with pruning}, $L$ is replaced by $k$ in downstream layers:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Time} \\
+\midrule
+Downstream attention & $\mathcal{O}(k^2 d)$ \\
+Downstream FFN & $\mathcal{O}(k d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $k = L / 2$, downstream cost is reduced by 4$\times$.
+
+\subsection{Parameter Analysis}
+
+EAT \textbf{does not reduce} parameters. For each projection of shape 
+$d_\text{in} \times d_\text{out}$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} \\
+\midrule
+Baseline & $d_\text{in} d_\text{out}$ \\
+EAT with LoRA rank $r$ & $d_\text{in} d_\text{out} + r(d_\text{in} + d_\text{out})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$ and $r = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Params} & \textbf{$\Delta$} \\
+\midrule
+Q projection baseline & 589,824 & -- \\
+Q projection EAT & 589,824 + 24,576 = 614,400 & +24,576 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Across 4 projections $\times$ $N_\ell$ layers:}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{EAT param increase} \\
+\midrule
+DistilBERT & 6 & +589,824 \\
+RoBERTa & 12 & +1,179,648 \\
+GPT-2 & 12 & +1,179,648 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This matches the empirical observations in  7.
+

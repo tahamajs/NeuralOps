@@ -1,3 +1,118 @@
-\section{01 Intro}
 
-Draft content for rpc.
+\section{Introduction}
+
+\subsection{Motivation}
+
+Self-attention (Vaswani et al., 2017) is the dominant compute cost in 
+transformers for long sequences. For input $X \in \mathbb{R}^{B \times L \times d}$, 
+the attention score matrix $S = Q K^\top \in \mathbb{R}^{B \times H \times L \times L}$ 
+requires $\mathcal{O}(L^2 d_h)$ FLOPs and $\mathcal{O}(L^2)$ memory. Even 
+with FlashAttention (Dao et al., 2022), which avoids materializing $S$, the 
+attention FLOPs remain $\mathcal{O}(L^2 d_h)$.
+
+\textbf{Random projections} offer a classical way to reduce the cost of 
+high-dimensional inner products. The \textbf{Johnson--Lindenstrauss (JL) lemma} 
+(Johnson \& Lindenstrauss, 1984) states that a random linear map 
+$\Omega : \mathbb{R}^d \to \mathbb{R}^r$ approximately preserves pairwise 
+distances with high probability when $r = \mathcal{O}(\log N / \epsilon^2)$ 
+for $N$ points. This property is widely used in nearest-neighbor search 
+(Indyk \& Motwani, 1998), streaming algorithms, and kernel approximations.
+
+\textbf{RPC applies JL to attention.} Instead of computing $Q_i K_j^\top$ directly, 
+RPC first projects $Q_i$ and $K_j$ into a smaller subspace:
+
+\[
+\tilde{Q}_i = Q_i \Omega, \qquad \tilde{K}_j = K_j \Omega
+\tag{1.1}
+\]
+
+then computes the score in the projected space:
+
+\[
+s_{ij} = \frac{\tilde{Q}_i \tilde{K}_j^\top}{\sqrt{r}}
+\tag{1.2}
+\]
+
+If $\Omega$ preserves inner products (which it does by JL), then 
+$s_{ij} \approx Q_i K_j^\top / \sqrt{d_h}$.
+
+\subsection{Problem Statement}
+
+Given a pretrained transformer $\mathcal{M}$ with $N_\ell$ attention layers, 
+we seek a modified attention block $\mathcal{A}'$ such that:
+
+\begin{enumerate}
+\item $\mathcal{A}'$ approximates the pretrained attention.
+\item $\mathcal{A}'$ reduces score-computation FLOPs from $\mathcal{O}(L^2 d_h)$
+  to $\mathcal{O}(L d_h r + L^2 r)$ with $r < d_h$.
+\item $\mathcal{A}'$ works across four attention architectures.
+\item $\mathcal{A}'$ preserves causality for decoders.
+
+\end{enumerate}
+We \textbf{do not} aim to reduce memory or model size. RPC's efficiency benefit 
+is purely in FLOPs for score computation.
+
+\subsection{Our Approach: RPC}
+
+RPC replaces the standard score computation with:
+
+\begin{enumerate}
+\item \textbf{Projection:} Multiply $Q, K$ by a fixed random matrix $\Omega \in \mathbb{R}^{d_h \times r}$.
+\item \textbf{Score:} Compute $\tilde{Q} \tilde{K}^\top / \sqrt{r}$ in the projected space.
+\item \textbf{Attend:} Apply softmax and multiply by $V$ (unprojected).
+
+\end{enumerate}
+The projection $\Omega$ is:
+\begin{itemize}
+\item \textbf{Head-wise:} Each head has its own $\Omega_h$.
+\item \textbf{Fixed:} Not trained; sampled once at initialization.
+\item \textbf{Gaussian:} Entries $\sim \mathcal{N}(0, 1/d_h)$.
+
+\end{itemize}
+The output projection is unchanged. LoRA adapters are added to all four 
+projections for recovery fine-tuning.
+
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A random projection attention mechanism.} RPC sketches Q/K to reduce
+  score FLOPs.
+\item \textbf{Head-wise projections.} Each head has its own $\Omega_h$, allowing
+  head-specific subspaces.
+\item \textbf{Multi-architecture support.} Same codebase handles flat, nested,
+  causal, and GQA+RoPE.
+\item \textbf{Honest reporting.} RPC does not reduce parameters or memory.
+\item \textbf{Full reproducibility.} Code and checkpoints released.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on JL and 
+sketching. Section 4 presents RPC. Section 5 details multi-architecture 
+integration. Section 6 gives setup. Section 7 reports results. Section 8 
+analyzes contributions. Section 9 provides guidance. Section 10 lists 
+limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d_h$ & Per-head dimension \\
+$H$ & Number of heads \\
+$r$ & Sketch dimension \\
+$\Omega$ & Random projection matrix \\
+$\tilde{Q}, \tilde{K}$ & Sketched query, key \\
+$r_L$ & LoRA rank \\
+$W_Q, W_K, W_V, W_O$ & Projection matrices \\
+\bottomrule
+\end{tabular}
+\end{table}
+

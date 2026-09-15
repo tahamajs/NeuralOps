@@ -1,3 +1,261 @@
-\section{04 Method}
 
-Draft content for rpc.
+\section{Method}
+
+\subsection{Overview}
+
+RPC replaces the standard attention score with a sketched version:
+
+\begin{enumerate}
+\item \textbf{Project} $Q, K$ to a lower-dimensional subspace using a fixed random
+  matrix $\Omega$.
+\item \textbf{Compute} scores in the projected space.
+\item \textbf{Apply} softmax and multiply by $V$ (unprojected).
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    +--------------------------------------------+
+    |  Input X $\in$ R^{B$\times$L$\times$d}                        |
+    +----------------+---------------------------+
+                     |
+        +------------+------------+
+                                   
+    +----------+             +----------+
+    | Q, K, V  |             | $\Omega$ $\in$ R^   |
+    | proj     |             | {d_h$\times$r}  |
+    +----+-----+             +----+-----+
+         |                        |
+                                   
+    +--------------------------------------+
+    |  Sketch: Q  = Q$\Omega$, K  = K$\Omega$              |
+    +------------------+-------------------+
+                       |
+                        
+    +--------------------------------------+
+    |  Score: Q  K ^T / $\sqrt{}$r                   |
+    +------------------+-------------------+
+                       |
+                        
+    +--------------------------------------+
+    |  Softmax + @ V                        |
+    +------------------+-------------------+
+                       |
+                        
+    +--------------------------------------+
+    |  Output projection                    |
+    +--------------------------------------+
+\end{lstlisting}
+
+\subsection{Random Projection Matrix}
+
+\subsubsection{Construction}
+
+For each head $h$, RPC samples:
+
+\[
+\Omega_h \in \mathbb{R}^{d_h \times r}, \qquad
+(\Omega_h)_{ij} \sim \mathcal{N}\!\left(0, \frac{1}{d_h}\right)
+\tag{4.1}
+\]
+
+This is stored as a \textbf{buffer} (not a parameter):
+
+\begin{lstlisting}
+self.register_buffer(
+    "proj",
+    torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+)
+\end{lstlisting}
+
+\subsubsection{Why Fixed?}
+
+The random projection is \textbf{fixed} (not trained) for three reasons:
+
+\begin{enumerate}
+\item \textbf{JL guarantee:} Only random matrices have the JL property. Training
+  could destroy it.
+\item \textbf{No parameter cost:} Buffers are not parameters, so they don't increase
+  model size in the usual sense.
+\item \textbf{Reproducibility:} Fixed projection makes results reproducible across
+  training runs.
+
+\end{enumerate}
+\subsubsection{Head-Wise vs Shared}
+
+RPC uses \textbf{head-wise} projections $\Omega_h$, so each head learns (implicitly) 
+its own subspace. This is different from using a single $\Omega$ shared 
+across heads.
+
+\subsection{Forward Pass}
+
+\subsubsection{Standard Attention}
+
+\[
+S_{ij} = \frac{Q_i K_j^\top}{\sqrt{d_h}}, \qquad
+P = \text{softmax}(S), \qquad
+\text{out} = P V
+\tag{4.2}
+\]
+
+\subsubsection{RPC Attention}
+
+\[
+\tilde{Q}_i = Q_i \Omega_h, \qquad
+\tilde{K}_j = K_j \Omega_h
+\tag{4.3}
+\]
+
+\[
+S_{ij}^{RPC} = \frac{\tilde{Q}_i \tilde{K}_j^\top}{\sqrt{r}}, \qquad
+P^{RPC} = \text{softmax}(S^{RPC}), \qquad
+\text{out} = P^{RPC} V
+\tag{4.4}
+\]
+
+\textbf{Note.} $V$ is not sketched; only $Q$ and $K$.
+
+\subsubsection{Causality}
+
+For decoders, the causal mask is applied in the sketched space:
+
+\[
+S^{RPC} = S^{RPC} + M_{causal}
+\tag{4.5}
+\]
+
+where $M_{ij} = -\infty$ for $j > i$.
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Standard} & \textbf{RPC} \\
+\midrule
+Q/K/V proj & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d^2)$ \\
+Sketch Q, K & -- & $\mathcal{O}(L d_h r H)$ \\
+Score & $\mathcal{O}(L^2 d_h H)$ & $\mathcal{O}(L^2 r H)$ \\
+Softmax & $\mathcal{O}(L^2 H)$ & $\mathcal{O}(L^2 H)$ \\
+@ V & $\mathcal{O}(L^2 d_h H)$ & $\mathcal{O}(L^2 d_h H)$ \\
+\textbf{Total} & $\mathcal{O}(L^2 d_h H)$ & $\mathcal{O}(L^2 r H + L d_h r H)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Speedup} for $L \gg d_h$:
+
+\[
+\frac{\text{Standard}}{\text{RPC}} \approx \frac{d_h}{r}
+\tag{4.6}
+\]
+
+For $d_h = 64, r = 32$: theoretical \textbf{2$\times$ speedup}.
+
+For $d_h = 64, r = 16$: theoretical \textbf{4$\times$ speedup}.
+
+\textbf{Memory.} RPC \textbf{does not reduce} memory; $S^{RPC}$ is still $L \times L$.
+
+\subsection{Parameter Analysis}
+
+RPC adds:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Parameters} \\
+\midrule
+LoRA Q & $r_L(d + H d_h)$ \\
+LoRA K & $r_L(d + H_{kv} d_h)$ \\
+LoRA V & $r_L(d + H_{kv} d_h)$ \\
+LoRA O & $r_L(H d_h + d)$ \\
+Random proj & \textbf{0} (buffer, not parameter) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For DistilBERT ($d = 768$, $H = 12$, $d_h = 64$, $r_L = 16$, $N_\ell = 6$):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
+\midrule
+LoRA (4 projections) & 98,304 & 589,824 \\
+Proj buffer & 0 & 0 \\
+\textbf{Total} & \textbf{98,304} & \textbf{589,824} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{+{{PARAM\_CHANGE\_PCT}}\%} parameter increase on DistilBERT.
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} RPC forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, $\Omega$ (fixed)
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)            (B, H, L, d_h)
+2:  K $\leftarrow$ W_K X + LoRA_K(X)
+3:  V $\leftarrow$ W_V X + LoRA_V(X)
+4:  if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+5:  if GQA:  K, V $\leftarrow$ repeat_kv(K, V)
+6:
+7:  # Sketch
+8:  Q  $\leftarrow$ einsum("bhld,hdr->bhlr", Q, $\Omega$)
+9:  K  $\leftarrow$ einsum("bhld,hdr->bhlr", K, $\Omega$)
+10:
+11: # Score
+12: S $\leftarrow$ Q  K ^T / $\sqrt{}$r                    (B, H, L, L)
+13: if causal: S $\leftarrow$ S + causal_mask
+14: if mask:   S $\leftarrow$ S + pad_mask
+15:
+16: # Attend
+17: P $\leftarrow$ softmax(S)
+18: out $\leftarrow$ P V                          (B, H, L, d_h)
+19: out $\leftarrow$ concat_heads(out)
+20: Y $\leftarrow$ W_O out + LoRA_O(out)
+21: return Y
+\end{lstlisting}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{JL Error Bound}
+
+\textbf{Claim.} For $r \geq 8 \log(L) / \epsilon^2$, with probability $1 - L^{-2}$:
+
+\[
+|S^{RPC}_{ij} - S_{ij}| \leq \epsilon \|Q_i\|_2 \|K_j\|_2 / \sqrt{r}
+\tag{4.7}
+\]
+
+\textbf{Proof sketch.} Direct consequence of JL applied to the concatenated 
+vector $[Q_i; K_j]$. Full derivation in Appendix A.1. $\square$
+
+\subsubsection{Softmax Stability}
+
+\textbf{Claim.} The sketched scores $S^{RPC}$ have bounded variance:
+
+\[
+\text{Var}[S^{RPC}_{ij}] \approx \frac{1}{r} \|Q_i\|_2^2 \|K_j\|_2^2
+\tag{4.8}
+\]
+
+\textbf{Proof.} Each entry $\tilde{Q}_{i,k}$ has variance $\|Q_i\|_2^2 / d_h \cdot d_h = \|Q_i\|_2^2$... 
+full derivation in Appendix A.2. $\square$
+
+\subsubsection{Causality}
+
+\textbf{Claim.} RPC preserves causality for decoders.
+
+\textbf{Proof.} The causal mask is applied after sketching. Since sketching is 
+position-independent, it does not affect the causal structure. $\square$
+

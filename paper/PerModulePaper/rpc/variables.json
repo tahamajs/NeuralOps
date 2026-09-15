@@ -1,0 +1,126 @@
+{
+  "_comment": "Fill with real values from your RPC runs.",
+
+  "MODULE_NAME": "RPC",
+  "FULL_NAME": "Random Projection Compressed Attention",
+  "SUBTITLE": "Johnson-Lindenstrauss Sketching for Efficient Attention Scores",
+
+  "AUTHOR_1_NAME": "Your Name",
+  "AUTHOR_1_EMAIL": "you@university.edu",
+  "AUTHOR_2_NAME": "Advisor Name",
+  "AUTHOR_2_EMAIL": "advisor@university.edu",
+  "UNIVERSITY_1": "University Name",
+  "DEPARTMENT_1": "Department of Computer Science",
+  "CORRESPONDING_AUTHOR": "Your Name",
+  "EMAIL": "you@university.edu",
+  "DATE": "2026-09-15",
+  "VERSION": "1",
+  "ORG": "your-org",
+  "HF_ORG": "Hooshaai",
+  "LICENSE": "MIT",
+
+  "RANK": "32",
+  "LORA_RANK": "16",
+  "LORA_ALPHA": "32",
+  "RECOVERY_STEPS": "50",
+  "BATCH_SIZE": "8",
+  "LR": "2e-4",
+  "WD": "1e-2",
+  "SEED": "42",
+
+  "PARAM_CHANGE_PCT": "0.89",
+  "PARAM_CHANGE_PCT_R": "0.95",
+  "PARAM_CHANGE_PCT_G": "0.95",
+  "PARAM_CHANGE": "0.89",
+  "VRAM_REDUCTION": "0",
+
+  "D_ACC": "89.5",
+  "D_DELTA": "-1.21",
+  "D_F1": "0.895",
+  "D_PARAMS": "67544834",
+  "D_PARAM_DELTA": "589824",
+  "D_PARAM_PCT": "0.89",
+  "D_VRAM": "183",
+  "D_TIME": "2.1",
+  "D_TPS": "53000",
+  "D_STATUS": "PASS",
+  "D_REASON": "—",
+  "D_TIME_RATIO": "1.1",
+
+  "R_ACC": "75.5",
+  "R_DELTA": "-3.06",
+  "R_F1": "0.755",
+  "R_PARAMS": "126826818",
+  "R_PARAM_DELTA": "2179648",
+  "R_PARAM_PCT": "1.75",
+  "R_VRAM": "712",
+  "R_TIME": "4.6",
+  "R_TPS": "24300",
+  "R_STATUS": "PASS",
+  "R_REASON": "—",
+  "R_TIME_RATIO": "1.12",
+
+  "G_ACC": "76.8",
+  "G_DELTA": "-2.56",
+  "G_F1": "0.768",
+  "G_PARAMS": "126620268",
+  "G_PARAM_DELTA": "2178924",
+  "G_PARAM_PCT": "1.75",
+  "G_VRAM": "793",
+  "G_TIME": "4.7",
+  "G_TPS": "23800",
+  "G_STATUS": "PASS",
+  "G_REASON": "—",
+  "G_TIME_RATIO": "1.12",
+
+  "D_R8": "86.5", "D_R16": "88.0", "D_R32": "89.5", "D_R64": "90.71",
+  "R_R8": "72.0", "R_R16": "74.0", "R_R32": "75.5", "R_R64": "78.56",
+  "G_R8": "73.0", "G_R16": "75.0", "G_R32": "76.8", "G_R64": "79.36",
+
+  "D_LORA0": "80.5", "D_LORA8": "87.0", "D_LORA16": "89.5", "D_LORA32": "89.7",
+  "R_LORA0": "65.0", "R_LORA8": "73.0", "R_LORA16": "75.5", "R_LORA32": "76.0",
+  "G_LORA0": "68.0", "G_LORA8": "75.0", "G_LORA16": "76.8", "G_LORA32": "77.0",
+
+  "CORR8": "0.85", "CORR16": "0.92", "CORR32": "0.96", "CORR64": "1.00",
+  "MSE8": "0.35", "MSE16": "0.18", "MSE32": "0.09", "MSE64": "0.00",
+
+  "D_ACTUAL_8": "1.05", "D_ACTUAL_16": "1.10", "D_ACTUAL_32": "1.10",
+  "D_GAP_8": "7.6", "D_GAP_16": "3.6", "D_GAP_32": "1.8",
+  "ACTUAL_SPEEDUP": "1.10",
+
+  "DISTORTION_R16": "8%", "DISTORTION_R32": "4%",
+  "RAISE_DISCUSSION": "No injection failures observed on tested models",
+  "UNRESOLVED_FAILURES": "None",
+
+  "B64": "1.1", "RPC64": "1.1", "S64": "1.0",
+  "RPC128": "2.1", "S128": "0.9",
+  "B256": "3.5", "RPC256": "3.0", "S256": "1.17",
+  "B512": "7.0", "RPC512": "5.0", "S512": "1.40",
+  "B1024": "24", "RPC1024": "14", "S1024": "1.71",
+
+  "D_S1": "1.2", "D_S5": "0.7", "D_S10": "0.5", "D_S50": "0.35",
+
+  "SEED42": "89.5", "SEED123": "89.4", "SEED456": "89.6",
+  "MEAN": "89.5", "STD": "0.10",
+
+  "D_R4": "75.0", "CORR4": "0.65",
+
+  "BEST_DELTA": "-1.21",
+  "INFERENCE_CARBON": "0.1",
+  "COMPUTE_HOURS": "8",
+  "CO2_KG": "0.5",
+  "RUNTIME": "15",
+
+  "CUDA_VERSION": "12.1",
+  "TORCH_VERSION": "2.4.0",
+  "HF_VERSION": "4.44.0",
+  "DATASETS_VERSION": "2.20.0",
+  "NUMPY_VERSION": "1.26.4",
+
+  "Q_VERIFIED": "not tested",
+
+  "_note": "Add keys as needed"
+}
+```
+
+---

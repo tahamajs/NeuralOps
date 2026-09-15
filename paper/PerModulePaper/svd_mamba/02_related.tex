@@ -1,3 +1,101 @@
-\section{02 Related}
 
-Draft content for svd_mamba.
+\section{Related Work}
+
+\subsection{State Space Models}
+
+\subsubsection{Classical SSMs}
+
+Linear time-invariant SSMs (S4, Gu et al., 2021) use structured state 
+transitions $\bar{A}$ and achieve $\mathcal{O}(L)$ complexity via 
+convolutional or recurrent forms. S5 (Smith et al., 2022) uses parallel 
+scan. These are \textbf{input-independent}.
+
+\subsubsection{Selective SSMs (Mamba)}
+
+Gu \& Dao (2023) introduced selective state spaces where $\Delta, B, C$ 
+are input-dependent. This enables content-based reasoning while maintaining 
+linear-time recurrence. SVD-Mamba adopts the Mamba selective mechanism.
+
+\subsubsection{Bidirectional SSMs}
+
+Some works extend SSMs to bidirectional processing (e.g., Vision Mamba). 
+SVD-Mamba preserves the causal nature of the original attention.
+
+\subsection{Hybrid Attention-SSM Models}
+
+\subsubsection{Jamba}
+
+Jamba (Lieber et al., 2024) interleaves Transformer and Mamba layers at 
+the \textbf{block level}. SVD-Mamba integrates both \textbf{within a single block}.
+
+\subsubsection{Zamba}
+
+Zamba (Glorioso et al., 2024) alternates attention and Mamba blocks with 
+shared parameters. SVD-Mamba instead runs both in parallel and fuses via 
+gating.
+
+\subsubsection{Hymba}
+
+Hymba (Dong et al., 2024) uses attention and SSM heads in parallel with 
+learnable meta-tokens. SVD-Mamba uses full attention and SSM branches 
+fused by a scalar gate.
+
+\subsubsection{Griffin}
+
+Griffin (De et al., 2024) mixes gated linear recurrences with local 
+attention. SVD-Mamba uses selective SSM.
+
+\subsection{Low-Rank Compression}
+
+\subsubsection{SVD-Based Compression}
+
+ASVD (Yuan et al., 2023), AASVD, A3 replace dense weights with low-rank 
+factors. SVD-Mamba uses the same factorization for projections but **adds 
+new modules** rather than only compressing.
+
+\subsubsection{LoRA}
+
+Hu et al. (2021) -- low-rank adapters with $B=0$ initialization. SVD-Mamba 
+uses LoRA for recovery after replacing attention.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Prior work} & \textbf{SVD-Mamba} \\
+\midrule
+\textbf{Attention + SSM} & Block-level interleaving & \textbf{Within-block fusion} \\
+\textbf{Projection storage} & Dense & \textbf{SVD-factorized} \\
+\textbf{Gate init} & N/A & \textbf{$-7$ (SSM silent)} \\
+\textbf{Multi-architecture} & Usually single family & Four families \\
+\textbf{Parameter effect} & Varies & \textbf{Increases} (net) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Prior hybrid models (Jamba, Zamba, Hymba) either 
+interleave at the block level or require architectural changes. SVD-Mamba 
+is a \textbf{drop-in replacement} for MHSA that works on pretrained transformers.
+
+\subsection{Comparison to Companion Modules}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Module} & \textbf{Approach} & \textbf{Params} & \textbf{Multi-arch} \\
+\midrule
+NHA & Local + RFF global & +LoRA & Yes \\
+EAT & Attention + pruning & +LoRA & Yes \\
+Infini-Attention & Local + memory & +memory+LoRA & Yes \\
+OHA & Local + compressed global & +compress+gate+LoRA & Yes \\
+RPC & Q/K sketching & +LoRA & Yes \\
+\textbf{SVD-Mamba} & \textbf{Attention + SSM + global} & \textbf{+SSM+global+gate+LoRA} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

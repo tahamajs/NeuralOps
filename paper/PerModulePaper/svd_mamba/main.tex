@@ -64,10 +64,45 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal analysis and benchmark evaluation of the module.
+Attention layers and State Space Models (SSMs) offer complementary inductive 
+biases: attention excels at content-based retrieval; SSMs offer linear-time 
+recurrence with bounded state. We present \textbf{SVD-Mamba}, a drop-in replacement 
+for multi-head self-attention that unifies three mechanisms:
+
+\begin{enumerate}
+\item \textbf{SVD-factorized attention projections} -- $W_Q, W_K, W_V, W_O$ are
+  stored as $U \Sigma V^\top$ factors, reducing projection parameter count
+  by ~4$\times$.
+\item \textbf{Selective SSM branch} -- a Mamba-style state-space block with causal
+  depthwise convolution, input-dependent gating, and a chunked associative
+  scan.
+\item \textbf{Global SVD mixing} -- a low-rank global aggregation to supplement
+  local attention.
+
+\end{enumerate}
+The two main branches (attention, SSM) are fused via a **gating module 
+initialized with bias $-7$**, making the SSM branch contribute less than 
+0.1\% at initialization and preserving the pretrained attention behavior 
+during the early recovery phase.
+
+We evaluate SVD-Mamba on DistilBERT, RoBERTa-base, and GPT-2 across SST-2 
+with {{RECOVERY\_STEPS}} LoRA recovery steps. SVD-Mamba achieves 
+\textbf{{{D\_ACC}}\%} on DistilBERT ($\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa 
+($\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}).
+
+SVD-Mamba \textbf{increases} total parameter count by \textbf{{{PARAM\_CHANGE\_PCT}}\%} 
+on DistilBERT. While SVD-factorized projections reduce per-layer parameters, 
+the SSM branch, global SVD mixing, gating module, and LoRA adapters add 
+more than the factorization saves. The "SVD-factorized" in the name refers 
+to the projection storage format, not to overall model compression.
+
+\textbf{Keywords:} state space models, Mamba, SVD factorization, hybrid attention, 
+selective gating
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} Efficient Attention, Transformers, Deep Learning, Model Compression
+\noindent\textbf{Keywords:} state space models, Mamba, SVD factorization, hybrid attention,
 \end{abstract}
 
 \vspace{1em}

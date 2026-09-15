@@ -1,3 +1,117 @@
-\section{09 Discussion}
 
-Draft content for eat.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: EAT is Not a Compressor}
+
+EAT replaces attention to enable \textbf{inference-time pruning}, not to reduce 
+model size. Parameter count increases by ~{{PARAM\_CHANGE}}\% due to LoRA.
+
+\subsubsection{Takeaway 2: Multi-Architecture Support is Real}
+
+EAT works across DistilBERT, RoBERTa, and GPT-2 without code changes. This 
+is a genuine advantage over architecture-specific methods.
+
+\subsubsection{Takeaway 3: Weight Transfer Must Be Verified}
+
+Silent weight transfer failure is the dominant failure mode. Any production 
+deployment must include a post-injection sanity check.
+
+\subsection{When to Use EAT}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Long-context inference} where pruning provides real speedup.
+\item \textbf{Multi-architecture deployment} where a single method must work on
+  many models.
+\item \textbf{Combined with AASVD or A3} -- compress first, then replace attention.
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Storage-constrained deployment} -- EAT does not reduce size.
+\item \textbf{Latency-critical applications} -- LoRA overhead makes EAT slower.
+\item \textbf{Models where weight transfer is uncertain} -- check first.
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need to reduce model size? --- Yes --- Use AASVD or A3
+  | No
+   
+Need to prune tokens at inference? --- Yes --- Use EAT
+  | No
+   
+Need multi-architecture deployment? --- Yes --- Use EAT or NHA
+  | No
+   
+Consider standard LoRA
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{EAT} & \textbf{Change} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M & \textbf{+{{D\_PARAM\_PCT}}\%} \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_DELTA}} \\
+Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Verdict.} EAT is \textbf{neutral} for storage, \textbf{worse} for latency unless 
+pruning is enabled, \textbf{neutral} for accuracy.
+
+\subsection{Interaction with Compressors}
+
+EAT can be \textbf{combined} with AASVD:
+
+\begin{enumerate}
+\item AASVD compresses projections $\to$ \texttt{SVDLinear}.
+\item EAT replaces attention block with pruned version.
+\item Both recover with LoRA.
+
+\end{enumerate}
+The combined pipeline achieves parameter reduction AND pruning speedup.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Optimal pruning ratio:} How to select $k$ per layer?
+\item \textbf{Cross-task transfer:} Does pruning trained on SST-2 transfer?
+\item \textbf{Merge vs prune:} Is token merging superior?
+\item \textbf{Theory:} Can pruning preserve the function class?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Reduces inference cost for long sequences
+\item Multi-architecture support simplifies deployment
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item May be used for surveillance (long-context monitoring)
+\item Adds parameters (opposite of compression)
+
+\end{itemize}
+\subsubsection{Environmental}
+\begin{itemize}
+\item Training: ~{{COMPUTE\_HOURS}} GPU-hours
+\item Inference: {{INFERENCE\_CARBON}} g CO$_2$eq per 1000 queries
+
+\end{itemize}

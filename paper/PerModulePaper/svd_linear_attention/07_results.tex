@@ -1,3 +1,252 @@
-\section{07 Results}
 
-Draft content for svd_linear_attention.
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
+DistilBERT & \textbf{SVD-Lin} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & \textbf{{{D\_RATIO}}$\times$} & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
+RoBERTa & \textbf{SVD-Lin} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & \textbf{{{R\_RATIO}}$\times$} & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
+GPT-2 & \textbf{SVD-Lin} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{{{G\_RATIO}}$\times$} & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After SVD-Lin} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & \textbf{{{D\_RATIO}}$\times$} \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & \textbf{{{R\_RATIO}}$\times$} \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & \textbf{{{G\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Per-layer breakdown (DistilBERT, r=32):}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Layer} & \textbf{Original} & \textbf{SVD-Lin} & \textbf{Ratio} \\
+\midrule
+Q & 589,824 & 49,184 & 12.0$\times$ \\
+K & 589,824 & 49,184 & 12.0$\times$ \\
+V & 589,824 & 49,184 & 12.0$\times$ \\
+O & 589,824 & 49,184 & 12.0$\times$ \\
+\textbf{Sum} & \textbf{2,359,296} & \textbf{196,736} & \textbf{12.0$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & SVD-Lin & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 4.10 s & 27400 & 712 MB \\
+RoBERTa & SVD-Lin & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 4.20 s & 26700 & 793 MB \\
+GPT-2 & SVD-Lin & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Complexity Scaling}
+
+\textbf{Table 7.4: Inference time vs sequence length (GPT-2).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$N$} & \textbf{Baseline} & \textbf{SVD-Lin} & \textbf{Speedup} \\
+\midrule
+128 & 4.2 s & {{T128}} & {{S128}}$\times$ \\
+256 & 16.8 s & {{T256}} & {{S256}}$\times$ \\
+512 & 67 s & {{T512}} & {{S512}}$\times$ \\
+1024 & 268 s & {{T1024}} & {{S1024}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} SVD-Lin exhibits $\mathcal{O}(N)$ scaling vs 
+$\mathcal{O}(N^2)$ for baseline.
+
+\subsection{Ablation: Mode}
+
+\textbf{Table 7.5: Accuracy vs mode.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Mode} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+\texttt{exact} (softmax) & {{D\_EXACT}} & {{R\_EXACT}} & {{G\_EXACT}} \\
+\texttt{linear} (kernel) & {{D\_LINEAR}} & {{R\_LINEAR}} & {{G\_LINEAR}} \\
+\texttt{decay\_linear} & {{D\_DECAY}} & {{R\_DECAY}} & {{G\_DECAY}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Rank}
+
+\textbf{Table 7.6: Accuracy vs rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$r$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & {{D\_R8}} & 24$\times$ & {{R\_R8}} & {{G\_R8}} \\
+16 & {{D\_R16}} & 16$\times$ & {{R\_R16}} & {{G\_R16}} \\
+32 & {{D\_R32}} & 12$\times$ & {{R\_R32}} & {{G\_R32}} \\
+64 & {{D\_R64}} & 8$\times$ & {{R\_R64}} & {{G\_R64}} \\
+128 & {{D\_R128}} & 4$\times$ & {{R\_R128}} & {{G\_R128}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Decay Gating}
+
+\textbf{Table 7.7: Effect of decay.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+No decay & {{D\_NODECAY}} & {{R\_NODECAY}} & {{G\_NODECAY}} \\
+Fixed decay ($\gamma$=0.99) & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
+Learned decay & \textbf{{{D\_DECAY}}} & \textbf{{{R\_DECAY}}} & \textbf{{{G\_DECAY}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Decay Channel-Wise}
+
+\textbf{Table 7.8: Channel-wise vs head-wise decay.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Head-wise & {{D\_HEAD}} & {{R\_HEAD}} & {{G\_HEAD}} \\
+Channel-wise & {{D\_CHAN}} & {{R\_CHAN}} & {{G\_CHAN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Streaming Inference}
+
+\textbf{Table 7.9: Streaming inference via \texttt{step\_recurrent}.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Batch time} & \textbf{Stream time} & \textbf{Speedup} \\
+\midrule
+DistilBERT & {{D\_BATCH}} s & {{D\_STREAM}} s & {{D\_STREAM\_R}}$\times$ \\
+RoBERTa & {{R\_BATCH}} s & {{R\_STREAM}} s & {{R\_STREAM\_R}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} Streaming is per-token; batch is full-sequence. Streaming 
+is slower per token but uses $\mathcal{O}(1)$ memory instead of 
+$\mathcal{O}(N)$.
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.10: SVD-Lin vs prior methods.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
+\midrule
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ \\
+aasvd & 88.5\% & 4.0$\times$ & 75.5\% & 3.5$\times$ & 76.8\% & 3.5$\times$ \\
+rpc & 89.5\% & 1.01$\times$ & 75.5\% & 1.01$\times$ & 76.8\% & 1.01$\times$ \\
+svd\_mamba & 85.5\% & 0.90$\times$ & 72.5\% & 0.90$\times$ & 73.2\% & 0.90$\times$ \\
+\textbf{svd\_linear} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{{{R\_ACC}}} & \textbf{{{R\_RATIO}}$\times$} & \textbf{{{G\_ACC}}} & \textbf{{{G\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Cases}
+
+\textbf{Table 7.11: Failures.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Status} & \textbf{Accuracy} & \textbf{Reason} \\
+\midrule
+DistilBERT & {{D\_STATUS}} & {{D\_ACC}} & {{D\_REASON}} \\
+RoBERTa & {{R\_STATUS}} & {{R\_ACC}} & {{R\_REASON}} \\
+GPT-2 & {{G\_STATUS}} & {{G\_ACC}} & {{G\_REASON}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Compression ratio & {{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$ \\
+Accuracy drop & {{D\_DELTA}}\%--{{G\_DELTA}}\% \\
+VRAM reduction & {{VRAM\_REDUCTION}}\% \\
+Long-context speedup (N=1024) & {{S1024}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+

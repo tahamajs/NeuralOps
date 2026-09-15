@@ -1,3 +1,78 @@
-\section{11 Conclusion}
 
-Draft content for unified_rope.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{UnifiedRoPE}, a single attention module implementing RoPE-based 
+scaled dot-product attention that works across four architecture families: 
+DistilBERT, RoBERTa, GPT-2, and Qwen3.5. The module handles nested encoder 
+bypass, Conv1D transposition, GQA expansion, and RoPE application.
+
+UnifiedRoPE is a \textbf{replacement module}, not a compression method. It 
+preserves parameter count, KV cache, and compute. Its purpose is to serve 
+as a substrate for other compression techniques.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params} & \textbf{Time $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & 1.00$\times$ & {{D\_TIME\_RATIO}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & 1.00$\times$ & {{R\_TIME\_RATIO}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & 1.00$\times$ & {{G\_TIME\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{One module, four architectures.}
+\item \textbf{Nested encoder, Conv1D, GQA handled correctly.}
+\item \textbf{LoRA recovery needed for adding RoPE.}
+\item \textbf{Orthogonal to compression methods.}
+\item \textbf{Reproducible across architectures.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused RoPE kernels
+\item Extension to cross-attention
+\item Long-context evaluation
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Learned RoPE base
+\item Combined with compression
+\item Extension to additional architectures
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+UnifiedRoPE demonstrates that RoPE-based attention can be ported to diverse 
+transformer families with a single module. We release all code and 
+checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed UnifiedRoPE, implemented the code, ran
+  experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

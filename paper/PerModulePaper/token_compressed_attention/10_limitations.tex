@@ -1,3 +1,88 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for token_compressed_attention.
+\subsection{Parameter Count}
+
+TCA \textbf{increases} parameter count by ~6.3\% due to LoRA + score\_net. This is 
+explicitly stated and is the primary limitation.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Behavior on:
+\begin{itemize}
+\item Generation tasks: unknown
+\item Multi-class classification: unknown
+\item Token-level tasks (NER): unknown
+\item Long-context tasks (L > 512): unknown
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B--10B & No \\
+>10B & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+All experiments on RTX 4070 (8 GB). Behavior on other hardware untested.
+
+\subsection{Inference Latency}
+
+The score\_net adds a small forward pass. For very small L, this overhead 
+may dominate. We do not characterize the crossover point.
+
+\subsection{No Theoretical Guarantee}
+
+We provide no bound on downstream accuracy loss. The selection is learned, 
+not provably optimal.
+
+\subsection{Training Dependence}
+
+The score\_net must be trained. If you cannot run recovery fine-tuning, TCA 
+cannot be applied.
+
+\subsection{Single-Seed Results}
+
+Single-seed results. SE ~1.7\%. Differences below 3.4\% may be noise.
+
+\subsection{No Comparison with All Baselines}
+
+We do not directly compare with:
+\begin{itemize}
+\item H2O (would need their exact implementation)
+\item StreamingLLM (different setup)
+\item SnapKV (different problem)
+\item KV quantization methods
+
+\end{itemize}
+\subsection{Causal Mask Complexity}
+
+Our causal mask construction is O(L k). This may become non-negligible 
+for very large L. A fused kernel would be better.
+
+\subsection{Failure Modes Not Diagnosed}
+
+{{UNRESOLVED}}
+
+\subsection{Code Quality}
+
+Research-grade implementation:
+\begin{itemize}
+\item Broad exception handling in copy\_weights
+\item No fused kernel for score\_net
+\item No unit tests for edge cases
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+KV compression is dual-use. See Appendix E.
+

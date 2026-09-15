@@ -1,3 +1,110 @@
-\section{02 Related}
 
-Draft content for asvd.
+\section{Related Work}
+
+\subsection{Low-Rank Matrix Factorization}
+
+\subsubsection{Classical SVD}
+
+Eckart \& Young (1936) proved that the optimal rank-$r$ Frobenius-norm 
+approximation of $W$ is the truncated SVD $W_r = U_{:, :r} \Sigma_{:r} V_{:r, :}^\top$. 
+This is the foundation for all SVD-based compression.
+
+\subsubsection{Randomized SVD}
+
+Halko et al. (2011) provide a randomized algorithm for truncated SVD with 
+complexity $\mathcal{O}(mn \log r)$, trading accuracy for speed. For our 
+layer sizes (up to 3072$\times$768), exact SVD is fast enough.
+
+\subsubsection{Weighted Low-Rank Approximation}
+
+Golub et al. (1987), Srebro \& Jaakkola (2003). Weighted approximation 
+minimizes $\|(W - W_r) D\|_F$ where $D$ is a weighting matrix. ASVD uses 
+$D = \text{diag}(\sqrt{F})$ where $F$ is the activation energy.
+
+\subsubsection{Tensor Decomposition}
+
+Tensor-train (Novikov et al., 2015) uses higher-order factorization. 
+ASVD is a matrix method.
+
+\subsection{Activation-Aware Compression}
+
+\subsubsection{ASVD Paper}
+
+Yuan et al. (2023) -- arXiv:2307.07382 -- introduced ASVD for LLM 
+compression. The core idea: scale the weight matrix by the input activation 
+magnitude before SVD. Our implementation extends this with explicit $\Sigma$, 
+energy-based dynamic rank, and pre-flight validation.
+
+\subsubsection{AWQ}
+
+Lin et al. (2023) use activation magnitude for weight quantization. 
+ASVD uses it for low-rank factorization.
+
+\subsubsection{SmoothQuant}
+
+Xiao et al. (2023) migrate activation scale to weights for INT8 quantization. 
+ASVD performs an analogous migration but for the SVD input space.
+
+\subsubsection{A3}
+
+Our companion module A3 uses diagonal Fisher weighting with LayerNorm 
+recalibration. ASVD differs by keeping $\Sigma$ explicit and using energy-based 
+rank selection instead of adaptive retry.
+
+\subsubsection{AASVD}
+
+Our companion module AASVD uses full covariance weighting with streaming 
+EMA. ASVD uses a simpler diagonal weighting.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\subsubsection{LoRA}
+
+Hu et al. (2021) -- low-rank adapters with $B=0$ initialization. ASVD uses 
+LoRA for recovery after compression.
+
+\subsubsection{AdaLoRA / DoRA}
+
+Zhang et al. (2023), Liu et al. (2024) -- adaptive rank allocation and 
+weight decomposition. ASVD uses standard LoRA.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{ASVD} \\
+\midrule
+\textbf{Weighting} & Unweighted or diagonal & Diagonal (activation energy) \\
+\textbf{  handling} & Implicit or folded & \textbf{Explicit matrix} \\
+\textbf{Rank selection} & Fixed or adaptive-retry & \textbf{Energy-based dynamic} \\
+\textbf{Validation} & Rare & \textbf{Strict Frobenius with abort} \\
+\textbf{Pre-flight check} & None & \textbf{Extraction validation} \\
+\textbf{Multi-architecture} & Usually one family & Four families \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} ASVD's explicit $\Sigma$ matrix distinguishes it from 
+A3 and AASVD, which fold the singular values into the factors. This enables 
+inspection and rank reduction without re-factorization.
+
+\subsection{Comparison to Companion Modules}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Module} & \textbf{Weighting} & \textbf{handling} & \textbf{Rank selection} \\
+\midrule
+A3 & Fisher diagonal & Folded & Adaptive retry \\
+AASVD & Full covariance & Folded & Fixed with cap \\
+\textbf{ASVD} & Activation energy & \textbf{Explicit} & \textbf{Energy-based} \\
+SDRM & None & Folded & Budget-proportional \\
+\bottomrule
+\end{tabular}
+\end{table}
+

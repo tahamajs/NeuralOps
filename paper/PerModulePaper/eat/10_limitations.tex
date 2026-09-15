@@ -1,3 +1,104 @@
-\section{10 Limitations}
 
-Draft content for eat.
+\section{Limitations}
+
+\subsection{Not a Compressor}
+
+EAT \textbf{increases} parameter count by ~{{PARAM\_CHANGE}}\% due to LoRA. It 
+does not reduce storage, memory, or model size on disk.
+
+\subsection{Inference Overhead}
+
+EAT is ~{{INFERENCE\_RATIO}}$\times$ slower than baseline when LoRA is enabled. 
+The overhead comes from:
+
+\begin{itemize}
+\item Additional LoRA matmuls per projection
+\item FP16 $\to$ FP32 cast in LoRA branch
+\item Additional kernel launches
+
+\end{itemize}
+\subsection{Silent Weight Transfer Failure}
+
+EAT's \texttt{copy\_weights} logs warnings on missing projections but continues 
+with random initialization. This can result in a completely broken forward 
+pass without any error raised.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. EAT may behave differently on:
+
+\begin{itemize}
+\item Generation tasks
+\item Long-context tasks
+\item Multi-class classification
+
+\end{itemize}
+\subsection{Model Coverage}
+
+Tested on models with $\le$124M parameters. Not tested on:
+
+\begin{itemize}
+\item >1B parameter models
+\item Very deep models (>24 layers)
+\item Mixture-of-Experts
+
+\end{itemize}
+\subsection{Hardware}
+
+All experiments on RTX 4070 Laptop. Not tested on:
+
+\begin{itemize}
+\item A100/H100
+\item CPU
+\item Edge devices
+
+\end{itemize}
+\subsection{RoBERTa-Specific Issues}
+
+RoBERTa's nested encoder requires correct \texttt{is\_nested\_encoder} setting. If 
+misconfigured, double projection causes 15-25\% accuracy drop.
+
+\subsection{No Theoretical Guarantees}
+
+We provide no bound on:
+
+\begin{itemize}
+\item Approximation error of EAT vs baseline
+\item Accuracy loss under pruning
+\item Optimal pruning ratio
+
+\end{itemize}
+\subsection{Single-Seed Results}
+
+All main results from a single seed. SE ~1.69\%. Differences below 3.4\% 
+may be noise.
+
+\subsection{Pruning Only at Inference}
+
+Training with pruning is not supported. Gradient flow through \texttt{argsort} 
+is undefined.
+
+\subsection{No Comparison with Some Baselines}
+
+We do not directly compare with:
+
+\begin{itemize}
+\item LTP, PuMer (token pruning)
+\item DynamicViT, EViT (vision token pruning)
+\item ToMe (token merging)
+
+\end{itemize}
+\subsection{Unresolved Failures}
+
+{{UNRESOLVED\_FAILURES}}
+
+\subsection{Code Quality}
+
+Research-grade implementation. Known issues:
+
+\begin{itemize}
+\item Silent failure paths
+\item Broad exception handling
+\item No unit tests for edge cases
+
+\end{itemize}

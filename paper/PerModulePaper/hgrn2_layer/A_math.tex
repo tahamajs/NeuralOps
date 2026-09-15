@@ -1,3 +1,134 @@
-\section{A Math}
+\section{Appendix A. Mathematical Derivations}
 
-Draft content for hgrn2_layer.
+\subsection{A.1 Recurrence Unrolling}
+
+For the HGRN-2 recurrence:
+
+\[
+s_t = f_t \odot s_{t-1} + g_t
+\tag{A.1}
+\]
+
+with $s_0 = 0$, the closed form is:
+
+\[
+s_t = \sum_{j=1}^{t} \left( \prod_{i=j+1}^{t} f_i \right) g_j
+\tag{A.2}
+\]
+
+The effective decay from position $j$ to position $t$ is:
+
+\[
+D_{t, j} = \prod_{i=j+1}^{t} f_i = \exp\left(\sum_{i=j+1}^{t} \log f_i\right)
+\tag{A.3}
+\]
+
+\subsection{A.2 Chunked Scan}
+
+For a chunk $[s, e)$ with $C = e - s$ timesteps, define:
+
+\[
+A_k = \sum_{i=s}^{k} \log f_i, \quad k \in [s, e)
+\tag{A.4}
+\]
+
+Then within the chunk:
+
+\[
+h_k^\text{intra} = \sum_{j=s}^{k} \exp(A_k - A_j) \cdot g_j
+\tag{A.5}
+\]
+
+Combined with previous chunk's final state $h_\text{prev}$:
+
+\[
+h_k^\text{chunk} = h_\text{prev} \cdot \exp(A_k) + h_k^\text{intra}
+\tag{A.6}
+\]
+
+This is exact (no approximation).
+
+\subsection{A.3 Bounded Forget Gate}
+
+The forget gate:
+
+\[
+f_t = \exp(-\text{softplus}(W_f x_t))
+\tag{A.7}
+\]
+
+Softplus is always positive: $\text{softplus}(u) > 0$. So $f_t \in (0, 1)$.
+
+\textbf{Clamp in log-space:}
+
+\[
+\log f_t \leftarrow \text{clamp}(- \text{softplus}(u), -3, -10^{-4})
+\tag{A.8}
+\]
+
+So $f_t \in [e^{-3}, e^{-10^{-4}}] \approx [0.05, 1]$.
+
+\textbf{Why clamp?} Without clamping, $\text{softplus}(u)$ can be very large (if 
+$u$ is large), giving $f \approx 0$ (no memory). Or very small, giving 
+$f \approx 1$ (no update). The clamp prevents both.
+
+\subsection{A.4 Bidirectional Combination}
+
+For encoders:
+
+\[
+h_t = h_t^\text{fwd} + h_t^\text{bwd}
+\tag{A.9}
+\]
+
+\textbf{Why sum, not concatenate?} Sum preserves dimension. Concatenate would 
+double the hidden size. Averaging would halve the magnitude. Sum is the 
+standard choice in BiRNN implementations.
+
+\subsection{A.5 LoRA Recovery}
+
+Base weights are frozen. LoRA adapters:
+
+\[
+\Delta W_v = \frac{\alpha}{r} B_v A_v, \quad
+\Delta W_o = \frac{\alpha}{r} B_o A_o
+\tag{A.10}
+\]
+
+with $B_v, B_o = 0$ initially.
+
+\subsection{A.6 Complexity}
+
+For a single layer of dim $d$, sequence $L$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+$W_f x$ & $L d^2$ & $L d$ \\
+$W_i x$ & $L d^2$ & $L d$ \\
+$W_v x$ & $L d^2$ & $L d$ \\
+$W_g x$ & $L d^2$ & $L d$ \\
+Chunked scan & $L d$ & $C^2 + L d$ \\
+$W_o$ & $L d^2$ & $L d$ \\
+\textbf{Total} & $5 L d^2 + L d$ & $\mathcal{O}(L d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{A.7 Chunk Size and Parallelism}
+
+For chunk size $C$, the number of sequential steps is $L / C$. The 
+intra-chunk work is $C^2$ per chunk, total $L \cdot C$. So:
+
+\begin{itemize}
+\item \textbf{Larger $C$:} more parallel work per chunk, fewer sequential steps, but
+  $C^2$ memory and compute per chunk.
+\item \textbf{Smaller $C$:} less memory, more sequential steps.
+
+\end{itemize}
+For L = 512, C = 32: 16 sequential chunks. This is a good balance.
+

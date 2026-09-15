@@ -1,11 +1,173 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Draft content for hgrn2_layer.
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention path} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+PyTorch MHA & Any & Varies & Varies & Varies \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer Patterns}
+
+The \texttt{copy\_weights} procedure handles five patterns:
+
+\subsubsection{Pattern 0: PyTorch `MultiheadAttention`}
+
+\begin{lstlisting}
+w_q, w_k, w_v = src.in_proj_weight.chunk(3, dim=0)
+b_q, b_k, b_v = src.in_proj_bias.chunk(3, dim=0)
+w_o = src.out_proj.weight
+\end{lstlisting}
+
+\subsubsection{Pattern 1: GPT-2 Conv1D}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight.t()  # transpose
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+w_o = src.c_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{Pattern 2: RoBERTa Nested}
+
+\begin{lstlisting}
+w_q = src.self.query.weight
+w_k = src.self.key.weight
+w_v = src.self.value.weight
+w_o = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Pattern 3: Qwen / LLaMA}
+
+\begin{lstlisting}
+w_q = src.q_proj.weight
+w_k = src.k_proj.weight
+w_v = src.v_proj.weight
+w_o = src.o_proj.weight
+\end{lstlisting}
+
+\subsubsection{Pattern 4: DistilBERT}
+
+\begin{lstlisting}
+w_q = src.q_lin.weight
+w_k = src.k_lin.weight
+w_v = src.v_lin.weight
+w_o = src.out_lin.weight
+\end{lstlisting}
+
+\subsection{What Gets Copied}
+
+HGRN2Layer uses only \textbf{V} and \textbf{O} projections from the pretrained attention:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Pretrained projection} & \textbf{HGRN2Layer target} \\
+\midrule
+Q & (unused) \\
+K & (unused) \\
+V & \texttt{v\_proj} \\
+O & \texttt{out\_proj} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Q and K projections are discarded because HGRN2Layer has no query-key 
+mechanism.
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa and BERT, \texttt{is\_nested\_encoder = True}. The injection procedure 
+replaces \texttt{layer.attention.self} with the HGRN2Layer and sets 
+\texttt{layer.attention.output.dense = nn.Identity()}. This ensures the output 
+projection is not applied twice.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject HGRN2Layer into a model
+\begin{lstlisting}
+Input:  model M, config c
+Output: M with attention replaced
+
+1: layer_list $\leftarrow$ find_transformer_layers(M)
+2: for i, layer in enumerate(layer_list) do
+3:     if not has_attention(layer): continue
+4:     src $\leftarrow$ get_attention(layer)
+5:     new $\leftarrow$ HGRN2Layer(c, old_attn=src, ...)
+6:     if is_nested(layer):
+7:         layer.attention.self = new
+8:         layer.attention.output.dense = nn.Identity()
+9:     else:
+10:        replace_attention(layer, new)
+11: end for
+12: return M
+\end{lstlisting}
+
+\subsection{Cross-Attention}
+
+Cross-attention is \textbf{not supported}. If \texttt{encoder\_hidden\_states} is provided, 
+we raise \texttt{NotImplementedError}.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+V/O not extractable & \texttt{copy\_weights} fails & Log warning, keep random \\
+Nested detection wrong & \texttt{is\_nested\_encoder} mis-set & Degraded output \\
+OOM in scan & GPU memory exhausted & Reduce batch or chunk size \\
+Cross-attention call & \texttt{encoder\_hidden\_states} not None & Raise \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Double-Injection Guard}
+
+The injection function does not check for double injection in this module 
+version, since the \texttt{HGRN2Layer} class name match is uncommon. However, we 
+recommend adding a check if re-injection is a concern.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("hgrn2_layer")
+@ATTENTION_REGISTRY.register("hgrn2")
+class HGRN2Layer(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Design Notes}
+
+\textbf{Bidirectional by default for encoders.} The scan runs forward and backward 
+and sums the results, giving each token access to both past and future context.
+
+\textbf{Causal for decoders.} Only the forward scan is used.
+
+\textbf{Chunk size = 32.} Chosen as a balance between parallelism (more chunks = 
+more parallel work) and memory (larger chunks = larger intra-chunk matrices).
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_hgrn2_gated_deltanet_1.jpeg}
-\caption{Architectural overview of hgrn2_layer.}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of hgrn2_layer.}
 \label{fig:arch_hgrn2_layer}
 \end{figure}
+

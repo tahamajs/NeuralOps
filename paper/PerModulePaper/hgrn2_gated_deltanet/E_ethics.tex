@@ -1,3 +1,67 @@
-\section{E Ethics}
+\section{Appendix E. Ethical Considerations}
 
-Draft content for hgrn2_gated_deltanet.
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Enables long-context inference on consumer hardware.
+\item Contributes to efficient ML research.
+\item Reduces memory footprint for streaming.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Large parameter increase (~226\%).
+\item Not yet competitive on standard benchmarks.
+\item Recurrent attention is dual-use.
+
+\end{itemize}
+\subsection{E.2 Environmental}
+
+\begin{itemize}
+\item Total GPU-hours: ~{{COMPUTE\_HOURS}}
+\item CO$_2$: {{CO2\_KG}} kg
+
+\end{itemize}
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item SST-2: public, English.
+\item No PII.
+
+\end{itemize}
+\subsection{E.4 Model Ethics}
+
+Not audited for bias. Compression/preservation may affect fairness.
+
+\subsection{E.5 Authorship}
+
+See  11.7.
+
+\subsection{E.6 Conflicts}
+
+None.
+
+\subsection{E.7 Funding}
+
+{{FUNDING}}
+
+\subsection{E.8 LLM Usage}
+
+Parts drafted with LLM assistance. Content reviewed by authors.
+
+\subsection{E.9 Long-Term}
+
+Linear recurrent models could:
+\begin{itemize}
+\item Enable efficient long-context on edge.
+\item Reduce compute cost of inference.
+\item Democratize LLM deployment.
+
+\end{itemize}
+But also:
+\begin{itemize}
+\item Enable surveillance at scale.
+\item Widen the gap between large and small labs.
+
+\end{itemize}

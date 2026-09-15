@@ -1,3 +1,70 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for token_compressed_attention.
+\subsection{Summary}
+
+We presented \textbf{TokenCompressedAttention (TCA)}, a learnable token-selection 
+module for efficient transformer inference. TCA reduces KV cache and 
+attention compute by a factor of $1 - \rho$ while preserving \texttt{[CLS]} and 
+respecting causality.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{KV reduction} & \textbf{Params $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & {{KV\_PCT}}\% & +{{D\_PARAM\_PCT}}\% \\
+RoBERTa & {{R\_DELTA}}\% & {{KV\_PCT}}\% & +{{R\_PARAM\_PCT}}\% \\
+GPT-2 & {{G\_DELTA}}\% & {{KV\_PCT}}\% & +{{G\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{KV reduction is real} ({{KV\_PCT}}\% at   = {{RATIO}}).
+\item \textbf{Learned scoring beats fixed heuristics} by {{SCORE\_NET\_GAIN}}\%.
+\item \textbf{[CLS] pinning matters} ({{CLS\_DROP}}\% drop without).
+\item \textbf{Parameter count increases} -- we are honest about this.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused CUDA kernel for score\_net + top-k
+\item Per-layer   schedule
+\item INT8 combined with TCA
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical bound on accuracy loss
+\item Cross-task transferability of score\_net
+\item Integration with continuous batching
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+TCA is a practical, learnable approach to KV cache reduction. We release all 
+code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed TCA, implemented, ran experiments, wrote paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

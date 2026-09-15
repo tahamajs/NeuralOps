@@ -1,3 +1,71 @@
-\section{10 Limitations}
 
-Draft content for rpc.
+\section{Limitations}
+
+\subsection{Not a Compressor}
+
+RPC \textbf{increases} parameter count by ~{{PARAM\_CHANGE\_PCT}}\% due to LoRA. It 
+does not reduce storage, memory, or model size.
+
+\subsection{No Memory Reduction}
+
+RPC \textbf{does not reduce memory}. The score matrix $S^{RPC}$ remains $L \times L$. 
+FlashAttention-style memory savings require not materializing $S$, which 
+RPC does not change.
+
+\subsection{Only Helps at Long Sequences}
+
+RPC is slower than baseline at $L \leq 256$ due to overhead. Benefit appears 
+at $L > 512$.
+
+\subsection{Approximation Error}
+
+The JL-based sketch is lossy. RPC scores are only approximately equal to 
+true scores. For tasks requiring exact attention (e.g., retrieval), this 
+is a limitation.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated.
+
+\subsection{Model Coverage}
+
+Tested on $\le$124M parameter models. Not tested on >1B models.
+
+\subsection{Hardware}
+
+All experiments on RTX 4070 Laptop.
+
+\subsection{Cross-Attention Not Supported}
+
+RPC's forward accepts \texttt{encoder\_hidden\_states} but does not use it.
+
+\subsection{Nested Encoder Complexity}
+
+RoBERTa requires \texttt{is\_nested\_encoder = True}.
+
+\subsection{`raise` on Failure}
+
+RPC raises \texttt{RuntimeError} on any injection failure. This is safer than 
+silent fallback but less flexible.
+
+\subsection{Single-Seed Results}
+
+All main results from a single seed.
+
+\subsection{No Theoretical Bound on Downstream Accuracy}
+
+We provide a JL-based bound on score error (Appendix A) but no bound on 
+downstream task error.
+
+\subsection{Unresolved Failures}
+
+{{UNRESOLVED\_FAILURES}}
+
+\subsection{Code Quality}
+
+Research-grade implementation. Known issues:
+\begin{itemize}
+\item \texttt{raise} in \texttt{copy\_weights} may be too aggressive
+\item No unit tests for edge cases
+
+\end{itemize}

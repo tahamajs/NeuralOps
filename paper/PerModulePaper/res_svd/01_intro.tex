@@ -1,3 +1,128 @@
-\section{01 Intro}
+\section{Introduction}
 
-Draft content for res_svd.
+\subsection{Motivation}
+
+Low-rank factorization of transformer weights is a common compression 
+primitive. For each projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$, 
+one replaces $W$ with a product of two smaller matrices, reducing parameter 
+count from $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$ 
+for rank $r$.
+
+\textbf{Two standard variants exist:}
+
+\begin{enumerate}
+\item \textbf{Pure SVD compression} (ASVD, AASVD): replace $W$ with a rank-$r$ SVD
+  approximation, then fine-tune with LoRA adapters on top. The LoRA is
+  initialized to zero.
+\item \textbf{Pure PEFT} (LoRA): keep $W$ dense, add a rank-$r$ trainable adapter.
+  No compression.
+
+\end{enumerate}
+\textbf{Res-SVD bridges these.} The base is a low-rank SVD approximation (compressed), 
+and the residual is a trainable adapter (PEFT), but the residual is **not 
+initialized to zero\textbf{ -- it is initialized from the }next singular directions** 
+of $W$. This makes the combined approximation equal to the best rank-$(r_b + r_r)$ 
+SVD at initialization, while keeping the base frozen for fine-tuning.
+
+\subsection{Problem Statement}
+
+Given a pretrained transformer $\mathcal{M}$ with $N_\ell$ attention layers, 
+we seek a compressed model $\mathcal{M}'$ such that:
+
+\begin{enumerate}
+\item Each projection is stored as a sum of two low-rank factors:
+  $$
+  W \approx U\_b V\_b^\top + \alpha B A
+  \tag{1.1}
+  $$
+  with $r_b + r_r \ll \min(d_\text{in}, d_\text{out})$.
+\item Parameter count decreases by factor $\sim (d_\text{in} d_\text{out}) / ((r_b + r_r)(d_\text{in} + d_\text{out}))$.
+\item The base $U_b V_b^\top$ is frozen; only $B, A$ are trained.
+\item At initialization, $U_b V_b^\top + \alpha B A$ matches the best rank-$(r_b + r_r)$
+  SVD of $W$.
+\item Weight transfer works across four attention families.
+
+\end{enumerate}
+\subsection{Our Approach: Res-SVD Attention}
+
+Given a projection weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
+
+\textbf{Step 1.} Compute the top-$r_b$ SVD:
+\[
+W_b = U_b \Sigma_b V_b^\top, \quad r_b \ll \min(d_\text{in}, d_\text{out})
+\tag{1.2}
+\]
+
+\textbf{Step 2.} Compute the residual:
+\[
+R = W - W_b
+\tag{1.3}
+\]
+
+\textbf{Step 3.} Take the top-$r_r$ SVD of the residual:
+\[
+R \approx U_r \Sigma_r V_r^\top
+\tag{1.4}
+\]
+
+\textbf{Step 4.} Initialize the LoRA adapter with:
+\[
+B = U_r \Sigma_r^{1/2}, \quad A = \Sigma_r^{1/2} V_r^\top
+\tag{1.5}
+\]
+
+\textbf{Step 5.} Store $U_b, V_b$ as frozen parameters and $B, A$ as trainable.
+
+The forward pass computes:
+\[
+y = x (U_b V_b)^\top + \alpha x (B A)^\top + b
+\tag{1.6}
+\]
+
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A two-level SVD factorization.} Res-SVD combines frozen low-rank SVD
+  with a trainable residual, initialized from the second-order spectrum.
+\item \textbf{Spectral LoRA initialization.} The residual adapter is initialized
+  non-zero, unlike standard LoRA, ensuring the initial approximation is
+  optimal for the total rank.
+\item \textbf{Multi-architecture support.} Same code handles flat, nested, causal,
+  and GQA+RoPE attention.
+\item \textbf{Compatibility with RoBERTa.} Nested encoders are handled via
+  identity initialization of the output projection.
+\item \textbf{Honest reporting.} Res-SVD reduces parameter count. The residual
+  adapter is a small trainable addition.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on SVD, LoRA, 
+and spectral initialization. Section 4 presents Res-SVD. Section 5 details 
+multi-architecture integration. Section 6 gives setup. Section 7 reports 
+results. Section 8 analyzes contributions. Section 9 provides guidance. 
+Section 10 lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$W$ & Projection weight matrix \\
+$r_b$ & Base SVD rank \\
+$r_r$ & Residual (LoRA) rank \\
+$U_b, V_b$ & Base SVD factors (frozen) \\
+$B, A$ & Residual LoRA factors (trainable) \\
+$\alpha$ & Residual scaling \\
+$R$ & Residual matrix $W - U_b V_b^\top$ \\
+$d_\text{in}, d_\text{out}$ & Input/output dimensions \\
+\bottomrule
+\end{tabular}
+\end{table}
+

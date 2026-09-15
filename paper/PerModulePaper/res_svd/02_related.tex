@@ -1,3 +1,91 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for res_svd.
+\subsection{Low-Rank Factorization}
+
+\subsubsection{Classical SVD}
+
+Eckart-Young (1936): optimal rank-$r$ Frobenius approximation is truncated SVD. 
+Res-SVD uses SVD twice: for base and residual.
+
+\subsubsection{Randomized SVD}
+
+Halko et al. (2011) -- randomized algorithm for truncated SVD. Not needed 
+for our layer sizes.
+
+\subsubsection{ASVD / AASVD / A3}
+
+Companion modules: use SVD once with optional activation weighting. Res-SVD 
+uses SVD twice with spectral initialization of the residual.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\subsubsection{LoRA}
+
+Hu et al. (2021) -- standard LoRA initializes $B = 0$. This makes the 
+initial approximation equal to the base weight. Res-SVD initializes 
+$B \neq 0$ from the residual spectrum.
+
+\subsubsection{AdaLoRA}
+
+Zhang et al. (2023) -- adaptive rank allocation. Not directly related.
+
+\subsubsection{DoRA}
+
+Liu et al. (2024) -- weight-decomposed LoRA. Different decomposition.
+
+\subsubsection{PiSSA}
+
+Meng et al. (2024) -- **PiSSA initializes LoRA from the top singular 
+directions of the base weight**, making the LoRA "principal". Res-SVD is 
+the \textbf{complementary} approach: base takes principal directions, residual 
+takes the next ones.
+
+\subsection{Residual Decomposition}
+
+\subsubsection{Two-Level SVD}
+
+Any full-rank matrix $W$ can be written as $W = W_b + R$ where $W_b$ is 
+rank $r_b$. The residual $R$ has rank $\leq \min(d_\text{in}, d_\text{out})$ 
+but effective rank $r_r$ if its spectrum decays.
+
+\subsubsection{Connection to Optimal Rank-$(r_b + r_r)$ SVD}
+
+As shown in Appendix A.1, Res-SVD with $(r_b, r_r)$ gives the same 
+approximation as SVD of rank $r_b + r_r$.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Aspect} & \textbf{Pure SVD} & \textbf{LoRA} & \textbf{PiSSA} & \textbf{Res-SVD} \\
+\midrule
+Base frozen & Yes & No (dense) & No & Yes \\
+Base rank & $r$ & Full & Full & $r_b$ \\
+Residual rank & 0 & $r$ & $r$ & $r_r$ \\
+Residual init & N/A & Zero & Principal & \textbf{Spectral} \\
+Compression & Yes & No & No & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Companion Modules}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Module} & \textbf{Approach} & \textbf{Base} & \textbf{Residual} \\
+\midrule
+ASVD & One SVD & Rank $r$ & LoRA zero \\
+AASVD & One SVD + covariance & Rank $r$ & LoRA zero \\
+A3 & One SVD + Fisher & Rank $r$ & LoRA zero \\
+SVD-Linear & SVD + linear attn & Rank $r$ & LoRA zero \\
+\textbf{Res-SVD} & \textbf{Two-level SVD} & \textbf{Rank $r_b$} & \textbf{Spectral init} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

@@ -1,3 +1,209 @@
-\section{07 Results}
+\section{Results}
 
-Draft content for minimal_aurora.
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
+DistilBERT & \textbf{MinimalAURORA} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & \textbf{{{D\_RATIO}}$\times$} & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
+RoBERTa & \textbf{MinimalAURORA} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & \textbf{{{R\_RATIO}}$\times$} & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
+GPT-2 & \textbf{MinimalAURORA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{{{G\_RATIO}}$\times$} & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & \textbf{{{D\_RATIO}}$\times$} \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & \textbf{{{R\_RATIO}}$\times$} \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & \textbf{{{G\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Per-layer breakdown (DistilBERT, $\varepsilon=0.95$):}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
+\midrule
+Rank & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
+Params & {{D\_L0\_Q\_P}} & {{D\_L0\_K\_P}} & {{D\_L0\_V\_P}} & {{D\_L0\_O\_P}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Rank Distribution}
+
+\textbf{Table 7.3: Energy-selected rank per layer.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
+\midrule
+0 & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
+1 & {{D\_L1\_Q\_R}} & {{D\_L1\_K\_R}} & {{D\_L1\_V\_R}} & {{D\_L1\_O\_R}} \\
+... & ... & ... & ... & ... \\
+5 & {{D\_L5\_Q\_R}} & {{D\_L5\_K\_R}} & {{D\_L5\_V\_R}} & {{D\_L5\_O\_R}} \\
+\textbf{Mean} & \textbf{{{D\_MEAN\_R}}} &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.4: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & Ours & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 4.10 s & 27400 & 712 MB \\
+RoBERTa & Ours & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 4.20 s & 26700 & 793 MB \\
+GPT-2 & Ours & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Energy Threshold}
+
+\textbf{Table 7.5: Accuracy vs $\varepsilon$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{$\varepsilon$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
+\midrule
+0.90 & {{D\_E90}} & {{D\_E90\_R}}$\times$ & {{R\_E90}} & {{R\_E90\_R}}$\times$ & {{G\_E90}} & {{G\_E90\_R}}$\times$ \\
+0.95 & {{D\_E95}} & {{D\_E95\_R}}$\times$ & {{R\_E95}} & {{R\_E95\_R}}$\times$ & {{G\_E95}} & {{G\_E95\_R}}$\times$ \\
+0.99 & {{D\_E99}} & {{D\_E99\_R}}$\times$ & {{R\_E99}} & {{R\_E99\_R}}$\times$ & {{G\_E99}} & {{G\_E99\_R}}$\times$ \\
+0.995 & {{D\_E995}} & {{D\_E995\_R}}$\times$ & {{R\_E995}} & {{R\_E995\_R}}$\times$ & {{G\_E995}} & {{G\_E995\_R}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Max Rank Cap}
+
+\textbf{Table 7.6: Accuracy vs rank cap.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Cap} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+16 & {{D\_C16}} & {{R\_C16}} & {{G\_C16}} \\
+32 & {{D\_C32}} & {{R\_C32}} & {{G\_C32}} \\
+64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} \\
+128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.7: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & {{D\_LORA0}} & {{R\_LORA0}} & {{G\_LORA0}} \\
+8 & {{D\_LORA8}} & {{R\_LORA8}} & {{G\_LORA8}} \\
+16 & {{D\_LORA16}} & {{R\_LORA16}} & {{G\_LORA16}} \\
+32 & {{D\_LORA32}} & {{R\_LORA32}} & {{G\_LORA32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{`output\_scale` Tracking}
+
+\textbf{Table 7.8: Final \texttt{output\_scale} per model.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Init} & \textbf{Final} & \textbf{Drift} \\
+\midrule
+DistilBERT & 1.00 & {{D\_OS}} & {{D\_OS\_DRIFT}} \\
+RoBERTa & 1.00 & {{R\_OS}} & {{R\_OS\_DRIFT}} \\
+GPT-2 & 1.00 & {{G\_OS}} & {{G\_OS\_DRIFT}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.9: Comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
+\midrule
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ \\
+asvd ($r=32$) & 88.5\% & 12$\times$ & 75.5\% & 11$\times$ & 76.8\% & 11$\times$ \\
+aasvd ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
+a3 ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
+res\_svd (16,4) & 88.2\% & 5.9$\times$ & 74.8\% & 5.5$\times$ & 75.5\% & 5.5$\times$ \\
+\textbf{minimal\_aurora} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{{{R\_ACC}}} & \textbf{{{R\_RATIO}}$\times$} & \textbf{{{G\_ACC}}} & \textbf{{{G\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Cases}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Status} & \textbf{Accuracy} & \textbf{Reason} \\
+\midrule
+DistilBERT & {{D\_STATUS}} & {{D\_ACC}} & {{D\_REASON}} \\
+RoBERTa & {{R\_STATUS}} & {{R\_ACC}} & {{R\_REASON}} \\
+GPT-2 & {{G\_STATUS}} & {{G\_ACC}} & {{G\_REASON}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

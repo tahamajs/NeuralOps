@@ -1,0 +1,155 @@
+{
+  "_comment": "Fill with real values from your SVD-Linear Attention runs.",
+
+  "MODULE_NAME": "SVD-Linear",
+  "FULL_NAME": "SVD-Linear Attention",
+  "SUBTITLE": "Factorized Low-Rank Linear Attention with Exponential Decay Gating",
+
+  "AUTHOR_1_NAME": "Your Name",
+  "AUTHOR_1_EMAIL": "you@university.edu",
+  "AUTHOR_2_NAME": "Advisor Name",
+  "AUTHOR_2_EMAIL": "advisor@university.edu",
+  "UNIVERSITY_1": "University Name",
+  "DEPARTMENT_1": "Department of Computer Science",
+  "CORRESPONDING_AUTHOR": "Your Name",
+  "EMAIL": "you@university.edu",
+  "DATE": "2026-09-15",
+  "VERSION": "1",
+  "ORG": "your-org",
+  "HF_ORG": "Hooshaai",
+  "LICENSE": "MIT",
+
+  "MODE": "decay_linear",
+  "RANK": "32",
+  "LORA_RANK": "16",
+  "LORA_ALPHA": "32",
+  "USE_DECAY": "true",
+  "CHANNEL_WISE": "false",
+  "RECOVERY_STEPS": "50",
+  "BATCH_SIZE": "8",
+  "LR": "2e-4",
+  "WD": "1e-2",
+  "SEED": "42",
+
+  "VRAM_REDUCTION": "45",
+
+  "D_ACC": "87.5",
+  "D_DELTA": "-3.21",
+  "D_F1": "0.875",
+  "D_PARAMS": "10240954",
+  "D_RATIO": "6.5",
+  "D_PARAM_PCT": "-84.7",
+  "D_VRAM": "100",
+  "D_TIME": "2.1",
+  "D_TPS": "53000",
+  "D_STATUS": "PASS",
+  "D_REASON": "—",
+  "D_MODE": "decay_linear",
+  "D_VRAM_PCT": "45",
+  "D_TIME_RATIO": "1.10",
+
+  "R_ACC": "74.5",
+  "R_DELTA": "-4.06",
+  "R_F1": "0.745",
+  "R_RATIO": "5.5",
+  "R_PARAMS": "22631040",
+  "R_VRAM": "400",
+  "R_TIME": "4.6",
+  "R_TPS": "24000",
+  "R_STATUS": "PASS",
+  "R_REASON": "—",
+  "R_TIME_RATIO": "1.12",
+
+  "G_ACC": "75.2",
+  "G_DELTA": "-4.16",
+  "G_F1": "0.752",
+  "G_RATIO": "5.5",
+  "G_PARAMS": "22610416",
+  "G_VRAM": "440",
+  "G_TIME": "4.7",
+  "G_TPS": "23500",
+  "G_STATUS": "PASS",
+  "G_REASON": "—",
+  "G_TIME_RATIO": "1.12",
+
+  "D_R8": "83.0", "D_R16": "85.5", "D_R32": "87.5", "D_R64": "88.5", "D_R128": "89.5",
+  "R_R8": "70.0", "R_R16": "72.5", "R_R32": "74.5", "R_R64": "75.5", "R_R128": "76.5",
+  "G_R8": "71.0", "G_R16": "73.0", "G_R32": "75.2", "G_R64": "76.0", "G_R128": "77.0",
+
+  "D_EXACT": "89.5", "D_LINEAR": "86.5", "D_DECAY": "87.5",
+  "R_EXACT": "76.5", "R_LINEAR": "73.0", "R_DECAY": "74.5",
+  "G_EXACT": "77.5", "G_LINEAR": "73.8", "G_DECAY": "75.2",
+
+  "D_NODECAY": "86.0", "D_FIXED": "87.0", "D_DECAY": "87.5",
+  "R_NODECAY": "73.0", "R_FIXED": "74.0", "R_DECAY": "74.5",
+  "G_NODECAY": "73.5", "G_FIXED": "74.8", "G_DECAY": "75.2",
+
+  "D_HEAD": "87.5", "D_CHAN": "87.5",
+  "R_HEAD": "74.5", "R_CHAN": "74.5",
+  "G_HEAD": "75.2", "G_CHAN": "75.2",
+
+  "D_BATCH": "2.1", "D_STREAM": "5.0", "D_STREAM_R": "2.4",
+  "R_BATCH": "4.6", "R_STREAM": "11.0", "R_STREAM_R": "2.4",
+
+  "ENERGY_32": "96.5",
+  "TOP5_OVERLAP": "80",
+  "RANK_OBS": "Rank 32 is a good balance",
+  "DECAY_OBS": "Heads converge to different decay scales",
+  "SCALING_OBS": "Linear scaling confirmed",
+
+  "D_H0_LAM": "0.999", "D_H0_CH": "+0.004",
+  "D_H1_LAM": "0.988", "D_H1_CH": "+0.007",
+  "D_H2_LAM": "0.965", "D_H2_CH": "+0.009",
+  "D_H3_LAM": "0.925", "D_H3_CH": "+0.007",
+  "D_H4_LAM": "0.870", "D_H4_CH": "+0.004",
+  "D_H5_LAM": "0.805", "D_H5_CH": "+0.004",
+  "D_H6_LAM": "0.725", "D_H6_CH": "+0.004",
+  "D_H7_LAM": "0.635", "D_H7_CH": "+0.006",
+  "D_H8_LAM": "0.535", "D_H8_CH": "+0.008",
+  "D_H9_LAM": "0.425", "D_H9_CH": "+0.010",
+  "D_H10_LAM": "0.305", "D_H10_CH": "+0.009",
+  "D_H11_LAM": "0.175", "D_H11_CH": "+0.008",
+
+  "T128": "2.1", "S128": "1.10",
+  "T256": "4.5", "S256": "3.73",
+  "T512": "9.0", "S512": "7.44",
+  "T1024": "18.0", "S1024": "14.89",
+
+  "D_Q_AASVD": "98304", "A3_D": "88.5", "A3_D_R": "5.0",
+  "AASVD_D": "88.5", "AASVD_D_R": "4.0",
+  "A3_R": "75.5", "A3_R_R": "4.5",
+  "AASVD_R": "75.5", "AASVD_R_R": "3.5",
+  "A3_G": "76.8", "A3_G_R": "4.5",
+  "AASVD_G": "76.8", "AASVD_G_R": "3.5",
+
+  "REL_ERR": "0.12", "D_REC_MEAN": "0.12",
+
+  "D_S1": "1.2", "D_S5": "0.8", "D_S10": "0.6", "D_S50": "0.35",
+
+  "RELU_DROP": "3.5",
+  "D_R4": "78.0", "D_LORA0": "80.0", "D_LORA8": "86.0", "D_LORA16": "87.5", "D_LORA32": "87.8",
+
+  "D_LR5e5": "85.0", "D_LR2e4": "87.5", "D_LR5e4": "82.0",
+
+  "SEED42": "87.5", "SEED123": "87.4", "SEED456": "87.6",
+  "MEAN": "87.5", "STD": "0.10",
+
+  "COMPUTE_HOURS": "8",
+  "CO2_KG": "0.5",
+  "RUNTIME": "15",
+  "INFERENCE_CARBON": "0.08",
+
+  "CUDA_VERSION": "12.1",
+  "TORCH_VERSION": "2.4.0",
+  "HF_VERSION": "4.44.0",
+  "DATASETS_VERSION": "2.20.0",
+  "NUMPY_VERSION": "1.26.4",
+
+  "Q_VERIFIED": "not tested",
+  "UNRESOLVED_FAILURES": "Decay init inversion not corrected",
+
+  "_note": "Add keys as needed"
+}
+```
+
+---

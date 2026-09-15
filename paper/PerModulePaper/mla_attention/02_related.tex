@@ -1,3 +1,87 @@
-\section{02 Related}
 
-Draft content for mla_attention.
+\section{Related Work}
+
+\subsection{KV-Cache Compression}
+
+\subsubsection{Token Eviction}
+
+StreamingLLM (Xiao et al., 2024) keeps the first few tokens as "attention 
+sinks" and a sliding window of recent tokens. H2O (Zhang et al., 2023) 
+retains "heavy-hitter" tokens based on accumulated attention scores. These 
+methods \textbf{discard tokens}, while MLA compresses the \textbf{representation} of 
+every token.
+
+\subsubsection{Quantization}
+
+KIVI (Liu et al., 2024) quantizes KV to 2-bit with per-channel scaling. 
+KVQuant (Hooper et al., 2024) uses non-uniform quantization. Quantization is 
+\textbf{orthogonal} to MLA -- the two can be combined.
+
+\subsubsection{Low-Rank Compression}
+
+Palu (Chang et al., 2024) uses low-rank KV compression. MLA (DeepSeek-AI, 
+2024) uses a shared latent for both K and V. **MLA differs by sharing the 
+latent across K and V projections**, achieving higher compression than 
+independent low-rank.
+
+\subsection{Attention Variants}
+
+\subsubsection{Multi-Query Attention (MQA)}
+
+Shazeer (2019) shares a single KV head across all query heads. Extreme 
+compression but large accuracy loss on some tasks.
+
+\subsubsection{Grouped-Query Attention (GQA)}
+
+Ainslie et al. (2023) use $H_{kv} < H$ KV heads. Standard in modern 
+LLMs. Compatible with MLA -- one can have GQA with MLA latent.
+
+\subsubsection{Multi-Head Latent Attention (MLA)}
+
+DeepSeek-AI (2024) introduces MLA with a shared latent $c$. The current 
+work reproduces it and ports it to other architectures.
+
+\subsection{Position Encoding}
+
+\subsubsection{RoPE}
+
+Su et al. (2021) rotate $Q, K$ by position-dependent angles. MLA preserves 
+RoPE compatibility.
+
+\subsubsection{Absolute and Learned Positions}
+
+DistilBERT and GPT-2 use absolute / learned position embeddings, which do 
+not interact with MLA.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+LoRA (Hu et al., 2021) is used for recovery fine-tuning after MLA 
+initialization.
+
+\subsection{Reproducibility and Portability Studies}
+
+Chen et al. (2024) study the portability of FlashAttention across GPUs. 
+Wang et al. (2024) reproduce Performer. Our work is in this spirit: we 
+reproduce MLA and study its portability to non-DeepSeek architectures.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{DeepSeek-AI 2024} & \textbf{Our work} \\
+\midrule
+\textbf{Original architecture} & DeepSeek-V2 & Four families \\
+\textbf{Latent dimension} & 512 (V2), 1536 (V3) & {{RANK}} \\
+\textbf{Multi-architecture} & No & Yes \\
+\textbf{Portability study} & No & Yes \\
+\textbf{Reproduction} & -- & This paper \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} We do not claim to improve MLA. We reproduce it and 
+study its behavior on models it was not designed for.
+

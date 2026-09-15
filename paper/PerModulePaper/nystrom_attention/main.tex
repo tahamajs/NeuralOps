@@ -64,10 +64,41 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the nystrom\_attention module within modern transformer architectures.
+\textbf{Nystr mformer} (Xiong et al., 2021) approximates standard softmax attention 
+via the Nystr m low-rank kernel method. Instead of materializing the full 
+$N \times N$ attention matrix, it selects $m \ll N$ landmark tokens and 
+computes three smaller attention matrices, achieving $\mathcal{O}(N m d)$ 
+complexity instead of $\mathcal{O}(N^2 d)$. Landmarks are chosen via 
+\textbf{adaptive average pooling}, and a \textbf{pseudoinverse} of the landmark attention 
+matrix is computed iteratively (Newton-Schulz).
+
+We present a \textbf{reproduction} of Nystr mformer, ported to four transformer 
+families that the original paper does not target: DistilBERT (flat), 
+RoBERTa/BERT (nested), GPT-2 (causal Conv1D), and Qwen3.5 (GQA + RoPE). Our 
+implementation:
+(i) preserves exact softmax attention for short sequences ($N \leq 128$) and 
+for causal decoders,
+(ii) uses an iterative pinv with a fallback to \texttt{torch.linalg.pinv},
+(iii) handles Conv1D transposition, nested encoder bypass, GQA expansion, 
+and RoPE,
+(iv) attaches LoRA adapters for recovery fine-tuning.
+
+We emphasize: **this is a reproduction and portability study, not a novel 
+architecture.\textbf{ Nystr mformer does }not** reduce parameter count or 
+KV-cache size. It reduces \textbf{attention compute} for long sequences.
+
+On SST-2 (sequence length 128), the Nystr m branch does not activate (dense 
+fallback), and Nystr mformer matches the baseline. On longer sequences, the 
+Nystr m approximation provides asymptotic savings.
+
+\textbf{Keywords:} Nystr mformer, Nystr m method, low-rank attention, kernel 
+approximation, iterative pseudoinverse, Newton-Schulz, multi-architecture 
+transformers, reproduction study
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} nystrom\_attention, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} Nystr mformer, Nystr m method, low-rank attention, kernel
 \end{abstract}
 
 \vspace{1em}

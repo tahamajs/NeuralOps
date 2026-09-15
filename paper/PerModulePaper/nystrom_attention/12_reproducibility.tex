@@ -1,3 +1,157 @@
-\section{12 Reproducibility}
 
-Draft content for nystrom_attention.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+numpy & {{NUMPY\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running Nystr mformer}
+
+\subsubsection{Short Sequence (N=128)}
+
+\begin{lstlisting}
+python run_all_4_nystrom.py \
+    --models distilbert,roberta,gpt2 \
+    --seq_len 128 \
+    --num_landmarks {{NUM_LANDMARKS}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsubsection{Long Sequence (N=512)}
+
+\begin{lstlisting}
+python run_all_4_nystrom.py \
+    --models distilbert,roberta \
+    --seq_len 512 \
+    --num_landmarks {{NUM_LANDMARKS}}
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --dataset sst2 \
+    --output_dir results/unified_nystrom/distilbert \
+    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --modules full,nystrom \
+    --num_landmarks {{NUM_LANDMARKS}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Short sequence)}
+
+\begin{lstlisting}
+python run_all_4_nystrom.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.2 (Long sequence)}
+
+\begin{lstlisting}
+for m in 16 32 64 128; do
+    python run_all_4_nystrom.py --models distilbert --seq_len 512 --num_landmarks $m --output_suffix m$m
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (Landmark ablation)}
+
+\begin{lstlisting}
+for m in 16 32 64 128; do
+    python run_all_4_nystrom.py --num_landmarks $m --output_suffix m$m
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (Pinv iterations)}
+
+\begin{lstlisting}
+for it in 1 2 3 5; do
+    python run_all_4_nystrom.py --pinv_iterations $it --output_suffix it$it
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{N=128} & \textbf{N=512} \\
+\midrule
+DistilBERT & Dense (baseline) & Nystr m ({{S512}}$\times$ speedup) \\
+RoBERTa & Dense (baseline) & Nystr m ({{S512}}$\times$ speedup) \\
+GPT-2 & Dense causal & Dense causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Checkpoints}
+
+\begin{lstlisting}
+from huggingface_hub import hf_hub_download
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-nystrom",
+        filename="weights.pt",
+    )
+    print(f"Downloaded {model}: {path}")
+\end{lstlisting}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Dataset: SST-2 via \texttt{datasets}
+\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-nystrom}
+\item Metrics: \texttt{results/unified\_nystrom/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/nystrom\_*.log}
+
+\end{itemize}
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Windows: use \texttt{PYTHONIOENCODING=utf-8}
+\item CUDA $\ge$ 11.8 recommended
+\item Nystr m branch inactive for $N \leq 128$
+\item Causal decoders always use dense fallback
+
+\end{itemize}
+\subsection{Original Paper}
+
+Nystr mformer is from Xiong et al. (2021), arXiv:2102.03902.
+

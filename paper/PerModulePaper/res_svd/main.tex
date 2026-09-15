@@ -64,10 +64,50 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal analysis and benchmark evaluation of the module.
+We present \textbf{Res-SVD Attention}, a drop-in attention replacement that stores 
+each projection as a \textbf{two-level SVD decomposition}:
+
+\[
+W = U_\text{base} V_\text{base}^\top + \alpha B A
+\tag{1}
+\]
+
+where $U_\text{base} V_\text{base}^\top$ is a \textbf{frozen} rank-$r_b$ SVD 
+approximation, and $B A$ is a \textbf{trainable} rank-$r_r$ residual adapter 
+whose columns are **initialized from the top-$r_r$ singular directions of 
+the residual $W - U_\text{base} V_\text{base}^\top$**.
+
+This combines two ideas that are usually separate: (i) low-rank SVD 
+compression of attention projections, and (ii) parameter-efficient 
+fine-tuning of the compressed model. The \textbf{spectral initialization} of the 
+LoRA adapter ensures that at initialization the combined approximation 
+matches the best rank-$(r_b + r_r)$ SVD of the original weight -- the 
+residual is not random but populated with the "second-order" spectrum.
+
+Res-SVD Attention supports four attention families -- flat (DistilBERT), 
+nested (RoBERTa/BERT), causal Conv1D (GPT-2), and grouped-query with rotary 
+embeddings (Qwen/LLaMA) -- with weight transfer, GQA, RoPE, and causal 
+masking.
+
+On SST-2 with {{RECOVERY\_STEPS}} LoRA recovery steps and $(r\_b, r\_r) = 
+({{BASE\_RANK}}, {{RESIDUAL\_RANK}})$, Res-SVD Attention achieves 
+\textbf{{{D\_ACC}}\%} on DistilBERT ($\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa 
+($\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). Total 
+parameter count decreases by \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$}.
+
+Res-SVD Attention \textbf{reduces} parameter count. The residual adapter adds 
+$r_r(d_\text{in} + d_\text{out})$ trainable parameters, but this is 
+offset by the reduction from SVD factorization of the projections. The 
+"residual" in the name refers to the **residual weight matrix after base 
+SVD**, not to residual connections.
+
+\textbf{Keywords:} spectral initialization, residual SVD, low-rank factorization, 
+parameter-efficient fine-tuning, attention compression
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} Efficient Attention, Transformers, Deep Learning, Model Compression
+\noindent\textbf{Keywords:} spectral initialization, residual SVD, low-rank factorization,
 \end{abstract}
 
 \vspace{1em}

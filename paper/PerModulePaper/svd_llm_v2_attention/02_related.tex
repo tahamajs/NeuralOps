@@ -1,3 +1,114 @@
-\section{02 Related}
 
-Draft content for svd_llm_v2_attention.
+\section{Related Work}
+
+\subsection{Low-Rank Matrix Factorization}
+
+\textbf{Classical SVD.} The Eckart--Young theorem (Eckart \& Young, 1936) states 
+that the best rank-$r$ approximation of $W$ in Frobenius norm is the 
+truncated SVD. SVD-LLM V2 uses this as the core primitive.
+
+\textbf{Symmetric vs. explicit factorization.} Standard implementations distribute 
+$\Sigma^{1/2}$ between $U$ and $V^H$ (Golub \& Van Loan, 2013). SVD-LLM V2 
+instead keeps $\Sigma$ separate, sacrificing FP16 stability for 
+interpretability.
+
+\textbf{Randomized SVD.} Halko et al. (2011) provide randomized algorithms. For 
+our layer sizes, exact SVD is feasible.
+
+\textbf{Weighted low-rank.} Golub et al. (1987) and Srebro \& Jaakkola (2003) study 
+weighted variants. Activation-aware methods (Lin et al., 2023; Xiao et al., 
+2023) use activation statistics. SVD-LLM V2 uses unweighted SVD with 
+energy-adaptive rank.
+
+\subsection{Rank Selection Strategies}
+
+\textbf{Fixed rank.} Most methods use a global $r$ (Yu et al., 2017).
+
+\textbf{AdaLoRA.} Zhang et al. (2023) learn per-layer rank budgets. SVD-LLM V2 
+uses a fixed \textbf{energy threshold}, simpler and training-free.
+
+\textbf{Energy-based truncation.} Standard in signal processing. SVD-LLM V2 
+applies it to transformer attention.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\textbf{LoRA.} Hu et al. (2021) freeze base weights and train rank-$r$ adapters. 
+SVD-LLM V2 uses LoRA as the recovery mechanism.
+
+\textbf{DoRA.} Liu et al. (2024) decompose weights into magnitude and direction. 
+Related in spirit to explicit $\Sigma$ storage.
+
+\subsection{Attention Variants}
+
+\textbf{Standard MHSA.} Vaswani et al. (2017) introduce the four-projection 
+attention. SVD-LLM V2 preserves the four-projection structure.
+
+\textbf{GQA.} Ainslie et al. (2023) share KV heads. SVD-LLM V2 supports GQA via 
+mean-pooling of K and V weights.
+
+\textbf{MQA.} Shazeer (2019) uses a single KV head. Compatible.
+
+\subsection{Model Compression}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{Retrain} & \textbf{Interpretable?} \\
+\midrule
+DistilBERT & Distillation & 1.6$\times$ & Yes & No \\
+SparseGPT & Pruning & 2-4$\times$ & No & Partial \\
+AWQ & Quantization & 4$\times$ & No & No \\
+A3 & Low-rank + Fisher & 5$\times$ & LoRA & No \\
+AASVD & Low-rank + covariance & 5$\times$ & LoRA & No \\
+MinimalSVD & Low-rank + energy & 3-6$\times$ & LoRA & No \\
+\textbf{SVD-LLM V2} & \textbf{Low-rank + explicit $\Sigma$} & \textbf{{{D\_RATIO}}$\times$} & \textbf{LoRA} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Position of Our Work}
+
+SVD-LLM V2 differs from prior work along three axes:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior} & \textbf{SVD-LLM V2} \\
+\midrule
+\textbf{Factorization} & Symmetric & \textbf{Explicit (U, $\Sigma$, V\^{}H)} \\
+\textbf{Interpretability} & Limited & \textbf{Full} \\
+\textbf{Downstream flexibility} & Low & \textbf{High} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Unlike symmetric-factorization methods, SVD-LLM V2 
+preserves the singular spectrum for inspection and downstream applications 
+(e.g., per-singular-value quantization, spectral analysis). This comes at 
+the cost of slight numerical sensitivity in FP16.
+
+
+
+\subsection{Comparison with Companion Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Feature} & \textbf{MinimalSVD} & \textbf{MinimalNOVA} & \textbf{MinimalPRISM} & \textbf{\textbf{SVD-LLM V2}} \\
+\midrule
+Factorization & Symmetric & Symmetric & Symmetric & \textbf{Explicit} \\
+Interpretable $\Sigma$ & No & No & No & \textbf{Yes} \\
+Pre-test & No & Yes & Yes & Yes \\
+Whole-model & No & Yes & Yes & Yes \\
+GQA pooling & General & General & General & \textbf{Per-head} \\
+Bias parameter & Fused & Fused & Fused & \textbf{Separate} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

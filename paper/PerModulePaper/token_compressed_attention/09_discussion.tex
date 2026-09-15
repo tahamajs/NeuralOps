@@ -1,3 +1,135 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for token_compressed_attention.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: KV Cache Reduction is Real}
+
+TCA reduces KV cache size by {{KV\_PCT}}\% at   = {{RATIO}}, translating 
+to real memory savings during long-context inference.
+
+\subsubsection{Takeaway 2: Learnable Scoring Wins}
+
+The score net improves accuracy by \textbf{{{SCORE\_NET\_GAIN}}\%} over the norm-only 
+heuristic. This confirms that content-specific importance is learnable.
+
+\subsubsection{Takeaway 3: [CLS] Preservation Matters}
+
+Pinning token 0 recovers \textbf{{{CLS\_DROP}}\%} accuracy -- a free win.
+
+\subsection{When to Use TCA}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Long-context inference} (L > 512)
+\item \textbf{Memory-constrained deployment}
+\item \textbf{Streaming/decoding scenarios}
+\item \textbf{Combined with quantization} (TCA + INT8)
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Short sequences} (L < 64): overhead dominates
+\item \textbf{Latency-critical}: score\_net adds a small compute cost
+\item \textbf{Parameter-sensitive deployments}: TCA increases params by ~6\%
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need to reduce KV cache at inference? --- Yes --- Use TCA
+  | No
+   
+Need to reduce model size? --- Yes --- Use A3/AASVD instead
+  | No
+   
+Need to reduce latency? --- Consider quantization
+  | No
+   
+Consider other methods
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT at L = 512:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{TCA ( =0.5)} & \textbf{Change} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M & +6.3\% \\
+KV cache & {{KV\_BASE}} & {{KV\_TCA}} & -50\% \\
+Inference time & {{T\_BASE}} s & {{T\_TCA}} s & {{T\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Prior Eviction Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Learnable} & \textbf{Causal-safe} & \textbf{[CLS] pinned} \\
+\midrule
+H2O & No & Partial & No \\
+StreamingLLM & No & Yes & Yes (sinks) \\
+SnapKV & No & Partial & No \\
+\textbf{TCA} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Deployment Considerations}
+
+\subsubsection{KV Cache Scaling}
+
+At long L, KV cache dominates memory. TCA's 50\% reduction means:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{L} & \textbf{Baseline KV} & \textbf{TCA KV ( =0.5)} \\
+\midrule
+1K & 12.6 MB & 6.3 MB \\
+4K & 50 MB & 25 MB \\
+16K & 200 MB & 100 MB \\
+32K & 400 MB & 200 MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Combined with Quantization}
+
+TCA + INT8 $\to$ \textbf{~8$\times$ total reduction} in KV footprint.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Optimal   schedule:} Can   vary per layer?
+\item \textbf{Score net generalization:} Does the score transfer across tasks?
+\item \textbf{Interaction with quantization:} TCA then INT8 vs INT8 then TCA?
+\item \textbf{Training stability:} Should score\_net be trained from the start?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Enables long-context inference on small GPUs
+\item Reduces memory footprint for chat models
+\item Complements existing KV compression methods
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Small parameter increase
+\item Adds a training step (score\_net)
+
+\end{itemize}

@@ -1,3 +1,75 @@
-\section{11 Conclusion}
 
-Draft content for minimal_prism.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{MinimalPRISM}, a training-free SVD factorization method for 
+transformer attention projections. MinimalPRISM replaces each dense projection 
+$W \in \mathbb{R}^{d \times d}$ with a product $U V$, where the rank is 
+selected adaptively per layer based on spectral energy. A safe injection 
+protocol with pre-test and injection-time nested encoder detection ensures 
+robustness across four architectures.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Real parameter reduction works.}
+\item \textbf{Energy-adaptive rank is effective.}
+\item \textbf{No calibration needed.}
+\item \textbf{Injection safety matters.}
+\item \textbf{LoRA recovery is essential.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernels for factorized forward pass
+\item Frobenius validation per layer
+\item INT8 combination
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical error propagation bounds
+\item Learned rank schedules
+\item Extension to FFN projections
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+MinimalPRISM demonstrates that safe, training-free, multi-architecture 
+attention compression is feasible. We release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed MinimalPRISM, implemented the code, ran
+  experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

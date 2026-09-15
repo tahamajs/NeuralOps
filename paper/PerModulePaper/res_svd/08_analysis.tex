@@ -1,3 +1,140 @@
-\section{08 Analysis}
+\section{Analysis}
 
-Draft content for res_svd.
+\subsection{Why Res-SVD Works}
+
+Two mechanisms:
+
+\subsubsection{Spectral Initialization Preserves More Information}
+
+At initialization, Res-SVD is equivalent to rank-$(r_b + r_r)$ SVD. This 
+is optimal -- no other rank-$(r_b + r_r)$ decomposition has lower Frobenius 
+error.
+
+\textbf{Figure 8.1} compares the initial loss of:
+\begin{itemize}
+\item Standard SVD + zero LoRA: $\|W - W_b\|_F = \sqrt{\sum_{i > r_b} \sigma_i^2}$
+\item Res-SVD: $\|W - W_b - R_r\|_F = \sqrt{\sum_{i > r_b + r_r} \sigma_i^2}$
+
+\end{itemize}
+The difference is the energy in directions $[r_b, r_b + r_r]$.
+
+\subsubsection{Trainable Residual Adapts to Task}
+
+The residual $B, A$ is trainable, allowing fine-tuning. The base 
+$U_b, V_b$ stays frozen, so the compressed representation is preserved.
+
+\subsection{Per-Layer Analysis}
+
+\textbf{Table 8.1: Reconstruction error per layer.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
+\midrule
+0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} \\
+1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} \\
+... & ... & ... & ... & ... \\
+5 & {{D\_L5\_Q}} & {{D\_L5\_K}} & {{D\_L5\_V}} & {{D\_L5\_O}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{REC\_ERR\_OBS}}
+
+\subsection{Comparison with Pure SVD at Equal Rank}
+
+As proven in  4.7.1, Res-SVD at $(r_b, r_r)$ is equivalent to SVD of 
+rank $r_b + r_r$ at initialization. Differences during training arise 
+because:
+
+\begin{enumerate}
+\item Only $B, A$ receive gradient, not $U_b, V_b$.
+\item The optimizer may update $B, A$ in ways that diverge from optimal
+  rank-$(r_b + r_r)$ directions.
+
+\end{enumerate}
+\textbf{Table 8.2: Accuracy comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+SVD $r=20$ + zero LoRA & {{D\_SVD20}} & {{R\_SVD20}} \\
+\textbf{Res-SVD $(16, 4)$} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} \\
+Difference & {{D\_DIFF}} & {{R\_DIFF}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with PiSSA}
+
+PiSSA (Meng et al., 2024) uses the \textbf{complementary} approach: base takes 
+the residual, LoRA takes the principal directions. 
+
+\textbf{Table 8.3: Res-SVD vs PiSSA (math comparison).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{PiSSA} & \textbf{Res-SVD} \\
+\midrule
+Base & $W - BA$ (frozen) & $U_b V_b^T$ (frozen) \\
+LoRA & $U_b \Sigma_b^{1/2}$ (principal) & $U_r \Sigma_r^{1/2}$ (residual) \\
+Base rank & Full $-$ $r$ & $r_b$ \\
+Total rank & $r$ (LoRA) + dense base & $r_b + r_r$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Inference Cost}
+
+\textbf{Table 8.4: Inference time (DistilBERT, N=128).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{Res-SVD} \\
+\midrule
+Q/K/V/O projections & 0.5 ms & {{D\_PROJ\_TIME}} ms \\
+Attention & 0.4 ms & 0.4 ms \\
+Output proj & 0.2 ms & {{D\_OUT\_TIME}} ms \\
+LoRA & 0 & {{D\_LORA\_TIME}} ms \\
+\textbf{Total} & \textbf{1.4 ms} & \textbf{{{D\_TOTAL\_TIME}} ms} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The Silent Injection Fallback}
+
+\texttt{inject\_res\_svd} catches exceptions and returns \texttt{None}:
+
+\begin{lstlisting}
+except Exception as e:
+    logger.error("inject_res_svd failed at layer %d: %s", layer_idx, e)
+    return None
+\end{lstlisting}
+
+This is a \textbf{silent failure} -- the model is left unchanged but no error 
+is raised. If the caller ignores the return value, the model runs as 
+baseline.
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Res-SVD is a real compressor.} Parameters reduce by {{D\_RATIO}}$\times$.
+\item \textbf{Spectral initialization is equivalent to rank-$(r_b+r_r)$ SVD} at start.
+\item \textbf{Only the residual is trained}, making the base frozen.
+\item \textbf{Silent injection failure} is a risk.
+\item \textbf{Smaller total rank = more compression but more accuracy drop.}
+
+\end{enumerate}

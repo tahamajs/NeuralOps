@@ -1,3 +1,117 @@
-\section{12 Reproducibility}
 
-Draft content for eat.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+numpy & {{NUMPY\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running EAT}
+
+\begin{lstlisting}
+python run_all_4_eat.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}} \
+    --batch_size {{BATCH_SIZE}}
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --modules full,eat \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1}
+
+\begin{lstlisting}
+python run_all_4_eat.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (LoRA rank)}
+
+\begin{lstlisting}
+for r in 4 8 16 32 64; do
+    python run_all_4_eat.py --lora_rank $r --output_suffix lora$r
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.6 (Pruning)}
+
+\begin{lstlisting}
+python run_all_4_eat.py --prune_ratio 0.5
+python run_all_4_eat.py --prune_ratio 0.7
+python run_all_4_eat.py --no_prune
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Param $\Delta$} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & +{{D\_PARAM\_PCT}}\% \\
+RoBERTa & {{R\_ACC}}\% & +{{R\_PARAM\_PCT}}\% \\
+GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Dataset: SST-2 via \texttt{datasets}
+\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-eat}
+\item Metrics: \texttt{results/unified\_eat/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/eat\_*.log}
+
+\end{itemize}
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Windows: \texttt{PYTHONIOENCODING=utf-8} recommended
+\item RoBERTa may fail on some configs (see  8.2)
+\item Verify weight transfer with \texttt{sanity\_check}
+
+\end{itemize}

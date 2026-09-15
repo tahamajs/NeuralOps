@@ -1,3 +1,133 @@
-\section{09 Discussion}
 
-Draft content for nystrom_attention.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Compute-Only Compression}
+
+Nystr mformer reduces \textbf{attention compute}, not parameters or KV cache. 
+It is orthogonal to weight/KV methods.
+
+\subsubsection{Takeaway 2: Encoder Only}
+
+Nystr m approximation is not causal. Only encoder models benefit.
+
+\subsubsection{Takeaway 3: Portability Confirmed}
+
+The algorithm ports cleanly to non-BERT architectures with careful 
+engineering (Conv1D, nested encoder, GQA, RoPE).
+
+\subsection{When to Use Nystr mformer}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Long-sequence encoder} ($N > 512$)
+\item \textbf{Combined with weight compression} (MinimalSVD + Nystr m)
+\item \textbf{Combined with KV compression} (MLA + Nystr m)
+\item \textbf{Inference on compute-constrained hardware}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Short sequences} ($N \leq 128$)
+\item \textbf{Causal decoders} (GPT, Qwen)
+\item \textbf{When accuracy is critical} (approximation error)
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Attention compute bottleneck? --- Yes --- Continue
+  | No $\to$ other approaches
+
+  |
+   
+Encoder or decoder? --- Decoder --- Nystr m not applicable
+  | Encoder
+   
+N > 512? --- No --- Dense attention is fine
+  | Yes
+   
+Use Nystr mformer
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT at $N=512$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Nystr m} & \textbf{Change} \\
+\midrule
+Accuracy & {{D\_L512\_BASE}}\% & {{D\_L512\_NYS}}\% & {{D\_L512\_DELTA}}\% \\
+Time & {{D\_T512\_D}} s & {{D\_T512\_N}} s & \textbf{{{S512}}$\times$} \\
+VRAM & {{V512\_D}} MB & {{V512\_N}} MB & \textbf{{{VR512}}$\times$} \\
+Params & 66.95M & 66.95M & 1.00$\times$ \\
+KV cache & Same & Same & 1.00$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Reduces} & \textbf{Architecture} & \textbf{Best for} \\
+\midrule
+MinimalSVD & Params & Any & Storage-bound \\
+SVD-LLM V2 & Params & Any & Storage-bound \\
+Dobi-SVD & Params & Any & Unknown rank \\
+MLA & KV cache & Any & Long context \\
+\textbf{Nystr mformer} & \textbf{Compute} & Encoder & Long encoder \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Deployment Considerations}
+
+\subsubsection{Storage}
+No change.
+
+\subsubsection{Latency}
+Speedup scales with $N / m$.
+
+\subsubsection{Batch Size}
+Benefit increases with batch size.
+
+\subsubsection{Combining Methods}
+Nystr mformer + MLA $\to$ both compute and memory reduced.
+Nystr mformer + MinimalSVD $\to$ both compute and parameters reduced.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Causal Nystr m:} can we make Nystr m causal?
+\item \textbf{Optimal landmark selection:} adaptive pooling vs k-means?
+\item \textbf{Combined compression:} how do methods interact?
+\item \textbf{Cross-task:} does Nystr m work for generation?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Enables long-context encoders
+\item Reduces compute cost
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Dual-use concerns
+
+\end{itemize}
+\subsubsection{Environmental}
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+

@@ -1,0 +1,144 @@
+# 13. References
+
+```bibtex
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@inproceedings{katharopoulos2020transformers,
+  title={Transformers are RNNs: Fast autoregressive transformers with linear attention},
+  author={Katharopoulos, Angelos and others},
+  booktitle={ICML},
+  year={2020}
+}
+
+@article{qin2023hgrn,
+  title={Hierarchically gated recurrent neural network for sequence modeling},
+  author={Qin, Zhen and others},
+  booktitle={NeurIPS},
+  year={2023}
+}
+
+@article{qin2024hgrn2,
+  title={{HGRN2}: Gated linear recurrent networks with forgetting},
+  author={Qin, Zhen and others},
+  year={2024}
+}
+
+@article{gu2021efficiently,
+  title={Efficiently modeling long sequences with structured state spaces},
+  author={Gu, Albert and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{gu2023mamba,
+  title={Mamba: Linear-time sequence modeling with selective state spaces},
+  author={Gu, Albert and Dao, Tri},
+  year={2023}
+}
+
+@article{yang2023gla,
+  title={Gated linear attention transformers with hardware-efficient training},
+  author={Yang, Songlin and others},
+  booktitle={ICML},
+  year={2024}
+}
+
+@article{peng2023rwkv,
+  title={RWKV: Reinventing RNNs for the transformer era},
+  author={Peng, Bo and others},
+  year={2023}
+}
+
+@article{smith2023simplified,
+  title={Simplified state space layers for sequence modeling},
+  author={Smith, Jimmy T H and others},
+  booktitle={ICLR},
+  year={2023}
+}
+
+@article{tay2021synthesizer,
+  title={Synthesizer: Rethinking self-attention for transformer models},
+  author={Tay, Yi and others},
+  booktitle={ICML},
+  year={2021}
+}
+
+@article{lee2021fnet,
+  title={FNet: Mixing tokens with Fourier transforms},
+  author={Lee-Thorp, James and others},
+  year={2021}
+}
+
+@article{poli2023hyena,
+  title={Hyena hierarchy: Towards larger convolutional language models},
+  author={Poli, Michael and others},
+  booktitle={ICML},
+  year={2023}
+}
+
+@article{blelloch1990prefix,
+  title={Prefix sums and their applications},
+  author={Blelloch, Guy E},
+  year={1990}
+}
+
+@inproceedings{hochreiter1997long,
+  title={Long short-term memory},
+  author={Hochreiter, Sepp and Schmidhuber, J{\"u}rgen},
+  journal={Neural Computation},
+  year={1997}
+}
+
+@inproceedings{shazeer2020glu,
+  title={{GLU} variants improve transformer},
+  author={Shazeer, Noam},
+  year={2020}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}: Low-rank adaptation of large language models},
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{sanh2019distilbert,
+  title={{DistilBERT}},
+  author={Sanh, Victor and others},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title={{RoBERTa}},
+  author={Liu, Yinhan and others},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+```
+
+---

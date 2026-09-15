@@ -1,0 +1,121 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: A_math.md
+     PURPOSE: Formal derivations
+     DEPENDENCIES: 04_method.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix A. Mathematical Derivations
+
+## A.1 SVD Optimality (Eckart–Young)
+
+**Theorem.** For $W \in \mathbb{R}^{m \times n}$ and $r \leq \min(m, n)$:
+
+$$
+W_r^* = \arg\min_{\text{rank}(W_r) \leq r} \|W - W_r\|_F = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+\tag{A.1}
+$$
+
+$\square$
+
+## A.2 Gate-Compensated Initialization
+
+**Claim.** If $U_r, V_r$ are the symmetric SVD factors and gates are 
+initialized to $\alpha_0$, then the gate-compensated forward equals the SVD:
+
+$$
+(x (V_r / \sigma(\alpha_0) \odot \sigma(\alpha_0))^\top) U_r^\top = (x V_r^\top) U_r^\top
+\tag{A.2}
+$$
+
+**Proof.** Element-wise: $V_r / \sigma_0 \cdot \sigma_0 = V_r$. $\square$
+
+## A.3 Gradient of the Gate
+
+Let $y = (x (V \odot g)^\top) U^\top$ where $g = \sigma(\alpha)$. Then:
+
+$$
+\frac{\partial \mathcal{L}}{\partial \alpha_i}
+= \frac{\partial \mathcal{L}}{\partial y} \cdot \frac{\partial y}{\partial g_i} \cdot \sigma(\alpha_i)(1 - \sigma(\alpha_i))
+\tag{A.3}
+$$
+
+The $\sigma(1-\sigma)$ factor is largest at $\sigma = 0.5$, providing a 
+natural gradient landscape for pruning.
+
+## A.4 Effective Rank Definition
+
+Let $\tau_g$ be the pruning threshold. The effective rank is:
+
+$$
+r_\text{eff} = \#\{i : \sigma(\alpha_i) > \tau_g\}
+\tag{A.4}
+$$
+
+## A.5 Parameter Count
+
+For $d_\text{in} \times d_\text{out}$ at rank $r$:
+
+| Config | Params |
+|---|---|
+| Original | $d_\text{in} d_\text{out}$ |
+| Dobi-SVD | $r d_\text{in} + d_\text{out} r + r + d_\text{out}$ |
+| Without bias | $r(d_\text{in} + d_\text{out} + 1)$ |
+
+**Reduction factor:**
+
+$$
+\rho = \frac{d_\text{in} d_\text{out}}{r(d_\text{in} + d_\text{out} + 1)}
+\tag{A.5}
+$$
+
+## A.6 Rank Bound for Parameter Reduction
+
+Requiring $\rho > 1$:
+
+$$
+r < \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out} + 1}
+\tag{A.6}
+$$
+
+Dobi-SVD enforces this via `max_reduction_r`:
+
+$$
+r_\text{max} = \left\lfloor \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out}} \right\rfloor - 1
+\tag{A.7}
+$$
+
+## A.7 Sigmoid Saturation
+
+The gate $\sigma(\alpha)$ saturates for $|\alpha| > 5$:
+
+- $\sigma(5) \approx 0.993$
+- $\sigma(-5) \approx 0.007$
+
+This means gates that drift beyond $|\alpha| = 5$ become effectively binary. 
+The practical pruning threshold $\tau_g$ should be within the sensitive range.
+
+## A.8 Numerical Stability
+
+The gate compensation factor $1/\sigma(\alpha_0)$ can be large if 
+$\alpha_0$ is small. Dobi-SVD uses $\alpha_0 = {{INIT_GATE}}$ giving 
+$1/\sigma \approx {{INV_SIGMA}}$, well-conditioned.
+
+## A.9 Reconstruction Error
+
+After initialization, the reconstruction error is:
+
+$$
+\text{err}_0 = \frac{\|W - U_r V_r\|_F}{\|W\|_F}
+\tag{A.8}
+$$
+
+After training with gates $\alpha$:
+
+$$
+\text{err}_t = \frac{\|W - U_r (V_r \odot \sigma(\alpha))\|_F}{\|W\|_F}
+\tag{A.9}
+$$
+
+We expect $\text{err}_t \geq \text{err}_0$ due to gate drift.
+
+---

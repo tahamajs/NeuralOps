@@ -1,3 +1,90 @@
-\section{02 Related}
 
-Draft content for eat.
+\section{Related Work}
+
+\subsection{Efficient Attention Architectures}
+
+\subsubsection{Sparse Attention}
+
+Longformer (Beltagy et al., 2020), BigBird (Zaheer et al., 2020). These 
+methods design sparse attention patterns but do not prune tokens. EAT 
+combines standard attention with dynamic pruning.
+
+\subsubsection{Low-Rank Attention}
+
+Linformer (Wang et al., 2020) uses low-rank key/value projections. 
+Nystr mformer (Xiong et al., 2021) uses Nystr m approximation. EAT 
+preserves standard attention shape.
+
+\subsubsection{Kernel Attention}
+
+Performer (Choromanski et al., 2021) and Linear Transformer (Katharopoulos 
+et al., 2020). EAT uses standard softmax attention.
+
+\subsection{Token Pruning and Reduction}
+
+\subsubsection{Vision Transformers}
+
+DynamicViT (Rao et al., 2021) and EViT (Liang et al., 2022) prune tokens in 
+vision transformers based on attention scores. EAT borrows this idea but 
+applies it to text.
+
+\subsubsection{Text Transformers}
+
+LTP (Kim et al., 2022) uses a learned scorer to prune tokens. PuMer (Cao et 
+al., 2023) uses a similar approach with vision-language models. EAT differs 
+by combining pruning with LoRA recovery and multi-architecture support.
+
+\subsubsection{Token Merging}
+
+ToMe (Bolya et al., 2023) merges similar tokens rather than pruning. EAT 
+prunes outright; the merge alternative is a future direction.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+LoRA (Hu et al., 2021), AdaLoRA (Zhang et al., 2023), DoRA (Liu et al., 2024). 
+EAT uses standard LoRA for recovery.
+
+\subsection{Knowledge Transfer}
+
+DistilBERT (Sanh et al., 2019) distills. EAT transfers weights exactly 
+(zero-shot). The two are orthogonal.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{EAT} \\
+\midrule
+\textbf{Architecture} & Single family & Four families \\
+\textbf{Weight transfer} & Retrain or distill & Zero-shot transfer \\
+\textbf{Recovery} & Full or LoRA & LoRA only \\
+\textbf{Pruning} & Train-time & Inference-time \\
+\textbf{Parameter effect} & Reduces & \textbf{Increases} (LoRA) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} EAT is not a compressor. It replaces attention to 
+support \textbf{inference-time pruning} and \textbf{multi-architecture deployment}. 
+Any parameter reduction reported for EAT would be a misattribution.
+
+\subsection{Comparison to Companion Modules}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Module} & \textbf{Type} & \textbf{Params} & \textbf{Pruning} & \textbf{Multi-arch} \\
+\midrule
+NHA & Hybrid attention & +LoRA & No & Yes \\
+A3 & Low-rank compression & \textbf{ 50\%} & No & Yes \\
+AASVD & Low-rank compression & \textbf{ 50\%} & No & Yes \\
+\textbf{EAT} & Attention + pruning & \textbf{+LoRA} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

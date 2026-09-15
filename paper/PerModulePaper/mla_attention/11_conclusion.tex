@@ -1,3 +1,76 @@
-\section{11 Conclusion}
 
-Draft content for mla_attention.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We reproduced \textbf{Multi-Head Latent Attention} from DeepSeek-AI (2024) and 
+ported it to four transformer families: DistilBERT (flat), RoBERTa 
+(nested), GPT-2 (causal Conv1D), and Qwen3.5 (GQA + RoPE). MLA replaces 
+separate K and V projections with a shared low-rank latent vector, 
+reducing KV-cache size by \textbf{{{D\_KV\_RATIO}}$\times$--{{G\_KV\_RATIO}}$\times$}.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{KV reduction} & \textbf{Params} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_KV\_RATIO}}$\times$} & {{D\_PARAMS}}M \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_KV\_RATIO}}$\times$} & {{R\_PARAMS}}M \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_KV\_RATIO}}$\times$} & {{G\_PARAMS}}M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{MLA ports successfully} to non-DeepSeek architectures.
+\item \textbf{SVD-based initialization} with singular value normalization is
+  essential.
+\item \textbf{RoBERTa nested encoder} requires careful \texttt{is\_nested\_encoder} handling.
+\item \textbf{GPT-2 Conv1D} requires explicit transposition.
+\item \textbf{GQA models} require mean-pooling before SVD.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Long-context evaluation ($L = 2048, 8192$)
+\item Combined with parameter compression
+\item INT8 KV cache + MLA
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Optimal latent dimension via spectral analysis
+\item Decoupled RoPE matching the original
+\item Extension to encoder-decoder models
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+MLA is a promising KV-cache compression technique that generalizes beyond 
+its original architecture. We release all code and checkpoints for 
+reproduction.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}. This work reproduces DeepSeek-AI (2024).
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the reproduction, ran experiments, wrote
+  the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

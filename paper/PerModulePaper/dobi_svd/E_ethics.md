@@ -1,0 +1,61 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: E_ethics.md
+     PURPOSE: Ethical considerations
+     DEPENDENCIES: 11_conclusion.md
+     LENGTH TARGET: 0.5 - 1 page
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix E. Ethical Considerations
+
+## E.1 Broader Impact
+
+### Positive
+- **Democratizes AI** via smaller models
+- **Reduces carbon footprint**
+- **Enables edge inference**
+
+### Negative
+- **Dual-use concerns**
+- **Concentration risk**
+
+## E.2 Environmental Impact
+
+- Total GPU-hours: ~{{COMPUTE_HOURS}}
+- Estimated CO₂: {{CO2_KG}} kg CO₂eq
+
+## E.3 Data Ethics
+
+- Dataset: SST-2 (public, English)
+- PII: None
+
+## E.4 Model Ethics
+
+### Bias
+Not audited.
+
+### Misuse
+Not endorsed.
+
+## E.5 Authorship and Credit
+See §11.7.
+
+## E.6 Conflicts of Interest
+None.
+
+## E.7 Funding
+{{FUNDING}}
+
+## E.8 Acknowledgments
+{{ACKNOWLEDGMENTS}}
+
+## E.9 LLM Usage
+Parts drafted with LLM assistance.
+
+## E.10 Reproducibility
+All code and checkpoints released.
+
+## E.11 Long-Term Considerations
+Learnable rank selection could enable more efficient deployment, but also 
+enable more aggressive compression that may hide systematic biases.
+
+---

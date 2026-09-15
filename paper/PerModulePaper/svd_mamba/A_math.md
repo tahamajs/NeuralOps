@@ -1,0 +1,93 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: A_math.md
+     PURPOSE: Mathematical derivations
+     DEPENDENCIES: 04_method.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix A. Mathematical Derivations
+
+## A.1 Selective SSM Discretization
+
+**Claim.** The zero-order-hold discretization of the continuous SSM
+
+$$
+h'(t) = A h(t) + B x(t)
+\tag{A.1}
+$$
+
+is $\bar{A} = e^{\Delta A}$, $\bar{B} = \Delta B$ for diagonal $A$.
+
+**Proof.** For constant input $x$ over interval $\Delta$:
+
+$$
+h(t + \Delta) = e^{A \Delta} h(t) + \int_0^\Delta e^{A(\Delta - s)} B x \, ds
+$$
+
+$$
+= e^{A \Delta} h(t) + A^{-1}(e^{A \Delta} - I) B x
+$$
+
+For diagonal $A$ and small $\Delta$, $(e^{A\Delta} - I) \approx A \Delta$, 
+giving $\bar{B} \approx \Delta B$. $\square$
+
+## A.2 Chunked Scan Correctness
+
+**Claim.** The chunked scan yields the same result as the sequential 
+recurrence.
+
+**Proof sketch.** Define the "log-decay" $\lambda_{c, i} = \sum_{j \leq i} \log \bar{A}_{c, j}$. 
+Then within a chunk:
+
+$$
+h_{c, i} = e^{\lambda_{c, i}} \sum_{j \leq i} e^{-\lambda_{c, j}} \bar{B}_{c, j} x_{c, j} + e^{\lambda_{c, i}} h_{c-1, C}
+$$
+
+The first term is the intra-chunk contribution; the second is the carry-over. 
+By induction on chunks, the total equals the full sequential recurrence. $\square$
+
+## A.3 Gate Initialization
+
+**Claim.** With bias $-7$, the SSM contributes $< 0.1\%$ at initialization.
+
+**Proof.** $\sigma(-7) = \frac{1}{1 + e^7} \approx 9.1 \times 10^{-4}$. The 
+fused output is:
+
+$$
+Y = \sigma(-7) Y_\text{SSM} + (1 - \sigma(-7)) Y_\text{attn} \approx 0.999 Y_\text{attn} + 0.0009 Y_\text{SSM}
+$$
+
+If $\|Y_\text{SSM}\| \sim \|Y_\text{attn}\|$, the SSM contributes ~0.09%. $\square$
+
+## A.4 Parameter Count
+
+**Claim.** SVD-Mamba's total parameter change is:
+
+$$
+\Delta P = P_\text{SSM} + P_\text{gate} + P_\text{global} + P_\text{LoRA} - P_\text{SVD saved}
+\tag{A.2}
+$$
+
+**Proof.** Direct sum. For DistilBERT:
+
+- $P_\text{SVD saved} \approx 6 \times 4 \times (589,824 - 98,368) \approx 11.8M$
+- $P_\text{SSM} \approx 6 \times 2.3M \approx 13.8M$
+- $P_\text{gate} \approx 6 \times 590K \approx 3.5M$
+- $P_\text{global} \approx 6 \times 50K \approx 300K$
+- $P_\text{LoRA} \approx 6 \times 100K \approx 600K$
+
+$\Delta P \approx 6.4M$ → +9.6% on DistilBERT. $\square$
+
+## A.5 Causality
+
+**Claim.** SVD-Mamba preserves causality.
+
+**Proof.** 
+- Attention: causal mask enforced.
+- SSM: recurrence is causal by construction.
+- Convolution: no padding on right → causal.
+- Global: position-wise.
+- Gating: position-wise.
+
+Therefore output at position $i$ depends only on inputs $1..i$. $\square$
+
+---

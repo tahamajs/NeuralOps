@@ -1,3 +1,176 @@
-\section{C Data}
 
-Draft content for unified_rope.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & 66,955,010 \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Precision & {{D\_PREC}} \\
+Recall & {{D\_REC}} \\
+Loss & {{D\_LOSS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+RoPE base & 10000 \\
+Rotary dim & {{D\_ROTARY\_DIM}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & 124,647,170 \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Nested & True \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & 124,441,344 \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Conv1D & True \\
+Causal & True \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 RoPE Correctness}
+
+\textbf{Norm preservation:}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Before} & \textbf{After} & \textbf{Error} \\
+\midrule
+DistilBERT & {{D\_Q\_NORM\_BEFORE}} & {{D\_Q\_NORM\_AFTER}} & {{D\_Q\_NORM\_ERR}} \\
+RoBERTa & {{R\_Q\_NORM\_BEFORE}} & {{R\_Q\_NORM\_AFTER}} & {{R\_Q\_NORM\_ERR}} \\
+GPT-2 & {{G\_Q\_NORM\_BEFORE}} & {{G\_Q\_NORM\_AFTER}} & {{G\_Q\_NORM\_ERR}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Relative position:}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Score variance across absolute positions} \\
+\midrule
+DistilBERT & {{D\_SCORE\_VAR}} \\
+RoBERTa & {{R\_SCORE\_VAR}} \\
+GPT-2 & {{G\_SCORE\_VAR}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 RoPE Base Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Base} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+5000 & {{D\_BASE5K}} & {{R\_BASE5K}} & {{G\_BASE5K}} \\
+10000 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+100000 & {{D\_BASE100K}} & {{R\_BASE100K}} & {{G\_BASE100K}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Rotary Dim Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rot dim} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & {{D\_ROT32}} & {{R\_ROT32}} & {{G\_ROT32}} \\
+64 & {{D\_ROT64}} & {{R\_ROT64}} & {{G\_ROT64}} \\
+Full & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsubsection{RoBERTa}
+\begin{lstlisting}
+Step  Loss
+1     {{R_S1}}
+...
+50    {{R_S50}}
+\end{lstlisting}
+
+\subsubsection{GPT-2}
+\begin{lstlisting}
+Step  Loss
+1     {{G_S1}}
+...
+50    {{G_S50}}
+\end{lstlisting}
+
+\subsection{C.8 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "params": 66955010,
+    "accuracy_pct": {{D_ACC}},
+    "f1": {{D_F1}},
+    "rope_base": 10000,
+    "rotary_dim": {{D_ROTARY_DIM}}
+  },
+  "roberta": {...},
+  "gpt2": {...}
+}
+\end{lstlisting}
+

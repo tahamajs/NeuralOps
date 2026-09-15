@@ -1,0 +1,165 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 13_references.md
+     PURPOSE: Bibliography
+     DEPENDENCIES: All
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# 13. References
+
+```bibtex
+@inproceedings{xiong2021nystromformer,
+  title={Nystr{\"o}mformer: A Nystr{\"o}m-based algorithm for approximating 
+         self-attention},
+  author={Xiong, Yunyang and Zeng, Zhanpeng and Chakraborty, Rudrasis and 
+          Tan, Mingxing and Fung, Glenn and Li, Yin and Singh, Vikas},
+  booktitle={AAAI},
+  year={2021}
+}
+
+@article{nystrom1930praktiska,
+  title={{\"U}ber die praktische Aufl{\"o}sung von Integralgleichungen 
+         mit Anwendung auf Randwertaufgaben},
+  author={Nystr{\"o}m, Evert J},
+  journal={Acta Mathematica},
+  volume={54},
+  pages={185--204},
+  year={1930}
+}
+
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@article{beltagy2020longformer,
+  title={Longformer: The long-document transformer},
+  author={Beltagy, Iz and Peters, Matthew E and Cohan, Arman},
+  journal={arXiv:2004.05150},
+  year={2020}
+}
+
+@inproceedings{zaheer2020big,
+  title={Big bird: Transformers for longer sequences},
+  author={Zaheer, Manzil and others},
+  booktitle={NeurIPS},
+  year={2020}
+}
+
+@inproceedings{wang2020linformer,
+  title={Linformer: Self-attention with linear complexity},
+  author={Wang, Sinong and others},
+  journal={arXiv:2006.04768},
+  year={2020}
+}
+
+@inproceedings{choromanski2021rethinking,
+  title={Rethinking attention with performers},
+  author={Choromanski, Krzysztof and others},
+  booktitle={ICLR},
+  year={2021}
+}
+
+@inproceedings{katharopoulos2020transformers,
+  title={Transformers are {RNNs}: Fast autoregressive transformers with 
+         linear attention},
+  author={Katharopoulos, Angelos and others},
+  booktitle={ICML},
+  year={2020}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}: Low-rank adaptation},
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{su2021roformer,
+  title={Roformer: Enhanced transformer with rotary position embedding},
+  author={Su, Jianlin and others},
+  journal={arXiv:2104.09864},
+  year={2021}
+}
+
+@inproceedings{ainslie2023gqa,
+  title={{GQA}: Grouped-query attention},
+  author={Ainslie, Joshua and others},
+  booktitle={EMNLP},
+  year={2023}
+}
+
+@inproceedings{shazeer2019mqa,
+  title={Fast transformer decoding: One write-head is all you need},
+  author={Shazeer, Noam},
+  journal={arXiv:1911.02150},
+  year={2019}
+}
+
+@article{sanh2019distilbert,
+  title={{DistilBERT}},
+  author={Sanh, Victor and others},
+  journal={arXiv:1910.01108},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title={{RoBERTa}},
+  author={Liu, Yinhan and others},
+  journal={arXiv:1907.11692},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for sentiment},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+
+@book{golub2013matrix,
+  title={Matrix Computations},
+  author={Golub, Gene H and Van Loan, Charles F},
+  publisher={Johns Hopkins University Press},
+  edition={4th},
+  year={2013}
+}
+
+@inproceedings{schulz1933iterative,
+  title={Iterative Berechung der reziproken Matrix},
+  author={Schulz, G{\"u}nther},
+  journal={Zeitschrift f{\"u}r Angewandte Mathematik und Mechanik},
+  year={1933}
+}
+
+@article{chang2024palu,
+  title={Palu: Compressing {KV}-cache with low-rank projection},
+  author={Chang, Chi-Chih and others},
+  journal={arXiv:2407.21118},
+  year={2024}
+}
+
+@article{deepseekai2024v2,
+  title={{DeepSeek-V2}},
+  author={{DeepSeek-AI}},
+  journal={arXiv:2405.04434},
+  year={2024}
+}
+```
+
+---

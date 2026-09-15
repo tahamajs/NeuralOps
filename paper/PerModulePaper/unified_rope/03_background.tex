@@ -1,3 +1,152 @@
-\section{03 Background}
 
-Draft content for unified_rope.
+\section{Background}
+
+\subsection{Multi-Head Self-Attention}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+\begin{aligned}
+Q &= X W_Q, \quad K = X W_K, \quad V = X W_V \\
+\text{head}_h &= \mathrm{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h \\
+\text{MHSA}(X) &= \mathrm{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+\end{aligned}
+\tag{3.1}
+\]
+
+\subsection{Rotary Position Embedding (RoPE)}
+
+RoPE encodes position by rotating each 2D subspace of $Q, K$:
+
+\[
+\tilde{q}_i = q_i \cos(\theta_i) + \mathrm{rot}(q_i) \sin(\theta_i)
+\tag{3.2}
+\]
+
+where the rotation operator acts on the first half vs second half:
+
+\[
+\mathrm{rot}(x) = \begin{pmatrix} -x_{d_h/2:} \\ x_{:d_h/2} \end{pmatrix}
+\tag{3.3}
+\]
+
+and $\theta_i$ is a position-dependent angle:
+
+\[
+\theta_i^{(k)} = i \cdot \omega_k, \qquad
+\omega_k = \mathrm{base}^{-2k/d_h}, \quad k = 0, \dots, d_h/2 - 1
+\tag{3.4}
+\]
+
+\textbf{Effect on attention.} The score between $q_i$ and $k_j$ depends only on 
+$i - j$:
+
+\[
+\tilde{q}_i^\top \tilde{k}_j = f(q_i, k_j, i - j)
+\tag{3.5}
+\]
+
+\subsection{Partial-Dimension RoPE}
+
+Not all models apply RoPE to the full head dimension. For models with 
+partial rotation (e.g., Qwen with \texttt{rotary\_dim < head\_dim}):
+
+\[
+\tilde{q}_i = \begin{pmatrix} q_i^{[:r]} \cos(\theta_i) + \mathrm{rot}(q_i^{[:r]}) \sin(\theta_i) \\ q_i^{[r:]} \end{pmatrix}
+\tag{3.6}
+\]
+
+where $r$ is the rotary dimension. UnifiedRoPE supports this via 
+\texttt{rotary\_dim = 2 * (head\_dim // 2)}.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+$H_{kv} < H$ KV heads, repeated $H / H_{kv}$ times before attention:
+
+\[
+K_\text{expanded} = \mathrm{repeat\_kv}(K, H / H_{kv})
+\tag{3.7}
+\]
+
+UnifiedRoPE applies \texttt{repeat\_kv} after RoPE.
+
+\subsection{Nested Encoder Structure}
+
+In BERT-style models:
+
+\begin{lstlisting}
+BertAttention
++-- self       (BertSelfAttention)
+|   +-- query
+|   +-- key
+|   +-- value
++-- output     (BertSelfOutput)
+    +-- dense  # $\leftarrow$ Output projection OUTSIDE
+\end{lstlisting}
+
+The output projection \texttt{output.dense} is \textbf{outside} the inner attention. 
+When replacing the inner attention, the outer \texttt{output.dense} must still 
+apply. UnifiedRoPE returns raw context and lets the outer layer project.
+
+\subsection{Conv1D in GPT-2}
+
+GPT-2 uses HuggingFace's \texttt{Conv1D}, which stores weights as \texttt{(in, out)}:
+
+\begin{lstlisting}
+class Conv1D(nn.Module):
+    def __init__(self, nf, nx):
+        self.weight = nn.Parameter(torch.empty(nx, nf))  # (in, out)
+\end{lstlisting}
+
+This is \textbf{transposed} relative to \texttt{nn.Linear}. UnifiedRoPE detects Conv1D 
+and transposes during weight transfer.
+
+\subsection{LoRA Adapters}
+
+LoRA (Hu et al., 2021) adds trainable residuals:
+
+\[
+\Delta W = \frac{\alpha}{r} B A
+\tag{3.8}
+\]
+
+with $B = 0$ at initialization. UnifiedRoPE's \texttt{LoRALinear} wraps this.
+
+\subsection{Precomputed Caches}
+
+RoPE angles $\theta_i$ are precomputed once:
+
+\begin{lstlisting}
+inv_freq = 1.0 / (base ** (arange(0, rotary_dim, 2) / rotary_dim))
+t = arange(seq_len)
+freqs = einsum("i,j->ij", t, inv_freq)
+emb = cat([freqs, freqs], dim=-1)
+cos_cached = emb.cos()
+sin_cached = emb.sin()
+\end{lstlisting}
+
+UnifiedRoPE stores these as \textbf{non-persistent buffers} (\texttt{persistent=False}), 
+so they are not saved with the model state dict.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$d, d_h, H, H_{kv}$ & Model dims \\
+$Q, K, V$ & Query, Key, Value \\
+$L$ & Sequence length \\
+$B$ & Batch size \\
+$\theta_i$ & RoPE angle at position $i$ \\
+$\mathrm{rot}(\cdot)$ & Half-rotation operator \\
+$\omega_k$ & Rotation frequency \\
+$r$ & Rotary dimension \\
+$r_L, \alpha$ & LoRA rank, scaling \\
+\bottomrule
+\end{tabular}
+\end{table}
+

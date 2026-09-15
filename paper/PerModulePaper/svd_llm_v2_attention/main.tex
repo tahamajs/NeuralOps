@@ -64,10 +64,40 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal analysis and benchmark evaluation of the module.
+We present \textbf{SVD-LLM V2}, a transformer attention compression method that 
+factorizes each of the four attention projections $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ 
+into \textbf{three explicit parameter buffers} -- left singular vectors $U$, 
+singular values $\Sigma$, and right singular vectors $V^H$ -- rather than a 
+symmetric product as in prior low-rank methods. This choice preserves the 
+\textbf{interpretability} of the singular spectrum and enables downstream 
+applications such as per-component quantization and spectral analysis.
+
+The rank for each projection is selected adaptively based on **energy 
+threshold** $\eta$: the smallest $r$ such that $E(r) = \sum_{i \le r} \sigma_i^2 / \sum_i \sigma_i^2 \ge \eta$. 
+Trainable LoRA adapters $A, B$ are attached per projection with $B = 0$ at 
+initialization, so the initial output equals the truncated SVD approximation. 
+Base weights and biases are frozen.
+
+SVD-LLM V2 is hardened for four transformer families: DistilBERT (flat), 
+RoBERTa/BERT (nested), GPT-2 (causal Conv1D), and Qwen/LLaMA (GQA + RoPE). 
+It includes \textbf{pre-test on the first layer} before mutating the model, 
+\textbf{injection-time nested encoder detection}, and a \textbf{double-injection guard}. 
+When target KV heads are fewer than source heads (GQA), K and V weights are 
+mean-pooled per head group before factorization.
+
+On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = {{RANK}}$ and 
+energy $\eta = {{ENERGY}}$, SVD-LLM V2 achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+parameter reduction with accuracy drops of only \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} 
+after {{RECOVERY\_STEPS}} LoRA recovery steps. Peak inference VRAM decreases 
+by \textbf{{{VRAM\_REDUCTION}}\%}.
+
+\textbf{Keywords:} SVD, low-rank factorization, explicit singular factors, LoRA 
+recovery, attention compression, multi-architecture transformers, GQA
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} Efficient Attention, Transformers, Deep Learning, Model Compression
+\noindent\textbf{Keywords:} SVD, low-rank factorization, explicit singular factors, LoRA
 \end{abstract}
 
 \vspace{1em}

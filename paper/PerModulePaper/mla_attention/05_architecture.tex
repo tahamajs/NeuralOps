@@ -1,11 +1,217 @@
-\section{05 Architecture}
 
-Draft content for mla_attention.
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{$d$} & \textbf{$H$} & \textbf{$H_{kv}$} & \textbf{Nested?} & \textbf{Conv1D?} & \textbf{RoPE?} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & No & No & No \\
+RoBERTa-base & 12 & 768 & 12 & 12 & Yes & No & No \\
+GPT-2 & 12 & 768 & 12 & 12 & No & Yes & No \\
+Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & No & No & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+distilbert.transformer.layer.0.attention
++-- q_lin  (Linear 768 $\to$ 768)
++-- k_lin  (Linear 768 $\to$ 768)
++-- v_lin  (Linear 768 $\to$ 768)
++-- out_lin (Linear 768 $\to$ 768)
+\end{lstlisting}
+
+\textbf{Extraction:}
+\begin{lstlisting}
+w_q = src.q_lin.weight.data
+w_k = src.k_lin.weight.data
+w_v = src.v_lin.weight.data
+w_o = src.out_lin.weight.data
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False}.
+
+\subsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+roberta.encoder.layer.0.attention
++-- self
+|   +-- query
+|   +-- key
+|   +-- value
++-- output
+    +-- dense
+\end{lstlisting}
+
+\textbf{Extraction:}
+\begin{lstlisting}
+src_inner = src.self
+w_q = src_inner.query.weight.data
+w_k = src_inner.key.weight.data
+w_v = src_inner.value.weight.data
+w_o = src.output.dense.weight.data
+\end{lstlisting}
+
+\textbf{Nested detection:} \texttt{hasattr(src, "self") and hasattr(src.self, "query")}.
+
+\texttt{is\_nested\_encoder = True}. Forward returns raw context; outer 
+\texttt{output.dense} applies projection.
+
+\subsection{GPT-2 (Causal Conv1D)}
+
+\begin{lstlisting}
+transformer.h.0.attn
++-- c_attn  (Conv1D 768 $\to$ 2304)
++-- c_proj  (Conv1D 768 $\to$ 768)
+\end{lstlisting}
+
+\textbf{Extraction:}
+\begin{lstlisting}
+weight = src.c_attn.weight.data
+if weight.shape[1] == 3 * hidden_size:   # Conv1D stores (in, out)
+    weight = weight.t()
+q_w, k_w, v_w = weight.chunk(3, dim=0)
+w_o = src.c_proj.weight.data
+\end{lstlisting}
+
+\texttt{is\_nested\_encoder = False}.
+
+\subsection{Qwen3.5 (GQA + RoPE)}
+
+\begin{lstlisting}
+model.layers.0.self_attn
++-- q_proj  (Linear 1024 $\to$ 2048)
++-- k_proj  (Linear 1024 $\to$ 512)
++-- v_proj  (Linear 1024 $\to$ 512)
++-- o_proj  (Linear 2048 $\to$ 1024)
+\end{lstlisting}
+
+\textbf{GQA dimension match:}
+\begin{lstlisting}
+if w_k_f.shape[0] > self.kv_dim:
+    rep = w_k_f.shape[0] // self.kv_dim
+    w_k_f = w_k_f.view(self.kv_dim, rep, -1).mean(dim=1)
+\end{lstlisting}
+
+\textbf{RoPE applied after up-projection} via \texttt{position\_embeddings} in kwargs.
+
+\texttt{is\_nested\_encoder = False}.
+
+\subsection{Injection Hook}
+
+\begin{lstlisting}
+def inject_mla(layer, model_config, comp_config=None, old_attn=None, ...):
+    rank = getattr(comp_config, "mla_rank", 128) if comp_config else 128
+    new_attn = MLAAttention(model_config, rank=rank)
+    
+    src_attn = old_attn or getattr(layer, "attention", getattr(layer, "self", None))
+    if src_attn is not None:
+        new_attn.copy_weights(src_attn)
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+    
+    if hasattr(layer, "attention"):
+        if hasattr(layer.attention, "self"):
+            layer.attention.self = new_attn
+        else:
+            layer.attention = new_attn
+    elif hasattr(layer, "self"):
+        layer.self = new_attn
+    
+    return new_attn
+\end{lstlisting}
+
+\textbf{Note.} This injection hook is \textbf{single-layer only}. Whole-model traversal 
+is the caller's responsibility.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing Q/K/V & \texttt{copy\_weights} raises & Abort \\
+Near-zero Frobenius & Norm check < 1e-4 & Raise \\
+Wrong Conv1D & \texttt{hasattr(src, "c\_attn")} & Handle \\
+Missing out\_proj (nested) & \texttt{is\_nested\_encoder} & Identity matrix \\
+GQA dimension mismatch & Shape check & Mean-pool \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("mla")
+@ATTENTION_REGISTRY.register("mla_attention")
+class MLAAttention(BaseAttention):
+    ...
+
+@ATTENTION_REGISTRY.register("mla_inject")
+def inject_mla(...):
+    ...
+\end{lstlisting}
+
+\subsection{LoRA Recovery Integration}
+
+MLA integrates with the framework's LoRA recovery:
+
+\begin{enumerate}
+\item MLA initialization $\to$ frozen base, trainable LoRA on Q/O.
+\item Recovery fine-tuning trains LoRA + \texttt{output\_scale}.
+\item Evaluation uses the fine-tuned model.
+
+\end{enumerate}
+\subsection{Cross-Attention}
+
+MLA does \textbf{not} support cross-attention. Encoder-decoder models (T5, BART) 
+are not applicable.
+
+\subsection{Comparison with Original DeepSeek-V2 MLA}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Original} & \textbf{Our reproduction} \\
+\midrule
+Target architecture & DeepSeek-V2 & Four families \\
+Latent dim & 512 (V2), 1536 (V3) & {{RANK}} \\
+RoPE on K & Decomposed & After projection \\
+GQA & Native & Supported via pool \\
+Output scale & Not specified & Trainable scalar \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Differences from original.}
+
+\begin{enumerate}
+\item \textbf{Latent dimension.} We use {{RANK}} instead of 512.
+\item \textbf{RoPE handling.} The original applies RoPE on a decoupled head
+  dimension; we apply it uniformly after up-projection.
+\item \textbf{Multi-architecture support.} The original does not target DistilBERT,
+  RoBERTa, or GPT-2.
+
+\end{enumerate}
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
-\caption{Architectural overview of mla_attention.}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of mla_attention.}
 \label{fig:arch_mla_attention}
 \end{figure}
+

@@ -1,3 +1,119 @@
-\section{06 Setup}
+\section{Experimental Setup}
 
-Draft content for minimal_aurora.
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}:
+\begin{itemize}
+\item Train: 67,349
+\item Validation: 872
+\item Test: 1,821
+\item Majority: 50.92\%
+
+\end{itemize}
+\subsection{MinimalAURORA Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{energy} $\varepsilon$ & {{ENERGY}} \\
+\texttt{rank} (max cap) & {{RANK}} \\
+\texttt{lora\_rank} & {{LORA\_RANK}} \\
+\texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
+\texttt{dropout} & 0.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & {{LR}} \\
+Weight decay & {{WD}} \\
+Steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item \textbf{Quality:} Accuracy, F1, precision, recall
+\item \textbf{Efficiency:} Total params, peak VRAM, inference time
+\item \textbf{Compression:} Parameter ratio, per-layer rank distribution
+\item \textbf{Energy:} Final \texttt{output\_scale} values
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+RTX 4070 Laptop, 8 GB VRAM.
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_minimal_aurora.py \
+    --models distilbert,roberta,gpt2 \
+    --energy {{ENERGY}} \
+    --rank {{RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Uncompressed model \\
+\texttt{minimal\_aurora} & Our method \\
+Companion & \texttt{asvd}, \texttt{aasvd}, \texttt{a3}, \texttt{res\_svd} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

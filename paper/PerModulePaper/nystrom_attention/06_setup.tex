@@ -1,3 +1,169 @@
-\section{06 Setup}
 
-Draft content for nystrom_attention.
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Attention} & \textbf{Causal} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M & Flat & No \\
+RoBERTa & 12 & 768 & 12 & 124.6M & Nested & No \\
+GPT-2 & 12 & 768 & 12 & 124.4M & Conv1D & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Split} & \textbf{Size} \\
+\midrule
+Train & 67,349 \\
+Validation & 872 \\
+Test & 1,821 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Sequence length:} 128 (below Nystr m activation threshold).
+
+Majority baseline: 50.92\%.
+
+\subsection{Nystr mformer Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
+\midrule
+\texttt{num\_landmarks} & {{NUM\_LANDMARKS}} & Default 32 \\
+\texttt{pinv\_iterations} & 3 & Newton-Schulz \\
+Short seq threshold & 128 & Dense fallback \\
+\texttt{lora\_rank} & {{LORA\_RANK}} & Recovery \\
+\texttt{lora\_alpha} & {{LORA\_ALPHA}} & Scaling \\
+\texttt{dropout} & 0.1 & Standard \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & {{LR}} \\
+Weight decay & {{WD}} \\
+Recovery steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation Metrics}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, Precision, Recall
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Inference time
+\item Peak VRAM
+\item \textbf{Path used} (dense or Nystr m)
+
+\end{itemize}
+\subsubsection{Approximation Quality}
+\begin{itemize}
+\item Nystr m approximation error (when active)
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Spec} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+VRAM & 8 GB GDDR6 \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
+Transformers & {{HF\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_nystrom.py \
+    --models distilbert,roberta,gpt2 \
+    --num_landmarks {{NUM_LANDMARKS}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+Runtime: ~{{RUNTIME}} minutes.
+
+\subsection{Long Sequence Evaluation}
+
+\textbf{Note.} At $N = 128$, all models use dense fallback. To activate Nystr m, 
+sequences must be $N > 128$. We test this in a separate experiment with 
+$N = 512$:
+
+\begin{lstlisting}
+python run_all_4_nystrom.py \
+    --models distilbert \
+    --seq_len 512 \
+    --num_landmarks 32
+\end{lstlisting}
+
+\subsection{Seeds}
+
+All experiments use seed {{SEED}}.
+
+\subsection{Baselines}
+
+\begin{enumerate}
+\item \textbf{\texttt{full}:} Uncompressed model.
+\item \textbf{\texttt{nystrom}:} Our method (dense fallback at $N=128$).
+\item \textbf{Companion methods:} \texttt{minimal\_svd}, \texttt{svd\_llm\_v2}, \texttt{mla}, \texttt{dobi}.
+
+\end{enumerate}

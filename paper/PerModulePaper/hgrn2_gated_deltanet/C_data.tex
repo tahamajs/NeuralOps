@@ -1,3 +1,133 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for hgrn2_gated_deltanet.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Params change & +{{D\_PARAM\_PCT}}\% \\
+Trainable & {{D\_TRAINABLE}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time (L=128) & {{D\_T128}} s \\
+Inference time (L=1024) & {{D\_T1024}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+Params change & +{{R\_PARAM\_PCT}}\% \\
+Trainable & {{R\_TRAINABLE}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Speed vs L}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{L} & \textbf{DistilBERT base} & \textbf{DistilBERT ours} & \textbf{Speedup} \\
+\midrule
+128 & 1.90 s & {{D\_T128}} s & {{S128}}$\times$ \\
+256 & 3.50 s & {{D\_T256}} s & {{S256}}$\times$ \\
+512 & 12.0 s & {{D\_T512}} s & {{S512}}$\times$ \\
+1024 & 45.0 s & {{D\_T1024}} s & {{S1024}}$\times$ \\
+2048 & 180.0 s & {{D\_T2048}} s & {{S2048}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+20    {{D_S20}}
+30    {{D_S30}}
+40    {{D_S40}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsubsection{RoBERTa}
+\begin{lstlisting}
+Step  Loss
+1     {{R_S1}}
+...
+50    {{R_S50}}
+\end{lstlisting}
+
+\subsubsection{GPT-2}
+\begin{lstlisting}
+Step  Loss
+1     {{G_S1}}
+...
+50    {{G_S50}}
+\end{lstlisting}
+
+\subsection{C.6 Gate Statistics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Mean $\gamma$} & \textbf{Std $\gamma$} & \textbf{Min $\gamma$} & \textbf{Max $\gamma$} \\
+\midrule
+DistilBERT & {{D\_GATE\_MEAN}} & {{D\_GATE\_STD}} & {{D\_GATE\_MIN}} & {{D\_GATE\_MAX}} \\
+RoBERTa & {{R\_GATE\_MEAN}} & {{R\_GATE\_STD}} & {{R\_GATE\_MIN}} & {{R\_GATE\_MAX}} \\
+GPT-2 & {{G\_GATE\_MEAN}} & {{G\_GATE\_STD}} & {{G\_GATE\_MIN}} & {{G\_GATE\_MAX}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_hgrn2_gated_deltanet.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps 50 \
+    --lora_rank 16
+\end{lstlisting}
+

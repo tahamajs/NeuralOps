@@ -1,3 +1,70 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for minimal_aurora.
+\subsection{Summary}
+
+We presented \textbf{MinimalAURORA}, an energy-preserving SVD-factorized 
+attention module that reduces parameter count by {{D\_RATIO}}$\times$ while 
+maintaining accuracy within {{D\_DELTA}}\%.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Real compression} via energy-threshold SVD.
+\item \textbf{Simple implementation} -- no calibration, no weighting.
+\item \textbf{Multi-architecture} -- same code, four families.
+\item \textbf{\texttt{pres\_gate} unused} -- should be removed.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Remove \texttt{pres\_gate}
+\item Freeze \texttt{output\_scale} or add regularization
+\item Test at long context
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Add activation weighting (A3/AASVD style)
+\item Add LayerNorm recalibration
+\item Compare with other energy thresholds
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+MinimalAURORA provides a simple, honest baseline for attention 
+compression. We release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed MinimalAURORA, implemented the code, ran
+  experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

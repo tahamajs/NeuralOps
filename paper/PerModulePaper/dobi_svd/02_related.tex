@@ -1,3 +1,100 @@
-\section{02 Related}
 
-Formal architectural specifications for \texttt{dobi_svd}.
+\section{Related Work}
+
+\subsection{Low-Rank Matrix Factorization}
+
+\textbf{Classical SVD.} The Eckart--Young theorem (Eckart \& Young, 1936) states 
+that the optimal rank-$r$ approximation of $W$ in Frobenius norm is the 
+truncated SVD. Dobi-SVD uses this for initialization.
+
+\textbf{Randomized SVD.} Halko et al. (2011) provide randomized algorithms. Not 
+used here; exact SVD is feasible for our sizes.
+
+\textbf{Symmetric vs. explicit factorization.} Standard implementations distribute 
+$\Sigma^{1/2}$ between $U$ and $V$ (Golub \& Van Loan, 2013). Dobi-SVD 
+uses symmetric form and pre-scales $V$ by the gate compensation factor.
+
+\textbf{Weighted low-rank.} Golub et al. (1987); Srebro \& Jaakkola (2003). 
+Activation-aware methods (Lin et al., 2023; Xiao et al., 2023) use 
+activation statistics. Dobi-SVD uses unweighted SVD with \textbf{learnable gating}.
+
+\subsection{Rank Selection Strategies}
+
+\subsubsection{Fixed Rank}
+
+Most methods use a single global $r$ (Yu et al., 2017). Simple but ignores 
+layer heterogeneity.
+
+\subsubsection{Energy-Based Rank}
+
+Choose the smallest $r$ with cumulative spectral energy $\geq \eta$. 
+Training-free. Used by MinimalSVD, MinimalNOVA, MinimalPRISM.
+
+\subsubsection{Learned Rank (AdaLoRA)}
+
+AdaLoRA (Zhang et al., 2023) learns per-layer rank budgets via 
+importance scores. Related but different: AdaLoRA learns a \textbf{budget}, 
+Dobi-SVD learns \textbf{which rank components survive}.
+
+\subsubsection{Differentiable Pruning}
+
+Louizos et al. (2018) use $L_0$ gates for structured pruning. Dobi-SVD 
+applies a similar idea to \textbf{rank components} in SVD factorization.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\textbf{LoRA.} Hu et al. (2021) freeze base weights and train rank-$r$ adapters. 
+Dobi-SVD trains LoRA + gates jointly.
+
+\textbf{DoRA.} Liu et al. (2024) decompose weights into magnitude and direction. 
+Dobi-SVD decomposes into rank components with gating.
+
+\subsection{Attention Variants}
+
+\textbf{Standard MHSA.} Vaswani et al. (2017).
+
+\textbf{GQA.} Ainslie et al. (2023). Supported via \texttt{repeat\_kv}.
+
+\subsection{Model Compression}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Rank selection} & \textbf{Differentiable?} & \textbf{Post-hoc pruning?} \\
+\midrule
+DistilBERT & -- (distillation) & -- & -- \\
+AWQ & -- (quantization) & -- & -- \\
+SparseGPT & -- (pruning) & -- & -- \\
+MinimalSVD & Energy &  &  \\
+SVD-LLM V2 & Energy &  &  \\
+MLA & Fixed latent &  &  \\
+AdaLoRA & Learned budget &  & Partial \\
+\textbf{Dobi-SVD} & \textbf{Learnable gates} & \textbf{ } & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Position of Our Work}
+
+Dobi-SVD differs from prior work along three axes:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior} & \textbf{Dobi-SVD} \\
+\midrule
+\textbf{Rank representation} & Integer & Continuous gates \\
+\textbf{Differentiability} & No & Yes \\
+\textbf{Post-hoc pruning} & Retrain & Threshold gates \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Unlike fixed or energy-selected rank, Dobi-SVD's rank 
+is \textbf{learned jointly with recovery}. After training, gates provide a 
+data-driven signal for which components to keep.
+

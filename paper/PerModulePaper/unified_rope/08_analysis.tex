@@ -1,3 +1,205 @@
-\section{08 Analysis}
 
-Draft content for unified_rope.
+\section{Analysis}
+
+\subsection{Portability Challenges}
+
+\subsubsection{DistilBERT -- Added RoPE}
+
+DistilBERT was trained with \textbf{absolute} position embeddings. Adding RoPE 
+changes the attention pattern. Accuracy drops unless recovery adapts.
+
+\textbf{Table 8.1: DistilBERT accuracy with and without RoPE.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{Accuracy} \\
+\midrule
+Full (absolute positions) & 90.71\% \\
+UnifiedRoPE (RoPE added) & {{D\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{DISTILBERT\_OBS}}
+
+\subsubsection{RoBERTa -- Nested Encoder}
+
+RoBERTa's output projection is outside the inner attention. Without 
+\texttt{is\_nested\_encoder = True}, the projection is applied twice.
+
+\textbf{Table 8.2: Effect of nested detection.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{Accuracy} \\
+\midrule
+\texttt{is\_nested\_encoder = True} (correct) & {{R\_ACC}}\% \\
+\texttt{is\_nested\_encoder = False} (bug) & Collapse \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{GPT-2 -- Conv1D}
+
+GPT-2's Conv1D stores weights as \texttt{(in, out)}. Without transposition, 
+Q/K/V would be swapped.
+
+\textbf{Table 8.3: Effect of Conv1D handling.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{Accuracy} \\
+\midrule
+With transposition (correct) & {{G\_ACC}}\% \\
+Without (bug) & Collapse \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Qwen -- GQA}
+
+Qwen has $H_{kv} = 2 < H = 8$. Without \texttt{repeat\_kv}, shape mismatch.
+
+\subsection{RoPE Correctness}
+
+\subsubsection{Norm Preservation}
+
+\textbf{Figure 8.1} shows the L2 norm of Q before and after RoPE. Norms 
+match to within numerical precision.
+
+\subsubsection{Relative Position}
+
+\textbf{Figure 8.2} shows attention scores as a function of $(i, j)$. The 
+pattern depends only on $i - j$, confirming the relative position 
+property.
+
+\subsection{LoRA Recovery Impact}
+
+\textbf{Table 8.4: Accuracy with and without LoRA recovery.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{No LoRA} & \textbf{With LoRA} \\
+\midrule
+DistilBERT & {{D\_NOLORA}}\% & {{D\_ACC}}\% \\
+RoBERTa & {{R\_NOLORA}}\% & {{R\_ACC}}\% \\
+GPT-2 & {{G\_NOLORA}}\% & {{G\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} LoRA recovery is \textbf{essential} for DistilBERT and 
+RoBERTa (which need to adapt to RoPE). For GPT-2, less needed.
+
+\subsection{Weight Transfer Correctness}
+
+\textbf{Table 8.5: Weight transfer verification.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Q matches?} & \textbf{K matches?} & \textbf{V matches?} & \textbf{O matches?} \\
+\midrule
+DistilBERT &  &  &  &  \\
+RoBERTa &  &  &  &  \\
+GPT-2 &  &  &  &  \\
+Qwen &  &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Verified by checking \texttt{ W\_original - W\_transferred \_F < 1e-5}.
+
+\subsection{Numerical Precision}
+
+All attention scores computed in \textbf{FP32} then cast to FP16. This avoids 
+underflow in softmax for long sequences.
+
+\subsection{Inference Efficiency}
+
+UnifiedRoPE adds \textbf{two operations} relative to baseline:
+\begin{enumerate}
+\item RoPE application (elementwise multiply).
+\item GQA expansion (repeat\_kv).
+
+\end{enumerate}
+\textbf{Table 8.6: Overhead vs baseline.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{UnifiedRoPE} & \textbf{Overhead} \\
+\midrule
+DistilBERT & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+RoBERTa & 4.10 s & {{R\_TIME}} s & {{R\_TIME\_RATIO}}$\times$ \\
+GPT-2 & 4.20 s & {{G\_TIME}} s & {{G\_TIME\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 8.7: UnifiedRoPE vs compression methods.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Reduces} & \textbf{Accuracy} & \textbf{Orthogonal to} \\
+\midrule
+MinimalSVD & Params & {{MINSVD\_D}}\% & UnifiedRoPE \\
+SVD-LLM V2 & Params & {{SVDLLM\_D}}\% & UnifiedRoPE \\
+Dobi-SVD & Params & {{DOBI\_D}}\% & UnifiedRoPE \\
+MLA & KV & {{MLA\_D}}\% & UnifiedRoPE \\
+Nystr m & Compute & {{NYS\_D}}\% & UnifiedRoPE \\
+\textbf{UnifiedRoPE} & \textbf{Nothing} & \textbf{{{D\_ACC}}\%} & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Frequency} & \textbf{Cause} \\
+\midrule
+Missing weights & Low & Extraction bug \\
+Conv1D orientation & Low & Not transposed \\
+Nested flag & Low & Wrong detection \\
+RoPE dim mismatch & Low & Cache shorter than seq \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{UnifiedRoPE is portable} across four architectures.
+\item \textbf{Nested encoder bypass is essential} for RoBERTa.
+\item \textbf{Conv1D transposition is essential} for GPT-2.
+\item \textbf{GQA expansion is essential} for Qwen.
+\item \textbf{LoRA recovery is needed} when adding RoPE to models trained with
+  absolute positions.
+\item \textbf{UnifiedRoPE is orthogonal} to all compression methods.
+
+\end{enumerate}

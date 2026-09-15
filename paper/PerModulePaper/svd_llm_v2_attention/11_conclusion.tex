@@ -1,3 +1,76 @@
-\section{11 Conclusion}
 
-Draft content for svd_llm_v2_attention.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{SVD-LLM V2}, a transformer attention compression method that 
+factorizes each projection into \textbf{explicit} $U$, $\Sigma$, and $V^H$ 
+buffers. Unlike symmetric-factorization methods, SVD-LLM V2 preserves the 
+singular spectrum for inspection and downstream applications. The method 
+uses energy-threshold rank selection, LoRA recovery, and multi-architecture 
+hardening with pre-test, injection-time nested detection, and GQA pooling.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Real parameter reduction works.}
+\item \textbf{Explicit storage is interpretable} with negligible accuracy loss.
+\item \textbf{No calibration needed.}
+\item \textbf{Multi-architecture support is robust.}
+\item \textbf{LoRA recovery is essential.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernels for explicit factorization
+\item Per-singular-value quantization
+\item INT8 combination
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical error propagation bounds
+\item Learned rank schedules
+\item Extension to FFN projections
+\item Cross-model spectral transfer
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+SVD-LLM V2 demonstrates that interpretable, multi-architecture attention 
+compression is feasible. We release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed SVD-LLM V2, implemented the code, ran experiments,
+  wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

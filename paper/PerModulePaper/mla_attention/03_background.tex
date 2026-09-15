@@ -1,3 +1,148 @@
-\section{03 Background}
 
-Draft content for mla_attention.
+\section{Background}
+
+\subsection{Standard Multi-Head Attention}
+
+For input $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+Q = X W^Q, \quad K = X W^K, \quad V = X W^V
+\tag{3.1}
+\]
+
+with $W^Q, W^K, W^V \in \mathbb{R}^{H d_h \times d}$. Attention:
+
+\[
+\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
+\tag{3.2}
+\]
+
+The KV cache stores $K, V \in \mathbb{R}^{B \times H \times L \times d_h}$ -- 
+a total of $2 \cdot H \cdot d_h \cdot L$ values per layer.
+
+\subsection{Multi-Head Latent Attention (MLA)}
+
+MLA replaces $W^K, W^V$ with a \textbf{shared low-rank latent}:
+
+\[
+c_t = W^{DKV} h_t \in \mathbb{R}^c
+\tag{3.3}
+\]
+
+Then:
+
+\[
+k_t = W^{UK} c_t, \quad v_t = W^{UV} c_t
+\tag{3.4}
+\]
+
+where $W^{UK}, W^{UV} \in \mathbb{R}^{H d_h \times c}$.
+
+The KV cache now stores $c_t \in \mathbb{R}^c$ instead of $(k_t, v_t) \in \mathbb{R}^{2 H d_h}$.
+
+\textbf{Compression ratio:}
+
+\[
+\rho = \frac{2 H d_h}{c}
+\tag{3.5}
+\]
+
+For DeepSeek-V2: $2 H d_h = 2 \cdot 128 \cdot 128 = 32{,}768$, $c = 512$, 
+$\rho = 64$.
+
+\subsection{Low-Rank Initialization}
+
+To initialize $W^{DKV}, W^{UK}, W^{UV}$ from a pretrained attention, we 
+concatenate the existing $W^K$ and $W^V$:
+
+\[
+W^{KV}_\text{fused} = \begin{pmatrix} W^K \\ W^V \end{pmatrix} \in \mathbb{R}^{2 H d_h \times d}
+\tag{3.6}
+\]
+
+Then compute SVD:
+
+\[
+W^{KV}_\text{fused} \approx U \Sigma V^\top
+\tag{3.7}
+\]
+
+and set:
+
+\[
+W^{DKV} = V_{:, :c}^\top, \quad
+W^{UK} = U_{:, :c} \Sigma_{:c, :c}
+\tag{3.8}
+\]
+
+with the corresponding slice of $U \Sigma$ for $W^{UV}$.
+
+\subsection{Singular Value Normalization}
+
+To preserve the reconstruction scale, we compute a scalar correction:
+
+\[
+\gamma = \frac{\|W^{KV}_\text{fused}\|_F}{\|\Sigma_{:c}\|_F}
+\tag{3.9}
+\]
+
+and multiply the up-projection by $\gamma$:
+
+\[
+W^{UK} \leftarrow \gamma \cdot U_{:H d_h, :c} \Sigma_{:c}
+\tag{3.10}
+\]
+
+This preserves the total Frobenius norm of the effective $W^K, W^V$ 
+reconstruction.
+
+\subsection{GQA Compatibility}
+
+MLA is compatible with GQA. When $H_{kv} < H$, the up-projections have 
+output dimension $H_{kv} d_h$, and \texttt{repeat\_kv} expands them to $H d_h$ 
+during forward.
+
+\subsection{RoPE Compatibility}
+
+RoPE (Su et al., 2021) applies rotations to $Q, K$. MLA preserves this by 
+applying RoPE \textbf{after} the up-projection.
+
+\subsection{LoRA Recovery}
+
+LoRA (Hu et al., 2021) adds trainable residuals:
+
+\[
+\Delta W = \frac{\alpha}{r_L} B A
+\tag{3.11}
+\]
+
+with $B = 0$ at initialization. In MLA, we apply LoRA to the Q and O 
+projections.
+
+\subsection{Output Scale Calibration}
+
+MLA introduces a trainable scalar \texttt{output\_scale} that multiplies the 
+output. This is \textbf{not} in the original DeepSeek-V2 paper but is used in 
+our reproduction to absorb distributional shift from the K/V factorization.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$W^Q, W^K, W^V, W^O$ & Standard attention weights \\
+$W^{DKV}$ & Latent down-projection \\
+$W^{UK}, W^{UV}$ & Up-projections \\
+$c_t$ & Latent vector at position $t$ \\
+$c$ & Latent dimension (rank) \\
+$H, H_{kv}, d_h$ & Head counts and dimension \\
+$\gamma$ & Normalization scale \\
+$\rho$ & Compression ratio \\
+\bottomrule
+\end{tabular}
+\end{table}
+

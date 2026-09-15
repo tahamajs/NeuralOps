@@ -1,3 +1,98 @@
-\section{12 Reproducibility}
+\section{Reproducibility Statement}
 
-Draft content for res_svd.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running Res-SVD}
+
+\begin{lstlisting}
+python run_all_4_res_svd.py \
+    --models distilbert,roberta,gpt2 \
+    --base_rank {{BASE_RANK}} \
+    --residual_rank {{RESIDUAL_RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1}
+\begin{lstlisting}
+python run_all_4_res_svd.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (base rank)}
+\begin{lstlisting}
+for rb in 8 16 32 64; do
+    python run_all_4_res_svd.py --base_rank $rb --output_suffix rb$rb
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (residual rank)}
+\begin{lstlisting}
+for rr in 0 2 4 8 16; do
+    python run_all_4_res_svd.py --residual_rank $rr --output_suffix rr$rr
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_RATIO}}$\times$ \\
+RoBERTa & {{R\_ACC}}\% & {{R\_RATIO}}$\times$ \\
+GPT-2 & {{G\_ACC}}\% & {{G\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Dataset: SST-2
+\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-res\_svd}
+\item Metrics: \texttt{results/unified\_res\_svd/*/summary.csv}
+
+\end{itemize}
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Windows: \texttt{PYTHONIOENCODING=utf-8}
+\item Cross-attention not supported
+\item Silent injection fallback
+
+\end{itemize}

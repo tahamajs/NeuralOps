@@ -1,0 +1,152 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: B_implementation.md
+     PURPOSE: Implementation details
+     DEPENDENCIES: 05_architecture.md
+     LENGTH TARGET: 1.5 pages
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix B. Implementation Details
+
+## B.1 The Module Structure
+
+```python
+@ATTENTION_REGISTRY.register("rpc")
+class RPCAttention(BaseAttention):
+    def __init__(self, config, rank=64, pretrained_attn=None, **kwargs):
+        super().__init__(config, rank)
+        self.dim = 768
+        self.num_heads = 12
+        self.head_dim = 64
+        self.rank = min(rank, self.head_dim)
+        
+        # Projections with LoRA
+        self.W_q = LoRALinear(768, 768, lora_rank=16)
+        self.W_k = LoRALinear(768, 768, lora_rank=16)
+        self.W_v = LoRALinear(768, 768, lora_rank=16)
+        self.out_proj = LoRALinear(768, 768, lora_rank=16)
+        
+        # Random projection buffer (NOT a parameter)
+        self.register_buffer(
+            "proj",
+            torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+        )
+        
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+```
+
+## B.2 Forward Pass
+
+```python
+def forward(self, hidden_states, attention_mask=None, **kwargs):
+    B, L, D = hidden_states.shape
+    
+    # 1. Project
+    q = self.W_q(hidden_states).view(B, L, H, d_h).permute(0, 2, 1, 3)
+    k = self.W_k(hidden_states).view(B, L, H, d_h).permute(0, 2, 1, 3)
+    v = self.W_v(hidden_states).view(B, L, H, d_h).permute(0, 2, 1, 3)
+    
+    # 2. RoPE
+    if position_embeddings is not None:
+        q, k = apply_rotary_pos_emb(q, k, *position_embeddings)
+    
+    # 3. GQA
+    if H != H_kv:
+        k = repeat_kv(k, H // H_kv)
+        v = repeat_kv(v, H // H_kv)
+    
+    # 4. Sketch
+    proj = self.proj.to(dtype=q.dtype, device=q.device)
+    q_sk = torch.einsum("bhld,hdr->bhlr", q, proj)
+    k_sk = torch.einsum("bhld,hdr->bhlr", k, proj)
+    
+    # 5. Score
+    scale = 1.0 / math.sqrt(self.rank)
+    scores = torch.matmul(q_sk.float(), k_sk.float().transpose(-2, -1)) * scale
+    
+    # 6. Masks
+    if self.is_decoder:
+        causal_mask = torch.triu(torch.full((L, L), -1e4), diagonal=1)
+        scores = scores + causal_mask
+    
+    if attention_mask is not None:
+        scores = apply_attention_mask(scores, attention_mask)
+    
+    # 7. Attend
+    probs = F.softmax(scores, dim=-1).to(hidden_states.dtype)
+    context = torch.matmul(probs, v)
+    context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+    
+    # 8. Output
+    if self.is_nested_encoder:
+        out = context
+    else:
+        out = self.out_proj(context)
+    
+    return out, None
+```
+
+## B.3 The Projection Buffer
+
+```python
+self.register_buffer(
+    "proj",
+    torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+)
+```
+
+**Notes:**
+- `randn` → Gaussian entries
+- `* (head_dim ** -0.5)` → variance $1/d_h$
+- `register_buffer` → saved with model, not counted in `parameters()`
+
+## B.4 The `raise` on Failure
+
+```python
+if missing_after:
+    raise RuntimeError(
+        f"RPCAttention copy_weights failed: missing mandatory projections "
+        f"{missing_after} from {src.__class__.__name__}."
+    )
+```
+
+And:
+
+```python
+except Exception as e:
+    logger.error("inject_rpc failed: %s", e)
+    raise RuntimeError(f"Injection failed")
+```
+
+**Advantages:**
+- No silent fallback
+- Broken models not produced
+
+**Disadvantages:**
+- Single missing projection aborts injection
+- Less graceful than A3/AASVD
+
+## B.5 Common Pitfalls
+
+### B.5.1 Confusing Buffer with Parameter
+
+The `proj` buffer is not counted in `model.parameters()`. If you need 
+to count it, use `model.state_dict()`.
+
+### B.5.2 RoPE Dimension Mismatch
+
+RoPE must be applied before sketching, since $\Omega$ assumes a specific 
+head dimension.
+
+### B.5.3 Scale Factor
+
+The scale is $1/\sqrt{r}$, not $1/\sqrt{d_h}$. This is because the sketched 
+vectors $\tilde{Q}, \tilde{K}$ have variance $\|Q\|_2^2 \cdot r / d_h$ (not 
+$\|Q\|_2^2$). The choice is subtle.
+
+### B.5.4 Random Seed
+
+The projection is sampled once. Different seeds give different results. 
+For reproducibility, set `torch.manual_seed()` before initialization.
+
+---
