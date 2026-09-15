@@ -4,6 +4,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Path} \\
@@ -121,6 +122,7 @@ class GalerkinAttention(BaseAttention):
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Failure} & \textbf{Response} \\
@@ -134,11 +136,3 @@ Injection error & return None \\
 \end{table}
 
 \subsection{5.10 Numerical Precision}
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/galerkin_attention_architecture.png}
-\caption{Architectural overview of Galerkin.}
-\label{fig:arch_Galerkin}
-\end{figure}

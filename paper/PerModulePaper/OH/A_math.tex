@@ -8,14 +8,8 @@
 \textbf{Proof.} 
 \begin{itemize}
 \item Local attention: $\mathcal{O}(L W d_h H)$.
-\end{itemize}
-\begin{itemize}
 \item Compression: $X W_k^\text{comp}$ is $\mathcal{O}(L d d_c)$; softmax over $L$ is $\mathcal{O}(L d_c)$; matmul with $K$ is $\mathcal{O}(L d_c d_h H)$.
-\end{itemize}
-\begin{itemize}
 \item Global attention: $Q C_K^\top$ is $\mathcal{O}(L d_c d_h H)$; softmax over $d_c$; matmul with $C_V$ is $\mathcal{O}(L d_c d_h H)$.
-\end{itemize}
-\begin{itemize}
 \item Sum: $\mathcal{O}(L(W + d_c) H d_h) = \mathcal{O}(L(W + d_c) d)$.
 \end{itemize}
 
@@ -51,33 +45,17 @@ Therefore output at position $i$ depends only on inputs $1..i$. $\square$
 \textbf{Proof.}
 \begin{itemize}
 \item Compression: $2 d d_c$.
-\end{itemize}
-\begin{itemize}
 \item Gate weight: $d H$.
-\end{itemize}
-\begin{itemize}
 \item Gate bias: $H$.
-\end{itemize}
-\begin{itemize}
 \item LoRA (4 projections): $4 r(d + H d_h)$.
-\end{itemize}
-\begin{itemize}
 \item Total: $2 d d_c + d H + H + 4 r(d + H d_h)$.
 \end{itemize}
 
 For DistilBERT ($d = 768$, $H = 12$, $d_h = 64$, $d_c = 32$, $r = 16$):
 \begin{itemize}
 \item $2 \cdot 768 \cdot 32 = 49,152$
-\end{itemize}
-\begin{itemize}
 \item $768 \cdot 12 = 9,216$
-\end{itemize}
-\begin{itemize}
 \item $12$
-\end{itemize}
-\begin{itemize}
 \item $4 \cdot 16 \cdot 1536 = 98,304$
-\end{itemize}
-\begin{itemize}
 \item Total per layer: $156,684$
 \end{itemize}

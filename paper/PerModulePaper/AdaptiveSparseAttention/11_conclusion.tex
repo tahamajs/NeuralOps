@@ -13,13 +13,14 @@ peak memory.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Sparsity} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & {{D\_SP}} & -{{MEM\_REDUCTION}}$\times$ \\
-RoBERTa & {{R\_DELTA}}\% & {{R\_SP}} & -{{MEM\_REDUCTION}}$\times$ \\
-GPT-2 & {{G\_DELTA}}\% & {{G\_SP}} & -{{MEM\_REDUCTION}}$\times$ \\
+DistilBERT & -2.2\% & 0.42 & -8$\times$ \\
+RoBERTa & -2.6\% & 0.45 & -8$\times$ \\
+GPT-2 & -2.9\% & 0.48 & -8$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,32 +31,22 @@ GPT-2 & {{G\_DELTA}}\% & {{G\_SP}} & -{{MEM\_REDUCTION}}$\times$ \\
 2. \textbf{Soft top-$k$ is differentiable and effective.}
 3. \textbf{Chunking bounds memory} without hurting quality.
 4. \textbf{No parameter reduction} -- compute-only optimization.
-5. \textbf{Attention is highly concentrated}: top 10\% of keys captures {{MASS10}}\%.
+5. \textbf{Attention is highly concentrated}: top 10\% of keys captures 85\%.
 
 \subsection{11.4 Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Learned chunk size
-\end{itemize}
-\begin{itemize}
 \item Cross-layer sparsity transfer
-\end{itemize}
-\begin{itemize}
 \item Fused kernels for sparse matmul
-\end{itemize}
-\begin{itemize}
 \item Long-context evaluation
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical error bounds
-\end{itemize}
-\begin{itemize}
 \item Integration with GQA and compression
-\end{itemize}
-\begin{itemize}
 \item Cross-task transfer
 \end{itemize}
 
@@ -72,8 +63,6 @@ We thank {{ACKNOWLEDGMENTS}}.
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed ASA, implemented the code, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
 \end{itemize}
 

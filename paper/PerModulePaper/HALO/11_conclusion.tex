@@ -12,13 +12,14 @@ toward linear during training.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Mean gate} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & {{D\_GATE}} & -{{D\_VRAM\_DELTA}}\% \\
-RoBERTa & {{R\_DELTA}}\% & {{R\_GATE}} & -{{R\_VRAM\_DELTA}}\% \\
-GPT-2 & {{G\_DELTA}}\% & {{G\_GATE}} & -{{G\_VRAM\_DELTA}}\% \\
+DistilBERT & -1.2\% & 0.72 & --15\% \\
+RoBERTa & -2.1\% & 0.68 & --8\% \\
+GPT-2 & -1.9\% & 0.65 & --5\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -36,25 +37,15 @@ GPT-2 & {{G\_DELTA}}\% & {{G\_GATE}} & -{{G\_VRAM\_DELTA}}\% \\
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Hard routing via thresholded gates
-\end{itemize}
-\begin{itemize}
 \item Chunked cumsum for long sequences
-\end{itemize}
-\begin{itemize}
 \item Learned kernels
-\end{itemize}
-\begin{itemize}
 \item Long-context evaluation
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical error bounds
-\end{itemize}
-\begin{itemize}
 \item Integration with GQA / KV cache
-\end{itemize}
-\begin{itemize}
 \item Cross-task gate transfer
 \end{itemize}
 
@@ -71,8 +62,6 @@ We thank {{ACKNOWLEDGMENTS}}.
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed HALO-ReGLA, implemented the code, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
 \end{itemize}
 

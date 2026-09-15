@@ -5,6 +5,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
@@ -12,8 +13,8 @@
 DistilBERT & Flat & No & No & No &  \\
 RoBERTa & Nested & No & No & No &  \\
 GPT-2 & Causal & No & No & No &  \\
-T5 & Causal + bias & No & No & Yes & {{T5\_VERIFIED}} \\
-Qwen3.5 & Causal + RoPE & Yes & Yes & No & {{Q\_VERIFIED}} \\
+T5 & Causal + bias & No & No & Yes & not tested \\
+Qwen3.5 & Causal + RoPE & Yes & Yes & No & not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -22,7 +23,7 @@ Qwen3.5 & Causal + RoPE & Yes & Yes & No & {{Q\_VERIFIED}} \\
 
 \subsubsection{5.2.1 DistilBERT (Flat)}
 
-Direct copy of \texttt{q\\_lin, k\\_lin, v\\_lin, out\\_lin}. \texttt{is\\_nested\\_encoder = False}.
+Direct copy of \texttt{q\_lin, k\_lin, v\_lin, out\_lin}. \texttt{is\_nested\_encoder = False}.
 
 \subsubsection{5.2.2 RoBERTa (Nested)}
 
@@ -40,7 +41,7 @@ if hasattr(target.attention, "output"):
 
 \subsubsection{5.2.3 GPT-2 (Causal)}
 
-Split fused \texttt{c\\_attn}:
+Split fused \texttt{c\_attn}:
 
 \begin{lstlisting}
 w = src.c_attn.weight.t()  # Conv1D $\to$ (out, in)
@@ -61,7 +62,7 @@ The bias is added to scores before the top-$k$ threshold.
 
 \subsubsection{5.2.5 Qwen3.5 (GQA + RoPE)}
 
-Direct copy with \texttt{repeat\\_kv} at runtime. RoPE applied before chunking.
+Direct copy with \texttt{repeat\_kv} at runtime. RoPE applied before chunking.
 
 \subsection{5.3 Injection Algorithm}
 
@@ -87,8 +88,6 @@ For RoBERTa/BERT, ASA is injected into \texttt{attention.self}. The outer
 
 \begin{itemize}
 \item \textbf{Inner ASA} processes Q, K, V and returns raw context (no out\_proj).
-\end{itemize}
-\begin{itemize}
 \item \textbf{Outer LoRALinear} applies output projection with trainable LoRA.
 \end{itemize}
 
@@ -117,7 +116,7 @@ this by computing the bias before the top-$k$ threshold.
 
 \subsection{5.7 Safe Injection}
 
-\texttt{inject\\_adaptive\\_sparse} returns \texttt{None} on failure:
+\texttt{inject\_adaptive\_sparse} returns \texttt{None} on failure:
 
 \begin{lstlisting}
 try:
@@ -133,6 +132,7 @@ The caller can then skip the layer.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\

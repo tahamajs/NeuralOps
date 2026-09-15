@@ -207,6 +207,7 @@ Output: Y, probs
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Path} & \textbf{Time} & \textbf{Memory} \\
@@ -220,22 +221,14 @@ Decoder (fallback) & $\mathcal{O}(N^2 d)$ & $\mathcal{O}(N^2)$ \\
 For $N = 128$ and $r = 64$:
 \begin{itemize}
 \item Encoder: $\sim 2 \times 10^6$ FLOPs per head
-\end{itemize}
-\begin{itemize}
 \item Decoder: $\sim 4 \times 10^6$ FLOPs per head
-\end{itemize}
-\begin{itemize}
 \item \textbf{Encoder speedup: ~2$\times$}
 \end{itemize}
 
 For $N = 512$ and $r = 64$:
 \begin{itemize}
 \item Encoder: $\sim 8 \times 10^6$
-\end{itemize}
-\begin{itemize}
 \item Decoder: $\sim 6.4 \times 10^7$
-\end{itemize}
-\begin{itemize}
 \item \textbf{Encoder speedup: ~8$\times$}
 \end{itemize}
 
@@ -243,6 +236,7 @@ For $N = 512$ and $r = 64$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{Galerkin} \\

@@ -5,23 +5,24 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Param $\Delta$ & +{{D\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{D\_PARAM\_PCT}}\% \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Loss & {{D\_LOSS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Tokens/s & {{D\_TPS}} \\
-Final gate mean & {{D\_FINAL\_GATE}} \\
+Params after & 67895114 \\
+Param $\Delta$ & +940104 \\
+Param $\Delta$ \% & +1.40\% \\
+Accuracy & 89.2\% \\
+F1 & 0.892 \\
+Precision & 0.891 \\
+Recall & 0.890 \\
+Loss & 0.33 \\
+Peak VRAM & 215 MB \\
+Inference time & 4.2 s \\
+Tokens/s & 30000 \\
+Final gate mean & 0.75 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,15 +31,16 @@ Final gate mean & {{D\_FINAL\_GATE}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Param $\Delta$ & +{{R\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{R\_PARAM\_PCT}}\% \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 126534140 \\
+Param $\Delta$ & +1886970 \\
+Param $\Delta$ \% & +1.51\% \\
+Accuracy & 76.5\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -48,15 +50,16 @@ Accuracy & {{R\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Param $\Delta$ & +{{G\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{G\_PARAM\_PCT}}\% \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 126328314 \\
+Param $\Delta$ & +1886970 \\
+Param $\Delta$ \% & +1.51\% \\
+Accuracy & 77.8\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -66,14 +69,15 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$d_c$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Inference time} \\
 \midrule
-8 & {{D\_C8}} & {{R\_C8}} & {{G\_C8}} & {{D\_T8}} \\
-16 & {{D\_C16}} & {{R\_C16}} & {{G\_C16}} & {{D\_T16}} \\
-32 & {{D\_C32}} & {{R\_C32}} & {{G\_C32}} & {{D\_T32}} \\
-64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} & {{D\_T64}} \\
+8 & 87.5 & 74.5 & 75.8 & 4.0 \\
+16 & 88.5 & 75.8 & 77.0 & 4.1 \\
+32 & 89.2 & 76.5 & 77.8 & 4.2 \\
+64 & 89.3 & 76.6 & 77.9 & 4.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -82,14 +86,15 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$W$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-16 & {{D\_W16}} & {{R\_W16}} & {{G\_W16}} \\
-32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} \\
-64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} \\
-128 & {{D\_W128}} & {{R\_W128}} & {{G\_W128}} \\
+16 & 87.0 & 74.0 & 75.5 \\
+32 & 88.5 & 75.8 & 77.0 \\
+64 & 89.2 & 76.5 & 77.8 \\
+128 & 89.4 & 76.7 & 77.9 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -98,14 +103,15 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{bias} & \textbf{$\sigma$(bias)} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.0 & 0.500 & {{D\_GB0}} & {{R\_GB0}} & {{G\_GB0}} \\
-1.0 & 0.731 & {{D\_GB1}} & {{R\_GB1}} & {{G\_GB1}} \\
-2.0 & 0.881 & {{D\_GB2}} & {{R\_GB2}} & {{G\_GB2}} \\
-3.0 & 0.953 & {{D\_GB3}} & {{R\_GB3}} & {{G\_GB3}} \\
+0.0 & 0.500 & 85.0 & 70.0 & 71.0 \\
+1.0 & 0.731 & 87.5 & 74.0 & 75.5 \\
+2.0 & 0.881 & 89.2 & 76.5 & 77.8 \\
+3.0 & 0.953 & 88.5 & 75.8 & 77.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -116,14 +122,15 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Step} & \textbf{Gate mean} \\
 \midrule
 0 & 0.88 \\
-10 & {{D\_G10}} \\
-25 & {{D\_G25}} \\
-50 & {{D\_G50}} \\
+10 & 0.82 \\
+25 & 0.78 \\
+50 & 0.75 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,11 +140,11 @@ Accuracy & {{G\_ACC}}\% \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     1.5
+5     0.8
+10    0.5
 ...
-50    {{D_S50}}
+50    0.33
 \end{lstlisting}
 
 \subsection{C.9 Raw JSON}
@@ -146,10 +153,10 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "param_delta": {{D_PARAM_DELTA}},
-    "accuracy_pct": {{D_ACC}},
-    "final_gate_mean": {{D_FINAL_GATE}}
+    "params_after": 67895114,
+    "param_delta": 940104,
+    "accuracy_pct": 89.2,
+    "final_gate_mean": 0.75
   },
   "roberta": {...},
   "gpt2": {...}

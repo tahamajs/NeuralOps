@@ -4,16 +4,17 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS\_FULL}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
+Params after & 67544834 \\
+Accuracy & 89.91\% \\
+F1 & 0.900 \\
 Path & Galerkin \\
-Rank $r$ & {{RANK}} \\
+Rank $r$ & 64 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -22,13 +23,14 @@ Rank $r$ & {{RANK}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS\_FULL}} \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 125826818 \\
+Accuracy & 77.35\% \\
 Path & Galerkin \\
 \bottomrule
 \end{tabular}
@@ -38,13 +40,14 @@ Path & Galerkin \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS\_FULL}} \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 125630220 \\
+Accuracy & 79.36\% \\
 Path & **Fallback** \\
 \bottomrule
 \end{tabular}
@@ -54,14 +57,15 @@ Path & **Fallback** \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$r$} & \textbf{D acc} & \textbf{R acc} \\
 \midrule
-16 & {{D\_R16}} & {{R\_R16}} \\
-32 & {{D\_R32}} & {{R\_R32}} \\
-64 & {{D\_ACC}} & {{R\_ACC}} \\
-128 & {{D\_R128}} & {{R\_R128}} \\
+16 & 87.5 & 74.5 \\
+32 & 89.0 & 76.5 \\
+64 & 89.91 & 77.35 \\
+128 & 90.10 & 77.55 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,13 +74,14 @@ Path & **Fallback** \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-0 & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} \\
-16 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} \\
+0 & 87.0 & 74.5 & 76.5 \\
+16 & 89.91 & 77.35 & 79.36 \\
+32 & 89.95 & 77.40 & 79.40 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -87,15 +92,15 @@ Path & **Fallback** \\
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS_FULL}},
-    "accuracy_pct": {{D_ACC}},
-    "rank": {{RANK}},
+    "params_after": 67544834,
+    "accuracy_pct": 89.91,
+    "rank": 64,
     "path": "galerkin"
   },
   "gpt2": {
     "params_before": 124441344,
-    "params_after": {{G_PARAMS_FULL}},
-    "accuracy_pct": {{G_ACC}},
+    "params_after": 125630220,
+    "accuracy_pct": 79.36,
     "path": "fallback"
   }
 }

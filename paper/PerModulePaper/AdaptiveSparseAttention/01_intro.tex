@@ -24,8 +24,6 @@ following has been repeatedly observed:
   heavy hitters).
 \begin{itemize}
 \item Many heads are redundant and can be pruned entirely.
-\end{itemize}
-\begin{itemize}
 \item The sparsity pattern varies dramatically across heads.
 \end{itemize}
 
@@ -57,7 +55,7 @@ We impose the following constraints:
 
 1. \textbf{Differentiability:} End-to-end trainable w.r.t. the sparsity budget.
 2. \textbf{Per-head adaptation:} Each head has its own sparsity budget.
-3. \textbf{Quality:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+3. \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 4. \textbf{Memory bounded:} Peak VRAM must not exceed baseline.
 5. \textbf{Compatibility:} Works with pretrained weights without retraining.
 

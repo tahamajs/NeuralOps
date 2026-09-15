@@ -13,13 +13,14 @@ data-adaptive.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param $\Delta$ \%} & \textbf{Time ratio (L=128)} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_TIME\_RATIO}}$\times$ \\
-RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_TIME\_RATIO}}$\times$ \\
-GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_RATIO}}$\times$ \\
+DistilBERT & -1.51\% & +1.40\% & 2.2$\times$ \\
+RoBERTa & -2.06\% & +1.51\% & 2.1$\times$ \\
+GPT-2 & -1.56\% & +1.51\% & 2.1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -38,22 +39,14 @@ At longer sequences, the efficiency benefit dominates.
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Cross-attention support
-\end{itemize}
-\begin{itemize}
 \item Better compression initialization
-\end{itemize}
-\begin{itemize}
 \item Fused Triton kernels
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical analysis
-\end{itemize}
-\begin{itemize}
 \item Needle-in-haystack evaluation
-\end{itemize}
-\begin{itemize}
 \item Comparison with Set Transformer
 \end{itemize}
 

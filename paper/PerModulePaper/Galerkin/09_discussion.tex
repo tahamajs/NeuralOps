@@ -22,11 +22,7 @@ Parameter count increases via LoRA. Not for size reduction.
 
 \begin{itemize}
 \item \textbf{Encoder models} (BERT, DistilBERT, RoBERTa)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Long sequences} ($N \geq 256$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Smooth attention patterns}
 \end{itemize}
 
@@ -34,11 +30,7 @@ Parameter count increases via LoRA. Not for size reduction.
 
 \begin{itemize}
 \item \textbf{Decoder models} (no benefit, uses fallback)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Size reduction} (use compression methods)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Sharp attention patterns} (DCT truncation loses high-frequency info)
 \end{itemize}
 
@@ -60,13 +52,14 @@ For DistilBERT at $N = 256$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{Change} \\
 \midrule
 Attention FLOPs & 262K & 131K & **2$\times$ reduction** \\
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
+Accuracy & 90.71\% & 89.91\% & -0.80\% \\
+Params & 66.9M & 67.54M & +589824M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -75,6 +68,7 @@ Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{Encoder} & \textbf{Decoder} & \textbf{Exact} \\
@@ -110,24 +104,16 @@ Encoder: $O(Nr)$ vs $O(N^2)$. Substantial savings for long sequences.
 \subsubsection{Positive}
 \begin{itemize}
 \item Encoder efficiency
-\end{itemize}
-\begin{itemize}
 \item Mathematical elegance
-\end{itemize}
-\begin{itemize}
 \item Composable with quantization
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
 \item No benefit for decoders
-\end{itemize}
-\begin{itemize}
 \item Parameter overhead
-\end{itemize}
-\begin{itemize}
 \item Dual-use
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~10 GPU-hours, ~{{CO2}} kg CO$_2$eq.

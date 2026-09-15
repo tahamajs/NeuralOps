@@ -33,11 +33,7 @@ linear and softmax branches. \textbf{HALO-ReGLA} is closely related but
 distinguishes itself by:
 \begin{itemize}
 \item Rectified kernel (positive features).
-\end{itemize}
-\begin{itemize}
 \item Explicit prefix-sum formulation.
-\end{itemize}
-\begin{itemize}
 \item Per-head gating with bias initialization.
 \end{itemize}
 
@@ -55,6 +51,7 @@ trains only LoRA + gate parameters, preserving the pretrained knowledge.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Axis} & \textbf{Prior} & \textbf{HALO-ReGLA} \\

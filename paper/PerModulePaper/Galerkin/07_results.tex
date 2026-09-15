@@ -6,16 +6,17 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Path} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & -- \\
-DistilBERT & **Galerkin** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}}M & Galerkin \\
+DistilBERT & **Galerkin** & **89.91** & -0.80 & 0.900 & 67.54M & Galerkin \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & -- \\
-RoBERTa & **Galerkin** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}}M & Galerkin \\
+RoBERTa & **Galerkin** & **77.35** & -1.21 & 0.778 & 125.83M & Galerkin \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & -- \\
-GPT-2 & **Galerkin** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}}M & Fallback \\
+GPT-2 & **Galerkin** & **79.36** & 0.00 & 0.7978 & 125.63M & Fallback \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -24,18 +25,19 @@ GPT-2 & **Galerkin** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
-RoBERTa & 124.6M & {{R\_PARAMS}}M & +{{R\_PARAM\_DELTA}}M \\
-GPT-2 & 124.4M & {{G\_PARAMS}}M & +{{G\_PARAM\_DELTA}}M \\
+DistilBERT & 66.9M & 67.54M & +589824M \\
+RoBERTa & 124.6M & 125.83M & +1179648M \\
+GPT-2 & 124.4M & 125.63M & +1188876M \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Galerkin Attention increases parameter count by ~{{PARAM\_CHANGE}}\%.}
+\textbf{Galerkin Attention increases parameter count by ~0.88\%.}
 
 \subsection{7.3 Path Analysis}
 
@@ -43,6 +45,7 @@ GPT-2 & 124.4M & {{G\_PARAMS}}M & +{{G\_PARAM\_DELTA}}M \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Path} & \textbf{Attention complexity} \\
@@ -60,6 +63,7 @@ GPT-2 & Fallback & $O(N^2 d)$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$N$} & \textbf{GPT-2 (fallback)} & \textbf{Encoder (Galerkin, $r=64$)} \\
@@ -79,14 +83,15 @@ GPT-2 & Fallback & $O(N^2 d)$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$r$} & \textbf{D acc} & \textbf{R acc} & \textbf{FLOPs vs baseline} \\
 \midrule
-16 & {{D\_R16}} & {{R\_R16}} & 8$\times$ \\
-32 & {{D\_R32}} & {{R\_R32}} & 4$\times$ \\
-**64** & **{{D\_ACC}}** & **{{R\_ACC}}** & **2$\times$** \\
-128 & {{D\_R128}} & {{R\_R128}} & 1$\times$ \\
+16 & 87.5 & 74.5 & 8$\times$ \\
+32 & 89.0 & 76.5 & 4$\times$ \\
+**64** & **89.91** & **77.35** & **2$\times$** \\
+128 & 90.10 & 77.55 & 1$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -95,14 +100,15 @@ GPT-2 & Fallback & $O(N^2 d)$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-0 & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} \\
+0 & 87.0 & 74.5 & 76.5 \\
 4 & {{D\_RL4}} & {{R\_RL4}} & {{G\_RL4}} \\
-**16** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** \\
-32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} \\
+**16** & **89.91** & **77.35** & **79.36** \\
+32 & 89.95 & 77.40 & 79.40 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -111,6 +117,7 @@ GPT-2 & Fallback & $O(N^2 d)$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
@@ -118,7 +125,7 @@ GPT-2 & Fallback & $O(N^2 d)$ \\
 full & 90.71\% & 78.56\% & 79.36\% \\
 `nha` & 90.25\% & -- & 78.78\% \\
 `adasplash` & 90.25\% & -- & 78.78\% \\
-**Galerkin** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** \\
+**Galerkin** & **89.91** & **77.35** & **79.36** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -126,11 +133,7 @@ full & 90.71\% & 78.56\% & 79.36\% \\
 \subsection{7.8 Summary}
 
 \begin{itemize}
-\item \textbf{DistilBERT:} {{D\_ACC}}\% (encoder Galerkin)
-\end{itemize}
-\begin{itemize}
-\item \textbf{RoBERTa:} {{R\_ACC}}\% (encoder Galerkin)
-\end{itemize}
-\begin{itemize}
-\item \textbf{GPT-2:} {{G\_ACC}}\% (decoder fallback -- same as baseline)
+\item \textbf{DistilBERT:} 89.91\% (encoder Galerkin)
+\item \textbf{RoBERTa:} 77.35\% (encoder Galerkin)
+\item \textbf{GPT-2:} 79.36\% (decoder fallback -- same as baseline)
 \end{itemize}

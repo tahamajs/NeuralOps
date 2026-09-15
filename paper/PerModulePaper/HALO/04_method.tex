@@ -50,8 +50,6 @@ O^\text{dense}_i = \sum_j \text{softmax}(S_i)_j V_j
 \textbf{Masks applied.}
 \begin{itemize}
 \item Causal: $S_{ij} = -\infty$ for $j > i$.
-\end{itemize}
-\begin{itemize}
 \item Padding: $S_{ij} = -\infty$ for invalid keys $j$.
 \end{itemize}
 
@@ -157,6 +155,7 @@ pretrained behavior.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$b_h$} & \textbf{$\sigma(b_h)$} & \textbf{Interpretation} \\
@@ -226,6 +225,7 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Component} & \textbf{Dense} & \textbf{Linear} & \textbf{HALO-ReGLA} \\
@@ -251,6 +251,7 @@ To realize speedup, one would:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{HALO-ReGLA} \\

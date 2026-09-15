@@ -5,6 +5,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
@@ -12,7 +13,7 @@
 DistilBERT & Flat & No & No &  \\
 RoBERTa & Nested & No & No &  \\
 GPT-2 & Causal & No & No &  \\
-Qwen3.5 & Causal + RoPE & Yes & Yes & {{Q\_VERIFIED}} \\
+Qwen3.5 & Causal + RoPE & Yes & Yes & not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -21,15 +22,15 @@ Qwen3.5 & Causal + RoPE & Yes & Yes & {{Q\_VERIFIED}} \\
 
 \subsubsection{5.2.1 DistilBERT (Flat)}
 
-Direct copy of \texttt{q\\_lin, k\\_lin, v\\_lin, out\\_lin}. \texttt{is\\_nested\\_encoder = False}.
+Direct copy of \texttt{q\_lin, k\_lin, v\_lin, out\_lin}. \texttt{is\_nested\_encoder = False}.
 
 \subsubsection{5.2.2 RoBERTa (Nested)}
 
-Extract from inner \texttt{self}. \texttt{is\\_nested\\_encoder = True}; skip own \texttt{out\\_proj}.
+Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}; skip own \texttt{out\_proj}.
 
 \subsubsection{5.2.3 GPT-2 (Causal)}
 
-Split fused \texttt{c\\_attn}:
+Split fused \texttt{c\_attn}:
 
 \begin{lstlisting}
 w = src.c_attn.weight.t()
@@ -38,16 +39,14 @@ q_w, k_w, v_w = w.chunk(3, dim=0)
 
 \subsubsection{5.2.4 Qwen3.5 (GQA + RoPE)}
 
-Direct copy. \texttt{repeat\\_kv} for GQA. RoPE applied to Q, K.
+Direct copy. \texttt{repeat\_kv} for GQA. RoPE applied to Q, K.
 
 \subsection{5.3 Handling Nested Encoders}
 
 For RoBERTa/BERT, HALO-ReGLA is injected into \texttt{attention.self}. The 
-\texttt{is\\_nested\\_encoder = True} flag ensures:
+\texttt{is\_nested\_encoder = True} flag ensures:
 \begin{itemize}
-\item No \texttt{out\\_proj} is applied inside HALO-ReGLA.
-\end{itemize}
-\begin{itemize}
+\item No \texttt{out\_proj} is applied inside HALO-ReGLA.
 \item The outer \texttt{attention.output.dense} applies the output projection.
 \end{itemize}
 
@@ -66,9 +65,7 @@ For the \textbf{linear stream}, causality is enforced by the prefix sum.
 
 Both streams handle padding:
 \begin{itemize}
-\item Dense: \texttt{masked\\_fill} with \texttt{-inf}.
-\end{itemize}
-\begin{itemize}
+\item Dense: \texttt{masked\_fill} with \texttt{-inf}.
 \item Linear: zero out invalid K, V before cumsum.
 \end{itemize}
 
@@ -99,7 +96,7 @@ Output: M with HALO-ReGLA attention
 
 \subsection{5.8 Failure Handling}
 
-\texttt{inject\\_halo\\_regla} returns \texttt{None} on failure:
+\texttt{inject\_halo\_regla} returns \texttt{None} on failure:
 
 \begin{lstlisting}
 try:
@@ -112,6 +109,7 @@ except Exception:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Projection} & \textbf{Params} \\
@@ -137,11 +135,3 @@ class HALOReGLAAttention(BaseAttention): ...
 \end{lstlisting}
 
 \subsection{5.11 Failure Modes}
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/halo_regla_architecture.png}
-\caption{Architectural overview of HALO.}
-\label{fig:arch_HALO}
-\end{figure}

@@ -8,14 +8,8 @@ key positions:
 
 \begin{itemize}
 \item \textbf{Longformer} (Beltagy et al., 2020): Sliding window + global tokens.
-\end{itemize}
-\begin{itemize}
 \item \textbf{BigBird} (Zaheer et al., 2020): Sliding window + random + global.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Sparse Transformer} (Child et al., 2019): Strided + local patterns.
-\end{itemize}
-\begin{itemize}
 \item \textbf{BlockBERT} (Qiu et al., 2020): Block-sparse pattern.
 \end{itemize}
 
@@ -32,11 +26,7 @@ content or head heterogeneity.
   and keys.
 \begin{itemize}
 \item \textbf{Reformer} (Kitaev et al., 2020): Locality-sensitive hashing.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Sinkhorn Attention} (Tay et al., 2020): Sorted bucket attention.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Top-K Attention} (Gupta et al., 2021): Hard top-$k$ over scores.
 \end{itemize}
 
@@ -53,8 +43,6 @@ or use hard top-$k$ with zero gradient.
   dilation.
 \begin{itemize}
 \item \textbf{SangerNet} (Yuan et al., 2021): Learned sparse masks.
-\end{itemize}
-\begin{itemize}
 \item \textbf{SparseBERT} (Xia et al., 2022): Distilled sparse patterns.
 \end{itemize}
 
@@ -67,11 +55,7 @@ per head, avoiding the complexity of learnable masks.
 
 \begin{itemize}
 \item \textbf{Soft top-$k$} (Augustin et al., 2022): Perturbation-based.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Gumbel top-$k$} (Kool et al., 2019): Stochastic.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Sigmoid soft mask} (our approach): Deterministic, based on threshold.
 \end{itemize}
 
@@ -84,11 +68,7 @@ and works well empirically.
 
 \begin{itemize}
 \item Voita et al. (2019): Most heads can be pruned with minimal loss.
-\end{itemize}
-\begin{itemize}
 \item Michel et al. (2019): A single head suffices for many tasks.
-\end{itemize}
-\begin{itemize}
 \item Clark et al. (2019): Attention patterns vary significantly across heads.
 \end{itemize}
 
@@ -99,6 +79,7 @@ effectively performing soft head pruning.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Axis} & \textbf{Prior work} & \textbf{ASA} \\

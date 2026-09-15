@@ -25,14 +25,8 @@ $\mathcal{O}(L \cdot C)$ peak memory regardless of query length.
 
 \begin{itemize}
 \item \textbf{Long-context inference} ($L > 1024$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Memory-constrained hardware}
-\end{itemize}
-\begin{itemize}
 \item \textbf{Interpretability studies} (head budget analysis)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Combined with GQA} for multiplicative savings
 \end{itemize}
 
@@ -40,11 +34,7 @@ $\mathcal{O}(L \cdot C)$ peak memory regardless of query length.
 
 \begin{itemize}
 \item \textbf{Very short sequences} ($L < 128$)
-\end{itemize}
-\begin{itemize}
 \item \textbf{When parameter reduction is the goal} (use A3 or AASVD instead)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Applications requiring strict causality} (chunking complicates this)
 \end{itemize}
 
@@ -52,6 +42,7 @@ $\mathcal{O}(L \cdot C)$ peak memory regardless of query length.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Use case} & \textbf{Recommended $\rho$} \\
@@ -70,12 +61,13 @@ For GPT-2 at $L = 512$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Config} & \textbf{VRAM} & \textbf{Inference} & \textbf{Accuracy} \\
 \midrule
 Baseline & 793 MB & 4.2 s & 79.36\% \\
-ASA ($\rho=0.5$) & {{G\_VRAM}} MB & {{G\_TIME}} s & {{G\_ACC}}\% \\
+ASA ($\rho=0.5$) & 550 MB & 4.6 s & 76.5\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,21 +85,15 @@ ASA ($\rho=0.5$) & {{G\_VRAM}} MB & {{G\_TIME}} s & {{G\_ACC}}\% \\
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Long-context inference:} Enables more capable applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Cheaper inference:} Reduces compute per token.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Interpretability:} Head budgets reveal structure.
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables surveillance at scale.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Favors large labs.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~10 GPU-hours, ~{{CO2}} kg CO$_2$eq.

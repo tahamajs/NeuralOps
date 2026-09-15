@@ -88,7 +88,7 @@ Overflow for $L > 512$. Always cast to FP32.
 
 \subsubsection{B.6.2 Zero Denominator}
 
-\texttt{(q\\_lin * cum\\_k).sum().clamp(min=1e-5)} prevents division by zero.
+\texttt{(q\_lin * cum\_k).sum().clamp(min=1e-5)} prevents division by zero.
 
 \subsubsection{B.6.3 Missing Padding Mask}
 

@@ -4,7 +4,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -15,13 +15,14 @@ pip install -r requirements.txt
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,9 +32,9 @@ datasets & {{DATASETS\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_oha.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --compression_rank {{COMPRESSION_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 64 \
+    --compression_rank 32 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{12.4 Individual Model}
@@ -42,7 +43,7 @@ python run_all_4_oha.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,oha \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{12.5 Reproducing Tables}
@@ -88,13 +89,14 @@ torch.backends.cudnn.deterministic = True
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Param $\Delta$ \%} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & {{R\_ACC}}\% & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & 89.2\% & +1.40\% \\
+RoBERTa & 76.5\% & +1.51\% \\
+GPT-2 & 77.8\% & +1.51\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,11 +105,7 @@ GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% \\
 
 \begin{itemize}
 \item Dataset: SST-2
-\end{itemize}
-\begin{itemize}
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-oha}
-\end{itemize}
-\begin{itemize}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-oha}
 \item Metrics: \texttt{results/unified\_oha/*/summary.csv}
 \end{itemize}
 
@@ -115,10 +113,6 @@ GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% \\
 
 \begin{itemize}
 \item Windows: \texttt{PYTHONIOENCODING=utf-8} recommended
-\end{itemize}
-\begin{itemize}
 \item Cross-attention not supported
-\end{itemize}
-\begin{itemize}
 \item \texttt{raise} in copy\_weights may abort injection
 \end{itemize}

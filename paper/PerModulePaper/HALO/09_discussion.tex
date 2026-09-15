@@ -20,7 +20,7 @@ HALO-ReGLA computes both streams. To realize speedup:
 2. Identify heads where $\bar{g}_h < \theta$.
 3. Convert to pure linear inference.
 
-Expected speedup: up to {{MAX\_SPEEDUP}}$\times$ if all heads convert.
+Expected speedup: up to 3$\times$ if all heads convert.
 
 \subsection{9.2 When to Use HALO-ReGLA}
 
@@ -28,11 +28,7 @@ Expected speedup: up to {{MAX\_SPEEDUP}}$\times$ if all heads convert.
 
 \begin{itemize}
 \item \textbf{Long-context inference} where some heads can be linearized
-\end{itemize}
-\begin{itemize}
 \item \textbf{Interpretability studies} of head specialization
-\end{itemize}
-\begin{itemize}
 \item \textbf{Base for hard routing} to linear-only inference
 \end{itemize}
 
@@ -40,11 +36,7 @@ Expected speedup: up to {{MAX\_SPEEDUP}}$\times$ if all heads convert.
 
 \begin{itemize}
 \item \textbf{Short sequences} (no benefit)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Parameter reduction} (use A3/AASVD)
-\end{itemize}
-\begin{itemize}
 \item \textbf{Immediate speedup} (use pure linear or sparse)
 \end{itemize}
 
@@ -52,6 +44,7 @@ Expected speedup: up to {{MAX\_SPEEDUP}}$\times$ if all heads convert.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Bias} & \textbf{Behavior at init} & \textbf{Use case} \\
@@ -70,12 +63,13 @@ For DistilBERT at $L = 128$:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Config} & \textbf{Acc} & \textbf{VRAM} & \textbf{Time} & \textbf{Mean gate} \\
 \midrule
 Baseline & 90.71\% & 183 MB & 1.9 s & -- \\
-HALO & {{D\_ACC}}\% & {{D\_VRAM}} MB & {{D\_TIME}} s & {{D\_GATE}} \\
+HALO & 89.5\% & 210 MB & 2.8 s & 0.72 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -92,21 +86,15 @@ HALO & {{D\_ACC}}\% & {{D\_VRAM}} MB & {{D\_TIME}} s & {{D\_GATE}} \\
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Long-context inference:} Enables more capable applications.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Interpretability:} Reveals head structure.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Foundation for routing:} Basis for efficient deployment.
 \end{itemize}
 
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables surveillance at scale.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Concentration:} Favors large labs.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~15 GPU-hours, ~{{CO2}} kg CO$_2$eq.

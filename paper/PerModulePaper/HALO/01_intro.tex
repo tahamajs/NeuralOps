@@ -32,7 +32,7 @@ module $\mathcal{A}'$ such that:
 
 1. \textbf{Efficiency:} $\mathcal{O}(L)$ memory and time for the linear branch, 
    at most $\mathcal{O}(L^2)$ for the dense branch when needed.
-2. \textbf{Quality:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+2. \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 3. \textbf{Pretrained compatibility:} No retraining of base weights; only LoRA 
    and gating parameters are trainable.
 4. \textbf{Architecture portability:} Flat, nested, and causal transformers.
@@ -45,8 +45,6 @@ Linear Attention), which:
 1. \textbf{Runs two attention streams in parallel.}
 \begin{itemize}
 \item Dense: standard softmax attention.
-\end{itemize}
-\begin{itemize}
 \item Linear: rectified kernel attention using $\phi(x) = \mathrm{elu}(x) + 1$.
 \end{itemize}
 

@@ -11,11 +11,7 @@ we do not measure accuracy at $L \ge 512$.
 Tested on models with $H = 12$. Not tested on:
 \begin{itemize}
 \item Very wide models ($H = 32+$)
-\end{itemize}
-\begin{itemize}
 \item Mixture-of-Experts
-\end{itemize}
-\begin{itemize}
 \item Vision transformers
 \end{itemize}
 
@@ -44,21 +40,15 @@ not theoretically justified.
 
 \subsection{10.7 Single Seed}
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 \subsection{10.8 No Comparison with Some Baselines}
 
 We do not directly compare with:
 \begin{itemize}
 \item Longformer
-\end{itemize}
-\begin{itemize}
 \item BigBird
-\end{itemize}
-\begin{itemize}
 \item Routing Transformer
-\end{itemize}
-\begin{itemize}
 \item Reformer
 \end{itemize}
 
@@ -68,7 +58,7 @@ For very small chunks ($C = 32$), chunk boundary effects may hurt accuracy.
 
 \subsection{10.10 Failure Modes}
 
-{{UNRESOLVED\_FAILURES}}
+Causality, long-context evaluation
 
 \subsection{10.11 Code Quality}
 
