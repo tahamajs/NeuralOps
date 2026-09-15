@@ -321,9 +321,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 76.49% | 0.7389 | 1.2358 | 36 | 518.32 | `PASS` | [`distilbert`](Upload error: (Request ID: Root=1-6aa38810-39d6421f3c2a0afc10b64624;baee5c05-6e11-481c-b9bb-ab4b944effc1)
-
-429 Too Many Requests for url: https://huggingface.co/api/repos/create.
-You have exceeded the rate limit for repository creation (300 per day). You can retry this action in about 24 hours.) |
-| ROBERTA | 50.92% | 0.6748 | 1.2488 | 68 | 890.67 | `PASS_LOW` | N/A |
-| GPT2 | 50.92% | 0.6748 | 1.2579 | 48 | 1146.86 | `PASS_LOW` | N/A |
+| DISTILBERT | 85.78% | 0.8631 | 1.2358 | 36 | 338.98 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sdrm) |
+| ROBERTA | 50.92% | 0.6748 | 1.2488 | 68 | 781.79 | `PASS_LOW` | N/A |
+| GPT2 | 67.66% | 0.7482 | 1.2586 | 152 | 446.9 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-sdrm) |
