@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Multi-Head Self-Attention}
+\subsection{Multi-Head Self-Attention}
 
 For $X \in \mathbb{R}^{B \times L \times d}$:
 
@@ -19,7 +19,7 @@ with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
 
 \textbf{Complexity:} $\mathcal{O}(L^2 d)$.
 
-\subsection{3.2 Sliding-Window Attention}
+\subsection{Sliding-Window Attention}
 
 Restrict attention to a window of size $W$:
 
@@ -30,7 +30,7 @@ Restrict attention to a window of size $W$:
 
 For causal models, the window is one-sided. Complexity: $\mathcal{O}(L W d)$.
 
-\subsection{3.3 Soft-Attention Pooling}
+\subsection{Soft-Attention Pooling}
 
 Given a sequence $X \in \mathbb{R}^{B \times L \times d}$ and a learnable 
 projection $W_p \in \mathbb{R}^{d \times d_c}$, the soft-attention pooled 
@@ -48,7 +48,7 @@ for $j = 1, \dots, d_c$.
 $\alpha_{ij}$ is the weight of token $i$ in slot $j$. The pooled 
 representation $\text{Pool}_j$ is a weighted average of tokens.
 
-\subsection{3.4 Gated Fusion}
+\subsection{Gated Fusion}
 
 Given two branches (local and global), we combine them via a gate:
 
@@ -62,17 +62,17 @@ with $\gamma = \sigma(W_g X) \in [0, 1]$.
 \textbf{Initialization.} With bias $= 2.0$, $\sigma(2) \approx 0.88$ at start, 
 favoring the local branch.
 
-\subsection{3.5 Grouped-Query Attention (GQA)}
+\subsection{Grouped-Query Attention (GQA)}
 
 For GQA with $H_{kv} < H$, we repeat $K, V$ before attention.
 
-\subsection{3.6 Rotary Position Embeddings (RoPE)}
+\subsection{Rotary Position Embeddings (RoPE)}
 
 RoPE rotates Q, K by position-dependent angles.
 
-\subsection{3.7 LoRA}
+\subsection{LoRA}
 
 LoRA freezes $W$ and adds $\frac{\alpha}{r} B A$ with $B = 0$ at 
 initialization.
 
-\subsection{3.8 Notation Summary}
+\subsection{Notation Summary}

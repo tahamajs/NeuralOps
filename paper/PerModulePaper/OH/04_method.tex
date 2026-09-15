@@ -1,14 +1,16 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 OHA replaces MHSA with a two-branch block:
 
-1. \textbf{Local branch:} sliding-window attention over the input sequence.
-2. \textbf{Global branch:} attention to $d_c$ compressed summary slots.
-3. \textbf{Fusion:} per-head gating.
+\begin{enumerate}
+\item \textbf{Local branch:} sliding-window attention over the input sequence.
+\item \textbf{Global branch:} attention to $d_c$ compressed summary slots.
+\item \textbf{Fusion:} per-head gating.
 
+\end{enumerate}
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
@@ -49,9 +51,9 @@ OHA replaces MHSA with a two-branch block:
               +---------------+
 \end{lstlisting}
 
-\subsection{4.2 Local Sliding-Window Branch}
+\subsection{Local Sliding-Window Branch}
 
-\subsubsection{4.2.1 Mask Construction}
+\subsubsection{Mask Construction}
 
 For causal models:
 
@@ -62,7 +64,7 @@ M_{ij}^\text{local} = \begin{cases} 0 & j \leq i \text{ and } i - j \leq W \\ -\
 
 For bidirectional: symmetric.
 
-\subsubsection{4.2.2 Local Attention}
+\subsubsection{Local Attention}
 
 \[
 \text{LocalAttn}_i = \text{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d_h}} + M^\text{local}\right) V
@@ -71,9 +73,9 @@ For bidirectional: symmetric.
 
 \textbf{Complexity:} $\mathcal{O}(L W d)$.
 
-\subsection{4.3 Sequence-Compressed Global Branch}
+\subsection{Sequence-Compressed Global Branch}
 
-\subsubsection{4.3.1 The Compression Projections}
+\subsubsection{The Compression Projections}
 
 We introduce two learnable projections:
 
@@ -98,7 +100,7 @@ P_V = \text{softmax}\!\left(X W_v^\text{comp}, \text{dim}=L\right) \in \mathbb{R
 The softmax is over the sequence dimension, so each of the $d_c$ slots has 
 a distribution over the $L$ tokens.
 
-\subsubsection{4.3.2 Compression}
+\subsubsection{Compression}
 
 The compressed keys and values are:
 
@@ -111,7 +113,7 @@ C_V = V^\top P_V \in \mathbb{R}^{B \times d_c \times d_h H}
 \textbf{Interpretation.} Each of the $d_c$ summary slots is a weighted average of 
 the sequence's keys (or values). The weights are data-dependent.
 
-\subsubsection{4.3.3 Global Attention}
+\subsubsection{Global Attention}
 
 \[
 \text{GlobalAttn}_i = \text{softmax}\!\left(\frac{Q_i C_K^\top}{\sqrt{d_h}}\right) C_V
@@ -123,7 +125,7 @@ but with $L$ replaced by $d_c$.
 
 \textbf{Complexity:} $\mathcal{O}(L d_c d)$.
 
-\subsubsection{4.3.4 Causality}
+\subsubsection{Causality}
 
 For causal models, the compression must not leak future information:
 
@@ -141,9 +143,9 @@ causal_global = torch.tril(torch.ones(N, d_c))
 global_scores = global_scores.masked_fill(~causal_global, -1e4)
 \end{lstlisting}
 
-\subsection{4.4 Per-Head Gating}
+\subsection{Per-Head Gating}
 
-\subsubsection{4.4.1 The Gate}
+\subsubsection{The Gate}
 
 \[
 \gamma = \sigma(W_g X) \in \mathbb{R}^{B \times L \times H}
@@ -152,14 +154,14 @@ global_scores = global_scores.masked_fill(~causal_global, -1e4)
 
 with $W_g \in \mathbb{R}^{d \times H}$.
 
-\subsubsection{4.4.2 Fusion}
+\subsubsection{Fusion}
 
 \[
 \text{output}_h = \gamma_h \odot \text{LocalAttn}_h + (1 - \gamma_h) \odot \text{GlobalAttn}_h
 \tag{4.10}
 \]
 
-\subsubsection{4.4.3 Initialization}
+\subsubsection{Initialization}
 
 We initialize the gate bias to $2.0$:
 
@@ -176,7 +178,7 @@ attention within the window. Starting with $\gamma \approx 0.88$ keeps
 the model close to the baseline. A $\gamma \approx 0.5$ start would 
 destabilize training.
 
-\subsection{4.5 Full Algorithm}
+\subsection{Full Algorithm}
 
 \textbf{Algorithm 1:} OHA forward pass
 \begin{lstlisting}
@@ -214,7 +216,7 @@ Output: Y $\in$ R^{B$\times$L$\times$d}
 29: return Y
 \end{lstlisting}
 
-\subsection{4.6 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -228,7 +230,7 @@ Local attention & $\mathcal{O}(L W d)$ & $\mathcal{O}(L W)$ \\
 Compression & $\mathcal{O}(L d_c d)$ & $\mathcal{O}(L d_c)$ \\
 Global attention & $\mathcal{O}(L d_c d)$ & $\mathcal{O}(L d_c)$ \\
 Output projection & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
-**Total** & $\mathcal{O}(L(W + d_c) d)$ & $\mathcal{O}(L(W + d_c))$ \\
+\textbf{Total} & $\mathcal{O}(L(W + d_c) d)$ & $\mathcal{O}(L(W + d_c))$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -243,7 +245,7 @@ Output projection & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
 \textbf{Method} & \textbf{Time} & \textbf{Space} \\
 \midrule
 Full MHSA & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
-**OHA** & $\mathcal{O}(L(W + d_c) d)$ & $\mathcal{O}(L(W + d_c))$ \\
+\textbf{OHA} & $\mathcal{O}(L(W + d_c) d)$ & $\mathcal{O}(L(W + d_c))$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -256,7 +258,7 @@ For $W = 64$, $d_c = 32$, $L = 4096$:
 
 \textbf{~43$\times$ faster} in attention.
 
-\subsection{4.7 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 OHA \textbf{adds} parameters to the model. Per attention layer:
 
@@ -271,7 +273,7 @@ Compression $W_k^\text{comp}$ & $d \cdot d_c$ \\
 Compression $W_v^\text{comp}$ & $d \cdot d_c$ \\
 Gate $W_g$ & $d \cdot H + H$ \\
 LoRA (4 projections) & $4 r(d + H d_h)$ \\
-**Total** & see below \\
+\textbf{Total} & see below \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -290,16 +292,16 @@ $W_k^\text{comp}$ & 24,576 & 147,456 \\
 $W_v^\text{comp}$ & 24,576 & 147,456 \\
 Gate & 9,228 & 55,368 \\
 LoRA (4) & 98,304 & 589,824 \\
-**Total** & **156,684** & **940,104** \\
+\textbf{Total} & \textbf{156,684} & \textbf{940,104} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{~+1.4\%} parameter increase on DistilBERT.
 
-\subsection{4.8 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.8.1 Compression as Soft Nearest-Neighbor}
+\subsubsection{Compression as Soft Nearest-Neighbor}
 
 \textbf{Claim.} When $d_c = L$ and $W_k^\text{comp} = I$ (identity), the 
 compression is an identity map and the global branch reduces to full 
@@ -309,14 +311,14 @@ attention.
 with $X \in \mathbb{R}^{B \times L \times L}$. This is not generally identity, 
 but if $X$ has one dominant dimension per position, $P_K \to I$ and $C_K \to K$. $\square$
 
-\subsubsection{4.8.2 Gate Initialization Effect}
+\subsubsection{Gate Initialization Effect}
 
 \textbf{Claim.} With gate bias $= 2.0$, the model starts as 88\% local / 12\% global.
 
 \textbf{Proof.} $\sigma(2.0) = \frac{1}{1 + e^{-2}} \approx 0.8808$. So 
 $\text{output} \approx 0.88 \cdot \text{local} + 0.12 \cdot \text{global}$. $\square$
 
-\subsubsection{4.8.3 Causality}
+\subsubsection{Causality}
 
 \textbf{Claim.} OHA preserves causality for decoders.
 

@@ -1,6 +1,6 @@
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 accuracy.}
 
@@ -12,16 +12,16 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB \\
-DistilBERT & **BAM-UMoE** & **89.5** & -1.2 & 0.895 & 293M & 800 MB \\
+DistilBERT & \textbf{BAM-UMoE} & \textbf{89.5} & -1.2 & 0.895 & 293M & 800 MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
-RoBERTa & **BAM-UMoE** & **76.5** & -2.1 & 0.765 & 570M & {{R\_VRAM}} MB \\
+RoBERTa & \textbf{BAM-UMoE} & \textbf{76.5} & -2.1 & 0.765 & 570M & {{R\_VRAM}} MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
-GPT-2 & **BAM-UMoE** & **77.8** & -1.6 & 0.778 & 570M & {{G\_VRAM}} MB \\
+GPT-2 & \textbf{BAM-UMoE} & \textbf{77.8} & -1.6 & 0.778 & 570M & {{G\_VRAM}} MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \textbf{Table 7.2: Parameter counts. BAM-UMoE EXPANDS the model.}
 
@@ -42,7 +42,7 @@ GPT-2 & 124.4M & 570M & +445M & 4.6$\times$ \\
 \textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~350\%. 
 It is \textbf{not a compression method}.
 
-\subsection{7.3 MoE Load Balancing}
+\subsection{MoE Load Balancing}
 
 \textbf{Table 7.3: Expert utilization (fraction of tokens per expert).}
 
@@ -62,7 +62,7 @@ GPT-2 & 0.10 & 0.16 & 0.125 \\
 
 Well-balanced: min/max within $\pm$25\% of ideal.
 
-\subsection{7.4 Efficiency}
+\subsection{Efficiency}
 
 \textbf{Table 7.4: Inference.}
 
@@ -81,7 +81,7 @@ GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.5 Ablation: Number of Experts}
+\subsection{Ablation: Number of Experts}
 
 \textbf{Table 7.5.}
 
@@ -94,13 +94,13 @@ GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
 \midrule
 2 & 89.0 & 75.5 & 77.0 \\
 4 & 89.3 & 76.0 & 77.4 \\
-**8** & **89.5** & **76.5** & **77.8** \\
+\textbf{8} & \textbf{89.5} & \textbf{76.5} & \textbf{77.8} \\
 16 & 89.5 & 76.4 & 77.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: Top-K}
+\subsection{Ablation: Top-K}
 
 \textbf{Table 7.6.}
 
@@ -112,13 +112,13 @@ GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
 \textbf{$k$} & \textbf{D acc} & \textbf{Time overhead} \\
 \midrule
 1 & 88.5 & 1$\times$ \\
-**2** & **89.5** & **2$\times$** \\
+\textbf{2} & \textbf{89.5} & \textbf{2$\times$} \\
 4 & 89.3 & 4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Ablation: Gate Initialization}
+\subsection{Ablation: Gate Initialization}
 
 \textbf{Table 7.7.}
 
@@ -131,13 +131,13 @@ GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
 \midrule
 0.0 & 84.5 & Unstable ramp \\
 -1.0 & 88.8 & Faster ramp \\
-**-3.0** & **89.5** & **Default** \\
+\textbf{-3.0} & \textbf{89.5} & \textbf{Default} \\
 -5.0 & 88.5 & Very slow ramp \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Accuracy:} -1.2\%---1.6\% change.

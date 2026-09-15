@@ -1,6 +1,6 @@
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Sparse Attention}
+\subsection{Sparse Attention}
 
 \textbf{Longformer.} Beltagy et al. (2020) combine a sliding window of radius $W$ 
 with a small set of global tokens. Complexity: $\mathcal{O}(L \cdot W)$. 
@@ -15,7 +15,7 @@ Pre-dates most modern work.
 \textbf{Star-Transformer.} Guo et al. (2019) use a star topology. Rarely used 
 today.
 
-\subsection{2.2 Content-Based Sparse Attention}
+\subsection{Content-Based Sparse Attention}
 
 \textbf{Routing Transformer.} Roy et al. (2021) cluster tokens and restrict 
 attention within clusters. Complexity: $\mathcal{O}(L \cdot L/K)$.
@@ -30,7 +30,7 @@ block selection.
 \textbf{NSA (Native Sparse Attention).} DeepSeek (2025) combines local, strided, 
 and compressed attention branches.
 
-\subsection{2.3 Hybrid Length-Aware Attention}
+\subsection{Hybrid Length-Aware Attention}
 
 \textbf{H-Transformer.} Zhu \& Soricut (2021) adapt pattern to sequence length. 
 FUSIONATTN uses a \textbf{discrete dispatch} based on a threshold.
@@ -38,12 +38,12 @@ FUSIONATTN uses a \textbf{discrete dispatch} based on a threshold.
 \textbf{Blockwise Parallel Transformer.} Liu \& Abbeel (2023) parallelize block 
 attention. Not length-aware.
 
-\subsection{2.4 Grouped Query Attention}
+\subsection{Grouped Query Attention}
 
 \textbf{GQA.} Ainslie et al. (2023) reduce KV head count. FUSIONATTN preserves 
 GQA structure.
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -56,7 +56,7 @@ Longformer & Fixed & No & No \\
 BigBird & Fixed + random & No & No \\
 Routing & Content & No & Yes \\
 MoBA & Content & No & Yes \\
-**FUSIONATTN** & **Content** & **Yes** & **Yes** \\
+\textbf{FUSIONATTN} & \textbf{Content} & \textbf{Yes} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -65,7 +65,7 @@ MoBA & Content & No & Yes \\
 dense attention for short sequences\textbf{ and }content-aware block sparsity 
 for long sequences**.
 
-\subsection{2.6 Comparison Table}
+\subsection{Comparison Table}
 
 \begin{table}[H]
 \centering
@@ -74,7 +74,7 @@ for long sequences**.
 \toprule
 \textbf{Feature} & \textbf{Longformer} & \textbf{Routing} & \textbf{MoBA} & \textbf{FUSIONATTN} \\
 \midrule
-Short-seq overhead & Yes & Yes & Yes & **None** \\
+Short-seq overhead & Yes & Yes & Yes & \textbf{None} \\
 Long-seq complexity & $O(LW)$ & $O(L^2/K)$ & $O(KL)$ & $O(KL)$ \\
 Learned gate & No & Yes & Yes & Yes \\
 Multi-arch & Partial & Partial & Partial & Full \\
@@ -82,7 +82,7 @@ Multi-arch & Partial & Partial & Partial & Full \\
 \end{tabular}
 \end{table}
 
-\subsection{2.7 Not a Compression Method}
+\subsection{Not a Compression Method}
 
 FUSIONATTN \textbf{increases} parameter count via LoRA and the gate MLP. It 
 should not be confused with compression methods like A3, AASVD, or 

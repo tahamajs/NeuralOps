@@ -1,6 +1,6 @@
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{BAM-UMoE}, a capacity expansion method for post-hoc MoE 
 application to pretrained transformers. The method introduces a three-part 
@@ -8,7 +8,7 @@ step-0 preservation mechanism (zero-init experts, negative gating bias,
 frozen base) that guarantees exact forward-pass equivalence at 
 initialization.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -24,46 +24,48 @@ GPT-2 & -1.6\% & +445M \\
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Step-0 preservation works} -- verified empirically.
-2. \textbf{Load balancing is stable} -- auxiliary loss effective.
-3. \textbf{Parameter cost is high} -- inherent to MoE.
-4. \textbf{Not a compression method.}
+\begin{enumerate}
+\item \textbf{Step-0 preservation works} -- verified empirically.
+\item \textbf{Load balancing is stable} -- auxiliary loss effective.
+\item \textbf{Parameter cost is high} -- inherent to MoE.
+\item \textbf{Not a compression method.}
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Sparse MoE (1 expert per token)
 \item Interaction with compression
 \item Multi-task evaluation
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical step-0 bounds
 \item Multi-modal extension
 \item Sparse hardware deployment
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 BAM-UMoE is a \textbf{research tool} for post-hoc capacity expansion. It is 
 \textbf{not} a compression method. We release code and checkpoints for 
 reproducibility.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 {{ACKNOWLEDGMENTS}}
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
 \item \textbf{{{AUTHOR\_2}}} provided methodological feedback and edited the manuscript.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

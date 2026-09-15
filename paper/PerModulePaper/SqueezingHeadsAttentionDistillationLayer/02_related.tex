@@ -1,7 +1,7 @@
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Head Pruning}
+\subsection{Head Pruning}
 
 \textbf{Voita et al. (2019):} Layer-wise relevance propagation to rank heads. 
 Prune 38 heads (of 48) in BERT with small loss.
@@ -16,7 +16,7 @@ positional, syntactic, rare-word, or non-specialized.
 kept but their dimensionality is reduced, and LoRA adapters learn to 
 compensate.
 
-\subsection{2.2 Knowledge Distillation}
+\subsection{Knowledge Distillation}
 
 \textbf{Hinton et al. (2015):} Original KD. Train a small student to match a 
 large teacher's logits.
@@ -28,7 +28,7 @@ targets and cosine loss.
 
 \textbf{Squeezing Heads is orthogonal} -- it can be combined with any of these.
 
-\subsection{2.3 Parameter-Efficient Fine-Tuning}
+\subsection{Parameter-Efficient Fine-Tuning}
 
 \textbf{LoRA (Hu et al., 2021):} Freeze base weights, add rank-$r$ adapters.
 
@@ -38,7 +38,7 @@ targets and cosine loss.
 
 \textbf{Squeezing Heads uses LoRA} as the recovery mechanism.
 
-\subsection{2.4 Attention Distillation}
+\subsection{Attention Distillation}
 
 \textbf{TinyBERT:} Attention transfer loss.
 
@@ -47,7 +47,7 @@ targets and cosine loss.
 \textbf{Squeezing Heads differs} by using LoRA adapters as the distillation 
 target -- the objective is on the wrapped attention, not on logits.
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -64,4 +64,4 @@ GQA-aware &  &  &  &  \\
 \end{tabular}
 \end{table}
 
-\subsection{2.6 Comparison Table}
+\subsection{Comparison Table}

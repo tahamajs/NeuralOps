@@ -1,6 +1,6 @@
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 accuracy.}
 
@@ -12,16 +12,16 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB & 1.90 s \\
-DistilBERT & **Flash3** & **90.25** & -0.46 & 0.9055 & 67.55M & 190 & 1.95 \\
+DistilBERT & \textbf{Flash3} & \textbf{90.25} & -0.46 & 0.9055 & 67.55M & 190 & 1.95 \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB & 4.10 s \\
-RoBERTa & **Flash3** & **77.50** & -1.06 & 0.780 & 125.83M & 720 & 4.20 \\
+RoBERTa & \textbf{Flash3} & \textbf{77.50} & -1.06 & 0.780 & 125.83M & 720 & 4.20 \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB & 4.20 s \\
-GPT-2 & **Flash3** & **78.98** & -0.38 & 0.789 & 125.63M & 800 & 4.30 \\
+GPT-2 & \textbf{Flash3} & \textbf{78.98} & -0.38 & 0.789 & 125.63M & 800 & 4.30 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -39,7 +39,7 @@ GPT-2 & 124.4M & 125.63M & +1188876M \\
 
 \textbf{Wrapper increases parameter count by ~0.88\%.}
 
-\subsection{7.3 Efficiency}
+\subsection{Efficiency}
 
 \textbf{Table 7.3: Inference comparison.}
 
@@ -57,7 +57,7 @@ DistilBERT & FA3 (H100, extrapolated) & 0.60 s & 120 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.4 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \begin{table}[H]
 \centering
@@ -69,13 +69,13 @@ DistilBERT & FA3 (H100, extrapolated) & 0.60 s & 120 MB \\
 0 & 88.5 & 75.5 & 76.5 \\
 4 & 89.5 & 76.8 & 78.0 \\
 8 & 90.0 & 77.2 & 78.5 \\
-**16** & **90.25** & **77.50** & **78.98** \\
+\textbf{16} & \textbf{90.25} & \textbf{77.50} & \textbf{78.98} \\
 32 & 90.30 & 77.55 & 79.00 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.5 Ablation: FP8}
+\subsection{Ablation: FP8}
 
 \textbf{Table 7.5: FP8 impact (only testable on Hopper).}
 
@@ -92,7 +92,7 @@ FP8 (simulated) & 90.10 & Simulated on Ada \\
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \begin{table}[H]
 \centering
@@ -103,13 +103,13 @@ FP8 (simulated) & 90.10 & Simulated on Ada \\
 \midrule
 10 & 88.5 & 75.5 & 76.8 \\
 25 & 89.5 & 76.8 & 78.0 \\
-**50** & **90.25** & **77.50** & **78.98** \\
+\textbf{50} & \textbf{90.25} & \textbf{77.50} & \textbf{78.98} \\
 100 & 90.30 & 77.55 & 79.00 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Comparison with Other Modules}
+\subsection{Comparison with Other Modules}
 
 \begin{table}[H]
 \centering
@@ -119,15 +119,15 @@ FP8 (simulated) & 90.10 & Simulated on Ada \\
 \textbf{Module} & \textbf{D acc} & \textbf{Params $\Delta$} & \textbf{Note} \\
 \midrule
 full & 90.71\% & 0 & Baseline \\
-`adaptive\_svd` & 88.0\% & -60\% & Compression \\
-`nha` & 90.25\% & +0.89\% & Attention replace \\
-`adasplash` & 90.25\% & +0.89\% & Sparse \\
-**`flash3`** & **90.25** & **+0.88\%** & **Hardware-opt** \\
+\texttt{adaptive\_svd} & 88.0\% & -60\% & Compression \\
+\texttt{nha} & 90.25\% & +0.89\% & Attention replace \\
+\texttt{adasplash} & 90.25\% & +0.89\% & Sparse \\
+\textbf{\texttt{flash3}} & \textbf{90.25} & \textbf{+0.88\%} & \textbf{Hardware-opt} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Accuracy:} matches baseline.

@@ -62,9 +62,9 @@ For a query block $i$ with selected key block $j$:
 \item If $j < i$: all keys are causally valid.
 \item If $j = i$: within-block causal masking applied.
 \item If $j > i$: no keys are valid (but block 0 always selected if $i > 0$,
-\end{itemize}
   and $j = 0$ for $i > 0$ is always causally valid).
 
+\end{itemize}
 Causality is enforced by:
 
 \[
@@ -91,7 +91,7 @@ Gate MLP $W_1$ & $4 d_h^2$ \\
 Gate MLP $W_2$ & $4 d_h$ \\
 Gate bias & $4 d_h + 1$ \\
 Gate temp & 1 \\
-**Total per layer** & $8 r_L d + 4 d_h^2 + O(d_h)$ \\
+\textbf{Total per layer} & $8 r_L d + 4 d_h^2 + O(d_h)$ \\
 \bottomrule
 \end{tabular}
 \end{table}

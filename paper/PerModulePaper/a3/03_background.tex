@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Singular Value Decomposition}
+\subsection{Singular Value Decomposition}
 
 For any matrix $W \in \mathbb{R}^{m \times n}$, the SVD is:
 
@@ -35,7 +35,7 @@ V_r = \Sigma_{:r, :}^{1/2} V_{:r, :}^\top
 
 so that $W_r = U_r V_r$.
 
-\subsection{3.2 The Fisher Information Matrix}
+\subsection{The Fisher Information Matrix}
 
 For a probabilistic model $p_\theta(y | x)$, the Fisher information is:
 
@@ -65,7 +65,7 @@ diagonal Fisher is approximately:
 This \textbf{activation energy} is cheap to compute and correlates well with the 
 true Fisher in practice.
 
-\subsection{3.3 Streaming Covariance Accumulation}
+\subsection{Streaming Covariance Accumulation}
 
 Given a stream of activation vectors $x_1, x_2, \dots, x_N \in \mathbb{R}^d$, 
 we want to compute:
@@ -90,7 +90,7 @@ with $\mathcal{O}(d^2)$ memory. We use this in A3.
 \textbf{Padding handling.} Padding tokens (all-zeros or mask-tagged) are filtered 
 out before accumulation.
 
-\subsection{3.4 LayerNorm}
+\subsection{LayerNorm}
 
 LayerNorm (Ba et al., 2016) normalizes activations across the feature 
 dimension:
@@ -108,7 +108,7 @@ approximation, its output distribution changes. The LayerNorm that follows
 sees a different input distribution and produces different normalized 
 activations. Recalibrating $\gamma$ can partially absorb this shift.
 
-\subsection{3.5 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) parameterizes weight updates as:
 
@@ -131,4 +131,4 @@ y = (x V^\top) U^\top + (x A^\top) B^\top \cdot s + b
 where $s = \alpha / r$ is the scaling factor. The frozen $U, V$ provide the 
 bulk of the computation; LoRA provides the recovery signal.
 
-\subsection{3.6 Notation Summary}
+\subsection{Notation Summary}

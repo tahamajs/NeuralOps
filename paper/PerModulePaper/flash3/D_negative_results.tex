@@ -32,19 +32,21 @@ pretrained benefits.
 \midrule
 RTX 4070 & No & No & No \\
 A100 & Yes & No & No \\
-H100 & Yes & **Yes** & **Yes** \\
+H100 & Yes & \textbf{Yes} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.3 Lessons Learned}
 
-1. \textbf{Fallback is essential} -- not all GPUs support FA3.
-2. \textbf{FP8 requires Hopper} -- no benefit on consumer GPUs.
-3. \textbf{Multi-arch weight extraction} required for portability.
-4. \textbf{Nested encoder handling} critical for RoBERTa.
-5. \textbf{Exactness verified} across all paths.
+\begin{enumerate}
+\item \textbf{Fallback is essential} -- not all GPUs support FA3.
+\item \textbf{FP8 requires Hopper} -- no benefit on consumer GPUs.
+\item \textbf{Multi-arch weight extraction} required for portability.
+\item \textbf{Nested encoder handling} critical for RoBERTa.
+\item \textbf{Exactness verified} across all paths.
 
+\end{enumerate}
 \subsection{D.4 Multi-Seed}
 
 \begin{table}[H]
@@ -65,7 +67,9 @@ Std & 0.08 & 0.05 & 0.08 \\
 
 \subsection{D.5 Unresolved Questions}
 
-1. \textbf{H100 benchmarks:} Would FA3 be 2-4$\times$ faster?
-2. \textbf{FP8 accuracy:} Real vs simulated?
-3. \textbf{Long context:} $L > 8192$ untested?
-4. \textbf{Training:} FA3 backward path untested?
+\begin{enumerate}
+\item \textbf{H100 benchmarks:} Would FA3 be 2-4$\times$ faster?
+\item \textbf{FP8 accuracy:} Real vs simulated?
+\item \textbf{Long context:} $L > 8192$ untested?
+\item \textbf{Training:} FA3 backward path untested?
+\end{enumerate}

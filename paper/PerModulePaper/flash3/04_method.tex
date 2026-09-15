@@ -1,14 +1,16 @@
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 The wrapper \texttt{FlashAttention3} replaces a pretrained attention module and 
 provides three execution paths:
 
-1. \textbf{FlashAttention-3 kernel} (Hopper + library installed).
-2. \textbf{PyTorch SDPA} (any CUDA GPU).
-3. \textbf{Head mask + SDPA} (for head pruning experiments).
+\begin{enumerate}
+\item \textbf{FlashAttention-3 kernel} (Hopper + library installed).
+\item \textbf{PyTorch SDPA} (any CUDA GPU).
+\item \textbf{Head mask + SDPA} (for head pruning experiments).
 
+\end{enumerate}
 \textbf{Figure 4.1} shows the dispatch logic.
 
 \begin{lstlisting}
@@ -49,7 +51,7 @@ provides three execution paths:
                     Y
 \end{lstlisting}
 
-\subsection{4.2 Phase 1: Weight Extraction}
+\subsection{Phase 1: Weight Extraction}
 
 For each projection $P \in \{Q, K, V, O\}$, extract $W_P$ from the source:
 
@@ -58,11 +60,11 @@ For each projection $P \in \{Q, K, V, O\}$, extract $W_P$ from the source:
 \item \textbf{RoBERTa:} \texttt{self.query}, \texttt{self.key}, \texttt{self.value}; \texttt{output.dense} for \texttt{o}.
 \item \textbf{GPT-2:} Split \texttt{c\_attn.weight.T}; \texttt{c\_proj.weight.T} for \texttt{o}.
 \item \textbf{Qwen:} \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}.
-\end{itemize}
 
+\end{itemize}
 Frobenius norms verified $\geq 10^{-4}$.
 
-\subsection{4.3 Phase 2: Frozen Base + LoRA}
+\subsection{Phase 2: Frozen Base + LoRA}
 
 Each projection becomes a \texttt{LoRALinear}:
 
@@ -74,12 +76,12 @@ Each projection becomes a \texttt{LoRALinear}:
 \begin{itemize}
 \item $W_P$: frozen (copied from source).
 \item $(A_P, B_P)$: LoRA factors, $B = 0$ at init.
-\end{itemize}
 
+\end{itemize}
 \textbf{Step-0 preservation.} With $B = 0$, the initial output equals the base 
 output.
 
-\subsection{4.4 Phase 3: Position and Head Expansion}
+\subsection{Phase 3: Position and Head Expansion}
 
 \subsubsection{RoPE}
 
@@ -102,7 +104,7 @@ V \leftarrow \text{repeat\_kv}(V, H/H_{kv})
 \tag{4.3}
 \]
 
-\subsection{4.5 Phase 4: Attention Kernel Dispatch}
+\subsection{Phase 4: Attention Kernel Dispatch}
 
 \subsubsection{Path A: FlashAttention-3}
 
@@ -136,7 +138,7 @@ else:
 
 \textbf{Advantage.} SDPA is always available on PyTorch 2.0+ with CUDA.
 
-\subsection{4.6 Phase 5: Output Projection}
+\subsection{Phase 5: Output Projection}
 
 \[
 Y = \text{Attn}(Q, K, V) W_O^\top + b_O
@@ -146,7 +148,7 @@ Y = \text{Attn}(Q, K, V) W_O^\top + b_O
 \textbf{Nested bypass.} For RoBERTa/BERT, \texttt{out\_proj} is not applied; the outer 
 \texttt{BertSelfOutput.dense} performs it.
 
-\subsection{4.7 The Full Algorithm}
+\subsection{The Full Algorithm}
 
 \textbf{Algorithm 1:} FlashAttention-3 wrapper forward
 \begin{lstlisting}
@@ -183,7 +185,7 @@ Output: Y, None
 28: return Y
 \end{lstlisting}
 
-\subsection{4.8 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -202,7 +204,7 @@ SDPA (math) & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2)$ \\
 \textbf{Actual time savings} depend on hardware. On Hopper, FA3 gives 2-4$\times$ over 
 naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$\times$.
 
-\subsection{4.9 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -213,7 +215,7 @@ naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2$\times$.
 \midrule
 Base weights & $4 d^2$ & $4 d^2$ (frozen) \\
 LoRA ($r_L$) & 0 & $8 r_L d$ \\
-**Total per layer** & $4 d^2$ & $4 d^2 + 8 r_L d$ \\
+\textbf{Total per layer} & $4 d^2$ & $4 d^2 + 8 r_L d$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -222,9 +224,9 @@ For DistilBERT ($d=768$, $r_L=16$): \textbf{+589,824 params} across 6 layers.
 
 \textbf{Wrapper increases parameter count by ~0.88\%.}
 
-\subsection{4.10 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.10.1 Exactness}
+\subsubsection{Exactness}
 
 \textbf{Claim.} FlashAttention produces the same output as naive attention up to 
 floating-point precision.
@@ -240,7 +242,7 @@ equivalent to standard softmax:
 for any shift $m$. The online variant updates $m$ incrementally and rescales 
 previous accumulations, giving the same final result. $\square$
 
-\subsubsection{4.10.2 FP8 Accuracy Loss}
+\subsubsection{FP8 Accuracy Loss}
 
 \textbf{Claim.} FP8 attention introduces small numerical error.
 
@@ -248,4 +250,4 @@ previous accumulations, giving the same final result. $\square$
 to FP8 introduces error $\epsilon \sim 0.06$ per element, which can propagate 
 through softmax. Empirically, we observe a small accuracy drop (see Section 8).
 
-\subsection{4.11 Hyperparameter Guidance}
+\subsection{Hyperparameter Guidance}

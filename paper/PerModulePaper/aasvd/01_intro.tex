@@ -1,7 +1,7 @@
 
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Deploying transformer models in resource-constrained settings -- mobile 
 devices, edge hardware, or cost-sensitive inference services -- requires 
@@ -22,16 +22,18 @@ sense, but the objective is misleading. The unweighted loss treats every
 input dimension as equally important, whereas real transformer activations 
 exhibit two critical properties that unweighted SVD ignores:
 
-1. \textbf{Heterogeneous variance.} Some input dimensions are highly active; 
-   others carry almost no signal. \textbf{Figure 1.1} shows the empirical variance 
-   across dimensions for a middle DistilBERT layer: the top 10\% of channels 
-   account for over \textbf{85\%} of total energy.
+\begin{enumerate}
+\item \textbf{Heterogeneous variance.} Some input dimensions are highly active;
+  others carry almost no signal. \textbf{Figure 1.1} shows the empirical variance
+  across dimensions for a middle DistilBERT layer: the top 10\% of channels
+  account for over \textbf{85\%} of total energy.
 
-2. \textbf{Inter-feature correlation.} Real activations are not independent 
-   across dimensions. Residual stream dimensions are correlated through the 
-   preceding LayerNorm and residual connections. Unweighted SVD ignores 
-   these correlations, wasting capacity on directions that rarely occur.
+\item \textbf{Inter-feature correlation.} Real activations are not independent
+  across dimensions. Residual stream dimensions are correlated through the
+  preceding LayerNorm and residual connections. Unweighted SVD ignores
+  these correlations, wasting capacity on directions that rarely occur.
 
+\end{enumerate}
 \textbf{Activation-aware compression} addresses both issues by reweighting the 
 factorization with a statistical summary of the input distribution. The 
 natural summary is the empirical input covariance:
@@ -45,7 +47,7 @@ Weights on high-variance or highly-correlated directions contribute more
 to the reconstruction error and should be approximated with higher fidelity. 
 This is the core insight behind AASVD.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained transformer $\mathcal{M}$ with $N_l$ layers and a target 
 compression rank $r$, we seek a compressed model $\mathcal{M}'$ such that:
@@ -58,56 +60,52 @@ compression rank $r$, we seek a compressed model $\mathcal{M}'$ such that:
 
 We impose the following constraints:
 
-1. \textbf{Parameter reduction:} $r(d_\text{in} + d_\text{out}) < d_\text{in} d_\text{out}$ for each layer.
-2. \textbf{Reconstruction bound:} $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau$.
-3. \textbf{Memory-bounded calibration:} statistics accumulated in $\mathcal{O}(d^2)$ memory.
-4. \textbf{No base retraining:} only LoRA adapters may be trained.
-5. \textbf{Deterministic fallback:} if error exceeds $\tau$, keep the original layer.
+\begin{enumerate}
+\item \textbf{Parameter reduction:} $r(d_\text{in} + d_\text{out}) < d_\text{in} d_\text{out}$ for each layer.
+\item \textbf{Reconstruction bound:} $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau$.
+\item \textbf{Memory-bounded calibration:} statistics accumulated in $\mathcal{O}(d^2)$ memory.
+\item \textbf{No base retraining:} only LoRA adapters may be trained.
+\item \textbf{Deterministic fallback:} if error exceeds $\tau$, keep the original layer.
 
-\subsection{1.3 Our Approach: AASVD}
+\end{enumerate}
+\subsection{Our Approach: AASVD}
 
 We propose \textbf{AASVD} (\textbf{A}ctivation-\textbf{A}ware \textbf{S}VD), which extends classical 
 SVD factorization with three components:
 
-1. \textbf{Full-covariance weighting.} We weight the SVD input space by 
-   $C_X^{1/2}$, capturing both variance and correlation, not just diagonal 
-   variance.
+\begin{enumerate}
+\item \textbf{Full-covariance weighting.} We weight the SVD input space by
+  $C_X^{1/2}$, capturing both variance and correlation, not just diagonal
+  variance.
 
-2. \textbf{Streaming EMA accumulation.} We maintain a running estimate of $C_X$ 
-   using exponential moving average over calibration batches, computed 
-   on CPU to prevent VRAM accumulation.
+\item \textbf{Streaming EMA accumulation.} We maintain a running estimate of $C_X$
+  using exponential moving average over calibration batches, computed
+  on CPU to prevent VRAM accumulation.
 
-3. \textbf{Bundled calibration corpus.} We ship a default multi-domain calibration 
-   corpus (English prose, code, mathematical text) so AASVD works out of the 
-   box even when no downstream data is available.
+\item \textbf{Bundled calibration corpus.} We ship a default multi-domain calibration
+  corpus (English prose, code, mathematical text) so AASVD works out of the
+  box even when no downstream data is available.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A streaming activation-aware SVD algorithm.} AASVD generalizes classical
-\end{itemize}
-  SVD with full-covariance weighting and provides a production-hardened 
-  implementation with EMA accumulation, safe fallback, and multi-architecture 
+  SVD with full-covariance weighting and provides a production-hardened
+  implementation with EMA accumulation, safe fallback, and multi-architecture
   support.
-\begin{itemize}
 \item \textbf{A structural replacement module.} We replace \texttt{nn.Linear} with a
-\end{itemize}
-  factorized \texttt{SVDLinear} achieving genuine parameter reduction from 
+  factorized \texttt{SVDLinear} achieving genuine parameter reduction from
   $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$.
-\begin{itemize}
 \item \textbf{A systematic evaluation.} We benchmark on DistilBERT, RoBERTa, and GPT-2
-\end{itemize}
   on SST-2, with ablations over rank, EMA $\beta$, and covariance usage.
-\begin{itemize}
 \item \textbf{A bundled calibration corpus.} A default 5-document, multi-domain corpus
-\end{itemize}
   that achieves near-optimal calibration without user-supplied data.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, weights, and evaluation scripts released
-\end{itemize}
   under MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on SVD, 
 covariance estimation, and EMA. Section 4 presents AASVD. Section 5 

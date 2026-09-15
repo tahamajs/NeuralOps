@@ -1,6 +1,6 @@
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
@@ -9,15 +9,15 @@
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Path} \\
 \midrule
-DistilBERT & Flat & No & No & No & **Galerkin** \\
-RoBERTa & Nested & Yes & No & No & **Galerkin** \\
+DistilBERT & Flat & No & No & No & \textbf{Galerkin} \\
+RoBERTa & Nested & Yes & No & No & \textbf{Galerkin} \\
 GPT-2 & Causal & No & No & No & Fallback \\
 Qwen3.5 & GQA+RoPE & No & Yes & Yes & Fallback \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Extraction}
+\subsection{Weight Extraction}
 
 \subsubsection{DistilBERT}
 \begin{lstlisting}
@@ -48,7 +48,7 @@ o_w = src.c_proj.weight.T
 \subsubsection{Qwen}
 Direct copy from \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}.
 
-\subsection{5.3 Nested Encoder Detection}
+\subsection{Nested Encoder Detection}
 
 \begin{lstlisting}
 if (
@@ -64,7 +64,7 @@ if (
 For nested encoders, the outer \texttt{output.dense} applies the projection. We 
 return raw \texttt{context} and bypass \texttt{out\_proj}.
 
-\subsection{5.4 GQA Support}
+\subsection{GQA Support}
 
 \begin{lstlisting}
 if self.num_kv_heads != self.num_heads:
@@ -72,12 +72,12 @@ if self.num_kv_heads != self.num_heads:
     V = repeat_kv(V, self.kv_repeat)
 \end{lstlisting}
 
-\subsection{5.5 RoPE}
+\subsection{RoPE}
 
 Applied before the Galerkin projection step. Partial RoPE supported via 
 coordinate slicing.
 
-\subsection{5.6 Decoder Detection}
+\subsection{Decoder Detection}
 
 \begin{lstlisting}
 _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
@@ -89,7 +89,7 @@ is_dec = (
 )
 \end{lstlisting}
 
-\subsection{5.7 Injection}
+\subsection{Injection}
 
 \begin{lstlisting}
 def inject_galerkin(layer, cfg, comp_config, old_attn):
@@ -109,7 +109,7 @@ def inject_galerkin(layer, cfg, comp_config, old_attn):
         return None  # Safe fallback
 \end{lstlisting}
 
-\subsection{5.8 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("galerkin")
@@ -118,7 +118,7 @@ class GalerkinAttention(BaseAttention):
     ...
 \end{lstlisting}
 
-\subsection{5.9 Failure Modes}
+\subsection{Failure Modes}
 
 \begin{table}[H]
 \centering
@@ -135,4 +135,4 @@ Injection error & return None \\
 \end{tabular}
 \end{table}
 
-\subsection{5.10 Numerical Precision}
+\subsection{Numerical Precision}

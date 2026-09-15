@@ -1,13 +1,13 @@
 
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 AdaSplash is Not a Compression Method}
+\subsection{AdaSplash is Not a Compression Method}
 
 \textbf{AdaSplash increases parameter count by ~0.88\%} due to LoRA 
 adapters. It does \textbf{not} reduce model size or VRAM. Any publication using 
 AdaSplash should avoid describing it as "compression".
 
-\subsection{10.2 Inference Latency}
+\subsection{Inference Latency}
 
 AdaSplash is \textbf{slower} than softmax attention by ~1.9$\times$:
 
@@ -15,11 +15,11 @@ AdaSplash is \textbf{slower} than softmax attention by ~1.9$\times$:
 \item Entmax bisection: 25 iterations of the same computation
 \item Softmax fallback computation
 \item LoRA branch matmuls
-\end{itemize}
 
+\end{itemize}
 For latency-critical applications, use softmax.
 
-\subsection{10.3 Task Coverage}
+\subsection{Task Coverage}
 
 Only \textbf{SST-2} is evaluated. Generalization to:
 \begin{itemize}
@@ -27,11 +27,11 @@ Only \textbf{SST-2} is evaluated. Generalization to:
 \item Multi-class classification
 \item Token-level tasks
 \item Long-context tasks
-\end{itemize}
 
+\end{itemize}
 is unknown.
 
-\subsection{10.4 Model Coverage}
+\subsection{Model Coverage}
 
 Three models tested (66.9M--124.6M). Not tested:
 \begin{itemize}
@@ -39,56 +39,56 @@ Three models tested (66.9M--124.6M). Not tested:
 \item Deep models (>24 layers)
 \item MoE
 \item Vision
-\end{itemize}
 
-\subsection{10.5 Hardware}
+\end{itemize}
+\subsection{Hardware}
 
 All on RTX 4070 Laptop. Behavior on:
 \begin{itemize}
 \item A100/H100: Unknown
 \item CPU inference: Unknown
 \item Edge devices: Unknown
-\end{itemize}
 
-\subsection{10.6 Splash Masking on Encoders}
+\end{itemize}
+\subsection{Splash Masking on Encoders}
 
 Splash masking is only applied to \textbf{causal decoders}. Encoders use full 
 attention. This is a design choice but not a fundamental limitation.
 
-\subsection{10.7 Attention Sink Count}
+\subsection{Attention Sink Count}
 
 We use $S = 4$ fixed. The optimal number may depend on the task and model. 
 We do not ablate this.
 
-\subsection{10.8 No Sparse Hardware Speedup Demonstration}
+\subsection{No Sparse Hardware Speedup Demonstration}
 
 Despite sparsity, our PyTorch implementation uses \textbf{dense matmuls}. The 
 sparsity is not exploited for actual speedup. Demonstrating real speedup 
 requires specialized kernels.
 
-\subsection{10.9 Single-Seed Results}
+\subsection{Single-Seed Results}
 
 All results from seed 42. Standard error ~1.69\%. Differences below 
 3.4\% may be noise.
 
-\subsection{10.10 T5 and Qwen Verification}
+\subsection{T5 and Qwen Verification}
 
 T5 verification is not tested, Qwen is partial.
 
-\subsection{10.11 Bisection Numerical Stability}
+\subsection{Bisection Numerical Stability}
 
 The bisection algorithm uses a fixed 25 iterations. For extreme score 
 distributions, this may not converge to sufficient precision.
 
-\subsection{10.12 Code Quality}
+\subsection{Code Quality}
 
 Research-grade:
 \begin{itemize}
 \item No CUDA kernel for fused entmax
 \item No sparse matmul optimization
 \item Broad exception handling
-\end{itemize}
 
-\subsection{10.13 Ethical Considerations}
+\end{itemize}
+\subsection{Ethical Considerations}
 
 Compression is dual-use. See Appendix E.

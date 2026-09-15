@@ -1,14 +1,14 @@
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{HALO-ReGLA}, a hybrid attention module that runs dense 
 softmax and rectified linear streams in parallel, combined by per-head 
 learnable gates. The gate is initialized to favor dense behavior and shifts 
 toward linear during training.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -24,15 +24,17 @@ GPT-2 & -1.9\% & 0.65 & --5\% \\
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Learned gates are bimodal}: dense vs linear heads.
-2. \textbf{Layer depth correlates with gate.}
-3. \textbf{Learned fusion beats fixed fusion.}
-4. \textbf{ELU+1 is optimal kernel.}
-5. \textbf{No speedup without hard routing.}
+\begin{enumerate}
+\item \textbf{Learned gates are bimodal}: dense vs linear heads.
+\item \textbf{Layer depth correlates with gate.}
+\item \textbf{Learned fusion beats fixed fusion.}
+\item \textbf{ELU+1 is optimal kernel.}
+\item \textbf{No speedup without hard routing.}
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
@@ -40,31 +42,31 @@ GPT-2 & -1.9\% & 0.65 & --5\% \\
 \item Chunked cumsum for long sequences
 \item Learned kernels
 \item Long-context evaluation
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical error bounds
 \item Integration with GQA / KV cache
 \item Cross-task gate transfer
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 HALO-ReGLA provides an interpretable hybrid attention mechanism. We release 
 code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank {{ACKNOWLEDGMENTS}}.
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed HALO-ReGLA, implemented the code, wrote the paper.
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

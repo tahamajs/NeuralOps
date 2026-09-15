@@ -69,37 +69,39 @@ $\mathcal{O}(L^2 d)$, which makes inference prohibitively expensive at
 $L \geq 4096$. Existing sparse methods -- Longformer, BigBird, MoBA -- reduce 
 this to $\mathcal{O}(L \cdot W \cdot d)$ or $\mathcal{O}(K \cdot L \cdot d)$ 
 but often apply the same sparsity pattern regardless of sequence length. 
-We introduce **FUSIONATTN**, a **multi-paradigm hybrid attention** that 
+We introduce \textbf{FUSIONATTN}, a \textbf{multi-paradigm hybrid attention} that 
 dispatches between two paths based on sequence length:
 
-1. **Short-sequence path ($L \leq 128$):** Standard softmax attention, no 
-   sparsity overhead.
-2. **Long-sequence path ($L > 128$):** Block-sparse attention with a 
-   **learnable gating MLP** that scores query-key block pairs, selects the 
-   top-$K$ blocks per query block, and computes attention only within the 
-   selected blocks (**MoBA-style**).
+\begin{enumerate}
+\item \textbf{Short-sequence path ($L \leq 128$):} Standard softmax attention, no
+  sparsity overhead.
+\item \textbf{Long-sequence path ($L > 128$):} Block-sparse attention with a
+  \textbf{learnable gating MLP} that scores query-key block pairs, selects the
+  top-$K$ blocks per query block, and computes attention only within the
+  selected blocks (\textbf{MoBA-style}).
 
+\end{enumerate}
 The gate is a 2-layer MLP with GELU activation that operates on 
 mean-pooled block representations; it is trained jointly with LoRA 
 adapters. Base Q/K/V/O projections are frozen and copied exactly from the 
 pretrained model, ensuring step-0 preservation.
 
-**Important disclosure.** FUSIONATTN is **not** a compression method. It 
-**increases** parameter count via LoRA adapters and the gate MLP. Its value 
-lies in **long-context compute efficiency**, not size reduction. We 
+\textbf{Important disclosure.} FUSIONATTN is \textbf{not} a compression method. It 
+\textbf{increases} parameter count via LoRA adapters and the gate MLP. Its value 
+lies in \textbf{long-context compute efficiency}, not size reduction. We 
 additionally note that at $L \leq 128$ (our test sequence length), FUSIONATTN 
-takes the **short path** and produces output identical to the pretrained 
+takes the \textbf{short path} and produces output identical to the pretrained 
 model with no sparsity benefit.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
 50 LoRA recovery steps. FUSIONATTN achieves 
-**90.48\%** on DistilBERT, **77.35\%** on RoBERTa, and **78.90\%** 
+\textbf{90.48\%} on DistilBERT, \textbf{77.35\%} on RoBERTa, and \textbf{78.90\%} 
 on GPT-2, matching the SDPA baseline within noise.
 
-**Keywords:** hybrid sparse attention, block gating, MoBA, short-sequence 
+\textbf{Keywords:} hybrid sparse attention, block gating, MoBA, short-sequence 
 fast path, learnable sparsity, LoRA
 
----
+
 
 \vspace{0.5em}
 \noindent\textbf{Keywords:} hybrid sparse attention, block gating, MoBA, short-sequence

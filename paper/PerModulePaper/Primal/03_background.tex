@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Softmax Attention}
+\subsection{Softmax Attention}
 
 For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
@@ -18,7 +18,7 @@ A = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) \in \mathbb{R}^{L \
 \textbf{Complexity.} $A$ requires $\mathcal{O}(L^2)$ memory; the two matmuls 
 require $\mathcal{O}(L^2 d_h)$ time.
 
-\subsection{3.2 Nystr m Approximation}
+\subsection{Nystr m Approximation}
 
 For a symmetric PSD kernel matrix $K \in \mathbb{R}^{L \times L}$, the Nystr m 
 method selects $m$ landmark rows/columns and approximates:
@@ -33,8 +33,8 @@ where:
 \begin{itemize}
 \item $C \in \mathbb{R}^{L \times m}$: query-landmark kernel
 \item $W \in \mathbb{R}^{m \times m}$: landmark-landmark kernel (PSD)
-\end{itemize}
 
+\end{itemize}
 The approximation is exact when $K$ has rank $\le m$.
 
 \textbf{Application to attention.} With $K_\text{attn} = \text{softmax}(QK^\top / \sqrt{d_h})$, 
@@ -47,7 +47,7 @@ A \approx \tilde{A} = \begin{pmatrix} A_{Q, L_m} \\ A_{L_m, L_m} \\ A_{L_m, Q} \
 
 where $L_m$ indexes $m$ landmarks.
 
-\subsection{3.3 Asymmetric Kernel}
+\subsection{Asymmetric Kernel}
 
 When the kernel is \textbf{not symmetric} -- e.g., $K(q_i, k_j) \ne K(k_i, q_j)$ 
 -- Nystr m approximation in the standard form does not apply.
@@ -59,19 +59,19 @@ of $A$ may differ.
 
 Primal Attention handles this by allowing $Q_\text{land} \ne K_\text{land}$.
 
-\subsection{3.4 Primal vs Dual Representation}
+\subsection{Primal vs Dual Representation}
 
 Given a kernel matrix $K$ with rank $r$:
 
 \begin{itemize}
 \item \textbf{Primal representation:} $K = \Phi \Phi^\top$ where $\Phi \in \mathbb{R}^{L \times r}$
 \item \textbf{Dual representation:} $K = U \Sigma U^\top$ where $U \in \mathbb{R}^{L \times r}$ is orthogonal
-\end{itemize}
 
+\end{itemize}
 Primal is cheaper when $r \ll L$ and $K$ is low-rank. Primal Attention uses 
 the primal form with asymmetric factors.
 
-\subsection{3.5 Moore--Penrose Pseudoinverse}
+\subsection{Moore--Penrose Pseudoinverse}
 
 For a matrix $A \in \mathbb{R}^{m \times n}$, the Moore--Penrose pseudoinverse 
 $A^+ \in \mathbb{R}^{n \times m}$ satisfies:
@@ -84,7 +84,7 @@ A A^+ A = A, \qquad A^+ A A^+ = A^+, \qquad (A A^+)^\top = A A^+, \qquad (A^+ A)
 \textbf{Computation.} For $A = U \Sigma V^\top$, $A^+ = V \Sigma^+ U^\top$ where 
 $\Sigma^+_{ii} = 1/\sigma_i$ if $\sigma_i > \epsilon$, else $0$.
 
-\subsection{3.6 Schulz Iteration}
+\subsection{Schulz Iteration}
 
 Schulz (1933) proposed the iteration:
 
@@ -107,7 +107,7 @@ so $\|E_t\| \le \|E_0\|^{2^t}$, giving quadratic convergence.
 \textbf{Initialization.} Common choices: $X_0 = A^\top / \|A\|_F^2$ or $X_0 = A^+$ 
 (precomputed).
 
-\subsection{3.7 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable low-rank adapters:
 
@@ -118,4 +118,4 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
 
 We use LoRA to recover quality after attention replacement.
 
-\subsection{3.8 Notation Summary}
+\subsection{Notation Summary}

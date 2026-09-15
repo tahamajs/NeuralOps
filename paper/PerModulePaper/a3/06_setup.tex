@@ -1,7 +1,7 @@
 
-\section{6. Experimental Setup}
+\section{Experimental Setup}
 
-\subsection{6.1 Models}
+\subsection{Models}
 
 We evaluate on three pretrained backbones:
 
@@ -21,7 +21,7 @@ GPT-2 & 12 & 768 & 124.4M & Causal \\
 
 Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 \textbf{SST-2} (Socher et al., 2013):
 
@@ -43,7 +43,7 @@ Majority baseline: \textbf{50.92\%}.
 
 Sequence length truncated to 128 tokens.
 
-\subsection{6.3 Calibration Data}
+\subsection{Calibration Data}
 
 For A3's activation statistics, we use the \textbf{training set} as calibration 
 source. This is legitimate because:
@@ -52,12 +52,12 @@ source. This is legitimate because:
 \item The calibration pass is a forward-only pass (no gradient)
 \item It uses unlabeled inputs (labels not required)
 \item It is not a form of test set leakage
-\end{itemize}
 
+\end{itemize}
 We use \textbf{1000 examples} (a subsample of the training set) for 
 calibration to keep memory bounded.
 
-\subsection{6.4 Compression Hyperparameters}
+\subsection{Compression Hyperparameters}
 
 \begin{table}[H]
 \centering
@@ -67,18 +67,18 @@ calibration to keep memory bounded.
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
 Rank $r$ & 64 & Target rank \\
-`use\_fisher` & True & Activation-aware weighting \\
-`recalibrate\_ln` & True & LayerNorm recalibration \\
-`max\_error` $\tau$ & 0.20 & Frobenius threshold \\
-`max\_retries` & 3 & Adaptive escalation steps \\
-`fallback\_to\_original` & True & Safe fallback \\
-`normalize\_scale` & True & Clamp weights \\
-`target\_attention\_only` & False & Compress all layers \\
+\texttt{use\_fisher} & True & Activation-aware weighting \\
+\texttt{recalibrate\_ln} & True & LayerNorm recalibration \\
+\texttt{max\_error} $\tau$ & 0.20 & Frobenius threshold \\
+\texttt{max\_retries} & 3 & Adaptive escalation steps \\
+\texttt{fallback\_to\_original} & True & Safe fallback \\
+\texttt{normalize\_scale} & True & Clamp weights \\
+\texttt{target\_attention\_only} & False & Compress all layers \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 After A3 compression, we train LoRA adapters:
 
@@ -101,17 +101,17 @@ Precision & FP16 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.6 Evaluation Metrics}
+\subsection{Evaluation Metrics}
 
-\subsubsection{6.6.1 Quality Metrics}
+\subsubsection{Quality Metrics}
 
 \begin{itemize}
 \item \textbf{Accuracy:} $\text{Acc} = \frac{\text{correct}}{\text{total}}$
 \item \textbf{F1:} Binary and macro-averaged
 \item \textbf{Precision, Recall}
-\end{itemize}
 
-\subsubsection{6.6.2 Efficiency Metrics}
+\end{itemize}
+\subsubsection{Efficiency Metrics}
 
 \begin{itemize}
 \item \textbf{Total parameters:} \texttt{sum(p.numel() for p in model.parameters())}
@@ -119,18 +119,18 @@ Precision & FP16 \\
 \item \textbf{Peak VRAM:} \texttt{torch.cuda.max\_memory\_allocated()}
 \item \textbf{Inference time:} Median of 20 forward passes
 \item \textbf{Throughput:} Tokens/sec
-\end{itemize}
 
-\subsubsection{6.6.3 Compression Metrics}
+\end{itemize}
+\subsubsection{Compression Metrics}
 
 \begin{itemize}
 \item \textbf{Compression ratio:} Baseline params / compressed params
 \item \textbf{Reconstruction error:} $\|W - UV\|_F / \|W\|_F$
 \item \textbf{Compressed layers:} Count of successfully factorized layers
 \item \textbf{Fallback layers:} Count of layers preserved
-\end{itemize}
 
-\subsection{6.7 Quality Gate}
+\end{itemize}
+\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
@@ -148,7 +148,7 @@ FAIL & < 50.92\% \\
 
 56\% corresponds to majority baseline + 3$\times$SE.
 
-\subsection{6.8 Hardware}
+\subsection{Hardware}
 
 \begin{table}[H]
 \centering
@@ -167,7 +167,7 @@ OS & Windows / Linux \\
 \end{tabular}
 \end{table}
 
-\subsection{6.9 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_a3.py \
@@ -179,19 +179,21 @@ python run_all_4_a3.py \
 
 Expected runtime: ~15 minutes.
 
-\subsection{6.10 Seeds}
+\subsection{Seeds}
 
 All experiments use seed 42. No multi-seed runs due to compute budget.
 
-\subsection{6.11 Baselines}
+\subsection{Baselines}
 
 We compare against:
 
-1. \textbf{\texttt{full}:} Uncompressed pretrained model.
-2. \textbf{\texttt{a3}:} Our method.
-3. \textbf{\texttt{a3\_no\_fisher}:} A3 without Fisher weighting (ablations).
-4. \textbf{\texttt{a3\_no\_ln}:} A3 without LayerNorm recalibration (ablations).
-5. \textbf{Prior modules} (from our benchmark suite):
+\begin{enumerate}
+\item \textbf{\texttt{full}:} Uncompressed pretrained model.
+\item \textbf{\texttt{a3}:} Our method.
+\item \textbf{\texttt{a3\_no\_fisher}:} A3 without Fisher weighting (ablations).
+\item \textbf{\texttt{a3\_no\_ln}:} A3 without LayerNorm recalibration (ablations).
+\item \textbf{Prior modules} (from our benchmark suite):
+\end{enumerate}
 \begin{itemize}
 \item \texttt{sdrm}, \texttt{svd\_linear}, \texttt{nha}, etc.
 \end{itemize}

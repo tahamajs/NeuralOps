@@ -64,10 +64,12 @@ def make_hook(name):
 
 \textbf{Key implementation notes:}
 
-1. \textbf{FP32 compute:} We cast to FP32 inside the hook to avoid numerical issues.
-2. \textbf{Padding filter:} Mask tokens with $\|x_i\|_1 < 10^{-5}$.
-3. \textbf{CPU transfer:} \texttt{batch\_cov.cpu()} prevents GPU memory accumulation.
+\begin{enumerate}
+\item \textbf{FP32 compute:} We cast to FP32 inside the hook to avoid numerical issues.
+\item \textbf{Padding filter:} Mask tokens with $\|x_i\|_1 < 10^{-5}$.
+\item \textbf{CPU transfer:} \texttt{batch\_cov.cpu()} prevents GPU memory accumulation.
 
+\end{enumerate}
 \subsection{B.3 Eigendecomposition with Regularization}
 
 \begin{lstlisting}

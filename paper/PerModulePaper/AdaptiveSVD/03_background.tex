@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Singular Value Decomposition}
+\subsection{Singular Value Decomposition}
 
 For any matrix $W \in \mathbb{R}^{m \times n}$, the SVD is:
 
@@ -34,7 +34,7 @@ V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
 ensures $\|U_r\|_2 = \|V_r\|_2 = \sigma_1^{1/2}$, giving balanced magnitudes 
 and improved numerical stability for FP16 computation.
 
-\subsection{3.2 Cumulative Squared Energy}
+\subsection{Cumulative Squared Energy}
 
 Define the cumulative squared energy at rank $r$:
 
@@ -49,8 +49,8 @@ Properties:
 \item $\mathcal{E}$ is monotone increasing
 \item $\mathcal{E}(\min(m, n)) = 1$
 \item $\mathcal{E}(r)$ measures the fraction of $\|W\|_F^2$ captured by the top-$r$ directions
-\end{itemize}
 
+\end{itemize}
 \textbf{Energy-thresholded rank.} Given $\tau \in (0, 1)$:
 
 \[
@@ -67,7 +67,7 @@ At this rank:
 
 so relative Frobenius error is $\leq \sqrt{1 - \tau}$.
 
-\subsection{3.3 Spectral Decay in Attention Weights}
+\subsection{Spectral Decay in Attention Weights}
 
 Attention projection matrices exhibit heterogeneous spectral decay:
 
@@ -76,12 +76,12 @@ Attention projection matrices exhibit heterogeneous spectral decay:
 \item \textbf{Key projections:} Slower decay (keys spread information across dimensions).
 \item \textbf{Value projections:} Faster decay (values have lower effective rank).
 \item \textbf{Output projections:} Moderate decay; depends on head-combining structure.
-\end{itemize}
 
+\end{itemize}
 \textbf{Figure 3.1} shows singular value spectra for DistilBERT layer 0 vs layer 3. 
 The difference in decay rate justifies per-layer rank selection.
 
-\subsection{3.4 LoRA-Style Residual Adapters}
+\subsection{LoRA-Style Residual Adapters}
 
 LoRA (Hu et al., 2021) parameterizes a weight update as:
 
@@ -102,7 +102,7 @@ y = x (U V)^\top + \frac{\alpha}{r_L} x (B A)^\top
 
 At initialization, $y = x (U V)^\top$, matching the frozen base.
 
-\subsection{3.5 T5 Relative Attention Bias}
+\subsection{T5 Relative Attention Bias}
 
 T5 (Raffel et al., 2020) adds a learnable bias to attention scores based on 
 the bucketed relative position of query and key:
@@ -125,7 +125,7 @@ d & \text{if } |d| < \text{max\_exact} \\
 with $\text{max\_exact} = 8$, $\text{num\_buckets} = 32$. The bias is added 
 to attention scores before softmax. Adaptive SVD preserves this bias.
 
-\subsection{3.6 Grouped-Query Attention (GQA)}
+\subsection{Grouped-Query Attention (GQA)}
 
 Modern models (Qwen, LLaMA) use GQA where $H_{kv} < H$:
 
@@ -137,7 +137,7 @@ K, V \in \mathbb{R}^{B \times L \times H_{kv} d_h}, \quad H_\text{repeat} = H / 
 The KV heads are repeated via \texttt{repeat\_kv} before attention. Adaptive SVD 
 preserves GQA structure.
 
-\subsection{3.7 Rotary Position Embeddings (RoPE)}
+\subsection{Rotary Position Embeddings (RoPE)}
 
 RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
 
@@ -148,4 +148,4 @@ RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
 
 Adaptive SVD applies RoPE after the factorized $Q, K$ projections.
 
-\subsection{3.8 Notation Summary}
+\subsection{Notation Summary}

@@ -1,11 +1,11 @@
 
-\section{8. Analysis}
+\section{Analysis}
 
-\subsection{8.1 Why Does AASVD Work?}
+\subsection{Why Does AASVD Work?}
 
 AASVD's success comes from three mechanisms working together.
 
-\subsubsection{8.1.1 Covariance Captures Directional Importance}
+\subsubsection{Covariance Captures Directional Importance}
 
 Unweighted SVD approximates $W$ to minimize $\|W - W_r\|_F$. But the 
 \textbf{effective importance} of each row of $W$ depends on how often the 
@@ -17,7 +17,7 @@ DistilBERT layer. The top 10\% of eigenvalues account for
 \textbf{85\%} of total energy. Weighting by $C_X^{1/2}$ concentrates 
 the factorization on these high-energy directions.
 
-\subsubsection{8.1.2 Streaming EMA Reduces Variance}
+\subsubsection{Streaming EMA Reduces Variance}
 
 The straight mean estimator $\hat{C} = \frac{1}{K} \sum_k C_k$ has variance 
 $\sigma^2 / K$ where $\sigma^2$ is the batch-level variance. EMA with 
@@ -27,19 +27,19 @@ similar to a straight mean over 20 batches.
 For a default corpus of 5 documents, EMA gives a slightly biased but 
 lower-variance estimate.
 
-\subsubsection{8.1.3 Bundled Corpus Provides Signal}
+\subsubsection{Bundled Corpus Provides Signal}
 
 \textbf{Figure 8.2} compares $C_X$ estimated from:
 \begin{itemize}
 \item Default bundled corpus
 \item SST-2 training samples
 \item Random texts
-\end{itemize}
 
+\end{itemize}
 The bundled corpus captures the dominant directions of $C_X$ well; task-specific 
 calibration only improves second-order structure.
 
-\subsection{8.2 Per-Layer Analysis}
+\subsection{Per-Layer Analysis}
 
 \textbf{Table 8.1: Reconstruction error by layer (DistilBERT).}
 
@@ -63,7 +63,7 @@ calibration only improves second-order structure.
 \textbf{Observation.} Middle layers (2--3) tend to have the highest error; early 
 and late layers are more compressible.
 
-\subsection{8.3 Contribution of Each Component}
+\subsection{Contribution of Each Component}
 
 \textbf{Table 8.2: Ablation of AASVD components.}
 
@@ -78,7 +78,7 @@ Baseline (no compression) & 90.71\% & -- \\
 SVD only (no cov) & {{SVD\_ONLY}} & {{SVD\_D}} \\
 + diagonal weighting & {{DIAG\_ONLY}} & {{DIAG\_D}} \\
 + full covariance & {{FULL\_COV}} & {{FULLCOV\_D}} \\
-+ LoRA recovery & **85.0** & **-5.7** \\
++ LoRA recovery & \textbf{85.0} & \textbf{-5.7} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -88,9 +88,9 @@ SVD only (no cov) & {{SVD\_ONLY}} & {{SVD\_D}} \\
 \item Diagonal weighting: +2.0\%
 \item Full covariance over diagonal: +1.5\%
 \item LoRA recovery: +5.0\%
-\end{itemize}
 
-\subsection{8.4 Effect of Rank}
+\end{itemize}
+\subsection{Effect of Rank}
 
 \textbf{Figure 8.3} shows accuracy vs rank for all three models.
 
@@ -113,7 +113,7 @@ SVD only (no cov) & {{SVD\_ONLY}} & {{SVD\_D}} \\
 \textbf{Observation.} Rank 64 is a sweet spot: high compression with minimal 
 accuracy loss.
 
-\subsection{8.5 Calibration Sensitivity}
+\subsection{Calibration Sensitivity}
 
 \textbf{Table 8.3: Effect of calibration corpus.}
 
@@ -136,7 +136,7 @@ No calibration & 80.0 & {{D\_NONE\_D}} \\
 \textbf{Observation.} The bundled corpus is competitive with 50 SST-2 examples; 
 500 examples give marginal additional improvement.
 
-\subsection{8.6 Comparison with A3}
+\subsection{Comparison with A3}
 
 AASVD and A3 both use activation-aware weighting. Key differences:
 
@@ -176,28 +176,28 @@ GPT-2 & {{A3\_G}} & 73.0 & {{DIFF\_G}} \\
 diagonal weighting (1.5\% on average), at the cost of 
 $\mathcal{O}(d^2)$ instead of $\mathcal{O}(d)$ memory.
 
-\subsection{8.7 Numerical Stability}
+\subsection{Numerical Stability}
 
-\subsubsection{8.7.1 Eigendecomposition}
+\subsubsection{Eigendecomposition}
 
 We use \texttt{torch.linalg.eigh} (symmetric) rather than \texttt{torch.linalg.svd} for 
 $C_X$, which exploits symmetry and returns real eigenvalues.
 
-\subsubsection{8.7.2 Regularization}
+\subsubsection{Regularization}
 
 Regularization $\lambda_i \leftarrow \max(\lambda_i, \epsilon_\text{reg})$ is 
 essential for avoiding division by zero when computing $C_X^{-1/2}$. Our 
 default $\epsilon_\text{reg} = 10^{-6} \max_j \lambda_j + 10^{-8}$ works 
 well in practice.
 
-\subsubsection{8.7.3 FP16 SVD}
+\subsubsection{FP16 SVD}
 
 All SVD is computed in FP32, even when the model is FP16. FP16 SVD 
 occasionally produces NaN for ill-conditioned matrices.
 
-\subsection{8.8 Failure Modes}
+\subsection{Failure Modes}
 
-\subsubsection{8.8.1 Layers That Failed}
+\subsubsection{Layers That Failed}
 
 \begin{table}[H]
 \centering
@@ -211,14 +211,16 @@ occasionally produces NaN for ill-conditioned matrices.
 \end{tabular}
 \end{table}
 
-\subsubsection{8.8.2 Root Causes}
+\subsubsection{Root Causes}
 
 {{FAIL\_CAUSE}}
 
-\subsection{8.9 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{Full covariance is better than diagonal} by 1.5\% at rank 64.
-2. \textbf{EMA with $\beta$=0.9} is robust across corpus sizes.
-3. \textbf{Bundled corpus works well} without task-specific calibration.
-4. \textbf{Rank 64 is a sweet spot} for all three models.
-5. \textbf{Frobenius fallback is essential} to prevent catastrophic compression.
+\begin{enumerate}
+\item \textbf{Full covariance is better than diagonal} by 1.5\% at rank 64.
+\item \textbf{EMA with $\beta$=0.9} is robust across corpus sizes.
+\item \textbf{Bundled corpus works well} without task-specific calibration.
+\item \textbf{Rank 64 is a sweet spot} for all three models.
+\item \textbf{Frobenius fallback is essential} to prevent catastrophic compression.
+\end{enumerate}

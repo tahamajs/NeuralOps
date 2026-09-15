@@ -1,7 +1,7 @@
 
-\section{6. Experimental Setup}
+\section{Experimental Setup}
 
-\subsection{6.1 Models}
+\subsection{Models}
 
 \begin{table}[H]
 \centering
@@ -19,7 +19,7 @@ GPT-2 & 12 & 768 & 12 & 12 & 124.4M & Causal \\
 
 Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 \textbf{SST-2} (Socher et al., 2013):
 
@@ -39,7 +39,7 @@ Test & 1,821 & -- & -- \\
 
 \textbf{Majority baseline:} 50.92\%. \textbf{Sequence length:} 128.
 
-\subsection{6.3 Compression Hyperparameters}
+\subsection{Compression Hyperparameters}
 
 \begin{table}[H]
 \centering
@@ -48,22 +48,22 @@ Test & 1,821 & -- & -- \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-`energy\_threshold` $\tau$ & 0.92 & Cumulative energy cutoff \\
-`svd\_rank` (cap) & 288 & Maximum rank (rarely hit) \\
-`residual\_rank` $r_L$ & 16 & LoRA adapter rank \\
-`min\_rank` & 16 & Minimum rank floor \\
-`trainable\_svd` & False & Base frozen \\
-`target\_attention\_only` & True & Only attention projections \\
+\texttt{energy\_threshold} $\tau$ & 0.92 & Cumulative energy cutoff \\
+\texttt{svd\_rank} (cap) & 288 & Maximum rank (rarely hit) \\
+\texttt{residual\_rank} $r_L$ & 16 & LoRA adapter rank \\
+\texttt{min\_rank} & 16 & Minimum rank floor \\
+\texttt{trainable\_svd} & False & Base frozen \\
+\texttt{target\_attention\_only} & True & Only attention projections \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Calibration}
+\subsection{Calibration}
 
 \textbf{None required.} Adaptive SVD selects rank from the weight spectrum alone. 
 No forward passes, no activation statistics.
 
-\subsection{6.5 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 After compression, adapters are trained:
 
@@ -90,7 +90,7 @@ Trainable params & Only $A_P, B_P$ \\
 \textbf{Trainable tensor count:} 96 (2 per projection $\times$ 4 per 
 layer $\times$ $N_l$).
 
-\subsection{6.6 Evaluation Metrics}
+\subsection{Evaluation Metrics}
 
 \subsubsection{Quality}
 \begin{itemize}
@@ -98,8 +98,8 @@ layer $\times$ $N_l$).
 \item F1 (binary, macro)
 \item Precision, Recall
 \item Validation loss
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Efficiency}
 \begin{itemize}
 \item Total parameters (before/after)
@@ -107,17 +107,17 @@ layer $\times$ $N_l$).
 \item Peak VRAM
 \item Inference time (median of 20 runs)
 \item Tokens/second
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Compression}
 \begin{itemize}
 \item Compressed layer count
 \item Fallback layer count (if any)
 \item Per-projection rank
 \item Reconstruction error at rank $r_P$
-\end{itemize}
 
-\subsection{6.7 Quality Gate}
+\end{itemize}
+\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
@@ -135,7 +135,7 @@ FAIL & < 50.92\% \\
 
 56\% = majority + 3 SE. SE is $\sqrt{p(1-p)/N} \approx 1.69\%$ at $N = 872$.
 
-\subsection{6.8 Hardware}
+\subsection{Hardware}
 
 \begin{table}[H]
 \centering
@@ -154,7 +154,7 @@ OS & Windows / Linux \\
 \end{tabular}
 \end{table}
 
-\subsection{6.9 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_adaptive_svd.py \
@@ -166,8 +166,8 @@ python run_all_4_adaptive_svd.py \
 
 \textbf{Expected runtime:} ~15 minutes on RTX 4070.
 
-\subsection{6.10 Seeds}
+\subsection{Seeds}
 
 All experiments use seed 42. No multi-seed runs due to compute budget.
 
-\subsection{6.11 Baselines}
+\subsection{Baselines}

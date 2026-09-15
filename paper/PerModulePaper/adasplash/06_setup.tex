@@ -1,7 +1,7 @@
 
-\section{6. Experimental Setup}
+\section{Experimental Setup}
 
-\subsection{6.1 Models}
+\subsection{Models}
 
 \begin{table}[H]
 \centering
@@ -19,7 +19,7 @@ GPT-2 & 12 & 768 & 12 & 12 & 124.4M & Causal \\
 
 Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 \textbf{SST-2} (Socher et al., 2013):
 
@@ -39,7 +39,7 @@ Test & 1,821 & -- & -- \\
 
 Majority baseline: 50.92\%. Sequence length: 128.
 
-\subsection{6.3 AdaSplash Hyperparameters}
+\subsection{AdaSplash Hyperparameters}
 
 \begin{table}[H]
 \centering
@@ -57,7 +57,7 @@ $r_L$ (LoRA rank) & 16 & Adapter rank \\
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 \begin{table}[H]
 \centering
@@ -80,7 +80,7 @@ Trainable params & LoRA only \\
 \textbf{Trainable tensor count:} 2 tensors per projection $\times$ 4 projections $\times$ $N_l$ 
 layers = 8$N_l$ tensors.
 
-\subsection{6.5 Evaluation Metrics}
+\subsection{Evaluation Metrics}
 
 \subsubsection{Quality}
 \begin{itemize}
@@ -88,24 +88,24 @@ layers = 8$N_l$ tensors.
 \item F1 (binary, macro)
 \item Precision, Recall
 \item Validation loss
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Efficiency}
 \begin{itemize}
 \item Total parameters (before/after)
 \item Peak VRAM
 \item Inference time (median of 20 runs)
 \item Attention sparsity (\% zero weights)
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Interpretability}
 \begin{itemize}
 \item Attention entropy
 \item Effective support size
 \item Sink token mass
-\end{itemize}
 
-\subsection{6.6 Quality Gate}
+\end{itemize}
+\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
@@ -121,7 +121,7 @@ FAIL & < 50.92\% \\
 \end{tabular}
 \end{table}
 
-\subsection{6.7 Hardware}
+\subsection{Hardware}
 
 \begin{table}[H]
 \centering
@@ -139,7 +139,7 @@ Transformers & 4.44.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.8 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_adasplash.py \
@@ -152,8 +152,8 @@ python run_all_4_adasplash.py \
 
 Runtime: ~20 minutes.
 
-\subsection{6.9 Seeds}
+\subsection{Seeds}
 
 All experiments with seed 42.
 
-\subsection{6.10 Baselines}
+\subsection{Baselines}

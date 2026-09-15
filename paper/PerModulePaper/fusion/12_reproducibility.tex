@@ -1,6 +1,6 @@
-\section{12. Reproducibility Statement}
+\section{Reproducibility Statement}
 
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -10,7 +10,7 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Dependencies}
+\subsection{Dependencies}
 
 \begin{table}[H]
 \centering
@@ -26,7 +26,7 @@ datasets & 2.20.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{12.3 Running FUSIONATTN}
+\subsection{Running FUSIONATTN}
 
 \begin{lstlisting}
 python run_all_4_fusion_attn.py \
@@ -36,7 +36,7 @@ python run_all_4_fusion_attn.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{12.4 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \begin{lstlisting}
 # Main
@@ -53,7 +53,7 @@ for K in 2 4 8; do
 done
 \end{lstlisting}
 
-\subsection{12.5 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
 seed = 42
@@ -63,7 +63,7 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 \end{lstlisting}
 
-\subsection{12.6 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
@@ -79,15 +79,15 @@ GPT-2 & 78.90\% $\pm$ 1\% & Short \\
 \end{tabular}
 \end{table}
 
-\subsection{12.7 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item Dataset: SST-2
 \item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-fusion\_attn}
 \item Metrics: \texttt{results/unified\_fusion\_attn/*/summary.csv}
-\end{itemize}
 
-\subsection{12.8 Known Issues}
+\end{itemize}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item Windows: \texttt{PYTHONIOENCODING=utf-8}

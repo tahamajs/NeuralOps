@@ -1,6 +1,6 @@
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 The softmax attention operation computes a pairwise score between every 
 query and every key:
@@ -21,21 +21,19 @@ trade-offs:
 
 \begin{itemize}
 \item \textbf{Sparse attention} (Longformer, BigBird) captures local structure well
-\end{itemize}
   but loses global context.
-\begin{itemize}
 \item \textbf{Kernel attention} (Performer, Linear Transformer) preserves global
-\end{itemize}
-  context but approximates softmax, which is problematic when the true 
+  context but approximates softmax, which is problematic when the true
   attention is peaked.
 
+\end{itemize}
 \textbf{Cluster-based attention} offers a third path. Instead of comparing 
 individual tokens, group them into $K$ clusters, compute attention at the 
 \textbf{cluster level}, and redistribute the results. If $K \ll L$, this is much 
 cheaper than dense attention while preserving \textbf{global reach} (every 
 cluster attends to every key).
 
-\subsection{1.2 Prior Work on Clustering Attention}
+\subsection{Prior Work on Clustering Attention}
 
 \textbf{Routing Transformer} (Roy et al., 2021) clusters tokens and restricts 
 attention within each cluster. Its complexity is $\mathcal{O}(L \cdot W)$ 
@@ -52,22 +50,24 @@ tasks but applies it at a coarse granularity (sentence-level).
 \textbf{ClusterFormer} differs by computing \textbf{centroid-to-key} attention 
 directly, giving exact global context at $\mathcal{O}(K L d)$ complexity.
 
-\subsection{1.3 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained attention module with projections $W_Q, W_K, W_V, W_O$, 
 we seek a modified attention function $\mathcal{A}'$ such that:
 
-1. \textbf{Subquadratic complexity.} $\mathcal{A}'$ runs in $\mathcal{O}(K L d)$ 
-   with $K \ll L$.
-2. \textbf{Global context.} Every query attends to a representation of the whole 
-   sequence, not just a window.
-3. \textbf{Local structure.} Nearby syntactic dependencies are preserved.
-4. \textbf{Step-0 preservation.} With zero-init LoRA adapters, the initial forward 
-   pass matches the pretrained model.
-5. \textbf{Multi-architecture support.} Works on flat, nested, and causal 
-   transformers.
+\begin{enumerate}
+\item \textbf{Subquadratic complexity.} $\mathcal{A}'$ runs in $\mathcal{O}(K L d)$
+  with $K \ll L$.
+\item \textbf{Global context.} Every query attends to a representation of the whole
+  sequence, not just a window.
+\item \textbf{Local structure.} Nearby syntactic dependencies are preserved.
+\item \textbf{Step-0 preservation.} With zero-init LoRA adapters, the initial forward
+  pass matches the pretrained model.
+\item \textbf{Multi-architecture support.} Works on flat, nested, and causal
+  transformers.
 
-\subsection{1.4 Our Approach}
+\end{enumerate}
+\subsection{Our Approach}
 
 ClusterFormer computes attention in three steps:
 
@@ -103,40 +103,28 @@ attention branch and blend via a learnable gate $\alpha$:
 \tag{1.4}
 \]
 
-\subsection{1.5 Contributions}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{Centroid-to-key cross-attention.} A novel formulation of cluster
-\end{itemize}
   attention that computes exact global context at linear cost. Section 4.3.
-\begin{itemize}
 \item \textbf{Fast differentiable K-means.} A vectorized Lloyd algorithm with
-\end{itemize}
-  padding-aware initialization and 3 iterations, sufficient for attention 
+  padding-aware initialization and 3 iterations, sufficient for attention
   clustering. Section 4.2.
-\begin{itemize}
 \item \textbf{Learnable temperature and blend.} A temperature parameter $\tau$ for
-\end{itemize}
-  assignment sharpening and a blend scalar $\alpha$ for global-local fusion, 
+  assignment sharpening and a blend scalar $\alpha$ for global-local fusion,
   both learned during recovery. Section 4.4.
-\begin{itemize}
 \item \textbf{Broad architecture support.} Multi-architecture weight extraction plus
-\end{itemize}
   GQA, RoPE, nested encoder bypass, and causal masking. Section 5.
-\begin{itemize}
 \item \textbf{Systematic evaluation.} Three models, SST-2, ablations over $K$,
-\end{itemize}
   window size, and blend initialization. Section 7.
-\begin{itemize}
 \item \textbf{Honest disclosure.} Parameter count increases due to LoRA and the
-\end{itemize}
   learnable scalars; we report this transparently. Section 7.2.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts
-\end{itemize}
   released under MIT.
 
-\subsection{1.6 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on attention, 
 K-means, and linear attention. Section 4 presents ClusterFormer. Section 5 

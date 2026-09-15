@@ -1,16 +1,18 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 HALO-ReGLA runs two attention streams in parallel and combines them with 
 per-head gates:
 
-1. \textbf{Dense stream} $O^\text{dense}$: standard softmax attention.
-2. \textbf{Linear stream} $O^\text{lin}$: rectified kernel attention.
-3. \textbf{Gate} $g$: per-head per-token sigmoid.
-4. \textbf{Fusion} $O = g \odot O^\text{dense} + (1 - g) \odot O^\text{lin}$.
+\begin{enumerate}
+\item \textbf{Dense stream} $O^\text{dense}$: standard softmax attention.
+\item \textbf{Linear stream} $O^\text{lin}$: rectified kernel attention.
+\item \textbf{Gate} $g$: per-head per-token sigmoid.
+\item \textbf{Fusion} $O = g \odot O^\text{dense} + (1 - g) \odot O^\text{lin}$.
 
+\end{enumerate}
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
@@ -34,7 +36,7 @@ per-head gates:
               out_proj
 \end{lstlisting}
 
-\subsection{4.2 Dense Stream}
+\subsection{Dense Stream}
 
 Standard softmax attention with causal masking and padding:
 
@@ -51,13 +53,13 @@ O^\text{dense}_i = \sum_j \text{softmax}(S_i)_j V_j
 \begin{itemize}
 \item Causal: $S_{ij} = -\infty$ for $j > i$.
 \item Padding: $S_{ij} = -\infty$ for invalid keys $j$.
-\end{itemize}
 
-\subsection{4.3 Linear Stream}
+\end{itemize}
+\subsection{Linear Stream}
 
 Rectified kernel attention with cumulative sums for causality:
 
-\subsubsection{4.3.1 Feature Map}
+\subsubsection{Feature Map}
 
 \[
 \phi(x) = \mathrm{elu}(x) + 1 \in \mathbb{R}^{d_h}
@@ -66,7 +68,7 @@ Rectified kernel attention with cumulative sums for causality:
 
 Since $\mathrm{elu}(x) > -1$ for all $x$, we have $\phi(x) > 0$.
 
-\subsubsection{4.3.2 Causal Formulation}
+\subsubsection{Causal Formulation}
 
 For each position $i$:
 
@@ -87,7 +89,7 @@ O^\text{lin}_i = \frac{\phi(Q_i) \cdot \text{cum}^{(i)}}{\phi(Q_i) \cdot \text{d
 
 where $\epsilon = 10^{-5}$ prevents division by zero.
 
-\subsubsection{4.3.3 Non-Causal Formulation}
+\subsubsection{Non-Causal Formulation}
 
 For encoders (bidirectional), we use the same formulas without cumsum:
 
@@ -96,7 +98,7 @@ O^\text{lin}_i = \frac{\phi(Q_i) \cdot \sum_j \phi(K_j) V_j^\top}{\phi(Q_i) \cdo
 \tag{4.6}
 \]
 
-\subsubsection{4.3.4 Padding Handling}
+\subsubsection{Padding Handling}
 
 We zero out padding keys before the cumsum:
 
@@ -108,7 +110,7 @@ V_j \leftarrow V_j \cdot \text{valid}_j
 
 This ensures padding contributes nothing to numerator or denominator.
 
-\subsubsection{4.3.5 Numerical Stability}
+\subsubsection{Numerical Stability}
 
 The cumsum is computed in FP32 to avoid overflow:
 
@@ -119,9 +121,9 @@ The cumsum is computed in FP32 to avoid overflow:
 
 We cast back to the model dtype after cumsum.
 
-\subsection{4.4 Fusion Gate}
+\subsection{Fusion Gate}
 
-\subsubsection{4.4.1 Parameterization}
+\subsubsection{Parameterization}
 
 For each head $h$, a linear projection computes the gate logit:
 
@@ -138,14 +140,14 @@ g_{h,i} = \sigma(\text{logit}_{h,i}) \in (0, 1)
 \tag{4.10}
 \]
 
-\subsubsection{4.4.2 Output}
+\subsubsection{Output}
 
 \[
 O_{h,i} = g_{h,i} \cdot O^\text{dense}_{h,i} + (1 - g_{h,i}) \cdot O^\text{lin}_{h,i}
 \tag{4.11}
 \]
 
-\subsubsection{4.4.3 Initialization}
+\subsubsection{Initialization}
 
 We initialize $b_h = 1.8$, so $\sigma(1.8) \approx 0.858$ at initialization. 
 This biases the model toward the \textbf{dense stream}, which matches the 
@@ -162,19 +164,19 @@ pretrained behavior.
 \midrule
 $-2$ & 0.12 & Mostly linear \\
 $0$ & 0.50 & Balanced \\
-$1.8$ & 0.86 & **Mostly dense (default)** \\
+$1.8$ & 0.86 & \textbf{Mostly dense (default)} \\
 $3$ & 0.95 & Almost purely dense \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsubsection{4.4.4 Per-Head vs Global Gate}
+\subsubsection{Per-Head vs Global Gate}
 
 We use \textbf{per-head} gates. This allows different heads to prefer different 
 streams, which matches empirical observations that some heads are local 
 (better served by linear) and others are global (better served by dense).
 
-\subsection{4.5 Complete Forward Pass}
+\subsection{Complete Forward Pass}
 
 \textbf{Algorithm 1:} HALO-ReGLA forward
 \begin{lstlisting}
@@ -221,7 +223,7 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 36: return O
 \end{lstlisting}
 
-\subsection{4.6 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -243,11 +245,13 @@ converges to 0 for many heads, we can drop those heads' dense computations
 post-training.
 
 To realize speedup, one would:
-1. Train with both streams.
-2. Identify heads where $\bar{g}_h < \theta$ (e.g., 0.1).
-3. Convert those heads to pure linear inference.
+\begin{enumerate}
+\item Train with both streams.
+\item Identify heads where $\bar{g}_h < \theta$ (e.g., 0.1).
+\item Convert those heads to pure linear inference.
 
-\subsection{4.7 Parameter Analysis}
+\end{enumerate}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -260,7 +264,7 @@ $W_Q$ & $d H d_h$ & Same \\
 $W_K$ & $d H_{kv} d_h$ & Same \\
 $W_V$ & $d H_{kv} d_h$ & Same \\
 $W_O$ & $H d_h d$ & Same \\
-**Gate** & 0 & $d H + H$ \\
+\textbf{Gate} & 0 & $d H + H$ \\
 LoRA & 0 & $2 r (d H d_h + \cdots)$ \\
 \bottomrule
 \end{tabular}
@@ -269,9 +273,9 @@ LoRA & 0 & $2 r (d H d_h + \cdots)$ \\
 The gate adds $d H + H$ parameters (one linear per head). For $d = 768$, 
 $H = 12$: \textbf{9,216 parameters}. Negligible.
 
-\subsection{4.8 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.8.1 Approximation of Dense by Linear}
+\subsubsection{Approximation of Dense by Linear}
 
 \textbf{Claim.} If the attention distribution is smooth (no sharp peaks), the 
 linear approximation is close to dense.
@@ -280,7 +284,7 @@ linear approximation is close to dense.
 bounded inputs and $d_h \to \infty$, PORF gives unbiased approximation. Our 
 ELU kernel is heuristic but works well in practice.
 
-\subsubsection{4.8.2 Gate Convergence}
+\subsubsection{Gate Convergence}
 
 \textbf{Claim.} The gate converges to a stationary point where:
 
@@ -293,7 +297,7 @@ or the gate is at a boundary ($g_h \to 0$ or $g_h \to 1$).
 
 \textbf{Proof.} At optimum, $\partial \mathcal{L} / \partial g = (\nabla_O \mathcal{L}) \cdot (O^\text{dense} - O^\text{lin}) = 0$. 
 
-\subsubsection{4.8.3 Causality Guarantee}
+\subsubsection{Causality Guarantee}
 
 The causal prefix-sum formulation ensures position $i$ only attends to 
 $j \le i$. This is because $\text{cum}^{(i)}$ depends only on $\{\phi(K\_j), 

@@ -1,28 +1,30 @@
 
-\section{9. Discussion}
+\section{Discussion}
 
-\subsection{9.1 Key Takeaways}
+\subsection{Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Learned Spans are Interpretable}
+\subsubsection{Takeaway 1: Learned Spans are Interpretable}
 
 The learned spans reveal a \textbf{structural} pattern in the model: some heads 
 are naturally local, others global. This is not visible from fixed-window 
 methods.
 
-\subsubsection{9.1.2 Takeaway 2: Span Regularization Works}
+\subsubsection{Takeaway 2: Span Regularization Works}
 
 The L1 penalty causes spans to shrink gracefully, with minimal accuracy loss 
 at $\lambda = 0.01$.
 
-\subsubsection{9.1.3 Takeaway 3: No Speedup Without Hard Truncation}
+\subsubsection{Takeaway 3: No Speedup Without Hard Truncation}
 
 The soft ramp is differentiable but \textbf{does not speed up inference} because 
 all scores are still computed. To realize speedup, one would:
-1. Train with soft ramp.
-2. Convert to hard window at inference.
-3. Use a sparse kernel.
+\begin{enumerate}
+\item Train with soft ramp.
+\item Convert to hard window at inference.
+\item Use a sparse kernel.
 
-\subsection{9.2 When to Use ASA-Span}
+\end{enumerate}
+\subsection{When to Use ASA-Span}
 
 \subsubsection{Recommended}
 
@@ -31,17 +33,17 @@ all scores are still computed. To realize speedup, one would:
 \item \textbf{Base for hard-window pruning}
 \item \textbf{Long-context fine-tuning}
 \item \textbf{Combined with other methods}
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
 \item \textbf{Immediate speedup needed} (use hard window directly)
 \item \textbf{Parameter-constrained} (use A3/AASVD)
 \item \textbf{Very short sequences} (no benefit)
-\end{itemize}
 
-\subsection{9.3 Choosing Max Span}
+\end{itemize}
+\subsection{Choosing Max Span}
 
 \begin{table}[H]
 \centering
@@ -60,7 +62,7 @@ all scores are still computed. To realize speedup, one would:
 
 \textbf{Rule of thumb.} $S_\text{max} = L / 4$ to $L / 2$.
 
-\subsection{9.4 Choosing Ramp Size}
+\subsection{Choosing Ramp Size}
 
 \begin{table}[H]
 \centering
@@ -77,7 +79,7 @@ Very smooth & 64 \\
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Cost-Benefit}
+\subsection{Cost-Benefit}
 
 For DistilBERT at $L = 128$:
 
@@ -96,38 +98,42 @@ ASA-Span $\lambda=0.1$ & 86.0\% & 32 & 75\% \\
 \end{tabular}
 \end{table}
 
-\subsection{9.6 Conversion to Hard Window}
+\subsection{Conversion to Hard Window}
 
 To realize speedup, one can:
 
-1. \textbf{Train} with soft ramp.
-2. \textbf{Extract} learned spans $\{z_h\}$.
-3. \textbf{Round} to nearest power of 2 (for kernel alignment).
-4. \textbf{Replace} soft ramp with hard band mask.
-5. \textbf{Use sparse kernel} (e.g., block-sparse or flash attention with local window).
+\begin{enumerate}
+\item \textbf{Train} with soft ramp.
+\item \textbf{Extract} learned spans $\{z_h\}$.
+\item \textbf{Round} to nearest power of 2 (for kernel alignment).
+\item \textbf{Replace} soft ramp with hard band mask.
+\item \textbf{Use sparse kernel} (e.g., block-sparse or flash attention with local window).
 
-\subsection{9.7 Open Questions}
+\end{enumerate}
+\subsection{Open Questions}
 
-1. \textbf{Learned ramp size:} Can we learn $R$ per head?
-2. \textbf{Interaction with content:} Does distance-based sparsity combine with 
-   content-based (e.g., ASA-Sparse)?
-3. \textbf{Cross-layer transfer:} Do spans transfer between tasks?
-4. \textbf{Long-context scaling:} How do spans evolve at $L = 4096$?
+\begin{enumerate}
+\item \textbf{Learned ramp size:} Can we learn $R$ per head?
+\item \textbf{Interaction with content:} Does distance-based sparsity combine with
+  content-based (e.g., ASA-Sparse)?
+\item \textbf{Cross-layer transfer:} Do spans transfer between tasks?
+\item \textbf{Long-context scaling:} How do spans evolve at $L = 4096$?
 
-\subsection{9.8 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Interpretability:} Reveals head structure.
 \item \textbf{Foundation for pruning:} Basis for hard-window deployment.
 \item \textbf{Efficiency:} Enables fixed-window deployment.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables surveillance at scale.
 \item \textbf{Concentration:} Favors large labs.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.

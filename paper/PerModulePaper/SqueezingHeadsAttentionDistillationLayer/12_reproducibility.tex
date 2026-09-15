@@ -1,7 +1,7 @@
 
-\section{12. Reproducibility Statement}
+\section{Reproducibility Statement}
 
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -11,7 +11,7 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Running}
+\subsection{Running}
 
 \begin{lstlisting}
 python run_all_4_squeezing_heads.py \
@@ -21,7 +21,7 @@ python run_all_4_squeezing_heads.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{12.3 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \subsubsection{Main (Table 7.1)}
 \begin{lstlisting}
@@ -42,7 +42,7 @@ for s in 1.0 1.5 2.0 2.5; do
 done
 \end{lstlisting}
 
-\subsection{12.4 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
 import random, numpy as np, torch
@@ -53,7 +53,7 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 \end{lstlisting}
 
-\subsection{12.5 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
@@ -69,15 +69,15 @@ GPT-2 & 77.5\% $\pm$ 1\% & ~1179648 \\
 \end{tabular}
 \end{table}
 
-\subsection{12.6 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
 \item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-squeezing\_heads}
 \item \textbf{Metrics:} \texttt{results/unified\_squeezing\_heads/*/summary.csv}
-\end{itemize}
 
-\subsection{12.7 Known Issues}
+\end{itemize}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item FP32 attention scores for stability

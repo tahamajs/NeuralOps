@@ -1,24 +1,24 @@
 
-\section{9. Discussion}
+\section{Discussion}
 
-\subsection{9.1 Key Takeaways}
+\subsection{Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Asymmetric Kernel Approximation}
+\subsubsection{Takeaway 1: Asymmetric Kernel Approximation}
 
 Allowing different landmarks for $Q$ and $K$ improves over symmetric Nystr m 
 by a small but consistent margin.
 
-\subsubsection{9.1.2 Takeaway 2: Length Advantage}
+\subsubsection{Takeaway 2: Length Advantage}
 
 Primal Attention's benefit grows with sequence length. At $L = 128$, 
 inference is slower; at $L > 512$, it is faster.
 
-\subsubsection{9.1.3 Takeaway 3: No Parameter Reduction}
+\subsubsection{Takeaway 3: No Parameter Reduction}
 
 Primal Attention does \textbf{not} reduce parameter count. For parameter 
 reduction, use A3 or AASVD.
 
-\subsection{9.2 When to Use Primal Attention}
+\subsection{When to Use Primal Attention}
 
 \subsubsection{Recommended}
 
@@ -26,17 +26,17 @@ reduction, use A3 or AASVD.
 \item \textbf{Long sequences} ($L > 512$)
 \item \textbf{Memory-constrained inference} (attention dominates)
 \item \textbf{Combined with quantization} for extra savings
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
 \item \textbf{Short sequences} ($L < 128$)
 \item \textbf{Parameter-constrained} applications
 \item \textbf{Causality-critical} generation tasks
-\end{itemize}
 
-\subsection{9.3 Choosing $m$}
+\end{itemize}
+\subsection{Choosing $m$}
 
 \begin{table}[H]
 \centering
@@ -53,7 +53,7 @@ reduction, use A3 or AASVD.
 \end{tabular}
 \end{table}
 
-\subsection{9.4 Cost-Benefit}
+\subsection{Cost-Benefit}
 
 For GPT-2 at $L = 2048$, $B = 1$:
 
@@ -64,35 +64,37 @@ For GPT-2 at $L = 2048$, $B = 1$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Primal ($m=64$)} \\
 \midrule
-Attention memory & 12.6 MB & 0.20 MB (**64$\times$**) \\
+Attention memory & 12.6 MB & 0.20 MB (\textbf{64$\times$}) \\
 Inference time & 8.5 s & 6.5 s \\
 Accuracy & 79.36\% & 75.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Open Questions}
+\subsection{Open Questions}
 
-1. \textbf{Learned landmark selection:} Can we train the pooling?
-2. \textbf{Content-aware pooling:} Use attention-weighted pooling?
-3. \textbf{True causal approximation:} How to ensure causality?
-4. \textbf{Combining with GQA:} Multiplicative savings?
-5. \textbf{Theoretical error bound:} Tighter than Frobenius?
+\begin{enumerate}
+\item \textbf{Learned landmark selection:} Can we train the pooling?
+\item \textbf{Content-aware pooling:} Use attention-weighted pooling?
+\item \textbf{True causal approximation:} How to ensure causality?
+\item \textbf{Combining with GQA:} Multiplicative savings?
+\item \textbf{Theoretical error bound:} Tighter than Frobenius?
 
-\subsection{9.6 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Long-context inference:} Enables more capable applications.
 \item \textbf{Cheaper inference:} Reduces compute per token.
 \item \textbf{Edge deployment:} Makes on-device LLMs more feasible.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables long-context surveillance.
 \item \textbf{Concentration:} Favors large labs.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.

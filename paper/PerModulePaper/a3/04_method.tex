@@ -1,16 +1,18 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 A3 compresses a pretrained transformer in \textbf{five phases}:
 
-1. \textbf{Calibration} ( 4.2): collect activation statistics via streaming hooks.
-2. \textbf{Weighted SVD} ( 4.3): factorize each weight matrix in weighted space.
-3. \textbf{Validation} ( 4.4): compute Frobenius reconstruction error.
-4. \textbf{Adaptive escalation} ( 4.4.2): increase rank if error exceeds $\tau$.
-5. \textbf{LayerNorm recalibration} ( 4.5): absorb distributional shift.
+\begin{enumerate}
+\item \textbf{Calibration} ( 4.2): collect activation statistics via streaming hooks.
+\item \textbf{Weighted SVD} ( 4.3): factorize each weight matrix in weighted space.
+\item \textbf{Validation} ( 4.4): compute Frobenius reconstruction error.
+\item \textbf{Adaptive escalation} ( 4.4.2): increase rank if error exceeds $\tau$.
+\item \textbf{LayerNorm recalibration} ( 4.5): absorb distributional shift.
 
+\end{enumerate}
 \textbf{Figure 4.1} shows the pipeline. Phase 1 runs once on the whole model; 
 phases 2--4 run per layer; phase 5 runs once at the end.
 
@@ -37,9 +39,9 @@ phases 2--4 run per layer; phase 5 runs once at the end.
     +--------------------------------------------------+
 \end{lstlisting}
 
-\subsection{4.2 Phase 1: Streaming Calibration}
+\subsection{Phase 1: Streaming Calibration}
 
-\subsubsection{4.2.1 Problem}
+\subsubsection{Problem}
 
 We want to compute, for each linear layer $\ell$:
 
@@ -56,16 +58,18 @@ Naively, storing all $N$ activations per layer costs $\mathcal{O}(N \sum_\ell d_
 which for $N = 10^4$ and $d_\text{in} = 768$ over 12 layers is $\sim 9 \times 10^7$ 
 values, or 180 MB at FP16. Streaming avoids this.
 
-\subsubsection{4.2.2 Streaming Accumulation}
+\subsubsection{Streaming Accumulation}
 
 We register forward hooks on every linear-like module. For each forward pass 
 with input $x \in \mathbb{R}^{B \times L \times d}$, the hook:
 
-1. Reshapes $x$ to $(BL) \times d$.
-2. Filters padding tokens: keeps only rows where $\|x_i\|_1 > 10^{-5}$.
-3. Accumulates $C_\text{batch} = x_\text{valid}^\top x_\text{valid} \in \mathbb{R}^{d \times d}$ and $f_\text{batch} = \sum_i x_{\text{valid}, i}^2 \in \mathbb{R}^d$.
-4. Adds these to CPU-side running buffers.
+\begin{enumerate}
+\item Reshapes $x$ to $(BL) \times d$.
+\item Filters padding tokens: keeps only rows where $\|x_i\|_1 > 10^{-5}$.
+\item Accumulates $C_\text{batch} = x_\text{valid}^\top x_\text{valid} \in \mathbb{R}^{d \times d}$ and $f_\text{batch} = \sum_i x_{\text{valid}, i}^2 \in \mathbb{R}^d$.
+\item Adds these to CPU-side running buffers.
 
+\end{enumerate}
 After all calibration passes:
 
 \[
@@ -77,19 +81,21 @@ C_X^{(\ell)} = \frac{\sum_k C^{(k)}}{\sum_k N^{(k)}}
 \textbf{Memory.} $\mathcal{O}(d^2)$ per layer, or $\mathcal{O}(N_l d^2)$ total. 
 For $d = 768$ and $N_l = 12$, this is $\sim 8.5$M values, or 17 MB at FP32.
 
-\subsubsection{4.2.3 Calibration Sources}
+\subsubsection{Calibration Sources}
 
 We support three sources, in priority order:
 
-1. \textbf{Explicit \texttt{calibration\_loader}.} A \texttt{DataLoader} of input batches.
-2. \textbf{\texttt{calibration\_texts}.} A list of strings; tokenized on-the-fly.
-3. \textbf{Default.} Random inputs of the appropriate shape (weak calibration).
+\begin{enumerate}
+\item \textbf{Explicit \texttt{calibration\_loader}.} A \texttt{DataLoader} of input batches.
+\item \textbf{\texttt{calibration\_texts}.} A list of strings; tokenized on-the-fly.
+\item \textbf{Default.} Random inputs of the appropriate shape (weak calibration).
 
+\end{enumerate}
 If none are provided, A3 falls back to unweighted SVD (see  4.3.4).
 
-\subsection{4.3 Phase 2: Weighted SVD}
+\subsection{Phase 2: Weighted SVD}
 
-\subsubsection{4.3.1 The Weighting Idea}
+\subsubsection{The Weighting Idea}
 
 Given weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$, standard 
 SVD minimizes $\|W - W_r\|_F^2$. We instead minimize an \textbf{activation-weighted} 
@@ -118,21 +124,23 @@ W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})
 
 where $\epsilon = 10^{-6}$ prevents division by zero.
 
-\subsubsection{4.3.2 The Algorithm}
+\subsubsection{The Algorithm}
 
-1. Compute $W_\text{weighted}$ using (4.5).
-2. Compute the truncated SVD:
-\[
-   W_\text{weighted} \approx U_r \Sigma_r V_r^\top
-   \tag{4.6}
-\]
-3. Unweight the right factor to recover the original space:
-\[
-   V_r^\text{unweighted} = V_r^\top \cdot \mathrm{diag}\!\left(\frac{1}{\sqrt{F + \epsilon}}\right)
-   \tag{4.7}
-\]
-4. Set $U = U_r \Sigma_r^{1/2}$ and $V = \Sigma_r^{1/2} V_r^\text{unweighted}$.
+\begin{enumerate}
+\item Compute $W_\text{weighted}$ using (4.5).
+\item Compute the truncated SVD:
+  $$
+  W\_\text{weighted} \approx U\_r \Sigma\_r V\_r^\top
+  \tag{4.6}
+  $$
+\item Unweight the right factor to recover the original space:
+  $$
+  V\_r^\text{unweighted} = V\_r^\top \cdot \mathrm{diag}\!\left(\frac{1}{\sqrt{F + \epsilon}}\right)
+  \tag{4.7}
+  $$
+\item Set $U = U_r \Sigma_r^{1/2}$ and $V = \Sigma_r^{1/2} V_r^\text{unweighted}$.
 
+\end{enumerate}
 The factorized layer computes:
 
 \[
@@ -140,7 +148,7 @@ y = (x V^\top) U^\top + b
 \tag{4.8}
 \]
 
-\subsubsection{4.3.3 Scale Normalization}
+\subsubsection{Scale Normalization}
 
 To prevent extreme weighting values, we optionally normalize $F$:
 
@@ -152,15 +160,15 @@ F_\text{norm} = \frac{F}{\|F\|_2 / \sqrt{d_\text{in}}}
 and clamp the square root to $[10^{-3}, 10^3]$. This is controlled by the 
 \texttt{normalize\_scale} flag.
 
-\subsubsection{4.3.4 Fallback to Unweighted SVD}
+\subsubsection{Fallback to Unweighted SVD}
 
 If no calibration data is available, we set $F = \mathbf{1}$, giving 
 standard SVD. This is a safe default but sacrifices the activation-aware 
 benefit.
 
-\subsection{4.4 Phase 3 \& 4: Validation and Adaptive Escalation}
+\subsection{Phase 3 \& 4: Validation and Adaptive Escalation}
 
-\subsubsection{4.4.1 Frobenius Error Validation}
+\subsubsection{Frobenius Error Validation}
 
 After factorization, we compute:
 
@@ -171,7 +179,7 @@ After factorization, we compute:
 
 If $\text{err} \leq \tau$, the layer is replaced. Otherwise:
 
-\subsubsection{4.4.2 Adaptive Rank Escalation}
+\subsubsection{Adaptive Rank Escalation}
 
 We retry with an increased rank:
 
@@ -187,21 +195,21 @@ steps if no improvement is seen.
 If even at maximum rank the error exceeds $\tau$, the layer **falls back to 
 the original** (no compression), and we log the failure.
 
-\subsubsection{4.4.3 Why Adaptive?}
+\subsubsection{Why Adaptive?}
 
 Choosing rank upfront is a trade-off:
 
 \begin{itemize}
 \item Too high $\to$ poor compression
 \item Too low $\to$ excessive error
-\end{itemize}
 
+\end{itemize}
 Our approach defers the decision to per-layer validation, which handles the 
 natural variance in layer importance.
 
-\subsection{4.5 Phase 5: LayerNorm Recalibration}
+\subsection{Phase 5: LayerNorm Recalibration}
 
-\subsubsection{4.5.1 Motivation}
+\subsubsection{Motivation}
 
 After factorizing a layer, its output distribution changes. The LayerNorm 
 that follows now sees a different input distribution, which may have 
@@ -226,17 +234,19 @@ We can compensate by adjusting $\gamma$:
 where $\sigma_\text{target}$ is the pre-compression standard deviation and 
 $\sigma_\text{current}$ is the post-compression one.
 
-\subsubsection{4.5.2 Procedure}
+\subsubsection{Procedure}
 
-1. Before compression, record $\sigma_\text{target}^{(\ell)}$ for every 
-   LayerNorm via a calibration pass.
-2. After compression, run another calibration pass to compute $\sigma_\text{current}^{(\ell)}$.
-3. For each LayerNorm, update $\gamma$ via (4.13).
+\begin{enumerate}
+\item Before compression, record $\sigma_\text{target}^{(\ell)}$ for every
+  LayerNorm via a calibration pass.
+\item After compression, run another calibration pass to compute $\sigma_\text{current}^{(\ell)}$.
+\item For each LayerNorm, update $\gamma$ via (4.13).
 
+\end{enumerate}
 This is applied only if \texttt{recalibrate\_ln = True} and calibration sources are 
 available.
 
-\subsection{4.6 Combined Algorithm}
+\subsection{Combined Algorithm}
 
 \textbf{Algorithm 1:} A3 compression
 \begin{lstlisting}
@@ -271,7 +281,7 @@ Output: compressed model M', statistics
 26: return M'
 \end{lstlisting}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -291,7 +301,7 @@ LN recalibration & $\mathcal{O}(N)$ & $\mathcal{O}(N_l d)$ \\
 \textbf{Full compression time} on DistilBERT (66.9M params): ~45 
 seconds on RTX 4070.
 
-\subsection{4.8 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 For a layer with weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 
@@ -322,14 +332,14 @@ Reduction factor & $\frac{d_\text{out} d_\text{in}}{r(d_\text{out} + d_\text{in}
 Original & 589,824 \\
 A3 rank 64 & 98,304 \\
 A3 rank 64 + LoRA rank 16 & 122,880 \\
-Reduction & **4.8$\times$** \\
+Reduction & \textbf{4.8$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{4.9 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.9.1 Optimality of Weighted SVD}
+\subsubsection{Optimality of Weighted SVD}
 
 \textbf{Proposition.} The truncated SVD of $W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F})$ 
 minimizes $\|(W - W_r) \mathrm{diag}(\sqrt{F})\|_F$ over all rank-$r$ matrices 
@@ -338,12 +348,12 @@ $W_r$.
 \textbf{Proof.} This follows directly from Eckart--Young applied to the matrix 
 $W_\text{weighted}$. $\square$
 
-\subsubsection{4.9.2 Relation to Standard SVD}
+\subsubsection{Relation to Standard SVD}
 
 If $F = \mathbf{1}$ (uniform), then $W_\text{weighted} = W$ and the weighted 
 SVD reduces to standard SVD.
 
-\subsubsection{4.9.3 Error Bound}
+\subsubsection{Error Bound}
 
 For any $W$, $U_r$, $V_r$ from weighted SVD:
 

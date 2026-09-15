@@ -1,7 +1,7 @@
 
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Multi-head self-attention is the core operation of every modern transformer, 
 but it is also the largest consumer of parameters and compute. A standard 
@@ -26,18 +26,20 @@ pruned model requires substantial compute and full-parameter optimization.
 a small trainable adapter, and let the adapter learn to compensate for 
 compressed head capacity? This is the idea behind \textbf{Squeezing Heads}.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained transformer with $H$ attention heads per layer, we seek 
 a modified module $\mathcal{A}'$ such that:
 
-1. \textbf{Compressible:} Effective head dimension can be reduced by a factor $s$.
-2. \textbf{Distillable:} Trainable adapters can recover lost capacity.
-3. \textbf{Drop-in:} Pretrained weights are copied exactly; no architecture change.
-4. \textbf{Portable:} Works across flat, nested, and causal architectures.
-5. \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
+\begin{enumerate}
+\item \textbf{Compressible:} Effective head dimension can be reduced by a factor $s$.
+\item \textbf{Distillable:} Trainable adapters can recover lost capacity.
+\item \textbf{Drop-in:} Pretrained weights are copied exactly; no architecture change.
+\item \textbf{Portable:} Works across flat, nested, and causal architectures.
+\item \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
-\subsection{1.3 Our Approach: Squeezing Heads}
+\end{enumerate}
+\subsection{Our Approach: Squeezing Heads}
 
 \textbf{Squeezing Heads} replaces each attention projection with a 
 \textbf{LoRA-wrapped linear layer}:
@@ -52,8 +54,8 @@ where:
 \item $W_\text{frozen}$ is the pretrained projection (unchanged).
 \item $B A$ is a low-rank adapter with rank $r$ (trainable).
 \item $\alpha$ is the LoRA scaling factor.
-\end{itemize}
 
+\end{itemize}
 \textbf{Figure 1.1} compares three head-compression strategies:
 
 \begin{table}[H]
@@ -65,48 +67,42 @@ where:
 \midrule
 Head pruning & Yes & No &  \\
 Full fine-tune & Yes & Yes & (expensive) \\
-**Squeezing Heads** & Optional & **LoRA only** &  \\
+\textbf{Squeezing Heads} & Optional & \textbf{LoRA only} &  \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key design choices:}
 
-1. \textbf{Wrapper, not replacement.} The pretrained attention is preserved 
-   exactly. Only the LoRA parameters differ from initialization.
-2. \textbf{Per-projection LoRA.} Each of $W_Q, W_K, W_V, W_O$ has its own LoRA 
-   adapter, allowing fine-grained capacity allocation.
-3. \textbf{GQA-aware pooling.} When the source model uses GQA (Qwen, LLaMA), 
-   we pool the source KV heads into the target head count.
-4. \textbf{Principal head preservation.} When the head dimension is reduced, we 
-   preserve the leading head dimensions (the principal components) rather 
-   than random slices.
+\begin{enumerate}
+\item \textbf{Wrapper, not replacement.} The pretrained attention is preserved
+  exactly. Only the LoRA parameters differ from initialization.
+\item \textbf{Per-projection LoRA.} Each of $W_Q, W_K, W_V, W_O$ has its own LoRA
+  adapter, allowing fine-grained capacity allocation.
+\item \textbf{GQA-aware pooling.} When the source model uses GQA (Qwen, LLaMA),
+  we pool the source KV heads into the target head count.
+\item \textbf{Principal head preservation.} When the head dimension is reduced, we
+  preserve the leading head dimensions (the principal components) rather
+  than random slices.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A LoRA-wrapped attention for head distillation.} Squeezing Heads
-\end{itemize}
   preserves pretrained weights exactly while enabling low-rank adaptation.
-\begin{itemize}
 \item \textbf{A GQA-aware copy procedure.} We handle the Grouped Query Attention
-\end{itemize}
   case by pooling source KV heads.
-\begin{itemize}
 \item \textbf{Multi-architecture support.} DistilBERT, RoBERTa, GPT-2, and Qwen with
-\end{itemize}
   RoPE, GQA, and causal masking preserved.
-\begin{itemize}
 \item \textbf{A systematic evaluation.} Benchmarked on DistilBERT, RoBERTa, and GPT-2
-\end{itemize}
-  on SST-2 with ablations over LoRA rank, head-dim reduction, and GQA 
+  on SST-2 with ablations over LoRA rank, head-dim reduction, and GQA
   pooling.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts
-\end{itemize}
   released under MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on attention, 
 LoRA, and head pruning. Section 4 presents Squeezing Heads. Section 5 

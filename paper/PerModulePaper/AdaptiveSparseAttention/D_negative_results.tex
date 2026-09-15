@@ -122,16 +122,18 @@ Multi-chunk gradients & Quality & No improvement \\
 42 & 88.5 \\
 123 & 88.3 \\
 456 & 88.7 \\
-**Mean** & **88.5** \\
-**Std** & **0.2** \\
+\textbf{Mean} & \textbf{88.5} \\
+\textbf{Std} & \textbf{0.2} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{Soft mask is essential} for differentiability.
-2. \textbf{$T = 0.1$} is the optimal temperature.
-3. \textbf{Per-head logits suffice;} per-layer not needed.
-4. \textbf{Chunk size remains a hyperparameter.}
-5. \textbf{Learned budgets are interpretable and bimodal.}
+\begin{enumerate}
+\item \textbf{Soft mask is essential} for differentiability.
+\item \textbf{$T = 0.1$} is the optimal temperature.
+\item \textbf{Per-head logits suffice;} per-layer not needed.
+\item \textbf{Chunk size remains a hyperparameter.}
+\item \textbf{Learned budgets are interpretable and bimodal.}
+\end{enumerate}

@@ -1,23 +1,23 @@
-\section{9. Discussion}
+\section{Discussion}
 
-\subsection{9.1 Key Takeaways}
+\subsection{Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Short-Path Exactness}
+\subsubsection{Takeaway 1: Short-Path Exactness}
 
 For $L \leq 128$, FUSIONATTN produces \textbf{exactly} the pretrained model's 
 output (with base weights copied and LoRA initially zero). This is a 
 desirable property but means no sparsity is active.
 
-\subsubsection{9.1.2 Takeaway 2: Sparsity is Length-Dependent}
+\subsubsection{Takeaway 2: Sparsity is Length-Dependent}
 
 FUSIONATTN's benefits only manifest at $L \geq 256$. Below that, the 
 dispatch logic disables sparsity.
 
-\subsubsection{9.1.3 Takeaway 3: Not a Compression Method}
+\subsubsection{Takeaway 3: Not a Compression Method}
 
 Parameter count increases by LoRA + gate MLP. Not for size reduction.
 
-\subsection{9.2 When to Use FUSIONATTN}
+\subsection{When to Use FUSIONATTN}
 
 \subsubsection{Recommended}
 
@@ -25,17 +25,17 @@ Parameter count increases by LoRA + gate MLP. Not for size reduction.
 \item \textbf{Long-context inference} ($L \geq 512$)
 \item \textbf{Content-dependent attention patterns}
 \item \textbf{Multi-paradigm research}
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
 \item \textbf{Short sequences} ($L < 256$) -- no benefit, more parameters
 \item \textbf{Model size reduction} -- use compression methods
 \item \textbf{Strict latency requirements} -- gate adds overhead
-\end{itemize}
 
-\subsection{9.3 Decision Flowchart}
+\end{itemize}
+\subsection{Decision Flowchart}
 
 \begin{lstlisting}
 Need size reduction? --- Yes --- Use A3/AASVD
@@ -50,7 +50,7 @@ Content-dependent sparsity needed? --- No --- Use Longformer
 Use FUSIONATTN
 \end{lstlisting}
 
-\subsection{9.4 Cost-Benefit}
+\subsection{Cost-Benefit}
 
 For DistilBERT at $L = 512$:
 
@@ -61,7 +61,7 @@ For DistilBERT at $L = 512$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{FUSIONATTN} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 262K & 65K & **4$\times$ reduction** \\
+Attention FLOPs & 262K & 65K & \textbf{4$\times$ reduction} \\
 Accuracy & 90.71\% & 90.48\% & -0.23\% \\
 Params & 66.9M & 67.74M & +786864M \\
 Gate overhead & 0 & ~32K params & +0.05\% \\
@@ -69,7 +69,7 @@ Gate overhead & 0 & ~32K params & +0.05\% \\
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Comparison with Published Methods}
+\subsection{Comparison with Published Methods}
 
 \begin{table}[H]
 \centering
@@ -81,52 +81,54 @@ Gate overhead & 0 & ~32K params & +0.05\% \\
 Longformer & Fixed sparse & $O(LW)$ & No \\
 Routing & Content sparse & $O(L^2/K)$ & No \\
 MoBA & Block sparse & $O(KL)$ & No \\
-**FUSIONATTN** & **Hybrid** & **$O(L^2)$ or $O(KL)$** & **Yes** \\
+\textbf{FUSIONATTN} & \textbf{Hybrid} & \textbf{$O(L^2)$ or $O(KL)$} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{9.6 Deployment Considerations}
+\subsection{Deployment Considerations}
 
 \subsubsection{Latency}
 \begin{itemize}
 \item Short path: same as baseline.
 \item Long path: $K/B \times$ faster.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Memory}
 \begin{itemize}
 \item Short path: same.
 \item Long path: $O(K \cdot L \cdot B)$ instead of $O(L^2)$.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Parameter Overhead}
 \begin{itemize}
 \item +1.17\% via LoRA + gate.
+
 \end{itemize}
+\subsection{Open Questions}
 
-\subsection{9.7 Open Questions}
+\begin{enumerate}
+\item \textbf{Optimal threshold} for various tasks?
+\item \textbf{Gate training} -- does it learn meaningful patterns?
+\item \textbf{Very long context} ($L > 8192$) behavior?
+\item \textbf{Combination with quantization}?
 
-1. \textbf{Optimal threshold} for various tasks?
-2. \textbf{Gate training} -- does it learn meaningful patterns?
-3. \textbf{Very long context} ($L > 8192$) behavior?
-4. \textbf{Combination with quantization}?
-
-\subsection{9.8 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item Long-context efficiency
 \item Content-aware sparsity
 \item Composable with other efficiency methods
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item Parameter overhead
 \item Zero benefit at L $\le$ 128
 \item Dual-use
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.

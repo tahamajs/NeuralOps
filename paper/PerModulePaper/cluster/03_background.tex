@@ -1,6 +1,6 @@
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Multi-Head Attention}
+\subsection{Multi-Head Attention}
 
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
@@ -16,7 +16,7 @@ Standard attention:
 \tag{3.2}
 \]
 
-\subsection{3.2 K-Means Clustering}
+\subsection{K-Means Clustering}
 
 Given $L$ points $x_1, \dots, x_L \in \mathbb{R}^d$, K-means minimizes:
 
@@ -27,14 +27,16 @@ Given $L$ points $x_1, \dots, x_L \in \mathbb{R}^d$, K-means minimizes:
 
 Lloyd's algorithm alternates:
 
-1. \textbf{Assignment:} $a_i = \arg\min_k \|x_i - c_k\|_2^2$
-2. \textbf{Update:} $c_k = \frac{\sum_{i: a_i = k} x_i}{|a_i = k|}$
+\begin{enumerate}
+\item \textbf{Assignment:} $a_i = \arg\min_k \|x_i - c_k\|_2^2$
+\item \textbf{Update:} $c_k = \frac{\sum_{i: a_i = k} x_i}{|a_i = k|}$
 
+\end{enumerate}
 \textbf{Complexity.} $\mathcal{O}(L K d)$ per iteration.
 
 \textbf{Vectorization.} Both steps parallelize over $B, H$ in attention context.
 
-\subsection{3.3 Differentiable K-Means}
+\subsection{Differentiable K-Means}
 
 Standard K-means uses \texttt{argmin}, which is non-differentiable. For 
 end-to-end training:
@@ -42,18 +44,16 @@ end-to-end training:
 \begin{itemize}
 \item \textbf{Forward:} Use \texttt{argmin} to get hard assignments (for the update step).
 \item \textbf{Backward:} Use softmax for gradient flow through assignments.
-\end{itemize}
 
+\end{itemize}
 ClusterFormer is fully differentiable:
 \begin{itemize}
 \item Centroid updates use one-hot (non-differentiable) -- this is fine since
-\end{itemize}
   centroids are deterministic functions of $Q$.
-\begin{itemize}
 \item Assignment uses \texttt{softmax} with learnable temperature, giving gradients.
-\end{itemize}
 
-\subsection{3.4 Linear Attention}
+\end{itemize}
+\subsection{Linear Attention}
 
 A generic linear attention reformulation:
 
@@ -68,7 +68,7 @@ $\mathcal{O}(L m d)$.
 ClusterFormer does not use this formulation. Instead, it clusters queries 
 and computes attention from $K$ centroids to keys.
 
-\subsection{3.5 LoRA Adapters}
+\subsection{LoRA Adapters}
 
 LoRA (Hu et al., 2021) parameterizes:
 
@@ -77,4 +77,4 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A, \quad B = 0 \text{ at i
 \tag{3.5}
 \]
 
-\subsection{3.6 Notation Summary}
+\subsection{Notation Summary}

@@ -1,7 +1,7 @@
 
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 The softmax attention function (Vaswani et al., 2017) is the fundamental 
 primitive of transformer architecture:
@@ -14,15 +14,17 @@ primitive of transformer architecture:
 Softmax has two properties that are convenient for optimization but awkward 
 for interpretation and sparse computation:
 
-1. \textbf{Dense output.} Every attention weight $A_{ij}$ is strictly positive. 
-   Softmax never produces exact zeros. This makes attention patterns hard 
-   to interpret -- a query spreads mass across all $L$ keys even when only 
-   a few are relevant.
+\begin{enumerate}
+\item \textbf{Dense output.} Every attention weight $A_{ij}$ is strictly positive.
+  Softmax never produces exact zeros. This makes attention patterns hard
+  to interpret -- a query spreads mass across all $L$ keys even when only
+  a few are relevant.
 
-2. \textbf{No sparsity leverage.} Because every weight is nonzero, the attention 
-   matrix must be materialized and multiplied densely. Sparse hardware 
-   (e.g., NVIDIA 2:4 sparsity) cannot accelerate it.
+\item \textbf{No sparsity leverage.} Because every weight is nonzero, the attention
+  matrix must be materialized and multiplied densely. Sparse hardware
+  (e.g., NVIDIA 2:4 sparsity) cannot accelerate it.
 
+\end{enumerate}
 \textbf{Empirical sparsity.} Prior work (Voita et al., 2019; Clark et al., 2019) 
 shows that despite dense softmax outputs, the \textit{effective} attention is sparse: 
 a small fraction of tokens receive most of the mass. \textbf{Figure 1.1} visualizes 
@@ -32,7 +34,7 @@ over 85\% of attention weight, while the bottom 50\% receive less than 2\%.
 This discrepancy motivates \textbf{sparse attention activations}: replacing softmax 
 with a function that produces \textbf{exact zeros} for low-scoring keys.
 
-\subsection{1.2 The $\alpha$-Entmax Family}
+\subsection{The $\alpha$-Entmax Family}
 
 Peters et al. (2019) introduce \textbf{$\alpha$-entmax}, a family of activation functions 
 parameterized by $\alpha \in [1, 2]$:
@@ -48,21 +50,21 @@ with parameter $\alpha$. Two special cases are well-known:
 \begin{itemize}
 \item $\alpha = 1$: reduces to \textbf{softmax} (dense).
 \item $\alpha = 2$: reduces to \textbf{sparsemax} (Martins \& Astudillo, 2016),
-\end{itemize}
-  which projects scores onto the simplex and produces the sparsest 
+  which projects scores onto the simplex and produces the sparsest
   distribution.
 
+\end{itemize}
 Intermediate values interpolate between the two:
 
 \begin{itemize}
 \item $\alpha = 1.5$: \textbf{1.5-entmax}, which in practice produces ~40\% exact zeros
-\end{itemize}
   while remaining differentiable (unlike sparsemax at boundaries).
 
+\end{itemize}
 This makes $\alpha = 1.5$ a natural default: sparse enough to matter, dense 
 enough to train stably.
 
-\subsection{1.3 Attention Sinks and Local Windows}
+\subsection{Attention Sinks and Local Windows}
 
 \textbf{Attention sinks.} Xiao et al. (2024) and others observe that the first 
 few tokens in a sequence -- regardless of content -- receive disproportionate 
@@ -78,74 +80,68 @@ AdaSplash combines both: \textbf{local splash} attention keeps a window of radiu
 $W$ around each query, plus the first 4 "sink" tokens, plus $\alpha$-entmax 
 sparsity on top.
 
-\subsection{1.4 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained attention module with projections 
 $W_Q, W_K, W_V, W_O \in \mathbb{R}^{d \times d}$, we seek a modified attention 
 function $\mathcal{A}'$ such that:
 
-1. \textbf{Sparse outputs.} $\mathcal{A}'$ produces \textbf{exact zeros} in attention 
-   weights for low-scoring keys.
-2. \textbf{Local structure.} Attention is restricted to a sliding window of radius 
-   $W$ plus sink tokens.
-3. \textbf{No base weight updates.} Base weights $W_Q, W_K, W_V, W_O$ are frozen.
-4. \textbf{Trainable adapters.} LoRA rank-$r_L$ adapters are added for task adaptation.
-5. \textbf{Multi-architecture support.} Works on flat (DistilBERT), nested 
-   (RoBERTa/BERT), causal (GPT-2), GQA (Qwen), and RoPE.
+\begin{enumerate}
+\item \textbf{Sparse outputs.} $\mathcal{A}'$ produces \textbf{exact zeros} in attention
+  weights for low-scoring keys.
+\item \textbf{Local structure.} Attention is restricted to a sliding window of radius
+  $W$ plus sink tokens.
+\item \textbf{No base weight updates.} Base weights $W_Q, W_K, W_V, W_O$ are frozen.
+\item \textbf{Trainable adapters.} LoRA rank-$r_L$ adapters are added for task adaptation.
+\item \textbf{Multi-architecture support.} Works on flat (DistilBERT), nested
+  (RoBERTa/BERT), causal (GPT-2), GQA (Qwen), and RoPE.
 
+\end{enumerate}
 \textbf{Note.} This is \textbf{not} a compression method. AdaSplash \textbf{increases} 
 parameter count by the LoRA adapter size. It trades parameter overhead for 
 attention sparsity and interpretability.
 
-\subsection{1.5 Our Approach}
+\subsection{Our Approach}
 
 \textbf{AdaSplash} combines four components:
 
-1. \textbf{$\alpha$-Entmax bisection.} We solve the entmax equation via bisection on 
-   $\tau$, the Lagrange multiplier. The procedure runs for 25 iterations, 
-   producing a numerically stable approximation with softmax fallback.
+\begin{enumerate}
+\item \textbf{$\alpha$-Entmax bisection.} We solve the entmax equation via bisection on
+  $\tau$, the Lagrange multiplier. The procedure runs for 25 iterations,
+  producing a numerically stable approximation with softmax fallback.
 
-2. \textbf{Local splash masking.} For causal decoders, keys outside $|i - j| \leq W$ 
-   are masked, along with the first 4 tokens preserved as attention sinks.
+\item \textbf{Local splash masking.} For causal decoders, keys outside $|i - j| \leq W$
+  are masked, along with the first 4 tokens preserved as attention sinks.
 
-3. \textbf{Frozen base + LoRA.} Base projections are copied exactly from pretrained 
-   weights. LoRA rank-$r_L$ adapters with $B = 0$ initialization provide 
-   trainable capacity.
+\item \textbf{Frozen base + LoRA.} Base projections are copied exactly from pretrained
+  weights. LoRA rank-$r_L$ adapters with $B = 0$ initialization provide
+  trainable capacity.
 
-4. \textbf{Multi-architecture weight transfer.} A comprehensive \texttt{copy\_weights} 
-   handles GPT-2 Conv1D, RoBERTa/BERT nested, DistilBERT flat, and Qwen 
-   GQA patterns.
+\item \textbf{Multi-architecture weight transfer.} A comprehensive \texttt{copy\_weights}
+  handles GPT-2 Conv1D, RoBERTa/BERT nested, DistilBERT flat, and Qwen
+  GQA patterns.
 
-\subsection{1.6 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A stabilized $\alpha$-entmax implementation.} We provide a numerically robust
-\end{itemize}
-  bisection algorithm for $\alpha$-entmax with valid-token masking and softmax 
+  bisection algorithm for $\alpha$-entmax with valid-token masking and softmax
   fallback, available for $\alpha \in (1, 2]$. Section 4.2.
-\begin{itemize}
 \item \textbf{Local splash masking with sink preservation.} We combine sliding-window
-\end{itemize}
   restriction with attention sink preservation (first 4 tokens). Section 4.3.
-\begin{itemize}
 \item \textbf{Architecture-agnostic injection.} The method works across flat, nested,
-\end{itemize}
   causal, and GQA attention without modification. Section 5.
-\begin{itemize}
 \item \textbf{Systematic evaluation.} We benchmark on three models on SST-2 with
-\end{itemize}
   ablations over $\alpha$, splash radius $W$, and LoRA rank. Section 7.
-\begin{itemize}
 \item \textbf{Honest disclosure.} We clearly state that AdaSplash \textbf{increases}
-\end{itemize}
-  parameter count due to LoRA, and report when the method is worth using. 
+  parameter count due to LoRA, and report when the method is worth using.
   Sections 8--9.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
-\end{itemize}
   under MIT.
 
-\subsection{1.7 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on $\alpha$-entmax, 
 attention sinks, and LoRA. Section 4 presents AdaSplash. Section 5 describes 

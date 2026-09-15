@@ -1,7 +1,7 @@
 
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Full self-attention is $\mathcal{O}(L^2)$ in sequence length $L$, which 
 becomes prohibitive for $L > 512$. Sliding-window attention reduces this to 
@@ -15,47 +15,47 @@ look at?
 
 \begin{itemize}
 \item \textbf{Sliding window + global tokens} (Longformer): the global branch attends
-\end{itemize}
   to a fixed set of "global" tokens. Simple but limited.
-\begin{itemize}
 \item \textbf{Sliding window + compressed memory} (Infini-Attention): the global
-\end{itemize}
-  branch attends to a \textbf{learned matrix}. Powerful but adds $H \cdot d_c \cdot d_h$ 
+  branch attends to a \textbf{learned matrix}. Powerful but adds $H \cdot d_c \cdot d_h$
   parameters.
-\begin{itemize}
 \item \textbf{Sliding window + sequence compression} (this work, OHA): the global
-\end{itemize}
-  branch attends to \textbf{$d_c$ summary slots} computed by soft-attention over 
+  branch attends to \textbf{$d_c$ summary slots} computed by soft-attention over
   the sequence.
 
+\end{itemize}
 \textbf{OHA's key idea:} Rather than learning a fixed memory matrix, compute a 
 \textbf{data-dependent compressed summary} of the current sequence. The compressed 
 summary adapts to each input.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained transformer $\mathcal{M}$ with $N_\ell$ attention layers, 
 we seek a modified attention block $\mathcal{A}'$ such that:
 
-1. $\mathcal{A}'$ reproduces the pretrained behavior at initialization.
-2. $\mathcal{A}'$ reduces attention cost from $\mathcal{O}(L^2)$ to 
-   $\mathcal{O}(L \cdot W + L \cdot d_c)$.
-3. $\mathcal{A}'$ maintains access to global context via the compressed 
-   summary.
-4. $\mathcal{A}'$ works across four attention architectures.
+\begin{enumerate}
+\item $\mathcal{A}'$ reproduces the pretrained behavior at initialization.
+\item $\mathcal{A}'$ reduces attention cost from $\mathcal{O}(L^2)$ to
+  $\mathcal{O}(L \cdot W + L \cdot d_c)$.
+\item $\mathcal{A}'$ maintains access to global context via the compressed
+  summary.
+\item $\mathcal{A}'$ works across four attention architectures.
 
+\end{enumerate}
 We do \textbf{not} aim to reduce model size. OHA targets \textbf{inference efficiency} 
 for long sequences.
 
-\subsection{1.3 Our Approach: OHA}
+\subsection{Our Approach: OHA}
 
 OHA replaces MHSA with a two-branch block:
 
-1. \textbf{Local branch:} sliding-window attention, $\mathcal{O}(L W)$.
-2. \textbf{Global branch:} attention to $d_c$ compressed summary slots, 
-   $\mathcal{O}(L d_c)$.
-3. \textbf{Fusion:} per-head gate.
+\begin{enumerate}
+\item \textbf{Local branch:} sliding-window attention, $\mathcal{O}(L W)$.
+\item \textbf{Global branch:} attention to $d_c$ compressed summary slots,
+  $\mathcal{O}(L d_c)$.
+\item \textbf{Fusion:} per-head gate.
 
+\end{enumerate}
 The compressed summary is computed by \textbf{soft-attention pooling}:
 
 \[
@@ -85,31 +85,23 @@ with $\gamma = \sigma(W_g X) \in [0, 1]^{B \times H}$.
 The gate bias is initialized to $2.0$, giving $\sigma(2) \approx 0.88$ -- 
 favoring the local branch at start.
 
-\subsection{1.4 Contributions}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A sequence-compressed hybrid attention block.} OHA combines local
-\end{itemize}
-  sliding-window attention with a global branch that attends to $d_c$ 
+  sliding-window attention with a global branch that attends to $d_c$
   data-dependent summary slots.
-\begin{itemize}
 \item \textbf{Soft-attention pooling.} The compression mechanism uses softmax
-\end{itemize}
   attention over the sequence, producing input-adaptive summaries.
-\begin{itemize}
 \item \textbf{Per-head gating.} Each head learns its own local/global balance,
-\end{itemize}
   initialized to favor local.
-\begin{itemize}
 \item \textbf{Multi-architecture support.} Same codebase handles flat, nested,
-\end{itemize}
   causal, and GQA+RoPE models.
-\begin{itemize}
 \item \textbf{Honest reporting.} OHA increases parameter count; the "compression"
-\end{itemize}
   refers to sequence length, not model size.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background. Section 4 
 presents OHA. Section 5 details multi-architecture integration. Section 6 

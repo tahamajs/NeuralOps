@@ -1,7 +1,7 @@
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
@@ -10,17 +10,17 @@
 \toprule
 \textbf{Architecture} & \textbf{Attention class} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
 \midrule
-DistilBERT & `MultiHeadSelfAttention` & No & No &  \\
-RoBERTa & `BertSelfAttention` & No & No &  \\
-GPT-2 & `GPT2Attention` & No & No &  \\
-Qwen3.5 & `Qwen3Attention` & Yes & Yes & not tested \\
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} & No & No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} & Yes & Yes & not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Transfer}
+\subsection{Weight Transfer}
 
-\subsubsection{5.2.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
 q_lin: Linear(768, 768)
@@ -31,7 +31,7 @@ out_lin: Linear(768, 768)
 
 \textbf{Copy:} Direct. \texttt{is\_nested\_encoder = False}.
 
-\subsubsection{5.2.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 \begin{lstlisting}
 attention.self.query: Linear(768, 768)
@@ -43,7 +43,7 @@ attention.output.dense: Linear(768, 768)
 \textbf{Copy:} Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}, skip own 
 \texttt{out\_proj}.
 
-\subsubsection{5.2.3 GPT-2 (Causal)}
+\subsubsection{GPT-2 (Causal)}
 
 \begin{lstlisting}
 attn.c_attn: Conv1D(768, 2304)   # fused Q, K, V
@@ -52,7 +52,7 @@ attn.c_proj: Conv1D(768, 768)
 
 \textbf{Copy:} Transpose and split. Direct for \texttt{c\_proj}.
 
-\subsubsection{5.2.4 Qwen3.5 (GQA + RoPE)}
+\subsubsection{Qwen3.5 (GQA + RoPE)}
 
 \begin{lstlisting}
 q_proj: Linear(1024, 2048)   # 8 heads $\times$ 256
@@ -64,7 +64,7 @@ o_proj: Linear(2048, 1024)
 \textbf{Copy:} Direct, then \texttt{repeat\_kv} at runtime. RoPE applied to landmarks 
 implicitly via the pooled $Q, K$ (see  5.5).
 
-\subsection{5.3 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject Primal Attention into a full model
 \begin{lstlisting}
@@ -79,7 +79,7 @@ Output: M with Primal attention
 6: end for
 \end{lstlisting}
 
-\subsection{5.4 Handling RoPE}
+\subsection{Handling RoPE}
 
 RoPE is applied to $Q, K$ \textbf{before} landmark pooling. This preserves the 
 relative positions of the landmark summaries.
@@ -89,7 +89,7 @@ Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids)
 Q_land, K_land = pool_to_landmarks(Q, K, m)
 \end{lstlisting}
 
-\subsection{5.5 Handling GQA}
+\subsection{Handling GQA}
 
 For grouped-query attention, we repeat KV heads \textbf{before} pooling:
 
@@ -101,7 +101,7 @@ if num_kv_heads < num_heads:
 
 Then landmarks are computed on the repeated KV.
 
-\subsection{5.6 Causality}
+\subsection{Causality}
 
 For decoder models, causal masking is applied to the \textbf{approximate} attention 
 matrix:
@@ -114,7 +114,7 @@ attn = attn + causal_mask
 \textbf{Note.} This is not a true causal approximation (landmarks see all tokens), 
 but empirically works for generation. See  8.5 for analysis.
 
-\subsection{5.7 Failure Handling}
+\subsection{Failure Handling}
 
 \texttt{inject\_primal} returns \texttt{None} on failure and logs the error:
 
@@ -127,7 +127,7 @@ except Exception:
 
 The outer loop can catch this and continue with the next layer.
 
-\subsection{5.8 Parameter Count}
+\subsection{Parameter Count}
 
 Primal Attention has the \textbf{same parameter count} as MHA:
 
@@ -148,7 +148,7 @@ $W_O$ & $H d_h \cdot d$ \\
 
 With LoRA recovery at rank $r_L$, add $2 r_L (d + d_h H)$ per projection.
 
-\subsection{5.9 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("primal")
@@ -156,4 +156,4 @@ With LoRA recovery at rank $r_L$, add $2 r_L (d + d_h H)$ per projection.
 class PrimalAttention(BaseAttention): ...
 \end{lstlisting}
 
-\subsection{5.10 Failure Modes}
+\subsection{Failure Modes}

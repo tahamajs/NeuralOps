@@ -1,12 +1,12 @@
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented a \textbf{production-hardened FlashAttention-3 wrapper} that 
 dispatches to the FA3 kernel when available, falls back to SDPA otherwise, 
 and transfers pretrained weights across four architectures.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -22,45 +22,47 @@ GPT-2 & -0.38\% & +1188876M \\
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Exact attention} preserved across all paths.
-2. \textbf{Graceful fallback} to SDPA on non-Hopper GPUs.
-3. \textbf{Multi-architecture} support.
-4. \textbf{Not a compression method.}
+\begin{enumerate}
+\item \textbf{Exact attention} preserved across all paths.
+\item \textbf{Graceful fallback} to SDPA on non-Hopper GPUs.
+\item \textbf{Multi-architecture} support.
+\item \textbf{Not a compression method.}
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item H100 benchmarking
 \item Real FP8 testing
 \item vLLM integration
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Cross-attention benchmarks
 \item Long-context evaluation
 \item Training support
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 This wrapper makes FA3 usable in any research framework with pretrained 
 models. We release code under MIT.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 {{ACKNOWLEDGMENTS}}
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed the wrapper, implemented the code, ran experiments.
 \item \textbf{{{AUTHOR\_2}}} provided feedback.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

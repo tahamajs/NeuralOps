@@ -1,7 +1,7 @@
 
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 The four attention projections $W_Q, W_K, W_V, W_O$ in a standard transformer 
 layer account for the majority of attention parameters. For DistilBERT 
@@ -20,18 +20,20 @@ best rank-$r$ approximation in Frobenius norm (Eckart--Young), but the theorem
 says nothing about what $r$ should be. Existing approaches fall into three 
 categories:
 
-1. \textbf{Fixed global rank.} Apply the same $r$ to every projection. Simple, but 
-   ignores that projections have very different \textbf{spectral decay rates}. 
-   \textbf{Figure 1.1} shows singular value spectra of two DistilBERT projections: 
-   one decays rapidly (~20 effective rank), another decays slowly (~200).
+\begin{enumerate}
+\item \textbf{Fixed global rank.} Apply the same $r$ to every projection. Simple, but
+  ignores that projections have very different \textbf{spectral decay rates}.
+  \textbf{Figure 1.1} shows singular value spectra of two DistilBERT projections:
+  one decays rapidly (~20 effective rank), another decays slowly (~200).
 
-2. \textbf{Validation-driven escalation.} Start low, increase rank if Frobenius 
-   error exceeds a threshold. Requires multiple SVDs per layer.
+\item \textbf{Validation-driven escalation.} Start low, increase rank if Frobenius
+  error exceeds a threshold. Requires multiple SVDs per layer.
 
-3. \textbf{Activation-aware rank.} Weight the SVD input space by empirical 
-   activation statistics (Fisher diagonal, covariance). Requires calibration 
-   data.
+\item \textbf{Activation-aware rank.} Weight the SVD input space by empirical
+  activation statistics (Fisher diagonal, covariance). Requires calibration
+  data.
 
+\end{enumerate}
 We propose a \textbf{fourth approach} that is self-contained: use the singular 
 values themselves to determine rank. Specifically, threshold **cumulative 
 squared energy**:
@@ -45,30 +47,34 @@ r^*(\tau) = \min\{r : \mathcal{E}(r) \geq \tau\}
 with default $\tau = 0.92$. Fast-decaying projections get 
 small $r$, slow-decaying ones get large $r$, all determined automatically.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained attention module with projections 
 $W_P \in \mathbb{R}^{d_\text{out}^{(P)} \times d_\text{in}^{(P)}}$ for 
 $P \in \{Q, K, V, O\}$, and an energy threshold $\tau \in (0, 1)$, we seek 
 per-projection factorizations $W_P \approx U_P V_P$ such that:
 
-1. \textbf{Energy preservation:} $\mathcal{E}_P(r_P) \geq \tau$ for each $P$.
-2. \textbf{Parameter reduction:} $r_P (d_\text{in}^{(P)} + d_\text{out}^{(P)}) < d_\text{in}^{(P)} d_\text{out}^{(P)}$.
-3. \textbf{No base retraining:} $U_P, V_P$ are frozen; only adapters train.
-4. \textbf{No calibration data:} rank selected purely from the weight's spectrum.
-5. \textbf{Multi-architecture support:} flat, nested, causal, T5, GQA, RoPE.
-6. \textbf{Initial forward fidelity:} with adapters zero-initialized, the initial 
-   forward pass matches the truncation approximation exactly.
+\begin{enumerate}
+\item \textbf{Energy preservation:} $\mathcal{E}_P(r_P) \geq \tau$ for each $P$.
+\item \textbf{Parameter reduction:} $r_P (d_\text{in}^{(P)} + d_\text{out}^{(P)}) < d_\text{in}^{(P)} d_\text{out}^{(P)}$.
+\item \textbf{No base retraining:} $U_P, V_P$ are frozen; only adapters train.
+\item \textbf{No calibration data:} rank selected purely from the weight's spectrum.
+\item \textbf{Multi-architecture support:} flat, nested, causal, T5, GQA, RoPE.
+\item \textbf{Initial forward fidelity:} with adapters zero-initialized, the initial
+  forward pass matches the truncation approximation exactly.
 
-\subsection{1.3 Our Approach}
+\end{enumerate}
+\subsection{Our Approach}
 
 \textbf{Adaptive SVD Attention} combines four design choices:
 
-1. \textbf{Cumulative energy rank.} For each projection, compute SVD, then select 
-   the smallest rank $r$ where cumulative squared energy $\mathcal{E}(r) \geq \tau$.
+\begin{enumerate}
+\item \textbf{Cumulative energy rank.} For each projection, compute SVD, then select
+  the smallest rank $r$ where cumulative squared energy $\mathcal{E}(r) \geq \tau$.
 
-2. \textbf{Symmetric factor distribution.} Split $\Sigma^{1/2}$ between factors:
+\item \textbf{Symmetric factor distribution.} Split $\Sigma^{1/2}$ between factors:
 
+\end{enumerate}
 \[
 U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad
 V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
@@ -77,44 +83,36 @@ V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
 
 This keeps $\|U_r\|_2 = \|V_r\|_2 = \sqrt{\sigma_\text{max}}$, avoiding FP16 overflow.
 
-3. \textbf{Residual adapters.} Add zero-initialized $B A$ with $B = 0$ at init. The 
-   adapter contributes zero to the initial forward, giving a stable starting 
-   point for recovery.
+\begin{enumerate}
+\item \textbf{Residual adapters.} Add zero-initialized $B A$ with $B = 0$ at init. The
+  adapter contributes zero to the initial forward, giving a stable starting
+  point for recovery.
 
-4. \textbf{Universal architecture support.} The injection handles flat (DistilBERT), 
-   nested (RoBERTa/BERT), fused Conv1D (GPT-2), GQA (Qwen), RoPE (LLaMA), 
-   and T5 relative attention bias.
+\item \textbf{Universal architecture support.} The injection handles flat (DistilBERT),
+  nested (RoBERTa/BERT), fused Conv1D (GPT-2), GQA (Qwen), RoPE (LLaMA),
+  and T5 relative attention bias.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{Energy-thresholded rank selection.} A self-contained, calibration-free
-\end{itemize}
-  criterion for per-layer rank based on cumulative singular value energy. 
+  criterion for per-layer rank based on cumulative singular value energy.
   Section 4.2 formalizes this.
-\begin{itemize}
 \item \textbf{Symmetric SVD + residual adapter.} A factorization that keeps both
-\end{itemize}
-  factors balanced in magnitude and adds zero-initialized residuals for 
+  factors balanced in magnitude and adds zero-initialized residuals for
   recovery. Section 4.3--4.4.
-\begin{itemize}
 \item \textbf{Broad architecture support.} The method works on flat, nested, and causal
-\end{itemize}
   attention, with optional T5 bias, GQA, and RoPE. Section 5.
-\begin{itemize}
 \item \textbf{Systematic evaluation.} We benchmark on 3 models on SST-2 with ablations
-\end{itemize}
   over $\tau$, residual rank, and recovery steps. Section 7.
-\begin{itemize}
 \item \textbf{Honest reporting.} We report which models benefit most, which have
-\end{itemize}
   limitations, and what we tried that failed (Appendix D).
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
-\end{itemize}
   under MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work in low-rank compression, activation-aware 
 methods, and parameter-efficient fine-tuning. Section 3 provides background 

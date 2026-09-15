@@ -1,29 +1,29 @@
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Efficient Attention}
+\subsection{Efficient Attention}
 
-\subsubsection{2.1.1 Sparse Attention}
+\subsubsection{Sparse Attention}
 
 Longformer (Beltagy et al., 2020) restricts attention to a sliding window 
 plus global tokens, achieving $\mathcal{O}(L \sqrt{L})$. BigBird (Zaheer et 
 al., 2020) adds random connections. Primal Attention is \textbf{dense} in content 
 but \textbf{low-rank} in structure.
 
-\subsubsection{2.1.2 Kernel Attention}
+\subsubsection{Kernel Attention}
 
 Performer (Choromanski et al., 2021) approximates softmax via random Fourier 
 features, achieving $\mathcal{O}(L)$ with a fixed number of random features. 
 Primal Attention uses landmarks instead of random features.
 
-\subsubsection{2.1.3 Low-Rank Attention}
+\subsubsection{Low-Rank Attention}
 
 Linformer (Wang et al., 2020) projects $K, V$ to a fixed low rank via learned 
 projections. Nystr mformer (Xiong et al., 2021) uses Nystr m landmark 
 approximation with the same landmarks for $Q$ and $K$. Primal Attention 
 \textbf{breaks this symmetry}.
 
-\subsubsection{2.1.4 Performer vs Nystr m}
+\subsubsection{Performer vs Nystr m}
 
 \begin{table}[H]
 \centering
@@ -34,51 +34,51 @@ approximation with the same landmarks for $Q$ and $K$. Primal Attention
 \midrule
 Performer & Random Fourier features & Yes & Yes \\
 Nystr mformer & Symmetric landmarks & Yes & Yes \\
-**Primal Attention** & Asymmetric landmarks & **No** & **Yes** \\
+\textbf{Primal Attention} & Asymmetric landmarks & \textbf{No} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{2.2 Nystr m Methods}
+\subsection{Nystr m Methods}
 
-\subsubsection{2.2.1 Classical Nystr m}
+\subsubsection{Classical Nystr m}
 
 Williams \& Seeger (2001) approximate a Gram matrix $K_{L \times L}$ as 
 $C W^{-1} C^\top$. This requires $C \in \mathbb{R}^{L \times m}$ and 
 $W \in \mathbb{R}^{m \times m}$.
 
-\subsubsection{2.2.2 Nystr mformer}
+\subsubsection{Nystr mformer}
 
 Xiong et al. (2021) apply Nystr m to attention by selecting $m$ landmarks 
 via \textbf{mean pooling} with stride $L/m$, then using the same landmarks for 
 both $Q$ and $K$. Primal Attention generalizes this by allowing separate 
 landmarks.
 
-\subsubsection{2.2.3 Randomized Nystr m}
+\subsubsection{Randomized Nystr m}
 
 Drineas \& Mahoney (2005) select landmarks randomly. Li et al. (2021) use 
 k-means clustering. Primal Attention uses \textbf{segment pooling} for simplicity 
 and determinism.
 
-\subsection{2.3 Pseudoinverse Computation}
+\subsection{Pseudoinverse Computation}
 
-\subsubsection{2.3.1 SVD-based Pseudoinverse}
+\subsubsection{SVD-based Pseudoinverse}
 
 Standard: $A^+ = V \Sigma^+ U^\top$. Cost: $\mathcal{O}(m^3)$ per layer, 
 which is the dominant cost.
 
-\subsubsection{2.3.2 Schulz Iteration}
+\subsubsection{Schulz Iteration}
 
 Schulz (1933) proposed the iterative scheme $X_{t+1} = X_t (2I - A X_t)$, 
 which converges quadratically to $A^{-1}$. We adapt this for pseudoinverse 
 with a slight modification.
 
-\subsubsection{2.3.3 Newton-Schulz in Deep Learning}
+\subsubsection{Newton-Schulz in Deep Learning}
 
 Bernstein \& Newhouse (2024) use Newton-Schulz iteration for orthogonalization 
 in optimizers. We use it for attention pseudoinverse.
 
-\subsection{2.4 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -88,8 +88,8 @@ in optimizers. We use it for attention pseudoinverse.
 \textbf{Axis} & \textbf{Nystr mformer} & \textbf{Primal Attention} \\
 \midrule
 Landmark selection & Mean pooling (shared) & Segment pooling (asymmetric) \\
-Kernel symmetry & Symmetric & **Asymmetric** \\
-Pseudoinverse & SVD-based & **Schulz iteration** \\
+Kernel symmetry & Symmetric & \textbf{Asymmetric} \\
+Pseudoinverse & SVD-based & \textbf{Schulz iteration} \\
 Differentiable & Yes & Yes \\
 GQA support & No & Yes \\
 RoPE support & Partial & Full \\

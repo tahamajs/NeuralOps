@@ -1,6 +1,6 @@
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 accuracy.}
 
@@ -12,16 +12,16 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 183 MB & 1.90 s \\
-DistilBERT & **ClusterFormer** & **89.91** & -0.80 & 0.900 & 195 & 2.10 \\
+DistilBERT & \textbf{ClusterFormer} & \textbf{89.91} & -0.80 & 0.900 & 195 & 2.10 \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 712 MB & 4.10 s \\
-RoBERTa & **ClusterFormer** & **77.50** & -1.06 & 0.780 & 720 & 4.50 \\
+RoBERTa & \textbf{ClusterFormer} & \textbf{77.50} & -1.06 & 0.780 & 720 & 4.50 \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 793 MB & 4.20 s \\
-GPT-2 & **ClusterFormer** & **78.98** & -0.38 & 0.789 & 800 & 4.80 \\
+GPT-2 & \textbf{ClusterFormer} & \textbf{78.98} & -0.38 & 0.789 & 800 & 4.80 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -40,7 +40,7 @@ GPT-2 & 124.4M & 125.63M & +1188876M & 0.99$\times$ \\
 \textbf{ClusterFormer is not a compression method.} Parameter count increases by 
 ~0.88\% (LoRA overhead only).
 
-\subsection{7.3 Attention FLOPs}
+\subsection{Attention FLOPs}
 
 \textbf{Table 7.3: Theoretical attention FLOPs (per layer, per head).}
 
@@ -52,13 +52,13 @@ GPT-2 & 124.4M & 125.63M & +1188876M & 0.99$\times$ \\
 \textbf{Config} & \textbf{FLOPs formula} & \textbf{$L=128$} & \textbf{$L=512$} \\
 \midrule
 Baseline & $2L^2 d_h$ & 2.1M & 33.6M \\
-ClusterFormer & $2KLd_h + 2LWd_h$ & **0.79M** & **7.1M** \\
-**Speedup** & -- & **2.7$\times$** & **4.7$\times$** \\
+ClusterFormer & $2KLd_h + 2LWd_h$ & \textbf{0.79M} & \textbf{7.1M} \\
+\textbf{Speedup} & -- & \textbf{2.7$\times$} & \textbf{4.7$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.4 Ablation: Number of Clusters}
+\subsection{Ablation: Number of Clusters}
 
 \begin{table}[H]
 \centering
@@ -69,14 +69,14 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & **0.79M** & **7.1M** \\
 \midrule
 4 & 88.5 & 75.8 & 77.2 & 6$\times$ \\
 8 & 89.5 & 77.0 & 78.5 & 4$\times$ \\
-**16** & **89.91** & **77.50** & **78.98** & **2.7$\times$** \\
+\textbf{16} & \textbf{89.91} & \textbf{77.50} & \textbf{78.98} & \textbf{2.7$\times$} \\
 32 & 90.05 & 77.6 & 79.0 & 1.9$\times$ \\
 64 & 90.15 & 77.7 & 79.05 & 1.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.5 Ablation: Window Size}
+\subsection{Ablation: Window Size}
 
 \begin{table}[H]
 \centering
@@ -87,13 +87,13 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & **0.79M** & **7.1M** \\
 \midrule
 0 & 88.2 & Global only \\
 8 & 89.5 & Very local \\
-**32** & **89.91** & **Default** \\
+\textbf{32} & \textbf{89.91} & \textbf{Default} \\
 64 & 89.80 & Broader local \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: K-Means Iterations}
+\subsection{Ablation: K-Means Iterations}
 
 \begin{table}[H]
 \centering
@@ -103,14 +103,14 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & **0.79M** & **7.1M** \\
 \textbf{Iters} & \textbf{D acc} & \textbf{Time overhead} \\
 \midrule
 1 & 89.0 & 1$\times$ \\
-**3** & **89.91** & **3$\times$** \\
+\textbf{3} & \textbf{89.91} & \textbf{3$\times$} \\
 5 & 89.95 & 5$\times$ \\
 10 & 89.98 & 10$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Ablation: Temperature}
+\subsection{Ablation: Temperature}
 
 \begin{table}[H]
 \centering
@@ -120,14 +120,14 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & **0.79M** & **7.1M** \\
 \textbf{$\tau$ init} & \textbf{D acc} & \textbf{Learned $\tau$} \\
 \midrule
 0.05 & 89.5 & 0.055 \\
-**0.1** & **89.91** & **0.087** \\
+\textbf{0.1} & \textbf{89.91} & \textbf{0.087} \\
 0.5 & 89.7 & 0.42 \\
 1.0 & 89.5 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Ablation: Blend Initialization}
+\subsection{Ablation: Blend Initialization}
 
 \begin{table}[H]
 \centering
@@ -143,7 +143,7 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & **0.79M** & **7.1M** \\
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \begin{table}[H]
 \centering
@@ -153,14 +153,14 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & **0.79M** & **7.1M** \\
 \textbf{Method} & \textbf{D acc} & \textbf{Params $\Delta$} & \textbf{Sparse?} \\
 \midrule
 full (baseline) & 90.71\% & 0 & No \\
-`nha` & 90.25\% & +0.89\% & No \\
-`adasplash` & 90.25\% & +0.89\% & Yes ($\alpha$-entmax) \\
-**ClusterFormer** & **89.91** & **+0.88\%** & **Cluster** \\
+\texttt{nha} & 90.25\% & +0.89\% & No \\
+\texttt{adasplash} & 90.25\% & +0.89\% & Yes ($\alpha$-entmax) \\
+\textbf{ClusterFormer} & \textbf{89.91} & \textbf{+0.88\%} & \textbf{Cluster} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Attention Quality}
+\subsection{Attention Quality}
 
 \textbf{Table 7.10: Cluster assignment quality.}
 

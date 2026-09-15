@@ -1,6 +1,6 @@
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Sparse Attention}
+\subsection{Sparse Attention}
 
 \textbf{Longformer.} Beltagy et al. (2020) combine a sliding window of radius 
 $W$ with a small set of global tokens. Complexity: $\mathcal{O}(L W)$. 
@@ -12,7 +12,7 @@ Theoretically Turing-complete; empirically similar to Longformer.
 \textbf{Sparse Transformer.} Child et al. (2019) use strided and fixed patterns. 
 Orthogonal to clustering.
 
-\subsection{2.2 Kernel and Linear Attention}
+\subsection{Kernel and Linear Attention}
 
 \textbf{Linear Transformer.} Katharopoulos et al. (2020) replace softmax with 
 $\phi(x) = \text{elu}(x) + 1$, achieving $\mathcal{O}(L d^2)$ via 
@@ -25,7 +25,7 @@ $m$ features.
 \textbf{Nystr mformer.} Xiong et al. (2021) approximate the attention matrix 
 via Nystr m landmarks, achieving $\mathcal{O}(L m d)$.
 
-\subsection{2.3 Cluster-Based Attention}
+\subsection{Cluster-Based Attention}
 
 \textbf{Routing Transformer.} Roy et al. (2021) cluster tokens into $k$ groups 
 and restrict attention within groups. Complexity: $\mathcal{O}(L \cdot L/k)$. 
@@ -40,7 +40,7 @@ document tasks. Not applicable to token-level attention.
 \textbf{Pixelfly / Cluster Attention.} Various works explore clustering in vision 
 transformers. ClusterFormer targets language.
 
-\subsection{2.4 MoE and Routing}
+\subsection{MoE and Routing}
 
 \textbf{Switch Transformer.} Fedus et al. (2022) route tokens to experts. Similar 
 routing mechanism but different purpose.
@@ -48,7 +48,7 @@ routing mechanism but different purpose.
 \textbf{Routing Attention.} Our framework's \texttt{routing} module clusters and routes 
 sequentially. ClusterFormer is vectorized and differentiable.
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -62,15 +62,17 @@ Longformer & $\mathcal{O}(LW)$ & Partial & Yes & Yes \\
 Performer & $\mathcal{O}(Lm)$ & Yes & No & Yes \\
 Reformer & $\mathcal{O}(L\log L)$ & Yes & No & Approx. \\
 Routing & $\mathcal{O}(L^2/k)$ & Partial & No & No (argmin) \\
-**ClusterFormer** & $\mathcal{O}(KL)$ & **Yes** & **Yes** & **Yes** \\
+\textbf{ClusterFormer} & $\mathcal{O}(KL)$ & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 ClusterFormer is unique in combining:
-1. \textbf{Exact} centroid-to-key attention (not approximate).
-2. \textbf{Global + local} blending.
-3. \textbf{Fully differentiable} clustering (softmax assignment).
-4. \textbf{Multi-architecture} support including GQA and RoPE.
+\begin{enumerate}
+\item \textbf{Exact} centroid-to-key attention (not approximate).
+\item \textbf{Global + local} blending.
+\item \textbf{Fully differentiable} clustering (softmax assignment).
+\item \textbf{Multi-architecture} support including GQA and RoPE.
 
-\subsection{2.6 Comparison Table}
+\end{enumerate}
+\subsection{Comparison Table}

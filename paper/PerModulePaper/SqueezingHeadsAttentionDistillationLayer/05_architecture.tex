@@ -1,7 +1,7 @@
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
@@ -18,9 +18,9 @@ Qwen3.5 & Causal + RoPE & Yes & Yes & not tested \\
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Transfer}
+\subsection{Weight Transfer}
 
-\subsubsection{5.2.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
 q_lin, k_lin, v_lin, out_lin
@@ -28,7 +28,7 @@ q_lin, k_lin, v_lin, out_lin
 
 Direct copy with head-dim slicing. \texttt{is\_nested\_encoder = False}.
 
-\subsubsection{5.2.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 \begin{lstlisting}
 attention.self.query, attention.self.key, attention.self.value
@@ -37,7 +37,7 @@ attention.output.dense
 
 Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}; skip own \texttt{out\_proj}.
 
-\subsubsection{5.2.3 GPT-2 (Causal)}
+\subsubsection{GPT-2 (Causal)}
 
 \begin{lstlisting}
 c_attn (fused), c_proj
@@ -50,7 +50,7 @@ w = src.c_attn.weight.t()  # Conv1D transpose
 q_w, k_w, v_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
-\subsubsection{5.2.4 Qwen3.5 (GQA + RoPE)}
+\subsubsection{Qwen3.5 (GQA + RoPE)}
 
 GQA with pooling:
 
@@ -60,15 +60,15 @@ if w_k.shape[0] > self.kv_head_size:
     w_k_pooled = w_k.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1)
 \end{lstlisting}
 
-\subsection{5.3 Handling Nested Encoders}
+\subsection{Handling Nested Encoders}
 
 For RoBERTa/BERT, \texttt{is\_nested\_encoder = True}:
 \begin{itemize}
 \item No \texttt{out\_proj} applied inside Squeezing Heads.
 \item Outer \texttt{attention.output.dense} applies output.
-\end{itemize}
 
-\subsection{5.4 Causality}
+\end{itemize}
+\subsection{Causality}
 
 Standard causal masking in forward:
 
@@ -77,7 +77,7 @@ causal_mask = torch.triu(torch.full((L, L), -inf), diagonal=1)
 scores = scores + causal_mask
 \end{lstlisting}
 
-\subsection{5.5 GQA Handling}
+\subsection{GQA Handling}
 
 For Qwen/LLaMA with $H_{kv} < H$, use \texttt{repeat\_kv}:
 
@@ -87,7 +87,7 @@ if self.num_kv_heads < self.num_heads:
     v = repeat_kv(v, self.kv_repeat)
 \end{lstlisting}
 
-\subsection{5.6 Head-Dim Reduction}
+\subsection{Head-Dim Reduction}
 
 If the target head\_dim $d_h' < d_h$, slice the leading rows of $W_Q, W_K, W_V$ 
 and leading columns of $W_O$:
@@ -97,7 +97,7 @@ m_q_out = min(self.q_head_size, w_q.shape[0])  # = d_h' * H
 self.q_proj.weight[:m_q_out, :m_q_in].copy_(w_q[:m_q_out, :m_q_in])
 \end{lstlisting}
 
-\subsection{5.7 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 3:} Inject Squeezing Heads
 \begin{lstlisting}
@@ -112,7 +112,7 @@ Output: M with LoRA-wrapped attention
 6: end for
 \end{lstlisting}
 
-\subsection{5.8 Failure Handling}
+\subsection{Failure Handling}
 
 \texttt{inject\_squeezing\_heads} returns \texttt{None} on failure:
 
@@ -124,7 +124,7 @@ except Exception as e:
     return None
 \end{lstlisting}
 
-\subsection{5.9 Parameter Count}
+\subsection{Parameter Count}
 
 \begin{table}[H]
 \centering
@@ -135,12 +135,12 @@ except Exception as e:
 \midrule
 Frozen $W_Q, W_K, W_V, W_O$ & $4 d^2$ & $4 d^2$ (same) \\
 LoRA adapters & 0 & $4 r_L d$ \\
-**Trainable** & $4 d^2$ & **$4 r_L d$** \\
+\textbf{Trainable} & $4 d^2$ & \textbf{$4 r_L d$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.10 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("squeezing_heads")
@@ -148,4 +148,4 @@ LoRA adapters & 0 & $4 r_L d$ \\
 class SqueezingHeadsDistiller(BaseAttention): ...
 \end{lstlisting}
 
-\subsection{5.11 Failure Modes}
+\subsection{Failure Modes}

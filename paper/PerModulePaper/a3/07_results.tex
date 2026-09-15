@@ -1,7 +1,7 @@
 
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: Main results on SST-2 validation.}
 
@@ -13,22 +13,24 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.9 s \\
-DistilBERT & **A3** & **88.5** & -2.2 & 0.884 & 36 & **5.0$\times$** & 110 & 2.4 \\
+DistilBERT & \textbf{A3} & \textbf{88.5} & -2.2 & 0.884 & 36 & \textbf{5.0$\times$} & 110 & 2.4 \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB & 4.1 s \\
-RoBERTa & **A3** & **75.8** & -2.8 & 0.775 & 72 & **4.5$\times$** & 450 & 5.2 \\
+RoBERTa & \textbf{A3} & \textbf{75.8} & -2.8 & 0.775 & 72 & \textbf{4.5$\times$} & 450 & 5.2 \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB & 4.2 s \\
-GPT-2 & **A3** & **76.5** & -2.9 & 0.768 & 72 & **4.5$\times$** & 500 & 5.5 \\
+GPT-2 & \textbf{A3} & \textbf{76.5} & -2.9 & 0.768 & 72 & \textbf{4.5$\times$} & 500 & 5.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key observations:}
 
-1. Parameter reduction: \textbf{5.0$\times$} (DistilBERT), \textbf{4.5$\times$} (RoBERTa), \textbf{4.5$\times$} (GPT-2).
-2. Accuracy drop: \textbf{-2.2\%}, \textbf{-2.8\%}, \textbf{-2.9\%}.
-3. Peak VRAM reduced by \textbf{40\%} on all models.
+\begin{enumerate}
+\item Parameter reduction: \textbf{5.0$\times$} (DistilBERT), \textbf{4.5$\times$} (RoBERTa), \textbf{4.5$\times$} (GPT-2).
+\item Accuracy drop: \textbf{-2.2\%}, \textbf{-2.8\%}, \textbf{-2.9\%}.
+\item Peak VRAM reduced by \textbf{40\%} on all models.
 
-\subsection{7.2 Parameter Analysis}
+\end{enumerate}
+\subsection{Parameter Analysis}
 
 \textbf{Table 7.2: Parameter counts.}
 
@@ -39,9 +41,9 @@ GPT-2 & **A3** & **76.5** & -2.9 & 0.768 & 72 & **4.5$\times$** & 500 & 5.5 \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After A3} & \textbf{Reduction} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 13500000 & **{{D\_PARAM\_RED}}$\times$** & {{D\_NOTE}} \\
-RoBERTa & 124,647,170 & 27700000 & **{{R\_PARAM\_RED}}$\times$** & {{R\_NOTE}} \\
-GPT-2 & 124,441,344 & 27700000 & **{{G\_PARAM\_RED}}$\times$** & {{G\_NOTE}} \\
+DistilBERT & 66,955,010 & 13500000 & \textbf{{{D\_PARAM\_RED}}$\times$} & {{D\_NOTE}} \\
+RoBERTa & 124,647,170 & 27700000 & \textbf{{{R\_PARAM\_RED}}$\times$} & {{R\_NOTE}} \\
+GPT-2 & 124,441,344 & 27700000 & \textbf{{{G\_PARAM\_RED}}$\times$} & {{G\_NOTE}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -55,17 +57,17 @@ GPT-2 & 124,441,344 & 27700000 & **{{G\_PARAM\_RED}}$\times$** & {{G\_NOTE}} \\
 \toprule
 \textbf{Layer} & \textbf{Original} & \textbf{A3} & \textbf{Ratio} \\
 \midrule
-`q\_lin` (768$\times$768) & 589,824 & {{D\_Q\_A3}} & {{D\_Q\_RATIO}}$\times$ \\
-`k\_lin` (768$\times$768) & 589,824 & {{D\_K\_A3}} & {{D\_K\_RATIO}}$\times$ \\
-`v\_lin` (768$\times$768) & 589,824 & {{D\_V\_A3}} & {{D\_V\_RATIO}}$\times$ \\
-`out\_lin` (768$\times$768) & 589,824 & {{D\_O\_A3}} & {{D\_O\_RATIO}}$\times$ \\
-`lin1` (768$\times$3072) & 2,359,296 & {{D\_L1\_A3}} & {{D\_L1\_RATIO}}$\times$ \\
-`lin2` (3072$\times$768) & 2,359,296 & {{D\_L2\_A3}} & {{D\_L2\_RATIO}}$\times$ \\
+\texttt{q\_lin} (768$\times$768) & 589,824 & {{D\_Q\_A3}} & {{D\_Q\_RATIO}}$\times$ \\
+\texttt{k\_lin} (768$\times$768) & 589,824 & {{D\_K\_A3}} & {{D\_K\_RATIO}}$\times$ \\
+\texttt{v\_lin} (768$\times$768) & 589,824 & {{D\_V\_A3}} & {{D\_V\_RATIO}}$\times$ \\
+\texttt{out\_lin} (768$\times$768) & 589,824 & {{D\_O\_A3}} & {{D\_O\_RATIO}}$\times$ \\
+\texttt{lin1} (768$\times$3072) & 2,359,296 & {{D\_L1\_A3}} & {{D\_L1\_RATIO}}$\times$ \\
+\texttt{lin2} (3072$\times$768) & 2,359,296 & {{D\_L2\_A3}} & {{D\_L2\_RATIO}}$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.3 Reconstruction Error Distribution}
+\subsection{Reconstruction Error Distribution}
 
 \textbf{Table 7.3: Frobenius reconstruction errors by layer type.}
 
@@ -82,14 +84,14 @@ Attention V & {{D\_REC\_V}} & {{R\_REC\_V}} & {{G\_REC\_V}} \\
 Attention O & {{D\_REC\_O}} & {{R\_REC\_O}} & {{G\_REC\_O}} \\
 FFN in & {{D\_REC\_FFI}} & {{R\_REC\_FFI}} & {{G\_REC\_FFI}} \\
 FFN out & {{D\_REC\_FFO}} & {{R\_REC\_FFO}} & {{G\_REC\_FFO}} \\
-**Mean** & **{{D\_REC\_MEAN}}** & **{{R\_REC\_MEAN}}** & **{{G\_REC\_MEAN}}** \\
+\textbf{Mean} & \textbf{{{D\_REC\_MEAN}}} & \textbf{{{R\_REC\_MEAN}}} & \textbf{{{G\_REC\_MEAN}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 All values below threshold $\tau = 0.20$.
 
-\subsection{7.4 Fallback Analysis}
+\subsection{Fallback Analysis}
 
 \textbf{Table 7.4: Layers compressed vs fallback.}
 
@@ -107,7 +109,7 @@ GPT-2 & 72 & 0 & {{G\_FALLBACK\_PCT}}\% \\
 \end{tabular}
 \end{table}
 
-\subsection{7.5 Inference Efficiency}
+\subsection{Inference Efficiency}
 
 \textbf{Table 7.5: Inference time and VRAM.}
 
@@ -128,7 +130,7 @@ GPT-2 & A3 & 5.5 s & 500 MB & 21000 \\
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: Rank}
+\subsection{Ablation: Rank}
 
 \textbf{Table 7.6: Accuracy vs compression rank.}
 
@@ -150,7 +152,7 @@ GPT-2 & A3 & 5.5 s & 500 MB & 21000 \\
 
 \textbf{Observation.} {{RANK\_OBS}}
 
-\subsection{7.7 Ablation: Fisher Weighting}
+\subsection{Ablation: Fisher Weighting}
 
 \textbf{Table 7.7: Effect of Fisher weighting.}
 
@@ -170,7 +172,7 @@ $\Delta$ & {{D\_FISHER\_DELTA}} & {{R\_FISHER\_DELTA}} & {{G\_FISHER\_DELTA}} \\
 
 \textbf{Observation.} {{FISHER\_OBS}}
 
-\subsection{7.8 Ablation: LayerNorm Recalibration}
+\subsection{Ablation: LayerNorm Recalibration}
 
 \textbf{Table 7.8: Effect of LN recalibration.}
 
@@ -190,7 +192,7 @@ $\Delta$ & {{D\_LN\_DELTA}} & {{R\_LN\_DELTA}} & {{G\_LN\_DELTA}} \\
 
 \textbf{Observation.} {{LN\_OBS}}
 
-\subsection{7.9 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.9: Accuracy vs recovery steps.}
 
@@ -209,7 +211,7 @@ $\Delta$ & {{D\_LN\_DELTA}} & {{R\_LN\_DELTA}} & {{G\_LN\_DELTA}} \\
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Training Loss Curves}
+\subsection{Training Loss Curves}
 
 \textbf{Figure 7.1} shows loss vs step for all three models.
 
@@ -217,9 +219,9 @@ $\Delta$ & {{D\_LN\_DELTA}} & {{R\_LN\_DELTA}} & {{G\_LN\_DELTA}} \\
 \item DistilBERT: {{D\_LOSS\_TRAJ}}
 \item RoBERTa: {{R\_LOSS\_TRAJ}}
 \item GPT-2: {{G\_LOSS\_TRAJ}}
-\end{itemize}
 
-\subsection{7.11 Compression Time}
+\end{itemize}
+\subsection{Compression Time}
 
 \textbf{Table 7.11: Wall-clock compression time.}
 
@@ -230,14 +232,14 @@ $\Delta$ & {{D\_LN\_DELTA}} & {{R\_LN\_DELTA}} & {{G\_LN\_DELTA}} \\
 \toprule
 \textbf{Model} & \textbf{Calibration} & \textbf{SVD} & \textbf{Validation} & \textbf{Total} \\
 \midrule
-DistilBERT & {{D\_CALIB}} s & {{D\_SVD}} s & {{D\_VAL}} s & **{{D\_TOTAL}} s** \\
-RoBERTa & {{R\_CALIB}} s & {{R\_SVD}} s & {{R\_VAL}} s & **{{R\_TOTAL}} s** \\
-GPT-2 & {{G\_CALIB}} s & {{G\_SVD}} s & {{G\_VAL}} s & **{{G\_TOTAL}} s** \\
+DistilBERT & {{D\_CALIB}} s & {{D\_SVD}} s & {{D\_VAL}} s & \textbf{{{D\_TOTAL}} s} \\
+RoBERTa & {{R\_CALIB}} s & {{R\_SVD}} s & {{R\_VAL}} s & \textbf{{{R\_TOTAL}} s} \\
+GPT-2 & {{G\_CALIB}} s & {{G\_SVD}} s & {{G\_VAL}} s & \textbf{{{G\_TOTAL}} s} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.12 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item A3 achieves \textbf{5.0$\times$--4.5$\times$} parameter reduction.

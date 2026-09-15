@@ -1,14 +1,14 @@
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We introduced \textbf{Primal Attention}, an asymmetric kernel SVD formulation 
 of self-attention. By allowing different landmarks for queries and keys, 
 Primal Attention generalizes symmetric Nystr m approximation. The pseudoinverse 
 is computed via differentiable Schulz iteration.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -17,22 +17,24 @@ is computed via differentiable Schulz iteration.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attn mem ratio} \\
 \midrule
-DistilBERT & -4.2\% & **4$\times$** \\
-RoBERTa & -4.6\% & **4$\times$** \\
-GPT-2 & -4.4\% & **4$\times$** \\
+DistilBERT & -4.2\% & \textbf{4$\times$} \\
+RoBERTa & -4.6\% & \textbf{4$\times$} \\
+GPT-2 & -4.4\% & \textbf{4$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Asymmetric landmarks} give +0.5\% over symmetric Nystr m.
-2. \textbf{$m = 64$} is optimal for $L = 128$.
-3. \textbf{Schulz from SVD pinv} is best practice.
-4. \textbf{Long $L$ benefits most.}
-5. \textbf{No parameter reduction.}
+\begin{enumerate}
+\item \textbf{Asymmetric landmarks} give +0.5\% over symmetric Nystr m.
+\item \textbf{$m = 64$} is optimal for $L = 128$.
+\item \textbf{Schulz from SVD pinv} is best practice.
+\item \textbf{Long $L$ benefits most.}
+\item \textbf{No parameter reduction.}
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
@@ -40,31 +42,31 @@ GPT-2 & -4.4\% & **4$\times$** \\
 \item Learned landmark pooling
 \item Fused kernels
 \item Long-context evaluation
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical error bounds
 \item Integration with MoE
 \item Cross-task transfer
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 Primal Attention provides a flexible approximation primitive for attention. 
 We release code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank {{ACKNOWLEDGMENTS}}.
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed Primal Attention, implemented the code, wrote the paper.
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

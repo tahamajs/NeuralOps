@@ -1,17 +1,19 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 Adaptive Span Attention (ASA-Span) replaces the standard softmax attention 
 with a \textbf{span-masked} variant:
 
-1. Compute standard scores $S = QK^\top / \sqrt{d_h}$.
-2. Apply causal, padding, and position-bias masks.
-3. Apply the \textbf{per-head soft ramp} $g_{z_h}(d)$.
-4. Renormalize via softmax.
-5. Multiply with $V$.
+\begin{enumerate}
+\item Compute standard scores $S = QK^\top / \sqrt{d_h}$.
+\item Apply causal, padding, and position-bias masks.
+\item Apply the \textbf{per-head soft ramp} $g_{z_h}(d)$.
+\item Renormalize via softmax.
+\item Multiply with $V$.
 
+\end{enumerate}
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
@@ -43,9 +45,9 @@ with a \textbf{span-masked} variant:
               O = P   V
 \end{lstlisting}
 
-\subsection{4.2 Learnable Span}
+\subsection{Learnable Span}
 
-\subsubsection{4.2.1 Parameterization}
+\subsubsection{Parameterization}
 
 For each of the $H$ heads, we introduce a scalar logit $\ell_h \in \mathbb{R}$. 
 The span is:
@@ -58,7 +60,7 @@ z_h = \sigma(\ell_h) \cdot S_\text{max}
 where $\sigma$ is the sigmoid and $S_\text{max}$ is the maximum span 
 (hyperparameter).
 
-\subsubsection{4.2.2 Initialization}
+\subsubsection{Initialization}
 
 We initialize $\ell_h$ to a value that makes $z_h \approx S_\text{max}$:
 
@@ -71,14 +73,14 @@ This gives $\sigma(4.0) \approx 0.982$, so $z_h \approx 0.982 \cdot S_\text{max}
 The span starts \textbf{nearly fully open} and shrinks during training via the 
 L1 penalty.
 
-\subsubsection{4.2.3 Why Start Open?}
+\subsubsection{Why Start Open?}
 
 Starting with a small span would immediately hurt accuracy. Starting open 
 lets the model decide which spans to shrink, based on task loss.
 
-\subsection{4.3 Soft Ramp Mask}
+\subsection{Soft Ramp Mask}
 
-\subsubsection{4.3.1 Definition}
+\subsubsection{Definition}
 
 Given query position $i$ and key position $j$, define the distance:
 
@@ -97,22 +99,20 @@ g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
 \tag{4.4}
 \]
 
-\subsubsection{4.3.2 Properties}
+\subsubsection{Properties}
 
 \begin{itemize}
 \item \textbf{Continuous:} $g_z$ is continuous in $z$ and $d$.
 \item \textbf{Piecewise-linear:} Three regimes (full, linear decay, zero).
 \item \textbf{Differentiable in $z$:}
-\end{itemize}
-\[
-  \frac{\partial g_z(d)}{\partial z} = \begin{cases} 0 & d < z \\ 1/R & z \le d \le z + R \\ 0 & d > z + R \end{cases}
+  $$
+  \frac{\partial g\_z(d)}{\partial z} = \begin{cases} 0 \& d < z \\ 1/R \& z \le d \le z + R \\ 0 \& d > z + R \end{cases}
   \tag{4.5}
-\]
-\begin{itemize}
+  $$
 \item \textbf{Bounded:} $g_z \in [0, 1]$.
-\end{itemize}
 
-\subsubsection{4.3.3 Numerical Stability}
+\end{itemize}
+\subsubsection{Numerical Stability}
 
 We compute the ramp in FP32 and apply in log space:
 
@@ -123,7 +123,7 @@ We compute the ramp in FP32 and apply in log space:
 
 with $\epsilon = 10^{-8}$. Then standard softmax.
 
-\subsection{4.4 Renormalization}
+\subsection{Renormalization}
 
 After masking, the attention row does not sum to 1. We renormalize:
 
@@ -140,7 +140,7 @@ P_{ij} = \frac{g_{z_h}(d_{ij}) \cdot \exp(S_{ij})}{\sum_j g_{z_h}(d_{ij}) \cdot 
 \tag{4.8}
 \]
 
-\subsection{4.5 Fast Path Optimization}
+\subsection{Fast Path Optimization}
 
 If the ramp has no effect (all heads have $z_h + R \geq L$), we skip ramp 
 computation:
@@ -153,9 +153,9 @@ if not ((span + self.ramp_size) >= N_k).all():
 
 This avoids the $\mathcal{O}(H L^2)$ ramp allocation when unnecessary.
 
-\subsection{4.6 L1 Span Penalty}
+\subsection{L1 Span Penalty}
 
-\subsubsection{4.6.1 Formulation}
+\subsubsection{Formulation}
 
 We add to the loss:
 
@@ -164,7 +164,7 @@ We add to the loss:
 \tag{4.9}
 \]
 
-\subsubsection{4.6.2 Effect}
+\subsubsection{Effect}
 
 The gradient w.r.t. $\ell_h$:
 
@@ -177,7 +177,7 @@ always negative (pushes $z_h$ toward 0). The task loss pushes $z_h$ up
 when the model needs long-range context. The equilibrium depends on 
 $\lambda$.
 
-\subsubsection{4.6.3 Recommended Values}
+\subsubsection{Recommended Values}
 
 \begin{table}[H]
 \centering
@@ -196,7 +196,7 @@ $\lambda$.
 
 We use $\lambda = 0.01$ by default.
 
-\subsection{4.7 Complete Forward Pass}
+\subsection{Complete Forward Pass}
 
 \textbf{Algorithm 1:} Adaptive Span Attention forward
 \begin{lstlisting}
@@ -233,7 +233,7 @@ Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 25: return O
 \end{lstlisting}
 
-\subsection{4.8 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -254,7 +254,7 @@ still computed. Its benefit is \textbf{interpretability} and \textbf{pruning} --
 model learns which spans matter. To realize speedup, one would apply a hard 
 mask after training and use sparse kernels.
 
-\subsection{4.9 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -267,8 +267,8 @@ $W_Q$ & $d H d_h$ & Same \\
 $W_K$ & $d H_{kv} d_h$ & Same \\
 $W_V$ & $d H_{kv} d_h$ & Same \\
 $W_O$ & $H d_h d$ & Same \\
-**Span logits** & 0 & **$H$** \\
-**LoRA** & 0 & $2 r_L (\cdots)$ \\
+\textbf{Span logits} & 0 & \textbf{$H$} \\
+\textbf{LoRA} & 0 & $2 r_L (\cdots)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -276,9 +276,9 @@ $W_O$ & $H d_h d$ & Same \\
 ASA-Span adds \textbf{$H$ parameters} (one logit per head). It does not reduce 
 parameter count.
 
-\subsection{4.10 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.10.1 Approximation Quality}
+\subsubsection{Approximation Quality}
 
 For a head with span $z$ and ramp $R$, the approximation error is bounded by:
 
@@ -294,7 +294,7 @@ where $\epsilon_R$ is the ramp-induced error:
 \tag{4.12}
 \]
 
-\subsubsection{4.10.2 Head Span Heterogeneity}
+\subsubsection{Head Span Heterogeneity}
 
 Empirically, spans converge to a bimodal distribution:
 
@@ -303,7 +303,7 @@ z_h^{(T)} \approx \begin{cases} 16 & \text{if head is local} \\ S_\text{max} & \
 \tag{4.13}
 \]
 
-\subsubsection{4.10.3 Equilibrium of L1 Penalty}
+\subsubsection{Equilibrium of L1 Penalty}
 
 The equilibrium span satisfies:
 

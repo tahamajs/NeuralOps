@@ -6,17 +6,21 @@
 
 \textbf{Proof.} Three components:
 
-1. \textbf{K-means.} Each iteration costs:
+\begin{enumerate}
+\item \textbf{K-means.} Each iteration costs:
+\end{enumerate}
 \begin{itemize}
 \item Assignment: \texttt{cdist} between $Q \in \mathbb{R}^{BHLd}$ and $C \in \mathbb{R}^{BH K d}$, cost $\mathcal{O}(BHLKd)$.
 \item Update: gather $Q$ by cluster id, cost $\mathcal{O}(BHLd)$.
 \item Three iterations: $\mathcal{O}(3 BHLKd)$.
+
 \end{itemize}
+\begin{enumerate}
+\item \textbf{Centroid-to-key.} Product $(BH K d) \times (BH d L)$ = $\mathcal{O}(BHKLd)$.
 
-2. \textbf{Centroid-to-key.} Product $(BH K d) \times (BH d L)$ = $\mathcal{O}(BHKLd)$.
+\item \textbf{Soft assignment.} Product $(BH L d) \times (BH d K)$ = $\mathcal{O}(BH LKd)$.
 
-3. \textbf{Soft assignment.} Product $(BH L d) \times (BH d K)$ = $\mathcal{O}(BH LKd)$.
-
+\end{enumerate}
 Sum is $\mathcal{O}(BHLKd)$. $\square$
 
 \subsection{A.2 K-Means Convergence}
@@ -25,11 +29,13 @@ Sum is $\mathcal{O}(BHLKd)$. $\square$
 
 \textbf{Proof.} Each iteration:
 
-1. \textbf{Assignment step:} For fixed centroids, assigning each point to 
-   nearest centroid minimizes the objective given centroids.
-2. \textbf{Update step:} For fixed assignments, the mean minimizes the sum of 
-   squared distances.
+\begin{enumerate}
+\item \textbf{Assignment step:} For fixed centroids, assigning each point to
+  nearest centroid minimizes the objective given centroids.
+\item \textbf{Update step:} For fixed assignments, the mean minimizes the sum of
+  squared distances.
 
+\end{enumerate}
 Both steps decrease the objective or keep it unchanged. Since the objective 
 is bounded below by 0, the algorithm converges. $\square$
 
@@ -76,8 +82,8 @@ For each layer, LoRA adds:
 \begin{itemize}
 \item $r_L \times d$ for $A_Q, A_K, A_V, A_O$
 \item $d \times r_L$ for $B_Q, B_K, B_V, B_O$
-\end{itemize}
 
+\end{itemize}
 Total per layer: $8 r_L d$.
 
 Across $N_l$ layers: $8 r_L d N_l$.

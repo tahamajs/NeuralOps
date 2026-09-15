@@ -1,48 +1,48 @@
 
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 evaluated ($L = 128$). ASA's sparsity benefit grows with $L$; 
 we do not measure accuracy at $L \ge 512$.
 
-\subsection{10.2 Model Coverage}
+\subsection{Model Coverage}
 
 Tested on models with $H = 12$. Not tested on:
 \begin{itemize}
 \item Very wide models ($H = 32+$)
 \item Mixture-of-Experts
 \item Vision transformers
-\end{itemize}
 
-\subsection{10.3 No Parameter Reduction}
+\end{itemize}
+\subsection{No Parameter Reduction}
 
 ASA \textbf{does not} reduce parameter count. It reduces attention memory and 
 compute. For parameter savings, use A3 or AASVD.
 
-\subsection{10.4 No Time Reduction}
+\subsection{No Time Reduction}
 
 Chunking bounds memory but does not reduce \textbf{time} -- we still compute all 
 scores. To reduce time, we would need to skip score computation for pruned 
 keys.
 
-\subsection{10.5 Approximate Causality}
+\subsection{Approximate Causality}
 
 Causal masking is applied to each chunk. The chunk boundary may leak 
 information from prior chunks (in bidirectional settings), but for causal 
 decoders, we verify strict causality.
 
-\subsection{10.6 Sparsity Logit Floor}
+\subsection{Sparsity Logit Floor}
 
 The floor operation in $k_h = \lfloor (1 - \rho_h) L \rfloor$ is not 
 differentiable. We use a straight-through estimator, which works but is 
 not theoretically justified.
 
-\subsection{10.7 Single Seed}
+\subsection{Single Seed}
 
 All results from seed 42.
 
-\subsection{10.8 No Comparison with Some Baselines}
+\subsection{No Comparison with Some Baselines}
 
 We do not directly compare with:
 \begin{itemize}
@@ -50,20 +50,20 @@ We do not directly compare with:
 \item BigBird
 \item Routing Transformer
 \item Reformer
-\end{itemize}
 
-\subsection{10.9 Chunk Boundary Effects}
+\end{itemize}
+\subsection{Chunk Boundary Effects}
 
 For very small chunks ($C = 32$), chunk boundary effects may hurt accuracy.
 
-\subsection{10.10 Failure Modes}
+\subsection{Failure Modes}
 
 Causality, long-context evaluation
 
-\subsection{10.11 Code Quality}
+\subsection{Code Quality}
 
 Research-grade implementation.
 
-\subsection{10.12 Ethical Considerations}
+\subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.

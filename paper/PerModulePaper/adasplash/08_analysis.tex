@@ -1,34 +1,34 @@
 
-\section{8. Analysis}
+\section{Analysis}
 
-\subsection{8.1 Why Does AdaSplash Work?}
+\subsection{Why Does AdaSplash Work?}
 
-\subsubsection{8.1.1 Sparse Attention Matches Effective Attention}
+\subsubsection{Sparse Attention Matches Effective Attention}
 
 \textbf{Figure 8.1} compares attention sparsity patterns:
 
 \begin{itemize}
 \item \textbf{Softmax attention:} All entries positive, most tiny.
 \item \textbf{$\alpha$-entmax attention:} ~40\% entries exactly zero.
-\end{itemize}
 
+\end{itemize}
 The zero entries are precisely those that softmax would assign near-zero 
 mass. By setting them exactly to zero, entmax preserves the \textbf{effective} 
 attention (top-K) while discarding numerical noise.
 
-\subsubsection{8.1.2 Frozen Base + LoRA Preserves Pretrained Representations}
+\subsubsection{Frozen Base + LoRA Preserves Pretrained Representations}
 
 By freezing the base weights and adding zero-initialized LoRA, the initial 
 forward pass equals the pretrained model. Recovery only adjusts LoRA, so 
 the pretrained representations remain intact.
 
-\subsubsection{8.1.3 Sinks Preserve Stability}
+\subsubsection{Sinks Preserve Stability}
 
 Preserving the first 4 tokens as sinks maintains the numerical stability 
 observed by Xiao et al. (2024). Removing sinks causes accuracy drops of 
 4.5\%.
 
-\subsection{8.2 Attention Sparsity Analysis}
+\subsection{Attention Sparsity Analysis}
 
 \textbf{Figure 8.2} shows sparsity vs $\alpha$.
 
@@ -51,7 +51,7 @@ observed by Xiao et al. (2024). Removing sinks causes accuracy drops of
 \textbf{Observation.} Sparsity grows monotonically with $\alpha$. $\alpha$ = 1.5 gives ~40\% 
 sparsity; $\alpha$ = 2.0 gives ~60\%.
 
-\subsection{8.3 Per-Layer Sparsity Distribution}
+\subsection{Per-Layer Sparsity Distribution}
 
 \textbf{Table 8.1: Sparsity by layer (DistilBERT, $\alpha$ = 1.5).}
 
@@ -75,7 +75,7 @@ sparsity; $\alpha$ = 2.0 gives ~60\%.
 \textbf{Observation.} Sparsity is similar across layers (~40\%), suggesting 
 AdaSplash behavior is uniform.
 
-\subsection{8.4 Ablation: Component Contributions}
+\subsection{Ablation: Component Contributions}
 
 \textbf{Table 8.2: Cumulative ablation.}
 
@@ -97,7 +97,7 @@ Full attention + softmax & 90.71\% & -- \\
 
 \textbf{Interpretation.} Each component contributes ~1.0\% accuracy.
 
-\subsection{8.5 Comparison with Sparsemax}
+\subsection{Comparison with Sparsemax}
 
 \textbf{Table 8.3: Entmax $\alpha$=1.5 vs Sparsemax $\alpha$=2.0.}
 
@@ -108,7 +108,7 @@ Full attention + softmax & 90.71\% & -- \\
 \toprule
 \textbf{Metric} & \textbf{$\alpha$=1.5} & \textbf{$\alpha$=2.0} \\
 \midrule
-DistilBERT & **90.25** & 88.30 \\
+DistilBERT & \textbf{90.25} & 88.30 \\
 Sparsity & 42\% & 60\% \\
 Training stability & Stable & Oscillatory \\
 Speed & Fast & Slower (bisection) \\
@@ -119,14 +119,16 @@ Speed & Fast & Slower (bisection) \\
 \textbf{Observation.} $\alpha$ = 1.5 is faster and more stable while giving similar 
 sparsity.
 
-\subsection{8.6 Inference Cost Breakdown}
+\subsection{Inference Cost Breakdown}
 
 AdaSplash is \textbf{slower} than baseline by 1.9$\times$. This comes from:
 
-1. \textbf{Entmax bisection:} 25 iterations of the same computation.
-2. \textbf{Masked softmax computation:} Softmax fallback check.
-3. \textbf{LoRA branch:} Additional matmuls.
+\begin{enumerate}
+\item \textbf{Entmax bisection:} 25 iterations of the same computation.
+\item \textbf{Masked softmax computation:} Softmax fallback check.
+\item \textbf{LoRA branch:} Additional matmuls.
 
+\end{enumerate}
 \textbf{Table 8.4: Latency breakdown (GPT-2, L=128).}
 
 \begin{table}[H]
@@ -141,24 +143,26 @@ Attention scores & 0.3 ms & 0.3 ms \\
 Normalization & 0.05 ms & 1.2 ms \\
 Context & 0.3 ms & 0.3 ms \\
 Output proj & 0.4 ms & 0.5 ms \\
-**Total** & **1.45 ms** & **2.8 ms** \\
+\textbf{Total} & \textbf{1.45 ms} & \textbf{2.8 ms} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{The bisection is the primary slowdown.}
 
-\subsection{8.7 Interpretability Analysis}
+\subsection{Interpretability Analysis}
 
 AdaSplash produces \textbf{more interpretable} attention:
 
-1. \textbf{Sparser:} ~60 nonzero entries per query vs. ~128 for softmax.
-2. \textbf{Higher entropy contrast:} The entropy distribution has more variance.
-3. \textbf{Clearer sink structure:} Sinks are identifiable in the first 4 columns.
+\begin{enumerate}
+\item \textbf{Sparser:} ~60 nonzero entries per query vs. ~128 for softmax.
+\item \textbf{Higher entropy contrast:} The entropy distribution has more variance.
+\item \textbf{Clearer sink structure:} Sinks are identifiable in the first 4 columns.
 
+\end{enumerate}
 \textbf{Figure 8.3} compares attention patterns.
 
-\subsection{8.8 Comparison with Attention Pruning}
+\subsection{Comparison with Attention Pruning}
 
 \textbf{Table 8.5: AdaSplash vs attention pruning.}
 
@@ -171,7 +175,7 @@ AdaSplash produces \textbf{more interpretable} attention:
 \midrule
 Magnitude pruning (50\%) & 85 & Weights & No \\
 Head pruning (50\%) & 82 & Heads & No \\
-**AdaSplash** & **90.25** & **Activations** & **Yes ($\alpha$=1)** \\
+\textbf{AdaSplash} & \textbf{90.25} & \textbf{Activations} & \textbf{Yes ($\alpha$=1)} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -179,9 +183,9 @@ Head pruning (50\%) & 82 & Heads & No \\
 \textbf{Key advantage.} AdaSplash's sparsity is \textbf{dynamic} (per-query) and 
 \textbf{reversible} (setting $\alpha$=1 recovers softmax).
 
-\subsection{8.9 Failure Analysis}
+\subsection{Failure Analysis}
 
-\subsubsection{8.9.1 Empty Support}
+\subsubsection{Empty Support}
 
 If all scores for a query are near-uniform (low variance), entmax's bisection 
 may produce an empty support. Our softmax fallback handles this:
@@ -191,22 +195,24 @@ if sum(p) < 1e-7:
     p = softmax(s_masked)
 \end{lstlisting}
 
-\subsubsection{8.9.2 Numerical Issues}
+\subsubsection{Numerical Issues}
 
 \begin{itemize}
 \item \textbf{Score overflow:} Prevented by subtracting max.
 \item \textbf{Support boundary:} Fallback to softmax.
 \item \textbf{Padding tokens:} Masked to -10000.
-\end{itemize}
 
-\subsubsection{8.9.3 Failures We Observed}
+\end{itemize}
+\subsubsection{Failures We Observed}
 
 No systematic failures observed.
 
-\subsection{8.10 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{$\alpha$ = 1.5 gives ~40\% sparsity} with no accuracy loss.
-2. \textbf{Attention sinks are essential} for stability.
-3. \textbf{Entmax bisection is the slowdown} (25$\times$ overhead vs softmax).
-4. \textbf{Sparsity is uniform across layers} -- no layer-specific tuning needed.
-5. \textbf{Parameter count increases} due to LoRA -- this is not compression.
+\begin{enumerate}
+\item \textbf{$\alpha$ = 1.5 gives ~40\% sparsity} with no accuracy loss.
+\item \textbf{Attention sinks are essential} for stability.
+\item \textbf{Entmax bisection is the slowdown} (25$\times$ overhead vs softmax).
+\item \textbf{Sparsity is uniform across layers} -- no layer-specific tuning needed.
+\item \textbf{Parameter count increases} due to LoRA -- this is not compression.
+\end{enumerate}

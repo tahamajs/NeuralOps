@@ -1,14 +1,14 @@
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{Adaptive Span Attention} (ASA-Span), a learnable per-head 
 window mechanism for transformer attention. Each head maintains a scalar 
 logit that controls its span, masked via a continuous soft ramp. An L1 penalty 
 encourages span shrinkage, achieving automatic pruning.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -17,22 +17,24 @@ encourages span shrinkage, achieving automatic pruning.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Learned span} & \textbf{Reduction} \\
 \midrule
-DistilBERT & -1.2\% & **68** & 47\% \\
-RoBERTa & -2.1\% & **72** & 44\% \\
-GPT-2 & -1.9\% & **75** & 41\% \\
+DistilBERT & -1.2\% & \textbf{68} & 47\% \\
+RoBERTa & -2.1\% & \textbf{72} & 44\% \\
+GPT-2 & -1.9\% & \textbf{75} & 41\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Learned spans are bimodal}: local vs global heads.
-2. \textbf{Layer depth correlates with span}: early = larger, late = smaller.
-3. \textbf{L1 regularization shrinks spans} to the minimum needed.
-4. \textbf{No speedup without hard truncation.}
-5. \textbf{Interpretability is the main benefit.}
+\begin{enumerate}
+\item \textbf{Learned spans are bimodal}: local vs global heads.
+\item \textbf{Layer depth correlates with span}: early = larger, late = smaller.
+\item \textbf{L1 regularization shrinks spans} to the minimum needed.
+\item \textbf{No speedup without hard truncation.}
+\item \textbf{Interpretability is the main benefit.}
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
@@ -40,31 +42,31 @@ GPT-2 & -1.9\% & **75** & 41\% \\
 \item Hard truncation + sparse kernels
 \item Combine with content-based sparsity
 \item Long-context evaluation
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical bounds on span vs accuracy
 \item Cross-task span transfer
 \item Integration with compression
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 ASA-Span provides an interpretable mechanism for learning per-head attention 
 windows. We release code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank {{ACKNOWLEDGMENTS}}.
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed the implementation, ran experiments, wrote the paper.
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

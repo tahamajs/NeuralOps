@@ -1,7 +1,7 @@
 
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 is evaluated. A3 may behave differently on:
 
@@ -10,9 +10,9 @@ Only SST-2 is evaluated. A3 may behave differently on:
 \item Multi-class classification (MNLI, AG News)
 \item Token-level tasks (NER, POS)
 \item Long-context tasks (>512 tokens)
-\end{itemize}
 
-\subsection{10.2 Model Coverage}
+\end{itemize}
+\subsection{Model Coverage}
 
 We test on models with $\le$124M parameters. Not tested:
 
@@ -22,9 +22,9 @@ We test on models with $\le$124M parameters. Not tested:
 \item Mixture-of-Experts: not tested
 \item Vision transformers: not tested
 \item Multimodal: not tested
-\end{itemize}
 
-\subsection{10.3 Hardware}
+\end{itemize}
+\subsection{Hardware}
 
 All experiments on RTX 4070 Laptop (8 GB). Behavior on other hardware:
 
@@ -32,9 +32,9 @@ All experiments on RTX 4070 Laptop (8 GB). Behavior on other hardware:
 \item A100/H100: SVD faster, benefit larger
 \item CPU: matmul-bound; A3 might help
 \item Edge: not tested
-\end{itemize}
 
-\subsection{10.4 Calibration Dependency}
+\end{itemize}
+\subsection{Calibration Dependency}
 
 A3 requires a calibration pass. If calibration data is unavailable:
 
@@ -42,12 +42,12 @@ A3 requires a calibration pass. If calibration data is unavailable:
 \item Fisher weighting degrades to unweighted SVD
 \item LayerNorm recalibration is skipped
 \item Accuracy may drop by up to 5\%
-\end{itemize}
 
+\end{itemize}
 This is a real limitation for models whose deployment environment differs 
 from training data.
 
-\subsection{10.5 Inference Latency}
+\subsection{Inference Latency}
 
 Factorized layers are slower at inference:
 
@@ -56,26 +56,26 @@ Factorized layers are slower at inference:
 \item Intermediate rank-$r$ tensor must be materialized
 \item On GPU: ~1.3$\times$ slower
 \item On CPU: potentially faster
-\end{itemize}
 
+\end{itemize}
 This is a \textbf{trade-off}: smaller size for slower latency.
 
-\subsection{10.6 Single-Seed Results}
+\subsection{Single-Seed Results}
 
 All main results are from one seed. With N=872 validation examples, SE is 
 ~1.69\%. Differences below 3.4\% (2$\times$SE) may be noise.
 
-\subsection{10.7 No Theoretical Guarantee}
+\subsection{No Theoretical Guarantee}
 
 We provide no formal bound on downstream accuracy loss. The Fisher proxy 
 $\mathbb{E}[x^2]$ is not the true Fisher; our approximation error is untested.
 
-\subsection{10.8 Rank Selection}
+\subsection{Rank Selection}
 
 Our adaptive rank escalation increases rank until error is met. This is 
 greedy and may not be optimal. A learned or Bayesian approach could be better.
 
-\subsection{10.9 LayerNorm Recalibration Heuristic}
+\subsection{LayerNorm Recalibration Heuristic}
 
 Our $\gamma \leftarrow \gamma \cdot \sigma_\text{target} / \sigma_\text{current}$ 
 is a heuristic. It does not account for:
@@ -84,9 +84,9 @@ is a heuristic. It does not account for:
 \item Nonlinear interactions between layers
 \item Changes in higher moments
 \item Attention-specific distribution shifts
-\end{itemize}
 
-\subsection{10.10 No Comparison with Some Baselines}
+\end{itemize}
+\subsection{No Comparison with Some Baselines}
 
 We do not directly compare with:
 
@@ -94,15 +94,15 @@ We do not directly compare with:
 \item DistilBERT / TinyBERT (distillation)
 \item Performer / Linformer (attention replacement)
 \item SparseGPT / Wanda (pruning)
-\end{itemize}
 
+\end{itemize}
 This limits the paper's external validity.
 
-\subsection{10.11 Failure Modes Not Fully Diagnosed}
+\subsection{Failure Modes Not Fully Diagnosed}
 
 {{UNRESOLVED\_FAILURES}}
 
-\subsection{10.12 Code Quality}
+\subsection{Code Quality}
 
 Our implementation is research-grade:
 
@@ -110,9 +110,9 @@ Our implementation is research-grade:
 \item No unit tests for edge cases
 \item Some error paths use broad exception handling
 \item Numerical stability could be improved in some paths
-\end{itemize}
 
-\subsection{10.13 Ethical Considerations}
+\end{itemize}
+\subsection{Ethical Considerations}
 
 Compression methods enable broader deployment. This is a \textbf{dual-use} 
 capability. See Appendix E.

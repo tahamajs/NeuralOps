@@ -1,7 +1,7 @@
 
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 results with gate bias 1.8.}
 
@@ -13,16 +13,16 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Mean gate} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 183 MB & 1.9 s \\
-DistilBERT & **HALO** & **89.5** & -1.2 & 0.895 & **0.72** & 210 MB & 2.8 s \\
+DistilBERT & \textbf{HALO} & \textbf{89.5} & -1.2 & 0.895 & \textbf{0.72} & 210 MB & 2.8 s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 712 MB & 4.1 s \\
-RoBERTa & **HALO** & **76.5** & -2.1 & 0.765 & **0.68** & 760 MB & 5.2 s \\
+RoBERTa & \textbf{HALO} & \textbf{76.5} & -2.1 & 0.765 & \textbf{0.68} & 760 MB & 5.2 s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 793 MB & 4.2 s \\
-GPT-2 & **HALO** & **77.5** & -1.9 & 0.775 & **0.65** & 820 MB & 5.5 s \\
+GPT-2 & \textbf{HALO} & \textbf{77.5} & -1.9 & 0.775 & \textbf{0.65} & 820 MB & 5.5 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Gate Analysis}
+\subsection{Gate Analysis}
 
 \textbf{Table 7.2: Learned gate statistics per head.}
 
@@ -43,7 +43,7 @@ GPT-2 & 0.10 & 0.98 & 0.65 & 0.28 \\
 \textbf{Observation.} Gates are non-uniform: some heads prefer dense 
 ($\bar{g}_h > 0.9$), others prefer linear ($\bar{g}_h < 0.3$).
 
-\subsection{7.3 Per-Layer Gate Evolution}
+\subsection{Per-Layer Gate Evolution}
 
 \textbf{Table 7.3: Mean gate per layer (DistilBERT).}
 
@@ -67,7 +67,7 @@ GPT-2 & 0.10 & 0.98 & 0.65 & 0.28 \\
 \textbf{Observation.} Early layers tend to have higher gates (dense); late 
 layers have lower gates (linear).
 
-\subsection{7.4 Efficiency}
+\subsection{Efficiency}
 
 \textbf{Table 7.4: Memory and time.}
 
@@ -86,7 +86,7 @@ GPT-2 & HALO & 820 MB & 5.5 s \\
 \end{tabular}
 \end{table}
 
-\subsection{7.5 Ablation: Gate Bias}
+\subsection{Ablation: Gate Bias}
 
 \textbf{Table 7.5: Accuracy vs gate bias.}
 
@@ -108,7 +108,7 @@ GPT-2 & HALO & 820 MB & 5.5 s \\
 
 \textbf{Observation.} $b_h = 1.8$ is a good balance.
 
-\subsection{7.6 Ablation: Kernel}
+\subsection{Ablation: Kernel}
 
 \textbf{Table 7.6: Accuracy vs kernel choice.}
 
@@ -129,7 +129,7 @@ Identity (linear) & 78.0 & 65.0 & 67.0 \\
 
 \textbf{Observation.} ELU+1 is best (non-negative, smooth).
 
-\subsection{7.7 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \textbf{Table 7.7: Accuracy vs LoRA rank.}
 
@@ -148,7 +148,7 @@ Identity (linear) & 78.0 & 65.0 & 67.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.8: Accuracy vs recovery steps.}
 
@@ -167,7 +167,7 @@ Identity (linear) & 78.0 & 65.0 & 67.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.9: Comparison.}
 
@@ -183,12 +183,12 @@ GQA & 88.5 & 75.5 & 77.0 & KV reduce \\
 Primal & 86.5 & 74.0 & 75.0 & Low-rank \\
 ASA-Sparse & 88.5 & 76.0 & 76.5 & Sparse \\
 NHA & 90.25\% & FAIL & 78.78\% & Hybrid \\
-**HALO** & **89.5** & **76.5** & **77.5** & Hybrid \\
+\textbf{HALO} & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} & Hybrid \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Scaling with Sequence Length}
+\subsection{Scaling with Sequence Length}
 
 \textbf{Table 7.10: Inference time at various $L$ (GPT-2).}
 
@@ -206,7 +206,7 @@ NHA & 90.25\% & FAIL & 78.78\% & Hybrid \\
 \end{tabular}
 \end{table}
 
-\subsection{7.11 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Accuracy:} drops -1.2\%---1.9\%.

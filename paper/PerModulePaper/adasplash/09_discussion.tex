@@ -1,9 +1,9 @@
 
-\section{9. Discussion}
+\section{Discussion}
 
-\subsection{9.1 Key Takeaways}
+\subsection{Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Sparsity $\ne$ Compression}
+\subsubsection{Takeaway 1: Sparsity $\ne$ Compression}
 
 AdaSplash produces sparse attention but \textbf{increases} parameter count. 
 It is not a compression method. Its value is in:
@@ -11,19 +11,19 @@ It is not a compression method. Its value is in:
 \item \textbf{Interpretability} (sparse attention maps)
 \item \textbf{Potential compute savings} on sparse hardware
 \item \textbf{Attention pattern analysis}
-\end{itemize}
 
-\subsubsection{9.1.2 Takeaway 2: $\alpha$ = 1.5 is a Good Default}
+\end{itemize}
+\subsubsection{Takeaway 2: $\alpha$ = 1.5 is a Good Default}
 
 Empirically, $\alpha$ = 1.5 balances sparsity and accuracy. $\alpha$ = 2.0 (sparsemax) 
 is too sparse for stable training.
 
-\subsubsection{9.1.3 Takeaway 3: Attention Sinks Matter}
+\subsubsection{Takeaway 3: Attention Sinks Matter}
 
 Preserving the first 4 tokens is critical. Without them, accuracy drops by 
 4.5\%.
 
-\subsection{9.2 When to Use AdaSplash}
+\subsection{When to Use AdaSplash}
 
 \subsubsection{Recommended}
 
@@ -32,8 +32,8 @@ Preserving the first 4 tokens is critical. Without them, accuracy drops by
 \item \textbf{Attention pattern analysis} -- sparsity reveals structure
 \item \textbf{Sparse hardware deployment} -- 2:4 sparsity can be leveraged
 \item \textbf{Long-context inference} -- splash masking reduces KV cache
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
@@ -41,9 +41,9 @@ Preserving the first 4 tokens is critical. Without them, accuracy drops by
 \item \textbf{Latency-critical inference} -- bisection is slow
 \item \textbf{Extreme compression} -- use A3/AASVD instead
 \item \textbf{Simple classification} -- softmax already works
-\end{itemize}
 
-\subsection{9.3 Decision Flowchart}
+\end{itemize}
+\subsection{Decision Flowchart}
 
 \begin{lstlisting}
 Need size reduction? --- Yes --- Use A3/AASVD/Adaptive SVD
@@ -58,7 +58,7 @@ Need latency reduction? --- Yes --- Use quantized attention
 Consider AdaSplash for research
 \end{lstlisting}
 
-\subsection{9.4 Cost-Benefit Analysis}
+\subsection{Cost-Benefit Analysis}
 
 For DistilBERT on SST-2:
 
@@ -80,7 +80,7 @@ Attention sparsity & 0\% & 42\% & +40\% \\
 
 \textbf{Verdict.} AdaSplash trades size and latency for sparsity and interpretability.
 
-\subsection{9.5 Comparison with Published Methods}
+\subsection{Comparison with Published Methods}
 
 \begin{table}[H]
 \centering
@@ -93,12 +93,12 @@ Softmax & Baseline & 0\% & No & 1$\times$ \\
 Longformer & Local & 0\% & No & ~1$\times$ \\
 Performer & Kernel & +linear & No & ~1$\times$ \\
 Sparsemax & Activation & 0\% & Yes & ~5$\times$ \\
-**AdaSplash** & **Activation + Local** & **+1\%** & **Yes** & **~1.9$\times$** \\
+\textbf{AdaSplash} & \textbf{Activation + Local} & \textbf{+1\%} & \textbf{Yes} & \textbf{~1.9$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{9.6 Deployment Considerations}
+\subsection{Deployment Considerations}
 
 \subsubsection{Storage}
 AdaSplash increases storage slightly due to LoRA.
@@ -113,28 +113,30 @@ Sparse attention maps can be visualized directly.
 If the deployment target has 2:4 sparsity support (e.g., Ampere GPUs), 
 AdaSplash's sparse outputs can be exploited for actual speedup.
 
-\subsection{9.7 Open Questions}
+\subsection{Open Questions}
 
-1. \textbf{Fused kernels:} Would a Triton kernel for bisection speed it up?
-2. \textbf{Learned $\alpha$:} Would per-layer learned $\alpha$ help?
-3. \textbf{Sparse hardware:} Actual speedup on Ampere 2:4 sparsity?
-4. \textbf{Long context:} How does AdaSplash scale to L = 4096?
+\begin{enumerate}
+\item \textbf{Fused kernels:} Would a Triton kernel for bisection speed it up?
+\item \textbf{Learned $\alpha$:} Would per-layer learned $\alpha$ help?
+\item \textbf{Sparse hardware:} Actual speedup on Ampere 2:4 sparsity?
+\item \textbf{Long context:} How does AdaSplash scale to L = 4096?
 
-\subsection{9.8 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Interpretability:} Sparse attention for research
 \item \textbf{Attention analysis:} Easier to study patterns
 \item \textbf{Sparse hardware:} Potential for real speedup
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Not a compression method} -- may mislead
 \item \textbf{Slower inference}
 \item \textbf{Dual-use}
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.

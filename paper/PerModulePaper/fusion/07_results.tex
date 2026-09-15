@@ -1,6 +1,6 @@
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 accuracy (L = 128, short path).}
 
@@ -12,16 +12,16 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB \\
-DistilBERT & **FUSIONATTN** & **90.48** & -0.23 & 0.9052 & 67.74M & 192 MB \\
+DistilBERT & \textbf{FUSIONATTN} & \textbf{90.48} & -0.23 & 0.9052 & 67.74M & 192 MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
-RoBERTa & **FUSIONATTN** & **77.35** & -1.21 & 0.778 & 126.10M & 720 MB \\
+RoBERTa & \textbf{FUSIONATTN} & \textbf{77.35} & -1.21 & 0.778 & 126.10M & 720 MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
-GPT-2 & **FUSIONATTN** & **78.90** & -0.46 & 0.788 & 125.90M & 800 MB \\
+GPT-2 & \textbf{FUSIONATTN} & \textbf{78.90} & -0.46 & 0.788 & 125.90M & 800 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -39,7 +39,7 @@ GPT-2 & 124.4M & 125.90M & +1460804M \\
 
 \textbf{FUSIONATTN increases parameter count by ~1.17\%.}
 
-\subsection{7.3 Attention Path Analysis}
+\subsection{Attention Path Analysis}
 
 \textbf{Table 7.3: Path taken at different sequence lengths.}
 
@@ -52,7 +52,7 @@ GPT-2 & 124.4M & 125.90M & +1460804M \\
 \midrule
 32 & Short & Trivial \\
 64 & Short &  \\
-**128** & **Short (all models)** & **Test length** \\
+\textbf{128} & \textbf{Short (all models)} & \textbf{Test length} \\
 256 & Long & Not tested \\
 512 & Long & Not tested \\
 \bottomrule
@@ -62,7 +62,7 @@ GPT-2 & 124.4M & 125.90M & +1460804M \\
 \textbf{   Critical observation.} At $L = 128$, all experiments use the 
 \textbf{short path}. Sparsity is not exercised.
 
-\subsection{7.4 Ablation: Block Size}
+\subsection{Ablation: Block Size}
 
 \textbf{Table 7.4 (L=512 only, not tested at L=128).}
 
@@ -80,7 +80,7 @@ GPT-2 & 124.4M & 125.90M & +1460804M \\
 \end{tabular}
 \end{table}
 
-\subsection{7.5 Ablation: Top-K}
+\subsection{Ablation: Top-K}
 
 \textbf{Table 7.5 (L=512 only).}
 
@@ -98,7 +98,7 @@ GPT-2 & 124.4M & 125.90M & +1460804M \\
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \begin{table}[H]
 \centering
@@ -109,13 +109,13 @@ GPT-2 & 124.4M & 125.90M & +1460804M \\
 \midrule
 0 & 88.5 & 75.5 & 76.8 \\
 4 & 89.8 & 76.8 & 78.2 \\
-**16** & **90.48** & **77.35** & **78.90** \\
+\textbf{16} & \textbf{90.48} & \textbf{77.35} & \textbf{78.90} \\
 32 & 90.55 & 77.45 & 78.95 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \begin{table}[H]
 \centering
@@ -125,14 +125,14 @@ GPT-2 & 124.4M & 125.90M & +1460804M \\
 \textbf{Method} & \textbf{D acc} & \textbf{Params $\Delta$} & \textbf{Sparse?} & \textbf{Path at L=128} \\
 \midrule
 full & 90.71\% & 0 & No & -- \\
-`adasplash` & 90.25\% & +0.89\% & Yes ($\alpha$-entmax) & -- \\
-`nha` & 90.25\% & +0.89\% & No & -- \\
-**`fusion\_attn`** & **90.48** & **+1.17\%** & **Block** & **Short** \\
+\texttt{adasplash} & 90.25\% & +0.89\% & Yes ($\alpha$-entmax) & -- \\
+\texttt{nha} & 90.25\% & +0.89\% & No & -- \\
+\textbf{\texttt{fusion\_attn}} & \textbf{90.48} & \textbf{+1.17\%} & \textbf{Block} & \textbf{Short} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Accuracy:} matches baseline (short path).

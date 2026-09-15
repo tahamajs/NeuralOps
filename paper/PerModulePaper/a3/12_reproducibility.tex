@@ -1,7 +1,7 @@
 
-\section{12. Reproducibility Statement}
+\section{Reproducibility Statement}
 
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -11,7 +11,7 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Dependencies}
+\subsection{Dependencies}
 
 \begin{table}[H]
 \centering
@@ -29,7 +29,7 @@ pandas & 2.2.2 \\
 \end{tabular}
 \end{table}
 
-\subsection{12.3 Running A3}
+\subsection{Running A3}
 
 \subsubsection{Full Benchmark}
 
@@ -63,7 +63,7 @@ python Codes/framework/run_quality_sweep.py \
     --precision fp16
 \end{lstlisting}
 
-\subsection{12.4 Downloading Checkpoints}
+\subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
 from huggingface_hub import hf_hub_download
@@ -76,7 +76,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
     print(f"Downloaded {model} to {path}")
 \end{lstlisting}
 
-\subsection{12.5 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main Results)}
 
@@ -107,7 +107,7 @@ python run_all_4_a3.py --recalibrate_ln true  --output_suffix ln
 python run_all_4_a3.py --recalibrate_ln false --output_suffix noln
 \end{lstlisting}
 
-\subsection{12.6 Random Seeds}
+\subsection{Random Seeds}
 
 \begin{lstlisting}
 import random
@@ -123,7 +123,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 \end{lstlisting}
 
-\subsection{12.7 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
@@ -141,16 +141,16 @@ GPT-2 & 76.5\% $\pm$ 1\% & 4.5$\times$ \\
 
 Deviations >2\% suggest environmental differences.
 
-\subsection{12.8 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets} library
 \item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-a3}
 \item \textbf{Metrics:} \texttt{results/unified\_a3/*/summary.csv}
 \item \textbf{Logs:} \texttt{benchmark\_logs/a3\_*.log}
-\end{itemize}
 
-\subsection{12.9 Reproducibility Checks}
+\end{itemize}
+\subsection{Reproducibility Checks}
 
 Before running, verify:
 
@@ -163,7 +163,7 @@ print('CUDA ver:', torch.version.cuda)
 "
 \end{lstlisting}
 
-\subsection{12.10 Known Issues}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item Windows: \texttt{cp1256} codec issues; set \texttt{PYTHONIOENCODING=utf-8}

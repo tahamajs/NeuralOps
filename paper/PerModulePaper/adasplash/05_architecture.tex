@@ -1,7 +1,7 @@
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support Matrix}
+\subsection{Model Support Matrix}
 
 AdaSplash supports the following attention variants:
 
@@ -12,18 +12,18 @@ AdaSplash supports the following attention variants:
 \toprule
 \textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT & `MultiHeadSelfAttention` & No & No & No & No &  \\
-RoBERTa & `BertSelfAttention` & Yes & No & No & No &  \\
-GPT-2 & `GPT2Attention` & No & No & No & No &  \\
-Qwen3.5 & `Qwen3Attention` & No & Yes & Yes & No & partial \\
-T5 & `T5Attention` & No & No & No & Yes & not tested \\
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No & partial \\
+T5 & \texttt{T5Attention} & No & No & No & Yes & not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Extraction}
+\subsection{Weight Extraction}
 
-\subsubsection{5.2.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
 Direct extraction:
 
@@ -36,7 +36,7 @@ W_O = src.out_lin.weight
 
 \texttt{is\_nested\_encoder = False}. All four projections compressed.
 
-\subsubsection{5.2.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 Extract from \texttt{self}:
 
@@ -50,7 +50,7 @@ W_V = src.self.value.weight
 \texttt{is\_nested\_encoder = True}. During forward, \texttt{context} is returned without 
 \texttt{out\_proj}; the outer \texttt{BertSelfOutput.dense} applies its projection.
 
-\subsubsection{5.2.3 GPT-2 (Fused Conv1D)}
+\subsubsection{GPT-2 (Fused Conv1D)}
 
 Split the fused \texttt{c\_attn} weight:
 
@@ -62,7 +62,7 @@ W_O = src.c_proj.weight.T
 
 Handles the HuggingFace Conv1D layout \texttt{(in, out)}.
 
-\subsubsection{5.2.4 Qwen3.5 (GQA + RoPE)}
+\subsubsection{Qwen3.5 (GQA + RoPE)}
 
 Direct extraction with GQA awareness:
 
@@ -75,7 +75,7 @@ W_O = src.o_proj.weight
 
 RoPE applied after projection via \texttt{position\_embeddings}.
 
-\subsection{5.3 The `AdaSplashLinear` Module}
+\subsection{The `AdaSplashLinear` Module}
 
 \begin{lstlisting}
 class AdaSplashLinear(nn.Module):
@@ -113,7 +113,7 @@ class AdaSplashLinear(nn.Module):
         return out
 \end{lstlisting}
 
-\subsection{5.4 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 3:} Inject AdaSplash into a model
 \begin{lstlisting}
@@ -130,9 +130,9 @@ Output: M with attention replaced
 8: return M
 \end{lstlisting}
 
-\subsection{5.5 Handling Special Cases}
+\subsection{Handling Special Cases}
 
-\subsubsection{5.5.1 Attention Sinks}
+\subsubsection{Attention Sinks}
 
 For causal decoders, we preserve the first $S = 4$ tokens regardless of 
 splash mask:
@@ -141,7 +141,7 @@ splash mask:
 splash_local = ((dist >= 0) & (dist <= W)) | (k_idx < 4)
 \end{lstlisting}
 
-\subsubsection{5.5.2 GQA Expansion}
+\subsubsection{GQA Expansion}
 
 \begin{lstlisting}
 if self.kv_repeat > 1:
@@ -149,7 +149,7 @@ if self.kv_repeat > 1:
     v = repeat_kv(v, self.kv_repeat)
 \end{lstlisting}
 
-\subsubsection{5.5.3 RoPE}
+\subsubsection{RoPE}
 
 \begin{lstlisting}
 if position_embeddings is not None:
@@ -157,7 +157,7 @@ if position_embeddings is not None:
     q, k = apply_rotary_emb(q, k, cos, sin)
 \end{lstlisting}
 
-\subsubsection{5.5.4 Causal Masking}
+\subsubsection{Causal Masking}
 
 \begin{lstlisting}
 if is_decoder:
@@ -165,7 +165,7 @@ if is_decoder:
     logits = logits.masked_fill(~causal_tril, -10000)
 \end{lstlisting}
 
-\subsubsection{5.5.5 Combined Masking}
+\subsubsection{Combined Masking}
 
 The causal mask and splash mask are combined:
 
@@ -177,7 +177,7 @@ if is_decoder and W > 0:
     logits = logits.masked_fill(~causal_and_splash, -10000)
 \end{lstlisting}
 
-\subsection{5.6 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("adasplash")
@@ -186,7 +186,7 @@ class AdaSplashAttention(BaseAttention):
     ...
 \end{lstlisting}
 
-\subsection{5.7 Failure Modes and Fallbacks}
+\subsection{Failure Modes and Fallbacks}
 
 \begin{table}[H]
 \centering
@@ -195,16 +195,16 @@ class AdaSplashAttention(BaseAttention):
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & `copy\_weights` raises & Return None \\
-Shape mismatch & Assertion in `copy\_weights` & Skip layer \\
+Missing weights & \texttt{copy\_weights} raises & Return None \\
+Shape mismatch & Assertion in \texttt{copy\_weights} & Skip layer \\
 Near-zero Frobenius & Check < 1e-4 & Raise \\
-Entmax support empty & `sum(p) < 1e-7` & Softmax fallback \\
-NaN in scores & `torch.isnan` & Mask to -10000 \\
+Entmax support empty & \texttt{sum(p) < 1e-7} & Softmax fallback \\
+NaN in scores & \texttt{torch.isnan} & Mask to -10000 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.8 Numerical Precision}
+\subsection{Numerical Precision}
 
 \begin{table}[H]
 \centering
@@ -222,14 +222,14 @@ LoRA & Model dtype \\
 \end{tabular}
 \end{table}
 
-\subsection{5.9 Compatibility}
+\subsection{Compatibility}
 
-\subsubsection{5.9.1 Encoder-Decoder Models}
+\subsubsection{Encoder-Decoder Models}
 
 For T5, the same class handles encoder (bidirectional, no splash) and decoder 
 (causal, splash). The \texttt{is\_decoder} flag switches behavior.
 
-\subsubsection{5.9.2 LoRA Wrappers}
+\subsubsection{LoRA Wrappers}
 
 If the source module is a \texttt{LoRALinear}, AdaSplash unwraps to \texttt{base\_layer} and 
 preserves the outer LoRA.

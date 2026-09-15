@@ -181,8 +181,8 @@ Qwen3.5 with GQA was partially tested. Full verification pending.
 42 & 88.0 & 74.0 & 75.5 \\
 123 & 87.8 & 73.8 & 75.3 \\
 456 & 88.1 & 74.1 & 75.6 \\
-**Mean** & **88.0** & **74.0** & **75.5** \\
-**Std** & **0.15** & **0.15** & **0.15** \\
+\textbf{Mean} & \textbf{88.0} & \textbf{74.0} & \textbf{75.5} \\
+\textbf{Std} & \textbf{0.15} & \textbf{0.15} & \textbf{0.15} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -192,28 +192,34 @@ are representative.
 
 \subsection{D.7 Lessons Learned}
 
-1. \textbf{Freeze base factors} -- never train them.
-2. \textbf{Zero-init one adapter factor} -- both zero or both random fails.
-3. \textbf{$\tau$=0.92 is robust} -- no need to tune extensively.
-4. \textbf{$r_L=16$ is sufficient} -- diminishing returns above.
-5. \textbf{No calibration is a feature} -- enables zero-data settings.
-6. \textbf{Per-layer rank matters} -- fixed rank loses ~1.5\% accuracy.
+\begin{enumerate}
+\item \textbf{Freeze base factors} -- never train them.
+\item \textbf{Zero-init one adapter factor} -- both zero or both random fails.
+\item \textbf{$\tau$=0.92 is robust} -- no need to tune extensively.
+\item \textbf{$r_L=16$ is sufficient} -- diminishing returns above.
+\item \textbf{No calibration is a feature} -- enables zero-data settings.
+\item \textbf{Per-layer rank matters} -- fixed rank loses ~1.5\% accuracy.
 
+\end{enumerate}
 \subsection{D.8 Recommendations}
 
 Based on our negative results:
 
-1. Start with default hyperparameters ($\tau$=0.92, r\_L=16).
-2. Tune $\tau$ only if accuracy is unacceptable.
-3. Increase r\_L if recovery plateaus below target.
-4. Keep base frozen.
-5. Verify on one model before full sweep.
+\begin{enumerate}
+\item Start with default hyperparameters ($\tau$=0.92, r\_L=16).
+\item Tune $\tau$ only if accuracy is unacceptable.
+\item Increase r\_L if recovery plateaus below target.
+\item Keep base frozen.
+\item Verify on one model before full sweep.
 
+\end{enumerate}
 \subsection{D.9 Unresolved Questions}
 
-1. \textbf{Optimal $\tau$ schedule:} Could per-layer $\tau$ beat uniform?
-2. \textbf{Combined with A3/AASVD:} Would activation-aware rank beat 
-   energy-thresholded?
-3. \textbf{Interaction with quantization:} INT8 + Adaptive SVD?
-4. \textbf{Learning rate schedule:} Would cosine scheduling help?
-5. \textbf{Multi-task calibration:} Does rank transfer across tasks?
+\begin{enumerate}
+\item \textbf{Optimal $\tau$ schedule:} Could per-layer $\tau$ beat uniform?
+\item \textbf{Combined with A3/AASVD:} Would activation-aware rank beat
+  energy-thresholded?
+\item \textbf{Interaction with quantization:} INT8 + Adaptive SVD?
+\item \textbf{Learning rate schedule:} Would cosine scheduling help?
+\item \textbf{Multi-task calibration:} Does rank transfer across tasks?
+\end{enumerate}

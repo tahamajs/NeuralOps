@@ -1,7 +1,7 @@
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Sparse Attention Activations}
+\subsection{Sparse Attention Activations}
 
 \textbf{Sparsemax.} Martins \& Astudillo (2016) introduce sparsemax, the $\alpha = 2$ 
 case of the entmax family. Sparsemax projects scores onto the simplex, 
@@ -20,7 +20,7 @@ for simplicity, but the mechanism supports learned $\alpha$.
 \textbf{Fused entmax.} Recent implementations (Zamora et al., 2024) provide 
 fused CUDA kernels for entmax. Our implementation is a reference bisection.
 
-\subsection{2.2 Local and Sliding-Window Attention}
+\subsection{Local and Sliding-Window Attention}
 
 \textbf{Longformer.} Beltagy et al. (2020) introduce a sliding-window attention 
 of width $W$, giving $\mathcal{O}(L \cdot W)$ complexity. AdaSplash uses the 
@@ -35,7 +35,7 @@ fixed block size. Similar idea, different primitive.
 \textbf{Sparse Transformer.} Child et al. (2019) use strided and fixed attention 
 patterns. Orthogonal to our approach.
 
-\subsection{2.3 Attention Sinks}
+\subsection{Attention Sinks}
 
 \textbf{StreamingLLM.} Xiao et al. (2024) discover that preserving the first 
 few tokens ("attention sinks") is critical for stability in streaming 
@@ -45,7 +45,7 @@ inference. AdaSplash preserves the first 4 tokens by default.
 for KV-cache eviction. AdaSplash uses attention sinks for a different purpose: 
 to preserve stability under local windowing.
 
-\subsection{2.4 Parameter-Efficient Fine-Tuning}
+\subsection{Parameter-Efficient Fine-Tuning}
 
 \textbf{LoRA.} Hu et al. (2021) add trainable rank-$r_L$ updates $B A$ with 
 $B = 0$. AdaSplash uses standard LoRA for task adaptation.
@@ -56,7 +56,7 @@ Orthogonal extension.
 \textbf{PiSSA.} Meng et al. (2024) initialize LoRA adapters with principal 
 components. Compatible with AdaSplash.
 
-\subsection{2.5 Efficient Attention Mechanisms}
+\subsection{Efficient Attention Mechanisms}
 
 \begin{table}[H]
 \centering
@@ -71,30 +71,32 @@ BigBird & Local + random & $\mathcal{O}(L W)$ & No & No \\
 Sparsemax & Activation & $\mathcal{O}(L^2)$ & Yes & No \\
 Entmax & Activation & $\mathcal{O}(L^2)$ & Yes & No \\
 StreamingLLM & Sink + window & $\mathcal{O}(L W)$ & No & Yes \\
-**AdaSplash** & **Sink + window + entmax** & **$\mathcal{O}(L W)$** & **Yes** & **Yes** \\
+\textbf{AdaSplash} & \textbf{Sink + window + entmax} & \textbf{$\mathcal{O}(L W)$} & \textbf{Yes} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{2.6 Position of Our Work}
+\subsection{Position of Our Work}
 
 AdaSplash is unique in combining:
-1. \textbf{$\alpha$-entmax sparsity} at the activation level (not mask level).
-2. \textbf{Local splash radius} with sink preservation.
-3. \textbf{Multi-architecture support} including GQA and RoPE.
-4. \textbf{Frozen base + LoRA} for parameter-efficient adaptation.
+\begin{enumerate}
+\item \textbf{$\alpha$-entmax sparsity} at the activation level (not mask level).
+\item \textbf{Local splash radius} with sink preservation.
+\item \textbf{Multi-architecture support} including GQA and RoPE.
+\item \textbf{Frozen base + LoRA} for parameter-efficient adaptation.
 
+\end{enumerate}
 The closest prior work is the \textbf{combination} of Longformer (local window) 
 with $\alpha$-entmax (sparsity). To our knowledge, no published work evaluates this 
 specific combination on small pretrained models with LoRA recovery.
 
-\subsection{2.7 Important Distinction}
+\subsection{Important Distinction}
 
 Unlike low-rank compression methods (A3, AASVD, Adaptive SVD), AdaSplash:
 \begin{itemize}
 \item Does \textbf{not} reduce parameter count.
 \item Does \textbf{not} compress weights.
 \item \textbf{Increases} parameter count by ~0.88\% via LoRA.
-\end{itemize}
 
+\end{itemize}
 Its value is in \textbf{sparsity} and \textbf{interpretability}, not size.

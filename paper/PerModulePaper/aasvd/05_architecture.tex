@@ -1,7 +1,7 @@
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
@@ -10,10 +10,10 @@
 \toprule
 \textbf{Architecture} & \textbf{Target layers} & \textbf{Conv1D?} & \textbf{Nested?} \\
 \midrule
-DistilBERT-base & `q\_lin, k\_lin, v\_lin, out\_lin` & No & No \\
-RoBERTa-base & `query, key, value, output.dense` & No & Yes \\
-GPT-2 & `c\_attn, c\_proj` & Yes & No \\
-Qwen3.5-0.8B & `q\_proj, k\_proj, v\_proj, o\_proj` & No & No \\
+DistilBERT-base & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} & No & No \\
+RoBERTa-base & \texttt{query, key, value, output.dense} & No & Yes \\
+GPT-2 & \texttt{c\_attn, c\_proj} & Yes & No \\
+Qwen3.5-0.8B & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} & No & No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -22,7 +22,7 @@ By default, AASVD targets \textbf{attention projections only}
 (\texttt{target\_attention\_only = True}). Set \texttt{target\_attention\_only = False} to 
 also compress FFN layers.
 
-\subsection{5.2 Layer Targeting Rules}
+\subsection{Layer Targeting Rules}
 
 AASVD protects the following layers from compression:
 
@@ -33,19 +33,19 @@ AASVD protects the following layers from compression:
 \toprule
 \textbf{Pattern} & \textbf{Reason} \\
 \midrule
-`lm\_head` & Output projection tied to embeddings \\
-`classifier` & Task-specific head, small \\
-`head` & Same as above \\
-`output\_layer` & Task-specific \\
-`score` & GPT-2 classification head \\
-`pooler` & BERT pooler, not a projection \\
+\texttt{lm\_head} & Output projection tied to embeddings \\
+\texttt{classifier} & Task-specific head, small \\
+\texttt{head} & Same as above \\
+\texttt{output\_layer} & Task-specific \\
+\texttt{score} & GPT-2 classification head \\
+\texttt{pooler} & BERT pooler, not a projection \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 The default targeting uses \texttt{should\_compress\_linear} for additional checks.
 
-\subsection{5.3 Handling Conv1D (GPT-2)}
+\subsection{Handling Conv1D (GPT-2)}
 
 GPT-2 uses HuggingFace's \texttt{Conv1D}, which stores weights as \texttt{(in, out)} 
 instead of \texttt{(out, in)}:
@@ -73,7 +73,7 @@ The transposed weight is used throughout. The factorized \texttt{SVDLinear}
 receives the same input/output shapes as the original Conv1D, so the 
 rest of the model's forward pass works unchanged.
 
-\subsection{5.4 Handling LoRA-Wrapped Modules}
+\subsection{Handling LoRA-Wrapped Modules}
 
 When the model has been wrapped with LoRA adapters (\texttt{LoRALinear}), AASVD 
 extracts the \texttt{base\_layer}:
@@ -86,7 +86,7 @@ The factorized layer replaces \texttt{module.base\_layer}, preserving the outer
 LoRA parameters. This ensures that any existing LoRA adapters remain 
 attached and trainable.
 
-\subsection{5.5 Replacing a Layer}
+\subsection{Replacing a Layer}
 
 Replacement uses \texttt{replace\_module} from the framework:
 
@@ -100,7 +100,7 @@ else:
 After replacement, all parameters in fallback layers are frozen 
 (\texttt{requires\_grad = False}) to prevent accidental training.
 
-\subsection{5.6 Causality and Streaming}
+\subsection{Causality and Streaming}
 
 For decoder models (GPT-2, Qwen), AASVD's calibration is compatible with 
 causal forward passes:
@@ -108,13 +108,13 @@ causal forward passes:
 \begin{itemize}
 \item Forward hooks fire during the standard causal forward pass.
 \item No future-token leakage occurs because the model's own attention
-\end{itemize}
   masking is respected.
 
+\end{itemize}
 \textbf{Verification.} We check that gradient of output at position $i$ w.r.t. 
 input at position $j > i$ is zero, both before and after injection.
 
-\subsection{5.7 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject AASVD into a full model
 \begin{lstlisting}
@@ -157,7 +157,7 @@ Output: compressed model M'
 33: return M'
 \end{lstlisting}
 
-\subsection{5.8 The `SVDLinear` Module}
+\subsection{The `SVDLinear` Module}
 
 \begin{lstlisting}
 class SVDLinear(nn.Module):
@@ -181,20 +181,22 @@ class SVDLinear(nn.Module):
         return out * self.output_scale
 \end{lstlisting}
 
-\subsection{5.9 Interaction with LoRA Recovery}
+\subsection{Interaction with LoRA Recovery}
 
 After AASVD compression, the model is passed to the LoRA recovery pipeline:
 
-1. \textbf{AASVD} compresses $\to$ factorized \texttt{SVDLinear} layers.
-2. \textbf{Framework} attaches LoRA adapters (\texttt{lora\_A}, \texttt{lora\_B}).
-3. \textbf{Recovery} trains only LoRA parameters.
-4. \textbf{Evaluation} uses the fine-tuned model.
+\begin{enumerate}
+\item \textbf{AASVD} compresses $\to$ factorized \texttt{SVDLinear} layers.
+\item \textbf{Framework} attaches LoRA adapters (\texttt{lora\_A}, \texttt{lora\_B}).
+\item \textbf{Recovery} trains only LoRA parameters.
+\item \textbf{Evaluation} uses the fine-tuned model.
 
+\end{enumerate}
 \textbf{Note.} AASVD can also instantiate LoRA adapters \textit{inside} the \texttt{SVDLinear} 
 module (via the \texttt{lora\_rank} parameter). This is used when the framework 
 expects LoRA to be part of the compression module.
 
-\subsection{5.10 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @COMPRESSOR_REGISTRY.register("aasvd")
@@ -204,4 +206,4 @@ class AASVDCompressor(BaseCompressor):
     ...
 \end{lstlisting}
 
-\subsection{5.11 Failure Modes and Fallbacks}
+\subsection{Failure Modes and Fallbacks}

@@ -1,7 +1,7 @@
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support Matrix}
+\subsection{Model Support Matrix}
 
 Adaptive SVD supports the following attention variants:
 
@@ -12,18 +12,18 @@ Adaptive SVD supports the following attention variants:
 \toprule
 \textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
 \midrule
-DistilBERT & `MultiHeadSelfAttention` & No & No & No & No &  \\
-RoBERTa & `BertSelfAttention` & Yes & No & No & No &  \\
-GPT-2 & `GPT2Attention` & No & No & No & No &  \\
-Qwen3.5 & `Qwen3Attention` & No & Yes & Yes & No & partial \\
-T5 & `T5Attention` & No & No & No & **Yes** & not tested \\
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No & partial \\
+T5 & \texttt{T5Attention} & No & No & No & \textbf{Yes} & not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Extraction}
+\subsection{Weight Extraction}
 
-\subsubsection{5.2.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
 Direct extraction:
 
@@ -36,7 +36,7 @@ W_O = src.out_lin.weight
 
 All four projections are inside \texttt{MultiHeadSelfAttention}. \texttt{is\_nested\_encoder = False}.
 
-\subsubsection{5.2.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 Extract from inner \texttt{BertSelfAttention}:
 
@@ -54,7 +54,7 @@ applies its own (unchanged) projection.
 \textbf{Consequence.} In RoBERTa, the output projection $W_O$ is \textbf{not compressed}, 
 only $W_Q, W_K, W_V$.
 
-\subsubsection{5.2.3 GPT-2 (Fused Conv1D)}
+\subsubsection{GPT-2 (Fused Conv1D)}
 
 GPT-2 fuses Q, K, V into a single \texttt{c\_attn} Conv1D:
 
@@ -67,7 +67,7 @@ W_O = src.c_proj.weight.T
 The transpose handles the HuggingFace Conv1D layout: it stores weights as 
 \texttt{(in\_features, out\_features)} instead of the standard \texttt{(out\_features, in\_features)}.
 
-\subsubsection{5.2.4 T5 (Relative Attention Bias)}
+\subsubsection{T5 (Relative Attention Bias)}
 
 T5 uses \texttt{relative\_attention\_bias} (an \texttt{nn.Embedding}) instead of learned 
 position embeddings:
@@ -81,7 +81,7 @@ The bias is preserved as a separate module and added to attention scores
 in forward. The bucket function handles bidirectional (encoder) and causal 
 (decoder) modes.
 
-\subsubsection{5.2.5 Qwen3.5 (GQA + RoPE)}
+\subsubsection{Qwen3.5 (GQA + RoPE)}
 
 Qwen3.5 uses GQA with $H_{kv} < H$:
 
@@ -98,7 +98,7 @@ RoPE is applied after projection:
 Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 \end{lstlisting}
 
-\subsection{5.3 The `AdaptiveSVDLinear` Module}
+\subsection{The `AdaptiveSVDLinear` Module}
 
 \begin{lstlisting}
 class AdaptiveSVDLinear(nn.Module):
@@ -144,7 +144,7 @@ class AdaptiveSVDLinear(nn.Module):
 
 \textbf{Parameter count:} $r_P(d_\text{in} + d_\text{out}) + r_L(d_\text{in} + d_\text{out}) + d_\text{out}$.
 
-\subsection{5.4 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject Adaptive SVD into a full model
 \begin{lstlisting}
@@ -170,17 +170,17 @@ Output: M with attention replaced
 \toprule
 \textbf{Model} & \textbf{Layer path} & \textbf{Attention path} \\
 \midrule
-DistilBERT & `distilbert.transformer.layer[i]` & `.attention` \\
-RoBERTa & `roberta.encoder.layer[i]` & `.attention.self` \\
-GPT-2 & `transformer.h[i]` & `.attn` \\
-T5 & `encoder.block[i].layer[0]` & `.SelfAttention` \\
+DistilBERT & \texttt{distilbert.transformer.layer[i]} & \texttt{.attention} \\
+RoBERTa & \texttt{roberta.encoder.layer[i]} & \texttt{.attention.self} \\
+GPT-2 & \texttt{transformer.h[i]} & \texttt{.attn} \\
+T5 & \texttt{encoder.block[i].layer[0]} & \texttt{.SelfAttention} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.5 Handling Special Cases}
+\subsection{Handling Special Cases}
 
-\subsubsection{5.5.1 T5 Relative Attention Bias}
+\subsubsection{T5 Relative Attention Bias}
 
 Forward:
 
@@ -193,7 +193,7 @@ if position_bias is None and self.has_relative_attention_bias:
 The \texttt{compute\_bias} function uses \texttt{\_relative\_position\_bucket} to map relative 
 positions to buckets, then looks up the bias embedding.
 
-\subsubsection{5.5.2 GQA Expansion}
+\subsubsection{GQA Expansion}
 
 \begin{lstlisting}
 if self.kv_repeat > 1:
@@ -201,7 +201,7 @@ if self.kv_repeat > 1:
     V = repeat_kv(V, self.kv_repeat)
 \end{lstlisting}
 
-\subsubsection{5.5.3 RoPE}
+\subsubsection{RoPE}
 
 \begin{lstlisting}
 if position_embeddings is not None:
@@ -209,7 +209,7 @@ if position_embeddings is not None:
     Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 \end{lstlisting}
 
-\subsubsection{5.5.4 Causal Masking}
+\subsubsection{Causal Masking}
 
 \begin{lstlisting}
 if is_causal:
@@ -217,7 +217,7 @@ if is_causal:
     scores = scores.masked_fill(~causal_tril.unsqueeze(0).unsqueeze(0), -10000.0)
 \end{lstlisting}
 
-\subsection{5.6 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("adaptive_svd_attn")
@@ -227,7 +227,7 @@ class AdaptiveSVDAttention(BaseAttention):
     ...
 \end{lstlisting}
 
-\subsection{5.7 Failure Modes and Fallbacks}
+\subsection{Failure Modes and Fallbacks}
 
 \begin{table}[H]
 \centering
@@ -236,16 +236,16 @@ class AdaptiveSVDAttention(BaseAttention):
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & `copy\_weights` raises & Return None \\
+Missing weights & \texttt{copy\_weights} raises & Return None \\
 Shape mismatch & Assertion & Skip layer \\
 Near-zero Frobenius & Check < 1e-4 & Skip layer \\
-NaN in SVD & `torch.isnan` & Fallback \\
+NaN in SVD & \texttt{torch.isnan} & Fallback \\
 T5 bias mismatch & Embedding shape & Skip \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.8 Numerical Precision}
+\subsection{Numerical Precision}
 
 \begin{table}[H]
 \centering
@@ -262,9 +262,9 @@ Adapter init & FP32 then cast \\
 \end{tabular}
 \end{table}
 
-\subsection{5.9 Compatibility}
+\subsection{Compatibility}
 
-\subsubsection{5.9.1 LoRA Wrappers}
+\subsubsection{LoRA Wrappers}
 
 If the source module is a \texttt{LoRALinear} wrapper, Adaptive SVD extracts the 
 inner \texttt{base\_layer} for SVD and preserves the outer LoRA parameters:
@@ -273,7 +273,7 @@ inner \texttt{base\_layer} for SVD and preserves the outer LoRA parameters:
 target_mod = getattr(module, "base_layer", module)
 \end{lstlisting}
 
-\subsubsection{5.9.2 Encoder-Decoder}
+\subsubsection{Encoder-Decoder}
 
 For T5, the same \texttt{AdaptiveSVDAttention} is used in both encoder and decoder 
 blocks. The decoder side has \texttt{is\_decoder = True}, which enables causal masking.

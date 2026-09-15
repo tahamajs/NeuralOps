@@ -1,15 +1,17 @@
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 ClusterFormer replaces the standard attention operation with four 
 components:
 
-1. \textbf{Fast differentiable K-means} over queries ( 4.2).
-2. \textbf{Centroid-to-key cross-attention} ( 4.3).
-3. \textbf{Soft assignment with learned temperature} ( 4.4).
-4. \textbf{Local sliding window residual} ( 4.5).
+\begin{enumerate}
+\item \textbf{Fast differentiable K-means} over queries ( 4.2).
+\item \textbf{Centroid-to-key cross-attention} ( 4.3).
+\item \textbf{Soft assignment with learned temperature} ( 4.4).
+\item \textbf{Local sliding window residual} ( 4.5).
 
+\end{enumerate}
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
@@ -51,23 +53,25 @@ components:
                   +--------+
 \end{lstlisting}
 
-\subsection{4.2 Phase 1: Fast Differentiable K-Means}
+\subsection{Phase 1: Fast Differentiable K-Means}
 
-\subsubsection{4.2.1 Initialization}
+\subsubsection{Initialization}
 
 Given queries $Q \in \mathbb{R}^{B \times H \times L \times d_h}$, we need 
 $K$ initial centroids. Padding tokens must be excluded.
 
 \textbf{Algorithm.} Given a valid-token mask $m \in \{0, 1\}^{B \times L}$:
 
-1. Compute the rank of each valid token: $r_i = \sum_{j \leq i} m_j - 1$.
-2. Compute target ranks: $t_k = \lfloor k \cdot N_\text{valid} / K \rfloor$ 
-   for $k = 0, \dots, K-1$.
-3. For each centroid $k$, pick the valid token whose rank is closest to $t_k$.
+\begin{enumerate}
+\item Compute the rank of each valid token: $r_i = \sum_{j \leq i} m_j - 1$.
+\item Compute target ranks: $t_k = \lfloor k \cdot N_\text{valid} / K \rfloor$
+  for $k = 0, \dots, K-1$.
+\item For each centroid $k$, pick the valid token whose rank is closest to $t_k$.
 
+\end{enumerate}
 This spreads initial centroids uniformly across the valid sequence.
 
-\subsubsection{4.2.2 Lloyd Iterations}
+\subsubsection{Lloyd Iterations}
 
 We run \textbf{3 iterations} of standard Lloyd's algorithm:
 
@@ -88,7 +92,7 @@ C_{b,h,k} = \frac{\sum_{i: a_{b,h,i} = k} Q_{b,h,i}}{\sum_{i: a_{b,h,i} = k} 1}
 Counts are clamped to $\ge$1 to avoid division by zero. Empty clusters keep 
 their previous centroid.
 
-\subsubsection{4.2.3 Why 3 Iterations?}
+\subsubsection{Why 3 Iterations?}
 
 Empirically, 3 iterations are enough for attention clustering:
 
@@ -96,9 +100,9 @@ Empirically, 3 iterations are enough for attention clustering:
 \item More iterations increase cost $\mathcal{O}(K L d)$ per iteration.
 \item The soft-assignment step (Phase 4) corrects for imperfect centroids.
 \item We ablate this in Section 7.6.
-\end{itemize}
 
-\subsection{4.3 Phase 2: Centroid-to-Key Cross-Attention}
+\end{itemize}
+\subsection{Phase 2: Centroid-to-Key Cross-Attention}
 
 For each centroid $C_k$, compute attention to all keys:
 
@@ -124,7 +128,7 @@ V_{\text{cent}, b,h,k} = \sum_j \alpha_{b,h,k,j} V_{b,h,j}
 \textbf{Causality.} For decoders, we apply a causal mask by construction: 
 scores are restricted to $j \leq$ some threshold. See Section 5.4.
 
-\subsection{4.4 Phase 3: Soft Assignment with Temperature}
+\subsection{Phase 3: Soft Assignment with Temperature}
 
 Each query is assigned to centroids via soft attention:
 
@@ -149,7 +153,7 @@ $\tau = 0.1$ and let recovery training learn the optimal value.
 \textbf{Empty clusters.} If a cluster has zero assigned tokens, its assignment 
 logit is masked to $-\infty$, ensuring no query attends to it.
 
-\subsection{4.5 Phase 4: Local Sliding Window Residual}
+\subsection{Phase 4: Local Sliding Window Residual}
 
 Clustering captures global structure but can miss fine-grained local 
 dependencies. We add a sliding-window attention branch:
@@ -166,7 +170,7 @@ dependencies. We add a sliding-window attention branch:
 
 \textbf{Complexity.} $\mathcal{O}(L \cdot W \cdot d_h)$.
 
-\subsubsection{4.5.1 Blending}
+\subsubsection{Blending}
 
 The final output is:
 
@@ -181,7 +185,7 @@ where $\alpha \in \mathbb{R}$ is a \textbf{learnable scalar} initialized to 0
 \textbf{Why sigmoid?} Enforces $\alpha_\text{blend} \in (0, 1)$, avoiding 
 negative or >1 weights.
 
-\subsection{4.6 The Full Algorithm}
+\subsection{The Full Algorithm}
 
 \textbf{Algorithm 1:} ClusterFormer forward pass
 \begin{lstlisting}
@@ -226,9 +230,9 @@ Output: Y, attn_weights
 36: return Y_out
 \end{lstlisting}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Complexity Analysis}
 
-\subsubsection{4.7.1 Time Complexity}
+\subsubsection{Time Complexity}
 
 \begin{table}[H]
 \centering
@@ -243,14 +247,14 @@ Centroid-to-key & $\mathcal{O}(K L d_h)$ \\
 Soft assignment & $\mathcal{O}(K L d_h)$ \\
 Local window & $\mathcal{O}(L W d_h)$ \\
 Output projection & $\mathcal{O}(L d^2)$ \\
-**Total** & $\mathcal{O}(L d^2 + L K d_h + L W d_h)$ \\
+\textbf{Total} & $\mathcal{O}(L d^2 + L K d_h + L W d_h)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 For $K, W \ll L$, this is effectively \textbf{linear in $L$}.
 
-\subsubsection{4.7.2 Comparison with Baseline}
+\subsubsection{Comparison with Baseline}
 
 \begin{table}[H]
 \centering
@@ -261,13 +265,13 @@ For $K, W \ll L$, this is effectively \textbf{linear in $L$}.
 \midrule
 Baseline & $\mathcal{O}(L^2 d_h)$ \\
 ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d_h)$ \\
-**Reduction at $L=128$** & **$\approx 2.7\times$** \\
-**Reduction at $L=512$** & **$\approx 10.7\times$** \\
+\textbf{Reduction at $L=128$} & \textbf{$\approx 2.7\times$} \\
+\textbf{Reduction at $L=512$} & \textbf{$\approx 10.7\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsubsection{4.7.3 Parameter Count}
+\subsubsection{Parameter Count}
 
 \begin{table}[H]
 \centering
@@ -279,8 +283,8 @@ ClusterFormer ($K=16, W=32$) & $\mathcal{O}(L \cdot 48 \cdot d_h)$ \\
 LoRA ($r_L=16$) & $4 \times r_L \times d$ per layer \\
 Learnable temperature & 1 \\
 Learnable blend & 1 \\
-**Per layer** & $4 r_L d + 2$ \\
-**Total ($N_l$ layers)** & $4 r_L d N_l + 2 N_l$ \\
+\textbf{Per layer} & $4 r_L d + 2$ \\
+\textbf{Total ($N_l$ layers)} & $4 r_L d N_l + 2 N_l$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -290,14 +294,14 @@ For DistilBERT ($d=768$, $r_L=16$, $N_l=6$): \textbf{+294,916 params}.
 \textbf{ClusterFormer is not a compression method.} Parameter count increases 
 by \textbf{0.88\%}.
 
-\subsection{4.8 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.8.1 K-Means Convergence}
+\subsubsection{K-Means Convergence}
 
 Lloyd's algorithm monotonically decreases the objective (3.3) and converges 
 in finite iterations. We use 3 iterations as a practical approximation.
 
-\subsubsection{4.8.2 Complexity Proof}
+\subsubsection{Complexity Proof}
 
 \textbf{Claim.} ClusterFormer's attention cost is $\mathcal{O}(K L d_h)$.
 
@@ -305,20 +309,16 @@ in finite iterations. We use 3 iterations as a practical approximation.
 
 \begin{itemize}
 \item K-means: each iteration is $\mathcal{O}(L K d_h)$ via cdist. Three
-\end{itemize}
   iterations = $\mathcal{O}(3 L K d_h)$.
-\begin{itemize}
 \item Centroid-to-key: matrix product of $(K \times d_h)$ and $(d_h \times L)$
-\end{itemize}
   is $\mathcal{O}(K L d_h)$.
-\begin{itemize}
 \item Soft assignment: product of $(L \times d_h)$ and $(d_h \times K)$ is
-\end{itemize}
   $\mathcal{O}(L K d_h)$.
 
+\end{itemize}
 Sum is $\mathcal{O}(L K d_h)$. $\square$
 
-\subsubsection{4.8.3 Approximation vs Exactness}
+\subsubsection{Approximation vs Exactness}
 
 Unlike Performer/Linformer, ClusterFormer is \textbf{exact} for the attention 
 distribution over centroids. It approximates the attention over tokens by 
@@ -332,7 +332,7 @@ distortion:
 
 See Appendix A.5 for details.
 
-\subsection{4.9 Hyperparameter Guidance}
+\subsection{Hyperparameter Guidance}
 
 \begin{table}[H]
 \centering

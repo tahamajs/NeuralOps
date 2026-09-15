@@ -1,41 +1,41 @@
-\section{9. Discussion}
+\section{Discussion}
 
-\subsection{9.1 Key Takeaways}
+\subsection{Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Step-0 Preservation is Effective}
+\subsubsection{Takeaway 1: Step-0 Preservation is Effective}
 
 The three-part mechanism (zero-init + negative gate + frozen base) produces 
 exact step-0 equivalence with the pretrained model. This is a general 
 technique applicable to any post-hoc capacity expansion.
 
-\subsubsection{9.1.2 Takeaway 2: Parameter Cost is High}
+\subsubsection{Takeaway 2: Parameter Cost is High}
 
 Adding 8 experts per layer increases parameter count by ~350\%. 
 This is inherent to MoE: $O(E \cdot d^2)$ extra parameters per layer.
 
-\subsubsection{9.1.3 Takeaway 3: Not a Compression Method}
+\subsubsection{Takeaway 3: Not a Compression Method}
 
 BAM-UMoE is a \textbf{capacity expansion} method. It should not be compared with 
 A3, AASVD, Adaptive SVD, or other compression methods on parameter count.
 
-\subsection{9.2 When to Use BAM-UMoE}
+\subsection{When to Use BAM-UMoE}
 
 \subsubsection{Recommended}
 \begin{itemize}
 \item \textbf{Capacity expansion} on a pretrained model
 \item \textbf{Multi-task learning} (experts specialize)
 \item \textbf{Research on post-hoc MoE}
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 \begin{itemize}
 \item \textbf{Model size reduction} -- use compression methods
 \item \textbf{Latency-critical} -- MoE adds compute
 \item \textbf{VRAM-constrained} -- MoE increases VRAM
 \item \textbf{Simple classification} -- overkill
-\end{itemize}
 
-\subsection{9.3 Cost-Benefit Analysis}
+\end{itemize}
+\subsection{Cost-Benefit Analysis}
 
 \begin{table}[H]
 \centering
@@ -52,7 +52,7 @@ Time & 1.90 s & 4.5 s & 2.4$\times$ \\
 \end{tabular}
 \end{table}
 
-\subsection{9.4 Comparison with Published Methods}
+\subsection{Comparison with Published Methods}
 
 \begin{table}[H]
 \centering
@@ -63,31 +63,33 @@ Time & 1.90 s & 4.5 s & 2.4$\times$ \\
 \midrule
 LoRA (r=16) & Adapter & +0.6M & 88.9 \\
 Full fine-tune & Retrain & 0 & 90.9 \\
-**BAM-UMoE** & **Capacity** & **+226M** & **89.5** \\
+\textbf{BAM-UMoE} & \textbf{Capacity} & \textbf{+226M} & \textbf{89.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Open Questions}
+\subsection{Open Questions}
 
-1. \textbf{Optimal E and k} for different tasks?
-2. \textbf{Interaction with compression} -- can BAM-UMoE be combined with A3?
-3. \textbf{Sparse MoE} -- would 1-expert-per-token reduce cost?
-4. \textbf{Long context} -- does MoE help?
+\begin{enumerate}
+\item \textbf{Optimal E and k} for different tasks?
+\item \textbf{Interaction with compression} -- can BAM-UMoE be combined with A3?
+\item \textbf{Sparse MoE} -- would 1-expert-per-token reduce cost?
+\item \textbf{Long context} -- does MoE help?
 
-\subsection{9.6 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Capacity expansion} research
 \item \textbf{Multi-task learning} potential
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Parameter overhead} -- not for edge
 \item \textbf{Compute overhead} -- not for latency-critical
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~20 GPU-hours, ~{{CO2}} kg CO$_2$eq.

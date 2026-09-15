@@ -1,7 +1,7 @@
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Low-Rank Matrix Factorization}
+\subsection{Low-Rank Matrix Factorization}
 
 \textbf{Classical SVD.} The Eckart--Young theorem (Eckart \& Young, 1936) guarantees 
 that the best rank-$r$ approximation of $W$ in Frobenius norm is the truncated 
@@ -24,35 +24,35 @@ study.
 (2003) study weighted variants of low-rank approximation. Our Fisher weighting 
 is a diagonal special case with input-dimension-dependent weights.
 
-\subsection{2.2 Transformer Compression}
+\subsection{Transformer Compression}
 
-\subsubsection{2.2.1 Post-Training Pruning}
+\subsubsection{Post-Training Pruning}
 
 Magnitude pruning (Han et al., 2015) removes individual weights. Structured 
 pruning (Li et al., 2017) removes entire channels. SparseGPT (Frantar \& 
 Alistarh, 2023) and Wanda (Sun et al., 2024) prune large language models 
 without retraining. A3 differs by factorizing rather than zeroing.
 
-\subsubsection{2.2.2 Knowledge Distillation}
+\subsubsection{Knowledge Distillation}
 
 DistilBERT (Sanh et al., 2019), TinyBERT (Jiao et al., 2020), and MiniLM 
 (Wang et al., 2020) train smaller models to mimic larger ones. A3 is 
 orthogonal -- it can compress an already-distilled model.
 
-\subsubsection{2.2.3 Quantization}
+\subsubsection{Quantization}
 
 8-bit (Dettmers et al., 2022) and 4-bit (Dettmers et al., 2023) quantization 
 reduces bit-width. GPTQ (Frantar et al., 2023) uses second-order 
 information. A3 is orthogonal to quantization -- the two can be combined.
 
-\subsubsection{2.2.4 Low-Rank Factorization}
+\subsubsection{Low-Rank Factorization}
 
 ALBERT (Lan et al., 2020) uses cross-layer parameter sharing, a form of 
 low-rank structure. Tensor train decomposition (Novikov et al., 2015) uses 
 higher-order factorization. **A3 differs by using activation-aware weighting 
 during factorization**, not after.
 
-\subsection{2.3 Activation-Aware Compression}
+\subsection{Activation-Aware Compression}
 
 \textbf{AWQ.} Lin et al. (2023) find that activation magnitude correlates with 
 weight importance. They use it for quantization. Our Fisher weighting uses the 
@@ -66,7 +66,7 @@ second moments.
 parameter importance (Pascanu \& Bengio, 2014; Kirkpatrick et al., 2017). We 
 use a cheap empirical proxy $\mathbb{E}[x^2]$ instead of the full Fisher.
 
-\subsection{2.4 LayerNorm Recalibration}
+\subsection{LayerNorm Recalibration}
 
 \textbf{Post-training recalibration.} Nagel et al. (2019) recalibrate activation 
 distributions for quantization. We adapt this idea to post-factorization 
@@ -76,7 +76,7 @@ distributional shift.
 quantization. Our ${{RECALIBRATION_FORMULA}}$ is the analogous operation 
 for low-rank factorization.
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -85,12 +85,12 @@ for low-rank factorization.
 \toprule
 \textbf{Axis} & \textbf{Prior work} & \textbf{A3} \\
 \midrule
-**Factorization weighting** & Uniform (unweighted SVD) & Fisher diagonal \\
-**Rank selection** & Fixed & Adaptive escalation \\
-**Calibration memory** & Full activation buffer & Streaming O($d^2$) \\
-**Post-factorization fix** & None & LayerNorm recalibration \\
-**Error validation** & Silent & Strict Frobenius bound \\
-**Fallback** & Never & Automatic per-layer \\
+\textbf{Factorization weighting} & Uniform (unweighted SVD) & Fisher diagonal \\
+\textbf{Rank selection} & Fixed & Adaptive escalation \\
+\textbf{Calibration memory} & Full activation buffer & Streaming O($d^2$) \\
+\textbf{Post-factorization fix} & None & LayerNorm recalibration \\
+\textbf{Error validation} & Silent & Strict Frobenius bound \\
+\textbf{Fallback} & Never & Automatic per-layer \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,14 +1,14 @@
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 FUSIONATTN has two execution paths selected by sequence length:
 
 \begin{itemize}
 \item \textbf{Short path ($L \leq L_\text{threshold}$):} Standard softmax attention.
 \item \textbf{Long path ($L > L_\text{threshold}$):} MoBA-style block-sparse attention.
-\end{itemize}
 
+\end{itemize}
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
@@ -46,7 +46,7 @@ FUSIONATTN has two execution paths selected by sequence length:
                       Y
 \end{lstlisting}
 
-\subsection{4.2 Phase 1: Projections}
+\subsection{Phase 1: Projections}
 
 Frozen base + LoRA:
 
@@ -57,7 +57,7 @@ Frozen base + LoRA:
 
 where $W_P$ is copied exactly from the pretrained attention.
 
-\subsection{4.3 Phase 2: Length-Based Dispatch}
+\subsection{Phase 2: Length-Based Dispatch}
 
 \[
 \text{Path}(L) = \begin{cases}
@@ -70,7 +70,7 @@ where $W_P$ is copied exactly from the pretrained attention.
 with $L_\text{threshold} = 128$ (default). Also uses short path for 
 cross-attention.
 
-\subsection{4.4 Phase 3 (Long Path): Block Gating}
+\subsection{Phase 3 (Long Path): Block Gating}
 
 \subsubsection{Block Partitioning}
 
@@ -118,7 +118,7 @@ where $\tau$ is a learnable temperature.
 
 with block 0 always included (attention sink).
 
-\subsection{4.5 Phase 4 (Long Path): Block Attention}
+\subsection{Phase 4 (Long Path): Block Attention}
 
 For each query block $i$:
 
@@ -129,7 +129,7 @@ For each query block $i$:
 
 with causal masking if decoder, and padding masking.
 
-\subsection{4.6 The Full Algorithm}
+\subsection{The Full Algorithm}
 
 \textbf{Algorithm 1:} FUSIONATTN forward
 \begin{lstlisting}
@@ -174,7 +174,7 @@ Output: Y, attn_weights
 36: return Y
 \end{lstlisting}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -195,17 +195,17 @@ For $L = 512, B = 64, K = 4$:
 \item Short: $512^2 = 262$K
 \item Long: $4 \times 512 \times 64 = 131$K
 \item \textbf{Reduction: 2$\times$}
-\end{itemize}
 
+\end{itemize}
 For $L = 4096, B = 64, K = 4$:
 
 \begin{itemize}
 \item Short: $16.7$M
 \item Long: $1.05$M
 \item \textbf{Reduction: 16$\times$}
-\end{itemize}
 
-\subsection{4.8 Parameter Analysis}
+\end{itemize}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -229,13 +229,13 @@ For DistilBERT ($d=768$, $r_L=16$, $d_h=64$):
 \item Gate: $2 \times 4 \times 64^2 = 32{,}768$ per layer
 \item Total: $131{,}072$ per layer
 \item \textbf{6 layers: +786,432 params}
-\end{itemize}
 
+\end{itemize}
 \textbf{FUSIONATTN increases parameter count by ~1.17\%.}
 
-\subsection{4.9 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.9.1 Short Path Exactness}
+\subsubsection{Short Path Exactness}
 
 \textbf{Claim.} For $L \leq L_\text{threshold}$ with $B_\text{LoRA} = 0$:
 
@@ -247,12 +247,12 @@ For DistilBERT ($d=768$, $r_L=16$, $d_h=64$):
 \textbf{Proof.} The short path performs standard softmax attention with copied 
 base weights. With zero LoRA, output matches pretrained. $\square$
 
-\subsubsection{4.9.2 Long Path Approximation}
+\subsubsection{Long Path Approximation}
 
 The long path approximates full attention by restricting to top-$K$ blocks. 
 Approximation error depends on gate quality. No formal bound provided.
 
-\subsubsection{4.9.3 Causality}
+\subsubsection{Causality}
 
 For decoder long path, causal masking is enforced within each selected block:
 
@@ -263,4 +263,4 @@ For decoder long path, causal masking is enforced within each selected block:
 
 Only keys with $j \leq i$ contribute. Causality preserved.
 
-\subsection{4.10 Hyperparameter Guidance}
+\subsection{Hyperparameter Guidance}

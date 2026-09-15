@@ -1,6 +1,6 @@
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Attention dominates the compute and memory cost of transformer inference:
 
@@ -21,94 +21,88 @@ backward rather than stored. This gives:
 \begin{itemize}
 \item \textbf{Memory:} $\mathcal{O}(L)$ instead of $\mathcal{O}(L^2)$.
 \item \textbf{Throughput:} 2-4$\times$ faster than standard attention on Hopper GPUs.
-\end{itemize}
 
+\end{itemize}
 \textbf{FP8 support.} FlashAttention-3 adds FP8 (e4m3) tensor core utilization, 
 achieving another 2$\times$ on H100/H200.
 
-\subsection{1.2 The Deployment Problem}
+\subsection{The Deployment Problem}
 
 Despite its benefits, FlashAttention-3 is not a drop-in replacement:
 
-1. \textbf{Hardware requirement.} Requires NVIDIA Hopper (H100/H200) for 
-   TMA and FP8. Ampere (A100) supports FlashAttention-2 only; older GPUs 
-   use the SDPA fallback.
-2. \textbf{Software dependency.} Requires the \texttt{flash-attn} or \texttt{flash-attn-3} 
-   Python package to be installed.
-3. \textbf{Architecture heterogeneity.} Pretrained models differ in their 
-   attention organization (fused Conv1D, nested self-attention, GQA, etc.), 
-   requiring per-architecture weight extraction.
+\begin{enumerate}
+\item \textbf{Hardware requirement.} Requires NVIDIA Hopper (H100/H200) for
+  TMA and FP8. Ampere (A100) supports FlashAttention-2 only; older GPUs
+  use the SDPA fallback.
+\item \textbf{Software dependency.} Requires the \texttt{flash-attn} or \texttt{flash-attn-3}
+  Python package to be installed.
+\item \textbf{Architecture heterogeneity.} Pretrained models differ in their
+  attention organization (fused Conv1D, nested self-attention, GQA, etc.),
+  requiring per-architecture weight extraction.
 
+\end{enumerate}
 Our wrapper addresses all three:
 
 \begin{itemize}
 \item \textbf{Automatic fallback.} If FlashAttention-3 is not available, use
-\end{itemize}
   PyTorch's SDPA kernel (which itself may use FlashAttention-2 internally).
-\begin{itemize}
 \item \textbf{Multi-architecture weight copy.} A single \texttt{copy\_weights} handles
-\end{itemize}
   GPT-2 Conv1D, RoBERTa/BERT nested, DistilBERT flat, and Qwen/LLaMA GQA.
-\begin{itemize}
 \item \textbf{FP8 opt-in.} FP8 precision is enabled via a flag, with automatic
-\end{itemize}
   dtype conversion and graceful NaN handling.
 
-\subsection{1.3 Problem Statement}
+\end{itemize}
+\subsection{Problem Statement}
 
 Given a pretrained attention module $\mathcal{A}$ with projections 
 $W_Q, W_K, W_V, W_O$, we seek a wrapper $\mathcal{A}'$ such that:
 
-1. \textbf{Exactness.} $\mathcal{A}'(X) = \mathcal{A}(X)$ mathematically (up to 
-   numerical precision).
-2. \textbf{Efficiency.} When FlashAttention-3 is available, 
-   $\text{Time}(\mathcal{A}') < \text{Time}(\mathcal{A})$ on Hopper GPUs.
-3. \textbf{Robustness.} When FlashAttention-3 is not available, gracefully fall 
-   back to SDPA without crashing.
-4. \textbf{Portability.} Supports flat, nested, and causal architectures, plus 
-   GQA and RoPE.
-5. \textbf{Recovery capacity.} Add trainable LoRA adapters for task adaptation.
+\begin{enumerate}
+\item \textbf{Exactness.} $\mathcal{A}'(X) = \mathcal{A}(X)$ mathematically (up to
+  numerical precision).
+\item \textbf{Efficiency.} When FlashAttention-3 is available,
+  $\text{Time}(\mathcal{A}') < \text{Time}(\mathcal{A})$ on Hopper GPUs.
+\item \textbf{Robustness.} When FlashAttention-3 is not available, gracefully fall
+  back to SDPA without crashing.
+\item \textbf{Portability.} Supports flat, nested, and causal architectures, plus
+  GQA and RoPE.
+\item \textbf{Recovery capacity.} Add trainable LoRA adapters for task adaptation.
 
+\end{enumerate}
 \textbf{Note.} This is \textbf{not} a compression method. Parameter count increases 
 by the LoRA adapter size.
 
-\subsection{1.4 Our Approach}
+\subsection{Our Approach}
 
 We provide a wrapper class \texttt{FlashAttention3} that:
 
-1. \textbf{Extracts pretrained weights} from the source attention module.
-2. \textbf{Freezes base weights} and adds trainable LoRA adapters.
-3. \textbf{Dispatches} to FlashAttention-3 if available, otherwise to SDPA.
-4. \textbf{Supports GQA} via \texttt{repeat\_kv} before the attention call.
-5. \textbf{Applies RoPE} (with partial-dim support) before the attention call.
-6. \textbf{Handles causal masking} for decoder models.
-7. \textbf{Supports cross-attention} for encoder-decoder models.
+\begin{enumerate}
+\item \textbf{Extracts pretrained weights} from the source attention module.
+\item \textbf{Freezes base weights} and adds trainable LoRA adapters.
+\item \textbf{Dispatches} to FlashAttention-3 if available, otherwise to SDPA.
+\item \textbf{Supports GQA} via \texttt{repeat\_kv} before the attention call.
+\item \textbf{Applies RoPE} (with partial-dim support) before the attention call.
+\item \textbf{Handles causal masking} for decoder models.
+\item \textbf{Supports cross-attention} for encoder-decoder models.
 
-\subsection{1.5 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A production-hardened FlashAttention-3 wrapper.} Works across four
-\end{itemize}
   architectures with exact weight transfer and graceful fallback.
-\begin{itemize}
 \item \textbf{Multi-architecture weight extraction.} Handles GPT-2 Conv1D,
-\end{itemize}
   RoBERTa/BERT nested, DistilBERT flat, and Qwen/LLaMA GQA.
-\begin{itemize}
 \item \textbf{FP8 support with automatic fallback.} FP8 precision on Hopper GPUs
-\end{itemize}
   with FP16 fallback if the hardware or library doesn't support it.
-\begin{itemize}
 \item \textbf{Honest reporting.} We disclose that on non-Hopper GPUs (like our
-\end{itemize}
-  RTX 4070 test machine), the SDPA fallback is used, not the FlashAttention-3 
+  RTX 4070 test machine), the SDPA fallback is used, not the FlashAttention-3
   kernel.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code and evaluation scripts released under
-\end{itemize}
   MIT.
 
-\subsection{1.6 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on 
 FlashAttention, SDPA, and hardware acceleration. Section 4 describes the 

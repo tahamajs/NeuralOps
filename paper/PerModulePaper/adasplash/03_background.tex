@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Standard Softmax Attention}
+\subsection{Standard Softmax Attention}
 
 For query-key scores $s = Q K^\top / \sqrt{d_h}$, softmax produces:
 
@@ -12,9 +12,11 @@ p_i = \frac{e^{s_i}}{\sum_j e^{s_j}}, \quad p_i > 0, \quad \sum_i p_i = 1
 
 Two properties matter here:
 
-1. \textbf{Strict positivity.} Every $p_i > 0$; no exact zeros.
-2. \textbf{Max-entropy solution.} Softmax solves:
+\begin{enumerate}
+\item \textbf{Strict positivity.} Every $p_i > 0$; no exact zeros.
+\item \textbf{Max-entropy solution.} Softmax solves:
 
+\end{enumerate}
 \[
 \text{softmax}(s) = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H(p)
 \tag{3.2}
@@ -23,7 +25,7 @@ Two properties matter here:
 where $H$ is Shannon entropy. The entropy regularization spreads mass 
 uniformly.
 
-\subsection{3.2 The $\alpha$-Entmax Family}
+\subsection{The $\alpha$-Entmax Family}
 
 Replacing Shannon entropy with \textbf{Tsallis entropy} $H_\alpha^T$:
 
@@ -60,7 +62,7 @@ S = \{i : (\alpha - 1) s_i > \tau\}
 
 For $\alpha = 1.5$: $p_i \propto \max(0, 0.5 s_i - \tau)^2$.
 
-\subsection{3.3 Bisection for $\tau$}
+\subsection{Bisection for $\tau$}
 
 Solving for $\tau$ is a one-dimensional root-finding problem:
 
@@ -78,14 +80,12 @@ $\sim 10^{-7}$.
 
 \begin{itemize}
 \item $\tau_\text{hi} = 0$ (a natural upper bound since scores are typically
-\end{itemize}
   shifted so max = 0).
-\begin{itemize}
 \item $\tau_\text{lo} = \min_i (\alpha - 1) s_i - 1$ (a lower bound below which
-\end{itemize}
   all weights are positive).
 
-\subsection{3.4 Numerical Stability}
+\end{itemize}
+\subsection{Numerical Stability}
 
 \textbf{Score shifting.} To avoid overflow in $(\alpha - 1) s_i$, we shift scores 
 by subtracting $\max_i s_i$. This preserves the argmax but bounds the 
@@ -94,20 +94,22 @@ exponent.
 \textbf{Fallback.} If the support is empty (all weights zero), the output would be 
 ill-defined. We fall back to softmax on the same masked scores.
 
-\subsection{3.5 Attention Sinks}
+\subsection{Attention Sinks}
 
 \textbf{Definition.} Xiao et al. (2024) define attention sinks as tokens that 
 receive high attention regardless of query content. In pretrained transformers, 
 the first few tokens act as sinks because:
 
-1. Positional embeddings for position 0 are unique.
-2. Token 0 is often \texttt{[CLS]} or \texttt{<s>}, a natural aggregator.
+\begin{enumerate}
+\item Positional embeddings for position 0 are unique.
+\item Token 0 is often \texttt{[CLS]} or \texttt{<s>}, a natural aggregator.
 
+\end{enumerate}
 \textbf{Empirical observation.} Removing sink tokens causes measurable accuracy 
 degradation. Preserving them (first 4 in our implementation) maintains 
 stability.
 
-\subsection{3.6 Local Splash Radius}
+\subsection{Local Splash Radius}
 
 For causal decoders, we restrict attention to:
 
@@ -123,7 +125,7 @@ For causal decoders, we restrict attention to:
 where $W$ is the splash radius (default 32) and $S = 4$ is the sink count. 
 Non-causal (bidirectional) models use the full attention (no windowing).
 
-\subsection{3.7 LoRA Adapters}
+\subsection{LoRA Adapters}
 
 LoRA (Hu et al., 2021) parameterizes a weight update:
 
@@ -138,4 +140,4 @@ $B = 0$ at initialization.
 \textbf{In AdaSplash.} LoRA is added to each attention projection. The 
 initial forward pass equals the pretrained model (since $B = 0$).
 
-\subsection{3.8 Notation Summary}
+\subsection{Notation Summary}

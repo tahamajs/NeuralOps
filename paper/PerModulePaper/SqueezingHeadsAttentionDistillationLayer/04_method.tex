@@ -1,7 +1,7 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 Squeezing Heads replaces each pretrained attention projection with a 
 \textbf{LoRA-wrapped linear layer}:
@@ -38,9 +38,9 @@ adapters (trainable), and $b$ is the bias (frozen).
            y = Wx + ($\alpha$/r)BAx + b
 \end{lstlisting}
 
-\subsection{4.2 LoRA-Wrapped Projection}
+\subsection{LoRA-Wrapped Projection}
 
-\subsubsection{4.2.1 Forward Pass}
+\subsubsection{Forward Pass}
 
 For input $x \in \mathbb{R}^{B \times L \times d_\text{in}}$:
 
@@ -66,15 +66,15 @@ LoRA & $r_L (d_\text{in} + d_\text{out})$ & $B L r_L (d_\text{in} + d_\text{out}
 
 \textbf{Total trainable:} $r_L (d_\text{in} + d_\text{out})$ per projection.
 
-\subsubsection{4.2.2 Initialization}
+\subsubsection{Initialization}
 
 \begin{itemize}
 \item $W_\text{frozen}$: copied from pretrained weights.
 \item $A$: Kaiming uniform.
 \item $B$: zeros $\to$ initial forward pass matches the pretrained model exactly.
-\end{itemize}
 
-\subsection{4.3 Head Dimension Reduction}
+\end{itemize}
+\subsection{Head Dimension Reduction}
 
 To reduce head dimension from $d_h$ to $d_h'$, we slice the leading rows 
 of $W_Q, W_K, W_V$:
@@ -98,7 +98,7 @@ initialization in pretrained models.
 \textbf{Note.} This is a \textbf{distillation} operation: the LoRA adapter learns to 
 recover the discarded directions.
 
-\subsection{4.4 GQA Pooling}
+\subsection{GQA Pooling}
 
 When the source attention has $H_\text{source}$ KV heads and the target has 
 $H_\text{target} < H_\text{source}$:
@@ -111,7 +111,7 @@ W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
 where $r = H_\text{source} / H_\text{target}$ and the mean is over the 
 heads in group $g$.
 
-\subsection{4.5 The Wrapper Class}
+\subsection{The Wrapper Class}
 
 \textbf{Algorithm 1:} Squeezing Heads initialization
 \begin{lstlisting}
@@ -131,7 +131,7 @@ Output: SqueezingHeadsDistiller instance
 10: return wrapper
 \end{lstlisting}
 
-\subsection{4.6 Forward Pass}
+\subsection{Forward Pass}
 
 \textbf{Algorithm 2:} Squeezing Heads forward
 \begin{lstlisting}
@@ -155,7 +155,7 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 14: else: return LoRALinear_o(O)
 \end{lstlisting}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -175,7 +175,7 @@ Storage & $4 d^2$ & $4 d^2$ + $4 r_L d$ \\
 \textbf{Squeezing Heads does not reduce frozen parameter count.} It reduces 
 \textbf{trainable} parameter count and enables head-dim compression.
 
-\subsection{4.8 Head-Dim Reduction Trade-off}
+\subsection{Head-Dim Reduction Trade-off}
 
 If we reduce head dimension from $d_h$ to $d_h'$:
 
@@ -193,16 +193,16 @@ If we reduce head dimension from $d_h$ to $d_h'$:
 
 but accuracy drops from head-dim reduction. LoRA recovers most of it.
 
-\subsection{4.9 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.9.1 Exact Recovery When $B = 0$}
+\subsubsection{Exact Recovery When $B = 0$}
 
 \textbf{Claim.} At initialization ($B = 0$), Squeezing Heads is exactly 
 equivalent to the pretrained attention.
 
 \textbf{Proof.} Forward pass: $y = x W_\text{frozen}^\top + (x A^\top) \cdot 0 + b = x W_\text{frozen}^\top + b$. The LoRA path contributes nothing. $\square$
 
-\subsubsection{4.9.2 Expressiveness}
+\subsubsection{Expressiveness}
 
 \textbf{Claim.} With head-dim reduction to $d_h'$, the maximum achievable 
 accuracy is bounded by the information retained in the leading $d_h'$ 
@@ -211,7 +211,7 @@ dimensions.
 \textbf{Sketch.} The discarded $d_h - d_h'$ dimensions cannot be recovered by 
 LoRA (which has rank $r_L \ll d_h$ in the worst case). $\square$
 
-\subsubsection{4.9.3 LoRA Recovery Bound}
+\subsubsection{LoRA Recovery Bound}
 
 \textbf{Claim.} If the discarded information lies in a subspace of dimension 
 $\leq r_L$, LoRA can fully recover it.

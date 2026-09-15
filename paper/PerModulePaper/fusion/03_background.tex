@@ -1,6 +1,6 @@
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Standard Attention}
+\subsection{Standard Attention}
 
 For $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$:
 
@@ -11,7 +11,7 @@ For $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$:
 
 Complexity: $\mathcal{O}(L^2 d_h)$.
 
-\subsection{3.2 Block-Sparse Attention}
+\subsection{Block-Sparse Attention}
 
 Partition the sequence into $T = L / B$ blocks. For block $i$ of queries 
 and block $j$ of keys, attention is computed only if $(i, j) \in \mathcal{S}$ 
@@ -23,7 +23,7 @@ or $j = 0$.
 \textbf{Content-based mask.} MoBA/Routing: $(i, j) \in \mathcal{S}$ iff $j$ 
 is among the top-$K$ for $i$ by some score.
 
-\subsection{3.3 MoBA-Style Block Selection}
+\subsection{MoBA-Style Block Selection}
 
 MoBA (Lu et al., 2024) computes a \textbf{block gate score}:
 
@@ -37,7 +37,7 @@ projection, and $\tau$ is a temperature.
 
 For each query block $i$, the top-$K$ key blocks by $g(i, j)$ are selected.
 
-\subsection{3.4 Grouped Query Attention}
+\subsection{Grouped Query Attention}
 
 GQA uses $H_{kv} < H$ KV heads, repeated to match query heads:
 
@@ -46,12 +46,12 @@ GQA uses $H_{kv} < H$ KV heads, repeated to match query heads:
 \tag{3.3}
 \]
 
-\subsection{3.5 Rotary Position Embeddings}
+\subsection{Rotary Position Embeddings}
 
 RoPE rotates Q, K by position-dependent angles. Partial RoPE (Qwen3.5) 
 rotates only the first \texttt{rotary\_dim} coordinates.
 
-\subsection{3.6 LoRA}
+\subsection{LoRA}
 
 LoRA (Hu et al., 2021) parameterizes:
 
@@ -60,4 +60,4 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A, \quad B = 0 \text{ at i
 \tag{3.4}
 \]
 
-\subsection{3.7 Notation Summary}
+\subsection{Notation Summary}

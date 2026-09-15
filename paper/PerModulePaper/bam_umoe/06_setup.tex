@@ -1,6 +1,6 @@
-\section{6. Experimental Setup}
+\section{Experimental Setup}
 
-\subsection{6.1 Models}
+\subsection{Models}
 
 \begin{table}[H]
 \centering
@@ -16,11 +16,11 @@ GPT-2 & 12 & 768 & 12 & 124.4M \\
 \end{tabular}
 \end{table}
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
 
-\subsection{6.3 Hyperparameters}
+\subsection{Hyperparameters}
 
 \begin{table}[H]
 \centering
@@ -29,10 +29,10 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-`num\_experts` & 8 \\
-`top\_k` & 2 \\
-`lora\_rank` & 16 \\
-`lora\_alpha` & 32 \\
+\texttt{num\_experts} & 8 \\
+\texttt{top\_k} & 2 \\
+\texttt{lora\_rank} & 16 \\
+\texttt{lora\_alpha} & 32 \\
 MoE scale $\alpha$ & 0.1 \\
 Gate bias $b_g$ & -3.0 \\
 Noise std (training) & 0.1 \\
@@ -41,7 +41,7 @@ Expert multiplier & 2 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 \begin{table}[H]
 \centering
@@ -60,7 +60,7 @@ Precision & FP16 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Metrics}
+\subsection{Metrics}
 
 \begin{itemize}
 \item Accuracy, F1, precision, recall
@@ -68,17 +68,17 @@ Precision & FP16 \\
 \item Peak VRAM
 \item Inference time
 \item MoE load balance (expert utilization)
-\end{itemize}
 
-\subsection{6.6 Quality Gate}
+\end{itemize}
+\subsection{Quality Gate}
 
 PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
 
-\subsection{6.7 Hardware}
+\subsection{Hardware}
 
 RTX 4070 Laptop, 8 GB VRAM, CUDA 12.1, PyTorch 2.4.0.
 
-\subsection{6.8 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_bam_umoe.py \

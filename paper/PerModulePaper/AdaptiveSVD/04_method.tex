@@ -1,16 +1,18 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 Adaptive SVD compresses each attention projection in four steps:
 
-1. \textbf{Full SVD} ( 4.2): compute $U \Sigma V^\top$ in FP32.
-2. \textbf{Energy-thresholded rank} ( 4.3): find smallest $r$ with $\mathcal{E}(r) \geq \tau$.
-3. \textbf{Symmetric factorization} ( 4.4): set $U_r = U_{:, :r} \Sigma^{1/2}$, 
-   $V_r = \Sigma^{1/2} V_{:r, :}^\top$.
-4. \textbf{Residual adapter} ( 4.5): attach zero-initialized $B A$ for recovery.
+\begin{enumerate}
+\item \textbf{Full SVD} ( 4.2): compute $U \Sigma V^\top$ in FP32.
+\item \textbf{Energy-thresholded rank} ( 4.3): find smallest $r$ with $\mathcal{E}(r) \geq \tau$.
+\item \textbf{Symmetric factorization} ( 4.4): set $U_r = U_{:, :r} \Sigma^{1/2}$,
+  $V_r = \Sigma^{1/2} V_{:r, :}^\top$.
+\item \textbf{Residual adapter} ( 4.5): attach zero-initialized $B A$ for recovery.
 
+\end{enumerate}
 \textbf{Figure 4.1} shows the pipeline. There is no calibration phase.
 
 \begin{lstlisting}
@@ -36,7 +38,7 @@ Adaptive SVD compresses each attention projection in four steps:
     +------------------------------------------+
 \end{lstlisting}
 
-\subsection{4.2 Phase 1: Full SVD}
+\subsection{Phase 1: Full SVD}
 
 For each projection weight $W_P \in \mathbb{R}^{d_\text{out}^{(P)} \times d_\text{in}^{(P)}}$:
 
@@ -51,9 +53,9 @@ produce NaN for ill-conditioned matrices.
 \textbf{Complexity.} $\mathcal{O}(d_\text{in} d_\text{out} \min(d_\text{in}, d_\text{out}))$. 
 For $768 \times 768$, this is ~450M FLOPs, ~50 ms on CPU, ~5 ms on GPU.
 
-\subsection{4.3 Phase 2: Energy-Thresholded Rank}
+\subsection{Phase 2: Energy-Thresholded Rank}
 
-\subsubsection{4.3.1 Definition}
+\subsubsection{Definition}
 
 Given singular values $\sigma_1 \geq \sigma_2 \geq \dots$, define:
 
@@ -69,7 +71,7 @@ r_P = \min\{r : \mathcal{E}(r) \geq \tau\}
 \tag{4.3}
 \]
 
-\subsubsection{4.3.2 Implementation}
+\subsubsection{Implementation}
 
 \begin{lstlisting}
 def _compute_energy_rank(self, S, max_rank, min_rank=16):
@@ -86,22 +88,22 @@ def _compute_energy_rank(self, S, max_rank, min_rank=16):
 
 \textbf{Complexity.} $\mathcal{O}(\min(d_\text{in}, d_\text{out}))$ via \texttt{cumsum}.
 
-\subsubsection{4.3.3 Minimum Rank Constraint}
+\subsubsection{Minimum Rank Constraint}
 
 We impose $r_P \geq r_\text{min}$ (default 16) to prevent numerical 
 instability in very low-rank layers. This bounds $r_P$ from below, but for 
 $\tau = 0.92$ and typical attention weights, the natural rank is far above 
 $r_\text{min}$.
 
-\subsubsection{4.3.4 Maximum Rank Cap}
+\subsubsection{Maximum Rank Cap}
 
 We cap $r_P \leq \min(d_\text{in}, d_\text{out})$. In practice, $\tau < 1.0$ 
 ensures $r_P < \min(d_\text{in}, d_\text{out})$, but the cap protects against 
 edge cases.
 
-\subsection{4.4 Phase 3: Symmetric Factorization}
+\subsection{Phase 3: Symmetric Factorization}
 
-\subsubsection{4.4.1 Factor Construction}
+\subsubsection{Factor Construction}
 
 Given $r_P$, set:
 
@@ -113,20 +115,22 @@ V_{P, r} = \Sigma_{P, :r_P, :r_P}^{1/2} V_{P, :r_P, :}^\top
 
 Then $U_{P, r} V_{P, r} = W_{P, r_P}$ (the truncated SVD).
 
-\subsubsection{4.4.2 Why Symmetric?}
+\subsubsection{Why Symmetric?}
 
 Three reasons:
 
-1. \textbf{Numerical stability.} Both factors have magnitude $\sqrt{\sigma_\text{max}}$, 
-   avoiding FP16 overflow.
+\begin{enumerate}
+\item \textbf{Numerical stability.} Both factors have magnitude $\sqrt{\sigma_\text{max}}$,
+  avoiding FP16 overflow.
 
-2. \textbf{Balanced gradient flow.} During recovery, adapters interact symmetrically 
-   with both factors.
+\item \textbf{Balanced gradient flow.} During recovery, adapters interact symmetrically
+  with both factors.
 
-3. \textbf{Orthogonality.} When singular values are distinct, columns of $U_{P, r}$ 
-   and rows of $V_{P, r}$ are orthogonal.
+\item \textbf{Orthogonality.} When singular values are distinct, columns of $U_{P, r}$
+  and rows of $V_{P, r}$ are orthogonal.
 
-\subsubsection{4.4.3 The Factorized Forward Pass}
+\end{enumerate}
+\subsubsection{The Factorized Forward Pass}
 
 The compressed projection computes:
 
@@ -152,9 +156,9 @@ Adaptive SVD & $r_P (d_\text{in}^{(P)} + d_\text{out}^{(P)})$ \\
 
 \textbf{Reduction factor:} $\frac{d_\text{in} d_\text{out}}{r_P (d_\text{in} + d_\text{out})}$.
 
-\subsection{4.5 Phase 4: Residual Adapter}
+\subsection{Phase 4: Residual Adapter}
 
-\subsubsection{4.5.1 The Residual}
+\subsubsection{The Residual}
 
 The truncation residual is:
 
@@ -166,7 +170,7 @@ The truncation residual is:
 Its Frobenius norm is $\sqrt{(1 - \mathcal{E}(r_P))} \cdot \|W_P\|_F \leq \sqrt{1 - \tau} \|W_P\|_F$. 
 At $\tau = 0.92$, this is ~28\% of $\|W_P\|_F$.
 
-\subsubsection{4.5.2 Adapter Parameterization}
+\subsubsection{Adapter Parameterization}
 
 We approximate the residual with a rank-$r_L$ factor:
 
@@ -177,7 +181,7 @@ B_P \in \mathbb{R}^{d_\text{out} \times r_L}
 \tag{4.7}
 \]
 
-\subsubsection{4.5.3 Initialization}
+\subsubsection{Initialization}
 
 \[
 B_P = 0, \quad A_P \sim \mathcal{N}(0, 1/\sqrt{r_L})
@@ -186,7 +190,7 @@ B_P = 0, \quad A_P \sim \mathcal{N}(0, 1/\sqrt{r_L})
 
 The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
 
-\subsubsection{4.5.4 Full Forward Pass}
+\subsubsection{Full Forward Pass}
 
 \[
 \text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + (x A_P^\top) B_P^\top + b_P
@@ -195,7 +199,7 @@ The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
 
 \textbf{Parameter overhead:} $r_L (d_\text{in} + d_\text{out})$ per projection.
 
-\subsection{4.6 The Full Algorithm}
+\subsection{The Full Algorithm}
 
 \textbf{Algorithm 1:} Adaptive SVD compression for one attention module
 \begin{lstlisting}
@@ -229,9 +233,9 @@ Output: compressed attention A'
 22: return A'
 \end{lstlisting}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Complexity Analysis}
 
-\subsubsection{4.7.1 Time Complexity}
+\subsubsection{Time Complexity}
 
 \begin{table}[H]
 \centering
@@ -244,21 +248,21 @@ SVD per projection & $\mathcal{O}(d_\text{in} d_\text{out} \min(d_\text{in}, d_\
 Rank selection & $\mathcal{O}(\min(d_\text{in}, d_\text{out}))$ \\
 Factor truncation & $\mathcal{O}(r_P (d_\text{in} + d_\text{out}))$ \\
 Adapter init & $\mathcal{O}(r_L (d_\text{in} + d_\text{out}))$ \\
-**Per projection** & $\mathcal{O}(d_\text{in} d_\text{out} \min(d_\text{in}, d_\text{out}))$ \\
-**Per attention module** & $\mathcal{O}(4 \cdot d^3)$ for square $d \times d$ \\
-**Total ($N_l$ layers)** & $\mathcal{O}(4 N_l d^3)$ \\
+\textbf{Per projection} & $\mathcal{O}(d_\text{in} d_\text{out} \min(d_\text{in}, d_\text{out}))$ \\
+\textbf{Per attention module} & $\mathcal{O}(4 \cdot d^3)$ for square $d \times d$ \\
+\textbf{Total ($N_l$ layers)} & $\mathcal{O}(4 N_l d^3)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 For DistilBERT ($N_l = 6$, $d = 768$): ~30 seconds total on GPU.
 
-\subsubsection{4.7.2 Space Complexity}
+\subsubsection{Space Complexity}
 
 Peak memory per projection: $O(d^2)$ for the SVD. All covariances 
 and calibration states are avoided.
 
-\subsubsection{4.7.3 Compression Time Comparison}
+\subsubsection{Compression Time Comparison}
 
 \begin{table}[H]
 \centering
@@ -269,12 +273,12 @@ and calibration states are avoided.
 \midrule
 A3 & ~10s & ~20s & ~30s \\
 AASVD & ~15s & ~20s & ~35s \\
-**Adaptive SVD** & **0s** & **~15s** & **~15s** \\
+\textbf{Adaptive SVD} & \textbf{0s} & \textbf{~15s} & \textbf{~15s} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{4.8 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 For a square $d \times d$ projection:
 
@@ -315,9 +319,9 @@ Adaptive SVD (base) & 196,608 & 3.00$\times$ \\
 \end{tabular}
 \end{table}
 
-\subsection{4.9 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.9.1 Reconstruction Bound}
+\subsubsection{Reconstruction Bound}
 
 \textbf{Proposition.} With energy threshold $\tau$:
 
@@ -332,13 +336,13 @@ the bound follows. $\square$
 
 At $\tau = 0.92$, the maximum relative error is $\sqrt{0.08} \approx 0.283$.
 
-\subsubsection{4.9.2 Exactness at Full Rank}
+\subsubsection{Exactness at Full Rank}
 
 \textbf{Proposition.} If $r_P = \mathrm{rank}(W_P)$, then $U_{P, r} V_{P, r} = W_P$ exactly.
 
 \textbf{Proof.} Direct from SVD. $\square$
 
-\subsubsection{4.9.3 Initial Forward Pass Fidelity}
+\subsubsection{Initial Forward Pass Fidelity}
 
 \textbf{Proposition.} At initialization ($B_P = 0$):
 
@@ -353,7 +357,7 @@ $\square$
 \textbf{Corollary.} The initial forward pass equals the truncation approximation, 
 not the pretrained model (unless $r_P = \text{rank}(W_P)$).
 
-\subsubsection{4.9.4 Rank Reduction Factor}
+\subsubsection{Rank Reduction Factor}
 
 The parameter ratio per projection is:
 
@@ -364,7 +368,7 @@ The parameter ratio per projection is:
 
 At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2$\times$ reduction).
 
-\subsection{4.10 Hyperparameter Guidance}
+\subsection{Hyperparameter Guidance}
 
 \begin{table}[H]
 \centering
@@ -388,8 +392,8 @@ Recovery steps & 50 & 10 -- 200 \\
 \item $\tau = 0.92$: balanced (default)
 \item $\tau = 0.95$: conservative, less compression
 \item $\tau = 0.99$: near-lossless, minimal compression
-\end{itemize}
 
+\end{itemize}
 \textbf{Choosing $r_L$:}
 
 \begin{itemize}

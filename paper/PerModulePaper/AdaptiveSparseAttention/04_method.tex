@@ -1,15 +1,17 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 Adaptive Sparse Attention (ASA) replaces dense softmax attention with a 
 sparse variant that:
 
-1. \textbf{Learns per-head budgets} via a scalar logit $\ell_h$ per head.
-2. \textbf{Softly thresholds} scores via a sigmoid mask.
-3. \textbf{Chunks the query dimension} for memory bounding.
+\begin{enumerate}
+\item \textbf{Learns per-head budgets} via a scalar logit $\ell_h$ per head.
+\item \textbf{Softly thresholds} scores via a sigmoid mask.
+\item \textbf{Chunks the query dimension} for memory bounding.
 
+\end{enumerate}
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
@@ -42,9 +44,9 @@ sparse variant that:
               Context
 \end{lstlisting}
 
-\subsection{4.2 Per-Head Sparsity Budget}
+\subsection{Per-Head Sparsity Budget}
 
-\subsubsection{4.2.1 Parameterization}
+\subsubsection{Parameterization}
 
 For each of the $H$ heads, we introduce a scalar logit $\ell_h \in \mathbb{R}$. 
 The sparsity ratio is:
@@ -61,7 +63,7 @@ k_h = \max(1, \lfloor (1 - \rho_h) L \rfloor)
 \tag{4.2}
 \]
 
-\subsubsection{4.2.2 Initialization}
+\subsubsection{Initialization}
 
 We initialize $\ell_h$ to a target sparsity $\rho_0$:
 
@@ -72,7 +74,7 @@ We initialize $\ell_h$ to a target sparsity $\rho_0$:
 
 For encoders, $\rho_0 = 0.1$; for decoders, $\rho_0 = 0.5$.
 
-\subsubsection{4.2.3 Differentiability}
+\subsubsection{Differentiability}
 
 The gradient of the loss w.r.t. $\ell_h$ is:
 
@@ -84,9 +86,9 @@ The gradient of the loss w.r.t. $\ell_h$ is:
 The floor operation in (4.2) is non-differentiable; in practice we use 
 $\partial k_h / \partial \rho_h \approx -L$ (straight-through).
 
-\subsection{4.3 Soft Top-$k$ Threshold}
+\subsection{Soft Top-$k$ Threshold}
 
-\subsubsection{4.3.1 Computing the Threshold}
+\subsubsection{Computing the Threshold}
 
 For each (batch, head, query) triple, we compute the top-$k_h$ threshold 
 $\tau$ as the $k_h$-th largest score:
@@ -98,7 +100,7 @@ $\tau$ as the $k_h$-th largest score:
 
 This is computed via \texttt{torch.sort} followed by indexing at position $k_h - 1$.
 
-\subsubsection{4.3.2 Soft Mask}
+\subsubsection{Soft Mask}
 
 Given threshold $\tau$, we define the mask:
 
@@ -116,25 +118,25 @@ where $T = 0.1$ is a temperature. The masked score is:
 
 with $\epsilon = 10^{-8}$ for numerical stability.
 
-\subsubsection{4.3.3 Interpretation}
+\subsubsection{Interpretation}
 
 \begin{itemize}
 \item For $s_j \gg \tau$: $m_j \approx 1$, $\log m_j \approx 0$ $\to$ \textbf{no change}.
 \item For $s_j \ll \tau$: $m_j \approx 0$, $\log m_j \to -\infty$ $\to$ \textbf{suppressed}.
 \item Near $s_j \approx \tau$: $m_j \approx 0.5$, $\log m_j \approx -0.7$ $\to$ \textbf{partial suppression}.
-\end{itemize}
 
+\end{itemize}
 As $T \to 0$, $m_j \to \mathbb{1}[s_j > \tau]$ and we recover hard top-$k$.
 
-\subsection{4.4 Chunked Forward Pass}
+\subsection{Chunked Forward Pass}
 
-\subsubsection{4.4.1 Motivation}
+\subsubsection{Motivation}
 
 Even with sparsity, computing the full $L \times L$ score matrix requires 
 $\mathcal{O}(L^2)$ memory. Chunking the query dimension bounds peak memory 
 to $\mathcal{O}(L \cdot C)$ where $C$ is the chunk size.
 
-\subsubsection{4.4.2 Algorithm}
+\subsubsection{Algorithm}
 
 \textbf{Algorithm 1:} Adaptive Sparse Attention forward
 \begin{lstlisting}
@@ -175,7 +177,7 @@ Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 30: return context
 \end{lstlisting}
 
-\subsection{4.5 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -187,8 +189,8 @@ Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 Score matrix & $\mathcal{O}(B H L^2)$ & $\mathcal{O}(B H C L)$ \\
 Softmax & $\mathcal{O}(B H L^2)$ & $\mathcal{O}(B H C L)$ \\
 Attention output & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
-**Total memory** & $\mathcal{O}(B H L^2)$ & $\mathcal{O}(B H C L)$ \\
-**Total time** & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
+\textbf{Total memory} & $\mathcal{O}(B H L^2)$ & $\mathcal{O}(B H C L)$ \\
+\textbf{Total time} & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -198,7 +200,7 @@ For $C = 64$ and $L = 512$, memory is reduced by
 only memory is saved. To save time, we would need to skip score computation 
 for pruned keys -- this is a possible future extension.
 
-\subsection{4.6 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -211,8 +213,8 @@ $W_Q$ & $d H d_h$ & Same \\
 $W_K$ & $d H_{kv} d_h$ & Same \\
 $W_V$ & $d H_{kv} d_h$ & Same \\
 $W_O$ & $H d_h d$ & Same \\
-**Sparsity logits** & 0 & **$H$** \\
-**LoRA** & 0 & $2 r_L (d H d_h + 2 d H_{kv} d_h + H d_h d)$ \\
+\textbf{Sparsity logits} & 0 & \textbf{$H$} \\
+\textbf{LoRA} & 0 & $2 r_L (d H d_h + 2 d H_{kv} d_h + H d_h d)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -220,9 +222,9 @@ $W_O$ & $H d_h d$ & Same \\
 \textbf{ASA adds $H$ parameters} (one per head) and LoRA adapters. It does \textbf{not} 
 reduce total parameter count.
 
-\subsection{4.7 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.7.1 Approximation Error}
+\subsubsection{Approximation Error}
 
 For a head with sparsity $\rho$, the approximation error is:
 
@@ -233,7 +235,7 @@ For a head with sparsity $\rho$, the approximation error is:
 
 where $\epsilon_T$ is the soft-mask error ($\to 0$ as $T \to 0$).
 
-\subsubsection{4.7.2 Head Heterogeneity}
+\subsubsection{Head Heterogeneity}
 
 Let $\rho_h^{(T)}$ be the learned sparsity for head $h$ after convergence. 
 Empirically, $\{\rho_h^{(T)}\}$ follows a bimodal distribution:
@@ -245,7 +247,7 @@ Empirically, $\{\rho_h^{(T)}\}$ follows a bimodal distribution:
 
 This matches the head-pruning literature.
 
-\subsubsection{4.7.3 Chunked Memory Bound}
+\subsubsection{Chunked Memory Bound}
 
 With chunk size $C$:
 

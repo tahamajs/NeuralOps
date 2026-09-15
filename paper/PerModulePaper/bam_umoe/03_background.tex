@@ -1,6 +1,6 @@
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Multi-Head Attention}
+\subsection{Multi-Head Attention}
 
 For input $X \in \mathbb{R}^{B \times L \times d}$, standard attention:
 
@@ -14,7 +14,7 @@ Q = X W_Q^\top, \quad K = X W_K^\top, \quad V = X W_V^\top
 \tag{3.2}
 \]
 
-\subsection{3.2 Mixture of Experts}
+\subsection{Mixture of Experts}
 
 An MoE layer replaces a single FFN with $E$ expert FFNs and a router:
 
@@ -36,7 +36,7 @@ $k$ highest-weighted experts. Only those experts run forward.
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is the 
 mean router probability for expert $e$.
 
-\subsection{3.3 The Step-0 Preservation Problem}
+\subsection{The Step-0 Preservation Problem}
 
 Adding a randomly initialized branch to a pretrained model perturbs its 
 output at step 0:
@@ -50,11 +50,13 @@ with $\Delta(X) \neq 0$ in general. For catastrophic forgetting this is
 harmful. BAM-UMoE enforces $\Delta(X) = 0$ at initialization via three 
 mechanisms:
 
-1. \textbf{Zero-init final layer.} Every expert's last linear layer is zero.
-2. \textbf{Negative gating bias.} The gate outputs $\sigma(-3) \approx 0.047$.
-3. \textbf{Frozen base.} Base attention weights are exact copies.
+\begin{enumerate}
+\item \textbf{Zero-init final layer.} Every expert's last linear layer is zero.
+\item \textbf{Negative gating bias.} The gate outputs $\sigma(-3) \approx 0.047$.
+\item \textbf{Frozen base.} Base attention weights are exact copies.
 
-\subsection{3.4 LoRA}
+\end{enumerate}
+\subsection{LoRA}
 
 LoRA (Hu et al., 2021):
 
@@ -65,15 +67,15 @@ LoRA (Hu et al., 2021):
 
 with $A \in \mathbb{R}^{r_L \times d}$, $B \in \mathbb{R}^{d \times r_L}$.
 
-\subsection{3.5 Grouped-Query Attention}
+\subsection{Grouped-Query Attention}
 
 GQA uses $H_{kv} < H$ KV heads, repeated to match query heads. BAM-UMoE 
 preserves GQA structure.
 
-\subsection{3.6 Rotary Position Embeddings}
+\subsection{Rotary Position Embeddings}
 
 RoPE rotates Q, K by position-dependent angles. BAM-UMoE supports **partial 
 RoPE** (Qwen3.5 with rotary\_dim < head\_dim) by rotating the first 
 \texttt{rotary\_dim} coordinates.
 
-\subsection{3.7 Notation Summary}
+\subsection{Notation Summary}

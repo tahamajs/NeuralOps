@@ -1,6 +1,6 @@
-\section{12. Reproducibility Statement}
+\section{Reproducibility Statement}
 
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -10,7 +10,7 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Optional: FlashAttention Installation}
+\subsection{Optional: FlashAttention Installation}
 
 \begin{lstlisting}
 # For Hopper (H100/H200):
@@ -19,7 +19,7 @@ pip install flash-attn --no-build-isolation
 # For older GPUs, no installation needed (SDPA fallback works).
 \end{lstlisting}
 
-\subsection{12.3 Running the Wrapper}
+\subsection{Running the Wrapper}
 
 \begin{lstlisting}
 python run_all_4_flash3.py \
@@ -28,7 +28,7 @@ python run_all_4_flash3.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{12.4 Verifying Path Selection}
+\subsection{Verifying Path Selection}
 
 \begin{lstlisting}
 from framework.attentions.flash_attention3 import FLASH_ATTN_AVAILABLE
@@ -37,7 +37,7 @@ print("FlashAttention available:", FLASH_ATTN_AVAILABLE)
 
 Expected: \texttt{True} on H100, \texttt{False} otherwise.
 
-\subsection{12.5 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \begin{lstlisting}
 # Main
@@ -49,7 +49,7 @@ for r in 0 4 8 16 32; do
 done
 \end{lstlisting}
 
-\subsection{12.6 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
 seed = 42
@@ -59,7 +59,7 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 \end{lstlisting}
 
-\subsection{12.7 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
@@ -75,15 +75,15 @@ GPT-2 & 78.98\% $\pm$ 1\% \\
 \end{tabular}
 \end{table}
 
-\subsection{12.8 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item Dataset: SST-2
 \item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-flash3}
 \item Metrics: \texttt{results/unified\_flash3/*/summary.csv}
-\end{itemize}
 
-\subsection{12.9 Known Issues}
+\end{itemize}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item No FA3 on non-Hopper GPUs

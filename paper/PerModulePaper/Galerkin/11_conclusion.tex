@@ -1,12 +1,12 @@
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{Galerkin Attention}, which formulates attention as a 
 Petrov-Galerkin projection onto a DCT basis, achieving $\mathcal{O}(Nrd)$ 
 complexity for encoder models. Decoders fall back to standard softmax.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -22,45 +22,47 @@ GPT-2 & 0.00\% & +1188876M & Fallback \\
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Encoder linear complexity} is achievable via basis projection.
-2. \textbf{DCT is the natural basis} for attention smoothness.
-3. \textbf{Decoder fallback} is necessary for causality.
-4. \textbf{Not a compression method.}
+\begin{enumerate}
+\item \textbf{Encoder linear complexity} is achievable via basis projection.
+\item \textbf{DCT is the natural basis} for attention smoothness.
+\item \textbf{Decoder fallback} is necessary for causality.
+\item \textbf{Not a compression method.}
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Learned basis
 \item Causal-compatible basis
 \item Cross-attention evaluation
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Higher-order DCT variants
 \item Adaptive rank per layer
 \item Integration with FlashAttention
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 Galerkin Attention is a mathematically principled encoder efficiency method. 
 We release code under MIT.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 {{ACKNOWLEDGMENTS}}
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
 \item \textbf{{{AUTHOR\_2}}} provided feedback.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

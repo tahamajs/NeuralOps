@@ -1,15 +1,17 @@
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 BAM-UMoE augments attention with an MoE refinement of the value pathway. 
 The forward pass:
 
-1. \textbf{Standard QKV projections} with frozen base weights ( 4.2).
-2. \textbf{MoE value refinement} applied additively to V ( 4.3).
-3. \textbf{Gated scaling} for controlled ramp-up ( 4.4).
-4. \textbf{Output projection} with nested bypass ( 4.5).
+\begin{enumerate}
+\item \textbf{Standard QKV projections} with frozen base weights ( 4.2).
+\item \textbf{MoE value refinement} applied additively to V ( 4.3).
+\item \textbf{Gated scaling} for controlled ramp-up ( 4.4).
+\item \textbf{Output projection} with nested bypass ( 4.5).
 
+\end{enumerate}
 \textbf{Figure 4.1} shows the architecture.
 
 \begin{lstlisting}
@@ -55,7 +57,7 @@ The forward pass:
                       Y
 \end{lstlisting}
 
-\subsection{4.2 Phase 1: Base Attention}
+\subsection{Phase 1: Base Attention}
 
 For each projection $P \in \{Q, K, V, O\}$, we use a \texttt{LoRALinear} module:
 
@@ -70,9 +72,9 @@ $s = \alpha/r_L$ is the LoRA scaling.
 Base weights are copied exactly from the pretrained attention via 
 \texttt{copy\_weights} (see Section 5).
 
-\subsection{4.3 Phase 2: MoE Value Refinement}
+\subsection{Phase 2: MoE Value Refinement}
 
-\subsubsection{4.3.1 MoE Architecture}
+\subsubsection{MoE Architecture}
 
 The MoE branch produces a refinement signal of shape 
 $(B, L, H \cdot d_h)$:
@@ -96,7 +98,7 @@ E_\text{out} &= \text{stack}([\text{Expert}_e(X) \text{ for } e \in [E]]) \\
 \tag{4.3}
 \]
 
-\subsubsection{4.3.2 Expert Architecture}
+\subsubsection{Expert Architecture}
 
 Each expert is a 2-layer MLP:
 
@@ -108,7 +110,7 @@ Each expert is a 2-layer MLP:
 with $W_1^{(e)} \in \mathbb{R}^{(2d) \times d}$ and 
 $W_2^{(e)} \in \mathbb{R}^{d \times (2d)}$.
 
-\subsubsection{4.3.3 Step-0 Zero Initialization}
+\subsubsection{Step-0 Zero Initialization}
 
 \textbf{Critical.} We initialize:
 
@@ -120,7 +122,7 @@ W_2^{(e)} = 0, \quad b_2^{(e)} = 0 \quad \forall e
 This ensures $\text{Expert}_e(X) = 0$ for all inputs, so 
 $\text{MoE}(X) = 0$ at step 0.
 
-\subsubsection{4.3.4 Auxiliary Load Balancing Loss}
+\subsubsection{Auxiliary Load Balancing Loss}
 
 We add the Switch/GShard load-balancing loss:
 
@@ -133,7 +135,7 @@ where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is
 the mean router probability. This is added to the task loss with weight 
 $\lambda_\text{aux} = 0.01$ (default 0.01).
 
-\subsubsection{4.3.5 Value Integration}
+\subsubsection{Value Integration}
 
 The MoE output is reshaped and added to $V$:
 
@@ -145,9 +147,9 @@ V' = V + \alpha \cdot \text{MoE}(X)
 with $\alpha = 0.1$ (fixed). The 0.1 scaling keeps the MoE contribution 
 conservative -- even after training, the MoE never dominates the base.
 
-\subsection{4.4 Phase 3: Gated Ramp-Up}
+\subsection{Phase 3: Gated Ramp-Up}
 
-\subsubsection{4.4.1 The Gate}
+\subsubsection{The Gate}
 
 A learnable scalar gate:
 
@@ -170,7 +172,7 @@ nonzero (since backprop through $W_2^{(e)} = 0$ gives nonzero gradient for
 $W_1^{(e)}$). The gate provides \textbf{additional} attenuation to prevent early 
 drift.
 
-\subsubsection{4.4.2 Combined Output}
+\subsubsection{Combined Output}
 
 The final forward pass:
 
@@ -182,7 +184,7 @@ V' = V + \alpha \cdot g_\text{gate} \cdot \text{MoE}(X)
 At step 0, $W_2^{(e)} = 0 \Rightarrow \text{MoE}(X) = 0 \Rightarrow V' = V$. 
 Exact preservation.
 
-\subsection{4.5 Phase 4: Output Projection}
+\subsection{Phase 4: Output Projection}
 
 The output projection follows the standard pattern:
 
@@ -194,7 +196,7 @@ Y = \text{Attn}(Q, K, V') W_O^\top + b_O
 with nested encoder bypass: for RoBERTa/BERT, \texttt{out\_lin} is not applied 
 (the outer \texttt{output.dense} performs it).
 
-\subsection{4.6 The Full Algorithm}
+\subsection{The Full Algorithm}
 
 \textbf{Algorithm 1:} BAM-UMoE forward pass
 \begin{lstlisting}
@@ -223,9 +225,9 @@ Output: Y $\in$ R^{B$\times$L$\times$d}, aux_loss
 20: return Y, MoE.aux_loss
 \end{lstlisting}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Complexity Analysis}
 
-\subsubsection{4.7.1 Time Complexity}
+\subsubsection{Time Complexity}
 
 \begin{table}[H]
 \centering
@@ -240,7 +242,7 @@ Expert forward (top-2) & $O(2 L d \cdot 2 d)$ \\
 Attention scores & $O(L^2 d_h)$ \\
 Context & $O(L^2 d_h)$ \\
 Output proj & $O(L d^2)$ \\
-**Total** & $O(L^2 d_h + L d^2 + L d^2)$ \\
+\textbf{Total} & $O(L^2 d_h + L d^2 + L d^2)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -248,7 +250,7 @@ Output proj & $O(L d^2)$ \\
 The MoE branch adds $O(L d^2)$ per layer (since 2 experts $\times$ 2-layer MLP 
 of width $2d$), comparable to the base attention cost.
 
-\subsubsection{4.7.2 Parameter Count}
+\subsubsection{Parameter Count}
 
 For \texttt{UnifiedMoE(dim=d, num\_experts=E, output\_dim=d)}:
 
@@ -263,7 +265,7 @@ Router LN & $2d$ \\
 Router & $d E$ \\
 Each expert & $2d \cdot 2d + 2d \cdot 2d = 8d^2$ \\
 Total experts & $8 d^2 E$ \\
-**MoE total** & $8 d^2 E + O(d E)$ \\
+\textbf{MoE total} & $8 d^2 E + O(d E)$ \\
 \bottomrule
 \end{tabular}
 \end{table}

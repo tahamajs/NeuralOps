@@ -67,12 +67,12 @@
 Standard self-attention is $\mathcal{O}(L^2)$ in sequence length, which is 
 prohibitive for long-context inference. Sliding-window attention reduces 
 this to $\mathcal{O}(L \cdot W)$, but cannot capture long-range dependencies. 
-We introduce **OHA** (**O**ptimized **H**ybrid **A**ttention), a drop-in 
+We introduce \textbf{OHA} (\textbf{O}ptimized \textbf{H}ybrid \textbf{A}ttention), a drop-in 
 replacement for multi-head self-attention that combines (i) local sliding-window 
-attention with (ii) **sequence-compressed global attention**, where the 
+attention with (ii) \textbf{sequence-compressed global attention}, where the 
 global branch attends not to all $L$ tokens but to $d_c \ll L$ compressed 
 "summary" slots produced by learnable soft-attention weights. The two 
-branches are combined through a **head-wise gating** scalar initialized to 
+branches are combined through a \textbf{head-wise gating} scalar initialized to 
 favor the local branch at start.
 
 OHA supports four attention families through a single weight-transfer routine: 
@@ -81,22 +81,21 @@ with rotary embeddings (Qwen/LLaMA). Base projections are frozen; only LoRA
 adapters, the compression projections, and the gate are trained.
 
 We evaluate OHA on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
-50 LoRA recovery steps. OHA achieves **89.2\%** on 
-DistilBERT ($\Delta$ = -1.51), **76.5\%** on RoBERTa ($\Delta$ = -2.06), 
-and **77.8\%** on GPT-2 ($\Delta$ = -1.56).
+50 LoRA recovery steps. OHA achieves \textbf{89.2\%} on 
+DistilBERT ($\Delta$ = -1.51), \textbf{76.5\%} on RoBERTa ($\Delta$ = -2.06), 
+and \textbf{77.8\%} on GPT-2 ($\Delta$ = -1.56).
 
-<!-- CRITICAL HONESTY -->
-OHA **increases** parameter count by **1.40\%** on DistilBERT 
+OHA \textbf{increases} parameter count by \textbf{1.40\%} on DistilBERT 
 due to three additions: (i) the compression projections 
 $W_k^\text{comp}, W_v^\text{comp} \in \mathbb{R}^{d \times d_c}$ 
 (ii) the gate $W_g \in \mathbb{R}^{d \times H}$, and (iii) LoRA adapters on 
 four projections. The "compression" in the name refers to the **sequence 
 length** of the global branch, not to model size reduction.
 
-**Keywords:** hybrid attention, sliding-window, sequence compression, 
+\textbf{Keywords:} hybrid attention, sliding-window, sequence compression, 
 gated fusion, transformer efficiency
 
----
+
 
 \vspace{0.5em}
 \noindent\textbf{Keywords:} hybrid attention, sliding-window, sequence compression,

@@ -1,7 +1,7 @@
 
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: Main results on SST-2 validation.}
 
@@ -13,24 +13,26 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
-DistilBERT & **Adaptive SVD** & **88.0** & -2.7 & 0.880 & 24 & **3.0$\times$** & 130 MB \\
+DistilBERT & \textbf{Adaptive SVD} & \textbf{88.0} & -2.7 & 0.880 & 24 & \textbf{3.0$\times$} & 130 MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
-RoBERTa & **Adaptive SVD** & **74.0** & -4.6 & 0.740 & 48 & **2.5$\times$** & 550 MB \\
+RoBERTa & \textbf{Adaptive SVD} & \textbf{74.0} & -4.6 & 0.740 & 48 & \textbf{2.5$\times$} & 550 MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
-GPT-2 & **Adaptive SVD** & **75.5** & -3.9 & 0.750 & 48 & **2.5$\times$** & 600 MB \\
+GPT-2 & \textbf{Adaptive SVD} & \textbf{75.5} & -3.9 & 0.750 & 48 & \textbf{2.5$\times$} & 600 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key observations:}
 
-1. \textbf{Parameter reduction:} 3.0$\times$ on DistilBERT, 2.5$\times$ on RoBERTa, 
-   2.5$\times$ on GPT-2.
-2. \textbf{Accuracy:} drops of only -2.7\%, -4.6\%, -3.9\%.
-3. \textbf{VRAM:} reduces by 30\% on all models.
-4. \textbf{No calibration:} compression time is only 15--30 seconds.
+\begin{enumerate}
+\item \textbf{Parameter reduction:} 3.0$\times$ on DistilBERT, 2.5$\times$ on RoBERTa,
+  2.5$\times$ on GPT-2.
+\item \textbf{Accuracy:} drops of only -2.7\%, -4.6\%, -3.9\%.
+\item \textbf{VRAM:} reduces by 30\% on all models.
+\item \textbf{No calibration:} compression time is only 15--30 seconds.
 
-\subsection{7.2 Parameter Analysis}
+\end{enumerate}
+\subsection{Parameter Analysis}
 
 \textbf{Table 7.2: Total parameter counts.}
 
@@ -41,9 +43,9 @@ GPT-2 & **Adaptive SVD** & **75.5** & -3.9 & 0.750 & 48 & **2.5$\times$** & 600 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Adaptive SVD} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & 22000000 & **3.0$\times$** \\
-RoBERTa & 124,647,170 & 50000000 & **2.5$\times$** \\
-GPT-2 & 124,441,344 & 50000000 & **2.5$\times$** \\
+DistilBERT & 66,955,010 & 22000000 & \textbf{3.0$\times$} \\
+RoBERTa & 124,647,170 & 50000000 & \textbf{2.5$\times$} \\
+GPT-2 & 124,441,344 & 50000000 & \textbf{2.5$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -65,7 +67,7 @@ $W_O$ & 589,824 & 98304 & 64 & 6.0$\times$ \\
 \end{tabular}
 \end{table}
 
-\subsection{7.3 Per-Layer Rank Distribution}
+\subsection{Per-Layer Rank Distribution}
 
 \textbf{Table 7.3: Energy-thresholded ranks for DistilBERT.}
 
@@ -82,7 +84,7 @@ $W_O$ & 589,824 & 98304 & 64 & 6.0$\times$ \\
 3 & 150 & 150 & 80 & 80 & 115 \\
 4 & 140 & 140 & 70 & 70 & 105 \\
 5 & 128 & 128 & 64 & 64 & 96 \\
-**Mean** & **139** & **139** & **71** & **71** & **105** \\
+\textbf{Mean} & \textbf{139} & \textbf{139} & \textbf{71} & \textbf{71} & \textbf{105} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -90,7 +92,7 @@ $W_O$ & 589,824 & 98304 & 64 & 6.0$\times$ \\
 \textbf{Observation.} Ranks range from 64 to 150. Value 
 projections tend to have lower rank than query and key projections.
 
-\subsection{7.4 Reconstruction Error}
+\subsection{Reconstruction Error}
 
 \textbf{Table 7.4: Relative Frobenius error at energy threshold $\tau$.}
 
@@ -111,7 +113,7 @@ DistilBERT & O & 0.28 & 0.283 \\
 
 All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 
-\subsection{7.5 Efficiency Profile}
+\subsection{Efficiency Profile}
 
 \textbf{Table 7.5: Inference efficiency.}
 
@@ -132,7 +134,7 @@ GPT-2 & Adaptive SVD & 5.3 & 21000 & 600 \\
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: Energy Threshold}
+\subsection{Ablation: Energy Threshold}
 
 \textbf{Table 7.6: Effect of energy threshold $\tau$.}
 
@@ -145,7 +147,7 @@ GPT-2 & Adaptive SVD & 5.3 & 21000 & 600 \\
 \midrule
 0.85 & 64 & 85 & 5.0$\times$ & 70 & 71 \\
 0.90 & 90 & 87 & 3.5$\times$ & 72 & 74 \\
-**0.92** & **105** & **88** & **3.0$\times$** & **74** & **75.5** \\
+\textbf{0.92} & \textbf{105} & \textbf{88} & \textbf{3.0$\times$} & \textbf{74} & \textbf{75.5} \\
 0.95 & 160 & 89 & 2.0$\times$ & 75.5 & 77 \\
 0.99 & 350 & 90 & 1.2$\times$ & 77 & 78.5 \\
 \bottomrule
@@ -155,7 +157,7 @@ GPT-2 & Adaptive SVD & 5.3 & 21000 & 600 \\
 \textbf{Observation.} $\tau$=0.92 is a sweet spot. $\tau$=0.85 loses accuracy; $\tau$=0.99 gives 
 minimal compression.
 
-\subsection{7.7 Ablation: Residual Rank}
+\subsection{Ablation: Residual Rank}
 
 \textbf{Table 7.7: Effect of residual adapter rank $r_L$.}
 
@@ -169,7 +171,7 @@ minimal compression.
 0 (no adapter) & 80 & 65 & 66 \\
 4 & 85 & 70 & 71.5 \\
 8 & 87 & 72.5 & 74 \\
-**16** & **88** & **74** & **75.5** \\
+\textbf{16} & \textbf{88} & \textbf{74} & \textbf{75.5} \\
 32 & 88.2 & 74.3 & 75.7 \\
 64 & 88.3 & 74.4 & 75.8 \\
 \bottomrule
@@ -179,7 +181,7 @@ minimal compression.
 \textbf{Observation.} $r_L = 16$ gives near-optimal accuracy. $r_L = 0$ (no adapter) 
 collapses accuracy.
 
-\subsection{7.8 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.8: Accuracy vs recovery steps (r\_L = 16).}
 
@@ -192,14 +194,14 @@ collapses accuracy.
 \midrule
 10 & 0.4 & 0.8 & 0.7 \\
 25 & 0.35 & 0.6 & 0.55 \\
-**50** & **0.30** & **0.55** & **0.50** \\
+\textbf{50} & \textbf{0.30} & \textbf{0.55} & \textbf{0.50} \\
 100 & 88.3 & 74.5 & 75.8 \\
 200 & 88.4 & 74.6 & 75.9 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Ablation: SVD Rank Cap}
+\subsection{Ablation: SVD Rank Cap}
 
 \textbf{Table 7.9: Effect of maximum rank cap ($\tau$=0.92).}
 
@@ -221,7 +223,7 @@ collapses accuracy.
 \textbf{Observation.} The energy criterion rarely hits the rank cap, confirming 
 that $\tau$ is the primary driver of rank selection.
 
-\subsection{7.10 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.10: Adaptive SVD vs prior compression methods.}
 
@@ -233,15 +235,15 @@ that $\tau$ is the primary driver of rank selection.
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 full & 90.71\% & 1.00$\times$ & 78.56\% & 79.36\% \\
-`svd\_linear` (r=128) & 84 & 3.0$\times$ & 70 & 72 \\
-`a3` & 85.5 & 2.8$\times$ & 72 & 74 \\
-`aasvd` & 85.0 & 3.0$\times$ & 72 & 73 \\
-**Adaptive SVD** & **88.0** & **3.0$\times$** & **74.0** & **75.5** \\
+\texttt{svd\_linear} (r=128) & 84 & 3.0$\times$ & 70 & 72 \\
+\texttt{a3} & 85.5 & 2.8$\times$ & 72 & 74 \\
+\texttt{aasvd} & 85.0 & 3.0$\times$ & 72 & 73 \\
+\textbf{Adaptive SVD} & \textbf{88.0} & \textbf{3.0$\times$} & \textbf{74.0} & \textbf{75.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.11 Compression Time}
+\subsection{Compression Time}
 
 \textbf{Table 7.11: Wall-clock compression time.}
 
@@ -252,9 +254,9 @@ full & 90.71\% & 1.00$\times$ & 78.56\% & 79.36\% \\
 \toprule
 \textbf{Model} & \textbf{SVD} & \textbf{Rank selection} & \textbf{Adapter init} & \textbf{Total} \\
 \midrule
-DistilBERT & 10 s & 2 s & 3 s & **15 s** \\
-RoBERTa & 20 s & 4 s & 6 s & **30 s** \\
-GPT-2 & 20 s & 4 s & 6 s & **30 s** \\
+DistilBERT & 10 s & 2 s & 3 s & \textbf{15 s} \\
+RoBERTa & 20 s & 4 s & 6 s & \textbf{30 s} \\
+GPT-2 & 20 s & 4 s & 6 s & \textbf{30 s} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -262,7 +264,7 @@ GPT-2 & 20 s & 4 s & 6 s & **30 s** \\
 \textbf{Observation.} No calibration, so compression is 5--10$\times$ faster than 
 calibration-based methods.
 
-\subsection{7.12 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Compression ratio:} 3.0$\times$--2.5$\times$

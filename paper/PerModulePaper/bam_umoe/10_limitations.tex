@@ -1,68 +1,68 @@
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 BAM-UMoE is Not a Compression Method}
+\subsection{BAM-UMoE is Not a Compression Method}
 
 \textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~350\%. 
 It should never be described as "compression" or "efficiency". Any paper 
 using BAM-UMoE must disclose the parameter increase.
 
-\subsection{10.2 Parameter Overhead}
+\subsection{Parameter Overhead}
 
 The MoE branch adds $O(E \cdot d^2)$ parameters per layer:
 \begin{itemize}
 \item $d = 768$, $E = 8$: ~37M params per layer.
 \item 6-layer DistilBERT: +226M params.
-\end{itemize}
 
-\subsection{10.3 Compute Overhead}
+\end{itemize}
+\subsection{Compute Overhead}
 
 The MoE branch adds $O(L d^2)$ FLOPs per layer, comparable to base 
 attention. Total compute roughly doubles.
 
-\subsection{10.4 VRAM Overhead}
+\subsection{VRAM Overhead}
 
 The MoE branch's expert weights and activations are stored in VRAM, 
 increasing peak memory by ~{{VRAM\_INC}}$\times$.
 
-\subsection{10.5 Inference Latency}
+\subsection{Inference Latency}
 
 Two matmuls + router overhead = ~{{LATENCY\_RATIO}}$\times$ slower.
 
-\subsection{10.6 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 evaluated. Generation, QA, NLI untested.
 
-\subsection{10.7 Model Coverage}
+\subsection{Model Coverage}
 
 Three models tested (66.9M--124.6M). Larger models untested.
 
-\subsection{10.8 Hardware}
+\subsection{Hardware}
 
 Only RTX 4070 Laptop. Scaling to datacenter GPUs unknown.
 
-\subsection{10.9 Load Balancing}
+\subsection{Load Balancing}
 
 Auxiliary loss weight $\lambda_\text{aux} = 0.01$ chosen 
 heuristically. Not tuned extensively.
 
-\subsection{10.10 Single Seed}
+\subsection{Single Seed}
 
 Standard error ~1.69\%. Differences below 3.4\% may be noise.
 
-\subsection{10.11 Cross-Attention Scope}
+\subsection{Cross-Attention Scope}
 
 MoE is not applied to cross-attention. This is a design choice but 
 limits applicability to encoder-decoder tasks.
 
-\subsection{10.12 Code Quality}
+\subsection{Code Quality}
 
 Research-grade:
 \begin{itemize}
 \item Broad exception handling
 \item No unit tests for MoE routing
 \item Numerical stability could be improved
-\end{itemize}
 
-\subsection{10.13 Ethical Considerations}
+\end{itemize}
+\subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.

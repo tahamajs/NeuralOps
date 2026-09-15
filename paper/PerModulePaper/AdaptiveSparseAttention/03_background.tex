@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Softmax Attention}
+\subsection{Softmax Attention}
 
 For a single head with $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
@@ -24,7 +24,7 @@ O = P V \in \mathbb{R}^{L \times d_h}
 matmuls require $\mathcal{O}(L^2 d_h)$ time. For $L = 1024$, $d_h = 64$, 
 this is $\sim 67$M FLOPs per head per sequence.
 
-\subsection{3.2 Sparsity in Attention}
+\subsection{Sparsity in Attention}
 
 \textbf{Observation.} The softmax distribution $P$ is typically concentrated:
 
@@ -40,7 +40,7 @@ vs ranked keys for a middle GPT-2 layer. Top 10\% of keys capture
 \textbf{Implication.} Pruning to the top $k = (1 - \rho) L$ keys retains most 
 of the output quality, at fraction $1 - \rho$ of the compute.
 
-\subsection{3.3 Top-$k$ Selection}
+\subsection{Top-$k$ Selection}
 
 For a score vector $s \in \mathbb{R}^L$, the top-$k$ selection produces:
 
@@ -54,7 +54,7 @@ where $\tau$ is the $k$-th largest value.
 \textbf{Non-differentiability.} The gradient $\partial \text{top-}k / \partial s$ 
 is zero almost everywhere. This is problematic for end-to-end training.
 
-\subsection{3.4 Soft Top-$k$ Relaxations}
+\subsection{Soft Top-$k$ Relaxations}
 
 \textbf{Sigmoid mask.} Given $\tau$, we can define:
 
@@ -77,7 +77,7 @@ log-mask to the scores:
 This preserves the softmax interpretation: $\text{softmax}(\tilde{s}) = 
 \text{softmax}(s) \cdot m / \sum m$.
 
-\subsection{3.5 Per-Head Sparsity Budgets}
+\subsection{Per-Head Sparsity Budgets}
 
 The retention budget $k_h$ for head $h$ is:
 
@@ -98,7 +98,7 @@ where $\rho_h \in [0, 1]$ is the head-specific sparsity ratio.
 This is differentiable w.r.t. $\ell_h$, allowing gradient-based learning of 
 the sparsity budget.
 
-\subsection{3.6 Chunked Computation}
+\subsection{Chunked Computation}
 
 To bound peak memory, we process the query dimension in chunks of size $C$:
 
@@ -112,7 +112,7 @@ O_{[i:i+C]} = \text{softmax}\!\left(\frac{Q_{[i:i+C]} K^\top}{\sqrt{d_h}}\right)
 For $C = 64$, $B = 8$, $H = 12$, $L = 512$: $64 \times 12 \times 64 \times 512 \times 2 = 50$ MB 
 instead of $8 \times 12 \times 512^2 \times 2 = 400$ MB. \textbf{8$\times$ reduction.}
 
-\subsection{3.7 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable adapters:
 
@@ -124,4 +124,4 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
 with $B = 0$ at initialization. ASA uses LoRA for recovery after sparsity 
 injection.
 
-\subsection{3.8 Notation Summary}
+\subsection{Notation Summary}

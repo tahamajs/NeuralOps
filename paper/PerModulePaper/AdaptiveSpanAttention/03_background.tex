@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Softmax Attention}
+\subsection{Softmax Attention}
 
 For a single head with $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
@@ -22,7 +22,7 @@ O = P V \in \mathbb{R}^{L \times d_h}
 
 \textbf{Complexity.} $\mathcal{O}(L^2)$ memory and time.
 
-\subsection{3.2 Window Attention}
+\subsection{Window Attention}
 
 \textbf{Fixed window.} Restrict attention to positions within distance $w$:
 
@@ -37,7 +37,7 @@ For a causal model, $P_{ij} = 0$ for $j > i$ or $i - j > w$.
 
 \textbf{Implementation.} Often done with band masks or block-sparse patterns.
 
-\subsection{3.3 Learned Span (Sukhbaatar et al., 2019)}
+\subsection{Learned Span (Sukhbaatar et al., 2019)}
 
 \textbf{Idea.} Replace the fixed window $w$ with a per-head learned span $z_h$.
 
@@ -52,8 +52,8 @@ g_z(d) = \text{clamp}\!\left(\frac{R + z - d}{R}, 0, 1\right)
 \item For $d \leq z$: $g_z(d) = 1$ (fully attend)
 \item For $z < d < z + R$: $g_z(d) = \frac{R + z - d}{R}$ (linear decay)
 \item For $d \geq z + R$: $g_z(d) = 0$ (no attend)
-\end{itemize}
 
+\end{itemize}
 \textbf{Parameterization.} We use a scalar logit:
 
 \[
@@ -61,7 +61,7 @@ z = \sigma(\ell) \cdot S_\text{max}
 \tag{3.6}
 \]
 
-\subsection{3.4 Span Regularization}
+\subsection{Span Regularization}
 
 \textbf{L1 penalty.} To encourage small spans:
 
@@ -75,7 +75,7 @@ training, the model shrinks $z_h$ to reduce the penalty, subject to preserving
 task accuracy. The equilibrium depends on $\lambda$: larger $\lambda$ $\to$ 
 smaller spans.
 
-\subsection{3.5 Softmax Renormalization}
+\subsection{Softmax Renormalization}
 
 After applying the ramp mask:
 
@@ -93,7 +93,7 @@ This renormalization ensures rows sum to 1. We implement this via:
 
 where we work in log space to avoid numerical issues.
 
-\subsection{3.6 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable low-rank adapters:
 
@@ -105,7 +105,7 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
 with $B = 0$ at initialization. ASA-Span uses LoRA to adapt the frozen 
 projections to the new span structure.
 
-\subsection{3.7 Relative Position Bias}
+\subsection{Relative Position Bias}
 
 T5 (Raffel et al., 2020) adds a learned bias based on bucketed relative 
 position:
@@ -117,4 +117,4 @@ S_{ij} \leftarrow S_{ij} + b_{\text{bucket}(i - j)}
 
 ASA-Span preserves this bias, applying the ramp \textbf{after} adding the bias.
 
-\subsection{3.8 Notation Summary}
+\subsection{Notation Summary}

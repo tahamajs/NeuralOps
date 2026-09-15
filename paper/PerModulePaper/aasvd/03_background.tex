@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Truncated SVD}
+\subsection{Truncated SVD}
 
 For any matrix $W \in \mathbb{R}^{m \times n}$, the SVD is:
 
@@ -34,7 +34,7 @@ V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
 
 so that $W_r = U_r V_r$, and the two factors have balanced magnitude.
 
-\subsection{3.2 Input Activation Covariance}
+\subsection{Input Activation Covariance}
 
 For a linear layer $y = Wx + b$ with input $x \sim \mathcal{D}$, define:
 
@@ -62,7 +62,7 @@ This is the "Fisher diagonal" used in A3.
 residual streams and FFN hidden states exhibit strong correlations. AASVD 
 captures this via the full matrix $C_X$.
 
-\subsection{3.3 Matrix Square Root}
+\subsection{Matrix Square Root}
 
 For a positive semi-definite matrix $C_X = Q \Lambda Q^\top$, the matrix 
 square root is:
@@ -83,7 +83,7 @@ The inverse square root is defined similarly with $1/\sqrt{\lambda_i}$.
 \tag{3.7}
 \]
 
-\subsection{3.4 Exponential Moving Average}
+\subsection{Exponential Moving Average}
 
 Given a stream of covariance estimates $C_1, C_2, \dots, C_K$ (one per 
 calibration batch), the EMA is:
@@ -105,7 +105,7 @@ with drift. For stationary distributions, both give the same expected value.
 memory is $\mathcal{O}(N_l d^2)$, independent of the number of calibration 
 batches.
 
-\subsection{3.5 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) parameterizes weight updates as:
 
@@ -127,7 +127,7 @@ y = (x V^\top) U^\top + (x A^\top) B^\top \cdot s + b
 where $s = \alpha / r_L$. The frozen $U, V$ provide the bulk; LoRA provides 
 recovery capacity.
 
-\subsection{3.6 Frobenius Reconstruction Error}
+\subsection{Frobenius Reconstruction Error}
 
 For validation, we use the relative Frobenius error:
 
@@ -139,4 +139,4 @@ For validation, we use the relative Frobenius error:
 This measures how much of the weight matrix's energy is lost. Thresholds 
 are typically $0.10$ (tight) to $0.50$ (permissive).
 
-\subsection{3.7 Notation Summary}
+\subsection{Notation Summary}

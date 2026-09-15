@@ -1,6 +1,6 @@
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
@@ -13,12 +13,12 @@ DistilBERT & Flat & No & No & No & No \\
 RoBERTa & Nested & Yes & No & No & No \\
 GPT-2 & Causal & No & No & No & No \\
 Qwen3.5 & GQA+RoPE & No & Yes & Yes & No \\
-T5 & Enc-Dec & No & No & No & **Yes** \\
+T5 & Enc-Dec & No & No & No & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Extraction}
+\subsection{Weight Extraction}
 
 \subsubsection{DistilBERT}
 \begin{lstlisting}
@@ -47,12 +47,12 @@ o_w = src.c_proj.weight.T
 \subsubsection{Qwen (GQA + RoPE)}
 Direct copy from \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}.
 
-\subsection{5.3 Nested Encoder Bypass}
+\subsection{Nested Encoder Bypass}
 
 For RoBERTa, BAM-UMoE's \texttt{out\_lin} is not applied; the outer 
 \texttt{BertSelfOutput.dense} performs the projection. This avoids double projection.
 
-\subsection{5.4 Partial RoPE}
+\subsection{Partial RoPE}
 
 For Qwen3.5 with \texttt{head\_dim=256} and \texttt{rotary\_dim=64}:
 \begin{lstlisting}
@@ -61,7 +61,7 @@ q_rot = (q_rot * cos) + (rotate_half(q_rot) * sin)
 q = torch.cat([q_rot, q_pass], dim=-1)
 \end{lstlisting}
 
-\subsection{5.5 Cross-Attention}
+\subsection{Cross-Attention}
 
 For encoder-decoder models, the MoE branch is \textbf{not applied} to 
 cross-attention. The reason: cross-attention V is projected from encoder 
@@ -74,7 +74,7 @@ if not is_cross_attention:
     v = v + 0.1 * moe_delta_v
 \end{lstlisting}
 
-\subsection{5.6 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("bam_umoe")
@@ -82,7 +82,7 @@ class BAMUMoEBlock(BaseAttention):
     ...
 \end{lstlisting}
 
-\subsection{5.7 Failure Modes}
+\subsection{Failure Modes}
 
 \begin{table}[H]
 \centering
@@ -91,12 +91,12 @@ class BAMUMoEBlock(BaseAttention):
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & `copy\_weights` raises & Return None \\
-NaN in scores & `torch.nan\_to\_num` & Replace with 0 \\
-MoE overflow & `torch.clamp` & Clamp to $\pm$65000 \\
+Missing weights & \texttt{copy\_weights} raises & Return None \\
+NaN in scores & \texttt{torch.nan\_to\_num} & Replace with 0 \\
+MoE overflow & \texttt{torch.clamp} & Clamp to $\pm$65000 \\
 Cross-attention MoE & Skip MoE branch & Preserve alignment \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.8 Numerical Stability}
+\subsection{Numerical Stability}

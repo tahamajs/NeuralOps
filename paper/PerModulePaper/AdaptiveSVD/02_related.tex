@@ -1,7 +1,7 @@
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Low-Rank Matrix Factorization}
+\subsection{Low-Rank Matrix Factorization}
 
 \textbf{Classical SVD.} The Eckart--Young theorem (Eckart \& Young, 1936) states 
 that the best rank-$r$ approximation of $W$ in Frobenius norm is the truncated 
@@ -20,7 +20,7 @@ singular values under noise (Gavish \& Donoho, 2014). Our criterion is a
 $\mathcal{O}(d r \log k)$ complexity. For our layer sizes ($\le$3072$\times$768), exact 
 SVD is faster and simpler.
 
-\subsection{2.2 Activation-Aware Compression}
+\subsection{Activation-Aware Compression}
 
 \textbf{AWQ.} Lin et al. (2023) observe that activation magnitude correlates with 
 weight importance and use it to scale quantization. Applied to low-rank 
@@ -38,7 +38,7 @@ streaming EMA accumulation. Adaptive SVD is calibration-free.
 \textbf{Key distinction.} Adaptive SVD does \textbf{not} use activation statistics. Its 
 rank criterion is intrinsic to the weight matrix.
 
-\subsection{2.3 Parameter-Efficient Fine-Tuning}
+\subsection{Parameter-Efficient Fine-Tuning}
 
 \textbf{LoRA.} Hu et al. (2021) add trainable rank-$r_L$ updates $B A$ with $B = 0$. 
 Adaptive SVD uses the same residual structure, integrated with a frozen SVD base.
@@ -53,7 +53,7 @@ and zero-initialized LoRA as the residual. These are complementary strategies.
 
 \textbf{OFT.} Qiu et al. (2023) use orthogonal fine-tuning. Different primitive.
 
-\subsection{2.4 Attention-Specific Compression}
+\subsection{Attention-Specific Compression}
 
 \textbf{Head pruning.} Voita et al. (2019) prune entire heads. Adaptive SVD preserves 
 head count and compresses per-head projections via low-rank factorization.
@@ -64,7 +64,7 @@ SVD preserves head count but compresses per-head projection matrices.
 \textbf{KV cache compression.} H2O (Zhang et al., 2023), StreamingLLM (Xiao et al., 
 2024) reduce cache size at inference. Different target.
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -77,14 +77,16 @@ SVD fixed rank & No & No & Fixed & No & No \\
 SDRM & No & No & Budget & No & No \\
 A3 & Yes & Fisher diag & Escalation & Partial & No \\
 AASVD & Yes & Full cov & Fixed & No & No \\
-**Adaptive SVD** & **No** & **No** & **Energy** & **Yes** & **Yes** \\
+\textbf{Adaptive SVD} & \textbf{No} & \textbf{No} & \textbf{Energy} & \textbf{Yes} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key distinction.} Adaptive SVD is the only method that:
-1. Requires no calibration data.
-2. Selects rank per-projection via an energy criterion.
-3. Preserves T5 relative attention bias.
+\begin{enumerate}
+\item Requires no calibration data.
+\item Selects rank per-projection via an energy criterion.
+\item Preserves T5 relative attention bias.
 
-\subsection{2.6 Comparison Table}
+\end{enumerate}
+\subsection{Comparison Table}

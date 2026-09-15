@@ -1,7 +1,7 @@
 
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 results with $S_\text{max} = 128$, $R = 32$, $\lambda = 0.01$.}
 
@@ -13,16 +13,16 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Learned span} & \textbf{Attn mem} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 128 KB & 1.9 s \\
-DistilBERT & **ASA-Span** & **89.5** & -1.2 & 0.895 & **68** & 128 KB & 2.1 s \\
+DistilBERT & \textbf{ASA-Span} & \textbf{89.5} & -1.2 & 0.895 & \textbf{68} & 128 KB & 2.1 s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 128 KB & 4.1 s \\
-RoBERTa & **ASA-Span** & **76.5** & -2.1 & 0.765 & **72** & 128 KB & 4.5 s \\
+RoBERTa & \textbf{ASA-Span} & \textbf{76.5} & -2.1 & 0.765 & \textbf{72} & 128 KB & 4.5 s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 128 KB & 4.2 s \\
-GPT-2 & **ASA-Span** & **77.5** & -1.9 & 0.775 & **75** & 128 KB & 4.6 s \\
+GPT-2 & \textbf{ASA-Span} & \textbf{77.5} & -1.9 & 0.775 & \textbf{75} & 128 KB & 4.6 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Learned Spans}
+\subsection{Learned Spans}
 
 \textbf{Table 7.2: Span distribution across heads.}
 
@@ -33,9 +33,9 @@ GPT-2 & **ASA-Span** & **77.5** & -1.9 & 0.775 & **75** & 128 KB & 4.6 s \\
 \toprule
 \textbf{Model} & \textbf{Mean span} & \textbf{Min} & \textbf{Max} & \textbf{Std} & \textbf{Reduction from $S_\text{max}$} \\
 \midrule
-DistilBERT & **68** & 16 & 124 & 35 & 47\% \\
-RoBERTa & **72** & 20 & 128 & 32 & 44\% \\
-GPT-2 & **75** & 18 & 126 & 34 & 41\% \\
+DistilBERT & \textbf{68} & 16 & 124 & 35 & 47\% \\
+RoBERTa & \textbf{72} & 20 & 128 & 32 & 44\% \\
+GPT-2 & \textbf{75} & 18 & 126 & 34 & 41\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -43,7 +43,7 @@ GPT-2 & **75** & 18 & 126 & 34 & 41\% \\
 \textbf{Observation.} Learned spans are \textbf{highly non-uniform}. Some heads 
 converge to < 16 (local), others to near $S_\text{max}$ (global).
 
-\subsection{7.3 Per-Layer Span Evolution}
+\subsection{Per-Layer Span Evolution}
 
 \textbf{Table 7.3: Mean span per layer (DistilBERT).}
 
@@ -68,7 +68,7 @@ converge to < 16 (local), others to near $S_\text{max}$ (global).
 have \textbf{smaller} spans. This matches the observation that early layers 
 integrate global context while late layers refine local features.
 
-\subsection{7.4 Efficiency}
+\subsection{Efficiency}
 
 \textbf{Table 7.4: Memory and time.}
 
@@ -91,7 +91,7 @@ GPT-2 & ASA-Span & 780 MB & 4.6 s \\
 because the ramp is applied as a \textbf{soft mask} rather than a hard window. 
 To realize speedup, a \textbf{hard truncation} post-training is needed.
 
-\subsection{7.5 Ablation: Max Span}
+\subsection{Ablation: Max Span}
 
 \textbf{Table 7.5: Accuracy vs $S_\text{max}$.}
 
@@ -110,7 +110,7 @@ To realize speedup, a \textbf{hard truncation} post-training is needed.
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: Ramp Size}
+\subsection{Ablation: Ramp Size}
 
 \textbf{Table 7.6: Accuracy vs $R$.}
 
@@ -133,7 +133,7 @@ To realize speedup, a \textbf{hard truncation} post-training is needed.
 \textbf{Observation.} Larger $R$ gives smoother transitions but less aggressive 
 pruning.
 
-\subsection{7.7 Ablation: L1 Penalty}
+\subsection{Ablation: L1 Penalty}
 
 \textbf{Table 7.7: Accuracy and span vs $\lambda$.}
 
@@ -154,7 +154,7 @@ pruning.
 
 \textbf{Observation.} $\lambda = 0.01$ is a good balance.
 
-\subsection{7.8 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \textbf{Table 7.8: Accuracy vs LoRA rank.}
 
@@ -173,7 +173,7 @@ pruning.
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.9: Accuracy vs recovery steps.}
 
@@ -192,7 +192,7 @@ pruning.
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.10: Comparison.}
 
@@ -205,14 +205,14 @@ pruning.
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% & Dense & 1.00$\times$ & 1.00$\times$ \\
 GQA & 88.5 & 75.5 & 77.0 & KV reduce & 0.95$\times$ & 1.00$\times$ \\
-Primal & 86.5 & 74.0 & 75.0 & Low-rank & 1.00$\times$ & **2$\times$** \\
+Primal & 86.5 & 74.0 & 75.0 & Low-rank & 1.00$\times$ & \textbf{2$\times$} \\
 ASA-Sparse & 88.5 & 76.0 & 76.5 & Sparse & 1.00$\times$ & 1.00$\times$ \\
-**ASA-Span** & **89.5** & **76.5** & **77.5** & Learned span & 1.00$\times$ & 1.00$\times$ \\
+\textbf{ASA-Span} & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} & Learned span & 1.00$\times$ & 1.00$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.11 Training Loss and Span Evolution}
+\subsection{Training Loss and Span Evolution}
 
 \textbf{Figure 7.1} shows span evolution over training steps.
 
@@ -220,7 +220,7 @@ ASA-Sparse & 88.5 & 76.0 & 76.5 & Sparse & 1.00$\times$ & 1.00$\times$ \\
 shrinkage is faster in early layers, slower in late layers. By step 50, 
 convergence is reached.
 
-\subsection{7.12 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Accuracy:} drops -1.2\%---1.9\%.

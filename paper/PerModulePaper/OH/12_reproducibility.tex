@@ -1,7 +1,7 @@
 
-\section{12. Reproducibility Statement}
+\section{Reproducibility Statement}
 
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -11,7 +11,7 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Dependencies}
+\subsection{Dependencies}
 
 \begin{table}[H]
 \centering
@@ -27,7 +27,7 @@ datasets & 2.20.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{12.3 Running OHA}
+\subsection{Running OHA}
 
 \begin{lstlisting}
 python run_all_4_oha.py \
@@ -37,7 +37,7 @@ python run_all_4_oha.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{12.4 Individual Model}
+\subsection{Individual Model}
 
 \begin{lstlisting}
 python Codes/framework/run_quality_sweep.py \
@@ -46,7 +46,7 @@ python Codes/framework/run_quality_sweep.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{12.5 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
@@ -75,7 +75,7 @@ python run_all_4_oha.py --gate_bias 2.0
 python run_all_4_oha.py --gate_bias 3.0
 \end{lstlisting}
 
-\subsection{12.6 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
 import random, numpy as np, torch
@@ -85,7 +85,7 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
-\subsection{12.7 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
@@ -101,15 +101,15 @@ GPT-2 & 77.8\% & +1.51\% \\
 \end{tabular}
 \end{table}
 
-\subsection{12.8 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item Dataset: SST-2
 \item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-oha}
 \item Metrics: \texttt{results/unified\_oha/*/summary.csv}
-\end{itemize}
 
-\subsection{12.9 Known Issues}
+\end{itemize}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item Windows: \texttt{PYTHONIOENCODING=utf-8} recommended

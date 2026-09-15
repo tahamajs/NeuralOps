@@ -1,6 +1,6 @@
-\section{6. Experimental Setup}
+\section{Experimental Setup}
 
-\subsection{6.1 Models}
+\subsection{Models}
 
 \begin{table}[H]
 \centering
@@ -16,11 +16,11 @@ GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
 \end{tabular}
 \end{table}
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
 
-\subsection{6.3 Hyperparameters}
+\subsection{Hyperparameters}
 
 \begin{table}[H]
 \centering
@@ -29,15 +29,15 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-`use\_fp8` & False \\
-`lora\_rank` & 16 \\
-`lora\_alpha` & 32 \\
-`dropout` & 0.1 \\
+\texttt{use\_fp8} & False \\
+\texttt{lora\_rank} & 16 \\
+\texttt{lora\_alpha} & 32 \\
+\texttt{dropout} & 0.1 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 \begin{table}[H]
 \centering
@@ -56,7 +56,7 @@ Precision & FP16 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Hardware}
+\subsection{Hardware}
 
 \begin{table}[H]
 \centering
@@ -77,20 +77,20 @@ FlashAttention & not installed (SDPA fallback) \\
 \textbf{Critical.} On RTX 4070 (Ada Lovelace), FlashAttention-3 is not available 
 (requires Hopper). Our wrapper uses SDPA fallback for all experiments.
 
-\subsection{6.6 Metrics}
+\subsection{Metrics}
 
 \begin{itemize}
 \item Accuracy, F1
 \item Peak VRAM
 \item Inference time
 \item Parameter count
-\end{itemize}
 
-\subsection{6.7 Quality Gate}
+\end{itemize}
+\subsection{Quality Gate}
 
 PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
 
-\subsection{6.8 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_flash3.py \
@@ -100,4 +100,4 @@ python run_all_4_flash3.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{6.9 Baselines}
+\subsection{Baselines}

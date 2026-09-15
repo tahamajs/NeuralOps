@@ -163,8 +163,8 @@ Hybrid softmax+entmax & Stability & No improvement \\
 42 & 90.25 & 77.50 & 78.78 \\
 123 & 90.10 & 77.35 & 78.60 \\
 456 & 90.30 & 77.60 & 78.85 \\
-**Mean** & **90.22** & **77.48** & **78.74** \\
-**Std** & **0.10** & **0.12** & **0.13** \\
+\textbf{Mean} & \textbf{90.22} & \textbf{77.48} & \textbf{78.74} \\
+\textbf{Std} & \textbf{0.10} & \textbf{0.12} & \textbf{0.13} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -173,17 +173,21 @@ Hybrid softmax+entmax & Stability & No improvement \\
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{Freeze base weights} -- always.
-2. \textbf{$\alpha$ = 1.5 is optimal} -- $\alpha$ = 2.0 is too sparse.
-3. \textbf{Sinks are essential} -- removing them causes 3-5\% drop.
-4. \textbf{LoRA is essential} -- without it, accuracy drops 5-10\%.
-5. \textbf{25 bisection iterations} is a reasonable default.
-6. \textbf{Not a compression method} -- parameter count increases.
+\begin{enumerate}
+\item \textbf{Freeze base weights} -- always.
+\item \textbf{$\alpha$ = 1.5 is optimal} -- $\alpha$ = 2.0 is too sparse.
+\item \textbf{Sinks are essential} -- removing them causes 3-5\% drop.
+\item \textbf{LoRA is essential} -- without it, accuracy drops 5-10\%.
+\item \textbf{25 bisection iterations} is a reasonable default.
+\item \textbf{Not a compression method} -- parameter count increases.
 
+\end{enumerate}
 \subsection{D.7 Unresolved Questions}
 
-1. \textbf{Fused CUDA kernel:} Would speedup by 10-20$\times$?
-2. \textbf{Learned $\alpha$ per head:} Would it help?
-3. \textbf{Sparse hardware:} Real 2:4 speedup?
-4. \textbf{Long context:} Does AdaSplash scale to L = 4096?
-5. \textbf{Other tasks:} Generation, QA, NLI?
+\begin{enumerate}
+\item \textbf{Fused CUDA kernel:} Would speedup by 10-20$\times$?
+\item \textbf{Learned $\alpha$ per head:} Would it help?
+\item \textbf{Sparse hardware:} Real 2:4 speedup?
+\item \textbf{Long context:} Does AdaSplash scale to L = 4096?
+\item \textbf{Other tasks:} Generation, QA, NLI?
+\end{enumerate}

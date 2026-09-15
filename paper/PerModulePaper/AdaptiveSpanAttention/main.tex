@@ -70,33 +70,33 @@ are actually needed. Fixed-window attention (Longformer, Mistral) truncates
 attention to a sliding window, but the window size is a static hyperparameter 
 that cannot adapt to the differing needs of individual heads.
 
-We present **Adaptive Span Attention** (ASA-Span), which learns a per-head 
+We present \textbf{Adaptive Span Attention} (ASA-Span), which learns a per-head 
 attention span via a single scalar logit per head. Given a head's span 
 $z_h \in [0, S_\text{max}]$ and a ramp size $R$, we mask attention scores by 
-the **continuous piecewise-linear ramp**:
+the \textbf{continuous piecewise-linear ramp}:
 
-$$
+\[
 g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
-$$
+\]
 
 where $d$ is the distance between query and key positions. The mask is 
-**differentiable** in $z_h$, allowing end-to-end training. An **L1 penalty** 
+\textbf{differentiable} in $z_h$, allowing end-to-end training. An \textbf{L1 penalty} 
 on the total span encourages the model to shrink windows when they are not 
 needed, achieving automatic context pruning.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At initialization 
 span $S_\text{max} = 128$, learned spans converge to 
-**68** on DistilBERT (47\% reduction from max), 
-**72** on RoBERTa, and **75** on GPT-2. Accuracy drops by 
-only **-1.2\%**, **-2.1\%**, and **-1.9\%** respectively. 
-Attention memory is reduced by **2$\times$** at convergence. The 
+\textbf{68} on DistilBERT (47\% reduction from max), 
+\textbf{72} on RoBERTa, and \textbf{75} on GPT-2. Accuracy drops by 
+only \textbf{-1.2\%}, \textbf{-2.1\%}, and \textbf{-1.9\%} respectively. 
+Attention memory is reduced by \textbf{2$\times$} at convergence. The 
 learned spans show systematic head heterogeneity, with some heads converging 
 to local (span $\approx$ 16) and others to global (span $\approx$ max) behavior.
 
-**Keywords:** adaptive attention, learned span, differentiable masking, 
+\textbf{Keywords:} adaptive attention, learned span, differentiable masking, 
 per-head budgets, efficient transformer
 
----
+
 
 \vspace{0.5em}
 \noindent\textbf{Keywords:} adaptive attention, learned span, differentiable masking,

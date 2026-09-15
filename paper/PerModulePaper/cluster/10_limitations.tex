@@ -1,68 +1,68 @@
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 Not a Compression Method}
+\subsection{Not a Compression Method}
 
 ClusterFormer \textbf{increases} parameter count by ~0.88\% due to 
 LoRA. It is a \textbf{compute efficiency} method, not a size reduction.
 
-\subsection{10.2 Short-Sequence Overhead}
+\subsection{Short-Sequence Overhead}
 
 For $L < 128$, ClusterFormer is slower than baseline. The clustering 
 overhead (K-means iterations) exceeds the savings.
 
-\subsection{10.3 Decoder Path Uses Exact Attention}
+\subsection{Decoder Path Uses Exact Attention}
 
 For causal decoders, we fall back to exact softmax attention (not clustering) 
 because centroid mixing can leak future information. This limits 
 ClusterFormer's benefit on autoregressive generation.
 
-\subsection{10.4 Clustering Quality}
+\subsection{Clustering Quality}
 
 K-means on high-dimensional queries may not discover semantically meaningful 
 clusters. The clustering is a \textbf{heuristic}, not a principled attention 
 approximation.
 
-\subsection{10.5 No Formal Approximation Bound}
+\subsection{No Formal Approximation Bound}
 
 We provide no bound on the difference between ClusterFormer's output and 
 exact attention. The approximation error depends on K-means distortion 
 and clustering quality.
 
-\subsection{10.6 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2. Generation, QA, NLI, and long-context tasks are untested.
 
-\subsection{10.7 Model Coverage}
+\subsection{Model Coverage}
 
 Three models (66.9M--124.6M). Larger models untested.
 
-\subsection{10.8 Hardware}
+\subsection{Hardware}
 
 Only RTX 4070 Laptop. Scaling to A100/H100 unknown.
 
-\subsection{10.9 Learned Hyperparameters}
+\subsection{Learned Hyperparameters}
 
 Temperature and blend are initialized heuristically and learned during 
 recovery. Their optimal values may depend on the task.
 
-\subsection{10.10 Single Seed}
+\subsection{Single Seed}
 
 Standard error ~1.69\%. Differences below 3.4\% may be noise.
 
-\subsection{10.11 FlashAttention Compatibility}
+\subsection{FlashAttention Compatibility}
 
 ClusterFormer does not use FlashAttention kernels. A fused kernel could 
 provide further speedup but is not implemented.
 
-\subsection{10.12 Code Quality}
+\subsection{Code Quality}
 
 Research-grade:
 \begin{itemize}
 \item No unit tests for edge cases (empty clusters, single-token sequences)
 \item Broad exception handling
 \item K-means iterations hardcoded
-\end{itemize}
 
-\subsection{10.13 Ethical Considerations}
+\end{itemize}
+\subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.

@@ -1,7 +1,7 @@
 
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Standard self-attention (Vaswani et al., 2017) allows every position to attend 
 to every other position, requiring $\mathcal{O}(L^2)$ time and memory in 
@@ -21,77 +21,73 @@ But not all attention heads need the same window:
 \item Some heads are \textbf{local}: they attend to nearby tokens for syntax.
 \item Some heads are \textbf{global}: they attend to distant tokens for coreference.
 \item Some heads are \textbf{sparse}: they attend to a few specific positions.
-\end{itemize}
 
+\end{itemize}
 A single window size forces all heads into the same trade-off. \textbf{Figure 1.1} 
 shows the attention distance distribution for a middle GPT-2 layer: some heads 
 concentrate within 32 tokens, others spread beyond 128.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a transformer with $H$ heads and a maximum window size $S_\text{max}$, 
 we seek a \textbf{per-head} window size $z_h \in [0, S_\text{max}]$ such that:
 
-1. \textbf{Learned:} $z_h$ is trained end-to-end alongside the model.
-2. \textbf{Differentiable:} gradients flow through $z_h$.
-3. \textbf{Adaptive:} some heads converge to small $z_h$, others to large.
-4. \textbf{Quality-preserving:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
+\begin{enumerate}
+\item \textbf{Learned:} $z_h$ is trained end-to-end alongside the model.
+\item \textbf{Differentiable:} gradients flow through $z_h$.
+\item \textbf{Adaptive:} some heads converge to small $z_h$, others to large.
+\item \textbf{Quality-preserving:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
-\subsection{1.3 Our Approach: Adaptive Span Attention}
+\end{enumerate}
+\subsection{Our Approach: Adaptive Span Attention}
 
 We propose \textbf{Adaptive Span Attention} (ASA-Span), which learns per-head 
 spans via:
 
-1. \textbf{Continuous soft ramp.} Given span $z_h$ and ramp size $R$, the masking 
-   function is:
-\[
-   g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
-   \tag{1.1}
-\]
-   where $d$ is the query-key distance. This is \textbf{piecewise linear} and 
-   \textbf{differentiable} in $z_h$.
+\begin{enumerate}
+\item \textbf{Continuous soft ramp.} Given span $z_h$ and ramp size $R$, the masking
+  function is:
+  $$
+  g\_{z\_h}(d) = \text{clamp}\!\left(\frac{R + z\_h - d}{R}, 0, 1\right)
+  \tag{1.1}
+  $$
+  where $d$ is the query-key distance. This is \textbf{piecewise linear} and
+  \textbf{differentiable} in $z_h$.
 
-2. \textbf{Learnable span.} Each head maintains a scalar logit $\ell_h \in \mathbb{R}$:
-\[
-   z_h = \sigma(\ell_h) \cdot S_\text{max}
-   \tag{1.2}
-\]
+\item \textbf{Learnable span.} Each head maintains a scalar logit $\ell_h \in \mathbb{R}$:
+  $$
+  z\_h = \sigma(\ell\_h) \cdot S\_\text{max}
+  \tag{1.2}
+  $$
 
-3. \textbf{L1 span penalty.} A regularization term $\lambda \sum_h z_h$ encourages 
-   the model to \textbf{shrink} spans that are not needed. At initialization, 
-   $z_h \approx S_\text{max}$ (fully open); during training, spans shrink 
-   to the smallest size preserving accuracy.
+\item \textbf{L1 span penalty.} A regularization term $\lambda \sum_h z_h$ encourages
+  the model to \textbf{shrink} spans that are not needed. At initialization,
+  $z_h \approx S_\text{max}$ (fully open); during training, spans shrink
+  to the smallest size preserving accuracy.
 
-4. \textbf{No hard truncation.} Unlike sliding-window attention, ASA-Span does not 
-   hard-truncate scores. It applies a soft multiplicative mask, so distant 
-   tokens are \textbf{down-weighted} rather than removed. This preserves 
-   differentiability and avoids artifacts at the window boundary.
+\item \textbf{No hard truncation.} Unlike sliding-window attention, ASA-Span does not
+  hard-truncate scores. It applies a soft multiplicative mask, so distant
+  tokens are \textbf{down-weighted} rather than removed. This preserves
+  differentiability and avoids artifacts at the window boundary.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A differentiable soft-ramp formulation.} We extend Sukhbaatar et al.'s
-\end{itemize}
-  (2019) adaptive span to modern transformers with a numerically stable and 
+  (2019) adaptive span to modern transformers with a numerically stable and
   GPU-efficient implementation.
-\begin{itemize}
 \item \textbf{Per-head span heterogeneity.} We show that learned spans are highly
-\end{itemize}
   non-uniform, with systematic dependence on head index and layer depth.
-\begin{itemize}
 \item \textbf{A production-hardened implementation.} Supports flat, nested, and causal
-\end{itemize}
   architectures with RoPE, GQA, and T5-style relative position bias.
-\begin{itemize}
 \item \textbf{A systematic evaluation.} Benchmarked on DistilBERT, RoBERTa, and GPT-2
-\end{itemize}
   on SST-2 with ablations over max span, ramp size, and L1 penalty.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
-\end{itemize}
   under MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on attention and 
 window attention. Section 4 presents ASA-Span. Section 5 describes integration 

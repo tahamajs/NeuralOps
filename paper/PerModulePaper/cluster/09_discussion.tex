@@ -1,24 +1,24 @@
-\section{9. Discussion}
+\section{Discussion}
 
-\subsection{9.1 Key Takeaways}
+\subsection{Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Linear Attention Without Random Features}
+\subsubsection{Takeaway 1: Linear Attention Without Random Features}
 
 ClusterFormer achieves linear complexity \textbf{without approximating softmax}. 
 It's exact on the cluster level, differentiating it from Performer and 
 Linformer.
 
-\subsubsection{9.1.2 Takeaway 2: Global + Local is Optimal}
+\subsubsection{Takeaway 2: Global + Local is Optimal}
 
 Neither global clustering alone nor local window alone matches the blend. 
 The learnable gate discovers the optimal mix per layer.
 
-\subsubsection{9.1.3 Takeaway 3: Not a Compression Method}
+\subsubsection{Takeaway 3: Not a Compression Method}
 
 Parameter count increases by LoRA overhead. ClusterFormer targets 
 \textbf{compute efficiency}, not size reduction.
 
-\subsection{9.2 When to Use ClusterFormer}
+\subsection{When to Use ClusterFormer}
 
 \subsubsection{Recommended}
 
@@ -27,8 +27,8 @@ Parameter count increases by LoRA overhead. ClusterFormer targets
 \item \textbf{Attention-bound workloads}
 \item \textbf{Research on clustering attention}
 \item \textbf{Multi-architecture pipelines}
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
@@ -36,9 +36,9 @@ Parameter count increases by LoRA overhead. ClusterFormer targets
 \item \textbf{Model size reduction} -- use compression methods
 \item \textbf{Strict causal generation} -- decoder uses exact attention anyway
 \item \textbf{Interpretability-first} -- attention maps are cluster-level
-\end{itemize}
 
-\subsection{9.3 Decision Flowchart}
+\end{itemize}
+\subsection{Decision Flowchart}
 
 \begin{lstlisting}
 Need size reduction? --- Yes --- Use A3/AASVD/Adaptive SVD
@@ -53,7 +53,7 @@ Latency critical? --- Yes --- Consider FlashAttention
 Use ClusterFormer
 \end{lstlisting}
 
-\subsection{9.4 Cost-Benefit}
+\subsection{Cost-Benefit}
 
 For DistilBERT at $L=256$:
 
@@ -64,7 +64,7 @@ For DistilBERT at $L=256$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{Change} \\
 \midrule
-Attention FLOPs & 6.7M & 2.4M & **2.8$\times$ reduction** \\
+Attention FLOPs & 6.7M & 2.4M & \textbf{2.8$\times$ reduction} \\
 Accuracy & 90.71\% & 89.91\% & -0.80\% \\
 Params & 66.9M & 67.55M & +589826M \\
 Wall time & 4.2 ms & 3.8 ms & 1.10$\times$ \\
@@ -72,7 +72,7 @@ Wall time & 4.2 ms & 3.8 ms & 1.10$\times$ \\
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Comparison with Published Methods}
+\subsection{Comparison with Published Methods}
 
 \begin{table}[H]
 \centering
@@ -84,12 +84,12 @@ Wall time & 4.2 ms & 3.8 ms & 1.10$\times$ \\
 Longformer & Sparse & $O(LW)$ & Partial & Yes \\
 Performer & Kernel & $O(Lm)$ & Yes & No \\
 Reformer & LSH & $O(L\log L)$ & Yes & No \\
-**ClusterFormer** & **Cluster** & **$O(LK)$** & **Yes** & **Yes** \\
+\textbf{ClusterFormer} & \textbf{Cluster} & \textbf{$O(LK)$} & \textbf{Yes} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{9.6 Deployment Considerations}
+\subsection{Deployment Considerations}
 
 \subsubsection{Latency}
 
@@ -105,28 +105,30 @@ for long sequences.
 Cluster assignments give coarse interpretability; per-token attention is 
 not directly accessible.
 
-\subsection{9.7 Open Questions}
+\subsection{Open Questions}
 
-1. \textbf{Optimal $K$ per layer} -- could be learned dynamically?
-2. \textbf{Interaction with quantization} -- INT8 + ClusterFormer?
-3. \textbf{Causal decoding} -- can clustering work for generation?
-4. \textbf{Very long context} ($L > 4096$) -- does the crossover hold?
+\begin{enumerate}
+\item \textbf{Optimal $K$ per layer} -- could be learned dynamically?
+\item \textbf{Interaction with quantization} -- INT8 + ClusterFormer?
+\item \textbf{Causal decoding} -- can clustering work for generation?
+\item \textbf{Very long context} ($L > 4096$) -- does the crossover hold?
 
-\subsection{9.8 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item Compute reduction for long-context inference
 \item Democratizes long-context models
 \item Complements other efficiency methods
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item Modest parameter increase
 \item Clustering opacity
 \item Dual-use
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~15 GPU-hours, ~{{CO2}} kg CO$_2$eq.

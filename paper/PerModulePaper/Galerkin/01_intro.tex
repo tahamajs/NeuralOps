@@ -1,6 +1,6 @@
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Self-attention is often described in discrete terms:
 
@@ -35,14 +35,16 @@ operator equation:
 where $\{\psi_i\}$ is the test basis.
 
 Applying this to attention:
-1. Choose an orthonormal basis $\Phi \in \mathbb{R}^{N \times r}$ (e.g., DCT).
-2. Project Q, K, V into basis space: $Q_\Phi = \Phi^\top Q$, etc.
-3. Compute attention in basis space at rank $r$.
-4. Reconstruct via basis synthesis: $Y = \Phi \cdot O_\Phi$.
+\begin{enumerate}
+\item Choose an orthonormal basis $\Phi \in \mathbb{R}^{N \times r}$ (e.g., DCT).
+\item Project Q, K, V into basis space: $Q_\Phi = \Phi^\top Q$, etc.
+\item Compute attention in basis space at rank $r$.
+\item Reconstruct via basis synthesis: $Y = \Phi \cdot O_\Phi$.
 
+\end{enumerate}
 This gives $\mathcal{O}(N r d)$ complexity -- \textbf{linear in $N$}.
 
-\subsection{1.2 The Decoder Problem}
+\subsection{The Decoder Problem}
 
 Galerkin projection is \textbf{incompatible with causal masking}. The projected 
 keys $K_\Phi$ contain contributions from \textbf{all} tokens, not just the 
@@ -51,23 +53,25 @@ prefix. For an encoder this is fine; for a decoder it breaks causality.
 \textbf{Solution.} For decoders, fall back to standard causal softmax attention. 
 This preserves exactness at the cost of the linear-complexity benefit.
 
-\subsection{1.3 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained attention module with projections $W_Q, W_K, W_V, W_O$, 
 we seek an augmented attention function $\mathcal{A}'$ such that:
 
-1. \textbf{Encoder linear complexity.} For bidirectional models, 
-   $\mathcal{A}'$ runs in $\mathcal{O}(N r d)$ instead of $\mathcal{O}(N^2 d)$.
-2. \textbf{Decoder exactness.} For causal models, $\mathcal{A}'$ preserves the 
-   standard softmax attention output exactly.
-3. \textbf{Multi-architecture support.} Works on flat (DistilBERT), nested 
-   (RoBERTa), causal (GPT-2), and GQA+RoPE (Qwen).
-4. \textbf{Step-0 preservation.} With zero-init LoRA, initial forward matches 
-   pretrained.
+\begin{enumerate}
+\item \textbf{Encoder linear complexity.} For bidirectional models,
+  $\mathcal{A}'$ runs in $\mathcal{O}(N r d)$ instead of $\mathcal{O}(N^2 d)$.
+\item \textbf{Decoder exactness.} For causal models, $\mathcal{A}'$ preserves the
+  standard softmax attention output exactly.
+\item \textbf{Multi-architecture support.} Works on flat (DistilBERT), nested
+  (RoBERTa), causal (GPT-2), and GQA+RoPE (Qwen).
+\item \textbf{Step-0 preservation.} With zero-init LoRA, initial forward matches
+  pretrained.
 
+\end{enumerate}
 \textbf{Note.} Not a compression method. Parameter count increases by LoRA.
 
-\subsection{1.4 Our Approach}
+\subsection{Our Approach}
 
 \textbf{Galerkin Attention} chooses the \textbf{discrete cosine basis}:
 
@@ -95,7 +99,7 @@ Y &= \Phi \cdot \text{Output}_\Phi \cdot \sqrt{N/r}
 
 Standard causal softmax attention (no projection).
 
-\subsection{1.5 Contributions}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A Galerkin formulation of self-attention.} Section 4.2.
@@ -104,9 +108,9 @@ Standard causal softmax attention (no projection).
 \item \textbf{Multi-architecture weight transfer.} GPT-2 Conv1D, RoBERTa nested, DistilBERT flat, Qwen GQA. Section 5.
 \item \textbf{Honest reporting.} We disclose that GPT-2 uses the fallback and gains no benefit. Sections 7--8.
 \item \textbf{Full reproducibility.} Code under MIT.
-\end{itemize}
 
-\subsection{1.6 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on integral 
 operators, Galerkin methods, and DCT. Section 4 presents Galerkin Attention. 

@@ -1,7 +1,7 @@
 
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: Main results on SST-2.}
 
@@ -13,16 +13,16 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$ \%} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 183 MB & 1.9 s \\
-DistilBERT & **OHA** & **89.2** & -1.51 & 0.892 & +1.40\% & 215 MB & 4.2 s \\
+DistilBERT & \textbf{OHA} & \textbf{89.2} & -1.51 & 0.892 & +1.40\% & 215 MB & 4.2 s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 712 MB & 4.1 s \\
-RoBERTa & **OHA** & **76.5** & -2.06 & 0.765 & +1.51\% & 790 MB & 8.5 s \\
+RoBERTa & \textbf{OHA} & \textbf{76.5} & -2.06 & 0.765 & +1.51\% & 790 MB & 8.5 s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 793 MB & 4.2 s \\
-GPT-2 & **OHA** & **77.8** & -1.56 & 0.778 & +1.51\% & 870 MB & 8.8 s \\
+GPT-2 & \textbf{OHA} & \textbf{77.8} & -1.56 & 0.778 & +1.51\% & 870 MB & 8.8 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \textbf{Table 7.2: Parameter counts.}
 
@@ -53,12 +53,12 @@ $W_k^\text{comp}$ & 24,576 & 147,456 \\
 $W_v^\text{comp}$ & 24,576 & 147,456 \\
 Gate & 9,228 & 55,368 \\
 LoRA (4) & 98,304 & 589,824 \\
-**Total** & **156,684** & **940,104** \\
+\textbf{Total} & \textbf{156,684} & \textbf{940,104} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.3 Efficiency Profile}
+\subsection{Efficiency Profile}
 
 \textbf{Table 7.3: Inference efficiency.}
 
@@ -79,7 +79,7 @@ GPT-2 & OHA & 8.8 s & 12900 & 870 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.4 Ablation: Compression Rank}
+\subsection{Ablation: Compression Rank}
 
 \textbf{Table 7.4: Accuracy vs compression rank.}
 
@@ -98,7 +98,7 @@ GPT-2 & OHA & 8.8 s & 12900 & 870 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.5 Ablation: Window Size}
+\subsection{Ablation: Window Size}
 
 \textbf{Table 7.5: Accuracy vs window size.}
 
@@ -117,7 +117,7 @@ GPT-2 & OHA & 8.8 s & 12900 & 870 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: Gate Bias}
+\subsection{Ablation: Gate Bias}
 
 \textbf{Table 7.6: Accuracy vs gate bias init.}
 
@@ -136,7 +136,7 @@ GPT-2 & OHA & 8.8 s & 12900 & 870 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \textbf{Table 7.7: Accuracy vs LoRA rank.}
 
@@ -155,7 +155,7 @@ GPT-2 & OHA & 8.8 s & 12900 & 870 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.8: OHA vs prior modules.}
 
@@ -169,12 +169,12 @@ GPT-2 & OHA & 8.8 s & 12900 & 870 MB \\
 full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
 nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
 infini & 89.5\% & 76.5\% & 77.5\% & 1.02$\times$ \\
-**oha** & **89.2** & **76.5** & **77.8** & **1.01$\times$** \\
+\textbf{oha} & \textbf{89.2} & \textbf{76.5} & \textbf{77.8} & \textbf{1.01$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Failure Cases}
+\subsection{Failure Cases}
 
 \textbf{Table 7.9: Failures.}
 
@@ -192,4 +192,4 @@ GPT-2 & PASS & 77.8 & -- \\
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Summary}
+\subsection{Summary}

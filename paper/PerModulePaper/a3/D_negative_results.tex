@@ -28,8 +28,8 @@
 \item Memory: O(batch $\times$ d) instead of O(d)
 \item Time: 3$\times$ slower
 \item Accuracy improvement: <0.5\%
-\end{itemize}
 
+\end{itemize}
 \textbf{Conclusion.} Cheap $\mathbb{E}[x^2]$ proxy is sufficient.
 
 \subsubsection{D.1.4 Per-Layer Rank Search}
@@ -40,8 +40,8 @@
 \begin{itemize}
 \item Time: 20$\times$ slower than adaptive escalation
 \item Accuracy improvement: <1\%
-\end{itemize}
 
+\end{itemize}
 \textbf{Conclusion.} Adaptive escalation is a good approximation.
 
 \subsubsection{D.1.5 No Fallback}
@@ -144,23 +144,27 @@ We ran 3 seeds on DistilBERT:
 42 & {{SEED42}} \\
 123 & {{SEED123}} \\
 456 & {{SEED456}} \\
-**Mean** & **{{MEAN}}** \\
-**Std** & **{{STD}}** \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.7 Lessons Learned}
 
-1. \textbf{FP32 SVD is necessary} for stability.
-2. \textbf{Real calibration data matters.}
-3. \textbf{Cheap Fisher proxy is sufficient.}
-4. \textbf{Adaptive rank is better than grid search.}
-5. \textbf{Fallback is essential} for safety.
+\begin{enumerate}
+\item \textbf{FP32 SVD is necessary} for stability.
+\item \textbf{Real calibration data matters.}
+\item \textbf{Cheap Fisher proxy is sufficient.}
+\item \textbf{Adaptive rank is better than grid search.}
+\item \textbf{Fallback is essential} for safety.
 
+\end{enumerate}
 \subsection{D.8 Recommendations}
 
-1. \textbf{Use default hyperparameters} unless you have evidence otherwise.
-2. \textbf{Start with rank 64} and adjust based on error.
-3. \textbf{Always include calibration data} -- even 100 examples help.
-4. \textbf{Enable fallback} in production.
+\begin{enumerate}
+\item \textbf{Use default hyperparameters} unless you have evidence otherwise.
+\item \textbf{Start with rank 64} and adjust based on error.
+\item \textbf{Always include calibration data} -- even 100 examples help.
+\item \textbf{Enable fallback} in production.
+\end{enumerate}

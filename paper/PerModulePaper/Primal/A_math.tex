@@ -89,10 +89,12 @@ $\mathcal{O}(L m d_h)$ instead of $\mathcal{O}(L^2 d_h)$.
 
 \textbf{Proof.} Compute in order:
 
-1. $F_3 V \in \mathbb{R}^{m \times d_h}$: cost $\mathcal{O}(m L d_h)$
-2. $F_2^{-1} (F_3 V) \in \mathbb{R}^{m \times d_h}$: cost $\mathcal{O}(m^2 d_h)$
-3. $F_1 (\cdots) \in \mathbb{R}^{L \times d_h}$: cost $\mathcal{O}(L m d_h)$
+\begin{enumerate}
+\item $F_3 V \in \mathbb{R}^{m \times d_h}$: cost $\mathcal{O}(m L d_h)$
+\item $F_2^{-1} (F_3 V) \in \mathbb{R}^{m \times d_h}$: cost $\mathcal{O}(m^2 d_h)$
+\item $F_1 (\cdots) \in \mathbb{R}^{L \times d_h}$: cost $\mathcal{O}(L m d_h)$
 
+\end{enumerate}
 Total: $\mathcal{O}(L m d_h + m^2 d_h)$, linear in $L$. $\square$
 
 \subsection{A.4 Approximation Error}

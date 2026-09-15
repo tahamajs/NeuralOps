@@ -1,6 +1,6 @@
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
@@ -18,7 +18,7 @@ T5 & Enc-Dec & No & No & No & Yes \\
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Extraction}
+\subsection{Weight Extraction}
 
 \subsubsection{DistilBERT (Flat)}
 \begin{lstlisting}
@@ -47,7 +47,7 @@ o_w = src.c_proj.weight.T
 \subsubsection{Qwen (GQA + RoPE)}
 Direct copy with GQA-aware dims.
 
-\subsection{5.3 Injection}
+\subsection{Injection}
 
 \begin{lstlisting}
 def inject_fusion_attn(layer, cfg, comp_config, old_attn):
@@ -66,11 +66,11 @@ def inject_fusion_attn(layer, cfg, comp_config, old_attn):
     return new
 \end{lstlisting}
 
-\subsection{5.4 Nested Encoder Bypass}
+\subsection{Nested Encoder Bypass}
 
 For RoBERTa, \texttt{out\_proj} is not applied; outer \texttt{BertSelfOutput.dense} does it.
 
-\subsection{5.5 GQA}
+\subsection{GQA}
 
 \begin{lstlisting}
 if self.kv_repeat > 1:
@@ -78,11 +78,11 @@ if self.kv_repeat > 1:
     v = repeat_kv(v, self.kv_repeat)
 \end{lstlisting}
 
-\subsection{5.6 RoPE}
+\subsection{RoPE}
 
 Supports partial RoPE (Qwen3.5 with rotary\_dim < head\_dim).
 
-\subsection{5.7 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("fusion_attn")
@@ -90,7 +90,7 @@ class FUSIONATTN(BaseAttention):
     ...
 \end{lstlisting}
 
-\subsection{5.8 Failure Modes}
+\subsection{Failure Modes}
 
 \begin{table}[H]
 \centering
@@ -99,8 +99,8 @@ class FUSIONATTN(BaseAttention):
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & Frobenius < 1e-4 & **raise RuntimeError** \\
-Zero Frobenius & Same & **raise RuntimeError** \\
+Missing weights & Frobenius < 1e-4 & \textbf{raise RuntimeError} \\
+Zero Frobenius & Same & \textbf{raise RuntimeError} \\
 Empty blocks & Padding mask & -inf \\
 NaN in scores & nan\_to\_num & Replace 0 \\
 \bottomrule
@@ -110,4 +110,4 @@ NaN in scores & nan\_to\_num & Replace 0 \\
 \textbf{   Critical:} \texttt{inject\_fusion\_attn} has \texttt{raise RuntimeError("copy\_weights failed")} 
 which kills the injection on any failure. Recommend changing to \texttt{return None}.
 
-\subsection{5.9 Numerical Stability}
+\subsection{Numerical Stability}

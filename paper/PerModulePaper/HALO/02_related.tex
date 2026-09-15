@@ -1,7 +1,7 @@
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Linear Attention}
+\subsection{Linear Attention}
 
 \textbf{Linear Transformer} (Katharopoulos et al., 2020) replaces softmax with 
 $\phi(x) = \mathrm{elu}(x) + 1$, achieving $\mathcal{O}(L)$ complexity via 
@@ -15,7 +15,7 @@ features (PORF) for unbiased approximation of softmax.
 \textbf{HALO-ReGLA's linear branch} uses the same $\mathrm{elu} + 1$ kernel, but 
 in a \textbf{hybrid} setting with a \textbf{dense branch} and \textbf{learnable gates}.
 
-\subsection{2.2 Hybrid Attention}
+\subsection{Hybrid Attention}
 
 \textbf{H-Transformer} (Zhu \& Soricut, 2021) alternates linear and dense layers.
 
@@ -26,7 +26,7 @@ in a \textbf{hybrid} setting with a \textbf{dense branch} and \textbf{learnable 
 \textbf{HALO-ReGLA} differs by running the two streams **in parallel within the 
 same layer\textbf{ and combining them via }per-head learnable gates**.
 
-\subsection{2.3 Gated Attention}
+\subsection{Gated Attention}
 
 \textbf{FLASH} (Hua et al., 2022) uses gated attention with learned gates between 
 linear and softmax branches. \textbf{HALO-ReGLA} is closely related but 
@@ -35,19 +35,19 @@ distinguishes itself by:
 \item Rectified kernel (positive features).
 \item Explicit prefix-sum formulation.
 \item Per-head gating with bias initialization.
-\end{itemize}
 
+\end{itemize}
 \textbf{GLA} (Yang et al., 2023) uses gated linear attention with data-dependent 
 decay, which is orthogonal to our fusion gate.
 
-\subsection{2.4 Pretrained Weight Transfer}
+\subsection{Pretrained Weight Transfer}
 
 \textbf{LoRA} (Hu et al., 2021) enables training adapters on frozen base weights.
 
 \textbf{HALO-ReGLA} transfers Q, K, V, O projections from pretrained weights and 
 trains only LoRA + gate parameters, preserving the pretrained knowledge.
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -56,19 +56,21 @@ trains only LoRA + gate parameters, preserving the pretrained knowledge.
 \toprule
 \textbf{Axis} & \textbf{Prior} & \textbf{HALO-ReGLA} \\
 \midrule
-Architecture & Fixed or alternating & **Parallel hybrid** \\
-Gate & Static or per-layer & **Per-head learnable** \\
-Kernel & RFF or ELU & **Rectified ELU** \\
-Pretrained transfer & Rarely & **Full support** \\
-Architectures & Limited & **BERT, RoBERTa, GPT-2, Qwen** \\
+Architecture & Fixed or alternating & \textbf{Parallel hybrid} \\
+Gate & Static or per-layer & \textbf{Per-head learnable} \\
+Kernel & RFF or ELU & \textbf{Rectified ELU} \\
+Pretrained transfer & Rarely & \textbf{Full support} \\
+Architectures & Limited & \textbf{BERT, RoBERTa, GPT-2, Qwen} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key distinction.} HALO-ReGLA combines:
-1. Parallel dense + linear streams.
-2. Per-head gates with principled bias initialization.
-3. Rectified kernel for stability.
-4. Full pretrained weight transfer.
+\begin{enumerate}
+\item Parallel dense + linear streams.
+\item Per-head gates with principled bias initialization.
+\item Rectified kernel for stability.
+\item Full pretrained weight transfer.
 
-\subsection{2.6 Comparison Table}
+\end{enumerate}
+\subsection{Comparison Table}

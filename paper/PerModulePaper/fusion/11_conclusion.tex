@@ -1,13 +1,13 @@
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{FUSIONATTN}, a length-aware hybrid attention with 
 short-sequence fast path and content-aware block sparsity for long 
 sequences. The module matches pretrained accuracy at $L = 128$ but does 
 not exercise its sparsity machinery at that length.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -23,45 +23,47 @@ GPT-2 & -0.46\% & +1460804M & Short \\
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Length-aware dispatch} preserves short-sequence behavior.
-2. \textbf{Sparsity only matters at $L \geq 256$.}
-3. \textbf{Learned gate adapts to task-specific patterns.}
-4. \textbf{Not a compression method.}
+\begin{enumerate}
+\item \textbf{Length-aware dispatch} preserves short-sequence behavior.
+\item \textbf{Sparsity only matters at $L \geq 256$.}
+\item \textbf{Learned gate adapts to task-specific patterns.}
+\item \textbf{Not a compression method.}
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Test at $L \geq 512$
 \item Analyze learned gate patterns
 \item Fused Triton kernel for block attention
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Learned dispatch threshold
 \item Dynamic block sizes
 \item Cross-task transfer
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 FUSIONATTN is a hybrid attention for long-context inference. We release 
 code under MIT.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 {{ACKNOWLEDGMENTS}}
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
 \item \textbf{{{AUTHOR\_2}}} provided feedback.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

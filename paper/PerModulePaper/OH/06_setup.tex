@@ -1,7 +1,7 @@
 
-\section{6. Experimental Setup}
+\section{Experimental Setup}
 
-\subsection{6.1 Models}
+\subsection{Models}
 
 \begin{table}[H]
 \centering
@@ -17,7 +17,7 @@ GPT-2 & 12 & 768 & 12 & 124.4M \\
 \end{tabular}
 \end{table}
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 \textbf{SST-2}:
 
@@ -37,7 +37,7 @@ Test & 1,821 \\
 
 Majority baseline: 50.92\%.
 
-\subsection{6.3 OHA Hyperparameters}
+\subsection{OHA Hyperparameters}
 
 \begin{table}[H]
 \centering
@@ -46,17 +46,17 @@ Majority baseline: 50.92\%.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-`window\_size` $W$ & 64 \\
-`compression\_rank` $d_c$ & 32 \\
-`gate\_bias` & 2.0 \\
-`lora\_rank` & 16 \\
-`lora\_alpha` & 32 \\
-`rank` & 64 \\
+\texttt{window\_size} $W$ & 64 \\
+\texttt{compression\_rank} $d_c$ & 32 \\
+\texttt{gate\_bias} & 2.0 \\
+\texttt{lora\_rank} & 16 \\
+\texttt{lora\_alpha} & 32 \\
+\texttt{rank} & 64 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 \begin{table}[H]
 \centering
@@ -75,15 +75,15 @@ Precision & FP16 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Evaluation}
+\subsection{Evaluation}
 
 \begin{itemize}
 \item \textbf{Quality:} Accuracy, F1
 \item \textbf{Efficiency:} Total params, peak VRAM, inference time
 \item \textbf{Compression:} Not applicable (OHA adds parameters)
-\end{itemize}
 
-\subsection{6.6 Quality Gate}
+\end{itemize}
+\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
@@ -99,7 +99,7 @@ FAIL & < 50.92\% \\
 \end{tabular}
 \end{table}
 
-\subsection{6.7 Hardware}
+\subsection{Hardware}
 
 \begin{table}[H]
 \centering
@@ -116,7 +116,7 @@ PyTorch & 2.4.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.8 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_oha.py \
@@ -126,4 +126,4 @@ python run_all_4_oha.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{6.9 Baselines}
+\subsection{Baselines}

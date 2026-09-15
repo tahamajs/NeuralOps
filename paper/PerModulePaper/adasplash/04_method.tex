@@ -1,18 +1,20 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 AdaSplash replaces the attention mechanism of a pretrained transformer with 
 four modifications:
 
-1. \textbf{$\alpha$-Entmax normalization} ( 4.2) replaces softmax.
-2. \textbf{Local splash masking} ( 4.3) restricts attention to a sliding window 
-   plus sink tokens.
-3. \textbf{Frozen base weights + LoRA} ( 4.4) preserves pretrained representations 
-   while providing trainable capacity.
-4. \textbf{Multi-architecture weight transfer} ( 4.5) enables drop-in replacement.
+\begin{enumerate}
+\item \textbf{$\alpha$-Entmax normalization} ( 4.2) replaces softmax.
+\item \textbf{Local splash masking} ( 4.3) restricts attention to a sliding window
+  plus sink tokens.
+\item \textbf{Frozen base weights + LoRA} ( 4.4) preserves pretrained representations
+  while providing trainable capacity.
+\item \textbf{Multi-architecture weight transfer} ( 4.5) enables drop-in replacement.
 
+\end{enumerate}
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
@@ -39,9 +41,9 @@ four modifications:
     +------------------------------------------+
 \end{lstlisting}
 
-\subsection{4.2 Phase 1: $\alpha$-Entmax Normalization}
+\subsection{Phase 1: $\alpha$-Entmax Normalization}
 
-\subsubsection{4.2.1 Problem Statement}
+\subsubsection{Problem Statement}
 
 Given scores $s \in \mathbb{R}^{L}$, compute:
 
@@ -52,7 +54,7 @@ p_i = \max(0, (\alpha - 1) s_i - \tau)^{1/(\alpha - 1)}
 
 with $\tau$ chosen so that $\sum_i p_i = 1$.
 
-\subsubsection{4.2.2 Bisection Algorithm}
+\subsubsection{Bisection Algorithm}
 
 \textbf{Algorithm 1:} $\alpha$-Entmax via bisection
 \begin{lstlisting}
@@ -96,22 +98,24 @@ to precision $(\tau_\text{hi} - \tau_\text{lo}) / 2^{n_\text{iter}}$. With
 
 \textbf{Numerical stability.}
 
-1. \textbf{Shift scores.} Subtract $\max_i s_i$ to bound $(\alpha - 1) s_i$.
-2. \textbf{Mask invalid keys.} Set to $-10000$ before the algorithm.
-3. \textbf{Softmax fallback.} If the support is empty (all p\_i = 0), fall back 
-   to softmax.
+\begin{enumerate}
+\item \textbf{Shift scores.} Subtract $\max_i s_i$ to bound $(\alpha - 1) s_i$.
+\item \textbf{Mask invalid keys.} Set to $-10000$ before the algorithm.
+\item \textbf{Softmax fallback.} If the support is empty (all p\_i = 0), fall back
+  to softmax.
 
-\subsubsection{4.2.3 Complexity}
+\end{enumerate}
+\subsubsection{Complexity}
 
 \begin{itemize}
 \item \textbf{Time:} $O(n_\text{iter} \cdot L^2)$ for sequence length $L$.
 \item \textbf{Memory:} $O(L^2)$ for the attention matrix.
-\end{itemize}
 
+\end{itemize}
 For $L = 128$ and $n_\text{iter} = 25$: ~$4 \times 10^5$ operations per head, 
 comparable to 25 softmaxes.
 
-\subsubsection{4.2.4 Sparsity Pattern}
+\subsubsection{Sparsity Pattern}
 
 For $\alpha = 1.5$, the support size depends on the score distribution:
 
@@ -119,13 +123,13 @@ For $\alpha = 1.5$, the support size depends on the score distribution:
 \item \textbf{Uniform scores:} ~50\% sparsity (barely sparse).
 \item \textbf{Peaked scores:} ~80\% sparsity.
 \item \textbf{Real attention scores:} ~40\% sparsity empirically.
-\end{itemize}
 
+\end{itemize}
 \textbf{Figure 4.2} shows sparsity vs $\alpha$ for a typical attention layer.
 
-\subsection{4.3 Phase 2: Local Splash Masking}
+\subsection{Phase 2: Local Splash Masking}
 
-\subsubsection{4.3.1 Splash Mask Definition}
+\subsubsection{Splash Mask Definition}
 
 For causal decoders, we restrict attention to a local window of radius $W$ 
 plus the first $S$ sink tokens:
@@ -141,7 +145,7 @@ plus the first $S$ sink tokens:
 
 Keys outside the splash mask are set to $-10000$ before entmax.
 
-\subsubsection{4.3.2 Non-Causal Models}
+\subsubsection{Non-Causal Models}
 
 For bidirectional encoders (DistilBERT, RoBERTa), we \textbf{do not} apply 
 splash masking. The full attention is used with $\alpha$-entmax. This preserves 
@@ -151,15 +155,15 @@ global context.
 long-context inference. On short sequences (L $\le$ 128), the window radius 
 $W = 32$ would restrict attention unnecessarily for encoders.
 
-\subsubsection{4.3.3 Interaction with Attention Sinks}
+\subsubsection{Interaction with Attention Sinks}
 
 The sink tokens ($j < S$, default $S = 4$) are always preserved, even outside 
 the splash window. This maintains the stability property discovered by 
 Xiao et al. (2024).
 
-\subsection{4.4 Phase 3: Frozen Base Weights + LoRA}
+\subsection{Phase 3: Frozen Base Weights + LoRA}
 
-\subsubsection{4.4.1 Base Weight Transfer}
+\subsubsection{Base Weight Transfer}
 
 For each projection $P \in \{Q, K, V, O\}$, we copy $W_P$ from the pretrained 
 attention module. The exact copy procedure depends on the architecture:
@@ -167,22 +171,18 @@ attention module. The exact copy procedure depends on the architecture:
 \begin{itemize}
 \item \textbf{DistilBERT:} Direct copy from \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}.
 \item \textbf{RoBERTa:} Copy from \texttt{self.query}, \texttt{self.key}, \texttt{self.value}; leave
-\end{itemize}
   \texttt{out\_proj} identity (outer \texttt{output.dense} applies it).
-\begin{itemize}
 \item \textbf{GPT-2:} Split fused \texttt{c\_attn.weight} (transposed) into Q, K, V; copy
-\end{itemize}
   \texttt{c\_proj.weight}.
-\begin{itemize}
 \item \textbf{Qwen:} Direct copy from \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}.
-\end{itemize}
 
-\subsubsection{4.4.2 Freezing Base}
+\end{itemize}
+\subsubsection{Freezing Base}
 
 After copying, base weights are frozen (\texttt{requires\_grad = False}). Biases are 
 also frozen if present.
 
-\subsubsection{4.4.3 LoRA Adapters}
+\subsubsection{LoRA Adapters}
 
 For each projection, we add a rank-$r_L$ adapter:
 
@@ -201,7 +201,7 @@ A_P \sim \mathcal{N}(0, \sigma^2), \quad B_P = 0
 At initialization, $\Delta W_P = 0$, so the forward pass matches the 
 pretrained model exactly.
 
-\subsubsection{4.4.4 Forward Pass}
+\subsubsection{Forward Pass}
 
 \[
 \text{Proj}_P(x) = x W_P^\top + x (B_P A_P)^\top + b_P
@@ -213,7 +213,7 @@ pretrained model exactly.
 \tag{4.6}
 \]
 
-\subsubsection{4.4.5 Parameter Count}
+\subsubsection{Parameter Count}
 
 \begin{table}[H]
 \centering
@@ -225,7 +225,7 @@ pretrained model exactly.
 Original & $d_\text{in} d_\text{out}$ \\
 AdaSplash base (frozen) & $d_\text{in} d_\text{out}$ (same) \\
 AdaSplash + LoRA & $d_\text{in} d_\text{out} + r_L (d_\text{in} + d_\text{out})$ \\
-**Parameter change** & **+$r_L (d_\text{in} + d_\text{out})$** \\
+\textbf{Parameter change} & \textbf{+$r_L (d_\text{in} + d_\text{out})$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -235,9 +235,9 @@ parameters. Across 4 projections $\times$ $N_l$ layers: significant addition.
 
 \textbf{AdaSplash is not a compression method.}
 
-\subsection{4.5 Phase 4: Multi-Architecture Weight Transfer}
+\subsection{Phase 4: Multi-Architecture Weight Transfer}
 
-\subsubsection{4.5.1 Architecture Detection}
+\subsubsection{Architecture Detection}
 
 \begin{lstlisting}
 # Nested encoder detection
@@ -250,7 +250,7 @@ is_nested = (
 For nested encoders, we extract $Q, K, V$ from \texttt{src.self} and set 
 \texttt{out\_proj} to identity (the outer \texttt{output.dense} applies the projection).
 
-\subsubsection{4.5.2 Frobenius Validation}
+\subsubsection{Frobenius Validation}
 
 After copying, we verify:
 
@@ -261,7 +261,7 @@ After copying, we verify:
 
 If a projection has near-zero norm, we raise an error and skip injection.
 
-\subsection{4.6 The Full Algorithm}
+\subsection{The Full Algorithm}
 
 \textbf{Algorithm 2:} AdaSplash forward pass
 \begin{lstlisting}
@@ -297,9 +297,9 @@ Output: output Y $\in$ R^{B$\times$L$\times$d}
 25: return Y
 \end{lstlisting}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Complexity Analysis}
 
-\subsubsection{4.7.1 Time Complexity}
+\subsubsection{Time Complexity}
 
 \begin{table}[H]
 \centering
@@ -313,7 +313,7 @@ Attention scores & $O(L^2 d_h)$ \\
 $\alpha$-entmax & $O(n_\text{iter} L^2)$ \\
 Context & $O(L^2 d_h)$ \\
 Output projection & $O(L d^2)$ \\
-**Total** & $O(L^2 d_h + n_\text{iter} L^2 + L d^2)$ \\
+\textbf{Total} & $O(L^2 d_h + n_\text{iter} L^2 + L d^2)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -326,11 +326,11 @@ slower attention.
 entries to $\sim W \cdot L$, reducing effective attention cost. In practice, 
 this is not leveraged by PyTorch dense matmul.
 
-\subsubsection{4.7.2 Space Complexity}
+\subsubsection{Space Complexity}
 
 \textbf{Attention matrix:} $O(L^2)$ -- same as softmax attention.
 
-\subsubsection{4.7.3 Parameter Count}
+\subsubsection{Parameter Count}
 
 \begin{table}[H]
 \centering
@@ -341,7 +341,7 @@ this is not leveraged by PyTorch dense matmul.
 \midrule
 Original & $4 d^2$ per layer \\
 AdaSplash + LoRA($r_L$) & $4 d^2 + 4 r_L (d + d)$ \\
-**Change** & **+$8 r_L d$** \\
+\textbf{Change} & \textbf{+$8 r_L d$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -349,9 +349,9 @@ AdaSplash + LoRA($r_L$) & $4 d^2 + 4 r_L (d + d)$ \\
 For $d = 768$, $r_L = 16$: +98,304 params per layer. Across 6 layers 
 (DistilBERT): +589,824 params.
 
-\subsection{4.8 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.8.1 $\alpha$-Entmax Support Sparsity}
+\subsubsection{$\alpha$-Entmax Support Sparsity}
 
 \textbf{Claim.} For $\alpha > 1$, the support of $\alpha$-entmax output has size at most 
 $L - k$ where $k$ is the number of scores below the threshold $\tau^*$.
@@ -359,7 +359,7 @@ $L - k$ where $k$ is the number of scores below the threshold $\tau^*$.
 \textbf{Proof.} Any score $s_i$ with $(\alpha - 1) s_i < \tau^*$ yields $p_i = 0$. 
 The support is exactly $S = \{i : (\alpha - 1) s_i \geq \tau^*\}$. $\square$
 
-\subsubsection{4.8.2 Entmax vs Softmax on Peaked Distributions}
+\subsubsection{Entmax vs Softmax on Peaked Distributions}
 
 \textbf{Claim.} For scores with high variance, $\alpha$-entmax with $\alpha = 1.5$ 
 produces sparser outputs than softmax.
@@ -368,19 +368,19 @@ produces sparser outputs than softmax.
 more than Shannon entropy. When score variance is high, the argmax pushes 
 mass to the top scores. $\square$
 
-\subsubsection{4.8.3 Attention Sink Preservation}
+\subsubsection{Attention Sink Preservation}
 
 \textbf{Claim.} Masking first $S$ tokens as sinks does not break causality.
 
 \textbf{Proof.} Sink tokens have $j < S \leq i$ for all queries $i \geq S$. 
 For $i < S$, causality is enforced by the lower triangular mask. $\square$
 
-\subsubsection{4.8.4 Approximation Error}
+\subsubsection{Approximation Error}
 
 We provide no bound on downstream accuracy loss. The approximation error is 
 determined by $\alpha$, $W$, and the interaction with LoRA recovery.
 
-\subsection{4.9 Hyperparameter Guidance}
+\subsection{Hyperparameter Guidance}
 
 \begin{table}[H]
 \centering
@@ -405,8 +405,8 @@ $r_L$ (LoRA rank) & 16 & Higher = more recovery capacity \\
 \item $\alpha = 1.5$: balanced (default)
 \item $\alpha = 1.8$: sparse, may destabilize
 \item $\alpha = 2.0$: sparsemax, sparse but non-smooth
-\end{itemize}
 
+\end{itemize}
 \textbf{Choosing $W$:}
 
 \begin{itemize}
@@ -414,7 +414,7 @@ $r_L$ (LoRA rank) & 16 & Higher = more recovery capacity \\
 \item $W = 32$: balanced (default)
 \item $W = 64$: broader context
 \item $W = L$: no windowing (baseline attention)
-\end{itemize}
 
+\end{itemize}
 \textbf{Note:} Splash masking is only applied to causal decoders. Encoders use 
 full attention.

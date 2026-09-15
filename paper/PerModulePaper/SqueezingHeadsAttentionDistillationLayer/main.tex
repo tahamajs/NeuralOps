@@ -71,7 +71,7 @@ the task-relevant information. Standard approaches to head compression
 either drop entire heads (which loses the head's information) or fine-tune 
 the full model (which is expensive).
 
-We present **Squeezing Heads**, a wrapper-based attention module for head 
+We present \textbf{Squeezing Heads}, a wrapper-based attention module for head 
 knowledge distillation. Each projection is wrapped with a frozen base and a 
 trainable LoRA adapter, and the effective head dimension can be reduced at 
 deployment time while the LoRA path recovers the lost capacity. The wrapper 
@@ -81,19 +81,19 @@ wrapper** -- the pretrained weights are copied verbatim; only LoRA parameters
 are trainable.
 
 We evaluate Squeezing Heads on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. 
-With LoRA rank 16, Squeezing Heads achieves **90.25\%**, 
-**76.8\%**, and **77.5\%** accuracy, within **-0.46\%**, 
-**-1.8\%**, and **-1.9\%** of the respective baselines. When 
-combined with head-dimension reduction to **64\%** of the original, 
-parameters drop by **2$\times$** with only **{{DIM\_DELTA}}\%** 
+With LoRA rank 16, Squeezing Heads achieves \textbf{90.25\%}, 
+\textbf{76.8\%}, and \textbf{77.5\%} accuracy, within \textbf{-0.46\%}, 
+\textbf{-1.8\%}, and \textbf{-1.9\%} of the respective baselines. When 
+combined with head-dimension reduction to \textbf{64\%} of the original, 
+parameters drop by \textbf{2$\times$} with only \textbf{{{DIM\_DELTA}}\%} 
 accuracy loss. The LoRA adapters recover a substantial portion of the 
 information lost by dimension reduction, outperforming direct fine-tuning by 
-**0.5\%**.
+\textbf{0.5\%}.
 
-**Keywords:** knowledge distillation, head compression, LoRA, attention, 
+\textbf{Keywords:} knowledge distillation, head compression, LoRA, attention, 
 efficient transformer
 
----
+
 
 \vspace{0.5em}
 \noindent\textbf{Keywords:} knowledge distillation, head compression, LoRA, attention,

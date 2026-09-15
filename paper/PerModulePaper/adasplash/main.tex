@@ -64,42 +64,44 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-Standard transformer attention produces **dense** probability distributions 
+Standard transformer attention produces \textbf{dense} probability distributions 
 over all keys via softmax, forcing every query to attend -- at least weakly -- 
 to every token. This has two consequences: attention weights are rarely 
 interpretable (mass is spread over thousands of tokens), and the operation 
-cannot exploit token sparsity for compute savings. We introduce **AdaSplash** 
-(**Ada**ptive **Splash** Attention), which replaces softmax with **$\alpha$-entmax** 
+cannot exploit token sparsity for compute savings. We introduce \textbf{AdaSplash} 
+(\textbf{Ada}ptive \textbf{Splash} Attention), which replaces softmax with \textbf{$\alpha$-entmax} 
 (Peters et al., 2019), a family of sparse activation functions parameterized 
-by $\alpha \in (1, 2]$ that produce **exact zeros** for low-scoring keys. 
+by $\alpha \in (1, 2]$ that produce \textbf{exact zeros} for low-scoring keys. 
 When $\alpha = 1.5$, $\alpha$-entmax is 1.5-entmax, which interpolates between 
 softmax ($\alpha = 1$) and sparsemax ($\alpha = 2$), yielding ~40\% zero 
 entries in practice.
 
 AdaSplash combines three ideas:
 
-1. **$\alpha$-entmax normalization** via a numerically stabilized bisection algorithm 
-   over valid tokens only, with softmax fallback when the support is empty.
-2. **Local splash radius masking.** For causal decoders, keys outside a 
-   sliding window of radius $W$ are masked to $-\infty$, restricting attention 
-   to local context plus a small set of attention sink tokens (first 4 tokens).
-3. **Frozen base weights + LoRA adapters.** Base projections are copied 
-   exactly from the pretrained model and frozen; a rank-16 LoRA residual 
-   is added for task adaptation.
+\begin{enumerate}
+\item \textbf{$\alpha$-entmax normalization} via a numerically stabilized bisection algorithm
+  over valid tokens only, with softmax fallback when the support is empty.
+\item \textbf{Local splash radius masking.} For causal decoders, keys outside a
+  sliding window of radius $W$ are masked to $-\infty$, restricting attention
+  to local context plus a small set of attention sink tokens (first 4 tokens).
+\item \textbf{Frozen base weights + LoRA adapters.} Base projections are copied
+  exactly from the pretrained model and frozen; a rank-16 LoRA residual
+  is added for task adaptation.
 
-AdaSplash is **not** a compression method: parameter count **increases** by 
-**0.88\%** due to LoRA adapters. It is a sparse attention mechanism 
+\end{enumerate}
+AdaSplash is \textbf{not} a compression method: parameter count \textbf{increases} by 
+\textbf{0.88\%} due to LoRA adapters. It is a sparse attention mechanism 
 that trades a small parameter overhead for interpretable attention and potential 
 compute savings on specialized hardware. We evaluate on DistilBERT, RoBERTa-base, 
 and GPT-2 on SST-2 with 50 LoRA recovery steps. AdaSplash 
-achieves **90.25\%** on DistilBERT, **77.5\%** on RoBERTa, and 
-**78.78\%** on GPT-2 with zero-mean accuracy drops and no weight updates 
+achieves \textbf{90.25\%} on DistilBERT, \textbf{77.5\%} on RoBERTa, and 
+\textbf{78.78\%} on GPT-2 with zero-mean accuracy drops and no weight updates 
 to the base model.
 
-**Keywords:** sparse attention, $\alpha$-entmax, sliding window, attention sinks, 
+\textbf{Keywords:} sparse attention, $\alpha$-entmax, sliding window, attention sinks, 
 local-global attention, LoRA
 
----
+
 
 \vspace{0.5em}
 \noindent\textbf{Keywords:} sparse attention, $\alpha$-entmax, sliding window, attention sinks,

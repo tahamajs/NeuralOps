@@ -69,8 +69,8 @@ tokens does not violate causality.
 \begin{itemize}
 \item $j < S$ (sink) OR
 \item $0 \leq i - j \leq W$ (local window)
-\end{itemize}
 
+\end{itemize}
 Case 1: Sink. If $j < S \leq i$ (assuming $i \geq S$), then $j \leq i$, 
 so causality is preserved. For $i < S$, only $j \leq i$ are included 
 because $i - j \geq 0$ requires $j \leq i$.

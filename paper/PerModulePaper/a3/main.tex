@@ -64,13 +64,6 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-<!-- 
-INSTRUCTIONS:
-- 200-250 words
-- Structure: problem $\to$ method $\to$ results $\to$ limitations
-- Emphasize: this is REAL compression (unlike attention-replacement methods)
-- Every number must match Section 7
--->
 
 Low-rank factorization is a classical approach to compressing the linear layers 
 of transformer models, replacing each weight matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ 
@@ -78,26 +71,26 @@ with a product $U V$ where $U \in \mathbb{R}^{d_\text{out} \times r}$,
 $V \in \mathbb{R}^{r \times d_\text{in}}$, and $r \ll \min(d_\text{in}, d_\text{out})$. 
 Standard SVD applies this factorization uniformly across all input dimensions, 
 ignoring the fact that transformer activations have highly non-uniform variance 
-across channels. We introduce **A3** (**A**ctivation-**A**ware **A**daptive 
+across channels. We introduce \textbf{A3} (\textbf{A}ctivation-\textbf{A}ware \textbf{A}daptive 
 factorization), which addresses this by (i) collecting a streaming empirical 
 Fisher diagonal during calibration, (ii) weighting the SVD input space by this 
 energy estimate before factorization, (iii) adaptively increasing rank when 
 reconstruction error exceeds a threshold, and (iv) recalibrating LayerNorm 
 affine parameters after factorization to absorb distributional shift.
 
-A3 achieves **5.0\%** parameter reduction on DistilBERT, 
-**4.5\%** on RoBERTa, and **4.5\%** on GPT-2 
+A3 achieves \textbf{5.0\%} parameter reduction on DistilBERT, 
+\textbf{4.5\%} on RoBERTa, and \textbf{4.5\%} on GPT-2 
 at rank $r = 64$. On SST-2, accuracy drops by only 
-**-2.2\%**, **-2.8\%**, and **-2.9\%** respectively, 
+\textbf{-2.2\%}, \textbf{-2.8\%}, and \textbf{-2.9\%} respectively, 
 after 50 LoRA recovery steps. Peak VRAM decreases by 
-**40\%**. We provide a fully reproducible implementation with 
+\textbf{40\%}. We provide a fully reproducible implementation with 
 strict Frobenius-norm validation, safe fallback to original layers, and 
 streaming O($d^2$) memory calibration.
 
-**Keywords:** low-rank factorization, activation-aware compression, Fisher 
+\textbf{Keywords:} low-rank factorization, activation-aware compression, Fisher 
 information, LayerNorm recalibration, transformer efficiency
 
----
+
 
 \vspace{0.5em}
 \noindent\textbf{Keywords:} low-rank factorization, activation-aware compression, Fisher

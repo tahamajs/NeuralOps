@@ -82,9 +82,9 @@ class UnifiedMoE(nn.Module):
 \item \textbf{MoE clamp.} Expert outputs clamped to $\pm$65000 (FP16 max).
 \item \textbf{NaN guards.} \texttt{torch.nan\_to\_num} on all intermediate outputs.
 \item \textbf{Noise masking.} Training-time noise added only to logits, not expert
-\end{itemize}
   outputs.
 
+\end{itemize}
 \subsection{B.3 Common Pitfalls}
 
 \subsubsection{B.3.1 Forgetting Zero-Init}

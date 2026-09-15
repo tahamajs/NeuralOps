@@ -1,7 +1,7 @@
 
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: Main results on SST-2 validation.}
 
@@ -13,22 +13,24 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB \\
-DistilBERT & **AdaSplash** & **90.25** & -0.46 & 0.9055 & 67.55M & 195 MB \\
+DistilBERT & \textbf{AdaSplash} & \textbf{90.25} & -0.46 & 0.9055 & 67.55M & 195 MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
-RoBERTa & **AdaSplash** & **77.5** & -1.06 & 0.780 & 125.8M & 730 MB \\
+RoBERTa & \textbf{AdaSplash} & \textbf{77.5} & -1.06 & 0.780 & 125.8M & 730 MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
-GPT-2 & **AdaSplash** & **78.78** & -0.58 & 0.7891 & 125.63M & 810 MB \\
+GPT-2 & \textbf{AdaSplash} & \textbf{78.78} & -0.58 & 0.7891 & 125.63M & 810 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key observations:}
 
-1. \textbf{Accuracy:} $\Delta$ of -0.46\%, -1.06\%, -0.58\% (all near zero).
-2. \textbf{Parameters:} increased by 0.88\% due to LoRA.
-3. \textbf{VRAM:} slightly increased (LoRA overhead).
+\begin{enumerate}
+\item \textbf{Accuracy:} $\Delta$ of -0.46\%, -1.06\%, -0.58\% (all near zero).
+\item \textbf{Parameters:} increased by 0.88\% due to LoRA.
+\item \textbf{VRAM:} slightly increased (LoRA overhead).
 
-\subsection{7.2 Parameter Analysis}
+\end{enumerate}
+\subsection{Parameter Analysis}
 
 \textbf{Table 7.2: Parameter counts.}
 
@@ -49,7 +51,7 @@ GPT-2 & 124,441,344 & 125630220 & +1188876 & 0.99$\times$ \\
 \textbf{AdaSplash increases parameter count.} This is fundamental to its design 
 (LoRA adapters on top of frozen base).
 
-\subsection{7.3 Attention Sparsity}
+\subsection{Attention Sparsity}
 
 \textbf{Table 7.3: Attention sparsity (\% zero weights) for $\alpha$ = 1.5.}
 
@@ -60,9 +62,9 @@ GPT-2 & 124,441,344 & 125630220 & +1188876 & 0.99$\times$ \\
 \toprule
 \textbf{Model} & \textbf{Full attention} & \textbf{AdaSplash} \\
 \midrule
-DistilBERT & 0\% & **42\%** \\
-RoBERTa & 0\% & **40\%** \\
-GPT-2 & 0\% & **41\%** \\
+DistilBERT & 0\% & \textbf{42\%} \\
+RoBERTa & 0\% & \textbf{40\%} \\
+GPT-2 & 0\% & \textbf{41\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,7 +72,7 @@ GPT-2 & 0\% & **41\%** \\
 \textbf{Observation.} AdaSplash produces 40\% zero attention weights 
 on average. This is a \textbf{strict} property of the activation, not a soft mask.
 
-\subsection{7.4 Efficiency Profile}
+\subsection{Efficiency Profile}
 
 \textbf{Table 7.4: Inference efficiency.}
 
@@ -94,7 +96,7 @@ GPT-2 & AdaSplash & 8.0 & 16000 & 810 \\
 \textbf{Observation.} AdaSplash is \textbf{slower} than baseline by 1.9$\times$ 
 due to the entmax bisection (25 iterations per attention call).
 
-\subsection{7.5 Ablation: $\alpha$ Parameter}
+\subsection{Ablation: $\alpha$ Parameter}
 
 \textbf{Table 7.5: Effect of $\alpha$ on accuracy and sparsity.}
 
@@ -107,7 +109,7 @@ due to the entmax bisection (25 iterations per attention call).
 \midrule
 1.0 (softmax) & 90.71 & 0\% & 78.56 & 79.36 \\
 1.2 & 90.48 & {{SP\_A12}}\% & 78.10 & 79.01 \\
-**1.5** & **90.25** & **{{SP\_A15}}\%** & **77.5** & **78.78** \\
+\textbf{1.5} & \textbf{90.25} & \textbf{{{SP\_A15}}\%} & \textbf{77.5} & \textbf{78.78} \\
 1.8 & 89.79 & {{SP\_A18}}\% & 77.20 & 78.30 \\
 2.0 (sparsemax) & 88.30 & {{SP\_A2}}\% & 75.80 & 77.10 \\
 \bottomrule
@@ -117,7 +119,7 @@ due to the entmax bisection (25 iterations per attention call).
 \textbf{Observation.} $\alpha$ = 1.5 is a good balance. $\alpha$ = 2.0 (sparsemax) is too sparse 
 and non-smooth.
 
-\subsection{7.6 Ablation: Splash Radius}
+\subsection{Ablation: Splash Radius}
 
 \textbf{Table 7.6: Effect of splash radius on GPT-2 (causal decoder).}
 
@@ -130,7 +132,7 @@ and non-smooth.
 \midrule
 8 & 77.2 & Very local \\
 16 & 78.10 & Local \\
-**32** & **78.78** & Balanced \\
+\textbf{32} & \textbf{78.78} & Balanced \\
 64 & 78.75 & Broad \\
 128 (full) & 78.80 & No windowing \\
 \bottomrule
@@ -139,7 +141,7 @@ and non-smooth.
 
 \textbf{Observation.} W = 32 is sufficient; larger windows don't improve accuracy.
 
-\subsection{7.7 Ablation: Attention Sinks}
+\subsection{Ablation: Attention Sinks}
 
 \textbf{Table 7.7: Effect of sink preservation.}
 
@@ -150,14 +152,14 @@ and non-smooth.
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With sink (S=4) & **90.25** & **77.5** & **78.78** \\
+With sink (S=4) & \textbf{90.25} & \textbf{77.5} & \textbf{78.78} \\
 No sink (S=0) & 85.5 & 73.0 & 74.0 \\
 $\Delta$ & +4.75 & +4.5 & +4.78 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \textbf{Table 7.8: Effect of LoRA rank.}
 
@@ -171,13 +173,13 @@ $\Delta$ & +4.75 & +4.5 & +4.78 \\
 0 (no LoRA) & 80.0 & baseline & 68.0 & 69.0 \\
 4 & 88.5 & +147456 & 75.0 & 76.5 \\
 8 & 89.8 & +294912 & 76.8 & 77.9 \\
-**16** & **90.25** & **+589824** & **77.5** & **78.78** \\
+\textbf{16} & \textbf{90.25} & \textbf{+589824} & \textbf{77.5} & \textbf{78.78} \\
 32 & 90.30 & +1179648 & 77.6 & 78.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.9: Accuracy vs recovery steps (r\_L = 16).}
 
@@ -190,13 +192,13 @@ $\Delta$ & +4.75 & +4.5 & +4.78 \\
 \midrule
 10 & 0.5 & 0.8 & 0.7 \\
 25 & 0.4 & 0.6 & 0.55 \\
-**50** & **0.31** & **0.48** & **0.47** \\
+\textbf{50} & \textbf{0.31} & \textbf{0.48} & \textbf{0.47} \\
 100 & 90.30 & 77.6 & 78.80 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.10: AdaSplash vs other attention methods.}
 
@@ -208,9 +210,9 @@ $\Delta$ & +4.75 & +4.5 & +4.78 \\
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Params change} & \textbf{Sparse?} \\
 \midrule
 full (softmax) & 90.71\% & 0\% & No \\
-`adaptive\_svd` & 88.0 & -60\% & No \\
-`nha` & 90.25 & +0.89\% & No \\
-**AdaSplash** & **90.25** & **+0.89\%** & **Yes** \\
+\texttt{adaptive\_svd} & 88.0 & -60\% & No \\
+\texttt{nha} & 90.25 & +0.89\% & No \\
+\textbf{AdaSplash} & \textbf{90.25} & \textbf{+0.89\%} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -218,15 +220,15 @@ full (softmax) & 90.71\% & 0\% & No \\
 \textbf{Note.} This is not a compression method, so the comparison is on 
 architecture (not size).
 
-\subsection{7.11 Attention Interpretability}
+\subsection{Attention Interpretability}
 
 \textbf{Figure 7.1} shows attention maps before and after AdaSplash.
 
 \begin{itemize}
 \item \textbf{Before (softmax):} Diffuse attention patterns; ~200 nonzero entries per query.
 \item \textbf{After (AdaSplash):} Sparse patterns; ~60 nonzero entries per query.
-\end{itemize}
 
+\end{itemize}
 \textbf{Figure 7.2} shows the effective support size distribution:
 
 \begin{table}[H]
@@ -243,7 +245,7 @@ GPT-2 & 128 & 76 \\
 \end{tabular}
 \end{table}
 
-\subsection{7.12 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Accuracy:} maintained at baseline.

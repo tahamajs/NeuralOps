@@ -1,6 +1,6 @@
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Transformer attention computes a pairwise score between every query and 
 every key:
@@ -20,39 +20,39 @@ Existing methods divide into:
 
 \begin{itemize}
 \item \textbf{Fixed sparsity patterns} (Longformer, BigBird): window + global tokens,
-\end{itemize}
   learned independently of content.
-\begin{itemize}
 \item \textbf{Content-based sparsity} (Routing, MoBA): tokens or blocks selected
-\end{itemize}
   based on query content.
 
+\end{itemize}
 \textbf{Length heterogeneity.} Most methods apply the same pattern regardless of 
 sequence length. But sparsity has \textbf{overhead}: even for $L = 32$, sparse 
 methods pay the cost of routing/gating. For short sequences, softmax is 
 both simpler and faster.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained attention module $\mathcal{A}$ with projections 
 $W_Q, W_K, W_V, W_O$, we seek an augmented attention function 
 $\mathcal{A}'$ such that:
 
-1. \textbf{Short-sequence preservation.} For $L \leq L_\text{threshold}$, 
-   $\mathcal{A}'(X) = \mathcal{A}(X)$ exactly (no sparsity overhead).
-2. \textbf{Long-sequence efficiency.} For $L > L_\text{threshold}$, 
-   $\mathcal{A}'$ reduces attention FLOPs by selecting a subset of keys.
-3. \textbf{Content-aware sparsity.} The selection depends on query content, not 
-   on fixed patterns.
-4. \textbf{Step-0 preservation.} With zero-init LoRA, initial forward matches 
-   the pretrained model.
-5. \textbf{Multi-architecture support.} Works on flat, nested, and causal 
-   transformers with GQA and RoPE.
+\begin{enumerate}
+\item \textbf{Short-sequence preservation.} For $L \leq L_\text{threshold}$,
+  $\mathcal{A}'(X) = \mathcal{A}(X)$ exactly (no sparsity overhead).
+\item \textbf{Long-sequence efficiency.} For $L > L_\text{threshold}$,
+  $\mathcal{A}'$ reduces attention FLOPs by selecting a subset of keys.
+\item \textbf{Content-aware sparsity.} The selection depends on query content, not
+  on fixed patterns.
+\item \textbf{Step-0 preservation.} With zero-init LoRA, initial forward matches
+  the pretrained model.
+\item \textbf{Multi-architecture support.} Works on flat, nested, and causal
+  transformers with GQA and RoPE.
 
+\end{enumerate}
 \textbf{Note.} This is \textbf{not} a compression method. Parameter count increases 
 by the LoRA adapters and gate MLP.
 
-\subsection{1.3 Our Approach}
+\subsection{Our Approach}
 
 FUSIONATTN dispatches based on sequence length:
 
@@ -65,10 +65,12 @@ identical to the pretrained model (given base weights copied exactly).
 
 Block-sparse attention with content-based gating:
 
-1. \textbf{Block partitioning.} Split sequence into blocks of size $B$ (default 
-   64).
-2. \textbf{Gate scoring.} For each query block $i$ and key block $j$, compute:
+\begin{enumerate}
+\item \textbf{Block partitioning.} Split sequence into blocks of size $B$ (default
+  64).
+\item \textbf{Gate scoring.} For each query block $i$ and key block $j$, compute:
 
+\end{enumerate}
 \[
 g(i, j) = \text{GateMLP}(\bar{Q}_i)^\top \cdot \text{GateMLP}(\bar{K}_j) / \tau
 \tag{1.2}
@@ -76,43 +78,35 @@ g(i, j) = \text{GateMLP}(\bar{Q}_i)^\top \cdot \text{GateMLP}(\bar{K}_j) / \tau
 
 where $\bar{Q}_i, \bar{K}_j$ are block-mean representations.
 
-3. \textbf{Top-K selection.} For each query block, keep the top-$K$ key blocks 
-   by gate score (plus the first block, for stability).
-4. \textbf{Block-local attention.} Compute attention only over the selected 
-   blocks.
+\begin{enumerate}
+\item \textbf{Top-K selection.} For each query block, keep the top-$K$ key blocks
+  by gate score (plus the first block, for stability).
+\item \textbf{Block-local attention.} Compute attention only over the selected
+  blocks.
 
+\end{enumerate}
 \textbf{Key advantage.} The gate is \textbf{learned}, not fixed. It can adapt to 
 task-specific sparsity patterns.
 
-\subsection{1.4 Contributions}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A length-aware dispatch.} Short sequences take a zero-overhead path;
-\end{itemize}
   long sequences take a content-aware sparse path. Section 4.3.
-\begin{itemize}
 \item \textbf{A learnable block gate.} 2-layer MLP over block-mean representations,
-\end{itemize}
   trained jointly with LoRA. Section 4.4.
-\begin{itemize}
 \item \textbf{MoBA-style block attention.} Top-$K$ block selection with first-block
-\end{itemize}
   preservation. Section 4.5.
-\begin{itemize}
 \item \textbf{Multi-architecture weight transfer.} GPT-2 Conv1D, RoBERTa/BERT nested,
-\end{itemize}
   DistilBERT flat, Qwen GQA. Section 5.
-\begin{itemize}
 \item \textbf{Honest reporting.} We disclose that at $L = 128$ (our test length), the
-\end{itemize}
-  module takes the short path and provides \textbf{no sparsity benefit}. We 
+  module takes the short path and provides \textbf{no sparsity benefit}. We
   report this transparently. Sections 7--8.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code and evaluation scripts released under
-\end{itemize}
   MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on sparse 
 attention, block gating, and MoBA. Section 4 presents FUSIONATTN. Section 

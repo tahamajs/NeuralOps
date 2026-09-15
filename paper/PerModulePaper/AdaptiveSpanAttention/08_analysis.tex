@@ -1,7 +1,7 @@
 
-\section{8. Analysis}
+\section{Analysis}
 
-\subsection{8.1 Head Span Heterogeneity}
+\subsection{Head Span Heterogeneity}
 
 \textbf{Figure 8.1} shows the histogram of learned spans across all heads in each 
 model. The distribution is \textbf{bimodal}:
@@ -10,8 +10,8 @@ model. The distribution is \textbf{bimodal}:
 \item \textbf{Local heads:} $\sim 40\%$ converge to $z_h < 32$
 \item \textbf{Global heads:} $\sim 30\%$ converge to $z_h > 96$
 \item \textbf{Middle heads:} $\sim 30\%$ fall in between
-\end{itemize}
 
+\end{itemize}
 \textbf{Table 8.1: Head classification.}
 
 \begin{table}[H]
@@ -28,7 +28,7 @@ Global ($z > 96$) & 3 & 3 & 3 \\
 \end{tabular}
 \end{table}
 
-\subsection{8.2 Layer-Wise Span Pattern}
+\subsection{Layer-Wise Span Pattern}
 
 \textbf{Figure 8.2} shows mean span vs layer for GPT-2. The pattern:
 
@@ -36,12 +36,12 @@ Global ($z > 96$) & 3 & 3 & 3 \\
 \item \textbf{Layers 0--3}: mean span ~105 (larger)
 \item \textbf{Layers 4--8}: mean span ~75 (middle)
 \item \textbf{Layers 9--11}: mean span ~55 (smaller)
-\end{itemize}
 
+\end{itemize}
 \textbf{Interpretation.} Early layers need global context to integrate information; 
 late layers refine local features.
 
-\subsection{8.3 Span Shrinkage Dynamics}
+\subsection{Span Shrinkage Dynamics}
 
 \textbf{Figure 8.3} shows span vs training step. Key observations:
 
@@ -50,13 +50,13 @@ late layers refine local features.
 \item \textbf{Step 10:} ~10\% shrinkage
 \item \textbf{Step 30:} ~30\% shrinkage
 \item \textbf{Step 50:} Convergence
-\end{itemize}
 
+\end{itemize}
 \textbf{Fast shrinkers.} Some heads shrink rapidly (within 10 steps), others 
 slowly. The fast shrinkers are typically \textbf{redundant heads} that can be 
 locally approximated.
 
-\subsection{8.4 Effect of Ramp Size}
+\subsection{Effect of Ramp Size}
 
 \textbf{Figure 8.4} shows the effective attention profile for different $R$:
 
@@ -64,11 +64,11 @@ locally approximated.
 \item $R = 1$: Sharp cutoff (near-hard window)
 \item $R = 16$: Moderate transition
 \item $R = 64$: Very smooth, span effectively larger
-\end{itemize}
 
+\end{itemize}
 The optimal $R$ balances differentiability with pruning.
 
-\subsection{8.5 Span vs Attention Entropy}
+\subsection{Span vs Attention Entropy}
 
 \textbf{Figure 8.5} shows correlation between learned span and attention entropy:
 
@@ -82,7 +82,7 @@ attention); heads with \textbf{small spans} have \textbf{low entropy} (concentra
 attention). This confirms that span correlates with the actual attention 
 pattern.
 
-\subsection{8.6 Comparison with Fixed Window}
+\subsection{Comparison with Fixed Window}
 
 \textbf{Table 8.2: ASA-Span vs fixed window at same mean span.}
 
@@ -94,7 +94,7 @@ pattern.
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 Fixed $w = $ mean span & 85.0 & 73.0 & 74.0 \\
-**ASA-Span** & **89.5** & **76.5** & **77.5** \\
+\textbf{ASA-Span} & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,7 +102,7 @@ Fixed $w = $ mean span & 85.0 & 73.0 & 74.0 \\
 \textbf{Observation.} ASA-Span outperforms fixed-window by 4.5\% 
 because per-head adaptation captures head-specific needs.
 
-\subsection{8.7 Span Interpretability}
+\subsection{Span Interpretability}
 
 \textbf{Table 8.3: Head spans in DistilBERT layer 3.}
 
@@ -124,26 +124,26 @@ because per-head adaptation captures head-specific needs.
 Manual inspection shows that \textbf{local heads} typically track syntactic 
 dependencies; \textbf{global heads} track semantic relationships.
 
-\subsection{8.8 Numerical Stability}
+\subsection{Numerical Stability}
 
-\subsubsection{8.8.1 Log-Space Ramp}
+\subsubsection{Log-Space Ramp}
 
 We compute \texttt{log(ramp + $\epsilon$)} in FP32 to avoid \texttt{log(0) = -inf}. The \texttt{$\epsilon$ = 1e-8} 
 prevents underflow.
 
-\subsubsection{8.8.2 Softmax Renormalization}
+\subsubsection{Softmax Renormalization}
 
 After ramp masking, the row may sum to a very small number. We renormalize 
 via softmax, which is numerically stable.
 
-\subsubsection{8.8.3 FP16 Issues}
+\subsubsection{FP16 Issues}
 
 The ramp mask is computed in FP32 for accuracy. Cast back to FP16 for the 
 context computation.
 
-\subsection{8.9 Failure Cases}
+\subsection{Failure Cases}
 
-\subsubsection{8.9.1 Layers Where ASA-Span Fails}
+\subsubsection{Layers Where ASA-Span Fails}
 
 \begin{table}[H]
 \centering
@@ -158,15 +158,17 @@ layer.2.attn & RoBERTa & 1.8 \\
 \end{tabular}
 \end{table}
 
-\subsubsection{8.9.2 Root Causes}
+\subsubsection{Root Causes}
 
 Some heads need larger span than initialized
 
-\subsection{8.10 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{Learned spans are bimodal}: local vs global heads.
-2. \textbf{Layer depth correlates with span}: early = larger, late = smaller.
-3. \textbf{$R = 32$} is optimal.
-4. \textbf{$\lambda = 0.01$} balances compression and accuracy.
-5. \textbf{Attention entropy} correlates with learned span.
-6. \textbf{No speedup without hard truncation.}
+\begin{enumerate}
+\item \textbf{Learned spans are bimodal}: local vs global heads.
+\item \textbf{Layer depth correlates with span}: early = larger, late = smaller.
+\item \textbf{$R = 32$} is optimal.
+\item \textbf{$\lambda = 0.01$} balances compression and accuracy.
+\item \textbf{Attention entropy} correlates with learned span.
+\item \textbf{No speedup without hard truncation.}
+\end{enumerate}

@@ -1,7 +1,7 @@
 
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 The quadratic parameter cost of transformer layers makes deployment of even 
 moderately-sized models expensive. A standard BERT-base layer contains 
@@ -36,7 +36,7 @@ faithfully as the high-variance ones wastes capacity.
 {{MOTIVATION\_PARAGRAPH\_3}}
 
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained transformer model $\mathcal{M}$ with $N_l$ layers, each 
 containing linear projections $\{W^{(\ell)}_k\}$, we seek a compressed model 
@@ -52,62 +52,60 @@ where $|\theta(\cdot)|$ denotes parameter count.
 
 We impose the following constraints:
 
-1. \textbf{Strict reconstruction bound.} For each compressed layer, 
-   $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = 0.20$.
-2. \textbf{No retraining of base weights.} Only LoRA adapters may be trained.
-3. \textbf{Memory-bounded calibration.} Activation statistics must be collected in 
-   $\mathcal{O}(d^2)$ memory, not $\mathcal{O}(Nd^2)$.
-4. \textbf{Deterministic fallback.} If error exceeds $\tau$, the original layer is 
-   preserved.
+\begin{enumerate}
+\item \textbf{Strict reconstruction bound.} For each compressed layer,
+  $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = 0.20$.
+\item \textbf{No retraining of base weights.} Only LoRA adapters may be trained.
+\item \textbf{Memory-bounded calibration.} Activation statistics must be collected in
+  $\mathcal{O}(d^2)$ memory, not $\mathcal{O}(Nd^2)$.
+\item \textbf{Deterministic fallback.} If error exceeds $\tau$, the original layer is
+  preserved.
 
-\subsection{1.3 Our Approach}
+\end{enumerate}
+\subsection{Our Approach}
 
 We propose \textbf{A3} (\textbf{A}ctivation-\textbf{A}ware \textbf{A}daptive factorization), 
 which differs from standard SVD compression in four ways:
 
-1. \textbf{Fisher-diagonal weighting.} We estimate the empirical Fisher diagonal 
-   $F_i = \mathbb{E}_x[x_i^2]$ from calibration data and use it to reweight 
-   the SVD input space: $W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})$.
+\begin{enumerate}
+\item \textbf{Fisher-diagonal weighting.} We estimate the empirical Fisher diagonal
+  $F_i = \mathbb{E}_x[x_i^2]$ from calibration data and use it to reweight
+  the SVD input space: $W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})$.
 
-2. \textbf{Streaming covariance accumulation.} We collect $F$ and $C_X$ using 
-   online streaming, requiring only $\mathcal{O}(d^2)$ memory regardless of 
-   calibration set size.
+\item \textbf{Streaming covariance accumulation.} We collect $F$ and $C_X$ using
+  online streaming, requiring only $\mathcal{O}(d^2)$ memory regardless of
+  calibration set size.
 
-3. \textbf{Adaptive rank escalation.} If the reconstruction error at the initial 
-   rank $r$ exceeds $\tau$, we incrementally increase the rank up to 
-   $\min(d_\text{in}, d_\text{out})$, retrying the SVD until the constraint 
-   is met or the fallback triggers.
+\item \textbf{Adaptive rank escalation.} If the reconstruction error at the initial
+  rank $r$ exceeds $\tau$, we incrementally increase the rank up to
+  $\min(d_\text{in}, d_\text{out})$, retrying the SVD until the constraint
+  is met or the fallback triggers.
 
-4. \textbf{LayerNorm recalibration.} After factorization, we rescale each 
-   LayerNorm's affine parameters $\gamma$ by the ratio of target to current 
-   activation standard deviation, absorbing distributional shift introduced 
-   by the factorization.
+\item \textbf{LayerNorm recalibration.} After factorization, we rescale each
+  LayerNorm's affine parameters $\gamma$ by the ratio of target to current
+  activation standard deviation, absorbing distributional shift introduced
+  by the factorization.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 We make the following contributions:
 
 \begin{itemize}
 \item \textbf{A streaming activation-aware compression algorithm.} We propose A3,
-\end{itemize}
-  which combines Fisher weighting, streaming covariance accumulation, adaptive 
+  which combines Fisher weighting, streaming covariance accumulation, adaptive
   rank escalation, and LayerNorm recalibration into a single pipeline.
-\begin{itemize}
 \item \textbf{A production-hardened implementation.} Our PyTorch implementation
-\end{itemize}
-  handles flat, nested, and causal architectures with safe fallback, strict 
+  handles flat, nested, and causal architectures with safe fallback, strict
   Frobenius validation, and CoO(nstant) memory overhead.
-\begin{itemize}
 \item \textbf{A comprehensive evaluation.} We benchmark on DistilBERT, RoBERTa, and
-\end{itemize}
-  GPT-2 on SST-2 with ablations over rank, weighting strategy, and LayerNorm 
+  GPT-2 on SST-2 with ablations over rank, weighting strategy, and LayerNorm
   recalibration.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts are
-\end{itemize}
   released under MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work in low-rank compression, activation-aware 
 pruning, and LayerNorm recalibration. Section 3 provides background on SVD, 

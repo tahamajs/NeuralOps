@@ -33,8 +33,8 @@ energy savings.
 \item \textbf{Compression compute:} ~10 GPU-hours
 \item \textbf{CO$_2$ estimate:} ~0.7 kg CO$_2$eq
 \item \textbf{Methodology:} [ML CO$_2$ Impact Calculator](https://mlco2.github.io/impact/)
-\end{itemize}
 
+\end{itemize}
 \subsection{E.2 Data Ethics}
 
 \textbf{Dataset.} SST-2 (Socher et al., 2013):
@@ -43,8 +43,8 @@ energy savings.
 \item English movie reviews
 \item No personally identifiable information (PII)
 \item Western-centric distribution
-\end{itemize}
 
+\end{itemize}
 \textbf{No calibration data.} Adaptive SVD requires no additional data collection, 
 reducing privacy risk.
 
@@ -52,8 +52,8 @@ reducing privacy risk.
 \begin{itemize}
 \item Amplify existing biases (if bias lives in high-rank directions)
 \item Suppress existing biases (if bias lives in low-rank directions)
-\end{itemize}
 
+\end{itemize}
 \subsection{E.3 Model Ethics}
 
 \textbf{Dual-use potential.} The method could be used for:
@@ -61,15 +61,15 @@ reducing privacy risk.
 \item Automated content moderation
 \item Privacy-preserving on-device AI
 \item Efficient scientific computing
-\end{itemize}
 
+\end{itemize}
 Or misused for:
 \begin{itemize}
 \item Mass surveillance
 \item Misinformation generation
 \item Automated censorship
-\end{itemize}
 
+\end{itemize}
 We do not endorse harmful uses.
 
 \subsection{E.4 Authorship and Credit}
@@ -78,12 +78,10 @@ We do not endorse harmful uses.
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran
-\end{itemize}
   experiments, wrote the paper.
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided methodological feedback and edited the manuscript.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{License}
 
 Code, weights, and this paper released under \textbf{MIT}.
@@ -109,12 +107,14 @@ edited by the authors.
 \subsection{E.9 Reproducibility Commitments}
 
 We commit to:
-1. Releasing all code under MIT
-2. Releasing checkpoints on HuggingFace
-3. Reporting negative results (Appendix D)
-4. Documenting all hyperparameters
-5. Responding to replication attempts
+\begin{enumerate}
+\item Releasing all code under MIT
+\item Releasing checkpoints on HuggingFace
+\item Reporting negative results (Appendix D)
+\item Documenting all hyperparameters
+\item Responding to replication attempts
 
+\end{enumerate}
 \subsection{E.10 Long-Term Considerations}
 
 Adaptive SVD could:
@@ -125,15 +125,15 @@ Adaptive SVD could:
 \item Reduced AI carbon footprint
 \item Democratized access to capable models
 \item Multi-task deployment without re-compression
-\end{itemize}
 
+\end{itemize}
 \textbf{Risk:}
 \begin{itemize}
 \item Increased surveillance capability
 \item Concentration of AI capabilities
 \item Widening gap between compressed and full models
-\end{itemize}
 
+\end{itemize}
 We encourage the community to consider these trade-offs alongside technical 
 merit.
 

@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Dense Softmax Attention}
+\subsection{Dense Softmax Attention}
 
 For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
@@ -14,7 +14,7 @@ For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
 \textbf{Causality.} For decoder models, mask: $S_{ij} = -\infty$ for $j > i$.
 
-\subsection{3.2 Linear Attention}
+\subsection{Linear Attention}
 
 Replace softmax with a kernel $\phi: \mathbb{R}^{d_h} \to \mathbb{R}^m$:
 
@@ -36,7 +36,7 @@ where $\mathbf{1} \in \mathbb{R}^L$ is a vector of ones.
 \tag{3.3}
 \]
 
-\subsection{3.3 Rectified Kernel}
+\subsection{Rectified Kernel}
 
 We use $\phi(x) = \mathrm{elu}(x) + 1$ where:
 
@@ -51,13 +51,13 @@ with $\alpha = 1$. This kernel:
 \item Is \textbf{non-negative}: $\phi(x) > 0$ for all $x$.
 \item Is \textbf{continuous} and \textbf{smooth}.
 \item Is \textbf{bounded} in expectation for bounded inputs.
-\end{itemize}
 
+\end{itemize}
 \textbf{Why non-negativity matters.} In (3.2), the denominator 
 $\phi(Q) (\phi(K)^\top \mathbf{1})$ is a sum of products of non-negative 
 terms, hence positive. This avoids division by zero or negative denominators.
 
-\subsection{3.4 Prefix Sum for Causal Attention}
+\subsection{Prefix Sum for Causal Attention}
 
 For causal linear attention, we compute:
 
@@ -73,7 +73,7 @@ via \texttt{torch.cumsum}. The complexity is $\mathcal{O}(L m d_h)$ memory and t
 with $m \le 128$. For longer sequences, chunked cumsum or a recurrent 
 formulation is needed.
 
-\subsection{3.5 Gating}
+\subsection{Gating}
 
 We use a per-head sigmoid gate:
 
@@ -92,7 +92,7 @@ O_i = g_{h,i} \cdot O_i^\text{dense} + (1 - g_{h,i}) \cdot O_i^\text{lin}
 \textbf{Interpretation.} $g \approx 1$ $\to$ dense attention; $g \approx 0$ $\to$ linear 
 attention; intermediate $\to$ smooth mix.
 
-\subsection{3.6 Grouped Query Attention (GQA)}
+\subsection{Grouped Query Attention (GQA)}
 
 GQA (Ainslie et al., 2023) reduces $H_{kv} < H$ and repeats KV heads:
 
@@ -104,7 +104,7 @@ K, V \in \mathbb{R}^{B \times H_{kv} \times L \times d_h}, \quad
 
 HALO-ReGLA supports GQA via \texttt{repeat\_kv} before attention computation.
 
-\subsection{3.7 Rotary Position Embeddings (RoPE)}
+\subsection{Rotary Position Embeddings (RoPE)}
 
 RoPE (Su et al., 2021) applies position-dependent rotation:
 
@@ -115,7 +115,7 @@ RoPE (Su et al., 2021) applies position-dependent rotation:
 
 HALO-ReGLA applies RoPE to Q, K before both branches.
 
-\subsection{3.8 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable adapters:
 
@@ -127,4 +127,4 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r} B A
 with $B = 0$ at initialization. HALO-ReGLA uses LoRA to adapt the frozen 
 projections.
 
-\subsection{3.9 Notation Summary}
+\subsection{Notation Summary}

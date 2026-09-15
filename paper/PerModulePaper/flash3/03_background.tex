@@ -1,6 +1,6 @@
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Standard Attention}
+\subsection{Standard Attention}
 
 For $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$:
 
@@ -12,7 +12,7 @@ For $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$:
 \textbf{Naive implementation.} Materialize $QK^\top \in \mathbb{R}^{L \times L}$, 
 apply softmax, multiply by $V$. Memory: $\mathcal{O}(L^2)$.
 
-\subsection{3.2 FlashAttention Tiling}
+\subsection{FlashAttention Tiling}
 
 FlashAttention partitions $Q, K, V$ into blocks:
 
@@ -45,34 +45,34 @@ The final output is $O_i = O_i^{(T)} / \ell_i^{(T)}$.
 \textbf{Memory.} $\mathcal{O}(B \cdot L \cdot d_h)$ for the output plus 
 $\mathcal{O}(B^2)$ for the block buffers. Total: $\mathcal{O}(L)$.
 
-\subsection{3.3 FlashAttention-3 Improvements}
+\subsection{FlashAttention-3 Improvements}
 
 Over FlashAttention-2, v3 adds:
 
-1. \textbf{TMA (Tensor Memory Accelerator).} Asynchronous bulk memory copies 
-   from HBM to shared memory, freeing the SM for computation.
-2. \textbf{Warp specialization.} Producer-consumer model where some warps handle 
-   memory while others compute.
-3. \textbf{FP8 support.} Tensor cores can process FP8 (e4m3) at 2$\times$ throughput.
+\begin{enumerate}
+\item \textbf{TMA (Tensor Memory Accelerator).} Asynchronous bulk memory copies
+  from HBM to shared memory, freeing the SM for computation.
+\item \textbf{Warp specialization.} Producer-consumer model where some warps handle
+  memory while others compute.
+\item \textbf{FP8 support.} Tensor cores can process FP8 (e4m3) at 2$\times$ throughput.
 
+\end{enumerate}
 \textbf{Result.} ~2$\times$ throughput over v2 on H100.
 
-\subsection{3.4 PyTorch SDPA}
+\subsection{PyTorch SDPA}
 
 \texttt{F.scaled\_dot\_product\_attention} auto-selects one of three backends:
 
 \begin{itemize}
 \item \textbf{Math path:} naive implementation.
 \item \textbf{Memory-efficient path (xFormers-style):} tiled computation similar
-\end{itemize}
   to FlashAttention-1.
-\begin{itemize}
 \item \textbf{FlashAttention-2 (if available):} uses the \texttt{flash\_attn} library.
-\end{itemize}
 
+\end{itemize}
 The wrapper dispatches to SDPA when FlashAttention-3 is unavailable.
 
-\subsection{3.5 GQA and Repeat\_KV}
+\subsection{GQA and Repeat\_KV}
 
 For GQA, $H_{kv} < H$:
 
@@ -88,7 +88,7 @@ Before attention, repeat each KV head $H/H_{kv}$ times:
 \tag{3.7}
 \]
 
-\subsection{3.6 Rotary Position Embeddings}
+\subsection{Rotary Position Embeddings}
 
 RoPE rotates $Q, K$ by position-dependent angles:
 
@@ -99,8 +99,8 @@ RoPE rotates $Q, K$ by position-dependent angles:
 
 Partial RoPE rotates only the first \texttt{rotary\_dim} coordinates.
 
-\subsection{3.7 LoRA}
+\subsection{LoRA}
 
 LoRA (Hu et al., 2021) parameterizes a weight update as $BA$ with $B = 0$.
 
-\subsection{3.8 Notation Summary}
+\subsection{Notation Summary}

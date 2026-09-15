@@ -1,6 +1,6 @@
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Linear-Complexity Attention}
+\subsection{Linear-Complexity Attention}
 
 \textbf{Linformer.} Wang et al. (2020) project $K, V$ to fixed low rank with 
 learned projection matrices. Galerkin uses a \textbf{fixed DCT basis}, not learned.
@@ -14,7 +14,7 @@ a full DCT basis.
 \textbf{Linear Transformer.} Katharopoulos et al. (2020) reorder attention as 
 associative products. Different mathematical primitive.
 
-\subsection{2.2 Basis Projection Methods}
+\subsection{Basis Projection Methods}
 
 \textbf{FNet.} Lee-Thorp et al. (2021) replace self-attention with an unparameterized 
 Fourier transform. Galerkin uses a truncated DCT basis plus a softmax 
@@ -26,7 +26,7 @@ for vision. Similar spirit, different domain.
 \textbf{AFNO.} Guibas et al. (2022) use adaptive Fourier neural operators for 
 PDEs. Galerkin is a Galerkin discretization of the attention operator.
 
-\subsection{2.3 Numerical Analysis of Attention}
+\subsection{Numerical Analysis of Attention}
 
 \textbf{Neural Operators.} Kovachki et al. (2023) formalize neural operators as 
 mappings between function spaces. Attention is a specific case.
@@ -38,7 +38,7 @@ for variational discretization of PDEs.
 uses a \textbf{single} orthonormal basis (Galerkin, not Petrov-Galerkin in the 
 strict sense).
 
-\subsection{2.4 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -51,14 +51,16 @@ Linformer & Linear proj & Yes & Yes & Yes \\
 Performer & Random feats & No & Yes & Yes \\
 FNet & FFT & No & Yes & No \\
 Nystr mformer & Landmarks & Yes & Yes & Yes \\
-**Galerkin** & **DCT (fixed)** & **No** & **Yes** & **Fallback** \\
+\textbf{Galerkin} & \textbf{DCT (fixed)} & \textbf{No} & \textbf{Yes} & \textbf{Fallback} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key distinction.} Galerkin is the only method that:
-1. Uses a \textbf{fixed orthonormal basis} (DCT).
-2. Dispatches encoder vs decoder.
-3. Provides an \textbf{exact} solution in basis space.
+\begin{enumerate}
+\item Uses a \textbf{fixed orthonormal basis} (DCT).
+\item Dispatches encoder vs decoder.
+\item Provides an \textbf{exact} solution in basis space.
 
-\subsection{2.5 Comparison Table}
+\end{enumerate}
+\subsection{Comparison Table}

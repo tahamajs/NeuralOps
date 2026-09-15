@@ -1,7 +1,7 @@
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{OHA} (Optimized Hybrid Attention), a drop-in replacement 
 for MHSA that combines sliding-window local attention with a 
@@ -9,7 +9,7 @@ for MHSA that combines sliding-window local attention with a
 compressed summary is computed on-the-fly from the input, making it 
 data-adaptive.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -27,48 +27,48 @@ GPT-2 & -1.56\% & +1.51\% & 2.1$\times$ \\
 
 At longer sequences, the efficiency benefit dominates.
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Not a compressor.} Parameters increase.
-2. \textbf{Long-context benefit.} $\mathcal{O}(L(W + d_c))$ vs $\mathcal{O}(L^2)$.
-3. \textbf{Data-adaptive compression.} Input-dependent summary.
-4. \textbf{Multi-architecture.} Same code, four families.
+\begin{enumerate}
+\item \textbf{Not a compressor.} Parameters increase.
+\item \textbf{Long-context benefit.} $\mathcal{O}(L(W + d_c))$ vs $\mathcal{O}(L^2)$.
+\item \textbf{Data-adaptive compression.} Input-dependent summary.
+\item \textbf{Multi-architecture.} Same code, four families.
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Cross-attention support
 \item Better compression initialization
 \item Fused Triton kernels
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical analysis
 \item Needle-in-haystack evaluation
 \item Comparison with Set Transformer
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 OHA is a practical tool for long-context inference with data-adaptive 
 compression. We release all code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 {{ACKNOWLEDGMENTS}}
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed OHA, implemented the code, ran experiments,
-\end{itemize}
   wrote the paper.
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

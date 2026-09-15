@@ -1,59 +1,59 @@
 
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 No Inference Speedup}
+\subsection{No Inference Speedup}
 
 Squeezing Heads adds LoRA overhead. Inference is slower than baseline 
 unless LoRA is folded into base weights.
 
-\subsection{10.2 Storage Overhead}
+\subsection{Storage Overhead}
 
 SH stores both frozen weights AND LoRA adapters. Storage is slightly 
 higher than baseline.
 
-\subsection{10.3 Head-Dim Reduction Loses Information}
+\subsection{Head-Dim Reduction Loses Information}
 
 Reducing head dimension from $d_h$ to $d_h'$ cannot be perfectly reversed. 
 There is an irreducible accuracy loss.
 
-\subsection{10.4 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 evaluated. Long-context tasks not tested.
 
-\subsection{10.5 Model Coverage}
+\subsection{Model Coverage}
 
 Not tested on:
 \begin{itemize}
 \item Large models ($H > 32$)
 \item Mixture-of-Experts
 \item Vision transformers
-\end{itemize}
 
-\subsection{10.6 No Comparison with Per-Head Rank}
+\end{itemize}
+\subsection{No Comparison with Per-Head Rank}
 
 Uniform LoRA rank may not be optimal.
 
-\subsection{10.7 Single Seed}
+\subsection{Single Seed}
 
 All results from seed 42.
 
-\subsection{10.8 No Comparison with Some Baselines}
+\subsection{No Comparison with Some Baselines}
 
 We do not compare with:
 \begin{itemize}
 \item DistilBERT (distillation)
 \item TinyBERT
 \item Head pruning + full fine-tuning
-\end{itemize}
 
-\subsection{10.9 Failure Modes}
+\end{itemize}
+\subsection{Failure Modes}
 
 Long-context, inference-time LoRA folding
 
-\subsection{10.10 Code Quality}
+\subsection{Code Quality}
 
 Research-grade implementation.
 
-\subsection{10.11 Ethical Considerations}
+\subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.

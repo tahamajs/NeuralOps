@@ -1,6 +1,6 @@
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
@@ -17,7 +17,7 @@ Qwen3.5 & GQA+RoPE & No & Yes & Yes & partial \\
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Extraction}
+\subsection{Weight Extraction}
 
 \subsubsection{DistilBERT (Flat)}
 \begin{lstlisting}
@@ -47,7 +47,7 @@ o_w = src.c_proj.weight.T
 \subsubsection{Qwen (GQA + RoPE)}
 Direct copy with GQA-aware dims.
 
-\subsection{5.3 Injection}
+\subsection{Injection}
 
 \begin{lstlisting}
 def inject_cluster(layer, cfg, comp_config, old_attn):
@@ -67,7 +67,7 @@ def inject_cluster(layer, cfg, comp_config, old_attn):
     return new
 \end{lstlisting}
 
-\subsection{5.4 Causal Masking}
+\subsection{Causal Masking}
 
 For decoders, ClusterFormer uses \textbf{exact causal attention}, not clustering:
 
@@ -83,12 +83,12 @@ if is_decoder:
 future information even with causal masking on keys. For stability we 
 use standard exact attention for decoder paths.
 
-\subsection{5.5 RoPE}
+\subsection{RoPE}
 
 Partial RoPE (Qwen3.5 with rotary\_dim < head\_dim) is supported via slicing 
 the first \texttt{rotary\_dim} coordinates.
 
-\subsection{5.6 GQA}
+\subsection{GQA}
 
 \begin{lstlisting}
 if self.kv_repeat > 1:
@@ -96,7 +96,7 @@ if self.kv_repeat > 1:
     V = repeat_kv(V, self.kv_repeat)
 \end{lstlisting}
 
-\subsection{5.7 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("cluster")
@@ -105,7 +105,7 @@ class ClusterAttention(BaseAttention):
     ...
 \end{lstlisting}
 
-\subsection{5.8 Failure Modes}
+\subsection{Failure Modes}
 
 \begin{table}[H]
 \centering
@@ -114,12 +114,12 @@ class ClusterAttention(BaseAttention):
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & `copy\_weights` raises & Return None \\
-Empty clusters & `counts == 0` & Mask logit to -inf \\
-NaN in cdist & `torch.nan\_to\_num` & Replace with 0 \\
+Missing weights & \texttt{copy\_weights} raises & Return None \\
+Empty clusters & \texttt{counts == 0} & Mask logit to -inf \\
+NaN in cdist & \texttt{torch.nan\_to\_num} & Replace with 0 \\
 Zero Frobenius & Check < 1e-4 & Raise error \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.9 Numerical Stability}
+\subsection{Numerical Stability}

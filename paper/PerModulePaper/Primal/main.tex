@@ -70,27 +70,27 @@ Nystr m approximation reduces this to $\mathcal{O}(L m)$ by projecting onto $m$
 landmarks, but requires a symmetric kernel matrix, forcing the same landmarks 
 for queries and keys. This is unnecessarily restrictive.
 
-We introduce **Primal Attention**, an asymmetric kernel SVD formulation that 
+We introduce \textbf{Primal Attention}, an asymmetric kernel SVD formulation that 
 decomposes the attention matrix as $A \approx F_1 F_2^{-1} F_3$, where $F_1, F_3$ 
 are query-key cross products with landmarks and $F_2$ is the landmark-landmark 
 Gram matrix. This allows independent landmark selection for queries and keys. 
 The pseudoinverse $F_2^{-1}$ is computed via an iterative Schulz refinement 
 that converges in a few steps and is differentiable.
 
-Primal Attention selects landmarks via **segment pooling** over contiguous chunks 
+Primal Attention selects landmarks via \textbf{segment pooling} over contiguous chunks 
 of the sequence, providing a uniform but content-agnostic summary of the 
 attention input. We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 
 with landmark count $m = 64$. Primal Attention achieves 
-**86.5\%**, **74.0\%**, and **75.0\%** accuracy respectively, 
-at the cost of **1.3$\times$** inference latency. The attention matrix 
-memory is reduced by **4$\times$**. We provide a production-hardened 
+\textbf{86.5\%}, \textbf{74.0\%}, and \textbf{75.0\%} accuracy respectively, 
+at the cost of \textbf{1.3$\times$} inference latency. The attention matrix 
+memory is reduced by \textbf{4$\times$}. We provide a production-hardened 
 PyTorch implementation supporting flat, nested, and causal architectures with 
 GQA, RoPE, and safe injection.
 
-**Keywords:** Nystr m approximation, low-rank attention, pseudoinverse, Schulz 
+\textbf{Keywords:} Nystr m approximation, low-rank attention, pseudoinverse, Schulz 
 iteration, efficient transformer
 
----
+
 
 \vspace{0.5em}
 \noindent\textbf{Keywords:} Nystr m approximation, low-rank attention, pseudoinverse, Schulz

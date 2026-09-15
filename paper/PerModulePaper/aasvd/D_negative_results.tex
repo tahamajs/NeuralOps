@@ -124,16 +124,18 @@ Separate calibration per layer & Precision & No change \\
 42 & {{SEED42}} \\
 123 & {{SEED123}} \\
 456 & {{SEED456}} \\
-**Mean** & **{{MEAN}}** \\
-**Std** & **{{STD}}** \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{FP32 SVD is essential.}
-2. \textbf{CPU transfer is required} for scaling.
-3. \textbf{Full covariance > diagonal.}
-4. \textbf{Bundled corpus is sufficient.}
-5. \textbf{Frobenius fallback is critical.}
+\begin{enumerate}
+\item \textbf{FP32 SVD is essential.}
+\item \textbf{CPU transfer is required} for scaling.
+\item \textbf{Full covariance > diagonal.}
+\item \textbf{Bundled corpus is sufficient.}
+\item \textbf{Frobenius fallback is critical.}
+\end{enumerate}

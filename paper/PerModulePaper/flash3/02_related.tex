@@ -1,6 +1,6 @@
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Attention Kernel Optimization}
+\subsection{Attention Kernel Optimization}
 
 \textbf{FlashAttention (v1).} Dao et al. (2022) introduce tiling and 
 recomputation for attention, reducing memory from $\mathcal{O}(L^2)$ to 
@@ -19,7 +19,7 @@ FlashAttention-2 (if available). It's our fallback.
 \textbf{xFormers.} Facebook's memory-efficient attention. Similar goals; 
 superseded by SDPA.
 
-\subsection{2.2 Exact vs Approximate Attention}
+\subsection{Exact vs Approximate Attention}
 
 \begin{table}[H]
 \centering
@@ -41,7 +41,7 @@ ClusterFormer & Approx. & $O(L K d)$ & $O(L K)$ \\
 FlashAttention is \textbf{exact} -- the output is mathematically identical to 
 the naive implementation. Only the memory layout and compute order change.
 
-\subsection{2.3 Hardware-Aware Transformer Optimization}
+\subsection{Hardware-Aware Transformer Optimization}
 
 \textbf{vLLM.} Kwon et al. (2023) provide PagedAttention for efficient 
 KV-cache management. Complementary to FlashAttention.
@@ -52,7 +52,7 @@ techniques as FlashAttention.
 \textbf{DeepSpeed.} Microsoft's training framework. Includes memory-efficient 
 attention.
 
-\subsection{2.4 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -75,4 +75,4 @@ Our wrapper is \textbf{not} a novel attention algorithm. It's a **production
 integration layer** that makes FlashAttention-3 usable in a research 
 framework with pretrained models.
 
-\subsection{2.5 Comparison Table}
+\subsection{Comparison Table}

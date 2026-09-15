@@ -1,6 +1,6 @@
-\section{6. Experimental Setup}
+\section{Experimental Setup}
 
-\subsection{6.1 Models}
+\subsection{Models}
 
 \begin{table}[H]
 \centering
@@ -16,12 +16,12 @@ GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
 \end{tabular}
 \end{table}
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 SST-2: 67,349 train / 872 val / 1,821 test. \textbf{Sequence length: 128} 
 (short path).
 
-\subsection{6.3 Hyperparameters}
+\subsection{Hyperparameters}
 
 \begin{table}[H]
 \centering
@@ -30,16 +30,16 @@ SST-2: 67,349 train / 872 val / 1,821 test. \textbf{Sequence length: 128}
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-`block\_size` & 64 \\
-`top\_k\_blocks` & 4 \\
-`lora\_rank` & 16 \\
-`lora\_alpha` & 32 \\
+\texttt{block\_size} & 64 \\
+\texttt{top\_k\_blocks} & 4 \\
+\texttt{lora\_rank} & 16 \\
+\texttt{lora\_alpha} & 32 \\
 Dispatch threshold & 128 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Recovery}
+\subsection{Recovery}
 
 \begin{table}[H]
 \centering
@@ -58,15 +58,15 @@ Precision & FP16 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Quality Gate}
+\subsection{Quality Gate}
 
 PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
 
-\subsection{6.6 Hardware}
+\subsection{Hardware}
 
 RTX 4070 Laptop, CUDA 12.1, PyTorch 2.4.0.
 
-\subsection{6.7 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_fusion_attn.py \
@@ -76,4 +76,4 @@ python run_all_4_fusion_attn.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{6.8 Baselines}
+\subsection{Baselines}

@@ -1,7 +1,7 @@
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
@@ -19,13 +19,13 @@ Qwen3.5 & Causal + RoPE & Yes & Yes & No & not tested \\
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Transfer}
+\subsection{Weight Transfer}
 
-\subsubsection{5.2.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
 Direct copy of \texttt{q\_lin, k\_lin, v\_lin, out\_lin}. \texttt{is\_nested\_encoder = False}.
 
-\subsubsection{5.2.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 Extract from inner \texttt{self}. The outer \texttt{attention.output.dense} is wrapped 
 with LoRALinear to allow training:
@@ -39,7 +39,7 @@ if hasattr(target.attention, "output"):
         target.attention.output.dense = wrapped
 \end{lstlisting}
 
-\subsubsection{5.2.3 GPT-2 (Causal)}
+\subsubsection{GPT-2 (Causal)}
 
 Split fused \texttt{c\_attn}:
 
@@ -48,7 +48,7 @@ w = src.c_attn.weight.t()  # Conv1D $\to$ (out, in)
 q_w, k_w, v_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
-\subsubsection{5.2.4 T5 (Relative Position Bias)}
+\subsubsection{T5 (Relative Position Bias)}
 
 T5 uses relative position bias embeddings. We preserve them:
 
@@ -60,11 +60,11 @@ if hasattr(src, "relative_attention_bias"):
 
 The bias is added to scores before the top-$k$ threshold.
 
-\subsubsection{5.2.5 Qwen3.5 (GQA + RoPE)}
+\subsubsection{Qwen3.5 (GQA + RoPE)}
 
 Direct copy with \texttt{repeat\_kv} at runtime. RoPE applied before chunking.
 
-\subsection{5.3 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject ASA into a full model
 \begin{lstlisting}
@@ -81,7 +81,7 @@ Output: M with ASA attention
 7: end for
 \end{lstlisting}
 
-\subsection{5.4 Handling Nested Encoder}
+\subsection{Handling Nested Encoder}
 
 For RoBERTa/BERT, ASA is injected into \texttt{attention.self}. The outer 
 \texttt{attention.output.dense} is wrapped separately with LoRA:
@@ -89,9 +89,9 @@ For RoBERTa/BERT, ASA is injected into \texttt{attention.self}. The outer
 \begin{itemize}
 \item \textbf{Inner ASA} processes Q, K, V and returns raw context (no out\_proj).
 \item \textbf{Outer LoRALinear} applies output projection with trainable LoRA.
-\end{itemize}
 
-\subsection{5.5 RoPE Handling}
+\end{itemize}
+\subsection{RoPE Handling}
 
 RoPE is applied to Q, K \textbf{before} chunking. This preserves relative 
 position information in the sparse scores.
@@ -102,7 +102,7 @@ for q_start in range(0, L, C):
     # ... chunk processing
 \end{lstlisting}
 
-\subsection{5.6 Relative Position Bias (T5)}
+\subsection{Relative Position Bias (T5)}
 
 T5 uses a learned bias added to scores:
 
@@ -114,7 +114,7 @@ s_{ij} = \frac{Q_i \cdot K_j}{\sqrt{d_h}} + b_{i-j}
 where $b$ is a learned embedding of bucketed relative positions. ASA preserves 
 this by computing the bias before the top-$k$ threshold.
 
-\subsection{5.7 Safe Injection}
+\subsection{Safe Injection}
 
 \texttt{inject\_adaptive\_sparse} returns \texttt{None} on failure:
 
@@ -128,7 +128,7 @@ except Exception as e:
 
 The caller can then skip the layer.
 
-\subsection{5.8 Handling Failure Modes}
+\subsection{Handling Failure Modes}
 
 \begin{table}[H]
 \centering
@@ -137,7 +137,7 @@ The caller can then skip the layer.
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & `copy\_weights` raises & Injection aborts \\
+Missing weights & \texttt{copy\_weights} raises & Injection aborts \\
 RoPE embedding missing & Exception & Fallback to no RoPE \\
 LoRA rank mismatch & Shape check & Zero-init LoRA \\
 CUDA OOM in chunk & RuntimeError & Reduce chunk size \\
@@ -145,7 +145,7 @@ CUDA OOM in chunk & RuntimeError & Reduce chunk size \\
 \end{tabular}
 \end{table}
 
-\subsection{5.9 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("adaptive_sparse")
@@ -153,6 +153,6 @@ CUDA OOM in chunk & RuntimeError & Reduce chunk size \\
 class AdaptiveSparseAttention(BaseAttention): ...
 \end{lstlisting}
 
-\subsection{5.10 LoRA Integration}
+\subsection{LoRA Integration}
 
 LoRA is used for recovery:

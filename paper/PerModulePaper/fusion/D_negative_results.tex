@@ -69,15 +69,19 @@ Std & 0.08 & 0.05 & 0.05 \\
 
 \subsection{D.5 Lessons Learned}
 
-1. Threshold 128 works but is silent at L=128.
-2. Block size 64 is reasonable.
-3. Top-K 4 is balanced.
-4. Block 0 preservation essential.
-5. LoRA needed for recovery.
+\begin{enumerate}
+\item Threshold 128 works but is silent at L=128.
+\item Block size 64 is reasonable.
+\item Top-K 4 is balanced.
+\item Block 0 preservation essential.
+\item LoRA needed for recovery.
 
+\end{enumerate}
 \subsection{D.6 Unresolved Questions}
 
-1. \textbf{Long-path results} -- untested at L > 128.
-2. \textbf{Gate learning} -- do gates learn meaningful patterns?
-3. \textbf{Optimal threshold} for various tasks?
-4. \textbf{Fused kernel} for block attention?
+\begin{enumerate}
+\item \textbf{Long-path results} -- untested at L > 128.
+\item \textbf{Gate learning} -- do gates learn meaningful patterns?
+\item \textbf{Optimal threshold} for various tasks?
+\item \textbf{Fused kernel} for block attention?
+\end{enumerate}

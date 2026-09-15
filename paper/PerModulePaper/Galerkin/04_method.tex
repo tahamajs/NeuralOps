@@ -1,17 +1,15 @@
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 Galerkin Attention has two execution paths:
 
 \begin{itemize}
 \item \textbf{Encoder path:} Petrov-Galerkin projection onto DCT basis, then attention
-\end{itemize}
   at rank $r$.
-\begin{itemize}
 \item \textbf{Decoder path:} Standard causal softmax attention (fallback).
-\end{itemize}
 
+\end{itemize}
 \textbf{Figure 4.1} shows the pipeline.
 
 \begin{lstlisting}
@@ -47,7 +45,7 @@ Galerkin Attention has two execution paths:
                       Y
 \end{lstlisting}
 
-\subsection{4.2 Phase 1: Projections}
+\subsection{Phase 1: Projections}
 
 Frozen base + LoRA:
 
@@ -58,7 +56,7 @@ Frozen base + LoRA:
 
 $W_P$ copied exactly from pretrained.
 
-\subsection{4.3 Phase 2: Basis Construction}
+\subsection{Phase 2: Basis Construction}
 
 \subsubsection{DCT-II Basis}
 
@@ -83,7 +81,7 @@ this. We add small identity regularization and apply QR:
 
 with $\epsilon = 10^{-4}$.
 
-\subsection{4.4 Phase 3: Encoder Path}
+\subsection{Phase 3: Encoder Path}
 
 \subsubsection{Projection to Basis}
 
@@ -137,7 +135,7 @@ Y \leftarrow Y \odot m
 \tag{4.10}
 \]
 
-\subsection{4.5 Phase 4: Decoder Path}
+\subsection{Phase 4: Decoder Path}
 
 For causal models, projection breaks causality because $K_\Phi$ depends on 
 \textbf{all} keys. We fall back to standard softmax attention:
@@ -156,7 +154,7 @@ Y = \text{Probs} \cdot V
 
 with numerical stabilization via $-\max$ subtraction.
 
-\subsection{4.6 The Full Algorithm}
+\subsection{The Full Algorithm}
 
 \textbf{Algorithm 1:} Galerkin Attention forward
 \begin{lstlisting}
@@ -203,7 +201,7 @@ Output: Y, probs
 37: return Y
 \end{lstlisting}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -223,16 +221,16 @@ For $N = 128$ and $r = 64$:
 \item Encoder: $\sim 2 \times 10^6$ FLOPs per head
 \item Decoder: $\sim 4 \times 10^6$ FLOPs per head
 \item \textbf{Encoder speedup: ~2$\times$}
-\end{itemize}
 
+\end{itemize}
 For $N = 512$ and $r = 64$:
 \begin{itemize}
 \item Encoder: $\sim 8 \times 10^6$
 \item Decoder: $\sim 6.4 \times 10^7$
 \item \textbf{Encoder speedup: ~8$\times$}
-\end{itemize}
 
-\subsection{4.8 Parameter Analysis}
+\end{itemize}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -243,7 +241,7 @@ For $N = 512$ and $r = 64$:
 \midrule
 Base weights & $4 d^2$ & $4 d^2$ (frozen) \\
 LoRA ($r_L$) & 0 & $8 r_L d$ \\
-**Total per layer** & $4 d^2$ & $4 d^2 + 8 r_L d$ \\
+\textbf{Total per layer} & $4 d^2$ & $4 d^2 + 8 r_L d$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -252,9 +250,9 @@ For DistilBERT ($d = 768$, $r_L = 16$): \textbf{+589,824 params} across 6 layers
 
 \textbf{Galerkin Attention is not a compression method.}
 
-\subsection{4.9 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.9.1 Galerkin Approximation Error}
+\subsubsection{Galerkin Approximation Error}
 
 \textbf{Claim.} The Galerkin approximation error for the attention operator is 
 bounded by the DCT tail energy:
@@ -270,7 +268,7 @@ where $\sigma_k$ are the singular values of the kernel operator.
 The error is dominated by the tail of the eigen-decomposition of $\mathcal{K}$. 
 DCT captures the low-frequency modes optimally. $\square$
 
-\subsubsection{4.9.2 Energy Preservation Scaling}
+\subsubsection{Energy Preservation Scaling}
 
 \textbf{Claim.} The scaling $\sqrt{N/r}$ preserves the expected output energy 
 under the assumption that $O_\Phi$ coefficients are i.i.d.
@@ -295,9 +293,9 @@ position is thus $\sigma^2$, matching the expected basis energy $\sigma^2 \cdot 
 The $\sqrt{N/r}$ factor compensates for the fact that $r$ basis modes must 
 represent $N$ sequence positions. $\square$
 
-\subsubsection{4.9.3 Causality Preservation for Encoders}
+\subsubsection{Causality Preservation for Encoders}
 
 Encoders have no causal constraint. The Galerkin projection preserves 
 bidirectional context. $\square$
 
-\subsection{4.10 Hyperparameter Guidance}
+\subsection{Hyperparameter Guidance}

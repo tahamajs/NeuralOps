@@ -121,16 +121,18 @@ No RoPE before pooling & Speed & Accuracy loss \\
 42 & 86.5 \\
 123 & 86.3 \\
 456 & 86.7 \\
-**Mean** & **86.5** \\
-**Std** & **0.2** \\
+\textbf{Mean} & \textbf{86.5} \\
+\textbf{Std} & \textbf{0.2} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{Asymmetric > symmetric} by 0.5\%.
-2. \textbf{Segment pooling is sufficient.}
-3. \textbf{Schulz from SVD pinv is essential.}
-4. \textbf{$K = 4$ iterations suffice.}
-5. \textbf{FP32 required for stability.}
+\begin{enumerate}
+\item \textbf{Asymmetric > symmetric} by 0.5\%.
+\item \textbf{Segment pooling is sufficient.}
+\item \textbf{Schulz from SVD pinv is essential.}
+\item \textbf{$K = 4$ iterations suffice.}
+\item \textbf{FP32 required for stability.}
+\end{enumerate}

@@ -1,7 +1,7 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 Primal Attention approximates the $L \times L$ attention matrix via a 
 low-rank factorization through $m$ landmarks:
@@ -46,7 +46,7 @@ $F_3 \in \mathbb{R}^{m \times L}$.
    softmax(A)   V
 \end{lstlisting}
 
-\subsection{4.2 Landmark Selection via Segment Pooling}
+\subsection{Landmark Selection via Segment Pooling}
 
 Given sequence length $L$ and target landmark count $m$, we divide the 
 sequence into $m$ equal segments of size $s = L / m$ and average each:
@@ -71,7 +71,7 @@ content, is \textbf{deterministic}, and is \textbf{differentiable} (mean is line
 \textbf{separately}, allowing different landmark summaries for the query and 
 key sides. This is the key difference from Nystr mformer.
 
-\subsection{4.3 The Three Factors}
+\subsection{The Three Factors}
 
 Given $Q, K \in \mathbb{R}^{L \times d_h}$ (after RoPE, after GQA repeat) and 
 their landmarks $Q_\text{land}, K_\text{land} \in \mathbb{R}^{m \times d_h}$, 
@@ -94,7 +94,7 @@ F_3 = \frac{Q_\text{land} K^\top}{\sqrt{d_h}} \in \mathbb{R}^{m \times L}
 
 The scale $1/\sqrt{d_h}$ is applied once, matching the standard attention.
 
-\subsection{4.4 Asymmetric Attention Matrix}
+\subsection{Asymmetric Attention Matrix}
 
 The approximate attention matrix is:
 
@@ -116,8 +116,8 @@ space). For general $A$, this is a low-rank approximation.
 \item $F_2^{-1}$: $\mathcal{O}(m^3)$ (via SVD or Schulz)
 \item $F_1 F_2^{-1}$: $\mathcal{O}(L m^2)$
 \item $(F_1 F_2^{-1}) F_3$: $\mathcal{O}(L m L) = \mathcal{O}(L^2 m)$
-\end{itemize}
 
+\end{itemize}
 \textbf{Wait -- that's still quadratic!} We need to be careful. Let me reconsider.
 
 The correct approach:
@@ -129,20 +129,22 @@ The correct approach:
 
 where the associativity allows computing left-to-right:
 
-1. $F_3 V \in \mathbb{R}^{m \times d_h}$: $\mathcal{O}(m L d_h)$
-2. $F_2^{-1} (F_3 V) \in \mathbb{R}^{m \times d_h}$: $\mathcal{O}(m^2 d_h)$
-3. $F_1 (\cdots) \in \mathbb{R}^{L \times d_h}$: $\mathcal{O}(L m d_h)$
+\begin{enumerate}
+\item $F_3 V \in \mathbb{R}^{m \times d_h}$: $\mathcal{O}(m L d_h)$
+\item $F_2^{-1} (F_3 V) \in \mathbb{R}^{m \times d_h}$: $\mathcal{O}(m^2 d_h)$
+\item $F_1 (\cdots) \in \mathbb{R}^{L \times d_h}$: $\mathcal{O}(L m d_h)$
 
+\end{enumerate}
 Total: $\mathcal{O}(L m d_h + m^2 d_h)$. For $m \ll L$, this is \textbf{linear in $L$}.
 
-\subsection{4.5 Schulz Pseudoinverse}
+\subsection{Schulz Pseudoinverse}
 
-\subsubsection{4.5.1 Initialization}
+\subsubsection{Initialization}
 
 We initialize $X_0 = F_2^+$ using \texttt{torch.linalg.pinv} (SVD-based). This 
 provides a good starting point for the Schulz iteration.
 
-\subsubsection{4.5.2 Iteration}
+\subsubsection{Iteration}
 
 For $K$ iterations (default $K = 4$):
 
@@ -162,19 +164,19 @@ E_{t+1} = I - F_2 X_{t+1} = I - F_2 X_t (2I - F_2 X_t) = (I - F_2 X_t)^2 = E_t^2
 
 So $\|E_t\| \le \|E_0\|^{2^t}$. If $\|E_0\| < 1$, convergence is quadratic.
 
-\subsubsection{4.5.3 Why Init with Pseudoinverse?}
+\subsubsection{Why Init with Pseudoinverse?}
 
 Starting with $X_0 = 0$ or $X_0 = F_2^\top / \|F_2\|^2$ often fails to 
 converge in $K \le 6$ iterations because $\|E_0\|$ may exceed 1. Starting 
 from the SVD pseudoinverse gives $\|E_0\| \approx 0$ and refines it 
 numerically.
 
-\subsubsection{4.5.4 Number of Iterations}
+\subsubsection{Number of Iterations}
 
 We use $K = 4$ iterations. Empirically, $K = 4$ suffices for 
 $m \le 128$; larger $m$ may benefit from more.
 
-\subsection{4.6 Causality}
+\subsection{Causality}
 
 For decoder models, the attention matrix must be lower-triangular (causal):
 
@@ -194,7 +196,7 @@ M_{ij} = \begin{cases} 0 & j \le i \\ -10^4 & j > i \end{cases}
 Then softmax. This is not a true causal approximation (the landmarks see 
 the whole sequence), but empirically works well for generation.
 
-\subsection{4.7 Complete Forward Pass}
+\subsection{Complete Forward Pass}
 
 \textbf{Algorithm 1:} Primal Attention forward
 \begin{lstlisting}
@@ -241,7 +243,7 @@ Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 \textbf{Complexity.} All operations are $\mathcal{O}(L m d_h + m^2 d_h + m^3)$; no 
 $L^2$ terms.
 
-\subsection{4.8 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -255,7 +257,7 @@ $F_1, F_2, F_3$ & -- & $\mathcal{O}(L m d_h + m^2 d_h)$ \\
 $F_2^{-1}$ & -- & $\mathcal{O}(m^3)$ \\
 $A V$ & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L m d_h)$ \\
 Softmax & $\mathcal{O}(L^2)$ & $\mathcal{O}(L m)$ \\
-**Total** & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L m d_h + m^3)$ \\
+\textbf{Total} & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L m d_h + m^3)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -263,7 +265,7 @@ Softmax & $\mathcal{O}(L^2)$ & $\mathcal{O}(L m)$ \\
 For $m = 64$ and $L = 512$, the crossover is at $L \approx m^2 / d_h \cdot c$ 
 for some constant. In practice, Primal Attention is faster for $L > 512$.
 
-\subsection{4.9 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 Primal Attention \textbf{does not reduce parameters} relative to MHA. The query, 
 key, value, and output projections are unchanged:
@@ -276,9 +278,9 @@ key, value, and output projections are unchanged:
 It reduces \textbf{memory during forward} (no $L \times L$ attention matrix) and 
 \textbf{time} (linear in $L$). LoRA adds $2 r_L d$ parameters per projection.
 
-\subsection{4.10 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.10.1 Approximation Error}
+\subsubsection{Approximation Error}
 
 For a general attention matrix $A$ with singular values $\sigma_1 \ge \sigma_2 \ge \cdots$:
 
@@ -289,12 +291,12 @@ For a general attention matrix $A$ with singular values $\sigma_1 \ge \sigma_2 \
 
 where $\epsilon_\text{landmark}$ depends on landmark selection quality.
 
-\subsubsection{4.10.2 Exactness for Low-Rank $A$}
+\subsubsection{Exactness for Low-Rank $A$}
 
 If $\text{rank}(A) \le m$, then $\tilde{A} = A$ exactly (assuming landmarks 
 span the row/column spaces).
 
-\subsubsection{4.10.3 Schulz Convergence Rate}
+\subsubsection{Schulz Convergence Rate}
 
 If $\|E_0\| \le \rho < 1$, then after $K$ iterations:
 

@@ -1,13 +1,13 @@
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{Squeezing Heads}, a LoRA-wrapped attention module for head 
 knowledge distillation. The wrapper preserves pretrained weights exactly 
 and allows head-dim reduction with LoRA recovery.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -23,15 +23,17 @@ GPT-2 & -1.9\% & 105$\times$ & 1.0$\times$ \\
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{LoRA recovers most accuracy} lost by head-dim reduction.
-2. \textbf{Trainable params reduced by ~100$\times$.}
-3. \textbf{Drop-in wrapper} -- no architecture change.
-4. \textbf{Multi-architecture support} with RoPE, GQA, causality.
-5. \textbf{Beats head pruning} by not discarding information.
+\begin{enumerate}
+\item \textbf{LoRA recovers most accuracy} lost by head-dim reduction.
+\item \textbf{Trainable params reduced by ~100$\times$.}
+\item \textbf{Drop-in wrapper} -- no architecture change.
+\item \textbf{Multi-architecture support} with RoPE, GQA, causality.
+\item \textbf{Beats head pruning} by not discarding information.
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
@@ -39,31 +41,31 @@ GPT-2 & -1.9\% & 105$\times$ & 1.0$\times$ \\
 \item Combine with pruning
 \item Teacher-student distillation
 \item Inference-time folding
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical bound on recovery
 \item Cross-task adapter transfer
 \item Integration with MoE
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 Squeezing Heads provides a practical, drop-in wrapper for head-dim 
 distillation. We release code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank {{ACKNOWLEDGMENTS}}.
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed SH, implemented the code, wrote the paper.
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

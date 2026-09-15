@@ -1,7 +1,7 @@
 
-\section{12. Reproducibility Statement}
+\section{Reproducibility Statement}
 
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -11,7 +11,7 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Dependencies}
+\subsection{Dependencies}
 
 \begin{table}[H]
 \centering
@@ -28,7 +28,7 @@ numpy & 1.26.4 \\
 \end{tabular}
 \end{table}
 
-\subsection{12.3 Running AASVD}
+\subsection{Running AASVD}
 
 \begin{lstlisting}
 python run_all_4_aasvd.py \
@@ -41,7 +41,7 @@ python run_all_4_aasvd.py \
 
 \textbf{Runtime:} ~20 minutes on RTX 4070.
 
-\subsection{12.4 Individual Model}
+\subsection{Individual Model}
 
 \begin{lstlisting}
 python Codes/framework/run_quality_sweep.py \
@@ -55,7 +55,7 @@ python Codes/framework/run_quality_sweep.py \
     --lora_rank 16
 \end{lstlisting}
 
-\subsection{12.5 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 
@@ -86,7 +86,7 @@ for beta in 0.5 0.7 0.9 0.95 0.99; do
 done
 \end{lstlisting}
 
-\subsection{12.6 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
 import random, numpy as np, torch
@@ -98,7 +98,7 @@ torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 
-\subsection{12.7 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
@@ -114,16 +114,16 @@ GPT-2 & 73.0\% $\pm$ 1\% & 3.5$\times$ \\
 \end{tabular}
 \end{table}
 
-\subsection{12.8 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}
 \item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-aasvd}
 \item \textbf{Metrics:} \texttt{results/unified\_aasvd/*/summary.csv}
 \item \textbf{Calibration corpus:} bundled in \texttt{aasvd\_compressor.py}
-\end{itemize}
 
-\subsection{12.9 Known Issues}
+\end{itemize}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item Windows: \texttt{PYTHONIOENCODING=utf-8} recommended

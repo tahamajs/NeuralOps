@@ -1,7 +1,7 @@
 
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 results with $m = 64$, $K = 4$.}
 
@@ -13,18 +13,18 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn mem} & \textbf{Time} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 128 KB & 1.90 s & 183 MB \\
-DistilBERT & **Primal** & **86.5** & -4.2 & 0.865 & **12 KB** & 2.5 s & 160 MB \\
+DistilBERT & \textbf{Primal} & \textbf{86.5} & -4.2 & 0.865 & \textbf{12 KB} & 2.5 s & 160 MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 128 KB & 4.10 s & 712 MB \\
-RoBERTa & **Primal** & **74.0** & -4.6 & 0.740 & **12 KB** & 5.3 s & 640 MB \\
+RoBERTa & \textbf{Primal} & \textbf{74.0} & -4.6 & 0.740 & \textbf{12 KB} & 5.3 s & 640 MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 128 KB & 4.20 s & 793 MB \\
-GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
+GPT-2 & \textbf{Primal} & \textbf{75.0} & -4.4 & 0.750 & \textbf{12 KB} & 5.5 s & 700 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Attention memory} = $B \cdot H \cdot L \cdot m$ vs $B \cdot H \cdot L^2$ for baseline.
 
-\subsection{7.2 Attention Memory Analysis}
+\subsection{Attention Memory Analysis}
 
 \textbf{Table 7.2: Attention memory at different sequence lengths ($B=1, H=12$).}
 
@@ -43,7 +43,7 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.3 Approximation Quality}
+\subsection{Approximation Quality}
 
 \textbf{Table 7.3: Frobenius error $\|A - \tilde{A}\|_F / \|A\|_F$.}
 
@@ -62,7 +62,7 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.4 Ablation: Landmark Count}
+\subsection{Ablation: Landmark Count}
 
 \textbf{Table 7.4: Accuracy vs $m$.}
 
@@ -84,7 +84,7 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 
 \textbf{Observation.} $m = 64$ is a sweet spot; accuracy plateaus beyond $m = 128$.
 
-\subsection{7.5 Ablation: Pseudoinverse Iterations}
+\subsection{Ablation: Pseudoinverse Iterations}
 
 \textbf{Table 7.5: Accuracy vs $K$.}
 
@@ -106,7 +106,7 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 
 \textbf{Observation.} $K = 4$ is sufficient; more iterations give diminishing returns.
 
-\subsection{7.6 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \textbf{Table 7.6: Accuracy vs LoRA rank.}
 
@@ -125,7 +125,7 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.7: Accuracy vs recovery steps.}
 
@@ -144,7 +144,7 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Scaling with Sequence Length}
+\subsection{Scaling with Sequence Length}
 
 \textbf{Table 7.8: Inference time at different $L$ (GPT-2, $m = 64$).}
 
@@ -163,7 +163,7 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.9: Comparison with other attention methods.}
 
@@ -177,16 +177,16 @@ GPT-2 & **Primal** & **75.0** & -4.4 & 0.750 & **12 KB** & 5.5 s & 700 MB \\
 full & 90.71\% & 78.56\% & 79.36\% & MHA & 1.00$\times$ & 1.00$\times$ & 1.00$\times$ \\
 NHA & 90.25\% & FAIL & 78.78\% & Hybrid & 1.009$\times$ & 1.00$\times$ & 1.00$\times$ \\
 GQA & 88.5 & 75.5 & 77.0 & Structural & 0.95$\times$ & 2.00$\times$ & 1.00$\times$ \\
-**Primal** & **86.5** & **74.0** & **75.0** & Low-rank & 1.00$\times$ & 1.00$\times$ & **4$\times$** \\
+\textbf{Primal} & \textbf{86.5} & \textbf{74.0} & \textbf{75.0} & Low-rank & 1.00$\times$ & 1.00$\times$ & \textbf{4$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Training Loss Curves}
+\subsection{Training Loss Curves}
 
 \textbf{Figure 7.1} shows recovery loss for all three models.
 
-\subsection{7.11 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Attention memory:} reduced by \textbf{4$\times$}.
