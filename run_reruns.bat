@@ -1,0 +1,3 @@
+@echo off
+cd /d D:\SVD_Project
+"C:\Users\Hadi Schumacher\anaconda3\python.exe" -u "D:\SVD_Project\Codes\runners\run_all_benchmarks_queue.py" --repo_dir "D:\SVD_Project\Codes\runners" --no_skip --modules "gqa,squeezing_heads_distiller,svd_mamba,svd_linear,minimal_nova,minimal_prism,svd_llm_v2,mla,dobi,unified_rope,hgrn2_gated_deltanet,soafusedattention,gated_delta_net,gated_deltanet_block,vspec,leka_v1,tpa,mamba,orion,padre,performer,phantom,projection_factorized_attn,reap_moe,regla,routing,salt,simple_ssm,svd_projection,template_attention,token_compressed,compressed_mha,svd_compressed,spectron,soa_module" > "D:\SVD_Project\results\full_benchmark\rerun_stdout.log" 2> "D:\SVD_Project\results\full_benchmark\rerun_stderr.log"
