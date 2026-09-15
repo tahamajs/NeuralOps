@@ -410,7 +410,7 @@ try:
     subprocess.run(["git", "checkout", branch_name], check=False)
     subprocess.run(["git", "add", "Docs/content/compressions/admm_pruner.md", str(master_csv), str(master_json)], check=True)
     subprocess.run(["git", "commit", "-m", "Add unified 4-model benchmark results and documentation for ADMM Pruner with Distillation"], check=True)
-    subprocess.run(["git", "push", "origin", branch_name], check=True)
+#     subprocess.run(["git", "push", "origin", branch_name], check=True)
     print(f"[+] Successfully committed and pushed results to GitHub branch '{branch_name}'.")
     subprocess.run(["git", "checkout", "main"], check=False)
 except Exception as e:
