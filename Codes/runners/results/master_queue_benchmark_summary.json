@@ -340,5 +340,68 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T21:51:44.056287"
+  },
+  {
+    "module": "minimal_nova",
+    "runner": "run_all_4_minimal_nova.py",
+    "exit_code": 0,
+    "elapsed_s": 163.27,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T21:54:29.243673"
+  },
+  {
+    "module": "minimal_prism",
+    "runner": "run_all_4_minimal_prism.py",
+    "exit_code": 0,
+    "elapsed_s": 163.04,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T21:57:14.149119"
+  },
+  {
+    "module": "minimal_svd",
+    "runner": "run_all_4_minimal_svd.py",
+    "exit_code": 0,
+    "elapsed_s": 170.26,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:00:09.054487"
+  },
+  {
+    "module": "mixattention_moska",
+    "runner": "run_all_4_mixattention_moska.py",
+    "exit_code": 0,
+    "elapsed_s": 157.24,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:02:47.787654"
+  },
+  {
+    "module": "mla",
+    "runner": "run_all_4_mla.py",
+    "exit_code": 0,
+    "elapsed_s": 135.62,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:05:04.898461"
+  },
+  {
+    "module": "moba",
+    "runner": "run_all_4_moba.py",
+    "exit_code": 0,
+    "elapsed_s": 164.5,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:07:50.930381"
+  },
+  {
+    "module": "moe_deltakv_paged",
+    "runner": "run_all_4_moe_deltakv_paged.py",
+    "exit_code": 0,
+    "elapsed_s": 168.91,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:10:41.324402"
   }
 ]
