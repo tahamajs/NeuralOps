@@ -64,10 +64,50 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the expert\_choice\_moe module within modern transformer architectures.
+Mixture-of-Experts (MoE) layers have become a standard technique for scaling 
+feed-forward networks without proportionally increasing compute. In 
+conventional \textbf{token-choice} MoE, each token selects its top-$k$ experts 
+and the resulting load is often highly imbalanced, requiring an auxiliary 
+loss to stabilize training.
+
+We adopt \textbf{expert-choice routing} (Zhou et al., 2022), in which the roles 
+are reversed: each expert selects its top-$k$ \textbf{tokens}. This provides 
+\textbf{guaranteed perfect load balancing} -- every expert processes exactly 
+$k = \lceil T / E \rceil$ tokens, where $T$ is the total token count and $E$ 
+is the number of experts -- and enables \textbf{dynamic per-token expert allocation} 
+(tokens that match many experts' preferences receive more capacity).
+
+We place the MoE block \textbf{inside multi-head attention} -- on the attention 
+output before the final output projection -- with:
+
+\begin{enumerate}
+\item \textbf{Zero-init experts.} The final projection of every expert is initialized
+  to zero, so at step 0, the MoE contributes nothing and the attention
+  behaves exactly as the pretrained model.
+\item \textbf{Learnable scalar gate.} A single learnable bias $b_g = {{MOE_INIT_GATE}}$
+  gives $\sigma(b_g) \approx {{MOE_GATE_VALUE}}$ at initialization --
+  providing a smooth ramp-up.
+\item \textbf{Architecture portability.} Weight transfer from DistilBERT, RoBERTa,
+  GPT-2, and Qwen3.5, with GQA, RoPE, nested encoders, and cross-attention.
+
+\end{enumerate}
+On SST-2, ExpertChoiceMoEAttention achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
+(baseline {{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), 
+and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%).
+
+\textbf{We are explicit that this module increases parameter count} by roughly 
+\textbf{{{D\_PARAM\_PCT}}\%} per layer due to the $E$-expert MoE block and LoRA 
+adapters. Its benefit is architectural: \textbf{guaranteed load balancing} and 
+\textbf{dynamic capacity allocation}, which we show improve training stability 
+relative to token-choice MoE.
+
+\textbf{Keywords:} mixture of experts, expert-choice routing, load balancing, 
+attention augmentation, multi-architecture transformers
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} expert\_choice\_moe, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} mixture of experts, expert-choice routing, load balancing,
 \end{abstract}
 
 \vspace{1em}

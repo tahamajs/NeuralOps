@@ -1,3 +1,108 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for expert_choice_moe.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Expert-Choice is the Right Choice for Attention}
+
+Token-choice routing requires an auxiliary loss and still produces 
+imbalance. Expert-choice routing guarantees balance by construction and 
+enables dynamic per-token capacity.
+
+\subsubsection{Takeaway 2: Zero-Init is Essential}
+
+Combined zero-init experts and negative gate bias make the augmented 
+attention numerically equivalent to the base at step 0.
+
+\subsubsection{Takeaway 3: Parameter Cost is Large}
+
++807\% more parameters per layer. This limits practical deployment.
+
+\subsection{When to Use ExpertChoiceMoEAttention}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Research on MoE routing.}
+\item \textbf{Training-time capacity expansion.}
+\item \textbf{Cross-attention encoder-decoder models} (MoE applied in cross-attention).
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Parameter-sensitive deployment.}
+\item \textbf{Inference-constrained environments.}
+\item \textbf{When a simpler method suffices} (LoRA, SOA Fused).
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need to reduce parameters? --- Yes --- Use SOA Fused / Adaptive SVD
+  | No
+   
+Need balanced MoE? --- Yes --- Use ExpertChoiceMoE
+  | No
+   
+Consider token-choice MoE (BAM-UMoE)
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{EC-MoE} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Total params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+Trainable & 0 & {{D\_TRAINABLE}} & +$\infty$ \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to FFN-MoE}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Feature} & \textbf{FFN-MoE (Switch)} & \textbf{EC-MoE (ours)} \\
+\midrule
+Location & FFN & Attention output \\
+Routing & Token-choice & Expert-choice \\
+Load balance & Aux loss & Guaranteed \\
+Zero-init & No & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Contributes to MoE routing research.
+\item Demonstrates expert-choice inside attention.
+\item No auxiliary loss needed.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Large parameter increase.
+\item Not deployment-ready.
+\item Python loop over experts limits speed.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Can it be parameter-efficient?} Share experts across layers?
+\item \textbf{Learned capacity factor?} Adaptive CF per layer?
+\item \textbf{Batch-size scaling?} Larger batches $\to$ better balance?
+\item \textbf{Interaction with quantization?} INT8 experts?
+
+\end{enumerate}

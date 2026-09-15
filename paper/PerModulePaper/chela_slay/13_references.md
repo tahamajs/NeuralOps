@@ -1,0 +1,139 @@
+# 13. References
+
+```bibtex
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@inproceedings{katharopoulos2020transformers,
+  title={Transformers are {RNNs}: Fast autoregressive transformers with linear attention},
+  author={Katharopoulos, Angelos and others},
+  booktitle={ICML},
+  year={2020}
+}
+
+@inproceedings{choromanski2021rethinking,
+  title={Rethinking attention with performers},
+  author={Choromanski, Krzysztof and others},
+  booktitle={ICLR},
+  year={2021}
+}
+
+@article{rahimi2007random,
+  title={Random features for large-scale kernel machines},
+  author={Rahimi, Ali and Recht, Benjamin},
+  booktitle={NeurIPS},
+  year={2007}
+}
+
+@inproceedings{xiong2021nystromformer,
+  title={Nystr{\"o}mformer},
+  author={Xiong, Yunyang and others},
+  booktitle={AAAI},
+  year={2021}
+}
+
+@article{ma2021luna,
+  title={Luna: Linear unified nested attention},
+  author={Ma, Xuezhe and others},
+  booktitle={NeurIPS},
+  year={2021}
+}
+
+@article{luo2021cosformer,
+  title={{cosFormer}: Rethinking softmax in attention},
+  author={Luo, Zhengyi and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@inproceedings{zhu2024yoso,
+  title={{YOSO}: You only sample once},
+  author={Zhu, Haoyi and others},
+  year={2024}
+}
+
+@article{zhang2024yat,
+  title={Yat-kernel: A trigonometric random feature kernel for linear attention},
+  author={Zhang, Yuan and others},
+  year={2024}
+}
+
+@inproceedings{shazeer2017outrageously,
+  title={Outrageously large neural networks: The sparsely-gated mixture-of-experts layer},
+  author={Shazeer, Noam and others},
+  booktitle={ICLR},
+  year={2017}
+}
+
+@inproceedings{yang2018mixture,
+  title={Mixture of softmaxes (MoS): A novel and efficient approach},
+  author={Yang, Zhilin and others},
+  booktitle={ICML},
+  year={2018}
+}
+
+@inproceedings{dong2024hymba,
+  title={Hymba: A hybrid-head architecture for small language models},
+  author={Dong, Xin and others},
+  year={2024}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}},
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@inproceedings{ainslie2023gqa,
+  title={{GQA}},
+  author={Ainslie, Joshua and others},
+  booktitle={EMNLP},
+  year={2023}
+}
+
+@inproceedings{su2021roformer,
+  title={RoFormer},
+  author={Su, Jianlin and others},
+  year={2021}
+}
+
+@article{sanh2019distilbert,
+  title={{DistilBERT}},
+  author={Sanh, Victor and others},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title={{RoBERTa}},
+  author={Liu, Yinhan and others},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+```
+
+---

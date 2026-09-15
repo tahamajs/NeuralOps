@@ -1,3 +1,91 @@
-\section{02 Related}
 
-Draft content for gated_deltanet_block.
+\section{Related Work}
+
+\subsection{Block-Level Attention Replacement}
+
+\textbf{RetNet} (Sun et al., 2023). Replaces the entire block with a retention 
+block, including new normalization. Trained from scratch.
+
+\textbf{Mamba} (Gu \& Dao, 2023). Uses a selective state-space block. Trained from 
+scratch.
+
+\textbf{RWKV} (Peng et al., 2023). Block-level replacement with a linear 
+attention-like mechanism. Trained from scratch.
+
+\textbf{Common pattern.} Most block-level replacements are trained from scratch; 
+they do not attempt to preserve pretrained weights.
+
+\subsection{Pretrained Weight Transfer}
+
+\textbf{BERT-to-distilBERT} (Sanh et al., 2019). Distillation preserves weights 
+across a smaller model.
+
+\textbf{LoRA} (Hu et al., 2021). Preserves pretrained weights and adds low-rank 
+adapters.
+
+\textbf{Our approach.} We preserve pretrained attention weights (via \texttt{copy\_weights}) 
+but replace the block structure. This is an \textbf{unusual combination}.
+
+\subsection{LayerNorm Initialization}
+
+\textbf{Standard init.} $\gamma = 1, \beta = 0$.
+
+\textbf{LayerScale} (Touvron et al., 2021). Multiplies residual branch by a small 
+learnable scalar. Improves training stability but requires retraining.
+
+\textbf{BitFit} (Ben Zaken et al., 2022). Trains only bias and LayerNorm 
+parameters. Shows that LayerNorm carries significant capacity.
+
+\textbf{Our approach.} We initialize LayerNorm from scratch; the model must learn 
+appropriate scales.
+
+\subsection{Hybrid Attention}
+
+\textbf{BigBird} (Zaheer et al., 2020). Combines sparse + global attention.
+
+\textbf{Hybrid Transformer} (Zhu et al., 2021). Combines local + global attention.
+
+\textbf{Our approach.} Uses one of two attention mechanisms (MHA or GatedDeltaNet) 
+at a time.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{Ours} \\
+\midrule
+\textbf{Replacement scope} & Attention only & Entire block \\
+\textbf{Pretrained preservation} & Attention weights & Attention weights only \\
+\textbf{LayerNorm} & New (from scratch) & New (from scratch) \\
+\textbf{Training} & From scratch & LoRA recovery \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} We attempt a \textbf{hybrid} approach: preserve pretrained 
+attention weights but replace the block structure. This combination has 
+not been studied, and our negative results suggest the mismatch is 
+fundamental.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Block-level?} & \textbf{Pretrained?} & \textbf{LayerNorm fresh?} & \textbf{Trained from scratch?} \\
+\midrule
+Standard transformer & No & -- & No & No \\
+RetNet & Yes & No & Yes & Yes \\
+Mamba & Yes & No & Yes & Yes \\
+\textbf{GatedDeltaNetBlock} & \textbf{Yes} & \textbf{Attention only} & \textbf{Yes} & \textbf{LoRA recovery} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

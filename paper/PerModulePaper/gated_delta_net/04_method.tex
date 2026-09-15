@@ -1,3 +1,260 @@
-\section{04 Method}
 
-Draft content for gated_delta_net.
+\section{Method}
+
+\subsection{Overview}
+
+Gated DeltaNet has four components:
+
+\begin{enumerate}
+\item \textbf{Projections:} $Q, K, V, Z$ from hidden states.
+\item \textbf{Gating:} per-head scalars $\alpha_t, \beta_t$ from hidden states.
+\item \textbf{Recurrence:} state update via the Delta Rule with gating.
+\item \textbf{Bidirectional scan} (encoders only) or \textbf{causal scan} (decoders).
+
+\end{enumerate}
+\begin{lstlisting}
+                Input X
+                   |
+        +----------+----------+----------+
+        |          |          |          |
+                                          
+    +------+  +------+  +------+  +------+
+    |  Q   |  |  K   |  |  V   |  |  Z   |
+    | proj |  | proj |  | proj |  | proj |
+    +---+--+  +---+--+  +---+--+  +---+--+
+        |         |         |         |
+        |         |         |         +-------+
+        |         |         |                 |
+        |  +------+------+  |                 |
+        |  |  $\beta$, $\alpha$ gates |  |                 |
+        |  +------+------+  |                 |
+        |         |         |                 |
+        +---------+---------+-----+           |
+                                 |           |
+                                             |
+                        +----------------+   |
+                        | Delta Rule     |   |
+                        | Recurrence     |   |
+                        +--------+-------+   |
+                                 |           |
+                                              
+                        +----------------------+
+                        |  SiLU gating         |
+                        +----------+-----------+
+                                   |
+                                    
+                        +----------------------+
+                        |  out_proj            |
+                        +----------------------+
+\end{lstlisting}
+
+\subsection{Projections}
+
+Given hidden states $X \in \mathbb{R}^{B \times L \times d}$:
+
+\[
+\begin{aligned}
+Q &= X W_Q \in \mathbb{R}^{B \times L \times H d_h} \\
+K &= X W_K \in \mathbb{R}^{B \times L \times H_{kv} d_h} \\
+V &= X W_V \in \mathbb{R}^{B \times L \times H_{kv} d_h} \\
+Z &= X W_Z \in \mathbb{R}^{B \times L \times H d_h}
+\end{aligned}
+\tag{4.1}
+\]
+
+\textbf{Note.} $W_Z$ is a \textbf{new parameter} not present in the pretrained model. 
+We initialize it from $W_Q$ (see Section 5.3).
+
+\subsection{Gating}
+
+Per-head scalars are computed from the input:
+
+\[
+\alpha_t = \sigma(W_\alpha x_t + b_\alpha), \quad
+\beta_t = \sigma(W_\beta x_t + b_\beta)
+\tag{4.2}
+\]
+
+where $\sigma$ is the sigmoid function and $W_\alpha, W_\beta \in \mathbb{R}^{H \times d}$.
+
+\textbf{Initialization.} We set $b_\beta = 2.0$ so that $\beta_0 \approx 0.88$, 
+encouraging active state updates early in training. We set $b_\alpha = 0$ 
+so that $\alpha_0 = 0.5$.
+
+\subsection{The Delta Rule Recurrence}
+
+The state $S \in \mathbb{R}^{d_h \times d_h}$ is updated as:
+
+\[
+\boxed{
+S_t = \beta_t S_{t-1} + \alpha_t \cdot \frac{k_t^\top (v_t - k_t S_{t-1})}{1 + \|k_t\|^2}
+}
+\tag{4.3}
+\]
+
+where:
+\begin{itemize}
+\item $k_t \in \mathbb{R}^{d_h}$ is the normalized key.
+\item $v_t \in \mathbb{R}^{d_h}$ is the value.
+\item $k_t S_{t-1}$ is the \textbf{prediction} of $v_t$ from the current state.
+\item $v_t - k_t S_{t-1}$ is the \textbf{prediction error}.
+\item The $1 / (1 + \|k_t\|^2)$ normalization stabilizes the update.
+
+\end{itemize}
+\textbf{Output:}
+
+\[
+y_t = q_t S_t
+\tag{4.4}
+\]
+
+where $q_t$ is the normalized query.
+
+\subsection{Bidirectional Scan (Encoders)}
+
+For encoder models, we compute two independent scans:
+
+\[
+y_\text{fwd} = \text{scan}(Q, K, V, \alpha, \beta)
+\tag{4.5}
+\]
+
+\[
+y_\text{bwd} = \text{flip}(\text{scan}(\text{flip}(Q), \text{flip}(K), \text{flip}(V), 
+\text{flip}(\alpha), \text{flip}(\beta)))
+\tag{4.6}
+\]
+
+The final output is the average:
+
+\[
+y = \frac{1}{2}(y_\text{fwd} + y_\text{bwd})
+\tag{4.7}
+\]
+
+\subsection{Causal Scan (Decoders)}
+
+For decoder models, we use only the forward scan:
+
+\[
+y = y_\text{fwd}
+\tag{4.8}
+\]
+
+This preserves causality: $y_t$ depends only on $S_t$, which depends only 
+on $X_1, \dots, X_t$.
+
+\subsection{Chunked Implementation}
+
+The reference implementation uses \textbf{chunked recurrence} to amortize Python 
+overhead:
+
+\begin{enumerate}
+\item Pad sequence to multiple of \texttt{chunk\_size = 8}.
+\item Split into \texttt{num\_chunks = L / 8} chunks.
+\item \textbf{Outer loop} over chunks: for each chunk, call \texttt{\_delta\_chunk\_forward}.
+\item \textbf{Inner loop} over tokens within chunk (8 iterations).
+
+\end{enumerate}
+\textbf{Complexity.} $\mathcal{O}(L / C \cdot C) = \mathcal{O}(L)$ Python 
+iterations, where $C$ is the chunk size.
+
+\textbf{This is the primary bottleneck} (see Section 8).
+
+\subsection{SiLU Gating}
+
+After the recurrence, we apply gated linear unit with SiLU:
+
+\[
+y_\text{final} = y \odot \text{SiLU}(Z)
+\tag{4.9}
+\]
+
+This adds a trainable nonlinearity without introducing additional parameters 
+beyond $W_Z$.
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} Gated DeltaNet forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, chunk_size C
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V;  Z $\leftarrow$ X W_Z
+ 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+ 3: if GQA:  (K, V) $\leftarrow$ repeat_kv(K, V)
+ 4: Q $\leftarrow$ normalize(Q);  K $\leftarrow$ normalize(K) / sqrt(d)
+ 5: $\beta$ $\leftarrow$ sigmoid(W_$\beta$ X);  $\alpha$ $\leftarrow$ sigmoid(W_$\alpha$ X)     [B, H, L]
+ 6:
+ 7: # Forward scan
+ 8: y_fwd $\leftarrow$ chunked_scan(Q, K, V, $\alpha$, $\beta$, C)
+ 9:
+10: if not is_decoder:
+11:     # Backward scan
+12:     Q' $\leftarrow$ flip(Q); K' $\leftarrow$ flip(K); V' $\leftarrow$ flip(V)
+13:     $\alpha$' $\leftarrow$ flip($\alpha$); $\beta$' $\leftarrow$ flip($\beta$)
+14:     y_bwd $\leftarrow$ flip(chunked_scan(Q', K', V', $\alpha$', $\beta$', C))
+15:     y $\leftarrow$ 0.5 * (y_fwd + y_bwd)
+16: else:
+17:     y $\leftarrow$ y_fwd
+18:
+19: y $\leftarrow$ y   SiLU(Z)
+20: return out_proj(y)
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Projections & $\mathcal{O}(Ld^2)$ & $\mathcal{O}(Ld)$ \\
+Gating & $\mathcal{O}(LdH)$ & $\mathcal{O}(LH)$ \\
+Recurrence (FLOPs) & $\mathcal{O}(Ld^2)$ & $\mathcal{O}(d^2)$ \\
+Recurrence (wall-clock) & $\mathcal{O}(L)$ sequential & -- \\
+SiLU gating & $\mathcal{O}(Ld^2)$ & $\mathcal{O}(Ld)$ \\
+\textbf{Baseline MHSA} & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{For $L = 128$, $d = 64$:}
+\begin{itemize}
+\item FLOPs: Gated DeltaNet is ~2$\times$ fewer.
+\item Wall-clock: Gated DeltaNet is \textbf{~45$\times$ slower} due to Python loops.
+
+\end{itemize}
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params per layer} \\
+\midrule
+Q projection + LoRA & $d \cdot H d_h + r_L(d + H d_h)$ \\
+K projection + LoRA & $d \cdot H_{kv} d_h + r_L(d + H_{kv} d_h)$ \\
+V projection + LoRA & same as K \\
+\textbf{Z projection + LoRA} & $d \cdot H d_h + r_L(d + H d_h)$ $\leftarrow$ \textbf{new} \\
+O projection + LoRA & $H d_h \cdot d + r_L(H d_h + d)$ \\
+$\alpha$ projection & $d \cdot H$ \\
+$\beta$ projection & $d \cdot H$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Example (DistilBERT, $r_L = 16$, $d = 768$):}
+\begin{itemize}
+\item Z projection: +589,824 params per layer
+\item $\alpha, \beta$: +18,432 per layer
+\item LoRA: +589,824 per layer
+\item \textbf{Total: +1.2M per layer $\times$ 6 layers = +7.2M (+10.7\%)}
+
+\end{itemize}
+The \textbf{Z projection is the largest overhead}. It is not present in baseline 
+attention.
+

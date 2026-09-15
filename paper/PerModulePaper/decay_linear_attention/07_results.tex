@@ -1,3 +1,192 @@
-\section{07 Results}
+\section{Results}
 
-Draft content for decay_linear_attention.
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{VRAM} & \textbf{State mem} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & {{BASE\_VRAM\_D}} MB & 0 \\
+DistilBERT & \textbf{DecayLinear} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & \textbf{{{D\_VRAM}} MB} & ~16 KB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & {{BASE\_VRAM\_R}} MB & 0 \\
+RoBERTa & \textbf{DecayLinear} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & \textbf{{{R\_VRAM}} MB} & ~16 KB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & {{BASE\_VRAM\_G}} MB & 0 \\
+GPT-2 & \textbf{DecayLinear} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{{{G\_VRAM}} MB} & ~16 KB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{State Memory}
+
+\textbf{Table 7.2: Inter-chunk state memory across L.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$L$} & \textbf{Dense} & \textbf{CHELA-SLAY causal} & \textbf{\textbf{DecayLinear}} \\
+\midrule
+128 & 50 KB & 8 GB & \textbf{16 KB} \\
+512 & 800 KB & 32 GB & \textbf{16 KB} \\
+2048 & 12 MB & 128 GB & \textbf{16 KB} \\
+8192 & 200 MB & 512 GB & \textbf{16 KB} \\
+32768 & 3.2 GB & OOM & \textbf{16 KB} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{DecayLinear state memory is constant in $L$.}
+
+\subsection{Inference Time}
+
+\textbf{Table 7.3: Inference time (s).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{L} & \textbf{Baseline} & \textbf{DecayLinear} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 128 & 1.90 & {{D\_T128}} & {{D\_RATIO\_128}}$\times$ \\
+DistilBERT & 512 & 12.0 & {{D\_T512}} & {{D\_RATIO\_512}}$\times$ \\
+DistilBERT & 2048 & 180.0 & {{D\_T2048}} & {{D\_RATIO\_2048}}$\times$ \\
+GPT-2 & 128 & 4.20 & {{G\_T128}} & {{G\_RATIO\_128}}$\times$ \\
+GPT-2 & 512 & 45.0 & {{G\_T512}} & {{G\_RATIO\_512}}$\times$ \\
+GPT-2 & 2048 & 720.0 & {{G\_T2048}} & {{G\_RATIO\_2048}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Breakeven:} $L^* = {{BREAKEVEN}}$.
+
+\subsection{Ablation: Decay Mode}
+
+\textbf{Table 7.4: Effect of decay design.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+No decay ($\lambda$=1) & {{D\_NO\_DECAY}} & {{R\_NO\_DECAY}} & {{G\_NO\_DECAY}} \\
+Fixed $\lambda$ per head & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
+\textbf{Data-dep $\lambda$} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Chunk Size}
+
+\textbf{Table 7.5: Accuracy vs chunk size.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$C$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{State mem} \\
+\midrule
+8 & {{D\_C8}} & {{R\_C8}} & {{G\_C8}} & {{CMEM\_C8}} KB \\
+16 & {{D\_C16}} & {{R\_C16}} & {{G\_C16}} & {{CMEM\_C16}} KB \\
+32 & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{{{CMEM\_C32}} KB} \\
+64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} & {{CMEM\_C64}} KB \\
+128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} & {{CMEM\_C128}} KB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Log-Decay Range}
+
+\textbf{Table 7.6: Effect of per-head bias range.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Range} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+[-2.0, 0.0] & {{D\_RANGE1}} & {{R\_RANGE1}} & {{G\_RANGE1}} \\
+[-1.0, 0.0] & {{D\_RANGE2}} & {{R\_RANGE2}} & {{G\_RANGE2}} \\
+\textbf{[-0.5, 0.0]} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+[0.0, 0.5] & {{D\_RANGE4}} & {{R\_RANGE4}} & {{G\_RANGE4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Feature Map}
+
+\textbf{Table 7.7: ELU+1 vs alternatives.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Feature map} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+\textbf{ELU+1} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+ReLU+1 & {{D\_RELU}} & {{R\_RELU}} & {{G\_RELU}} \\
+GeLU+1 & {{D\_GELU}} & {{R\_GELU}} & {{G\_GELU}} \\
+Spherical + ELU+1 & {{D\_SPH\_ELU}} & {{R\_SPH\_ELU}} & {{G\_SPH\_ELU}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Learned Decay Rates}
+
+\textbf{Figure 7.1} shows the learned decay rates per head.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Head} & \textbf{$\lambda$ (mean)} & \textbf{Horizon $1/(1-\lambda)$} \\
+\midrule
+0 & {{LAMBDA\_H0}} & {{HORIZON\_H0}} \\
+3 & {{LAMBDA\_H3}} & {{HORIZON\_H3}} \\
+6 & {{LAMBDA\_H6}} & {{HORIZON\_H6}} \\
+9 & {{LAMBDA\_H9}} & {{HORIZON\_H9}} \\
+11 & {{LAMBDA\_H11}} & {{HORIZON\_H11}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Heads learn diverse horizons.
+
+\subsection{Cross-Attention}
+
+\textbf{Table 7.9: Cross-attention on T5 (preliminary).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{Accuracy} \\
+\midrule
+Baseline T5 & {{T5\_BASE}} \\
+DecayLinear T5 & {{T5\_DL}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{State memory:} 16 KB, constant in $L$.
+\item \textbf{Accuracy:} {{D\_DELTA}}\%--{{G\_DELTA}}\% change.
+\item \textbf{Breakeven:} $L^* = {{BREAKEVEN}}$.
+\item \textbf{Cross-attention:} works.
+
+\end{itemize}

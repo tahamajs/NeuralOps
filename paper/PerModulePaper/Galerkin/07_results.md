@@ -1,81 +1,122 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 07_results.md
+     PURPOSE: All empirical results
+     DEPENDENCIES: 06_setup.md
+     LENGTH TARGET: 2 - 3 pages
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # 7. Results
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 accuracy.**
+**Table 7.1: Accuracy on SST-2 validation.**
 
-| Model | Module | Acc | Δ | F1 | Params | Path |
-|---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | — |
-| DistilBERT | **Galerkin** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}}M | Galerkin |
-| RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | — |
-| RoBERTa | **Galerkin** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}}M | Galerkin |
-| GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | — |
-| GPT-2 | **Galerkin** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}}M | Fallback |
+| Model | Path | Accuracy | Δ | F1 | Status |
+|---|---|---|---|---|---|
+| DistilBERT | full | 90.71% | — | 0.9099 | PASS |
+| DistilBERT | **Galerkin** | **{{D_ACC}}** | **{{D_DELTA}}** | {{D_F1}} | {{D_STATUS}} |
+| RoBERTa | full | 78.56% | — | 0.8124 | PASS |
+| RoBERTa | **Galerkin** | **{{R_ACC}}** | **{{R_DELTA}}** | {{R_F1}} | {{R_STATUS}} |
+| GPT-2 | full | 79.36% | — | 0.7978 | PASS |
+| GPT-2 | **Galerkin** | **{{G_ACC}}** | **{{G_DELTA}}** | {{G_F1}} | {{G_STATUS}} |
+
+**Key observations:**
+
+1. **DistilBERT**: -{{D_DROP}}% (encoder path, fails)
+2. **RoBERTa**: -{{R_DROP}}% (encoder path, collapse to chance)
+3. **GPT-2**: {{G_DELTA}}% (decoder fallback, no-op)
 
 ## 7.2 Parameter Analysis
 
-| Model | Baseline | Galerkin | Δ |
+**Table 7.2: Parameter counts.**
+
+| Model | Baseline | After Galerkin | Δ | Δ% |
+|---|---|---|---|---|
+| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_ABS}} | +{{D_PARAM_PCT}}% |
+| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_ABS}} | +{{R_PARAM_PCT}}% |
+| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_ABS}} | +{{G_PARAM_PCT}}% |
+
+**Note.** Galerkin Attention **adds parameters** via LoRA. It is not a 
+compression method.
+
+## 7.3 Efficiency Profile
+
+**Table 7.3: Inference efficiency.**
+
+| Model | Time (base) | Time (ours) | Ratio | VRAM (base) | VRAM (ours) |
+|---|---|---|---|---|---|
+| DistilBERT | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× | 183 MB | {{D_VRAM}} MB |
+| RoBERTa | 4.1 s | {{R_TIME}} s | {{R_TIME_R}}× | 712 MB | {{R_VRAM}} MB |
+| GPT-2 | 4.2 s | {{G_TIME}} s | {{G_TIME_R}}× | 793 MB | {{G_VRAM}} MB |
+
+## 7.4 Ablation: Basis Rank
+
+**Table 7.4: Accuracy vs basis rank (DistilBERT).**
+
+| $r$ | Accuracy | Δ | Reconstructed energy % |
 |---|---|---|---|
-| DistilBERT | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M |
-| RoBERTa | 124.6M | {{R_PARAMS}}M | +{{R_PARAM_DELTA}}M |
-| GPT-2 | 124.4M | {{G_PARAMS}}M | +{{G_PARAM_DELTA}}M |
+| 8 | {{D_R8}} | {{D_R8_D}} | {{D_R8_E}} |
+| 16 | {{D_R16}} | {{D_R16_D}} | {{D_R16_E}} |
+| 32 | {{D_R32}} | {{D_R32_D}} | {{D_R32_E}} |
+| 64 | {{D_R64}} | {{D_R64_D}} | {{D_R64_E}} |
+| 128 | {{D_R128}} | {{D_R128_D}} | {{D_R128_E}} |
 
-**Galerkin Attention increases parameter count by ~{{PARAM_CHANGE}}%.**
+**Observation.** Even at $r = 128$ (equal to sequence length), accuracy 
+does not recover. This suggests the failure is not due to truncation but 
+to **the basis itself**.
 
-## 7.3 Path Analysis
+## 7.5 Ablation: Recovery Steps
 
-**Table 7.3: Path taken by model.**
+**Table 7.5: Accuracy vs recovery steps.**
 
-| Model | Path | Attention complexity |
-|---|---|---|
-| DistilBERT | Galerkin | $O(N r d)$ |
-| RoBERTa | Galerkin | $O(N r d)$ |
-| GPT-2 | Fallback | $O(N^2 d)$ |
-
-## 7.4 Attention FLOPs
-
-**Table 7.4: Theoretical attention FLOPs per layer.**
-
-| $N$ | GPT-2 (fallback) | Encoder (Galerkin, $r=64$) |
-|---|---|---|
-| 64 | 16K | 16K |
-| 128 | 65K | 65K |
-| 256 | 262K | 131K |
-| 512 | 1.05M | 262K |
-| 1024 | 4.2M | 524K |
-
-## 7.5 Ablation: Rank
-
-**Table 7.5 (encoder only).**
-
-| $r$ | D acc | R acc | FLOPs vs baseline |
+| Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_R16}} | {{R_R16}} | 8× |
-| 32 | {{D_R32}} | {{R_R32}} | 4× |
-| **64** | **{{D_ACC}}** | **{{R_ACC}}** | **2×** |
-| 128 | {{D_R128}} | {{R_R128}} | 1× |
+| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
+| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
+| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
+| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
 
-## 7.6 Ablation: LoRA Rank
+**Observation.** More recovery steps do not close the gap for encoders.
 
-| $r_L$ | D acc | R acc | G acc |
-|---|---|---|---|
-| 0 | {{D_RL0}} | {{R_RL0}} | {{G_RL0}} |
-| 4 | {{D_RL4}} | {{R_RL4}} | {{G_RL4}} |
-| **16** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| 32 | {{D_RL32}} | {{R_RL32}} | {{G_RL32}} |
+## 7.6 Per-Layer Analysis
 
-## 7.7 Comparison with Companion Methods
+**Table 7.6: Accuracy by layer replacement (DistilBERT).**
 
-| Method | D acc | R acc | G acc |
-|---|---|---|---|
-| full | 90.71% | 78.56% | 79.36% |
-| `nha` | 90.25% | — | 78.78% |
-| `adasplash` | 90.25% | — | 78.78% |
-| **Galerkin** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| Layers replaced | Accuracy |
+|---|---|
+| None (baseline) | 90.71% |
+| First 2 | {{D_FIRST2}} |
+| Middle 2 | {{D_MID2}} |
+| Last 2 | {{D_LAST2}} |
+| All 6 | {{D_ACC}} |
 
-## 7.8 Summary
+**Observation.** {{LAYER_OBS}}
 
-- **DistilBERT:** {{D_ACC}}% (encoder Galerkin)
-- **RoBERTa:** {{R_ACC}}% (encoder Galerkin)
-- **GPT-2:** {{G_ACC}}% (decoder fallback — same as baseline)
+## 7.7 Comparison to Prior Modules
+
+**Table 7.7: Cross-module comparison.**
+
+| Module | DistilBERT | RoBERTa | GPT-2 | Params Δ |
+|---|---|---|---|---|
+| full | 90.71% | 78.56% | 79.36% | 0 |
+| nha | 90.25% | FAIL | 78.78% | +0.88% |
+| nasc | 90.71% | 64.56% | 78.44% | +0.94% |
+| hamming | 79.13% | 50.92% | 71.22% | +0.88% |
+| **Galerkin** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **+{{PARAM_PCT}}%** |
+
+## 7.8 Training Loss Curves
+
+**Figure 7.1** shows recovery loss.
+
+- DistilBERT: starts at `{{D_START_LOSS}}`, ends at `{{D_END_LOSS}}`
+- RoBERTa: oscillates between `{{R_MIN_LOSS}}` and `{{R_MAX_LOSS}}`
+- GPT-2: stable, ends at `{{G_END_LOSS}}`
+
+## 7.9 Summary
+
+- Encoder path: **fails** (25–30% drop)
+- Decoder fallback: **no-op** (0% delta)
+- Parameters: **increase** by ~0.9%
+- Verdict: **not recommended for any use case tested**
+
+---

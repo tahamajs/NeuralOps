@@ -1,3 +1,288 @@
-\section{04 Method}
 
-Draft content for flash_attention3_fp8.
+\section{Method}
+
+\subsection{Overview}
+
+Our implementation wraps FlashAttention-3 with three layers of safety:
+
+\begin{enumerate}
+\item \textbf{Import-time detection.} At module load, we attempt to import
+  \texttt{flash\_attn\_interface} or \texttt{flash\_attn}. If neither is available, we set
+  \texttt{FLASH\_ATTN\_AVAILABLE = False}.
+
+\item \textbf{Runtime FP8 detection.} At each forward, we check that:
+\end{enumerate}
+\begin{itemize}
+\item \texttt{FLASH\_ATTN\_AVAILABLE} is True
+\item \texttt{self.use\_fp8} is True
+\item \texttt{q.is\_cuda} is True
+\item \texttt{torch.float8\_e4m3fn} is available
+  
+  If all hold, we cast Q/K/V to FP8 and call \texttt{flash\_attn\_func}.
+
+\end{itemize}
+\begin{enumerate}
+\item \textbf{SDPA fallback.} If any check fails, we call
+  \texttt{F.scaled\_dot\_product\_attention} instead.
+
+\end{enumerate}
+\begin{lstlisting}
+              +-----------------------------+
+              |  Input Q, K, V              |
+              +--------------+--------------+
+                             |
+                              
+              +-----------------------------+
+              |  FLASH_ATTN_AVAILABLE ?     |
+              +------+--------------+-------+
+                     | No           | Yes
+                     |              |
+                     |               
+                     |    +-----------------+
+                     |    | self.use_fp8 ?  |
+                     |    +--+---------+----+
+                     |       | No      | Yes
+                     |       |         |
+                     |       |          
+                     |       |   +--------------+
+                     |       |   | has float8? |
+                     |       |   +--+-------+---+
+                     |       |      | No    | Yes
+                     |       |      |       |
+                     |                       
+                     |    +----------------------+
+                     +--- |  SDPA fallback       |
+                          +----------------------+
+                                    |
+                                     
+                          +----------------------+
+                          |  Output              |
+                          +----------------------+
+\end{lstlisting}
+
+\subsection{Detection Logic}
+
+\subsubsection{FlashAttention Import}
+
+\begin{lstlisting}
+try:
+    from flash_attn_interface import flash_attn_func
+    FLASH_ATTN_AVAILABLE = True
+except ImportError:
+    try:
+        from flash_attn import flash_attn_func
+        FLASH_ATTN_AVAILABLE = True
+    except ImportError:
+        FLASH_ATTN_AVAILABLE = False
+\end{lstlisting}
+
+The first import path is used by the Hopper-optimized \texttt{flash-attn-3} package; 
+the second by the community \texttt{flash-attn} package.
+
+\subsubsection{FP8 Path Condition}
+
+At each forward, we check four conditions:
+
+\begin{lstlisting}
+use_fp8_path = (
+    FLASH_ATTN_AVAILABLE
+    and self.use_fp8
+    and q.is_cuda
+    and hasattr(torch, "float8_e4m3fn")
+)
+\end{lstlisting}
+
+\textbf{Note.} We do \textbf{not} check CUDA capability directly; if the hardware 
+does not support FP8, \texttt{flash\_attn\_func} will raise a runtime error and we 
+catch it, falling back to SDPA.
+
+\subsection{FP8 Cast}
+
+When the FP8 path is taken:
+
+\begin{lstlisting}
+q_fa = q.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
+k_fa = k.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
+v_fa = v.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
+out = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag).to(dtype)
+\end{lstlisting}
+
+\textbf{Cast order.} Q and K are cast to e4m3 (higher precision for products); 
+V is cast to the same. The output is returned in FP16/BF16.
+
+\textbf{No scaling.} Unlike TransformerEngine, we do not apply per-tensor scaling. 
+This is correct for well-behaved distributions but may lose precision for 
+models with large activations.
+
+\subsection{SDPA Fallback}
+
+If the FP8 path is not taken:
+
+\begin{lstlisting}
+if causal_flag and attn_mask is None:
+    out_sdpa = F.scaled_dot_product_attention(
+        q, k, v, attn_mask=None, is_causal=True, dropout_p=self.dropout.p
+    )
+else:
+    # Build causal mask, add padding mask
+    out_sdpa = F.scaled_dot_product_attention(
+        q, k, v, attn_mask=attn_mask, is_causal=False, dropout_p=self.dropout.p
+    )
+\end{lstlisting}
+
+PyTorch's SDPA dispatches internally to:
+\begin{itemize}
+\item FlashAttention-2 (if installed and CUDA >= 11.8)
+\item Memory-efficient attention
+\item Native math
+
+\end{itemize}
+\subsection{Architecture-Specific Weight Transfer}
+
+The \texttt{copy\_weights} method extracts Q, K, V, and output projections from four 
+families:
+
+\subsubsection{GPT-2 (Fused Conv1D)}
+
+\begin{lstlisting}
+if hasattr(src, "c_attn"):
+    w = src.c_attn.weight.data
+    if src.c_attn.__class__.__name__ == "Conv1D":
+        w = w.t()  # (in, out) $\to$ (out, in)
+    q_w, k_w, v_w = w.chunk(3, dim=0)
+    extracted["q"] = (q_w, ...)
+    ...
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+elif hasattr(src, "self") and hasattr(src.self, "query"):
+    q_w = src.self.query.weight.data
+    k_w = src.self.key.weight.data
+    v_w = src.self.value.weight.data
+    if hasattr(src.output, "dense"):
+        o_w = src.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+else:
+    q_w = src.q_lin.weight.data
+    k_w = src.k_lin.weight.data
+    v_w = src.v_lin.weight.data
+    o_w = src.out_lin.weight.data
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA + RoPE)}
+
+Qwen uses separate \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}. Standard extraction.
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa and other BERT-family models, the output projection lives 
+outside the self-attention module:
+
+\begin{lstlisting}
+BertAttention
++-- self: BertSelfAttention
+|   +-- query
+|   +-- key
+|   +-- value
++-- output: BertSelfOutput
+    +-- dense  $\leftarrow$ output projection
+\end{lstlisting}
+
+We set \texttt{is\_nested\_encoder = True}, which causes \texttt{forward} to return raw 
+\texttt{context} (without applying \texttt{out\_proj}). The outer \texttt{output.dense} applies 
+the projection.
+
+For DistilBERT, \texttt{out\_lin} is inside the attention module, so we set 
+\texttt{is\_nested\_encoder = False}.
+
+\subsection{LoRA Adaptation}
+
+Each projection is wrapped in \texttt{LoRALinear}:
+
+\begin{lstlisting}
+class LoRALinear(nn.Module):
+    def __init__(self, in_features, out_features, ..., lora_rank=16):
+        self.weight = nn.Parameter(...)      # frozen after copy
+        self.lora_A = nn.Parameter(...)      # trainable
+        self.lora_B = nn.Parameter(...)      # trainable, initialized to 0
+    
+    def forward(self, x):
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0:
+            out += F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        return out
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Q/K/V projection & $\mathcal{O}(BLd^2)$ & $\mathcal{O}(BLd)$ \\
+FlashAttention-3 FP8 & $\mathcal{O}(BL^2 d / S)$ & $\mathcal{O}(BLd + S^2)$ \\
+SDPA (fallback) & $\mathcal{O}(BL^2 d)$ & $\mathcal{O}(BLd)$ \\
+Output projection & $\mathcal{O}(BLd^2)$ & $\mathcal{O}(BLd)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{FP8 path} uses ~$S^2$ SRAM per tile and reads Q/K/V once from HBM.
+
+\textbf{SDPA path} uses memory-efficient attention with the same asymptotics but 
+without the FP8 speedup.
+
+\subsection{Parameter Analysis}
+
+Our implementation \textbf{does not reduce parameter count}. The LoRA adapters 
+add:
+
+\[
+\Delta p = r \cdot (d_\text{in} + d_\text{out})
+\tag{4.1}
+\]
+
+per layer. For $r = 16$ and $d = 768$, this is 24,576 params per projection.
+
+\textbf{Total overhead (DistilBERT):} 4 projections $\times$ 6 layers $\times$ 24,576 = 
+\textbf{589,824 params} (+0.88\%).
+
+\textbf{This is not a compression method.}
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} FlashAttention3FP8 forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V      With LoRA
+ 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+ 3: if GQA:  (K, V) $\leftarrow$ repeat_kv(K, V)
+ 4:
+ 5: if FLASH_ATTN_AVAILABLE AND use_fp8 AND q.is_cuda AND has_float8:
+ 6:     q8, k8, v8 $\leftarrow$ cast_to_fp8(Q, K, V)
+ 7:     try:
+ 8:         out $\leftarrow$ flash_attn_func(q8, k8, v8, causal)
+ 9:     except:
+10:         out $\leftarrow$ NULL    Fallback
+11: else:
+12:     out $\leftarrow$ NULL
+13:
+14: if out is NULL:
+15:     out $\leftarrow$ SDPA(Q, K, V, mask, causal)
+16:
+17: if not is_nested_encoder:
+18:     out $\leftarrow$ out_proj(out)
+19: return out
+\end{lstlisting}
+

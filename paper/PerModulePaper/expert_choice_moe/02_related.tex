@@ -1,3 +1,96 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for expert_choice_moe.
+\subsection{Mixture of Experts}
+
+\textbf{Shazeer et al. (2017)} introduced sparsely-gated MoE with top-$k$ 
+token-choice routing. \textbf{GShard} (Lepikhin et al., 2021) scaled to 600B 
+parameters using expert parallelism. \textbf{Switch Transformer} (Fedus et al., 
+2022) simplified to top-1 routing and introduced the auxiliary 
+load-balancing loss:
+
+\[
+\mathcal{L}_\text{aux} = E \sum_{i=1}^{E} f_i P_i
+\tag{2.1}
+\]
+
+\textbf{Expert Choice} (Zhou et al., 2022) reversed the routing direction:
+each expert selects tokens. We adopt this formulation.
+
+\subsection{Expert Choice Routing}
+
+Expert-choice routing:
+
+\begin{itemize}
+\item \textbf{Guaranteed load balance.} Each expert processes exactly $k = T / E$
+  tokens.
+\item \textbf{Dynamic per-token capacity.} Tokens can be selected by 0, 1, or many
+  experts.
+\item \textbf{No auxiliary loss.}
+
+\end{itemize}
+Zhou et al. (2022) show improved zero-shot transfer and stable training 
+compared to token-choice. We bring this to attention augmentation.
+
+\subsection{MoE in Attention}
+
+\textbf{BAM-UMoE} (companion work) uses token-choice MoE on attention values. 
+Our work uses expert-choice MoE on attention \textbf{outputs}. The routing 
+mechanism and target differ.
+
+\subsection{Attention Augmentation}
+
+\textbf{LoRA} (Hu et al., 2021) adds low-rank deltas to frozen weights. 
+\textbf{AdaLoRA} (Zhang et al., 2023) adaptively allocates rank. \textbf{Compacter} 
+(Karimi Mahabadi et al., 2021) uses Kronecker adapters.
+
+Our work is orthogonal to these -- we add a full MoE block, not a low-rank 
+adapter.
+
+\subsection{Zero-Init Stability}
+
+\textbf{Goyal et al. (2017)} show zero-init of last layers stabilizes training. 
+\textbf{Fixup} (Zhang et al., 2019) uses scaled initialization. \textbf{ReZero} 
+(Bachlechner et al., 2021) initializes residual gates to zero. We use both: 
+zero-init expert output and negative gate bias.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Routing} & \textbf{Location} & \textbf{Guaranteed balance} \\
+\midrule
+Switch Transformer & Token-choice & FFN & (needs aux loss) \\
+GShard & Token-choice & FFN &  \\
+Mixtral & Token-choice & FFN &  \\
+\textbf{Expert Choice} (Zhou) & \textbf{Expert-choice} & FFN &  \\
+BAM-UMoE & Token-choice & Attention V &  \\
+\textbf{ExpertChoiceMoE} & \textbf{Expert-choice} & \textbf{Attention output} &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} First method to apply **expert-choice MoE inside 
+attention** with guaranteed load balancing.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Routing} & \textbf{Load balance} & \textbf{Zero-init} & \textbf{Cross-attn} \\
+\midrule
+Switch Transformer & Token & Aux loss &  & N/A \\
+Mixtral & Token & Aux loss &  & N/A \\
+BAM-UMoE & Token & Aux loss &  & Skip \\
+\textbf{ExpertChoiceMoE} & \textbf{Expert} & \textbf{Guaranteed} &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+

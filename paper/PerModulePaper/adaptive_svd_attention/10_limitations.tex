@@ -1,3 +1,90 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Formal architectural specifications for \texttt{adaptive_svd_attention}.
+\subsection{Attention-Only Compression}
+
+We compress only the attention projections. The FFN remains uncompressed. 
+Total model reduction is therefore modest.
+
+\subsection{Attention Remains Quadratic}
+
+The attention computation (Q K\^{}T) is not compressed. Long-context inference 
+is not improved.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Generalization to:
+\begin{itemize}
+\item Generation tasks
+\item Long-context
+\item Multi-class classification
+\item Token-level tasks
+\item \textbf{T5-style seq2seq} (though we support the architecture, we don't test)
+
+\end{itemize}
+is untested.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+T5-base/large & Not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+All experiments on RTX 4070. Other hardware untested.
+
+\subsection{Energy Threshold Choice}
+
+We use $\tau$ = 0.92 as a fixed default. A per-layer adaptive $\tau$ might improve 
+compression-accuracy tradeoffs, but we do not explore this.
+
+\subsection{Residual Rank}
+
+We fix $r_a = 16$. Optimal $r_a$ may differ per model or per projection.
+
+\subsection{No Theoretical Bound on Task Accuracy}
+
+We provide a bound on \textbf{reconstruction} error but not on \textbf{downstream task} 
+accuracy. The gap is not characterized.
+
+\subsection{Single-Seed Results}
+
+Multi-seed would strengthen conclusions.
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa, we set \texttt{is\_nested\_encoder = True}, but we still factorize the 
+output projection. The interaction is not fully characterized.
+
+\subsection{No Comparison with Some Methods}
+
+We do not compare with:
+\begin{itemize}
+\item DistilBERT (distillation)
+\item SparseGPT / Wanda (pruning)
+\item Performer / Linformer (attention replacement)
+
+\end{itemize}
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling
+\item No fused kernels for factorized forward
+\item No unit tests for edge cases
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Compression is dual-use. See Appendix E.
+

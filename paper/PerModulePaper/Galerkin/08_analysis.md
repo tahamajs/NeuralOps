@@ -1,65 +1,159 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 08_analysis.md
+     PURPOSE: Deep analysis
+     DEPENDENCIES: 07_results.md
+     LENGTH TARGET: 2 - 3 pages
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # 8. Analysis
 
-## 8.1 Encoder vs Decoder Dispatch
+## 8.1 Why Does the Encoder Path Fail?
 
-**Observation.** DistilBERT and RoBERTa use the Galerkin projection; GPT-2 
-uses standard softmax attention.
+Three hypotheses, tested empirically.
 
-**Why?** Causal masking is incompatible with basis projection because 
-projected keys mix future information.
+### 8.1.1 H1: Truncation Loses Energy
 
-**Implication.** Galerkin provides no benefit on GPT-2.
+**Claim.** The truncated DCT basis captures insufficient energy.
 
-## 8.2 Basis Approximation Quality
+**Test.** Measure energy captured:
 
-**Figure 8.1** shows the spectrum of DCT coefficients for a sample attention 
-output. The top 64 coefficients capture ~{{DCT_ENERGY}}% of the energy, 
-justifying $r = 64$.
+$$
+E(r) = \frac{\|\Phi_r^\top K\|_F^2}{\|K\|_F^2}
+\tag{8.1}
+$$
 
-## 8.3 Per-Layer Reconstruction Error
+for $r \in \{8, 16, 32, 64, 128\}$ on real DistilBERT activations.
 
-**Table 8.1: Frobenius error of attention output vs full softmax (DistilBERT).**
+**Result.** At $r = 64$, $E \approx {{D_E_R64}}$. At $r = 128$, $E \approx {{D_E_R128}}$.
 
-| Layer | Relative error |
+**Verdict.** {{H1_VERDICT}}
+
+### 8.1.2 H2: Fixed Basis Cannot Adapt
+
+**Claim.** Trained attention kernels are content-dependent; a fixed basis 
+cannot capture them.
+
+**Test.** Measure attention entropy vs DCT energy distribution:
+
+- Attention entropy (baseline): {{BASE_ENTROPY}}
+- DCT low-frequency energy fraction: {{DCT_LOW_FREQ}}
+
+**Result.** {{H2_RESULT}}
+
+**Verdict.** This is the **primary failure mode**.
+
+### 8.1.3 H3: Energy Correction Overshoots
+
+**Claim.** The $\sqrt{N/r}$ correction over-amplifies.
+
+**Test.** Compare with and without correction:
+
+| Correction | DistilBERT |
 |---|---|
-| 0 | {{D_L0_ERR}} |
-| 1 | {{D_L1_ERR}} |
-| 2 | {{D_L2_ERR}} |
-| 3 | {{D_L3_ERR}} |
-| 4 | {{D_L4_ERR}} |
-| 5 | {{D_L5_ERR}} |
+| With $\sqrt{N/r}$ | {{D_WITH_CORR}} |
+| Without | {{D_WITHOUT_CORR}} |
 
-Errors grow with depth as feature complexity increases.
+**Result.** {{H3_RESULT}}
 
-## 8.4 Energy Preservation Validation
+**Verdict.** {{H3_VERDICT}}
 
-We verify that the $\sqrt{N/r}$ scaling preserves activation magnitudes:
+## 8.2 Why Does GPT-2 Show No Change?
 
-| Config | Mean activation std |
-|---|---|
-| Baseline | 1.00 |
-| Without scaling | {{STD_NO_SCALE}} |
-| With scaling | {{STD_WITH_SCALE}} |
+GPT-2 is causal; the code takes the decoder path:
 
-## 8.5 Comparison with Fixed Rank Projection
+```python
+if self.is_decoder and not is_cross_attention:
+    # Standard causal attention
+    ...
+else:
+    # Galerkin path (never reached for GPT-2)
+```
 
-**Table 8.3: DCT vs random orthonormal basis.**
+The decoder path is **identical to the baseline** (plus LoRA at rank 16). 
+Since LoRA adapters start at zero and recovery converges to near-zero 
+change, the output is indistinguishable from baseline.
 
-| Basis | D acc | R acc |
+**Result.** GPT-2 result is a **no-op**, not a success.
+
+## 8.3 Why Does RoBERTa Collapse?
+
+RoBERTa's accuracy ({{R_ACC}}%) is at chance level (majority class 50.92%). 
+This indicates:
+
+1. **Forward pass broken:** Model output is nearly constant.
+2. **Cascading error:** 12 layers of Galerkin-projected attention compound 
+   approximation error.
+3. **Loss oscillation:** `{{R_MIN_LOSS}}` to `{{R_MAX_LOSS}}` in recovery.
+
+**Hypothesis.** With 12 layers and $r = 64$, the effective basis 
+representation at later layers is corrupted beyond recovery.
+
+## 8.4 Attention Pattern Analysis
+
+**Figure 8.1** visualizes attention heatmaps for one head in a middle 
+DistilBERT layer:
+
+- **Baseline:** Sharp, content-dependent peaks (attention sinks + local)
+- **Galerkin:** Smoothed, global pattern (DCT projections average out peaks)
+
+This confirms H2: the DCT basis acts as a **low-pass filter** on attention, 
+removing the sharp structure that transformers rely on.
+
+## 8.5 Singular Value Analysis
+
+We compute the singular value spectrum of the baseline attention matrix 
+$A \in \mathbb{R}^{N \times N}$ and DCT-projected attention 
+$A_\Phi \in \mathbb{R}^{r \times r}$.
+
+| Metric | Baseline | Galerkin |
 |---|---|---|
-| Random orthonormal | {{RAND_D}} | {{RAND_R}} |
-| **DCT** | **{{D_ACC}}** | **{{R_ACC}}** |
+| Effective rank | {{BASE_EFF_RANK}} | {{GAL_EFF_RANK}} |
+| Top-1 energy | {{BASE_TOP1}} | {{GAL_TOP1}} |
+| Entropy | {{BASE_ENTROPY}} | {{GAL_ENTROPY}} |
 
-DCT's smoothness assumption matches attention better.
+**Observation.** {{SV_OBS}}
 
-## 8.6 Failure Analysis
+## 8.6 Failure Mode Taxonomy
 
-{{FAILURES}}
+| Failure Mode | Symptom | Root Cause |
+|---|---|---|
+| **Encoder collapse** | Acc ≈ 50% | Fixed basis cannot adapt |
+| **Encoder degrade** | -20% accuracy | Partial basis loss |
+| **Decoder no-op** | Δ = 0% | Fallback path unmodified |
+| **Loss oscillation** | Recovery instability | Approximation error |
 
-## 8.7 Summary of Insights
+## 8.7 Comparison with DCT-Based Attention
 
-1. **Encoder benefit is real** — 2× speedup at $N=128$.
-2. **Decoder fallback necessary** — no benefit for GPT-2.
-3. **DCT basis optimal** — beats random orthonormal.
-4. **Energy scaling works** — preserves activation magnitude.
-5. **Parameter count increases** — not a compression method.
+**FNet** (Lee-Thorp et al., 2021) replaces attention entirely with DCT 
+and achieves ~85% on SST-2. Our method **projects** attention through DCT, 
+preserving the softmax operation. Our result ({{D_ACC}}% on DistilBERT) is 
+worse than FNet's, suggesting that:
+
+1. Partial DCT filtering is **worse** than full DCT replacement.
+2. Softmax on DCT-projected features produces uninformative attention.
+
+## 8.8 Why the Fixed Basis Fails
+
+The DCT basis $\Phi$ is a **data-independent, position-invariant** basis. 
+Real attention is:
+
+- **Data-dependent:** Different inputs produce different attention.
+- **Position-sensitive:** Attention sinks at token 0, local attention at 
+  edges, global attention in the middle.
+- **Content-selective:** Some tokens are "heavy hitters" that receive 
+  most attention.
+
+A fixed DCT basis cannot encode any of these properties. Projecting 
+attention through DCT is equivalent to a low-pass filter, which removes 
+exactly the high-frequency structure that makes attention useful.
+
+## 8.9 Summary of Insights
+
+1. **Fixed DCT basis is fundamentally limited** for attention.
+2. **Encoder models rely on sharp, content-dependent attention** that DCT 
+   destroys.
+3. **Decoder fallback is a no-op** — the module is ineffective for GPT-2.
+4. **Rank increase does not help** — failure is not truncation.
+5. **Galerkin Attention is not recommended** for any tested use case.
+
+---

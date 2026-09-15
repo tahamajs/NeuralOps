@@ -1,3 +1,124 @@
-\section{03 Background}
 
-Draft content for flash_attention3_fp8.
+\section{Background}
+
+\subsection{Scaled Dot-Product Attention}
+
+Standard attention:
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d}}\right) V
+\tag{3.1}
+\]
+
+Memory for $QK^\top$ is $\mathcal{O}(BL^2)$ -- the target of reduction.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+GQA uses $H_{kv} < H$ to reduce KV-cache size:
+
+\[
+K, V \in \mathbb{R}^{B \times L \times H_{kv} d}, \qquad
+H_{\text{repeat}} = H / H_{kv}
+\tag{3.2}
+\]
+
+The \texttt{repeat\_kv} operation expands KV to match Q heads.
+
+\subsection{FlashAttention Tiling}
+
+FlashAttention partitions $Q, K, V$ into blocks that fit in SRAM ($\sim$ 100 KB 
+on A100, $\sim$ 200 KB on H100). The inner loop:
+
+\[
+O_{ij} \leftarrow \text{softmax}(Q_i K_j^\top / \sqrt{d}) V_j
+\tag{3.3}
+\]
+
+accumulates partial results in SRAM, never materializing $QK^\top$ to HBM.
+
+\textbf{Tiling cost.} For block size $S$, the number of HBM reads is 
+$\mathcal{O}(BL \cdot S)$, and SRAM occupancy is $\mathcal{O}(S^2 + Sd)$.
+
+\subsection{FP8 Format}
+
+The 8-bit floating-point format has two variants (Micikevicius et al., 2022):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Format} & \textbf{Bits (sign/exp/mant)} & \textbf{Max} & \textbf{Precision} \\
+\midrule
+E4M3 & 1 / 4 / 3 & 448 & ~0.5\% \\
+E5M2 & 1 / 5 / 2 & 57344 & ~1\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{FP8 tensor cores.} Only Hopper (H100, H200) and Ada (RTX 4090, L40) expose 
+FP8 tensor cores with 2$\times$ throughput over FP16. On Ampere (A100, RTX 30-series) 
+and earlier, FP8 is only a storage format, not a compute format.
+
+\textbf{Detection.} PyTorch exposes the FP8 dtype as \texttt{torch.float8\_e4m3fn} 
+(available in PyTorch $\ge$ 2.1). Its presence in \texttt{dir(torch)} indicates the 
+build supports the type, but \textbf{does not} indicate hardware tensor-core 
+support. This must be verified at runtime via CUDA capability.
+
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021) parameterizes:
+
+\[
+\Delta W = \frac{\alpha}{r} BA, \quad
+A \in \mathbb{R}^{r \times k}, \quad
+B \in \mathbb{R}^{d \times r}
+\tag{3.4}
+\]
+
+with $B = 0$ at init. Only $A, B$ are trained.
+
+\subsection{Hardware Capabilities}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{GPU} & \textbf{Architecture} & \textbf{Compute Capability} & \textbf{FP8 Tensor Cores?} \\
+\midrule
+A100 & Ampere & 8.0 &  \\
+H100 & Hopper & 9.0 &  \\
+H200 & Hopper & 9.0 &  \\
+RTX 3090 & Ampere & 8.6 &  \\
+RTX 4070 & Ada & 8.9 & (driver-dependent) \\
+RTX 4090 & Ada & 8.9 &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+On RTX 4070 Laptop (this study's hardware), FP8 tensor cores exist 
+architecturally but are often not exposed through the CUDA driver; we 
+detect this and fall back.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$B$ & Batch size \\
+$L$ & Sequence length \\
+$d$ & Head dimension \\
+$H$ & Query head count \\
+$H_{kv}$ & KV head count \\
+$r$ & LoRA rank \\
+$S$ & SRAM block size \\
+$f_{p8}$ & FP8 format (e4m3 or e5m2) \\
+\bottomrule
+\end{tabular}
+\end{table}
+

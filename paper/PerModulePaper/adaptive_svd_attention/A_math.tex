@@ -1,3 +1,145 @@
-\section{A Math}
+\section{Appendix A. Mathematical Derivations}
 
-Formal architectural specifications for \texttt{adaptive_svd_attention}.
+\subsection{A.1 Energy Threshold Derivation}
+
+\textbf{Claim.} If $r^* = \min\{r : E(r) \geq \tau\}$ where
+
+\[
+E(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(m,n)} \sigma_j^2}
+\tag{A.1}
+\]
+
+then the relative Frobenius error satisfies:
+
+\[
+\frac{\|W - W_{r^*}\|_F}{\|W\|_F} \leq \sqrt{1 - \tau}
+\tag{A.2}
+\]
+
+\textbf{Proof.} By Eckart-Young:
+
+\[
+\|W - W_{r^*}\|_F^2 = \sum_{i > r^*} \sigma_i^2
+\tag{A.3}
+\]
+
+And:
+
+\[
+\|W\|_F^2 = \sum_{i=1}^{\min(m,n)} \sigma_i^2
+\tag{A.4}
+\]
+
+So:
+
+\[
+\frac{\|W - W_{r^*}\|_F^2}{\|W\|_F^2} = 1 - E(r^*) \leq 1 - \tau
+\tag{A.5}
+\]
+
+Taking square roots gives (A.2). $\square$
+
+\subsection{A.2 Symmetric Split Equivalence}
+
+\textbf{Claim.} For any $\Sigma_r \succ 0$, the following are equal:
+
+\[
+U_r \Sigma_r V_r^\top = (U_r \Sigma_r^{1/2})(\Sigma_r^{1/2} V_r^\top)
+\tag{A.6}
+\]
+
+\textbf{Proof.} Trivial by associativity. $\square$
+
+\textbf{Numerical benefit.} Splitting $\Sigma^{1/2}$ between the factors bounds 
+the magnitude of each factor by $\sqrt{\sigma_1}$, reducing FP16 overflow/
+underflow risk.
+
+\subsection{A.3 Parameter Reduction}
+
+For a projection $W \in \mathbb{R}^{d \times d}$:
+
+\[
+\text{Baseline} = d^2
+\tag{A.7}
+\]
+
+\[
+\text{Factorized} = 2 d r^* + 2 d r_a
+\tag{A.8}
+\]
+
+Ratio:
+
+\[
+\frac{\text{Baseline}}{\text{Factorized}} = \frac{d^2}{2 d (r^* + r_a)} = \frac{d}{2(r^* + r_a)}
+\tag{A.9}
+\]
+
+For $d = 768$, $r^* = 128$, $r_a = 16$:
+
+\[
+\frac{768}{2 \cdot 144} = 2.67
+\tag{A.10}
+\]
+
+\subsection{A.4 Residual Adapter Recovery}
+
+The effective weight is:
+
+\[
+W_\text{eff} = U_r V_r + B A
+\tag{A.11}
+\]
+
+We want $W_\text{eff} \approx W$. The SVD part captures $W_{r^*}$; the 
+adapter captures the residual $W - W_{r^*}$:
+
+\[
+W - W_\text{eff} = (W - W_{r^*}) - B A
+\tag{A.12}
+\]
+
+The adapter rank $r_a$ should be large enough to represent this residual.
+
+\subsection{A.5 GQA Composition}
+
+For GQA with $H_{kv} < H$:
+
+\[
+\text{K projection output} = H_{kv} \cdot d_h
+\tag{A.13}
+\]
+
+Factorized K:
+
+\[
+\text{K params} = 2 d r^* + 2 r_a (H_{kv} d_h)
+\tag{A.14}
+\]
+
+Since $H_{kv} d_h < d$, this gives additional savings.
+
+\subsection{A.6 T5 Relative Bias}
+
+T5 adds a relative position bias to attention scores:
+
+\[
+\text{scores}_{ij} \leftarrow \text{scores}_{ij} + b_{\text{bucket}(i, j)}
+\tag{A.15}
+\]
+
+The bias is parameterized by an embedding of shape $(num\_buckets, num\_heads)$ 
+and is \textbf{not modified} by our factorization.
+
+\subsection{A.7 Causality Preservation}
+
+For causal attention, we mask scores at positions $j > i$:
+
+\[
+\text{mask}_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j > i \end{cases}
+\tag{A.16}
+\]
+
+The factorization does not affect causality because it only modifies the 
+projection weights.
+

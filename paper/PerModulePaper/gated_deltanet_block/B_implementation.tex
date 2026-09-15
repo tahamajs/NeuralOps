@@ -1,3 +1,151 @@
-\section{B Implementation}
 
-Draft content for gated_deltanet_block.
+\section{Appendix B. Implementation Details}
+
+\subsection{B.1 The `try/except` Pattern}
+
+\begin{lstlisting}
+try:
+    adapter = UniversalAdapter()
+    w_q, b_q = adapter.get_weight_bias(old_attn, "q")
+    ...
+    qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
+    if qkv_w.shape == self.attn.in_proj_weight.shape:
+        self.attn.in_proj_weight.copy_(qkv_w)
+    ...
+except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+    pass
+\end{lstlisting}
+
+\textbf{Problems:}
+\begin{enumerate}
+\item Catches 5 exception types
+\item Silently continues on failure
+\item No logging
+\item No verification
+
+\end{enumerate}
+\textbf{Fix:}
+
+\begin{lstlisting}
+try:
+    ...
+except Exception as e:
+    logger.warning(f"Weight transfer failed: {e}")
+    raise  # $\leftarrow$ do not swallow
+\end{lstlisting}
+
+\subsection{B.2 The Nested Encoder Path}
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    return delta_out, None  # $\leftarrow$ no LN, no residual
+\end{lstlisting}
+
+For RoBERTa, this returns raw context. The outer \texttt{BertSelfOutput} applies 
+residual + LN.
+
+\textbf{Verification:}
+
+\begin{lstlisting}
+# Check that self.norm is not used
+def forward(self, x):
+    if self.is_nested_encoder:
+        assert not hasattr(self, '_norm_used')  # should not be touched
+        return delta_out, None
+\end{lstlisting}
+
+\subsection{B.3 Causal Masking for GPT-2}
+
+The \texttt{use\_full\_attention=True} path does not pass \texttt{attn\_mask}:
+
+\begin{lstlisting}
+attn_out, attn_weights = self.attn(
+    x, x, x, key_padding_mask=key_padding_mask, need_weights=output_attentions
+)
+\end{lstlisting}
+
+\textbf{Fix for GPT-2:}
+
+\begin{lstlisting}
+if self.is_decoder:
+    seq_len = x.shape[1]
+    causal_mask = torch.triu(
+        torch.full((seq_len, seq_len), float('-inf'), device=x.device),
+        diagonal=1
+    )
+    attn_out, _ = self.attn(x, x, x, attn_mask=causal_mask)
+\end{lstlisting}
+
+\subsection{B.4 Shape Padding Logic}
+
+\begin{lstlisting}
+if attn_out.shape[-1] != x.shape[-1]:
+    attn_out = F.pad(attn_out, (0, x.shape[-1] - attn_out.shape[-1])) \
+               if attn_out.shape[-1] < x.shape[-1] \
+               else attn_out[..., :x.shape[-1]]
+\end{lstlisting}
+
+\textbf{Concern.} If shapes mismatch, this silently pads/truncates. \textbf{Should} 
+instead be an assertion error -- shape mismatch indicates a bug.
+
+\subsection{B.5 Weight Transfer Logging}
+
+Add explicit logging:
+
+\begin{lstlisting}
+import logging
+logger = logging.getLogger(__name__)
+
+# After weight transfer:
+qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
+if qkv_w.shape == self.attn.in_proj_weight.shape:
+    self.attn.in_proj_weight.copy_(qkv_w)
+    logger.info(f"Q/K/V transfer OK: {qkv_w.shape}")
+else:
+    logger.error(f"Q/K/V shape mismatch: {qkv_w.shape} vs {self.attn.in_proj_weight.shape}")
+\end{lstlisting}
+
+\subsection{B.6 Common Pitfalls}
+
+\subsubsection{B.6.1 `UniversalAdapter` Returns None}
+
+If \texttt{get\_weight\_bias} returns \texttt{None}, \texttt{torch.cat([None, None, None])} raises. 
+But \texttt{try/except} masks it.
+
+\subsubsection{B.6.2 Nested Encoder Detection}
+
+\texttt{is\_nested\_encoder} must be set correctly. For DistilBERT, \texttt{False}. For 
+RoBERTa, \texttt{True}. Getting this wrong leads to double LayerNorm or missing LN.
+
+\subsubsection{B.6.3 LayerNorm Initialization}
+
+\texttt{nn.LayerNorm} defaults to $\gamma = 1, \beta = 0$. This is \textbf{not} 
+pretrained. Consider copying pretrained LN if available.
+
+\subsection{B.7 Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("gated_deltanet_block")
+class GatedDeltaNetBlock(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{B.8 Injection Factory}
+
+Standard pattern (see \texttt{05\_architecture.md}).
+
+\subsection{B.9 Diagnostics}
+
+\begin{lstlisting}
+def diagnose_block(model):
+    for name, mod in model.named_modules():
+        if isinstance(mod, GatedDeltaNetBlock):
+            print(f"{name}:")
+            print(f"  use_full_attention: {mod.use_full_attention}")
+            print(f"  is_nested_encoder: {mod.is_nested_encoder}")
+            print(f"  deltanet.is_nested_encoder: {mod.deltanet.is_nested_encoder}")
+            if mod.attn is not None:
+                w = mod.attn.in_proj_weight
+                print(f"  in_proj_weight norm: {w.norm().item():.4f}")
+\end{lstlisting}
+

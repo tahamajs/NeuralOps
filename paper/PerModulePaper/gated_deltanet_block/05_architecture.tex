@@ -1,11 +1,188 @@
-\section{05 Architecture}
 
-Draft content for gated_deltanet_block.
+\section{Architecture Integration}
+
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention class} & \textbf{Nested?} & \textbf{use\_full\_attention=True} & \textbf{use\_full\_attention=False} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & Fragile transfer & GatedDeltaNet (slow) \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & Fragile transfer & GatedDeltaNet (slow) \\
+GPT-2 & \texttt{GPT2Attention} & No & Fragile transfer & GatedDeltaNet (slow) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject GatedDeltaNetBlock
+\begin{lstlisting}
+Input:  layer  , config, old_attn
+Output: new block in  
+
+1: Determine d_model, num_heads from config or src
+2: new $\leftarrow$ GatedDeltaNetBlock(config, d_model, num_heads, use_full_attention)
+3: if src_attn is not None:
+4:     new.copy_weights(src_attn)        May fail silently
+5: Replace attention slot:
+6:     if   has .attention.self:  .attention.self $\leftarrow$ new; is_nested $\leftarrow$ True
+7:     elif   has .attention:  .attention $\leftarrow$ new
+8:     elif   has .self:  .self $\leftarrow$ new; is_nested $\leftarrow$ True
+9:     elif   has .attn:  .attn $\leftarrow$ new
+10: return new
+\end{lstlisting}
+
+\subsection{The Nested Encoder Path}
+
+For RoBERTa, \texttt{is\_nested\_encoder=True}. The block returns **raw attention 
+output** without residual or LayerNorm:
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    return delta_out, None
+\end{lstlisting}
+
+\textbf{Why?} Because in RoBERTa, the outer \texttt{BertAttention} block already wraps 
+attention in a residual + LayerNorm:
+
+\begin{lstlisting}
+class BertAttention(nn.Module):
+    def __init__(...):
+        self.self = BertSelfAttention(...)
+        self.output = BertSelfOutput(...)  # has dense + LayerNorm + residual
+    
+    def forward(self, hidden_states):
+        self_outputs = self.self(hidden_states)
+        attention_output = self.output(self_outputs[0], hidden_states)
+        return (attention_output,)
+\end{lstlisting}
+
+So replacing \texttt{layer.attention.self} means the outer \texttt{output} block handles 
+residual + LayerNorm. Our block must return the \textbf{raw context}.
+
+\textbf{However.} Our block's \texttt{self.norm} is \textbf{not used} in the nested path. So 
+the \texttt{self.norm} LayerNorm parameters are \textbf{dead}. This is a minor 
+inefficiency but not a correctness issue.
+
+\subsection{Weight Transfer for `use\_full\_attention=True`}
+
+\subsubsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+w_q = src.q_lin.weight.data  # (768, 768)
+w_k = src.k_lin.weight.data  # (768, 768)
+w_v = src.v_lin.weight.data  # (768, 768)
+w_o = src.out_lin.weight.data  # (768, 768)
+
+qkv_w = torch.cat([w_q, w_k, w_v], dim=0)  # (2304, 768)
+# nn.MultiheadAttention.in_proj_weight.shape = (2304, 768)
+# $\to$ copy succeeds
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+w_q = src.self.query.weight.data  # (768, 768)
+...
+w_o = src.output.dense.weight.data  # (768, 768)
+
+qkv_w = torch.cat([w_q, w_k, w_v], dim=0)  # (2304, 768)
+# $\to$ copy succeeds
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+
+\begin{lstlisting}
+c_attn_w = src.c_attn.weight.data.t()  # (2304, 768)
+w_q, w_k, w_v = c_attn_w.chunk(3, dim=0)  # each (768, 768)
+qkv_w = torch.cat([w_q, w_k, w_v], dim=0)  # (2304, 768)
+# $\to$ copy succeeds
+\end{lstlisting}
+
+\subsection{Silent Failure Path}
+
+The \texttt{copy\_weights} method wraps the entire transfer in:
+
+\begin{lstlisting}
+try:
+    ...
+except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+    pass
+\end{lstlisting}
+
+\textbf{Failure modes:}
+\begin{enumerate}
+\item \texttt{UniversalAdapter.get\_weight\_bias} raises $\to$ \textbf{silent}
+\item Q/K/V shape mismatch $\to$ \textbf{silent} (no copy)
+\item \texttt{out\_proj} shape mismatch $\to$ \textbf{silent}
+\item Any other issue $\to$ \textbf{silent}
+
+\end{enumerate}
+If any of these occur, the block has \textbf{random-init weights} and produces 
+garbage output.
+
+\textbf{No logging, no warning.} This is the primary debugging challenge.
+
+\subsection{The `use\_full\_attention` Path vs Baseline Attention}
+
+Even when weight transfer succeeds, \texttt{nn.MultiheadAttention} differs from 
+BERT/GPT-2 attention in:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Baseline} & \textbf{`nn.MultiheadAttention`} \\
+\midrule
+Dropout & Configurable per layer & Fixed \texttt{dropout=0.0} by default \\
+Scale & $1/\sqrt{d_h}$ & $1/\sqrt{d_h}$ \\
+Bias handling & Per-projection & Fused \\
+Causal masking & Explicit (GPT-2) & \textbf{NOT applied by default} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical for GPT-2:} \texttt{nn.MultiheadAttention} does not apply causal masking. 
+The GPT-2 block will produce \textbf{non-causal output}, breaking autoregressive 
+generation. The code does not pass an \texttt{attn\_mask} in the \texttt{use\_full\_attention} 
+path.
+
+\subsection{Common Pitfalls}
+
+\subsubsection{Silent Weight Transfer Failure}
+
+The single most dangerous issue. Add explicit logging:
+
+\begin{lstlisting}
+if qkv_w.shape != self.attn.in_proj_weight.shape:
+    logger.warning(f"Q/K/V shape mismatch: {qkv_w.shape} vs {self.attn.in_proj_weight.shape}")
+\end{lstlisting}
+
+\subsubsection{LayerNorm Fresh Init}
+
+The \texttt{self.norm} LayerNorm must be trained. Ensure \texttt{requires\_grad=True}.
+
+\subsubsection{Missing Causal Mask}
+
+For GPT-2, the \texttt{use\_full\_attention=True} path is \textbf{incorrect} without 
+explicit causal masking.
+
+\subsubsection{Nested Encoder Double-LN}
+
+If \texttt{is\_nested\_encoder} is set wrong, the outer block applies LayerNorm on 
+top of our LayerNorm, leading to \textbf{double normalization}.
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_gated_linear_attention.jpeg}
-\caption{Architectural overview of gated_deltanet_block.}
-\label{fig:arch_gated_deltanet_block}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of gated\_deltanet\_block.}
+\label{fig:arch_gated-deltanet-block}
 \end{figure}
+

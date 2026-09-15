@@ -1,3 +1,216 @@
-\section{04 Method}
 
-Draft content for gated_deltanet_block.
+\section{Method}
+
+\subsection{Overview}
+
+GatedDeltaNetBlock has two code paths:
+
+\begin{lstlisting}
+                   Input X
+                      |
+                       
+              +---------------+
+              | use_full_attn |
+              +---+-------+---+
+                  | No    | Yes
+                  |       |
+                           
+          +----------+  +--------------+
+          | Gated    |  | nn.Multi     |
+          | DeltaNet |  | headAttn     |
+          +----+-----+  +------+-------+
+               |               |
+               +-------+-------+
+                        
+              +---------------+
+              | Is nested?    |
+              +---+-------+---+
+                  | Yes   | No
+                  |       |
+                           
+             Raw Attn   LayerNorm(X + Attn)
+             (no LN)    (residual block)
+\end{lstlisting}
+
+\subsection{The Two Paths}
+
+\subsubsection{Path A: Full Attention (`use\_full\_attention=True`)}
+
+Uses \texttt{nn.MultiheadAttention}. Weight transfer:
+
+\begin{lstlisting}
+qkv_w = torch.cat([w_q, w_k, w_v], dim=0)  # (3d, d)
+if qkv_w.shape == self.attn.in_proj_weight.shape:
+    self.attn.in_proj_weight.copy_(qkv_w)
+\end{lstlisting}
+
+\textbf{This is a shape-conditional copy.} If shapes do not match, the copy is 
+silently skipped. This is the primary failure mode of this path.
+
+\subsubsection{Path B: GatedDeltaNet (`use\_full\_attention=False`)}
+
+Delegates to the \texttt{GatedDeltaNet} module from the companion paper. Weight 
+transfer is via \texttt{GatedDeltaNet.copy\_weights}.
+
+\subsection{The Residual Structure}
+
+For non-nested encoders (\texttt{is\_nested\_encoder=False}):
+
+\begin{lstlisting}
+delta_out, _ = self.deltanet(x, ...)
+out = self.norm(x + delta_out)
+return out, None
+\end{lstlisting}
+
+This is a \textbf{post-LayerNorm} residual block.
+
+For nested encoders (\texttt{is\_nested\_encoder=True}):
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    return delta_out, None  # $\leftarrow$ no residual, no LayerNorm!
+\end{lstlisting}
+
+\textbf{Critical:} For RoBERTa (nested), the block returns **raw attention 
+output** without the residual or LayerNorm. This means:
+\begin{itemize}
+\item The outer \texttt{BertAttention} block applies its own LayerNorm.
+\item But the \textbf{inner attention} (which we replaced) had its own structure.
+\item The result is that \textbf{the outer LayerNorm expects a different input distribution}.
+
+\end{itemize}
+\subsection{Weight Transfer}
+
+\subsubsection{For `use\_full\_attention=True`}
+
+\begin{lstlisting}
+try:
+    adapter = UniversalAdapter()
+    w_q, b_q = adapter.get_weight_bias(old_attn, "q")
+    ...
+    qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
+    if qkv_w.shape == self.attn.in_proj_weight.shape:
+        self.attn.in_proj_weight.copy_(qkv_w)
+    ...
+except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+    pass  # $\leftarrow$ silent failure!
+\end{lstlisting}
+
+\textbf{Failure modes:}
+\begin{itemize}
+\item For DistilBERT, \texttt{w\_q.shape = (768, 768)}, so \texttt{qkv\_w.shape = (2304, 768)}.
+  \texttt{in\_proj\_weight.shape} is also \texttt{(2304, 768)}. \textbf{Copy succeeds.}
+\item For RoBERTa (nested), \texttt{w\_q.shape = (768, 768)} but only if we extract from
+  \texttt{self.query}. \texttt{in\_proj\_weight.shape = (2304, 768)}. \textbf{Copy succeeds.}
+\item For GPT-2, \texttt{c\_attn.weight} is \texttt{(768, 2304)} (Conv1D). After transpose
+  \texttt{(2304, 768)}. Split gives \texttt{(768, 768) $\times$ 3}. Concat gives \texttt{(2304, 768)}.
+  \textbf{Copy succeeds.}
+\item \textbf{But \texttt{out\_proj}:} For DistilBERT, \texttt{out\_lin.weight = (768, 768)} and
+  \texttt{out\_proj.weight = (768, 768)}. \textbf{Copy succeeds.}
+\item For RoBERTa, \texttt{output.dense.weight = (768, 768)}. Same.
+\item For GPT-2, \texttt{c\_proj.weight = (768, 768)} after transpose.
+
+\end{itemize}
+\textbf{In practice}, the copy often succeeds. But \texttt{UniversalAdapter} extraction 
+may fail for some architectures, and the silent \texttt{except} masks it.
+
+\subsubsection{For `use\_full\_attention=False`}
+
+Delegates to \texttt{GatedDeltaNet.copy\_weights}. See companion paper.
+
+\subsection{LayerNorm Initialization Problem}
+
+The \texttt{self.norm} LayerNorm is initialized with $\gamma = 1, \beta = 0$.
+
+For the output of this block to match the pretrained block, we need:
+
+\[
+\text{LN}_\text{new}(X + A_\text{new}) \approx \text{LN}_\text{pre}(X + A_\text{pre})
+\tag{4.1}
+\]
+
+If $A_\text{new} \approx A_\text{pre}$, then we need 
+$\text{LN}_\text{new} \approx \text{LN}_\text{pre}$. But 
+$\text{LN}_\text{new}$ starts with $\gamma = 1, \beta = 0$ while 
+$\text{LN}_\text{pre}$ has trained parameters.
+
+\textbf{Distributional mismatch.} The pretrained FFN block (which comes next) was 
+trained to consume the output of $\text{LN}_\text{pre}$. Feeding it 
+$\text{LN}_\text{new}(...) \approx \text{standardized}(X + A)$ instead 
+produces a different distribution.
+
+\textbf{Training.} LoRA recovery must learn $\gamma, \beta$ for $\text{LN}_\text{new}$. 
+But LayerNorm is not a LoRA-compatible target (it's not a linear projection), 
+so it must be trained directly. This is allowed if \texttt{requires\_grad=True}, but 
+it is \textbf{not part of the LoRA parameter set} by default.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline block} & \textbf{GatedDeltaNetBlock} \\
+\midrule
+Attention & $4 d^2$ & $4 d^2 + 2 d H$ + LoRA \\
+LayerNorm & (pretrained) & \textbf{New} $2d$ \\
+Residual & -- & (structure) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{$\Delta$ params:} $+2d$ per block for LayerNorm (negligible), but the \textbf{effective} 
+$\Delta$ params is different because the pretrained LayerNorm parameters are 
+\textbf{discarded} and replaced with fresh ones.
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Path A (MHA) & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+Path B (GatedDeltaNet) & $\mathcal{O}(L d^2)$ wall-clock with big constant & $\mathcal{O}(d^2)$ \\
+Residual + LN & $\mathcal{O}(Ld)$ & $\mathcal{O}(Ld)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} GatedDeltaNetBlock forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, use_full_attention
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1: if use_full_attention:
+2:     A $\leftarrow$ nn.MultiheadAttention(X, X, X)
+3: else:
+4:     A $\leftarrow$ GatedDeltaNet(X)
+5:
+6: if is_nested_encoder:
+7:     return A                       Raw, no LN
+8: else:
+9:     Y $\leftarrow$ LayerNorm(X + A)           With LN
+10: return Y
+\end{lstlisting}
+
+\subsection{Theoretical Basis}
+
+The block is a \textbf{structural wrapper}. Its correctness depends entirely on 
+the underlying attention. The LayerNorm mismatch is an additional source 
+of error that is \textbf{independent} of the attention mechanism.
+
+\textbf{Combined error bound.}
+
+\[
+\|Y_\text{new} - Y_\text{pre}\| \leq \underbrace{\|\text{Attn}_\text{new} - \text{Attn}_\text{pre}\|}_{\text{attention error}} + \underbrace{\|\text{LN}_\text{new} - \text{LN}_\text{pre}\|}_{\text{normalization error}}
+\tag{4.2}
+\]
+
+Even if attention is perfect, LayerNorm mismatch contributes error.
+

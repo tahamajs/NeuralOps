@@ -1,11 +1,140 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Draft content for expert_choice_moe.
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Cross-attn} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes & No \\
+T5 & \texttt{block[i].layer[0]} & No & No & No & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction Patterns}
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c_w = c_attn.weight.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+o_w = c_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+q_w = src.self.query.weight
+k_w = src.self.key.weight
+v_w = src.self.value.weight
+o_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Flat Modules}
+
+Direct attribute access on \texttt{q\_lin} / \texttt{q\_proj} / \texttt{query}.
+
+\subsubsection{UniversalAdapter Fallback}
+
+If any projection is missing.
+
+\subsection{Handling of the MoE Dimension}
+
+The MoE operates on \texttt{all\_head\_size = num\_heads * head\_dim}. This equals the 
+hidden dimension for standard attention.
+
+\textbf{For GQA models}, \texttt{kv\_head\_size < all\_head\_size}. But the attention output 
+is always \texttt{all\_head\_size} (Q heads $\times$ head dim). So the MoE input dimension 
+is always \texttt{all\_head\_size = d}.
+
+\subsection{Dynamic Dimension Adaptation}
+
+If the incoming hidden size differs from the router's input size, a 
+\textbf{dynamic router} is created on-the-fly:
+
+\begin{lstlisting}
+if D == self.d_model:
+    logits = self.router(self.router_ln(x_flat))
+else:
+    normed = F.layer_norm(x_flat, (D,))
+    if not hasattr(self, "_dynamic_router") or self._dynamic_router.in_features != D:
+        self._dynamic_router = nn.Linear(D, self.n_experts, bias=False)...
+    logits = self._dynamic_router(normed)
+\end{lstlisting}
+
+This handles cross-attention where the input dimension may differ.
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, \texttt{is\_nested\_encoder = True}:
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    if enriched_attn.shape[-1] != self.dim:
+        out = self.out_lin(enriched_attn)
+    else:
+        out = enriched_attn
+\end{lstlisting}
+
+The outer \texttt{attention.output.dense} handles the projection.
+
+\subsection{Causality}
+
+For decoders, causal masking is applied to attention scores:
+
+\begin{lstlisting}
+if self.is_decoder and not is_cross_attention:
+    causal_mask = torch.triu(torch.full((L, kv_len), -inf, ...), diagonal=1)
+    scores = scores + causal_mask.unsqueeze(0).unsqueeze(1)
+\end{lstlisting}
+
+The MoE operates on the attention output, which is already causal.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject ExpertChoiceMoEAttention
+\begin{lstlisting}
+Input:  model M, config c, n_experts, capacity_factor
+Output: M with attention replaced
+
+1: for each layer:
+2:     src $\leftarrow$ extract_attention(layer)
+3:     if src is None: continue
+4:     try:
+5:         new $\leftarrow$ ExpertChoiceMoEAttention(c, n_experts=E, ...)
+6:         replace(layer, new)
+7:     except Exception:
+8:         raise RuntimeError("copy_weights failed")
+9: return M
+\end{lstlisting}
+
+\subsection{Failure Handling}
+
+The injection raises \texttt{RuntimeError} on any failure. This is strict because 
+MoE injection is complex.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("expert_choice_moe")
+@ATTENTION_REGISTRY.register("expert_choice_moe_attention")
+class ExpertChoiceMoEAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_expert_choice_moe.jpeg}
-\caption{Architectural overview of expert_choice_moe.}
-\label{fig:arch_expert_choice_moe}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of expert\_choice\_moe.}
+\label{fig:arch_expert-choice-moe}
 \end{figure}
+

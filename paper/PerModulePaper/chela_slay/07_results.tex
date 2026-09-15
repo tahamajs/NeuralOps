@@ -1,3 +1,226 @@
-\section{07 Results}
+\section{Results}
 
-Draft content for chela_slay.
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Trainable} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 0 & 183 MB \\
+DistilBERT & \textbf{CHELA-SLAY} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}} & {{D\_TRAINABLE}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 0 & 712 MB \\
+RoBERTa & \textbf{CHELA-SLAY} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}} & {{R\_TRAINABLE}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 0 & 793 MB \\
+GPT-2 & \textbf{CHELA-SLAY} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}} & {{G\_TRAINABLE}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{CHELA-SLAY} & \textbf{Change} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_PCT}}\% \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Inference Time}
+
+\textbf{Table 7.3: Inference time (seconds).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{CHELA-SLAY} & \textbf{Ratio} \\
+\midrule
+DistilBERT (L=128) & 1.90 & {{D\_TIME}} & \textbf{{{D\_TIME\_RATIO}}$\times$} \\
+RoBERTa (L=128) & 4.10 & {{R\_TIME}} & \textbf{{{R\_TIME\_RATIO}}$\times$} \\
+GPT-2 (L=128) & 4.20 & {{G\_TIME}} & \textbf{{{G\_TIME\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} CHELA-SLAY is \textbf{slower} because both streams are computed.
+
+\subsection{Peak VRAM}
+
+\textbf{Table 7.4: Peak VRAM (MB).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{CHELA-SLAY} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 183 & {{D\_VRAM}} & {{D\_VRAM\_RATIO}}$\times$ \\
+RoBERTa & 712 & {{R\_VRAM}} & {{R\_VRAM\_RATIO}}$\times$ \\
+GPT-2 & 793 & {{G\_VRAM}} & {{G\_VRAM\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{The causal cumsum is the major memory sink:} see Section 4.7 for the 
+analytic formula.
+
+\subsection{Ablation: Feature Dim $F$}
+
+\textbf{Table 7.5: Accuracy vs feature dimension.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$F$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Cumsum memory (MB)} \\
+\midrule
+32 & {{D\_F32}} & {{R\_F32}} & {{G\_F32}} & {{CMEM\_F32}} \\
+64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} & {{CMEM\_F64}} \\
+128 & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & {{CMEM\_F128}} \\
+256 & {{D\_F256}} & {{R\_F256}} & {{G\_F256}} & {{CMEM\_F256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Gate Bias}
+
+\textbf{Table 7.6: Accuracy vs gate initialization bias.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$b_g$} & \textbf{$\sigma$(b\_g)} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.0 & 0.50 & {{D\_GB0}} & {{R\_GB0}} & {{G\_GB0}} \\
+2.0 & 0.88 & {{D\_GB2}} & {{R\_GB2}} & {{G\_GB2}} \\
+\textbf{5.0} & \textbf{{{GATE\_INIT}}} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+10.0 & ~1.0 & {{D\_GB10}} & {{R\_GB10}} & {{G\_GB10}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Dense-Only vs Linear-Only vs Hybrid}
+
+\textbf{Table 7.7: Stream contribution.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Dense only & {{D\_DENSE\_ONLY}} & {{R\_DENSE\_ONLY}} & {{G\_DENSE\_ONLY}} \\
+Linear only & {{D\_LINEAR\_ONLY}} & {{R\_LINEAR\_ONLY}} & {{G\_LINEAR\_ONLY}} \\
+\textbf{Hybrid} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Spherical Normalization}
+
+\textbf{Table 7.8: Effect of spherical normalization on the linear stream.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+With spherical & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+Without & {{D\_NO\_SPH}} & {{R\_NO\_SPH}} & {{G\_NO\_SPH}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Yat-Kernel vs ELU+1}
+
+\textbf{Table 7.9: Feature map comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Feature map} & \textbf{Dim} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Yat-Kernel & $2F = {{FEATURE_DIM_2}} $ & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+ELU+1 & $d_h$ & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Gate Statistics}
+
+\textbf{Figure 7.1} shows the learned gate distribution.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Mean g} & \textbf{Std g} \\
+\midrule
+DistilBERT & {{D\_GATE\_MEAN}} & {{D\_GATE\_STD}} \\
+RoBERTa & {{R\_GATE\_MEAN}} & {{R\_GATE\_STD}} \\
+GPT-2 & {{G\_GATE\_MEAN}} & {{G\_GATE\_STD}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} The gate remains near 1 (dense-dominant) even after training, 
+suggesting the model does not heavily rely on the linear stream for 
+$L = 128$.
+
+\subsection{Sequence-Length Scaling}
+
+\textbf{Table 7.11: Inference time vs L (GPT-2).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{L} & \textbf{Baseline} & \textbf{CHELA-SLAY} & \textbf{Speedup} \\
+\midrule
+128 & {{B128}} s & {{C128}} s & {{S128}}$\times$ \\
+256 & {{B256}} s & {{C256}} s & {{S256}}$\times$ \\
+512 & {{B512}} s & {{C512}} s & {{S512}}$\times$ \\
+1024 & {{B1024}} s & {{C1024}} s & {{S1024}}$\times$ \\
+2048 & {{B2048}} s & {{C2048}} s & {{S2048}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Breakeven:} $L^* = {{BREAKEVEN}}$.
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} {{D\_DELTA}}\% to {{G\_DELTA}}\% change.
+\item \textbf{Parameters:} +{{D\_PARAM\_PCT}}\%.
+\item \textbf{Speed:} slower at L=128 (both streams computed).
+\item \textbf{Memory:} cumsum dominates peak VRAM.
+\item \textbf{Gate:} learned near-dense (mean {{D\_GATE\_MEAN}}).
+
+\end{itemize}

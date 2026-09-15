@@ -1,3 +1,101 @@
-\section{10 Limitations}
 
-Draft content for flash_attention3_fp8.
+\section{Limitations}
+
+\subsection{FP8 Path Not Exercised}
+
+\textbf{The most important limitation.} On our test hardware (RTX 4070 Laptop), 
+\texttt{flash\_attn} is not available and/or FP8 tensor cores are not exposed. 
+Therefore:
+
+\begin{itemize}
+\item The FP8 path was never taken.
+\item No FP8 speedup was measured.
+\item No FP8 accuracy impact was measured.
+
+\end{itemize}
+We state this \textbf{explicitly in the abstract} and throughout the paper.
+
+\textbf{Implication.} This paper validates the \textbf{portability} of our 
+implementation, not its FP8 performance.
+
+\subsection{No H100 Testing}
+
+Without access to Hopper hardware, we cannot validate the FP8 speedups 
+claimed by the original FlashAttention-3 paper.
+
+\subsection{Parameter Increase}
+
+This module \textbf{increases parameter count} by \textbf{{{PARAM\_PCT}}\%} because 
+LoRA adapters are added. It is not a compression method.
+
+\subsection{Task Coverage}
+
+Only SST-2. Behavior on generation, multi-class, or token-level tasks 
+is untested.
+
+\subsection{Model Coverage}
+
+Only DistilBERT, RoBERTa, GPT-2. Qwen3.5 was not completed. No testing on 
+LLaMA, Mistral, or >1B models.
+
+\subsection{No Cross-Attention}
+
+We raise \texttt{NotImplementedError} if \texttt{encoder\_hidden\_states} is provided.
+
+\subsection{Single Seed}
+
+No multi-seed runs. Differences below 3.4\% may be noise.
+
+\subsection{RoBERTa Loss Oscillation}
+
+RoBERTa's recovery loss oscillates, suggesting optimization instability. 
+We did not fully diagnose this.
+
+\subsection{No Numerical Error Analysis}
+
+We cannot quantify FP8 numerical error without a working FP8 path.
+
+\subsection{No Comparison with `flash-attn` Original}
+
+We do not run head-to-head with the original \texttt{flash-attn} library because 
+it is not installed.
+
+\subsection{Training Instability on Larger Models}
+
+Not tested. LoRA rank, LR, and batch size are tuned for small models.
+
+\subsection{Hardware-Detection is Coarse}
+
+Our detection uses \texttt{hasattr(torch, "float8\_e4m3fn")} and 
+\texttt{FLASH\_ATTN\_AVAILABLE}. It does not check:
+
+\begin{itemize}
+\item CUDA compute capability
+\item Driver version
+\item Tensor core availability
+
+\end{itemize}
+This can cause false positives (attempt FP8 on unsupported hardware) or 
+false negatives (skip FP8 on supported hardware).
+
+\subsection{Code Quality}
+
+Research-grade:
+
+\begin{itemize}
+\item No unit tests
+\item Broad exception handling in FP8 path hides errors
+\item No profiling instrumentation
+
+\end{itemize}
+\subsection{What This Paper Is Not}
+
+This is \textbf{not}:
+
+\begin{itemize}
+\item A new attention mechanism
+\item A compression method
+\item An FP8 benchmark
+\item A scaling study
+
+\end{itemize}

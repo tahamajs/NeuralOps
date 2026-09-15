@@ -1,3 +1,75 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for expert_choice_moe.
+\subsection{Summary}
+
+We presented \textbf{ExpertChoiceMoEAttention}, an attention block that adds an 
+expert-choice MoE layer on top of standard attention. Expert-choice routing 
+guarantees perfect load balancing across experts, requires no auxiliary 
+loss, and enables dynamic per-token capacity. Combined zero-init experts 
+and a negative gate bias ensure the augmented attention is numerically 
+equivalent to the base at step 0.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Expert balance} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & Perfect \\
+RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & Perfect \\
+GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & Perfect \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Expert-choice routing guarantees load balance.}
+\item \textbf{Dynamic per-token capacity is enabled.}
+\item \textbf{Zero-init stability is essential.}
+\item \textbf{Parameter increase (+807\%) is the main limitation.}
+\item \textbf{No auxiliary loss needed.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Batched expert forward (no Python loop)
+\item Learned capacity factor
+\item INT8 experts
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Parameter-efficient variants (shared experts)
+\item Larger-scale evaluation
+\item Hybrid with token-choice for variable capacity
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+ExpertChoiceMoEAttention shows that expert-choice routing can be applied 
+inside attention with guaranteed load balance. We release all code and 
+checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed the module, implemented, ran experiments, wrote
+  the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

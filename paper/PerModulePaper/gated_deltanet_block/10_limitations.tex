@@ -1,3 +1,68 @@
-\section{10 Limitations}
 
-Draft content for gated_deltanet_block.
+\section{Limitations}
+
+\subsection{Fresh LayerNorm}
+
+The block's LayerNorm is initialized from $\gamma = 1, \beta = 0$, which 
+does not match the pretrained model's distribution. This is the \textbf{primary} 
+limitation.
+
+\subsection{Silent Weight Transfer Failure}
+
+The \texttt{try/except} in \texttt{copy\_weights} swallows five exception types. Any 
+failure leaves the attention with \textbf{random weights} and no warning.
+
+\subsection{Non-Causal MHA for GPT-2}
+
+The \texttt{use\_full\_attention=True} path uses \texttt{nn.MultiheadAttention} without 
+causal masking. \textbf{This is incorrect for GPT-2.}
+
+\subsection{Nested Encoder Inconsistency}
+
+For RoBERTa, the block returns raw output without LayerNorm. This is 
+different from the behavior on DistilBERT.
+
+\subsection{Slow GatedDeltaNet Path}
+
+The \texttt{use\_full\_attention=False} path uses GatedDeltaNet, which is 
+\textbf{~{{D\_SLOWDOWN}}$\times$ slower} than baseline.
+
+\subsection{OOM on 12-Layer Models}
+
+RoBERTa and GPT-2 fail with CUDA OOM at batch\_size=8.
+
+\subsection{No Multi-Seed}
+
+Single seed.
+
+\subsection{Task Coverage}
+
+Only SST-2. No generation tasks tested (important for causal masking issue).
+
+\subsection{Model Coverage}
+
+Only DistilBERT completes. Larger models fail.
+
+\subsection{Parameter Overhead}
+
+LayerNorm adds $2d$ params per block (small). Attention + LoRA add more.
+
+\subsection{Code Quality}
+
+\begin{itemize}
+\item Silent \texttt{try/except} masks bugs
+\item No logging of weight transfer status
+\item Non-causal MHA for GPT-2
+\item Nested encoder path differs from flat path
+\item The \texttt{if attn\_out.shape[-1] != x.shape[-1]} padding logic may silently
+  pass through wrong dimensions
+
+\end{itemize}
+\subsection{What This Paper Is Not}
+
+\begin{itemize}
+\item Not a compression method
+\item Not a speedup method
+\item Not a recommended replacement for baseline transformer blocks
+
+\end{itemize}

@@ -1,3 +1,144 @@
-\section{09 Discussion}
 
-Draft content for gated_deltanet_block.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Block-Level Replacement is Harder}
+
+Replacing the entire block introduces new parameters (LayerNorm) that are 
+not pretrained. This is an additional source of error that does not exist 
+in attention-level replacement.
+
+\subsubsection{Takeaway 2: Silent Failures are Real}
+
+The \texttt{try/except} pattern masks bugs. Always log when critical operations 
+fail.
+
+\subsubsection{Takeaway 3: The Wrapper Adds No Value}
+
+Even when the underlying attention works, the block wrapper is not better 
+than attention-level replacement. It adds:
+\begin{itemize}
+\item A fresh LayerNorm
+\item Residual structure complexity
+\item Nested encoder inconsistency
+
+\end{itemize}
+\subsection{When to Use This Block}
+
+\subsubsection{Recommended}
+
+\textbf{None.} We do not recommend this block for any tested use case.
+
+\subsubsection{Possibly Worth Exploring}
+
+\begin{itemize}
+\item \textbf{When pretrained LayerNorm is available.} If you have access to the
+  pretrained model's LayerNorm parameters, you can copy them into the block.
+\item \textbf{When the model has no nested encoders.} If you only work with DistilBERT
+  or GPT-2 (flat models), the nested encoder issue disappears.
+\item \textbf{As a research baseline.} For comparing block-level vs attention-level
+  replacement.
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Start
+  |
+   
+Do you have access to pretrained LayerNorm? -- No -- Do not use this block
+  |
+  Yes
+   
+Do you need block-level control? -- No -- Use attention-level replacement
+  |
+  Yes
+   
+Is the model flat (no nested encoder)? -- No -- Test carefully
+  |
+  Yes
+   
+Consider using this block
+\end{lstlisting}
+
+\subsection{Comparison with Attention-Level Replacement}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Attention-level} & \textbf{Block-level} \\
+\midrule
+Pretrained LN preserved & Yes & \textbf{No} \\
+Residual structure & Unchanged & Replaced \\
+Parameters added & LoRA only & LoRA + LN \\
+Silent failure paths & Fewer & More \\
+Nested encoder handling & Automatic & Manual \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT with Path A (MHA):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Block MHA} \\
+\midrule
+Accuracy & 90.71\% & {{D\_MHA\_ACC}}\% \\
+$\Delta$ & -- & {{D\_MHA\_DELTA}} \\
+Params & 66.9M & +{{D\_MHA\_PARAM}} \\
+Time & 0.4 s & {{D\_MHA\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Verdict.} Not worth the additional complexity.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Would copying pretrained LayerNorm help?} Likely yes, but requires
+  access to the original parameters.
+\item \textbf{Would a residual-only block (no LN) work?} Untested.
+\item \textbf{Would a pre-LN vs post-LN choice matter?} Untested.
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+
+\begin{itemize}
+\item Documents a real failure mode.
+\item Warns against \texttt{try/except: pass} in critical code.
+\item Clarifies LayerNorm's role in weight transfer.
+
+\end{itemize}
+\subsubsection{Negative}
+
+\begin{itemize}
+\item Compute consumed for a non-working method.
+
+\end{itemize}
+\subsection{Deployment Recommendations}
+
+\textbf{Do not deploy GatedDeltaNetBlock in production.}
+
+\subsection{Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Always preserve pretrained LayerNorm.} If you must replace the block,
+  copy the LN parameters.
+\item \textbf{Never use \texttt{try/except: pass} on critical operations.} Log failures.
+\item \textbf{Attention-level replacement is usually sufficient.} Block-level adds
+  complexity for marginal benefit.
+\item \textbf{Causal masking is not optional for decoders.} \texttt{nn.MultiheadAttention}
+  needs explicit masking.
+
+\end{enumerate}

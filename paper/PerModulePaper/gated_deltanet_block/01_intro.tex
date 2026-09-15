@@ -1,3 +1,110 @@
-\section{01 Intro}
 
-Draft content for gated_deltanet_block.
+\section{Introduction}
+
+\subsection{Motivation}
+
+Transformer architectures are typically described in terms of \textbf{blocks}, 
+where each block comprises:
+
+\[
+\text{Block}(X) = X + \text{Attention}(\text{LayerNorm}(X))
+\tag{1.1}
+\]
+
+(pre-LayerNorm) or:
+
+\[
+\text{Block}(X) = \text{LayerNorm}(X + \text{Attention}(X))
+\tag{1.2}
+\]
+
+(post-LayerNorm). The attention mechanism is the focus of most efficiency 
+research, but the \textbf{block structure itself} is often left untouched.
+
+We ask: what happens if we replace the entire block, including its 
+normalization and residual structure, rather than just the attention?
+
+{{MOTIVATION\_PARAGRAPH\_2}}
+
+
+\subsection{Problem Statement}
+
+Given a pretrained transformer block:
+
+\[
+\text{Block}_\text{pre}(X) = \text{LN}_\text{pre}(X + \text{Attn}_\text{pre}(X))
+\tag{1.3}
+\]
+
+we seek a replacement block:
+
+\[
+\text{Block}_\text{new}(X) = \text{LN}_\text{new}(X + \text{Attn}_\text{new}(X))
+\tag{1.4}
+\]
+
+such that $\text{Block}_\text{new} \approx \text{Block}_\text{pre}$, where 
+$\text{LN}_\text{new}$ may be fresh (not pretrained) and $\text{Attn}_\text{new}$ 
+may be a different attention mechanism.
+
+\subsection{Our Approach}
+
+\textbf{GatedDeltaNetBlock} offers two variants:
+
+\begin{enumerate}
+\item \textbf{Full-attention variant} (\texttt{use\_full\_attention=True}): uses
+  \texttt{nn.MultiheadAttention} with pretrained Q/K/V/O copied into its fused
+  \texttt{in\_proj\_weight} and \texttt{out\_proj}.
+
+\item \textbf{GatedDeltaNet variant} (\texttt{use\_full\_attention=False}): uses GatedDeltaNet
+  (see companion paper).
+
+\end{enumerate}
+Both variants wrap the attention in a \textbf{residual + LayerNorm} structure.
+
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A block-level wrapper} for attention replacement that gives explicit
+  control over normalization and residual.
+\item \textbf{An honest analysis} of two structural failure modes:
+\item LayerNorm initialization mismatch
+\item Silent failure in the MHA weight-transfer path
+\item \textbf{An empirical evaluation} on DistilBERT, RoBERTa, and GPT-2 on SST-2.
+\item \textbf{A negative result:} the block adds overhead without accuracy benefit.
+\item \textbf{Full reproducibility}, including code paths and error handling.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews block-level attention replacement, LayerNorm 
+initialization, and hybrid approaches. Section 3 provides background on 
+transformer blocks, LayerNorm, and \texttt{nn.MultiheadAttention}. Section 4 
+presents GatedDeltaNetBlock. Section 5 covers integration. Section 6 
+details the setup. Section 7 reports results. Section 8 analyzes failure 
+modes. Section 9 discusses. Section 10 lists limitations. Section 11 
+concludes.
+
+
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$\text{Block}(X)$ & Transformer block & 1.1 \\
+$\text{LN}$ & LayerNorm & 1.1 \\
+$\text{Attn}$ & Attention mechanism & 1.1 \\
+$\gamma, \beta$ & LayerNorm parameters & 3.2 \\
+$d$ & Hidden size & 1.3 \\
+$H$ & Number of heads & 1.3 \\
+$r$ & LoRA rank & 4.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+</parameter>
+

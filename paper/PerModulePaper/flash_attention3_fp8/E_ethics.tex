@@ -1,3 +1,58 @@
-\section{E Ethics}
 
-Draft content for flash_attention3_fp8.
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{E.1.1 Positive}
+
+\begin{itemize}
+\item \textbf{Portability:} Code runs on any GPU.
+\item \textbf{Reproducibility:} Hardware detection logged.
+\item \textbf{Honesty:} FP8 limitations clearly documented.
+
+\end{itemize}
+\subsubsection{E.1.2 Negative}
+
+\begin{itemize}
+\item \textbf{Expectation mismatch:} Users may expect H100 speedups on consumer GPUs.
+\item \textbf{Mitigation:} We document hardware requirements prominently.
+
+\end{itemize}
+\subsection{E.2 Environmental Impact}
+
+\begin{itemize}
+\item \textbf{GPU-hours:} ~{{COMPUTE\_HOURS}}
+\item \textbf{CO$_2$:} ~{{CO2\_KG}} kg
+
+\end{itemize}
+Small compared to full training.
+
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item SST-2 public dataset.
+\item No PII.
+
+\end{itemize}
+\subsection{E.4 LLM Usage Disclosure}
+
+Parts of this paper were drafted with LLM assistance. All technical content 
+reviewed by authors.
+
+\subsection{E.5 Conflicts of Interest}
+
+None.
+
+\subsection{E.6 Long-Term Considerations}
+
+FP8 attention democratizes access to fast inference -- but only on hardware 
+that supports it. This may:
+
+\begin{itemize}
+\item Widen the gap between labs with Hopper GPUs and those without.
+\item Incentivize hardware upgrades.
+\item Reduce the value of software-only optimizations.
+
+\end{itemize}
+We do not claim to solve these issues; we simply document the trade-offs.
+

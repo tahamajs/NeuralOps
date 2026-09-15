@@ -1,3 +1,129 @@
-\section{C Data}
 
-Draft content for gated_deltanet_block.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT -- Path A (MHA)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_MHA\_ACC}}\% \\
+$\Delta$ & {{D\_MHA\_DELTA}}\% \\
+Params (after) & {{D\_MHA\_PARAMS}} \\
+Peak VRAM & {{D\_MHA\_VRAM}} MB \\
+Per-step time & {{D\_MHA\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 DistilBERT -- Path B (DeltaNet)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_ACC}}\% \\
+$\Delta$ & {{D\_DELTA}}\% \\
+Params (after) & {{D\_PARAMS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Per-step time & {{D\_STEP\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 RoBERTa Status}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Path A} & \textbf{Path B} \\
+\midrule
+Status & {{R\_MHA\_STATUS}} & OOM \\
+Error & {{R\_MHA\_ERROR}} & CUDA OOM \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 GPT-2 Status}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Path A} & \textbf{Path B} \\
+\midrule
+Status & {{G\_MHA\_STATUS}} & OOM \\
+Error & {{G\_MHA\_ERROR}} & CUDA OOM \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Weight Transfer Verification}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Q/K/V shape match?} & \textbf{Out\_proj match?} \\
+\midrule
+DistilBERT & {{D\_QKV\_OK}} & {{D\_O\_OK}} \\
+RoBERTa & {{R\_QKV\_OK}} & {{R\_O\_OK}} \\
+GPT-2 & {{G\_QKV\_OK}} & {{G\_O\_OK}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 LayerNorm After Recovery (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+$\gamma$ mean & {{D\_GAMMA\_MEAN}} \\
+$\gamma$ std & {{D\_GAMMA\_STD}} \\
+$\beta$ mean & {{D\_BETA\_MEAN}} \\
+$\beta$ std & {{D\_BETA\_STD}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert_mha": {
+    "accuracy": {{D_MHA_ACC}},
+    "params": {{D_MHA_PARAMS}},
+    "vram_mb": {{D_MHA_VRAM}}
+  },
+  "distilbert_deltanet": {
+    "accuracy": {{D_ACC}},
+    "params": {{D_PARAMS}},
+    "vram_mb": {{D_VRAM}}
+  }
+}
+\end{lstlisting}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+# Path A
+python run_all_4_gated_deltanet_block.py --models distilbert --use_full_attention true
+
+# Path B
+python run_all_4_gated_deltanet_block.py --models distilbert --use_full_attention false
+\end{lstlisting}
+

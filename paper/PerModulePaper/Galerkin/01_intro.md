@@ -1,130 +1,120 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 01_intro.md
+     PURPOSE: Introduction
+     DEPENDENCIES: 00_meta.md
+     LENGTH TARGET: 1.5 - 2 pages
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # 1. Introduction
 
 ## 1.1 Motivation
 
-Self-attention is often described in discrete terms:
+Self-attention computes pairwise interactions between all tokens in a 
+sequence, yielding an $N \times N$ attention matrix. This quadratic cost 
+in sequence length is the primary bottleneck for long-context transformers. 
+A natural question arises: **can attention be reformulated in a lower-dimensional 
+space without losing its expressive power?**
+
+One classical approach is to view attention as a discretization of the 
+continuous non-local integral operator:
 
 $$
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+(\mathcal{K} f)(x) = \int_\Omega k(x, y) f(y) \, dy
 \tag{1.1}
 $$
 
-but its mathematical foundation is **continuous**. Attention is a 
-**non-local integral operator** acting on functions over a domain $\Omega$:
+where $k(x, y)$ is a kernel and $\Omega$ is the domain. Petrov-Galerkin 
+methods approximate such operators by projecting onto finite-dimensional 
+subspaces:
 
 $$
-(\mathcal{K} Q)(s) = \int_\Omega \kappa(s, t) V(t) \, dt
+\mathcal{K} \approx \Phi \, K_{\Phi \Phi} \, \Phi^\top
 \tag{1.2}
 $$
 
-where $\kappa(s, t)$ is the kernel (typically $\exp(\langle Q(s), K(t) \rangle)$). 
-Standard transformers discretize this operator on the **raw token grid**, 
-yielding $\mathcal{O}(N^2 d)$ complexity for $N$ tokens.
+where $\Phi \in \mathbb{R}^{N \times r}$ is a basis and $K_{\Phi \Phi}$ is 
+the projected kernel matrix.
 
-**The Galerkin idea.** In numerical analysis, integral operators are often 
-discretized not on the raw grid, but on a **finite-dimensional subspace** 
-spanned by a small set of **basis functions**. The **Petrov-Galerkin 
-method** selects test and trial bases to minimize the residual of the 
-operator equation:
+{{MOTIVATION_PARAGRAPH_2}}
+
+<!-- 
+EXAMPLE continuation:
+"This observation motivated us to ask: if we project Q, K, V onto an 
+orthonormal basis $\Phi$ with $r \ll N$, we reduce the attention matrix 
+from $N \times N$ to $r \times r$, achieving $O(N r)$ memory and 
+$O(N r^2)$ time. The natural choice for $\Phi$ on finite sequences is the 
+discrete cosine transform (DCT)."
+-->
+
+## 1.2 Problem Statement
+
+Given a pretrained transformer with hidden size $d$ and $H$ heads, we seek 
+a modified attention function $\mathcal{A}'$ such that:
 
 $$
-\langle \mathcal{K} Q - \hat{Q}, \psi_i \rangle = 0 \quad \forall i
+\mathcal{A}'(Q, K, V) \approx \mathcal{A}(Q, K, V), \quad
+\text{Cost}(\mathcal{A}') = \mathcal{O}(Nr^2), \quad r \ll N
 \tag{1.3}
 $$
 
-where $\{\psi_i\}$ is the test basis.
+We do not require retraining of base weights; LoRA adapters provide 
+recovery capacity.
 
-Applying this to attention:
-1. Choose an orthonormal basis $\Phi \in \mathbb{R}^{N \times r}$ (e.g., DCT).
-2. Project Q, K, V into basis space: $Q_\Phi = \Phi^\top Q$, etc.
-3. Compute attention in basis space at rank $r$.
-4. Reconstruct via basis synthesis: $Y = \Phi \cdot O_\Phi$.
+## 1.3 Our Approach
 
-This gives $\mathcal{O}(N r d)$ complexity — **linear in $N$**.
+We propose **Galerkin Attention**, which:
 
-## 1.2 The Decoder Problem
+1. **Projects** $Q, K, V$ onto an orthonormal DCT basis $\Phi \in \mathbb{R}^{N \times r}$:
+   $$
+   Q_\Phi = \Phi^\top Q, \quad K_\Phi = \Phi^\top K, \quad V_\Phi = \Phi^\top V
+   $$
 
-Galerkin projection is **incompatible with causal masking**. The projected 
-keys $K_\Phi$ contain contributions from **all** tokens, not just the 
-prefix. For an encoder this is fine; for a decoder it breaks causality.
+2. **Computes attention** in the reduced basis space:
+   $$
+   O_\Phi = \mathrm{softmax}\!\left(\frac{Q_\Phi K_\Phi^\top}{\sqrt{d}}\right) V_\Phi
+   $$
 
-**Solution.** For decoders, fall back to standard causal softmax attention. 
-This preserves exactness at the cost of the linear-complexity benefit.
+3. **Reconstructs** to the original sequence length:
+   $$
+   O = \Phi \, O_\Phi
+   $$
 
-## 1.3 Problem Statement
+4. **Falls back** to standard causal attention for decoder models.
 
-Given a pretrained attention module with projections $W_Q, W_K, W_V, W_O$, 
-we seek an augmented attention function $\mathcal{A}'$ such that:
+## 1.4 Contributions
 
-1. **Encoder linear complexity.** For bidirectional models, 
-   $\mathcal{A}'$ runs in $\mathcal{O}(N r d)$ instead of $\mathcal{O}(N^2 d)$.
-2. **Decoder exactness.** For causal models, $\mathcal{A}'$ preserves the 
-   standard softmax attention output exactly.
-3. **Multi-architecture support.** Works on flat (DistilBERT), nested 
-   (RoBERTa), causal (GPT-2), and GQA+RoPE (Qwen).
-4. **Step-0 preservation.** With zero-init LoRA, initial forward matches 
-   pretrained.
+- **A Petrov-Galerkin formulation of attention** using fixed DCT basis 
+  projection.
+- **An empirical evaluation** on DistilBERT, RoBERTa, and GPT-2 on SST-2.
+- **A negative result:** encoder models lose 25–30% accuracy; the method 
+  fails as a compression technique.
+- **An analysis** attributing failure to the fixed, data-independent basis.
+- **Full reproducibility**, including code and checkpoints.
 
-**Note.** Not a compression method. Parameter count increases by LoRA.
+## 1.5 Paper Organization
 
-## 1.4 Our Approach
-
-**Galerkin Attention** chooses the **discrete cosine basis**:
-
-$$
-\Phi_{n, k} = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n+1)}{2N}\right)
-\tag{1.4}
-$$
-
-with the DC component scaled by $1/\sqrt{N}$. The basis is orthonormalized 
-via QR for numerical stability.
-
-**Encoder forward:**
-
-$$
-\begin{aligned}
-Q_\Phi &= \Phi^\top Q, \quad K_\Phi = \Phi^\top K, \quad V_\Phi = \Phi^\top V \\
-\text{Scores} &= Q_\Phi K_\Phi^\top / \sqrt{d_h} \\
-\text{Output}_\Phi &= \text{softmax}(\text{Scores}) V_\Phi \\
-Y &= \Phi \cdot \text{Output}_\Phi \cdot \sqrt{N/r}
-\end{aligned}
-\tag{1.5}
-$$
-
-**Decoder forward:**
-
-Standard causal softmax attention (no projection).
-
-## 1.5 Contributions
-
-- **A Galerkin formulation of self-attention.** Section 4.2.
-- **A DCT-based orthonormal basis.** With energy-preserving scaling. Section 4.3.
-- **Encoder-decoder dispatch.** Projection for encoders, softmax for decoders. Section 4.4.
-- **Multi-architecture weight transfer.** GPT-2 Conv1D, RoBERTa nested, DistilBERT flat, Qwen GQA. Section 5.
-- **Honest reporting.** We disclose that GPT-2 uses the fallback and gains no benefit. Sections 7–8.
-- **Full reproducibility.** Code under {{LICENSE}}.
-
-## 1.6 Paper Organization
-
-Section 2 reviews related work. Section 3 provides background on integral 
-operators, Galerkin methods, and DCT. Section 4 presents Galerkin Attention. 
-Section 5 details architecture integration. Section 6 gives experimental 
-setup. Section 7 reports results. Section 8 analyzes the encoder-decoder 
-dispatch. Section 9 discusses usage. Section 10 lists limitations. Section 
-11 concludes.
+Section 2 reviews related work on Galerkin methods, spectral attention, 
+and low-rank attention. Section 3 provides background on attention, DCT, 
+and Petrov-Galerkin projection. Section 4 presents Galerkin Attention. 
+Section 5 covers architecture integration. Section 6 details the 
+experimental setup. Section 7 reports results. Section 8 analyzes why the 
+method fails. Section 9 discusses lessons learned. Section 10 lists 
+limitations. Section 11 concludes.
 
 ---
 
 ## Notation
 
-| Symbol | Meaning |
-|---|---|
-| $N$ | Sequence length |
-| $r$ | Basis rank |
-| $d$ | Hidden size |
-| $d_h$ | Per-head dimension |
-| $\Phi$ | Orthonormal basis matrix $\in \mathbb{R}^{N \times r}$ |
-| $Q_\Phi$ | Projected queries $\in \mathbb{R}^{r \times d_h}$ |
-| $\kappa$ | Attention kernel |
-| $\Omega$ | Domain |
-| $\delta_{k0}$ | Kronecker delta |
+| Symbol | Meaning | First appears |
+|---|---|---|
+| $N$ | Sequence length | §1.1 |
+| $d$ | Head dimension | §1.1 |
+| $H$ | Number of heads | §1.1 |
+| $r$ | Basis dimension (rank) | §1.1 |
+| $\Phi \in \mathbb{R}^{N \times r}$ | Orthonormal basis | §1.1 |
+| $\mathcal{K}$ | Integral operator | §1.1 |
+| $k(x, y)$ | Kernel function | §1.1 |
+| $Q_\Phi, K_\Phi, V_\Phi$ | Basis-projected Q/K/V | §1.3 |
+</parameter>
+
+---

@@ -1,3 +1,100 @@
-\section{12 Reproducibility}
 
-Draft content for gated_deltanet_block.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\subsubsection{Path A (Full Attention)}
+
+\begin{lstlisting}
+python run_all_4_gated_deltanet_block.py \
+    --models distilbert \
+    --use_full_attention true \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsubsection{Path B (GatedDeltaNet)}
+
+\begin{lstlisting}
+python run_all_4_gated_deltanet_block.py \
+    --models distilbert \
+    --use_full_attention false \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Verification Steps}
+
+\subsubsection{Verify Weight Transfer}
+
+Add logging and check output:
+
+\begin{lstlisting}
+import logging
+logging.basicConfig(level=logging.INFO)
+
+# After injection:
+for name, mod in model.named_modules():
+    if hasattr(mod, 'attn') and mod.attn is not None:
+        w = mod.attn.in_proj_weight
+        print(f"{name}: in_proj_weight norm = {w.norm().item():.4f}")
+        # If norm ~= 1e-3, weights are random $\to$ silent failure
+        # If norm ~= sqrt(3d) * something, weights transferred OK
+\end{lstlisting}
+
+\subsubsection{Verify Causal Masking (GPT-2)}
+
+\begin{lstlisting}
+# Compare block output to baseline on first token
+x = torch.randn(1, 1, 768)  # single token
+y_block = block(x)
+# For GPT-2 causal, y_block should equal y_baseline
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+seed = 42
+torch.manual_seed(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{Status} \\
+\midrule
+Path A (MHA) & {{D\_MHA\_ACC}}\% & {{D\_MHA\_STATUS}} \\
+Path B (DeltaNet) & {{D\_ACC}}\% & {{D\_STATUS}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Known Issues}
+
+\begin{enumerate}
+\item \textbf{Silent weight transfer failure.} Check norm after injection.
+\item \textbf{OOM on RoBERTa/GPT-2.} Reduce batch size.
+\item \textbf{Slow GatedDeltaNet path.} ~90 s per 5 steps.
+\item \textbf{Non-causal MHA for GPT-2.} Incorrect but not detected by tests.
+
+\end{enumerate}
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Code: \texttt{framework/attentions/gated\_deltanet\_block.py}
+\item Metrics: \texttt{results/unified\_gated\_deltanet\_block/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/gated\_deltanet\_block\_*.log}
+
+\end{itemize}

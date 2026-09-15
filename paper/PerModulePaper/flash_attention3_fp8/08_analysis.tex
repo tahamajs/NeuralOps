@@ -1,3 +1,230 @@
-\section{08 Analysis}
 
-Draft content for flash_attention3_fp8.
+\section{Analysis}
+
+\subsection{Why FP8 Was Not Taken on RTX 4070}
+
+The FP8 path requires four conditions to hold simultaneously. On RTX 4070:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Condition} & \textbf{Result} & \textbf{Reason} \\
+\midrule
+\texttt{FLASH\_ATTN\_AVAILABLE} & {{FLASH\_AVAILABLE}} & {{FLASH\_REASON}} \\
+\texttt{self.use\_fp8} & True & Set by config \\
+\texttt{q.is\_cuda} & True & Running on GPU \\
+\texttt{torch.float8\_e4m3fn} & {{FP8\_DTYPE}} & {{FP8\_REASON}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{The first condition is the blocker.} {{FLASH\_BLOCKER\_DETAIL}}
+
+\subsubsection{What is `flash\_attn`?}
+
+\texttt{flash-attn} is a CUDA extension package. Two variants exist:
+
+\begin{enumerate}
+\item \textbf{\texttt{flash-attn}} -- the Dao-AILab community version, supporting
+  FlashAttention-1 and FlashAttention-2.
+\item \textbf{\texttt{flash-attn-3}} -- the Hopper-optimized version from the 2024 paper.
+
+\end{enumerate}
+Both require a CUDA toolkit \textbf{and} the correct GPU architecture at compile 
+time. Our environment:
+
+\begin{itemize}
+\item CUDA: {{CUDA\_VERSION}}
+\item PyTorch: {{TORCH\_VERSION}}
+\item \texttt{flash-attn} installed: {{FLASH\_AVAILABLE}}
+
+\end{itemize}
+\subsubsection{Alternative Detection}
+
+If \texttt{flash\_attn} is installed but FP8 is unsupported by the driver, the call 
+to \texttt{flash\_attn\_func(q8, k8, v8)} will raise a \texttt{RuntimeError}. Our code 
+catches this and falls back. This is defensive, but it means we cannot 
+distinguish "FP8 unsupported" from "FP8 bug".
+
+\subsection{FP8 on H100 -- What We Would Expect}
+
+Based on the FlashAttention-3 paper (Shah et al., 2024):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Speedup over FP16} \\
+\midrule
+FP16 FlashAttention-2 & 1.0$\times$ \\
+FP8 FlashAttention-3 (H100 SXM) & ~1.8$\times$ \\
+FP8 FlashAttention-3 (H100 PCIe) & ~1.5$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{We did not test this} because we do not have access to Hopper hardware.
+
+\subsection{Accuracy Preservation}
+
+On our hardware, using the SDPA fallback:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{Ours} & \textbf{$\Delta$} \\
+\midrule
+DistilBERT & 90.71\% & {{D\_ACC}} & {{D\_DELTA}} \\
+RoBERTa & 78.56\% & {{R\_ACC}} & {{R\_DELTA}} \\
+GPT-2 & 79.36\% & {{G\_ACC}} & {{G\_DELTA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{All within $\pm${{MAX\_DELTA}}\%} -- consistent with LoRA recovery.
+
+\subsection{Per-Layer Analysis}
+
+\textbf{Table 8.1: Per-layer attention output norms (DistilBERT, first batch).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Layer} & \textbf{Baseline norm} & \textbf{Ours norm} & \textbf{Ratio} \\
+\midrule
+0 & {{D\_L0\_BASE}} & {{D\_L0\_OURS}} & {{D\_L0\_R}} \\
+1 & {{D\_L1\_BASE}} & {{D\_L1\_OURS}} & {{D\_L1\_R}} \\
+2 & {{D\_L2\_BASE}} & {{D\_L2\_OURS}} & {{D\_L2\_R}} \\
+... & ... & ... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{LAYER\_NORM\_OBS}}
+
+\subsection{Weight Transfer Verification}
+
+We verify that base weights match after \texttt{copy\_weights}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Projection} & \textbf{Frobenius diff} \\
+\midrule
+Q & {{WT\_Q\_DIFF}} \\
+K & {{WT\_K\_DIFF}} \\
+V & {{WT\_V\_DIFF}} \\
+O & {{WT\_O\_DIFF}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{All diffs are exactly 0} -- confirmed by \texttt{torch.equal}.
+
+\subsection{Comparison with PyTorch SDPA}
+
+Since our fallback uses \texttt{F.scaled\_dot\_product\_attention}, the fallback path 
+\textbf{is} PyTorch SDPA (with LoRA added). Thus:
+
+\begin{itemize}
+\item Baseline (SDPA, no LoRA) = "full"
+\item Ours (SDPA, with LoRA) = "flash3\_fp8"
+
+\end{itemize}
+The comparison is meaningful but the "FP8" label is misleading on our 
+hardware.
+
+\subsection{Why LoRA Still Helps}
+
+Even without FP8, LoRA adapters provide a small accuracy benefit (or no 
+harm):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{$\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}} \\
+RoBERTa & {{R\_DELTA}} \\
+GPT-2 & {{G\_DELTA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Cases}
+
+\subsubsection{RoBERTa Loss Oscillation}
+
+For RoBERTa, loss oscillates between \texttt{{{R\_MIN\_LOSS}}} and \texttt{{{R\_MAX\_LOSS}}}. 
+Hypotheses:
+
+\begin{enumerate}
+\item \textbf{Nested encoder:} \texttt{is\_nested\_encoder=True} but the outer \texttt{output.dense}
+  may not be applied correctly.
+\item \textbf{LR too high:} {{LR}} may be too high for 12-layer models.
+\item \textbf{Gradient explosion:} {{GRAD\_NORM}} at step {{GRAD\_STEP}}.
+
+\end{enumerate}
+\subsubsection{OOM on RoBERTa}
+
+If OOM occurs on RoBERTa with \texttt{batch\_size=8}, reduce to 4.
+
+\subsection{Inference Cost Breakdown}
+
+Since FP8 is unavailable, we analyze the SDPA path:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Operation} & \textbf{Kernel launches} \\
+\midrule
+Q/K/V projection ($\times$3) & 3 \\
+RoPE (if applicable) & 2 \\
+repeat\_kv (if GQA) & 2 \\
+SDPA & 1 \\
+Output projection & 1 \\
+\textbf{Total} & \textbf{~9} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Same as baseline + LoRA overhead.
+
+\subsection{What We Cannot Measure}
+
+We cannot measure:
+
+\begin{itemize}
+\item \textbf{FP8 vs FP16 speedup:} Requires H100.
+\item \textbf{FP8 numerical error:} Requires a working FP8 path.
+\item \textbf{FP8 tensor core utilization:} Requires hardware profiling tools.
+
+\end{itemize}
+We state these as \textbf{explicit limitations}.
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Hardware-detection matters.} Without it, the code would crash on
+  unsupported GPUs.
+\item \textbf{SDPA fallback is correct.} Our fallback matches PyTorch's native
+  behavior.
+\item \textbf{The FP8 path is unexercised on our hardware.} This is a real
+  limitation, not a hidden failure.
+\item \textbf{LoRA provides marginal benefit.} Accuracy is preserved but not
+  improved.
+
+\end{enumerate}

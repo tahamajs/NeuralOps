@@ -1,59 +1,77 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 10_limitations.md
+     PURPOSE: Honest limitations
+     DEPENDENCIES: 09_discussion.md
+     LENGTH TARGET: 0.5 - 1 page
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # 10. Limitations
 
-## 10.1 Encoder-Only Benefit
+## 10.1 Encoder Path Fails
 
-Galerkin provides linear complexity only for **encoder** models. Decoders 
-fall back to standard attention.
+Galerkin Attention **fails on encoders**:
+- DistilBERT: -{{D_DROP}}%
+- RoBERTa: -{{R_DROP}}% (chance level)
 
-## 10.2 Not a Compression Method
+This is not a minor limitation; it is a fundamental failure of the method.
 
-Parameter count increases by ~{{PARAM_CHANGE}}% via LoRA.
+## 10.2 Decoder Path is a No-Op
 
-## 10.3 Fixed Basis
+For GPT-2, the module uses standard attention. There is no innovation on 
+the decoder path.
 
-The DCT basis is fixed, not learned. A data-adaptive basis might be better.
+## 10.3 No Parameter Reduction
 
-## 10.4 Smoothness Assumption
+Galerkin Attention **adds** parameters via LoRA. It is not a compression 
+method.
 
-DCT assumes smoothness. Attention patterns with sharp peaks (e.g., exact 
-token matching) may be poorly represented by low-rank DCT.
+## 10.4 Fixed Basis
 
-## 10.5 No Formal Error Bound on Downstream Accuracy
+The DCT basis is data-independent. This is the root cause of the encoder 
+failure.
 
-We bound the operator approximation error (Section 4.9), but not the 
-downstream task accuracy.
+## 10.5 Task Coverage
 
-## 10.6 Task Coverage
+Only SST-2. Behavior on generation, multi-class, or token-level tasks 
+is untested.
 
-Only SST-2 at $N=128$. Generation, QA, long-context untested.
+## 10.6 Model Coverage
 
-## 10.7 Model Coverage
+Only DistilBERT, RoBERTa, GPT-2. No Qwen, LLaMA, or large models.
 
-Three models (66.9M–124.6M).
+## 10.7 No Learned Basis Comparison
 
-## 10.8 Hardware
+We did not compare against Linformer or Nyströmformer, which use learned 
+or landmark-based bases.
 
-Only RTX 4070 Laptop.
+## 10.8 Single Seed
 
-## 10.9 Rank Selection
+No multi-seed runs.
 
-Fixed at $r = 64$. Rank ablation shows sensitivity.
+## 10.9 No Theoretical Bound
 
-## 10.10 Numerical Stability
+We provide no formal approximation error bound.
 
-DCT orthonormalization uses QR with $10^{-4}$ regularization. Extreme 
-sequences may still have issues.
+## 10.10 Cross-Attention Not Supported
 
-## 10.11 Causal Cross-Attention
+Passing `encoder_hidden_states` may fail. Not tested.
 
-Not tested.
+## 10.11 Failure Not Fully Diagnosed
+
+While we attribute failure to the fixed basis, we do not prove this. Other 
+factors (energy correction, QR orthonormalization, FP16 precision) may 
+contribute.
 
 ## 10.12 Code Quality
 
-- Research-grade
-- Broad exception handling in `inject_galerkin` (returns None on any failure)
+- Duplicate `freeze_base_weights()` call in `copy_weights`
 - No unit tests
+- Some error paths log warnings but continue
 
-## 10.13 Ethical Considerations
+## 10.13 What This Paper Is Not
 
-Dual-use. See Appendix E.
+- Not a compression method
+- Not a speedup method
+- Not a working attention replacement for encoders
+
+---

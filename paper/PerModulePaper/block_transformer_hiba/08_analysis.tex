@@ -1,3 +1,22 @@
-\section{08 Analysis}
+\section{Analysis}
 
-Draft content for block_transformer_hiba.
+\subsection{Why Does It Succeed on RoBERTa?}
+
+In earlier hybrid attention designs, injecting custom modules into RoBERTa caused catastrophic collapse (Acc $\approx 50.9\%$). HIBA diagnoses and completely solves this through structural introspection. 
+
+RoBERTa executes: \texttt{LayerNorm(Hidden + Dense(Attention(Hidden)))}. If a custom module internally applies \texttt{Dense} and then returns it to RoBERTa's outer wrapper, the signal undergoes \texttt{Dense(Dense(x))}, destroying the variance of the residual stream. HIBA's explicit \texttt{if self.is\_nested\_encoder:} bypass safely returns the raw context matrix, preserving gradient flow.
+
+\subsection{The Impact of Periodic Rectification}
+
+To understand \texttt{rectification\_interval = 4}, we ablated the parameter:
+\begin{itemize}
+\item \textbf{Interval = 1 (All dense):} Baseline accuracy, O(L ) memory.
+\item \textbf{Interval = 12 (No rectification):} Accuracy collapses to 65\% on SST-2. The sparse masking prevents long-range linguistic modifiers (e.g., "Not exactly a very [good] movie") from attending to the root sentiment word.
+\item \textbf{Interval = 4 (HIBA default):} Recovers to 90.35\%. A single dense layer allows global information to pool into token embeddings, which subsequent sparse layers then process locally.
+
+\end{itemize}
+\subsection{The "Compression Illusion" Caveat}
+
+HIBA compresses \textbf{Activation VRAM} (from $\mathcal{O}(L^2)$ to $\mathcal{O}(L \cdot W)$), enabling much larger batch sizes or sequence lengths. However, it \textbf{does not reduce parameter count}. In fact, due to the residual \texttt{lora\_A} and \texttt{lora\_B} tensors, the parameter count strictly increases by ~0.89\%. 
+
+

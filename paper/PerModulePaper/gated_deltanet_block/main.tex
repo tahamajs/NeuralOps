@@ -64,10 +64,41 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the gated\_deltanet\_block module within modern transformer architectures.
+
+We present \textbf{GatedDeltaNetBlock}, a block-level wrapper that replaces an 
+entire transformer block (attention + residual + normalization) with either 
+(a) standard PyTorch \texttt{nn.MultiheadAttention} + LayerNorm, or (b) GatedDeltaNet 
+attention + LayerNorm. Unlike attention-level replacements, this block 
+intercepts the entire block computation, providing explicit control over 
+normalization and residual structure.
+
+\textbf{Two critical limitations.} First, the block's **LayerNorm parameters are 
+not pretrained** -- they initialize from $\gamma = 1, \beta = 0$ and must 
+learn the correct scale during recovery. In pretrained transformer blocks, 
+LayerNorm statistics are calibrated against the specific activation 
+distribution of the pretrained attention; replacing them with fresh 
+parameters causes a distributional mismatch that persists through training.
+
+Second, the \textbf{weight-transfer path for \texttt{nn.MultiheadAttention}} uses a 
+fragile shape-matching heuristic wrapped in a broad \texttt{try/except} that 
+silently succeeds even when transfer fails, leaving attention weights 
+at random initialization.
+
+We evaluate on DistilBERT, RoBERTa, and GPT-2. On DistilBERT with 
+\texttt{use\_full\_attention=False}, the block achieves \textbf{{{D\_ACC}}\%} ($\Delta$ = 
+{{D\_DELTA}}\%) but at \textbf{{{D\_STEP\_TIME}} s/step} -- the underlying GatedDeltaNet 
+recurrence dominates runtime. With \texttt{use\_full\_attention=True}, accuracy is 
+\textbf{{{D\_MHA\_ACC}}\%} ($\Delta$ = {{D\_MHA\_DELTA}}\%). RoBERTa and GPT-2 fail due to 
+memory constraints. We document these negative results and identify the 
+specific code paths that must be fixed for the block to be viable.
+
+\textbf{Keywords:} block-level replacement, LayerNorm initialization, hybrid 
+attention, GatedDeltaNet, negative results
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} gated\_deltanet\_block, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} block-level replacement, LayerNorm initialization, hybrid
 \end{abstract}
 
 \vspace{1em}

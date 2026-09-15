@@ -1,3 +1,162 @@
-\section{D Negative Results}
 
-Draft content for gated_deltanet_block.
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 LayerNorm Initialization Mismatch}
+
+The block's LayerNorm starts at $\gamma = 1, \beta = 0$, which does not 
+match the pretrained LayerNorm.
+
+\subsubsection{D.1.1 Attempted Fixes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Fix} & \textbf{Result} \\
+\midrule
+Higher LoRA rank & No improvement \\
+More recovery steps & Slow convergence, no improvement \\
+Train LN separately & Untested \\
+Copy pretrained LN & Untested (would require pretrained access) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.2 Silent Weight Transfer Failure}
+
+The \texttt{try/except} swallows errors silently.
+
+\subsubsection{D.2.1 Detection}
+
+We added logging and observed:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Path A transfer} & \textbf{Silent fail?} \\
+\midrule
+DistilBERT & OK & No \\
+RoBERTa & OK & No \\
+GPT-2 & OK & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} For our specific models, transfer happened to succeed. But 
+the code is fragile -- any change could trigger silent failure.
+
+\subsection{D.3 Non-Causal MHA for GPT-2}
+
+\texttt{nn.MultiheadAttention} without causal masking.
+
+\subsubsection{D.3.1 Test}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{GPT-2 Accuracy} \\
+\midrule
+Baseline (causal) & 79.36\% \\
+Block MHA (non-causal) & {{G\_MHA\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{NON\_CAUSAL\_OBS}}
+
+\subsection{D.4 Nested Encoder Inconsistency}
+
+For RoBERTa, the block returns raw output without LN. For DistilBERT, it 
+applies LN.
+
+\subsubsection{D.4.1 Impact}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Path} & \textbf{LN applied?} \\
+\midrule
+DistilBERT & Both & Yes \\
+RoBERTa & Both & No \\
+GPT-2 & Both & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Inconsistency} makes debugging harder.
+
+\subsection{D.5 Slow GatedDeltaNet Path}
+
+Same issue as the standalone GatedDeltaNet: Python loops dominate.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Path} & \textbf{Per-step time} \\
+\midrule
+Baseline & 0.4 s \\
+Block (MHA) & {{D\_MHA\_TIME}} s \\
+Block (DeltaNet) & {{D\_STEP\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 OOM on RoBERTa/GPT-2}
+
+Same memory issue as GatedDeltaNet.
+
+\subsubsection{D.6.1 Attempted Fixes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Fix} & \textbf{Result} \\
+\midrule
+batch\_size=4 & Still OOM \\
+batch\_size=2 & Still OOM \\
+gradient checkpointing & Still OOM (recompute overhead) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.7 What Would Make This Work?}
+
+\begin{enumerate}
+\item \textbf{Copy pretrained LayerNorm} into the block.
+\item \textbf{Remove \texttt{try/except: pass}} -- log failures.
+\item \textbf{Add causal masking} for decoders.
+\item \textbf{Use fused Triton kernel} for GatedDeltaNet.
+\item \textbf{Reduce memory} with better checkpointing.
+
+\end{enumerate}
+\subsection{D.8 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Preserve pretrained LayerNorm.} Do not replace with fresh init.
+\item \textbf{Never swallow exceptions silently.} Log every failure.
+\item \textbf{Causal masking is not optional.} It is a correctness requirement.
+\item \textbf{Block-level replacement is harder than attention-level.} More sources
+  of error.
+
+\end{enumerate}
+\subsection{D.9 Recommendations}
+
+\begin{enumerate}
+\item \textbf{Prefer attention-level replacement.} It preserves the block structure
+  including LayerNorm.
+\item \textbf{If block-level is necessary}, copy the pretrained LayerNorm.
+\item \textbf{Always verify weight transfer} with logging.
+\item \textbf{Test causal masking} explicitly.
+
+\end{enumerate}

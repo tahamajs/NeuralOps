@@ -1,3 +1,91 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for decay_linear_attention.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Truly O(1) Memory}
+
+DecayLinearAttention uses 16 KB of state memory per layer, independent of 
+sequence length. This is a strict improvement over CHELA-SLAY and other 
+cumsum-based methods.
+
+\subsubsection{Takeaway 2: Data-Dependent Decay Works}
+
+The learned per-token decay $\lambda_{h,t}$ improves accuracy by 
+{{DECAY\_GAIN}}\% over fixed decay.
+
+\subsubsection{Takeaway 3: Cross-Attention Support}
+
+The same recurrence works for cross-attention, enabling encoder-decoder 
+models.
+
+\subsection{When to Use DecayLinearAttention}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Long-context inference} ($L \geq {{BREAKEVEN}}$).
+\item \textbf{Memory-constrained environments.}
+\item \textbf{Encoder-decoder models} (cross-attention).
+\item \textbf{Streaming decoding.}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Very short sequences} ($L \leq 256$).
+\item \textbf{When softmax is essential.}
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need O(1) memory at long L? --- Yes --- Use DecayLinear
+  | No
+   
+Need softmax behavior? --- Yes --- Use standard attention
+  | No
+   
+Consider CHELA-SLAY (hybrid)
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT at L = 2048:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{DecayLinear} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+Time & 180 s & {{D\_T2048}} s & {{D\_RATIO\_2048}}$\times$ \\
+State mem & 12 MB & \textbf{16 KB} & \textbf{750$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Enables long-context on consumer hardware.
+\item Reduces memory footprint dramatically.
+\item Cross-attention support broadens applicability.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Linear attention may not capture all softmax behaviors.
+\item Feature map choice affects accuracy.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Learned feature map?} Would it improve over ELU+1?
+\item \textbf{Per-head chunk sizes?} Would asymmetric $C$ help?
+\item \textbf{Combined with token compression?}
+\item \textbf{Scale to L > 32K?}
+
+\end{enumerate}

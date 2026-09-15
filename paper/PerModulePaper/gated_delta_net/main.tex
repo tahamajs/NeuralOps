@@ -64,10 +64,42 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the gated\_delta\_net module within modern transformer architectures.
+
+Recurrent linear attention mechanisms reduce the quadratic cost of transformer 
+self-attention to linear time by maintaining a fixed-size hidden state 
+$S \in \mathbb{R}^{d_h \times d_h}$ updated token-by-token. We implement 
+\textbf{Gated DeltaNet}, a bidirectional/causal linear recurrent attention that 
+combines the \textbf{Delta Rule} (Widrow--Hoff, 1960) with **input-dependent 
+exponential decay gating**. The state update is:
+
+\[
+S_t = \beta_t S_{t-1} + \alpha_t K_t^\top (V_t - K_t S_{t-1}) / (1 + \|K_t\|^2)
+\]
+
+where $\alpha_t, \beta_t \in (0, 1)$ are per-head gates computed from the 
+input. For encoder models, a bidirectional scan averages forward and 
+backward recurrences; for decoder models, only the forward recurrence is 
+used. Base pretrained weights are transferred exactly via a four-architecture 
+\texttt{copy\_weights} procedure; trainable capacity is provided by LoRA adapters 
+at rank $r = {{LORA_RANK}}$.
+
+\textbf{Practical limitation.} Although the algorithm is theoretically 
+$\mathcal{O}(L)$ in both time and memory, our PyTorch reference 
+implementation uses two nested Python loops (outer over chunks, inner over 
+tokens within a chunk), which dominates wall-clock time. On DistilBERT with 
+$L = 128$, one recovery step takes ~{{D\_STEP\_TIME}} seconds -- approximately 
+\textbf{{{D\_SLOWDOWN}}$\times$ slower} than baseline attention. RoBERTa and GPT-2 
+(12 layers) exceed our GPU memory budget. We report these results as an 
+honest assessment of the \textbf{implementation bottleneck} and identify the 
+required fix (fused CUDA kernel or Triton JIT).
+
+\textbf{Keywords:} linear attention, delta rule, recurrent neural network, 
+associative memory, state-space models
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} gated\_delta\_net, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} linear attention, delta rule, recurrent neural network,
 \end{abstract}
 
 \vspace{1em}

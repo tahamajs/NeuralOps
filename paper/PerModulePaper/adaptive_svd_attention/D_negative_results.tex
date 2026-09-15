@@ -1,3 +1,122 @@
-\section{D Negative Results}
+\section{Appendix D. Negative Results}
 
-Formal architectural specifications for \texttt{adaptive_svd_attention}.
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Energy $\tau$ < 0.80}
+
+\textbf{Goal.} Aggressive compression.
+
+\textbf{Result.} Accuracy collapsed to {{T80\_ACC}}\%.
+
+\textbf{Conclusion.} $\tau$ $\ge$ 0.85 required.
+
+\subsubsection{D.1.2 No Residual Adapter}
+
+\textbf{Goal.} Pure SVD without adapter.
+
+\textbf{Result.} Accuracy dropped by {{NO\_ADAPTER\_DROP}}\%.
+
+\textbf{Conclusion.} Residual adapter recovers significant accuracy.
+
+\subsubsection{D.1.3 Asymmetric Split}
+
+\textbf{Goal.} Use $\Sigma$ entirely in up.
+
+\textbf{Result.} Slightly worse numerical stability in FP16.
+
+\textbf{Conclusion.} Symmetric split is better.
+
+\subsubsection{D.1.4 Skip W\_O}
+
+\textbf{Goal.} Only factorize Q/K/V.
+
+\textbf{Result.} Higher attention ratio but similar accuracy.
+
+\textbf{Conclusion.} W\_O factorizes fine with adapter.
+
+\subsubsection{D.1.5 Residual on Down-Projection}
+
+\textbf{Goal.} Attach adapter to V\_r instead of U\_r.
+
+\textbf{Result.} No improvement; slightly worse.
+
+\textbf{Conclusion.} Adapter after up is better.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Per-Head Rank}
+
+We tested different rank per head. Result: no improvement.
+
+\subsubsection{D.2.2 Learned $\tau$}
+
+We tested making $\tau$ learnable. Result: unstable; converged to 0.92 anyway.
+
+\subsubsection{D.2.3 Two-Stage Compression}
+
+We tested SVD then LoRA then another SVD. Result: no benefit.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Residual Rank}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{$r_a$} & \textbf{DistilBERT} \\
+\midrule
+0 & {{D\_RA0}} \\
+4 & {{D\_RA4}} \\
+8 & {{D\_RA8}} \\
+16 & {{D\_RA16}} \\
+32 & {{D\_RA32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Min Rank}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{min\_rank} & \textbf{DistilBERT} \\
+\midrule
+8 & {{D\_MIN8}} \\
+16 & {{D\_MIN16}} \\
+32 & {{D\_MIN32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{$\tau$ = 0.92 is a good default.}
+\item \textbf{Residual adapter is essential.}
+\item \textbf{Symmetric split is preferable.}
+\item \textbf{All four projections can be factorized.}
+\item \textbf{W\_O needs a slightly higher rank than Q/K.}
+
+\end{enumerate}

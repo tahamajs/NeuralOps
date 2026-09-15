@@ -1,0 +1,131 @@
+# 13. References
+
+```bibtex
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@article{eckart1936approximation,
+  title={The approximation of one matrix by another of lower rank},
+  author={Eckart, Carl and Young, Gale},
+  journal={Psychometrika},
+  year={1936}
+}
+
+@article{jolliffe2002principal,
+  title={Principal component analysis},
+  author={Jolliffe, Ian T},
+  year={2002}
+}
+
+@article{deerwester1990indexing,
+  title={Indexing by latent semantic analysis},
+  author={Deerwester, Scott and others},
+  journal={JASIS},
+  year={1990}
+}
+
+@article{halko2011finding,
+  title={Finding structure with randomness},
+  author={Halko, Nathan and others},
+  journal={SIAM Review},
+  year={2011}
+}
+
+@article{raffel2020exploring,
+  title={Exploring the limits of transfer learning with a unified text-to-text transformer},
+  author={Raffel, Colin and others},
+  journal={JMLR},
+  year={2020}
+}
+
+@inproceedings{wang2020linformer,
+  title={Linformer},
+  author={Wang, Sinong and others},
+  year={2020}
+}
+
+@article{shazeer2019fast,
+  title={Fast transformer decoding},
+  author={Shazeer, Noam},
+  year={2019}
+}
+
+@inproceedings{ainslie2023gqa,
+  title={{GQA}},
+  author={Ainslie, Joshua and others},
+  booktitle={EMNLP},
+  year={2023}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}},
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@inproceedings{zhang2023adalora,
+  title={{AdaLoRA}},
+  author={Zhang, Qingru and others},
+  booktitle={ICLR},
+  year={2023}
+}
+
+@inproceedings{liu2024dora,
+  title={{DoRA}},
+  author={Liu, Shih-Yang and others},
+  booktitle={ICML},
+  year={2024}
+}
+
+@inproceedings{su2021roformer,
+  title={RoFormer},
+  author={Su, Jianlin and others},
+  year={2021}
+}
+
+@article{sanh2019distilbert,
+  title={{DistilBERT}},
+  author={Sanh, Victor and others},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title={{RoBERTa}},
+  author={Liu, Yinhan and others},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+
+@article{lewis2019bart,
+  title={{BART}: Denoising sequence-to-sequence pre-training},
+  author={Lewis, Mike and others},
+  year={2019}
+}
+```
+
+---

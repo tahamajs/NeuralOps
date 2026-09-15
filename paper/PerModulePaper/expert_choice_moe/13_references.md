@@ -1,0 +1,139 @@
+# 13. References
+
+```bibtex
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@article{shazeer2017outrageously,
+  title={Outrageously large neural networks: The sparsely-gated mixture-of-experts layer},
+  author={Shazeer, Noam and others},
+  booktitle={ICLR},
+  year={2017}
+}
+
+@inproceedings{lepikhin2021gshard,
+  title={{GShard}: Scaling giant models with conditional computation},
+  author={Lepikhin, Dmitry and others},
+  booktitle={ICLR},
+  year={2021}
+}
+
+@article{fedus2022switch,
+  title={Switch transformers: Scaling to trillion parameter models},
+  author={Fedus, William and others},
+  journal={JMLR},
+  year={2022}
+}
+
+@inproceedings{zhou2022mixture,
+  title={Mixture-of-experts with expert choice routing},
+  author={Zhou, Yanqi and others},
+  booktitle={NeurIPS},
+  year={2022}
+}
+
+@article{jiang2024mixtral,
+  title={Mixtral of experts},
+  author={Jiang, Albert Q and others},
+  year={2024}
+}
+
+@article{deepseek2024v3,
+  title={DeepSeek-V3 technical report},
+  author={DeepSeek-AI},
+  year={2024}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}},
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@inproceedings{zhang2023adalora,
+  title={{AdaLoRA}},
+  author={Zhang, Qingru and others},
+  booktitle={ICLR},
+  year={2023}
+}
+
+@inproceedings{karimi2021compacter,
+  title={Compacter},
+  author={Karimi Mahabadi, Rabeeh and others},
+  booktitle={NeurIPS},
+  year={2021}
+}
+
+@article{goyal2017accurate,
+  title={Accurate, large minibatch {SGD}},
+  author={Goyal, Priya and others},
+  year={2017}
+}
+
+@inproceedings{zhang2019fixup,
+  title={Fixup initialization},
+  author={Zhang, Hongyi and others},
+  booktitle={ICLR},
+  year={2019}
+}
+
+@inproceedings{bachlechner2021rezero,
+  title={ReZero is all you need},
+  author={Bachlechner, Thomas and others},
+  booktitle={UAI},
+  year={2021}
+}
+
+@inproceedings{ainslie2023gqa,
+  title={{GQA}},
+  author={Ainslie, Joshua and others},
+  booktitle={EMNLP},
+  year={2023}
+}
+
+@inproceedings{su2021roformer,
+  title={RoFormer},
+  author={Su, Jianlin and others},
+  year={2021}
+}
+
+@article{sanh2019distilbert,
+  title={{DistilBERT}},
+  author={Sanh, Victor and others},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title={{RoBERTa}},
+  author={Liu, Yinhan and others},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+```
+
+---

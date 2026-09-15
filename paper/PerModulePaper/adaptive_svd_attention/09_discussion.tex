@@ -1,3 +1,109 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Formal architectural specifications for \texttt{adaptive_svd_attention}.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Adaptive Rank is Better Than Fixed}
+
+Energy thresholding selects different ranks for Q, K, V, O -- allocating 
+capacity based on the intrinsic spectrum of each projection.
+
+\subsubsection{Takeaway 2: All Four Projections Can Be Factorized}
+
+Unlike SOA Fused Attention, we compress $W_O$ too. The residual adapter 
+absorbs the additional error.
+
+\subsubsection{Takeaway 3: T5 and Cross-Attention Work}
+
+The method supports T5 relative attention bias and encoder-decoder cross-
+attention, making it applicable to a broader range of models.
+
+\subsection{When to Use Adaptive SVD Attention}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Models with heterogeneous projection spectra} (where fixed rank
+  under-performs).
+\item \textbf{T5-family models} (relative bias support).
+\item \textbf{Encoder-decoder models} (cross-attention).
+\item \textbf{Zero-shot deployments} (no calibration).
+\item \textbf{Parameter-sensitive applications} (2-3$\times$ attention reduction).
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Long-context inference} (attention still quadratic).
+\item \textbf{Models where attention is a small fraction} (FFN dominates).
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Target model uses T5 relative bias? --- Yes --- Use Adaptive SVD
+  | No
+   
+Target uses cross-attention? --- Yes --- Use Adaptive SVD
+  | No
+   
+Want all-four projection compression? --- Yes --- Use Adaptive SVD
+  | No
+   
+Consider SOA Fused (simpler)
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT at $\tau$ = 0.92:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+Attention params & 2.36M & {{D\_ATTN}} & \textbf{{{D\_RATIO}}$\times$} \\
+Total params & 66.95M & {{D\_TOTAL}} & {{D\_TOTAL\_DELTA}}\% \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Avg rank & 384 & {{AVG\_RANK}} & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Composition with Other Methods}
+
+Adaptive SVD Attention composes with:
+
+\begin{itemize}
+\item \textbf{GQA:} further reduces KV projection size.
+\item \textbf{KV quantization:} INT8 on factorized weights.
+\item \textbf{Token compression} (TCA): reduces KV length.
+\item \textbf{FFN compression} (A3/AASVD): compresses the other half.
+
+\end{itemize}
+A combined pipeline could achieve \textbf{4-5$\times$ total compression}.
+
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Principled rank selection.
+\item Broad architecture support (T5, cross-attention).
+\item Zero-shot -- no calibration data.
+\item Real parameter reduction.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Attention remains quadratic.
+\item Requires more code than fixed-rank methods.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Per-layer $\tau$ scheduling:} Should $\tau$ vary per layer?
+\item \textbf{Interaction with quantization:} INT8-A3 vs INT8-A3+Adaptive SVD?
+\item \textbf{Optimal min\_rank:} Is 16 the right floor?
+\item \textbf{Cross-attention with asymmetric K/V:} Does it change the optimal rank?
+
+\end{enumerate}

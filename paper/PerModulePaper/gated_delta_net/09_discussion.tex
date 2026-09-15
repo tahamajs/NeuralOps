@@ -1,3 +1,142 @@
-\section{09 Discussion}
 
-Draft content for gated_delta_net.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: The Algorithm Is Sound}
+
+Gated DeltaNet, as described in the literature, is a valid linear attention 
+mechanism with good theoretical properties. Our negative results reflect 
+the implementation, not the algorithm.
+
+\subsubsection{Takeaway 2: Implementation Matters}
+
+A 45$\times$ slowdown from Python loops is not a fundamental limitation -- it is 
+an engineering gap. Fused kernels (Triton, CUDA) would close it.
+
+\subsubsection{Takeaway 3: Memory Is Also a Constraint}
+
+Even with a fast kernel, the state matrix $S \in \mathbb{R}^{d \times d}$ 
+scales as $d^2$ per head. For large $d$ or many heads, this may exceed 
+VRAM.
+
+\subsection{When to Use This Module}
+
+\subsubsection{Recommended}
+
+\textbf{Currently: not recommended.} Without a fused kernel, the module is 
+impractical for training.
+
+\textbf{In the future:} if a Triton kernel becomes available, this module 
+would be suitable for:
+\begin{itemize}
+\item Long-context inference (linear memory)
+\item Streaming applications (constant state)
+\item Encoder models where bidirectionality helps
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item Any 12+ layer model (OOM)
+\item Any time-sensitive training
+\item Production deployment
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Start
+  |
+   
+Do you have a Triton/CUDA kernel for Gated DeltaNet? -- No -- Do not use
+  |
+  Yes
+   
+Is memory a constraint? -- Yes -- Test carefully
+  |
+  No
+   
+Is L >> d (long sequences)? -- Yes -- Consider using
+  |
+  No
+   
+Standard attention is likely better
+\end{lstlisting}
+
+\subsection{Comparison with Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Alternative} & \textbf{Speed} & \textbf{Memory} & \textbf{Correctness} \\
+\midrule
+FlashAttention-2 & Fast & $\mathcal{O}(L)$ & Exact \\
+Mamba (CUDA) & Very fast & $\mathcal{O}(L)$ & Approximate \\
+RetNet & Fast (if kernels exist) & $\mathcal{O}(L)$ & Approximate \\
+\textbf{GatedDeltaNet (ours)} & \textbf{Very slow} & $\mathcal{O}(L)$ & Exact delta rule \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT on RTX 4070:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{GatedDeltaNet} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Per-step time & 0.4 s & {{D\_STEP\_TIME}} s & \textbf{{{D\_SLOWDOWN}}$\times$} \\
+Peak VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
+Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Verdict.} Not worth it without a fused kernel.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{What would a Triton kernel cost?} Unknown effort.
+\item \textbf{Does bidirectional scan help accuracy?} Cannot test due to slowness.
+\item \textbf{Does the algorithm scale to long sequences?} Theory says yes;
+  implementation says we can't test.
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+
+\begin{itemize}
+\item Documents a real implementation bottleneck.
+\item Provides a reference implementation for future kernel development.
+\item Warns the community that linear $\ne$ fast.
+
+\end{itemize}
+\subsubsection{Negative}
+
+\begin{itemize}
+\item Compute consumed for slow runs.
+
+\end{itemize}
+\subsection{Deployment Recommendations}
+
+\textbf{Do not deploy Gated DeltaNet in production without a fused kernel.}
+
+\subsection{Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Complexity analysis is necessary but not sufficient.} A slow
+  implementation of a fast algorithm is still slow.
+\item \textbf{Python loops are the enemy.} Always measure wall-clock time.
+\item \textbf{The gap between theory and practice can be 10-100$\times$.}
+
+\end{enumerate}

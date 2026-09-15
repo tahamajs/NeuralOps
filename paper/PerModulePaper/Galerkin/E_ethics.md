@@ -1,47 +1,55 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: E_ethics.md
+     PURPOSE: Ethical considerations
+     DEPENDENCIES: 11_conclusion.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # Appendix E. Ethical Considerations
 
 ## E.1 Broader Impact
 
-### Positive
-- Encoder efficiency
-- Mathematical rigor
-- Educational value (numerical methods applied to ML)
+### E.1.1 Positive
 
-### Negative
-- No decoder benefit
-- Parameter overhead
-- Dual-use
+- **Documents a negative result** for the community.
+- **Provides a reproducible baseline** for spectral attention research.
+- **Prevents wasted compute** by future researchers.
 
-## E.2 Environmental
+### E.1.2 Negative
 
-- Total compute: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg CO₂eq
+- **Compute consumed** for a non-working method.
+- **May create confusion** if misinterpreted as a success.
+
+## E.2 Environmental Impact
+
+- **GPU-hours:** ~{{COMPUTE_HOURS}}
+- **CO₂:** ~{{CO2_KG}} kg
+
+Small compared to full training, but represents wasted effort.
 
 ## E.3 Data Ethics
 
-SST-2 public dataset. No PII.
+- SST-2 public dataset.
+- No PII.
 
-## E.4 Model Ethics
+## E.4 LLM Usage Disclosure
 
-- No bias audit
-- Basis truncation may discard discriminative features
+Parts of this paper were drafted with LLM assistance. All technical content 
+reviewed by authors.
 
-## E.5 Authorship
-
-See §11.7.
-
-## E.6 Conflicts of Interest
+## E.5 Conflicts of Interest
 
 None.
 
-## E.7 Funding
+## E.6 Long-Term Considerations
 
-{{FUNDING}}
+Negative results are valuable for science, but rare in ML publishing. 
+We advocate for:
 
-## E.8 LLM Usage
+- More honest reporting of failures
+- Venues that accept negative results
+- Standardized failure-mode taxonomies
 
-Parts drafted with LLM assistance.
+We hope this work contributes to a culture of transparency in 
+efficient-attention research.
 
-## E.9 Institutional Review
-
-No human subjects.
+---

@@ -1,3 +1,135 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Formal architectural specifications for \texttt{adaptive_svd_attention}.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params before & 66,955,010 \\
+Total params after & {{D\_TOTAL}} \\
+Attention params before & 2,359,296 \\
+Attention params after & {{D\_ATTN}} \\
+Attention ratio & {{D\_RATIO}}$\times$ \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Avg rank & {{AVG\_RANK}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params after & {{R\_TOTAL}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Avg rank & {{R\_AVG\_RANK}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params after & {{G\_TOTAL}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Avg rank & {{G\_AVG\_RANK}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Per-Layer Rank}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Q r*} & \textbf{K r*} & \textbf{V r*} & \textbf{O r*} \\
+\midrule
+0 & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
+1 & {{D\_L1\_Q\_R}} & {{D\_L1\_K\_R}} & {{D\_L1\_V\_R}} & {{D\_L1\_O\_R}} \\
+2 & {{D\_L2\_Q\_R}} & {{D\_L2\_K\_R}} & {{D\_L2\_V\_R}} & {{D\_L2\_O\_R}} \\
+3 & {{D\_L3\_Q\_R}} & {{D\_L3\_K\_R}} & {{D\_L3\_V\_R}} & {{D\_L3\_O\_R}} \\
+4 & {{D\_L4\_Q\_R}} & {{D\_L4\_K\_R}} & {{D\_L4\_V\_R}} & {{D\_L4\_O\_R}} \\
+5 & {{D\_L5\_Q\_R}} & {{D\_L5\_K\_R}} & {{D\_L5\_V\_R}} & {{D\_L5\_O\_R}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Energy $\tau$ Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Avg Rank} & \textbf{Ratio} \\
+\midrule
+0.80 & {{D\_T80}} & {{D\_T80\_R}} & {{RATIO\_80}}$\times$ \\
+0.85 & {{D\_T85}} & {{D\_T85\_R}} & {{RATIO\_85}}$\times$ \\
+0.92 & {{D\_T92}} & {{AVG\_RANK}} & {{D\_RATIO}}$\times$ \\
+0.95 & {{D\_T95}} & {{D\_T95\_R}} & {{RATIO\_95}}$\times$ \\
+0.99 & {{D\_T99}} & {{D\_T99\_R}} & {{RATIO\_99}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Residual Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_a$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & {{D\_RA0}} & {{R\_RA0}} & {{G\_RA0}} \\
+8 & {{D\_RA8}} & {{R\_RA8}} & {{G\_RA8}} \\
+16 & {{D\_RA16}} & {{R\_RA16}} & {{G\_RA16}} \\
+32 & {{D\_RA32}} & {{R\_RA32}} & {{G\_RA32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+20    {{D_S20}}
+30    {{D_S30}}
+40    {{D_S40}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_adaptive_svd.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+

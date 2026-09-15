@@ -1,3 +1,114 @@
-\section{03 Background}
 
-Draft content for gated_deltanet_block.
+\section{Background}
+
+\subsection{Transformer Block}
+
+A transformer block (post-LN variant):
+
+\[
+\begin{aligned}
+A &= \text{Attention}(X) \\
+X' &= \text{LayerNorm}(X + A) \\
+F &= \text{FFN}(X') \\
+Y &= \text{LayerNorm}(X' + F)
+\end{aligned}
+\tag{3.1}
+\]
+
+Our \texttt{GatedDeltaNetBlock} replaces only the \textbf{attention + first LayerNorm} 
+part, leaving the FFN block untouched (or applies the same pattern inside).
+
+\textbf{Important.} When we replace a block, we must ensure the **output 
+distribution** matches what the FFN expects. This is why LayerNorm 
+initialization matters.
+
+\subsection{LayerNorm}
+
+LayerNorm (Ba et al., 2016) computes:
+
+\[
+\text{LN}(X) = \gamma \odot \frac{X - \mu}{\sqrt{\sigma^2 + \epsilon}} + \beta
+\tag{3.2}
+\]
+
+with learnable $\gamma, \beta \in \mathbb{R}^d$.
+
+\textbf{Initialization.} Standard: $\gamma = 1, \beta = 0$.
+
+\textbf{Pretrained.} In pretrained transformers, $\gamma, \beta$ have been 
+calibrated against the specific activation distribution that the pretrained 
+attention produces. \textbf{They are not 1 and 0.}
+
+For example, in a trained BERT block, typical $\gamma$ values range from 
+$0.5$ to $2.0$ depending on the layer. Replacing them with $\gamma = 1$ 
+produces a different distribution.
+
+\subsection{`nn.MultiheadAttention`}
+
+PyTorch's \texttt{nn.MultiheadAttention} (Vaswani et al., 2017) is structured as:
+
+\[
+\begin{aligned}
+\text{in\_proj\_weight} &\in \mathbb{R}^{3 d_\text{model} \times d_\text{model}} \\
+\text{in\_proj\_bias} &\in \mathbb{R}^{3 d_\text{model}} \\
+\text{out\_proj} &\in \mathbb{R}^{d_\text{model} \times d_\text{model}}
+\end{aligned}
+\tag{3.3}
+\]
+
+Q, K, V are computed by splitting \texttt{in\_proj\_weight} into three equal parts.
+
+\textbf{Comparison with BERT-style attention.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{BERT/DistilBERT} & \textbf{`nn.MultiheadAttention`} \\
+\midrule
+Q/K/V storage & Three separate linears & One fused \texttt{in\_proj\_weight} \\
+Weight shapes & \texttt{(d, d) $\times$ 3} & \texttt{(3d, d)} \\
+Bias & Three separate & One fused \\
+Output & \texttt{out\_lin} or \texttt{output.dense} & \texttt{out\_proj} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+To transfer weights, we must \textbf{concatenate Q/K/V} into a single matrix.
+
+\subsection{Silent Failure}
+
+A \texttt{try/except} block that catches broad exceptions can silently succeed 
+even when the operation failed:
+
+\begin{lstlisting}
+try:
+    ...critical operation...
+except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+    pass  # $\leftarrow$ silently swallows errors
+\end{lstlisting}
+
+If the operation fails, the code continues as if nothing happened, with 
+\textbf{partial state}. This is a common source of hard-to-debug bugs.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$X$ & Input hidden states \\
+$d$ & Hidden size \\
+$H$ & Number of heads \\
+$\gamma, \beta$ & LayerNorm scale and shift \\
+$\mu, \sigma$ & LayerNorm mean and std \\
+$\epsilon$ & LayerNorm numerical constant \\
+$r$ & LoRA rank \\
+\bottomrule
+\end{tabular}
+\end{table}
+

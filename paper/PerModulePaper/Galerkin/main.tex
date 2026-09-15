@@ -64,10 +64,35 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the \texttt{galerkin} module within modern transformer architectures.
+
+We reinterpret transformer self-attention as a **discretization of a 
+continuous non-local integral operator** and approximate it via 
+\textbf{Petrov-Galerkin projection} onto an orthonormal basis (discrete cosine 
+transform). The method projects queries, keys, and values onto a truncated 
+$r$-dimensional basis $\Phi \in \mathbb{R}^{N \times r}$ before computing 
+attention, reducing the quadratic interaction matrix from $N \times N$ to 
+$r \times r$. For bidirectional (encoder) models, this yields a data-agnostic 
+low-rank attention approximation; for causal (decoder) models, we fall back 
+to standard scaled dot-product attention to preserve causality.
+
+We evaluate on three pretrained models -- DistilBERT, RoBERTa, and GPT-2 -- 
+on SST-2 with LoRA recovery. Our results are \textbf{negative for encoders}: 
+DistilBERT drops from 90.71\% to \textbf{{{D\_ACC}}\%} ($\Delta$ = {{D\_DELTA}}) and RoBERTa 
+collapses from 78.56\% to \textbf{{{R\_ACC}}\%} ($\Delta$ = {{R\_DELTA}}), the latter at 
+chance level. GPT-2 shows no change ($\Delta$ = 0.00\%) because the causal fallback 
+path leaves attention unmodified. We attribute encoder failures to the 
+\textbf{data-independent, fixed DCT basis}, which cannot capture the 
+content-dependent, position-specific attention patterns learned by 
+pretraining. We document this negative result to inform future work on 
+basis-projected attention.
+
+\textbf{Keywords:} Galerkin projection, transformer attention, orthonormal basis, 
+integral operator, negative results
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} galerkin, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} Galerkin projection, transformer attention, orthonormal basis,
 \end{abstract}
 
 \vspace{1em}

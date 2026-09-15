@@ -1,3 +1,125 @@
-\section{09 Discussion}
 
-Draft content for flash_attention3_fp8.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Portability Requires Detection}
+
+FlashAttention-3 as published assumes Hopper. Our contribution is the 
+\textbf{detection logic} that ensures the code runs on any GPU.
+
+\subsubsection{Takeaway 2: FP8 Is a Hardware Feature}
+
+No amount of software can conjure FP8 tensor cores. The FP8 path is 
+unavailable on RTX 4070 Laptop; no workaround exists.
+
+\subsubsection{Takeaway 3: SDPA is a Strong Fallback}
+
+PyTorch's SDPA is highly optimized and matches FlashAttention-2 performance 
+in most cases. The fallback is not a downgrade.
+
+\subsection{When to Use This Module}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Deploying on H100 or H200:} Actual FP8 speedups.
+\item \textbf{Mixed-hardware clusters:} Runtime detection avoids crashes.
+\item \textbf{Prototyping on any GPU:} Works everywhere.
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Expecting speedups on consumer GPUs:} The FP8 path is unavailable.
+\item \textbf{Long-context on Ampere:} FlashAttention-2 is better tested.
+\item \textbf{Cross-attention tasks:} Not supported.
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Start
+  |
+   
+Do you have an H100/H200? -- Yes -- Use this module for FP8 speedup
+  |
+  No
+   
+Do you have an RTX 4090/L40? -- Maybe -- Test FP8 path manually
+  |
+  No
+   
+Are you on Ampere/older? -- Yes -- Use SDPA fallback (this module works but no FP8)
+\end{lstlisting}
+
+\subsection{Comparison with Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Alternative} & \textbf{FP8?} & \textbf{Fallback?} & \textbf{Complexity} \\
+\midrule
+FlashAttention-2 & No & Error & Higher \\
+FlashAttention-3 (original) & Yes & Error & Higher \\
+PyTorch SDPA & No & -- & None \\
+\textbf{Ours} & \textbf{Yes} & \textbf{SDPA} & \textbf{Medium} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cost-Benefit Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Ours} \\
+\midrule
+Accuracy & same & same (LoRA preserved) \\
+Params & 66.9M & +0.88\% \\
+Speed on H100 & 1.0$\times$ & ~1.8$\times$ (expected) \\
+Speed on RTX 4070 & 1.0$\times$ & 1.0$\times$ \\
+Portability & Limited & Full \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Verdict.} Worth using only on Hopper hardware.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Would FP8 change accuracy?} Cannot test without H100.
+\item \textbf{What is the FP8 cast overhead?} Requires profiling.
+\item \textbf{How does FP8 interact with LoRA?} Untested.
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+
+\begin{itemize}
+\item Portability enables broader deployment.
+\item Fallback prevents silent failures.
+
+\end{itemize}
+\subsubsection{Negative}
+
+\begin{itemize}
+\item May create a false expectation of speedups.
+\item We mitigate this by \textbf{clearly documenting} the hardware requirements.
+
+\end{itemize}
+\subsection{Deployment Recommendations}
+
+\begin{enumerate}
+\item \textbf{Check GPU first.} Print \texttt{torch.cuda.get\_device\_name(0)} at startup.
+\item \textbf{Log which path was taken.} Add \texttt{logger.info("FP8 path taken: \%s", use\_fp8\_path)}.
+\item \textbf{Test on target hardware} before deploying.
+\item \textbf{Do not benchmark on laptops} and generalize to servers.
+
+\end{enumerate}

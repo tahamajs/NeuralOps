@@ -64,10 +64,65 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the chela\_slay module within modern transformer architectures.
+Linear attention replaces the quadratic softmax over $L^2$ attention pairs 
+with an associative kernel feature map, achieving $\mathcal{O}(L)$ complexity. 
+However, naive linear attention is often unstable and fails to recover 
+pretrained attention accuracy. We introduce \textbf{CHELA-SLAY}, a hybrid attention 
+that fuses a \textbf{dense softmax stream} with a **spherically normalized linear 
+stream** via a learnable per-head gate.
+
+The linear stream combines three components:
+
+\begin{enumerate}
+\item \textbf{Spherical normalization.} We project $Q, K$ onto the unit hypersphere:
+  
+  $$
+  \hat{Q} = \frac{Q}{\|Q\|\_2 + \epsilon}, \quad
+  \hat{K} = \frac{K}{\|K\|\_2 + \epsilon}
+  $$
+  
+\item \textbf{Yat-Kernel feature map.} We apply a trigonometric random Fourier
+  mapping:
+  
+  $$
+  \phi(x) = \frac{1}{F\^{}{1/4}} [\cos(x \Omega) \,\|\, \sin(x \Omega)]
+  $$
+  
+  producing a $2F$-dimensional positive feature vector.
+\item \textbf{Adaptive gating.} A per-head, per-token gate blends the dense and
+  linear streams. The gate is initialized with a bias of
+  $b_g = {{GATE_INIT_BIAS}}$ so that $\sigma(b_g) \approx {{GATE_INIT}}$
+  -- biasing the output toward the dense path at step 0.
+
+\end{enumerate}
+We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. CHELA-SLAY 
+achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{BASE\_D}}\%), 
+\textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and \textbf{{{G\_ACC}}\%} on 
+GPT-2 (baseline {{BASE\_G}}\%) using {{RECOVERY\_STEPS}} LoRA recovery steps.
+
+\textbf{We report two limitations honestly.}
+
+\begin{enumerate}
+\item \textbf{Memory.} The causal cumsum path materializes a
+  $(\text{B}, \text{H}, L, 2F, d_h)$ intermediate, which for
+  $L = 128$, $F = 128$, $d_h = 64$ is roughly
+  \textbf{{{CUMSUM\_MEM}} MB} per layer at FP32.
+\item \textbf{Speed.} On SST-2 ($L = 128$), CHELA-SLAY is \textbf{{{SLOWDOWN}}$\times$ slower}
+  than baseline because both dense and linear streams are computed
+  simultaneously, and the cumsum has overhead.
+
+\end{enumerate}
+The linear stream would dominate only at longer sequences 
+($L \geq {{BREAKEVEN}}$), where the quadratic term of the dense stream 
+becomes the bottleneck.
+
+\textbf{Keywords:} linear attention, random Fourier features, spherical 
+normalization, hybrid attention, adaptive gating
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} chela\_slay, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} linear attention, random Fourier features, spherical
 \end{abstract}
 
 \vspace{1em}

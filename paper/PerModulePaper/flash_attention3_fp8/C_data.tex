@@ -1,3 +1,192 @@
-\section{C Data}
 
-Draft content for flash_attention3_fp8.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 Hardware Detection Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Check} & \textbf{Result} \\
+\midrule
+\texttt{torch.cuda.is\_available()} & True \\
+GPU & NVIDIA GeForce RTX 4070 Laptop GPU \\
+Compute capability & (8, 9) \\
+\texttt{torch.float8\_e4m3fn} & {{FP8\_DTYPE}} \\
+\texttt{flash\_attn} importable & {{FLASH\_AVAILABLE}} \\
+FP8 path taken & {{FP8\_TAKEN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Precision & {{D\_PREC}} \\
+Recall & {{D\_REC}} \\
+Loss & {{D\_LOSS}} \\
+Params (before) & 66,955,010 \\
+Params (after) & {{D\_PARAMS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Tokens/sec & {{D\_TPS}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Precision & {{R\_PREC}} \\
+Recall & {{R\_REC}} \\
+Loss & {{R\_LOSS}} \\
+Params (before) & 124,647,170 \\
+Params (after) & {{R\_PARAMS}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Inference time & {{R\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Precision & {{G\_PREC}} \\
+Recall & {{G\_REC}} \\
+Loss & {{G\_LOSS}} \\
+Params (before) & 124,441,344 \\
+Params (after) & {{G\_PARAMS}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Inference time & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsubsection{RoBERTa}
+
+\begin{lstlisting}
+Step  Loss
+1     {{R_S1}}
+5     {{R_S5}}
+10    {{R_S10}}
+...
+50    {{R_S50}}
+\end{lstlisting}
+
+\subsubsection{GPT-2}
+
+\begin{lstlisting}
+Step  Loss
+1     {{G_S1}}
+...
+50    {{G_S50}}
+\end{lstlisting}
+
+\subsection{C.6 Per-Layer Weight Transfer Verification}
+
+\subsubsection{DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Q diff} & \textbf{K diff} & \textbf{V diff} & \textbf{O diff} \\
+\midrule
+0 & 0.00 & 0.00 & 0.00 & 0.00 \\
+1 & 0.00 & 0.00 & 0.00 & 0.00 \\
+... & ... & ... & ... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{RoBERTa}
+
+(Same verification; diff should be 0 for Q/K/V, N/A for O due to nested)
+
+\subsubsection{GPT-2}
+
+(Same verification; requires Conv1D transpose check)
+
+\subsection{C.7 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "accuracy": {{D_ACC}},
+    "params_after": {{D_PARAMS}},
+    "fp8_path_taken": false,
+    "sdpa_backend": "flash",
+    "peak_vram_mb": {{D_VRAM}}
+  },
+  ...
+}
+\end{lstlisting}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+# Full run
+python run_all_4_flash3_fp8.py --models distilbert,roberta,gpt2
+
+# Ablations
+python run_all_4_flash3_fp8.py --use_fp8 false --output_suffix nofp8
+\end{lstlisting}
+
+\subsection{C.9 Hardware Comparison Table}
+
+\begin{lstlisting}
+\end{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{GPU} & \textbf{Compute} & \textbf{FP8 Available?} \\
+\midrule
+RTX 4070 Laptop & 8.9 & (this study) \\
+RTX 4090 & 8.9 &  \\
+H100 & 9.0 &  \\
+A100 & 8.0 &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+

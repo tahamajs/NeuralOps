@@ -64,10 +64,52 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the decay\_linear\_attention module within modern transformer architectures.
+Linear attention replaces the quadratic softmax with an associative kernel, 
+achieving $\mathcal{O}(L)$ complexity. However, two practical issues remain: 
+(i) standard linear attention has \textbf{no position-dependent decay}, so all 
+past keys contribute equally to the current context, and (ii) causal 
+implementations often materialize an $\mathcal{O}(L)$ intermediate state, 
+negating the memory benefit.
+
+We introduce \textbf{DecayLinearAttention}, which addresses both via:
+
+\begin{enumerate}
+\item \textbf{Data-dependent exponential decay per head.} We learn a per-head decay
+  rate $\lambda_{h,t} \in (0, 1)$ from the input:
+  
+  $$
+  \lambda\_{h,t} = \sigma\!\left(W\_g x\_t + b\_g + \ell\_h\right)
+  $$
+  
+  where $\ell_h \in [{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$ is a per-head
+  learned bias. Different heads learn different context horizons.
+\item \textbf{Chunked scan with O(1) state.} We partition the sequence into chunks
+  of size $C = {{CHUNK_SIZE}}$ and carry a compact state
+  $S \in \mathbb{R}^{d \times d}$ between chunks. The intermediate state is
+  \textbf{$\mathcal{O}(1)$ in sequence length}, in contrast to the
+  $\mathcal{O}(L)$ intermediates used by cumsum-based causal linear
+  attention.
+\item \textbf{ELU+1 feature map.} We use $\phi(x) = \text{elu}(x) + 1$, which is
+  positive and cheap.
+
+\end{enumerate}
+We support \textbf{bidirectional} attention for encoders (forward and backward 
+scans averaged) and \textbf{causal} for decoders, along with GQA, RoPE, and 
+\textbf{cross-attention}.
+
+On SST-2, DecayLinearAttention achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
+(baseline {{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), 
+and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%). Peak inference VRAM is 
+\textbf{{{D\_VRAM}} MB} on DistilBERT (baseline {{BASE\_VRAM\_D}} MB), and the state 
+memory is \textbf{constant} in $L$.
+
+\textbf{Keywords:} linear attention, data-dependent decay, chunked scan, O(1) 
+memory, cross-attention
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} decay\_linear\_attention, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} linear attention, data-dependent decay, chunked scan, O(1)
 \end{abstract}
 
 \vspace{1em}

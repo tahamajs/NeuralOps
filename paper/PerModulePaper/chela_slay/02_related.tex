@@ -1,3 +1,98 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for chela_slay.
+\subsection{Linear Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020) introduced the modern 
+formulation of linear attention with $\phi(x) = \text{elu}(x) + 1$. It 
+achieves $\mathcal{O}(L)$ complexity but suffers on tasks requiring precise 
+retrieval.
+
+\textbf{Performer} (Choromanski et al., 2021) uses **positive orthogonal random 
+features (PORF)** to approximate softmax with rigorous error bounds. Our 
+Yat-Kernel is a trigonometric RFF variant, similar in spirit.
+
+\textbf{Nystr mformer} (Xiong et al., 2021) approximates the attention matrix 
+via Nystr m landmarks. \textbf{Luna} (Ma et al., 2021) uses random projections. 
+\textbf{COSFORMER} (Luo et al., 2021) uses cos-based feature maps.
+
+\subsection{Random Fourier Features}
+
+\textbf{Rahimi \& Recht (2007)} showed that kernel functions can be approximated 
+via random Fourier features:
+
+\[
+k(x, y) \approx \phi(x)^\top \phi(y), \quad
+\phi(x) = \frac{1}{\sqrt{F}} \left[ \cos(\omega_1 \cdot x), \sin(\omega_1 \cdot x), \dots \right]
+\tag{2.1}
+\]
+
+with $\omega_i \sim \mathcal{N}(0, 1)$. \textbf{Yat-Kernel} (Zhang et al., 2024) 
+extends this with a $\cos + \sin$ concatenation and a $1/F^{1/4}$ scaling. 
+We adopt this formulation.
+
+\subsection{Spherical Normalization}
+
+\textbf{Spherical attention} (Zhu et al., 2024) normalizes Q, K to the unit 
+hypersphere, giving attention scores that are cosine similarities. This 
+stabilizes training and improves robustness to magnitude variance.
+
+Our method uses spherical normalization only on the linear stream, 
+preserving the dense stream's sensitivity to magnitude.
+
+\subsection{Hybrid Attention}
+
+\textbf{Hymba} (Dong et al., 2024) fuses attention and SSM inside a single 
+layer. \textbf{T2T} (Yuan et al., 2021) combines linear and dense via gating. 
+\textbf{YOSO} (Zhu et al., 2024) uses a gate to mix local and global attention.
+
+CHELA-SLAY differs by using a \textbf{dense + linear} hybrid with 
+\textbf{spherical-normalized Yat-Kernel features} on the linear path.
+
+\subsection{Adaptive Gating}
+
+\textbf{MoE} (Shazeer et al., 2017) uses a router to select experts. **Mixture 
+of Softmaxes** (Yang et al., 2018) blends softmax heads. Our gate is a 
+\textbf{per-head scalar} (not a routing distribution), blending two full 
+attention streams.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Linear stream?} & \textbf{Dense anchor?} & \textbf{Spherical?} & \textbf{Gate?} \\
+\midrule
+Linear Transformer &  &  &  &  \\
+Performer &  &  &  &  \\
+Cosformer &  &  &  &  \\
+Hymba &  &  &  &  \\
+\textbf{CHELA-SLAY} &  &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} CHELA-SLAY is the only method that combines a **dense 
+anchor\textbf{ with a }spherically normalized linear stream\textbf{ via a }learnable 
+gate**.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Params} & \textbf{SST-2} & \textbf{Recoverable?} \\
+\midrule
+Baseline MHSA & $\mathcal{O}(L^2)$ & $4d^2$ & 90.71\% & -- \\
+Linear Transformer & $\mathcal{O}(L)$ & $4d^2$ & {{LT\_D}} & Retrain \\
+Performer & $\mathcal{O}(L)$ & $4d^2$ & {{PERF\_D}} & Retrain \\
+\textbf{CHELA-SLAY} & $\mathcal{O}(L^2)$ (dense) + $\mathcal{O}(L)$ (linear) & $4d^2 + \epsilon$ & \textbf{{{D\_ACC}}} & \textbf{LoRA} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

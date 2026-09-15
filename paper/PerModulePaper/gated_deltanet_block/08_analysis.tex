@@ -1,3 +1,207 @@
-\section{08 Analysis}
 
-Draft content for gated_deltanet_block.
+\section{Analysis}
+
+\subsection{The LayerNorm Initialization Mismatch}
+
+\subsubsection{Problem}
+
+The pretrained model's LayerNorm parameters were learned to match the 
+activation distribution produced by the pretrained attention. Our new 
+LayerNorm starts at $\gamma = 1, \beta = 0$.
+
+\textbf{Test.} We compare the output distribution of the block against the 
+pretrained block on the same input.
+
+\textbf{Table 8.1: Output statistics (DistilBERT, first layer, first batch).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Block (fresh LN)} & \textbf{Block (LN = pretrained)} \\
+\midrule
+Mean & 0.00 & {{D\_MEAN\_FRESH}} & {{D\_MEAN\_PRE}} \\
+Std & 1.00 & {{D\_STD\_FRESH}} & {{D\_STD\_PRE}} \\
+Max & {{D\_MAX\_BASE}} & {{D\_MAX\_FRESH}} & {{D\_MAX\_PRE}} \\
+Min & {{D\_MIN\_BASE}} & {{D\_MIN\_FRESH}} & {{D\_MIN\_PRE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{LN\_MISMATCH\_OBS}}
+
+\subsubsection{Why Training Doesn't Fully Fix It}
+
+LayerNorm scale parameters are in a \textbf{logarithmic} regime: a small change 
+in $\gamma$ produces a large change in activation scale. This can cause:
+
+\begin{itemize}
+\item \textbf{Gradient explosion} if $\gamma$ grows too large.
+\item \textbf{Gradient vanishing} if $\gamma$ shrinks to zero.
+\item \textbf{Slow convergence} because each layer's LayerNorm must re-learn
+  independently.
+
+\end{itemize}
+\subsection{Silent Weight Transfer Failure}
+
+\subsubsection{The `try/except` Antipattern}
+
+\begin{lstlisting}
+try:
+    ...
+except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+    pass
+\end{lstlisting}
+
+Catches \textbf{five exception types} and \textbf{silently swallows} them.
+
+\subsubsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Mode} & \textbf{Cause} & \textbf{Symptom} \\
+\midrule
+\texttt{AttributeError} & \texttt{UniversalAdapter} missing method & Attention has random weights \\
+\texttt{KeyError} & Missing config field & Same \\
+\texttt{RuntimeError} & Shape mismatch in \texttt{.copy\_()} & \textbf{Copy skipped silently} \\
+\texttt{TypeError} & Wrong argument type & Same \\
+\texttt{ValueError} & Invalid value & Same \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Detection}
+
+We added logging to detect silent failures:
+
+\begin{lstlisting}
+qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
+if qkv_w.shape != self.attn.in_proj_weight.shape:
+    logger.warning(f"MISMATCH: {qkv_w.shape} vs {self.attn.in_proj_weight.shape}")
+else:
+    self.attn.in_proj_weight.copy_(qkv_w)
+    logger.info(f"Weight transfer OK: {qkv_w.shape}")
+\end{lstlisting}
+
+\textbf{Result.} {{SILENT\_DETECTION\_RESULT}}
+
+\subsection{The Nested Encoder Path}
+
+For RoBERTa (\texttt{is\_nested\_encoder=True}), the block returns raw attention 
+output \textbf{without LayerNorm}. This has two implications:
+
+\begin{enumerate}
+\item \textbf{The block's \texttt{self.norm} is unused.} Wasted parameters.
+\item \textbf{The outer \texttt{BertSelfOutput} applies LayerNorm.} This is fine \textbf{if}
+  the attention output distribution matches.
+
+\end{enumerate}
+\textbf{However.} The outer LayerNorm was pretrained against the pretrained 
+\texttt{BertSelfAttention} output. Our block produces a different distribution 
+(especially for GatedDeltaNet). So the outer LayerNorm sees mismatched input.
+
+\subsection{The `use\_full\_attention=True` Path}
+
+\subsubsection{Non-causal MHA for GPT-2}
+
+For GPT-2, \texttt{use\_full\_attention=True} uses \texttt{nn.MultiheadAttention} **without 
+causal masking\textbf{. This is }incorrect** for autoregressive generation.
+
+\textbf{Test.} We compare predictions with and without causal masking:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Configuration} & \textbf{Accuracy (GPT-2)} & \textbf{Note} \\
+\midrule
+Baseline (causal) & 79.36\% & Correct \\
+Block MHA (no causal) & {{G\_MHA\_ACC}}\% & \textbf{Incorrect} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} The non-causal MHA is a \textbf{fundamental correctness bug} for 
+decoder models.
+
+\subsubsection{Fused vs Separate Projections}
+
+\texttt{nn.MultiheadAttention} uses fused Q/K/V. Pretrained models use separate 
+projections. Even with correct concatenation, the resulting attention is 
+\textbf{not numerically identical} because:
+
+\begin{itemize}
+\item Pretrained attention may have different dropout rates per projection.
+\item Pretrained attention may use different scaling.
+\item Fused operation may have different numerical precision.
+
+\end{itemize}
+\subsection{Failure Mode Taxonomy}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure Mode} & \textbf{Symptom} & \textbf{Root Cause} \\
+\midrule
+\textbf{LN mismatch} & $\pm${{LN\_DELTA}}\% accuracy & Fresh LN \\
+\textbf{Silent transfer} & Random attention & \texttt{try/except: pass} \\
+\textbf{Non-causal MHA} & Wrong for GPT-2 & Missing mask \\
+\textbf{GatedDeltaNet slow} & {{D\_SLOWDOWN}}$\times$ slowdown & Python loops \\
+\textbf{OOM on 12-layer} & CUDA error & State memory \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Why the Wrapper Adds Problems}
+
+Even if the underlying attention is fine, the block wrapper introduces:
+
+\begin{enumerate}
+\item \textbf{Fresh LayerNorm}: An independent source of error.
+\item \textbf{Different residual structure}: Post-LN vs pre-LN.
+\item \textbf{Nested encoder inconsistency}: Different behavior for RoBERTa vs DistilBERT.
+\item \textbf{Silent failure paths}: Harder to debug.
+
+\end{enumerate}
+\textbf{The wrapper does not improve over attention-level replacement.}
+
+\subsection{Ablation: What Contributes to Error?}
+
+\textbf{Table 8.2: Error decomposition (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Configuration} & \textbf{Accuracy} & \textbf{$\Delta$ from baseline} \\
+\midrule
+Baseline & 90.71\% & -- \\
+Block (LN=pretrained, attention=pretrained) & {{D\_IDEAL}}\% & {{D\_IDEAL\_DELTA}} \\
+Block (LN=fresh, attention=pretrained) & {{D\_LN\_FRESH}}\% & {{D\_LN\_FRESH\_DELTA}} \\
+Block (LN=fresh, attention=random) & {{D\_RANDOM}}\% & {{D\_RANDOM\_DELTA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{ERROR\_DECOMP\_OBS}}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{LayerNorm initialization matters.} Pretrained LN is not 1/0; replacing
+  it with fresh parameters introduces error.
+\item \textbf{Silent failures are dangerous.} The \texttt{try/except} masks bugs.
+\item \textbf{Non-causal MHA breaks GPT-2.} A fundamental correctness bug.
+\item \textbf{The wrapper adds no value over attention-level replacement.} It adds
+  parameters and complexity without benefit.
+\item \textbf{GatedDeltaNet remains the bottleneck.} Its Python loops dominate.
+
+\end{enumerate}

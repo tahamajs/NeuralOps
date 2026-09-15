@@ -1,136 +1,140 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 13_references.md
+     PURPOSE: Bibliography
+     DEPENDENCIES: All sections
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # 13. References
 
 ```bibtex
 @inproceedings{vaswani2017attention,
   title={Attention is all you need},
-  author={Vaswani, Ashish and others},
+  author={Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and 
+          Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N and 
+          Kaiser, {\L}ukasz and Polosukhin, Illia},
   booktitle={NeurIPS},
   year={2017}
 }
 
-@book{strang1973introduction,
-  title={An Introduction to the Finite Element Method},
-  author={Strang, Gilbert and Fix, George J},
-  year={1973},
-  publisher={Prentice-Hall}
-}
-
-@book{brenner2008mathematical,
-  title={The Mathematical Theory of Finite Element Methods},
-  author={Brenner, Susanne C and Scott, L Ridgway},
-  year={2008},
+@book{quarteroni1994numerical,
+  title={Numerical Approximation of Partial Differential Equations},
+  author={Quarteroni, Alfio and Valli, Alberto},
+  year={1994},
   publisher={Springer}
 }
 
-@inproceedings{wang2020linformer,
-  title={Linformer},
-  author={Wang, Sinong and others},
-  journal={arXiv:2006.04768},
-  year={2020}
-}
-
-@inproceedings{choromanski2021rethinking,
-  title={Rethinking attention with performers},
-  author={Choromanski, Krzysztof and others},
-  booktitle={ICLR},
-  year={2021}
-}
-
-@inproceedings{xiong2021nystromformer,
-  title={Nystr{\"o}mformer},
-  author={Xiong, Yunyang and others},
-  booktitle={AAAI},
-  year={2021}
-}
-
-@inproceedings{katharopoulos2020transformers,
-  title={Transformers are RNNs},
-  author={Katharopoulos, Angelos and others},
-  booktitle={ICML},
-  year={2020}
+@article{ahmed1974discrete,
+  title={Discrete cosine transform},
+  author={Ahmed, Nasir and Natarajan, T and Rao, Kamisetty R},
+  journal={IEEE Transactions on Computers},
+  volume={100},
+  number={1},
+  pages={90--93},
+  year={1974}
 }
 
 @inproceedings{lee2021fnet,
   title={{FNet}: Mixing tokens with Fourier transforms},
-  author={Lee-Thorp, James and others},
+  author={Lee-Thorp, James and Ainslie, Joshua and Eckstein, Ilya and 
+          Ontanon, Santiago},
   booktitle={NAACL},
   year={2022}
 }
 
-@inproceedings{rao2021global,
-  title={Global filter networks for image classification},
-  author={Rao, Yongming and others},
-  booktitle={NeurIPS},
+@inproceedings{wang2020linformer,
+  title={Linformer: Self-attention with linear complexity},
+  author={Wang, Sinong and Li, Belinda Z and Khabsa, Madian and 
+          Fang, Han and Ma, Hao},
+  journal={arXiv preprint arXiv:2006.04768},
+  year={2020}
+}
+
+@inproceedings{xiong2021nystromformer,
+  title={Nystr{\"o}mformer: A Nystr{\"o}m-based algorithm for 
+         approximating self-attention},
+  author={Xiong, Yunyang and Zeng, Zhanpeng and Chakraborty, Rudrasis and 
+          Tan, Mingxing and Fung, Glenn and Li, Yin and Singh, Vikas},
+  booktitle={AAAI},
   year={2021}
 }
 
-@inproceedings{guibas2022adaptive,
-  title={Adaptive Fourier neural operators},
-  author={Guibas, John and others},
-  booktitle={ICLR},
-  year={2022}
+@inproceedings{tay2021synthesizer,
+  title={Synthesizer: Rethinking self-attention for transformer models},
+  author={Tay, Yi and Bahri, Dara and Metzler, Donald and Juan, Da-Cheng and 
+          Zhao, Zhe and Zheng, Che},
+  booktitle={ICML},
+  year={2021}
 }
 
-@article{kovachki2023neural,
-  title={Neural operator: Learning maps between function spaces},
-  author={Kovachki, Nikola and others},
-  journal={JMLR},
-  year={2023}
+@inproceedings{choromanski2021rethinking,
+  title={Rethinking attention with performers},
+  author={Choromanski, Krzysztof and Likhosherstov, Valerii and 
+          Dohan, David and Song, Xingyou and Gane, Andreea and 
+          Sarlos, Tamas and Hawkins, Peter and Davis, Jared and 
+          Mohiuddin, Afroz and Kaiser, Lukasz and others},
+  booktitle={ICLR},
+  year={2021}
+}
+
+@article{williams2001nystrom,
+  title={Using the Nystr{\"o}m method to speed up kernel machines},
+  author={Williams, Christopher KI and Seeger, Matthias},
+  journal={NeurIPS},
+  year={2001}
+}
+
+@article{peng2021random,
+  title={Random feature attention},
+  author={Peng, Hao and Pappas, Nikolaos and Yogatama, Dani and 
+          Schwartz, Roy and Smith, Noah A and Kong, Lingpeng},
+  booktitle={ICLR},
+  year={2021}
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
-  author={Hu, Edward J and others},
+  title={{LoRA}: Low-rank adaptation of large language models},
+  author={Hu, Edward J and Shen, Yelong and Wallis, Phillip and 
+          Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and 
+          Wang, Lu and Chen, Weizhu},
   booktitle={ICLR},
   year={2022}
 }
 
-@inproceedings{ainslie2023gqa,
-  title={{GQA}},
-  author={Ainslie, Joshua and others},
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality over a 
+         sentiment treebank},
+  author={Socher, Richard and Perelygin, Alex and Wu, Jean and 
+          Chuang, Jason and Manning, Christopher D and Ng, Andrew Y and 
+          Potts, Christopher},
   booktitle={EMNLP},
-  year={2023}
-}
-
-@article{su2021roformer,
-  title={Roformer},
-  author={Su, Jianlin and others},
-  journal={arXiv:2104.09864},
-  year={2021}
+  year={2013}
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
-  author={Sanh, Victor and others},
-  journal={arXiv:1910.01108},
+  title={{DistilBERT}, a distilled version of {BERT}: smaller, faster, 
+         cheaper and lighter},
+  author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and 
+          Wolf, Thomas},
+  journal={arXiv preprint arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
-  author={Liu, Yinhan and others},
-  journal={arXiv:1907.11692},
+  title={{RoBERTa}: A robustly optimized {BERT} pretraining approach},
+  author={Liu, Yinhan and Ott, Myle and Goyal, Naman and Du, Jingfei and 
+          Joshi, Mandar and Chen, Danqi and Levy, Omer and Lewis, Mike and 
+          Zettlemoyer, Luke and Stoyanov, Veselin},
+  journal={arXiv preprint arXiv:1907.11692},
   year={2019}
 }
 
 @article{radford2019language,
   title={Language models are unsupervised multitask learners},
-  author={Radford, Alec and others},
+  author={Radford, Alec and Wu, Jeffrey and Child, Rewon and Luan, David and 
+          Amodei, Dario and Sutskever, Ilya},
   journal={OpenAI Blog},
   year={2019}
 }
-
-@inproceedings{socher2013recursive,
-  title={Recursive deep models for semantic compositionality},
-  author={Socher, Richard and others},
-  booktitle={EMNLP},
-  year={2013}
-}
-
-@inproceedings{loshchilov2019decoupled,
-  title={Decoupled weight decay},
-  author={Loshchilov, Ilya and Hutter, Frank},
-  booktitle={ICLR},
-  year={2019}
-}
 ```
+
+---

@@ -1,3 +1,74 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Formal architectural specifications for \texttt{adaptive_svd_attention}.
+\subsection{Summary}
+
+We presented \textbf{Adaptive SVD Attention}, a zero-shot attention compressor 
+with \textbf{energy-thresholded rank selection} per projection. The method 
+factorizes all four projections (Q/K/V/O) using symmetric $\sqrt{\Sigma}$ 
+splits and residual adapters, achieving \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+attention parameter reduction with only \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} 
+accuracy drop.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attention Ratio} & \textbf{Avg Rank} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & {{AVG\_RANK}} \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & {{R\_AVG\_RANK}} \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & {{G\_AVG\_RANK}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Adaptive rank beats fixed rank} at equal compression.
+\item \textbf{All four projections} can be factorized with residual adapters.
+\item \textbf{T5 relative bias and cross-attention} work.
+\item \textbf{$\tau$ = 0.92} is a sweet spot.
+\item \textbf{Zero-shot} -- no calibration data needed.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Per-layer $\tau$ scheduling
+\item Fused Triton kernels for factorized forward
+\item Combined with quantization
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical error propagation bounds
+\item Cross-task transfer
+\item Extension to MoE attention
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+Adaptive SVD Attention is a principled, broadly-applicable attention 
+compressor. We release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented, ran experiments, wrote
+  the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

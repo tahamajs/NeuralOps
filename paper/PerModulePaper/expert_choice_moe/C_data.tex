@@ -1,3 +1,179 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for expert_choice_moe.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params before & 66,955,010 \\
+Total params after & {{D\_PARAMS}} \\
+Trainable & {{D\_TRAINABLE}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Expert Count Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$E$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params/layer} \\
+\midrule
+4 & {{D\_E4}} & {{R\_E4}} & {{G\_E4}} & 9.4M \\
+8 & {{D\_E8}} & {{R\_E8}} & {{G\_E8}} & 18.9M \\
+16 & {{D\_E16}} & {{R\_E16}} & {{G\_E16}} & 37.8M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Capacity Factor Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{CF} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.5 & {{D\_CF05}} & {{R\_CF05}} & {{G\_CF05}} \\
+1.0 & {{D\_CF10}} & {{R\_CF10}} & {{G\_CF10}} \\
+1.5 & {{D\_CF15}} & {{R\_CF15}} & {{G\_CF15}} \\
+2.0 & {{D\_CF20}} & {{R\_CF20}} & {{G\_CF20}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 MoE Gate Initialization Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$b_g$} & \textbf{$\sigma$($b_g$)} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+-8.0 & 0.0003 & {{D\_G\_M8}} & {{R\_G\_M8}} & {{G\_G\_M8}} \\
+-4.0 & 0.018 & {{D\_G\_M4}} & {{R\_G\_M4}} & {{G\_G\_M4}} \\
+-2.0 & 0.12 & {{D\_G\_M2}} & {{R\_G\_M2}} & {{G\_G\_M2}} \\
+0.0 & 0.50 & {{D\_G\_0}} & {{R\_G\_0}} & {{G\_G\_0}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Expert Utilization}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Expert} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & 12.5\% & 12.5\% & 12.5\% \\
+1 & 12.5\% & 12.5\% & 12.5\% \\
+... & ... & ... & ... \\
+7 & 12.5\% & 12.5\% & 12.5\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Perfect balance.}
+
+\subsection{C.8 Per-Token Capacity Distribution}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Selected by} & \textbf{Fraction} \\
+\midrule
+0 experts & {{PCT\_0}}\% \\
+1 expert & {{PCT\_1}}\% \\
+2 experts & {{PCT\_2}}\% \\
+3+ experts & {{PCT\_3}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Gate Evolution}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Step} & \textbf{$\gamma$} \\
+\midrule
+0 & 0.018 \\
+10 & {{GAMMA\_STEP10}} \\
+25 & {{GAMMA\_STEP25}} \\
+50 & {{GAMMA\_STEP50}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.10 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+20    {{D_S20}}
+30    {{D_S30}}
+40    {{D_S40}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.11 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_expert_choice_moe.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+

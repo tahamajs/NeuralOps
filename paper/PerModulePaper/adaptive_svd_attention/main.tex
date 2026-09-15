@@ -64,10 +64,48 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the adaptive\_svd\_attention module within modern transformer architectures.
+Low-rank factorization of attention projections reduces parameter count but 
+requires a \textbf{rank selection policy} that is often fixed per model. We 
+introduce \textbf{Adaptive SVD Attention}, which chooses rank **dynamically 
+per projection** based on cumulative singular-value energy:
+
+\[
+r^* = \min\left\{ r : \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{d} \sigma_j^2} \geq \tau \right\}, \quad \tau = {{ENERGY_THRESHOLD}}
+\]
+
+This adapts to the intrinsic rank of each projection, allocating more 
+capacity to projections that require it. The factorization uses a **symmetric 
+$\sqrt{\Sigma}$ split**:
+
+\[
+W \approx U_r V_r, \quad U_r = U_{:, :r} \Sigma_r^{1/2}, \quad V_r = \Sigma_r^{1/2} V_{:r, :}^\top
+\]
+
+and augments the frozen SVD base with a \textbf{trainable residual adapter}:
+
+\[
+W_\text{eff} \approx U_r V_r + B A
+\]
+
+Unlike prior attention-factorization methods that preserve the output 
+projection, we factorize \textbf{all four projections} $W_Q, W_K, W_V, W_O$, 
+achieving parameter reduction across the full attention block.
+
+On SST-2, Adaptive SVD Attention achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
+(baseline {{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), 
+and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%). Attention-block parameter 
+reduction is \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$}. The method is \textbf{zero-shot} -- no 
+calibration data is needed -- and supports GQA, RoPE, T5 relative attention 
+bias, and cross-attention. The average selected rank is \textbf{{{AVG\_RANK}}} 
+across layers.
+
+\textbf{Keywords:} adaptive rank selection, singular value decomposition, energy 
+thresholding, attention compression, T5 relative attention
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} adaptive\_svd\_attention, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} adaptive rank selection, singular value decomposition, energy
 \end{abstract}
 
 \vspace{1em}

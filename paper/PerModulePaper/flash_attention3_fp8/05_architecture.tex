@@ -1,11 +1,221 @@
-\section{05 Architecture}
 
-Draft content for flash_attention3_fp8.
+\section{Architecture Integration}
+
+\subsection{Model Support Matrix}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{FP8 on RTX 4070?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & Fallback \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & Fallback \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No & Fallback \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & Fallback \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer Details}
+
+\subsubsection{Conv1D Orientation (GPT-2)}
+
+HuggingFace \texttt{Conv1D} stores weight as \texttt{(in\_features, out\_features)}:
+
+\begin{lstlisting}
+class Conv1D(nn.Module):
+    def __init__(self, nf, nx):
+        self.weight = nn.Parameter(torch.empty(nx, nf))
+        # nx = in_features, nf = out_features
+\end{lstlisting}
+
+Our extraction:
+
+\begin{lstlisting}
+if src.c_attn.__class__.__name__ == "Conv1D":
+    w = src.c_attn.weight.data.t()  # $\to$ (nf, nx)
+\end{lstlisting}
+
+We detect Conv1D via class name \textbf{or} the shape heuristic 
+\texttt{w.shape[0] < w.shape[1]} (which holds for Conv1D with $n_f > n_x$ but 
+not for square matrices).
+
+\subsubsection{Nested vs Flat Detection}
+
+We use the following logic in \texttt{copy\_weights}:
+
+\begin{lstlisting}
+if hasattr(src, "out_lin"):
+    is_nested = False       # DistilBERT
+elif (hasattr(src, "self") and hasattr(src.self, "query")
+      and hasattr(src, "output") and hasattr(src.output, "dense")):
+    is_nested = True        # RoBERTa
+elif cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]:
+    is_nested = True
+elif cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower():
+    is_nested = True
+else:
+    is_nested = False
+\end{lstlisting}
+
+\textbf{Key insight:} check \texttt{out\_lin} \textbf{first}. DistilBERT's 
+\texttt{MultiHeadSelfAttention} ends with "SelfAttention" and would be misclassified 
+as nested otherwise.
+
+\subsection{GQA Support}
+
+For Qwen3.5 with $H_{kv} = 2 < H = 8$:
+
+\begin{lstlisting}
+# In forward:
+if self.num_kv_heads != self.num_heads:
+    k = repeat_kv(k, self.kv_repeat)
+    v = repeat_kv(v, self.kv_repeat)
+\end{lstlisting}
+
+The \texttt{repeat\_kv} function expands via broadcast and reshape:
+
+\begin{lstlisting}
+def repeat_kv(hidden_states, n_rep):
+    if n_rep == 1:
+        return hidden_states
+    B, H_kv, L, D = hidden_states.shape
+    hidden_states = hidden_states[:, :, None, :, :].expand(B, H_kv, n_rep, L, D)
+    return hidden_states.reshape(B, H_kv * n_rep, L, D)
+\end{lstlisting}
+
+\subsection{RoPE Support}
+
+We support partial RoPE, where the rotary dimension is smaller than 
+\texttt{head\_dim}:
+
+\begin{lstlisting}
+def apply_rotary_pos_emb(q, k, cos, sin):
+    rotary_dim = cos.shape[-1]
+    if rotary_dim < q.shape[-1]:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        q_rot_embed = q_rot * cos + rotate_half(q_rot) * sin
+        q = torch.cat([q_rot_embed, q_pass], dim=-1)
+    ...
+\end{lstlisting}
+
+\subsection{Causality}
+
+For decoder models, we set \texttt{causal\_flag = True} if:
+\begin{itemize}
+\item \texttt{self.is\_decoder}
+\item AND not cross-attention
+\item AND $L = L_{kv}$
+
+\end{itemize}
+This ensures we only apply causal masking for self-attention, not 
+cross-attention.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject FlashAttention3FP8 into a layer
+\begin{lstlisting}
+Input:  layer   (transformer block), config, old_attn
+Output: new attention module in  
+
+1: new $\leftarrow$ FlashAttention3FP8(config, old_attn=old_attn)
+2: if new.copy_weights failed: return None
+3: if   has .attention.self:
+4:      .attention.self $\leftarrow$ new
+5:     new.is_nested_encoder $\leftarrow$ True
+6: elif   has .attention:
+7:      .attention $\leftarrow$ new
+8: elif   has .self_attn:
+9:      .self_attn $\leftarrow$ new
+10: return new
+\end{lstlisting}
+
+\subsection{Failure Handling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+\texttt{flash\_attn} not installed & ImportError & \texttt{FLASH\_ATTN\_AVAILABLE = False} \\
+\texttt{float8\_e4m3fn} missing & \texttt{hasattr(torch, ...)} & Skip FP8 path \\
+FP8 kernel crash & try/except & SDPA fallback \\
+Weight copy failure & Frobenius check & Log + skip \\
+Cross-attention & \texttt{encoder\_hidden\_states != None} & Not supported -- raise \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cross-Attention}
+
+Our implementation \textbf{does not support cross-attention} in the current 
+version. If \texttt{encoder\_hidden\_states} is provided, we raise 
+\texttt{NotImplementedError}. This is acceptable because the models tested 
+(DistilBERT, RoBERTa, GPT-2) are encoder-only or decoder-only.
+
+\subsection{Common Pitfalls}
+
+\subsubsection{Nested Encoder Double-Projection}
+
+If \texttt{is\_nested\_encoder} is set incorrectly, the output projection is applied 
+twice (once inside our module, once by the outer block):
+
+\begin{lstlisting}
+# WRONG for RoBERTa
+if not self.is_nested_encoder:
+    out = self.out_proj(out)  # would double-project
+\end{lstlisting}
+
+We verify \texttt{is\_nested\_encoder} by checking \texttt{hasattr(src, "out\_lin")}.
+
+\subsubsection{Conv1D Transpose}
+
+If we forget to transpose Conv1D weights, Q/K/V shapes mismatch:
+
+\begin{lstlisting}
+# CORRECT
+w = src.c_attn.weight.data.t()
+\end{lstlisting}
+
+\subsubsection{GQA Mismatch}
+
+If \texttt{num\_kv\_heads} is wrong, \texttt{view(B, L, num\_kv\_heads, head\_dim)} will fail 
+or silently produce wrong results. We detect the correct value from 
+\texttt{config.num\_key\_value\_heads}.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("flash3_fp8")
+@ATTENTION_REGISTRY.register("flash_attention3_fp8")
+class FlashAttention3FP8(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Integration with LoRA Recovery}
+
+The pipeline:
+
+\begin{enumerate}
+\item Load base model.
+\item Replace attention with \texttt{FlashAttention3FP8} via injection.
+\item Freeze base weights, keep LoRA trainable.
+\item Run recovery fine-tuning for {{RECOVERY\_STEPS}} steps.
+\item Evaluate.
+
+\end{enumerate}
+This is the same pipeline as other modules in our framework.
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_aegis_spectron_fp8.jpeg}
-\caption{Architectural overview of flash_attention3_fp8.}
-\label{fig:arch_flash_attention3_fp8}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of flash\_attention3\_fp8.}
+\label{fig:arch_flash-attention3-fp8}
 \end{figure}
+

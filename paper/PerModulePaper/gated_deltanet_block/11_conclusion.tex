@@ -1,3 +1,89 @@
-\section{11 Conclusion}
 
-Draft content for gated_deltanet_block.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{GatedDeltaNetBlock}, a block-level wrapper for attention 
+replacement. Unlike attention-level replacement, it introduces a **fresh 
+LayerNorm** and replaces the entire block structure. Two paths are 
+available: \texttt{use\_full\_attention=True} (standard \texttt{nn.MultiheadAttention}) 
+and \texttt{use\_full\_attention=False} (GatedDeltaNet).
+
+\textbf{Results are negative for both paths.} Path A suffers from LayerNorm 
+mismatch and silent weight-transfer failures. Path B inherits GatedDeltaNet's 
+slow implementation. On DistilBERT, both paths are worse than baseline. 
+RoBERTa and GPT-2 fail due to memory constraints.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Path} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Block (MHA) & {{D\_MHA\_ACC}}\% & {{R\_MHA\_STATUS}} & {{G\_MHA\_STATUS}} \\
+Block (DeltaNet) & {{D\_ACC}}\% & OOM & OOM \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{LayerNorm must be pretrained.} Fresh LayerNorm causes distributional
+  mismatch.
+\item \textbf{Silent \texttt{try/except} is dangerous.} It masks critical failures.
+\item \textbf{Block-level replacement adds complexity without benefit.} Attention-level
+  is usually sufficient.
+\item \textbf{Non-causal MHA breaks GPT-2.} This is a fundamental correctness bug.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Immediate Fixes}
+
+\begin{itemize}
+\item \textbf{Copy pretrained LayerNorm} into the block.
+\item \textbf{Add explicit logging} to weight transfer.
+\item \textbf{Add causal masking} for GPT-2 in Path A.
+\item \textbf{Replace \texttt{try/except: pass}} with targeted error handling.
+
+\end{itemize}
+\subsubsection{Medium-Term}
+
+\begin{itemize}
+\item Test with pretrained LayerNorm to isolate the LN contribution.
+\item Test on flat-only models (no nested encoder).
+
+\end{itemize}
+\subsubsection{Long-Term}
+
+\begin{itemize}
+\item Study block-level replacement systematically.
+\item Compare against RetNet, Mamba, RWKV.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+This work documents three specific failure modes of block-level replacement:
+LayerNorm initialization, silent exception handling, and non-causal attention 
+for decoders. We hope these observations help future work avoid the same 
+pitfalls.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}} for feedback.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

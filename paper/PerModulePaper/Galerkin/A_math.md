@@ -1,95 +1,110 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: A_math.md
+     PURPOSE: Mathematical derivations
+     DEPENDENCIES: 04_method.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # Appendix A. Mathematical Derivations
 
-## A.1 Galerkin Discretization of Attention
+## A.1 DCT Basis Construction
 
-The continuous attention operator:
+DCT-II basis:
 
 $$
-(\mathcal{K} Q)(s) = \int_0^1 \kappa(s, t) V(t) \, dt
+\Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right)
 \tag{A.1}
 $$
 
-Choose an orthonormal basis $\{\phi_k\}_{k=1}^r$ of $L^2[0, 1]$. The Galerkin 
-approximation $\hat{Q} = \sum_k q_k \phi_k$ satisfies:
+After normalization:
 
 $$
-\langle \mathcal{K} Q, \phi_j \rangle = \sum_k q_k \langle \mathcal{K} \phi_k, \phi_j \rangle
+\tilde{\Phi}_{n, k} = \begin{cases}
+\Phi_{n, k} / \sqrt{N} & k = 0 \\
+\Phi_{n, k} \cdot \sqrt{2/N} & k \geq 1
+\end{cases}
 \tag{A.2}
 $$
 
-In matrix form, define $\Phi_{n,k} = \phi_k(t_n)$ and $Q_\Phi = \Phi^\top Q$:
+Orthonormality: $\tilde{\Phi}^\top \tilde{\Phi} = I_N$.
+
+## A.2 Projection Error
+
+For a smooth function $f \in C^s([0, 1])$, truncation at $r$ basis 
+functions gives:
 
 $$
-Q_\Phi = (\Phi^\top \mathcal{K} \Phi) Q_\Phi
+\|f - \Phi_r \Phi_r^\top f\|_{L^2} \leq C r^{-s}
 \tag{A.3}
 $$
 
-where $\mathcal{K}_{ij} = \kappa(t_i, t_j)$ is the discretized kernel.
+where $C$ depends on the smoothness. This bound does **not** apply to 
+non-smooth functions like trained attention kernels.
 
-## A.2 DCT Orthonormality
+## A.3 Energy Preservation
 
-**Theorem.** The DCT-II basis vectors:
+For orthonormal $\Phi_r$:
 
 $$
-\phi_k(n) = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n+1)}{2N}\right)
+\|\Phi_r^\top f\|_F^2 \leq \|f\|_F^2
 \tag{A.4}
 $$
 
-are orthonormal: $\sum_n \phi_i(n) \phi_j(n) = \delta_{ij}$.
+with equality iff $f$ lies in the span of $\Phi_r$.
 
-**Proof.** Standard DCT result (Ahmed et al., 1974). $\square$
-
-## A.3 Approximation Error Bound
-
-**Theorem.** For the DCT basis, the Galerkin approximation error is:
+The **expected** energy preserved for random $f \sim \mathcal{N}(0, I_N)$:
 
 $$
-\|\mathcal{K} Q - \hat{\mathcal{K}} \hat{Q}\|_2 \leq \sqrt{\sum_{k > r} \lambda_k}
+\mathbb{E}[\|\Phi_r^\top f\|^2] = r
 \tag{A.5}
 $$
 
-where $\lambda_k$ are the eigenvalues of $\mathcal{K}^\top \mathcal{K}$ 
-sorted descending.
+while $\mathbb{E}[\|f\|^2] = N$. So on average, only $r/N$ of energy 
+is preserved.
 
-**Proof.** Standard result in finite element theory (Strang & Fix, 1973, 
-Theorem 5.2). $\square$
-
-## A.4 Energy Preservation Scaling
-
-**Claim.** The scaling factor $\sqrt{N/r}$ ensures:
+The correction $\sqrt{N/r}$ restores average energy:
 
 $$
-\mathbb{E}\left[\|\Phi O_\Phi \sqrt{N/r}\|_2^2\right] \approx \mathbb{E}\left[\|O_\Phi\|_2^2\right] \cdot (N/r) \cdot r = N \cdot \mathbb{E}[\|O_\Phi\|^2 / r]
+\mathbb{E}[\|\sqrt{N/r} \Phi_r \Phi_r^\top f\|^2] = N
 \tag{A.6}
 $$
 
-Under the assumption of i.i.d. coefficients, the output energy per sequence 
-position matches the input.
+But this is only a **distributional** correction; individual samples may 
+overshoot or undershoot.
 
-## A.5 Partial RoPE
+## A.4 Attention Smoothness
 
-For Qwen3.5 with $d_h = 256$ and $d_\text{rot} = 64$:
+Trained attention weights often exhibit high entropy and sharp peaks. Let 
+$\sigma^2$ denote the variance of the attention kernel $k(x, y)$ in the 
+$L^2$ sense. DCT truncation preserves:
 
 $$
-\tilde{Q} = [\text{RoPE}(Q_{:64}), \ Q_{64:}]
+\text{Preserved energy} \approx \frac{1}{1 + \sigma^2 r^2 / \pi^2}
 \tag{A.7}
 $$
 
-Only the first 64 coordinates rotate.
+For small $\sigma$ (sharp peaks), preservation is poor.
 
-## A.6 Causality Preservation Fallback
+## A.5 Causality of Decoder Path
 
-For decoders, the projection cannot preserve causality because projected 
-keys depend on all tokens. We use exact causal softmax.
-
-## A.7 Rank Selection
-
-The optimal rank $r^*$ minimizes:
+For causal attention, the standard masked softmax preserves:
 
 $$
-r^* = \arg\min_r \left[ \text{FLOPs}(r) + \lambda \cdot \text{ApproxError}(r) \right]
+\frac{\partial O_i}{\partial X_j} = 0 \text{ for } j > i
 \tag{A.8}
 $$
 
-For DCT, $\text{ApproxError}(r) \sim \exp(-c r)$ for smooth kernels, so 
-$r = 64$ suffices for $N = 128$.
+The Galerkin path does not preserve this and is therefore **not used** for 
+decoders.
+
+## A.6 LoRA Initialization
+
+Standard LoRA init:
+
+$$
+A \sim \mathcal{N}(0, \sigma^2), \quad B = 0
+\tag{A.9}
+$$
+
+So $\Delta W = BA = 0$ at step 0, preserving base behavior exactly.
+
+---

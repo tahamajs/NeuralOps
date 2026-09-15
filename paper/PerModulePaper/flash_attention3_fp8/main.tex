@@ -64,10 +64,41 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the flash\_attention3\_fp8 module within modern transformer architectures.
+
+Recent attention implementations -- FlashAttention, FlashAttention-2, and 
+FlashAttention-3 -- have reduced attention memory from $\mathcal{O}(L^2)$ to 
+$\mathcal{O}(L)$ by exploiting tiling and, in the third generation, 8-bit 
+floating-point (FP8) tensor cores on Hopper architectures. However, these 
+methods assume specific hardware that many practitioners do not have access 
+to. We present a \textbf{hardened PyTorch implementation} of FlashAttention-3 FP8 
+that automatically degrades to PyTorch's native Scaled Dot-Product Attention 
+(SDPA) when FP8 tensor cores are unavailable, ensuring portability across 
+all CUDA GPUs.
+
+Our implementation supports four transformer families -- DistilBERT, 
+RoBERTa/BERT, GPT-2, and Qwen/LLaMA -- with correct handling of grouped-query 
+attention (GQA), rotary position embeddings (RoPE), causal masking, and 
+nested encoder architectures. Base weights are transferred exactly from the 
+pretrained attention via a weight-copy procedure that handles fused Conv1D, 
+nested self-attention, and GQA-based projections; trainable capacity is 
+provided by LoRA adapters at rank $r = {{LORA_RANK}}$.
+
+We benchmark on SST-2 across DistilBERT, RoBERTa, and GPT-2. Because our 
+test hardware (RTX 4070 Laptop) does not expose FP8 tensor cores, the FP8 
+path is unavailable and all models run through the SDPA fallback. We report 
+this transparently and identify the exact hardware requirements for 
+reproducing the FP8 speedups claimed in the original FlashAttention-3 paper. 
+On our hardware, accuracy is preserved within \textbf{{{D\_DELTA}}\%} (DistilBERT), 
+\textbf{{{R\_DELTA}}\%} (RoBERTa), and \textbf{{{G\_DELTA}}\%} (GPT-2), but parameter 
+count increases by \textbf{{{PARAM\_INC}}\%} due to LoRA adapters.
+
+\textbf{Keywords:} FlashAttention-3, FP8 quantization, Hopper tensor cores, 
+attention implementation, hardware-aware fallback
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} flash\_attention3\_fp8, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} FlashAttention-3, FP8 quantization, Hopper tensor cores,
 \end{abstract}
 
 \vspace{1em}

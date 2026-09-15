@@ -1,3 +1,33 @@
-\section{12 Reproducibility}
+\section{Reproducibility Statement}
 
-Draft content for block_transformer_hiba.
+We believe in open science and rigorous verification. To reproduce the HIBA results presented in this paper:
+
+\subsection{Code and Framework}
+The full implementation, including the \texttt{BlockTransformerHIBA} class and the dynamic \texttt{copy\_weights} injection factory, is open-sourced under the MIT License at:
+\texttt{https://github.com/HooshaAI/SVD\_Project/tree/main/framework/attentions/block\_transformer\_hiba.py}
+
+\subsection{Experimental Setup}
+All experiments were conducted using the following environment:
+\begin{itemize}
+\item \textbf{GPU:} Single NVIDIA RTX 4070 (8 GB VRAM)
+\item \textbf{Framework:} PyTorch 2.1+, CUDA 11.8+
+\item \textbf{Hyperparameters:} LoRA Rank = 16, LoRA Alpha = 32.0, Learning Rate = 2e-4, Batch Size = 8, Recovery Steps = 50.
+\item \textbf{Random Seed:} Set globally to \texttt{42} via \texttt{torch.manual\_seed(42)}.
+
+\end{itemize}
+\subsection{Execution Command}
+To reproduce the Table 7.1 main results, execute the unified sweep script:
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --modules full,block_transformer_hiba \
+    --recovery_steps 50 \
+    --lora_rank 16 \
+    --batch_size 8 \
+    --precision fp16
+
+\end{lstlisting}
+
+This script handles the automatic extraction of pretrained weights, the injection of the HIBA module, and the LoRA recovery fine-tuning loop. Model checkpoints (including LoRA adapters) will be saved to the \texttt{./results/unified\_hiba/} directory for subsequent verification.
+
+

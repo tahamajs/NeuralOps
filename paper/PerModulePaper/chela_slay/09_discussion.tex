@@ -1,3 +1,104 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for chela_slay.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Dense Anchor is Essential}
+
+Pure linear attention loses ~{{ANCHOR\_GAIN}}\% accuracy. The dense anchor 
+recovers this.
+
+\subsubsection{Takeaway 2: Spherical + Yat-Kernel Improves Linear}
+
+The combined spherical normalization + Yat-Kernel feature map gives a 
+\textbf{stable, efficient} linear stream.
+
+\subsubsection{Takeaway 3: Cumsum Memory is the Limitation}
+
+The causal linear attention via cumsum materializes 
+$(\text{B}, \text{H}, L, 2F, d_h)$ which is \textbf{memory-intensive} for short L.
+
+\subsection{When to Use CHELA-SLAY}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Long-context inference} ($L \geq {{BREAKEVEN}}$) where dense dominates.
+\item \textbf{Research on hybrid attention.}
+\item \textbf{Learning gate behavior} for stream selection.
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Short sequences} ($L \leq 256$).
+\item \textbf{Memory-constrained environments} (cumsum dominates).
+\item \textbf{Latency-critical applications.}
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Target L $\ge$ 512? --- Yes --- Consider CHELA-SLAY
+  | No
+   
+Need memory efficiency? --- Yes --- Use SOA Fused / Adaptive SVD
+  | No
+   
+Consider standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT at L = 128:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{CHELA-SLAY} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Improving the Cumsum}
+
+\textbf{Future work.} Replace the cumsum with a \textbf{chunked state-passing}:
+
+\begin{lstlisting}
+for chunk_start in range(0, L, C):
+    chunk_end = chunk_start + C
+    # intra-chunk: cumsum within C tokens
+    # inter-chunk: add previous chunk's final state
+\end{lstlisting}
+
+This would reduce memory to $\mathcal{O}(C \cdot 2F \cdot d_h)$.
+
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Contributes to hybrid attention research.
+\item Demonstrates stable linear attention.
+\item Provides multi-architecture support.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Cumsum memory limitation.
+\item Slower at short L.
+\item Modest accuracy gain.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Chunked cumsum:} Would it eliminate the memory bottleneck?
+\item \textbf{Learned $\Omega$:} Could training $\Omega$ improve the linear stream?
+\item \textbf{Different gate shapes:} Would a per-token per-dimension gate help?
+\item \textbf{Scale to L > 4096:} Does the linear stream become dominant?
+
+\end{enumerate}

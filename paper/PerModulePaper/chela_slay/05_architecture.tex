@@ -1,11 +1,139 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Draft content for chela_slay.
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+The \texttt{copy\_weights} procedure handles four patterns:
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c_w = c_attn.weight.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+o_w = c_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+q_w = src.self.query.weight
+k_w = src.self.key.weight
+v_w = src.self.value.weight
+o_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Flat Modules}
+
+\begin{lstlisting}
+q_w = src.q_lin.weight  # or q_proj or query
+\end{lstlisting}
+
+\subsubsection{UniversalAdapter}
+
+Fallback if none match.
+
+\subsection{Handling of the RFF Projection}
+
+The RFF matrix $\Omega$ has \textbf{no pretrained equivalent} -- it is initialized 
+randomly. This is intentional: random features are theoretically justified 
+by Bochner's theorem, and the adaptive gate can down-weight the linear 
+stream if $\Omega$ is not useful.
+
+\subsection{Gate Initialization}
+
+The gate is a \texttt{Linear(dim, H)} module with:
+
+\begin{itemize}
+\item Weight zero-initialized.
+\item Bias = {{GATE\_INIT\_BIAS}}.
+
+\end{itemize}
+This makes $\sigma(b_g) \approx {{GATE_INIT}}$, favoring the dense stream.
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, \texttt{is\_nested\_encoder = True}, so we \textbf{do not} apply \texttt{out\_proj}. 
+The outer \texttt{attention.output.dense} handles the projection.
+
+\subsection{GQA Support}
+
+For GQA models (Qwen), we expand K, V via \texttt{repeat\_kv} before both streams.
+
+\subsection{RoPE Support}
+
+Partial-coordinate RoPE:
+
+\begin{lstlisting}
+if rotary_dim < head_dim:
+    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+    q = torch.cat([q_rot * cos + rot(q_rot) * sin, q_pass], dim=-1)
+\end{lstlisting}
+
+\subsection{Causality}
+
+For decoders, we apply:
+
+\begin{enumerate}
+\item \textbf{Dense stream:} causal mask on scores.
+\item \textbf{Linear stream:} cumsum over sequence.
+
+\end{enumerate}
+Both are strictly causal.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject CHELA-SLAY into a model
+\begin{lstlisting}
+Input:  model M, config c
+Output: M with attention replaced
+
+1: for each layer with attention:
+2:     src $\leftarrow$ extract_attention(layer)
+3:     if src is None: continue
+4:     try:
+5:         new $\leftarrow$ ChelaSlayAttention(c, pretrained_attn=src)
+6:         replace(layer, new)
+7:     except Exception:
+8:         raise RuntimeError("copy_weights failed")
+9: return M
+\end{lstlisting}
+
+\subsection{Failure Handling}
+
+The injection raises \texttt{RuntimeError} on any failure. This is strict but 
+appropriate because the hybrid attention is complex.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("chela_slay")
+@ATTENTION_REGISTRY.register("chela_slay_attention")
+class ChelaSlayAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/chela_slay_architecture.png}
-\caption{Architectural overview of chela_slay.}
-\label{fig:arch_chela_slay}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of chela\_slay.}
+\label{fig:arch_chela-slay}
 \end{figure}
+

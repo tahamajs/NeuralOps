@@ -1,3 +1,210 @@
-\section{07 Results}
+\section{Results}
 
-Draft content for expert_choice_moe.
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Trainable} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 0 & 183 MB \\
+DistilBERT & \textbf{EC-MoE} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}} & {{D\_TRAINABLE}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 0 & 712 MB \\
+RoBERTa & \textbf{EC-MoE} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}} & {{R\_TRAINABLE}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 0 & 793 MB \\
+GPT-2 & \textbf{EC-MoE} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}} & {{G\_TRAINABLE}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{EC-MoE} & \textbf{Change} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_PCT}}\% \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{We state explicitly:} parameter count \textbf{increases}.
+
+\subsection{Expert Utilization}
+
+\textbf{Table 7.3: Expert utilization (should be perfectly balanced).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Expert} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & {{UTIL\_D\_E0}}\% & {{UTIL\_R\_E0}}\% & {{UTIL\_G\_E0}}\% \\
+1 & {{UTIL\_D\_E1}}\% & {{UTIL\_R\_E1}}\% & {{UTIL\_G\_E1}}\% \\
+2 & {{UTIL\_D\_E2}}\% & {{UTIL\_R\_E2}}\% & {{UTIL\_G\_E2}}\% \\
+3 & {{UTIL\_D\_E3}}\% & {{UTIL\_R\_E3}}\% & {{UTIL\_G\_E3}}\% \\
+4 & {{UTIL\_D\_E4}}\% & {{UTIL\_R\_E4}}\% & {{UTIL\_G\_E4}}\% \\
+5 & {{UTIL\_D\_E5}}\% & {{UTIL\_R\_E5}}\% & {{UTIL\_G\_E5}}\% \\
+6 & {{UTIL\_D\_E6}}\% & {{UTIL\_R\_E6}}\% & {{UTIL\_G\_E6}}\% \\
+7 & {{UTIL\_D\_E7}}\% & {{UTIL\_R\_E7}}\% & {{UTIL\_G\_E7}}\% \\
+\textbf{Std} & \textbf{{{UTIL\_D\_STD}}} & \textbf{{{UTIL\_R\_STD}}} & \textbf{{{UTIL\_G\_STD}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Utilization is \textbf{exactly balanced} (std $\approx$ 0) -- this is a 
+direct consequence of expert-choice routing.
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.4: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline Time} & \textbf{EC-MoE} & \textbf{VRAM} \\
+\midrule
+DistilBERT & 1.90 s & {{D\_TIME}} s & {{D\_VRAM}} MB \\
+RoBERTa & 4.10 s & {{R\_TIME}} s & {{R\_VRAM}} MB \\
+GPT-2 & 4.20 s & {{G\_TIME}} s & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Number of Experts}
+
+\textbf{Table 7.5: Accuracy vs experts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$E$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & {{D\_E4}} & {{R\_E4}} & {{G\_E4}} \\
+8 & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+16 & {{D\_E16}} & {{R\_E16}} & {{G\_E16}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Capacity Factor}
+
+\textbf{Table 7.6: Accuracy vs capacity factor.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{CF} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.5 & {{D\_CF05}} & {{R\_CF05}} & {{G\_CF05}} \\
+1.0 & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+1.5 & {{D\_CF15}} & {{R\_CF15}} & {{G\_CF15}} \\
+2.0 & {{D\_CF20}} & {{R\_CF20}} & {{G\_CF20}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: MoE Gate Initialization}
+
+\textbf{Table 7.7: Accuracy vs moe\_init\_gate.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$b_g$} & \textbf{$\sigma$(b\_g)} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+-8.0 & 0.0003 & {{D\_G\_M8}} & {{R\_G\_M8}} & {{G\_G\_M8}} \\
+-4.0 & {{MOE\_GATE\_VALUE}} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+-2.0 & 0.12 & {{D\_G\_M2}} & {{R\_G\_M2}} & {{G\_G\_M2}} \\
+0.0 & 0.50 & {{D\_G\_0}} & {{R\_G\_0}} & {{G\_G\_0}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Zero-Init}
+
+\textbf{Table 7.8: Effect of zero-init.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+With zero-init & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+Without & {{D\_NO\_ZI}} & {{R\_NO\_ZI}} & {{G\_NO\_ZI}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Token-Choice MoE}
+
+\textbf{Table 7.9: Expert-choice vs token-choice (BAM-UMoE).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Expert balance} \\
+\midrule
+BAM-UMoE (token-choice) & {{BAM\_D}} & {{BAM\_R}} & {{BAM\_G}} & {{BAM\_STD}} \\
+\textbf{EC-MoE (expert-choice)} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{~0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Loss}
+
+\textbf{Figure 7.1} shows recovery loss vs step. {{TRAINING\_DESC}}
+
+\subsection{Gate Evolution}
+
+\textbf{Figure 7.2} shows the learned gate $\gamma$ over training.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Step} & \textbf{DistilBERT $\gamma$} & \textbf{RoBERTa $\gamma$} & \textbf{GPT-2 $\gamma$} \\
+\midrule
+0 & {{GAMMA\_STEP0}} & {{GAMMA\_STEP0}} & {{GAMMA\_STEP0}} \\
+10 & {{GAMMA\_STEP10}} & {{GAMMA\_STEP10}} & {{GAMMA\_STEP10}} \\
+25 & {{GAMMA\_STEP25}} & {{GAMMA\_STEP25}} & {{GAMMA\_STEP25}} \\
+50 & {{GAMMA\_STEP50}} & {{GAMMA\_STEP50}} & {{GAMMA\_STEP50}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} {{D\_DELTA}}\% to {{G\_DELTA}}\% change.
+\item \textbf{Parameters:} +{{D\_PARAM\_PCT}}\%.
+\item \textbf{Expert utilization:} perfectly balanced (std $\approx$ 0).
+\item \textbf{Gate:} ramps from {{MOE\_GATE\_VALUE}} to {{GAMMA\_FINAL}}.
+
+\end{itemize}

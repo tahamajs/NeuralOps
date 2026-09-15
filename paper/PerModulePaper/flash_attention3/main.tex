@@ -64,10 +64,52 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the flash\_attention3 module within modern transformer architectures.
+Standard scaled dot-product attention requires $\mathcal{O}(L^2)$ memory to 
+materialize the attention matrix. FlashAttention-3 (Dao et al., 2024) 
+eliminates this bottleneck via \textbf{IO-aware tiling} and **asynchronous 
+hardware overlap** on Hopper GPUs, achieving near-optimal utilization of 
+TMA (Tensor Memory Accelerator) and warp specialization. It produces 
+\textbf{exact} attention -- no approximation.
+
+We present a \textbf{production-hardened FlashAttention-3 integration} for 
+pretrained transformer attention. Our implementation:
+
+\begin{enumerate}
+\item \textbf{Dispatches to FlashAttention-3} when the \texttt{flash\_attn} library is
+  available and the input is on CUDA.
+\item \textbf{Falls back gracefully to PyTorch SDPA} when FA3 is unavailable,
+  preserving exact attention semantics.
+\item \textbf{Optionally applies FP8 precision} (\texttt{e4m3fn}) when requested.
+\item \textbf{Transfers pretrained weights exactly} from DistilBERT, RoBERTa,
+  GPT-2, and Qwen3.5 via a robust \texttt{copy\_weights} procedure.
+\item \textbf{Adds LoRA adapters} for parameter-efficient recovery fine-tuning.
+\item \textbf{Supports cross-attention} for encoder-decoder models.
+
+\end{enumerate}
+\textbf{We report two important caveats.}
+
+\begin{enumerate}
+\item \textbf{No parameter reduction.} FlashAttention is an \textbf{algorithm}, not a
+  compression method. Parameter count changes only by the LoRA adapters
+  (+{{D\_PARAM\_PCT}}\%). We make no compressive claims.
+\item \textbf{No speedup without the FA3 kernel.} When \texttt{flash\_attn} is not installed
+  (e.g., on non-Hopper GPUs or with an incompatible CUDA version), our
+  implementation falls back to PyTorch SDPA. This fallback is functionally
+  identical but numerically slower.
+
+\end{enumerate}
+On SST-2, the module produces baseline-identical accuracy (since attention 
+is exact) with only LoRA-induced variance of \textbf{{{D\_DELTA}}\%}. The primary 
+contribution is a \textbf{drop-in integration} of FlashAttention-3 into existing 
+pretrained models with correct weight transfer.
+
+\textbf{Keywords:} FlashAttention, IO-aware attention, Hopper TMA, FP8, exact 
+attention, inference optimization
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} flash\_attention3, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} FlashAttention, IO-aware attention, Hopper TMA, FP8, exact
 \end{abstract}
 
 \vspace{1em}

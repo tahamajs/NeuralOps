@@ -1,3 +1,160 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for chela_slay.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params before & 66,955,010 \\
+Total params after & {{D\_PARAMS}} \\
+Trainable & {{D\_TRAINABLE}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Cumsum memory & {{CMEM\_128}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Feature Dim Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{F} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Memory (MB)} \\
+\midrule
+32 & {{D\_F32}} & {{R\_F32}} & {{G\_F32}} & {{CMEM\_F32}} \\
+64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} & {{CMEM\_F64}} \\
+128 & {{D\_F128}} & {{R\_F128}} & {{G\_F128}} & {{CMEM\_F128}} \\
+256 & {{D\_F256}} & {{R\_F256}} & {{G\_F256}} & {{CMEM\_F256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Gate Bias Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$b_g$} & \textbf{$\sigma$(b\_g)} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.0 & 0.50 & {{D\_GB0}} & {{R\_GB0}} & {{G\_GB0}} \\
+2.0 & 0.88 & {{D\_GB2}} & {{R\_GB2}} & {{G\_GB2}} \\
+5.0 & 0.993 & {{D\_GB5}} & {{R\_GB5}} & {{G\_GB5}} \\
+10.0 & ~1.0 & {{D\_GB10}} & {{R\_GB10}} & {{G\_GB10}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Stream Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Dense only & {{D\_DENSE\_ONLY}} & {{R\_DENSE\_ONLY}} & {{G\_DENSE\_ONLY}} \\
+Linear only & {{D\_LINEAR\_ONLY}} & {{R\_LINEAR\_ONLY}} & {{G\_LINEAR\_ONLY}} \\
+Hybrid & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Sequence-Length Scaling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{L} & \textbf{Baseline (s)} & \textbf{CHELA-SLAY (s)} & \textbf{Cumsum mem (MB)} \\
+\midrule
+128 & 1.90 & {{D\_T128}} & {{CMEM\_128}} \\
+256 & 3.50 & {{D\_T256}} & {{CMEM\_256}} \\
+512 & 12.0 & {{D\_T512}} & {{CMEM\_512}} \\
+1024 & 45.0 & {{D\_T1024}} & {{CMEM\_1024}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Gate Statistics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Mean g} & \textbf{Std g} & \textbf{Min g} & \textbf{Max g} \\
+\midrule
+DistilBERT & {{D\_GATE\_MEAN}} & {{D\_GATE\_STD}} & {{D\_GATE\_MIN}} & {{D\_GATE\_MAX}} \\
+RoBERTa & {{R\_GATE\_MEAN}} & {{R\_GATE\_STD}} & {{R\_GATE\_MIN}} & {{R\_GATE\_MAX}} \\
+GPT-2 & {{G\_GATE\_MEAN}} & {{G\_GATE\_STD}} & {{G\_GATE\_MIN}} & {{G\_GATE\_MAX}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+20    {{D_S20}}
+30    {{D_S30}}
+40    {{D_S40}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.10 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_chela_slay.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+

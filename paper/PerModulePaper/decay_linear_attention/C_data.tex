@@ -1,3 +1,148 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for decay_linear_attention.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params before & 66,955,010 \\
+Total params after & {{D\_PARAMS}} \\
+Trainable & {{D\_TRAINABLE}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+State mem & 16 KB \\
+Inference L=128 & {{D\_T128}} s \\
+Inference L=2048 & {{D\_T2048}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Chunk Size Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$C$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{State mem} \\
+\midrule
+8 & {{D\_C8}} & {{R\_C8}} & {{G\_C8}} & 4 KB \\
+16 & {{D\_C16}} & {{R\_C16}} & {{G\_C16}} & 8 KB \\
+32 & {{D\_C32}} & {{R\_C32}} & {{G\_C32}} & 16 KB \\
+64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} & 32 KB \\
+128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} & 64 KB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Log-Decay Range Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Range} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+[-2.0, 0.0] & {{D\_RANGE1}} & {{R\_RANGE1}} & {{G\_RANGE1}} \\
+[-1.0, 0.0] & {{D\_RANGE2}} & {{R\_RANGE2}} & {{G\_RANGE2}} \\
+[-0.5, 0.0] & {{D\_RANGE3}} & {{R\_RANGE3}} & {{G\_RANGE3}} \\
+[0.0, 0.5] & {{D\_RANGE4}} & {{R\_RANGE4}} & {{G\_RANGE4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Feature Map Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Feature map} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+ELU+1 & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
+ReLU+1 & {{D\_RELU}} & {{R\_RELU}} & {{G\_RELU}} \\
+GeLU+1 & {{D\_GELU}} & {{R\_GELU}} & {{G\_GELU}} \\
+Spherical+ELU & {{D\_SPH}} & {{R\_SPH}} & {{G\_SPH}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Learned Decay Rates}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Head} & \textbf{DistilBERT $\lambda$} & \textbf{RoBERTa $\lambda$} & \textbf{GPT-2 $\lambda$} \\
+\midrule
+0 & {{LAMBDA\_D\_H0}} & {{LAMBDA\_R\_H0}} & {{LAMBDA\_G\_H0}} \\
+3 & {{LAMBDA\_D\_H3}} & {{LAMBDA\_R\_H3}} & {{LAMBDA\_G\_H3}} \\
+6 & {{LAMBDA\_D\_H6}} & {{LAMBDA\_R\_H6}} & {{LAMBDA\_G\_H6}} \\
+9 & {{LAMBDA\_D\_H9}} & {{LAMBDA\_R\_H9}} & {{LAMBDA\_G\_H9}} \\
+11 & {{LAMBDA\_D\_H11}} & {{LAMBDA\_R\_H11}} & {{LAMBDA\_G\_H11}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+20    {{D_S20}}
+30    {{D_S30}}
+40    {{D_S40}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.9 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_decay_linear.py --models distilbert,roberta,gpt2 --chunk_size 32
+\end{lstlisting}
+

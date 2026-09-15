@@ -1,3 +1,85 @@
-\section{11 Conclusion}
 
-Draft content for gated_delta_net.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{Gated DeltaNet}, a bidirectional/causal linear recurrent 
+attention that combines the Delta Rule with input-dependent exponential 
+decay gating. The implementation supports four transformer families and 
+transfers pretrained Q/K/V/O weights exactly. However, **our pure-PyTorch 
+implementation is not practical**: on DistilBERT it takes ~{{D\_STEP\_TIME}}s 
+per training step (vs 0.4s baseline), and RoBERTa and GPT-2 exceed GPU memory.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Status} & \textbf{Per-step time} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_STATUS}} & {{D\_STEP\_TIME}} s \\
+RoBERTa & -- & OOM & -- \\
+GPT-2 & -- & OOM & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{The algorithm is sound; the implementation is not.}
+\item \textbf{Python loops dominate wall-clock time} (~600 kernel launches).
+\item \textbf{A Triton kernel would make this competitive.}
+\item \textbf{Without such a kernel, Gated DeltaNet is not deployable.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Immediate Priority}
+
+\begin{itemize}
+\item \textbf{Implement a Triton kernel} for \texttt{chunked\_delta\_rule\_scan} (expected
+  speedup: 20-50$\times$).
+\item \textbf{Profile memory} to identify redundant allocations.
+\item \textbf{Cache the state} across chunks (avoid re-initialization).
+
+\end{itemize}
+\subsubsection{Medium-Term}
+
+\begin{itemize}
+\item Test on long sequences ($L > 512$) where linear attention has its main
+  advantage.
+\item Compare against Mamba and GLA with proper kernels.
+
+\end{itemize}
+\subsubsection{Long-Term}
+
+\begin{itemize}
+\item Combine with FlashAttention-style tiling.
+\item Explore hybrid mechanisms (linear + sparse).
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+This work is a \textbf{cautionary example}: an algorithm with $\mathcal{O}(L)$ 
+complexity can still be slower than $\mathcal{O}(L^2)$ in practice. We 
+hope our negative results and profiling analysis help others avoid the 
+same pitfall.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}} for feedback.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

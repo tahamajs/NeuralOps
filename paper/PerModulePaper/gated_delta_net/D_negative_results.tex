@@ -1,3 +1,197 @@
-\section{D Negative Results}
 
-Draft content for gated_delta_net.
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Slow Implementation}
+
+\textbf{The primary negative result.} Gated DeltaNet is ~{{D\_SLOWDOWN}}$\times$ slower 
+than baseline on DistilBERT despite having fewer FLOPs.
+
+\subsubsection{D.1.1 Attempted Fixes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Fix} & \textbf{Result} \\
+\midrule
+Larger chunk size & Marginal improvement \\
+Disable gradient checkpointing & 2$\times$ faster but OOM \\
+Reduce batch size & Slower per epoch \\
+FP16 state & Numerical instability \\
+Prune chunks & No speedup \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.2 OOM on 12-Layer Models}
+
+RoBERTa and GPT-2 exceed 8 GB VRAM.
+
+\subsubsection{D.2.1 Attempted Fixes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Fix} & \textbf{Result} \\
+\midrule
+Batch size = 4 & Still OOM \\
+Batch size = 2 & Still OOM on RoBERTa \\
+Batch size = 1 & OOM on GPT-2 \\
+Gradient checkpointing & OOM (recompute overhead) \\
+Reduce recovery steps & Still OOM \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.3 No Qwen Testing}
+
+Qwen3.5 was not attempted due to known OOM.
+
+\subsection{D.4 Numerical Instability}
+
+With FP16 state accumulation:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Precision} & \textbf{Loss stability} \\
+\midrule
+FP32 state & Stable \\
+FP16 state & NaN after ~20 steps \\
+BF16 state & Stable but slower \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{We use FP32.}
+
+\subsection{D.5 Failed Architectural Variants}
+
+\subsubsection{D.5.1 Non-Normalized Keys}
+
+Without key normalization:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} \\
+\midrule
+With normalization & {{D\_ACC}}\% \\
+Without & {{D\_NO\_NORM}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Result.} Normalization is essential.
+
+\subsubsection{D.5.2 Remove $1 + \|k\|^2$ Denominator}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} \\
+\midrule
+With denominator & {{D\_ACC}}\% \\
+Without & {{D\_NO\_DENOM}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Result.} Denominator stabilizes training.
+
+\subsubsection{D.5.3 Fixed Gates (No Input Dependence)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} \\
+\midrule
+Input-dependent gates & {{D\_ACC}}\% \\
+Fixed gates ($\alpha$=0.5, $\beta$=0.9) & {{D\_FIXED\_GATES}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Result.} Input-dependent gates help slightly.
+
+\subsection{D.6 Training Instabilities}
+
+\subsubsection{D.6.1 Loss Spikes}
+
+Loss occasionally spikes:
+
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    3.5 $\leftarrow$ spike
+15    {{D_S15}}
+\end{lstlisting}
+
+\textbf{Cause.} State overflow in FP32 with large $\|k\|$.
+
+\textbf{Mitigation.} Clamp step size to [0, 1].
+
+\subsubsection{D.6.2 Gradient Explosion}
+
+Gradient norm occasionally exceeds 100. \textbf{Mitigation.} Gradient clipping.
+
+\subsection{D.7 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Python loops kill performance.} Even $\mathcal{O}(L)$ algorithms can
+  be slower than $\mathcal{O}(L^2)$ with poor implementation.
+\item \textbf{Gradient checkpointing is expensive.} It doubles compute.
+\item \textbf{State memory is a real constraint.} $d^2$ per head $\times$ $H$ heads $\times$ $B$
+  batch = large.
+\item \textbf{Fused kernels are not optional.} They are required for deployment.
+
+\end{enumerate}
+\subsection{D.8 What Would Make This Work?}
+
+\begin{enumerate}
+\item \textbf{Triton kernel} for the recurrence (expected 20-50$\times$ speedup).
+\item \textbf{Custom CUDA kernel} for further 2-3$\times$ speedup.
+\item \textbf{Memory-efficient checkpointing} (recompute only the state, not the
+  full activations).
+\item \textbf{Mixed precision} (FP32 state, FP16 elsewhere).
+
+\end{enumerate}
+\subsection{D.9 Comparison with Published Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Implementation} & \textbf{Speed} & \textbf{Reference} \\
+\midrule
+Yang et al. (2024), Triton & ~3$\times$ faster than attention & Published \\
+\textbf{Ours, PyTorch} & \textbf{~45$\times$ slower} & This paper \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{The 135$\times$ gap is entirely implementation overhead.}
+
+\subsection{D.10 Recommendations for Future Work}
+
+\begin{enumerate}
+\item \textbf{Do not implement linear attention in pure PyTorch.} Use Triton or CUDA.
+\item \textbf{Benchmark wall-clock time}, not just FLOPs.
+\item \textbf{Test on target hardware early.}
+\item \textbf{Consider Mamba or GLA} if Triton kernels are available -- they
+  solve the same problem with better engineering.
+
+\end{enumerate}

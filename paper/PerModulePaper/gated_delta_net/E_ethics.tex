@@ -1,3 +1,71 @@
-\section{E Ethics}
 
-Draft content for gated_delta_net.
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{E.1.1 Positive}
+
+\begin{itemize}
+\item \textbf{Documents implementation bottlenecks} that the community can avoid.
+\item \textbf{Provides a reference implementation} for future kernel development.
+\item \textbf{Warns against premature deployment} of linear attention.
+
+\end{itemize}
+\subsubsection{E.1.2 Negative}
+
+\begin{itemize}
+\item \textbf{Compute consumed} for slow, incomplete runs.
+\item \textbf{May discourage research} into the algorithm (which is sound).
+
+\end{itemize}
+\subsection{E.2 Environmental Impact}
+
+\begin{itemize}
+\item \textbf{GPU-hours:} ~{{COMPUTE\_HOURS}}
+\item \textbf{CO$_2$:} ~{{CO2\_KG}} kg
+
+\end{itemize}
+Larger than necessary due to slow implementation.
+
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item SST-2 public dataset.
+\item No PII.
+
+\end{itemize}
+\subsection{E.4 LLM Usage Disclosure}
+
+Parts of this paper were drafted with LLM assistance. All technical content 
+reviewed by authors.
+
+\subsection{E.5 Conflicts of Interest}
+
+None.
+
+\subsection{E.6 Long-Term Considerations}
+
+Linear attention is a promising direction for long-context models. However:
+
+\begin{itemize}
+\item \textbf{Implementation quality matters as much as algorithm design.}
+\item \textbf{Published results assume optimized kernels.}
+\item \textbf{Reproducing them requires equivalent engineering.}
+
+\end{itemize}
+We hope this work encourages:
+\begin{itemize}
+\item Better tooling for linear attention (e.g., \texttt{flash-linear-attention})
+\item Standardized benchmarks that measure wall-clock, not just FLOPs
+\item Honest reporting of implementation gaps
+
+\end{itemize}
+\subsection{E.7 Recommendations}
+
+\begin{enumerate}
+\item \textbf{Use existing optimized libraries} (Mamba, GLA, FLA) instead of
+  reimplementing.
+\item \textbf{Measure end-to-end time} on target hardware before publishing.
+\item \textbf{Document implementation details} for reproducibility.
+
+\end{enumerate}

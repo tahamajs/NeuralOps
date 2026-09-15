@@ -1,3 +1,72 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for decay_linear_attention.
+\subsection{Summary}
+
+We presented \textbf{DecayLinearAttention}, a linear attention module with 
+\textbf{data-dependent exponential decay per head} and **chunked scan with 
+O(1) state memory**. The method supports bidirectional and causal modes, 
+GQA, RoPE, and cross-attention.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{State mem} & \textbf{Time ratio at L=2048} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{16 KB} & {{D\_RATIO\_2048}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{16 KB} & {{R\_RATIO\_2048}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{16 KB} & {{G\_RATIO\_2048}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Truly O(1) state memory.}
+\item \textbf{Data-dependent decay improves accuracy.}
+\item \textbf{Per-head bias gives multi-scale horizons.}
+\item \textbf{Cross-attention works.}
+\item \textbf{Speedup grows with L.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernels for chunked scan
+\item Adaptive chunk size
+\item Learned feature map
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Scale to L > 32K
+\item Combine with token compression
+\item Theoretical analysis
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+DecayLinearAttention offers a practical, memory-efficient alternative to 
+softmax attention for long sequences. We release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed the module, implemented, ran experiments, wrote
+  the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

@@ -1,3 +1,115 @@
-\section{01 Intro}
 
-Draft content for gated_delta_net.
+\section{Introduction}
+
+\subsection{Motivation}
+
+The quadratic cost of transformer self-attention -- $\mathcal{O}(L^2)$ in 
+both time and memory -- has motivated a decade of research into efficient 
+alternatives. Among these, \textbf{linear recurrent attention} is particularly 
+attractive because it reduces complexity to $\mathcal{O}(L)$ while 
+maintaining the same asymptotic expressiveness.
+
+The core idea: replace the softmax attention matrix with a **fixed-size 
+state** $S \in \mathbb{R}^{d_h \times d_h}$ that is updated as tokens arrive:
+
+\[
+S_t = f(S_{t-1}, K_t, V_t), \quad y_t = Q_t^\top S_t
+\tag{1.1}
+\]
+
+For this to work, $f$ must be \textbf{associative} -- that is, the composition 
+$(f \circ f)$ must be efficiently computable.
+
+{{MOTIVATION\_PARAGRAPH\_2}}
+
+
+\subsection{Problem Statement}
+
+We seek an attention mechanism $\mathcal{A}$ with the following properties:
+
+\begin{enumerate}
+\item \textbf{Linear complexity:} $\mathcal{O}(L)$ time and memory.
+\item \textbf{Bidirectional support:} work on encoders (BERT, RoBERTa).
+\item \textbf{Causal support:} work on decoders (GPT-2, LLaMA).
+\item \textbf{Weight compatibility:} transfer pretrained Q/K/V/O projections.
+\item \textbf{Gating:} input-dependent forgetting/retention.
+\item \textbf{Fine-tunable:} LoRA recovery.
+
+\end{enumerate}
+\subsection{Our Approach}
+
+\textbf{Gated DeltaNet} combines three ideas:
+
+\begin{enumerate}
+\item \textbf{Delta Rule update} (Widrow--Hoff, 1960): correct the state by the error
+  between the predicted value and the observed value:
+  $$
+  S\_t = S\_{t-1} + K\_t\^{}\top (V\_t - K\_t S\_{t-1})
+  \tag{1.2}
+  $$
+
+\item \textbf{Input-dependent gating:} replace fixed step size with learnable
+  $\alpha_t, \beta_t \in (0, 1)$:
+  $$
+  S\_t = \beta\_t S\_{t-1} + \alpha\_t K\_t\^{}\top (V\_t - K\_t S\_{t-1})
+  \tag{1.3}
+  $$
+
+\item \textbf{Bidirectional scan for encoders:} average forward and backward scans:
+  $$
+  y = \frac{1}{2}(y\_{\text{fwd}} + y\_{\text{bwd}})
+  \tag{1.4}
+  $$
+
+\end{enumerate}
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A gated delta rule attention} with input-dependent decay and
+  bidirectional support.
+\item \textbf{A chunked implementation} that is exact (not approximate) but uses
+  nested Python loops.
+\item \textbf{An honest evaluation} reporting that the implementation is
+  \textbf{~45$\times$ slower} than baseline on DistilBERT and exceeds memory on larger
+  models.
+\item \textbf{A negative result:} the algorithm is not the bottleneck; the
+  implementation is.
+\item \textbf{Full reproducibility}, including code, timing measurements, and
+  recommendations for fixing.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews linear attention, state-space models, and DeltaNet. 
+Section 3 provides background on RNNs, associative scans, and the Delta 
+Rule. Section 4 presents Gated DeltaNet. Section 5 covers architecture 
+integration. Section 6 details the experimental setup. Section 7 reports 
+results (including timeouts). Section 8 analyzes the implementation 
+bottleneck. Section 9 discusses practical guidance. Section 10 lists 
+limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$L$ & Sequence length & 1.1 \\
+$d$ & Head dimension & 1.1 \\
+$H$ & Number of heads & 1.1 \\
+$S_t$ & State matrix at time $t$ & 1.1 \\
+$\alpha_t$ & Forget gate (input-dependent) & 1.3 \\
+$\beta_t$ & Write gate (input-dependent) & 1.3 \\
+$K_t, V_t, Q_t$ & Key, Value, Query at token $t$ & 1.1 \\
+$r$ & LoRA rank & 3.5 \\
+$\text{chunk\_size}$ & Inner loop size & 4.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+</parameter>
+

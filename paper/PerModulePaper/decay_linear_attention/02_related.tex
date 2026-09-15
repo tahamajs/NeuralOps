@@ -1,3 +1,95 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for decay_linear_attention.
+\subsection{Linear Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020) introduced the modern 
+formulation with $\phi(x) = \text{elu}(x) + 1$. It achieves 
+$\mathcal{O}(L)$ time but uses no decay.
+
+\textbf{Performer} (Choromanski et al., 2021) uses positive orthogonal random 
+features. \textbf{cosFormer} (Luo et al., 2022) uses a cos-based feature map.
+
+\textbf{GLA} (Yang et al., 2024) adds \textbf{learned decay} to linear attention, 
+similar in spirit to our work. However, GLA uses \textbf{fixed} per-head decay 
+rates, not input-dependent ones.
+
+\textbf{Mamba} (Gu \& Dao, 2023) uses \textbf{selective} SSM where the transition 
+matrix is input-dependent. Our decay is analogous: $\lambda_{h,t}$ depends 
+on the input.
+
+\subsection{Exponential Decay in RNNs}
+
+\textbf{HGRN} (Qin et al., 2023) uses a bounded forget gate in an element-wise 
+recurrence. \textbf{RetNet} (Sun et al., 2023) uses a fixed exponential decay 
+per head. \textbf{RWKV} (Peng et al., 2023) uses data-dependent decay in a 
+linear-attention-like formulation.
+
+Our decay is per-head (like RetNet) and data-dependent (like HGRN), which 
+is a strict generalization.
+
+\subsection{Chunked Linear Attention}
+
+\textbf{FlashLinearAttention} (Yang \& Zhang, 2024) uses chunked algorithms for 
+linear attention. \textbf{Mamba} uses a parallel scan over chunks. \textbf{DeltaNet} 
+uses chunked parallelization for the delta rule.
+
+Our chunked scan is a simpler variant specialized for exponential decay:
+the state $S$ is decayed by a scalar between chunks, and the intra-chunk 
+computation is a small dense causal attention.
+
+\subsection{Spherical and Other Feature Maps}
+
+\textbf{CHELA-SLAY} (companion work) uses spherical normalization + Yat-Kernel. 
+\textbf{Zhang et al. (2024)} propose $\phi(x) = \text{elu}(x) + 1$ as a 
+general-purpose feature map. We adopt ELU+1 for its simplicity and 
+positivity.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Decay} & \textbf{Data-dep} & \textbf{O(1) causal mem} & \textbf{Cross-attn} \\
+\midrule
+Linear Transformer & $\mathcal{O}(L)$ & None &  &  &  \\
+Performer & $\mathcal{O}(L)$ & None &  &  &  \\
+GLA & $\mathcal{O}(L)$ & Fixed &  & Partial &  \\
+RetNet & $\mathcal{O}(L)$ & Fixed &  &  &  \\
+Mamba & $\mathcal{O}(L)$ & Fixed + selective & Partial &  &  \\
+CHELA-SLAY & $\mathcal{O}(L^2)$ & None &  &  &  \\
+\textbf{DecayLinear} & \textbf{$\mathcal{O}(L)$} & \textbf{Data-dep} &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} DecayLinearAttention combines:
+\begin{itemize}
+\item \textbf{Data-dependent} exponential decay
+\item \textbf{O(1) causal memory} via chunked scan
+\item \textbf{Cross-attention} support
+
+\end{itemize}
+No prior method combines all three.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Decay} & \textbf{Memory (L=1024)} & \textbf{SST-2} & \textbf{Cross-attn} \\
+\midrule
+Baseline MHSA & None & ~3 MB & 90.71\% &  \\
+Linear Transformer & None & ~0.3 MB & {{LT\_D}} &  \\
+GLA & Fixed & ~0.3 MB & {{GLA\_D}} &  \\
+CHELA-SLAY & None & ~65 MB & {{CS\_D}} &  \\
+\textbf{DecayLinear} & \textbf{Data-dep} & \textbf{~1.5 MB} & \textbf{{{D\_ACC}}} & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
+

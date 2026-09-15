@@ -1,3 +1,171 @@
-\section{C Data}
 
-Draft content for gated_delta_net.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_ACC}}\% \\
+$\Delta$ & {{D\_DELTA}}\% \\
+F1 & {{D\_F1}} \\
+Params (before) & 66,955,010 \\
+Params (after) & {{D\_PARAMS}} \\
+$\Delta$ params & +{{D\_PARAM\_ABS}} \\
+$\Delta$\% & +{{D\_PARAM\_PCT}}\% \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Per-step time & {{D\_STEP\_TIME}} s \\
+Total time (5 steps) & {{D\_TOTAL\_TIME}} s \\
+Chunk size & {{CHUNK\_SIZE}} \\
+Gradient checkpointing & {{USE\_GC}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Status}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Status & {{R\_STATUS}} \\
+Error & {{R\_ERROR}} \\
+VRAM at OOM & {{R\_OOM\_VRAM}} MB \\
+Recovery step at OOM & {{R\_OOM\_STEP}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Status}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Status & {{G\_STATUS}} \\
+Error & {{G\_ERROR}} \\
+VRAM at OOM & {{G\_OOM\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Timing Breakdown (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Phase} & \textbf{Time (ms)} \\
+\midrule
+Q/K/V projections & 30 \\
+Z projection & 10 \\
+RoPE & 10 \\
+Gating & 20 \\
+\textbf{Recurrence} & \textbf{{{D\_RECURRENCE\_MS}}} \\
+SiLU & 10 \\
+Output projection & 10 \\
+\textbf{Total} & \textbf{{{D\_STEP\_MS}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Chunk Size Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Chunk size} & \textbf{Per-step time} & \textbf{Peak VRAM} \\
+\midrule
+4 & {{D\_CHUNK4\_TIME}} s & {{D\_CHUNK4\_VRAM}} MB \\
+8 & {{D\_CHUNK8\_TIME}} s & {{D\_CHUNK8\_VRAM}} MB \\
+16 & {{D\_CHUNK16\_TIME}} s & {{D\_CHUNK16\_VRAM}} MB \\
+32 & {{D\_CHUNK32\_TIME}} s & {{D\_CHUNK32\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Gradient Checkpointing Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Setting} & \textbf{Time} & \textbf{VRAM} & \textbf{Accuracy} \\
+\midrule
+True & {{D\_GC\_TRUE\_TIME}} s & {{D\_GC\_TRUE\_VRAM}} MB & {{D\_GC\_TRUE\_ACC}}\% \\
+False & {{D\_GC\_FALSE\_TIME}} s & {{D\_GC\_FALSE\_VRAM}} MB & {{D\_GC\_FALSE\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Training Loss (DistilBERT)}
+
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+15    {{D_S15}}
+20    {{D_S20}}
+25    {{D_S25}}
+30    {{D_S30}}
+35    {{D_S35}}
+40    {{D_S40}}
+45    {{D_S45}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.8 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "accuracy": {{D_ACC}},
+    "status": "{{D_STATUS}}",
+    "per_step_s": {{D_STEP_TIME}},
+    "peak_vram_mb": {{D_VRAM}},
+    "params_after": {{D_PARAMS}}
+  },
+  "roberta": {
+    "status": "{{R_STATUS}}",
+    "error": "{{R_ERROR}}"
+  },
+  "gpt2": {
+    "status": "{{G_STATUS}}",
+    "error": "{{G_ERROR}}"
+  }
+}
+\end{lstlisting}
+
+\subsection{C.9 Reproduction Commands}
+
+\begin{lstlisting}
+# DistilBERT only
+python run_all_4_gated_delta_net.py --models distilbert
+
+# With smaller batch
+python run_all_4_gated_delta_net.py \
+    --models distilbert \
+    --batch_size 4 \
+    --recovery_steps 20
+
+# With chunk size sweep
+for cs in 4 8 16 32; do
+    python run_all_4_gated_delta_net.py --chunk_size $cs --output_suffix cs$cs
+done
+\end{lstlisting}
+

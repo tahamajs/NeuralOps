@@ -1,3 +1,72 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for SOAFusedAttention.
+\subsection{Summary}
+
+We presented \textbf{SOA Fused Attention}, a zero-shot low-rank factorization of 
+attention projections. The method replaces Q, K, V with factorized pairs 
+initialized from the truncated SVD of the pretrained weights, achieving 
+\textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} parameter reduction on attention projections 
+without any calibration data.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attention Ratio} & \textbf{VRAM $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Zero-shot SVD works} -- no calibration needed.
+\item \textbf{$W_O$ should stay} -- factorizing it compounds error.
+\item \textbf{LoRA recovers} {{LORA\_GAIN}}\% of the accuracy drop.
+\item \textbf{Attention parameters reduce by {{D\_RATIO}}$\times$.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Per-layer adaptive rank selection
+\item Fused kernels for factorized attention
+\item Combined with KV quantization
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Composition with token compression
+\item Extension to cross-attention
+\item Theoretical error propagation bounds
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+SOA Fused Attention is a practical, zero-shot attention compressor. We 
+release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented, ran experiments, wrote
+  the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

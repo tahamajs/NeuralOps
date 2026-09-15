@@ -1,3 +1,84 @@
-\section{11 Conclusion}
 
-Draft content for flash_attention3_fp8.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented a \textbf{hardened, hardware-aware} implementation of FlashAttention-3 
+FP8 that runs on any CUDA GPU by falling back to PyTorch SDPA when FP8 
+tensor cores are unavailable. The implementation handles four transformer 
+families and preserves accuracy within \textbf{{{D\_DELTA}}\%} (DistilBERT), 
+\textbf{{{R\_DELTA}}\%} (RoBERTa), and \textbf{{{G\_DELTA}}\%} (GPT-2) on SST-2.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Params $\Delta$} & \textbf{FP8 Path} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & No \\
+RoBERTa & {{R\_ACC}}\% & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & No \\
+GPT-2 & {{G\_ACC}}\% & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Portability matters.} Hardware detection prevents crashes.
+\item \textbf{FP8 is hardware-limited.} Without Hopper, no speedup.
+\item \textbf{SDPA is a strong fallback.} Accuracy is preserved.
+\item \textbf{Honest reporting is essential.} We did not measure FP8; we say so.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+
+\begin{itemize}
+\item Test on H100 to validate FP8 speedups.
+\item Profile FP8 cast overhead.
+\item Add CUDA capability detection.
+
+\end{itemize}
+\subsubsection{Long-Term}
+
+\begin{itemize}
+\item Support cross-attention.
+\item Integrate with TransformerEngine.
+\item Test on 7B+ models.
+
+\end{itemize}
+\subsubsection{Methodological}
+
+\begin{itemize}
+\item Standardize hardware reporting.
+\item Publish FP8 accuracy curves.
+\item Compare with FP8 training.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+This work is a \textbf{cautionary example}: the original FlashAttention-3 paper 
+reports impressive speedups on H100. On consumer hardware, those speedups 
+are unavailable. We provide the code that works everywhere and report 
+honestly where it does not.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}} for feedback.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback and edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

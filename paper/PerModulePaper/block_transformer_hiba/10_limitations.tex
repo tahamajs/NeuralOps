@@ -1,3 +1,19 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for block_transformer_hiba.
+While HIBA successfully bridges dense and sparse attention with minimal accuracy degradation, we acknowledge several important limitations in the current implementation.
+
+\subsection{Inference Latency and Python Loop Overhead}
+Despite reducing theoretical FLOPs and Activation VRAM (from $\mathcal{O}(L^2)$ to $\mathcal{O}(LW)$), HIBA currently induces a \textbf{1.2$\times$ wall-clock latency regression} compared to the highly optimized baseline. This is primarily due to the inter-block sparse routing mechanism being implemented via Python \texttt{for}-loops over sequence chunks in PyTorch (\texttt{\_inter\_block\_sparse}). 
+
+Unlike standard dense attention, which utilizes heavily optimized fused kernels (e.g., FlashAttention), HIBA requires custom memory access patterns (Top-K selection and sparse scatter/gather operations) that are not natively fused in standard PyTorch. To realize actual wall-clock speedups, HIBA requires a custom Triton or CUDA kernel, which we leave to future work.
+
+\subsection{Parameter Count Increase}
+The term "compression" in this context applies strictly to inference KV-cache and activation VRAM. HIBA \textbf{does not reduce the total parameter count}. In fact, the inclusion of the residual LoRA adapters ($A$ and $B$ matrices for $Q, K, V$, and output projections) increases the total parameter footprint of the model by approximately $+0.89\%$. 
+
+\subsection{Single-Task and Sequence Length Constraints}
+Our empirical validation is currently limited to the SST-2 sentiment classification task up to a sequence length of 128/512 tokens. While this validates the architectural integration and the gradient flow stability, it does not fully stress-test HIBA's ability to maintain context over extremely long sequences (e.g., 32k+ tokens) typical in retrieval-augmented generation (RAG) or long-document summarization tasks. 
+
+\subsection{Heuristic Rectification Interval}
+The \texttt{rectification\_interval} parameter (e.g., executing dense attention every 4 layers) is currently static. While effective, this is a heuristic approach. Different datasets and model architectures may require dynamic or learnable rectification intervals to optimally balance memory efficiency with contextual density.
+
+

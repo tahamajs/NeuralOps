@@ -1,3 +1,273 @@
-\section{04 Method}
+\section{Method}
 
-Draft content for chela_slay.
+\subsection{Overview}
+
+CHELA-SLAY computes two attention streams in parallel:
+
+\begin{enumerate}
+\item \textbf{Dense stream:} standard softmax attention.
+\item \textbf{Linear stream:} spherical-normalized linear attention with Yat-Kernel.
+
+\end{enumerate}
+Then blends them via an adaptive gate.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    Input X
+       |
+   +---+---------------+
+                        
+   W_q W_k W_v    (gate)
+   |   |   |         |
+                      
+   Q   K   V          g
+   |   |   |         |
+   +---+---+         |
+   |       |         |
+                     |
+ Dense   Linear      |
+ Stream  Stream      |
+   |       |         |
+   +---+---+         |
+                     |
+   g dense + (1-g) linear
+       |
+        
+    W_o (output proj)
+       |
+        
+    Output Y
+\end{lstlisting}
+
+\subsection{Dense Stream}
+
+Standard softmax attention:
+
+\[
+O^\text{dense} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}} + M\right) V
+\tag{4.1}
+\]
+
+where $M$ is the attention mask (padding or causal).
+
+\subsection{Linear Stream}
+
+\subsubsection{Spherical Normalization}
+
+\[
+\hat{Q} = \text{Normalize}(Q), \quad
+\hat{K} = \text{Normalize}(K)
+\tag{4.2}
+\]
+
+\subsubsection{Yat-Kernel Feature Map}
+
+For each head, we compute:
+
+\[
+\phi(x) = \frac{1}{F^{1/4}} \left[ \cos(x \Omega) \,\|\, \sin(x \Omega) \right]
+\tag{4.3}
+\]
+
+where $\Omega \in \mathbb{R}^{d_h \times F}$ is a fixed random projection.
+
+\textbf{Initialization.} $\Omega \sim \mathcal{N}(0, 0.02^2)$.
+
+\subsubsection{Linear Attention (Bidirectional)}
+
+\[
+KV = \phi(\hat{K})^\top V, \quad
+Z = \sum_j \phi(\hat{K}_j)
+\tag{4.4}
+\]
+
+\[
+O^\text{linear}_i = \frac{\phi(\hat{Q}_i) KV}{\phi(\hat{Q}_i) Z + \epsilon}
+\tag{4.5}
+\]
+
+\subsubsection{Linear Attention (Causal)}
+
+For decoders, we use a \textbf{cumulative sum} over the sequence:
+
+\[
+S_t = \sum_{j \leq t} \phi(\hat{K}_j)^\top V_j, \quad
+Z_t = \sum_{j \leq t} \phi(\hat{K}_j)
+\tag{4.6}
+\]
+
+\[
+O^\text{linear}_t = \frac{\phi(\hat{Q}_t) S_t}{\phi(\hat{Q}_t) Z_t + \epsilon}
+\tag{4.7}
+\]
+
+\textbf{Implementation.} We materialize $\phi(\hat{K})^\top V$ as a 
+$(\text{B}, \text{H}, L, 2F, d_h)$ tensor and apply \texttt{torch.cumsum} along 
+the sequence dimension:
+
+\begin{lstlisting}
+outer_prod = k_feat.unsqueeze(-1) * v.unsqueeze(-2)  # (B, H, L, 2F, d_h)
+S = torch.cumsum(outer_prod, dim=2)
+\end{lstlisting}
+
+\textbf{Memory warning.} This intermediate is \texttt{B \textit{ H } L \textit{ 2F } d\_h} floats. 
+For B=8, H=12, L=128, 2F=256, d\_h=64: ~2 billion floats (8 GB at FP32).
+
+\subsection{Adaptive Gate}
+
+A per-head, per-token gate:
+
+\[
+g = \sigma(W_g X + b_g) \in \mathbb{R}^{B \times L \times H}
+\tag{4.8}
+\]
+
+\textbf{Initialization.} $W_g = 0$, $b_g = {{GATE_INIT_BIAS}}$.
+
+\textbf{Effect.} At step 0:
+
+\[
+g = \sigma({{GATE_INIT_BIAS}}) \approx {{GATE_INIT}}
+\tag{4.9}
+\]
+
+So the output is dominated by the dense stream (which preserves pretrained 
+behavior).
+
+\subsection{Fusion}
+
+\[
+O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
+\tag{4.10}
+\]
+
+Then apply output projection:
+
+\[
+Y = W_O O + b_O
+\tag{4.11}
+\]
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} CHELA-SLAY forward pass
+\begin{lstlisting}
+Input:  X, attention_mask, position_embeddings
+Output: Y
+
+ 1: Q $\leftarrow$ W_q X                          LoRA
+ 2: K $\leftarrow$ W_k X
+ 3: V $\leftarrow$ W_v X
+ 4: if RoPE: Q, K $\leftarrow$ rotary(Q, K)
+ 5: if GQA: K, V $\leftarrow$ repeat_kv(...)
+ 6:
+ 7: # Dense stream
+ 8: S_dense $\leftarrow$ Q K^T / $\sqrt{}$d_h
+ 9: S_dense = mask(S_dense)
+10: O_dense $\leftarrow$ softmax(S_dense) V
+11:
+12: # Linear stream
+13: Q  $\leftarrow$ normalize(Q)
+14: K  $\leftarrow$ normalize(K)
+15:  _Q $\leftarrow$ YatKernel(Q )
+16:  _K $\leftarrow$ YatKernel(K )
+17: if causal:
+18:     S_cum $\leftarrow$ cumsum( _K^T V)
+19:     Z_cum $\leftarrow$ cumsum( _K)
+20:     O_linear $\leftarrow$  _Q S_cum / ( _Q Z_cum + $\epsilon$)
+21: else:
+22:     KV $\leftarrow$  _K^T V
+23:     Z $\leftarrow$ sum( _K)
+24:     O_linear $\leftarrow$  _Q KV / ( _Q Z + $\epsilon$)
+25:
+26: # Gate + fuse
+27: g $\leftarrow$ sigmoid(W_g X + b_g)
+28: O $\leftarrow$ g O_dense + (1-g) O_linear
+29: Y $\leftarrow$ W_o O
+30: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Stream} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Dense & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2)$ \\
+Linear (bidirectional) & $\mathcal{O}(L \cdot 2F \cdot d_h)$ & $\mathcal{O}(2F \cdot d_h)$ \\
+Linear (causal) & $\mathcal{O}(L \cdot 2F \cdot d_h)$ & $\mathcal{O}(L \cdot 2F \cdot d_h)$ \\
+Gate & $\mathcal{O}(L d H)$ & $\mathcal{O}(L H)$ \\
+\textbf{Total} & $\mathcal{O}(L^2 d_h + L \cdot 2F \cdot d_h)$ & See below \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical observation:} The causal linear stream's memory is 
+$\mathcal{O}(L \cdot 2F \cdot d_h)$, which for $2F = 256$, $d_h = 64$ is 
+$16384 L$ -- worse than the dense stream's $L^2$ for $L < 16384$.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{CHELA-SLAY} \\
+\midrule
+Q, K, V, O & $4 d^2$ & $4 d^2$ (frozen) + LoRA \\
+$\Omega$ (RFF) & 0 & $d_h \cdot F$ \\
+Gate & 0 & $d \cdot H + H$ \\
+LoRA & 0 & $8 r_L d$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $H = 12$, $F = 128$, $d_h = 64$, $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+$\Omega$ & 8,192 \\
+Gate & 9,228 \\
+LoRA & 98,304 \\
+\textbf{Total per layer} & ~116,000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Relative to baseline attention ($4 d^2 = 2.36M$):} +4.9\%.
+
+\subsection{Step-0 Preservation}
+
+\textbf{Claim.} At initialization ($W_g = 0$, $b_g = {{GATE_INIT_BIAS}}$, 
+$B_\text{LoRA} = 0$), CHELA-SLAY output equals the pretrained baseline.
+
+\textbf{Proof sketch.} With $W_g = 0$, $g = \sigma(b_g)$ is constant per token. 
+The gate weight is ${{GATE_INIT}}$, so $g \approx 1$. The dense output 
+matches the pretrained attention (since base weights are copied and 
+LoRA = 0). The linear contribution is $(1 - g) \cdot O\^{}\text{linear} 
+\approx 0.007 \cdot O\^{}\text{linear}$. So the output is dominated by dense, 
+approximately equal to baseline. $\square$
+
+\subsection{Weight Transfer}
+
+We copy base weights from the pretrained attention:
+
+\begin{itemize}
+\item \textbf{Q, K, V, O}: copied into \texttt{LoRALinear} modules.
+\item \textbf{$\Omega$ (RFF)}: randomly initialized (no pretrained equivalent).
+\item \textbf{Gate}: zero-weight, bias = {{GATE\_INIT\_BIAS}}.
+
+\end{itemize}
+Four architectures supported: DistilBERT, RoBERTa (nested), GPT-2 (Conv1D), 
+Qwen (GQA + RoPE).
+

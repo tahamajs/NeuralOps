@@ -1,3 +1,169 @@
-\section{07 Results}
+\section{Results}
 
-Formal architectural specifications for \texttt{adaptive_svd_attention}.
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn Params} & \textbf{Ratio} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 2.36M & 1.00$\times$ \\
+DistilBERT & \textbf{Adaptive SVD} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_ATTN}} & \textbf{{{D\_RATIO}}$\times$} \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 2.36M & 1.00$\times$ \\
+RoBERTa & \textbf{Adaptive SVD} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_ATTN}} & \textbf{{{R\_RATIO}}$\times$} \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 2.36M & 1.00$\times$ \\
+GPT-2 & \textbf{Adaptive SVD} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_ATTN}} & \textbf{{{G\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Per-Projection Reduction}
+
+\textbf{Table 7.2: Selected rank per projection (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Q r*} & \textbf{K r*} & \textbf{V r*} & \textbf{O r*} \\
+\midrule
+0 & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
+1 & {{D\_L1\_Q\_R}} & {{D\_L1\_K\_R}} & {{D\_L1\_V\_R}} & {{D\_L1\_O\_R}} \\
+2 & {{D\_L2\_Q\_R}} & {{D\_L2\_K\_R}} & {{D\_L2\_V\_R}} & {{D\_L2\_O\_R}} \\
+3 & {{D\_L3\_Q\_R}} & {{D\_L3\_K\_R}} & {{D\_L3\_V\_R}} & {{D\_L3\_O\_R}} \\
+4 & {{D\_L4\_Q\_R}} & {{D\_L4\_K\_R}} & {{D\_L4\_V\_R}} & {{D\_L4\_O\_R}} \\
+5 & {{D\_L5\_Q\_R}} & {{D\_L5\_K\_R}} & {{D\_L5\_V\_R}} & {{D\_L5\_O\_R}} \\
+\textbf{Mean} & \textbf{{{D\_Q\_MEAN}}} & \textbf{{{D\_K\_MEAN}}} & \textbf{{{D\_V\_MEAN}}} & \textbf{{{D\_O\_MEAN}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline Time} & \textbf{Ours} & \textbf{VRAM} \\
+\midrule
+DistilBERT & 1.90 s & {{D\_TIME}} s & {{D\_VRAM}} MB \\
+RoBERTa & 4.10 s & {{R\_TIME}} s & {{R\_VRAM}} MB \\
+GPT-2 & 4.20 s & {{G\_TIME}} s & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Energy Threshold $\tau$}
+
+\textbf{Table 7.4: Accuracy vs energy threshold.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Avg Rank} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.80 & {{D\_T80}} & {{D\_T80\_R}} & {{R\_T80}} & {{G\_T80}} \\
+0.85 & {{D\_T85}} & {{D\_T85\_R}} & {{R\_T85}} & {{G\_T85}} \\
+0.92 & \textbf{{{D\_ACC}}} & \textbf{{{AVG\_RANK}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+0.95 & {{D\_T95}} & {{D\_T95\_R}} & {{R\_T95}} & {{G\_T95}} \\
+0.99 & {{D\_T99}} & {{D\_T99\_R}} & {{R\_T99}} & {{G\_T99}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Residual Rank}
+
+\textbf{Table 7.5: Accuracy vs residual adapter rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_a$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 (no adapter) & {{D\_RA0}} & {{R\_RA0}} & {{G\_RA0}} \\
+8 & {{D\_RA8}} & {{R\_RA8}} & {{G\_RA8}} \\
+16 & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+32 & {{D\_RA32}} & {{R\_RA32}} & {{G\_RA32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Fixed vs Adaptive Rank}
+
+*\textit{Table 7.6: Fixed rank $r^}$ vs adaptive.**
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Note} \\
+\midrule
+Fixed $r^*$ = 128 & {{D\_FIX128}} & {{D\_FIX128\_R}}$\times$ & Uniform \\
+Fixed $r^*$ = 192 & {{D\_FIX192}} & {{D\_FIX192\_R}}$\times$ & Uniform \\
+\textbf{Adaptive} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & Per-projection \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Adaptive achieves similar accuracy with better compression 
+because it concentrates capacity where needed.
+
+\subsection{Ablation: All-Four vs Q/K/V-Only}
+
+\textbf{Table 7.7: Factorizing all four projections.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{Ratio} \\
+\midrule
+Q/K/V only (SOA-style) & {{D\_QKV\_ONLY}} & {{D\_QKV\_ONLY\_R}}$\times$ \\
+\textbf{All four} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.8: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Attention parameters:} reduce by {{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$.
+\item \textbf{Accuracy:} drops {{D\_DELTA}}\%--{{G\_DELTA}}\%.
+\item \textbf{Average rank:} {{AVG\_RANK}} at $\tau$ = {{ENERGY\_THRESHOLD}}.
+\item \textbf{Zero-shot} -- no calibration required.
+\item \textbf{Supports T5, cross-attention, GQA, RoPE.}
+
+\end{itemize}

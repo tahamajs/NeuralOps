@@ -1,3 +1,148 @@
-\section{12 Reproducibility}
 
-Draft content for flash_attention3_fp8.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+source .venv/bin/activate  # or .venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Verify Hardware First}
+
+\begin{lstlisting}
+import torch
+print("CUDA:", torch.cuda.is_available())
+print("GPU:", torch.cuda.get_device_name(0))
+print("Capability:", torch.cuda.get_device_capability(0))
+print("Float8 dtype:", hasattr(torch, "float8_e4m3fn"))
+try:
+    import flash_attn
+    print("flash_attn:", flash_attn.__version__)
+except ImportError:
+    print("flash_attn: NOT INSTALLED")
+\end{lstlisting}
+
+Expected on RTX 4070 Laptop:
+
+\begin{lstlisting}
+CUDA: True
+GPU: NVIDIA GeForce RTX 4070 Laptop GPU
+Capability: (8, 9)
+Float8 dtype: True
+flash_attn: NOT INSTALLED  (or a version without FP8 support)
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_flash3_fp8.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Downloading Checkpoints}
+
+\begin{lstlisting}
+from huggingface_hub import hf_hub_download
+
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-flash3_fp8",
+        filename="weights.pt",
+    )
+    print(f"Downloaded {model}")
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.2 (Main Results)}
+
+\begin{lstlisting}
+python run_all_4_flash3_fp8.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (use\_fp8 Ablation)}
+
+\begin{lstlisting}
+python run_all_4_flash3_fp8.py --use_fp8 true  --output_suffix fp8on
+python run_all_4_flash3_fp8.py --use_fp8 false --output_suffix fp8off
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{FP8 Path} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & No \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & No \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware Requirements for FP8}
+
+To reproduce the FP8 path, you need:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Requirement} & \textbf{Minimum} \\
+\midrule
+GPU & H100, H200, or RTX 4090 \\
+CUDA & 12.0+ \\
+PyTorch & 2.1+ \\
+\texttt{flash-attn} & 2.6+ (Hopper) or \texttt{flash-attn-3} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Windows: \texttt{cp1256} codec issues; set \texttt{PYTHONIOENCODING=utf-8}.
+\item CUDA: FP8 requires CUDA >= 11.8.
+\item Driver: consumer Ada GPUs may not expose FP8 via driver.
+
+\end{itemize}
+\subsection{Reproducibility Checklist}
+
+\begin{itemize}
+\item [ ] Hardware printed via \texttt{torch.cuda.get\_device\_name(0)}
+\item [ ] \texttt{hasattr(torch, "float8\_e4m3fn")} result logged
+\item [ ] \texttt{flash\_attn} import attempt logged
+\item [ ] FP8 path taken or not taken logged
+\item [ ] SDPA backend logged
+
+\end{itemize}
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Code: \texttt{framework/attentions/flash\_attention3\_fp8.py}
+\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-flash3\_fp8}
+\item Metrics: \texttt{results/unified\_flash3\_fp8/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/flash3\_fp8\_*.log}
+
+\end{itemize}

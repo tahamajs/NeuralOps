@@ -1,3 +1,97 @@
-\section{10 Limitations}
 
-Draft content for gated_delta_net.
+\section{Limitations}
+
+\subsection{Implementation Bottleneck (Primary)}
+
+The pure-PyTorch implementation is \textbf{~{{D\_SLOWDOWN}}$\times$ slower} than baseline 
+attention. This is the \textbf{dominant limitation} and prevents practical 
+deployment.
+
+\textbf{Root cause.} Nested Python loops (outer over chunks, inner over tokens) 
+generate ~600 kernel launches per forward pass.
+
+\textbf{Fix.} Requires a fused Triton or CUDA kernel.
+
+\subsection{Memory Exceeds Budget on 12-Layer Models}
+
+RoBERTa and GPT-2 (12 layers) \textbf{exceed 8 GB VRAM} during training, 
+resulting in OOM. This prevents evaluation on these models.
+
+\textbf{Cause.} State matrix + gradient checkpointed activations.
+
+\subsection{No Fusion Available}
+
+We did not implement a fused kernel in this work. The implementation uses 
+\texttt{torch.utils.checkpoint} for memory but at 2$\times$ compute cost.
+
+\subsection{Parameter Overhead}
+
+Gated DeltaNet \textbf{adds ~10.7\% parameters} compared to baseline:
+\begin{itemize}
+\item Z projection: +589K per layer
+\item $\alpha$, $\beta$ gates: +18K per layer
+\item LoRA: +123K per layer
+
+\end{itemize}
+This is not a compression method.
+
+\subsection{Single Seed}
+
+No multi-seed runs. Accuracy numbers are from one seed.
+
+\subsection{Task Coverage}
+
+Only SST-2. Long-context tasks (where linear attention has its main 
+advantage) are not tested.
+
+\subsection{Model Coverage}
+
+Only DistilBERT completes. RoBERTa and GPT-2 OOM.
+
+\subsection{No Qwen Testing}
+
+Qwen3.5 with GQA and RoPE was not tested due to memory constraints.
+
+\subsection{Numerical Precision}
+
+State matrix is accumulated in FP32. For FP16 training, numerical drift 
+may occur for long sequences. We test only $L = 128$.
+
+\subsection{Bidirectional Scan Overhead}
+
+For encoders, we run \textbf{two} full scans (forward + backward), \textbf{doubling} 
+compute time. This is not accounted for in the "linear complexity" claim.
+
+\subsection{Gradient Checkpointing is On by Default}
+
+We enable checkpointing by default, which doubles forward time. Disabling 
+it causes OOM on larger models.
+
+\subsection{No Theoretical Guarantee}
+
+We do not prove that Gated DeltaNet matches softmax attention's 
+expressiveness. The Delta Rule is a heuristic.
+
+\subsection{Failure to Reproduce Literature}
+
+Published Gated DeltaNet results use Triton kernels. Our results do not 
+match those speeds.
+
+\subsection{Code Quality}
+
+\begin{itemize}
+\item Python loops in hot path
+\item Some redundant tensor allocations
+\item No profiling instrumentation
+\item Gradient checkpointing adds complexity
+
+\end{itemize}
+\subsection{What This Paper Is Not}
+
+\begin{itemize}
+\item Not a speedup method
+\item Not a practical attention replacement
+\item Not a comparison with Mamba or GLA
+\item Not a scaling study
+
+\end{itemize}

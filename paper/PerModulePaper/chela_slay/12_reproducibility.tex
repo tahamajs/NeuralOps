@@ -1,3 +1,105 @@
-\section{12 Reproducibility}
+\section{Reproducibility}
 
-Draft content for chela_slay.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_chela_slay.py \
+    --models distilbert,roberta,gpt2 \
+    --feature_dim {{FEATURE_DIM}} \
+    --gate_init_bias {{GATE_INIT_BIAS}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --modules full,chela_slay \
+    --feature_dim {{FEATURE_DIM}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+\begin{lstlisting}
+python run_all_4_chela_slay.py
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (Feature Dim)}
+\begin{lstlisting}
+for f in 32 64 128 256; do
+    python run_all_4_chela_slay.py --feature_dim $f --output_suffix f$f
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.6 (Gate Bias)}
+\begin{lstlisting}
+for bg in 0.0 2.0 5.0 10.0; do
+    python run_all_4_chela_slay.py --gate_init_bias $bg --output_suffix gb$bg
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} & \textbf{Time Ratio} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_TIME\_RATIO}}$\times$ \\
+RoBERTa & {{R\_ACC}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_TIME\_RATIO}}$\times$ \\
+GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}.
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-chela\_slay}.
+\item \textbf{Metrics:} \texttt{results/unified\_chela\_slay/*/summary.csv}.
+
+\end{itemize}

@@ -1,3 +1,97 @@
-\section{02 Related}
 
-Draft content for gated_delta_net.
+\section{Related Work}
+
+\subsection{Linear Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020). Reformulates attention 
+with a kernel function $\phi$:
+
+\[
+y_t = \frac{\sum_{s \leq t} \phi(q_t)^\top \phi(k_s) v_s}{\sum_{s \leq t} \phi(q_t)^\top \phi(k_s)}
+\tag{2.1}
+\]
+
+which can be computed with a running state $S_t = \sum_{s \leq t} \phi(k_s) v_s^\top$. 
+\textbf{No gating, no error correction.}
+
+\textbf{Performer} (Choromanski et al., 2021). Uses random Fourier features for 
+$\phi$. Same linear state but with better kernel approximation.
+
+\subsection{Gated Linear Attention}
+
+\textbf{RetNet} (Sun et al., 2023). Introduces exponential decay:
+\[
+S_t = \gamma S_{t-1} + k_t v_t^\top
+\tag{2.2}
+\]
+with fixed (not input-dependent) $\gamma$.
+
+\textbf{Mamba} (Gu \& Dao, 2023). Adds input-dependent gating to state-space models, 
+but does not use the Delta Rule.
+
+\textbf{GLA} (Yang et al., 2024). Combines Mamba-style gating with linear attention.
+
+\subsection{Delta Rule Attention}
+
+\textbf{DeltaNet} (Schlag et al., 2021). Introduces the Delta Rule to linear 
+attention:
+\[
+S_t = S_{t-1} + \beta_t k_t^\top (v_t - k_t S_{t-1})
+\tag{2.3}
+\]
+
+\textbf{Gated DeltaNet} (Yang et al., 2024). Adds input-dependent forget gate. 
+This is the direct inspiration for our work.
+
+\textbf{DeltaNet with Parallel Scan} (Yang et al., 2024; Wang et al., 2024). Uses 
+WY representation for efficient parallel computation.
+
+\subsection{State-Space Models}
+
+\textbf{S4} (Gu et al., 2022), \textbf{S5} (Smith et al., 2023), \textbf{Mamba} (Gu \& Dao, 
+2023). Model sequences as linear time-invariant or time-varying systems. 
+Related but not equivalent to DeltaNet.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{Gated DeltaNet (ours)} \\
+\midrule
+\textbf{State update} & Fixed or input-gated & Delta Rule + gating \\
+\textbf{Bidirectional} & Usually causal only & Both supported \\
+\textbf{Implementation} & CUDA kernels (Mamba) & \textbf{Pure PyTorch (slow)} \\
+\textbf{Weight transfer} & Trained from scratch & \textbf{Pretrained Q/K/V/O} \\
+\textbf{LoRA recovery} & Rare & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Our contribution is \textbf{integration} with pretrained 
+transformers -- a mechanism to reuse $W_Q, W_K, W_V, W_O$ from a pretrained 
+model. The algorithm itself follows Yang et al. (2024).
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Gating} & \textbf{Delta Rule} & \textbf{Bidirectional} & \textbf{Pretrained transfer} \\
+\midrule
+Standard MHSA & $O(L^2)$ & -- & -- & Yes & -- \\
+Linear Transformer & $O(L)$ & No & No & Yes & Rare \\
+RetNet & $O(L)$ & Fixed & No & No & From scratch \\
+Mamba & $O(L)$ & Input & No & No & From scratch \\
+DeltaNet & $O(L)$ & Input & Yes & No & Rare \\
+\textbf{Gated DeltaNet} & \textbf{$O(L)$} & \textbf{Input} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

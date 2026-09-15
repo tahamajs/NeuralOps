@@ -1,3 +1,184 @@
-\section{06 Setup}
 
-Draft content for flash_attention3_fp8.
+\section{Experimental Setup}
+
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Split} & \textbf{Size} & \textbf{Majority \%} \\
+\midrule
+Train & 67,349 & 50.2\% \\
+Validation & 872 & 50.92\% \\
+Test & 1,821 & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sequence length truncated to 128.
+
+\subsection{FP8 Configuration}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+\texttt{use\_fp8} & True \\
+FP8 format & e4m3fn \\
+Fallback dtype & FP16 \\
+\texttt{FLASH\_ATTN\_AVAILABLE} & \textbf{{{FLASH\_AVAILABLE}}} \\
+FP8 path taken? & \textbf{{{FP8\_TAKEN}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Protocol}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & {{LR}} \\
+Recovery steps & {{RECOVERY\_STEPS}} \\
+LoRA rank & {{LORA\_RANK}} \\
+LoRA alpha & {{LORA\_ALPHA}} \\
+Batch size & {{BATCH\_SIZE}} \\
+Precision & FP16 \\
+Dropout & {{DROPOUT}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\subsubsection{Quality Metrics}
+
+\begin{itemize}
+\item Accuracy
+\item F1 (binary), F1 (macro)
+\item Precision, Recall
+
+\end{itemize}
+\subsubsection{Efficiency Metrics}
+
+\begin{itemize}
+\item Total params
+\item Trainable params
+\item Peak VRAM
+\item Inference time (median of 20 runs)
+\item Throughput (tokens/sec)
+
+\end{itemize}
+\subsubsection{Hardware Detection Metrics}
+
+\begin{itemize}
+\item \texttt{FLASH\_ATTN\_AVAILABLE} -- whether flash-attn is importable
+\item \texttt{FP8\_TAKEN} -- whether the FP8 path was used at least once
+\item \texttt{SDPA\_BACKEND} -- which SDPA backend PyTorch dispatched to
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Level} & \textbf{Threshold} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Specification} \\
+\midrule
+GPU & NVIDIA RTX 4070 Laptop \\
+GPU VRAM & 8 GB GDDR6 \\
+GPU Architecture & Ada Lovelace (SM 8.9) \\
+FP8 Tensor Cores & Available architecturally \\
+FP8 Exposed? & \textbf{{{FP8\_EXPOSED}}} \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
+Transformers & {{HF\_VERSION}} \\
+flash-attn & \textbf{{{FLASH\_ATTN\_VERSION}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Why FP8 May Not Be Available}
+
+On RTX 4070 Laptop:
+
+\begin{enumerate}
+\item FP8 tensor cores exist in silicon (Ada architecture).
+\item But the consumer driver may not expose them to CUDA.
+\item PyTorch's \texttt{float8\_e4m3fn} dtype exists in the build.
+\item But \texttt{flash\_attn\_func} may reject the call.
+
+\end{enumerate}
+Our code catches these failures and falls back. **The result is that on 
+our hardware, the FP8 path is not exercised**, and we report results from 
+the SDPA fallback.
+
+This is documented as a \textbf{key limitation} (Section 10).
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_flash3_fp8.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+Expected runtime: ~{{RUNTIME}} minutes on RTX 4070.
+
+\subsection{Seeds}
+
+Single seed ({{SEED}}). No multi-seed runs.
+
+\subsection{Baselines}
+
+\begin{itemize}
+\item \texttt{full} -- unmodified model
+\item \texttt{flash3\_fp8} -- our implementation
+\item Prior modules: \texttt{nha}, \texttt{nasc}, \texttt{a3}, etc.
+
+\end{itemize}

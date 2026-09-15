@@ -1,286 +1,208 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 04_method.md
+     PURPOSE: The core method
+     DEPENDENCIES: 03_background.md
+     LENGTH TARGET: 3 - 5 pages
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # 4. Method
 
 ## 4.1 Overview
 
-Galerkin Attention has two execution paths:
+Galerkin Attention has two paths:
 
-- **Encoder path:** Petrov-Galerkin projection onto DCT basis, then attention 
-  at rank $r$.
-- **Decoder path:** Standard causal softmax attention (fallback).
-
-**Figure 4.1** shows the pipeline.
+1. **Encoder path** (bidirectional models): project attention onto DCT basis.
+2. **Decoder path** (causal models): fall back to standard causal attention.
 
 ```
-    ┌───────────────────────────────────────────┐
-    │  Input X → Q/K/V projections (frozen+LoRA)│
-    └─────────────────────┬─────────────────────┘
-                          │
-                          ▼
-    ┌───────────────────────────────────────────┐
-    │  Apply RoPE, GQA repeat_kv                │
-    └─────────────────────┬─────────────────────┘
-                          │
-                          ▼
-    ┌───────────────────────────────────────────┐
-    │  Is decoder?                              │
-    └────┬─────────────────────┬────────────────┘
-         │ Yes                 │ No
-         ▼                     ▼
-    ┌──────────────┐    ┌──────────────────────┐
-    │  Standard    │    │  1. Build DCT basis  │
-    │  causal      │    │  2. Project Q/K/V    │
-    │  softmax     │    │  3. Attention in r   │
-    │  attention   │    │  4. Reconstruct + √  │
-    └──────┬───────┘    └──────────┬───────────┘
-           │                       │
-           └───────────┬───────────┘
-                       ▼
-              ┌────────────────┐
-              │  out_proj      │
-              └────────┬───────┘
+                    Input X
                        │
                        ▼
-                      Y
+                 ┌───────────┐
+                 │  Q/K/V    │
+                 │ projection│
+                 └─────┬─────┘
+                       │
+                       ▼
+                 ┌───────────┐
+                 │ is_decoder│
+                 └──┬────┬───┘
+                    │ No │ Yes
+                    │    │
+                    │    ▼
+                    │  ┌──────────────┐
+                    │  │ Causal       │
+                    │  │ attention    │
+                    │  │ (standard)   │
+                    │  └──────┬───────┘
+                    │         │
+                    ▼         │
+            ┌───────────────┐ │
+            │ Galerkin proj │ │
+            │ + softmax     │ │
+            └───────┬───────┘ │
+                    │         │
+                    └────┬────┘
+                         │
+                         ▼
+                    Output Y
 ```
 
-## 4.2 Phase 1: Projections
+## 4.2 The Galerkin Basis
 
-Frozen base + LoRA:
+We construct the DCT-II basis $\Phi \in \mathbb{R}^{N \times r}$:
 
 $$
-\text{Proj}_P(X) = X W_P^\top + \frac{\alpha}{r_L} (X A_P^\top) B_P^\top + b_P
+\Phi_{n, k} = \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right) \cdot
+c_k, \quad c_k = \begin{cases} 1/\sqrt{N} & k = 0 \\ \sqrt{2/N} & k \geq 1 \end{cases}
 \tag{4.1}
 $$
 
-$W_P$ copied exactly from pretrained.
-
-## 4.3 Phase 2: Basis Construction
-
-### DCT-II Basis
-
-For sequence length $N$ and rank $r$:
+We then orthonormalize via QR to correct for numerical error:
 
 $$
-\Phi_{n, k} = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right)
+\Phi \leftarrow Q \text{ where } \Phi + 10^{-4} I = Q R
 \tag{4.2}
 $$
 
-with indices $n = 0, \dots, N-1$ and $k = 0, \dots, r-1$.
+## 4.3 Projection and Attention
 
-### Orthonormalization
+For each head:
 
-DCT is theoretically orthonormal, but floating-point rounding can break 
-this. We add small identity regularization and apply QR:
+1. **Project** Q, K, V onto the basis:
+   $$
+   Q_\Phi = \Phi^\top Q \in \mathbb{R}^{B \times H \times r \times d}
+   \tag{4.3}
+   $$
+   
+2. **Compute attention** in the reduced space:
+   $$
+   A_\Phi = \mathrm{softmax}\!\left(\frac{Q_\Phi K_\Phi^\top}{\sqrt{d}}\right) \in \mathbb{R}^{B \times H \times r \times r}
+   \tag{4.4}
+   $$
+   
+3. **Apply to values:**
+   $$
+   O_\Phi = A_\Phi V_\Phi \in \mathbb{R}^{B \times H \times r \times d}
+   \tag{4.5}
+   $$
+   
+4. **Reconstruct** to original space:
+   $$
+   O = \Phi O_\Phi \in \mathbb{R}^{B \times H \times N \times d}
+   \tag{4.6}
+   $$
+
+5. **Energy correction:**
+   $$
+   O \leftarrow O \cdot \sqrt{N / r}
+   \tag{4.7}
+   $$
+
+## 4.4 Why the Energy Correction?
+
+The projection $\Phi^\top$ is contractive: $\|\Phi^\top Q\|_F \leq \|Q\|_F$. 
+For an orthonormal basis of $r$ columns out of $N$, the average energy 
+preserved is $r/N$. Multiplying by $\sqrt{N/r}$ approximately restores 
+the original norm.
+
+**Caveat.** This correction is a heuristic and does not account for the 
+actual distribution of energy across the basis. If energy is concentrated 
+in the first $r$ components, the correction **overshoots**; if it is 
+uniform, the correction is exact.
+
+## 4.5 Decoder Fallback
+
+For causal models, we use standard attention with explicit causal masking:
 
 $$
-\Phi \leftarrow \text{QR}(\Phi + \epsilon I_{N \times r})
-\tag{4.3}
-$$
-
-with $\epsilon = 10^{-4}$.
-
-## 4.4 Phase 3: Encoder Path
-
-### Projection to Basis
-
-$$
-Q_\Phi = \Phi^\top Q \in \mathbb{R}^{B \times H \times r \times d_h}
-\tag{4.4}
-$$
-
-$$
-K_\Phi = \Phi^\top K_{\text{masked}}, \quad V_\Phi = \Phi^\top V_{\text{masked}}
-\tag{4.5}
-$$
-
-where $K_{\text{masked}} = K \cdot m$ and $V_{\text{masked}} = V \cdot m$ 
-with padding mask $m$.
-
-### Attention in Basis Space
-
-$$
-\text{Scores} = \frac{Q_\Phi K_\Phi^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times r \times r}
-\tag{4.6}
-$$
-
-$$
-\text{Probs} = \text{softmax}(\text{Scores})
-\tag{4.7}
-$$
-
-$$
-O_\Phi = \text{Probs} \cdot V_\Phi
+\text{scores}_{ij} = \begin{cases}
+Q_i K_j^\top / \sqrt{d} & j \leq i \\
+-\infty & j > i
+\end{cases}
 \tag{4.8}
 $$
 
-### Reconstruction to Sequence Grid
+This preserves the autoregressive property. The Galerkin path is **not** 
+used for decoders.
 
-$$
-Y = \Phi \cdot O_\Phi \cdot \sqrt{N / r}
-\tag{4.9}
-$$
+## 4.6 Parameter Analysis
 
-The scaling factor $\sqrt{N / r}$ compensates for the energy loss due to 
-truncation.
+Galerkin Attention **adds parameters** via LoRA:
 
-### Padding Handling
+| Component | Params |
+|---|---|
+| Original attention | $d_\text{in} d_\text{out}$ |
+| Q projection + LoRA | $d_\text{in} d_\text{out} + r_L(d_\text{in} + d_\text{out})$ |
+| K projection + LoRA | same |
+| V projection + LoRA | same |
+| O projection + LoRA | same |
+| **Total per layer** | $4 d_\text{in} d_\text{out} + 4 r_L(d_\text{in} + d_\text{out})$ |
 
-Masked tokens in $K$ and $V$ are zeroed before projection. After 
-reconstruction, the output at padded positions is zeroed:
+**Example (DistilBERT, $r_L = 16$, $d = 768$):** +589,824 params per layer.
 
-$$
-Y \leftarrow Y \odot m
-\tag{4.10}
-$$
-
-## 4.5 Phase 4: Decoder Path
-
-For causal models, projection breaks causality because $K_\Phi$ depends on 
-**all** keys. We fall back to standard softmax attention:
-
-$$
-\text{Scores} = \frac{Q K^\top}{\sqrt{d_h}}, \quad
-\text{Scores} \leftarrow \text{Scores} + M_{\text{causal}}
-\tag{4.11}
-$$
-
-$$
-\text{Probs} = \text{softmax}(\text{Scores}), \quad
-Y = \text{Probs} \cdot V
-\tag{4.12}
-$$
-
-with numerical stabilization via $-\max$ subtraction.
-
-## 4.6 The Full Algorithm
-
-**Algorithm 1:** Galerkin Attention forward
-```
-Input:  X, attention_mask, position_embeddings
-        is_decoder, rank r
-Output: Y, probs
-
-1:  Q ← LoRALinear_Q(X)
-2:  K ← LoRALinear_K(X)
-3:  V ← LoRALinear_V(X)
-4:
-5:  if RoPE: (Q, K) ← apply_rope(Q, K, cos, sin)
-6:  if GQA: K, V ← repeat_kv(K, V)
-7:
-8:  if is_decoder:                              ▷ DECODER FALLBACK
-9:      S ← Q K^T / √d_h
-10:     S ← S + causal_mask
-11:     S ← S + padding_mask
-12:     P ← softmax(S)
-13:     Y_ctx ← P @ V
-14:
-15: else:                                        ▷ ENCODER GALERKIN
-16:     mask ← valid_token_mask(attention_mask)
-17:     K_masked ← K ⊙ mask
-18:     V_masked ← V ⊙ mask
-19:
-20:     Φ ← DCT_basis(N, r)                        ▷ Orthonormalize via QR
-21:     Q_Φ ← Φ^T Q
-22:     K_Φ ← Φ^T K_masked
-23:     V_Φ ← Φ^T V_masked
-24:
-25:     S ← Q_Φ K_Φ^T / √d_h                       ▷ (B, H, r, r)
-26:     P ← softmax(S)
-27:     O_Φ ← P @ V_Φ
-28:
-29:     Y_ctx ← Φ @ O_Φ                             ▷ Reconstruct
-30:     Y_ctx ← Y_ctx · √(N/r)                      ▷ Energy correction
-31:     Y_ctx ← Y_ctx ⊙ mask                        ▷ Zero padded positions
-32:
-33: Y_ctx ← reshape(B, N, H · d_h)
-34: if nested: Y ← Y_ctx
-35: else: Y ← LoRALinear_O(Y_ctx)
-36:
-37: return Y
-```
+**Note.** Galerkin Attention is **not a compression method**. It aims to 
+reduce **attention-matrix memory**, not parameter count.
 
 ## 4.7 Complexity Analysis
 
-| Path | Time | Memory |
+| Component | Time | Memory |
 |---|---|---|
-| Encoder (Galerkin) | $\mathcal{O}(N r d)$ + $\mathcal{O}(N r)$ for basis | $\mathcal{O}(N r)$ |
-| Decoder (fallback) | $\mathcal{O}(N^2 d)$ | $\mathcal{O}(N^2)$ |
+| Q/K/V proj | $\mathcal{O}(Nd^2)$ | $\mathcal{O}(Nd)$ |
+| Basis projection | $\mathcal{O}(Nrd)$ | $\mathcal{O}(Nrd)$ |
+| Attention | $\mathcal{O}(r^2 d)$ | $\mathcal{O}(r^2)$ |
+| Reconstruction | $\mathcal{O}(Nrd)$ | $\mathcal{O}(Nrd)$ |
+| O proj | $\mathcal{O}(Nd^2)$ | $\mathcal{O}(Nd)$ |
+| **Baseline MHSA** | $\mathcal{O}(N^2 d)$ | $\mathcal{O}(N^2)$ |
+| **Galerkin** | $\mathcal{O}(Nrd + r^2 d)$ | $\mathcal{O}(Nr)$ |
 
-For $N = 128$ and $r = 64$:
-- Encoder: $\sim 2 \times 10^6$ FLOPs per head
-- Decoder: $\sim 4 \times 10^6$ FLOPs per head
-- **Encoder speedup: ~2×**
+For $r \ll N$, Galerkin attention is asymptotically faster in the 
+attention matrix, but the projection/reconstruction overhead dominates 
+for short sequences.
 
-For $N = 512$ and $r = 64$:
-- Encoder: $\sim 8 \times 10^6$
-- Decoder: $\sim 6.4 \times 10^7$
-- **Encoder speedup: ~8×**
+## 4.8 Algorithm
 
-## 4.8 Parameter Analysis
+**Algorithm 1:** Galerkin Attention forward
+```
+Input:  X ∈ R^{B×N×d}, is_decoder
+Output: Y ∈ R^{B×N×d}
 
-| Component | Baseline | Galerkin |
-|---|---|---|
-| Base weights | $4 d^2$ | $4 d^2$ (frozen) |
-| LoRA ($r_L$) | 0 | $8 r_L d$ |
-| **Total per layer** | $4 d^2$ | $4 d^2 + 8 r_L d$ |
+ 1: Q ← X W_Q;  K ← X W_K;  V ← X W_V
+ 2: if RoPE: (Q, K) ← Rotary(Q, K)
+ 3: if GQA: (K, V) ← repeat_kv(K, V)
+ 4:
+ 5: if is_decoder:
+ 6:     A ← causal_softmax(Q K^T / sqrt(d))
+ 7:     O ← A V
+ 8: else:
+ 9:     Φ ← DCT_basis(N, r)               ▷ Orthonormal
+10:     Q_Φ ← Φ^T Q
+11:     K_Φ ← Φ^T K
+12:     V_Φ ← Φ^T V
+13:     A_Φ ← softmax(Q_Φ K_Φ^T / sqrt(d))
+14:     O_Φ ← A_Φ V_Φ
+15:     O ← Φ O_Φ
+16:     O ← O * sqrt(N / r)               ▷ Energy correction
+17:
+18: return out_proj(O)
+```
 
-For DistilBERT ($d = 768$, $r_L = 16$): **+589,824 params** across 6 layers.
+## 4.9 Theoretical Basis
 
-**Galerkin Attention is not a compression method.**
-
-## 4.9 Theoretical Notes
-
-### 4.9.1 Galerkin Approximation Error
-
-**Claim.** The Galerkin approximation error for the attention operator is 
-bounded by the DCT tail energy:
-
-$$
-\|\mathcal{K} Q - \hat{\mathcal{K}} \hat{Q}\|_2 \leq C \cdot \sqrt{\sum_{k > r} \sigma_k^2}
-\tag{4.13}
-$$
-
-where $\sigma_k$ are the singular values of the kernel operator.
-
-**Proof sketch.** Standard Galerkin theory (Strang, 1973, Theorem 5.2). 
-The error is dominated by the tail of the eigen-decomposition of $\mathcal{K}$. 
-DCT captures the low-frequency modes optimally. $\square$
-
-### 4.9.2 Energy Preservation Scaling
-
-**Claim.** The scaling $\sqrt{N/r}$ preserves the expected output energy 
-under the assumption that $O_\Phi$ coefficients are i.i.d.
-
-**Proof.** For $O_\Phi \in \mathbb{R}^{r \times d_h}$ with i.i.d. entries 
-variance $\sigma^2$, the reconstruction $Y = \Phi O_\Phi$ has entries:
+The method is motivated by the following observation: for smooth attention 
+kernels $k(x, y)$, projection onto the first $r$ DCT basis functions 
+preserves energy at rate:
 
 $$
-Y_{n, j} = \sum_k \Phi_{n,k} (O_\Phi)_{k, j}
-\tag{4.14}
+\frac{\|\Phi_r^\top k\|_2}{\|k\|_2} \approx 1 - \mathcal{O}(r^{-2\alpha})
+\tag{4.9}
 $$
 
-with variance:
+where $\alpha$ is the smoothness parameter of $k$. For $C^\infty$ kernels, 
+the decay is super-polynomial.
 
-$$
-\text{Var}(Y_{n,j}) = \sum_k \Phi_{n,k}^2 \sigma^2 = \sigma^2 \cdot \|\Phi_{n,:}\|_2^2 = \sigma^2
-\tag{4.15}
-$$
+**Empirical caveat.** Trained transformer attention kernels are **not** 
+smooth. They are sharply peaked (attention sinks, heavy hitters) and highly 
+content-dependent. This is why our method fails in practice (Section 8).
 
-since $\Phi$ has orthonormal columns. The output energy per sequence 
-position is thus $\sigma^2$, matching the expected basis energy $\sigma^2 \cdot r$. 
-The $\sqrt{N/r}$ factor compensates for the fact that $r$ basis modes must 
-represent $N$ sequence positions. $\square$
-
-### 4.9.3 Causality Preservation for Encoders
-
-Encoders have no causal constraint. The Galerkin projection preserves 
-bidirectional context. $\square$
-
-## 4.10 Hyperparameter Guidance
-
-| Hyperparameter | Default | Effect |
-|---|---|---|
-| Rank $r$ | 64 | Higher = more fidelity, slower |
-| Basis | DCT-II | Only option |
-| $\epsilon$ (regularization) | $10^{-4}$ | Numerical stability |
-| LoRA rank | 16 | Adapter capacity |
+---

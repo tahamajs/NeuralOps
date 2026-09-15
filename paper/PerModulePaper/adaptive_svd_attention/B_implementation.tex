@@ -1,3 +1,146 @@
-\section{B Implementation}
+\section{Appendix B. Implementation Details}
 
-Formal architectural specifications for \texttt{adaptive_svd_attention}.
+\subsection{B.1 The AdaptiveSVDLinear Module}
+
+\begin{lstlisting}
+class AdaptiveSVDLinear(nn.Module):
+    def __init__(self, in_features, out_features, svd_rank, residual_rank=16, ...):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.svd_rank = min(svd_rank, in_features, out_features)
+        self.residual_rank = min(residual_rank, in_features, out_features)
+        
+        # Frozen SVD factors
+        self.U = nn.Parameter(torch.empty(out_features, self.svd_rank), 
+                              requires_grad=False)
+        self.V = nn.Parameter(torch.empty(self.svd_rank, in_features), 
+                              requires_grad=False)
+        
+        # Trainable residual
+        if self.residual_rank > 0:
+            self.lora_B = nn.Parameter(torch.empty(out_features, self.residual_rank))
+            self.lora_A = nn.Parameter(torch.empty(self.residual_rank, in_features))
+        
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+\end{lstlisting}
+
+\subsection{B.2 Energy-Thresholded Rank Selection}
+
+\begin{lstlisting}
+def _compute_energy_rank(self, S, max_rank, min_rank=16):
+    s_squared = S ** 2
+    total_energy = s_squared.sum()
+    if total_energy <= 1e-12:
+        return max(1, min(min_rank, max_rank))
+    
+    cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
+    idx = torch.where(cum_energy >= self.energy_threshold)[0]
+    r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
+    return max(1, min(max(r, min_rank), max_rank))
+\end{lstlisting}
+
+\subsection{B.3 SVD Initialization}
+
+\begin{lstlisting}
+def _init_svd_part(self, adap_linear, W_data, bias_data):
+    with torch.no_grad():
+        W = W_data.float()
+        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        max_r = min(adap_linear.svd_rank, U.size(1), Vt.size(0))
+        r = self._compute_energy_rank(S, max_rank=max_r)
+        
+        sqrt_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U_r = (U[:, :r] * sqrt_s.unsqueeze(0))
+        V_r = (sqrt_s.unsqueeze(1) * Vt[:r, :])
+        
+        adap_linear.set_svd_factors(U_r, V_r)
+        if adap_linear.bias is not None and bias_data is not None:
+            adap_linear.bias.data.copy_(bias_data)
+\end{lstlisting}
+
+\subsection{B.4 Weight Extraction}
+
+\begin{lstlisting}
+def copy_weights(self, src):
+    for proj in ["q", "k", "v", "o"]:
+        w, b = None, None
+        try:
+            w, b = UniversalAdapter.get_weight_bias(src, proj)
+        except Exception:
+            pass
+        
+        if w is None:
+            # Manual fallbacks
+            if hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
+                fused_w = src.c_attn.weight.T
+                idx = {"q": 0, "k": 1, "v": 2}[proj]
+                split_size = fused_w.size(0) // 3
+                w = fused_w[idx*split_size:(idx+1)*split_size, :]
+            elif hasattr(src, "self") and hasattr(src.self, "query"):
+                s = src.self
+                name_map = {"q": "query", "k": "key", "v": "value"}
+                if proj in name_map:
+                    mod = getattr(s, name_map[proj])
+                    w = mod.weight
+            # ... (more fallbacks)
+\end{lstlisting}
+
+\subsection{B.5 Freezing Base Weights}
+
+\begin{lstlisting}
+for proj, target in [("q", self.query), ("k", self.key), 
+                     ("v", self.value), ("o", self.out_proj)]:
+    w, b = extracted_weights[proj]
+    if w is not None:
+        self._init_svd_part(target, w, b)
+        target.U.requires_grad = False
+        target.V.requires_grad = False
+        if target.bias is not None:
+            target.bias.requires_grad = False
+        if target.lora_A is not None:
+            target.lora_A.requires_grad = True
+        if target.lora_B is not None:
+            target.lora_B.requires_grad = True
+\end{lstlisting}
+
+\subsection{B.6 T5 Relative Bias}
+
+\begin{lstlisting}
+if hasattr(src, "relative_attention_bias") and src.relative_attention_bias is not None:
+    self.relative_attention_bias = src.relative_attention_bias
+    self.has_relative_attention_bias = True
+\end{lstlisting}
+
+In forward:
+
+\begin{lstlisting}
+if position_bias is None and self.has_relative_attention_bias:
+    position_bias = self.compute_bias(N_q, N_k, device=hidden_states.device)
+\end{lstlisting}
+
+\subsection{B.7 Common Pitfalls}
+
+\subsubsection{B.7.1 Wrong Rank Cap}
+
+If \texttt{svd\_rank} > min(in\_features, out\_features), the factorized weight has 
+more parameters than the baseline. Clamp.
+
+\subsubsection{B.7.2 Forgetting to Freeze}
+
+Without \texttt{requires\_grad = False} on $U, V$, training modifies the compression.
+
+\subsubsection{B.7.3 Wrong Symmetric Split}
+
+Using asymmetric split with clamp(min=1e-12) can lose numerical precision.
+
+\subsubsection{B.7.4 Missing Residual Bias}
+
+If bias is not copied, the initial module has zero bias -- degraded output.
+
+\subsubsection{B.7.5 Nested Encoder Mis-Handling}
+
+For RoBERTa, \texttt{is\_nested\_encoder=True} but we STILL apply \texttt{out\_proj}. This 
+differs from SOA Fused.
+

@@ -1,3 +1,115 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Formal architectural specifications for \texttt{flash_attention3}.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params before & 66,955,010 \\
+Total params after & {{D\_PARAMS}} \\
+Trainable & {{D\_TRAINABLE}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time L=128 & {{D\_T128}} s \\
+Path used & {{D\_PATH}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Path used & {{R\_PATH}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Path used & {{G\_PATH}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Sequence-Length Scaling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{L} & \textbf{Baseline} & \textbf{FA3} & \textbf{FA3 FP8} \\
+\midrule
+128 & 1$\times$ & 1$\times$ & 1$\times$ \\
+256 & 1$\times$ & 1.5$\times$ & 2$\times$ \\
+512 & 1$\times$ & 2.5$\times$ & 4$\times$ \\
+1024 & 1$\times$ & 3.5$\times$ & 5.5$\times$ \\
+2048 & 1$\times$ & 4$\times$ & 6$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+(Speedups relative to baseline; only meaningful on Hopper.)
+
+\subsection{C.5 Output Correctness}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Max abs diff (FA3 vs SDPA)} \\
+\midrule
+DistilBERT & {{D\_DIFF\_MAX}} \\
+RoBERTa & {{R\_DIFF\_MAX}} \\
+GPT-2 & {{G\_DIFF\_MAX}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+20    {{D_S20}}
+30    {{D_S30}}
+40    {{D_S40}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.7 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_flash3.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
