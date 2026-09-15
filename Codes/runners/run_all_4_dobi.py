@@ -21,14 +21,14 @@ models = [
     {
         "name": "distilbert",
         "slug": "distilbert",
-        "out_dir": r"results\unified_dobi_svd\distilbert",
+        "out_dir": r"results\unified_dobi\distilbert",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
             "--model", r"models\distilbert_sst2",
             "--model_family", "bert",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_dobi_svd\distilbert",
+            "--output_dir", r"results\unified_dobi\distilbert",
             "--parent_checkpoint", r"results\unified_asvd\distilbert\finetuned_model.pt",
             "--modules", "full,dobi_svd",
             "--batch_size", "8",
@@ -43,20 +43,20 @@ models = [
             "--defer_export",
             "--timeout", "180",
         ],
-        "summary_csv": r"results\unified_dobi_svd\distilbert\summary.csv",
-        "stats_json": r"results\unified_dobi_svd\distilbert\dobi_svd_stats.json",
+        "summary_csv": r"results\unified_dobi\distilbert\summary.csv",
+        "stats_json": r"results\unified_dobi\distilbert\dobi_svd_stats.json",
     },
     {
         "name": "roberta",
         "slug": "roberta",
-        "out_dir": r"results\unified_dobi_svd\roberta",
+        "out_dir": r"results\unified_dobi\roberta",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
             "--model", r"models\roberta-base",
             "--model_family", "roberta",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_dobi_svd\roberta",
+            "--output_dir", r"results\unified_dobi\roberta",
             "--parent_checkpoint", r"results\roberta_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,dobi_svd",
             "--batch_size", "8",
@@ -71,20 +71,20 @@ models = [
             "--defer_export",
             "--timeout", "180",
         ],
-        "summary_csv": r"results\unified_dobi_svd\roberta\summary.csv",
-        "stats_json": r"results\unified_dobi_svd\roberta\dobi_svd_stats.json",
+        "summary_csv": r"results\unified_dobi\roberta\summary.csv",
+        "stats_json": r"results\unified_dobi\roberta\dobi_svd_stats.json",
     },
     {
         "name": "gpt2",
         "slug": "gpt2",
-        "out_dir": r"results\unified_dobi_svd\gpt2",
+        "out_dir": r"results\unified_dobi\gpt2",
         "cmd": [
             sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
             "--model", r"models\gpt2",
             "--model_family", "gpt",
             "--dataset", "sst2",
             "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_dobi_svd\gpt2",
+            "--output_dir", r"results\unified_dobi\gpt2",
             "--parent_checkpoint", r"results\gpt2_sst2_lora_baseline\finetuned_model.pt",
             "--modules", "full,dobi_svd",
             "--batch_size", "8",
@@ -99,8 +99,8 @@ models = [
             "--defer_export",
             "--timeout", "180",
         ],
-        "summary_csv": r"results\unified_dobi_svd\gpt2\summary.csv",
-        "stats_json": r"results\unified_dobi_svd\gpt2\dobi_svd_stats.json",
+        "summary_csv": r"results\unified_dobi\gpt2\summary.csv",
+        "stats_json": r"results\unified_dobi\gpt2\dobi_svd_stats.json",
     },
 ]
 
@@ -249,8 +249,8 @@ print("=" * 80, flush=True)
 
 out_dir = Path("results")
 out_dir.mkdir(parents=True, exist_ok=True)
-out_csv = out_dir / "unified_dobi_svd_4models_summary.csv"
-out_json = out_dir / "unified_dobi_svd_4models_summary.json"
+out_csv = out_dir / "unified_dobi_4models_summary.csv"
+out_json = out_dir / "unified_dobi_4models_summary.json"
 res_df.to_csv(out_csv, index=False)
 with open(out_json, "w", encoding="utf-8") as f:
     json.dump(final_stats, f, indent=2)
