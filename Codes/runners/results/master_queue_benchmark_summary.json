@@ -349,5 +349,32 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T11:41:46.637463"
+  },
+  {
+    "module": "cur_linear",
+    "runner": "run_all_4_cur_linear.py",
+    "exit_code": 0,
+    "elapsed_s": 137.89,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:44:06.494932"
+  },
+  {
+    "module": "cur_moe",
+    "runner": "run_all_4_cur_moe.py",
+    "exit_code": 0,
+    "elapsed_s": 135.77,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:46:24.146125"
+  },
+  {
+    "module": "cure",
+    "runner": "run_all_4_cure.py",
+    "exit_code": 0,
+    "elapsed_s": 136.81,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:48:42.869378"
   }
 ]
