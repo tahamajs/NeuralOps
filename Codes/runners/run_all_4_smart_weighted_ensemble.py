@@ -96,32 +96,6 @@ models = [
         "summary_csv": r"results\unified_smart_weighted_ensemble\gpt2\summary.csv",
         "stats_json": r"results\unified_smart_weighted_ensemble\gpt2\smart_weighted_ensemble_stats.json",
     },
-    {
-        "name": "qwen3_5",
-        "slug": "qwen3_5",
-        "out_dir": r"results\unified_smart_weighted_ensemble\qwen3_5",
-        "cmd": [
-            sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
-            "--model", r"models\Qwen3.5-0.8B",
-            "--model_family", "qwen3_5",
-            "--dataset", "sst2",
-            "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_smart_weighted_ensemble\qwen3_5",
-            "--parent_checkpoint", r"results\unified_asvd\qwen3_5\finetuned_model.pt",
-            "--modules", "full,smart_weighted_ensemble",
-            "--batch_size", "8",
-            "--recovery_steps", "50",
-            "--learning_rate", "2e-4",
-            "--lora_rank", "16",
-            "--rank", "32",
-            "--precision", "fp16",
-            "--fresh",
-            "--defer_export",
-            "--timeout", "180",
-        ],
-        "summary_csv": r"results\unified_smart_weighted_ensemble\qwen3_5\summary.csv",
-        "stats_json": r"results\unified_smart_weighted_ensemble\qwen3_5\smart_weighted_ensemble_stats.json",
-    },
 ]
 
 import argparse

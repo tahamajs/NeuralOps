@@ -99,33 +99,6 @@ models = [
         "summary_csv": r"results\unified_erc\gpt2\summary.csv",
         "stats_json": r"results\unified_erc\gpt2\erc_stats.json",
     },
-    {
-        "name": "qwen3_5",
-        "slug": "qwen3_5",
-        "out_dir": r"results\unified_erc\qwen3_5",
-        "cmd": [
-            sys.executable, "-u", r"Codes\framework\run_quality_sweep.py",
-            "--model", r"models\Qwen3.5-0.8B",
-            "--model_family", "qwen3_5",
-            "--dataset", "sst2",
-            "--dataset_dir", r"Codes\framework\data\glue_data\sst2",
-            "--output_dir", r"results\unified_erc\qwen3_5",
-            "--parent_checkpoint", r"results\unified_asvd\qwen3_5\finetuned_model.pt",
-            "--modules", "full,erc",
-            "--batch_size", "8",
-            "--recovery_steps", "50",
-            "--learning_rate", "2e-4",
-            "--erc_allowed_error", "0.20",
-            "--erc_max_error", "0.35",
-            "--erc_target_attention_only", "true",
-            "--precision", "fp16",
-            "--fresh",
-            "--defer_export",
-            "--timeout", "180",
-        ],
-        "summary_csv": r"results\unified_erc\qwen3_5\summary.csv",
-        "stats_json": r"results\unified_erc\qwen3_5\erc_stats.json",
-    },
 ]
 
 import argparse
