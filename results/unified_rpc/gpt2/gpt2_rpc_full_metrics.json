@@ -1,26 +1,26 @@
 {
     "model": "gpt2_rpc",
     "performance": {
-        "accuracy_pct": 83.6,
-        "f1_score": 0.843,
-        "f1_macro": 0.8357,
-        "precision": 0.8371,
-        "recall": 0.8355,
-        "val_loss": 0.3716,
-        "status": "PASS",
-        "elapsed_s": 28.41
+        "accuracy_pct": 70.53,
+        "f1_score": 0.707,
+        "f1_macro": 0.7053,
+        "precision": 0.7053,
+        "recall": 0.7054,
+        "val_loss": 0.5586,
+        "status": "PASS_NO_COMPRESSION",
+        "elapsed_s": 23.93
     },
     "efficiency": {
-        "total_params_before": 126800640,
-        "total_params_after": 127095552,
-        "trainable_recovery_params": 2654208,
-        "compression_rate": 0.9977,
-        "compression_ratio_pct": -0.23,
+        "total_params_before": 124441344,
+        "total_params_after": 125620992,
+        "trainable_recovery_params": 1179648,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
         "flops_reduction_pct": 0.0,
-        "num_compressed_layers": 72,
+        "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
-        "lora_params": 2654208,
+        "lora_params": 1179648,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -40,8 +40,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 339.81,
-        "tokens_per_sec": 9788.18
+        "peak_vram_mb": 570.16,
+        "tokens_per_sec": 12198.37
     },
     "architecture": {
         "span_distribution": {},
@@ -49,10 +49,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 299.81,
-        "L_256_vram_mb": 305.84,
-        "L_512_vram_mb": 337.84,
+        "L_128_vram_mb": 528.04,
+        "L_256_vram_mb": 532.59,
+        "L_512_vram_mb": 566.34,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-14T19:09:03.126569"
+    "timestamp": "2026-09-15T23:28:50.386101"
 }

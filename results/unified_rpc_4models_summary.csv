@@ -1,4 +1,4 @@
 Model,Exit Code,Baseline Acc,RPC Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.94%,88.88%,-2.06%,0.8911,PASS,24,0.99x,326.4 MB,47.4
-roberta,0,60.09%,59.17%,-0.92%,0.7063,PASS,48,0.94x,660.6 MB,75.8
-gpt2,0,87.84%,83.60%,-4.24%,0.8430,PASS,72,1.00x,339.8 MB,61.0
+distilbert,0,90.71%,88.99%,-1.72%,0.8919,PASS_NO_COMPRESSION,0,1.00x,326.4 MB,48.8
+roberta,0,78.56%,74.20%,-4.36%,0.7429,PASS_NO_COMPRESSION,0,1.00x,659.8 MB,66.9
+gpt2,0,79.36%,70.53%,-8.83%,0.7070,PASS_NO_COMPRESSION,0,1.00x,570.2 MB,69.4
