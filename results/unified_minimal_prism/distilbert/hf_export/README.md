@@ -21,7 +21,7 @@ Validated factorized/adapted checkpoint of **distilbert** using **distilbert** e
 - **F1 Macro**: `0.8814`
 - **Precision**: `0.885`
 - **Recall**: `0.8811`
-- **Validation Loss**: `0.3205`
+- **Validation Loss**: `0.3206`
 - **Quality Gate Status**: `PASS` (Pass Threshold: >= 56.00%)
 
 ## Efficiency Profile & Resource Footprint
@@ -30,10 +30,10 @@ Validated factorized/adapted checkpoint of **distilbert** using **distilbert** e
 - **Total Parameters Before**: `66955010`
 - **Total Parameters After**: `58107650`
 - **Trainable Recovery Params**: `589824`
-- **Compressed / Injected Layers**: `30`
-- **Peak VRAM**: `182.03 MB`
-- **Throughput**: `24042.34 tokens/sec`
-- **Evaluation Time**: `13.79 s`
+- **Compressed / Injected Layers**: `0`
+- **Peak VRAM**: `284.65 MB`
+- **Throughput**: `24506.34 tokens/sec`
+- **Evaluation Time**: `13.82 s`
 
 ## Reproduction & Usage
 ```python

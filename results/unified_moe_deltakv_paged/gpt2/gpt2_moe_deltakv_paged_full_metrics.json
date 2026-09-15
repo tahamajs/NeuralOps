@@ -1,23 +1,23 @@
 {
     "model": "gpt2_moe_deltakv_paged",
     "performance": {
-        "accuracy_pct": 49.77,
-        "f1_score": 0.0437,
-        "f1_macro": 0.3515,
-        "precision": 0.6042,
-        "recall": 0.5066,
-        "val_loss": 0.7618,
-        "status": "PASS_LOW",
-        "elapsed_s": 18.23
+        "accuracy_pct": 52.41,
+        "f1_score": 0.3095,
+        "f1_macro": 0.4732,
+        "precision": 0.5507,
+        "recall": 0.53,
+        "val_loss": 0.7045,
+        "status": "PASS_NO_COMPRESSION",
+        "elapsed_s": 32.66
     },
     "efficiency": {
         "total_params_before": 124441344,
         "total_params_after": 125670144,
         "trainable_recovery_params": 1179648,
-        "compression_rate": 0.9902,
-        "compression_ratio_pct": -0.99,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
         "flops_reduction_pct": 0.0,
-        "num_compressed_layers": 48,
+        "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
         "lora_params": 1179648,
@@ -27,8 +27,8 @@
         "per_layer_ranks": {}
     },
     "hardware": {
-        "peak_vram_mb": 563.6,
-        "tokens_per_sec": 8531.05
+        "peak_vram_mb": 568.1,
+        "tokens_per_sec": 8375.44
     },
     "architecture": {
         "span_distribution": {},
@@ -36,10 +36,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 522.35,
-        "L_256_vram_mb": 526.86,
-        "L_512_vram_mb": 555.81,
+        "L_128_vram_mb": 526.85,
+        "L_256_vram_mb": 531.36,
+        "L_512_vram_mb": 560.31,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-15T05:00:51.252909"
+    "timestamp": "2026-09-15T22:10:37.425622"
 }
