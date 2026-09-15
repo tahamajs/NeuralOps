@@ -23,9 +23,15 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 
 
+DEPRECATED_MODULES = {"tt", "tt_linear"}
+
+
 def get_all_runner_scripts(repo_dir: Path) -> List[Path]:
-    """Find all run_all_4_*.py files in the repository."""
-    runners = sorted(repo_dir.glob("run_all_4_*.py"))
+    """Find all run_all_4_*.py files in the repository, excluding deprecated modules."""
+    runners = [
+        p for p in sorted(repo_dir.glob("run_all_4_*.py"))
+        if extract_module_name(p) not in DEPRECATED_MODULES
+    ]
     return runners
 
 
