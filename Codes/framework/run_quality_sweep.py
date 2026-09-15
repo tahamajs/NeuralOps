@@ -2191,7 +2191,7 @@ def main():
                             "adaptive_sparse", "adaptive_sparse_attention",
                         }
                         if name in FROM_SCRATCH_MODULES or name in ("asvd", "asvd_attention"):
-                            rec_steps = max(args.recovery_steps, 50)
+                            rec_steps = args.recovery_steps if getattr(args, "recovery_steps", None) is not None else 50
                             if name in ("asvd", "asvd_attention") and family == "gpt":
                                 rec_lr = args.learning_rate if args.learning_rate != 2e-4 else 1e-4
                             else:

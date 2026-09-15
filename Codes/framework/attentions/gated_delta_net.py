@@ -643,8 +643,8 @@ class GatedDeltaNet(BaseAttention):
             v_f = v_f * m_f.unsqueeze(-1)
 
         # Chunked associative recurrence via vectorised intra-chunk matrix multiplications
-        chunk_size = getattr(self, "chunk_size", 8)
-        use_checkpoint = getattr(self, "use_gradient_checkpointing", True)
+        chunk_size = getattr(self, "chunk_size", 16)
+        use_checkpoint = getattr(self, "use_gradient_checkpointing", False)
         logger.debug("Using chunked delta scan with chunk_size=%d, checkpointing=%s", chunk_size, use_checkpoint)
 
         y_fwd = chunked_delta_rule_scan(
