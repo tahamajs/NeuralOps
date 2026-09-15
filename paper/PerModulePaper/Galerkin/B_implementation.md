@@ -1,0 +1,93 @@
+# Appendix B. Implementation Details
+
+## B.1 DCT Basis Construction
+
+```python
+def _get_orthonormal_basis(self, N, r, device, dtype):
+    r_actual = max(1, min(r, N))
+    n = torch.arange(N, device=device, dtype=torch.float32).unsqueeze(1)
+    k = torch.arange(r_actual, device=device, dtype=torch.float32).unsqueeze(0)
+    
+    phi = torch.cos((math.pi * k * (2.0 * n + 1.0)) / (2.0 * max(1, N)))
+    phi[:, 0] = phi[:, 0] * (1.0 / math.sqrt(max(1, N)))
+    if r_actual > 1:
+        phi[:, 1:] = phi[:, 1:] * math.sqrt(2.0 / max(1, N))
+    
+    # Orthonormalize via QR
+    eye = torch.eye(N, r_actual, device=device, dtype=torch.float32)
+    phi = phi + 1e-4 * eye
+    phi, _ = torch.linalg.qr(phi)
+    
+    return phi.to(dtype=dtype)
+```
+
+## B.2 Encoder Galerkin Path
+
+```python
+r_actual = max(1, min(self.rank, kv_len))
+Phi = self._get_orthonormal_basis(kv_len, r_actual, device, dtype)
+
+Q_basis = torch.einsum("bhnd,nr->bhrd", Q, Phi)
+K_basis = torch.einsum("bhnd,nr->bhrd", K_masked, Phi)
+V_basis = torch.einsum("bhnd,nr->bhrd", V_masked, Phi)
+
+scores = torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1)) * scale
+probs = F.softmax(scores, dim=-1)
+O_basis = torch.matmul(probs, V_basis)
+
+context = torch.einsum("bhrd,nr->bhnd", O_basis, Phi)
+scale_factor = math.sqrt(kv_len / r_actual) if kv_len > r_actual else 1.0
+context = context * scale_factor
+```
+
+## B.3 Decoder Fallback Path
+
+```python
+scale = d ** -0.5
+scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+causal_diag = 1 + max(0, kv_len - N)
+causal_mask = torch.triu(
+    torch.full((N, kv_len), float("-inf")), diagonal=causal_diag
+)
+scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
+# ... mask, softmax, matmul
+```
+
+## B.4 Padding Handling
+
+```python
+valid_mask = get_token_valid_mask(eff_mask, B, kv_len, device)
+mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+K_masked = K * mask_expanded
+V_masked = V * mask_expanded
+# ... after reconstruction
+context = context * mask_expanded
+```
+
+## B.5 Common Pitfalls
+
+### B.5.1 DCT Dimension Mismatch
+Basis is (N, r), Q is (B, H, N, d_h). Einsum "bhnd,nr->bhrd" handles this.
+
+### B.5.2 Forgetting √(N/r) Scaling
+Without scaling, output magnitude drops by √(r/N) ≈ 0.7 for typical 
+configurations.
+
+### B.5.3 QR Numerical Stability
+QR on (N, r) matrix with N > r adds no rank; regularization via `epsilon * I` 
+prevents degenerate cases.
+
+### B.5.4 Decoder Fallback Detection
+Use `model_type.startswith(prefix)` for robustness.
+
+### B.5.5 Nested Encoder
+For RoBERTa: `src = src.self` after setting `is_nested_encoder = True`.
+
+## B.6 Diagnostics
+
+```python
+# Check basis orthonormality
+Phi = galerkin_attn._get_orthonormal_basis(N, r, device, dtype)
+eye = torch.matmul(Phi.T, Phi)
+print((eye - torch.eye(r)).abs().max())  # Should be < 1e-5
+```

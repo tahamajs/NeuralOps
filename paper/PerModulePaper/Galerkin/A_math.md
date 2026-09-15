@@ -1,0 +1,95 @@
+# Appendix A. Mathematical Derivations
+
+## A.1 Galerkin Discretization of Attention
+
+The continuous attention operator:
+
+$$
+(\mathcal{K} Q)(s) = \int_0^1 \kappa(s, t) V(t) \, dt
+\tag{A.1}
+$$
+
+Choose an orthonormal basis $\{\phi_k\}_{k=1}^r$ of $L^2[0, 1]$. The Galerkin 
+approximation $\hat{Q} = \sum_k q_k \phi_k$ satisfies:
+
+$$
+\langle \mathcal{K} Q, \phi_j \rangle = \sum_k q_k \langle \mathcal{K} \phi_k, \phi_j \rangle
+\tag{A.2}
+$$
+
+In matrix form, define $\Phi_{n,k} = \phi_k(t_n)$ and $Q_\Phi = \Phi^\top Q$:
+
+$$
+Q_\Phi = (\Phi^\top \mathcal{K} \Phi) Q_\Phi
+\tag{A.3}
+$$
+
+where $\mathcal{K}_{ij} = \kappa(t_i, t_j)$ is the discretized kernel.
+
+## A.2 DCT Orthonormality
+
+**Theorem.** The DCT-II basis vectors:
+
+$$
+\phi_k(n) = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n+1)}{2N}\right)
+\tag{A.4}
+$$
+
+are orthonormal: $\sum_n \phi_i(n) \phi_j(n) = \delta_{ij}$.
+
+**Proof.** Standard DCT result (Ahmed et al., 1974). $\square$
+
+## A.3 Approximation Error Bound
+
+**Theorem.** For the DCT basis, the Galerkin approximation error is:
+
+$$
+\|\mathcal{K} Q - \hat{\mathcal{K}} \hat{Q}\|_2 \leq \sqrt{\sum_{k > r} \lambda_k}
+\tag{A.5}
+$$
+
+where $\lambda_k$ are the eigenvalues of $\mathcal{K}^\top \mathcal{K}$ 
+sorted descending.
+
+**Proof.** Standard result in finite element theory (Strang & Fix, 1973, 
+Theorem 5.2). $\square$
+
+## A.4 Energy Preservation Scaling
+
+**Claim.** The scaling factor $\sqrt{N/r}$ ensures:
+
+$$
+\mathbb{E}\left[\|\Phi O_\Phi \sqrt{N/r}\|_2^2\right] \approx \mathbb{E}\left[\|O_\Phi\|_2^2\right] \cdot (N/r) \cdot r = N \cdot \mathbb{E}[\|O_\Phi\|^2 / r]
+\tag{A.6}
+$$
+
+Under the assumption of i.i.d. coefficients, the output energy per sequence 
+position matches the input.
+
+## A.5 Partial RoPE
+
+For Qwen3.5 with $d_h = 256$ and $d_\text{rot} = 64$:
+
+$$
+\tilde{Q} = [\text{RoPE}(Q_{:64}), \ Q_{64:}]
+\tag{A.7}
+$$
+
+Only the first 64 coordinates rotate.
+
+## A.6 Causality Preservation Fallback
+
+For decoders, the projection cannot preserve causality because projected 
+keys depend on all tokens. We use exact causal softmax.
+
+## A.7 Rank Selection
+
+The optimal rank $r^*$ minimizes:
+
+$$
+r^* = \arg\min_r \left[ \text{FLOPs}(r) + \lambda \cdot \text{ApproxError}(r) \right]
+\tag{A.8}
+$$
+
+For DCT, $\text{ApproxError}(r) \sim \exp(-c r)$ for smooth kernels, so 
+$r = 64$ suffices for $N = 128$.

@@ -1,0 +1,107 @@
+# Appendix B. Implementation Details
+
+## B.1 UnifiedMoE Module
+
+```python
+class UnifiedMoE(nn.Module):
+    def __init__(self, dim, num_experts=8, top_k=2, output_dim=None,
+                 noise_std=0.1, expert_multiplier=2):
+        super().__init__()
+        self.output_scale = nn.Parameter(torch.ones(1))
+        self.dim = dim
+        self.num_experts = max(1, num_experts)
+        self.top_k = min(max(1, top_k), self.num_experts)
+        self.out_dim = output_dim or dim
+        self.noise_std = noise_std
+        self.aux_loss = torch.tensor(0.0)
+        
+        self.router_ln = nn.LayerNorm(self.dim)
+        self.router = nn.Linear(self.dim, self.num_experts, bias=False)
+        nn.init.uniform_(self.router.weight, -0.01, 0.01)
+        
+        hidden_dim = self.out_dim * expert_multiplier
+        self.experts = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(dim, hidden_dim),
+                nn.GELU(),
+                nn.Linear(hidden_dim, self.out_dim),
+            )
+            for _ in range(self.num_experts)
+        ])
+        
+        # Step-0 preservation: final expert layer zero
+        for exp in self.experts:
+            nn.init.zeros_(exp[2].weight)
+            if exp[2].bias is not None:
+                nn.init.zeros_(exp[2].bias)
+        
+        self.gate_bias = nn.Parameter(torch.tensor([-3.0]))
+    
+    def forward(self, x):
+        B, L, D = x.shape
+        x_norm = self.router_ln(x)
+        logits = self.router(x_norm)
+        
+        if self.training and self.noise_std > 0:
+            noise = torch.randn_like(logits) * self.noise_std
+            routing_logits = logits + noise
+        else:
+            routing_logits = logits
+        
+        topk_vals, topk_idx = torch.topk(routing_logits, self.top_k, dim=-1)
+        scores = F.softmax(topk_vals, dim=-1)
+        scores = torch.nan_to_num(scores, nan=0.0, posinf=1.0, neginf=0.0)
+        
+        # Auxiliary load balancing
+        if self.training and self.num_experts > 1:
+            router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.num_experts)
+            expert_mask = F.one_hot(topk_idx, num_classes=self.num_experts).float()
+            density = expert_mask.sum(dim=2).view(-1, self.num_experts).mean(dim=0)
+            prob_mean = router_probs.mean(dim=0)
+            self.aux_loss = self.num_experts * torch.sum(density * prob_mean)
+        else:
+            self.aux_loss = torch.tensor(0.0, device=x.device, dtype=torch.float32)
+        
+        # Expert forward
+        experts_out = torch.stack([exp(x) for exp in self.experts], dim=2)
+        topk_out = torch.gather(
+            experts_out, 2,
+            topk_idx.unsqueeze(-1).expand(B, L, self.top_k, self.out_dim)
+        )
+        out = torch.sum(topk_out * scores.unsqueeze(-1), dim=2)
+        out = torch.clamp(torch.nan_to_num(out, nan=0.0), min=-65000.0, max=65000.0)
+        
+        gate = torch.sigmoid(self.gate_bias)
+        return out * self.output_scale * gate
+```
+
+## B.2 Numerical Stability
+
+- **FP32 scores.** Attention scores in FP32 to avoid FP16 overflow.
+- **MoE clamp.** Expert outputs clamped to ±65000 (FP16 max).
+- **NaN guards.** `torch.nan_to_num` on all intermediate outputs.
+- **Noise masking.** Training-time noise added only to logits, not expert 
+  outputs.
+
+## B.3 Common Pitfalls
+
+### B.3.1 Forgetting Zero-Init
+
+Without zero-initialized final expert layers, step-0 forward pass differs 
+from pretrained, causing catastrophic drift.
+
+### B.3.2 Gate Bias Too High
+
+Gate bias > -1 gives fast ramp-up, destabilizing early training.
+
+### B.3.3 Cross-Attention MoE
+
+Applying MoE to cross-attention disrupts encoder-decoder alignment. Skip it.
+
+### B.3.4 Conv1D Transpose
+
+GPT-2 Conv1D stores `(in, out)`. Must transpose.
+
+### B.3.5 Nested Encoder Bypass
+
+For RoBERTa, do NOT apply `out_lin` — the outer layer does it.

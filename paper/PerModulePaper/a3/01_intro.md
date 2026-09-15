@@ -1,50 +1,141 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 01_intro.md
+     PURPOSE: Introduction — motivation, problem, contributions, organization
+     DEPENDENCIES: 00_meta.md
+     LENGTH TARGET: 1.5 - 2 pages (800 - 1200 words)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # 1. Introduction
 
 ## 1.1 Motivation
 
-Transformer models are widely used because they deliver strong task performance, but their parameter and activation footprint is expensive to deploy. Standard linear layers in a transformer typically dominate the storage cost of the model, especially for smaller backbones used in edge or latency-sensitive deployment settings. A common response is to reduce the rank of each layer via matrix factorization, replacing a dense weight matrix with a product of lower-rank factors. This is appealing because it preserves the original model architecture while shrinking the size of each layer.
+The quadratic parameter cost of transformer layers makes deployment of even 
+moderately-sized models expensive. A standard BERT-base layer contains 
+approximately 7 million parameters, of which 4.7 million (67%) live in the 
+four attention projections $W_Q, W_K, W_V, W_O$ and the remaining 2.4 million 
+in the FFN. For DistilBERT, this drops to 3.5M and 2.4M respectively. However, 
+even DistilBERT (66.9M parameters) requires 134 MB of storage at FP16, which 
+is not negligible for mobile or edge deployment.
 
-The basic low-rank approximation problem is
+Low-rank factorization is the classical approach to reducing this cost. Given 
+a linear layer $y = x W^\top + b$, one replaces $W$ with a product $W \approx U V$ 
+where $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d_\text{in}}$, 
+$r \ll \min(d_\text{in}, d_\text{out})$. The parameter count decreases from 
+$d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$, achieving 
+compression ratio $\frac{r(d_\text{in} + d_\text{out})}{d_\text{in} d_\text{out}}$. 
+For a $768 \times 768$ matrix at rank $r = 64$, this is a 5.9× reduction 
+(589,824 → 98,304 parameters).
+
+Classical SVD is optimal in an unweighted Frobenius norm sense:
 
 $$
-W_r^{*} = \arg\min_{\mathrm{rank}(W_r) = r} \|W - W_r\|_F
+W_r^* = \arg\min_{W_r : \text{rank}(W_r) = r} \|W - W_r\|_F
 \tag{1.1}
 $$
 
-which is solved in the classical case by truncated SVD. However, unweighted SVD treats each input feature equally, even though transformer activations often differ sharply in magnitude and importance. Some channels remain highly active, while many others have small variance and little effect on task performance. Ignoring this non-uniformity leads to wasted factorization capacity on directions that matter little.
+but this optimality is with respect to uniform treatment of all input 
+dimensions. Transformer activations, however, have **highly non-uniform 
+variance** across channels. Some input dimensions carry most of the signal; 
+others are nearly constant. Reconstructing the near-constant dimensions as 
+faithfully as the high-variance ones wastes capacity.
 
-This observation motivates the core idea of A3: compress the model according to how it actually behaves under real inputs, not only according to a uniform matrix norm. By estimating activation importance and using it during factorization, the method can preserve the model's most important directions while discarding redundant ones.
+{{MOTIVATION_PARAGRAPH_3}}
+
+<!-- 
+EXAMPLE continuation:
+"Activation-aware compression addresses this by weighting the reconstruction 
+objective per input dimension. The natural weight is the empirical Fisher 
+diagonal, F_i = E_x[x_i²], which measures how much of the output variance is 
+attributable to input dimension i. Reweighting the SVD by this quantity 
+concentrates the low-rank approximation on the directions that matter."
+-->
 
 ## 1.2 Problem Statement
 
-Given a pretrained transformer with hidden dimension $d$ and a linear weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, we seek a compressed approximation $\tilde{W}$ such that
+Given a pretrained transformer model $\mathcal{M}$ with $N_l$ layers, each 
+containing linear projections $\{W^{(\ell)}_k\}$, we seek a compressed model 
+$\mathcal{M}'$ such that:
 
 $$
-\tilde{W} \approx W, \qquad \mathrm{Cost}(\tilde{W}) < \mathrm{Cost}(W)
+\mathcal{M}' \approx \mathcal{M}, \qquad
+\frac{|\theta(\mathcal{M}')|}{|\theta(\mathcal{M})|} \ll 1
 \tag{1.2}
 $$
 
-where the cost is measured in terms of parameter count, storage size, and inference memory. We impose the following constraints:
+where $|\theta(\cdot)|$ denotes parameter count.
 
-1. The method must compress genuine weight matrices without altering the outer model interface.
-2. The approximation must remain stable under the pretrained model's activation distribution.
-3. Recovery training must remain lightweight and limited to a small LoRA stage.
-4. The method must support the architecture families used in this project: flat, nested, and causal models.
+We impose the following constraints:
+
+1. **Strict reconstruction bound.** For each compressed layer, 
+   $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = {{MAX_ERROR}}$.
+2. **No retraining of base weights.** Only LoRA adapters may be trained.
+3. **Memory-bounded calibration.** Activation statistics must be collected in 
+   $\mathcal{O}(d^2)$ memory, not $\mathcal{O}(Nd^2)$.
+4. **Deterministic fallback.** If error exceeds $\tau$, the original layer is 
+   preserved.
 
 ## 1.3 Our Approach
 
-We propose **A3**, an activation-aware factorized SVD method for transformer compression. The key idea is to estimate how important each input dimension is from real activations, then factorize the weight matrix in a way that respects that importance. This produces a lower-rank approximation that retains the essential structure while reducing parameter count and inference memory.
+We propose **A3** (**A**ctivation-**A**ware **A**daptive factorization), 
+which differs from standard SVD compression in four ways:
+
+1. **Fisher-diagonal weighting.** We estimate the empirical Fisher diagonal 
+   $F_i = \mathbb{E}_x[x_i^2]$ from calibration data and use it to reweight 
+   the SVD input space: $W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})$.
+
+2. **Streaming covariance accumulation.** We collect $F$ and $C_X$ using 
+   online streaming, requiring only $\mathcal{O}(d^2)$ memory regardless of 
+   calibration set size.
+
+3. **Adaptive rank escalation.** If the reconstruction error at the initial 
+   rank $r$ exceeds $\tau$, we incrementally increase the rank up to 
+   $\min(d_\text{in}, d_\text{out})$, retrying the SVD until the constraint 
+   is met or the fallback triggers.
+
+4. **LayerNorm recalibration.** After factorization, we rescale each 
+   LayerNorm's affine parameters $\gamma$ by the ratio of target to current 
+   activation standard deviation, absorbing distributional shift introduced 
+   by the factorization.
 
 ## 1.4 Contributions
 
-This work makes the following contributions:
+We make the following contributions:
 
-- We introduce **A3**, an activation-aware low-rank factorization method for transformer layers.
-- We combine Fisher-like weighting, streaming covariance estimation, and LayerNorm recalibration in a single production-ready compression pipeline.
-- We benchmark the method on DistilBERT, RoBERTa, and GPT-2 under the same evaluation protocol.
-- We provide a safe fallback strategy and honest negative-result reporting for weak compression cases.
-- We release a reproducible implementation for the project.
+- **A streaming activation-aware compression algorithm.** We propose A3, 
+  which combines Fisher weighting, streaming covariance accumulation, adaptive 
+  rank escalation, and LayerNorm recalibration into a single pipeline.
+- **A production-hardened implementation.** Our PyTorch implementation 
+  handles flat, nested, and causal architectures with safe fallback, strict 
+  Frobenius validation, and CoO(nstant) memory overhead.
+- **A comprehensive evaluation.** We benchmark on DistilBERT, RoBERTa, and 
+  GPT-2 on SST-2 with ablations over rank, weighting strategy, and LayerNorm 
+  recalibration.
+- **Full reproducibility.** Code, checkpoints, and evaluation scripts are 
+  released under {{LICENSE}}.
 
 ## 1.5 Paper Organization
 
-Section 2 reviews related work in low-rank compression and activation-aware factorization. Section 3 provides the required background on SVD, covariance structure, and LayerNorm. Section 4 presents the A3 method. Section 5 discusses integration across different transformer architectures. Section 6 details the experimental setup. Section 7 reports the results. Section 8 analyzes the conditions under which the method succeeds or fails. Section 9 discusses practical use. Section 10 lists limitations. Section 11 concludes.
+Section 2 reviews related work in low-rank compression, activation-aware 
+pruning, and LayerNorm recalibration. Section 3 provides background on SVD, 
+the Fisher information, and streaming statistics. Section 4 presents A3. 
+Section 5 describes integration with three transformer architectures. Section 
+6 details the experimental setup. Section 7 reports results. Section 8 
+analyzes where A3 succeeds and fails. Section 9 discusses practical guidance. 
+Section 10 lists limitations. Section 11 concludes.
+
+---
+
+## Notation
+
+| Symbol | Meaning | First appears |
+|---|---|---|
+| $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ | Weight matrix of a linear layer | §1.1 |
+| $U, V$ | Low-rank factors | §1.1 |
+| $r$ | Target rank | §1.1 |
+| $F \in \mathbb{R}^{d_\text{in}}$ | Fisher diagonal / activation energy | §1.1 |
+| $C_X$ | Activation covariance matrix | §4.1 |
+| $\tau$ | Reconstruction error threshold | §1.2 |
+| $\epsilon$ | Numerical stability constant | §4.2 |
+| $\sigma_t$ | Target standard deviation (for LN) | §4.5 |
+| $\gamma$ | LayerNorm affine scale | §4.5 |
+| $N$ | Number of calibration tokens | §4.1 |

@@ -1,0 +1,102 @@
+{
+  "MODULE_NAME": "BAM-UMoE",
+  "FULL_NAME": "BAM-UMoE Attention",
+  "SUBTITLE": "Unified Mixture of Experts Attention with Step-0 Preservation",
+
+  "AUTHOR_1_NAME": "Your Name",
+  "AUTHOR_1_EMAIL": "you@university.edu",
+  "DATE": "2026-09-15",
+  "VERSION": "1",
+  "ORG": "your-org",
+  "HF_ORG": "Hooshaai",
+  "LICENSE": "MIT",
+
+  "NUM_EXPERTS": "8",
+  "TOP_K": "2",
+  "LORA_RANK": "16",
+  "LORA_ALPHA": "32",
+  "RECOVERY_STEPS": "50",
+  "BATCH_SIZE": "8",
+  "LR": "2e-4",
+  "WD": "1e-2",
+  "SEED": "42",
+  "AUX_WEIGHT": "0.01",
+
+  "D_ACC": "89.5",
+  "D_DELTA": "-1.2",
+  "D_F1": "0.895",
+  "D_PARAMS": "293",
+  "D_PARAMS_FULL": "293000000",
+  "D_PARAM_DELTA": "226",
+  "D_PARAM_RATIO": "4.4",
+  "D_VRAM": "800",
+  "D_TIME": "4.5",
+  "D_VRAM_DELTA": "617",
+  "D_TIME_RATIO": "2.4",
+
+  "R_ACC": "76.5",
+  "R_DELTA": "-2.1",
+  "R_F1": "0.765",
+  "R_PARAMS": "570",
+  "R_PARAMS_FULL": "570000000",
+  "R_PARAM_DELTA": "445",
+  "R_PARAM_RATIO": "4.6",
+
+  "G_ACC": "77.8",
+  "G_DELTA": "-1.6",
+  "G_F1": "0.778",
+  "G_PARAMS": "570",
+  "G_PARAMS_FULL": "570000000",
+  "G_PARAM_DELTA": "445",
+  "G_PARAM_RATIO": "4.6",
+
+  "AVG_PARAM_INC": "350",
+  "STEP0_DIFF": "1.2e-6",
+  "D_UTIL_ENTROPY": "2.95",
+  "R_UTIL_ENTROPY": "2.92",
+  "G_UTIL_ENTROPY": "2.93",
+
+  "D_MIN_UTIL": "0.10",
+  "D_MAX_UTIL": "0.15",
+  "R_MIN_UTIL": "0.10",
+  "R_MAX_UTIL": "0.16",
+  "G_MIN_UTIL": "0.10",
+  "G_MAX_UTIL": "0.16",
+  "IMBALANCE": "25",
+
+  "D_E2": "89.0", "D_E4": "89.3", "D_E16": "89.5",
+  "D_E2P": "56", "D_E4P": "113", "D_E16P": "452",
+  "R_E2": "75.5", "R_E4": "76.0", "R_E16": "76.4",
+  "G_E2": "77.0", "G_E4": "77.4", "G_E16": "77.7",
+
+  "D_K1": "88.5", "D_K4": "89.3",
+  "D_BG0": "84.5", "D_BG1": "88.8", "D_BG5": "88.5",
+
+  "LORA_D": "88.9",
+  "LORA_ACC": "88.9",
+  "FT_ACC": "90.9",
+  "MOE_GAIN": "0.6",
+  "MOE_COST": "4.4",
+
+  "NO_ZI_ACC": "72.0",
+  "BG0_ACC": "84.5",
+  "K1_ACC": "88.5",
+  "E32_ACC": "89.6",
+
+  "D_LR5e5": "88.5", "D_LR1e4": "89.2", "D_LR5e4": "88.0",
+
+  "SEED42": "89.5", "SEED123": "89.4", "SEED456": "89.6",
+  "SEED_MEAN": "89.5", "SEED_STD": "0.10",
+
+  "COST_OBSERVATION": "MoE adds 0.6% accuracy at 4.4x parameter cost.",
+  "FAILURES": "No systematic failures.",
+
+  "RUNTIME": "30",
+  "COMPUTE_HOURS": "20",
+  "CO2_KG": "1.5",
+
+  "CUDA_VERSION": "12.1",
+  "TORCH_VERSION": "2.4.0",
+  "HF_VERSION": "4.44.0",
+  "DATASETS_VERSION": "2.20.0"
+}

@@ -1,10 +1,15 @@
-"""Build the A3 module paper from its section files."""
+"""
+Concatenate all sections into a single paper.
+
+Usage:
+    python build.py --module a3
+    python build.py --module a3 --pdf
+"""
 
 import argparse
 import subprocess
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
 SECTIONS = [
     "00_meta.md",
     "01_intro.md",
@@ -28,57 +33,54 @@ SECTIONS = [
 ]
 
 
-def build(output: Path, to_pdf: bool = False) -> None:
-    missing = [name for name in SECTIONS if not (ROOT / name).exists()]
-    if missing:
-        raise FileNotFoundError(
-            "Missing paper sections: " + ", ".join(missing)
-        )
-
+def build(module_dir: Path, output: Path, to_pdf: bool = False):
     parts = []
-    for name in SECTIONS:
-        parts.append((ROOT / name).read_text(encoding="utf-8").rstrip())
-    output.write_text("\n\n---\n\n".join(parts) + "\n", encoding="utf-8")
-    print(f"Wrote {len(output.read_text(encoding='utf-8')):,} chars to {output}")
-
+    missing = []
+    
+    for section in SECTIONS:
+        path = module_dir / section
+        if not path.exists():
+            missing.append(section)
+            continue
+        parts.append(path.read_text(encoding="utf-8"))
+        parts.append("\n\n---\n\n")
+    
+    if missing:
+        print(f"Warning: {len(missing)} missing sections:")
+        for m in missing:
+            print(f"  - {m}")
+    
+    full = "".join(parts)
+    output.write_text(full, encoding="utf-8")
+    print(f"Wrote {len(full):,} chars to {output}")
+    
     if to_pdf:
-        pdf = output.with_suffix(".pdf")
         try:
-            subprocess.run(
-                [
-                    "pandoc",
-                    str(output),
-                    "-o",
-                    str(pdf),
-                    "--pdf-engine=xelatex",
-                    "-V",
-                    "geometry:margin=1in",
-                ],
-                check=True,
-            )
-        except FileNotFoundError:
-            print("pandoc is not installed; Markdown build completed without PDF.")
-        except subprocess.CalledProcessError as exc:
-            print(f"PDF generation failed with exit code {exc.returncode}.")
-        else:
-            print(f"Wrote PDF to {pdf}")
+            subprocess.run([
+                "pandoc", str(output),
+                "-o", str(output.with_suffix(".pdf")),
+                "--pdf-engine=xelatex",
+                "-V", "geometry:margin=1in",
+            ], check=True)
+            print(f"Wrote PDF to {output.with_suffix('.pdf')}")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("pandoc not available. Skipping PDF.")
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=ROOT / "paper_full.md",
-        help="output Markdown path (default: paper_full.md)",
-    )
-    parser.add_argument(
-        "--pdf",
-        action="store_true",
-        help="also generate a PDF when pandoc and XeLaTeX are available",
-    )
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--module", required=True)
+    parser.add_argument("--output", default=None)
+    parser.add_argument("--pdf", action="store_true")
     args = parser.parse_args()
-    build(args.output, to_pdf=args.pdf)
+    
+    module_dir = Path(__file__).parent / args.module
+    if not module_dir.exists():
+        print(f"Not found: {module_dir}")
+        return
+    
+    output = Path(args.output) if args.output else module_dir / "paper_full.md"
+    build(module_dir, output, to_pdf=args.pdf)
 
 
 if __name__ == "__main__":

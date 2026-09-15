@@ -1,17 +1,145 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 06_setup.md
+     PURPOSE: Experimental setup
+     DEPENDENCIES: 05_architecture.md
+     LENGTH TARGET: 1 - 1.5 pages (600 - 900 words)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
 # 6. Experimental Setup
 
 ## 6.1 Models
 
-We evaluate A3 on DistilBERT, RoBERTa-base, and GPT-2.
+We evaluate on three pretrained backbones:
 
-## 6.2 Datasets
+| Model | Layers | Hidden | Params | Attention |
+|---|---|---|---|---|
+| DistilBERT-base | 6 | 768 | 66.9M | Flat |
+| RoBERTa-base | 12 | 768 | 124.6M | Nested |
+| GPT-2 | 12 | 768 | 124.4M | Causal |
 
-The main benchmark uses SST-2 for sentiment classification, with a fixed split and standard evaluation metrics.
+Base weights loaded from `results/*_baseline/finetuned_model.pt`.
 
-## 6.3 Hyperparameters
+## 6.2 Dataset
 
-The compression rank is fixed at $r = 64$ for the main result, and a lightweight LoRA recovery stage is used after compressed replacement. The recovery phase is intentionally small to emphasize the practicality of the method.
+**SST-2** (Socher et al., 2013):
 
-## 6.4 Evaluation Protocol
+| Split | Size | Positives | Negatives |
+|---|---|---|---|
+| Train | 67,349 | 33,807 (50.2%) | 33,542 |
+| Validation | 872 | 444 (50.9%) | 428 |
+| Test | 1,821 | — | — |
 
-Each model is measured before and after compression under the same hardware and sequence-length configuration. We report accuracy, parameter reduction, and VRAM savings under matching conditions.
+Majority baseline: **50.92%**.
+
+Sequence length truncated to 128 tokens.
+
+## 6.3 Calibration Data
+
+For A3's activation statistics, we use the **training set** as calibration 
+source. This is legitimate because:
+
+- The calibration pass is a forward-only pass (no gradient)
+- It uses unlabeled inputs (labels not required)
+- It is not a form of test set leakage
+
+We use **{{N_CALIB}} examples** (a subsample of the training set) for 
+calibration to keep memory bounded.
+
+## 6.4 Compression Hyperparameters
+
+| Hyperparameter | Value | Notes |
+|---|---|---|
+| Rank $r$ | {{RANK}} | Target rank |
+| `use_fisher` | True | Activation-aware weighting |
+| `recalibrate_ln` | True | LayerNorm recalibration |
+| `max_error` $\tau$ | {{MAX_ERROR}} | Frobenius threshold |
+| `max_retries` | 3 | Adaptive escalation steps |
+| `fallback_to_original` | True | Safe fallback |
+| `normalize_scale` | True | Clamp weights |
+| `target_attention_only` | False | Compress all layers |
+
+## 6.5 Recovery Fine-Tuning
+
+After A3 compression, we train LoRA adapters:
+
+| Hyperparameter | Value |
+|---|---|
+| Optimizer | AdamW |
+| Learning rate | {{LR}} |
+| Weight decay | {{WD}} |
+| Recovery steps | {{RECOVERY_STEPS}} |
+| LoRA rank | {{LORA_RANK}} |
+| LoRA alpha | {{LORA_ALPHA}} |
+| Batch size | {{BATCH_SIZE}} |
+| Precision | FP16 |
+
+## 6.6 Evaluation Metrics
+
+### 6.6.1 Quality Metrics
+
+- **Accuracy:** $\text{Acc} = \frac{\text{correct}}{\text{total}}$
+- **F1:** Binary and macro-averaged
+- **Precision, Recall**
+
+### 6.6.2 Efficiency Metrics
+
+- **Total parameters:** `sum(p.numel() for p in model.parameters())`
+- **Trainable parameters**
+- **Peak VRAM:** `torch.cuda.max_memory_allocated()`
+- **Inference time:** Median of 20 forward passes
+- **Throughput:** Tokens/sec
+
+### 6.6.3 Compression Metrics
+
+- **Compression ratio:** Baseline params / compressed params
+- **Reconstruction error:** $\|W - UV\|_F / \|W\|_F$
+- **Compressed layers:** Count of successfully factorized layers
+- **Fallback layers:** Count of layers preserved
+
+## 6.7 Quality Gate
+
+| Level | Accuracy threshold |
+|---|---|
+| PASS | ≥ 56.0% |
+| PASS_LOW | 50.92% – 56.0% |
+| FAIL | < 50.92% |
+
+56% corresponds to majority baseline + 3×SE.
+
+## 6.8 Hardware
+
+| Component | Specification |
+|---|---|
+| GPU | NVIDIA RTX 4070 Laptop |
+| VRAM | 8 GB GDDR6 |
+| CUDA | {{CUDA_VERSION}} |
+| PyTorch | {{TORCH_VERSION}} |
+| Transformers | {{HF_VERSION}} |
+| OS | Windows / Linux |
+
+## 6.9 Reproduction
+
+```bash
+python run_all_4_a3.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
+```
+
+Expected runtime: ~{{RUNTIME}} minutes.
+
+## 6.10 Seeds
+
+All experiments use seed {{SEED}}. No multi-seed runs due to compute budget.
+
+## 6.11 Baselines
+
+We compare against:
+
+1. **`full`:** Uncompressed pretrained model.
+2. **`a3`:** Our method.
+3. **`a3_no_fisher`:** A3 without Fisher weighting (ablations).
+4. **`a3_no_ln`:** A3 without LayerNorm recalibration (ablations).
+5. **Prior modules** (from our benchmark suite):
+   - `sdrm`, `svd_linear`, `nha`, etc.

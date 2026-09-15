@@ -1,0 +1,131 @@
+# Appendix B. Implementation Details
+
+## B.1 Dispatch Logic
+
+```python
+if N <= 128 or is_cross_attention:
+    # Short path
+    scale = 1.0 / math.sqrt(self.head_dim)
+    scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+    if self.is_decoder:
+        causal_mask = torch.triu(torch.full((N, N), float("-inf")), diagonal=1)
+        scores = scores + causal_mask
+    # padding mask...
+    probs = F.softmax(scores, dim=-1)
+    context = torch.matmul(probs.to(v.dtype), v)
+else:
+    # Long path
+    context = self._moba_block_attention(...)
+```
+
+## B.2 Block Gate
+
+```python
+# Pad to multiple of block_size
+pad_len = (self.block_size - (N % self.block_size)) % self.block_size
+q_padded = F.pad(q, (0, 0, 0, pad_len)) if pad_len > 0 else q
+k_padded = F.pad(k, (0, 0, 0, pad_len)) if pad_len > 0 else k
+
+# Reshape and mean
+num_blocks = q_padded.size(2) // self.block_size
+q_blocks = q_padded.reshape(B, H, num_blocks, self.block_size, d_h).mean(dim=-2)
+k_blocks = k_padded.reshape(B, H, num_blocks, self.block_size, d_h).mean(dim=-2)
+
+# Gate scores
+q_gate = self.attn_gate(q_blocks).squeeze(-1)  # (B, H, num_blocks)
+k_gate = self.attn_gate(k_blocks).squeeze(-1)
+gate_scores = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2))
+gate_scores = gate_scores / (self.gate_temp.abs() + 1e-5)
+```
+
+## B.3 MoBA Block Attention
+
+```python
+def _moba_block_attention(self, q, k, v, gate_scores, valid_mask, is_causal):
+    B, H, N, D = q.shape
+    
+    # Pad
+    pad_len = (self.block_size - (N % self.block_size)) % self.block_size
+    q_pad = F.pad(q, (0, 0, 0, pad_len)) if pad_len > 0 else q
+    k_pad = F.pad(k, (0, 0, 0, pad_len)) if pad_len > 0 else k
+    v_pad = F.pad(v, (0, 0, 0, pad_len)) if pad_len > 0 else v
+    
+    num_blocks = q_pad.size(2) // self.block_size
+    top_k = min(self.top_k_blocks, num_blocks)
+    
+    _, top_indices = torch.topk(gate_scores, top_k, dim=-1)
+    top_indices[:, :, :, 0] = 0  # Always block 0
+    
+    # Reshape
+    q_blocks = q_pad.reshape(B, H, num_blocks, self.block_size, D)
+    k_blocks = k_pad.reshape(B, H, num_blocks, self.block_size, D)
+    v_blocks = v_pad.reshape(B, H, num_blocks, self.block_size, D)
+    
+    # Attention per query block
+    out_blocks = []
+    for b in range(num_blocks):
+        idx_b = top_indices[:, :, b, :]
+        idx_exp = idx_b.unsqueeze(-1).unsqueeze(-1).expand(B, H, top_k, self.block_size, D)
+        k_sel = torch.gather(k_blocks, 2, idx_exp).reshape(B, H, top_k * self.block_size, D)
+        v_sel = torch.gather(v_blocks, 2, idx_exp).reshape(B, H, top_k * self.block_size, D)
+        
+        q_curr = q_blocks[:, :, b, :, :]
+        attn_b = torch.matmul(q_curr.float(), k_sel.float().transpose(-2, -1)) / math.sqrt(D)
+        
+        if is_causal:
+            causal_b = torch.triu(torch.full((self.block_size, top_k * self.block_size), float("-inf")), diagonal=1)
+            attn_b = attn_b + causal_b.unsqueeze(0).unsqueeze(0)
+        
+        if valid_mask is not None:
+            pad_m = (~valid_mask).unsqueeze(1).unsqueeze(2)
+            if pad_m.shape[-1] < k_sel.shape[2]:
+                pad_m = F.pad(pad_m, (0, k_sel.shape[2] - pad_m.shape[-1]), value=True)
+            attn_b = attn_b.masked_fill(pad_m[:, :, :, :k_sel.shape[2]], float("-inf"))
+        
+        attn_b = F.softmax(attn_b, dim=-1)
+        attn_b = torch.nan_to_num(attn_b, nan=0.0)
+        attn_b = self.dropout(attn_b)
+        out_b = torch.matmul(attn_b.to(v_sel.dtype), v_sel)
+        out_blocks.append(out_b)
+    
+    out_pad = torch.cat(out_blocks, dim=2)
+    return out_pad[:, :, :N, :]
+```
+
+## B.4 Common Pitfalls
+
+### B.4.1 Threshold too High
+
+If threshold > test L, sparsity never activates.
+
+### B.4.2 Gate Temperature Collapse
+
+Clamp gate_temp to avoid division by zero.
+
+### B.4.3 Padding Mask Shape
+
+Padding mask must be padded to match selected block length.
+
+### B.4.4 Conv1D Transpose
+
+GPT-2 Conv1D stores (in, out). Must transpose.
+
+### B.4.5 Nested Encoder Bypass
+
+RoBERTa: do not apply out_proj.
+
+## B.5 Critical Bug
+
+`inject_fusion_attn` has:
+
+```python
+except Exception:
+    raise RuntimeError("copy_weights failed")
+```
+
+This should be changed to:
+
+```python
+except Exception:
+    return None
+```

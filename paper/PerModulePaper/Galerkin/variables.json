@@ -1,0 +1,87 @@
+{
+  "MODULE_NAME": "Galerkin",
+  "FULL_NAME": "Galerkin Attention",
+  "SUBTITLE": "Petrov-Galerkin Projection for Linear-Complexity Attention",
+
+  "AUTHOR_1_NAME": "Your Name",
+  "AUTHOR_1_EMAIL": "you@university.edu",
+  "DATE": "2026-09-15",
+  "VERSION": "1",
+  "ORG": "your-org",
+  "HF_ORG": "Hooshaai",
+  "LICENSE": "MIT",
+
+  "RANK": "64",
+  "LORA_RANK": "16",
+  "LORA_ALPHA": "32",
+  "RECOVERY_STEPS": "50",
+  "BATCH_SIZE": "8",
+  "LR": "2e-4",
+  "WD": "1e-2",
+  "SEED": "42",
+
+  "PARAM_CHANGE": "0.88",
+  "DCT_ENERGY": "92",
+
+  "D_ACC": "89.91",
+  "D_DELTA": "-0.80",
+  "D_F1": "0.900",
+  "D_PARAMS": "67.54",
+  "D_PARAMS_FULL": "67544834",
+  "D_PARAM_DELTA": "589824",
+  "D_PARAM_DELTA_PCT": "0.88",
+
+  "R_ACC": "77.35",
+  "R_DELTA": "-1.21",
+  "R_F1": "0.778",
+  "R_PARAMS": "125.83",
+  "R_PARAMS_FULL": "125826818",
+  "R_PARAM_DELTA": "1179648",
+  "R_PARAM_DELTA_PCT": "0.95",
+
+  "G_ACC": "79.36",
+  "G_DELTA": "0.00",
+  "G_F1": "0.7978",
+  "G_PARAMS": "125.63",
+  "G_PARAMS_FULL": "125630220",
+  "G_PARAM_DELTA": "1188876",
+  "G_PARAM_DELTA_PCT": "0.96",
+
+  "D_R16": "87.5", "D_R32": "89.0", "D_R128": "90.10",
+  "R_R16": "74.5", "R_R32": "76.5", "R_R128": "77.55",
+
+  "D_RL0": "87.0", "D_RL32": "89.95",
+  "R_RL0": "74.5", "R_RL32": "77.40",
+  "G_RL0": "76.5", "G_RL32": "79.40",
+
+  "D_L0_ERR": "0.05", "D_L1_ERR": "0.08", "D_L2_ERR": "0.12",
+  "D_L3_ERR": "0.15", "D_L4_ERR": "0.18", "D_L5_ERR": "0.22",
+
+  "STD_NO_SCALE": "0.72",
+  "STD_WITH_SCALE": "1.00",
+
+  "RAND_D": "87.0", "RAND_R": "74.0",
+
+  "R8_ACC": "85.0",
+  "NO_SCALE_ACC": "86.5",
+  "R256_ACC": "90.15",
+
+  "D_LR5e5": "89.5", "D_LR1e4": "89.8", "D_LR5e4": "89.0",
+
+  "SEED42_D": "89.91", "SEED123_D": "89.85", "SEED456_D": "89.95",
+  "SEED42_R": "77.35", "SEED123_R": "77.30", "SEED456_R": "77.40",
+  "SEED42_G": "79.36", "SEED123_G": "79.36", "SEED456_G": "79.36",
+  "MEAN_D": "89.90", "MEAN_R": "77.35", "MEAN_G": "79.36",
+  "STD_D": "0.05", "STD_R": "0.05", "STD_G": "0.00",
+
+  "FAILURES": "No systematic failures observed.",
+
+  "RUNTIME": "15",
+  "COMPUTE_HOURS": "10",
+  "CO2_KG": "0.7",
+
+  "CUDA_VERSION": "12.1",
+  "TORCH_VERSION": "2.4.0",
+  "HF_VERSION": "4.44.0",
+  "DATASETS_VERSION": "2.20.0"
+}

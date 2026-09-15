@@ -1,0 +1,108 @@
+# 3. Background
+
+## 3.1 Attention as an Integral Operator
+
+For continuous query and key functions $Q, K: \Omega \to \mathbb{R}^{d_h}$:
+
+$$
+(\mathcal{K}Q)(s) = \int_\Omega \kappa(s, t) V(t) \, dt
+\tag{3.1}
+$$
+
+with $\kappa(s, t) = \exp(\langle Q(s), K(t) \rangle / \sqrt{d_h})$.
+
+Discretizing on a grid $\{t_1, \dots, t_N\}$ and normalizing:
+
+$$
+(\mathcal{K}Q)_i \approx \frac{\sum_j \kappa(s_i, t_j) V(t_j)}{\sum_j \kappa(s_i, t_j)}
+\tag{3.2}
+$$
+
+which is the softmax attention formula.
+
+## 3.2 Galerkin Discretization
+
+Choose a finite-dimensional subspace $\mathcal{V}_r = \text{span}\{\phi_1, \dots, \phi_r\}$ 
+with $\phi_k \in L^2(\Omega)$. The Galerkin approximation $\hat{Q} \in \mathcal{V}_r$ 
+satisfies:
+
+$$
+\langle \mathcal{K} \hat{Q}, \phi_j \rangle = \langle \mathcal{K} Q, \phi_j \rangle \quad \forall j
+\tag{3.3}
+$$
+
+For orthonormal $\{\phi_k\}$, the projected operator is:
+
+$$
+(\mathcal{K}_r)_{ij} = \langle \mathcal{K} \phi_j, \phi_i \rangle
+\tag{3.4}
+$$
+
+In matrix form, if $\Phi = [\phi_1, \dots, \phi_r] \in \mathbb{R}^{N \times r}$, 
+then $\mathcal{K}_r = \Phi^\top \mathcal{K} \Phi$.
+
+## 3.3 Discrete Cosine Transform (DCT)
+
+The DCT-II basis:
+
+$$
+\phi_k(n) = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right)
+\tag{3.5}
+$$
+
+**Properties:**
+
+1. **Orthonormality:** $\langle \phi_i, \phi_j \rangle = \delta_{ij}$.
+2. **Real-valued:** Unlike FFT.
+3. **Energy compaction:** DCT concentrates most signal energy in the low-frequency coefficients. This is critical for attention, where smooth variations dominate.
+4. **Fast transform:** $O(N \log N)$ via FFT.
+
+## 3.4 Why DCT?
+
+Attention outputs tend to be **smooth** over the sequence:
+- The kernel $\kappa(s, t)$ is smooth in both arguments.
+- Values $V(t)$ vary slowly.
+- The attention output $(\mathcal{K}Q)(s)$ is a smoothed integral.
+
+Therefore, a **low-rank basis that captures smoothness** is ideal. DCT is 
+the optimal basis for this under certain smoothness assumptions (Karhunen-Loève 
+theorem for first-order Markov processes).
+
+## 3.5 Energy Preservation
+
+When reconstructing from a rank-$r$ projection, the total energy scales as:
+
+$$
+\|\Phi \Phi^\top x\|_2^2 = \|\Phi^\top x\|_2^2 \cdot \text{(correction)}
+\tag{3.6}
+$$
+
+For DCT with $r < N$, a naive reconstruction underestimates the signal 
+energy by a factor. We apply an empirical scaling:
+
+$$
+\text{Output} = \Phi \cdot O_\Phi \cdot \sqrt{N / r}
+\tag{3.7}
+$$
+
+to compensate.
+
+## 3.6 Grouped Query Attention
+
+GQA uses $H_{kv} < H$ KV heads. Galerkin preserves GQA structure via `repeat_kv`.
+
+## 3.7 Rotary Position Embeddings
+
+RoPE rotates Q, K before the projection step. Partial RoPE is supported via 
+coordinate slicing.
+
+## 3.8 Notation Summary
+
+| Symbol | Meaning |
+|---|---|
+| $\mathcal{K}$ | Attention kernel operator |
+| $\kappa$ | Kernel function |
+| $\Phi$ | Orthonormal basis matrix |
+| $\phi_k$ | $k$-th basis vector |
+| $r$ | Truncation rank |
+| $\delta_{ij}$ | Kronecker delta |

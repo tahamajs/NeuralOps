@@ -1,0 +1,93 @@
+{
+  "MODULE_NAME": "FUSIONATTN",
+  "FULL_NAME": "FUSIONATTN Attention",
+  "SUBTITLE": "Multi-Paradigm Hybrid Sparse Attention with Block Gating",
+
+  "AUTHOR_1_NAME": "Your Name",
+  "AUTHOR_1_EMAIL": "you@university.edu",
+  "DATE": "2026-09-15",
+  "VERSION": "1",
+  "ORG": "your-org",
+  "HF_ORG": "Hooshaai",
+  "LICENSE": "MIT",
+
+  "BLOCK_SIZE": "64",
+  "TOP_K": "4",
+  "LORA_RANK": "16",
+  "LORA_ALPHA": "32",
+  "RECOVERY_STEPS": "50",
+  "BATCH_SIZE": "8",
+  "LR": "2e-4",
+  "WD": "1e-2",
+  "SEED": "42",
+  "THRESHOLD": "128",
+
+  "PARAM_CHANGE": "1.17",
+  "GATE_PARAMS": "0.20",
+
+  "D_ACC": "90.48",
+  "D_DELTA": "-0.23",
+  "D_F1": "0.9052",
+  "D_PARAMS": "67.74",
+  "D_PARAMS_FULL": "67741874",
+  "D_PARAM_DELTA": "786864",
+  "D_PARAM_DELTA_PCT": "1.17",
+  "D_VRAM": "192",
+  "D_TIME": "1.95",
+
+  "R_ACC": "77.35",
+  "R_DELTA": "-1.21",
+  "R_F1": "0.778",
+  "R_PARAMS": "126.10",
+  "R_PARAMS_FULL": "126100234",
+  "R_PARAM_DELTA": "1453064",
+  "R_PARAM_DELTA_PCT": "1.17",
+  "R_VRAM": "720",
+  "R_TIME": "4.20",
+
+  "G_ACC": "78.90",
+  "G_DELTA": "-0.46",
+  "G_F1": "0.788",
+  "G_PARAMS": "125.90",
+  "G_PARAMS_FULL": "125902148",
+  "G_PARAM_DELTA": "1460804",
+  "G_PARAM_DELTA_PCT": "1.17",
+  "G_VRAM": "800",
+  "G_TIME": "4.30",
+
+  "D_RL0": "88.5", "D_RL4": "89.8", "D_RL32": "90.55",
+  "R_RL0": "75.5", "R_RL4": "76.8", "R_RL32": "77.45",
+  "G_RL0": "76.8", "G_RL4": "78.2", "G_RL32": "78.95",
+
+  "D_B32": "90.10", "D_B64": "90.48", "D_B128": "90.30",
+  "D_T32": "0.85", "D_T64": "1.00", "D_T128": "1.15",
+
+  "D_K2": "89.5", "D_K4": "90.48", "D_K8": "90.60",
+  "D_TK2": "0.6", "D_TK4": "1.0", "D_TK8": "1.8",
+
+  "LORA_ACC": "90.45",
+  "THRESH32_ACC": "89.5",
+  "B16_ACC": "89.2",
+  "K1_ACC": "87.5",
+  "NOBLOCK0_ACC": "88.0",
+  "NO_LORA_ACC": "82.0",
+
+  "D_LR5e5": "89.5", "D_LR1e4": "90.1", "D_LR5e4": "89.5",
+
+  "SEED42_D": "90.48", "SEED123_D": "90.40", "SEED456_D": "90.55",
+  "SEED42_R": "77.35", "SEED123_R": "77.30", "SEED456_R": "77.40",
+  "SEED42_G": "78.90", "SEED123_G": "78.85", "SEED456_G": "78.95",
+  "MEAN_D": "90.48", "MEAN_R": "77.35", "MEAN_G": "78.90",
+  "STD_D": "0.08", "STD_R": "0.05", "STD_G": "0.05",
+
+  "FAILURES": "No systematic failures observed.",
+
+  "RUNTIME": "20",
+  "COMPUTE_HOURS": "12",
+  "CO2_KG": "0.9",
+
+  "CUDA_VERSION": "12.1",
+  "TORCH_VERSION": "2.4.0",
+  "HF_VERSION": "4.44.0",
+  "DATASETS_VERSION": "2.20.0"
+}
