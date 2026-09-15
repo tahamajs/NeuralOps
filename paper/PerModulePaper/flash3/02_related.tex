@@ -12,7 +12,7 @@ achieving ~2$\times$ over v1.
 \textbf{FlashAttention-3.} Dao et al. (2024) add TMA (Hopper), warp-specialized 
 asynchronous execution, and FP8 support, achieving ~2$\times$ over v2 on H100.
 
-\textbf{PyTorch SDPA.} PyTorch 2.0+ includes \texttt{F.scaled\\_dot\\_product\\_attention}, 
+\textbf{PyTorch SDPA.} PyTorch 2.0+ includes \texttt{F.scaled\_dot\_product\_attention}, 
 which auto-selects between a math path, a memory-efficient path, and 
 FlashAttention-2 (if available). It's our fallback.
 

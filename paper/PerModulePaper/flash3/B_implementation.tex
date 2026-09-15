@@ -110,16 +110,16 @@ except ImportError:
 \end{lstlisting}
 
 \subsubsection{B.5.2 Wrong contiguity}
-FlashAttention requires contiguous tensors in \texttt{(B, L, H, d\\_h)} layout:
+FlashAttention requires contiguous tensors in \texttt{(B, L, H, d\_h)} layout:
 \begin{lstlisting}
 q_fa = q.transpose(1, 2).contiguous()
 \end{lstlisting}
 
 \subsubsection{B.5.3 FP8 without Hopper}
-\texttt{torch.float8\\_e4m3fn} exists on any CUDA, but tensor cores only on Hopper.
+\texttt{torch.float8\_e4m3fn} exists on any CUDA, but tensor cores only on Hopper.
 
 \subsubsection{B.5.4 Nested encoder double projection}
-For RoBERTa: \texttt{is\\_nested\\_encoder = True} skips \texttt{out\\_proj}.
+For RoBERTa: \texttt{is\_nested\_encoder = True} skips \texttt{out\_proj}.
 
 \subsection{B.6 Verification}
 

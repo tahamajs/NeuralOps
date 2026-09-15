@@ -48,7 +48,7 @@ Our wrapper addresses all three:
 \end{itemize}
   PyTorch's SDPA kernel (which itself may use FlashAttention-2 internally).
 \begin{itemize}
-\item \textbf{Multi-architecture weight copy.} A single \texttt{copy\\_weights} handles
+\item \textbf{Multi-architecture weight copy.} A single \texttt{copy\_weights} handles
 \end{itemize}
   GPT-2 Conv1D, RoBERTa/BERT nested, DistilBERT flat, and Qwen/LLaMA GQA.
 \begin{itemize}
@@ -81,7 +81,7 @@ We provide a wrapper class \texttt{FlashAttention3} that:
 1. \textbf{Extracts pretrained weights} from the source attention module.
 2. \textbf{Freezes base weights} and adds trainable LoRA adapters.
 3. \textbf{Dispatches} to FlashAttention-3 if available, otherwise to SDPA.
-4. \textbf{Supports GQA} via \texttt{repeat\\_kv} before the attention call.
+4. \textbf{Supports GQA} via \texttt{repeat\_kv} before the attention call.
 5. \textbf{Applies RoPE} (with partial-dim support) before the attention call.
 6. \textbf{Handles causal masking} for decoder models.
 7. \textbf{Supports cross-attention} for encoder-decoder models.

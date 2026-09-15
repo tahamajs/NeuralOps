@@ -171,23 +171,23 @@ For each projection $P \in \{Q, K, V, O\}$, we copy $W_P$ from the pretrained
 attention module. The exact copy procedure depends on the architecture:
 
 \begin{itemize}
-\item \textbf{DistilBERT:} Direct copy from \texttt{q\\_lin}, \texttt{k\\_lin}, \texttt{v\\_lin}, \texttt{out\\_lin}.
+\item \textbf{DistilBERT:} Direct copy from \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}.
 \end{itemize}
 \begin{itemize}
 \item \textbf{RoBERTa:} Copy from \texttt{self.query}, \texttt{self.key}, \texttt{self.value}; leave
 \end{itemize}
-  \texttt{out\\_proj} identity (outer \texttt{output.dense} applies it).
+  \texttt{out\_proj} identity (outer \texttt{output.dense} applies it).
 \begin{itemize}
-\item \textbf{GPT-2:} Split fused \texttt{c\\_attn.weight} (transposed) into Q, K, V; copy
+\item \textbf{GPT-2:} Split fused \texttt{c\_attn.weight} (transposed) into Q, K, V; copy
 \end{itemize}
-  \texttt{c\\_proj.weight}.
+  \texttt{c\_proj.weight}.
 \begin{itemize}
-\item \textbf{Qwen:} Direct copy from \texttt{q\\_proj}, \texttt{k\\_proj}, \texttt{v\\_proj}, \texttt{o\\_proj}.
+\item \textbf{Qwen:} Direct copy from \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}.
 \end{itemize}
 
 \subsubsection{4.4.2 Freezing Base}
 
-After copying, base weights are frozen (\texttt{requires\\_grad = False}). Biases are 
+After copying, base weights are frozen (\texttt{requires\_grad = False}). Biases are 
 also frozen if present.
 
 \subsubsection{4.4.3 LoRA Adapters}
@@ -255,7 +255,7 @@ is_nested = (
 \end{lstlisting}
 
 For nested encoders, we extract $Q, K, V$ from \texttt{src.self} and set 
-\texttt{out\\_proj} to identity (the outer \texttt{output.dense} applies the projection).
+\texttt{out\_proj} to identity (the outer \texttt{output.dense} applies the projection).
 
 \subsubsection{4.5.2 Frobenius Validation}
 

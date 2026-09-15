@@ -54,16 +54,16 @@ provides three execution paths:
 For each projection $P \in \{Q, K, V, O\}$, extract $W_P$ from the source:
 
 \begin{itemize}
-\item \textbf{DistilBERT:} \texttt{q\\_lin}, \texttt{k\\_lin}, \texttt{v\\_lin}, \texttt{out\\_lin}.
+\item \textbf{DistilBERT:} \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}.
 \end{itemize}
 \begin{itemize}
 \item \textbf{RoBERTa:} \texttt{self.query}, \texttt{self.key}, \texttt{self.value}; \texttt{output.dense} for \texttt{o}.
 \end{itemize}
 \begin{itemize}
-\item \textbf{GPT-2:} Split \texttt{c\\_attn.weight.T}; \texttt{c\\_proj.weight.T} for \texttt{o}.
+\item \textbf{GPT-2:} Split \texttt{c\_attn.weight.T}; \texttt{c\_proj.weight.T} for \texttt{o}.
 \end{itemize}
 \begin{itemize}
-\item \textbf{Qwen:} \texttt{q\\_proj}, \texttt{k\\_proj}, \texttt{v\\_proj}, \texttt{o\\_proj}.
+\item \textbf{Qwen:} \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}.
 \end{itemize}
 
 Frobenius norms verified $\geq 10^{-4}$.
@@ -114,7 +114,7 @@ V \leftarrow \text{repeat\_kv}(V, H/H_{kv})
 
 \subsubsection{Path A: FlashAttention-3}
 
-If \texttt{FLASH\\_ATTN\\_AVAILABLE} and \texttt{hidden\\_states.is\\_cuda}:
+If \texttt{FLASH\_ATTN\_AVAILABLE} and \texttt{hidden\_states.is\_cuda}:
 
 \begin{lstlisting}
 q_fa = q.transpose(1, 2).contiguous()  # (B, L, H, d_h)
@@ -129,7 +129,7 @@ if use_fp8 and hasattr(torch, "float8_e4m3fn"):
 out = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag).to(dtype)
 \end{lstlisting}
 
-\textbf{FP8.} If \texttt{use\\_fp8=True} and Hopper, casts Q/K/V to FP8.
+\textbf{FP8.} If \texttt{use\_fp8=True} and Hopper, casts Q/K/V to FP8.
 
 \subsubsection{Path B: SDPA Fallback}
 
@@ -151,7 +151,7 @@ Y = \text{Attn}(Q, K, V) W_O^\top + b_O
 \tag{4.4}
 \]
 
-\textbf{Nested bypass.} For RoBERTa/BERT, \texttt{out\\_proj} is not applied; the outer 
+\textbf{Nested bypass.} For RoBERTa/BERT, \texttt{out\_proj} is not applied; the outer 
 \texttt{BertSelfOutput.dense} performs it.
 
 \subsection{4.7 The Full Algorithm}

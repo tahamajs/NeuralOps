@@ -38,7 +38,7 @@ LayerNorm & Never & Not factorizable \\
 \end{tabular}
 \end{table}
 
-The \texttt{should\\_compress\\_linear} helper enforces these rules.
+The \texttt{should\_compress\_linear} helper enforces these rules.
 
 \subsection{5.3 Handling Different Architectures}
 
@@ -75,7 +75,7 @@ roberta.encoder.layer.0.output.dense          # Linear(3072, 768)
 \subsubsection{5.3.3 GPT-2 (Conv1D)}
 
 GPT-2 uses \texttt{Conv1D} from HuggingFace, which stores weights as 
-\texttt{(in\\_features, out\\_features)} instead of \texttt{(out\\_features, in\\_features)}:
+\texttt{(in\_features, out\_features)} instead of \texttt{(out\_features, in\_features)}:
 
 \begin{lstlisting}
 transformer.h.0.attn.c_attn  # Conv1D(768, 2304) -- fused Q,K,V
@@ -123,14 +123,14 @@ class LoRALinear(nn.Module):
 
 \textbf{Injection procedure:}
 
-1. Extract \texttt{target\\_mod = getattr(module, "base\\_layer", module)}.
-2. Factorize \texttt{target\\_mod}.
-3. Replace \texttt{module.base\\_layer} with the factorized layer.
-4. \textbf{Preserve} the outer LoRA parameters (\texttt{module.lora\\_A}, \texttt{module.lora\\_B}).
+1. Extract \texttt{target\_mod = getattr(module, "base\_layer", module)}.
+2. Factorize \texttt{target\_mod}.
+3. Replace \texttt{module.base\_layer} with the factorized layer.
+4. \textbf{Preserve} the outer LoRA parameters (\texttt{module.lora\_A}, \texttt{module.lora\_B}).
 
 If the original module had LoRA, A3 optionally instantiates LoRA inside the 
 factorized layer to maintain trainability. This is controlled by 
-\texttt{lora\\_rank > 0}.
+\texttt{lora\_rank > 0}.
 
 \subsection{5.5 Injection Algorithm}
 
@@ -192,7 +192,7 @@ class A3FactorizedLinear(nn.Module):
         return out
 \end{lstlisting}
 
-\textbf{Parameter count:} \texttt{r \textit{ (d\\_in + d\\_out)} vs \texttt{d\\_in } d\\_out} for the original.
+\textbf{Parameter count:} \texttt{r \textit{ (d\_in + d\_out)} vs \texttt{d\_in } d\_out} for the original.
 
 \subsection{5.7 Causality and Streaming}
 

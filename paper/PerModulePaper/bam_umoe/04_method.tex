@@ -68,7 +68,7 @@ where $W_P$ is the frozen base, $(A_P, B_P)$ are LoRA factors, and
 $s = \alpha/r_L$ is the LoRA scaling.
 
 Base weights are copied exactly from the pretrained attention via 
-\texttt{copy\\_weights} (see Section 5).
+\texttt{copy\_weights} (see Section 5).
 
 \subsection{4.3 Phase 2: MoE Value Refinement}
 
@@ -191,7 +191,7 @@ Y = \text{Attn}(Q, K, V') W_O^\top + b_O
 \tag{4.11}
 \]
 
-with nested encoder bypass: for RoBERTa/BERT, \texttt{out\\_lin} is not applied 
+with nested encoder bypass: for RoBERTa/BERT, \texttt{out\_lin} is not applied 
 (the outer \texttt{output.dense} performs it).
 
 \subsection{4.6 The Full Algorithm}
@@ -249,7 +249,7 @@ of width $2d$), comparable to the base attention cost.
 
 \subsubsection{4.7.2 Parameter Count}
 
-For \texttt{UnifiedMoE(dim=d, num\\_experts=E, output\\_dim=d)}:
+For \texttt{UnifiedMoE(dim=d, num\_experts=E, output\_dim=d)}:
 
 \begin{table}[H]
 \centering

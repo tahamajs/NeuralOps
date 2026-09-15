@@ -33,7 +33,7 @@ W_V = src.v_lin.weight
 W_O = src.out_lin.weight
 \end{lstlisting}
 
-\texttt{is\\_nested\\_encoder = False}. All four projections compressed.
+\texttt{is\_nested\_encoder = False}. All four projections compressed.
 
 \subsubsection{5.2.2 RoBERTa (Nested)}
 
@@ -46,12 +46,12 @@ W_V = src.self.value.weight
 # W_O is not extracted -- outer output.dense applies it
 \end{lstlisting}
 
-\texttt{is\\_nested\\_encoder = True}. During forward, \texttt{context} is returned without 
-\texttt{out\\_proj}; the outer \texttt{BertSelfOutput.dense} applies its projection.
+\texttt{is\_nested\_encoder = True}. During forward, \texttt{context} is returned without 
+\texttt{out\_proj}; the outer \texttt{BertSelfOutput.dense} applies its projection.
 
 \subsubsection{5.2.3 GPT-2 (Fused Conv1D)}
 
-Split the fused \texttt{c\\_attn} weight:
+Split the fused \texttt{c\_attn} weight:
 
 \begin{lstlisting}
 fused = src.c_attn.weight.T  # (2304, 768)
@@ -72,7 +72,7 @@ W_V = src.v_proj.weight
 W_O = src.o_proj.weight
 \end{lstlisting}
 
-RoPE applied after projection via \texttt{position\\_embeddings}.
+RoPE applied after projection via \texttt{position\_embeddings}.
 
 \subsection{5.3 The `AdaSplashLinear` Module}
 
@@ -224,9 +224,9 @@ LoRA & Model dtype \\
 \subsubsection{5.9.1 Encoder-Decoder Models}
 
 For T5, the same class handles encoder (bidirectional, no splash) and decoder 
-(causal, splash). The \texttt{is\\_decoder} flag switches behavior.
+(causal, splash). The \texttt{is\_decoder} flag switches behavior.
 
 \subsubsection{5.9.2 LoRA Wrappers}
 
-If the source module is a \texttt{LoRALinear}, AdaSplash unwraps to \texttt{base\\_layer} and 
+If the source module is a \texttt{LoRALinear}, AdaSplash unwraps to \texttt{base\_layer} and 
 preserves the outer LoRA.

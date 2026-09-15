@@ -18,7 +18,7 @@ GPT-2 & 12 & 768 & 124.4M & Causal \\
 \end{tabular}
 \end{table}
 
-Base weights loaded from \texttt{results/*\\_baseline/finetuned\\_model.pt}.
+Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
 \subsection{6.2 Dataset}
 
@@ -124,7 +124,7 @@ Precision & FP16 \\
 \item \textbf{Trainable parameters}
 \end{itemize}
 \begin{itemize}
-\item \textbf{Peak VRAM:} \texttt{torch.cuda.max\\_memory\\_allocated()}
+\item \textbf{Peak VRAM:} \texttt{torch.cuda.max\_memory\_allocated()}
 \end{itemize}
 \begin{itemize}
 \item \textbf{Inference time:} Median of 20 forward passes
@@ -205,9 +205,9 @@ We compare against:
 
 1. \textbf{\texttt{full}:} Uncompressed pretrained model.
 2. \textbf{\texttt{a3}:} Our method.
-3. \textbf{\texttt{a3\\_no\\_fisher}:} A3 without Fisher weighting (ablations).
-4. \textbf{\texttt{a3\\_no\\_ln}:} A3 without LayerNorm recalibration (ablations).
+3. \textbf{\texttt{a3\_no\_fisher}:} A3 without Fisher weighting (ablations).
+4. \textbf{\texttt{a3\_no\_ln}:} A3 without LayerNorm recalibration (ablations).
 5. \textbf{Prior modules} (from our benchmark suite):
 \begin{itemize}
-\item \texttt{sdrm}, \texttt{svd\\_linear}, \texttt{nha}, etc.
+\item \texttt{sdrm}, \texttt{svd\_linear}, \texttt{nha}, etc.
 \end{itemize}

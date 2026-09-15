@@ -77,7 +77,7 @@ So $\mathcal{L}_\text{aux} \in [1, E]$.
 
 \subsection{A.4 MoE Parameter Count}
 
-For \texttt{UnifiedMoE(dim=d, num\\_experts=E, output\\_dim=d)}:
+For \texttt{UnifiedMoE(dim=d, num\_experts=E, output\_dim=d)}:
 
 \begin{table}[H]
 \centering
@@ -102,7 +102,7 @@ For $d = 768$, $E = 8$:
 \tag{A.8}
 \]
 
-Wait -- hidden = \texttt{output\\_dim \textit{ expert\\_multiplier = 768 } 2 = 1536}. Each 
+Wait -- hidden = \texttt{output\_dim \textit{ expert\_multiplier = 768 } 2 = 1536}. Each 
 expert: $d \cdot 1536 + 1536 \cdot d = 2 \cdot 768 \cdot 1536 = 2{,}359{,}296$. 
 For 8 experts: \textbf{18.9M per layer}.
 

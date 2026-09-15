@@ -81,8 +81,8 @@ For $d = 768$ and $N_l = 12$, this is $\sim 8.5$M values, or 17 MB at FP32.
 
 We support three sources, in priority order:
 
-1. \textbf{Explicit \texttt{calibration\\_loader}.} A \texttt{DataLoader} of input batches.
-2. \textbf{\texttt{calibration\\_texts}.} A list of strings; tokenized on-the-fly.
+1. \textbf{Explicit \texttt{calibration\_loader}.} A \texttt{DataLoader} of input batches.
+2. \textbf{\texttt{calibration\_texts}.} A list of strings; tokenized on-the-fly.
 3. \textbf{Default.} Random inputs of the appropriate shape (weak calibration).
 
 If none are provided, A3 falls back to unweighted SVD (see  4.3.4).
@@ -150,7 +150,7 @@ F_\text{norm} = \frac{F}{\|F\|_2 / \sqrt{d_\text{in}}}
 \]
 
 and clamp the square root to $[10^{-3}, 10^3]$. This is controlled by the 
-\texttt{normalize\\_scale} flag.
+\texttt{normalize\_scale} flag.
 
 \subsubsection{4.3.4 Fallback to Unweighted SVD}
 
@@ -235,7 +235,7 @@ $\sigma_\text{current}$ is the post-compression one.
 2. After compression, run another calibration pass to compute $\sigma_\text{current}^{(\ell)}$.
 3. For each LayerNorm, update $\gamma$ via (4.13).
 
-This is applied only if \texttt{recalibrate\\_ln = True} and calibration sources are 
+This is applied only if \texttt{recalibrate\_ln = True} and calibration sources are 
 available.
 
 \subsection{4.6 Combined Algorithm}
