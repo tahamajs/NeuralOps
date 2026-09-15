@@ -701,4 +701,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 SVD + 2:4 structured
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| GPT2 | 71.33% | 0.776 | 1.159 | 24 | 336.25 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-res_svd) |
+| DISTILBERT | 89.11% | 0.8982 | 1.1407 | 0 | 298.36 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-res_svd) |
+| ROBERTA | 52.41% | 0.68 | 1.0818 | 0 | 593.56 | `PASS_LOW` | N/A |
+| GPT2 | 62.16% | 0.7259 | 1.153 | 0 | 506.91 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-res_svd) |
