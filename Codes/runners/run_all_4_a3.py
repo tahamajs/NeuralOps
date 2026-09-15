@@ -64,24 +64,6 @@ models = [
         ),
         "summary": r"D:\SVD_Project\results\unified_a3\gpt2\summary.csv",
     },
-    {
-        "name": "Qwen3.5",
-        "cmd": (
-            r'"C:\Users\Hadi Schumacher\anaconda3\python.exe" -u Codes\framework\run_quality_sweep.py '
-            r"--model models\Qwen3.5-0.8B "
-            r"--model_family qwen3_5 "
-            r"--dataset sst2 "
-            r"--dataset_dir Codes\framework\data\glue_data\sst2 "
-            r"--output_dir results\unified_a3\qwen3_5 "
-            r"--modules a3 "
-            r"--batch_size 8 "
-            r"--recovery_steps 50 "
-            r"--timeout 1200 "
-            r"--precision fp16 "
-            r"--fresh"
-        ),
-        "summary": r"D:\SVD_Project\results\unified_a3\qwen3_5\summary.csv",
-    },
 ]
 
 print("=" * 80, flush=True)
