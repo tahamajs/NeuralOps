@@ -1,41 +1,54 @@
 [
   {
     "Model": "distilbert",
-    "Exit Code": 0,
-    "Baseline Acc": "90.48%",
-    "Tensor Train (TT) Acc": "81.08%",
-    "Delta Acc": "-9.40%",
-    "F1": "0.7919",
-    "Status": "PASS",
+    "Exit Code": 1,
+    "Baseline Acc": "90.71%",
+    "Tensor Train (TT) Acc": "49.77%",
+    "Delta Acc": "-40.94%",
+    "F1": "0.1673",
+    "Status": "PASS_NO_COMPRESSION",
     "Compressed Layers": "0",
     "Comp Rate": "0.90x",
-    "Peak VRAM": "508.1 MB",
-    "Time (s)": "26.3"
+    "Peak VRAM": "391.2 MB",
+    "Time (s)": "0.1"
   },
   {
     "Model": "roberta",
-    "Exit Code": 0,
-    "Baseline Acc": "75.11%",
+    "Exit Code": 1,
+    "Baseline Acc": "78.56%",
     "Tensor Train (TT) Acc": "50.92%",
-    "Delta Acc": "-24.19%",
+    "Delta Acc": "-27.64%",
     "F1": "0.6748",
     "Status": "PASS_LOW",
     "Compressed Layers": "0",
     "Comp Rate": "0.90x",
-    "Peak VRAM": "684.0 MB",
-    "Time (s)": "36.5"
+    "Peak VRAM": "715.6 MB",
+    "Time (s)": "0.0"
   },
   {
     "Model": "gpt2",
-    "Exit Code": 0,
-    "Baseline Acc": "60.78%",
-    "Tensor Train (TT) Acc": "50.92%",
-    "Delta Acc": "-9.86%",
-    "F1": "0.6748",
-    "Status": "PASS_LOW",
-    "Compressed Layers": "0",
+    "Exit Code": 1,
+    "Baseline Acc": "87.84%",
+    "Tensor Train (TT) Acc": "87.61%",
+    "Delta Acc": "-0.23%",
+    "F1": "0.8741",
+    "Status": "PASS",
+    "Compressed Layers": "48",
     "Comp Rate": "0.97x",
-    "Peak VRAM": "784.1 MB",
-    "Time (s)": "60.7"
+    "Peak VRAM": "426.3 MB",
+    "Time (s)": "0.1"
+  },
+  {
+    "Model": "qwen3_5",
+    "Exit Code": 1,
+    "Baseline Acc": "N/A",
+    "Tensor Train (TT) Acc": "N/A",
+    "Delta Acc": "N/A",
+    "F1": "N/A",
+    "Status": "EXIT_1",
+    "Compressed Layers": "N/A",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "N/A",
+    "Time (s)": "0.1"
   }
 ]
