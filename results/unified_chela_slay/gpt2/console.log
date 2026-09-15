@@ -52,3 +52,20 @@ Notes:
 2026-09-15 11:18:18,761 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5060 (bs=8, micro_bs=8)
 2026-09-15 11:18:51,015 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6538 (bs=8, micro_bs=8)
 2026-09-15 11:19:14,658 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.5478 (bs=8, micro_bs=8)
+2026-09-15 11:19:38,629 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.5610 (bs=8, micro_bs=8)
+2026-09-15 11:20:02,784 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.2437 (bs=8, micro_bs=8)
+2026-09-15 11:20:25,968 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.3938 (bs=8, micro_bs=8)
+2026-09-15 11:20:51,678 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.3794 (bs=8, micro_bs=8)
+2026-09-15 11:21:17,294 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.4372 (bs=8, micro_bs=8)
+2026-09-15 11:21:48,704 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_chela_slay\gpt2\gpt2_chela_slay_full_metrics.json
+2026-09-15 11:21:48,781 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_chela_slay\gpt2\checkpoints\chela_slay\weights.pt (module_params=0, lora_params=97)
+2026-09-15 11:21:49,759 [INFO] QwenQualitySweep: [2/2] chela_slay -> PASS_NO_COMPRESSION 78.90% (F1: 0.7928, Peak VRAM: 2526.15 MB)
+2026-09-15 11:21:49,759 [WARNING] QwenQualitySweep: Module 'chela_slay' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 11:21:49,760 [INFO] QwenQualitySweep: [Quality Guard] Module 'chela_slay' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=78.90%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 11:21:50,018 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:21:50,018 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 11:21:50,027 [INFO] QwenQualitySweep: 
+                     Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                       full                PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.81              5.51
+chela_slay (efficient-attn) PASS_NO_COMPRESSION   78.90%       -0.46% 0.7928                  0            1.00x 2526.2 MB              30.48             34.96
+2026-09-15 11:21:50,028 [INFO] QwenQualitySweep: ================================================================================

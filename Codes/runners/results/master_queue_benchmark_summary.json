@@ -277,5 +277,77 @@
     "status": "FAIL",
     "error": null,
     "timestamp": "2026-09-15T11:14:02.579936"
+  },
+  {
+    "module": "chela_slay",
+    "runner": "run_all_4_chela_slay.py",
+    "exit_code": 0,
+    "elapsed_s": 468.91,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:21:53.562784"
+  },
+  {
+    "module": "cluster",
+    "runner": "run_all_4_cluster.py",
+    "exit_code": 0,
+    "elapsed_s": 233.52,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:25:49.116216"
+  },
+  {
+    "module": "come",
+    "runner": "run_all_4_come.py",
+    "exit_code": 0,
+    "elapsed_s": 148.28,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:28:19.364195"
+  },
+  {
+    "module": "compressed_attention",
+    "runner": "run_all_4_compressed_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 161.1,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:31:03.076038"
+  },
+  {
+    "module": "compressed_attention_layer",
+    "runner": "run_all_4_compressed_attention_layer.py",
+    "exit_code": 0,
+    "elapsed_s": 159.19,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:33:44.251036"
+  },
+  {
+    "module": "compressed_mha",
+    "runner": "run_all_4_compressed_mha.py",
+    "exit_code": 0,
+    "elapsed_s": 144.77,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:36:11.429461"
+  },
+  {
+    "module": "cosformer",
+    "runner": "run_all_4_cosformer.py",
+    "exit_code": 0,
+    "elapsed_s": 197.3,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:39:30.682527"
+  },
+  {
+    "module": "cur",
+    "runner": "run_all_4_cur.py",
+    "exit_code": 0,
+    "elapsed_s": 133.96,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:41:46.637463"
   }
 ]

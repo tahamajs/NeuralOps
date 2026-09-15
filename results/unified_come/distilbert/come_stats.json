@@ -25,6 +25,6 @@
   "num_compressed": 1,
   "num_fallback": 0,
   "num_skipped": 0,
-  "forward_check_success": false,
+  "forward_check_success": true,
   "method": "come_layer_shedding_with_bridges"
 }

@@ -1,10 +1,10 @@
 {
   "compressor_name": "come",
-  "original_parameters": 127325954,
-  "compressed_parameters": 100449030,
-  "saved_parameters": 26876924,
-  "compression_ratio": 0.7889124474967609,
-  "reduction_percentage": 21.108755250323906,
+  "original_parameters": 124647170,
+  "compressed_parameters": 98654982,
+  "saved_parameters": 25992188,
+  "compression_ratio": 0.7914739018944433,
+  "reduction_percentage": 20.852609810555666,
   "original_layer_count": 12,
   "kept_layer_count": 8,
   "shed_layer_count": 4,
@@ -25,6 +25,6 @@
   "num_compressed": 1,
   "num_fallback": 0,
   "num_skipped": 0,
-  "forward_check_success": false,
+  "forward_check_success": true,
   "method": "come_layer_shedding_with_bridges"
 }
