@@ -1,14 +1,14 @@
 {
     "model": "gpt2_mamba",
     "performance": {
-        "accuracy_pct": 48.97,
-        "f1_score": 0.2741,
-        "f1_macro": 0.4403,
-        "precision": 0.4925,
-        "recall": 0.4953,
-        "val_loss": 1.0977,
-        "status": "PENDING",
-        "elapsed_s": 25.49
+        "accuracy_pct": 48.85,
+        "f1_score": 0.231,
+        "f1_macro": 0.4239,
+        "precision": 0.4902,
+        "recall": 0.4948,
+        "val_loss": 1.1739,
+        "status": "PASS_LOW",
+        "elapsed_s": 19.69
     },
     "efficiency": {
         "total_params_before": 124441344,
@@ -17,7 +17,7 @@
         "compression_rate": 1.0537,
         "compression_ratio_pct": 5.1,
         "flops_reduction_pct": 0.0,
-        "num_compressed_layers": 24,
+        "num_compressed_layers": 0,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 0,
         "lora_params": 737280,
@@ -40,8 +40,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 650.56,
-        "tokens_per_sec": 15411.81
+        "peak_vram_mb": 649.68,
+        "tokens_per_sec": 15361.74
     },
     "architecture": {
         "span_distribution": {},
@@ -51,8 +51,8 @@
     "scalability": {
         "L_128_vram_mb": 630.81,
         "L_256_vram_mb": 1066.36,
-        "L_512_vram_mb": "OOM or unsupported (CUDA out of memory. Tried to allocate 768.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 5.49 GiB is free. Of the allocated memory 1.24 GiB is allocated by PyTorch, and 114.86 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables))",
+        "L_512_vram_mb": 2802.8,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-15T04:42:14.156369"
+    "timestamp": "2026-09-15T21:48:19.769774"
 }

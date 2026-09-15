@@ -35,3 +35,5 @@ leka_v2,run_all_4_leka_v2.py,0,194.55,PASS,,2026-09-15T21:38:20.120198
 leka_v3,run_all_4_leka_v3.py,0,176.95,PASS,,2026-09-15T21:41:18.557287
 linformer,run_all_4_linformer.py,0,143.28,PASS,,2026-09-15T21:43:43.299454
 lora_attention,run_all_4_lora_attention.py,0,141.29,PASS,,2026-09-15T21:46:06.029352
+mamba,run_all_4_mamba.py,0,137.5,PASS,,2026-09-15T21:48:24.982012
+minimal_aurora,run_all_4_minimal_aurora.py,0,197.07,PASS,,2026-09-15T21:51:44.056287

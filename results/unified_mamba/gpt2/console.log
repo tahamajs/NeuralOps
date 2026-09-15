@@ -56,3 +56,14 @@ Notes:
 2026-09-15 21:48:10,638 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=2.5246 (bs=8, micro_bs=8)
 2026-09-15 21:48:11,374 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=1.1414 (bs=8, micro_bs=8)
 2026-09-15 21:48:12,122 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.8684 (bs=8, micro_bs=8)
+2026-09-15 21:48:19,771 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_mamba\gpt2\gpt2_mamba_full_metrics.json
+2026-09-15 21:48:20,767 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_mamba\gpt2\checkpoints\mamba\weights.pt (module_params=0, lora_params=49)
+2026-09-15 21:48:21,753 [INFO] QwenQualitySweep: [2/2] mamba -> PASS_LOW 48.85% (F1: 0.231, Peak VRAM: 649.68 MB)
+2026-09-15 21:48:21,753 [INFO] QwenQualitySweep: [Quality Guard] Module 'mamba' did not pass quality criteria (status=PASS_LOW, acc=48.85%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 21:48:22,052 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 21:48:22,053 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 21:48:22,061 [INFO] QwenQualitySweep: 
+                Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                  full     PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.20              4.82
+mamba (efficient-attn) PASS_LOW   48.85%      -30.51% 0.2310                  0            1.05x  649.7 MB               7.27              8.33
+2026-09-15 21:48:22,061 [INFO] QwenQualitySweep: ================================================================================
