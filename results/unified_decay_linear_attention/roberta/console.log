@@ -68,3 +68,14 @@ Notes:
 2026-09-15 11:51:27,959 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=2.8830 (bs=8, micro_bs=8)
 2026-09-15 11:51:34,228 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.4455 (bs=8, micro_bs=8)
 2026-09-15 11:52:14,888 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_decay_linear_attention\roberta\roberta-base_decay_linear_attention_full_metrics.json
+2026-09-15 11:52:14,944 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_decay_linear_attention\roberta\checkpoints\decay_linear_attention\weights.pt (module_params=0, lora_params=100)
+2026-09-15 11:52:15,814 [INFO] QwenQualitySweep: [2/2] decay_linear_attention -> PASS_NO_COMPRESSION 49.20% (F1: 0.4855, Peak VRAM: 672.16 MB)
+2026-09-15 11:52:15,814 [WARNING] QwenQualitySweep: Module 'decay_linear_attention' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 11:52:15,815 [INFO] QwenQualitySweep: [Quality Guard] Module 'decay_linear_attention' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=49.20%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 11:52:16,093 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:52:16,093 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-15 11:52:16,101 [INFO] QwenQualitySweep: 
+                                 Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                                   full                PASS   78.56% 0.00% (base) 0.8124                  0            1.00x  712.3 MB               4.17              4.78
+decay_linear_attention (efficient-attn) PASS_NO_COMPRESSION   49.20%      -29.36% 0.4855                  0            1.00x  672.2 MB              38.87             44.57
+2026-09-15 11:52:16,101 [INFO] QwenQualitySweep: ================================================================================

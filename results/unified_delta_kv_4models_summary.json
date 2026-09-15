@@ -6,11 +6,11 @@
     "DeltaKV Acc": "90.71%",
     "Delta Acc": "+0.00%",
     "F1": "0.9099",
-    "Status": "PASS",
+    "Status": "PASS_NO_COMPRESSION",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
-    "Peak VRAM": "183.1 MB",
-    "Time (s)": "32.9"
+    "Peak VRAM": "300.7 MB",
+    "Time (s)": "29.2"
   },
   {
     "Model": "roberta",
@@ -19,11 +19,11 @@
     "DeltaKV Acc": "85.09%",
     "Delta Acc": "+6.53%",
     "F1": "0.8474",
-    "Status": "PASS",
-    "Compressed Layers": "73",
+    "Status": "PASS_NO_COMPRESSION",
+    "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "333.3 MB",
-    "Time (s)": "62.9"
+    "Time (s)": "62.0"
   },
   {
     "Model": "gpt2",
@@ -32,10 +32,10 @@
     "DeltaKV Acc": "75.92%",
     "Delta Acc": "-3.44%",
     "F1": "0.7185",
-    "Status": "PASS",
+    "Status": "PASS_NO_COMPRESSION",
     "Compressed Layers": "0",
     "Comp Rate": "1.00x",
     "Peak VRAM": "627.9 MB",
-    "Time (s)": "39.9"
+    "Time (s)": "33.1"
   }
 ]

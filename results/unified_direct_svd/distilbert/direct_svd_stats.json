@@ -1,10 +1,10 @@
 {
   "compressor_name": "direct_svd",
   "original_parameters": 66955010,
-  "compressed_parameters": 65332994,
-  "saved_parameters": 1622016,
-  "compression_ratio": 0.9757745387537093,
-  "reduction_percentage": 2.4225461246290605,
+  "compressed_parameters": 65333005,
+  "saved_parameters": 1622005,
+  "compression_ratio": 0.975774703043133,
+  "reduction_percentage": 2.4225296956867006,
   "compressed_layers": [
     "distilbert.transformer.layer.0.attention.q_lin",
     "distilbert.transformer.layer.0.attention.k_lin",
@@ -136,6 +136,6 @@
   "num_compressed": 11,
   "num_fallback": 25,
   "num_skipped": 0,
-  "forward_check_success": true,
+  "forward_check_success": false,
   "method": "direct_truncated_svd"
 }
