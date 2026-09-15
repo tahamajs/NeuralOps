@@ -1,4 +1,11 @@
 ```
+# Per-Module Paper Template
+
+This is a clean, fillable template for a single-module paper in this project. It is designed for attention and compression modules, but it can also be adapted to any other architecture-level contribution.
+
+## Folder structure
+
+```text
 papers/
 ├── _TEMPLATE/
 │   ├── 00_meta.md
@@ -24,26 +31,51 @@ papers/
 │   ├── variables.json
 │   └── figures/
 │       └── .gitkeep
-└── nha/
+└── <module_name>/
     ├── 00_meta.md
     ├── 01_intro.md
-    └── ... (same structure)
+    ├── 02_related.md
+    ├── 03_background.md
+    ├── 04_method.md
+    ├── 05_architecture.md
+    ├── 06_setup.md
+    ├── 07_results.md
+    ├── 08_analysis.md
+    ├── 09_discussion.md
+    ├── 10_limitations.md
+    ├── 11_conclusion.md
+    ├── 12_reproducibility.md
+    ├── 13_references.md
+    ├── A_math.md
+    ├── B_implementation.md
+    ├── C_data.md
+    ├── D_negative_results.md
+    ├── E_ethics.md
+    ├── build.py
+    ├── variables.json
+    └── figures/
 ```
+
+## Recommended workflow
+
+1. Copy this template to a new module folder.
+2. Fill in the metadata in `00_meta.md`.
+3. Replace all `{{PLACEHOLDER}}` fields with real values.
+4. Use the same model names, evaluation setup, and metrics as your benchmark runs.
+5. Keep the phrasing honest: if runtime increases or parameters change, state it explicitly.
+6. Keep the paper aligned with the actual code and benchmark outputs.
 
 ---
 
-## 📄 `00_meta.md`
+## 00_meta.md
 
 ```markdown
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 00_meta.md
-     PURPOSE: Title, authors, abstract, keywords
-     DEPENDENCIES: None (first file)
-     ═══════════════════════════════════════════════════════════════════════════ -->
+<!--
+FILE: 00_meta.md
+PURPOSE: Title page, metadata, abstract, lay summary
+-->
 
 # {{FULL_NAME}} ({{MODULE_NAME}}): {{SUBTITLE}}
-
-<!-- SUBTITLE example: "A Hybrid Local–Global Attention Mechanism for Efficient Transformers" -->
 
 **Authors:**
 - {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
@@ -56,7 +88,7 @@ papers/
 **Corresponding author:** {{CORRESPONDING_AUTHOR}}
 **Preprint date:** {{DATE}}
 **Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/{{module_file}}.py
+**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/{{MODULE_PATH}}
 **Model weights:** https://huggingface.co/{{HF_ORG}}
 **License:** {{LICENSE}}
 
@@ -64,55 +96,19 @@ papers/
 
 ## Abstract
 
-<!-- 
-INSTRUCTIONS:
-- 200-250 words MAXIMUM
-- Structure: problem (2 sentences) → method (3 sentences) → results (3 sentences) → limitations (1 sentence)
-- Every number MUST match Section 7
-- If parameters increased, state it in abstract
-- If inference is slower, state it in abstract
-- Never overclaim
--->
+Transformer self-attention scales quadratically with sequence length, making long-context inference expensive in memory-constrained deployment settings. Existing solutions based on sparse patterns, low-rank approximations, and KV-cache pruning trade off accuracy, stability, or implementation complexity. We introduce **{{FULL_NAME}}** (**{{MODULE_NAME}}**), a {{CATEGORY}} that {{CORE_BEHAVIOR_IN_ONE_SENTENCE}}.
 
-Transformer self-attention scales quadratically with sequence length, making 
-long-context inference prohibitively expensive on memory-constrained hardware. 
-Existing approaches — sparse attention, low-rank projection, and KV-cache 
-eviction — trade accuracy for efficiency in ways that are often opaque to 
-practitioners. We introduce **{{FULL_NAME}}** (**{{MODULE_NAME}}**), a 
-{{CATEGORY}} that {{CORE_BEHAVIOR_IN_ONE_SENTENCE}}.
+{{MODULE_NAME}} combines {{COMPONENT_1}}, {{COMPONENT_2}}, and {{COMPONENT_3}} without retraining the base model. We transfer pretrained attention weights into the modified module and initialize trainable adapters to zero so the baseline behavior is preserved before recovery training. We evaluate on {{N_MODELS}} backbones on the {{TASK}} task with {{RECOVERY_STEPS}} LoRA recovery steps at rank {{LORA_RANK}}.
 
-{{MODULE_NAME}} combines {{COMPONENT_1}}, {{COMPONENT_2}}, and {{COMPONENT_3}} 
-without retraining the base model. Base weights are transferred exactly from 
-the pretrained attention via a weight-copy procedure that handles three 
-distinct architectures (flat, nested, and causal), and trainable capacity is 
-provided through LoRA adapters initialized to zero.
+The method achieves **{{ACC_D}}%** on DistilBERT, **{{ACC_R}}%** on RoBERTa-base, and **{{ACC_G}}%** on GPT-2, relative to baselines of **{{BASE_D}}%**, **{{BASE_R}}%**, and **{{BASE_G}}%**, respectively. Parameter counts change by **{{PARAM_CHANGE_PCT}}%** ({{PARAM_CHANGE_NOTE}}), while peak inference VRAM decreases by **{{VRAM_CHANGE_PCT}}%** and wall-clock latency changes by **{{LATENCY_CHANGE}}×** due to {{LATENCY_REASON_SHORT}}.
 
-We evaluate on three backbones — DistilBERT (6 layers), RoBERTa-base (12 
-layers), and GPT-2 (12 layers) — on the SST-2 sentiment task with 
-{{RECOVERY_STEPS}} LoRA recovery steps at rank {{LORA_RANK}}. {{MODULE_NAME}} 
-achieves **{{ACC_D}}%** on DistilBERT (baseline {{BASE_D}}%, Δ = {{DELTA_D}}), 
-**{{ACC_R}}%** on RoBERTa (baseline {{BASE_R}}%, Δ = {{DELTA_R}}), and 
-**{{ACC_G}}%** on GPT-2 (baseline {{BASE_G}}%, Δ = {{DELTA_G}}).
+Our results suggest that {{WHAT_WORKS}} and that {{WHAT_FAILS}} under {{FAILURE_CONDITION}}. We release the implementation, evaluation scripts, and checkpoints to support reproducibility.
 
-<!-- CRITICAL: parameter honesty -->
-Parameter count changes by **{{PARAM_CHANGE_PCT}}%** ({{PARAM_CHANGE_NOTE}}). 
-Peak inference VRAM decreases by **{{VRAM_CHANGE_PCT}}%**, while wall-clock 
-latency increases by **{{LATENCY_CHANGE}}×** due to {{LATENCY_REASON_SHORT}}.
-
-Our results show that {{WHAT_WORKS}} and that {{WHAT_FAILS}}. We release all 
-code, checkpoints, and evaluation scripts for reproducibility.
-
-**Keywords:** efficient attention, {{KEYWORD_2}}, {{KEYWORD_3}}, {{KEYWORD_4}}, 
-transformer compression
+**Keywords:** efficient attention, {{KEYWORD_2}}, {{KEYWORD_3}}, {{KEYWORD_4}}, transformer compression
 
 ---
 
 ## Lay Summary
-
-<!-- 
-INSTRUCTIONS: For non-specialist audience. 100 words MAX.
-Plain English. No jargon. No math.
--->
 
 {{LAY_SUMMARY}}
 
@@ -144,660 +140,540 @@ Plain English. No jargon. No math.
 
 ---
 
-## 📄 `01_intro.md`
+## 01_intro.md
 
 ```markdown
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 01_intro.md
-     PURPOSE: Introduction — motivation, problem, contributions, organization
-     DEPENDENCIES: 00_meta.md
-     LENGTH TARGET: 1.5 - 2 pages (800 - 1200 words)
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 1. Introduction
 
 ## 1.1 Motivation
 
-<!-- 
-INSTRUCTIONS:
-- Start with a concrete use case, not "Transformer models are popular"
-- Cite at least 3 papers in this subsection
-- Explain WHY this problem matters NOW
--->
+Deploying transformer models in resource-constrained settings is increasingly common in edge inference, latency-sensitive serving, and long-context workloads. Standard self-attention has quadratic complexity in the sequence length, which creates a bottleneck when sequence lengths grow beyond a few thousand tokens. Sparse attention (Longformer, BigBird), low-rank attention (Linformer, Nyströmformer), and kernelized attention (Performer, Linear Transformer) each address this challenge in different ways, but they often require architectural changes, retraining, or careful tuning to remain stable.
 
-{{MOTIVATION_OPENING}}
-
-<!-- 
-EXAMPLE for an efficient attention paper:
-"Deploying large language models on edge devices — phones, laptops, and 
-embedded systems — requires attention mechanisms that fit within strict 
-memory budgets. Yet the standard softmax attention introduced by Vaswani 
-et al. (2017) requires O(L²) memory in the sequence length L, which becomes 
-the dominant cost for contexts exceeding a few thousand tokens."
--->
-
-Standard scaled dot-product attention (Vaswani et al., 2017) computes:
+Standard scaled dot-product attention computes
 
 $$
-\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d_h}}\right)V
 \tag{1.1}
 $$
 
-where $Q, K, V \in \mathbb{R}^{L \times d_h}$ for sequence length $L$ and 
-per-head dimension $d_h$. The intermediate attention matrix $QK^\top$ 
-requires $\mathcal{O}(L^2)$ time and memory, which becomes the dominant cost 
-when $L \gg d_h$.
+where $Q, K, V \in \mathbb{R}^{L \times d_h}$. The core bottleneck is the $QK^\top$ matrix, which requires $\mathcal{O}(L^2)$ time and memory.
 
-{{MOTIVATION_PARAGRAPH_2}}
-
-<!-- 
-EXAMPLE:
-"Recent work has proposed three broad strategies. Sparse attention 
-(Longformer, BigBird) restricts the attention pattern to O(L√L) connections. 
-Low-rank attention (Linformer, Nyströmformer) projects keys and values into 
-a smaller subspace. Kernel attention (Performer, Linear Transformer) 
-approximates softmax via random features, achieving O(L). Each comes with 
-trade-offs: sparse methods lose global context, low-rank methods require 
-fixed rank, and kernel methods suffer from approximation error on peaked 
-distributions."
--->
+Recent work has highlighted that this issue matters not only for latency but also for memory footprint, throughput, and deployability under tight hardware limits. In parallel, parameter-efficient adaptation methods such as LoRA have shown that pretrained models can often be recovered with a small number of trainable parameters. This creates an opportunity to replace expensive attention components in a pretrained model without retraining the full backbone.
 
 ## 1.2 Problem Statement
 
-<!-- 
-INSTRUCTIONS:
-- Formalize the problem mathematically
-- Define success criteria
-- State constraints
--->
-
-Given a pretrained transformer $\mathcal{M}$ with hidden size $d$, $H$ 
-attention heads, and $N_\ell$ layers, we seek a modified attention function 
-$\mathcal{A}'$ such that:
+Given a pretrained transformer $\mathcal{M}$ with hidden size $d$, $H$ attention heads, and $N_\ell$ layers, we seek a modified attention function $\mathcal{A}'$ such that
 
 $$
-\mathcal{A}' \approx \mathcal{A}, \qquad
-\text{Cost}(\mathcal{A}') < \text{Cost}(\mathcal{A})
+\mathcal{A}' \approx \mathcal{A}, \qquad \mathrm{Cost}(\mathcal{A}') < \mathrm{Cost}(\mathcal{A})
 \tag{1.2}
 $$
 
-where "Cost" denotes our target efficiency metric: {{TARGET_METRIC}}.
+where the cost is measured in terms of {{TARGET_METRIC}}. We impose the following constraints:
 
-We impose the following constraints:
-
-1. **No retraining of base weights.** Only adapters may be trained.
-2. **Accuracy preservation.** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
-3. **Deployment readiness.** Peak VRAM $\leq {{VRAM_TARGET}}$ GB on {{GPU_MODEL}}.
-4. **Architecture portability.** Must work across flat, nested, and causal transformers.
+1. No retraining of base weights.
+2. Accuracy degradation must remain within {{ACC_TOLERANCE}}% on {{EVAL_TASK}}.
+3. Peak inference VRAM must remain below {{VRAM_TARGET}} GB on {{GPU_MODEL}}.
+4. The method must work across flat, nested, and causal transformer architectures.
 
 ## 1.3 Our Approach
 
-<!-- 
-INSTRUCTIONS:
-- 1 paragraph, high-level
-- No math yet
-- Reference Section 4 for details
--->
-
-We propose {{FULL_NAME}} ({{MODULE_NAME}}), which {{HIGH_LEVEL_DESCRIPTION}}. 
-Our key insight is that {{KEY_INSIGHT}}. Section 4 formalizes this and 
-derives the resulting attention formula.
+We propose {{FULL_NAME}} ({{MODULE_NAME}}), which {{HIGH_LEVEL_DESCRIPTION}}. The key idea is to preserve the original pretrained attention structure while replacing the expensive component with a lower-cost approximation that can be recovered through a lightweight LoRA-based fine-tuning stage. Section 4 formalizes the method and derives the resulting attention formulation.
 
 ## 1.4 Contributions
 
-<!-- 
-INSTRUCTIONS:
-- 4-6 bullets MAX
-- Each bullet must be verifiable
-- Avoid vague claims like "extensive experiments"
--->
-
 We make the following contributions:
 
-- **A new {{CATEGORY}}.** We propose {{MODULE_NAME}}, which {{BEHAVIOR_1}}. Unlike prior work, {{DIFFERENTIATOR}}.
-- **A production-hardened implementation.** Our PyTorch implementation handles {{ENGINEERING_1}}, {{ENGINEERING_2}}, and {{ENGINEERING_3}} across three architectures.
-- **A systematic evaluation.** We benchmark {{N_MODELS}} models on SST-2 with {{N_ABLATIONS}} ablations over rank, recovery steps, and {{HYPERPARAM_3}}.
-- **Honest negative results.** We report which models fail ({{FAILING_MODELS}}), why we believe they fail, and what we tried.
-- **Full reproducibility.** Code, weights, and evaluation scripts are released under {{LICENSE}}.
+- We introduce **{{MODULE_NAME}}**, a {{CATEGORY}} that {{BEHAVIOR_1}}.
+- We provide a production-hardened PyTorch implementation that handles {{ENGINEERING_1}}, {{ENGINEERING_2}}, and {{ENGINEERING_3}} across three architectures.
+- We benchmark {{N_MODELS}} model families on {{TASK}} with {{N_ABLATIONS}} ablations over rank, recovery steps, and {{HYPERPARAM_3}}.
+- We report honest negative results for {{FAILING_MODELS}} and explain the observed failure modes.
+- We release code, checkpoints, and evaluation scripts under {{LICENSE}}.
 
 ## 1.5 Paper Organization
 
-<!-- 
-INSTRUCTIONS: One sentence per section.
--->
-
-Section 2 reviews related work in efficient attention, KV-cache compression, 
-and parameter-efficient fine-tuning. Section 3 provides background on 
-attention, GQA, RoPE, and LoRA. Section 4 presents {{MODULE_NAME}}. Section 5 
-describes our integration with three transformer architectures. Section 6 
-details the experimental setup. Section 7 reports results. Section 8 analyzes 
-failure modes and gives an inference-cost breakdown. Section 9 discusses 
-when to use {{MODULE_NAME}}. Section 10 lists limitations. Section 11 
-concludes.
-
----
-
-## Notation
-
-<!-- 
-INSTRUCTIONS: Define every symbol used in the paper.
-If your paper is short, merge this into Section 3.
--->
-
-| Symbol | Meaning | First appears |
-|---|---|---|
-| $B$ | Batch size | §3.1 |
-| $L$ | Sequence length | §3.1 |
-| $d$ | Hidden dimension | §3.1 |
-| $H$ | Number of query heads | §3.1 |
-| $H_{kv}$ | Number of KV heads | §3.2 |
-| $d_h$ | Per-head dimension | §3.1 |
-| $N_\ell$ | Number of layers | §3.1 |
-| $r$ | LoRA rank | §3.4 |
-| $\alpha$ | LoRA scaling | §3.4 |
-| $\sigma$ | Softmax temperature | §4.2 |
-| $W$ | Sliding-window size | §4.3 |
-| $m$ | Number of RFF features | §4.3 |
-| $\phi(\cdot)$ | Feature map | §4.3 |
-| $\lambda$ | Regularization strength | §4.5 |
+Section 2 reviews related work in efficient attention, KV-cache compression, and parameter-efficient fine-tuning. Section 3 provides background on fundamentals relevant to the method. Section 4 presents the proposed module. Section 5 describes architecture integration. Section 6 explains the experimental setup. Section 7 reports results. Section 8 analyzes failure modes and inference costs. Section 9 discusses practical usage. Section 10 describes limitations. Section 11 concludes.
 ```
 
 ---
 
-## 📄 `02_related.md`
+## 02_related.md
 
 ```markdown
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 02_related.md
-     PURPOSE: Related work — position our method against prior art
-     DEPENDENCIES: 01_intro.md
-     LENGTH TARGET: 1 - 1.5 pages (600 - 900 words)
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 2. Related Work
 
 ## 2.1 Efficient Attention Mechanisms
 
-### 2.1.1 Sparse Attention
-
-Longformer (Beltagy et al., 2020) combines a sliding-window with a small 
-set of global tokens, reducing complexity to $\mathcal{O}(L \sqrt{L})$. 
-BigBird (Zaheer et al., 2020) adds random attention and proves Turing 
-completeness. {{MODULE_NAME}} differs by {{DIFF_SPARSE}}.
-
-### 2.1.2 Low-Rank Attention
-
-Linformer (Wang et al., 2020) projects $K, V \in \mathbb{R}^{L \times d}$ 
-to $\mathbb{R}^{k \times d}$ with fixed $k$. Nyströmformer (Xiong et al., 
-2021) approximates the attention matrix using Nyström landmarks. {{MODULE_NAME}} 
-{{DIFF_LOWRANK}}.
-
-### 2.1.3 Kernel Attention
-
-Performer (Choromanski et al., 2021) approximates softmax via positive 
-orthogonal random features (PORF). Linear Transformer (Katharopoulos et al., 
-2020) uses $\phi(x) = \mathrm{elu}(x) + 1$, which we adopt in our global 
-branch. {{MODULE_NAME}} {{DIFF_KERNEL}}.
-
-### 2.1.4 Hybrid Attention
-
-H-transformer (Zhu & Soricut, 2021), Reformer (Kitaev et al., 2020), and 
-Routing Transformer (Roy et al., 2021) combine multiple attention strategies. 
-Our work is closest to these but differs in {{DIFF_HYBRID}}.
+Sparse attention methods such as Longformer and BigBird reduce the attention pattern to a subset of tokens while keeping a small number of global connections. Low-rank approaches such as Linformer and Nyströmformer compress the projection space to approximate the attention matrix. Kernel methods such as Performer and Linear Transformer replace the softmax kernel with a more tractable feature map, enabling near-linear complexity in some settings.
 
 ## 2.2 KV-Cache Compression
 
-### 2.2.1 Token Eviction
-
-H2O (Zhang et al., 2023) keeps a small fraction of "heavy-hitter" tokens 
-based on accumulated attention scores. StreamingLLM (Xiao et al., 2024) 
-pins the first few tokens as "attention sinks" and keeps a sliding window. 
-{{MODULE_NAME}} {{DIFF_EVICTION}}.
-
-### 2.2.2 Quantization
-
-KIVI (Liu et al., 2024) quantizes KV cache to 2-bit using per-channel 
-scaling. KVQuant (Hooper et al., 2024) uses non-uniform quantization. 
-{{MODULE_NAME}} {{DIFF_QUANT}}.
-
-### 2.2.3 Low-Rank Cache
-
-{{LOWRANK_CACHE_WORK}}. {{MODULE_NAME}} {{DIFF_LOWRANK_CACHE}}.
+Methods such as H2O, StreamingLLM, and KV quantization focus on reducing the cost of caching keys and values during generation. These methods are generally complementary to attention approximation and can be combined with architectural changes when memory constraints are dominant.
 
 ## 2.3 Parameter-Efficient Fine-Tuning
 
-LoRA (Hu et al., 2021) freezes base weights and trains rank-$r$ adapters 
-$BA$ with $B = 0$ at initialization:
-
-$$
-W_{\text{eff}} = W_{\text{frozen}} + \frac{\alpha}{r} B A
-\tag{2.1}
-$$
-
-AdaLoRA (Zhang et al., 2023) adaptively allocates rank per layer. 
-DoRA (Liu et al., 2024) decomposes weights into magnitude and direction. 
-Our work uses standard LoRA for recovery after attention replacement.
+LoRA freezes the base weights and learns low-rank adapters, making it a natural mechanism for recovery after replacing a pretrained attention module. AdaLoRA and DoRA improve the choice of rank or decomposition, but the core principle remains the same: adapt only a small trainable subset while preserving the base model.
 
 ## 2.4 Position of Our Work
 
-<!-- 
-INSTRUCTIONS: 
-- This subsection MUST clearly distinguish your work
-- Use a comparison table if possible
--->
-
-{{MODULE_NAME}} differs from prior work along three axes:
-
-| Axis | Prior work | {{MODULE_NAME}} |
-|---|---|---|
-| **Attention mechanism** | Single (sparse OR low-rank OR kernel) | {{MECHANISM}} |
-| **Training requirement** | Often requires retraining | {{TRAINING}} |
-| **Architecture support** | Usually one family | {{ARCH_SUPPORT}} |
-| **Parameter effect** | Reduces parameters | {{PARAM_EFFECT}} |
-
-**Key distinction.** While {{PRIOR_METHOD}} {{PRIOR_BEHAVIOR}}, 
-{{MODULE_NAME}} {{OUR_BEHAVIOR}}. This allows {{ADVANTAGE}}.
-
----
-
-## Comparison Table (Optional)
-
-<!-- 
-INSTRUCTIONS: Fill this in if you want a quick "at a glance" comparison.
--->
-
-| Method | Complexity | Trains base? | Param change | SST-2 Acc |
-|---|---|---|---|---|
-| Standard MHSA | $\mathcal{O}(L^2)$ | — | 0% | 90.71% |
-| Performer | $\mathcal{O}(L)$ | Yes | 0% | {{PERF_ACC}} |
-| Linformer | $\mathcal{O}(L)$ | Yes | 0% | {{LIN_ACC}} |
-| Longformer | $\mathcal{O}(L\sqrt{L})$ | Yes | 0% | {{LONG_ACC}} |
-| H2O | $\mathcal{O}(L)$ at inference | No | 0% | {{H2O_ACC}} |
-| **{{MODULE_NAME}}** | $\mathcal{O}({{COMPLEXITY}})$ | No | {{PARAM_CHANGE}}% | **{{ACC}}** |
+{{MODULE_NAME}} differs from these methods in three ways. First, it targets architecture portability across flat, nested, and causal models without retraining the original module. Second, it preserves the pretrained attention weights and uses LoRA-like recovery only for adaptation. Third, it is explicitly benchmarked under a fixed evaluation protocol with honest failure reporting and implementation guardrails.
 ```
 
 ---
 
-## 📄 `03_background.md`
+## 03_background.md
 
 ```markdown
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 03_background.md
-     PURPOSE: Technical background needed to understand the method
-     DEPENDENCIES: 02_related.md
-     LENGTH TARGET: 1 - 1.5 pages (600 - 900 words)
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 3. Background
 
-## 3.1 Multi-Head Self-Attention (MHSA)
+## 3.1 Multi-Head Self-Attention
 
-For input $X \in \mathbb{R}^{B \times L \times d}$, MHSA computes:
-
-$$
-\begin{aligned}
-Q &= X W_Q, \quad K = X W_K, \quad V = X W_V \\
-\text{head}_h &= \mathrm{Attention}(Q_h, K_h, V_h) \\
-\text{MHSA}(X) &= \mathrm{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
-\end{aligned}
-\tag{3.1}
-$$
-
-where $W_Q, W_K, W_V \in \mathbb{R}^{d \times d_h H}$ and 
-$W_O \in \mathbb{R}^{d_h H \times d}$.
-
-**Complexity.** Time and memory are $\mathcal{O}(L^2 d)$ and $\mathcal{O}(L^2)$ 
-respectively, dominated by the attention matrix $QK^\top$.
-
-## 3.2 Grouped-Query Attention (GQA)
-
-Modern models (Qwen, LLaMA, Mistral) use GQA where $H_{kv} < H$:
+For input $X \in \mathbb{R}^{B \times L \times d}$, multi-head attention projects keys, queries, and values via learned matrices:
 
 $$
-K, V \in \mathbb{R}^{B \times L \times H_{kv} d_h}, \qquad
-H_{\text{repeat}} = H / H_{kv}
-\tag{3.2}
+Q = XW_Q, \quad K = XW_K, \quad V = XW_V
 $$
 
-The KV heads are repeated to match query heads before attention. GQA reduces 
-KV-cache size by a factor of $H / H_{kv}$ at small accuracy cost.
-
-**Relevance to {{MODULE_NAME}}.** {{GQA_RELEVANCE}}
-
-## 3.3 Rotary Position Embeddings (RoPE)
-
-RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
+The attention output is computed as
 
 $$
-\tilde{Q}_i = Q_i \cos(\theta_i) + \mathrm{rot}(Q_i) \sin(\theta_i)
-\tag{3.3}
+\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d_h}}\right)V
 $$
 
-where $\theta_i = i \cdot \omega_k$ for frequency schedule $\omega_k$ and 
-$\mathrm{rot}$ swaps the two halves of the vector.
+This produces the standard quadratic attention bottleneck in sequence length.
 
-**Relevance to {{MODULE_NAME}}.** {{ROPE_RELEVANCE}}
+## 3.2 Grouped-Query Attention
+
+Grouped-query attention reduces the number of KV heads relative to Q heads, lowering cache size and memory cost while preserving a large query head count. This design is common in modern LLMs and matters for efficient inference.
+
+## 3.3 Rotary Position Embeddings
+
+RoPE injects position-dependent rotations into query and key vectors to encode relative order. This matters for causal generation and for any module that must preserve positional behavior under long-context usage.
 
 ## 3.4 LoRA Recovery
 
-LoRA (Hu et al., 2021) parameterizes weight updates as:
+LoRA learns a low-rank residual update of the form
 
 $$
-\Delta W = \frac{\alpha}{r} B A, \qquad
-A \in \mathbb{R}^{r \times k}, \quad B \in \mathbb{R}^{d \times r}
-\tag{3.4}
+\Delta W = \frac{\alpha}{r}BA
 $$
 
-with $A \sim \mathcal{N}(0, \sigma^2)$ and $B = 0$ at initialization, so 
-that $\Delta W = 0$ at step 0. Only $A$ and $B$ are trained; $W_{\text{base}}$ 
-is frozen.
-
-**Training objective.** We minimize cross-entropy on the downstream task:
-
-$$
-\mathcal{L} = -\frac{1}{N} \sum_{i=1}^{N} \log p_\theta(y_i \mid x_i)
-\tag{3.5}
-$$
-
-We optionally add a regularization term $\lambda \mathcal{L}_{\text{reg}}$ 
-(e.g., orthogonality of LoRA factors) with $\lambda = {{LAMBDA}}$.
+where $B$ and $A$ are trainable low-rank matrices and $W$ is the frozen base weight. In the recovery phase, the model can adapt to a new attention structure while preserving the original pretrained weights.
 
 ## 3.5 Attention Sinks and Heavy Hitters
 
-**Attention sinks.** Xiao et al. (2024) show that transformer attention 
-concentrates on the first few tokens. Preserving these tokens is critical for 
-stability.
-
-**Heavy hitters.** Zhang et al. (2023) show that a small fraction of tokens 
-(~1-5%) receive most of the attention mass.
-
-**Relevance to {{MODULE_NAME}}.** {{SINK_RELEVANCE}}
-
-## 3.6 Notation Summary
-
-| Symbol | Meaning |
-|---|---|
-| $B$ | Batch size |
-| $L$ | Sequence length |
-| $d$ | Hidden size |
-| $H$ | Query head count |
-| $H_{kv}$ | KV head count |
-| $d_h$ | Per-head dimension |
-| $N_\ell$ | Layer count |
-| $r$ | LoRA rank |
-| $\alpha$ | LoRA scaling |
-| $W$ | Window size |
-| $m$ | RFF feature count |
-| $\theta_i$ | RoPE angle at position $i$ |
+Recent work shows that a small number of tokens can dominate attention concentration. This motivates guardrails for padding, causal masking, and stable initialization when replacing attention paths.
 ```
 
 ---
 
-## 📄 `04_method.md`
+## 04_method.md
 
 ```markdown
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     FILE: 04_method.md
-     PURPOSE: The core method — the most important section
-     DEPENDENCIES: 03_background.md
-     LENGTH TARGET: 3 - 5 pages (1500 - 2500 words)
-     ═══════════════════════════════════════════════════════════════════════════ -->
-
 # 4. Method
 
 ## 4.1 Overview
 
-<!-- 
-INSTRUCTIONS:
-- 1 short paragraph + architecture diagram
-- Refer to Figure 4.1
-- High-level before diving into math
--->
+We replace the original attention computation with a hybrid mechanism that combines {{COMPONENT_1}}, {{COMPONENT_2}}, and {{COMPONENT_3}}. The goal is to preserve the pretrained behavior as much as possible while reducing the dominant cost term. The method is designed for compatibility with masked, causal, and grouped-query attention settings.
 
-**Figure 4.1** shows the {{MODULE_NAME}} pipeline. Given input $X \in 
-\mathbb{R}^{B \times L \times d}$, we:
+The pipeline is:
 
-1. **Project** to $Q, K, V$ using frozen base weights from the pretrained model.
-2. **Apply position encoding** (RoPE, if applicable).
-3. **Compute attention** using {{COMPONENT_1}}, {{COMPONENT_2}}, {{COMPONENT_3}}.
-4. **Combine** via {{COMBINATION_OPERATOR}}.
-5. **Project** output back to $d$ dimensions.
-
-<!-- 
-DIAGRAM instructions:
-- Draw in draw.io, excalidraw.com, or TikZ
-- Export to PNG/SVG into figures/
-- Reference here
--->
-
-```
-    Input X ∈ R^{B×L×d}
-            │
-            ▼
-    ┌─────────────────┐
-    │  Q/K/V proj     │ ← frozen base weights
-    └────────┬────────┘
-             │
-             ▼
-    ┌─────────────────┐
-    │  Position       │ ← RoPE if needed
-    │  encoding       │
-    └────────┬────────┘
-             │
-    ┌────────┴────────┐
-    ▼                 ▼
- ┌──────┐         ┌──────┐
- │ Path │         │ Path │
- │  A   │         │  B   │
- └──┬───┘         └──┬───┘
-    │                │
-    └────────┬───────┘
-             ▼
-    ┌─────────────────┐
-    │  Gate / Merge   │
-    └────────┬────────┘
-             │
-             ▼
-    ┌─────────────────┐
-    │  out_proj       │ ← frozen base weights
-    └────────┬────────┘
-             │
-             ▼
-    Output Y ∈ R^{B×L×d}
-```
+1. Project $X$ into $Q$, $K$, and $V$.
+2. Apply RoPE or other positional encoding when required.
+3. Compute the local and global branches.
+4. Fuse them with a learnable gate.
+5. Project the result back to the hidden dimension.
 
 ## 4.2 Component 1: {{COMPONENT_1_NAME}}
 
-### 4.2.1 Formal Definition
-
-We define ${{COMPONENT_1}}$ as:
+We define {{COMPONENT_1_NAME}} as
 
 $$
 {{COMPONENT_1_FORMULA}}
 \tag{4.1}
 $$
 
-where:
-- ${{VAR_1}}$ is {{VAR_1_DESC}}
-- ${{VAR_2}}$ is {{VAR_2_DESC}}
-- ${{HYPERPARAM_1}} = {{DEFAULT_VALUE}}$ controls {{BEHAVIOR}}
-
-### 4.2.2 Intuition
-
-<!-- 
-INSTRUCTIONS:
-- Explain WHY this formula, not another
-- Give a concrete example
--->
-
-{{COMPONENT_1_INTUITION}}
-
-**Concrete example.** {{EXAMPLE}}
-
-### 4.2.3 Why This Choice?
-
-We considered three alternatives:
-
-| Alternative | Formula | Why rejected |
-|---|---|---|
-| {{ALT_1}} | {{ALT_1_FORMULA}} | {{ALT_1_REASON}} |
-| {{ALT_2}} | {{ALT_2_FORMULA}} | {{ALT_2_REASON}} |
-| {{ALT_3}} | {{ALT_3_FORMULA}} | {{ALT_3_REASON}} |
-
-{{COMPONENT_1}} is preferable because {{JUSTIFICATION}}.
+where {{VAR_1_DESC}} and {{VAR_2_DESC}}. The hyperparameter {{HYPERPARAM_1}} controls {{BEHAVIOR}}.
 
 ## 4.3 Component 2: {{COMPONENT_2_NAME}}
 
-### 4.3.1 Formal Definition
+The second branch computes
 
 $$
 {{COMPONENT_2_FORMULA}}
 \tag{4.2}
 $$
 
-### 4.3.2 Details
-
-{{COMPONENT_2_DETAILS}}
-
-### 4.3.3 Handling Edge Cases
-
-<!-- 
-INSTRUCTIONS: This is where production hardening lives.
-Cover: padding, causal masking, GQA, short sequences.
--->
-
-- **Padding tokens:** {{PAD_HANDLING}}
-- **Causal masking:** {{CAUSAL_HANDLING}}
-- **GQA:** {{GQA_HANDLING}}
-- **Short sequences ($L < W$):** {{SHORT_SEQ_HANDLING}}
+This component handles {{SECOND_COMPONENT_ROLE}} and is designed to preserve local context or global structure depending on the architecture.
 
 ## 4.4 Component 3: {{COMPONENT_3_NAME}}
 
-### 4.4.1 Formal Definition
+The third branch is defined as
 
 $$
 {{COMPONENT_3_FORMULA}}
 \tag{4.3}
 $$
 
-### 4.4.2 Details
-
-{{COMPONENT_3_DETAILS}}
+This branch supports {{THIRD_COMPONENT_ROLE}} and stabilizes the approximation when the sequence is long or position-sensitive.
 
 ## 4.5 Combined Attention
 
-Combining (4.1), (4.2), and (4.3):
+The final attention output is computed as
 
 $$
-\mathcal{A}_{{{\text{MODULE}}}}(Q, K, V) = {{FINAL_FORMULA}}
+\mathcal{A}(Q, K, V) = \mathrm{Fuse}\big(\mathcal{A}_1, \mathcal{A}_2, \mathcal{A}_3\big)
 \tag{4.4}
 $$
 
-<!-- 
-INSTRUCTIONS:
-- Show how components combine
-- Define any fusion/gating
--->
+with gate values $\gamma \in [0,1]$ learned per token. The gate is initialized to favor the original branch and is updated during recovery training.
 
-The fusion operation is defined as:
+## 4.6 Edge-Case Handling
 
-$$
-\text{Fuse}(a, b) = \gamma \odot a + (1 - \gamma) \odot b
-\tag{4.5}
-$$
-
-where $\gamma = \sigma(W_g X) \in [0, 1]$ is a token-level gate with a 
-learnable linear projection $W_g$.
-
-**Initialization.** We initialize $W_g = 0$ and $b_g = {{GATE_BIAS}}$, so 
-that $\gamma = \sigma({{GATE_BIAS}}) = {{GATE_VALUE}}$ at start. This 
-biases the model toward {{PREFERRED_BRANCH}} initially.
-
-## 4.6 Algorithm
-
-**Algorithm 1:** {{MODULE_NAME}} forward pass
-```
-Input:  X ∈ R^{B×L×d}
-        attention_mask ∈ {0,1}^{B×L}
-        position_ids ∈ Z^{B×L}
-Output: Y ∈ R^{B×L×d}
-
- 1: Q ← X W_Q;  K ← X W_K;  V ← X W_V         ▷ Project (frozen)
- 2: if RoPE: (Q, K) ← Rotary(Q, K, position_ids)
- 3: if GQA:  K, V ← repeat_kv(K, V, H/H_kv)
- 4: (Q, K, V) ← mask_padding(Q, K, V, attention_mask)
- 5: A ← {{ALGO_STEP_5}}                       ▷ {{STEP_5_DESC}}
- 6: B ← {{ALGO_STEP_6}}                       ▷ {{STEP_6_DESC}}
- 7: γ ← σ(gate(X))                            ▷ Token gate
- 8: Z ← γ ⊙ A + (1-γ) ⊙ B
- 9: Y ← out_proj(Z)                            ▷ Output (frozen)
-10: return Y
-```
+- Padding tokens are masked before attention.
+- Causal attention uses the standard lower-triangular mask.
+- GQA is supported by repeating KV heads to match query heads.
+- Short sequences are handled by falling back to dense local attention or a stabilized branch.
 
 ## 4.7 Complexity Analysis
 
-### 4.7.1 Time Complexity
+The baseline complexity is quadratic in the sequence length. The proposed method reduces the dominant term to {{TOTAL_TIME}} while preserving the same output dimension and supporting the same pretrained model family.
 
-| Component | Time |
-|---|---|
-| Q/K/V projections | $\mathcal{O}(L d^2)$ |
-| {{COMPONENT_1}} | $\mathcal{O}({{C1_TIME}})$ |
-| {{COMPONENT_2}} | $\mathcal{O}({{C2_TIME}})$ |
-| {{COMPONENT_3}} | $\mathcal{O}({{C3_TIME}})$ |
-| Output projection | $\mathcal{O}(L d^2)$ |
-| **Total (baseline)** | $\mathcal{O}(L^2 d)$ |
-| **Total (ours)** | $\mathcal{O}({{TOTAL_TIME}})$ |
+## 4.8 Parameter Count and Initialization
 
-### 4.7.2 Space Complexity
+The base weights are copied from the original attention modules. Trainable adapters are initialized to zero or near-zero, so the method starts from a faithful copy of the original behavior. This is important for preserving stability during the recovery stage.
+```
 
-| Component | Space |
-|---|---|
-| Activation memory | $\mathcal{O}({{ACT_SPACE}})$ |
-| Attention matrix | $\mathcal{O}({{ATT_SPACE}})$ |
-| **Total (baseline)** | $\mathcal{O}(L^2)$ |
-| **Total (ours)** | $\mathcal{O}({{TOTAL_SPACE}})$ |
+---
 
-### 4.7.3 Parameter Count
+## 05_architecture.md
 
-<!-- 
-CRITICAL SECTION: Be honest here.
-If parameters don't decrease, say so explicitly.
--->
+```markdown
+# 5. Architecture Integration
 
-| Component | Baseline | {{MODULE_NAME}} | Change |
-|---|---|---|---|
-| $W_Q$ | $d \cdot d_h H$ | ${{Q_PARAMS}}$ | {{Q_DELTA}} |
-| $W_K$ | $d \cdot d_h H_{kv}$ | ${{K_PARAMS}}$ | {{K_DELTA}} |
-| $W_V$ | $d \cdot d_h H_{kv}$ | ${{V_PARAMS}}$ | {{V_DELTA}} |
-| $W_O$ | $d_h H \cdot d$ | ${{O_PARAMS}}$ | {{O_DELTA}} |
-| Adapters | 0 | ${{ADAPTER_PARAMS}}$ | +{{ADAPTER_PARAMS}} |
-| **Per layer** | ${{BASE_PER_LAYER}}$ | ${{OUR_PER_LAYER}}$ | {{LAYER_DELTA}} |
-| **Total** | ${{BASE_TOTAL}}$ | ${{OUR_TOTAL}}$ | {{TOTAL_DELTA}} |
+## 5.1 Flat Transformers
 
-**Interpretation.** {{MODULE_NAME}} {{PARAM_INTERPRETATION}}.
+For flat transformers such as DistilBERT, we directly replace the attention module in each layer. The implementation preserves the same projection layout and mask semantics as the original architecture.
 
-<!-- 
-EXAMPLE honest statements:
-- "does not reduce parameter count because base weights are preserved"
-- "increases parameters by 0.89% due to LoRA adapters"
-- "reduces parameters by 42% because W_Q, W_K, W_V, W_O are factorized"
--->
+## 5.2 Nested Transformers
 
-## 4.8 Weight Initialization
+For nested architectures, the attention replacement must respect the internal grouping patterns and head arrangements. We handle this by wrapping the module logic in a compatibility layer that flattens and restores the expected tensor shapes.
 
-### 4.8.1 Base Weights
+## 5.3 Causal Transformers
 
-We transfer base weights from the pretrained attention via `copy_weights`. 
-The procedure differs by architecture (§5.2).
+For GPT-like causal models, causal masks and rotary position embeddings must remain intact. The replacement module verifies that the mask is applied before the attention combination and that the positional encoding remains consistent with the original model.
 
-### 4.8.2 LoRA Adapters
+## 5.4 Weight Copy Procedure
 
-Adapters are initialized as in Hu et al. (2021):
+We copy the original $W_Q$, $W_K$, $W_V$, and $W_O$ weights into the replacement module when possible, then initialize the residual adapters to zero. This keeps the module close to the pretrained behavior at initialization and ensures a stable recovery process.
+```
 
-$$
-A \sim \mathcal{N}\!\left(0, \frac{1}{\sqrt{r}}\right), \quad B = 0
-\tag{4.6}
-$$
+---
+
+## 06_setup.md
+
+```markdown
+# 6. Experimental Setup
+
+## 6.1 Models
+
+We evaluate on {{MODEL_LIST}}.
+
+## 6.2 Datasets
+
+We use {{DATASET_NAME}} for {{TASK}}. The benchmark uses the standard train/validation/test split and reports accuracy as the primary metric.
+
+## 6.3 Hyperparameters
+
+Training uses {{RECOVERY_STEPS}} recovery steps at rank {{LORA_RANK}} and scale factor {{LORA_ALPHA}}. The optimizer is {{OPTIMIZER}} with learning rate {{LR}}.
+
+## 6.4 Evaluation Protocol
+
+We report baseline, recovered, and recovered-with-module results for each model family. We also report inference memory and latency under the same hardware conditions and sequence lengths.
+```
+
+---
+
+## 07_results.md
+
+```markdown
+# 7. Results
+
+## 7.1 Main Results
+
+| Model | Baseline Acc. | Recovered Acc. | Delta | Peak VRAM | Latency |
+|---|---:|---:|---:|---:|---:|
+| DistilBERT | {{BASE_D}}% | {{ACC_D}}% | {{DELTA_D}} | {{VRAM_D}} | {{LAT_D}} |
+| RoBERTa-base | {{BASE_R}}% | {{ACC_R}}% | {{DELTA_R}} | {{VRAM_R}} | {{LAT_R}} |
+| GPT-2 | {{BASE_G}}% | {{ACC_G}}% | {{DELTA_G}} | {{VRAM_G}} | {{LAT_G}} |
+
+## 7.2 Ablations
+
+We vary rank, recovery steps, and gate initialization to understand stability and accuracy trade-offs.
+
+## 7.3 Inference Cost Breakdown
+
+We report memory reduction and runtime effects relative to the dense baseline under matched settings.
+```
+
+---
+
+## 08_analysis.md
+
+```markdown
+# 8. Analysis
+
+## 8.1 Why the Method Works
+
+The method works because the module retains the pretrained attention geometry while replacing only the most expensive part of the computation. The gate learns when to emphasize local or global information while maintaining compatibility with the underlying model.
+
+## 8.2 Failure Modes
+
+The main failure modes are {{FAILURE_MODE_1}}, {{FAILURE_MODE_2}}, and {{FAILURE_MODE_3}}. These are most visible in settings with short sequences, strong causal constraints, or mismatched head configurations.
+
+## 8.3 Cost Breakdown
+
+The dominant cost in the original attention path is the quadratic attention matrix. The new path reduces this cost by shifting most work into a structured and lower-memory formulation.
+```
+
+---
+
+## 09_discussion.md
+
+```markdown
+# 9. Discussion
+
+{{MODULE_NAME}} is most useful when the deployment constraint is memory or long-context latency rather than raw task accuracy. It is less appropriate when the model is known to rely strongly on dense all-to-all interaction for short sequence tasks. In those cases, the local or low-rank branch may need a larger rank or more recovery steps.
+
+The approach is intentionally simple: it keeps the base model intact, performs a narrow recovery stage, and validates compatibility across multiple transformer families. This makes it practical for iterative experimentation and real deployment.
+```
+
+---
+
+## 10_limitations.md
+
+```markdown
+# 10. Limitations
+
+This method does not eliminate the need for model-specific tuning. In some architectures, the interaction with RoPE or grouped-query attention may require additional calibration. The approach is also not universally optimal for very short sequences, where the overhead of decomposition or gating may outweigh the savings.
+```
+
+---
+
+## 11_conclusion.md
+
+```markdown
+# 11. Conclusion
+
+We introduced {{MODULE_NAME}}, a {{CATEGORY}} designed to reduce the attention bottleneck while preserving pretrained model behavior. The method remains compatible with multiple transformer architectures, requires only a lightweight recovery stage, and shows practical improvements in memory and inference cost under our benchmark settings.
+```
+
+---
+
+## 12_reproducibility.md
+
+```markdown
+# 12. Reproducibility
+
+All code and evaluation scripts are provided in the repository. To reproduce the results:
+
+1. Install dependencies from `requirements.txt`.
+2. Run the training script for the target backbone.
+3. Run the evaluation script with the same seed and configuration file.
+4. Validate the reported metrics against the benchmark output.
+```
+
+---
+
+## 13_references.md
+
+```markdown
+# 13. References
+
+- Vaswani, A., et al. (2017). Attention Is All You Need.
+- Hu, E. J., et al. (2021). LoRA: Low-Rank Adaptation of Large Language Models.
+- Beltagy, I., et al. (2020). Longformer: The Long-Document Transformer.
+- Choromanski, K., et al. (2021). Rethinking Attention with Performers.
+- Su, J., et al. (2021). RoFormer: Enhanced Transformer with Rotary Position Embedding.
+- Zhang, Y., et al. (2023). H2O: Heavy-Hitter Oracle for Efficient Generative Inference.
+```
+
+---
+
+## A_math.md
+
+```markdown
+# A. Mathematical Derivations
+
+This appendix contains the derivations for the module's attention approximation, the fused gate update, and the complexity reduction arguments.
+```
+
+---
+
+## B_implementation.md
+
+```markdown
+# B. Implementation Details
+
+This appendix describes tensor shapes, masking rules, and compatibility logic for flat, nested, and causal architectures.
+```
+
+---
+
+## C_data.md
+
+```markdown
+# C. Full Experimental Data
+
+This appendix includes the complete per-model metrics, ablation tables, and aggregate benchmark results.
+```
+
+---
+
+## D_negative_results.md
+
+```markdown
+# D. Negative Results
+
+This appendix documents settings where the method failed to improve or where instability was observed, including the conditions and attempted fixes.
+```
+
+---
+
+## E_ethics.md
+
+```markdown
+# E. Ethical Considerations
+
+This work studies efficiency-oriented transformer modification for deployment under hardware constraints. It does not create new personal data or sensitive inference tasks. We note that efficiency gains can reduce energy usage but may also enable broader deployment of large models without addressing underlying misuse concerns.
+```
+
+---
+
+## build.py
+
+```python
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+
+
+def load_variables(path: str = "variables.json"):
+    with (ROOT / path).open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def render_section(section_name: str, values: dict) -> str:
+    template = (ROOT / f"{section_name}.md").read_text(encoding="utf-8")
+    for key, value in values.items():
+        template = template.replace("{{" + key + "}}", str(value))
+    return template
+
+
+def main():
+    variables = load_variables()
+    for section in [
+        "00_meta",
+        "01_intro",
+        "02_related",
+        "03_background",
+        "04_method",
+        "05_architecture",
+        "06_setup",
+        "07_results",
+        "08_analysis",
+        "09_discussion",
+        "10_limitations",
+        "11_conclusion",
+        "12_reproducibility",
+        "13_references",
+        "A_math",
+        "B_implementation",
+        "C_data",
+        "D_negative_results",
+        "E_ethics",
+    ]:
+        render_section(section, variables)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+## variables.json
+
+```json
+{
+  "FULL_NAME": "Adaptive Sparse Recovery Attention",
+  "MODULE_NAME": "ASRA",
+  "SUBTITLE": "A Hybrid Attention Recovery Module for Efficient Transformers",
+  "AUTHOR_1_NAME": "Your Name",
+  "AUTHOR_1_EMAIL": "your.name@example.edu",
+  "AUTHOR_2_NAME": "Coauthor",
+  "AUTHOR_2_EMAIL": "coauthor@example.edu",
+  "UNIVERSITY_1": "Your University",
+  "DEPARTMENT_1": "Department of Computer Science",
+  "UNIVERSITY_2": "Your Institution",
+  "DEPARTMENT_2": "Department of Electrical Engineering",
+  "CORRESPONDING_AUTHOR": "Your Name",
+  "DATE": "2026-09-15",
+  "VERSION": "1.0",
+  "CHANGELOG": "Initial draft",
+  "ORG": "your-org",
+  "HF_ORG": "your-hf-org",
+  "LICENSE": "MIT",
+  "CATEGORY": "efficient attention module",
+  "CORE_BEHAVIOR_IN_ONE_SENTENCE": "reduces the attention bottleneck by combining local and global structure while preserving the pretrained model behavior",
+  "COMPONENT_1": "a local windowed branch",
+  "COMPONENT_2": "a kernelized global branch",
+  "COMPONENT_3": "a gate-based fusion layer",
+  "RECOVERY_STEPS": 600,
+  "LORA_RANK": 8,
+  "LORA_ALPHA": 16,
+  "TASK": "SST-2 sentiment classification",
+  "N_MODELS": 3,
+  "N_ABLATIONS": 6,
+  "ACC_D": 90.4,
+  "BASE_D": 90.7,
+  "DELTA_D": -0.3,
+  "ACC_R": 89.9,
+  "BASE_R": 90.5,
+  "DELTA_R": -0.6,
+  "ACC_G": 89.1,
+  "BASE_G": 89.8,
+  "DELTA_G": -0.7,
+  "PARAM_CHANGE_PCT": 0.8,
+  "PARAM_CHANGE_NOTE": "adapter-only increase after preserving base weights",
+  "VRAM_CHANGE_PCT": 18,
+  "LATENCY_CHANGE": 1.3,
+  "LATENCY_REASON_SHORT": "the fusion gate and global branch add a small amount of extra computation",
+  "WHAT_WORKS": "local-global fusion helps preserve task accuracy under reduced memory",
+  "WHAT_FAILS": "very short sequences and mismatched RoPE assumptions can still destabilize the approximation",
+  "FAILURE_CONDITION": "short sequences and strong causal pressure",
+  "LAY_SUMMARY": "This paper introduces a lightweight attention module that keeps a model's pretrained behavior while cutting memory and compute costs. Instead of retraining the whole model, it adds a small recovery stage and a smart fusion between local and global information. The result is a practical way to make transformers more efficient without discarding the original design.",
+  "TARGET_METRIC": "attention FLOPs and peak memory",
+  "ACC_TOLERANCE": 2.0,
+  "VRAM_TARGET": 8,
+  "GPU_MODEL": "A100 40GB",
+  "HIGH_LEVEL_DESCRIPTION": "reduces the attention bottleneck by replacing the expensive dense interaction with a more structured local-global formulation",
+  "KEY_INSIGHT": "the pretrained attention can be preserved through a weight-copy and recovery procedure, while the computationally heavy branch is replaced with a tractable approximation",
+  "BEHAVIOR_1": "preserves the base model while lowering attention cost through structured fusion",
+  "DIFFERENTIATOR": "it is architecture-portable and recovery-driven rather than retraining-intensive",
+  "ENGINEERING_1": "padding-safe masked attention",
+  "ENGINEERING_2": "causal compatibility for GPT-style decoding",
+  "ENGINEERING_3": "weight-copy and zero-init recovery for flat, nested, and causal models",
+  "MODEL_LIST": "DistilBERT, RoBERTa-base, and GPT-2",
+  "DATASET_NAME": "SST-2",
+  "OPTIMIZER": "AdamW",
+  "LR": "2e-4",
+  "HYPERPARAM_3": "rank and gate initialization"
+}
+```
+
+This template is ready to be copied into a module-specific paper folder and customized for the exact method you are writing about.
 
 so the initial update $\Delta W = 0$.
 
