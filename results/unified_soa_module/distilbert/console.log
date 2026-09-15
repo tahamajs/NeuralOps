@@ -43,3 +43,20 @@ Loading weights: 100%|##########| 104/104 [00:00<00:00, 2533.23it/s]
 2026-09-15 23:42:48,864 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.0156 (bs=8, micro_bs=8)
 2026-09-15 23:42:49,828 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.0985 (bs=8, micro_bs=8)
 2026-09-15 23:42:50,783 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.1285 (bs=8, micro_bs=8)
+2026-09-15 23:42:52,061 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.0103 (bs=8, micro_bs=8)
+2026-09-15 23:42:53,602 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.0053 (bs=8, micro_bs=8)
+2026-09-15 23:42:54,666 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.0573 (bs=8, micro_bs=8)
+2026-09-15 23:42:55,763 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.2991 (bs=8, micro_bs=8)
+2026-09-15 23:42:56,863 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.0031 (bs=8, micro_bs=8)
+2026-09-15 23:42:57,831 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.1605 (bs=8, micro_bs=8)
+2026-09-15 23:43:06,127 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_soa_module\distilbert\distilbert_sst2_soa_module_full_metrics.json
+2026-09-15 23:43:06,177 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_soa_module\distilbert\checkpoints\soa_module\weights.pt (module_params=0, lora_params=52)
+2026-09-15 23:43:06,661 [INFO] QwenQualitySweep: [2/2] soa_module -> PASS 89.22% (F1: 0.898, Peak VRAM: 293.12 MB)
+2026-09-15 23:43:06,661 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_soa_module\distilbert\checkpoints\soa_module. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 23:43:07,047 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 23:43:07,047 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-15 23:43:07,064 [INFO] QwenQualitySweep: 
+                     Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                       full   PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  389.5 MB               4.05              4.65
+soa_module (efficient-attn)   PASS   89.22%       -1.49% 0.8980                  0            1.11x  293.1 MB               8.08              9.27
+2026-09-15 23:43:07,064 [INFO] QwenQualitySweep: ================================================================================
