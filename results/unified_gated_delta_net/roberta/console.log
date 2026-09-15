@@ -58,3 +58,16 @@ Notes:
 2026-09-16 02:29:59,888 [INFO] QwenQualitySweep: LoRA fine-tune step 1/15 loss=2.3197 (bs=4, micro_bs=4)
 2026-09-16 02:32:21,432 [INFO] QwenQualitySweep: LoRA fine-tune step 5/15 loss=0.9272 (bs=4, micro_bs=4)
 2026-09-16 02:35:12,289 [INFO] QwenQualitySweep: LoRA fine-tune step 10/15 loss=0.8431 (bs=4, micro_bs=4)
+2026-09-16 02:38:07,916 [INFO] QwenQualitySweep: LoRA fine-tune step 15/15 loss=0.3732 (bs=4, micro_bs=4)
+2026-09-16 02:54:41,691 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_gated_delta_net\roberta\roberta-base_gated_delta_net_full_metrics.json
+2026-09-16 02:54:41,754 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_gated_delta_net\roberta\checkpoints\gated_delta_net\weights.pt (module_params=0, lora_params=124)
+2026-09-16 02:54:42,850 [INFO] QwenQualitySweep: [2/2] gated_delta_net -> PASS_NO_COMPRESSION 50.92% (F1: 0.6738, Peak VRAM: 681.99 MB)
+2026-09-16 02:54:42,850 [WARNING] QwenQualitySweep: Module 'gated_delta_net' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-16 02:54:42,851 [INFO] QwenQualitySweep: [Quality Guard] Module 'gated_delta_net' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=50.92%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-16 02:54:43,124 [INFO] QwenQualitySweep: ================================================================================
+2026-09-16 02:54:43,125 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-16 02:54:43,132 [INFO] QwenQualitySweep: 
+                          Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                            full                PASS   78.67% 0.00% (base) 0.8133                  0            1.00x  698.9 MB               8.04              9.22
+gated_delta_net (efficient-attn) PASS_NO_COMPRESSION   50.92%      -27.75% 0.6738                  0            1.00x  682.0 MB             961.36           1102.48
+2026-09-16 02:54:43,133 [INFO] QwenQualitySweep: ================================================================================
