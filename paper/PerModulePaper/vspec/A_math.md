@@ -1,0 +1,132 @@
+# Appendix A. Mathematical Derivations
+
+## A.1 SVD Factorization
+
+$$
+W = U \Sigma V^\top, \quad W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+\tag{A.1}
+$$
+
+**Symmetric split:**
+
+$$
+W_r = (U_{:, :r} \Sigma_{:r, :r}^{1/2}) (\Sigma_{:r, :r}^{1/2} V_{:r, :}^\top)
+\tag{A.2}
+$$
+
+**Our storage:** we store $U_r, S_r, V_r$ separately for gate application.
+
+## A.2 Variational Spectral Gate
+
+Posterior:
+
+$$
+q(g | x) = \mathcal{N}(\mu(x), \text{diag}(\sigma^2(x)))
+\tag{A.3}
+$$
+
+**Reparameterization:**
+
+$$
+g = \sigma(\mu + \sigma \odot \epsilon), \quad \epsilon \sim \mathcal{N}(0, I)
+\tag{A.4}
+$$
+
+**Gradient:**
+
+$$
+\frac{\partial g}{\partial \mu} = g(1 - g), \quad
+\frac{\partial g}{\partial \sigma} = g(1 - g) \epsilon
+\tag{A.5}
+$$
+
+Both gradients flow through the sigmoid, allowing standard SGD.
+
+## A.3 KL Divergence (Optional)
+
+If we add a prior $\mathcal{N}(0, I)$, the KL term:
+
+$$
+\text{KL}(q \| p) = \frac{1}{2} \sum_i \left(\mu_i^2 + \sigma_i^2 - 1 - \log \sigma_i^2\right)
+\tag{A.6}
+$$
+
+We use a simplified penalty:
+
+$$
+\mathcal{L}_\text{reg} = \beta \sum_i (\mu_i^2 + \sigma_i^2 - 1)
+\tag{A.7}
+$$
+
+## A.4 Attention with Head Gate
+
+$$
+\text{scores}_{i, j, h} = \frac{Q_{i, h} \cdot K_{j, h}}{\sqrt{d_h}} \cdot h_h
+\tag{A.8}
+$$
+
+where $h_h \in [0, 1]$ is the gate for head $h$.
+
+**Effect.** When $h_h \to 0$, the head's scores collapse to 0 before softmax. 
+Softmax with all-equal scores gives uniform attention — the head 
+effectively averages. This is **not** equivalent to removing the head 
+because the V contribution remains.
+
+## A.5 Token Router
+
+**Saliency.**
+
+$$
+s_i = \sigma(f_\theta(x_i))
+\tag{A.9}
+$$
+
+**Force CLS.** $s_0 \leftarrow 10^4$.
+
+**Force padding.** $s_i \leftarrow -10^4$ for $i \in \text{pad}$.
+
+**Top-$k$.**
+
+$$
+k = \max(8, \lceil \rho L \rceil), \quad
+\mathcal{S} = \text{Sort}(\text{TopK}(s, k))
+\tag{A.10}
+$$
+
+## A.6 Complexity
+
+| Component | Time | Params |
+|---|---|---|
+| Q/K/V projection | $O(k d r)$ | $3 \cdot 2 d r$ |
+| Spectral gates | $O(d r)$ | $3 \cdot (64d + 64 \cdot 2r)$ |
+| Head gate | $O(d H)$ | $32d + 32H$ |
+| Router | $O(L d)$ | $32d + 32$ |
+| Attention | $O(k^2 d)$ | 0 |
+| Out projection | $O(k d r)$ | $2 d r$ |
+| LoRA | $O(k d r_L)$ | $4 r_L d$ |
+
+## A.7 Gate Initialization
+
+We set:
+
+$$
+W_\text{last} = 0, \quad b_\text{last} = [\mathbf{3}, \mathbf{-3}]
+\tag{A.11}
+$$
+
+Then:
+
+$$
+\mu = 3, \quad \log \sigma = -3 \implies \sigma \approx 0.05
+\tag{A.12}
+$$
+
+$$
+g = \sigma(\mu + \sigma \epsilon) \approx \sigma(3) \approx 0.95
+\tag{A.13}
+$$
+
+The gate is **near-identity** at initialization, preserving the SVD 
+representation.
+
+---

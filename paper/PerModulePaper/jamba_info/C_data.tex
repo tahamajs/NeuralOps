@@ -1,3 +1,129 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for jamba_info.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Params change & +{{D\_PARAM\_PCT}}\% \\
+Trainable & {{D\_TRAINABLE}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+$\alpha$ final & {{D\_ALPHA}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+$\alpha$ final & {{R\_ALPHA}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+$\alpha$ final & {{G\_ALPHA}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Bottleneck Dim Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$b$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+64 & {{D\_B64}} & {{R\_B64}} & {{G\_B64}} \\
+128 & {{D\_B128}} & {{R\_B128}} & {{G\_B128}} \\
+256 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+512 & {{D\_B512}} & {{R\_B512}} & {{G\_B512}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 No-Bottleneck Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+With BN & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+No BN & {{D\_NOBN}} & {{R\_NOBN}} & {{G\_NOBN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 $\alpha$ Init Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$w_0$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+-4 & {{D\_WM4}} & {{R\_WM4}} & {{G\_WM4}} \\
+-2 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+0 & {{D\_W0}} & {{R\_W0}} & {{G\_W0}} \\
++2 & {{D\_WP2}} & {{R\_WP2}} & {{G\_WP2}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+20    {{D_S20}}
+30    {{D_S30}}
+40    {{D_S40}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_jamba_info.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+

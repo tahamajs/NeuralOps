@@ -1,3 +1,156 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for vspec.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total params before & 66,955,010 \\
+Total params after & {{D\_PARAMS}} \\
+Attention params before & 2,359,296 \\
+Attention params after & {{D\_ATTN}} \\
+Attention ratio & {{D\_RATIO}}$\times$ \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Mean spectral gate $g$ & {{D\_G\_MEAN}} \\
+Mean head gate $h$ & {{D\_H\_MEAN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & {{R\_PARAMS}} \\
+Attention params & {{R\_ATTN}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Mean $g$ & {{R\_G\_MEAN}} \\
+Mean $h$ & {{R\_H\_MEAN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & {{G\_PARAMS}} \\
+Attention params & {{G\_ATTN}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Mean $g$ & {{G\_G\_MEAN}} \\
+Mean $h$ & {{G\_H\_MEAN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
+\midrule
+32 & {{D\_R32}} & {{D\_R32\_RATIO}}$\times$ & {{R\_R32}} & {{R\_R32\_RATIO}}$\times$ \\
+64 & {{D\_R64}} & {{D\_R64\_RATIO}}$\times$ & {{R\_R64}} & {{R\_R64\_RATIO}}$\times$ \\
+128 & {{D\_ACC}} & {{D\_RATIO}}$\times$ & {{R\_ACC}} & {{R\_RATIO}}$\times$ \\
+192 & {{D\_R192}} & {{D\_R192\_RATIO}}$\times$ & {{R\_R192}} & {{R\_R192\_RATIO}}$\times$ \\
+256 & {{D\_R256}} & {{D\_R256\_RATIO}}$\times$ & {{R\_R256}} & {{R\_R256\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Gate Ablations}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Full VSpec++ & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+No router & {{D\_NOROUTE}} & {{R\_NOROUTE}} & {{G\_NOROUTE}} \\
+No spectral gate & {{D\_NOGATE}} & {{R\_NOGATE}} & {{G\_NOGATE}} \\
+No head gate & {{D\_NOHEAD}} & {{R\_NOHEAD}} & {{G\_NOHEAD}} \\
+Deterministic & {{D\_DET}} & {{R\_DET}} & {{G\_DET}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Recovery Steps}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Per-Layer Gates (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{$g_q$} & \textbf{$g_k$} & \textbf{$g_v$} & \textbf{$h$} \\
+\midrule
+0 & {{D\_L0\_GQ}} & {{D\_L0\_GK}} & {{D\_L0\_GV}} & {{D\_L0\_H}} \\
+1 & {{D\_L1\_GQ}} & {{D\_L1\_GK}} & {{D\_L1\_GV}} & {{D\_L1\_H}} \\
+2 & {{D\_L2\_GQ}} & {{D\_L2\_GK}} & {{D\_L2\_GV}} & {{D\_L2\_H}} \\
+3 & {{D\_L3\_GQ}} & {{D\_L3\_GK}} & {{D\_L3\_GV}} & {{D\_L3\_H}} \\
+4 & {{D\_L4\_GQ}} & {{D\_L4\_GK}} & {{D\_L4\_GV}} & {{D\_L4\_H}} \\
+5 & {{D\_L5\_GQ}} & {{D\_L5\_GK}} & {{D\_L5\_GV}} & {{D\_L5\_H}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+20    {{D_S20}}
+30    {{D_S30}}
+40    {{D_S40}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.9 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_vspec.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+

@@ -1,0 +1,109 @@
+# Appendix B. Implementation Details
+
+## B.1 InfoMambaConceptBottleneck
+
+```python
+class InfoMambaConceptBottleneck(nn.Module):
+    def __init__(self, dim, bottleneck_dim=64):
+        super().__init__()
+        self.W_down = nn.Linear(dim, bottleneck_dim, bias=False)
+        self.W_up = nn.Linear(bottleneck_dim, dim, bias=False)
+    
+    def forward(self, x):
+        return self.W_up(F.gelu(self.W_down(x)))
+```
+
+## B.2 Forward Pass
+
+```python
+def forward(self, x, attention_mask=None, position_embeddings=None):
+    B, L, D = x.shape
+    
+    # Differential attention branch
+    q1 = self.W_q1(x).view(B, L, H, Dh).transpose(1, 2)
+    k1 = self.W_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    q2 = self.W_q2(x).view(B, L, H, Dh).transpose(1, 2)
+    k2 = self.W_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    v = self.W_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    
+    if position_embeddings is not None:
+        cos, sin = position_embeddings
+        q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
+        q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
+    
+    if self.kv_repeat > 1:
+        k1 = repeat_kv(k1, self.kv_repeat)
+        k2 = repeat_kv(k2, self.kv_repeat)
+        v = repeat_kv(v, self.kv_repeat)
+    
+    scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * scale
+    scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * scale
+    
+    # masks
+    if self.is_decoder:
+        causal = torch.tril(...)
+        scores1 = scores1.masked_fill(~causal, -1e4)
+        scores2 = scores2.masked_fill(~causal, -1e4)
+    if attention_mask is not None:
+        ...
+    
+    attn1 = F.softmax(scores1, dim=-1)
+    attn2 = F.softmax(scores2, dim=-1)
+    diff_attn = F.relu(attn1 - 0.2 * attn2)
+    diff_attn = diff_attn / (diff_attn.sum(dim=-1, keepdim=True) + 1e-8)
+    
+    attn_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    
+    # Concept-bottlenecked SSM
+    z = self.bottleneck(x)  # (B, L, D)
+    if self.is_decoder:
+        ssm_branch = self.ssm(z, attention_mask=attention_mask)[0]
+    else:
+        z_rev = torch.flip(z, dims=[1])
+        M_fwd = self.ssm(z, attention_mask=attention_mask)[0]
+        M_bwd = self.ssm(z_rev, attention_mask=attention_mask)[0]
+        ssm_branch = 0.5 * (M_fwd + torch.flip(M_bwd, dims=[1]))
+    
+    # Fusion
+    alpha = torch.sigmoid(self.alpha_raw)
+    combined = (1 - alpha) * attn_out + alpha * ssm_branch
+    
+    if self.is_nested_encoder:
+        return combined, None
+    return self.out_proj(combined), None
+```
+
+## B.3 Bottleneck Dimension
+
+Default `b = 256` when `d = 768`. General rule:
+
+$$
+b = \min(d, \max(64, d // 3))
+\tag{B.1}
+$$
+
+## B.4 Common Pitfalls
+
+### B.4.1 Forgetting GELU
+
+Without nonlinearity, the bottleneck is just a low-rank linear map.
+
+### B.4.2 α Init Sign
+
+We use `w₀ = -2` so α₀ ≈ 0.12. **Not** +2 (which would make α ≈ 0.88).
+
+### B.4.3 Fusion Order
+
+Our fusion is `(1-α) A + α M`, not `α A + (1-α) M`. The gate parameter 
+and the fusion order are tied.
+
+## B.5 Diagnostic Checks
+
+```python
+# After init
+assert self.bottleneck.W_down.weight.shape == (b, d)
+assert self.bottleneck.W_up.weight.shape == (d, b)
+assert abs(self.alpha.item() - 0.12) < 0.01
+```
+
+---

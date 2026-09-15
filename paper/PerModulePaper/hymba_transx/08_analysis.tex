@@ -1,3 +1,127 @@
-\section{08 Analysis}
+\section{Analysis}
 
-Draft content for hymba_transx.
+\subsection{Why Does Differential Attention Work?}
+
+\textbf{Figure 8.1} compares the attention entropy of:
+\begin{itemize}
+\item Standard softmax attention
+\item Differential attention ($A_1 - 0.2 A_2$ after ReLU)
+
+\end{itemize}
+Differential attention has \textbf{{{ENTROPY\_REDUCTION}}\%} lower entropy -- a 
+more concentrated, less noisy attention pattern.
+
+\subsubsection{Noise Cancellation}
+
+We define "noise" as attention mass on tokens that do not contribute to the 
+label. Empirically, differential attention reduces this by 
+\textbf{{{NOISE\_REDUCTION}}\%}.
+
+\subsubsection{Signal Preservation}
+
+We define "signal" as attention on tokens that do contribute. Differential 
+attention preserves \textbf{{{SIGNAL\_PRESERVATION}}\%} of the original signal.
+
+\subsection{Why Does SSM Fusion Work?}
+
+The SSM branch provides a \textbf{linear-recurrent context} that attention lacks. 
+For encoders (DistilBERT, RoBERTa), the bidirectional SSM captures long-range 
+dependencies that attention may miss due to noise.
+
+\textbf{Figure 8.2} shows the learned $\alpha$ per model:
+\begin{itemize}
+\item DistilBERT: $\alpha$ = {{D\_ALPHA}} ({{D\_ALPHA\_INTERP}})
+\item RoBERTa: $\alpha$ = {{R\_ALPHA}} ({{R\_ALPHA\_INTERP}})
+\item GPT-2: $\alpha$ = {{G\_ALPHA}} ({{G\_ALPHA\_INTERP}})
+
+\end{itemize}
+\subsection{Learned $\alpha$ Analysis}
+
+\textbf{Initialization.} We init $\alpha$ = $\sigma$(-1) $\approx$ 0.27. This favors SSM initially 
+(73\% SSM), then lets training adjust.
+
+\textbf{Final values.} See Table 7.6. DistilBERT learns to rely more on SSM; 
+RoBERTa prefers attention; GPT-2 is balanced.
+
+\subsection{Per-Layer Analysis}
+
+\textbf{Table 8.1: $\alpha$ per layer (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Layer} & \textbf{$\alpha$} \\
+\midrule
+0 & {{D\_L0\_ALPHA}} \\
+1 & {{D\_L1\_ALPHA}} \\
+2 & {{D\_L2\_ALPHA}} \\
+3 & {{D\_L3\_ALPHA}} \\
+4 & {{D\_L4\_ALPHA}} \\
+5 & {{D\_L5\_ALPHA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Early layers favor {{EARLY\_PREF}}; late layers favor {{LATE\_PREF}}.
+
+\subsection{Attention Sparsity}
+
+\textbf{Table 8.2: Attention map statistics.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Standard} & \textbf{Differential} \\
+\midrule
+Mean entropy & {{STD\_ENTROPY}} & {{DIFF\_ENTROPY}} \\
+Fraction > 0.01 & {{STD\_FRAC}} & {{DIFF\_FRAC}} \\
+Top-5 mass & {{STD\_TOP5}} & {{DIFF\_TOP5}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Baselines}
+
+\textbf{Table 8.3: HymbaTransX vs alternatives.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 4 d \\
+Hymba (est.) & {{HYMBA\_D}} & {{HYMBA\_R}} & {{HYMBA\_G}} & 7 d \\
+Diff Transformer & {{DIFF\_D}} & {{DIFF\_R}} & {{DIFF\_G}} & 6 d \\
+\textbf{HymbaTransX} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{8 d } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Analysis}
+
+\subsubsection{RoBERTa Stability}
+
+RoBERTa's loss is less stable. Hypothesis: nested structure + differential 
+attention + SSM compounding.
+
+\subsubsection{$\alpha$ Saturation}
+
+If $\alpha$ saturates to 0 or 1, the model degenerates to a single branch. We 
+observe this on {{SATURATING\_MODEL}}.
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Differential attention reduces noise} by {{NOISE\_REDUCTION}}\%.
+\item \textbf{SSM fusion helps encoders} more than decoders.
+\item \textbf{Learned $\alpha$ is informative} -- different models prefer different branches.
+\item \textbf{Parameter cost is real} (~{{PARAM\_INCREASE}}\%).
+\item \textbf{Training is slower} than baseline.
+
+\end{enumerate}

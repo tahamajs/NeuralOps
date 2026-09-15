@@ -1,3 +1,149 @@
-\section{01 Intro}
+\section{Introduction}
 
-Draft content for vspec.
+\subsection{Motivation}
+
+Attention in transformers is parameter-expensive: the four projections 
+$W_Q, W_K, W_V, W_O$ contribute $4d^2$ parameters per layer. For a 
+768-dimensional model, that is 2.36M per layer, or ~28M across 12 layers.
+
+Three orthogonal avenues for improvement have emerged:
+
+\begin{enumerate}
+\item \textbf{Low-rank factorization} -- replace $W$ with $UV$ (A3, SOA Fused,
+  Adaptive SVD).
+\item \textbf{Token sparsity} -- attend to only the important tokens (H2O,
+  StreamingLLM, TCA).
+\item \textbf{Head-level modulation} -- weight or prune heads (Squeezing Heads,
+  Selective Attention).
+
+\end{enumerate}
+Each has been studied independently. We ask: **can they be combined, and 
+can the gating be trained via variational inference?**
+
+\subsection{Problem Statement}
+
+Given a pretrained attention block with projections $\{W_Q, W_K, W_V, W_O\}$ 
+and input sequence $X \in \mathbb{R}^{B \times L \times d}$, we seek a 
+replacement block $\mathcal{B}(X)$ that:
+
+\begin{enumerate}
+\item \textbf{Compresses} each projection via truncated SVD.
+\item \textbf{Routes} tokens to a subset of size $k < L$.
+\item \textbf{Gates} singular values with a stochastic, input-dependent weight.
+\item \textbf{Gates} heads with a per-example importance.
+\item \textbf{Transfers} pretrained weights zero-shot.
+\item \textbf{Trains} only adapters, gates, and router.
+
+\end{enumerate}
+\subsection{Our Approach: VSpec++}
+
+VSpec++ has four components:
+
+\subsubsection{Token Router}
+
+Given $X$ and a validity mask, a learned saliency network computes:
+
+\[
+s_i = \sigma(f_\theta(x_i)) \in [0, 1]
+\tag{1.1}
+\]
+
+We force $s_0 = 10^4$ (retaining \texttt{[CLS]}), mask padding to $-\infty$, and 
+select the top-$k$ indices. Then gather:
+
+\[
+X_\text{routed} = \text{gather}(X, \mathcal{S}), \quad k = \lceil \rho L \rceil
+\tag{1.2}
+\]
+
+\subsubsection{Variational Spectral Gate}
+
+For each projection, we compute a **posterior over singular value 
+importances**:
+
+\[
+q(g | x) = \mathcal{N}\!\left(\mu(x), \text{diag}(\sigma^2(x))\right)
+\tag{1.3}
+\]
+
+where $\mu(x) = f_\mu(\text{pool}(x))$ and $\log \sigma(x) = f_\sigma(\text{pool}(x))$. 
+We sample:
+
+\[
+g = \sigma(\mu + \sigma \odot \epsilon), \quad \epsilon \sim \mathcal{N}(0, I)
+\tag{1.4}
+\]
+
+At inference, $g = \sigma(\mu)$.
+
+\subsubsection{Head Gate}
+
+A small network computes per-head importances:
+
+\[
+h = \sigma(f_h(\text{pool}(x))) \in [0, 1]^H
+\tag{1.5}
+\]
+
+These multiply the attention logits.
+
+\subsubsection{Factorized Projections}
+
+Each projection is:
+
+\[
+W_\text{eff} = U \cdot \text{diag}(S \odot g) \cdot V^\top + B A
+\tag{1.6}
+\]
+
+where $U, S, V$ are SVD factors (frozen), $g$ is the spectral gate, and 
+$B A$ is a LoRA adapter.
+
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A variational spectral gate.} We introduce a per-singular-value
+  posterior trained via reparameterization.
+\item \textbf{Three-level token-adaptive gating.} Token routing, spectral gating,
+  and head gating are jointly trained.
+\item \textbf{Zero-shot SVD initialization.} Factor initialization requires no
+  calibration.
+\item \textbf{A production-hardened implementation.} Handles DistilBERT, RoBERTa,
+  GPT-2, and Qwen3.5, with masks, GQA, RoPE, and nested encoders.
+\item \textbf{Full reproducibility.} Code, weights, and scripts released.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on SVD, 
+variational inference, and LoRA. Section 4 presents VSpec++. Section 5 
+describes integration. Section 6 details the setup. Section 7 reports 
+results. Section 8 analyzes the gates. Section 9 discusses guidance. 
+Section 10 lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$k$ & Routed sequence length \\
+$\rho$ & Keep ratio \\
+$d$ & Hidden size \\
+$H$ & Heads \\
+$r$ & SVD rank \\
+$r_L$ & LoRA rank \\
+$\mu, \sigma$ & Variational parameters \\
+$g$ & Spectral gate \\
+$h$ & Head gate \\
+$s$ & Token saliency \\
+\bottomrule
+\end{tabular}
+\end{table}
+

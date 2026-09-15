@@ -1,0 +1,130 @@
+# 13. References
+
+```bibtex
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@inproceedings{ye2024differential,
+  title={Differential Transformer},
+  author={Ye, Tianzhu and others},
+  booktitle={ICLR},
+  year={2025}
+}
+
+@article{dong2024hymba,
+  title={Hymba: A hybrid-head architecture for small language models},
+  author={Dong, Xin and others},
+  year={2024}
+}
+
+@article{gu2021efficiently,
+  title={Efficiently modeling long sequences with structured state spaces},
+  author={Gu, Albert and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{gu2023mamba,
+  title={Mamba: Linear-time sequence modeling with selective state spaces},
+  author={Gu, Albert and Dao, Tri},
+  year={2023}
+}
+
+@article{smith2023simplified,
+  title={Simplified state space layers for sequence modeling},
+  author={Smith, Jimmy T H and others},
+  booktitle={ICLR},
+  year={2023}
+}
+
+@inproceedings{katharopoulos2020transformers,
+  title={Transformers are RNNs},
+  author={Katharopoulos, Angelos and others},
+  booktitle={ICML},
+  year={2020}
+}
+
+@inproceedings{choromanski2021rethinking,
+  title={Rethinking attention with performers},
+  author={Choromanski, Krzysztof and others},
+  booktitle={ICLR},
+  year={2021}
+}
+
+@article{lieber2024jamba,
+  title={Jamba: A hybrid transformer-Mamba language model},
+  author={Lieber, Opher and others},
+  year={2024}
+}
+
+@article{glorioso2024zamba,
+  title={Zamba: A compact 7B SSM-transformer hybrid},
+  author={Glorioso, Paolo and others},
+  year={2024}
+}
+
+@article{qin2024hgrn2,
+  title={{HGRN2}: Gated linear recurrent networks with forgetting},
+  author={Qin, Zhen and others},
+  year={2024}
+}
+
+@article{su2021roformer,
+  title={RoFormer},
+  author={Su, Jianlin and others},
+  year={2021}
+}
+
+@inproceedings{ainslie2023gqa,
+  title={{GQA}},
+  author={Ainslie, Joshua and others},
+  booktitle={EMNLP},
+  year={2023}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}},
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{sanh2019distilbert,
+  title={{DistilBERT}},
+  author={Sanh, Victor and others},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title={{RoBERTa}},
+  author={Liu, Yinhan and others},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+```
+
+---

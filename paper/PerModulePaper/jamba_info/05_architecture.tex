@@ -1,11 +1,121 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Draft content for jamba_info.
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention path} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+Handles four patterns (UniversalAdapter first, then fallbacks).
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight
+if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+o_w = src.c_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+s = src.self
+q_w = s.query.weight
+k_w = s.key.weight
+v_w = s.value.weight
+o_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Flat Modules}
+
+\begin{lstlisting}
+q_w = src.q_lin.weight  # or q_proj or query
+k_w = src.k_lin.weight
+v_w = src.v_lin.weight
+o_w = src.out_lin.weight
+\end{lstlisting}
+
+\subsection{Soft Fallback}
+
+On missing weights, we log a warning and keep Kaiming defaults.
+
+\subsection{Second Q-K Pair}
+
+$W_{Q_2}, W_{K_2}$ are Kaiming-initialized and never copied -- the parent 
+model has no analogue.
+
+\subsection{The Bottleneck}
+
+$W_\text{down}, W_\text{up}$ are randomly initialized (default PyTorch 
+init) and trained. They do not need pretrained weights because they 
+represent an \textbf{arbitrary} concept space.
+
+\textbf{Optional:} Future work could initialize from PCA of activations (see 
+Appendix D).
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject JambaInfo into a layer
+\begin{lstlisting}
+Input:  layer, config
+Output: layer with attention replaced
+
+1: src $\leftarrow$ extract_attention(layer)
+2: if src is None: return None
+3: try:
+4:     new $\leftarrow$ JambaInfoBlock(config, old_attn=src)
+5:     replace(layer, new)
+6:     return new
+7: except Exception:
+8:     log_error
+9:     return None
+\end{lstlisting}
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa, \texttt{is\_nested\_encoder = True}. The forward pass returns raw 
+context, and the outer \texttt{output.dense} applies the projection.
+
+\subsection{Causality}
+
+Both attention maps and the SSM are causally masked for decoders.
+
+\subsection{Cross-Attention}
+
+Not supported. JambaInfo is encoder-only or decoder-only.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("jamba_info")
+class JambaInfoBlock(BaseAttention):
+    ...
+
+@ATTENTION_REGISTRY.register("jamba_info_inject")
+def inject_jamba_info(...):
+    ...
+\end{lstlisting}
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_jamba_info.jpeg}
-\caption{Architectural overview of jamba_info.}
-\label{fig:arch_jamba_info}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of jamba\_info.}
+\label{fig:arch_jamba-info}
 \end{figure}
+

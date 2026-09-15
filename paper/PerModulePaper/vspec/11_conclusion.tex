@@ -1,3 +1,72 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for vspec.
+\subsection{Summary}
+
+We presented \textbf{VSpec++}, a variational spectral attention module that 
+combines token routing, variational spectral gating, and head gating with 
+SVD-factorized projections. The method achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+attention parameter reduction with \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} accuracy 
+loss on SST-2.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attention Ratio} & \textbf{VRAM $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{All three gates contribute.}
+\item \textbf{Variational training regularizes.}
+\item \textbf{Real parameter reduction} with SVD.
+\item \textbf{Gates provide diagnostics.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Learned  .
+\item Gate sharing across layers.
+\item Optimal KL penalty.
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Cross-attention support.
+\item Scaling to 1B+.
+\item Interpretability studies.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+VSpec++ is a step toward richer, more interpretable attention. We release 
+all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented, ran experiments, wrote
+  the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

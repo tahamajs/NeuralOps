@@ -1,3 +1,257 @@
-\section{04 Method}
+\section{Method}
 
-Draft content for jamba_info.
+\subsection{Overview}
+
+JambaInfo is a two-branch hybrid block:
+
+\begin{itemize}
+\item \textbf{Branch 1: Differential attention} (noise-reduced).
+\item \textbf{Branch 2: Concept-bottlenecked SSM} (IB-motivated compression).
+
+\end{itemize}
+The branches are fused by a learned scalar gate.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$\times$L$\times$d}
+              |
+       +------+------+
+                      
+   +-------+    +---------------+
+   | Diff  |    |  Bottleneck   |
+   | Attn  |    |  W_down $\to$     |
+   |       |    |  GELU $\to$       |
+   |       |    |  W_up         |
+   +---+---+    +-------+-------+
+       |                 
+       |            +-------+
+       |            |  SSM  |
+       |            +---+---+
+       | $\alpha$=$\sigma$(w)         |
+       |  +-------------+
+           
+   (1-$\alpha$) A + $\alpha$ M
+       |
+        
+     out_proj
+       |
+        
+    Output Y
+\end{lstlisting}
+
+\subsection{Differential Attention Branch}
+
+Same as HymbaTransX:
+
+\[
+Q_1 = X W_{Q_1}, \quad K_1 = X W_{K_1}, \quad
+Q_2 = X W_{Q_2}, \quad K_2 = X W_{K_2}
+\tag{4.1}
+\]
+
+\[
+A_1 = \text{softmax}(Q_1 K_1^\top / \sqrt{d_h}), \quad
+A_2 = \text{softmax}(Q_2 K_2^\top / \sqrt{d_h})
+\tag{4.2}
+\]
+
+\[
+A_\text{diff} = \text{ReLU}(A_1 - 0.2 A_2), \quad
+\tilde{A}_\text{diff} = \frac{A_\text{diff}}{\sum A_\text{diff} + \epsilon}
+\tag{4.3}
+\]
+
+\[
+A_\text{out} = \tilde{A}_\text{diff} V, \quad V = X W_V
+\tag{4.4}
+\]
+
+\subsection{Concept-Bottlenecked SSM Branch}
+
+\textbf{Step 1 -- Bottleneck projection:}
+
+\[
+z = W_\text{up} \cdot \text{GELU}(W_\text{down} X)
+\tag{4.5}
+\]
+
+with $W_\text{down} \in \mathbb{R}^{b \times d}$, $W_\text{up} \in \mathbb{R}^{d \times b}$.
+
+\textbf{Step 2 -- SSM on concept representation:}
+
+For decoders:
+\[
+M_\text{concept} = \text{SSM}(z)
+\tag{4.6}
+\]
+
+For encoders (bidirectional):
+\[
+M_\text{fwd} = \text{SSM}(z), \quad M_\text{bwd} = \text{flip}(\text{SSM}(\text{flip}(z)))
+\tag{4.7}
+\]
+
+\[
+M_\text{concept} = 0.5(M_\text{fwd} + M_\text{bwd})
+\tag{4.8}
+\]
+
+\subsection{Why a Concept Bottleneck?}
+
+\subsubsection{Information-Theoretic Motivation}
+
+The SSM state $h_t \in \mathbb{R}^d$ has bounded capacity. Feeding it a 
+$d$-dimensional input with high redundancy wastes capacity on noise. The 
+bottleneck reduces the input to $b = 256$ dimensions of "concepts", 
+concentrating information.
+
+\subsubsection{Parameter Reduction}
+
+Without bottleneck: SSM has $d$-dimensional input and output.
+With bottleneck: SSM still $d \times d$, but the input to SSM has fewer 
+unique directions.
+
+\subsubsection{Empirical Observation}
+
+\textbf{Figure 4.2} (deferred to Section 8) shows that the SSM's recurrent 
+state has effective rank closer to $b$ than $d$ -- confirming the 
+bottleneck dimension is appropriate.
+
+\subsection{Fusion}
+
+\[
+\alpha = \sigma(w), \quad w_0 = -2
+\tag{4.9}
+\]
+
+\[
+\text{combined} = (1 - \alpha) \odot A_\text{out} + \alpha \odot M_\text{concept}
+\tag{4.10}
+\]
+
+\textbf{Note the swap.} HymbaTransX uses $\alpha A + (1-\alpha) M$; we use 
+$(1-\alpha) A + \alpha M$. Combined with $\alpha_0 = 0.12$, this favors 
+attention initially, letting the model learn how much SSM it needs.
+
+\subsection{Dual Operational Modes}
+
+JambaInfo supports two modes:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Mode} & \textbf{Description} & \textbf{$\alpha$ init} & \textbf{Use case} \\
+\midrule
+\texttt{retrieval} & Default. Bias toward attention. & -2 & Classification, QA \\
+\texttt{compression} & Bias toward SSM. & +2 & Long-context, generation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \texttt{mode} parameter is passed at construction; the difference is the 
+initial value of $w$ and a slight rescaling of the SSM output.
+
+\subsection{Sparsity Parameter}
+
+The \texttt{sparsity} parameter (default 0.5) controls an optional sparsity 
+penalty on the differential attention. When active, it encourages the 
+$A_\text{diff}$ map to be sparse (few nonzero entries).
+
+In the current implementation, \texttt{sparsity} is a placeholder -- future work 
+will add the penalty.
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} JambaInfo forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+        position_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q1, K1 $\leftarrow$ W_q1(X), W_k1(X)
+ 2: Q2, K2 $\leftarrow$ W_q2(X), W_k2(X)
+ 3: V $\leftarrow$ W_v(X)
+ 4: if pos_emb: apply RoPE
+ 5: if GQA: repeat_kv
+ 6: A1 $\leftarrow$ softmax(Q1 K1^T / $\sqrt{}$d_h)
+ 7: A2 $\leftarrow$ softmax(Q2 K2^T / $\sqrt{}$d_h)
+ 8: A_diff $\leftarrow$ ReLU(A1 - 0.2 A2)
+ 9: A_out $\leftarrow$ normalize(A_diff) @ V
+10: z $\leftarrow$ W_up(GELU(W_down(X)))         Concept
+11: if decoder: M $\leftarrow$ SSM(z)
+12: else: M $\leftarrow$ 0.5(SSM(z) + flip(SSM(flip(z))))
+13: $\alpha$ $\leftarrow$ sigmoid(w)
+14: out $\leftarrow$ (1-$\alpha$) A_out + $\alpha$ M
+15: Y $\leftarrow$ out_proj(out)
+16: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+Per block:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Params} \\
+\midrule
+Q/K/V & $O(L d^2)$ & $3 d^2$ \\
+W\_q2, W\_k2 & $O(L d^2)$ & $2 d^2$ \\
+Diff attention & $O(L^2 d)$ & 0 \\
+Bottleneck & $O(L d b)$ & $2 b d$ \\
+SSM & $O(L d)$ & $2 d^2$ \\
+out\_proj & $O(L d^2)$ & $d^2$ \\
+\textbf{Total} & $O(L^2 d)$ & $8 d^2 + 2bd$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Compared to baseline ($4 d^2$), we have ~2$\times$ more parameters.
+
+\subsection{Parameter Analysis}
+
+For $d = 768$, $b = 256$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{JambaInfo} \\
+\midrule
+Q, K, V, O & 4$\times$589,824 = 2.36M & -- \\
+W\_q1, W\_k1 & -- & 1.18M \\
+W\_q2, W\_k2 & -- & 1.18M \\
+W\_v & -- & 0.59M \\
+Bottleneck & -- & 0.39M \\
+SSM & -- & 0.59M \\
+W\_o & -- & 0.59M \\
+\textbf{Total} & \textbf{2.36M} & \textbf{4.52M} \\
+\textbf{Increase} & -- & \textbf{+92\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training}
+
+Trainable:
+\begin{itemize}
+\item LoRA adapters on all attention projections.
+\item $W_{Q_2}, W_{K_2}$ (Kaiming init).
+\item Bottleneck $W_\text{down}, W_\text{up}$.
+\item SSM parameters.
+\item $\alpha$ (scalar).
+
+\end{itemize}
+Frozen:
+\begin{itemize}
+\item Base Q/K/V/O weights.
+
+\end{itemize}
+\textbf{Trainable count:} ~{{TRAINABLE}} per layer.
+

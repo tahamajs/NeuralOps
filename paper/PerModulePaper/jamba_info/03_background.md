@@ -1,0 +1,92 @@
+# 3. Background
+
+## 3.1 Information Bottleneck Principle
+
+The Information Bottleneck (Tishby et al., 1999) seeks a stochastic 
+mapping $p(z | x)$ that minimizes:
+
+$$
+\mathcal{L}_\text{IB} = I(X; Z) - \beta I(Z; Y)
+\tag{3.1}
+$$
+
+where $I(\cdot; \cdot)$ is mutual information, $X$ is the input, $Y$ is 
+the target, and $Z$ is the representation. The parameter $\beta > 0$ 
+controls the tradeoff.
+
+**Practical interpretation.** Representations should be **informative** 
+about the target while **compressed** with respect to the input.
+
+**In our work.** The bottleneck $z = W_\text{up} \cdot \text{GELU}(W_\text{down} x)$ 
+enforces an explicit compression: $|z| = b \ll d = |x|$.
+
+## 3.2 Differential Attention
+
+Ye et al. (2024) propose using two Q-K pairs:
+
+$$
+A_1 = \text{softmax}\!\left(\frac{Q_1 K_1^\top}{\sqrt{d_h}}\right), \quad
+A_2 = \text{softmax}\!\left(\frac{Q_2 K_2^\top}{\sqrt{d_h}}\right)
+\tag{3.2}
+$$
+
+$$
+A_\text{diff} = \text{ReLU}(A_1 - \lambda A_2)
+\tag{3.3}
+$$
+
+with $\lambda \in [0, 1]$. The subtraction cancels common-mode noise.
+
+## 3.3 State Space Models
+
+An SSM defines a linear recurrence:
+
+$$
+h_t = \bar{A} h_{t-1} + \bar{B} x_t, \quad
+y_t = \bar{C} h_t
+\tag{3.4}
+$$
+
+SimpleSSM uses element-wise recurrence and diagonal $\bar{A}$.
+
+## 3.4 Concept Bottleneck
+
+A concept bottleneck projects an input through a low-rank nonlinear 
+transformation:
+
+$$
+z = W_\text{up} \cdot \sigma(W_\text{down} x)
+\tag{3.5}
+$$
+
+where $\sigma$ is a nonlinearity (we use GELU) and $b = \dim(z) \ll d$.
+
+**Why GELU?** Provides nonlinearity while keeping the bottleneck 
+differentiable.
+
+**Why a bottleneck?** Forces the downstream module (SSM) to work with a 
+compressed representation, reducing noise and computational cost.
+
+## 3.5 Gated Fusion
+
+Scalar gate $\alpha$:
+
+$$
+\text{out} = (1 - \alpha) A + \alpha B
+\tag{3.6}
+$$
+
+We initialize $\alpha = \sigma(-2) \approx 0.12$, biasing toward $A$ 
+(attention).
+
+## 3.6 Notation
+
+| Symbol | Meaning |
+|---|---|
+| $X$ | Input tensor |
+| $Z$ | Bottleneck output |
+| $b$ | Bottleneck dim |
+| $\bar{A}, \bar{B}, \bar{C}$ | SSM parameters |
+| $\alpha$ | Fusion gate |
+
+---

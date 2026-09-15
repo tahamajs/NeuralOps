@@ -1,3 +1,102 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for jamba_info.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Bottleneck is Beneficial}
+
+The concept bottleneck improves accuracy by {{BN\_GAIN}}\% at 
+{{BOTTLENECK\_DIM}}-dim, confirming the IB hypothesis.
+
+\subsubsection{Takeaway 2: SSM Doesn't Need Full Dimensions}
+
+The SSM state's effective rank is close to $b = 256$, not $d = 768$. The 
+extra 512 dimensions are redundant.
+
+\subsubsection{Takeaway 3: Different Models Prefer Different Branches}
+
+$\alpha$ learns to {{D\_ALPHA\_INTERP}} on DistilBERT, {{R\_ALPHA\_INTERP}} on 
+RoBERTa, and is {{G\_ALPHA\_INTERP}} on GPT-2.
+
+\subsection{When to Use JambaInfo}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Quality-focused applications.}
+\item \textbf{Long-context encoders} (bidirectional SSM helps).
+\item \textbf{Hybrid architecture research.}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Parameter-constrained deployments.}
+\item \textbf{Latency-critical applications.}
+\item \textbf{Encoder-decoder models.}
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Prioritize quality over params? --- Yes --- JambaInfo
+  | No
+   
+Need parameter reduction? --- Yes --- A3/Adaptive SVD
+  | No
+   
+Standard attention or HymbaTransX
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT at $b = 256$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Inference time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Peak VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Composition with Compression}
+
+JambaInfo can be combined with SVD factorization of attention projections. 
+The bottleneck is orthogonal to weight compression.
+
+Combined pipeline:
+\begin{itemize}
+\item Compress $W_{Q_1}, W_{K_1}, W_{Q_2}, W_{K_2}, W_V, W_O$ via SOA Fused.
+\item Keep bottleneck and SSM full-rank.
+\item Expected: \textbf{quality + compression} in one block.
+
+\end{itemize}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Principled bottleneck design.
+\item IB-motivated architecture.
+\item Complements compression.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Parameter increase.
+\item Slower training.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Learned bottleneck dim:} Can $b$ be adaptive?
+\item \textbf{Human-interpretable concepts:} Can the bottleneck be aligned to human concepts?
+\item \textbf{PCA init:} Would PCA initialization help?
+\item \textbf{Cross-attention:} How to extend?
+
+\end{enumerate}

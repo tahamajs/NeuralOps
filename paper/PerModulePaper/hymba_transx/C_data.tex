@@ -1,3 +1,165 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for hymba_transx.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Params change & +{{D\_PARAM\_PCT}}\% \\
+Trainable & {{D\_TRAINABLE}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+$\alpha$ final & {{D\_ALPHA}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+$\alpha$ final & {{R\_ALPHA}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+$\alpha$ final & {{G\_ALPHA}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Ablation: Differential}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Standard & {{D\_MHSA}} & {{R\_MHSA}} & {{G\_MHSA}} \\
+Diff $\lambda$=0.2 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+Diff $\lambda$=0.8 & {{D\_L08}} & {{R\_L08}} & {{G\_L08}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Ablation: Fusion}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+$\alpha$=1 (attn only) & {{D\_ATTN\_ONLY}} & {{R\_ATTN\_ONLY}} & {{G\_ATTN\_ONLY}} \\
+$\alpha$=0 (ssm only) & {{D\_SSM\_ONLY}} & {{R\_SSM\_ONLY}} & {{G\_SSM\_ONLY}} \\
+$\alpha$=0.5 (fixed) & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
+$\alpha$ learned & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 LoRA Rank}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
+16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
+32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Recovery Steps}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 $\alpha$ Per Layer (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Layer} & \textbf{$\alpha$} \\
+\midrule
+0 & {{D\_L0\_ALPHA}} \\
+1 & {{D\_L1\_ALPHA}} \\
+2 & {{D\_L2\_ALPHA}} \\
+3 & {{D\_L3\_ALPHA}} \\
+4 & {{D\_L4\_ALPHA}} \\
+5 & {{D\_L5\_ALPHA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+20    {{D_S20}}
+30    {{D_S30}}
+40    {{D_S40}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.10 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_hymba_transx.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+

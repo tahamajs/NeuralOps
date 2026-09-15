@@ -1,3 +1,78 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for hymba_transx.
+\subsection{Parameter Cost}
+
+HymbaTransX increases parameter count by ~{{PARAM\_INCREASE}}\%.
+
+\subsection{Training Slower}
+
+The two Q-K pairs and SSM branch slow training by {{TRAIN\_SLOWDOWN}}$\times$.
+
+\subsection{Inference Latency}
+
+Inference is {{INFERENCE\_SLOWDOWN}}$\times$ slower than baseline.
+
+\subsection{Cross-Attention Not Supported}
+
+Encoder-decoder models raise \texttt{NotImplementedError}.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Behavior on:
+\begin{itemize}
+\item Generation
+\item Long-context
+\item Token-level tasks
+
+\end{itemize}
+is untested.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+All experiments on RTX 4070.
+
+\subsection{Soft Fallback Risk}
+
+Our \texttt{copy\_weights} logs a warning on missing weights but does not raise. This 
+can lead to silent degradation on unusual architectures.
+
+\subsection{$\alpha$ Saturation}
+
+If $\alpha$ saturates to 0 or 1, the model degenerates. We observe this on 
+{{SATURATING\_MODEL}}.
+
+\subsection{No Theoretical Guarantee}
+
+We provide no bound on attention noise reduction or task accuracy.
+
+\subsection{Single-Seed Results}
+
+Multi-seed would strengthen conclusions.
+
+\subsection{No Comparison with Hymba}
+
+We don't run head-to-head against Hymba or Mamba.
+
+\subsection{Code Quality}
+
+Research-grade implementation.
+
+\subsection{Ethical Considerations}
+
+Hybrid attention is dual-use. See Appendix E.
+

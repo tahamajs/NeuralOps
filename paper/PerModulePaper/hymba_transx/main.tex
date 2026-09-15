@@ -64,10 +64,47 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the hymba\_transx module within modern transformer architectures.
+Transformers and state space models (SSMs) have complementary strengths: 
+attention captures precise pairwise dependencies but scales quadratically, 
+while SSMs scale linearly but compress distant context. We introduce 
+\textbf{HymbaTransX}, a hybrid block that combines \textbf{differential attention} 
+(Ye et al., 2024) with a \textbf{SimpleSSM} branch via a learned fusion gate:
+
+\[
+\text{out} = \alpha \odot A_\text{diff} + (1 - \alpha) \odot M_\text{ssm},
+\quad \alpha = \sigma(w)
+\]
+
+The differential attention branch maintains **two independent query-key 
+pairs** $(Q_1, K_1)$ and $(Q_2, K_2)$ and computes a ReLU-damped difference:
+
+\[
+A_\text{diff} = \text{ReLU}\!\left(\text{softmax}(Q_1 K_1^\top) - \lambda \cdot \text{softmax}(Q_2 K_2^\top)\right)
+\]
+
+with $\lambda = 0.2$. This cancels common-mode noise in the attention 
+pattern, improving signal-to-noise ratio. The SSM branch provides 
+$O(L)$ long-range mixing. Both branches share input projections.
+
+HymbaTransX supports GQA, causal masking for decoders, bidirectional 
+recurrence for encoders, and both external RoPE (from the parent model) 
+and internal \texttt{HeadRoPE} fallback. We evaluate on DistilBERT, RoBERTa, and 
+GPT-2 on SST-2, achieving \textbf{{{D\_ACC}}\%} (DistilBERT, baseline {{BASE\_D}}\%), 
+\textbf{{{R\_ACC}}\%} (RoBERTa, baseline {{BASE\_R}}\%), and \textbf{{{G\_ACC}}\%} 
+(GPT-2, baseline {{BASE\_G}}\%).
+
+\textbf{We are explicit that HymbaTransX does not reduce parameter count.} In 
+fact, the module \textbf{adds} approximately {{PARAM\_INCREASE}}\% more parameters 
+per layer. Its benefit is \textbf{attention-noise reduction} and **SSM-augmented 
+long-range context**, at a small training and inference overhead.
+
+\textbf{Keywords:} differential attention, hybrid architecture, state space model, 
+SSM, attention noise cancellation
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} hymba\_transx, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} differential attention, hybrid architecture, state space model,
 \end{abstract}
 
 \vspace{1em}

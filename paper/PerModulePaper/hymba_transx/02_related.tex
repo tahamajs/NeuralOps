@@ -1,3 +1,85 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for hymba_transx.
+\subsection{Attention Alternatives}
+
+\textbf{Linear attention} (Katharopoulos et al., 2020) replaces softmax with a 
+kernel feature map for $\mathcal{O}(L)$ complexity. \textbf{Performer} 
+(Choromanski et al., 2021) uses orthogonal random features. Both suffer 
+from approximation error on peaked distributions.
+
+\textbf{Sparse attention} (Longformer, BigBird) reduces the attention pattern. 
+\textbf{FlashAttention} (Dao et al., 2022) makes dense attention efficient on 
+GPU but keeps $\mathcal{O}(L^2)$ complexity.
+
+\subsection{Differential Attention}
+
+\textbf{Differential Transformer} (Ye et al., 2024) introduces **differential 
+attention**: two softmax attention maps are subtracted to cancel 
+common-mode noise. Our implementation uses the same primitive with a 
+different damping coefficient.
+
+\textbf{Noise cancellation} is a classical signal processing technique. Ye et al. 
+adapted it to attention. We combine it with SSM.
+
+\subsection{State Space Models}
+
+\textbf{S4} (Gu et al., 2021), \textbf{S5} (Smith et al., 2023), and \textbf{Mamba} (Gu \& 
+Dao, 2023) use linear time-invariant or selective SSMs for sequence 
+modeling. \textbf{SimpleSSM} is a lightweight variant used in our hybrid.
+
+\textbf{HGRN-2} (Qin et al., 2024) uses an element-wise recurrence related to 
+diagonal SSMs. Our SSM branch uses similar mechanics.
+
+\subsection{Hybrid Attention-SSM}
+
+\textbf{Hymba} (Dong et al., 2024) combines attention and SSM heads within a 
+single block, sharing key-value projections. \textbf{Jamba} (Lieber et al., 2024) 
+interleaves transformer and Mamba layers. \textbf{Zamba} (Glorioso et al., 2024) 
+adds shared attention blocks.
+
+\textbf{Our distinction.} We use \textbf{differential attention} (two Q-K pairs) 
+instead of standard attention, combining the benefits of both hybrid 
+architecture and attention denoising.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Attention} & \textbf{SSM} & \textbf{Differential} & \textbf{Fusion} \\
+\midrule
+Standard MHSA & Single & No & No & -- \\
+Mamba & No & Yes & No & -- \\
+Hymba & Single & Yes & No & Learned \\
+Diff Transformer & \textbf{Differential} & No & Yes & -- \\
+\textbf{HymbaTransX} & \textbf{Differential} & \textbf{Yes} & \textbf{Yes} & \textbf{Learned} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} HymbaTransX is the first block to combine **differential 
+attention\textbf{ with }SSM** in a single module with learned fusion.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Noise cancel} & \textbf{Long-range} & \textbf{Params} \\
+\midrule
+MHSA & $O(L^2)$ & No & Yes & $4 d^2$ \\
+Linear Attn & $O(L)$ & No & Yes & $4 d^2$ \\
+Mamba & $O(L)$ & No & Yes & $5 d^2$ \\
+Diff Transformer & $O(L^2)$ & Yes & Yes & $6 d^2$ \\
+Hymba & $O(L^2 + L)$ & No & Yes & $7 d^2$ \\
+\textbf{HymbaTransX} & $O(L^2 + L)$ & \textbf{Yes} & \textbf{Yes} & \textbf{$7 d^2$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

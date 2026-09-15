@@ -64,10 +64,53 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the jamba\_info module within modern transformer architectures.
+Hybrid attention-SSM architectures combine the precise retrieval of attention 
+with the long-range efficiency of state space models. However, naively 
+feeding the full hidden state $x \in \mathbb{R}^d$ into the SSM branch 
+introduces redundant information: the SSM must compress $d$-dimensional 
+inputs into its recurrent state at every step. We argue that this is 
+\textbf{information-theoretically wasteful} -- the SSM only needs a compressed 
+"concept representation" of the input.
+
+We introduce \textbf{JambaInfo}, an information-bottlenecked hybrid block that 
+\textbf{routes the SSM branch through a low-dimensional concept bottleneck}:
+
+\[
+z_t = W_\text{up} \cdot \text{GELU}(W_\text{down} x_t), 
+\quad W_\text{down} \in \mathbb{R}^{b \times d}, \quad b \ll d
+\]
+
+where $b = {{BOTTLENECK_DIM}}$. The bottleneck acts as an explicit 
+information constraint: the SSM processes only the essential concepts, 
+reducing noise and parameters. Concurrently, a \textbf{differential attention} 
+branch (two Q-K pairs with ReLU-damped subtraction) computes precise 
+retrieval. The two branches are fused by a learned scalar gate:
+
+\[
+\text{out} = (1 - \alpha) \odot A_\text{diff} + \alpha \odot M_\text{concept},
+\quad \alpha = \sigma(w), \quad w_0 = -2
+\]
+
+We initialize $\alpha \approx 0.12$, biasing toward attention initially 
+and letting the model learn how much to rely on the SSM.
+
+On SST-2, JambaInfo achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
+{{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and 
+\textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%).
+
+\textbf{We are explicit that JambaInfo does not reduce parameter count.} It 
+\textbf{adds} approximately {{PARAM\_INCREASE}}\% more parameters per layer. Its 
+benefit is \textbf{concept-driven SSM compression} and \textbf{reduced attention noise} 
+at a modest parameter cost. The concept bottleneck itself can be viewed as 
+a lightweight information bottleneck that improves SSM efficiency.
+
+\textbf{Keywords:} information bottleneck, hybrid architecture, differential 
+attention, state space model, concept compression
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} jamba\_info, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} information bottleneck, hybrid architecture, differential
 \end{abstract}
 
 \vspace{1em}

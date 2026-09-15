@@ -1,3 +1,103 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for hymba_transx.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Differential Attention Reduces Noise}
+
+The two-Q-K formulation improves signal-to-noise ratio by 
+{{NOISE\_REDUCTION}}\% at a modest parameter cost.
+
+\subsubsection{Takeaway 2: SSM Fusion is Model-Dependent}
+
+Encoders benefit from SSM fusion (bidirectional context). Decoders benefit 
+less because SSM is causal-only.
+
+\subsubsection{Takeaway 3: Parameter Cost is Real}
+
+HymbaTransX adds ~{{PARAM\_INCREASE}}\% parameters. This is a **quality 
+improvement\textbf{, not a }compression**.
+
+\subsection{When to Use HymbaTransX}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Quality-focused applications} where parameter count is not critical.
+\item \textbf{Encoder models} with long sequences (SSM provides efficient context).
+\item \textbf{Noisy attention scenarios} where differential helps.
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Parameter-constrained deployments.}
+\item \textbf{Latency-critical applications.}
+\item \textbf{Encoder-decoder models} (cross-attention not supported).
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need parameter reduction? --- Yes --- Use A3/Adaptive SVD
+  | No
+   
+Quality-focused? --- Yes --- Use HymbaTransX
+  | No
+   
+Standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Inference time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Peak VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Composition with Compression Methods}
+
+HymbaTransX \textbf{can} be combined with compression:
+
+\begin{itemize}
+\item Replace $W_{Q_1}, W_{K_1}, W_{Q_2}, W_{K_2}, W_V, W_O$ with factorized SVD
+  versions from SOA Fused or Adaptive SVD.
+\item The SSM branch could be compressed via low-rank factorization.
+
+\end{itemize}
+Result: \textbf{quality + compression} in a single pipeline.
+
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Noise-reduced attention.
+\item Efficient long-range context.
+\item Complementary to compression.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Parameter cost.
+\item Slower training.
+\item Not a compression method.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{$\lambda$ scheduling:} Should $\lambda$ vary during training?
+\item \textbf{Per-head $\alpha$:} Would per-head gates be better?
+\item \textbf{Compression of the SSM:} Can SSM be factorized?
+\item \textbf{Cross-attention:} How to extend to encoder-decoder?
+
+\end{enumerate}

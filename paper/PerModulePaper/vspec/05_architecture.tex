@@ -1,11 +1,135 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Draft content for vspec.
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention path} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+UniversalAdapter first, then fallback patterns:
+
+\subsubsection{GPT-2 Fused Conv1D}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight
+if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+o_w = src.c_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+s = src.self
+q_w = s.query.weight
+k_w = s.key.weight
+v_w = s.value.weight
+o_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Flat}
+
+Standard attributes: \texttt{q\_lin/q\_proj/query}, etc.
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa/BERT, we:
+\begin{enumerate}
+\item Set \texttt{is\_nested\_encoder = True}.
+\item Skip token routing (preserve full sequence).
+\item Use \texttt{Po} only as identity initialization.
+
+\end{enumerate}
+\textbf{Important.} Unlike SOA Fused, we still apply \texttt{Po} but it's identity-initialized 
+in nested case.
+
+\subsection{Token Routing Guard}
+
+The router sets \texttt{s[:, 0] = 1e4} to force \texttt{[CLS]} retention. This is 
+essential for classification tasks.
+
+\subsection{RoPE Compatibility}
+
+RoPE is applied after projection. Since tokens are routed, we must 
+\textbf{gather the position embeddings} corresponding to selected indices:
+
+\begin{lstlisting}
+cos_routed = torch.gather(cos_b, 1, idx.unsqueeze(-1).expand(...))
+sin_routed = torch.gather(sin_b, 1, idx.unsqueeze(-1).expand(...))
+Q, K = apply_rotary_pos_emb(Q, K, cos_routed, sin_routed)
+\end{lstlisting}
+
+\subsection{Head Gate Application}
+
+The head gate multiplies the \textbf{attention logits} before softmax:
+
+\begin{lstlisting}
+scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale * hg.float()
+\end{lstlisting}
+
+\subsection{Scatter Back}
+
+For non-routed tokens, we set the attention output to zero. This preserves 
+the residual connection's contribution -- the non-routed tokens pass 
+through unchanged.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject VSpec++ into a model
+\begin{lstlisting}
+Input:  model M, config c, rank r, lora_rank r_L
+Output: M with attention replaced
+
+1: for layer in transformer_layers(M):
+2:     src $\leftarrow$ extract_attention(layer)
+3:     if src is None or is_already_injected: continue
+4:     try:
+5:         new $\leftarrow$ VSpecAttention(c, rank=r, lora_rank=r_L, pretrained_attn=src)
+6:         replace(layer, new)
+7:     except Exception as e:
+8:         log_error; continue
+9: return M
+\end{lstlisting}
+
+\subsection{Double-Injection Guard}
+
+\begin{lstlisting}
+if isinstance(src, VSpecAttention): return None
+if "VSpec" in src.__class__.__name__: return None
+\end{lstlisting}
+
+\subsection{Cross-Attention}
+
+Not supported. Raises \texttt{NotImplementedError}.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("vspec")
+@ATTENTION_REGISTRY.register("vspec_attention")
+class VSpecAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/vspec_architecture.png}
-\caption{Architectural overview of vspec.}
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of vspec.}
 \label{fig:arch_vspec}
 \end{figure}
+

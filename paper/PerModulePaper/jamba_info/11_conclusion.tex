@@ -1,3 +1,73 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for jamba_info.
+\subsection{Summary}
+
+We presented \textbf{JambaInfo}, an information-bottlenecked hybrid block. The 
+SSM branch processes a compressed concept representation $z \in \mathbb{R}^b$ 
+instead of the full hidden state, reducing noise and improving accuracy. 
+Combined with differential attention and learned fusion, JambaInfo achieves 
+\textbf{{{D\_ACC}}\%} on DistilBERT.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Bottleneck Gain} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{BN\_GAIN}}\% \\
+RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_BN\_GAIN}}\% \\
+GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_BN\_GAIN}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Bottleneck improves accuracy} by {{BN\_GAIN}}\%.
+\item \textbf{SSM does not need full dimensions.}
+\item \textbf{$b = 256$ is a sweet spot.}
+\item \textbf{Differential attention reduces noise.}
+\item \textbf{$\alpha$ learns model-specific preferences.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Learned bottleneck dimension.
+\item PCA initialization.
+\item Sparsity penalty.
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Human-interpretable concepts.
+\item Cross-attention support.
+\item Scaling to 1B+ models.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+JambaInfo is a step toward principled hybrid architectures. We release 
+all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed the block, implemented, ran experiments, wrote
+  the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

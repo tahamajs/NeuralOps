@@ -1,3 +1,75 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for vspec.
+\subsection{Attention-Only Compression}
+
+Only Q/K/V/O projections are factorized. The FFN is untouched. Total 
+model reduction is modest.
+
+\subsection{Attention Still Quadratic}
+
+Token routing reduces the effective length but attention is still 
+$\mathcal{O}(k^2)$. For very long L, this is still expensive.
+
+\subsection{Task Coverage}
+
+Only SST-2 is evaluated. Untested on:
+\begin{itemize}
+\item Generation
+\item Long-context
+\item Token-level tasks
+\item Multilingual
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+Only RTX 4070.
+
+\subsection{Variational Training Overhead}
+
+Sampling adds a small overhead (~10\%). At inference, this is removed.
+
+\subsection{Gate Saturation Risk}
+
+At high LR, gates may saturate. We mitigate with bias init but do not 
+provide a formal guarantee.
+
+\subsection{Cross-Attention}
+
+Not supported.
+
+\subsection{Single-Seed}
+
+Single-seed results.
+
+\subsection{No Theoretical Bound}
+
+We provide no bound on accuracy after compression.
+
+\subsection{Nested Encoder Routing}
+
+For RoBERTa/BERT, we skip token routing. This limits compression for 
+nested encoders.
+
+\subsection{Code Quality}
+
+Research-grade.
+
+\subsection{Ethical Considerations}
+
+See Appendix E.
+

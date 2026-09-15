@@ -1,3 +1,105 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for vspec.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Three-Level Gating Works}
+
+Combining token, spectral, and head gates provides a richer modulation 
+than any single gate.
+
+\subsubsection{Takeaway 2: Variational Training Regularizes}
+
+The stochastic sampling acts as a data-dependent regularizer, improving 
+generalization by {{VAR\_GAIN}}\%.
+
+\subsubsection{Takeaway 3: Real Parameter Reduction}
+
+The SVD factorization provides {{D\_RATIO}}$\times$ parameter reduction on 
+attention projections.
+
+\subsection{When to Use VSpec++}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Parameter-constrained deployment.}
+\item \textbf{Quality-focused applications.}
+\item \textbf{Interpretability research} (gate values as diagnostics).
+\item \textbf{Combined with quantization.}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Latency-critical applications.}
+\item \textbf{Encoder-decoder models} (cross-attention not supported).
+\item \textbf{Very large models} (gate overhead grows).
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need both compression and quality? --- Yes --- VSpec++
+  | No
+   
+Only compression? --- Yes --- SOA Fused / Adaptive SVD
+  | No
+   
+Only quality? --- Yes --- HymbaTransX
+  | No
+   
+Standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{VSpec++} & \textbf{Change} \\
+\midrule
+Attention params & 2.36M & {{D\_ATTN}} & \textbf{{{D\_RATIO}}$\times$} \\
+Total params & 66.95M & {{D\_PARAMS}} & {{D\_PARAM\_PCT}}\% \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Inference time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Peak VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Composition with Other Methods}
+
+VSpec++ composes with:
+
+\begin{itemize}
+\item \textbf{KV quantization:} INT8 on the factorized projections.
+\item \textbf{FFN compression} (A3/AASVD): compress the other half of the block.
+\item \textbf{Layer dropping:} gates as a signal for which layers to keep.
+
+\end{itemize}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Rich diagnostic signal from gate values.
+\item Real parameter reduction.
+\item Zero-shot initialization.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Training overhead from gates.
+\item Not audited for bias.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Gate interpretability:} Can gate values predict layer importance?
+\item \textbf{Cross-layer gate sharing:} Would shared gates help?
+\item \textbf{Optimal  :} Can it be learned?
+\item \textbf{KL penalty:} What is the optimal coefficient?
+
+\end{enumerate}

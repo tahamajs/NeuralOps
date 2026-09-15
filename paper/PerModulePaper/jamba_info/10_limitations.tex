@@ -1,3 +1,82 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for jamba_info.
+\subsection{Parameter Cost}
+
+JambaInfo increases parameter count by ~{{PARAM\_INCREASE}}\%.
+
+\subsection{Training Slower}
+
+~{{TRAIN\_SLOWDOWN}}$\times$ slower than baseline.
+
+\subsection{Inference Latency}
+
+~{{INFERENCE\_SLOWDOWN}}$\times$ slower.
+
+\subsection{Cross-Attention Not Supported}
+
+\texttt{encoder\_hidden\_states} raises \texttt{NotImplementedError}.
+
+\subsection{Task Coverage}
+
+Only SST-2. Untested:
+\begin{itemize}
+\item Generation
+\item Long-context
+\item Token-level tasks
+\item T5-style seq2seq
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+Only RTX 4070.
+
+\subsection{Soft Fallback}
+
+\texttt{copy\_weights} logs warnings on missing projections but does not raise. 
+Risk of silent degradation.
+
+\subsection{Sparsity Parameter}
+
+The \texttt{sparsity} parameter is currently a placeholder. No sparsity penalty is 
+actually applied in this version.
+
+\subsection{Bottleneck Initialization}
+
+We use default PyTorch init. PCA or SVD init might improve.
+
+\subsection{No Theoretical Bound}
+
+We provide no formal bound on the information-theoretic benefit of the 
+bottleneck.
+
+\subsection{Single-Seed}
+
+Single-seed results. Multi-seed would strengthen.
+
+\subsection{$\alpha$ Saturation}
+
+At some initializations, $\alpha$ saturates and the model degenerates.
+
+\subsection{Code Quality}
+
+Research-grade.
+
+\subsection{Ethical Considerations}
+
+See Appendix E.
+

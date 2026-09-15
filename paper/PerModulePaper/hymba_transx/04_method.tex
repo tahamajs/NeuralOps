@@ -1,3 +1,281 @@
-\section{04 Method}
+\section{Method}
 
-Draft content for hymba_transx.
+\subsection{Overview}
+
+HymbaTransX replaces standard attention with a \textbf{two-branch block}:
+
+\begin{itemize}
+\item \textbf{Branch 1: Differential attention} -- noise-reduced softmax attention.
+\item \textbf{Branch 2: SimpleSSM} -- linear recurrent mixing.
+
+\end{itemize}
+A \textbf{learned scalar gate} $\alpha$ blends them.
+
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$\times$L$\times$d}
+              |
+       +------+------+
+                      
+   +-------+    +-------+
+   | Diff  |    | SSM   |
+   | Attn  |    |       |
+   +---+---+    +---+---+
+       |            |
+       | $\alpha$=$\sigma$(w)     |
+       |  +---------+
+           
+   $\alpha$ A + (1-$\alpha$) M
+       |
+        
+     out_proj
+       |
+        
+    Output Y
+\end{lstlisting}
+
+\subsection{Differential Attention Branch}
+
+We compute two independent Q-K pairs:
+
+\[
+Q_1 = X W_{Q_1}, \quad K_1 = X W_{K_1}
+\tag{4.1}
+\]
+
+\[
+Q_2 = X W_{Q_2}, \quad K_2 = X W_{K_2}
+\tag{4.2}
+\]
+
+Two attention maps:
+
+\[
+A_1 = \text{softmax}\!\left(\frac{Q_1 K_1^\top}{\sqrt{d_h}}\right), \quad
+A_2 = \text{softmax}\!\left(\frac{Q_2 K_2^\top}{\sqrt{d_h}}\right)
+\tag{4.3}
+\]
+
+Differential output:
+
+\[
+A_\text{diff} = \text{ReLU}(A_1 - \lambda A_2), \quad \lambda = 0.2
+\tag{4.4}
+\]
+
+Then normalize:
+
+\[
+\tilde{A}_\text{diff} = \frac{A_\text{diff}}{\sum A_\text{diff} + \epsilon}
+\tag{4.5}
+\]
+
+Value projection:
+
+\[
+V = X W_V, \quad A_\text{out} = \tilde{A}_\text{diff} V
+\tag{4.6}
+\]
+
+\textbf{Why $\lambda = 0.2$?} Ye et al. use $\lambda = 0.8$ for pure differential 
+attention. Since we blend with SSM, we soften the damping to retain more 
+attention signal.
+
+\textbf{Why ReLU?} Prevents negative values from flipping sign of the value 
+contribution.
+
+\textbf{Why normalize after ReLU?} The subtraction can produce a sparse map with 
+very small total mass. Normalization preserves output scale.
+
+\subsection{SSM Branch}
+
+We use a \texttt{SimpleSSM} module with element-wise recurrence:
+
+\[
+h_t = \bar{A}_t \odot h_{t-1} + \bar{B}_t \odot x_t, \quad
+y_t = \bar{C}_t \odot h_t
+\tag{4.7}
+\]
+
+where $\bar{A}_t \in (0, 1)$ is a data-dependent decay.
+
+\textbf{Bidirectional handling.} For encoders, we run two SSM passes:
+
+\[
+M_\text{fwd} = \text{SSM}(X), \quad
+M_\text{bwd} = \text{flip}(\text{SSM}(\text{flip}(X)))
+\tag{4.8}
+\]
+
+\[
+M_\text{ssm} = 0.5 (M_\text{fwd} + M_\text{bwd})
+\tag{4.9}
+\]
+
+For decoders, only the forward pass is used.
+
+\subsection{Fusion}
+
+A single learnable scalar $\alpha$:
+
+\[
+\alpha = \sigma(w), \quad w \in \mathbb{R}
+\tag{4.10}
+\]
+
+Initialized to $w = -1$, giving $\alpha = 0.27$.
+
+Final output:
+
+\[
+\text{combined} = \alpha \odot A_\text{out} + (1 - \alpha) \odot M_\text{ssm}
+\tag{4.11}
+\]
+
+then projected by \texttt{out\_proj}.
+
+\subsection{HeadRoPE Fallback}
+
+When the parent model does not pass \texttt{position\_embeddings}, we compute them 
+internally:
+
+\[
+\theta_{k, i} = i \cdot \text{base}^{-2k/d_h}, \quad \text{base} = 10^4
+\tag{4.12}
+\]
+
+\[
+\text{cos}_{i, k} = \cos(\theta_{k, i}), \quad \text{sin}_{i, k} = \sin(\theta_{k, i})
+\tag{4.13}
+\]
+
+Then apply:
+
+\[
+\tilde{Q}_i = Q_i \cos_i + \text{rot}(Q_i) \sin_i
+\tag{4.14}
+\]
+
+\textbf{Cache.} Cos/sin tables are cached up to \texttt{max\_seq\_len = 4096} and extended 
+on demand.
+
+\subsection{Weight Transfer}
+
+Our \texttt{copy\_weights} handles four patterns:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Architecture} & \textbf{Source} & \textbf{Target} \\
+\midrule
+DistilBERT & \texttt{q\_lin/k\_lin/v\_lin/out\_lin} & \texttt{W\_q1/W\_k1/W\_v/out\_proj} \\
+RoBERTa & \texttt{self.query/key/value} + \texttt{output.dense} & same \\
+GPT-2 & \texttt{c\_attn} (fused, transposed) + \texttt{c\_proj} & same \\
+Qwen3.5 & \texttt{q\_proj/k\_proj/v\_proj/o\_proj} & same \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$W_{Q_2}$ and $W_{K_2}$ are initialized independently via Kaiming uniform -- 
+they have no pretrained counterpart.
+
+\textbf{Fallback on missing weights.} If a projection is missing after extraction, 
+we log a warning and keep the Kaiming-initialized default. This is a 
+\textbf{soft fallback} (unlike SOA Fused which raises).
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} HymbaTransX forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+        position_embeddings (optional)
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q1 $\leftarrow$ W_q1(X);  K1 $\leftarrow$ W_k1(X)
+ 2: Q2 $\leftarrow$ W_q2(X);  K2 $\leftarrow$ W_k2(X)
+ 3: V  $\leftarrow$ W_v(X)
+ 4: if pos_emb: Q_i, K_i $\leftarrow$ RoPE(Q_i, K_i, pos_emb)
+ 5: else:       Q_i, K_i $\leftarrow$ HeadRoPE(Q_i, K_i)
+ 6: if GQA: K_i, V $\leftarrow$ repeat_kv(...)
+ 7: A1 $\leftarrow$ softmax(Q1 K1^T / $\sqrt{}$d_h)
+ 8: A2 $\leftarrow$ softmax(Q2 K2^T / $\sqrt{}$d_h)
+ 9: if causal: mask A1, A2
+10: A_diff $\leftarrow$ ReLU(A1 - $\lambda$ A2)
+11: A_norm $\leftarrow$ A_diff / (sum + $\epsilon$)
+12: A_out $\leftarrow$ A_norm @ V
+13: if decoder: M $\leftarrow$ SSM(X)
+14: else:       M $\leftarrow$ 0.5(SSM(X) + flip(SSM(flip(X))))
+15: $\alpha$ $\leftarrow$ sigmoid(w)
+16: out $\leftarrow$ $\alpha$ A_out + (1-$\alpha$) M
+17: Y $\leftarrow$ out_proj(out)
+18: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+For a single block:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Params} \\
+\midrule
+$W_{Q_1}, W_{K_1}$ & $O(L d^2)$ & $2 d^2$ \\
+$W_{Q_2}, W_{K_2}$ & $O(L d^2)$ & $2 d^2$ \\
+$W_V$ & $O(L d^2)$ & $d^2$ \\
+Diff attention & $O(L^2 d)$ & 0 \\
+SSM & $O(L d)$ & $2 d^2$ \\
+$W_O$ & $O(L d^2)$ & $d^2$ \\
+\textbf{Total} & $O(L^2 d)$ & $8 d^2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Compared to standard attention ($4 d^2$ params), HymbaTransX has \textbf{$8 d^2$} -- 
+double the parameter count.
+
+\subsection{Parameter Analysis}
+
+For $d = 768$, per layer:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{HymbaTransX} \\
+\midrule
+Q, K, V, O & 4 $\times$ 589,824 = 2.36M & -- \\
+W\_q1, W\_k1 & -- & 1.18M \\
+W\_q2, W\_k2 & -- & 1.18M \\
+W\_v & -- & 0.59M \\
+SSM & 0 & 0.59M \\
+W\_o & -- & 0.59M \\
+\textbf{Total} & \textbf{2.36M} & \textbf{4.13M} \\
+\textbf{Increase} & -- & \textbf{+75\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training}
+
+Trainable:
+\begin{itemize}
+\item LoRA adapters on all projections.
+\item $W_{Q_2}, W_{K_2}$ (Kaiming init, then LoRA-tuned).
+\item SSM parameters.
+\item $\alpha$ (scalar).
+
+\end{itemize}
+Frozen:
+\begin{itemize}
+\item Base Q/K/V/O weights (transferred from pretrained attention).
+
+\end{itemize}
+\textbf{Trainable count:} ~{{TRAINABLE}} per layer.
+

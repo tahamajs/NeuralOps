@@ -1,3 +1,83 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for jamba_info.
+\subsection{Information Bottleneck}
+
+\textbf{Tishby et al. (1999)} introduced the Information Bottleneck principle 
+for representation learning. \textbf{Alemi et al. (2017)} formulated the VIB 
+(Variational IB) for deep networks. \textbf{Shwartz-Ziv \& Tishby (2017)} 
+analyzed IB in training dynamics.
+
+Our work is the first (to our knowledge) to apply IB explicitly to the SSM 
+branch of a hybrid architecture.
+
+\subsection{Hybrid Attention-SSM}
+
+\textbf{Jamba} (Lieber et al., 2024) interleaves transformer and Mamba layers. 
+\textbf{Zamba} (Glorioso et al., 2024) shares attention blocks. \textbf{Hymba} (Dong 
+et al., 2024) fuses attention and SSM in a single block. \textbf{Samba} (Ren et 
+al., 2024) uses a similar design.
+
+\textbf{Our distinction.} We add an \textbf{explicit bottleneck} between the input 
+and the SSM branch, forcing the SSM to operate on compressed concepts.
+
+\subsection{Differential Attention}
+
+\textbf{Differential Transformer} (Ye et al., 2024) introduces two-Q-K 
+subtraction for noise reduction. We use this as our attention branch with 
+a softened damping ($\lambda = 0.2$ vs Ye's $0.8$).
+
+\subsection{State Space Models}
+
+\textbf{S4} (Gu et al., 2021), \textbf{Mamba} (Gu \& Dao, 2023), \textbf{HGRN-2} (Qin et 
+al., 2024) are linear-time recurrent models. Our SSM branch uses 
+\textbf{SimpleSSM}, a lightweight variant.
+
+\subsection{Concept Bottlenecks}
+
+\textbf{Concept Bottleneck Models} (Koh et al., 2020) enforce human-interpretable 
+intermediate concepts. Our bottleneck is not human-interpretable but 
+serves a similar compression purpose.
+
+\textbf{Autoencoders} use bottlenecks for dimensionality reduction. We use a 
+bottleneck as an \textbf{information constraint} on the SSM input.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Attention} & \textbf{SSM} & \textbf{Bottleneck} & \textbf{IB-motivated} \\
+\midrule
+Standard MHSA & Single & No & No & No \\
+Jamba & Single & Yes & No & No \\
+Hymba & Single & Yes & No & No \\
+Diff Transformer & Differential & No & No & No \\
+\textbf{JambaInfo} & \textbf{Differential} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} JambaInfo is the first to combine differential 
+attention, SSM, and an explicit information bottleneck.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Bottleneck} & \textbf{Noise cancel} & \textbf{Params} \\
+\midrule
+MHSA & $O(L^2)$ & No & No & $4d^2$ \\
+Jamba & $O(L^2 + L)$ & No & No & $7d^2$ \\
+Hymba & $O(L^2 + L)$ & No & No & $7d^2$ \\
+\textbf{JambaInfo} & $O(L^2 + L)$ & \textbf{Yes} & \textbf{Yes} & \textbf{$7d^2 + 2bd$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

@@ -1,3 +1,88 @@
-\section{12 Reproducibility}
+\section{Reproducibility}
 
-Draft content for hymba_transx.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_hymba_transx.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --modules full,hymba_transx \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+\begin{lstlisting}
+python run_all_4_hymba_transx.py
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (Differential Ablation)}
+\begin{lstlisting}
+# Standard: modify module to use single Q-K
+# Differential: default
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (SSM Ablation)}
+\begin{lstlisting}
+python run_all_4_hymba_transx.py --alpha 1.0  # attn only
+python run_all_4_hymba_transx.py --alpha 0.0  # ssm only
+python run_all_4_hymba_transx.py --alpha 0.5  # fixed
+# default: learned
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} & \textbf{$\alpha$} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_ALPHA}} \\
+RoBERTa & {{R\_ACC}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_ALPHA}} \\
+GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_ALPHA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}.
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-hymba\_transx}.
+\item \textbf{Metrics:} \texttt{results/unified\_hymba\_transx/*/summary.csv}.
+
+\end{itemize}

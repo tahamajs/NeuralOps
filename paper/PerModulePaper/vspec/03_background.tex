@@ -1,3 +1,96 @@
-\section{03 Background}
+\section{Background}
 
-Draft content for vspec.
+\subsection{Truncated SVD}
+
+For $W \in \mathbb{R}^{m \times n}$:
+
+\[
+W = U \Sigma V^\top \approx U_r \Sigma_r V_r^\top
+\tag{3.1}
+\]
+
+with error $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
+
+\textbf{Factorization.} We use:
+
+\[
+U_r = U_{:, :r} \Sigma_r^{1/2}, \quad V_r = \Sigma_r^{1/2} V_{:r, :}^\top
+\tag{3.2}
+\]
+
+for balanced magnitudes.
+
+\subsection{Low-Rank Adapters (LoRA)}
+
+\textbf{LoRA} (Hu et al., 2021) parameterizes a rank-$r_L$ update:
+
+\[
+\Delta W = B A, \quad A \in \mathbb{R}^{r_L \times d}, \quad B \in \mathbb{R}^{d \times r_L}
+\tag{3.3}
+\]
+
+with $B = 0$ at init.
+
+\subsection{Variational Inference}
+
+\textbf{Variational Inference} approximates an intractable posterior $p(z | x)$ 
+with a tractable $q_\phi(z)$. The ELBO is:
+
+\[
+\mathcal{L} = \mathbb{E}_{q}[\log p(x | z)] - \text{KL}(q(z) \| p(z))
+\tag{3.4}
+\]
+
+\textbf{Reparameterization.} For Gaussian $q(z) = \mathcal{N}(\mu, \sigma^2)$:
+
+\[
+z = \mu + \sigma \odot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+\tag{3.5}
+\]
+
+allows gradient flow to $\mu, \sigma$.
+
+\subsection{Multi-Head Attention}
+
+Standard:
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_h}}\right) V
+\tag{3.6}
+\]
+
+\textbf{GQA.} $H_{kv} < H$ heads share K, V; \texttt{repeat\_kv} expands.
+
+\subsection{Token Routing}
+
+Given scores $s_i$, select top-$k$:
+
+\[
+\mathcal{S} = \text{TopK}(s, k), \quad k = \lceil \rho L \rceil
+\tag{3.7}
+\]
+
+with $s_0 = \infty$ (retain \texttt{[CLS]}) and $s_i = -\infty$ for padding.
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$W$ & Weight matrix \\
+$U, S, V$ & SVD factors \\
+$r$ & SVD rank \\
+$r_L$ & LoRA rank \\
+$\mu, \sigma$ & Variational parameters \\
+$g$ & Spectral gate \\
+$h$ & Head gate \\
+$s$ & Token salience \\
+$\rho$ & Keep ratio \\
+\bottomrule
+\end{tabular}
+\end{table}
+

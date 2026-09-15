@@ -1,0 +1,95 @@
+# Appendix A. Mathematical Derivations
+
+## A.1 Information Bottleneck Objective
+
+The IB Lagrangian:
+
+$$
+\mathcal{L}_\text{IB} = I(X; Z) - \beta I(Z; Y)
+\tag{A.1}
+$$
+
+Our bottleneck $z = W_\text{up} \cdot \text{GELU}(W_\text{down} x)$ 
+enforces $|Z| = b$. This is a **hard** bottleneck (deterministic), not a 
+stochastic one.
+
+The mutual information $I(X; Z)$ is bounded by $b \log_2(b)$ if $Z$ is 
+discrete, or by the entropy of $Z$ if continuous. Reducing $b$ reduces 
+$I(X; Z)$.
+
+## A.2 Bottleneck Reconstruction
+
+If we pass $z$ through an inverse $W_\text{up}^\dagger$:
+
+$$
+\hat{x} = W_\text{up}^\dagger z
+\tag{A.2}
+$$
+
+The reconstruction error is:
+
+$$
+\|x - \hat{x}\|_2 \leq \sigma_{b+1}(X) + \epsilon
+\tag{A.3}
+$$
+
+where $\sigma_{b+1}$ is the $(b+1)$-th singular value of $X$. This 
+motivates the bottleneck dimension choice.
+
+## A.3 Differential Attention
+
+Same derivation as HymbaTransX:
+
+$$
+A_\text{diff} = \text{ReLU}(A_1 - 0.2 A_2)
+\tag{A.4}
+$$
+
+Noise suppression: if $A_1 = S + N_1$ and $A_2 = S + N_2$:
+
+$$
+A_1 - 0.2 A_2 = 0.8 S + N_1 - 0.2 N_2
+\tag{A.5}
+$$
+
+For common-mode noise ($N_1 = N_2 = N$):
+
+$$
+= 0.8 S + 0.8 N
+\tag{A.6}
+$$
+
+The common-mode noise is not cancelled in this case, only attenuated. For 
+independent noise, the variance is $1.04 \sigma^2$.
+
+## A.4 Fusion Gradient
+
+$$
+\frac{\partial \text{out}}{\partial \alpha} = M - A
+\tag{A.7}
+$$
+
+When $M$ and $A$ have opposite signs of error, the gate can reduce total 
+error.
+
+## A.5 Complexity
+
+| Component | Time | Params |
+|---|---|---|
+| Q/K/V | $O(L d^2)$ | $3 d^2$ |
+| Q2/K2 | $O(L d^2)$ | $2 d^2$ |
+| Diff attn | $O(L^2 d)$ | 0 |
+| Bottleneck | $O(L d b)$ | $2 b d$ |
+| SSM | $O(L d)$ | $2 d^2$ |
+| Out proj | $O(L d^2)$ | $d^2$ |
+
+For $d = 768$, $b = 256$:
+
+| Component | Params |
+|---|---|
+| Attn | 3.54M |
+| Bottleneck | 0.39M |
+| SSM | 0.59M |
+| **Total** | **4.52M** |
+
+---

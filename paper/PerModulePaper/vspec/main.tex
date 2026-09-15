@@ -64,10 +64,47 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal analysis and benchmark evaluation of the module.
+Attention projection matrices in transformers are typically learned densely, 
+yet their spectra are often highly non-uniform. We propose \textbf{VSpec++}, a 
+variational spectral attention module that combines **three orthogonal 
+gating mechanisms**:
+
+\begin{enumerate}
+\item \textbf{Token routing} -- select top-$k$ tokens via a learned saliency network
+  with guaranteed \texttt{[CLS]} retention.
+\item \textbf{Variational spectral gating} -- modulate each truncated singular value
+  with a stochastic, input-dependent gate trained via the reparameterization
+  trick.
+\item \textbf{Head gating} -- weight attention heads per-example via a masked-pooled
+  network.
+
+\end{enumerate}
+The Q/K/V/O projections are factorized via truncated SVD, initialized 
+zero-shot from the pretrained weights, and augmented with LoRA adapters. 
+All base weights (SVD factors) are frozen; only the gates, router, and LoRA 
+adapters are trained.
+
+We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
+{{RECOVERY\_STEPS}} recovery steps. VSpec++ achieves \textbf{{{D\_ACC}}\%} on 
+DistilBERT (baseline {{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
+{{BASE\_R}}\%), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%). Attention 
+parameters reduce by \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$}, and peak VRAM decreases 
+by \textbf{{{VRAM\_REDUCTION}}\%}.
+
+The variational formulation provides a \textbf{Bayesian interpretation}: the 
+spectral gate $g_i \sim q(g_i | x)$ is a posterior over per-singular-value 
+importance, and the reparameterized sample $z = \mu + \sigma \epsilon$ 
+allows gradient-based training of both mean and variance. At inference, we 
+use $z = \mu$ (deterministic), giving a stable, non-stochastic attention 
+computation.
+
+\textbf{Keywords:} variational inference, spectral attention, token routing, 
+low-rank factorization, LoRA
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} Efficient Attention, Transformers, Deep Learning, Model Compression
+\noindent\textbf{Keywords:} variational inference, spectral attention, token routing,
 \end{abstract}
 
 \vspace{1em}

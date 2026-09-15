@@ -1,11 +1,159 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Draft content for hymba_transx.
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention path} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{layer[i].attention} & No & No & No \\
+RoBERTa & \texttt{layer[i].attention.self} & Yes & No & No \\
+GPT-2 & \texttt{h[i].attn} & No & No & No \\
+Qwen3.5 & \texttt{layers[i].self\_attn} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Extraction}
+
+\subsubsection{UniversalAdapter First}
+
+\begin{lstlisting}
+from framework.core.adapters import UniversalAdapter
+adapter = UniversalAdapter()
+for k in ["q", "k", "v", "o"]:
+    w, b = adapter.get_weight_bias(src, k)
+\end{lstlisting}
+
+\subsubsection{GPT-2 Fused Conv1D}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight  # (in, out) for Conv1D
+if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+o_w = src.c_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+s = src.self
+q_w = s.query.weight
+k_w = s.key.weight
+v_w = s.value.weight
+o_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{DistilBERT Flat}
+
+\begin{lstlisting}
+q_w = src.q_lin.weight
+k_w = src.k_lin.weight
+v_w = src.v_lin.weight
+o_w = src.out_lin.weight
+\end{lstlisting}
+
+\subsection{Soft Fallback on Missing Weights}
+
+Unlike SOA Fused Attention, we do \textbf{not} raise on missing weights. Instead:
+
+\begin{lstlisting}
+missing_after = [k for k, (w, _) in extracted.items() 
+                 if w is None and (k != "o" or not self.is_nested_encoder)]
+if missing_after:
+    logger.warning(f"Missing {missing_after}, keeping Kaiming defaults.")
+\end{lstlisting}
+
+The projection retains its Kaiming initialization. This makes HymbaTransX 
+more robust to unusual architectures but risks silent degradation.
+
+\subsection{Second Query-Key Pair}
+
+$W_{Q_2}, W_{K_2}$ are initialized via Kaiming uniform and \textbf{never copied} 
+from the pretrained model -- the parent model has no analogue.
+
+\begin{lstlisting}
+nn.init.kaiming_uniform_(self.W_q2.weight, a=math.sqrt(5))
+nn.init.kaiming_uniform_(self.W_k2.weight, a=math.sqrt(5))
+\end{lstlisting}
+
+\subsection{HeadRoPE Fallback}
+
+If the parent model provides \texttt{position\_embeddings} (external RoPE), we use 
+them directly. Otherwise, we apply \texttt{HeadRoPE}:
+
+\begin{lstlisting}
+if position_embeddings is not None:
+    cos, sin = position_embeddings
+    q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
+else:
+    q1 = self.rope(q1)
+    k1 = self.rope(k1)
+\end{lstlisting}
+
+\texttt{HeadRoPE} caches cos/sin tables up to 4096 tokens.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject HymbaTransX into a model
+\begin{lstlisting}
+Input:  model M, config c
+Output: M with attention replaced
+
+1: layer_list $\leftarrow$ find_transformer_layers(M)
+2: for i, layer in enumerate(layer_list):
+3:     src $\leftarrow$ extract_attention(layer)
+4:     if src is None: continue
+5:     try:
+6:         new $\leftarrow$ HymbaTransXBlock(c, old_attn=src)
+7:         replace(layer, new)
+8:     except Exception:
+9:         log_error("Layer {i} failed")
+10: return M
+\end{lstlisting}
+
+\subsection{Nested Encoder Handling}
+
+For RoBERTa, we set \texttt{is\_nested\_encoder = True}. The forward pass returns 
+raw context, and the outer \texttt{output.dense} applies the projection.
+
+\subsection{Causality Preservation}
+
+\begin{lstlisting}
+if self.is_decoder:
+    causal_mask = torch.tril(torch.ones(L, L, dtype=torch.bool))
+    scores1 = scores1.masked_fill(~causal_mask, -1e4)
+    scores2 = scores2.masked_fill(~causal_mask, -1e4)
+\end{lstlisting}
+
+The mask applies to \textbf{both} attention maps before the subtraction.
+
+\subsection{Cross-Attention}
+
+Cross-attention raises \texttt{NotImplementedError}. HymbaTransX is encoder-only or 
+decoder-only, not encoder-decoder.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("hymba_transx")
+class HymbaTransXBlock(BaseAttention):
+    ...
+
+@ATTENTION_REGISTRY.register("hymba_transx_inject")
+def inject_hymba_transx(...):
+    ...
+\end{lstlisting}
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/hymba_transx_arch.jpg}
-\caption{Architectural overview of hymba_transx.}
-\label{fig:arch_hymba_transx}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of hymba\_transx.}
+\label{fig:arch_hymba-transx}
 \end{figure}
+

@@ -1,3 +1,82 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for vspec.
+\subsection{Low-Rank Attention}
+
+\textbf{SOA Fused Attention} and \textbf{Adaptive SVD Attention} factorize Q/K/V 
+(and possibly O) via truncated SVD. \textbf{A3} and \textbf{AASVD} use 
+activation-weighted SVD requiring calibration. VSpec++ differs by 
+combining \textbf{spectral modulation} with \textbf{token routing}.
+
+\subsection{Token Sparse Attention}
+
+\textbf{H2O} (Zhang et al., 2023) evicts KV tokens by accumulated attention. 
+\textbf{StreamingLLM} (Xiao et al., 2024) preserves attention sinks. \textbf{TCA} 
+(companion work) uses a learnable saliency net with \texttt{[CLS]} preservation. 
+VSpec++ uses a similar router, combined with the other gates.
+
+\subsection{Head Sparsity}
+
+\textbf{Squeezing Heads} (companion) distills heads. \textbf{Selective Attention} 
+(Lee et al., 2019) prunes heads. \textbf{HeadGate} in VSpec++ provides per-example 
+soft weighting rather than hard pruning.
+
+\subsection{Variational Methods in Attention}
+
+\textbf{Variational Dropout} (Kingma et al., 2015; Molchanov et al., 2017) 
+learns per-weight dropout rates via reparameterization. \textbf{VIB} (Alemi 
+et al., 2017) uses variational bounds for representation learning. 
+\textbf{Variational Attention} (Bahuleyan et al., 2018) uses a latent variable 
+for attention. Our variational spectral gate is closest to Variational 
+Dropout but applied to singular value importances.
+
+\subsection{Reparameterization Trick}
+
+\textbf{Kingma \& Welling (2013)} introduced the reparameterization trick for 
+training VAEs. \textbf{Rezende et al. (2014)} developed similar ideas 
+independently. We use the standard Gaussian reparameterization:
+
+\[
+z = \mu + \sigma \odot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+\tag{2.1}
+\]
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Method} & \textbf{SVD} & \textbf{Token route} & \textbf{Spectral gate} & \textbf{Head gate} & \textbf{Variational} \\
+\midrule
+SOA Fused & Yes & No & No & No & No \\
+TCA & No & Yes & No & No & No \\
+Squeezing Heads & No & No & No & Yes & No \\
+Variational Dropout & No & No & No & No & Yes \\
+\textbf{VSpec++} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} VSpec++ is the first to combine all four techniques 
+in a single attention block.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Params} & \textbf{Token} & \textbf{Spectral} & \textbf{Variational} \\
+\midrule
+MHSA & $4d^2$ & Full & -- & -- \\
+SOA Fused & $2d^2 + 2rd$ & Full & -- & -- \\
+TCA & $4d^2$ & Top-$k$ & -- & -- \\
+\textbf{VSpec++} & $2rd + \text{gates}$ & \textbf{Top-$k$} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
