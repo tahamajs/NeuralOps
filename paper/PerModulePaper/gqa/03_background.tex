@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Multi-Head Attention}
+\subsection{Multi-Head Attention}
 
 Standard MHA computes:
 
@@ -24,7 +24,7 @@ per head per token. The total cache size is:
 \tag{3.2}
 \]
 
-\subsection{3.2 Multi-Query Attention}
+\subsection{Multi-Query Attention}
 
 MQA shares a single $K, V$ pair across all query heads:
 
@@ -42,7 +42,7 @@ Query heads still project separately. During generation:
 
 Reduction factor: $H \times$.
 
-\subsection{3.3 Grouped-Query Attention}
+\subsection{Grouped-Query Attention}
 
 GQA partitions $H$ query heads into $G$ groups, each with its own $K, V$:
 
@@ -68,7 +68,7 @@ Query heads in group $g$ share $K_g, V_g$. The KV cache size is:
 Reduction factor: $H / G$. The MHA and MQA cases are special cases at 
 $G = H$ and $G = 1$.
 
-\subsection{3.4 KV Head Repetition}
+\subsection{KV Head Repetition}
 
 During the forward pass, each KV head must be repeated to match the 
 corresponding query heads. If $H / G = r$ (integer), each KV head is 
@@ -82,7 +82,7 @@ replicated $r$ times:
 This is implemented efficiently via \texttt{reshape} + \texttt{expand} (no memory copy 
 in most cases).
 
-\subsection{3.5 Rotary Position Embeddings (RoPE)}
+\subsection{Rotary Position Embeddings (RoPE)}
 
 RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
 
@@ -94,7 +94,7 @@ RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
 GQA applies RoPE to the shared $K$ heads before repetition. This is the 
 standard configuration in LLaMA, Mistral, and Qwen.
 
-\subsection{3.6 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable low-rank adapters:
 
@@ -106,4 +106,4 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
 with $B = 0$ at initialization. In GQA, we freeze the KV projection weights 
 and train LoRA adapters for recovery.
 
-\subsection{3.7 Notation Summary}
+\subsection{Notation Summary}

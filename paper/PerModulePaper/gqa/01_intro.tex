@@ -1,7 +1,7 @@
 
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Autoregressive inference in transformer models is memory-bound, not 
 compute-bound. During generation, the model stores keys and values for every 
@@ -29,18 +29,20 @@ per layer group, exceeding most consumer GPUs.
 
 Two extremes have been explored to reduce this cost:
 
-1. \textbf{Multi-Head Attention (MHA).} Each of the $H$ query heads has its own 
-   $K$ and $V$ ($H_{KV} = H$). Maximally expressive, maximally memory-intensive.
-2. \textbf{Multi-Query Attention (MQA).} All query heads share a single $K, V$ 
-   pair ($H_{KV} = 1$). Minimal memory, but empirically worse quality, 
-   especially on tasks requiring fine-grained attention.
+\begin{enumerate}
+\item \textbf{Multi-Head Attention (MHA).} Each of the $H$ query heads has its own
+  $K$ and $V$ ($H_{KV} = H$). Maximally expressive, maximally memory-intensive.
+\item \textbf{Multi-Query Attention (MQA).} All query heads share a single $K, V$
+  pair ($H_{KV} = 1$). Minimal memory, but empirically worse quality,
+  especially on tasks requiring fine-grained attention.
 
+\end{enumerate}
 \textbf{Grouped-Query Attention (GQA)} was introduced as a middle ground: partition 
 the $H$ query heads into $G$ groups, each with a dedicated $K, V$ pair 
 ($H_{KV} = G$). The KV cache shrinks by a factor of $H / G$, and quality 
 degrades gracefully with $G$.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained MHA-based model $\mathcal{M}$ with $H$ query heads and 
 $H_{KV} = H$, we seek a modified model $\mathcal{M}'$ such that:
@@ -53,47 +55,45 @@ $H_{KV} = H$, we seek a modified model $\mathcal{M}'$ such that:
 
 We impose the following constraints:
 
-1. \textbf{Quality preservation:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
-2. \textbf{Weight compatibility:} No retraining of base weights; use LoRA recovery.
-3. \textbf{Architecture portability:} Must work with flat, nested, and causal transformers.
-4. \textbf{Inference ready:} KV cache reduction must be realized at generation time.
+\begin{enumerate}
+\item \textbf{Quality preservation:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
+\item \textbf{Weight compatibility:} No retraining of base weights; use LoRA recovery.
+\item \textbf{Architecture portability:} Must work with flat, nested, and causal transformers.
+\item \textbf{Inference ready:} KV cache reduction must be realized at generation time.
 
-\subsection{1.3 Our Approach}
+\end{enumerate}
+\subsection{Our Approach}
 
 We present a production-hardened implementation of GQA with three key features:
 
-1. \textbf{Exact weight transfer.} The \texttt{copy\_weights} procedure handles four 
-   distinct attention configurations: flat (DistilBERT), nested (RoBERTa), 
-   causal (GPT-2), and grouped-query (Qwen3.5). For MHA $\to$ GQA conversion, 
-   query weights are copied verbatim; KV weights are grouped and repeated.
+\begin{enumerate}
+\item \textbf{Exact weight transfer.} The \texttt{copy\_weights} procedure handles four
+  distinct attention configurations: flat (DistilBERT), nested (RoBERTa),
+  causal (GPT-2), and grouped-query (Qwen3.5). For MHA $\to$ GQA conversion,
+  query weights are copied verbatim; KV weights are grouped and repeated.
 
-2. \textbf{Flexible group size.} We support $G \in \{1, 2, \ldots, H\}$. The 
-   default is $G = H / 2$, giving a 2$\times$ KV cache reduction.
+\item \textbf{Flexible group size.} We support $G \in \{1, 2, \ldots, H\}$. The
+  default is $G = H / 2$, giving a 2$\times$ KV cache reduction.
 
-3. \textbf{LoRA recovery.} After injection, the base weights are frozen and 
-   only LoRA adapters are trainable. This preserves pretrained knowledge 
-   while allowing task-specific adaptation.
+\item \textbf{LoRA recovery.} After injection, the base weights are frozen and
+  only LoRA adapters are trainable. This preserves pretrained knowledge
+  while allowing task-specific adaptation.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A production-hardened GQA implementation.} Our PyTorch implementation
-\end{itemize}
   handles four attention variants, RoPE, LoRA recovery, and safe fallback.
-\begin{itemize}
 \item \textbf{A systematic evaluation.} We benchmark GQA on DistilBERT, RoBERTa, and
-\end{itemize}
   GPT-2 on SST-2 with ablations over $G / H$ ratio.
-\begin{itemize}
 \item \textbf{KV cache analysis.} We provide a detailed breakdown of where the memory
-\end{itemize}
   savings come from and how they scale with $L$ and $B$.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts are
-\end{itemize}
   released under MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on attention 
 and KV cache. Section 4 presents GQA. Section 5 describes integration with 

@@ -1,65 +1,65 @@
 
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 No Time Speedup Without Sparse Kernels}
+\subsection{No Time Speedup Without Sparse Kernels}
 
 NSA computes the full $L \times L$ score matrix then masks. Without sparse 
 matmul kernels that skip masked entries, no wall-clock speedup is realized.
 
-\subsection{10.2 No Parameter Reduction}
+\subsection{No Parameter Reduction}
 
 NSA adds \textbf{zero} parameters. Its benefit is attention sparsity, not 
 parameter compression.
 
-\subsection{10.3 Fixed Hyperparameters}
+\subsection{Fixed Hyperparameters}
 
 $w$ and $k$ are hyperparameters, not learned per head or per layer. Our 
 Adaptive Sparse Attention (companion method) does learn these.
 
-\subsection{10.4 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 evaluated at $L = 128$. Long-context tasks ($L > 512$) not 
 tested.
 
-\subsection{10.5 Model Coverage}
+\subsection{Model Coverage}
 
 Tested on models with $H = 12$. Not tested on:
 \begin{itemize}
 \item Wide models ($H > 32$)
 \item Mixture-of-Experts
 \item Vision transformers
-\end{itemize}
 
-\subsection{10.6 No Speedup at Short L}
+\end{itemize}
+\subsection{No Speedup at Short L}
 
 At $L = 128$ with $w = 32, k = 16$: density is 63\%. Small benefit.
 
-\subsection{10.7 Top-K Time Complexity}
+\subsection{Top-K Time Complexity}
 
 \texttt{torch.topk} on $L \times L$ costs $\mathcal{O}(L^2)$. NSA does not reduce 
 asymptotic time complexity.
 
-\subsection{10.8 Single Seed}
+\subsection{Single Seed}
 
 All results from seed 42.
 
-\subsection{10.9 No Comparison with Some Baselines}
+\subsection{No Comparison with Some Baselines}
 
 We do not compare with:
 \begin{itemize}
 \item Longformer
 \item BigBird
 \item Routing Transformer
-\end{itemize}
 
-\subsection{10.10 Failure Modes}
+\end{itemize}
+\subsection{Failure Modes}
 
 Long-context evaluation, sparse kernels
 
-\subsection{10.11 Code Quality}
+\subsection{Code Quality}
 
 Research-grade implementation.
 
-\subsection{10.12 Ethical Considerations}
+\subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.

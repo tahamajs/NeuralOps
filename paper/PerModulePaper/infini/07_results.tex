@@ -1,7 +1,7 @@
 
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: Main results on SST-2.}
 
@@ -13,16 +13,16 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 183 MB & 1.9 s \\
-DistilBERT & **Infini** & **89.5** & -1.21 & 0.895 & 0 & 220 MB & 4.5 s \\
+DistilBERT & \textbf{Infini} & \textbf{89.5} & -1.21 & 0.895 & 0 & 220 MB & 4.5 s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 712 MB & 4.1 s \\
-RoBERTa & **Infini** & **76.5** & -2.06 & 0.765 & 0 & 790 MB & 9.0 s \\
+RoBERTa & \textbf{Infini} & \textbf{76.5} & -2.06 & 0.765 & 0 & 790 MB & 9.0 s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 793 MB & 4.2 s \\
-GPT-2 & **Infini** & **77.5** & -1.86 & 0.775 & 0 & 870 MB & 9.2 s \\
+GPT-2 & \textbf{Infini} & \textbf{77.5} & -1.86 & 0.775 & 0 & 870 MB & 9.2 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \textbf{Table 7.2: Parameter counts.}
 
@@ -52,12 +52,12 @@ GPT-2 & 124,441,344 & 126799360 & +2358016 & +1.89\% \\
 Memory $M$ & 98,304 & 589,824 \\
 Gate $\beta$ & 1 & 6 \\
 LoRA (4 projections) & 98,304 & 589,824 \\
-**Total** & **196,609** & **1,179,654** \\
+\textbf{Total} & \textbf{196,609} & \textbf{1,179,654} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.3 Efficiency Profile}
+\subsection{Efficiency Profile}
 
 \textbf{Table 7.3: Inference efficiency.}
 
@@ -78,7 +78,7 @@ GPT-2 & Infini & 9.2 s & 12200 & 870 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.4 Ablation: Compression Dimension $d_c$}
+\subsection{Ablation: Compression Dimension $d_c$}
 
 \textbf{Table 7.4: Accuracy vs compression dim.}
 
@@ -99,7 +99,7 @@ GPT-2 & Infini & 9.2 s & 12200 & 870 MB \\
 
 \textbf{Observation.} d\_c=128 is a sweet spot; d\_c=256 gives <0.1\% improvement at 2$\times$ cost
 
-\subsection{7.5 Ablation: Local Window $W$}
+\subsection{Ablation: Local Window $W$}
 
 \textbf{Table 7.5: Accuracy vs window size.}
 
@@ -118,7 +118,7 @@ GPT-2 & Infini & 9.2 s & 12200 & 870 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: $\beta$ Initialization}
+\subsection{Ablation: $\beta$ Initialization}
 
 \textbf{Table 7.6: Accuracy vs initial $\beta$.}
 
@@ -139,7 +139,7 @@ GPT-2 & Infini & 9.2 s & 12200 & 870 MB \\
 
 \textbf{Observation.} $\beta$=-5 works best; $\beta$=-2 destabilizes; $\beta$=0 fails to converge
 
-\subsection{7.7 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \textbf{Table 7.7: Accuracy vs LoRA rank.}
 
@@ -158,7 +158,7 @@ GPT-2 & Infini & 9.2 s & 12200 & 870 MB \\
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.8: Infini vs prior modules.}
 
@@ -172,12 +172,12 @@ GPT-2 & Infini & 9.2 s & 12200 & 870 MB \\
 full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
 nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
 eat & 90.25\% & 0.00\% & 78.78\% & 1.01$\times$ \\
-**infini** & **89.5** & **76.5** & **77.5** & **1.02$\times$** \\
+\textbf{infini} & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} & \textbf{1.02$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Failure Cases}
+\subsection{Failure Cases}
 
 \textbf{Table 7.9: Failures.}
 
@@ -195,4 +195,4 @@ GPT-2 & PASS & 77.5 & -- \\
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Summary}
+\subsection{Summary}

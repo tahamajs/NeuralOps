@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Sliding-Window Attention}
+\subsection{Sliding-Window Attention}
 
 Given $Q, K, V \in \mathbb{R}^{L \times d_h}$ and window size $w$:
 
@@ -20,7 +20,7 @@ O_i^\text{local} = \frac{\sum_j \text{mask}_{ij} \exp(S_{ij}) V_j}{\sum_j \text{
 
 \textbf{Causal version.} Only $j \le i$ and $i - j \leq w$ are attended.
 
-\subsection{3.2 Random Fourier Features}
+\subsection{Random Fourier Features}
 
 Rahimi \& Recht (2007) show that:
 
@@ -44,7 +44,7 @@ with positive orthogonal features.
 
 with $\Omega \in \mathbb{R}^{d_h \times m}$ orthogonal.
 
-\subsection{3.3 Orthogonal Projection Matrix}
+\subsection{Orthogonal Projection Matrix}
 
 We construct $\Omega$ by block QR:
 
@@ -59,7 +59,7 @@ on a random Gaussian matrix, and $b = \lceil m / d_h \rceil$.
 \textbf{Why orthogonal?} Orthogonal projections give \textbf{lower variance} kernel 
 approximation than i.i.d. Gaussians, at no extra cost.
 
-\subsection{3.4 Kernel Linear Attention}
+\subsection{Kernel Linear Attention}
 
 Given $\phi$, linear attention is:
 
@@ -70,7 +70,7 @@ O_i^\text{global} = \frac{\phi(Q_i)^\top \left(\sum_j \phi(K_j) V_j^\top\right)}
 
 \textbf{Complexity.} $\mathcal{O}(L m d_h)$ time, $\mathcal{O}(m d_h)$ memory.
 
-\subsection{3.5 Causal Prefix Scan}
+\subsection{Causal Prefix Scan}
 
 For causal models, the cumulative state is:
 
@@ -93,7 +93,7 @@ S \leftarrow S + \sum_{j \in \text{chunk}} \phi(K_j) V_j^\top
 
 This bounds memory to $\mathcal{O}(m d_h)$ regardless of $L$.
 
-\subsection{3.6 Sigmoid Gate}
+\subsection{Sigmoid Gate}
 
 Per-token gate:
 
@@ -105,4 +105,4 @@ g_i = \sigma(w^\top x_i + b) \in (0, 1)
 \textbf{Initialization.} $w = 0$, $b = 3.0$ gives $g_i = \sigma(3) \approx 0.95$ 
 for all tokens. The model starts close to the local stream.
 
-\subsection{3.7 Notation Summary}
+\subsection{Notation Summary}

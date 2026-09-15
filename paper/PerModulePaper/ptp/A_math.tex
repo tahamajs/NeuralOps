@@ -18,12 +18,10 @@ $0 \in \mathcal{T}$. $\square$
 \textbf{Proof.} For query $i$ and pruned key $j \in \mathcal{T}$:
 \begin{itemize}
 \item If original position $\mathcal{T}[b, j] > i$, then the causal mask is
-\end{itemize}
   $-\infty$, and $P_{ij} = 0$.
-\begin{itemize}
 \item Otherwise, $\mathcal{T}[b, j] \leq i$, and attention is allowed.
-\end{itemize}
 
+\end{itemize}
 Therefore $O_i$ depends only on tokens with original position $\leq i$. 
 $\square$
 

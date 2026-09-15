@@ -1,17 +1,19 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 GQA is a \textbf{structural modification} of the attention mechanism: it reduces 
 the number of $K, V$ heads from $H$ to $G$ while keeping all $H$ query heads 
 intact. The modification consists of four components:
 
-1. \textbf{Group configuration} ( 4.2): choose $G$.
-2. \textbf{Projection initialization} ( 4.3): initialize $K, V$ for the reduced head count.
-3. \textbf{Weight transfer} ( 4.4): copy query weights verbatim; group-reduce KV weights.
-4. \textbf{Forward pass} ( 4.5): apply standard attention with KV repetition.
+\begin{enumerate}
+\item \textbf{Group configuration} ( 4.2): choose $G$.
+\item \textbf{Projection initialization} ( 4.3): initialize $K, V$ for the reduced head count.
+\item \textbf{Weight transfer} ( 4.4): copy query weights verbatim; group-reduce KV weights.
+\item \textbf{Forward pass} ( 4.5): apply standard attention with KV repetition.
 
+\end{enumerate}
 \textbf{Figure 4.1} shows the difference between MHA, GQA, and MQA at $H = 8$.
 
 \begin{lstlisting}
@@ -27,18 +29,18 @@ intact. The modification consists of four components:
     Q8 -- K8 V8             Q8 -- +                 Q8 -- +
 \end{lstlisting}
 
-\subsection{4.2 Group Configuration}
+\subsection{Group Configuration}
 
 The number of KV heads $G$ satisfies $1 \le G \le H$. Two natural choices:
 
 \begin{itemize}
 \item \textbf{Default:} $G = H / 2$ (2$\times$ KV cache reduction).
 \item \textbf{Aggressive:} $G = H / 4$ or $G = 1$ (MQA).
-\end{itemize}
 
+\end{itemize}
 Our default is $G = H / 2$ to balance quality and memory.
 
-\subsection{4.3 Projection Initialization}
+\subsection{Projection Initialization}
 
 For a target model with hidden size $d$ and per-head dimension $d_h$:
 
@@ -52,9 +54,9 @@ W_O \in \mathbb{R}^{H d_h \times d}
 The query and output projections have unchanged shapes; only $W_K, W_V$ 
 shrink by $H / G$.
 
-\subsection{4.4 Weight Transfer}
+\subsection{Weight Transfer}
 
-\subsubsection{4.4.1 From MHA to GQA}
+\subsubsection{From MHA to GQA}
 
 Given MHA weights $W_Q^{(\text{MHA})} \in \mathbb{R}^{d \times H d_h}$ and 
 $W_K^{(\text{MHA})}, W_V^{(\text{MHA})} \in \mathbb{R}^{d \times H d_h}$, we 
@@ -77,7 +79,7 @@ of the head weights within each group.
 \textbf{Alternative:} We could pick the first head in each group or use learned 
 pooling. Our experiments use averaging.
 
-\subsubsection{4.4.2 From GQA to GQA (Re-grouping)}
+\subsubsection{From GQA to GQA (Re-grouping)}
 
 If the source is already GQA with $G_\text{src}$ groups and we want 
 $G_\text{tgt} < G_\text{src}$, we group the source KV heads:
@@ -89,7 +91,7 @@ W_K^{(\text{tgt})}_g = \text{mean}\!\left(W_K^{(\text{src})}_{g' \in g}\right)
 
 If $G_\text{tgt} = G_\text{src}$, the copy is exact.
 
-\subsubsection{4.4.3 Copy Procedure Pseudocode}
+\subsubsection{Copy Procedure Pseudocode}
 
 \textbf{Algorithm 1:} \texttt{copy\_weights} for GQA
 \begin{lstlisting}
@@ -121,7 +123,7 @@ Output: GQA weights
 22: freeze_base_weights()
 \end{lstlisting}
 
-\subsection{4.5 Forward Pass}
+\subsection{Forward Pass}
 
 \textbf{Algorithm 2:} GQA forward
 \begin{lstlisting}
@@ -151,9 +153,9 @@ Output: Y $\in$ R^{B $\times$ N $\times$ d}
 20: return Y
 \end{lstlisting}
 
-\subsection{4.6 KV Cache Analysis}
+\subsection{KV Cache Analysis}
 
-\subsubsection{4.6.1 Per-Token Memory}
+\subsubsection{Per-Token Memory}
 
 For a single layer at sequence position $t$:
 
@@ -167,7 +169,7 @@ For a single layer at sequence position $t$:
 \tag{4.6}
 \]
 
-\subsubsection{4.6.2 Total Cache}
+\subsubsection{Total Cache}
 
 For sequence length $L$ and batch size $B$ across $N_l$ layers:
 
@@ -176,7 +178,7 @@ For sequence length $L$ and batch size $B$ across $N_l$ layers:
 \tag{4.7}
 \]
 
-\subsubsection{4.6.3 Concrete Numbers}
+\subsubsection{Concrete Numbers}
 
 For GPT-2 ($N_l = 12$, $H = 12$, $d_h = 64$, FP16):
 
@@ -195,7 +197,7 @@ MQA & 1 & 3.1 & 3.1 & 25 \\
 \end{tabular}
 \end{table}
 
-\subsection{4.7 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -209,7 +211,7 @@ K projection FLOPs & $\mathcal{O}(N d \cdot H d_h)$ & $\mathcal{O}(N d \cdot G d
 V projection FLOPs & Same as K & Same as K \\
 Attention FLOPs & $\mathcal{O}(N^2 H d_h)$ & Same \\
 Output projection FLOPs & Same & Same \\
-**KV cache bytes** & $2 H d_h L B$ & $2 G d_h L B$ \\
+\textbf{KV cache bytes} & $2 H d_h L B$ & $2 G d_h L B$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -218,25 +220,27 @@ Output projection FLOPs & Same & Same \\
 to $G / H$, but \textbf{not} attention FLOPs or output projection FLOPs. The primary 
 benefit is memory-bound inference.
 
-\subsection{4.8 Rank and Head Grouping}
+\subsection{Rank and Head Grouping}
 
 The number of KV heads $G$ must satisfy two constraints:
 
-1. $G \le H$ (can't have more KV heads than query heads).
-2. $H$ is divisible by $G$ (each group has $H / G$ heads).
+\begin{enumerate}
+\item $G \le H$ (can't have more KV heads than query heads).
+\item $H$ is divisible by $G$ (each group has $H / G$ heads).
 
+\end{enumerate}
 If $H$ is prime, only $G = 1$ or $G = H$ are valid. For $H = 12$, valid values 
 are $G \in \{1, 2, 3, 4, 6, 12\}$.
 
-\subsection{4.9 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.9.1 MHA and MQA as Special Cases}
+\subsubsection{MHA and MQA as Special Cases}
 
 At $G = H$, GQA reduces to MHA (each head has its own KV). At $G = 1$, GQA 
 reduces to MQA (all heads share KV). GQA is a \textbf{continuous interpolation} 
 between these extremes.
 
-\subsubsection{4.9.2 Expressiveness Bound}
+\subsubsection{Expressiveness Bound}
 
 For a fixed sequence, the set of attention matrices expressible by GQA is a 
 subset of MHA's expressible set. The reduction is bounded by the number of 

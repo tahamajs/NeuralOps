@@ -1,23 +1,23 @@
 
-\section{9. Discussion}
+\section{Discussion}
 
-\subsection{9.1 Key Takeaways}
+\subsection{Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Hybrid Works Without Retraining}
+\subsubsection{Takeaway 1: Hybrid Works Without Retraining}
 
 NHA preserves most pretrained accuracy while reducing complexity to linear 
 in $L$.
 
-\subsubsection{9.1.2 Takeaway 2: Orthogonal RFF Matters}
+\subsubsection{Takeaway 2: Orthogonal RFF Matters}
 
 Using orthogonal projection reduces variance, stabilizing training.
 
-\subsubsection{9.1.3 Takeaway 3: Learned Gates are Interpretable}
+\subsubsection{Takeaway 3: Learned Gates are Interpretable}
 
 The learned gate distribution reveals which positions benefit from local vs 
 global attention.
 
-\subsection{9.2 When to Use NHA}
+\subsection{When to Use NHA}
 
 \subsubsection{Recommended}
 
@@ -26,16 +26,16 @@ global attention.
 \item \textbf{Memory-constrained hardware}
 \item \textbf{Interpretability studies} of local vs global needs
 \item \textbf{Base for further optimization} (quantization, distillation)
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
 \item \textbf{Very short sequences} ($L < 128$)
 \item \textbf{Parameter reduction} (use A3/AASVD)
-\end{itemize}
 
-\subsection{9.3 Choosing Window Size}
+\end{itemize}
+\subsection{Choosing Window Size}
 
 \begin{table}[H]
 \centering
@@ -52,7 +52,7 @@ global attention.
 \end{tabular}
 \end{table}
 
-\subsection{9.4 Choosing RFF Features}
+\subsection{Choosing RFF Features}
 
 \begin{table}[H]
 \centering
@@ -69,7 +69,7 @@ Maximum & 256 \\
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Cost-Benefit}
+\subsection{Cost-Benefit}
 
 For GPT-2 at $L = 2048$:
 
@@ -86,27 +86,29 @@ NHA & 572 MB & 5.0 s & 78.78\% \\
 \end{tabular}
 \end{table}
 
-\subsection{9.6 Open Questions}
+\subsection{Open Questions}
 
-1. \textbf{Chunk size optimization:} Can we learn the optimal chunk size?
-2. \textbf{Adaptive RFF count:} Per-head different $m$?
-3. \textbf{Combining with GQA:} Orthogonal optimizations?
-4. \textbf{Learned kernel:} Replace ELU with a learned kernel?
+\begin{enumerate}
+\item \textbf{Chunk size optimization:} Can we learn the optimal chunk size?
+\item \textbf{Adaptive RFF count:} Per-head different $m$?
+\item \textbf{Combining with GQA:} Orthogonal optimizations?
+\item \textbf{Learned kernel:} Replace ELU with a learned kernel?
 
-\subsection{9.7 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Long-context inference:} Enables more capable applications.
 \item \textbf{Cheaper inference:} Reduces compute per token.
 \item \textbf{Interpretability:} Gate analysis reveals structure.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Enables surveillance at scale.
 \item \textbf{Concentration:} Favors large labs.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.

@@ -1,24 +1,22 @@
 
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Transformer attention at inference has two distinct regimes that pull in 
 opposite directions:
 
 \begin{itemize}
 \item \textbf{Local regime.} Attention concentrates on nearby tokens, especially in
-\end{itemize}
-  early layers. Sliding-window attention (Beltagy et al., 2020) exploits this 
+  early layers. Sliding-window attention (Beltagy et al., 2020) exploits this
   with $\mathcal{O}(L w)$ complexity, where $w$ is the window size.
 
-\begin{itemize}
 \item \textbf{Global regime.} Some attention heads (e.g., attention sinks, coreference
-\end{itemize}
-  heads) attend to distant tokens. Linear attention (Katharopoulos et al., 
-  2020; Choromanski et al., 2021) approximates global attention in 
+  heads) attend to distant tokens. Linear attention (Katharopoulos et al.,
+  2020; Choromanski et al., 2021) approximates global attention in
   $\mathcal{O}(L)$ via a kernel factorization.
 
+\end{itemize}
 \textbf{The problem with picking one.} Longformer's window truncates global 
 context. Performer's random features degrade local precision. Neither 
 extremes is universally better.
@@ -28,28 +26,32 @@ runs both and combines them. If the combination weight is **learned per
 token**, the model can allocate local precision where it matters and global 
 approximation elsewhere.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained transformer with dense attention, we seek a modified 
 module $\mathcal{A}'$ such that:
 
-1. \textbf{Parallel streams:} Both local and global attention are computed 
-   simultaneously.
-2. \textbf{Learned fusion:} A per-token gate mixes the two streams.
-3. \textbf{Stability:} The gate is initialized to favor the pretrained behavior.
-4. \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
-5. \textbf{Pretrained compatibility:} No base retraining; only LoRA + gate 
-   parameters are trainable.
+\begin{enumerate}
+\item \textbf{Parallel streams:} Both local and global attention are computed
+  simultaneously.
+\item \textbf{Learned fusion:} A per-token gate mixes the two streams.
+\item \textbf{Stability:} The gate is initialized to favor the pretrained behavior.
+\item \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
+\item \textbf{Pretrained compatibility:} No base retraining; only LoRA + gate
+  parameters are trainable.
 
-\subsection{1.3 Our Approach: NHA}
+\end{enumerate}
+\subsection{Our Approach: NHA}
 
 \textbf{Native Hybrid Attention} (NHA) runs two attention streams in parallel:
 
-1. \textbf{Local stream} $\mathcal{A}_\text{local}$: sliding-window attention with 
-   window size $w$ and chunked computation.
-2. \textbf{Global stream} $\mathcal{A}_\text{global}$: RFF-based linear attention 
-   with orthogonal projection matrix.
+\begin{enumerate}
+\item \textbf{Local stream} $\mathcal{A}_\text{local}$: sliding-window attention with
+  window size $w$ and chunked computation.
+\item \textbf{Global stream} $\mathcal{A}_\text{global}$: RFF-based linear attention
+  with orthogonal projection matrix.
 
+\end{enumerate}
 The streams are combined via a \textbf{token-level learned gate}:
 
 \[
@@ -62,38 +64,32 @@ toward local, $\sigma(3) \approx 0.95$).
 
 \textbf{Key design choices:}
 
-1. \textbf{Orthogonal RFF projection.} We build the RFF projection via block QR, 
-   reducing variance compared to i.i.d. Gaussian projections.
-2. \textbf{Chunked causal prefix scan.} For decoders, the RFF stream maintains 
-   cumulative state across chunks, preserving strict causality.
-3. \textbf{Token-level gating.} The gate is per token, not per head, capturing 
-   position-specific needs without excess parameters.
+\begin{enumerate}
+\item \textbf{Orthogonal RFF projection.} We build the RFF projection via block QR,
+  reducing variance compared to i.i.d. Gaussian projections.
+\item \textbf{Chunked causal prefix scan.} For decoders, the RFF stream maintains
+  cumulative state across chunks, preserving strict causality.
+\item \textbf{Token-level gating.} The gate is per token, not per head, capturing
+  position-specific needs without excess parameters.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A native hybrid attention module.} NHA runs local and global streams in
-\end{itemize}
   parallel within each layer, fused by a learned token-level gate.
-\begin{itemize}
 \item \textbf{Orthogonal RFF.} We use block-QR orthogonal projections for reduced
-\end{itemize}
   variance.
-\begin{itemize}
 \item \textbf{Chunked causal scan.} A memory-bounded RFF implementation for decoders.
 \item \textbf{A production-hardened implementation.} Supports four architectures
-\end{itemize}
   with RoPE, GQA, LoRA recovery, and safe injection.
-\begin{itemize}
 \item \textbf{A systematic evaluation.} Benchmarked on DistilBERT, RoBERTa, and GPT-2
-\end{itemize}
   on SST-2 with ablations over window size, RFF feature count, and gate bias.
-\begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
-\end{itemize}
   under MIT.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on local and 
 linear attention. Section 4 presents NHA. Section 5 describes integration 

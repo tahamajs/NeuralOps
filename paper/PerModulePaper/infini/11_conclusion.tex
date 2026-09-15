@@ -1,14 +1,14 @@
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{Infini-Attention}, a drop-in replacement for MHSA that 
 combines sliding-window local attention with a learned compressive memory 
 via a gated scalar $\beta$. The gate is initialized to $\sigma(-5) \approx 0.007$, 
 preserving pretrained behavior at start.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -26,48 +26,48 @@ GPT-2 & -1.86\% & +1.89\% & 2.2$\times$ \\
 
 At longer sequences, the efficiency benefit dominates.
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Not a compressor.} Parameters increase.
-2. \textbf{Long-context benefit.} $\mathcal{O}(L(W + d_c))$ vs $\mathcal{O}(L^2)$.
-3. \textbf{Multi-architecture.} Same code, four families.
-4. \textbf{$\beta$ init critical.} $-5$ works well.
+\begin{enumerate}
+\item \textbf{Not a compressor.} Parameters increase.
+\item \textbf{Long-context benefit.} $\mathcal{O}(L(W + d_c))$ vs $\mathcal{O}(L^2)$.
+\item \textbf{Multi-architecture.} Same code, four families.
+\item \textbf{$\beta$ init critical.} $-5$ works well.
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Cross-attention support
 \item Multi-memory variant
 \item Fused Triton kernels
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical analysis
 \item Needle-in-haystack evaluation
 \item Scaling to >1B models
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 Infini-Attention is a practical tool for long-context inference. We release 
 all code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 {{ACKNOWLEDGMENTS}}
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed Infini-Attention, implemented the code, ran
-\end{itemize}
   experiments, wrote the paper.
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

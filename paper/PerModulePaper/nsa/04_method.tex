@@ -1,12 +1,14 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 NSA computes a hybrid sparse attention mask that combines:
-1. A \textbf{fixed sliding window}.
-2. A \textbf{dynamic top-$k$} selection of distant keys.
+\begin{enumerate}
+\item A \textbf{fixed sliding window}.
+\item A \textbf{dynamic top-$k$} selection of distant keys.
 
+\end{enumerate}
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
@@ -43,7 +45,7 @@ NSA computes a hybrid sparse attention mask that combines:
               O = P   V
 \end{lstlisting}
 
-\subsection{4.2 Local Window Mask}
+\subsection{Local Window Mask}
 
 For window size $w$:
 
@@ -59,9 +61,9 @@ For window size $w$:
 \tag{4.2}
 \]
 
-\subsection{4.3 Dynamic Top-K Global}
+\subsection{Dynamic Top-K Global}
 
-\subsubsection{4.3.1 Score Computation}
+\subsubsection{Score Computation}
 
 Given scores $s_{ij} = Q_i^\top K_j / \sqrt{d_h}$, we mask out the local 
 window and padding:
@@ -78,7 +80,7 @@ window and padding:
 \tag{4.4}
 \]
 
-\subsubsection{4.3.2 Top-K Selection}
+\subsubsection{Top-K Selection}
 
 We select the top-$k$ positions:
 
@@ -89,14 +91,14 @@ We select the top-$k$ positions:
 
 Implemented via \texttt{torch.topk}.
 
-\subsubsection{4.3.3 Why Top-K on Masked Scores?}
+\subsubsection{Why Top-K on Masked Scores?}
 
 We could instead select top-$k$ over all scores and then remove window 
 positions. But that would waste $k$ budget on window entries. By masking 
 window first, we ensure all $k$ selections are \textbf{outside} the window, 
 maximizing the union coverage.
 
-\subsection{4.4 Union Mask}
+\subsection{Union Mask}
 
 The combined mask is:
 
@@ -112,7 +114,7 @@ The combined mask is:
 \tag{4.7}
 \]
 
-\subsection{4.5 Short Sequence Handling}
+\subsection{Short Sequence Handling}
 
 When $L \leq 2w + 1$, every key is already in the window. The top-$k$ step 
 is skipped:
@@ -124,7 +126,7 @@ is skipped:
 
 This avoids unnecessary computation for short sequences.
 
-\subsection{4.6 Efficient Top-K Computation}
+\subsection{Efficient Top-K Computation}
 
 \textbf{Full computation} (naive):
 
@@ -144,9 +146,9 @@ $\mathcal{O}(L^2)$ time. This is not better than dense attention, but:
 \item We only care about \textbf{memory} (masked softmax), not time.
 \item For $L > 512$, the sparse mask saves memory in subsequent operations.
 \item A custom top-$k$ kernel could reduce time, but that's future work.
-\end{itemize}
 
-\subsection{4.7 Causality Enforcement}
+\end{itemize}
+\subsection{Causality Enforcement}
 
 \textbf{Critical ordering.} We apply causal masking \textbf{before} top-$k$ selection 
 to prevent future leakage:
@@ -166,7 +168,7 @@ topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_ind, Tr
 
 \textbf{Verify.} For decoder, $j > i$ positions are never selected.
 
-\subsection{4.8 Complete Forward Pass}
+\subsection{Complete Forward Pass}
 
 \textbf{Algorithm 1:} NSA forward
 \begin{lstlisting}
@@ -209,7 +211,7 @@ Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 33: return O
 \end{lstlisting}
 
-\subsection{4.9 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -241,7 +243,7 @@ For $L = 2048$: $\rho = 0.04$.
 \textbf{To realize speedup}, one needs sparse matmul kernels that skip the 
 $-10^4$-masked entries. This is future work.
 
-\subsection{4.10 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -251,7 +253,7 @@ $-10^4$-masked entries. This is future work.
 \textbf{Component} & \textbf{Baseline} & \textbf{NSA} \\
 \midrule
 $W_Q, W_K, W_V, W_O$ & Standard & Same \\
-**Extra parameters** & 0 & **0** \\
+\textbf{Extra parameters} & 0 & \textbf{0} \\
 LoRA & 0 & $2 r (\cdots)$ \\
 \bottomrule
 \end{tabular}
@@ -260,9 +262,9 @@ LoRA & 0 & $2 r (\cdots)$ \\
 \textbf{NSA adds zero parameters.} The window size $w$ and top-$k$ count are 
 hyperparameters, not trainable.
 
-\subsection{4.11 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.11.1 Attention Mass Preservation}
+\subsubsection{Attention Mass Preservation}
 
 \textbf{Claim.} For any $\epsilon > 0$, there exists a window $w$ and top-$k$ 
 count $k$ such that the preserved attention mass is at least $1 - \epsilon$:
@@ -275,7 +277,7 @@ count $k$ such that the preserved attention mass is at least $1 - \epsilon$:
 \textbf{Proof sketch.} Set $w$ large enough to cover local mass, and $k$ large 
 enough to cover the tail. $\square$
 
-\subsubsection{4.11.2 Top-K Selection Quality}
+\subsubsection{Top-K Selection Quality}
 
 \textbf{Claim.} Top-$k$ on masked scores $\tilde{s}_{ij}$ yields the same top-$k$ 
 set as top-$k$ on $s_{ij}$ outside the window.
@@ -283,17 +285,19 @@ set as top-$k$ on $s_{ij}$ outside the window.
 \textbf{Proof.} Masking with $-\infty$ preserves the ordering of valid entries. 
 $\square$
 
-\subsubsection{4.11.3 Causality Guarantee}
+\subsubsection{Causality Guarantee}
 
 \textbf{Claim.} For decoders, NSA never attends to future positions.
 
 \textbf{Proof.} Two mechanisms:
-1. Local mask: $i - j \leq w$ AND $j \leq i$.
-2. Top-$k$ mask: computed on scores that have been causal-masked.
+\begin{enumerate}
+\item Local mask: $i - j \leq w$ AND $j \leq i$.
+\item Top-$k$ mask: computed on scores that have been causal-masked.
 
+\end{enumerate}
 Combined with a final causal AND, causality is guaranteed. $\square$
 
-\subsubsection{4.11.4 Coverage Bound}
+\subsubsection{Coverage Bound}
 
 \textbf{Claim.} The number of attended keys is bounded by:
 

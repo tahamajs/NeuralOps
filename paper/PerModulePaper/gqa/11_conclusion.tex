@@ -1,14 +1,14 @@
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented a production-hardened implementation of **Grouped-Query 
 Attention** (GQA) supporting flat, nested, causal, and GQA-native 
 architectures. GQA reduces KV cache by $H / G$ at inference with minimal 
 quality loss.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -17,22 +17,24 @@ quality loss.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{KV ratio} & \textbf{Params $\Delta$} \\
 \midrule
-DistilBERT & -2.2\% & **2.0$\times$** & 1.05$\times$ \\
-RoBERTa & -3.1\% & **2.0$\times$** & 1.05$\times$ \\
-GPT-2 & -2.4\% & **2.0$\times$** & 1.05$\times$ \\
+DistilBERT & -2.2\% & \textbf{2.0$\times$} & 1.05$\times$ \\
+RoBERTa & -3.1\% & \textbf{2.0$\times$} & 1.05$\times$ \\
+GPT-2 & -2.4\% & \textbf{2.0$\times$} & 1.05$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{GQA reduces KV cache, not parameters.} For parameter reduction, use 
-   A3 or AASVD.
-2. \textbf{Quality loss is graceful.} At $G = H/2$, drops are small.
-3. \textbf{Long-context benefit is linear.} Savings grow with sequence length.
-4. \textbf{Compatible with quantization} for multiplicative savings.
+\begin{enumerate}
+\item \textbf{GQA reduces KV cache, not parameters.} For parameter reduction, use
+  A3 or AASVD.
+\item \textbf{Quality loss is graceful.} At $G = H/2$, drops are small.
+\item \textbf{Long-context benefit is linear.} Savings grow with sequence length.
+\item \textbf{Compatible with quantization} for multiplicative savings.
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
@@ -40,32 +42,32 @@ GPT-2 & -2.4\% & **2.0$\times$** & 1.05$\times$ \\
 \item Long-context evaluation ($L = 4096$)
 \item Per-head grouping analysis
 \item Non-uniform grouping
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical expressiveness analysis
 \item Cross-lingual evaluation
 \item Integration with MoE
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 GQA is a mature technique with wide adoption in industry (LLaMA, Mistral, 
 Qwen). Our implementation makes it accessible to researchers working with 
 diverse architectures. We release all code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank {{ACKNOWLEDGMENTS}}.
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} implemented the code, ran experiments, wrote the paper.
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

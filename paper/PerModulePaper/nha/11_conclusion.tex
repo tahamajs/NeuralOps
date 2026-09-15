@@ -1,13 +1,13 @@
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{NHA} (Native Hybrid Attention), a module that runs local 
 sliding-window attention and global RFF attention in parallel, combined via 
 a learned token-level gate.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -23,15 +23,17 @@ GPT-2 & -0.58\% & $\mathcal{O}(L(w+m))$ & 0.72 \\
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Linear complexity} in $L$ for both streams.
-2. \textbf{Learned gates} outperform fixed fusion.
-3. \textbf{Orthogonal RFF} stabilizes training.
-4. \textbf{Chunked scan} preserves causality with bounded memory.
-5. \textbf{No parameter reduction} -- compute-only optimization.
+\begin{enumerate}
+\item \textbf{Linear complexity} in $L$ for both streams.
+\item \textbf{Learned gates} outperform fixed fusion.
+\item \textbf{Orthogonal RFF} stabilizes training.
+\item \textbf{Chunked scan} preserves causality with bounded memory.
+\item \textbf{No parameter reduction} -- compute-only optimization.
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
@@ -39,31 +41,31 @@ GPT-2 & -0.58\% & $\mathcal{O}(L(w+m))$ & 0.72 \\
 \item Per-head RFF count
 \item Fused kernels for local + RFF
 \item Long-context evaluation
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical error bounds
 \item Cross-task gate transfer
 \item Integration with quantization
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 NHA provides an interpretable hybrid attention mechanism for linear-time 
 inference. We release code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank {{ACKNOWLEDGMENTS}}.
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed NHA, implemented the code, wrote the paper.
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

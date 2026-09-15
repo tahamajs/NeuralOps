@@ -69,25 +69,25 @@ the key-value (KV) cache, which scales linearly with sequence length and number
 of heads. Multi-Head Attention (MHA) stores one $K$ and $V$ per query head 
 ($H_{KV} = H$), which is maximally expressive but also maximally memory-intensive. 
 Multi-Query Attention (MQA) collapses all KV heads into one ($H_{KV} = 1$), 
-achieving minimal memory at a cost to quality. **Grouped-Query Attention** (GQA) 
+achieving minimal memory at a cost to quality. \textbf{Grouped-Query Attention} (GQA) 
 interpolates between these extremes: it partitions the $H$ query heads into $G$ 
 groups and shares a single KV head per group ($H_{KV} = G \le H$).
 
 We present a production-hardened PyTorch implementation of GQA that supports 
 flat (DistilBERT), nested (RoBERTa), causal (GPT-2), and grouped-query (Qwen3.5) 
 architectures. Our implementation includes exact pretrained weight transfer 
-via `copy\_weights`, frozen base weights with LoRA recovery adapters, RoPE 
-support, and safe injection returning `None` on failure. We evaluate GQA on 
+via \texttt{copy\_weights}, frozen base weights with LoRA recovery adapters, RoPE 
+support, and safe injection returning \texttt{None} on failure. We evaluate GQA on 
 DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with $G = H/2$ (i.e., 
-$H_{KV} = 6$), achieving **88.5\%**, **75.5\%**, and 
-**77.0\%** accuracy respectively. The KV cache footprint is reduced by 
-**{{KV\_REDUCTION}}$\times$** at inference time. We provide a full ablation over 
+$H_{KV} = 6$), achieving \textbf{88.5\%}, \textbf{75.5\%}, and 
+\textbf{77.0\%} accuracy respectively. The KV cache footprint is reduced by 
+\textbf{{{KV\_REDUCTION}}$\times$} at inference time. We provide a full ablation over 
 $G / H$ ratio and analyze the trade-off between memory savings and quality loss.
 
-**Keywords:** grouped-query attention, KV cache, memory efficiency, transformer 
+\textbf{Keywords:} grouped-query attention, KV cache, memory efficiency, transformer 
 inference, attention architecture
 
----
+
 
 \vspace{0.5em}
 \noindent\textbf{Keywords:} grouped-query attention, KV cache, memory efficiency, transformer

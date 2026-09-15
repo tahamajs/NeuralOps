@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Dense Softmax Attention}
+\subsection{Dense Softmax Attention}
 
 For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
@@ -12,7 +12,7 @@ For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
 \textbf{Complexity.} $\mathcal{O}(L^2 d_h)$ time, $\mathcal{O}(L^2)$ memory.
 
-\subsection{3.2 Token Pruning}
+\subsection{Token Pruning}
 
 Restrict attention to a subset $\mathcal{T} \subseteq \{1, \dots, L\}$ 
 of \textbf{retained tokens}:
@@ -33,7 +33,7 @@ For $|\mathcal{T}| = \rho L$:
 \tag{3.3}
 \]
 
-\subsection{3.3 Scoring Network}
+\subsection{Scoring Network}
 
 A learnable function $f_\theta: \mathbb{R}^d \to \mathbb{R}$ maps hidden 
 states to scores. Choices:
@@ -55,7 +55,7 @@ MLP-2 & Two hidden layers & More \\
 PTP uses \textbf{MLP-1} (one hidden layer of 64 units). This is a good 
 trade-off between expressiveness and parameter count.
 
-\subsection{3.4 Top-K Selection}
+\subsection{Top-K Selection}
 
 Given scores $s \in \mathbb{R}^L$:
 
@@ -67,7 +67,7 @@ Given scores $s \in \mathbb{R}^L$:
 \textbf{Complexity.} $\mathcal{O}(L \log k)$ via heap or $\mathcal{O}(L)$ via 
 quickselect.
 
-\subsection{3.5 [CLS] Preservation}
+\subsection{[CLS] Preservation}
 
 In classification tasks, the [CLS] token (position 0) carries the 
 aggregated sequence representation. Dropping it breaks classification.
@@ -81,7 +81,7 @@ s_0 \leftarrow 10^4
 
 This is a soft guarantee (no runtime branching required).
 
-\subsection{3.6 Padding Handling}
+\subsection{Padding Handling}
 
 Padding tokens have zero or invalid content. They must be excluded:
 
@@ -90,7 +90,7 @@ s_i \leftarrow -10^4 \quad \text{if token } i \text{ is padding}
 \tag{3.6}
 \]
 
-\subsection{3.7 Causal Masking}
+\subsection{Causal Masking}
 
 For decoder models, position $i$ cannot attend to $j > i$. After pruning, 
 we must preserve this by comparing \textbf{original} positions:
@@ -100,7 +100,7 @@ we must preserve this by comparing \textbf{original} positions:
 \tag{3.7}
 \]
 
-\subsection{3.8 Rotary Position Embeddings}
+\subsection{Rotary Position Embeddings}
 
 RoPE (Su et al., 2021) applies position-dependent rotation:
 
@@ -111,4 +111,4 @@ RoPE (Su et al., 2021) applies position-dependent rotation:
 
 PTP applies RoPE to Q, K before pruning.
 
-\subsection{3.9 Notation Summary}
+\subsection{Notation Summary}

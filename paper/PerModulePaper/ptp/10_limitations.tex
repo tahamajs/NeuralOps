@@ -1,7 +1,7 @@
 
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 Score Network Sees Future Tokens}
+\subsection{Score Network Sees Future Tokens}
 
 The MLP scores all tokens at once, including future positions. This is 
 \textbf{acceptable for classification} but problematic for autoregressive 
@@ -10,54 +10,54 @@ generation, where future tokens are not available at inference.
 \textbf{Mitigation.} For generation, use a causal score network (which we do 
 not implement).
 
-\subsection{10.2 Shared Selection Across Queries}
+\subsection{Shared Selection Across Queries}
 
 All queries attend to the \textbf{same} retained tokens. Per-query selection 
 would be more expressive but requires per-query top-$k$.
 
-\subsection{10.3 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 evaluated. Long-context tasks not tested.
 
-\subsection{10.4 Model Coverage}
+\subsection{Model Coverage}
 
 Not tested on:
 \begin{itemize}
 \item Large models ($H > 32$)
 \item Mixture-of-Experts
 \item Vision transformers
-\end{itemize}
 
-\subsection{10.5 Very Short Sequences}
+\end{itemize}
+\subsection{Very Short Sequences}
 
 At $L < 32$, pruning removes useful tokens and hurts accuracy.
 
-\subsection{10.6 Fixed Keep Ratio}
+\subsection{Fixed Keep Ratio}
 
 $\rho$ is a hyperparameter, not learned. Our Adaptive Sparse Attention 
 (companion method) learns a similar quantity.
 
-\subsection{10.7 Single Seed}
+\subsection{Single Seed}
 
 All results from seed 42.
 
-\subsection{10.8 No Comparison with Some Baselines}
+\subsection{No Comparison with Some Baselines}
 
 We do not compare with:
 \begin{itemize}
 \item PoWER-BERT (original)
 \item TR-BERT (RL)
 \item DynamicViT (vision)
-\end{itemize}
 
-\subsection{10.9 Failure Modes}
+\end{itemize}
+\subsection{Failure Modes}
 
 Long-context, autoregressive generation
 
-\subsection{10.10 Code Quality}
+\subsection{Code Quality}
 
 Research-grade implementation.
 
-\subsection{10.11 Ethical Considerations}
+\subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.

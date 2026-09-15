@@ -1,7 +1,7 @@
 
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 results with $w = 64$, $m = 128$, bias = 3.0.}
 
@@ -13,16 +13,16 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Mean gate} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 183 MB & 1.9 s \\
-DistilBERT & **NHA** & **90.25** & -0.46 & 0.9055 & **0.75** & 230 MB & 2.4 s \\
+DistilBERT & \textbf{NHA} & \textbf{90.25} & -0.46 & 0.9055 & \textbf{0.75} & 230 MB & 2.4 s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 712 MB & 4.1 s \\
-RoBERTa & **NHA** & **67.89** & -10.67 & 0.6602 & **0.70** & 650 MB & 5.5 s \\
+RoBERTa & \textbf{NHA} & \textbf{67.89} & -10.67 & 0.6602 & \textbf{0.70} & 650 MB & 5.5 s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 793 MB & 4.2 s \\
-GPT-2 & **NHA** & **78.78** & -0.58 & 0.7891 & **0.72** & 572 MB & 5.0 s \\
+GPT-2 & \textbf{NHA} & \textbf{78.78} & -0.58 & 0.7891 & \textbf{0.72} & 572 MB & 5.0 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Gate Analysis}
+\subsection{Gate Analysis}
 
 \textbf{Table 7.2: Gate statistics.}
 
@@ -43,7 +43,7 @@ GPT-2 & 0.72 & 0.12 & 0.97 & 0.26 \\
 \textbf{Observation.} Gates shift from initial $\sigma(3) \approx 0.95$ to a 
 broader distribution, indicating learned adaptation.
 
-\subsection{7.3 Per-Layer Gate Evolution}
+\subsection{Per-Layer Gate Evolution}
 
 \textbf{Table 7.3: Mean gate per layer (DistilBERT).}
 
@@ -67,7 +67,7 @@ broader distribution, indicating learned adaptation.
 \textbf{Observation.} Early layers have higher gates (local-leaning); late layers 
 shift toward global.
 
-\subsection{7.4 Efficiency}
+\subsection{Efficiency}
 
 \textbf{Table 7.4: Memory and time.}
 
@@ -86,7 +86,7 @@ GPT-2 & NHA & 572 MB & 5.0 s \\
 \end{tabular}
 \end{table}
 
-\subsection{7.5 Ablation: Window Size}
+\subsection{Ablation: Window Size}
 
 \textbf{Table 7.5: Accuracy vs window size.}
 
@@ -105,7 +105,7 @@ GPT-2 & NHA & 572 MB & 5.0 s \\
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: RFF Features}
+\subsection{Ablation: RFF Features}
 
 \textbf{Table 7.6: Accuracy vs RFF feature count.}
 
@@ -124,7 +124,7 @@ GPT-2 & NHA & 572 MB & 5.0 s \\
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Ablation: Gate Bias}
+\subsection{Ablation: Gate Bias}
 
 \textbf{Table 7.7: Accuracy vs gate bias.}
 
@@ -146,7 +146,7 @@ GPT-2 & NHA & 572 MB & 5.0 s \\
 
 \textbf{Observation.} Bias 3.0 is best; lower values degrade.
 
-\subsection{7.8 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \textbf{Table 7.8: Accuracy vs LoRA rank.}
 
@@ -165,7 +165,7 @@ GPT-2 & NHA & 572 MB & 5.0 s \\
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.9: Accuracy vs recovery steps.}
 
@@ -184,7 +184,7 @@ GPT-2 & NHA & 572 MB & 5.0 s \\
 \end{tabular}
 \end{table}
 
-\subsection{7.10 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.10: Comparison.}
 
@@ -200,12 +200,12 @@ GQA & 88.5 & 75.5 & 77.0 & KV reduce & $\mathcal{O}(L^2)$ \\
 Primal & 86.5 & 74.0 & 75.0 & Low-rank & $\mathcal{O}(Lm)$ \\
 ASA-Sparse & 88.5 & 76.0 & 76.5 & Sparse & $\mathcal{O}(L^2)$ \\
 HALO-ReGLA & 89.5 & 76.5 & 77.5 & Hybrid & $\mathcal{O}(L^2)$ \\
-**NHA** & **90.25** & **67.89** & **78.78** & **Hybrid** & **$\mathcal{O}(L(w+m))$** \\
+\textbf{NHA} & \textbf{90.25} & \textbf{67.89} & \textbf{78.78} & \textbf{Hybrid} & \textbf{$\mathcal{O}(L(w+m))$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.11 Scaling with Sequence Length}
+\subsection{Scaling with Sequence Length}
 
 \textbf{Table 7.11: Inference time at various $L$ (GPT-2).}
 
@@ -223,11 +223,11 @@ HALO-ReGLA & 89.5 & 76.5 & 77.5 & Hybrid & $\mathcal{O}(L^2)$ \\
 \end{tabular}
 \end{table}
 
-\subsection{7.12 Training Loss and Gate Evolution}
+\subsection{Training Loss and Gate Evolution}
 
 \textbf{Figure 7.1} shows loss curves and gate evolution over training.
 
-\subsection{7.13 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Accuracy:} drops -0.46\%---0.58\%.

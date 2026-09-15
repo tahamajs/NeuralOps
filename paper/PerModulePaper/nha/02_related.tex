@@ -1,7 +1,7 @@
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Local Attention}
+\subsection{Local Attention}
 
 \textbf{Longformer} (Beltagy et al., 2020): Sliding window + global tokens. 
 $\mathcal{O}(L w)$ complexity.
@@ -14,7 +14,7 @@ decoder-only.
 \textbf{NHA's local stream} uses sliding window with chunked processing for 
 memory efficiency.
 
-\subsection{2.2 Linear Attention}
+\subsection{Linear Attention}
 
 \textbf{Linear Transformer} (Katharopoulos et al., 2020): ELU+1 kernel with 
 associativity.
@@ -25,7 +25,7 @@ associativity.
 \textbf{NHA's global stream} uses RFF with an \textbf{orthogonal} projection, similar 
 to PORF but simpler.
 
-\subsection{2.3 Hybrid Attention}
+\subsection{Hybrid Attention}
 
 \textbf{NHA} is most closely related to:
 
@@ -34,20 +34,22 @@ to PORF but simpler.
 \item \textbf{Hyena} (Poli et al., 2023): Interleaves convolutions with attention.
 \item \textbf{FLASH} (Hua et al., 2022): Gated attention between linear and softmax.
 \item \textbf{HALO-ReGLA} (our framework): Global dense + linear with per-head gates.
+
 \end{itemize}
-
 \textbf{NHA differs} by:
-1. Using \textbf{local window} + \textbf{RFF} (not global dense + linear).
-2. Using \textbf{token-level} gate (not per-head).
-3. Orthogonal RFF projection (not i.i.d. Gaussian).
+\begin{enumerate}
+\item Using \textbf{local window} + \textbf{RFF} (not global dense + linear).
+\item Using \textbf{token-level} gate (not per-head).
+\item Orthogonal RFF projection (not i.i.d. Gaussian).
 
-\subsection{2.4 Learnable Fusion}
+\end{enumerate}
+\subsection{Learnable Fusion}
 
 \textbf{Sigmoid gating} is standard in mixture-of-experts (Shazeer et al., 2017).
 
 \textbf{NHA adapts this} to attention fusion with principled bias initialization.
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -58,11 +60,11 @@ to PORF but simpler.
 \midrule
 Local branch & Fixed window & Sliding window \\
 Global branch & Random features / kernel & Orthogonal RFF \\
-Gate level & Per-layer or per-head & **Token-level** \\
-Initialization & Uniform & **Biased (bias=3.0)** \\
+Gate level & Per-layer or per-head & \textbf{Token-level} \\
+Initialization & Uniform & \textbf{Biased (bias=3.0)} \\
 Causal handling & Full cumsum & Chunked state \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{2.6 Comparison Table}
+\subsection{Comparison Table}

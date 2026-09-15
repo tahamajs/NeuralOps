@@ -1,13 +1,13 @@
 
-\section{11. Conclusion}
+\section{Conclusion}
 
-\subsection{11.1 Summary}
+\subsection{Summary}
 
 We presented \textbf{Progressive Token Pruning} (PTP), a learnable token-selection 
 module for efficient transformer attention. PTP scores each token with a 
 small MLP, retains the top-$k$ fraction, and preserves [CLS] and causality.
 
-\subsection{11.2 Results Recap}
+\subsection{Results Recap}
 
 \begin{table}[H]
 \centering
@@ -23,15 +23,17 @@ GPT-2 & -1.4\% & 1.20$\times$ & 80\% \\
 \end{tabular}
 \end{table}
 
-\subsection{11.3 Key Takeaways}
+\subsection{Key Takeaways}
 
-1. \textbf{Token pruning is effective} at $\rho = 0.8$.
-2. \textbf{[CLS] preservation is essential.}
-3. \textbf{Learned scores reveal structure.}
-4. \textbf{Causality preserved.}
-5. \textbf{Drop-in wrapper.}
+\begin{enumerate}
+\item \textbf{Token pruning is effective} at $\rho = 0.8$.
+\item \textbf{[CLS] preservation is essential.}
+\item \textbf{Learned scores reveal structure.}
+\item \textbf{Causality preserved.}
+\item \textbf{Drop-in wrapper.}
 
-\subsection{11.4 Future Work}
+\end{enumerate}
+\subsection{Future Work}
 
 \subsubsection{Short-Term}
 \begin{itemize}
@@ -39,31 +41,31 @@ GPT-2 & -1.4\% & 1.20$\times$ & 80\% \\
 \item Per-head scoring
 \item Learned keep ratio
 \item Long-context evaluation
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Cross-layer score sharing
 \item Theoretical bounds
 \item Integration with MoE
-\end{itemize}
 
-\subsection{11.5 Closing Remarks}
+\end{itemize}
+\subsection{Closing Remarks}
 
 PTP provides a practical, learnable, drop-in token-pruning module. We 
 release code and checkpoints.
 
-\subsection{11.6 Acknowledgments}
+\subsection{Acknowledgments}
 
 We thank {{ACKNOWLEDGMENTS}}.
 
-\subsection{11.7 Author Contributions}
+\subsection{Author Contributions}
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed PTP, implemented the code, wrote the paper.
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
-\end{itemize}
 
-\subsection{11.8 Conflict of Interest}
+\end{itemize}
+\subsection{Conflict of Interest}
 
 None.

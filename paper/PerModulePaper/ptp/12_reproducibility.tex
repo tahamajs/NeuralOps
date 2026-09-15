@@ -1,7 +1,7 @@
 
-\section{12. Reproducibility Statement}
+\section{Reproducibility Statement}
 
-\subsection{12.1 Environment}
+\subsection{Environment}
 
 \begin{lstlisting}
 git clone https://github.com/your-org/SVD_Project
@@ -11,7 +11,7 @@ python -m venv .venv
 pip install -r requirements.txt
 \end{lstlisting}
 
-\subsection{12.2 Running}
+\subsection{Running}
 
 \begin{lstlisting}
 python run_all_4_ptp.py \
@@ -20,7 +20,7 @@ python run_all_4_ptp.py \
     --recovery_steps 50
 \end{lstlisting}
 
-\subsection{12.3 Reproducing Tables}
+\subsection{Reproducing Tables}
 
 \subsubsection{Main (Table 7.1)}
 \begin{lstlisting}
@@ -40,7 +40,7 @@ python run_all_4_ptp.py --preserve_cls true --output_suffix cls
 python run_all_4_ptp.py --preserve_cls false --output_suffix nopcls
 \end{lstlisting}
 
-\subsection{12.4 Seeds}
+\subsection{Seeds}
 
 \begin{lstlisting}
 import random, numpy as np, torch
@@ -51,7 +51,7 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 \end{lstlisting}
 
-\subsection{12.5 Expected Results}
+\subsection{Expected Results}
 
 \begin{table}[H]
 \centering
@@ -67,15 +67,15 @@ GPT-2 & 78.0\% $\pm$ 1\% & ~80\% \\
 \end{tabular}
 \end{table}
 
-\subsection{12.6 Data Availability}
+\subsection{Data Availability}
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
 \item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-ptp}
 \item \textbf{Metrics:} \texttt{results/unified\_ptp/*/summary.csv}
-\end{itemize}
 
-\subsection{12.7 Known Issues}
+\end{itemize}
+\subsection{Known Issues}
 
 \begin{itemize}
 \item Score network sees future tokens (not for generation)

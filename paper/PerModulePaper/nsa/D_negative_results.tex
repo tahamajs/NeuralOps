@@ -126,16 +126,18 @@ Cached top-k indices & Speed & Not applicable at inference \\
 42 & 89.5 \\
 123 & 89.3 \\
 456 & 89.7 \\
-**Mean** & **89.5** \\
-**Std** & **0.2** \\
+\textbf{Mean} & \textbf{89.5} \\
+\textbf{Std} & \textbf{0.2} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{D.6 Lessons Learned}
 
-1. \textbf{Mask order matters:} local $\to$ causal $\to$ top-$k$.
-2. \textbf{Short sequences skip top-$k$.}
-3. \textbf{Fixed $w, k$ suffices.}
-4. \textbf{No time speedup without sparse kernels.}
-5. \textbf{Density decreases with $L$.}
+\begin{enumerate}
+\item \textbf{Mask order matters:} local $\to$ causal $\to$ top-$k$.
+\item \textbf{Short sequences skip top-$k$.}
+\item \textbf{Fixed $w, k$ suffices.}
+\item \textbf{No time speedup without sparse kernels.}
+\item \textbf{Density decreases with $L$.}
+\end{enumerate}

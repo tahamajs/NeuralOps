@@ -1,11 +1,11 @@
 
-\section{8. Analysis}
+\section{Analysis}
 
-\subsection{8.1 Gate Behavior}
+\subsection{Gate Behavior}
 
 \textbf{Figure 8.1} shows the learned gate distribution. Three observations:
 
-\subsubsection{8.1.1 Shift from Initialization}
+\subsubsection{Shift from Initialization}
 
 Gates start at $\sigma(3) \approx 0.95$ and shift during training:
 
@@ -23,42 +23,42 @@ GPT-2 & 0.95 & 0.72 & -0.23 \\
 \end{tabular}
 \end{table}
 
-\subsubsection{8.1.2 Bimodal Distribution}
+\subsubsection{Bimodal Distribution}
 
 At convergence, gates split into two clusters:
 \begin{itemize}
 \item \textbf{Local-leaning} ($g_i > 0.7$)
 \item \textbf{Global-leaning} ($g_i < 0.3$)
-\end{itemize}
 
-\subsubsection{8.1.3 Position-Dependent Pattern}
+\end{itemize}
+\subsubsection{Position-Dependent Pattern}
 
 \textbf{Figure 8.2} shows gates at different sequence positions. Early positions 
 (sinks) tend to have higher gates; middle positions have lower gates.
 
-\subsection{8.2 Layer-Wise Pattern}
+\subsection{Layer-Wise Pattern}
 
 \textbf{Figure 8.3} shows mean gate per layer. Pattern:
 
 \begin{itemize}
 \item Early layers: high gate (local)
 \item Late layers: lower gate (global)
-\end{itemize}
 
+\end{itemize}
 \textbf{Interpretation.} Early layers extract local features; late layers 
 integrate global context.
 
-\subsection{8.3 Window Size Effect}
+\subsection{Window Size Effect}
 
 \textbf{Figure 8.4} shows accuracy vs window size. The knee is at $w = 64$: larger 
 windows don't help because the global stream already covers long-range 
 context.
 
-\subsection{8.4 RFF Feature Effect}
+\subsection{RFF Feature Effect}
 
 \textbf{Figure 8.5} shows accuracy vs $m$. Diminishing returns beyond $m = 128$.
 
-\subsection{8.5 Comparison with Fixed Fusion}
+\subsection{Comparison with Fixed Fusion}
 
 \textbf{Table 8.1: Learned vs fixed gate.}
 
@@ -71,14 +71,14 @@ context.
 \midrule
 Fixed 0.5 & 86.0 & 60.0 & 72.0 \\
 Fixed 0.8 & 88.5 & 64.0 & 76.0 \\
-**Learned** & **90.25** & **67.89** & **78.78** \\
+\textbf{Learned} & \textbf{90.25} & \textbf{67.89} & \textbf{78.78} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Observation.} Learned gate outperforms fixed by 2.0\%.
 
-\subsection{8.6 Comparison with NHA Variants}
+\subsection{Comparison with NHA Variants}
 
 \begin{table}[H]
 \centering
@@ -96,32 +96,32 @@ Global only & 82.0 & 58.0 & 70.0 \\
 
 \textbf{Observation.} Both branches contribute; neither alone is sufficient.
 
-\subsection{8.7 Numerical Stability}
+\subsection{Numerical Stability}
 
-\subsubsection{8.7.1 FP32 in RFF}
+\subsubsection{FP32 in RFF}
 
 The RFF stream is computed in FP32 to avoid overflow. Without this, 
 $L > 512$ produces NaN.
 
-\subsubsection{8.7.2 Orthogonal Projection}
+\subsubsection{Orthogonal Projection}
 
 Orthogonal $\Omega$ reduces variance compared to i.i.d. Gaussians, 
 stabilizing training.
 
-\subsubsection{8.7.3 Padding Zeroing}
+\subsubsection{Padding Zeroing}
 
 Invalid K, V are zeroed before cumsum, avoiding contamination.
 
-\subsection{8.8 Causality Verification}
+\subsection{Causality Verification}
 
 We verify causality via finite differences: for input $X$ with $L = 128$, 
 we check $\partial O_i / \partial X_j = 0$ for $j > i$.
 
 \textbf{Result.}   Verified on all three models
 
-\subsection{8.9 Failure Cases}
+\subsection{Failure Cases}
 
-\subsubsection{8.9.1 Layers Where NHA Fails}
+\subsubsection{Layers Where NHA Fails}
 
 \begin{table}[H]
 \centering
@@ -136,15 +136,17 @@ layer.3 & GPT-2 & 1.5 \\
 \end{tabular}
 \end{table}
 
-\subsubsection{8.9.2 Root Causes}
+\subsubsection{Root Causes}
 
 RoBERTa nested encoder mis-set; some heads need global attention
 
-\subsection{8.10 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{Gates shift from local-leaning} to a broader distribution.
-2. \textbf{Layer depth correlates with gate}: early local, late global.
-3. \textbf{Learned gate beats fixed.}
-4. \textbf{Both streams necessary} -- neither alone suffices.
-5. \textbf{Orthogonal RFF} stabilizes training.
-6. \textbf{Causality preserved} via chunked scan.
+\begin{enumerate}
+\item \textbf{Gates shift from local-leaning} to a broader distribution.
+\item \textbf{Layer depth correlates with gate}: early local, late global.
+\item \textbf{Learned gate beats fixed.}
+\item \textbf{Both streams necessary} -- neither alone suffices.
+\item \textbf{Orthogonal RFF} stabilizes training.
+\item \textbf{Causality preserved} via chunked scan.
+\end{enumerate}

@@ -69,34 +69,34 @@ within a small neighborhood around each query. Fixed-window methods
 (Longformer, BigBird) capture local context cheaply but miss distant 
 dependencies. Content-based methods (Routing Transformer, Reformer) capture 
 distant dependencies but add hashing or clustering overhead. We present 
-**Native Sparse Attention** (NSA), which combines **both**: a fixed sliding 
-window captures local context, while a **dynamic top-$k$ routing** selects 
+\textbf{Native Sparse Attention} (NSA), which combines \textbf{both}: a fixed sliding 
+window captures local context, while a \textbf{dynamic top-$k$ routing} selects 
 the $k$ most relevant distant keys per query based on actual attention scores. 
-The selection is **fully vectorized** -- no Python loop, no clustering, no 
+The selection is \textbf{fully vectorized} -- no Python loop, no clustering, no 
 hashing -- making NSA easy to implement, train, and reason about.
 
 NSA is parameterized by two scalars: window size $w$ and top-$k$ count $k$. 
 For each query $i$, the retained keys are:
 
-$$
+\[
 \mathcal{S}_i = \underbrace{\{j : |i - j| \leq w\}}_{\text{local window}} \cup \underbrace{\text{top-}k_{j' \notin \mathcal{W}_i} s_{ij'}}_{\text{dynamic global}}
-$$
+\]
 
 The union is computed via a boolean mask that is applied before softmax. 
 Padding, causality, and GQA are all preserved.
 
 We evaluate NSA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-$w = 32$, $k = 16$. NSA achieves **89.5\%**, 
-**76.5\%**, and **77.5\%** accuracy, within **-1.2\%**, 
-**-2.1\%**, and **-1.9\%** of the dense baselines. Attention 
-density drops to **{{DENSITY}}\%** (from 100\% dense). The dynamic top-$k$ 
+$w = 32$, $k = 16$. NSA achieves \textbf{89.5\%}, 
+\textbf{76.5\%}, and \textbf{77.5\%} accuracy, within \textbf{-1.2\%}, 
+\textbf{-2.1\%}, and \textbf{-1.9\%} of the dense baselines. Attention 
+density drops to \textbf{{{DENSITY}}\%} (from 100\% dense). The dynamic top-$k$ 
 selection shifts systematically with layer depth, revealing head-level 
 content specialization.
 
-**Keywords:** sparse attention, sliding window, dynamic top-k, content-aware 
+\textbf{Keywords:} sparse attention, sliding window, dynamic top-k, content-aware 
 routing, efficient transformer
 
----
+
 
 \vspace{0.5em}
 \noindent\textbf{Keywords:} sparse attention, sliding window, dynamic top-k, content-aware

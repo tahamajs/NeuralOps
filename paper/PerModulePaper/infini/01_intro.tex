@@ -1,7 +1,7 @@
 
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Full self-attention is $\mathcal{O}(L^2)$ in sequence length $L$, which is 
 prohibitive for long-context inference. \textbf{Sliding-window attention} reduces 
@@ -27,30 +27,34 @@ gate:
 The gate $\sigma(\beta)$ is initialized close to zero, so the model starts by 
 reproducing standard local attention and gradually learns to use the memory.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained transformer $\mathcal{M}$ with $N_\ell$ attention layers, 
 we seek a modified attention block $\mathcal{A}'$ such that:
 
-1. $\mathcal{A}'$ reproduces the pretrained behavior at initialization.
-2. $\mathcal{A}'$ reduces attention cost from $\mathcal{O}(L^2)$ to 
-   $\mathcal{O}(L \cdot W + L \cdot d_c)$.
-3. $\mathcal{A}'$ maintains access to global context via the memory matrix.
-4. $\mathcal{A}'$ works across four attention architectures.
+\begin{enumerate}
+\item $\mathcal{A}'$ reproduces the pretrained behavior at initialization.
+\item $\mathcal{A}'$ reduces attention cost from $\mathcal{O}(L^2)$ to
+  $\mathcal{O}(L \cdot W + L \cdot d_c)$.
+\item $\mathcal{A}'$ maintains access to global context via the memory matrix.
+\item $\mathcal{A}'$ works across four attention architectures.
 
+\end{enumerate}
 We do \textbf{not} aim to reduce model size. Infini-Attention targets 
 \textbf{inference efficiency} for long sequences, not model compression.
 
-\subsection{1.3 Our Approach: Infini-Attention}
+\subsection{Our Approach: Infini-Attention}
 
 Infini-Attention replaces the standard MHSA block with:
 
-1. \textbf{Frozen base projections} $W_Q, W_K, W_V, W_O$ transferred from the 
-   pretrained attention.
-2. \textbf{Trainable LoRA adapters} on each projection.
-3. \textbf{A learned compressive memory} $M$ per head.
-4. \textbf{A learnable scalar gate} $\beta$.
+\begin{enumerate}
+\item \textbf{Frozen base projections} $W_Q, W_K, W_V, W_O$ transferred from the
+  pretrained attention.
+\item \textbf{Trainable LoRA adapters} on each projection.
+\item \textbf{A learned compressive memory} $M$ per head.
+\item \textbf{A learnable scalar gate} $\beta$.
 
+\end{enumerate}
 The local branch uses sliding-window attention, which for causal models 
 combines a causal mask and a distance-band mask:
 
@@ -67,32 +71,24 @@ The memory branch computes:
 \tag{1.3}
 \]
 
-\subsection{1.4 Contributions}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A hybrid local+global attention block.} Infini-Attention combines
-\end{itemize}
-  sliding-window local attention with a learned compressive memory via a 
+  sliding-window local attention with a learned compressive memory via a
   gated scalar.
-\begin{itemize}
 \item \textbf{Multi-architecture support.} Same codebase handles flat, nested,
-\end{itemize}
   causal, and GQA+RoPE models.
-\begin{itemize}
 \item \textbf{Initialization strategy.} The gate $\beta = -5$ ensures the memory
-\end{itemize}
   starts nearly silent, preserving the pretrained local behavior.
-\begin{itemize}
 \item \textbf{Systematic evaluation.} Benchmarks on DistilBERT, RoBERTa, and GPT-2
-\end{itemize}
-  with ablations over $\beta$ initialization, compression dimension, and 
+  with ablations over $\beta$ initialization, compression dimension, and
   window size.
-\begin{itemize}
 \item \textbf{Honest reporting.} Parameter count increases; the "compression" in the
-\end{itemize}
   name refers to the memory, not the model.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background. Section 4 
 presents Infini-Attention. Section 5 details multi-architecture integration. 

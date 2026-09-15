@@ -1,16 +1,18 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 NHA runs two attention streams in parallel and combines them via a token-level 
 gate:
 
-1. \textbf{Local stream} $O^\text{local}$: sliding-window attention.
-2. \textbf{Global stream} $O^\text{global}$: RFF linear attention.
-3. \textbf{Gate} $g$: per-token sigmoid.
-4. \textbf{Fusion} $O = g \odot O^\text{local} + (1 - g) \odot O^\text{global}$.
+\begin{enumerate}
+\item \textbf{Local stream} $O^\text{local}$: sliding-window attention.
+\item \textbf{Global stream} $O^\text{global}$: RFF linear attention.
+\item \textbf{Gate} $g$: per-token sigmoid.
+\item \textbf{Fusion} $O = g \odot O^\text{local} + (1 - g) \odot O^\text{global}$.
 
+\end{enumerate}
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
@@ -34,9 +36,9 @@ gate:
               out_proj
 \end{lstlisting}
 
-\subsection{4.2 Local Window Stream}
+\subsection{Local Window Stream}
 
-\subsubsection{4.2.1 Definition}
+\subsubsection{Definition}
 
 For window size $w$:
 
@@ -51,7 +53,7 @@ O_i^\text{local} = \text{softmax}(S \odot \text{mask})_i \cdot V
 \tag{4.2}
 \]
 
-\subsubsection{4.2.2 Chunked Computation}
+\subsubsection{Chunked Computation}
 
 To bound memory, we process the query dimension in chunks of 64:
 
@@ -68,7 +70,7 @@ for i in range(0, N, chunk):
 This gives $\mathcal{O}(B H C (2w + C))$ peak memory instead of 
 $\mathcal{O}(B H L^2)$.
 
-\subsubsection{4.2.3 Causal Masking}
+\subsubsection{Causal Masking}
 
 For decoders:
 
@@ -77,9 +79,9 @@ For decoders:
 \tag{4.3}
 \]
 
-\subsection{4.3 Global RFF Stream}
+\subsection{Global RFF Stream}
 
-\subsubsection{4.3.1 RFF Projection}
+\subsubsection{RFF Projection}
 
 We build $\Omega \in \mathbb{R}^{d_h \times m}$ via block QR:
 
@@ -98,7 +100,7 @@ W = torch.cat(blocks, dim=1) * math.sqrt(d_h)
 \textbf{Orthogonality.} Each block $Q_i$ has orthonormal columns. The scale 
 $\sqrt{d_h}$ matches the expected variance of Gaussian projections.
 
-\subsubsection{4.3.2 Feature Map}
+\subsubsection{Feature Map}
 
 \[
 \phi(x) = \frac{1}{\sqrt{m}} \left(\mathrm{elu}(\Omega^\top x) + 1\right)
@@ -110,9 +112,9 @@ $\sqrt{d_h}$ matches the expected variance of Gaussian projections.
 \item \textbf{Non-negative:} $\mathrm{elu}(x) > -1$ $\to$ $\phi > 0$.
 \item \textbf{Bounded:} $\phi \in [0, \infty)$.
 \item \textbf{Smooth:} ELU is $C^1$.
-\end{itemize}
 
-\subsubsection{4.3.3 Non-Causal Computation}
+\end{itemize}
+\subsubsection{Non-Causal Computation}
 
 For encoders:
 
@@ -127,7 +129,7 @@ O_i^\text{global} = \frac{\phi(Q_i)^\top KV}{\phi(Q_i)^\top Z + \epsilon}
 \tag{4.6}
 \]
 
-\subsubsection{4.3.4 Causal Prefix Scan (Chunked)}
+\subsubsection{Causal Prefix Scan (Chunked)}
 
 For decoders, we use a chunked prefix scan with cumulative state:
 
@@ -138,33 +140,35 @@ Z \in \mathbb{R}^{B \times H \times m}
 
 Initialize $S = 0$, $Z = 0$. For each chunk $[start, end)$:
 
-1. Compute intra-chunk causal scores:
-\[
-   A^\text{intra} = \phi(Q_c) \phi(K_c)^\top \odot \text{tril}(1)
-   \tag{4.7}
-\]
+\begin{enumerate}
+\item Compute intra-chunk causal scores:
+  $$
+  A^\text{intra} = \phi(Q\_c) \phi(K\_c)^\top \odot \text{tril}(1)
+  \tag{4.7}
+  $$
 
-2. Compute inter-chunk contribution:
-\[
-   O^\text{inter} = \phi(Q_c) S
-   \tag{4.8}
-\]
+\item Compute inter-chunk contribution:
+  $$
+  O^\text{inter} = \phi(Q\_c) S
+  \tag{4.8}
+  $$
 
-3. Combine:
-\[
-   O_c = \frac{A^\text{intra} V_c + O^\text{inter}}{(A^\text{intra} \cdot 1 + \phi(Q_c) Z) + \epsilon}
-   \tag{4.9}
-\]
+\item Combine:
+  $$
+  O\_c = \frac{A^\text{intra} V\_c + O^\text{inter}}{(A^\text{intra} \cdot 1 + \phi(Q\_c) Z) + \epsilon}
+  \tag{4.9}
+  $$
 
-4. Update state:
-\[
-   S \leftarrow S + \phi(K_c)^\top V_c, \quad Z \leftarrow Z + \sum \phi(K_c)
-   \tag{4.10}
-\]
+\item Update state:
+  $$
+  S \leftarrow S + \phi(K\_c)^\top V\_c, \quad Z \leftarrow Z + \sum \phi(K\_c)
+  \tag{4.10}
+  $$
 
+\end{enumerate}
 \textbf{Complexity.} $\mathcal{O}(B H L m d_h)$ time, $\mathcal{O}(B H m d_h)$ memory.
 
-\subsubsection{4.3.5 Numerical Stability}
+\subsubsection{Numerical Stability}
 
 We compute the RFF stream in \textbf{FP32} inside an autocast-disabled block:
 
@@ -178,9 +182,9 @@ with torch.autocast(device_type=..., enabled=False):
 
 This avoids FP16 overflow for $L > 512$.
 
-\subsection{4.4 Token-Level Gate}
+\subsection{Token-Level Gate}
 
-\subsubsection{4.4.1 Parameterization}
+\subsubsection{Parameterization}
 
 \[
 g_i = \sigma(w^\top x_i + b)
@@ -190,7 +194,7 @@ g_i = \sigma(w^\top x_i + b)
 where $x_i$ is the input hidden state at position $i$, and $w \in \mathbb{R}^d$, 
 $b \in \mathbb{R}$.
 
-\subsubsection{4.4.2 Initialization}
+\subsubsection{Initialization}
 
 We initialize $w = 0$ and $b = 3.0$, so:
 
@@ -203,7 +207,7 @@ g_i = \sigma(0 + 3) = \sigma(3) \approx 0.95 \quad \text{for all } i
 short-range behavior. Starting global-leaning would immediately degrade 
 accuracy.
 
-\subsubsection{4.4.3 Per-Token vs Per-Head}
+\subsubsection{Per-Token vs Per-Head}
 
 NHA uses \textbf{per-token} gating (single scalar per position), while HALO-ReGLA 
 uses per-head. Per-token is:
@@ -212,11 +216,11 @@ uses per-head. Per-token is:
 \item \textbf{Parameter-efficient:} $d + 1$ parameters instead of $d H + H$.
 \item \textbf{Position-aware:} Can adapt to local vs global needs per position.
 \item \textbf{Simpler:} No head dimension to manage.
-\end{itemize}
 
+\end{itemize}
 Empirically, per-token works as well as per-head for our tasks.
 
-\subsection{4.5 Complete Forward Pass}
+\subsection{Complete Forward Pass}
 
 \textbf{Algorithm 1:} NHA forward
 \begin{lstlisting}
@@ -253,7 +257,7 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 26: return O
 \end{lstlisting}
 
-\subsection{4.6 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -264,7 +268,7 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 \midrule
 Time & $\mathcal{O}(L w d_h)$ & $\mathcal{O}(L m d_h)$ & $\mathcal{O}(L (w + m) d_h)$ \\
 Memory & $\mathcal{O}(L w)$ & $\mathcal{O}(m d_h)$ & $\mathcal{O}(L w + m d_h)$ \\
-vs Dense & $\mathcal{O}(L^2 d_h)$ & -- & **$\mathcal{O}(L (w + m) d_h)$** \\
+vs Dense & $\mathcal{O}(L^2 d_h)$ & -- & \textbf{$\mathcal{O}(L (w + m) d_h)$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -272,7 +276,7 @@ vs Dense & $\mathcal{O}(L^2 d_h)$ & -- & **$\mathcal{O}(L (w + m) d_h)$** \\
 \textbf{Key insight.} NHA is \textbf{linear} in $L$ for both branches. This is the 
 primary efficiency benefit.
 
-\subsection{4.7 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -285,8 +289,8 @@ $W_Q$ & $d H d_h$ & Same \\
 $W_K$ & $d H_{kv} d_h$ & Same \\
 $W_V$ & $d H_{kv} d_h$ & Same \\
 $W_O$ & $H d_h d$ & Same \\
-**Gate** & 0 & $d + 1$ \\
-**RFF proj** & 0 & $d_h m$ (buffer, not trainable) \\
+\textbf{Gate} & 0 & $d + 1$ \\
+\textbf{RFF proj} & 0 & $d_h m$ (buffer, not trainable) \\
 LoRA & 0 & $2 r (\cdots)$ \\
 \bottomrule
 \end{tabular}
@@ -294,9 +298,9 @@ LoRA & 0 & $2 r (\cdots)$ \\
 
 \textbf{Total: same as MHA + $d + 1$ parameters (gate) + RFF buffer.}
 
-\subsection{4.8 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.8.1 Kernel Approximation}
+\subsubsection{Kernel Approximation}
 
 With orthogonal $\Omega$ and $m \to \infty$:
 
@@ -307,7 +311,7 @@ With orthogonal $\Omega$ and $m \to \infty$:
 
 where $k_\text{exp}$ is the exp kernel.
 
-\subsubsection{4.8.2 Gate Convergence}
+\subsubsection{Gate Convergence}
 
 The gate converges to a stationary point where:
 
@@ -318,7 +322,7 @@ The gate converges to a stationary point where:
 
 or hits the boundary ($g_i \to 0$ or $g_i \to 1$).
 
-\subsubsection{4.8.3 Causality}
+\subsubsection{Causality}
 
 For causal models, the chunked prefix scan ensures:
 

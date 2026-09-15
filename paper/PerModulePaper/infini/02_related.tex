@@ -1,52 +1,52 @@
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Efficient Attention Architectures}
+\subsection{Efficient Attention Architectures}
 
-\subsubsection{2.1.1 Sparse and Sliding-Window Attention}
+\subsubsection{Sparse and Sliding-Window Attention}
 
 Longformer (Beltagy et al., 2020) combines a sliding window with a small 
 set of global tokens. BigBird (Zaheer et al., 2020) adds random attention. 
 Infini-Attention differs by using a \textbf{learned} memory instead of fixed 
 global tokens.
 
-\subsubsection{2.1.2 Compressive Memory}
+\subsubsection{Compressive Memory}
 
 Compressive Transformer (Rae et al., 2020) compresses past activations into 
 a small buffer. Transformer-XL (Dai et al., 2019) caches the previous 
 segment's hidden states. Our memory is a \textbf{learned matrix} that persists 
 across all tokens, not a cache of past activations.
 
-\subsubsection{2.1.3 Linear Attention}
+\subsubsection{Linear Attention}
 
 Performer (Choromanski et al., 2021) and Linear Transformer (Katharopoulos 
 et al., 2020) replace softmax with kernel-based approximations, achieving 
 $\mathcal{O}(L)$ complexity. Infini-Attention retains softmax but on a 
 sliding window plus a fixed memory.
 
-\subsubsection{2.1.4 Recurrent Memory}
+\subsubsection{Recurrent Memory}
 
 Recurrent Memory Transformer (Bulatov et al., 2022) uses special memory 
 tokens. Infini-Attention's memory is a matrix, not tokens, and applies to 
 every position.
 
-\subsection{2.2 Memorizing Transformers}
+\subsection{Memorizing Transformers}
 
 Wu et al. (2022) add a kNN lookup to a stored database of past keys and 
 values. Our memory is \textbf{learned} and \textbf{fixed-size}, not a database.
 
-\subsection{2.3 Gated Attention Fusion}
+\subsection{Gated Attention Fusion}
 
 Gating mechanisms are common in transformers (GTrXL, Parisotto et al., 2020). 
 Our gate $\sigma(\beta)$ is a scalar per attention head, initialized to make 
 the memory nearly silent at start.
 
-\subsection{2.4 Parameter-Efficient Fine-Tuning}
+\subsection{Parameter-Efficient Fine-Tuning}
 
 LoRA (Hu et al., 2021) is the standard for freezing base weights and adding 
 low-rank adapters. Infini-Attention uses LoRA for recovery.
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -55,12 +55,12 @@ low-rank adapters. Infini-Attention uses LoRA for recovery.
 \toprule
 \textbf{Axis} & \textbf{Prior work} & \textbf{Infini-Attention} \\
 \midrule
-**Local attention** & Sliding window & Sliding window \\
-**Global context** & Fixed global tokens or kNN & **Learned memory matrix** \\
-**Fusion** & Concatenation & **Gated scalar** \\
-**Multi-architecture** & Usually one family & **Four families** \\
-**Parameter effect** & Varies & **Increases** (memory + LoRA) \\
-**Gate init** & N/A & **$\beta$ = -5 (memory silent)** \\
+\textbf{Local attention} & Sliding window & Sliding window \\
+\textbf{Global context} & Fixed global tokens or kNN & \textbf{Learned memory matrix} \\
+\textbf{Fusion} & Concatenation & \textbf{Gated scalar} \\
+\textbf{Multi-architecture} & Usually one family & \textbf{Four families} \\
+\textbf{Parameter effect} & Varies & \textbf{Increases} (memory + LoRA) \\
+\textbf{Gate init} & N/A & \textbf{$\beta$ = -5 (memory silent)} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,4 +70,4 @@ past activations (Compressive Transformer), or (b) query a database (kNN).
 Infini-Attention learns a \textbf{fixed-size parametric memory} per head, 
 trained jointly with LoRA.
 
-\subsection{2.6 Comparison to Companion Modules}
+\subsection{Comparison to Companion Modules}

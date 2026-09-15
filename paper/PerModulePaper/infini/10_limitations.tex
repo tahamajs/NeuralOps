@@ -1,13 +1,13 @@
 
-\section{10. Limitations}
+\section{Limitations}
 
-\subsection{10.1 Not a Compressor}
+\subsection{Not a Compressor}
 
 Infini-Attention \textbf{increases} parameter count by ~1.82\%. It is 
 designed for \textbf{inference efficiency at long sequences}, not for model 
 size reduction.
 
-\subsection{10.2 Task Coverage}
+\subsection{Task Coverage}
 
 Only SST-2 is evaluated. Infini-Attention may behave differently on:
 
@@ -15,9 +15,9 @@ Only SST-2 is evaluated. Infini-Attention may behave differently on:
 \item Generation tasks (summarization, translation)
 \item Long-context reasoning (needle-in-haystack)
 \item Multi-class classification
-\end{itemize}
 
-\subsection{10.3 Model Coverage}
+\end{itemize}
+\subsection{Model Coverage}
 
 Tested on models with $\le$124M parameters. Not tested on:
 
@@ -25,9 +25,9 @@ Tested on models with $\le$124M parameters. Not tested on:
 \item >1B parameters
 \item Very deep models (>24 layers)
 \item Mixture-of-Experts
-\end{itemize}
 
-\subsection{10.4 Hardware}
+\end{itemize}
+\subsection{Hardware}
 
 All experiments on RTX 4070 Laptop. Not tested on:
 
@@ -35,24 +35,24 @@ All experiments on RTX 4070 Laptop. Not tested on:
 \item A100/H100
 \item CPU
 \item Edge devices
-\end{itemize}
 
-\subsection{10.5 Cross-Attention Not Supported}
+\end{itemize}
+\subsection{Cross-Attention Not Supported}
 
 Infini-Attention raises \texttt{NotImplementedError} for cross-attention. This 
 excludes encoder-decoder models (T5, BART).
 
-\subsection{10.6 Nested Encoder Complexity}
+\subsection{Nested Encoder Complexity}
 
 RoBERTa requires correct \texttt{is\_nested\_encoder = True}. If mis-set, 
 double-projection causes scale collapse.
 
-\subsection{10.7 Inference Overhead}
+\subsection{Inference Overhead}
 
 At $L = 128$, Infini-Attention is slower than baseline due to the extra 
 matmuls. The benefit materializes only at $L \gg 256$.
 
-\subsection{10.8 Memory Interpretation}
+\subsection{Memory Interpretation}
 
 We do not analyze what the memory learns. In particular:
 
@@ -60,28 +60,28 @@ We do not analyze what the memory learns. In particular:
 \item Does it capture global sentiment?
 \item Does it memorize specific tokens?
 \item How does it interact with position embeddings?
-\end{itemize}
 
-\subsection{10.9 Single-Seed Results}
+\end{itemize}
+\subsection{Single-Seed Results}
 
 All main results from a single seed. SE ~1.69\%. Differences below 3.4\% 
 may be noise.
 
-\subsection{10.10 No Theoretical Guarantee}
+\subsection{No Theoretical Guarantee}
 
 We provide no bound on approximation error vs the baseline attention. 
 The memory is a learned parametric approximator.
 
-\subsection{10.11 No Comparison with Compressive Transformer}
+\subsection{No Comparison with Compressive Transformer}
 
 We do not run head-to-head comparison with Compressive Transformer (Rae et 
 al., 2020) or Recurrent Memory Transformer (Bulatov et al., 2022).
 
-\subsection{10.12 Unresolved Failures}
+\subsection{Unresolved Failures}
 
 None observed on the three tested models
 
-\subsection{10.13 Code Quality}
+\subsection{Code Quality}
 
 Research-grade implementation. Known issues:
 

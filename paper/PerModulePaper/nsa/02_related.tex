@@ -1,7 +1,7 @@
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Fixed Sparse Attention}
+\subsection{Fixed Sparse Attention}
 
 \textbf{Longformer} (Beltagy et al., 2020): Sliding window + global tokens. 
 Deterministic pattern.
@@ -16,7 +16,7 @@ Theoretical universality.
 \textbf{NSA's local branch} uses a sliding window (same as Longformer) but 
 \textbf{augments} with content-based global.
 
-\subsection{2.2 Content-Based Sparse Attention}
+\subsection{Content-Based Sparse Attention}
 
 \textbf{Routing Transformer} (Roy et al., 2021): K-means clustering of queries 
 and keys.
@@ -28,7 +28,7 @@ and keys.
 \textbf{NSA differs} by using \textbf{direct top-$k$ selection} -- no clustering, no 
 hashing.
 
-\subsection{2.3 Dynamic Sparsity}
+\subsection{Dynamic Sparsity}
 
 \textbf{H2O} (Zhang et al., 2023): Heavy-hitter oracle for KV cache eviction. 
 Selects top-k keys for each query.
@@ -38,7 +38,7 @@ Selects top-k keys for each query.
 \textbf{NSA} generalizes both: it retains local window + top-$k$ global in **every 
 forward pass**, not just at cache time.
 
-\subsection{2.4 Learned Sparsity}
+\subsection{Learned Sparsity}
 
 \textbf{Adaptive Span} (Sukhbaatar et al., 2019): Learned per-head window.
 
@@ -46,7 +46,7 @@ forward pass**, not just at cache time.
 
 \textbf{NSA} uses \textbf{fixed} $w, k$ but \textbf{dynamic content-based selection}.
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -55,13 +55,13 @@ forward pass**, not just at cache time.
 \toprule
 \textbf{Axis} & \textbf{Longformer} & \textbf{Routing} & \textbf{H2O} & \textbf{NSA} \\
 \midrule
-Local & Fixed window & -- & -- & **Fixed window** \\
-Global & Global tokens & K-means & Heavy hitters & **Top-k** \\
-Content-aware & No & Yes & Yes & **Yes** \\
-Vectorized & Yes & No & Yes & **Yes** \\
-Pretrained & Yes & Rarely & Yes & **Yes** \\
+Local & Fixed window & -- & -- & \textbf{Fixed window} \\
+Global & Global tokens & K-means & Heavy hitters & \textbf{Top-k} \\
+Content-aware & No & Yes & Yes & \textbf{Yes} \\
+Vectorized & Yes & No & Yes & \textbf{Yes} \\
+Pretrained & Yes & Rarely & Yes & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{2.6 Comparison Table}
+\subsection{Comparison Table}

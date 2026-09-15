@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Multi-Head Self-Attention}
+\subsection{Multi-Head Self-Attention}
 
 For $X \in \mathbb{R}^{B \times L \times d}$:
 
@@ -19,7 +19,7 @@ with $Q = X W_Q$, $K = X W_K$, $V = X W_V$, and:
 
 \textbf{Complexity:} $\mathcal{O}(L^2 d)$.
 
-\subsection{3.2 Sliding-Window Attention}
+\subsection{Sliding-Window Attention}
 
 Restrict attention to a window of size $W$ around each position:
 
@@ -36,7 +36,7 @@ For causal models, the window is one-sided: $K_{[i-W:i]}$.
 Global information must propagate through the residual stream, which 
 requires many layers.
 
-\subsection{3.3 Compressive Memory}
+\subsection{Compressive Memory}
 
 A compressive memory $M \in \mathbb{R}^{d_c \times d_h}$ is a small matrix 
 that acts as $d_c$ learned "virtual tokens". Queries attend to it via:
@@ -51,7 +51,7 @@ Since $d_c \ll L$, this is a form of learned summarization.
 
 \textbf{Complexity:} $\mathcal{O}(L \cdot d_c \cdot d_h)$.
 
-\subsection{3.4 Gated Combination}
+\subsection{Gated Combination}
 
 Given two branches (local and memory), we combine them via a scalar gate:
 
@@ -66,12 +66,12 @@ preserves the pretrained output distribution when $\sigma(\beta) \to 0$.
 \textbf{Initialization.} Setting $\beta = -5$ gives $\sigma(-5) \approx 0.0067$, 
 meaning the memory contributes <1\% at start.
 
-\subsection{3.5 Grouped-Query Attention (GQA)}
+\subsection{Grouped-Query Attention (GQA)}
 
 For GQA with $H_{kv} < H$, we repeat $K, V$ $H / H_{kv}$ times before 
 attention. Infini-Attention supports GQA via \texttt{repeat\_kv}.
 
-\subsection{3.6 Rotary Position Embeddings (RoPE)}
+\subsection{Rotary Position Embeddings (RoPE)}
 
 RoPE rotates Q, K by position-dependent angles:
 
@@ -82,9 +82,9 @@ RoPE rotates Q, K by position-dependent angles:
 
 Infini-Attention preserves RoPE via \texttt{rotary\_emb}.
 
-\subsection{3.7 LoRA}
+\subsection{LoRA}
 
 LoRA (Hu et al., 2021) freezes $W$ and adds $\frac{\alpha}{r} B A$ with 
 $B = 0$ at initialization.
 
-\subsection{3.8 Notation Summary}
+\subsection{Notation Summary}

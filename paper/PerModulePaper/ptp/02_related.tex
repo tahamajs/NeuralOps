@@ -1,7 +1,7 @@
 
-\section{2. Related Work}
+\section{Related Work}
 
-\subsection{2.1 Token Pruning}
+\subsection{Token Pruning}
 
 \textbf{PoWER-BERT} (Goyal et al., 2020): Progressive word elimination based on 
 attention scores. Fixed heuristic.
@@ -16,7 +16,7 @@ Requires RL training.
 \textbf{PTP differs} by using a \textbf{learnable MLP} for scoring, retaining 
 \textbf{[CLS] unconditionally}, and being \textbf{drop-in} for pretrained models.
 
-\subsection{2.2 Attention Sparsity}
+\subsection{Attention Sparsity}
 
 \textbf{Longformer} (Beltagy et al., 2020): Fixed window + global tokens.
 
@@ -27,14 +27,14 @@ Requires RL training.
 \textbf{PTP differs} by pruning \textbf{tokens} (dense per remaining token), not 
 \textbf{connections}.
 
-\subsection{2.3 Token Merging}
+\subsection{Token Merging}
 
 \textbf{Token Merging} (Bolya et al., 2022): Merges similar tokens via bipartite 
 matching.
 
 \textbf{PTP differs} by \textbf{hard pruning} rather than merging.
 
-\subsection{2.4 Head Pruning}
+\subsection{Head Pruning}
 
 \textbf{Voita et al. (2019):} Prune attention heads. Redundant heads dropped.
 
@@ -42,7 +42,7 @@ matching.
 
 \textbf{PTP operates orthogonally} -- it prunes tokens, not heads. Can be combined.
 
-\subsection{2.5 Position of Our Work}
+\subsection{Position of Our Work}
 
 \begin{table}[H]
 \centering
@@ -60,4 +60,4 @@ Causal-aware &  &  &  &  \\
 \end{tabular}
 \end{table}
 
-\subsection{2.6 Comparison Table}
+\subsection{Comparison Table}

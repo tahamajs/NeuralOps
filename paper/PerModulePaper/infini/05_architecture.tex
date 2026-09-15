@@ -1,7 +1,7 @@
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
@@ -10,15 +10,15 @@
 \toprule
 \textbf{Model} & \textbf{Attention class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
 \midrule
-DistilBERT & `MultiHeadSelfAttention` & No & No & No &  \\
-RoBERTa & `BertSelfAttention` (nested) & Yes & No & No &  \\
-GPT-2 & `GPT2Attention` (Conv1D) & No & No & No &  \\
-Qwen3.5 & `Qwen3Attention` & No & Yes & Yes & not tested \\
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No &  \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Adaptive Rank}
+\subsection{Adaptive Rank}
 
 Infini-Attention scales compression dimensions based on model depth:
 
@@ -35,9 +35,9 @@ elif num_layers > 6:
 This ensures RoBERTa (12 layers) and larger models get sufficient 
 capacity.
 
-\subsection{5.3 Copy Weights}
+\subsection{Copy Weights}
 
-\subsubsection{5.3.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
 extracted["q"] = (src.q_lin.weight.data, src.q_lin.bias.data)
@@ -48,7 +48,7 @@ extracted["o"] = (src.out_lin.weight.data, src.out_lin.bias.data)
 
 \texttt{is\_nested\_encoder = False}.
 
-\subsubsection{5.3.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 \begin{lstlisting}
 s = src.self
@@ -61,7 +61,7 @@ extracted["o"] = (src.output.dense.weight.data, src.output.dense.bias.data)
 \texttt{is\_nested\_encoder = True} (RoBERTa's \texttt{attention.output.dense} applies the 
 output projection).
 
-\subsubsection{5.3.3 GPT-2 (Conv1D)}
+\subsubsection{GPT-2 (Conv1D)}
 
 \begin{lstlisting}
 w = src.c_attn.weight.data.t()  # transpose
@@ -72,12 +72,12 @@ extracted["v"] = (v_w, src.c_attn.bias.data[1536:2304])
 extracted["o"] = (src.c_proj.weight.data.t(), src.c_proj.bias.data)
 \end{lstlisting}
 
-\subsubsection{5.3.4 Qwen (GQA + RoPE)}
+\subsubsection{Qwen (GQA + RoPE)}
 
 Direct copy from \texttt{q\_proj/k\_proj/v\_proj/o\_proj}; RoPE preserved via 
 \texttt{rotary\_emb}.
 
-\subsection{5.4 Nested Encoder Detection}
+\subsection{Nested Encoder Detection}
 
 \begin{lstlisting}
 cls_name = src.__class__.__name__
@@ -94,7 +94,7 @@ if hasattr(src, "self") and hasattr(src, "output"):
 self.is_nested_encoder = is_nested
 \end{lstlisting}
 
-\subsection{5.5 Injection}
+\subsection{Injection}
 
 \begin{lstlisting}
 def inject_infini(layer, model_config=None, old_attn=None, **kwargs):

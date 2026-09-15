@@ -1,27 +1,25 @@
 
-\section{8. Analysis}
+\section{Analysis}
 
-\subsection{8.1 Top-K Selection Patterns}
+\subsection{Top-K Selection Patterns}
 
 \textbf{Figure 8.1} shows the fraction of top-$k$ selected tokens per head across 
 layers. Two patterns:
 
-\subsubsection{8.1.1 Layer Dependence}
+\subsubsection{Layer Dependence}
 
 \begin{itemize}
 \item \textbf{Early layers:} Top-$k$ selects mostly recent past tokens (local
-\end{itemize}
   extension of window).
-\begin{itemize}
 \item \textbf{Late layers:} Top-$k$ selects semantically related distant tokens.
-\end{itemize}
 
-\subsubsection{8.1.2 Head Dependence}
+\end{itemize}
+\subsubsection{Head Dependence}
 
 Some heads consistently select top-$k$ from specific position ranges (e.g., 
 always the beginning); others adapt to content.
 
-\subsection{8.2 Attention Mass Preserved}
+\subsection{Attention Mass Preserved}
 
 \textbf{Figure 8.2} shows preserved attention mass vs density. At density 
 63\%, we preserve 96\% of the total mass.
@@ -29,7 +27,7 @@ always the beginning); others adapt to content.
 \textbf{Interpretation.} Even with 37\% of keys dropped, we retain ~95\% of the 
 mass. This confirms the sparsity of attention.
 
-\subsection{8.3 Comparison with Fixed Sparsity}
+\subsection{Comparison with Fixed Sparsity}
 
 \textbf{Table 8.1: NSA vs fixed-window-only.}
 
@@ -41,14 +39,14 @@ mass. This confirms the sparsity of attention.
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 Window only ($w={WINDOW_SIZE}$) & 86.5 & 72.0 & 73.0 \\
-Window + top-$k$ & **89.5** & **76.5** & **77.5** \\
+Window + top-$k$ & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Observation.} Adding top-$k$ improves accuracy by 3.0\%.
 
-\subsection{8.4 Comparison with Top-K Only}
+\subsection{Comparison with Top-K Only}
 
 \textbf{Table 8.2: NSA vs top-$k$-only.}
 
@@ -60,7 +58,7 @@ Window + top-$k$ & **89.5** & **76.5** & **77.5** \\
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 Top-$k$ only ($k={TOP_K}$) & 84.0 & 70.0 & 71.0 \\
-Window + top-$k$ & **89.5** & **76.5** & **77.5** \\
+Window + top-$k$ & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,14 +66,14 @@ Window + top-$k$ & **89.5** & **76.5** & **77.5** \\
 \textbf{Observation.} The local window is essential -- top-$k$ alone misses local 
 context.
 
-\subsection{8.5 Window vs Top-K Trade-off}
+\subsection{Window vs Top-K Trade-off}
 
 \textbf{Figure 8.3} shows the accuracy surface over $(w, k)$ at fixed budget 
 $w + k = 48$.
 
 \textbf{Observation.} Balance matters: pure-window or pure-top-$k$ both underperform.
 
-\subsection{8.6 Causality Verification}
+\subsection{Causality Verification}
 
 We verify causality by finite differences:
 
@@ -88,7 +86,7 @@ assert x.grad[0, i+1:].abs().max() < 1e-6
 
 \textbf{Result.}   Verified on all three models
 
-\subsection{8.7 Padding Safety}
+\subsection{Padding Safety}
 
 We verify that padding tokens are excluded from both local window and 
 top-$k$:
@@ -100,7 +98,7 @@ assert scores_masked[:, :, :, padding_positions].max() < -1000
 
 \textbf{Result.}   Padding excluded from top-k
 
-\subsection{8.8 Per-Layer Analysis}
+\subsection{Per-Layer Analysis}
 
 \textbf{Table 8.3: Per-layer accuracy and density (DistilBERT).}
 
@@ -121,9 +119,9 @@ assert scores_masked[:, :, :, padding_positions].max() < -1000
 \end{tabular}
 \end{table}
 
-\subsection{8.9 Failure Cases}
+\subsection{Failure Cases}
 
-\subsubsection{8.9.1 Layers Where NSA Fails}
+\subsubsection{Layers Where NSA Fails}
 
 \begin{table}[H]
 \centering
@@ -138,14 +136,16 @@ layer.5 & GPT-2 & 1.5 \\
 \end{tabular}
 \end{table}
 
-\subsubsection{8.9.2 Root Causes}
+\subsubsection{Root Causes}
 
 Some layers need global context beyond w + k
 
-\subsection{8.10 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{Attention is sparse:} 96\% mass in 63\% keys.
-2. \textbf{Local + global both matter}: neither alone suffices.
-3. \textbf{Top-$k$ selection is content-dependent}: varies with input.
-4. \textbf{Layer depth affects selection}: early local, late semantic.
-5. \textbf{No time speedup} without sparse kernels.
+\begin{enumerate}
+\item \textbf{Attention is sparse:} 96\% mass in 63\% keys.
+\item \textbf{Local + global both matter}: neither alone suffices.
+\item \textbf{Top-$k$ selection is content-dependent}: varies with input.
+\item \textbf{Layer depth affects selection}: early local, late semantic.
+\item \textbf{No time speedup} without sparse kernels.
+\end{enumerate}

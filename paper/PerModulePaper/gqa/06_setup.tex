@@ -1,7 +1,7 @@
 
-\section{6. Experimental Setup}
+\section{Experimental Setup}
 
-\subsection{6.1 Models}
+\subsection{Models}
 
 \begin{table}[H]
 \centering
@@ -19,7 +19,7 @@ GPT-2 & 12 & 12 & 64 & 124.4M & 12 (MHA) \\
 
 All models loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
 
-\subsection{6.2 Dataset}
+\subsection{Dataset}
 
 \textbf{SST-2} (Socher et al., 2013):
 
@@ -39,7 +39,7 @@ Test & 1,821 \\
 
 Majority baseline: 50.92\%. Sequence length: 128.
 
-\subsection{6.3 GQA Configuration}
+\subsection{GQA Configuration}
 
 \begin{table}[H]
 \centering
@@ -56,7 +56,7 @@ LoRA alpha & 32 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.4 Recovery Fine-Tuning}
+\subsection{Recovery Fine-Tuning}
 
 \begin{table}[H]
 \centering
@@ -75,20 +75,20 @@ Precision & FP16 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.5 Evaluation}
+\subsection{Evaluation}
 
 \subsubsection{Quality}
 \begin{itemize}
 \item Accuracy, F1, Precision, Recall
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Efficiency}
 \begin{itemize}
 \item KV cache at inference (per token, per layer)
 \item Peak VRAM during forward pass
 \item Inference time (median of 20)
-\end{itemize}
 
+\end{itemize}
 \subsubsection{KV Cache Calculation}
 
 \begin{lstlisting}
@@ -96,7 +96,7 @@ kv_bytes_per_token_per_layer = 2 * G * d_h * 2  # FP16
 total_kv = N_layers * L * B * kv_bytes_per_token_per_layer
 \end{lstlisting}
 
-\subsection{6.6 Quality Gate}
+\subsection{Quality Gate}
 
 \begin{table}[H]
 \centering
@@ -112,7 +112,7 @@ FAIL & < 50.92\% \\
 \end{tabular}
 \end{table}
 
-\subsection{6.7 Hardware}
+\subsection{Hardware}
 
 \begin{table}[H]
 \centering
@@ -129,7 +129,7 @@ PyTorch & 2.4.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{6.8 Reproduction}
+\subsection{Reproduction}
 
 \begin{lstlisting}
 python run_all_4_gqa.py \
@@ -139,4 +139,4 @@ python run_all_4_gqa.py \
     --lora_rank 16
 \end{lstlisting}
 
-\subsection{6.9 Ablations}
+\subsection{Ablations}

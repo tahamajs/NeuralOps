@@ -1,29 +1,29 @@
 
-\section{8. Analysis}
+\section{Analysis}
 
-\subsection{8.1 Why Does Infini-Attention Work?}
+\subsection{Why Does Infini-Attention Work?}
 
 Three mechanisms contribute:
 
-\subsubsection{8.1.1 Local Window Preserves Pretrained Behavior}
+\subsubsection{Local Window Preserves Pretrained Behavior}
 
 At $\beta = -5$, $\sigma(\beta) \approx 0.007$. The output is dominated 
 by local sliding-window attention, which approximates the pretrained 
 attention for tokens within the window. The model starts close to the 
 baseline.
 
-\subsubsection{8.1.2 Memory Provides Global Context}
+\subsubsection{Memory Provides Global Context}
 
 As training progresses, $\beta$ increases, giving the memory more weight. 
 The memory learns to summarize global information that the local window 
 cannot capture.
 
-\subsubsection{8.1.3 LoRA Adapts Projections}
+\subsubsection{LoRA Adapts Projections}
 
 LoRA provides capacity to adjust the Q/K/V/O projections to the new 
 attention pattern.
 
-\subsection{8.2 Evolution of $\beta$ During Training}
+\subsection{Evolution of $\beta$ During Training}
 
 \textbf{Figure 8.1} shows $\sigma(\beta)$ over recovery steps.
 
@@ -44,7 +44,7 @@ attention pattern.
 
 \textbf{Observation.} $\beta$ increased from -5.0 to -3.2 over 50 steps, $\sigma$($\beta$) from 0.007 to 0.039
 
-\subsection{8.3 Per-Layer Analysis}
+\subsection{Per-Layer Analysis}
 
 \textbf{Table 8.1: Reconstruction metrics by layer (DistilBERT).}
 
@@ -65,7 +65,7 @@ attention pattern.
 \end{tabular}
 \end{table}
 
-\subsection{8.4 Memory Utilization}
+\subsection{Memory Utilization}
 
 \textbf{Figure 8.2} shows how the $d_c = 128$ memory slots are used. The 
 attention distribution over memory slots is:
@@ -73,11 +73,11 @@ attention distribution over memory slots is:
 \begin{itemize}
 \item \textbf{Uniform:} All slots used equally (memory acts as averaging)
 \item \textbf{Concentrated:} Few slots dominate (memory acts as retrieval)
-\end{itemize}
 
+\end{itemize}
 \textbf{Observation.} Slightly concentrated: top-10 slots receive ~40\% of attention mass
 
-\subsection{8.5 Inference Cost}
+\subsection{Inference Cost}
 
 \textbf{Table 8.2: Inference time breakdown (DistilBERT, L=128).}
 
@@ -93,18 +93,18 @@ Local attention & 0 & 0.2 ms \\
 Memory attention & 0 & 0.05 ms \\
 Output projection & 0.2 ms & 0.2 ms \\
 LoRA & 0 & 0.15 ms \\
-**Total** & 1.9 s & 4.5 s \\
+\textbf{Total} & 1.9 s & 4.5 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{8.6 Effect of Window Size}
+\subsection{Effect of Window Size}
 
 \textbf{Figure 8.3} shows accuracy vs window size. Larger windows improve 
 local accuracy but reduce the memory's contribution. We find $W = 128$ 
 is a good balance.
 
-\subsection{8.7 The Parameter Increase}
+\subsection{The Parameter Increase}
 
 The \textbf{+1.82\%} parameter increase comes from:
 
@@ -124,15 +124,17 @@ LoRA & 50\% \\
 
 \textbf{Memory dominates} for small models; \textbf{LoRA dominates} for larger.
 
-\subsection{8.8 Comparison with AASVD}
+\subsection{Comparison with AASVD}
 
 AASVD \textbf{reduces} parameters. Infini-Attention \textbf{increases}. The two are 
 complementary:
 
-1. Apply AASVD to compress the base model.
-2. Apply Infini-Attention to add long-context capability.
+\begin{enumerate}
+\item Apply AASVD to compress the base model.
+\item Apply Infini-Attention to add long-context capability.
 
-\subsection{8.9 Failure Mode Taxonomy}
+\end{enumerate}
+\subsection{Failure Mode Taxonomy}
 
 \begin{table}[H]
 \centering
@@ -149,10 +151,12 @@ Slow & >5$\times$ latency & Extra matmuls \\
 \end{tabular}
 \end{table}
 
-\subsection{8.10 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{$\beta$ init matters.} $-5$ is a good default.
-2. \textbf{Window size balances local vs global.}
-3. \textbf{Memory dominates params for small models.}
-4. \textbf{LoRA dominates for larger.}
-5. \textbf{Not a compressor.} Parameter count increases.
+\begin{enumerate}
+\item \textbf{$\beta$ init matters.} $-5$ is a good default.
+\item \textbf{Window size balances local vs global.}
+\item \textbf{Memory dominates params for small models.}
+\item \textbf{LoRA dominates for larger.}
+\item \textbf{Not a compressor.} Parameter count increases.
+\end{enumerate}

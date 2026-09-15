@@ -1,7 +1,7 @@
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
@@ -18,17 +18,17 @@ Qwen3.5 & Causal + RoPE & Yes & Yes & not tested \\
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Transfer}
+\subsection{Weight Transfer}
 
-\subsubsection{5.2.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
 Direct copy of \texttt{q\_lin, k\_lin, v\_lin, out\_lin}. \texttt{is\_nested\_encoder = False}.
 
-\subsubsection{5.2.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}; skip own \texttt{out\_proj}.
 
-\subsubsection{5.2.3 GPT-2 (Causal)}
+\subsubsection{GPT-2 (Causal)}
 
 Split fused \texttt{c\_attn}:
 
@@ -37,26 +37,26 @@ w = src.c_attn.weight.t()  # Conv1D transpose
 q_w, k_w, v_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
-\subsubsection{5.2.4 Qwen3.5 (GQA + RoPE)}
+\subsubsection{Qwen3.5 (GQA + RoPE)}
 
 Direct copy with \texttt{repeat\_kv} at runtime.
 
-\subsection{5.3 Handling Nested Encoders}
+\subsection{Handling Nested Encoders}
 
 For RoBERTa/BERT, \texttt{is\_nested\_encoder = True}:
 \begin{itemize}
 \item No \texttt{out\_proj} applied inside NHA.
 \item Outer \texttt{attention.output.dense} applies output projection.
-\end{itemize}
 
-\subsection{5.4 Causality}
+\end{itemize}
+\subsection{Causality}
 
 \begin{itemize}
 \item \textbf{Local stream:} Band mask with $j \le i$.
 \item \textbf{Global stream:} Chunked prefix scan.
-\end{itemize}
 
-\subsection{5.5 RoPE Integration}
+\end{itemize}
+\subsection{RoPE Integration}
 
 RoPE applied to Q, K \textbf{before} both streams:
 
@@ -64,15 +64,15 @@ RoPE applied to Q, K \textbf{before} both streams:
 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids)
 \end{lstlisting}
 
-\subsection{5.6 Padding Handling}
+\subsection{Padding Handling}
 
 Both streams handle padding:
 \begin{itemize}
 \item \textbf{Local:} Mask invalid keys.
 \item \textbf{Global:} Zero out invalid K, V before prefix scan.
-\end{itemize}
 
-\subsection{5.7 Injection Algorithm}
+\end{itemize}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject NHA into a full model
 \begin{lstlisting}
@@ -87,7 +87,7 @@ Output: M with NHA attention
 6: end for
 \end{lstlisting}
 
-\subsection{5.8 Failure Handling}
+\subsection{Failure Handling}
 
 \texttt{inject\_nha} returns \texttt{None} on failure:
 
@@ -99,7 +99,7 @@ except Exception as e:
     return None
 \end{lstlisting}
 
-\subsection{5.9 Parameter Count}
+\subsection{Parameter Count}
 
 \begin{table}[H]
 \centering
@@ -118,7 +118,7 @@ RFF buffer & $d_h m$ (not trainable) \\
 \end{tabular}
 \end{table}
 
-\subsection{5.10 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("nha")
@@ -126,4 +126,4 @@ RFF buffer & $d_h m$ (not trainable) \\
 class NativeHybridAttention(BaseAttention): ...
 \end{lstlisting}
 
-\subsection{5.11 Failure Modes}
+\subsection{Failure Modes}

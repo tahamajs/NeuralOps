@@ -1,16 +1,18 @@
 
-\section{4. Method}
+\section{Method}
 
-\subsection{4.1 Overview}
+\subsection{Overview}
 
 PTP is a wrapper for standard attention that replaces the full $L \times L$ 
 attention with a pruned $L \times k$ attention:
 
-1. \textbf{Score} each token with a small MLP.
-2. \textbf{Select} the top-$k$ tokens.
-3. \textbf{Prune} K, V to the selected tokens.
-4. \textbf{Attend} using the pruned K, V.
+\begin{enumerate}
+\item \textbf{Score} each token with a small MLP.
+\item \textbf{Select} the top-$k$ tokens.
+\item \textbf{Prune} K, V to the selected tokens.
+\item \textbf{Attend} using the pruned K, V.
 
+\end{enumerate}
 \textbf{Figure 4.1} illustrates the pipeline.
 
 \begin{lstlisting}
@@ -40,9 +42,9 @@ attention with a pruned $L \times k$ attention:
    +--------------+
 \end{lstlisting}
 
-\subsection{4.2 Score Network}
+\subsection{Score Network}
 
-\subsubsection{4.2.1 Architecture}
+\subsubsection{Architecture}
 
 \[
 s_i = \sigma\!\left(W_2 \cdot \text{GELU}(W_1 x_i + b_1) + b_2\right)
@@ -54,23 +56,23 @@ with:
 \item $W_1 \in \mathbb{R}^{64 \times d}$: input projection.
 \item $W_2 \in \mathbb{R}^{1 \times 64}$: output scalar.
 \item $\sigma$: sigmoid.
-\end{itemize}
 
+\end{itemize}
 \textbf{Parameters:} $64 (d + 1) + 1 \approx 64 d$.
 
 For $d = 768$: ~49K parameters per attention layer.
 
-\subsubsection{4.2.2 Initialization}
+\subsubsection{Initialization}
 
 \begin{itemize}
 \item $W_1$: Kaiming uniform.
 \item $W_2$: Kaiming uniform.
 \item Bias: zero.
-\end{itemize}
 
+\end{itemize}
 At initialization, scores are roughly uniform in $(0, 1)$.
 
-\subsubsection{4.2.3 Why a Small MLP?}
+\subsubsection{Why a Small MLP?}
 
 Alternatives:
 
@@ -82,7 +84,7 @@ Alternatives:
 \textbf{Type} & \textbf{Pros} & \textbf{Cons} \\
 \midrule
 Linear ($w^\top x$) & Minimal params & Cannot model nonlinearity \\
-**MLP-64** & **Expressive, small** & **~50K params/layer** \\
+\textbf{MLP-64} & \textbf{Expressive, small} & \textbf{~50K params/layer} \\
 MLP-256 & More expressive & ~200K params/layer \\
 \bottomrule
 \end{tabular}
@@ -90,9 +92,9 @@ MLP-256 & More expressive & ~200K params/layer \\
 
 MLP-64 is a good trade-off.
 
-\subsection{4.3 Token Selection}
+\subsection{Token Selection}
 
-\subsubsection{4.3.1 [CLS] Preservation}
+\subsubsection{[CLS] Preservation}
 
 Set $s_0 \leftarrow 10^4$ to guarantee retention:
 
@@ -100,7 +102,7 @@ Set $s_0 \leftarrow 10^4$ to guarantee retention:
 scores[:, 0] = 1e4
 \end{lstlisting}
 
-\subsubsection{4.3.2 Padding Masking}
+\subsubsection{Padding Masking}
 
 Set padding scores to $-10^4$:
 
@@ -109,7 +111,7 @@ valid_mask = get_token_valid_mask(attention_mask, B, L, device)
 scores = scores.masked_fill(~valid_mask, -1e4)
 \end{lstlisting}
 
-\subsubsection{4.3.3 Order of Operations}
+\subsubsection{Order of Operations}
 
 \textbf{Critical:} apply padding masking \textbf{after} [CLS] preservation so that 
 if [CLS] is padding (it never should be), it is still excluded.
@@ -120,7 +122,7 @@ scores = scores.masked_fill(~valid_mask, -1e4)  # Padding
 scores[:, 0] = 1e4               # Re-apply CLS (padding mask may have overwritten)
 \end{lstlisting}
 
-\subsubsection{4.3.4 Top-K Selection}
+\subsubsection{Top-K Selection}
 
 \[
 k = \lceil \rho L \rceil, \quad
@@ -139,9 +141,9 @@ top_indices, _ = torch.sort(top_indices, dim=-1)
 Sorting ensures the pruned sequence preserves original order, which helps 
 downstream layers.
 
-\subsection{4.4 KV Pruning}
+\subsection{KV Pruning}
 
-\subsubsection{4.4.1 Gather Operation}
+\subsubsection{Gather Operation}
 
 Given $K_\text{all}, V_\text{all} \in \mathbb{R}^{B \times H \times L \times d_h}$ 
 and indices $\mathcal{T} \in \mathbb{Z}^{B \times k}$:
@@ -159,7 +161,7 @@ k_pruned = torch.gather(k_all, 2, top_idx_exp)
 v_pruned = torch.gather(v_all, 2, top_idx_exp)
 \end{lstlisting}
 
-\subsubsection{4.4.2 Complexity}
+\subsubsection{Complexity}
 
 \begin{table}[H]
 \centering
@@ -176,14 +178,14 @@ Attention & $\mathcal{O}(B H L k d_h)$ \\
 
 \textbf{Reduction from dense:} $k / L = \rho$.
 
-\subsection{4.5 Attention on Pruned KV}
+\subsection{Attention on Pruned KV}
 
 \[
 S = \frac{Q K_\text{pruned}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times L \times k}
 \tag{4.4}
 \]
 
-\subsubsection{4.5.1 Causal Masking}
+\subsubsection{Causal Masking}
 
 For decoders, queries can only attend to keys at positions $\leq$ query 
 position. After pruning, we compare \textbf{original} positions:
@@ -202,7 +204,7 @@ causal_mask = k_orig_pos > q_pos
 attn_scores = attn_scores.masked_fill(causal_mask, -1e4)
 \end{lstlisting}
 
-\subsubsection{4.5.2 Padding Masking}
+\subsubsection{Padding Masking}
 
 We gather padding validity for the retained keys:
 
@@ -211,7 +213,7 @@ valid_keys = torch.gather(valid_mask, 1, top_indices)  # (B, k)
 attn_scores = attn_scores.masked_fill(~valid_keys.unsqueeze(1).unsqueeze(2), -1e4)
 \end{lstlisting}
 
-\subsubsection{4.5.3 Softmax and Dropout}
+\subsubsection{Softmax and Dropout}
 
 Standard:
 
@@ -220,7 +222,7 @@ P = \text{softmax}(S), \quad P \leftarrow \text{Dropout}(P)
 \tag{4.6}
 \]
 
-\subsection{4.6 Output Projection}
+\subsection{Output Projection}
 
 For non-nested encoders:
 
@@ -236,7 +238,7 @@ For nested encoders (RoBERTa/BERT), we skip $W_O$:
 \tag{4.8}
 \]
 
-\subsection{4.7 Complete Forward Pass}
+\subsection{Complete Forward Pass}
 
 \textbf{Algorithm 1:} PTP forward
 \begin{lstlisting}
@@ -285,7 +287,7 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 38: return out
 \end{lstlisting}
 
-\subsection{4.8 Complexity Analysis}
+\subsection{Complexity Analysis}
 
 \begin{table}[H]
 \centering
@@ -297,16 +299,16 @@ Output: output $\in$ R^{B $\times$ L $\times$ d}
 Score network & -- & $\mathcal{O}(B L \cdot 64 d)$ \\
 Top-$k$ & -- & $\mathcal{O}(B L \log k)$ \\
 Q/K/V projections & $\mathcal{O}(B L d^2)$ & Same \\
-Attention & $\mathcal{O}(B H L^2 d_h)$ & **$\mathcal{O}(B H L k d_h)$** \\
+Attention & $\mathcal{O}(B H L^2 d_h)$ & \textbf{$\mathcal{O}(B H L k d_h)$} \\
 Output projection & $\mathcal{O}(B L d^2)$ & Same \\
-**Total attention** & $\mathcal{O}(B H L^2 d_h)$ & **$\mathcal{O}(B H L k d_h)$** \\
+\textbf{Total attention} & $\mathcal{O}(B H L^2 d_h)$ & \textbf{$\mathcal{O}(B H L k d_h)$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Reduction factor:} $L / k = 1 / \rho$.
 
-\subsection{4.9 Parameter Analysis}
+\subsection{Parameter Analysis}
 
 \begin{table}[H]
 \centering
@@ -326,9 +328,9 @@ LoRA adapters & 0 & $2 r_L \cdot 4 d$ \\
 
 For $d = 768, r_L = 16$: ~49K + 98K = \textbf{147K} trainable per layer.
 
-\subsection{4.10 Theoretical Notes}
+\subsection{Theoretical Notes}
 
-\subsubsection{4.10.1 [CLS] Retention Guarantee}
+\subsubsection{[CLS] Retention Guarantee}
 
 \textbf{Claim.} Token 0 is always in $\mathcal{T}$.
 
@@ -336,14 +338,14 @@ For $d = 768, r_L = 16$: ~49K + 98K = \textbf{147K} trainable per layer.
 bounded in $(-10^4, 10^4)$, position 0 has the maximum score and is always 
 selected. $\square$
 
-\subsubsection{4.10.2 Causality Guarantee}
+\subsubsection{Causality Guarantee}
 
 \textbf{Claim.} For decoder models, PTP never attends to future positions.
 
 \textbf{Proof.} We mask $(i, j)$ whenever $\mathcal{T}[b, j] > i$. This ensures 
 only original positions $\leq i$ are attended. $\square$
 
-\subsubsection{4.10.3 Approximation Error}
+\subsubsection{Approximation Error}
 
 \textbf{Claim.} The output of PTP attention is bounded by:
 
@@ -355,7 +357,7 @@ only original positions $\leq i$ are attended. $\square$
 \textbf{Sketch.} The difference is the sum over pruned keys weighted by their 
 attention probability. $\square$
 
-\subsubsection{4.10.4 Optimal Keep Ratio}
+\subsubsection{Optimal Keep Ratio}
 
 \textbf{Claim.} Under the assumption that task accuracy is proportional to 
 retained attention mass, the optimal $\rho$ satisfies:

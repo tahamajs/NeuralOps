@@ -1,7 +1,7 @@
 
-\section{7. Results}
+\section{Results}
 
-\subsection{7.1 Main Results}
+\subsection{Main Results}
 
 \textbf{Table 7.1: SST-2 results with $\rho = 0.8$.}
 
@@ -13,16 +13,16 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Kept} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 100\% & 183 MB & 1.9 s \\
-DistilBERT & **PTP** & **89.5** & -1.2 & 0.895 & **80\%** & 155 MB & 1.6 s \\
+DistilBERT & \textbf{PTP} & \textbf{89.5} & -1.2 & 0.895 & \textbf{80\%} & 155 MB & 1.6 s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 100\% & 712 MB & 4.1 s \\
-RoBERTa & **PTP** & **77.0** & -1.6 & 0.770 & **80\%** & 600 MB & 3.4 s \\
+RoBERTa & \textbf{PTP} & \textbf{77.0} & -1.6 & 0.770 & \textbf{80\%} & 600 MB & 3.4 s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 100\% & 793 MB & 4.2 s \\
-GPT-2 & **PTP** & **78.0** & -1.4 & 0.780 & **80\%** & 680 MB & 3.5 s \\
+GPT-2 & \textbf{PTP} & \textbf{78.0} & -1.4 & 0.780 & \textbf{80\%} & 680 MB & 3.5 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.2 Efficiency}
+\subsection{Efficiency}
 
 \textbf{Table 7.2: Memory and time.}
 
@@ -34,14 +34,14 @@ GPT-2 & **PTP** & **78.0** & -1.4 & 0.780 & **80\%** & 680 MB & 3.5 s \\
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} & \textbf{Speedup} \\
 \midrule
 DistilBERT & full & 183 MB & 1.90 s & 1.00$\times$ \\
-DistilBERT & PTP & 155 MB & 1.6 s & **1.25$\times$** \\
+DistilBERT & PTP & 155 MB & 1.6 s & \textbf{1.25$\times$} \\
 GPT-2 & full & 793 MB & 4.20 s & 1.00$\times$ \\
-GPT-2 & PTP & 680 MB & 3.5 s & **1.20$\times$** \\
+GPT-2 & PTP & 680 MB & 3.5 s & \textbf{1.20$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.3 Ablation: Keep Ratio}
+\subsection{Ablation: Keep Ratio}
 
 \textbf{Table 7.3: Accuracy vs keep ratio.}
 
@@ -61,7 +61,7 @@ GPT-2 & PTP & 680 MB & 3.5 s & **1.20$\times$** \\
 \end{tabular}
 \end{table}
 
-\subsection{7.4 Ablation: [CLS] Preservation}
+\subsection{Ablation: [CLS] Preservation}
 
 \textbf{Table 7.4: Effect of [CLS] preservation.}
 
@@ -72,7 +72,7 @@ GPT-2 & PTP & 680 MB & 3.5 s & **1.20$\times$** \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With [CLS] preserve & **89.5** & **77.0** & **78.0** \\
+With [CLS] preserve & \textbf{89.5} & \textbf{77.0} & \textbf{78.0} \\
 Without & 55.0 & 51.5 & 52.0 \\
 \bottomrule
 \end{tabular}
@@ -80,7 +80,7 @@ Without & 55.0 & 51.5 & 52.0 \\
 
 \textbf{Observation.} [CLS] preservation improves accuracy by 15\%.
 
-\subsection{7.5 Ablation: Score Network Hidden Dim}
+\subsection{Ablation: Score Network Hidden Dim}
 
 \textbf{Table 7.5: Accuracy vs hidden dimension.}
 
@@ -98,7 +98,7 @@ Without & 55.0 & 51.5 & 52.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{7.6 Ablation: LoRA Rank}
+\subsection{Ablation: LoRA Rank}
 
 \textbf{Table 7.6: Accuracy vs LoRA rank.}
 
@@ -117,7 +117,7 @@ Without & 55.0 & 51.5 & 52.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{7.7 Ablation: Recovery Steps}
+\subsection{Ablation: Recovery Steps}
 
 \textbf{Table 7.7: Accuracy vs recovery steps.}
 
@@ -136,7 +136,7 @@ Without & 55.0 & 51.5 & 52.0 \\
 \end{tabular}
 \end{table}
 
-\subsection{7.8 Comparison with Companion Methods}
+\subsection{Comparison with Companion Methods}
 
 \textbf{Table 7.8: Comparison with other pruning methods.}
 
@@ -151,12 +151,12 @@ full & 90.71\% & 78.56\% & 79.36\% & Dense & 1.0$\times$ \\
 PoWER-BERT & 86.0 & 73.5 & 74.5 & Attn-heuristic & 1.4$\times$ \\
 LTP & 87.0 & 74.5 & 75.5 & Learned threshold & 1.4$\times$ \\
 Token Merging & 89.0 & 76.5 & 77.5 & Merge & 1.5$\times$ \\
-**PTP** & **89.5** & **77.0** & **78.0** & **MLP top-k** & **1.25$\times$** \\
+\textbf{PTP} & \textbf{89.5} & \textbf{77.0} & \textbf{78.0} & \textbf{MLP top-k} & \textbf{1.25$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{7.9 Token Score Analysis}
+\subsection{Token Score Analysis}
 
 \textbf{Table 7.9: Top-5 highest-scoring tokens (DistilBERT, sample input).}
 
@@ -178,7 +178,7 @@ Token Merging & 89.0 & 76.5 & 77.5 & Merge & 1.5$\times$ \\
 
 \textbf{Observation.} Content words dominate; function words are pruned.
 
-\subsection{7.10 Per-Layer Pruning Ratio}
+\subsection{Per-Layer Pruning Ratio}
 
 \textbf{Table 7.10: Effective kept ratio per layer (DistilBERT).}
 
@@ -199,11 +199,11 @@ Token Merging & 89.0 & 76.5 & 77.5 & Merge & 1.5$\times$ \\
 \end{tabular}
 \end{table}
 
-\subsection{7.11 Training Loss Curves}
+\subsection{Training Loss Curves}
 
 \textbf{Figure 7.1} shows loss vs step.
 
-\subsection{7.12 Summary}
+\subsection{Summary}
 
 \begin{itemize}
 \item \textbf{Accuracy:} drops -1.2\%---1.4\%.

@@ -1,7 +1,7 @@
 
-\section{5. Architecture Integration}
+\section{Architecture Integration}
 
-\subsection{5.1 Model Support}
+\subsection{Model Support}
 
 \begin{table}[H]
 \centering
@@ -18,17 +18,17 @@ Qwen3.5 & Causal + RoPE & Yes & Yes & not tested \\
 \end{tabular}
 \end{table}
 
-\subsection{5.2 Weight Transfer}
+\subsection{Weight Transfer}
 
-\subsubsection{5.2.1 DistilBERT (Flat)}
+\subsubsection{DistilBERT (Flat)}
 
 Direct copy of \texttt{q\_lin, k\_lin, v\_lin, out\_lin}.
 
-\subsubsection{5.2.2 RoBERTa (Nested)}
+\subsubsection{RoBERTa (Nested)}
 
 Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}; skip own \texttt{out\_proj}.
 
-\subsubsection{5.2.3 GPT-2 (Causal)}
+\subsubsection{GPT-2 (Causal)}
 
 Split fused \texttt{c\_attn}:
 
@@ -37,26 +37,28 @@ w = src.c_attn.weight.t()  # Conv1D transpose
 q_w, k_w, v_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
-\subsubsection{5.2.4 Qwen3.5 (GQA + RoPE)}
+\subsubsection{Qwen3.5 (GQA + RoPE)}
 
 Direct copy with \texttt{repeat\_kv}.
 
-\subsection{5.3 Handling Nested Encoders}
+\subsection{Handling Nested Encoders}
 
 For RoBERTa/BERT, \texttt{is\_nested\_encoder = True}:
 \begin{itemize}
 \item No \texttt{out\_proj} applied inside NSA.
 \item Outer \texttt{attention.output.dense} applies output.
-\end{itemize}
 
-\subsection{5.4 Causality}
+\end{itemize}
+\subsection{Causality}
 
 For decoders:
-1. Local mask: $(i - j \leq w) \land (j \leq i)$.
-2. Top-$k$ on causal-masked scores.
-3. Final AND with causal.
+\begin{enumerate}
+\item Local mask: $(i - j \leq w) \land (j \leq i)$.
+\item Top-$k$ on causal-masked scores.
+\item Final AND with causal.
 
-\subsection{5.5 Padding Handling}
+\end{enumerate}
+\subsection{Padding Handling}
 
 Padding keys are excluded from both local window and top-$k$:
 
@@ -65,11 +67,11 @@ key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
 non_local_scores = non_local_scores.masked_fill(~key_valid_4d, -1e4)
 \end{lstlisting}
 
-\subsection{5.6 RoPE Integration}
+\subsection{RoPE Integration}
 
 RoPE applied to Q, K \textbf{before} score computation and top-$k$ selection.
 
-\subsection{5.7 Injection Algorithm}
+\subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject NSA into a full model
 \begin{lstlisting}
@@ -84,7 +86,7 @@ Output: M with NSA attention
 6: end for
 \end{lstlisting}
 
-\subsection{5.8 Failure Handling}
+\subsection{Failure Handling}
 
 \texttt{inject\_nsa} returns \texttt{None} on failure:
 
@@ -96,7 +98,7 @@ except Exception as e:
     return None
 \end{lstlisting}
 
-\subsection{5.9 Parameter Count}
+\subsection{Parameter Count}
 
 \begin{table}[H]
 \centering
@@ -106,7 +108,7 @@ except Exception as e:
 \textbf{Component} & \textbf{Baseline} & \textbf{NSA} \\
 \midrule
 $W_Q, W_K, W_V, W_O$ & Standard & Same \\
-Extra & 0 & **0** \\
+Extra & 0 & \textbf{0} \\
 LoRA & 0 & $2 r (\cdots)$ \\
 \bottomrule
 \end{tabular}
@@ -114,7 +116,7 @@ LoRA & 0 & $2 r (\cdots)$ \\
 
 \textbf{NSA adds zero parameters.}
 
-\subsection{5.10 Registry}
+\subsection{Registry}
 
 \begin{lstlisting}
 @ATTENTION_REGISTRY.register("nsa")
@@ -122,4 +124,4 @@ LoRA & 0 & $2 r (\cdots)$ \\
 class NativeSparseAttention(BaseAttention): ...
 \end{lstlisting}
 
-\subsection{5.11 Failure Modes}
+\subsection{Failure Modes}

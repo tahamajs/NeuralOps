@@ -31,11 +31,13 @@ selects from the non-masked set. $\square$
 
 \textbf{Proof.} Two mechanisms:
 
-1. \textbf{Local mask} ensures $j \leq i$ within the window.
-2. \textbf{Top-$k$ mask} computed on causal-masked scores, selecting only 
-   $j \leq i$.
-3. \textbf{Final AND with causal} ensures no leakage.
+\begin{enumerate}
+\item \textbf{Local mask} ensures $j \leq i$ within the window.
+\item \textbf{Top-$k$ mask} computed on causal-masked scores, selecting only
+  $j \leq i$.
+\item \textbf{Final AND with causal} ensures no leakage.
 
+\end{enumerate}
 Therefore, for all selected $j$: $j \leq i$. $\square$
 
 \subsection{A.4 Coverage Bound}
@@ -83,7 +85,7 @@ Padding mask & $\mathcal{O}(B H L)$ \\
 Top-$k$ & $\mathcal{O}(B H L \cdot k)$ \\
 Mask union & $\mathcal{O}(B H L^2)$ \\
 Softmax + $P V$ & $\mathcal{O}(B H L^2 d_h)$ \\
-**Total** & $\mathcal{O}(B H L^2 d_h)$ \\
+\textbf{Total} & $\mathcal{O}(B H L^2 d_h)$ \\
 \bottomrule
 \end{tabular}
 \end{table}

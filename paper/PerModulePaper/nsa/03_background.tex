@@ -1,7 +1,7 @@
 
-\section{3. Background}
+\section{Background}
 
-\subsection{3.1 Dense Softmax Attention}
+\subsection{Dense Softmax Attention}
 
 For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
@@ -14,7 +14,7 @@ O = PV
 
 \textbf{Complexity.} $\mathcal{O}(L^2)$ memory and time.
 
-\subsection{3.2 Fixed Sparse Attention}
+\subsection{Fixed Sparse Attention}
 
 Restrict attention to a fixed subset $\mathcal{S}_{ij}$:
 
@@ -29,7 +29,7 @@ P_{ij} = \frac{\mathbb{1}[\mathcal{S}_{ij}] \exp(s_{ij})}{\sum_{j'} \mathbb{1}[\
 
 \textbf{Complexity.} $\mathcal{O}(L w)$ memory and time.
 
-\subsection{3.3 Top-K Selection}
+\subsection{Top-K Selection}
 
 Given scores $s_i \in \mathbb{R}^L$, the top-$k$ set is:
 
@@ -44,7 +44,7 @@ where $\tau_i$ is the $k$-th largest score.
 everywhere. However, in \textbf{inference-only} settings (which is our focus), 
 this does not matter.
 
-\subsection{3.4 Union of Local and Global Masks}
+\subsection{Union of Local and Global Masks}
 
 NSA uses:
 
@@ -60,7 +60,7 @@ P_{ij} = \frac{\mathcal{S}_{ij} \exp(s_{ij})}{\sum_{j'} \mathcal{S}_{ij'} \exp(s
 \tag{3.5}
 \]
 
-\subsection{3.5 Causal Masking}
+\subsection{Causal Masking}
 
 For decoders:
 
@@ -71,7 +71,7 @@ For decoders:
 
 Applied \textbf{after} top-$k$ so that top-$k$ never selects future positions.
 
-\subsection{3.6 Padding}
+\subsection{Padding}
 
 Padding keys must be excluded:
 
@@ -80,7 +80,7 @@ Padding keys must be excluded:
 \tag{3.7}
 \]
 
-\subsection{3.7 Attention Density}
+\subsection{Attention Density}
 
 The density of attention is:
 
@@ -93,7 +93,7 @@ For $w = 32$, $k = 16$, $L = 128$: $\rho \approx \frac{81}{128} = 0.63$.
 
 For $w = 32$, $k = 16$, $L = 2048$: $\rho \approx 0.04$.
 
-\subsection{3.8 LoRA Recovery}
+\subsection{LoRA Recovery}
 
 LoRA (Hu et al., 2021) adds trainable adapters:
 
@@ -104,4 +104,4 @@ W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r} B A
 
 NSA uses LoRA to adapt the frozen projections to the sparse structure.
 
-\subsection{3.9 Notation Summary}
+\subsection{Notation Summary}

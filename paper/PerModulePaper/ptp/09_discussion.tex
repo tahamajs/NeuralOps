@@ -1,23 +1,23 @@
 
-\section{9. Discussion}
+\section{Discussion}
 
-\subsection{9.1 Key Takeaways}
+\subsection{Key Takeaways}
 
-\subsubsection{9.1.1 Takeaway 1: Token Pruning is Effective}
+\subsubsection{Takeaway 1: Token Pruning is Effective}
 
 At $\rho = 0.8$, PTP achieves \textbf{1.25$\times$} speedup with 
 only \textbf{-1.2\%} accuracy drop.
 
-\subsubsection{9.1.2 Takeaway 2: [CLS] Preservation is Essential}
+\subsubsection{Takeaway 2: [CLS] Preservation is Essential}
 
 Without [CLS] preservation, accuracy drops by \textbf{15\%}.
 
-\subsubsection{9.1.3 Takeaway 3: Learned Scores Reveal Structure}
+\subsubsection{Takeaway 3: Learned Scores Reveal Structure}
 
 The MLP learns a task-specific importance measure that correlates with 
 content-word importance.
 
-\subsection{9.2 When to Use PTP}
+\subsection{When to Use PTP}
 
 \subsubsection{Recommended}
 
@@ -25,17 +25,17 @@ content-word importance.
 \item \textbf{Long-sequence classification} (document sentiment, topic)
 \item \textbf{Retrieval-augmented generation} (prune retrieved passages)
 \item \textbf{Edge deployment} where latency matters
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Not Recommended}
 
 \begin{itemize}
 \item \textbf{Very short sequences} ($L < 32$)
 \item \textbf{Generation tasks} (token order matters)
 \item \textbf{Tasks requiring full context} (long-form QA)
-\end{itemize}
 
-\subsection{9.3 Choosing Keep Ratio}
+\end{itemize}
+\subsection{Choosing Keep Ratio}
 
 \begin{table}[H]
 \centering
@@ -52,7 +52,7 @@ Very safe & 0.9 \\
 \end{tabular}
 \end{table}
 
-\subsection{9.4 Cost-Benefit}
+\subsection{Cost-Benefit}
 
 For DistilBERT at $L = 128$:
 
@@ -66,12 +66,12 @@ For DistilBERT at $L = 128$:
 Baseline & 90.71\% & 1.00$\times$ & 183 MB \\
 $\rho = 0.5$ & 85.0\% & 2.00$\times$ & 130 MB \\
 $\rho = 0.7$ & 88.5\% & 1.43$\times$ & 145 MB \\
-$\rho = 0.8$ & **89.5\%** & **1.25$\times$** & 155 MB \\
+$\rho = 0.8$ & \textbf{89.5\%} & \textbf{1.25$\times$} & 155 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{9.5 Interaction with Other Methods}
+\subsection{Interaction with Other Methods}
 
 \begin{table}[H]
 \centering
@@ -89,27 +89,29 @@ MoE & (orthogonal) \\
 \end{tabular}
 \end{table}
 
-\subsection{9.6 Open Questions}
+\subsection{Open Questions}
 
-1. \textbf{Per-head scoring:} Should each head have its own score network?
-2. \textbf{Learned $\rho$:} Can we learn the keep ratio?
-3. \textbf{Cross-layer sharing:} Share the score network across layers?
-4. \textbf{Long-context scaling:} How does PTP scale at $L = 4096$?
+\begin{enumerate}
+\item \textbf{Per-head scoring:} Should each head have its own score network?
+\item \textbf{Learned $\rho$:} Can we learn the keep ratio?
+\item \textbf{Cross-layer sharing:} Share the score network across layers?
+\item \textbf{Long-context scaling:} How does PTP scale at $L = 4096$?
 
-\subsection{9.7 Broader Impact}
+\end{enumerate}
+\subsection{Broader Impact}
 
 \subsubsection{Positive}
 \begin{itemize}
 \item \textbf{Faster inference:} Reduces compute per token.
 \item \textbf{Lower memory:} Attention memory scales with $k$.
 \item \textbf{Interpretability:} Token importance is visible.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Negative}
 \begin{itemize}
 \item \textbf{Dual-use:} Efficiency gains benefit malicious applications.
 \item \textbf{Concentration:} Favors large labs.
-\end{itemize}
 
+\end{itemize}
 \subsubsection{Environmental}
 Total compute: ~10 GPU-hours, ~{{CO2}} kg CO$_2$eq.

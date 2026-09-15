@@ -1,7 +1,7 @@
 
-\section{1. Introduction}
+\section{Introduction}
 
-\subsection{1.1 Motivation}
+\subsection{Motivation}
 
 Transformer inference at long sequence length is dominated by the 
 $\mathcal{O}(L^2)$ cost of softmax attention, but the actual \textbf{useful} 
@@ -12,32 +12,36 @@ span are critical. The rest are redundant.
 
 Prior work exploits this in three ways:
 
-1. \textbf{Fixed heuristics.} Prune tokens by attention magnitude (Kim \& Cho, 
-   2021), or by position (longformer-style). Simple but not task-aligned.
+\begin{enumerate}
+\item \textbf{Fixed heuristics.} Prune tokens by attention magnitude (Kim \& Cho,
+  2021), or by position (longformer-style). Simple but not task-aligned.
 
-2. \textbf{Learned selectors.} Train a selector network on top of a frozen 
-   transformer (Wang et al., 2021). Requires task-specific training.
+\item \textbf{Learned selectors.} Train a selector network on top of a frozen
+  transformer (Wang et al., 2021). Requires task-specific training.
 
-3. \textbf{Full retraining.} Train the transformer with pruning in the loop 
-   (Rao et al., 2021). Effective but expensive.
+\item \textbf{Full retraining.} Train the transformer with pruning in the loop
+  (Rao et al., 2021). Effective but expensive.
 
+\end{enumerate}
 \textbf{The gap.} None of these is a \textbf{drop-in} solution that (a) learns which 
 tokens to keep, (b) preserves pretrained weights exactly, and (c) works 
 across flat, nested, and causal architectures. PTP fills this gap.
 
-\subsection{1.2 Problem Statement}
+\subsection{Problem Statement}
 
 Given a pretrained transformer with hidden dimension $d$ and $H$ heads, we 
 seek a modified attention module $\mathcal{A}'$ that:
 
-1. \textbf{Prunes tokens:} Retains only a fraction $\rho = k/L$ of tokens.
-2. \textbf{Preserves [CLS]:} The classification token is always retained.
-3. \textbf{Handles padding:} Invalid tokens are excluded.
-4. \textbf{Preserves causality:} For decoders, no future information leaks.
-5. \textbf{Drop-in:} Pretrained projections are copied exactly.
-6. \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
+\begin{enumerate}
+\item \textbf{Prunes tokens:} Retains only a fraction $\rho = k/L$ of tokens.
+\item \textbf{Preserves [CLS]:} The classification token is always retained.
+\item \textbf{Handles padding:} Invalid tokens are excluded.
+\item \textbf{Preserves causality:} For decoders, no future information leaks.
+\item \textbf{Drop-in:} Pretrained projections are copied exactly.
+\item \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
-\subsection{1.3 Our Approach: PTP}
+\end{enumerate}
+\subsection{Our Approach: PTP}
 
 \textbf{Progressive Token Pruning} (PTP) introduces a **learnable scoring 
 network**:
@@ -66,42 +70,34 @@ tokens with the highest scores:
 
 \textbf{Key design choices:}
 
-1. \textbf{[CLS] preservation.} We set $s_0 = 10^4$ before top-$k$, guaranteeing 
-   the first token is always retained.
-2. \textbf{Padding masking.} Invalid tokens get $s_i = -10^4$ before top-$k$.
-3. \textbf{Gather-based KV pruning.} Rather than masking, we gather the top-$k$ 
-   KV tensors, reducing memory.
-4. \textbf{Causal-aware attention.} For decoders, we mask queries that would 
-   attend to future keys by comparing original positions.
+\begin{enumerate}
+\item \textbf{[CLS] preservation.} We set $s_0 = 10^4$ before top-$k$, guaranteeing
+  the first token is always retained.
+\item \textbf{Padding masking.} Invalid tokens get $s_i = -10^4$ before top-$k$.
+\item \textbf{Gather-based KV pruning.} Rather than masking, we gather the top-$k$
+  KV tensors, reducing memory.
+\item \textbf{Causal-aware attention.} For decoders, we mask queries that would
+  attend to future keys by comparing original positions.
 
-\subsection{1.4 Contributions}
+\end{enumerate}
+\subsection{Contributions}
 
 \begin{itemize}
 \item \textbf{A learnable token-selection module.} PTP scores tokens with a small
-\end{itemize}
   MLP and prunes them via top-$k$.
-\begin{itemize}
 \item \textbf{[CLS] preservation.} Guaranteed by score clamping, with no additional
-\end{itemize}
   parameters or logic.
-\begin{itemize}
 \item \textbf{Causal-aware pruning.} We preserve causality by comparing original
-\end{itemize}
   positions after pruning.
-\begin{itemize}
 \item \textbf{A drop-in wrapper.} Pretrained projections are copied exactly; only
-\end{itemize}
   the score network and LoRA adapters are trainable.
-\begin{itemize}
 \item \textbf{A systematic evaluation.} Benchmarked on DistilBERT, RoBERTa, and
-\end{itemize}
   GPT-2 on SST-2 with ablations over keep ratio and score network depth.
-\begin{itemize}
 \item \textbf{Token importance analysis.} We show that learned scores correlate with
-\end{itemize}
   content-word importance and reveal systematic patterns.
 
-\subsection{1.5 Paper Organization}
+\end{itemize}
+\subsection{Paper Organization}
 
 Section 2 reviews related work. Section 3 provides background on attention 
 and token pruning. Section 4 presents PTP. Section 5 describes integration 

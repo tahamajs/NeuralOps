@@ -1,12 +1,12 @@
 
-\section{8. Analysis}
+\section{Analysis}
 
-\subsection{8.1 What Does the Score Network Learn?}
+\subsection{What Does the Score Network Learn?}
 
 \textbf{Figure 8.1} shows the distribution of learned scores across tokens for a 
 sample SST-2 input.
 
-\subsubsection{8.1.1 Content vs Function Words}
+\subsubsection{Content vs Function Words}
 
 \textbf{Table 8.1: Mean score by POS tag.}
 
@@ -32,7 +32,7 @@ Punctuation & 0.15 \\
 \textbf{Observation.} Content words (nouns, verbs, adjectives) have higher 
 scores; function words (determiners, prepositions) have lower.
 
-\subsubsection{8.1.2 Correlation with TF-IDF}
+\subsubsection{Correlation with TF-IDF}
 
 We compute the Pearson correlation between learned scores and TF-IDF:
 
@@ -44,7 +44,7 @@ We compute the Pearson correlation between learned scores and TF-IDF:
 \textbf{Interpretation.} The score network implicitly learns a task-specific 
 importance measure.
 
-\subsection{8.2 Per-Layer Analysis}
+\subsection{Per-Layer Analysis}
 
 \textbf{Table 8.2: Effective kept ratio (DistilBERT).}
 
@@ -67,7 +67,7 @@ importance measure.
 
 \textbf{Observation.} Later layers prune more aggressively.
 
-\subsection{8.3 Comparison with Heuristic Pruning}
+\subsection{Comparison with Heuristic Pruning}
 
 \textbf{Table 8.3: Learned vs heuristic scoring.}
 
@@ -80,14 +80,14 @@ importance measure.
 \midrule
 Attention magnitude & 85.5 & 73.0 & 74.0 \\
 Token magnitude & 82.0 & 70.0 & 71.0 \\
-**Learned MLP** & **89.5** & **77.0** & **78.0** \\
+\textbf{Learned MLP} & \textbf{89.5} & \textbf{77.0} & \textbf{78.0} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Observation.} Learned MLP improves by 3.5\%.
 
-\subsection{8.4 Causality Verification}
+\subsection{Causality Verification}
 
 We verify causality via finite differences:
 
@@ -100,7 +100,7 @@ assert x.grad[0, i+1:].abs().max() < 1e-6
 
 \textbf{Result.}   Verified on all three models
 
-\subsection{8.5 Effect of Score Network Depth}
+\subsection{Effect of Score Network Depth}
 
 \textbf{Table 8.4: Accuracy vs MLP depth.}
 
@@ -112,7 +112,7 @@ assert x.grad[0, i+1:].abs().max() < 1e-6
 \textbf{Depth} & \textbf{DistilBERT} & \textbf{Params/layer} \\
 \midrule
 Linear (1 layer) & 87.5 & ~768 \\
-MLP-64 (2 layers) & **89.5** & ~50K \\
+MLP-64 (2 layers) & \textbf{89.5} & ~50K \\
 MLP-64-64 (3 layers) & 89.5 & ~55K \\
 \bottomrule
 \end{tabular}
@@ -120,9 +120,9 @@ MLP-64-64 (3 layers) & 89.5 & ~55K \\
 
 \textbf{Observation.} One hidden layer suffices.
 
-\subsection{8.6 Failure Cases}
+\subsection{Failure Cases}
 
-\subsubsection{8.6.1 Cases Where PTP Fails}
+\subsubsection{Cases Where PTP Fails}
 
 \begin{table}[H]
 \centering
@@ -138,28 +138,30 @@ Rare-word inputs & 3 \\
 \end{tabular}
 \end{table}
 
-\subsubsection{8.6.2 Root Causes}
+\subsubsection{Root Causes}
 
 Score network relies on content; adversarial inputs confuse it
 
-\subsection{8.7 Numerical Stability}
+\subsection{Numerical Stability}
 
-\subsubsection{8.7.1 Score Clamping}
+\subsubsection{Score Clamping}
 
 $10^4$ clamp prevents overflow. Score range is bounded.
 
-\subsubsection{8.7.2 Gather Safety}
+\subsubsection{Gather Safety}
 
 \texttt{topk} returns valid indices; gather is safe.
 
-\subsubsection{8.7.3 Empty Mask}
+\subsubsection{Empty Mask}
 
 If all tokens are padding, we clamp to first token.
 
-\subsection{8.8 Summary of Insights}
+\subsection{Summary of Insights}
 
-1. \textbf{Learned scores correlate with content-word importance.}
-2. \textbf{[CLS] preservation is essential.}
-3. \textbf{Late layers prune more.}
-4. \textbf{Learned MLP beats heuristics.}
-5. \textbf{Causality preserved via position comparison.}
+\begin{enumerate}
+\item \textbf{Learned scores correlate with content-word importance.}
+\item \textbf{[CLS] preservation is essential.}
+\item \textbf{Late layers prune more.}
+\item \textbf{Learned MLP beats heuristics.}
+\item \textbf{Causality preserved via position comparison.}
+\end{enumerate}
