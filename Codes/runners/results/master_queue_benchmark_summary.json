@@ -403,5 +403,32 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T22:10:41.324402"
+  },
+  {
+    "module": "nasc_attention",
+    "runner": "run_all_4_nasc_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 281.29,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:15:24.037924"
+  },
+  {
+    "module": "nexus",
+    "runner": "run_all_4_nexus.py",
+    "exit_code": 0,
+    "elapsed_s": 244.67,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:19:30.616266"
+  },
+  {
+    "module": "nha",
+    "runner": "run_all_4_nha.py",
+    "exit_code": 0,
+    "elapsed_s": 234.75,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T22:23:31.576804"
   }
 ]
