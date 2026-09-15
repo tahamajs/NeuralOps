@@ -322,5 +322,23 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T21:46:06.029352"
+  },
+  {
+    "module": "mamba",
+    "runner": "run_all_4_mamba.py",
+    "exit_code": 0,
+    "elapsed_s": 137.5,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T21:48:24.982012"
+  },
+  {
+    "module": "minimal_aurora",
+    "runner": "run_all_4_minimal_aurora.py",
+    "exit_code": 0,
+    "elapsed_s": 197.07,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T21:51:44.056287"
   }
 ]
