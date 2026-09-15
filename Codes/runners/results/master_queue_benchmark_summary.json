@@ -610,5 +610,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T23:53:40.891814"
+  },
+  {
+    "module": "span_expanded",
+    "runner": "run_all_4_span_expanded.py",
+    "exit_code": 0,
+    "elapsed_s": 339.53,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T23:59:23.372660"
   }
 ]
