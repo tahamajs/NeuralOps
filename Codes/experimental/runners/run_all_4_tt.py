@@ -13,9 +13,13 @@ os.environ.pop("TRANSFORMERS_OFFLINE", None)
 os.environ["HF_HUB_DISABLE_XET"] = "1"
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 
-# Switch to project directory if on Windows GPU server
+# Switch to project directory if on Windows GPU server or if executed from experimental/runners
 if os.path.exists(r"D:\svd_project"):
     os.chdir(r"D:\svd_project")
+else:
+    repo_root = Path(__file__).resolve().parents[2]
+    if repo_root.exists() and (repo_root / "Codes").is_dir():
+        os.chdir(str(repo_root))
 
 models = [
     {
