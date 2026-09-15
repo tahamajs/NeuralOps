@@ -234,7 +234,7 @@ class TTLinearLayer(nn.Module):
         tt_rank: int = 16,
         num_factors: int = 2,
         max_error: float = 0.20,
-        max_retries: int = 3,
+        max_retries: int = 0,
         fallback_to_svd: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -374,15 +374,17 @@ class TTLinearLayer(nn.Module):
                     break
 
                 if cur_tt_rank >= max_rank_for_compression:
-                    # Cannot reach error threshold without exceeding parameter budget.
-                    # Fall back to the original module.
-                    import logging
-                    logging.getLogger(__name__).warning(
-                        "TT: cannot achieve error < %.4f at max_rank=%d "
-                        "(param budget ceiling); falling back to original.",
-                        max_error, max_rank_for_compression,
-                    )
-                    return None  # signal caller to keep original
+                    if max_retries > 0:
+                        # Cannot reach error threshold without exceeding parameter budget during retries.
+                        # Fall back to the original module.
+                        import logging
+                        logging.getLogger(__name__).warning(
+                            "TT: cannot achieve error < %.4f at max_rank=%d "
+                            "(param budget ceiling); falling back to original.",
+                            max_error, max_rank_for_compression,
+                        )
+                        return None  # signal caller to keep original
+                    break
 
                 # Step up rank for retry
                 step = max(4, (max_rank_for_compression - cur_tt_rank) // max(1, max_retries - attempt))
