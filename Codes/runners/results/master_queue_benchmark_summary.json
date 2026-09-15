@@ -376,5 +376,50 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T11:48:42.869378"
+  },
+  {
+    "module": "decay_linear_attention",
+    "runner": "run_all_4_decay_linear_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 309.17,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:53:54.023074"
+  },
+  {
+    "module": "delta_kv",
+    "runner": "run_all_4_delta_kv.py",
+    "exit_code": 0,
+    "elapsed_s": 128.0,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:56:04.128781"
+  },
+  {
+    "module": "direct_svd",
+    "runner": "run_all_4_direct_svd.py",
+    "exit_code": 0,
+    "elapsed_s": 215.3,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T11:59:42.547402"
+  },
+  {
+    "module": "dobi",
+    "runner": "run_all_4_dobi.py",
+    "exit_code": 0,
+    "elapsed_s": 112.91,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:01:37.724386"
+  },
+  {
+    "module": "dynamic_entropy",
+    "runner": "run_all_4_dynamic_entropy.py",
+    "exit_code": 0,
+    "elapsed_s": 119.48,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T12:03:39.191879"
   }
 ]

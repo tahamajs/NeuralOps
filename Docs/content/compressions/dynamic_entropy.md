@@ -118,6 +118,6 @@ Evaluated on SST-2 sentiment classification (FP16, singular entropy dynamic rank
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 90.71% | 0.9099 | 1.0 | 0 | 183.07 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-dynamic-entropy-svd) |
-| ROBERTA | 78.56% | 0.8124 | 1.0 | 0 | 520.18 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-dynamic-entropy-svd) |
-| GPT2 | 79.36% | 0.7978 | 1.0 | 0 | 627.16 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-dynamic-entropy-svd) |
+| DISTILBERT | 90.71% | 0.9099 | 1.0 | 0 | 300.68 | `PASS_NO_COMPRESSION` | N/A |
+| ROBERTA | 78.56% | 0.8124 | 1.0 | 0 | 520.18 | `PASS_NO_COMPRESSION` | N/A |
+| GPT2 | 79.36% | 0.7978 | 1.0 | 0 | 627.16 | `PASS_NO_COMPRESSION` | N/A |

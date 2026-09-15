@@ -420,19 +420,6 @@ Evaluated on SST-2 sentiment classification (FP16, rank 128 truncated SVD, max e
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 89.33% | 0.8959 | 1.0248 | 11 | 357.79 | `PASS` | [`distilbert`](Upload error: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond) |
-| ROBERTA | 84.98% | 0.8665 | 1.0274 | 23 | 346.97 | `PASS` | [`roberta`](Upload error: [Errno 11001] getaddrinfo failed) |
-| GPT2 | 81.77% | 0.8239 | 1.0082 | 6 | 406.32 | `PASS` | [`gpt2`](Upload error: [Errno 11001] getaddrinfo failed) |
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
+| DISTILBERT | 88.99% | 0.8977 | 1.0248 | 11 | 355.29 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-direct-svd) |
+| ROBERTA | 71.10% | 0.7544 | 1.028 | 23 | 567.52 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-direct-svd) |
+| GPT2 | 68.46% | 0.5827 | 1.0084 | 6 | 646.14 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-direct-svd) |
