@@ -1,23 +1,23 @@
 {
     "model": "gpt2_moba",
     "performance": {
-        "accuracy_pct": 50.92,
-        "f1_score": 0.6748,
-        "f1_macro": 0.3374,
-        "precision": 0.2546,
-        "recall": 0.5,
-        "val_loss": 0.7048,
+        "accuracy_pct": 51.83,
+        "f1_score": 0.6651,
+        "f1_macro": 0.404,
+        "precision": 0.5397,
+        "recall": 0.5105,
+        "val_loss": 0.7183,
         "status": "PASS_LOW",
-        "elapsed_s": 13.54
+        "elapsed_s": 51.36
     },
     "efficiency": {
         "total_params_before": 124441344,
-        "total_params_after": 125621040,
-        "trainable_recovery_params": 1181232,
+        "total_params_after": 125621004,
+        "trainable_recovery_params": 1179660,
         "compression_rate": 0.9906,
         "compression_ratio_pct": -0.95,
         "flops_reduction_pct": 0.0,
-        "num_compressed_layers": 0,
+        "num_compressed_layers": 60,
         "num_fallback_layers": 0,
         "num_injected_attention_layers": 12,
         "lora_params": 1179648,
@@ -26,34 +26,22 @@
         "per_layer_reconstruction_errors": {},
         "per_layer_ranks": {
             "transformer.h.0.attn": 32,
-            "transformer.h.0.attn.inner": 32,
             "transformer.h.1.attn": 32,
-            "transformer.h.1.attn.inner": 32,
             "transformer.h.2.attn": 32,
-            "transformer.h.2.attn.inner": 32,
             "transformer.h.3.attn": 32,
-            "transformer.h.3.attn.inner": 32,
             "transformer.h.4.attn": 32,
-            "transformer.h.4.attn.inner": 32,
             "transformer.h.5.attn": 32,
-            "transformer.h.5.attn.inner": 32,
             "transformer.h.6.attn": 32,
-            "transformer.h.6.attn.inner": 32,
             "transformer.h.7.attn": 32,
-            "transformer.h.7.attn.inner": 32,
             "transformer.h.8.attn": 32,
-            "transformer.h.8.attn.inner": 32,
             "transformer.h.9.attn": 32,
-            "transformer.h.9.attn.inner": 32,
             "transformer.h.10.attn": 32,
-            "transformer.h.10.attn.inner": 32,
-            "transformer.h.11.attn": 32,
-            "transformer.h.11.attn.inner": 32
+            "transformer.h.11.attn": 32
         }
     },
     "hardware": {
-        "peak_vram_mb": 569.46,
-        "tokens_per_sec": 19829.2
+        "peak_vram_mb": 567.29,
+        "tokens_per_sec": 7904.24
     },
     "architecture": {
         "span_distribution": {},
@@ -61,10 +49,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 526.03,
-        "L_256_vram_mb": 530.72,
-        "L_512_vram_mb": 547.22,
+        "L_128_vram_mb": 525.98,
+        "L_256_vram_mb": 530.68,
+        "L_512_vram_mb": 545.8,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-11T06:38:56.637445"
+    "timestamp": "2026-09-15T04:58:03.718675"
 }

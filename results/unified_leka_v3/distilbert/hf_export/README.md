@@ -7,7 +7,7 @@ datasets:
 - sst2
 ---
 # LEKA_V3 - distilbert
-- Benchmark Accuracy: 70.53%
+- Benchmark Accuracy: 62.84%
 - F1 Score: 0.0000
 - Status: PASS
 - Architecture: distilbert

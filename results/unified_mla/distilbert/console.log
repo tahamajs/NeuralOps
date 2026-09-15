@@ -1,61 +1,78 @@
-Skipping attention module 'SOAFusedAttention' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
-Skipping attention module 'soa_fused_module' due to: cannot import name 'SOAFusedAttention' from partially initialized module 'framework.attentions.SOAFusedAttention' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\attentions\SOAFusedAttention.py)
-Skipping attention module 'soa_module' due to: cannot import name 'inject_soa_module' from 'framework.attentions.soa_attn' (D:\SVD_Project\Codes\framework\attentions\soa_attn.py)
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep:   family:            bert
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-11 19:58:13,263 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 19:58:13,271 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\unified_asvd\distilbert\finetuned_model.pt
-2026-09-11 19:58:13,416 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-11 19:58:13,955 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-11 19:58:15,621 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.94%
-2026-09-11 19:58:15,639 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 19:58:15,639 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-11 19:58:15,639 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-11 19:58:15,639 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-11 19:58:15,639 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-11 19:58:15,639 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-11 19:58:15,639 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-11 19:58:15,639 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 19:58:15,642 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 19:58:16,946 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_mla\distilbert\distilbert_sst2_full_full_metrics.json
-2026-09-11 19:58:16,953 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_mla\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
-2026-09-11 19:58:17,086 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.94% (F1: 0.9125, Peak VRAM: 389.51 MB)
-2026-09-11 19:58:17,086 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_mla\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-11 19:58:17,221 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: mla (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-11 19:58:18,394 [INFO] framework.core.attention_utils: Successfully injected 'mla' into 6 transformer blocks.
-2026-09-11 19:58:18,395 [INFO] QwenQualitySweep: module=mla path=legacy_bert
-2026-09-11 19:58:18,395 [INFO] QwenQualitySweep: module=mla injection summary: 0 SVDLinear layers active
-2026-09-11 19:58:18,396 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for mla (lr=2.0e-04)
-2026-09-11 19:58:18,420 [INFO] framework.utils.compat: Recovery fine-tuning selected 887048 trainable parameters across 34 tensors.
-2026-09-11 19:58:18,421 [INFO] QwenQualitySweep: LoRA fine-tuning: 887048 trainable parameters across 34 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-11 19:58:18,633 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6868 (bs=8, micro_bs=8)
-2026-09-11 19:58:18,748 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7152 (bs=8, micro_bs=8)
-2026-09-11 19:58:18,869 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.6711 (bs=8, micro_bs=8)
-2026-09-11 19:58:18,993 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6350 (bs=8, micro_bs=8)
-2026-09-11 19:58:19,099 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.7065 (bs=8, micro_bs=8)
-2026-09-11 19:58:19,215 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.8052 (bs=8, micro_bs=8)
-2026-09-11 19:58:19,337 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7685 (bs=8, micro_bs=8)
-2026-09-11 19:58:19,459 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7394 (bs=8, micro_bs=8)
-2026-09-11 19:58:19,580 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.6029 (bs=8, micro_bs=8)
-2026-09-11 19:58:19,714 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.6821 (bs=8, micro_bs=8)
-2026-09-11 19:58:19,844 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.7205 (bs=8, micro_bs=8)
-2026-09-11 19:58:20,953 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_mla\distilbert\distilbert_sst2_mla_full_metrics.json
-2026-09-11 19:58:20,964 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_mla\distilbert\checkpoints\mla\weights.pt (module_params=0, lora_params=28)
-2026-09-11 19:58:21,096 [INFO] QwenQualitySweep: [2/2] mla -> PASS_LOW 50.92% (F1: 0.6748, Peak VRAM: 298.5 MB)
-2026-09-11 19:58:21,096 [INFO] QwenQualitySweep: [Quality Guard] Module 'mla' did not pass quality criteria (status=PASS_LOW, acc=50.92%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-11 19:58:21,254 [INFO] QwenQualitySweep: ================================================================================
-2026-09-11 19:58:21,255 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
-2026-09-11 19:58:21,261 [INFO] QwenQualitySweep: 
+Skipping attention module 'fused_svd_kernel' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'projection_factorized_attn' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping compression_engine module 'svd_linear' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_attention' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_decay' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+2026-09-15 04:53:15,158 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 3325.16it/s]
+2026-09-15 04:53:15,835 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-15 04:53:15,835 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 04:53:15,835 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:53:15,835 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 04:53:15,835 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-15 04:53:15,836 [INFO] QwenQualitySweep:   family:            bert
+2026-09-15 04:53:15,836 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 04:53:15,836 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 04:53:15,836 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 04:53:15,836 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 04:53:15,836 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 04:53:15,837 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:53:15,837 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\distilbert\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-15 04:53:15,838 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-09-15 04:53:17,233 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0001
+2026-09-15 04:53:17,961 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0005
+2026-09-15 04:53:18,671 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1861
+2026-09-15 04:53:19,392 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0247
+2026-09-15 04:53:20,128 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0038
+2026-09-15 04:53:20,837 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0151
+2026-09-15 04:53:21,543 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0045
+2026-09-15 04:53:22,279 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0014
+2026-09-15 04:53:22,289 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_mla\distilbert\finetuned_model.pt
+2026-09-15 04:53:22,350 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 04:53:23,212 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 04:53:25,230 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.71%
+2026-09-15 04:53:25,278 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:53:25,278 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 04:53:25,278 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 04:53:25,278 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 04:53:25,279 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 04:53:25,279 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 04:53:25,279 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 04:53:25,279 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:53:25,280 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 04:53:27,710 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_mla\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-15 04:53:27,719 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_mla\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-15 04:53:27,887 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.71% (F1: 0.9099, Peak VRAM: 182.94 MB)
+2026-09-15 04:53:27,888 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_mla\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 04:53:28,122 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: mla (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 04:53:29,796 [INFO] framework.core.attention_utils: Successfully injected 'mla' into 6 transformer blocks.
+2026-09-15 04:53:29,803 [INFO] QwenQualitySweep: module=mla path=legacy_bert
+2026-09-15 04:53:29,804 [INFO] QwenQualitySweep: module=mla injection summary: 12 SVDLinear layers active
+2026-09-15 04:53:29,805 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for mla (lr=2.0e-04)
+2026-09-15 04:53:29,861 [INFO] framework.utils.compat: Recovery fine-tuning selected 294918 trainable parameters across 30 tensors.
+2026-09-15 04:53:29,862 [INFO] framework.utils.compat: Discovered 30 trainable tensors (294918 params)
+2026-09-15 04:53:29,866 [INFO] QwenQualitySweep: LoRA fine-tuning: 294918 trainable parameters across 30 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 04:53:30,002 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6573 (bs=8, micro_bs=8)
+2026-09-15 04:53:30,280 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7078 (bs=8, micro_bs=8)
+2026-09-15 04:53:30,635 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7285 (bs=8, micro_bs=8)
+2026-09-15 04:53:31,002 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.6738 (bs=8, micro_bs=8)
+2026-09-15 04:53:31,351 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.7675 (bs=8, micro_bs=8)
+2026-09-15 04:53:31,702 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7527 (bs=8, micro_bs=8)
+2026-09-15 04:53:32,043 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6876 (bs=8, micro_bs=8)
+2026-09-15 04:53:32,394 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7443 (bs=8, micro_bs=8)
+2026-09-15 04:53:32,737 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7142 (bs=8, micro_bs=8)
+2026-09-15 04:53:33,108 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.7212 (bs=8, micro_bs=8)
+2026-09-15 04:53:33,452 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.7617 (bs=8, micro_bs=8)
+2026-09-15 04:53:36,456 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_mla\distilbert\distilbert_sst2_mla_full_metrics.json
+2026-09-15 04:53:36,473 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_mla\distilbert\checkpoints\mla\weights.pt (module_params=0, lora_params=28)
+2026-09-15 04:53:36,651 [INFO] QwenQualitySweep: [2/2] mla -> PASS_LOW 51.26% (F1: 0.1584, Peak VRAM: 178.89 MB)
+2026-09-15 04:53:36,651 [INFO] QwenQualitySweep: [Quality Guard] Module 'mla' did not pass quality criteria (status=PASS_LOW, acc=51.26%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 04:53:36,877 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:53:36,878 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-15 04:53:36,883 [INFO] QwenQualitySweep: 
 Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-  full     PASS   90.94% 0.00% (base) 0.9125                  0            1.00x  389.5 MB               0.86              0.98
-   mla PASS_LOW   50.92%      -40.02% 0.6748                  0            1.10x  298.5 MB               1.07              1.23
-2026-09-11 19:58:21,261 [INFO] QwenQualitySweep: ================================================================================
+  full     PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  182.9 MB               1.87              2.15
+   mla PASS_LOW   51.26%      -39.45% 0.1584                 12            1.10x  178.9 MB               2.94              3.37
+2026-09-15 04:53:36,883 [INFO] QwenQualitySweep: ================================================================================

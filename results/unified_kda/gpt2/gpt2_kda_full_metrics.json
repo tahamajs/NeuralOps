@@ -7,8 +7,8 @@
         "precision": 0.6565,
         "recall": 0.5784,
         "val_loss": 0.6581,
-        "status": "PASS",
-        "elapsed_s": 7.28
+        "status": "FAIL",
+        "elapsed_s": 3.13
     },
     "efficiency": {
         "total_params_before": 124441344,

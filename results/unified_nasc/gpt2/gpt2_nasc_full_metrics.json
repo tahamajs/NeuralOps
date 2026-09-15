@@ -1,26 +1,26 @@
 {
     "model": "gpt2_nasc",
     "performance": {
-        "accuracy_pct": 49.31,
-        "f1_score": 0.0596,
-        "f1_macro": 0.3563,
-        "precision": 0.5151,
-        "recall": 0.5017,
-        "val_loss": 0.6959,
-        "status": "PASS_LOW",
-        "elapsed_s": 91.14
+        "accuracy_pct": 78.44,
+        "f1_score": 0.8178,
+        "f1_macro": 0.7769,
+        "precision": 0.8201,
+        "recall": 0.7813,
+        "val_loss": 0.4513,
+        "status": "PASS",
+        "elapsed_s": 24.69
     },
     "efficiency": {
-        "total_params_before": 126800640,
-        "total_params_after": 127172388,
-        "trainable_recovery_params": 1797156,
-        "compression_rate": 0.9971,
-        "compression_ratio_pct": -0.29,
+        "total_params_before": 124441344,
+        "total_params_after": 125697828,
+        "trainable_recovery_params": 1207332,
+        "compression_rate": 0.99,
+        "compression_ratio_pct": -1.01,
         "flops_reduction_pct": 0.0,
-        "num_compressed_layers": 72,
+        "num_compressed_layers": 48,
         "num_fallback_layers": 0,
-        "num_injected_attention_layers": 12,
-        "lora_params": 2654208,
+        "num_injected_attention_layers": 0,
+        "lora_params": 1179648,
         "avg_reconstruction_error": null,
         "weighted_reconstruction_error": null,
         "per_layer_reconstruction_errors": {},
@@ -40,8 +40,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 1276.39,
-        "tokens_per_sec": 2660.49
+        "peak_vram_mb": 567.46,
+        "tokens_per_sec": 11892.54
     },
     "architecture": {
         "span_distribution": {},
@@ -49,10 +49,10 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 409.87,
-        "L_256_vram_mb": 533.44,
-        "L_512_vram_mb": 781.82,
+        "L_128_vram_mb": 526.08,
+        "L_256_vram_mb": 530.59,
+        "L_512_vram_mb": 556.8,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
-    "timestamp": "2026-09-14T05:07:46.817014"
+    "timestamp": "2026-09-15T05:03:41.409907"
 }
