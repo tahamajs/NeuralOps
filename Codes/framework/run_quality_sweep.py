@@ -194,7 +194,7 @@ def compute_compression_metrics(
 
     num_svd_layers = sum(
         1 for m in model.modules()
-        if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "LoRALinear")
+        if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer")
         or any(k in m.__class__.__name__ for k in ("SVDCompressed", "MinimalNOVA", "MinimalPRISM", "NEXUS", "ORION", "MoBA"))
         or hasattr(m, "q_down")
     )
@@ -210,8 +210,7 @@ def compute_compression_metrics(
 
     is_compression = (
         module_type == "compressor"
-        or (total_params_after != total_params_before and module_name != "full")
-        or num_svd_layers > 0
+        or (total_params_after < total_params_before and module_name != "full")
     )
 
     if is_compression and total_params_after > 0:
@@ -221,7 +220,7 @@ def compute_compression_metrics(
         compression_rate = 1.0
         compression_ratio_pct = 0.0
 
-    num_compressed_layers = comp_stats.get("num_compressed", num_svd_layers)
+    num_compressed_layers = comp_stats.get("num_compressed", 0)
     num_fallback_layers = comp_stats.get("num_fallback", 0)
 
     # Layer ranks and reconstruction errors
@@ -1272,11 +1271,25 @@ def main():
                     val = st[base_key].clone()
                     if k.endswith(".weight"):
                         prefix = k[:-len(".weight")]
-                        lora_a_key = f"{prefix}.lora_A.weight"
-                        lora_b_key = f"{prefix}.lora_B.weight"
+                        # Try direct nn.Parameter keys first (LoRALinear convention)
+                        lora_a_key = f"{prefix}.lora_A"
+                        lora_b_key = f"{prefix}.lora_B"
+                        if lora_a_key not in st or lora_b_key not in st:
+                            # Fall back to submodule.weight convention (nn.Linear-based LoRA)
+                            lora_a_key = f"{prefix}.lora_A.weight"
+                            lora_b_key = f"{prefix}.lora_B.weight"
                         if lora_a_key in st and lora_b_key in st:
-                            delta = (st[lora_b_key] @ st[lora_a_key]) * scaling
-                            val = val + delta.to(val.dtype)
+                            a = st[lora_a_key]
+                            b = st[lora_b_key]
+                            if a.dim() == 2 and b.dim() == 2:
+                                if a.shape[0] == b.shape[1]:
+                                    delta = (b @ a) * scaling
+                                elif a.shape[1] == b.shape[0]:
+                                    delta = (a.t() @ b.t()).t() * scaling
+                                else:
+                                    delta = None
+                                if delta is not None and delta.shape == val.shape:
+                                    val = val + delta.to(val.dtype)
                     filtered_st[k] = val
                     LOG.info("Reconstructed unmerged model layer '%s' from checkpoint LoRA '%s'", k, base_key)
 
@@ -1564,6 +1577,16 @@ def main():
             "vspec": 8, "slicegpt": 8, "slicegpt_pca": 8,
             "asvd": 8, "cosformer": 8, "cur": 8, "vig": 8,
             "tpa": 4, "tpa_attention": 4, "tp_attention": 4,
+            # Newly added — all crashed with CUDA OOM on 12-layer models
+            "kda": 4,
+            "nha": 4,
+            "nha_attention": 4,
+            "nha_compressor": 4,
+            "kronecker_tt_lora": 4,
+            "gated_delta_net": 4,
+            "hgrn2_gated_deltanet": 4,
+            "nasc": 8,
+            "nasc_attention": 8,
         }
         effective_batch_size = min(args.batch_size, _OOM_MODULE_BATCH_OVERRIDES[name]) if name in _OOM_MODULE_BATCH_OVERRIDES else args.batch_size
 
@@ -2124,7 +2147,7 @@ def main():
                     LOG.info("module=%s path=%s", name, path_name)
                     num_svd_layers = sum(
                         1 for m in model.modules()
-                        if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear", "LoRALinear")
+                        if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer")
                         or any(k in m.__class__.__name__ for k in ("SVDCompressed", "NEXUS", "ORION", "MoBA"))
                         or hasattr(m, "q_down")
                     )
@@ -2389,6 +2412,15 @@ def main():
                 err = "note: recovery_loss_nan"
             elif acc < pass_threshold_pct:
                 err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
+            # NEW: compressor that failed to reduce parameter count
+            if (
+                name != "full"
+                and typ == "compressor"
+                and comp_metrics.get("num_compressed_layers", 0) == 0
+                and comp_metrics.get("total_params_after", 0) >= comp_metrics.get("total_params_before", 0)
+            ):
+                status = "PASS_NO_COMPRESSION"
+                err = "note: zero compressed layers, model grew (LoRA only)"
 
         # Update per-module full metrics JSON with final classification status and elapsed time
         json_path = out / f"{model_slug}_{name}_full_metrics.json"
