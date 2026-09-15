@@ -1,4 +1,4 @@
 Model,Exit Code,Baseline Acc,Kronecker TT-LoRA Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.48%,90.60%,+0.12%,0.9095,PASS,0,0.98x,345.9 MB,19.5
-roberta,0,75.11%,83.72%,+8.61%,0.8515,PASS,0,0.98x,333.2 MB,25.2
-gpt2,0,60.78%,55.16%,-5.62%,0.6787,PASS_LOW,0,0.98x,804.5 MB,25.1
+distilbert,0,90.71%,90.48%,-0.23%,0.9091,PASS,0,0.98x,211.5 MB,43.7
+roberta,0,78.56%,0.00%,-78.56%,0.8124,FAIL,0,1.00x,712.3 MB,34.6
+gpt2,0,79.36%,76.95%,-2.41%,0.7996,PASS,0,0.98x,803.7 MB,91.6
