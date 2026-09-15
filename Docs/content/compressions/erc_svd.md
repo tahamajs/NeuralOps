@@ -557,23 +557,6 @@ Evaluated on SST-2 sentiment classification (FP16, allowed error 0.20, max error
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 90.48% | 0.9077 | 1.0 | 0 | 310.69 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-erc) |
-| ROBERTA | 88.53% | 0.8932 | 1.0 | 0 | 321.64 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-erc) |
-| GPT2 | 82.45% | 0.8374 | 1.0 | 0 | 400.12 | `PASS` | [`gpt2`](https://huggingface.co/Hooshaai/svd-linear-attention-gpt2-erc) |
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
-
-## Limitations & Future Work
-
-TODO: Identify specific limitations and edge cases for this module.
+| DISTILBERT | 90.71% | 0.9099 | 1.0 | 0 | 301.18 | `PASS_NO_COMPRESSION` | N/A |
+| ROBERTA | 78.56% | 0.8124 | 1.0 | 0 | 520.68 | `PASS_NO_COMPRESSION` | N/A |
+| GPT2 | 79.36% | 0.7978 | 1.0 | 0 | 627.16 | `PASS_NO_COMPRESSION` | N/A |
