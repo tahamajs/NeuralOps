@@ -36,19 +36,6 @@
     "Compressed Layers": "0",
     "Comp Rate": "0.98x",
     "Peak VRAM": "574.7 MB",
-    "Time (s)": "0.0"
-  },
-  {
-    "Model": "qwen3_5",
-    "Exit Code": 1,
-    "Baseline Acc": "N/A",
-    "TLinFormer Attention Acc": "N/A",
-    "Delta Acc": "N/A",
-    "F1": "N/A",
-    "Status": "EXIT_1",
-    "Compressed Layers": "N/A",
-    "Comp Rate": "1.00x",
-    "Peak VRAM": "N/A",
-    "Time (s)": "0.0"
+    "Time (s)": "0.1"
   }
 ]
