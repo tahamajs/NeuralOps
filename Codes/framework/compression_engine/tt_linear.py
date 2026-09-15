@@ -1,6 +1,12 @@
 """
 Tensor-Train Linear Layer: parameterizes weight matrices as Tensor-Train (TT) Matrix cores.
 Reference: Novikov et al., 'Tensorizing Neural Networks' (NeurIPS 2015).
+
+NOTE (DEPRECATED):
+    Tensor-Train compression on 2D linear matrices is deprecated in this repository.
+    Due to mode scrambling and flattened singular value decay compared to 2D SVD, TT
+    requires very high ranks to achieve low error, yielding negligible parameter savings
+    and no FLOPs reduction. See Docs/content/compressions/tt.md.
 """
 
 from __future__ import annotations
@@ -46,16 +52,21 @@ def factorize_dimension_pair(
             if not found:
                 factors.append(1)
         factors.append(curr)
-        return factors
+        while len(factors) < k:
+            factors.append(1)
+        return factors[:k]
 
-    p_dims = tuple(get_factors(in_features, num_factors))
-    q_dims = tuple(get_factors(out_features, num_factors))
-    return p_dims, q_dims
+    return tuple(get_factors(in_features, num_factors)), tuple(get_factors(out_features, num_factors))
 
 
 class TTLinearLayer(nn.Module):
     """
     Tensor-Train (TT) Linear Layer.
+
+    .. deprecated::
+        Tensor-Train compression is deprecated on 2D linear layers in favor of SVD.
+        See Docs/content/compressions/tt.md for theoretical and empirical comparisons.
+
     Represents weight matrix W in R^{out_features x in_features} as a sequence
     of d TT-cores: G_1, G_2, ..., G_d where core G_k has shape (r_{k-1}, p_k, q_k, r_k)
     with boundary ranks r_0 = r_d = 1.
