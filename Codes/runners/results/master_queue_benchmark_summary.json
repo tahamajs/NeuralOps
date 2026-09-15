@@ -583,5 +583,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T23:35:09.522768"
+  },
+  {
+    "module": "simple_ssm",
+    "runner": "run_all_4_simple_ssm.py",
+    "exit_code": 0,
+    "elapsed_s": 378.6,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T23:41:29.687620"
   }
 ]
