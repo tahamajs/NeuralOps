@@ -103,3 +103,4 @@ def inject_infini(layer, model_config=None, old_attn=None, **kwargs):
         new_attn.copy_weights(src)
     replace_attention(layer, new_attn)
     return new_attn
+\end{lstlisting}
