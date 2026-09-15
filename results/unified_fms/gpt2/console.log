@@ -1,7 +1,12 @@
-2026-09-15 01:05:47,400 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+Skipping attention module 'fused_svd_kernel' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'projection_factorized_attn' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping compression_engine module 'svd_linear' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_attention' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_decay' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+2026-09-15 03:28:55,109 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
 
 Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 148/148 [00:00<00:00, 2287.70it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 3660.25it/s]
 [1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
 Key          | Status  | 
 -------------+---------+-
@@ -9,72 +14,62 @@ score.weight | MISSING |
 
 Notes:
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-15 01:05:49,103 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-15 01:05:49,103 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-15 01:05:49,103 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 01:05:49,104 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-15 01:05:49,104 [INFO] QwenQualitySweep:   model:             models\gpt2
-2026-09-15 01:05:49,104 [INFO] QwenQualitySweep:   family:            gpt
-2026-09-15 01:05:49,104 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-15 01:05:49,104 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-15 01:05:49,105 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-15 01:05:49,105 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-15 01:05:49,105 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-15 01:05:49,105 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 01:05:49,105 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\gpt2_sst2_lora_baseline\finetuned_model.pt' does not exist; attempting automatic fallback search.
-2026-09-15 01:05:49,107 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
-2026-09-15 01:05:51,232 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=2.6597
-2026-09-15 01:05:52,643 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=2.3356
-2026-09-15 01:05:53,934 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.5385
-2026-09-15 01:05:55,188 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0049
-2026-09-15 01:05:56,455 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.8259
-2026-09-15 01:05:57,730 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=1.0690
-2026-09-15 01:05:59,013 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=1.2230
-2026-09-15 01:06:00,300 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6620
-2026-09-15 01:06:00,307 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_fms\gpt2\finetuned_model.pt
-2026-09-15 01:06:00,419 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-15 01:06:01,220 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-15 01:06:05,600 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 49.54%
-2026-09-15 01:06:05,653 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 01:06:05,654 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-15 01:06:05,654 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-15 01:06:05,654 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-15 01:06:05,654 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-15 01:06:05,654 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-15 01:06:05,654 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-15 01:06:05,655 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 01:06:05,659 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 01:06:12,159 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_fms\gpt2\gpt2_full_full_metrics.json
-2026-09-15 01:06:12,165 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_fms\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
-2026-09-15 01:06:12,892 [INFO] QwenQualitySweep: [1/2] full -> PASS_LOW 49.54% (F1: 0.2903, Peak VRAM: 390.24 MB)
-2026-09-15 01:06:12,892 [INFO] QwenQualitySweep: [Quality Guard] Module 'full' did not pass quality criteria (status=PASS_LOW, acc=49.54%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-15 01:06:13,121 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: fms (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 01:06:14,899 [INFO] framework.core.attention_utils: Successfully injected 'fms' into 12 transformer blocks.
-2026-09-15 01:06:14,923 [INFO] QwenQualitySweep: module=fms path=adapted_gpt
-2026-09-15 01:06:14,925 [INFO] QwenQualitySweep: module=fms injection summary: 48 SVDLinear layers active
-2026-09-15 01:06:14,925 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for fms (lr=2.0e-04)
-2026-09-15 01:06:15,221 [INFO] framework.utils.compat: Recovery fine-tuning selected 1769664 trainable parameters across 180 tensors.
-2026-09-15 01:06:15,222 [INFO] framework.utils.compat: Discovered 180 trainable tensors (1769664 params)
-2026-09-15 01:06:15,237 [INFO] QwenQualitySweep: LoRA fine-tuning: 1769664 trainable parameters across 180 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-15 01:06:15,675 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=1.0293 (bs=8, micro_bs=8)
-2026-09-15 01:06:16,834 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=1.0937 (bs=8, micro_bs=8)
-2026-09-15 01:06:18,363 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=1.0922 (bs=8, micro_bs=8)
-2026-09-15 01:06:19,815 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=1.0698 (bs=8, micro_bs=8)
-2026-09-15 01:06:21,273 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=1.2046 (bs=8, micro_bs=8)
-2026-09-15 01:06:22,797 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=1.1068 (bs=8, micro_bs=8)
-2026-09-15 01:06:24,280 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.8469 (bs=8, micro_bs=8)
-2026-09-15 01:06:25,731 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=1.2877 (bs=8, micro_bs=8)
-2026-09-15 01:06:27,203 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7042 (bs=8, micro_bs=8)
-2026-09-15 01:06:28,696 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.7323 (bs=8, micro_bs=8)
-2026-09-15 01:06:30,129 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.4842 (bs=8, micro_bs=8)
-2026-09-15 01:06:41,554 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_fms\gpt2\gpt2_fms_full_metrics.json
-2026-09-15 01:06:41,669 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_fms\gpt2\checkpoints\fms\weights.pt (module_params=0, lora_params=97)
-2026-09-15 01:06:42,434 [INFO] QwenQualitySweep: [2/2] fms -> PASS_LOW 52.41% (F1: 0.6492, Peak VRAM: 335.37 MB)
-2026-09-15 01:06:42,435 [INFO] QwenQualitySweep: [Quality Guard] Module 'fms' did not pass quality criteria (status=PASS_LOW, acc=52.41%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-15 01:06:42,676 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 01:06:42,677 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
-2026-09-15 01:06:42,685 [INFO] QwenQualitySweep: 
-Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-  full PASS_LOW   49.54% 0.00% (base) 0.2903                  0            1.00x  390.2 MB               5.35              6.14
-   fms PASS_LOW   52.41%       +2.87% 0.6492                 48            0.99x  335.4 MB              11.02             12.63
-2026-09-15 01:06:42,686 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:28:56,519 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 03:28:56,520 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 03:28:56,520 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:28:56,520 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 03:28:56,520 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 03:28:56,520 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 03:28:56,520 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 03:28:56,521 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 03:28:56,521 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 03:28:56,521 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 03:28:56,521 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 03:28:56,521 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:28:56,543 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 03:28:57,172 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 03:28:57,916 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 03:29:02,903 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 03:29:02,954 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:29:02,955 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 03:29:02,955 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 03:29:02,955 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 03:29:02,955 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 03:29:02,955 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 03:29:02,955 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 03:29:02,956 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:29:02,958 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 03:29:08,344 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_fms\gpt2\gpt2_full_full_metrics.json
+2026-09-15 03:29:08,351 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_fms\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 03:29:09,032 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 793.19 MB)
+2026-09-15 03:29:09,032 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_fms\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 03:29:09,287 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: fms (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 03:29:11,105 [INFO] framework.core.attention_utils: Successfully injected 'fms' into 12 transformer blocks.
+2026-09-15 03:29:11,124 [INFO] QwenQualitySweep: module=fms path=adapted_gpt
+2026-09-15 03:29:11,126 [INFO] QwenQualitySweep: module=fms injection summary: 48 SVDLinear layers active
+2026-09-15 03:29:11,126 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for fms (lr=2.0e-04)
+2026-09-15 03:29:11,365 [INFO] framework.utils.compat: Recovery fine-tuning selected 1769664 trainable parameters across 180 tensors.
+2026-09-15 03:29:11,366 [INFO] framework.utils.compat: Discovered 180 trainable tensors (1769664 params)
+2026-09-15 03:29:11,372 [INFO] QwenQualitySweep: LoRA fine-tuning: 1769664 trainable parameters across 180 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 03:29:12,079 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.4384 (bs=8, micro_bs=8)
+2026-09-15 03:29:13,339 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7512 (bs=8, micro_bs=8)
+2026-09-15 03:29:14,787 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7940 (bs=8, micro_bs=8)
+2026-09-15 03:29:16,245 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.9963 (bs=8, micro_bs=8)
+2026-09-15 03:29:17,697 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.7290 (bs=8, micro_bs=8)
+2026-09-15 03:29:19,289 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.6685 (bs=8, micro_bs=8)
+2026-09-15 03:29:20,766 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.7134 (bs=8, micro_bs=8)
+2026-09-15 03:29:22,222 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=1.1354 (bs=8, micro_bs=8)
+2026-09-15 03:29:23,670 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.6278 (bs=8, micro_bs=8)
+2026-09-15 03:29:25,157 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.3950 (bs=8, micro_bs=8)
+2026-09-15 03:29:26,607 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.4269 (bs=8, micro_bs=8)
+2026-09-15 03:29:38,159 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_fms\gpt2\gpt2_fms_full_metrics.json
+2026-09-15 03:29:38,283 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_fms\gpt2\checkpoints\fms\weights.pt (module_params=0, lora_params=97)
+2026-09-15 03:29:39,110 [INFO] QwenQualitySweep: [2/2] fms -> PASS 57.80% (F1: 0.6535, Peak VRAM: 574.03 MB)
+2026-09-15 03:29:39,111 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_fms\gpt2\checkpoints\fms. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 03:29:39,367 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:29:39,367 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 03:29:39,374 [INFO] QwenQualitySweep: 
+Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+  full   PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.13              4.74
+   fms   PASS   57.80%      -21.56% 0.6535                 48            0.99x  574.0 MB              11.33             13.00
+2026-09-15 03:29:39,374 [INFO] QwenQualitySweep: ================================================================================

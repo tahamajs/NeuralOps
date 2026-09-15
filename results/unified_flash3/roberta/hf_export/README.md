@@ -16,24 +16,24 @@ metrics:
 Validated factorized/adapted checkpoint of **roberta** using **roberta** evaluated on **SST-2**.
 
 ## Empirical Performance Results
-- **Validation Accuracy**: `87.61%`
-- **F1 Score (Binary)**: `0.8873`
-- **F1 Macro**: `0.8749`
-- **Precision**: `0.8869`
-- **Recall**: `0.8746`
-- **Validation Loss**: `0.4187`
+- **Validation Accuracy**: `62.61%`
+- **F1 Score (Binary)**: `0.6472`
+- **F1 Macro**: `0.6248`
+- **Precision**: `0.6265`
+- **Recall**: `0.6253`
+- **Validation Loss**: `0.7936`
 - **Quality Gate Status**: `PASS` (Pass Threshold: >= 56.00%)
 
 ## Efficiency Profile & Resource Footprint
-- **Compression Rate**: `0.9452x`
+- **Compression Rate**: `0.9378x`
 - **FLOPs Reduction**: `0.0%`
-- **Total Parameters Before**: `127325954`
-- **Total Parameters After**: `134707970`
-- **Trainable Recovery Params**: `2973696`
-- **Compressed / Injected Layers**: `85`
-- **Peak VRAM**: `394.02 MB`
-- **Throughput**: `12178.79 tokens/sec`
-- **Evaluation Time**: `24.97 s`
+- **Total Parameters Before**: `124647170`
+- **Total Parameters After**: `132913922`
+- **Trainable Recovery Params**: `1179648`
+- **Compressed / Injected Layers**: `48`
+- **Peak VRAM**: `645.51 MB`
+- **Throughput**: `17994.64 tokens/sec`
+- **Evaluation Time**: `16.8 s`
 
 ## Reproduction & Usage
 ```python

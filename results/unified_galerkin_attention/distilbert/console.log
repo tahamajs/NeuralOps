@@ -1,73 +1,69 @@
-2026-09-15 01:16:47,963 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+Skipping attention module 'fused_svd_kernel' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'projection_factorized_attn' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping compression_engine module 'svd_linear' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_attention' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_decay' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+2026-09-15 03:34:28,099 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
 
 Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 104/104 [00:00<00:00, 3377.63it/s]
-2026-09-15 01:16:48,641 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
-2026-09-15 01:16:48,641 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-15 01:16:48,642 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 01:16:48,642 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-15 01:16:48,642 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
-2026-09-15 01:16:48,642 [INFO] QwenQualitySweep:   family:            bert
-2026-09-15 01:16:48,642 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-15 01:16:48,643 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-15 01:16:48,643 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-15 01:16:48,643 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-15 01:16:48,643 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-15 01:16:48,643 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 01:16:48,644 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\distilbert\finetuned_model.pt' does not exist; attempting automatic fallback search.
-2026-09-15 01:16:48,645 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
-2026-09-15 01:16:50,129 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.0001
-2026-09-15 01:16:51,006 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.0005
-2026-09-15 01:16:52,005 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=0.1861
-2026-09-15 01:16:53,078 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.0247
-2026-09-15 01:16:54,147 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.0038
-2026-09-15 01:16:55,180 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.0151
-2026-09-15 01:16:56,640 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.0045
-2026-09-15 01:16:58,305 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.0014
-2026-09-15 01:16:58,323 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_galerkin_attention\distilbert\finetuned_model.pt
-2026-09-15 01:16:58,402 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-15 01:16:59,651 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-15 01:17:02,805 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.71%
-2026-09-15 01:17:02,880 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 01:17:02,881 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-15 01:17:02,881 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-15 01:17:02,881 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-15 01:17:02,881 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-15 01:17:02,881 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-15 01:17:02,882 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-15 01:17:02,882 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 01:17:02,884 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 01:17:06,906 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_galerkin_attention\distilbert\distilbert_sst2_full_full_metrics.json
-2026-09-15 01:17:06,914 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_galerkin_attention\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
-2026-09-15 01:17:07,142 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.71% (F1: 0.9099, Peak VRAM: 182.94 MB)
-2026-09-15 01:17:07,143 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_galerkin_attention\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
-2026-09-15 01:17:07,452 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: galerkin_attention (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 01:17:08,452 [INFO] framework.core.attention_utils: Successfully injected 'galerkin_attention' into 6 transformer blocks.
-2026-09-15 01:17:08,460 [INFO] QwenQualitySweep: module=galerkin_attention path=legacy_bert
-2026-09-15 01:17:08,461 [INFO] QwenQualitySweep: module=galerkin_attention injection summary: 24 SVDLinear layers active
-2026-09-15 01:17:08,462 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for galerkin_attention (lr=2.0e-04)
-2026-09-15 01:17:08,539 [INFO] framework.utils.compat: Recovery fine-tuning selected 589824 trainable parameters across 48 tensors.
-2026-09-15 01:17:08,539 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
-2026-09-15 01:17:08,545 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-15 01:17:09,082 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.2553 (bs=8, micro_bs=8)
-2026-09-15 01:17:10,217 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7148 (bs=8, micro_bs=8)
-2026-09-15 01:17:12,155 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.2970 (bs=8, micro_bs=8)
-2026-09-15 01:17:13,352 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5042 (bs=8, micro_bs=8)
-2026-09-15 01:17:14,484 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.4097 (bs=8, micro_bs=8)
-2026-09-15 01:17:15,622 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.3386 (bs=8, micro_bs=8)
-2026-09-15 01:17:16,779 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.3244 (bs=8, micro_bs=8)
-2026-09-15 01:17:17,967 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.1452 (bs=8, micro_bs=8)
-2026-09-15 01:17:19,401 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.4511 (bs=8, micro_bs=8)
-2026-09-15 01:17:20,555 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.0972 (bs=8, micro_bs=8)
-2026-09-15 01:17:21,645 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.5322 (bs=8, micro_bs=8)
-2026-09-15 01:17:31,340 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_galerkin_attention\distilbert\distilbert_sst2_galerkin_attention_full_metrics.json
-2026-09-15 01:17:31,427 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_galerkin_attention\distilbert\checkpoints\galerkin_attention\weights.pt (module_params=0, lora_params=52)
-2026-09-15 01:17:31,658 [INFO] QwenQualitySweep: [2/2] galerkin_attention -> PASS 66.06% (F1: 0.6442, Peak VRAM: 194.0 MB)
-2026-09-15 01:17:31,659 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_galerkin_attention\distilbert\checkpoints\galerkin_attention. Automated export will be handled post-sweep by orchestrator.
-2026-09-15 01:17:31,926 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 01:17:31,927 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
-2026-09-15 01:17:31,941 [INFO] QwenQualitySweep: 
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 3287.79it/s]
+2026-09-15 03:34:28,757 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-15 03:34:28,757 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 03:34:28,757 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:34:28,757 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 03:34:28,758 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-15 03:34:28,758 [INFO] QwenQualitySweep:   family:            bert
+2026-09-15 03:34:28,758 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 03:34:28,758 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 03:34:28,758 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 03:34:28,758 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 03:34:28,758 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 03:34:28,758 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:34:28,758 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_asvd\distilbert\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-15 03:34:28,784 [INFO] QwenQualitySweep: Loading cached fine-tuned checkpoint: results\unified_galerkin_attention\distilbert\finetuned_model.pt
+2026-09-15 03:34:28,893 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 03:34:29,745 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 03:34:32,621 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.71%
+2026-09-15 03:34:32,670 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:34:32,670 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 03:34:32,670 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 03:34:32,671 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 03:34:32,671 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 03:34:32,671 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 03:34:32,671 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 03:34:32,671 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:34:32,672 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 03:34:35,470 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_galerkin_attention\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-15 03:34:35,489 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_galerkin_attention\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-15 03:34:35,692 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.71% (F1: 0.9099, Peak VRAM: 389.51 MB)
+2026-09-15 03:34:35,692 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_galerkin_attention\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 03:34:35,934 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: galerkin_attention (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 03:34:36,706 [INFO] framework.core.attention_utils: Successfully injected 'galerkin_attention' into 6 transformer blocks.
+2026-09-15 03:34:36,715 [INFO] QwenQualitySweep: module=galerkin_attention path=legacy_bert
+2026-09-15 03:34:36,716 [INFO] QwenQualitySweep: module=galerkin_attention injection summary: 24 SVDLinear layers active
+2026-09-15 03:34:36,716 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for galerkin_attention (lr=2.0e-04)
+2026-09-15 03:34:36,781 [INFO] framework.utils.compat: Recovery fine-tuning selected 589824 trainable parameters across 48 tensors.
+2026-09-15 03:34:36,781 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
+2026-09-15 03:34:36,784 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 03:34:37,298 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.2547 (bs=8, micro_bs=8)
+2026-09-15 03:34:37,923 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.7151 (bs=8, micro_bs=8)
+2026-09-15 03:34:38,694 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.2971 (bs=8, micro_bs=8)
+2026-09-15 03:34:39,465 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5042 (bs=8, micro_bs=8)
+2026-09-15 03:34:40,200 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.4099 (bs=8, micro_bs=8)
+2026-09-15 03:34:40,961 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.3385 (bs=8, micro_bs=8)
+2026-09-15 03:34:41,713 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.3246 (bs=8, micro_bs=8)
+2026-09-15 03:34:42,458 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.1452 (bs=8, micro_bs=8)
+2026-09-15 03:34:43,227 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.4514 (bs=8, micro_bs=8)
+2026-09-15 03:34:43,991 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.0972 (bs=8, micro_bs=8)
+2026-09-15 03:34:44,746 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.5321 (bs=8, micro_bs=8)
+2026-09-15 03:34:51,879 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_galerkin_attention\distilbert\distilbert_sst2_galerkin_attention_full_metrics.json
+2026-09-15 03:34:51,906 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_galerkin_attention\distilbert\checkpoints\galerkin_attention\weights.pt (module_params=0, lora_params=52)
+2026-09-15 03:34:52,219 [INFO] QwenQualitySweep: [2/2] galerkin_attention -> PASS 65.94% (F1: 0.6426, Peak VRAM: 322.36 MB)
+2026-09-15 03:34:52,220 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_galerkin_attention\distilbert\checkpoints\galerkin_attention. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 03:34:52,458 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:34:52,458 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-15 03:34:52,462 [INFO] QwenQualitySweep: 
             Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-              full   PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  182.9 MB               3.31              3.80
-galerkin_attention   PASS   66.06%      -24.65% 0.6442                 24            0.99x  194.0 MB               9.53             10.93
-2026-09-15 01:17:31,941 [INFO] QwenQualitySweep: ================================================================================
+              full   PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  389.5 MB               2.19              2.51
+galerkin_attention   PASS   65.94%      -24.77% 0.6426                 24            0.99x  322.4 MB               6.98              8.00
+2026-09-15 03:34:52,463 [INFO] QwenQualitySweep: ================================================================================

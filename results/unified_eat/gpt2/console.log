@@ -1,7 +1,12 @@
-2026-09-15 00:55:16,363 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+Skipping attention module 'fused_svd_kernel' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'projection_factorized_attn' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping compression_engine module 'svd_linear' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_attention' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_decay' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+2026-09-15 03:22:46,740 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
 
 Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
-Loading weights: 100%|##########| 148/148 [00:00<00:00, 3047.00it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 3146.95it/s]
 [1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
 Key          | Status  | 
 -------------+---------+-
@@ -9,72 +14,62 @@ score.weight | MISSING |
 
 Notes:
 - MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
-2026-09-15 00:55:17,708 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
-2026-09-15 00:55:17,709 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
-2026-09-15 00:55:17,709 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:55:17,709 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
-2026-09-15 00:55:17,709 [INFO] QwenQualitySweep:   model:             models\gpt2
-2026-09-15 00:55:17,710 [INFO] QwenQualitySweep:   family:            gpt
-2026-09-15 00:55:17,710 [INFO] QwenQualitySweep:   dataset:           sst2
-2026-09-15 00:55:17,710 [INFO] QwenQualitySweep:   batch_size:        8
-2026-09-15 00:55:17,710 [INFO] QwenQualitySweep:   recovery_steps:    50
-2026-09-15 00:55:17,710 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
-2026-09-15 00:55:17,710 [INFO] QwenQualitySweep:   precision:         fp16
-2026-09-15 00:55:17,711 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:55:17,711 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\gpt2_sst2_lora_baseline\finetuned_model.pt' does not exist; attempting automatic fallback search.
-2026-09-15 00:55:17,712 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
-2026-09-15 00:55:19,732 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=2.6597
-2026-09-15 00:55:20,993 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=2.3356
-2026-09-15 00:55:22,219 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.5385
-2026-09-15 00:55:23,473 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=1.0049
-2026-09-15 00:55:24,687 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.8259
-2026-09-15 00:55:25,937 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=1.0690
-2026-09-15 00:55:27,190 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=1.2230
-2026-09-15 00:55:28,434 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.6620
-2026-09-15 00:55:28,441 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\unified_eat\gpt2\finetuned_model.pt
-2026-09-15 00:55:28,554 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
-2026-09-15 00:55:29,298 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
-2026-09-15 00:55:33,550 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 49.54%
-2026-09-15 00:55:33,600 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:55:33,600 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
-2026-09-15 00:55:33,600 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
-2026-09-15 00:55:33,600 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
-2026-09-15 00:55:33,600 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
-2026-09-15 00:55:33,601 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
-2026-09-15 00:55:33,601 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
-2026-09-15 00:55:33,601 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:55:33,604 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 00:55:38,684 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_eat\gpt2\gpt2_full_full_metrics.json
-2026-09-15 00:55:38,689 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_eat\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
-2026-09-15 00:55:39,319 [INFO] QwenQualitySweep: [1/2] full -> PASS_LOW 49.54% (F1: 0.2903, Peak VRAM: 390.24 MB)
-2026-09-15 00:55:39,319 [INFO] QwenQualitySweep: [Quality Guard] Module 'full' did not pass quality criteria (status=PASS_LOW, acc=49.54%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-15 00:55:39,564 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: eat (recovery_steps=50, batch_size=8, optimizer=adamw)
-2026-09-15 00:55:41,247 [INFO] framework.core.attention_utils: Successfully injected 'eat' into 12 transformer blocks.
-2026-09-15 00:55:41,262 [INFO] QwenQualitySweep: module=eat path=adapted_gpt
-2026-09-15 00:55:41,263 [INFO] QwenQualitySweep: module=eat injection summary: 48 SVDLinear layers active
-2026-09-15 00:55:41,264 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for eat (lr=2.0e-04)
-2026-09-15 00:55:41,444 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
-2026-09-15 00:55:41,446 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
-2026-09-15 00:55:41,455 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw)
-2026-09-15 00:55:41,664 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=1.1483 (bs=8, micro_bs=8)
-2026-09-15 00:55:42,611 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6983 (bs=8, micro_bs=8)
-2026-09-15 00:55:43,731 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.6091 (bs=8, micro_bs=8)
-2026-09-15 00:55:44,804 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.9420 (bs=8, micro_bs=8)
-2026-09-15 00:55:45,851 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6797 (bs=8, micro_bs=8)
-2026-09-15 00:55:46,915 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=1.1885 (bs=8, micro_bs=8)
-2026-09-15 00:55:48,009 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.9416 (bs=8, micro_bs=8)
-2026-09-15 00:55:49,062 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.6566 (bs=8, micro_bs=8)
-2026-09-15 00:55:50,097 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=1.1646 (bs=8, micro_bs=8)
-2026-09-15 00:55:51,144 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=1.0272 (bs=8, micro_bs=8)
-2026-09-15 00:55:52,188 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.6593 (bs=8, micro_bs=8)
-2026-09-15 00:56:01,003 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_eat\gpt2\gpt2_eat_full_metrics.json
-2026-09-15 00:56:01,115 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_eat\gpt2\checkpoints\eat\weights.pt (module_params=0, lora_params=97)
-2026-09-15 00:56:01,822 [INFO] QwenQualitySweep: [2/2] eat -> PASS_LOW 49.54% (F1: 0.2691, Peak VRAM: 325.93 MB)
-2026-09-15 00:56:01,823 [INFO] QwenQualitySweep: [Quality Guard] Module 'eat' did not pass quality criteria (status=PASS_LOW, acc=49.54%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
-2026-09-15 00:56:02,079 [INFO] QwenQualitySweep: ================================================================================
-2026-09-15 00:56:02,079 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
-2026-09-15 00:56:02,084 [INFO] QwenQualitySweep: 
-Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
-  full PASS_LOW   49.54% 0.00% (base) 0.2903                  0            1.00x  390.2 MB               4.03              4.62
-   eat PASS_LOW   49.54%       +0.00% 0.2691                 48            0.99x  325.9 MB               8.60              9.86
-2026-09-15 00:56:02,084 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:22:48,014 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 03:22:48,014 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 03:22:48,015 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:22:48,015 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 03:22:48,015 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 03:22:48,015 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 03:22:48,015 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 03:22:48,015 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 03:22:48,016 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 03:22:48,016 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 03:22:48,016 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 03:22:48,016 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:22:48,357 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 03:22:49,002 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 03:22:49,725 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 03:22:54,673 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 03:22:54,724 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:22:54,724 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 03:22:54,724 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 03:22:54,724 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 03:22:54,724 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 03:22:54,725 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 03:22:54,725 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 03:22:54,725 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:22:54,726 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 03:23:00,104 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_eat\gpt2\gpt2_full_full_metrics.json
+2026-09-15 03:23:00,118 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_eat\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 03:23:00,801 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 793.19 MB)
+2026-09-15 03:23:00,802 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_eat\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 03:23:01,059 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: eat (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 03:23:03,041 [INFO] framework.core.attention_utils: Successfully injected 'eat' into 12 transformer blocks.
+2026-09-15 03:23:03,060 [INFO] QwenQualitySweep: module=eat path=adapted_gpt
+2026-09-15 03:23:03,062 [INFO] QwenQualitySweep: module=eat injection summary: 48 SVDLinear layers active
+2026-09-15 03:23:03,063 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for eat (lr=2.0e-04)
+2026-09-15 03:23:03,277 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-15 03:23:03,279 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-15 03:23:03,285 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 03:23:03,743 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.6858 (bs=8, micro_bs=8)
+2026-09-15 03:23:04,578 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6801 (bs=8, micro_bs=8)
+2026-09-15 03:23:05,644 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.7767 (bs=8, micro_bs=8)
+2026-09-15 03:23:06,717 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5119 (bs=8, micro_bs=8)
+2026-09-15 03:23:07,779 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6577 (bs=8, micro_bs=8)
+2026-09-15 03:23:08,861 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.5536 (bs=8, micro_bs=8)
+2026-09-15 03:23:09,927 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.5694 (bs=8, micro_bs=8)
+2026-09-15 03:23:11,056 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.2429 (bs=8, micro_bs=8)
+2026-09-15 03:23:12,120 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.4042 (bs=8, micro_bs=8)
+2026-09-15 03:23:13,207 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.3856 (bs=8, micro_bs=8)
+2026-09-15 03:23:14,264 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.4602 (bs=8, micro_bs=8)
+2026-09-15 03:23:23,347 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_eat\gpt2\gpt2_eat_full_metrics.json
+2026-09-15 03:23:23,444 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_eat\gpt2\checkpoints\eat\weights.pt (module_params=0, lora_params=97)
+2026-09-15 03:23:24,243 [INFO] QwenQualitySweep: [2/2] eat -> PASS 79.24% (F1: 0.7969, Peak VRAM: 567.91 MB)
+2026-09-15 03:23:24,243 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_eat\gpt2\checkpoints\eat. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 03:23:24,502 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 03:23:24,502 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 03:23:24,509 [INFO] QwenQualitySweep: 
+Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+  full   PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.19              4.80
+   eat   PASS   79.24%       -0.12% 0.7969                 48            0.99x  567.9 MB               8.73             10.01
+2026-09-15 03:23:24,509 [INFO] QwenQualitySweep: ================================================================================

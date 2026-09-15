@@ -5,8 +5,8 @@ metrics: [accuracy, f1]
 ---
 # SVD Linear Attention: DISTILBERT (galerkin_attention)
 Galerkin Attention: Petrov-Galerkin Projection Attention — validated checkpoint evaluated on SST-2.
-- **Accuracy**: `66.06%` | **Status**: `PASS` (threshold >= 56%)
-- **F1**: `N/A` | **Peak VRAM**: `194.0 MB`
+- **Accuracy**: `65.94%` | **Status**: `PASS` (threshold >= 56%)
+- **F1**: `N/A` | **Peak VRAM**: `322.36 MB`
 ```python
 import torch; checkpoint = torch.load("weights.pt", map_location="cpu")
 ```

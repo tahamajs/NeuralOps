@@ -10,8 +10,8 @@
   "params_total": null,
   "params_active": null,
   "param_reduction_pct": null,
-  "peak_vram_mb": 212.58,
-  "tokens_per_sec": 13466.19,
+  "peak_vram_mb": 339.99,
+  "tokens_per_sec": 15783.59,
   "elapsed_seconds": null,
   "full_metrics": {
     "module_name": "fms",
@@ -21,10 +21,10 @@
     "f1_macro": 0.7603,
     "precision": 0.7699,
     "recall": 0.763,
-    "val_loss": 0.6874,
-    "elapsed_s": 20.87,
-    "peak_vram_mb": 212.58,
-    "tokens_per_sec": 13466.19,
+    "val_loss": 0.6873,
+    "elapsed_s": 17.79,
+    "peak_vram_mb": 339.99,
+    "tokens_per_sec": 15783.59,
     "total_params_before": 66955010,
     "total_params_after": 67839842,
     "trainable_recovery_params": 884832,
@@ -39,6 +39,6 @@
     "lora_params": 589824,
     "error": NaN,
     "path": "legacy_bert",
-    "timestamp": "2026-09-15T01:03:49.181939"
+    "timestamp": "2026-09-15T03:27:33.789758"
   }
 }
