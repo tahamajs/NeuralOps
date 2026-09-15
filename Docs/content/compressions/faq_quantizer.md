@@ -472,3 +472,11 @@ Evaluations across sequence lengths and model scales:
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
 
+## Unified 4-Architecture Benchmark Results (FAQ Quantizer)
+Evaluated on SST-2 sentiment classification (FP16, 8-bit SmoothQuant STE, alpha 0.5, lora_r 16, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.48% | 0.9071 | 0.9806 | 0 | 416.0 | `PASS_NO_COMPRESSION` | N/A |
+| ROBERTA | 80.05% | 0.8184 | 0.9791 | 0 | 916.21 | `PASS_NO_COMPRESSION` | N/A |
+| GPT2 | 78.56% | 0.7848 | 0.9814 | 0 | 884.17 | `PASS_NO_COMPRESSION` | N/A |

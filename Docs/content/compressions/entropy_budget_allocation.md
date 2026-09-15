@@ -656,19 +656,6 @@ Evaluated on SST-2 sentiment classification (FP16, total budget ratio 0.7, max e
 
 | Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
 |:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
-| DISTILBERT | 90.48% | 0.9077 | 1.0 | 0 | 310.69 | `PASS` | [`distilbert`](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-entropy-budget) |
-| ROBERTA | 88.65% | 0.8941 | 1.0 | 0 | 321.14 | `PASS` | [`roberta`](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-entropy-budget) |
-| GPT2 | 82.57% | 0.84 | 1.0 | 0 | 400.12 | `PASS` | [`gpt2`](Upload error: [WinError 10054] An existing connection was forcibly closed by the remote host) |
-
-## Usage Examples
-
-```python
-# TODO: Add specific usage example
-```
-
-## Benchmark Results
-
-| Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
-|--------|----------|----------|-----------|-------------------|
-| Pending| Pending  | Pending  | Pending   | Pending           |
-
+| DISTILBERT | 90.71% | 0.9099 | 1.0 | 0 | 300.68 | `PASS_NO_COMPRESSION` | N/A |
+| ROBERTA | 78.56% | 0.8124 | 1.0 | 0 | 519.68 | `PASS_NO_COMPRESSION` | N/A |
+| GPT2 | 79.36% | 0.7978 | 1.0 | 0 | 627.16 | `PASS_NO_COMPRESSION` | N/A |

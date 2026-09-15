@@ -497,3 +497,12 @@ pruned_model = compressor.compress(calibration_data)
 
 ## Future Work
 - Iterative pruning schedule with knowledge distillation.
+
+## Unified 4-Architecture Benchmark Results (FLAP)
+Evaluated on SST-2 sentiment classification (FP16, 20% WIFV structured pruning, max error 0.35, target attention only, 200 recovery steps):
+
+| Model Architecture | Accuracy | F1 Score | Compression Rate | Compressed Layers | Peak VRAM | Gate Status | Hugging Face Repository |
+|:-------------------|:--------:|:--------:|:----------------:|:-----------------:|:---------:|:-----------:|:------------------------|
+| DISTILBERT | 90.71% | 0.9099 | 1.0 | 0 | 300.68 | `PASS_NO_COMPRESSION` | N/A |
+| ROBERTA | 78.56% | 0.8124 | 1.0 | 0 | 520.18 | `PASS_NO_COMPRESSION` | N/A |
+| GPT2 | 77.87% | 0.7737 | 1.0 | 2 | 626.91 | `PASS` | [`gpt2`](Upload error: [WinError 10054] An existing connection was forcibly closed by the remote host) |
