@@ -49,3 +49,33 @@ Notes:
 2026-09-15 10:47:28,428 [INFO] QwenQualitySweep: [1/2] full -> PASS 78.56% (F1: 0.8124, Peak VRAM: 712.34 MB)
 2026-09-15 10:47:28,428 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_v5_module\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
 2026-09-15 10:47:28,678 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: aegis_v5_module (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 10:47:39,552 [INFO] framework.core.attention_utils: Successfully injected 'aegis_v5_module' into 12 transformer blocks.
+2026-09-15 10:47:39,576 [INFO] QwenQualitySweep: module=aegis_v5_module path=adapted_roberta
+2026-09-15 10:47:39,579 [INFO] QwenQualitySweep: module=aegis_v5_module injection summary: 48 SVDLinear layers active
+2026-09-15 10:47:39,579 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for aegis_v5_module (lr=2.0e-04)
+2026-09-15 10:47:40,208 [INFO] framework.utils.compat: Recovery fine-tuning selected 1573056 trainable parameters across 168 tensors.
+2026-09-15 10:47:40,208 [INFO] framework.utils.compat: Discovered 168 trainable tensors (1573056 params)
+2026-09-15 10:47:40,217 [INFO] QwenQualitySweep: LoRA fine-tuning: 1573056 trainable parameters across 168 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 10:47:40,815 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.8317 (bs=8, micro_bs=8)
+2026-09-15 10:47:42,867 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=1.1130 (bs=8, micro_bs=8)
+2026-09-15 10:47:45,345 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=1.0166 (bs=8, micro_bs=8)
+2026-09-15 10:47:47,846 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=1.2597 (bs=8, micro_bs=8)
+2026-09-15 10:47:50,329 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5297 (bs=8, micro_bs=8)
+2026-09-15 10:47:52,743 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=1.3556 (bs=8, micro_bs=8)
+2026-09-15 10:47:55,215 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=1.3735 (bs=8, micro_bs=8)
+2026-09-15 10:47:57,689 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.4017 (bs=8, micro_bs=8)
+2026-09-15 10:48:00,147 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7384 (bs=8, micro_bs=8)
+2026-09-15 10:48:02,583 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.4515 (bs=8, micro_bs=8)
+2026-09-15 10:48:05,047 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.8147 (bs=8, micro_bs=8)
+2026-09-15 10:48:23,960 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_v5_module\roberta\roberta-base_aegis_v5_module_full_metrics.json
+2026-09-15 10:48:24,010 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_v5_module\roberta\checkpoints\aegis_v5_module\weights.pt (module_params=0, lora_params=100)
+2026-09-15 10:48:24,949 [INFO] QwenQualitySweep: [2/2] aegis_v5_module -> PASS_NO_COMPRESSION 52.29% (F1: 0.681, Peak VRAM: 677.12 MB)
+2026-09-15 10:48:24,950 [WARNING] QwenQualitySweep: Module 'aegis_v5_module' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 10:48:24,950 [INFO] QwenQualitySweep: [Quality Guard] Module 'aegis_v5_module' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=52.29%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 10:48:25,225 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 10:48:25,225 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-15 10:48:25,234 [INFO] QwenQualitySweep: 
+                          Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                            full                PASS   78.56% 0.00% (base) 0.8124                  0            1.00x  712.3 MB               4.68              5.36
+aegis_v5_module (efficient-attn) PASS_NO_COMPRESSION   52.29%      -26.27% 0.6810                  0            1.00x  677.1 MB              18.29             20.98
+2026-09-15 10:48:25,234 [INFO] QwenQualitySweep: ================================================================================
