@@ -50,11 +50,7 @@ g_z(d) = \text{clamp}\!\left(\frac{R + z - d}{R}, 0, 1\right)
 
 \begin{itemize}
 \item For $d \leq z$: $g_z(d) = 1$ (fully attend)
-\end{itemize}
-\begin{itemize}
 \item For $z < d < z + R$: $g_z(d) = \frac{R + z - d}{R}$ (linear decay)
-\end{itemize}
-\begin{itemize}
 \item For $d \geq z + R$: $g_z(d) = 0$ (no attend)
 \end{itemize}
 

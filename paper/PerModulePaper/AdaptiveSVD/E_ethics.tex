@@ -10,7 +10,7 @@ requiring calibration data. This makes compression accessible to researchers
 and practitioners who lack access to target-task data or extensive compute.
 
 \textbf{Environmental benefits.} Smaller models consume less energy at inference. 
-The compression process itself uses ~{{COMPUTE\_HOURS}} GPU-hours, minimal 
+The compression process itself uses ~10 GPU-hours, minimal 
 compared to training.
 
 \textbf{Edge deployment.} Compressed models fit on consumer hardware, enabling 
@@ -30,12 +30,8 @@ energy savings.
 \subsubsection{E.1.3 Environmental Cost}
 
 \begin{itemize}
-\item \textbf{Compression compute:} ~{{COMPUTE\_HOURS}} GPU-hours
-\end{itemize}
-\begin{itemize}
-\item \textbf{CO$_2$ estimate:} ~{{CO2\_KG}} kg CO$_2$eq
-\end{itemize}
-\begin{itemize}
+\item \textbf{Compression compute:} ~10 GPU-hours
+\item \textbf{CO$_2$ estimate:} ~0.7 kg CO$_2$eq
 \item \textbf{Methodology:} [ML CO$_2$ Impact Calculator](https://mlco2.github.io/impact/)
 \end{itemize}
 
@@ -44,14 +40,8 @@ energy savings.
 \textbf{Dataset.} SST-2 (Socher et al., 2013):
 \begin{itemize}
 \item Public benchmark
-\end{itemize}
-\begin{itemize}
 \item English movie reviews
-\end{itemize}
-\begin{itemize}
 \item No personally identifiable information (PII)
-\end{itemize}
-\begin{itemize}
 \item Western-centric distribution
 \end{itemize}
 
@@ -61,8 +51,6 @@ reducing privacy risk.
 \textbf{Bias.} We did not audit for bias. Compression may:
 \begin{itemize}
 \item Amplify existing biases (if bias lives in high-rank directions)
-\end{itemize}
-\begin{itemize}
 \item Suppress existing biases (if bias lives in low-rank directions)
 \end{itemize}
 
@@ -71,22 +59,14 @@ reducing privacy risk.
 \textbf{Dual-use potential.} The method could be used for:
 \begin{itemize}
 \item Automated content moderation
-\end{itemize}
-\begin{itemize}
 \item Privacy-preserving on-device AI
-\end{itemize}
-\begin{itemize}
 \item Efficient scientific computing
 \end{itemize}
 
 Or misused for:
 \begin{itemize}
 \item Mass surveillance
-\end{itemize}
-\begin{itemize}
 \item Misinformation generation
-\end{itemize}
-\begin{itemize}
 \item Automated censorship
 \end{itemize}
 
@@ -106,7 +86,7 @@ We do not endorse harmful uses.
 
 \subsubsection{License}
 
-Code, weights, and this paper released under \textbf{{{LICENSE}}}.
+Code, weights, and this paper released under \textbf{MIT}.
 
 \subsection{E.5 Conflicts of Interest}
 
@@ -129,7 +109,7 @@ edited by the authors.
 \subsection{E.9 Reproducibility Commitments}
 
 We commit to:
-1. Releasing all code under {{LICENSE}}
+1. Releasing all code under MIT
 2. Releasing checkpoints on HuggingFace
 3. Reporting negative results (Appendix D)
 4. Documenting all hyperparameters
@@ -142,25 +122,15 @@ Adaptive SVD could:
 \textbf{Enable:}
 \begin{itemize}
 \item AI on billions of consumer devices
-\end{itemize}
-\begin{itemize}
 \item Reduced AI carbon footprint
-\end{itemize}
-\begin{itemize}
 \item Democratized access to capable models
-\end{itemize}
-\begin{itemize}
 \item Multi-task deployment without re-compression
 \end{itemize}
 
 \textbf{Risk:}
 \begin{itemize}
 \item Increased surveillance capability
-\end{itemize}
-\begin{itemize}
 \item Concentration of AI capabilities
-\end{itemize}
-\begin{itemize}
 \item Widening gap between compressed and full models
 \end{itemize}
 

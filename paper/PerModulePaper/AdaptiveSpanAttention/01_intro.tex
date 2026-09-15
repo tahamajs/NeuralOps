@@ -19,11 +19,7 @@ But not all attention heads need the same window:
 
 \begin{itemize}
 \item Some heads are \textbf{local}: they attend to nearby tokens for syntax.
-\end{itemize}
-\begin{itemize}
 \item Some heads are \textbf{global}: they attend to distant tokens for coreference.
-\end{itemize}
-\begin{itemize}
 \item Some heads are \textbf{sparse}: they attend to a few specific positions.
 \end{itemize}
 
@@ -39,7 +35,7 @@ we seek a \textbf{per-head} window size $z_h \in [0, S_\text{max}]$ such that:
 1. \textbf{Learned:} $z_h$ is trained end-to-end alongside the model.
 2. \textbf{Differentiable:} gradients flow through $z_h$.
 3. \textbf{Adaptive:} some heads converge to small $z_h$, others to large.
-4. \textbf{Quality-preserving:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+4. \textbf{Quality-preserving:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
 \subsection{1.3 Our Approach: Adaptive Span Attention}
 
@@ -93,7 +89,7 @@ spans via:
 \begin{itemize}
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
 \end{itemize}
-  under {{LICENSE}}.
+  under MIT.
 
 \subsection{1.5 Paper Organization}
 

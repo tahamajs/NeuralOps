@@ -5,6 +5,7 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Architecture} & \textbf{Attention} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{T5 bias?} & \textbf{Verified} \\
@@ -12,8 +13,8 @@
 DistilBERT & Flat & No & No & No &  \\
 RoBERTa & Nested & No & No & No &  \\
 GPT-2 & Causal & No & No & No &  \\
-T5 & Causal + bias & No & No & Yes & {{T5\_VERIFIED}} \\
-Qwen3.5 & Causal + RoPE & Yes & Yes & No & {{Q\_VERIFIED}} \\
+T5 & Causal + bias & No & No & Yes & not tested \\
+Qwen3.5 & Causal + RoPE & Yes & Yes & No & not tested \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -29,7 +30,7 @@ v_lin: Linear(768, 768)
 out_lin: Linear(768, 768)
 \end{lstlisting}
 
-Direct copy. \texttt{is\\_nested\\_encoder = False}.
+Direct copy. \texttt{is\_nested\_encoder = False}.
 
 \subsubsection{5.2.2 RoBERTa (Nested)}
 
@@ -50,11 +51,11 @@ attn.c_attn: Conv1D(768, 2304)   # fused Q, K, V
 attn.c_proj: Conv1D(768, 768)
 \end{lstlisting}
 
-Transpose \texttt{c\\_attn} weight, split into Q/K/V.
+Transpose \texttt{c\_attn} weight, split into Q/K/V.
 
 \subsubsection{5.2.4 T5 (Relative Position Bias)}
 
-T5 has \texttt{relative\\_attention\\_bias} embedding. We preserve it:
+T5 has \texttt{relative\_attention\_bias} embedding. We preserve it:
 
 \begin{lstlisting}
 if hasattr(src, "relative_attention_bias"):
@@ -130,14 +131,10 @@ Output: M with ASA-Span attention
 
 \subsection{5.8 Failure Handling}
 
-\texttt{inject\\_adaptive\\_span} returns \texttt{None} on:
+\texttt{inject\_adaptive\_span} returns \texttt{None} on:
 \begin{itemize}
 \item Already-injected layer (AdaptiveSpan instance)
-\end{itemize}
-\begin{itemize}
 \item DeltaNet/LinearAttention layers (unsupported)
-\end{itemize}
-\begin{itemize}
 \item Weight extraction failure
 \end{itemize}
 
@@ -152,6 +149,7 @@ except Exception:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Projection} & \textbf{Params} \\

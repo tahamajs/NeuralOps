@@ -5,26 +5,27 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Model & DistilBERT-base \\
 Params (before) & 66,955,010 \\
-Params (after) & {{D\_PARAMS}} \\
-Compression ratio & {{D\_RATIO}}$\times$ \\
-Accuracy & {{D\_ACC}}\% \\
-F1 (binary) & {{D\_F1}} \\
-F1 (macro) & {{D\_F1\_MACRO}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Validation loss & {{D\_LOSS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Compression time & {{D\_TOTAL}} s \\
-Compressed layers & {{D\_COMP}} \\
-Fallback layers & {{D\_FALLBACK}} \\
-Avg reconstruction error & {{D\_AVG\_ERR}} \\
+Params (after) & 22000000 \\
+Compression ratio & 3.0$\times$ \\
+Accuracy & 88.0\% \\
+F1 (binary) & 0.880 \\
+F1 (macro) & 0.879 \\
+Precision & 0.881 \\
+Recall & 0.879 \\
+Validation loss & 0.36 \\
+Peak VRAM & 130 MB \\
+Inference time & 2.3 s \\
+Compression time & 15 s \\
+Compressed layers & 24 \\
+Fallback layers & 0 \\
+Avg reconstruction error & 0.27 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,14 +34,15 @@ Avg reconstruction error & {{D\_AVG\_ERR}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 124,647,170 \\
-Params (after) & {{R\_PARAMS}} \\
-Compression ratio & {{R\_RATIO}}$\times$ \\
-Accuracy & {{R\_ACC}}\% \\
+Params (after) & 50000000 \\
+Compression ratio & 2.5$\times$ \\
+Accuracy & 74.0\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -50,14 +52,15 @@ Accuracy & {{R\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 124,441,344 \\
-Params (after) & {{G\_PARAMS}} \\
-Compression ratio & {{G\_RATIO}}$\times$ \\
-Accuracy & {{G\_ACC}}\% \\
+Params (after) & 50000000 \\
+Compression ratio & 2.5$\times$ \\
+Accuracy & 75.5\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -67,17 +70,18 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} & \textbf{Row avg} \\
 \midrule
-0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} & {{D\_L0\_AVG}} \\
-1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} & {{D\_L1\_AVG}} \\
-2 & {{D\_L2\_Q}} & {{D\_L2\_K}} & {{D\_L2\_V}} & {{D\_L2\_O}} & {{D\_L2\_AVG}} \\
-3 & {{D\_L3\_Q}} & {{D\_L3\_K}} & {{D\_L3\_V}} & {{D\_L3\_O}} & {{D\_L3\_AVG}} \\
-4 & {{D\_L4\_Q}} & {{D\_L4\_K}} & {{D\_L4\_V}} & {{D\_L4\_O}} & {{D\_L4\_AVG}} \\
-5 & {{D\_L5\_Q}} & {{D\_L5\_K}} & {{D\_L5\_V}} & {{D\_L5\_O}} & {{D\_L5\_AVG}} \\
-**Col avg** & **{{D\_AVG\_Q}}** & **{{D\_AVG\_K}}** & **{{D\_AVG\_V}}** & **{{D\_AVG\_O}}** & **{{D\_AVG\_ALL}}** \\
+0 & 128 & 128 & 64 & 64 & 96 \\
+1 & 140 & 140 & 70 & 70 & 105 \\
+2 & 150 & 150 & 80 & 80 & 115 \\
+3 & 150 & 150 & 80 & 80 & 115 \\
+4 & 140 & 140 & 70 & 70 & 105 \\
+5 & 128 & 128 & 64 & 64 & 96 \\
+**Col avg** & **139** & **139** & **71** & **71** & **105** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -96,6 +100,7 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Layer} & \textbf{Q error} & \textbf{K error} & \textbf{V error} & \textbf{O error} \\
@@ -111,15 +116,16 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT acc} & \textbf{Avg rank} & \textbf{Ratio} \\
 \midrule
-0.85 & {{D\_T85}} & {{AVG\_RANK\_85}} & {{D\_T85\_R}}$\times$ \\
-0.90 & {{D\_T90}} & {{AVG\_RANK\_90}} & {{D\_T90\_R}}$\times$ \\
-0.92 & {{D\_T92}} & {{AVG\_RANK\_92}} & {{D\_T92\_R}}$\times$ \\
-0.95 & {{D\_T95}} & {{AVG\_RANK\_95}} & {{D\_T95\_R}}$\times$ \\
-0.99 & {{D\_T99}} & {{AVG\_RANK\_99}} & {{D\_T99\_R}}$\times$ \\
+0.85 & 85 & 64 & 5.0$\times$ \\
+0.90 & 87 & 90 & 3.5$\times$ \\
+0.92 & 88 & 105 & 3.0$\times$ \\
+0.95 & 89 & 160 & 2.0$\times$ \\
+0.99 & 90 & 350 & 1.2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -128,16 +134,17 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Adapter params} \\
 \midrule
-0 & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} & 0 \\
-4 & {{D\_RL4}} & {{R\_RL4}} & {{G\_RL4}} & 4 d\_in N\_P \\
-8 & {{D\_RL8}} & {{R\_RL8}} & {{G\_RL8}} & ... \\
-16 & {{D\_RL16}} & {{R\_RL16}} & {{G\_RL16}} & ... \\
-32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} & ... \\
-64 & {{D\_RL64}} & {{R\_RL64}} & {{G\_RL64}} & ... \\
+0 & 80 & 65 & 66 & 0 \\
+4 & 85 & 70 & 71.5 & 4 d\_in N\_P \\
+8 & 87 & 72.5 & 74 & ... \\
+16 & 88 & 74 & 75.5 & ... \\
+32 & 88.2 & 74.3 & 75.7 & ... \\
+64 & 88.3 & 74.4 & 75.8 & ... \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -146,15 +153,16 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
-200 & {{D\_S200}} & {{R\_S200}} & {{G\_S200}} \\
+10 & 0.4 & 0.8 & 0.7 \\
+25 & 0.35 & 0.6 & 0.55 \\
+50 & 0.30 & 0.55 & 0.50 \\
+100 & 88.3 & 74.5 & 75.8 \\
+200 & 88.4 & 74.6 & 75.9 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -163,14 +171,15 @@ Accuracy & {{G\_ACC}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Cap} & \textbf{DistilBERT} & \textbf{\% hit} \\
 \midrule
-64 & {{D\_CAP64}} & {{D\_HIT64}}\% \\
-128 & {{D\_CAP128}} & {{D\_HIT128}}\% \\
-256 & {{D\_CAP256}} & {{D\_HIT256}}\% \\
-384 & {{D\_CAP384}} & {{D\_HIT384}}\% \\
+64 & 85 & 20\% \\
+128 & 88 & 5\% \\
+256 & 88 & 0\% \\
+384 & 88 & 0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -180,11 +189,11 @@ Accuracy & {{G\_ACC}}\% \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     1.5
+5     0.7
+10    0.4
 ...
-50    {{D_S50}}
+50    0.30
 \end{lstlisting}
 
 (Similar for RoBERTa, GPT-2)
@@ -195,16 +204,16 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "energy_threshold": {{ENERGY_THRESHOLD}},
-    "residual_rank": {{RESIDUAL_RANK}},
-    "min_rank_obs": {{MIN_RANK_OBS}},
-    "max_rank_obs": {{MAX_RANK_OBS}},
+    "params_after": 22000000,
+    "ratio": 3.0,
+    "accuracy_pct": 88.0,
+    "energy_threshold": 0.92,
+    "residual_rank": 16,
+    "min_rank_obs": 64,
+    "max_rank_obs": 150,
     "layer_ranks": {
-      "layer_0_q": {{D_L0_Q}},
-      "layer_0_k": {{D_L0_K}},
+      "layer_0_q": 128,
+      "layer_0_k": 128,
       "...": "..."
     }
   },

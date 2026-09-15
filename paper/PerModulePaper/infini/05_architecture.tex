@@ -104,3 +104,11 @@ def inject_infini(layer, model_config=None, old_attn=None, **kwargs):
     replace_attention(layer, new_attn)
     return new_attn
 \end{lstlisting}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/infini_attention_architecture.png}
+\caption{Architectural overview of infini.}
+\label{fig:arch_infini}
+\end{figure}

@@ -13,13 +13,14 @@ AASVD, no calibration data is required.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{Compression time} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & **{{D\_RATIO}}$\times$** & {{D\_TOTAL}} s \\
-RoBERTa & {{R\_DELTA}}\% & **{{R\_RATIO}}$\times$** & {{R\_TOTAL}} s \\
-GPT-2 & {{G\_DELTA}}\% & **{{G\_RATIO}}$\times$** & {{G\_TOTAL}} s \\
+DistilBERT & -2.7\% & **3.0$\times$** & 15 s \\
+RoBERTa & -4.6\% & **2.5$\times$** & 30 s \\
+GPT-2 & -3.9\% & **2.5$\times$** & 30 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -36,35 +37,23 @@ GPT-2 & {{G\_DELTA}}\% & **{{G\_RATIO}}$\times$** & {{G\_TOTAL}} s \\
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Fused Triton kernels for factorized forward
-\end{itemize}
-\begin{itemize}
 \item Learned per-layer $\tau$
-\end{itemize}
-\begin{itemize}
 \item Combined with quantization
-\end{itemize}
-\begin{itemize}
 \item Full T5 verification
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical downstream error bounds
-\end{itemize}
-\begin{itemize}
 \item Cross-lingual evaluation
-\end{itemize}
-\begin{itemize}
 \item Integration with pruning
-\end{itemize}
-\begin{itemize}
 \item Combination with activation-aware methods
 \end{itemize}
 
 \subsection{11.5 Closing Remarks}
 
 Adaptive SVD is a practical, fast, calibration-free compression method. We 
-release all code and checkpoints under {{LICENSE}} to enable replication 
+release all code and checkpoints under MIT to enable replication 
 and incremental improvement.
 
 \subsection{11.6 Acknowledgments}

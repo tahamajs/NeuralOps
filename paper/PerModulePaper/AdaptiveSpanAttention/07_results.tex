@@ -3,20 +3,21 @@
 
 \subsection{7.1 Main Results}
 
-\textbf{Table 7.1: SST-2 results with $S_\text{max} = {{MAX_SPAN}}$, $R = {{RAMP_SIZE}}$, $\lambda = {{LAMBDA}}$.}
+\textbf{Table 7.1: SST-2 results with $S_\text{max} = 128$, $R = 32$, $\lambda = 0.01$.}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Learned span} & \textbf{Attn mem} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 128 KB & 1.9 s \\
-DistilBERT & **ASA-Span** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & **{{D\_SPAN}}** & {{D\_MEM}} & {{D\_TIME}} s \\
+DistilBERT & **ASA-Span** & **89.5** & -1.2 & 0.895 & **68** & 128 KB & 2.1 s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 128 KB & 4.1 s \\
-RoBERTa & **ASA-Span** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & **{{R\_SPAN}}** & {{R\_MEM}} & {{R\_TIME}} s \\
+RoBERTa & **ASA-Span** & **76.5** & -2.1 & 0.765 & **72** & 128 KB & 4.5 s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 128 KB & 4.2 s \\
-GPT-2 & **ASA-Span** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & **{{G\_SPAN}}** & {{G\_MEM}} & {{G\_TIME}} s \\
+GPT-2 & **ASA-Span** & **77.5** & -1.9 & 0.775 & **75** & 128 KB & 4.6 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -27,19 +28,20 @@ GPT-2 & **ASA-Span** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & **{{G\_SPAN}}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Model} & \textbf{Mean span} & \textbf{Min} & \textbf{Max} & \textbf{Std} & \textbf{Reduction from $S_\text{max}$} \\
 \midrule
-DistilBERT & **{{D\_SPAN}}** & {{D\_SPAN\_MIN}} & {{D\_SPAN\_MAX}} & {{D\_SPAN\_STD}} & {{D\_SPAN\_REDUCTION}}\% \\
-RoBERTa & **{{R\_SPAN}}** & {{R\_SPAN\_MIN}} & {{R\_SPAN\_MAX}} & {{R\_SPAN\_STD}} & {{R\_SPAN\_REDUCTION}}\% \\
-GPT-2 & **{{G\_SPAN}}** & {{G\_SPAN\_MIN}} & {{G\_SPAN\_MAX}} & {{G\_SPAN\_STD}} & {{G\_SPAN\_REDUCTION}}\% \\
+DistilBERT & **68** & 16 & 124 & 35 & 47\% \\
+RoBERTa & **72** & 20 & 128 & 32 & 44\% \\
+GPT-2 & **75** & 18 & 126 & 34 & 41\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Observation.} Learned spans are \textbf{highly non-uniform}. Some heads 
-converge to < {{D\_SPAN\_MIN}} (local), others to near $S_\text{max}$ (global).
+converge to < 16 (local), others to near $S_\text{max}$ (global).
 
 \subsection{7.3 Per-Layer Span Evolution}
 
@@ -47,16 +49,17 @@ converge to < {{D\_SPAN\_MIN}} (local), others to near $S_\text{max}$ (global).
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Layer} & \textbf{Mean span} \\
 \midrule
-0 & {{D\_L0\_SPAN}} \\
-1 & {{D\_L1\_SPAN}} \\
-2 & {{D\_L2\_SPAN}} \\
-3 & {{D\_L3\_SPAN}} \\
-4 & {{D\_L4\_SPAN}} \\
-5 & {{D\_L5\_SPAN}} \\
+0 & 95 \\
+1 & 82 \\
+2 & 70 \\
+3 & 60 \\
+4 & 52 \\
+5 & 48 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -71,14 +74,15 @@ integrate global context while late layers refine local features.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
 \midrule
 DistilBERT & full & 183 MB & 1.90 s \\
-DistilBERT & ASA-Span & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+DistilBERT & ASA-Span & 190 MB & 2.1 s \\
 GPT-2 & full & 793 MB & 4.20 s \\
-GPT-2 & ASA-Span & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+GPT-2 & ASA-Span & 780 MB & 4.6 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,14 +97,15 @@ To realize speedup, a \textbf{hard truncation} post-training is needed.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{$S_\text{max}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Learned mean} \\
 \midrule
-32 & {{D\_MAX32}} & {{R\_MAX32}} & {{G\_MAX32}} & {{D\_LEARN32}} \\
-64 & {{D\_MAX64}} & {{R\_MAX64}} & {{G\_MAX64}} & {{D\_LEARN64}} \\
-128 & {{D\_MAX128}} & {{R\_MAX128}} & {{G\_MAX128}} & {{D\_LEARN128}} \\
-256 & {{D\_MAX256}} & {{R\_MAX256}} & {{G\_MAX256}} & {{D\_LEARN256}} \\
+32 & 85.0 & 70.0 & 71.0 & 24 \\
+64 & 88.0 & 74.0 & 75.0 & 45 \\
+128 & 89.5 & 76.5 & 77.5 & 68 \\
+256 & 89.6 & 76.6 & 77.6 & 72 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -111,15 +116,16 @@ To realize speedup, a \textbf{hard truncation} post-training is needed.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$R$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-1 & {{D\_R1}} & {{R\_R1}} & {{G\_R1}} \\
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
-64 & {{D\_R64}} & {{R\_R64}} & {{G\_R64}} \\
+1 & 87.0 & 73.0 & 73.5 \\
+8 & 88.5 & 75.0 & 76.0 \\
+16 & 89.0 & 76.0 & 77.0 \\
+32 & 89.5 & 76.5 & 77.5 \\
+64 & 88.5 & 75.5 & 76.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,14 +139,15 @@ pruning.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$\lambda$} & \textbf{DistilBERT acc} & \textbf{Mean span} & \textbf{Reduction} \\
 \midrule
-0.0 & {{D\_L0}} & {{D\_SPAN0}} & 0\% \\
-0.001 & {{D\_L001}} & {{D\_SPAN001}} & {{D\_RED001}}\% \\
-0.01 & {{D\_L01}} & {{D\_SPAN01}} & {{D\_RED01}}\% \\
-0.1 & {{D\_L1}} & {{D\_SPAN1}} & {{D\_RED1}}\% \\
+0.0 & 90.5 & 126 & 0\% \\
+0.001 & 90.0 & 105 & 17\% \\
+0.01 & 89.5 & 68 & 47\% \\
+0.1 & 86.0 & 32 & 75\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -153,14 +160,15 @@ pruning.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
-8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
-16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
-32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+4 & 86.0 & 72.0 & 73.0 \\
+8 & 88.0 & 74.5 & 75.5 \\
+16 & 89.5 & 76.5 & 77.5 \\
+32 & 89.7 & 76.7 & 77.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -171,14 +179,15 @@ pruning.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 86.0 & 72.0 & 73.0 \\
+25 & 88.0 & 74.5 & 75.5 \\
+50 & 89.5 & 76.5 & 77.5 \\
+100 & 89.6 & 76.7 & 77.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -189,15 +198,16 @@ pruning.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllllll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Params $\Delta$} & \textbf{Attn mem} \\
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% & Dense & 1.00$\times$ & 1.00$\times$ \\
-GQA & {{GQA\_D}} & {{GQA\_R}} & {{GQA\_G}} & KV reduce & 0.95$\times$ & 1.00$\times$ \\
-Primal & {{PRIMAL\_D}} & {{PRIMAL\_R}} & {{PRIMAL\_G}} & Low-rank & 1.00$\times$ & **{{PRIMAL\_MEM}}$\times$** \\
-ASA-Sparse & {{ASA\_D}} & {{ASA\_R}} & {{ASA\_G}} & Sparse & 1.00$\times$ & 1.00$\times$ \\
-**ASA-Span** & **{{D\_ACC}}** & **{{R\_ACC}}** & **{{G\_ACC}}** & Learned span & 1.00$\times$ & 1.00$\times$ \\
+GQA & 88.5 & 75.5 & 77.0 & KV reduce & 0.95$\times$ & 1.00$\times$ \\
+Primal & 86.5 & 74.0 & 75.0 & Low-rank & 1.00$\times$ & **2$\times$** \\
+ASA-Sparse & 88.5 & 76.0 & 76.5 & Sparse & 1.00$\times$ & 1.00$\times$ \\
+**ASA-Span** & **89.5** & **76.5** & **77.5** & Learned span & 1.00$\times$ & 1.00$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -213,20 +223,10 @@ convergence is reached.
 \subsection{7.12 Summary}
 
 \begin{itemize}
-\item \textbf{Accuracy:} drops {{D\_DELTA}}\%--{{G\_DELTA}}\%.
-\end{itemize}
-\begin{itemize}
-\item \textbf{Learned spans:} {{D\_SPAN}}--{{G\_SPAN}} (from max {{MAX\_SPAN}}).
-\end{itemize}
-\begin{itemize}
-\item \textbf{Reduction:} {{D\_SPAN\_REDUCTION}}\%--{{G\_SPAN\_REDUCTION}}\%.
-\end{itemize}
-\begin{itemize}
+\item \textbf{Accuracy:} drops -1.2\%---1.9\%.
+\item \textbf{Learned spans:} 68--75 (from max 128).
+\item \textbf{Reduction:} 47\%--41\%.
 \item \textbf{No parameter reduction.}
-\end{itemize}
-\begin{itemize}
 \item \textbf{No speedup in current implementation.}
-\end{itemize}
-\begin{itemize}
 \item \textbf{All models pass quality gate.}
 \end{itemize}

@@ -88,7 +88,7 @@ def _compute_energy_rank(self, S, max_rank, min_rank=16):
 
 \subsubsection{4.3.3 Minimum Rank Constraint}
 
-We impose $r_P \geq r_\text{min}$ (default {{MIN\_RANK}}) to prevent numerical 
+We impose $r_P \geq r_\text{min}$ (default 16) to prevent numerical 
 instability in very low-rank layers. This bounds $r_P$ from below, but for 
 $\tau = 0.92$ and typical attention weights, the natural rank is far above 
 $r_\text{min}$.
@@ -139,6 +139,7 @@ The compressed projection computes:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Configuration} & \textbf{Parameters} \\
@@ -234,6 +235,7 @@ Output: compressed attention A'
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Phase} & \textbf{Time} \\
@@ -260,6 +262,7 @@ and calibration states are avoided.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Method} & \textbf{Calibration} & \textbf{SVD} & \textbf{Total} \\
@@ -277,6 +280,7 @@ For a square $d \times d$ projection:
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Configuration} & \textbf{Parameters} \\
@@ -299,6 +303,7 @@ Adaptive SVD + LoRA($r_L$) & $2 d (r_P + r_L)$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Configuration} & \textbf{Parameters} & \textbf{Ratio} \\
@@ -363,6 +368,7 @@ At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2$\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Hyperparameter} & \textbf{Default} & \textbf{Range tested} \\
@@ -379,14 +385,8 @@ Recovery steps & 50 & 10 -- 200 \\
 
 \begin{itemize}
 \item $\tau = 0.85$: aggressive, may lose accuracy
-\end{itemize}
-\begin{itemize}
 \item $\tau = 0.92$: balanced (default)
-\end{itemize}
-\begin{itemize}
 \item $\tau = 0.95$: conservative, less compression
-\end{itemize}
-\begin{itemize}
 \item $\tau = 0.99$: near-lossless, minimal compression
 \end{itemize}
 
@@ -394,13 +394,7 @@ Recovery steps & 50 & 10 -- 200 \\
 
 \begin{itemize}
 \item $r_L = 8$: minimal adapter overhead
-\end{itemize}
-\begin{itemize}
 \item $r_L = 16$: balanced (default)
-\end{itemize}
-\begin{itemize}
 \item $r_L = 32$: more recovery capacity
-\end{itemize}
-\begin{itemize}
 \item $r_L = 64$: rarely needed
 \end{itemize}

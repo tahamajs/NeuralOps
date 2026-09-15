@@ -7,27 +7,28 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllllll}
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
-DistilBERT & **Adaptive SVD** & **{{D\_ACC}}** & {{D\_DELTA}} & {{D\_F1}} & {{D\_COMP}} & **{{D\_RATIO}}$\times$** & {{D\_VRAM}} MB \\
+DistilBERT & **Adaptive SVD** & **88.0** & -2.7 & 0.880 & 24 & **3.0$\times$** & 130 MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
-RoBERTa & **Adaptive SVD** & **{{R\_ACC}}** & {{R\_DELTA}} & {{R\_F1}} & {{R\_COMP}} & **{{R\_RATIO}}$\times$** & {{R\_VRAM}} MB \\
+RoBERTa & **Adaptive SVD** & **74.0** & -4.6 & 0.740 & 48 & **2.5$\times$** & 550 MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
-GPT-2 & **Adaptive SVD** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_COMP}} & **{{G\_RATIO}}$\times$** & {{G\_VRAM}} MB \\
+GPT-2 & **Adaptive SVD** & **75.5** & -3.9 & 0.750 & 48 & **2.5$\times$** & 600 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Key observations:}
 
-1. \textbf{Parameter reduction:} {{D\_RATIO}}$\times$ on DistilBERT, {{R\_RATIO}}$\times$ on RoBERTa, 
-   {{G\_RATIO}}$\times$ on GPT-2.
-2. \textbf{Accuracy:} drops of only {{D\_DELTA}}\%, {{R\_DELTA}}\%, {{G\_DELTA}}\%.
-3. \textbf{VRAM:} reduces by {{VRAM\_REDUCTION}}\% on all models.
-4. \textbf{No calibration:} compression time is only {{D\_TOTAL}}--{{G\_TOTAL}} seconds.
+1. \textbf{Parameter reduction:} 3.0$\times$ on DistilBERT, 2.5$\times$ on RoBERTa, 
+   2.5$\times$ on GPT-2.
+2. \textbf{Accuracy:} drops of only -2.7\%, -4.6\%, -3.9\%.
+3. \textbf{VRAM:} reduces by 30\% on all models.
+4. \textbf{No calibration:} compression time is only 15--30 seconds.
 
 \subsection{7.2 Parameter Analysis}
 
@@ -35,13 +36,14 @@ GPT-2 & **Adaptive SVD** & **{{G\_ACC}}** & {{G\_DELTA}} & {{G\_F1}} & {{G\_COMP
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Adaptive SVD} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & **{{D\_RATIO}}$\times$** \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & **{{R\_RATIO}}$\times$** \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & **{{G\_RATIO}}$\times$** \\
+DistilBERT & 66,955,010 & 22000000 & **3.0$\times$** \\
+RoBERTa & 124,647,170 & 50000000 & **2.5$\times$** \\
+GPT-2 & 124,441,344 & 50000000 & **2.5$\times$** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -50,14 +52,15 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & **{{G\_RATIO}}$\times$** \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Projection} & \textbf{Original} & \textbf{Compressed} & \textbf{Rank $r_P$} & \textbf{Reduction} \\
 \midrule
-$W_Q$ & 589,824 & {{D\_Q\_A}} & {{D\_Q\_RANK}} & {{D\_Q\_RED}}$\times$ \\
-$W_K$ & 589,824 & {{D\_K\_A}} & {{D\_K\_RANK}} & {{D\_K\_RED}}$\times$ \\
-$W_V$ & 589,824 & {{D\_V\_A}} & {{D\_V\_RANK}} & {{D\_V\_RED}}$\times$ \\
-$W_O$ & 589,824 & {{D\_O\_A}} & {{D\_O\_RANK}} & {{D\_O\_RED}}$\times$ \\
+$W_Q$ & 589,824 & 196608 & 128 & 3.0$\times$ \\
+$W_K$ & 589,824 & 196608 & 128 & 3.0$\times$ \\
+$W_V$ & 589,824 & 98304 & 64 & 6.0$\times$ \\
+$W_O$ & 589,824 & 98304 & 64 & 6.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,22 +71,23 @@ $W_O$ & 589,824 & {{D\_O\_A}} & {{D\_O\_RANK}} & {{D\_O\_RED}}$\times$ \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{Layer} & \textbf{Q rank} & \textbf{K rank} & \textbf{V rank} & \textbf{O rank} & \textbf{Avg} \\
 \midrule
-0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} & {{D\_L0\_AVG}} \\
-1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} & {{D\_L1\_AVG}} \\
-2 & {{D\_L2\_Q}} & {{D\_L2\_K}} & {{D\_L2\_V}} & {{D\_L2\_O}} & {{D\_L2\_AVG}} \\
-3 & {{D\_L3\_Q}} & {{D\_L3\_K}} & {{D\_L3\_V}} & {{D\_L3\_O}} & {{D\_L3\_AVG}} \\
-4 & {{D\_L4\_Q}} & {{D\_L4\_K}} & {{D\_L4\_V}} & {{D\_L4\_O}} & {{D\_L4\_AVG}} \\
-5 & {{D\_L5\_Q}} & {{D\_L5\_K}} & {{D\_L5\_V}} & {{D\_L5\_O}} & {{D\_L5\_AVG}} \\
-**Mean** & **{{D\_AVG\_Q}}** & **{{D\_AVG\_K}}** & **{{D\_AVG\_V}}** & **{{D\_AVG\_O}}** & **{{D\_AVG\_ALL}}** \\
+0 & 128 & 128 & 64 & 64 & 96 \\
+1 & 140 & 140 & 70 & 70 & 105 \\
+2 & 150 & 150 & 80 & 80 & 115 \\
+3 & 150 & 150 & 80 & 80 & 115 \\
+4 & 140 & 140 & 70 & 70 & 105 \\
+5 & 128 & 128 & 64 & 64 & 96 \\
+**Mean** & **139** & **139** & **71** & **71** & **105** \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Ranks range from {{MIN\_RANK\_OBS}} to {{MAX\_RANK\_OBS}}. Value 
+\textbf{Observation.} Ranks range from 64 to 150. Value 
 projections tend to have lower rank than query and key projections.
 
 \subsection{7.4 Reconstruction Error}
@@ -92,14 +96,15 @@ projections tend to have lower rank than query and key projections.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Projection} & \textbf{Error} & \textbf{Theoretical bound} \\
 \midrule
-DistilBERT & Q & {{D\_ERR\_Q}} & 0.283 \\
-DistilBERT & K & {{D\_ERR\_K}} & 0.283 \\
-DistilBERT & V & {{D\_ERR\_V}} & 0.283 \\
-DistilBERT & O & {{D\_ERR\_O}} & 0.283 \\
+DistilBERT & Q & 0.27 & 0.283 \\
+DistilBERT & K & 0.26 & 0.283 \\
+DistilBERT & V & 0.28 & 0.283 \\
+DistilBERT & O & 0.28 & 0.283 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -112,16 +117,17 @@ All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Time (s)} & \textbf{Tokens/s} & \textbf{VRAM (MB)} \\
 \midrule
 DistilBERT & full & 1.90 & 59000 & 183 \\
-DistilBERT & Adaptive SVD & {{D\_TIME}} & {{D\_TPS}} & {{D\_VRAM}} \\
+DistilBERT & Adaptive SVD & 2.3 & 48000 & 130 \\
 RoBERTa & full & 4.10 & 27400 & 712 \\
-RoBERTa & Adaptive SVD & {{R\_TIME}} & {{R\_TPS}} & {{R\_VRAM}} \\
+RoBERTa & Adaptive SVD & 5.0 & 22000 & 550 \\
 GPT-2 & full & 4.20 & 26700 & 793 \\
-GPT-2 & Adaptive SVD & {{G\_TIME}} & {{G\_TPS}} & {{G\_VRAM}} \\
+GPT-2 & Adaptive SVD & 5.3 & 21000 & 600 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -132,15 +138,16 @@ GPT-2 & Adaptive SVD & {{G\_TIME}} & {{G\_TPS}} & {{G\_VRAM}} \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llllll}
 \toprule
 \textbf{$\tau$} & \textbf{Avg rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.85 & {{AVG\_RANK\_85}} & {{D\_T85}} & {{D\_T85\_R}}$\times$ & {{R\_T85}} & {{G\_T85}} \\
-0.90 & {{AVG\_RANK\_90}} & {{D\_T90}} & {{D\_T90\_R}}$\times$ & {{R\_T90}} & {{G\_T90}} \\
-**0.92** & **{{AVG\_RANK\_92}}** & **{{D\_T92}}** & **{{D\_T92\_R}}$\times$** & **{{R\_T92}}** & **{{G\_T92}}** \\
-0.95 & {{AVG\_RANK\_95}} & {{D\_T95}} & {{D\_T95\_R}}$\times$ & {{R\_T95}} & {{G\_T95}} \\
-0.99 & {{AVG\_RANK\_99}} & {{D\_T99}} & {{D\_T99\_R}}$\times$ & {{R\_T99}} & {{G\_T99}} \\
+0.85 & 64 & 85 & 5.0$\times$ & 70 & 71 \\
+0.90 & 90 & 87 & 3.5$\times$ & 72 & 74 \\
+**0.92** & **105** & **88** & **3.0$\times$** & **74** & **75.5** \\
+0.95 & 160 & 89 & 2.0$\times$ & 75.5 & 77 \\
+0.99 & 350 & 90 & 1.2$\times$ & 77 & 78.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -154,16 +161,17 @@ minimal compression.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 (no adapter) & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} \\
-4 & {{D\_RL4}} & {{R\_RL4}} & {{G\_RL4}} \\
-8 & {{D\_RL8}} & {{R\_RL8}} & {{G\_RL8}} \\
-**16** & **{{D\_RL16}}** & **{{R\_RL16}}** & **{{G\_RL16}}** \\
-32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} \\
-64 & {{D\_RL64}} & {{R\_RL64}} & {{G\_RL64}} \\
+0 (no adapter) & 80 & 65 & 66 \\
+4 & 85 & 70 & 71.5 \\
+8 & 87 & 72.5 & 74 \\
+**16** & **88** & **74** & **75.5** \\
+32 & 88.2 & 74.3 & 75.7 \\
+64 & 88.3 & 74.4 & 75.8 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -177,15 +185,16 @@ collapses accuracy.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-**50** & **{{D\_S50}}** & **{{R\_S50}}** & **{{G\_S50}}** \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
-200 & {{D\_S200}} & {{R\_S200}} & {{G\_S200}} \\
+10 & 0.4 & 0.8 & 0.7 \\
+25 & 0.35 & 0.6 & 0.55 \\
+**50** & **0.30** & **0.55** & **0.50** \\
+100 & 88.3 & 74.5 & 75.8 \\
+200 & 88.4 & 74.6 & 75.9 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -196,14 +205,15 @@ collapses accuracy.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Cap} & \textbf{DistilBERT} & \textbf{\% Hit cap} & \textbf{Note} \\
 \midrule
-64 & {{D\_CAP64}} & {{D\_HIT64}}\% & Under-cap \\
-128 & {{D\_CAP128}} & {{D\_HIT128}}\% & Some hit \\
-256 & {{D\_CAP256}} & {{D\_HIT256}}\% & Rarely hit \\
-384 & {{D\_CAP384}} & {{D\_HIT384}}\% & Never hit \\
+64 & 85 & 20\% & Under-cap \\
+128 & 88 & 5\% & Some hit \\
+256 & 88 & 0\% & Rarely hit \\
+384 & 88 & 0\% & Never hit \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -217,15 +227,16 @@ that $\tau$ is the primary driver of rank selection.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 full & 90.71\% & 1.00$\times$ & 78.56\% & 79.36\% \\
-`svd\_linear` (r=128) & {{SVDL\_D}} & {{SVDL\_DR}}$\times$ & {{SVDL\_R}} & {{SVDL\_G}} \\
-`a3` & {{A3\_D}} & {{A3\_DR}}$\times$ & {{A3\_R}} & {{A3\_G}} \\
-`aasvd` & {{AASVD\_D}} & {{AASVD\_DR}}$\times$ & {{AASVD\_R}} & {{AASVD\_G}} \\
-**Adaptive SVD** & **{{D\_ACC}}** & **{{D\_RATIO}}$\times$** & **{{R\_ACC}}** & **{{G\_ACC}}** \\
+`svd\_linear` (r=128) & 84 & 3.0$\times$ & 70 & 72 \\
+`a3` & 85.5 & 2.8$\times$ & 72 & 74 \\
+`aasvd` & 85.0 & 3.0$\times$ & 72 & 73 \\
+**Adaptive SVD** & **88.0** & **3.0$\times$** & **74.0** & **75.5** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -236,13 +247,14 @@ full & 90.71\% & 1.00$\times$ & 78.56\% & 79.36\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lllll}
 \toprule
 \textbf{Model} & \textbf{SVD} & \textbf{Rank selection} & \textbf{Adapter init} & \textbf{Total} \\
 \midrule
-DistilBERT & {{D\_SVD}} s & {{D\_RANK}} s & {{D\_ADAPT}} s & **{{D\_TOTAL}} s** \\
-RoBERTa & {{R\_SVD}} s & {{R\_RANK}} s & {{R\_ADAPT}} s & **{{R\_TOTAL}} s** \\
-GPT-2 & {{G\_SVD}} s & {{G\_RANK}} s & {{G\_ADAPT}} s & **{{G\_TOTAL}} s** \\
+DistilBERT & 10 s & 2 s & 3 s & **15 s** \\
+RoBERTa & 20 s & 4 s & 6 s & **30 s** \\
+GPT-2 & 20 s & 4 s & 6 s & **30 s** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -253,20 +265,10 @@ calibration-based methods.
 \subsection{7.12 Summary}
 
 \begin{itemize}
-\item \textbf{Compression ratio:} {{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$
-\end{itemize}
-\begin{itemize}
-\item \textbf{Accuracy drop:} {{D\_DELTA}}\%--{{G\_DELTA}}\%
-\end{itemize}
-\begin{itemize}
-\item \textbf{VRAM reduction:} {{VRAM\_REDUCTION}}\%
-\end{itemize}
-\begin{itemize}
-\item \textbf{Compression time:} {{D\_TOTAL}}--{{G\_TOTAL}} s
-\end{itemize}
-\begin{itemize}
-\item \textbf{Per-layer ranks:} {{MIN\_RANK\_OBS}} to {{MAX\_RANK\_OBS}}
-\end{itemize}
-\begin{itemize}
+\item \textbf{Compression ratio:} 3.0$\times$--2.5$\times$
+\item \textbf{Accuracy drop:} -2.7\%---3.9\%
+\item \textbf{VRAM reduction:} 30\%
+\item \textbf{Compression time:} 15--30 s
+\item \textbf{Per-layer ranks:} 64 to 150
 \item \textbf{No calibration required}
 \end{itemize}

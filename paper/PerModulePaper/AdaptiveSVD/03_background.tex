@@ -46,14 +46,8 @@ Define the cumulative squared energy at rank $r$:
 Properties:
 \begin{itemize}
 \item $\mathcal{E}(0) = 0$
-\end{itemize}
-\begin{itemize}
 \item $\mathcal{E}$ is monotone increasing
-\end{itemize}
-\begin{itemize}
 \item $\mathcal{E}(\min(m, n)) = 1$
-\end{itemize}
-\begin{itemize}
 \item $\mathcal{E}(r)$ measures the fraction of $\|W\|_F^2$ captured by the top-$r$ directions
 \end{itemize}
 
@@ -79,14 +73,8 @@ Attention projection matrices exhibit heterogeneous spectral decay:
 
 \begin{itemize}
 \item \textbf{Query projections:} Moderate decay. Effective rank ~40--80\% of full.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Key projections:} Slower decay (keys spread information across dimensions).
-\end{itemize}
-\begin{itemize}
 \item \textbf{Value projections:} Faster decay (values have lower effective rank).
-\end{itemize}
-\begin{itemize}
 \item \textbf{Output projections:} Moderate decay; depends on head-combining structure.
 \end{itemize}
 
@@ -146,7 +134,7 @@ K, V \in \mathbb{R}^{B \times L \times H_{kv} d_h}, \quad H_\text{repeat} = H / 
 \tag{3.11}
 \]
 
-The KV heads are repeated via \texttt{repeat\\_kv} before attention. Adaptive SVD 
+The KV heads are repeated via \texttt{repeat\_kv} before attention. Adaptive SVD 
 preserves GQA structure.
 
 \subsection{3.7 Rotary Position Embeddings (RoPE)}

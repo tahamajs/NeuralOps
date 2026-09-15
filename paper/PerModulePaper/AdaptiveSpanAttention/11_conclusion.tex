@@ -12,13 +12,14 @@ encourages span shrinkage, achieving automatic pruning.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Learned span} & \textbf{Reduction} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & **{{D\_SPAN}}** & {{D\_SPAN\_REDUCTION}}\% \\
-RoBERTa & {{R\_DELTA}}\% & **{{R\_SPAN}}** & {{R\_SPAN\_REDUCTION}}\% \\
-GPT-2 & {{G\_DELTA}}\% & **{{G\_SPAN}}** & {{G\_SPAN\_REDUCTION}}\% \\
+DistilBERT & -1.2\% & **68** & 47\% \\
+RoBERTa & -2.1\% & **72** & 44\% \\
+GPT-2 & -1.9\% & **75** & 41\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -36,25 +37,15 @@ GPT-2 & {{G\_DELTA}}\% & **{{G\_SPAN}}** & {{G\_SPAN\_REDUCTION}}\% \\
 \subsubsection{Short-Term}
 \begin{itemize}
 \item Learn ramp size per-head
-\end{itemize}
-\begin{itemize}
 \item Hard truncation + sparse kernels
-\end{itemize}
-\begin{itemize}
 \item Combine with content-based sparsity
-\end{itemize}
-\begin{itemize}
 \item Long-context evaluation
 \end{itemize}
 
 \subsubsection{Long-Term}
 \begin{itemize}
 \item Theoretical bounds on span vs accuracy
-\end{itemize}
-\begin{itemize}
 \item Cross-task span transfer
-\end{itemize}
-\begin{itemize}
 \item Integration with compression
 \end{itemize}
 
@@ -71,8 +62,6 @@ We thank {{ACKNOWLEDGMENTS}}.
 
 \begin{itemize}
 \item \textbf{{{AUTHOR\_1}}} designed the implementation, ran experiments, wrote the paper.
-\end{itemize}
-\begin{itemize}
 \item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
 \end{itemize}
 

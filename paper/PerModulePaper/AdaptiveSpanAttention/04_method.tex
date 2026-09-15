@@ -101,11 +101,7 @@ g_{z_h}(d) = \text{clamp}\!\left(\frac{R + z_h - d}{R}, 0, 1\right)
 
 \begin{itemize}
 \item \textbf{Continuous:} $g_z$ is continuous in $z$ and $d$.
-\end{itemize}
-\begin{itemize}
 \item \textbf{Piecewise-linear:} Three regimes (full, linear decay, zero).
-\end{itemize}
-\begin{itemize}
 \item \textbf{Differentiable in $z$:}
 \end{itemize}
 \[
@@ -185,6 +181,7 @@ $\lambda$.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$\lambda$} & \textbf{Effect} \\
@@ -197,7 +194,7 @@ $\lambda$.
 \end{tabular}
 \end{table}
 
-We use $\lambda = {{LAMBDA}}$ by default.
+We use $\lambda = 0.01$ by default.
 
 \subsection{4.7 Complete Forward Pass}
 
@@ -240,6 +237,7 @@ Output: context $\in$ R^{B $\times$ H $\times$ L $\times$ d_h}
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Dense} & \textbf{ASA-Span} \\
@@ -260,6 +258,7 @@ mask after training and use sparse kernels.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{ASA-Span} \\

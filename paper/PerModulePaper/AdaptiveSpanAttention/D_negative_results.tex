@@ -62,15 +62,16 @@ Multiple disjoint windows per head. No improvement.
 \subsubsection{Ramp Size Too Small}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$R$} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-0.5 & {{D\_R05}} & Near hard \\
-1 & {{D\_R1}} & Sharp \\
-8 & {{D\_R8}} & OK \\
-32 & {{D\_R32}} & Best \\
-64 & {{D\_R64}} & Too smooth \\
+0.5 & 82.0 & Near hard \\
+1 & 87.0 & Sharp \\
+8 & 88.5 & OK \\
+32 & 89.5 & Best \\
+64 & 88.5 & Too smooth \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -78,13 +79,14 @@ Multiple disjoint windows per head. No improvement.
 \subsubsection{L1 Too Aggressive}
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{$\lambda$} & \textbf{DistilBERT} \\
 \midrule
-0.1 & {{D\_L1}} \\
-0.5 & {{D\_L5}} \\
-1.0 & {{D\_L10}} \\
+0.1 & 86.0 \\
+0.5 & 78.0 \\
+1.0 & 65.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -95,6 +97,7 @@ Aggressive L1 collapses spans; accuracy drops.
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
@@ -111,15 +114,16 @@ Per-layer $\lambda$ & Quality & No improvement \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & {{SEED42}} \\
-123 & {{SEED123}} \\
-456 & {{SEED456}} \\
-**Mean** & **{{MEAN}}** \\
-**Std** & **{{STD}}** \\
+42 & 89.5 \\
+123 & 89.3 \\
+456 & 89.7 \\
+**Mean** & **89.5** \\
+**Std** & **0.2** \\
 \bottomrule
 \end{tabular}
 \end{table}

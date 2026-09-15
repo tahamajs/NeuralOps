@@ -1,37 +1,122 @@
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
+% --- Typography & Geometry ---
 \usepackage[utf8]{inputenc}
-\usepackage[margin=0.75in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{microtype}
+\usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
+
+% --- Math & Symbols ---
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{bm}
+
+% --- Tables & Arrays ---
 \usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+
+% --- Graphics & Floats ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% --- Code Listings ---
 \usepackage{xcolor}
 \usepackage{listings}
-\usepackage{tabularx}
-\usepackage{float}
-\usepackage{hyperref}
 
 \definecolor{codebg}{HTML}{F8F9FA}
+\definecolor{codeframe}{HTML}{D0D7DE}
+\definecolor{keywordcolor}{HTML}{0550AE}
+\definecolor{stringcolor}{HTML}{0A3069}
+\definecolor{commentcolor}{HTML}{57606A}
+
 \lstset{
     backgroundcolor=\color{codebg},
     basicstyle=\ttfamily\scriptsize\color{black},
-    numbers=none,
+    keywordstyle=\color{keywordcolor}\bfseries,
+    stringstyle=\color{stringcolor},
+    commentstyle=\color{commentcolor}\itshape,
     frame=single,
+    rulecolor=\color{codeframe},
     breaklines=true,
     breakatwhitespace=true,
-    extendedchars=true
+    extendedchars=true,
+    xleftmargin=6pt,
+    xrightmargin=6pt,
+    aboveskip=8pt,
+    belowskip=8pt
 }
 
+% --- Hyperlinks ---
+\usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
 }
+
+% --- Input Title & Authors ---
+\input{00_meta.tex}
 
 \begin{document}
 
-\input{00_meta.tex}
+\maketitle
+
+% --- Abstract & Keywords Block ---
+\begin{abstract}
+Low-rank factorization is a widely used primitive for compressing transformer 
+attention, but the standard approach -- truncated SVD at a fixed global rank -- 
+treats all layers identically. This is suboptimal because attention projection 
+matrices exhibit highly heterogeneous spectral decay: some are well-approximated 
+by only 32 singular directions, while others require 200 or more. We introduce 
+**Adaptive SVD Attention** (**Adaptive SVD**), a compression method that selects 
+a **per-projection rank** via an **energy threshold** on the cumulative squared 
+singular values:
+
+$$
+r^{(\ell)} = \min\left\{ r : \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_\text{in}, d_\text{out})} \sigma_j^2} \geq \tau \right\}, \quad \tau = 0.92
+$$
+
+Unlike activation-aware methods (A3, AASVD), Adaptive SVD does **not** require 
+calibration data, activation statistics, or forward passes. Rank is determined 
+purely from the weight's own spectrum, making the method self-contained and 
+deployable in zero-data settings.
+
+Each attention projection $W$ is replaced with a frozen symmetric factorized 
+base $U_r V_r$ plus a **zero-initialized** residual adapter $B A$:
+
+$$
+W \approx U_r V_r + B A, \quad U_r = U_{:, :r} \Sigma^{1/2}, \quad V_r = \Sigma^{1/2} V_{:r, :}^\top
+$$
+
+The zero initialization ensures the initial forward pass of the compressed model 
+matches the pretrained model up to the truncation residual, giving a clean 
+starting point for LoRA recovery.
+
+We evaluate on DistilBERT (6 layers, flat attention), RoBERTa-base (12 layers, 
+nested attention), and GPT-2 (12 layers, causal attention) on SST-2 with 
+50 LoRA recovery steps at residual rank 16. 
+Adaptive SVD achieves parameter reductions of **3.0$\times$--2.5$\times$** 
+with accuracy drops of only **-2.7\%---3.9\%**. The method 
+additionally supports **T5 relative attention bias**, **GQA**, and **RoPE**, 
+making it applicable across encoder-only, decoder-only, and encoder-decoder 
+architectures. Per-layer ranks range from 64 to 150, 
+confirming that the energy criterion adapts to each weight's spectrum.
+
+**Keywords:** adaptive rank selection, cumulative energy thresholding, low-rank 
+attention, residual adapters, transformer compression
+
+---
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} adaptive rank selection, cumulative energy thresholding, low-rank
+\end{abstract}
+
+\vspace{1em}
+
+% --- Paper Body ---
 \input{01_intro.tex}
 \input{02_related.tex}
 \input{03_background.tex}
@@ -46,7 +131,12 @@
 \input{12_reproducibility.tex}
 \input{13_references.tex}
 
+% --- Appendices ---
+\clearpage
 \appendix
+\section*{Appendices}
+\addcontentsline{toc}{section}{Appendices}
+
 \input{A_math.tex}
 \input{B_implementation.tex}
 \input{C_data.tex}

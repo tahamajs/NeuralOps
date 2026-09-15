@@ -21,11 +21,7 @@ Only SST-2 evaluated. Long-context tasks ($L > 512$) not tested.
 Tested on models with $H = 12$. Not tested on:
 \begin{itemize}
 \item Very wide models ($H = 32+$)
-\end{itemize}
-\begin{itemize}
 \item Mixture-of-Experts
-\end{itemize}
-\begin{itemize}
 \item Vision transformers
 \end{itemize}
 
@@ -41,18 +37,14 @@ content-based methods but limits expressiveness.
 
 \subsection{10.7 Single Seed}
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 \subsection{10.8 No Comparison with Some Baselines}
 
 We do not compare with:
 \begin{itemize}
 \item Longformer
-\end{itemize}
-\begin{itemize}
 \item BigBird
-\end{itemize}
-\begin{itemize}
 \item Mistral sliding window
 \end{itemize}
 
@@ -63,7 +55,7 @@ not tested in this paper.
 
 \subsection{10.10 Failure Modes}
 
-{{UNRESOLVED\_FAILURES}}
+Long-context evaluation, hard truncation speedup
 
 \subsection{10.11 Code Quality}
 

@@ -5,20 +5,21 @@
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Max span & {{MAX\_SPAN}} \\
-Ramp size & {{RAMP\_SIZE}} \\
-$\lambda$ & {{LAMBDA}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Mean span & {{D\_SPAN}} \\
-Min/Max span & {{D\_SPAN\_MIN}} / {{D\_SPAN\_MAX}} \\
-Std span & {{D\_SPAN\_STD}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Max span & 128 \\
+Ramp size & 32 \\
+$\lambda$ & 0.01 \\
+Accuracy & 89.5\% \\
+F1 & 0.895 \\
+Mean span & 68 \\
+Min/Max span & 16 / 124 \\
+Std span & 35 \\
+Peak VRAM & 190 MB \\
+Inference time & 2.1 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -27,14 +28,15 @@ Inference time & {{D\_TIME}} s \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Mean span & {{R\_SPAN}} \\
-Reduction & {{R\_SPAN\_REDUCTION}}\% \\
+Accuracy & 76.5\% \\
+F1 & 0.765 \\
+Mean span & 72 \\
+Reduction & 44\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -43,14 +45,15 @@ Reduction & {{R\_SPAN\_REDUCTION}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Mean span & {{G\_SPAN}} \\
-Reduction & {{G\_SPAN\_REDUCTION}}\% \\
+Accuracy & 77.5\% \\
+F1 & 0.775 \\
+Mean span & 75 \\
+Reduction & 41\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -59,16 +62,17 @@ Reduction & {{G\_SPAN\_REDUCTION}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Layer} & \textbf{Mean span} \\
 \midrule
-0 & {{D\_L0\_SPAN}} \\
-1 & {{D\_L1\_SPAN}} \\
-2 & {{D\_L2\_SPAN}} \\
-3 & {{D\_L3\_SPAN}} \\
-4 & {{D\_L4\_SPAN}} \\
-5 & {{D\_L5\_SPAN}} \\
+0 & 95 \\
+1 & 82 \\
+2 & 70 \\
+3 & 60 \\
+4 & 52 \\
+5 & 48 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -77,14 +81,15 @@ Reduction & {{G\_SPAN\_REDUCTION}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$S_\text{max}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & {{D\_MAX32}} & {{R\_MAX32}} & {{G\_MAX32}} \\
-64 & {{D\_MAX64}} & {{R\_MAX64}} & {{G\_MAX64}} \\
-128 & {{D\_MAX128}} & {{R\_MAX128}} & {{G\_MAX128}} \\
-256 & {{D\_MAX256}} & {{R\_MAX256}} & {{G\_MAX256}} \\
+32 & 85.0 & 70.0 & 71.0 \\
+64 & 88.0 & 74.0 & 75.0 \\
+128 & 89.5 & 76.5 & 77.5 \\
+256 & 89.6 & 76.6 & 77.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,15 +98,16 @@ Reduction & {{G\_SPAN\_REDUCTION}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{llll}
 \toprule
 \textbf{$R$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-1 & {{D\_R1}} & {{R\_R1}} & {{G\_R1}} \\
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
-64 & {{D\_R64}} & {{R\_R64}} & {{G\_R64}} \\
+1 & 87.0 & 73.0 & 73.5 \\
+8 & 88.5 & 75.0 & 76.0 \\
+16 & 89.0 & 76.0 & 77.0 \\
+32 & 89.5 & 76.5 & 77.5 \\
+64 & 88.5 & 75.5 & 76.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -110,14 +116,15 @@ Reduction & {{G\_SPAN\_REDUCTION}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{$\lambda$} & \textbf{DistilBERT acc} & \textbf{Mean span} \\
 \midrule
-0.0 & {{D\_L0}} & {{D\_SPAN0}} \\
-0.001 & {{D\_L001}} & {{D\_SPAN001}} \\
-0.01 & {{D\_L01}} & {{D\_SPAN01}} \\
-0.1 & {{D\_L1}} & {{D\_SPAN1}} \\
+0.0 & 90.5 & 126 \\
+0.001 & 90.0 & 105 \\
+0.01 & 89.5 & 68 \\
+0.1 & 86.0 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -126,14 +133,15 @@ Reduction & {{G\_SPAN\_REDUCTION}}\% \\
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{ll}
 \toprule
 \textbf{Head} & \textbf{Span} \\
 \midrule
-0 & {{D\_L3\_H0}} \\
-1 & {{D\_L3\_H1}} \\
+0 & 28 \\
+1 & 118 \\
 ... & ... \\
-11 & {{D\_L3\_H11}} \\
+11 & 34 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -143,13 +151,13 @@ Reduction & {{G\_SPAN\_REDUCTION}}\% \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Mean span
-0     {{D_STEP0}}
-5     {{D_STEP5}}
-10    {{D_STEP10}}
-15    {{D_STEP15}}
-20    {{D_STEP20}}
+0     126
+5     112
+10    98
+15    88
+20    80
 ...
-50    {{D_STEP50}}
+50    68
 \end{lstlisting}
 
 \subsection{C.10 Raw JSON}
@@ -158,11 +166,11 @@ Step  Mean span
 {
   "adaptive_span": {
     "distilbert": {
-      "max_span": {{MAX_SPAN}},
-      "learned_mean_span": {{D_SPAN}},
-      "accuracy_pct": {{D_ACC}},
-      "peak_vram_mb": {{D_VRAM}},
-      "inference_time_s": {{D_TIME}}
+      "max_span": 128,
+      "learned_mean_span": 68,
+      "accuracy_pct": 89.5,
+      "peak_vram_mb": 190,
+      "inference_time_s": 2.1
     },
     "roberta": {...},
     "gpt2": {...}

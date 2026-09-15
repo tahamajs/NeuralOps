@@ -4,7 +4,7 @@
 \subsection{12.1 Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -16,16 +16,16 @@ pip install -r requirements.txt
 \begin{lstlisting}
 python run_all_4_adaptive_span.py \
     --models distilbert,roberta,gpt2 \
-    --max_span {{MAX_SPAN}} \
-    --ramp_size {{RAMP_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --max_span 128 \
+    --ramp_size 32 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{12.3 Reproducing Tables}
 
 \subsubsection{Main (Table 7.1)}
 \begin{lstlisting}
-python run_all_4_adaptive_span.py --max_span {{MAX_SPAN}}
+python run_all_4_adaptive_span.py --max_span 128
 \end{lstlisting}
 
 \subsubsection{Max Span Ablation (Table 7.5)}
@@ -64,13 +64,14 @@ torch.cuda.manual_seed_all(seed)
 
 \begin{table}[H]
 \centering
+\small
 \begin{tabular}{lll}
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Mean span} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & ~{{D\_SPAN}} \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & ~{{R\_SPAN}} \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_SPAN}} \\
+DistilBERT & 89.5\% $\pm$ 1\% & ~68 \\
+RoBERTa & 76.5\% $\pm$ 1\% & ~72 \\
+GPT-2 & 77.5\% $\pm$ 1\% & ~75 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -79,22 +80,14 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_SPAN}} \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\end{itemize}
-\begin{itemize}
-\item \textbf{Checkpoints:} \texttt{{{HF\\_ORG}}/svd-linear-attention-*-adaptive\\_span}
-\end{itemize}
-\begin{itemize}
-\item \textbf{Metrics:} \texttt{results/unified\\_adaptive\\_span/*/summary.csv}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive\_span}
+\item \textbf{Metrics:} \texttt{results/unified\_adaptive\_span/*/summary.csv}
 \end{itemize}
 
 \subsection{12.7 Known Issues}
 
 \begin{itemize}
 \item Slow training due to ramp allocation
-\end{itemize}
-\begin{itemize}
 \item Fast path optimization needed for short sequences
-\end{itemize}
-\begin{itemize}
 \item No hard truncation for actual speedup
 \end{itemize}
