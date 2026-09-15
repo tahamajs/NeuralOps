@@ -108,9 +108,11 @@ def run_single_module(
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 bufsize=1,
             )
-            with open(log_file_path, "w", encoding="utf-8") as f:
+            with open(log_file_path, "w", encoding="utf-8", errors="replace") as f:
                 for line in process.stdout:
                     sys.stdout.write(line)
                     sys.stdout.flush()
@@ -123,6 +125,8 @@ def run_single_module(
                 cmd,
                 capture_output=False,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=timeout_s,
             )
             exit_code = proc.returncode
