@@ -529,5 +529,14 @@
     "status": "PASS",
     "error": null,
     "timestamp": "2026-09-15T23:06:28.685804"
+  },
+  {
+    "module": "reap_moe",
+    "runner": "run_all_4_reap_moe.py",
+    "exit_code": 0,
+    "elapsed_s": 261.88,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T23:10:52.117955"
   }
 ]
