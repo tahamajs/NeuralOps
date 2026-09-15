@@ -1,3 +1,9 @@
 module,runner,exit_code,elapsed_s,status,error,timestamp
 a3,run_all_4_a3.py,0,160.03,PASS,,2026-09-15T09:17:26.208467
 aasvd,run_all_4_aasvd.py,1,262.25,FAIL,,2026-09-15T09:21:51.783278
+adaptive_compressor,run_all_4_adaptive_compressor.py,0,214.49,PASS,,2026-09-15T09:25:28.114782
+adaptive_ranks,run_all_4_adaptive_ranks.py,1,164.7,FAIL,,2026-09-15T09:28:14.199904
+adaptive_span,run_all_4_adaptive_span.py,0,198.37,PASS,,2026-09-15T09:31:34.443072
+adaptive_sparse,run_all_4_adaptive_sparse.py,0,79.27,PASS,,2026-09-15T09:32:55.131115
+adaptive_sparse_attention,run_all_4_adaptive_sparse_attention.py,0,215.52,PASS,,2026-09-15T09:36:32.227766
+adaptive_svd_attention,run_all_4_adaptive_svd_attention.py,0,358.24,PASS,,2026-09-15T09:42:32.335728

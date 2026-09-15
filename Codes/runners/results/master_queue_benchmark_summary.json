@@ -16,5 +16,59 @@
     "status": "FAIL",
     "error": null,
     "timestamp": "2026-09-15T09:21:51.783278"
+  },
+  {
+    "module": "adaptive_compressor",
+    "runner": "run_all_4_adaptive_compressor.py",
+    "exit_code": 0,
+    "elapsed_s": 214.49,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T09:25:28.114782"
+  },
+  {
+    "module": "adaptive_ranks",
+    "runner": "run_all_4_adaptive_ranks.py",
+    "exit_code": 1,
+    "elapsed_s": 164.7,
+    "status": "FAIL",
+    "error": null,
+    "timestamp": "2026-09-15T09:28:14.199904"
+  },
+  {
+    "module": "adaptive_span",
+    "runner": "run_all_4_adaptive_span.py",
+    "exit_code": 0,
+    "elapsed_s": 198.37,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T09:31:34.443072"
+  },
+  {
+    "module": "adaptive_sparse",
+    "runner": "run_all_4_adaptive_sparse.py",
+    "exit_code": 0,
+    "elapsed_s": 79.27,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T09:32:55.131115"
+  },
+  {
+    "module": "adaptive_sparse_attention",
+    "runner": "run_all_4_adaptive_sparse_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 215.52,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T09:36:32.227766"
+  },
+  {
+    "module": "adaptive_svd_attention",
+    "runner": "run_all_4_adaptive_svd_attention.py",
+    "exit_code": 0,
+    "elapsed_s": 358.24,
+    "status": "PASS",
+    "error": null,
+    "timestamp": "2026-09-15T09:42:32.335728"
   }
 ]
