@@ -801,8 +801,17 @@ def inject_gated_delta_net(
         layer_list = target.distilbert.transformer.layer
     elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
         layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+        layer_list = target.bert.encoder.layer
     elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        # GPT-2 wrapped style
         layer_list = target.transformer.h
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "layer"):
+        # DistilBERT bare model style (DistilBertModel has .transformer.layer)
+        layer_list = target.transformer.layer
+    elif hasattr(target, "h") and isinstance(target.h, (nn.ModuleList, list)):
+        # GPT-2 bare model: GPT2Model has .h directly
+        layer_list = target.h
     elif hasattr(target, "model") and hasattr(target.model, "layers"):
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
