@@ -67,7 +67,19 @@ LoRA & No & Nothing & Yes & Yes & Yes \\
 
 \subsection{Comparison Table}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Reduction} & \textbf{Calibration} & \textbf{Retrain?} & \textbf{SST-2 acc} \\
+\midrule
+Baseline & 1$\times$ & -- & -- & 90.71\% \\
+DistilBERT (distill) & 1.6$\times$ & -- & Yes & 90.7\% \\
+Vanilla SVD & 3$\times$ & No & LoRA & {{VANILLA\_SVD\_D}} \\
+A3 & 3$\times$ & Yes & LoRA & {{A3\_D}} \\
+\textbf{SOA Fused} & \textbf{3$\times$} & \textbf{No} & \textbf{LoRA} & \textbf{{{D\_ACC}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

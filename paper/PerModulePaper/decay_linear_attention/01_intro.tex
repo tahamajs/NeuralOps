@@ -119,7 +119,26 @@ concludes.
 
 \subsection{Notation}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d$ & Hidden dimension \\
+$d_h$ & Head dimension \\
+$H$ & Number of query heads \\
+$H_{kv}$ & Number of KV heads \\
+$C$ & Chunk size (32) \\
+$\lambda_{h,t}$ & Decay rate at position $t$, head $h$ \\
+$\ell_h$ & Per-head decay bias \\
+$S$ & Inter-chunk state \\
+$z$ & Inter-chunk denominator state \\
+$\phi$ & Feature map \\
+$\epsilon$ & Numerical stability constant \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

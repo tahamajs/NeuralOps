@@ -65,7 +65,18 @@ in a single attention block.
 
 \subsection{Comparison Table}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Params} & \textbf{Token} & \textbf{Spectral} & \textbf{Variational} \\
+\midrule
+MHSA & $4d^2$ & Full & -- & -- \\
+SOA Fused & $2d^2 + 2rd$ & Full & -- & -- \\
+TCA & $4d^2$ & Top-$k$ & -- & -- \\
+\textbf{VSpec++} & $2rd + \text{gates}$ & \textbf{Top-$k$} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}
