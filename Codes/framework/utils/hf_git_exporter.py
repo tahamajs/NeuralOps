@@ -356,7 +356,7 @@ def commit_and_push_git(
             switched = True
 
         subprocess.run(["git", "commit", "-m", commit_message], cwd=cwd, check=True)
-        subprocess.run(["git", "pull", "--rebase", "origin", target_branch], cwd=cwd, check=False)
+        subprocess.run(["git", "pull", "--rebase", "--autostash", "origin", target_branch], cwd=cwd, check=False)
         subprocess.run(["git", "push", "-u", "origin", target_branch], cwd=cwd, check=True)
         rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True)
         commit_hash = rev.stdout.strip()[:8]
@@ -406,7 +406,7 @@ def handle_benchmark_run_export(
 
     clean_model = sanitize_slug(Path(model_name).name)
     clean_mod = sanitize_slug(module_name)
-    hf_org = os.environ.get("HF_ORG", "Hooshaai")
+    hf_org = os.environ.get("HF_ORG", "tahamajs")
     repo_id = f"{hf_org}/svd-linear-attention-{clean_model}-{clean_mod}"
 
     LOG.info(

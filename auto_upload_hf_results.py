@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Background Auto-Uploader & Verifier for Hugging Face Hub (Hooshaai Organization).
+Background Auto-Uploader & Verifier for Hugging Face Hub (tahamajs Organization).
 
 Monitors the results/ directory across all evaluation sweeps:
 - results/agnews_unified_* (AG News 4-class multi-class benchmark)
@@ -8,21 +8,21 @@ Monitors the results/ directory across all evaluation sweeps:
 - results/unified_*        (GLUE SST-2 benchmark)
 
 Standardized Repo Naming:
-- Hooshaai/svd-<dataset>-<model_family>-<module_slug>
+- tahamajs/svd-<dataset>-<model_family>-<module_slug>
   e.g.:
-    Hooshaai/svd-agnews-distilbert-adaptive-span
-    Hooshaai/svd-sst2-roberta-svd-mamba
-    Hooshaai/svd-mnli-distilbert-primal
+    tahamajs/svd-agnews-distilbert-adaptive-span
+    tahamajs/svd-sst2-roberta-svd-mamba
+    tahamajs/svd-mnli-distilbert-primal
 
 Ensures:
-1. Every repo exists on Hooshaai with clean, human-readable repository slugs.
+1. Every repo exists on tahamajs with clean, human-readable repository slugs.
 2. A comprehensive, publication-ready model card (README.md) is ALWAYS generated and uploaded,
    dynamically highlighting the correct dataset, multi-class accuracy, F1 scores, compression stats,
    and parameter counts.
 3. weights.pt is uploaded for PASS and valid factorized/compressed models.
 4. All auxiliary configs, metrics, and tokenizer files are synced.
 5. PASS_LOW, PASS_NO_COMPRESSION, and FAIL modules get a clean model card + metrics uploaded.
-6. Master benchmark results JSON and CSV dataset are kept up-to-date on HF (Hooshaai/svd-benchmark-master-results).
+6. Master benchmark results JSON and CSV dataset are kept up-to-date on HF (tahamajs/svd-benchmark-master-results).
 """
 
 import os
@@ -38,7 +38,7 @@ from datetime import datetime
 from pathlib import Path
 from huggingface_hub import HfApi
 
-HF_ORG = "Hooshaai"
+HF_ORG = "tahamajs"
 CHECK_INTERVAL_S = 180  # Check every 3 minutes
 MASTER_RESULTS_REPO = f"{HF_ORG}/svd-benchmark-master-results"
 
@@ -170,7 +170,7 @@ This repository hosts empirical benchmark results and factorized checkpoints for
 
 Developed and benchmarked using the **SVD Linear Attention Framework** — Universal GPU Benchmark Suite.
 - **Repository:** [tahamajs/SVD_linear_Attention](https://github.com/tahamajs/SVD_linear_Attention)
-- **Organization:** [Hooshaai](https://huggingface.co/Hooshaai)
+- **Organization:** [tahamajs](https://huggingface.co/tahamajs)
 """
     return card
 
@@ -301,7 +301,7 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, dataset_name,
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Skipping bad/low result: {repo_id} (status={status}, acc={acc_float:.2f}% < thresh={thresh_float:.2f}%)")
         return
 
-    # 1. Ensure repo exists on Hooshaai
+    # 1. Ensure repo exists on tahamajs
     try:
         api.create_repo(repo_id=repo_id, exist_ok=True, private=True)
     except Exception as e_cr:
