@@ -79,8 +79,8 @@ def generate_figures(df, figures_dir):
         fig, ax = plt.subplots(figsize=(6, 4))
         for bb in rank_df['backbone'].unique():
             sub = rank_df[rank_df['backbone'] == bb]
-            agg = sub.groupby('rank')[['accuracy_pct', 'compression_ratio']].mean().reset_index()
-            ax.plot(agg['compression_ratio'], agg['accuracy_pct'], marker='o', label=bb)
+            agg = sub.groupby('rank')[['accuracy_pct', 'compression_rate']].mean().reset_index()
+            ax.plot(agg['compression_rate'], agg['accuracy_pct'], marker='o', label=bb)
         ax.set_xlabel('Compression Ratio')
         ax.set_ylabel('Accuracy (%)')
         ax.legend()
@@ -133,7 +133,7 @@ def write_paper(module, df, out_path):
         if rank_df.empty: return "1.00x"
         sub = rank_df[rank_df['rank'] == r]
         if sub.empty: return "N/A"
-        return f"{sub['compression_ratio'].mean():.2f}x"
+        return f"{sub['compression_rate'].mean():.2f}x"
 
     ranks = [16, 32, 64, 128, 192, 256, 384]
     
