@@ -64,10 +64,39 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal architectural analysis and comprehensive benchmark evaluation of the module.
+
+Linear attention reduces the quadratic complexity of softmax attention to 
+$\mathcal{O}(L)$ in sequence length by factorizing the attention matrix as 
+a product of kernel feature maps. However, standard linear attention loses 
+the head-specific interaction structure that gives softmax attention much 
+of its expressiveness. We introduce \textbf{RALA} (\textbf{R}ank-\textbf{A}ugmented 
+\textbf{L}inear \textbf{A}ttention), which augments the standard linear attention 
+output with a low-rank per-head interaction term learned through a scalar 
+gate.
+
+RALA combines three components: (i) a \textbf{softplus kernel} $\phi(x) = 
+\mathrm{softplus}(x)$ that is smooth and strictly positive, in contrast to 
+the more common $\mathrm{elu}(x) + 1$; (ii) a **rank-$r$ head interaction 
+matrix** $M_h = U_h V_h^\top \in \mathbb{R}^{d \times d}$ per head, with 
+$r \ll d$; and (iii) a \textbf{scalar gate} $\alpha$ that blends the linear and 
+augmented outputs. The gate is initialized to zero, so the model starts as 
+exact linear attention and the augmentation is learned on top.
+
+We evaluate RALA on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA recovery. 
+On DistilBERT, RALA achieves \textbf{{{D\_ACC}}\%} (baseline {{D\_BASE}}\%, 
+$\Delta$ = {{D\_DELTA}}). Parameter count increases by \textbf{{{D\_PARAM\_PCT}}\%} due to 
+LoRA adapters and the augmentation matrices; RALA is \textbf{not} a compression 
+method. Wall-clock inference increases by \textbf{{{D\_TIME\_R}}$\times$} because the 
+causal prefix scan is implemented as a Python loop. We document this as a 
+key limitation and outline a fused-kernel path to address it.
+
+\textbf{Keywords:} linear attention, low-rank augmentation, softplus kernel, 
+efficient transformers
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} Efficient Attention, Transformers, Deep Learning, Model Compression
+\noindent\textbf{Keywords:} linear attention, low-rank augmentation, softplus kernel,
 \end{abstract}
 
 \vspace{1em}

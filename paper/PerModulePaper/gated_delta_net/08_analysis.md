@@ -157,5 +157,6 @@ equivalent.
 3. **Gradient checkpointing doubles the cost.**
 4. **A Triton or CUDA kernel would make this competitive.**
 5. **Without such a kernel, Gated DeltaNet is not deployable.**
+```
 
 ---

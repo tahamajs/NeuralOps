@@ -9,11 +9,11 @@ emerged to reduce this cost:
 
 \begin{enumerate}
 \item \textbf{Dense softmax attention} $\mathcal{A}\_\text{dense}(Q, K, V) =
-  \text{softmax}(QK^\top / \sqrt{d}) V$. This preserves the expressive power
+  \text{softmax}(QK\^{}\top / \sqrt{d}) V$. This preserves the expressive power
   of exact attention but requires materializing an $L \times L$ matrix.
 
 \item \textbf{Linear attention} $\mathcal{A}\_\text{lin}(Q, K, V) =
-  \phi(Q) (\phi(K)^\top V) / (\phi(Q) \cdot \sum\_j \phi(K\_j))$ for a kernel
+  \phi(Q) (\phi(K)\^{}\top V) / (\phi(Q) \cdot \sum\_j \phi(K\_j))$ for a kernel
   $\phi$. This reduces complexity to $\mathcal{O}(L)$ but trades quality.
 
 \end{enumerate}
@@ -35,7 +35,7 @@ module $\mathcal{A}'$ such that:
 \begin{enumerate}
 \item \textbf{Efficiency:} $\mathcal{O}(L)$ memory and time for the linear branch,
   at most $\mathcal{O}(L^2)$ for the dense branch when needed.
-\item \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
+\item \textbf{Quality:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
 \item \textbf{Pretrained compatibility:} No retraining of base weights; only LoRA
   and gating parameters are trainable.
 \item \textbf{Architecture portability:} Flat, nested, and causal transformers.
@@ -70,7 +70,7 @@ Linear Attention), which:
 \item \textbf{Preserves causality via prefix sums.} For causal models, the linear
   branch uses a cumulative-sum formulation:
   $$
-  O\_i^\text{lin} = \frac{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j) V\_j^\top}{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j)}
+  O\_i\^{}\text{lin} = \frac{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j) V\_j\^{}\top}{\phi(Q\_i) \sum\_{j \le i} \phi(K\_j)}
   $$
 
 \end{enumerate}
@@ -102,3 +102,8 @@ Section 11 concludes.
 
 
 \subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

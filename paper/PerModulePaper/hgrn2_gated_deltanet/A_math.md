@@ -101,5 +101,6 @@ $$
 
 Since $\gamma = \sigma(W_g x)$, gradients flow through the gate. Since 
 $B = 0$ initially, the LoRA branch contributes zero at step 0.
+```
 
 ---

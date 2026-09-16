@@ -162,5 +162,6 @@ SVD-LLM V2 transposes via `_unpack_weight_bias`.
 | $\eta$ | Energy threshold |
 | $d, H, H_{kv}, d_h$ | Model dims |
 | $r_L, \alpha$ | LoRA rank, scaling |
+```
 
 ---

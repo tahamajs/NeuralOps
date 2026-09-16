@@ -1,3 +1,73 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Formal architectural specifications for \texttt{padre_attention}.
+\subsection{Summary}
+
+We presented \textbf{PADRe}, a polynomial-kernel attention module that replaces 
+softmax with $(1 + s/d)^d$. The module supports four architectures with 
+Frobenius validation and output equivalence checking. We are explicit that 
+kernelization -- the source of theoretical speedup -- is left to future work.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% \\
+RoBERTa & {{R\_DELTA}}\% \\
+GPT-2 & {{G\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Polynomial substitution works.}
+\item \textbf{Max-centering is essential.}
+\item \textbf{Order 2 is sufficient.}
+\item \textbf{Kernelization is future work.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Kernelize the polynomial: $\phi(x) = (1, x, x^2, \ldots, x^d)$
+\item Learned order
+\item Comparison with Performer
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theory: bound downstream error
+\item Multi-task evaluation
+\item Cross-model transfer
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+PADRe is a research prototype for polynomial attention in pretrained 
+transformers. Code and checkpoints released.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed, implemented, ran experiments, wrote paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

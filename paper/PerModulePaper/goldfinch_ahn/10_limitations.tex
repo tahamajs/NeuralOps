@@ -1,3 +1,71 @@
-\section{10 Limitations}
 
-Draft content for goldfinch_ahn.
+\section{Limitations}
+
+\subsection{The Long-Memory Branch is a Linear Projection}
+
+Despite the name \texttt{GatedDeltaNetLayer}, the implementation is a single 
+\texttt{nn.Linear}. It has no recurrence, no state, no delta rule. **The 
+"long-memory" claim is not supported by the implementation.**
+
+\subsection{No Long-Range Capability}
+
+Sliding-window attention is local. The linear projection is per-token. 
+Together, the module has no mechanism for long-range dependencies.
+
+\subsection{Gate Mean-Pooling}
+
+The gate is per-head but mean-pooled to scalar. This loses head-specific 
+information.
+
+\subsection{Preservation Gate Dominance}
+
+At $\alpha$ $\approx$ 0.88, the block contributes only 88\% of its output. This is 
+conservative but limits gains.
+
+\subsection{Parameter Overhead}
+
+The module adds ~5-6\% parameters. Most of this (590K per layer) is the 
+long-memory linear projection, which contributes nothing.
+
+\subsection{Slower than Baseline}
+
+~{{D\_TIME\_R}}$\times$ slowdown from extra kernel launches.
+
+\subsection{Task Coverage}
+
+Only SST-2. Behavior on tasks requiring long-range dependencies (QA, 
+summarization) is untested.
+
+\subsection{Model Coverage}
+
+Only DistilBERT, RoBERTa, GPT-2. Qwen3.5 untested.
+
+\subsection{Single Seed}
+
+No multi-seed runs.
+
+\subsection{Window Size Choice}
+
+The window size is a hyperparameter. Optimal value depends on task.
+
+\subsection{Code Quality}
+
+\begin{itemize}
+\item \texttt{output\_scale} redundancy in \texttt{LoRALinear}
+\item \texttt{GatedDeltaNetLayer} is misleadingly named
+\item No logging of gate statistics during training
+\item Some \texttt{try/except} blocks silently pass
+
+\end{itemize}
+\subsection{What This Paper Is Not}
+
+\begin{itemize}
+\item Not a compression method
+\item Not a long-context method
+\item Not a new recurrent mechanism
+\item Not a speedup method
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

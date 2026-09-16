@@ -1,0 +1,112 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: A_math.md
+     PURPOSE: Mathematical derivations
+     DEPENDENCIES: 04_method.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix A. Mathematical Derivations
+
+## A.1 SVD Truncation Error
+
+The rank-$r$ SVD approximation satisfies:
+
+$$
+\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\tag{A.1}
+$$
+
+This is optimal (Eckart-Young).
+
+## A.2 SALT Parameterization
+
+We define:
+
+$$
+W_\text{SALT}(\gamma, A, B) = U_r \text{diag}(\Sigma_r \odot \gamma) V_r + AB
+\tag{A.2}
+$$
+
+## A.3 SALT at Initialization
+
+At init:
+
+- $\gamma = \mathbf{1}$
+- $B = 0$
+
+So:
+
+$$
+W_\text{SALT}(\mathbf{1}, A, 0) = U_r \Sigma_r V_r + A \cdot 0 = W_r
+\tag{A.3}
+$$
+
+The model starts as the truncated SVD.
+
+## A.4 Expressiveness
+
+**Claim.** The family of matrices representable by $W_\text{SALT}$ includes 
+all rank-$r$ matrices, and additionally any matrix of the form 
+$W_r + AB$ where $\text{rank}(AB) \leq r$.
+
+**Proof.** Setting $\gamma$ and $A, B$ appropriately, we can reach any 
+matrix in $\{W_r + AB : \text{rank}(AB) \leq r\}$. $\square$
+
+**Effective rank:** up to $2r$.
+
+## A.5 Parameter Count
+
+Let $W \in \mathbb{R}^{m \times n}$.
+
+| Component | Params |
+|---|---|
+| $U_r$ | $m \cdot r$ |
+| $\Sigma_r$ | $r$ |
+| $V_r$ | $r \cdot n$ |
+| $\gamma$ | $r$ |
+| $A$ | $m \cdot r$ |
+| $B$ | $r \cdot n$ |
+| bias | $m$ |
+| **Total** | $2r(m + n) + 2r + m$ |
+
+For $m = n = 768$, $r = 16$:
+
+$$
+\text{Total} = 2 \cdot 16 \cdot 1536 + 32 + 768 = 49,184
+\tag{A.4}
+$$
+
+Full W = 589,824. Ratio = 11.99×.
+
+## A.6 Inference Complexity
+
+### Naive Forward
+
+$$
+T_\text{naive} = T_\text{reconstruct} + T_\text{matmul} = \mathcal{O}(d_\text{out} r d_\text{in}) + \mathcal{O}(BL d_\text{out} d_\text{in})
+\tag{A.5}
+$$
+
+### Fused Forward
+
+$$
+T_\text{fused} = \mathcal{O}(BL r (d_\text{out} + d_\text{in}))
+\tag{A.6}
+$$
+
+**Ratio:** $T_\text{naive} / T_\text{fused} \approx \frac{d_\text{in} + d_\text{out}}{r (1 + 1/BL)}$. 
+For $B = 8, L = 128, r = 16$: ~100× more FLOPs in the naive version (mostly 
+from the matmul, not reconstruction).
+
+## A.7 GQA Pooling
+
+For $H_{kv} < H$, the source has more KV heads. We pool:
+
+$$
+W_{k,\text{pooled}}[i, :] = \frac{1}{\text{rep}} \sum_{j=1}^{\text{rep}} W_{k}[i \cdot \text{rep} + j, :]
+\tag{A.7}
+$$
+
+This is a mean-pooling over groups of size $\text{rep} = H / H_{kv}$.
+```
+
+---

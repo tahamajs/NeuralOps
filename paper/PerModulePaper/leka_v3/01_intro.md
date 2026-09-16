@@ -136,5 +136,6 @@ concludes.
 | $s_i$ | Landmark importance score |
 | $\mathcal{L}$ | Landmark index set |
 | $\sigma(g)$ | Gate value |
+```
 
 ---

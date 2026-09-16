@@ -87,3 +87,6 @@ For DistilBERT at $L = 128$:
 
 ### Environmental
 Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+```
+
+---

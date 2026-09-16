@@ -63,5 +63,12 @@ Parts drafted with LLM assistance.
 
 MinimalAURORA is a baseline compression method. It should be used 
 responsibly.
+```
+
+---
+
+## 📄 `build.py` و `apply_vars.py`
+
+(همان‌طور که در تمپلیت‌های قبلی آمده بود — کپی کن)
 
 ---

@@ -103,5 +103,6 @@ optimization.
 1. Replace `raise RuntimeError` in `copy_weights` with a soft fallback.
 2. Implement blocked cumsum for large L.
 3. Consider dropping the `output_scale` parameter (not in checkpoint).
+```
 
 ---

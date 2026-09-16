@@ -148,5 +148,6 @@ $\|Q\|_2^2$). The choice is subtle.
 
 The projection is sampled once. Different seeds give different results. 
 For reproducibility, set `torch.manual_seed()` before initialization.
+```
 
 ---

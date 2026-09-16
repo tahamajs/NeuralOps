@@ -140,5 +140,6 @@ UnifiedRoPE adds **two operations** relative to baseline:
 5. **LoRA recovery is needed** when adding RoPE to models trained with 
    absolute positions.
 6. **UnifiedRoPE is orthogonal** to all compression methods.
+```
 
 ---

@@ -68,10 +68,10 @@ Different $w$ per layer. Marginal improvement.
 \toprule
 \textbf{$w$} & \textbf{DistilBERT} \\
 \midrule
-2 & 70.0 \\
-4 & 78.0 \\
-8 & 86.0 \\
-16 & 88.5 \\
+2 & {{D\_W2}} \\
+4 & {{D\_W4}} \\
+8 & {{D\_W8}} \\
+16 & {{D\_W16}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,9 +85,9 @@ Different $w$ per layer. Marginal improvement.
 \toprule
 \textbf{$k$} & \textbf{DistilBERT} \\
 \midrule
-1 & 75.0 \\
-2 & 80.0 \\
-4 & 86.0 \\
+1 & {{D\_K1}} \\
+2 & {{D\_K2}} \\
+4 & {{D\_K4}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -123,11 +123,11 @@ Cached top-k indices & Speed & Not applicable at inference \\
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & 89.5 \\
-123 & 89.3 \\
-456 & 89.7 \\
-\textbf{Mean} & \textbf{89.5} \\
-\textbf{Std} & \textbf{0.2} \\
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -141,3 +141,7 @@ Cached top-k indices & Speed & Not applicable at inference \\
 \item \textbf{No time speedup without sparse kernels.}
 \item \textbf{Density decreases with $L$.}
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

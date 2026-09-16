@@ -133,7 +133,7 @@ We add the Switch/GShard load-balancing loss:
 
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is 
 the mean router probability. This is added to the task loss with weight 
-$\lambda_\text{aux} = 0.01$ (default 0.01).
+$\lambda_\text{aux} = {{AUX_WEIGHT}}$ (default 0.01).
 
 \subsubsection{Value Integration}
 
@@ -276,3 +276,7 @@ For $d = 768$, $E = 8$: \textbf{8 $\times$ 768  $\times$ 8 $\approx$ 37.7M param
 66.9M model. Parameter count \textbf{increases by ~4.4$\times$}.
 
 \textbf{BAM-UMoE is not a compression method.}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

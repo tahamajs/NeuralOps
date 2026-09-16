@@ -122,3 +122,6 @@ GPT-2 Conv1D stores weights as `(in, out)`. Must transpose.
 ### B.5.6 Nested Encoder Bypass
 
 For RoBERTa, do not apply `out_proj` — the outer layer does.
+```
+
+---

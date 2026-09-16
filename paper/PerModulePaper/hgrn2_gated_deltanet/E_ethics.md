@@ -52,5 +52,6 @@ Linear recurrent models could:
 But also:
 - Enable surveillance at scale.
 - Widen the gap between large and small labs.
+```
 
 ---

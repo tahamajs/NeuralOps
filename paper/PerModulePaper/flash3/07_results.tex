@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB & 1.90 s \\
-DistilBERT & \textbf{Flash3} & \textbf{90.25} & -0.46 & 0.9055 & 67.55M & 190 & 1.95 \\
+DistilBERT & \textbf{Flash3} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}}M & {{D\_VRAM}} & {{D\_TIME}} \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB & 4.10 s \\
-RoBERTa & \textbf{Flash3} & \textbf{77.50} & -1.06 & 0.780 & 125.83M & 720 & 4.20 \\
+RoBERTa & \textbf{Flash3} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}}M & {{R\_VRAM}} & {{R\_TIME}} \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB & 4.20 s \\
-GPT-2 & \textbf{Flash3} & \textbf{78.98} & -0.38 & 0.789 & 125.63M & 800 & 4.30 \\
+GPT-2 & \textbf{Flash3} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}}M & {{G\_VRAM}} & {{G\_TIME}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,14 +30,14 @@ GPT-2 & \textbf{Flash3} & \textbf{78.98} & -0.38 & 0.789 & 125.63M & 800 & 4.30 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Flash3} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & 66.9M & 67.55M & +589826M \\
-RoBERTa & 124.6M & 125.83M & +1179648M \\
-GPT-2 & 124.4M & 125.63M & +1188876M \\
+DistilBERT & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
+RoBERTa & 124.6M & {{R\_PARAMS}}M & +{{R\_PARAM\_DELTA}}M \\
+GPT-2 & 124.4M & {{G\_PARAMS}}M & +{{G\_PARAM\_DELTA}}M \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Wrapper increases parameter count by ~0.88\%.}
+\textbf{Wrapper increases parameter count by ~{{PARAM\_CHANGE}}\%.}
 
 \subsection{Efficiency}
 
@@ -51,8 +51,8 @@ GPT-2 & 124.4M & 125.63M & +1188876M \\
 \textbf{Model} & \textbf{Path} & \textbf{Time} & \textbf{VRAM} \\
 \midrule
 DistilBERT & SDPA (baseline) & 1.90 s & 183 MB \\
-DistilBERT & SDPA (via wrapper) & 1.95 s & 190 MB \\
-DistilBERT & FA3 (H100, extrapolated) & 0.60 s & 120 MB \\
+DistilBERT & SDPA (via wrapper) & {{D\_TIME\_SDPA}} s & {{D\_VRAM\_SDPA}} MB \\
+DistilBERT & FA3 (H100, extrapolated) & {{D\_TIME\_FA3}} s & {{D\_VRAM\_FA3}} MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -66,11 +66,11 @@ DistilBERT & FA3 (H100, extrapolated) & 0.60 s & 120 MB \\
 \toprule
 \textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-0 & 88.5 & 75.5 & 76.5 \\
-4 & 89.5 & 76.8 & 78.0 \\
-8 & 90.0 & 77.2 & 78.5 \\
-\textbf{16} & \textbf{90.25} & \textbf{77.50} & \textbf{78.98} \\
-32 & 90.30 & 77.55 & 79.00 \\
+0 & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} \\
+4 & {{D\_RL4}} & {{R\_RL4}} & {{G\_RL4}} \\
+8 & {{D\_RL8}} & {{R\_RL8}} & {{G\_RL8}} \\
+\textbf{16} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,8 +86,8 @@ DistilBERT & FA3 (H100, extrapolated) & 0.60 s & 120 MB \\
 \toprule
 \textbf{Config} & \textbf{Acc} & \textbf{Note} \\
 \midrule
-FP16 & 90.25 & Baseline \\
-FP8 (simulated) & 90.10 & Simulated on Ada \\
+FP16 & {{FP16\_ACC}} & Baseline \\
+FP8 (simulated) & {{FP8\_ACC}} & Simulated on Ada \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -101,10 +101,10 @@ FP8 (simulated) & 90.10 & Simulated on Ada \\
 \toprule
 \textbf{Steps} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-10 & 88.5 & 75.5 & 76.8 \\
-25 & 89.5 & 76.8 & 78.0 \\
-\textbf{50} & \textbf{90.25} & \textbf{77.50} & \textbf{78.98} \\
-100 & 90.30 & 77.55 & 79.00 \\
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+\textbf{50} & \textbf{{{D\_S50}}} & \textbf{{{R\_S50}}} & \textbf{{{G\_S50}}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -122,7 +122,7 @@ full & 90.71\% & 0 & Baseline \\
 \texttt{adaptive\_svd} & 88.0\% & -60\% & Compression \\
 \texttt{nha} & 90.25\% & +0.89\% & Attention replace \\
 \texttt{adasplash} & 90.25\% & +0.89\% & Sparse \\
-\textbf{\texttt{flash3}} & \textbf{90.25} & \textbf{+0.88\%} & \textbf{Hardware-opt} \\
+\textbf{\texttt{flash3}} & \textbf{{{D\_ACC}}} & \textbf{+{{D\_PARAM\_DELTA\_PCT}}\%} & \textbf{Hardware-opt} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -131,7 +131,11 @@ full & 90.71\% & 0 & Baseline \\
 
 \begin{itemize}
 \item \textbf{Accuracy:} matches baseline.
-\item \textbf{Parameters:} +0.88\%.
+\item \textbf{Parameters:} +{{PARAM\_CHANGE}}\%.
 \item \textbf{Runtime on RTX 4070:} SDPA fallback (no FA3).
 \item \textbf{Runtime on H100:} estimated 2-4$\times$ faster (not tested).
 \end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

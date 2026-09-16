@@ -1,3 +1,81 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for moba.
+\subsection{Summary}
+
+We presented \textbf{Mamba-Inspired Gated State-Space Attention}, a drop-in 
+replacement for multi-head attention that:
+\begin{itemize}
+\item Reuses pretrained Q/K/V/O weights
+\item Applies learned exponential decay
+\item Uses a preservation gate
+\item Supports causal and bidirectional modes
+
+\end{itemize}
+We are explicit that the implementation is \textbf{not} true Mamba and remains 
+$\mathcal{O}(L^2 d)$.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% \\
+RoBERTa & {{R\_DELTA}}\% \\
+GPT-2 & {{G\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Pretrained weight reuse is possible} in SSM-inspired structures.
+\item \textbf{Learned decay is effective.}
+\item \textbf{Preservation gate is essential.}
+\item \textbf{Complexity remains quadratic} -- a key limitation.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item True $\mathcal{O}(L)$ implementation via chunked scan
+\item Selective decay (input-dependent $\gamma$)
+\item Per-head preservation gates
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Hybrid Mamba + attention
+\item Theoretical analysis of the two-branch mapping
+\item Cross-task transfer of learned decay
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+Mamba-Inspired SSM Attention provides a pretrained-friendly baseline for 
+SSM research. Code released. **We encourage users to be aware of the 
+quadratic complexity despite the SSM naming.**
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed, implemented, ran experiments, wrote paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

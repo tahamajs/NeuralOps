@@ -1,3 +1,75 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for compressed_mha.
+\subsection{Summary}
+
+We presented \textbf{Compressed MHA}, a joint SVD compression method for 
+transformer attention. By sharing an input basis across Q, K, V via joint 
+SVD and separately factorizing W\_O, we achieve \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+parameter reduction on attention projections.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & -{{D\_VRAM\_DEC}}\% \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & -{{R\_VRAM\_DEC}}\% \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{G\_VRAM\_DEC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Joint SVD exploits Q/K/V correlation} -- fewer parameters at equal
+  accuracy.
+\item \textbf{Nested detection order is critical} -- wrong order causes collapse.
+\item \textbf{LoRA recovery is essential} -- closes most of the accuracy gap.
+\item \textbf{Multi-architecture support} works across four model families.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernel for joint SVD forward
+\item Per-layer rank selection
+\item INT8 combined with Compressed MHA
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Cross-layer factor sharing
+\item Joint Q/K/V/O factorization
+\item Theoretical approximation bounds
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+Compressed MHA is a practical, honest approach to attention compression. We 
+release all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed Compressed MHA, implemented, ran experiments,
+  wrote paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

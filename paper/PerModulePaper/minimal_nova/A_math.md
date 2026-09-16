@@ -121,5 +121,6 @@ if self.is_decoder and N > 1:
 Positions $j > i$ are set to $-\infty$ before softmax, so attention at 
 position $i$ depends only on positions $\leq i$. This does not depend on the 
 attention implementation. $\square$
+```
 
 ---

@@ -59,5 +59,6 @@ validation and multi-architecture support.
 ## 11.8 Conflict of Interest
 
 None.
+```
 
 ---

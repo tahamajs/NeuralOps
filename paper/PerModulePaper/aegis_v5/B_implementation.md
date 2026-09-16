@@ -1,0 +1,133 @@
+# Appendix B. Implementation Details
+
+## B.1 FactorisedLinear
+
+```python
+class FactorisedLinear(nn.Module):
+    def __init__(self, in_features_or_weight, out_features_or_bias=None, ...):
+        super().__init__()
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
+        ...
+    
+    def decompose_from_weight(self, weight, bias=None, energy=None):
+        with torch.no_grad():
+            W = weight.float()
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            # Energy-based rank
+            target_energy = energy if energy is not None else self.energy
+            cum = torch.cumsum(S**2, dim=0) / ((S**2).sum() + 1e-5)
+            calc_rank = int((cum < target_energy).sum().item()) + 1
+            r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
+            
+            # Store factors
+            A = U[:, :r] * S[:r].unsqueeze(0)
+            B = Vt[:r, :]
+            self.down.weight.data.zero_()
+            self.up.weight.data.zero_()
+            self.down.weight.data[:r, :] = B
+            self.up.weight.data[:, :r] = A
+            self.freeze_base_weights()
+    
+    def forward(self, x):
+        out = self.up(self.down(x))
+        if self.lora_rank > 0:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        return out * self.output_scale
+```
+
+## B.2 Softpick Fix
+
+```python
+def softpick(x, dim=-1, temperature=1.0):
+    """Stable softmax with temperature. Replaces broken ReLU-based softpick."""
+    x_f = x.float()
+    if temperature <= 0 or temperature == 1.0:
+        return F.softmax(x_f, dim=dim).to(x.dtype)
+    return F.softmax(x_f / temperature, dim=dim).to(x.dtype)
+```
+
+## B.3 Local Window Attention
+
+```python
+def local_window_attention(Q, K, V, window, softpick_temperature=1.0, 
+                          token_valid=None, is_decoder=False):
+    B, H, N, D = Q.shape
+    idx_q = torch.arange(N).unsqueeze(1)
+    idx_k = torch.arange(N).unsqueeze(0)
+    dist = (idx_q - idx_k).abs()
+    mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
+    if is_decoder and N > 1:
+        causal = (idx_k <= idx_q).unsqueeze(0).unsqueeze(0)
+        mask = mask & causal
+    
+    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * (D**-0.5)
+    scores = scores.masked_fill(~mask, -10000.0)
+    if token_valid is not None:
+        scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -10000.0)
+    attn = softpick(scores, dim=-1, temperature=softpick_temperature)
+    return torch.matmul(attn, V)
+```
+
+## B.4 Kernel Linear Attention
+
+```python
+def kernel_linear_attention(Q, K, V, rff_proj, use_zero_sum=True, 
+                            max_clamp=11.0, is_causal=False):
+    B, H, N, D = Q.shape
+    F_dim = rff_proj.size(-1)
+    
+    Q_f, K_f, V_f = Q.float(), K.float(), V.float()
+    if use_zero_sum:
+        K_f = K_f - K_f.mean(dim=2, keepdim=True)
+    
+    Q_norm = F.normalize(Q_f, p=2, dim=-1)
+    K_norm = F.normalize(K_f, p=2, dim=-1)
+    
+    Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, rff_proj.float()).clamp(max=max_clamp)
+    K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, rff_proj.float()).clamp(max=max_clamp)
+    Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
+    K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
+    
+    if is_causal:
+        kv_outer = torch.einsum("bhnf,bhnd->bhnfd", K_feat, V_f)
+        KV_cum = torch.cumsum(kv_outer, dim=2)
+        z_cum = torch.cumsum(K_feat, dim=2)
+        num = torch.einsum("bhnf,bhnfd->bhnd", Q_feat, KV_cum)
+        denom = torch.einsum("bhnf,bhnf->bhn", Q_feat, z_cum).unsqueeze(-1).clamp(min=1e-5)
+        ctx = num / denom
+    else:
+        KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_f)
+        K_sum = K_feat.sum(dim=2)
+        denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)
+        ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / (denom + 1e-5)
+    
+    return torch.nan_to_num(ctx, nan=0.0).to(Q.dtype)
+```
+
+## B.5 Common Pitfalls
+
+### B.5.1 ReLU-Based Softpick
+
+The V4 formula is broken. Always use stable softmax.
+
+### B.5.2 Energy Rank = Full Rank
+
+With `max_rank=384` and `d=768`, SVD gives no compression. Use 
+`max_rank < d/2`.
+
+### B.5.3 Decoder Fallback
+
+Without the fallback, GPT-2 would see future tokens. Always check 
+`is_decoder`.
+
+### B.5.4 Conv1D Orientation
+
+GPT-2's Conv1D stores (in, out). Transpose before chunking.
+
+### B.5.5 RFF Numeric Overflow
+
+RFF features can overflow FP16. Compute in FP32 and clamp.
+```
+
+---

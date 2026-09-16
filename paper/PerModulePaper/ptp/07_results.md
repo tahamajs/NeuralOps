@@ -136,3 +136,6 @@
 - **[CLS] preservation:** essential.
 - **Score network:** learns content-word importance.
 - **All models pass quality gate.**
+```
+
+---

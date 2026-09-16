@@ -13,7 +13,7 @@
 DistilBERT & \texttt{MultiHeadSelfAttention} & No & No &  \\
 RoBERTa & \texttt{BertSelfAttention} & No & No &  \\
 GPT-2 & \texttt{GPT2Attention} & No & No &  \\
-Qwen3.5 & \texttt{Qwen3Attention} & Yes & Yes & not tested \\
+Qwen3.5 & \texttt{Qwen3Attention} & Yes & Yes & {{Q\_VERIFIED}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -158,10 +158,15 @@ class PrimalAttention(BaseAttention): ...
 
 \subsection{Failure Modes}
 
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_primal_attention.jpeg}
-\caption{Architectural schematic of Primal.}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of Primal.}
 \label{fig:arch_Primal}
 \end{figure}
+

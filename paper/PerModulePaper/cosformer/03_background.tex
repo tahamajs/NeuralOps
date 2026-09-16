@@ -1,3 +1,124 @@
-\section{03 Background}
 
-Draft content for cosformer.
+\section{Background}
+
+\subsection{Softmax Attention}
+
+Standard scaled dot-product attention:
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d}}\right)V
+\tag{3.1}
+\]
+
+\textbf{Properties:}
+\begin{itemize}
+\item \textbf{Non-negativity:} $\text{softmax}(\cdot) > 0$ elementwise.
+\item \textbf{Normalization:} $\sum_j \text{softmax}(\cdot)_{ij} = 1$.
+\item \textbf{Locality:} With scale factor $1/\sqrt{d}$, softmax concentrates on
+  the largest entries of $QK^\top$.
+
+\end{itemize}
+\subsection{Linear Attention}
+
+Replacing softmax with a kernel factorization:
+
+\[
+\exp(q^\top k) \approx \phi(q)^\top \phi(k), \quad \phi: \mathbb{R}^d \to \mathbb{R}^m
+\tag{3.2}
+\]
+
+allows rewriting attention as:
+
+\[
+\text{Attn}(Q_i, K, V) = \frac{\sum_j \phi(q_i)^\top \phi(k_j) V_j}{\sum_j \phi(q_i)^\top \phi(k_j)} = \frac{\phi(q_i)^\top \sum_j \phi(k_j) V_j}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\tag{3.3}
+\]
+
+\textbf{Complexity.} The sums $\sum_j \phi(k_j) V_j$ and $\sum_j \phi(k_j)$ are 
+$\mathcal{O}(L m d)$, independent of the query position. Precomputed once, 
+each query costs $\mathcal{O}(m d)$.
+
+\textbf{Common kernels:}
+\begin{itemize}
+\item \textbf{ELU + 1} (Katharopoulos et al., 2020): $\phi(x) = \text{elu}(x) + 1$.
+\item \textbf{ReLU:} $\phi(x) = \text{ReLU}(x)$.
+\item \textbf{Softplus:} $\phi(x) = \log(1 + e^x)$.
+\item \textbf{Random Fourier Features:} $\phi(x) = e^{\omega^\top x}$ for random
+  $\omega$.
+
+\end{itemize}
+All are non-negative; the first three are cheap and deterministic.
+
+\subsection{Locality and Its Loss}
+
+Softmax attention exhibits locality: nearby tokens receive higher attention 
+mass on average, especially with positional information. This is critical 
+for language understanding.
+
+\textbf{Why linear attention loses locality.} The kernel approximation is 
+position-independent: $\phi(q_i)$ and $\phi(k_j)$ have no information about 
+$|i - j|$. So there is no bias toward nearby tokens.
+
+\textbf{Empirical effect.} On tasks requiring local context (NER, chunked 
+summarization), linear attention underperforms softmax.
+
+\subsection{Cosformer's Reweighting}
+
+Cosformer adds cosine/sine modulation:
+
+\[
+\tilde{\phi}(q_i) = \phi(q_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
+\tilde{\phi}'(q_i) = \phi(q_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
+\tag{3.4}
+\]
+
+Then the attention becomes:
+
+\[
+\text{Attn}(Q_i, K, V) = \frac{\tilde{\phi}(q_i)^\top \sum_j \tilde{\phi}(k_j) V_j + \tilde{\phi}'(q_i)^\top \sum_j \tilde{\phi}'(k_j) V_j}{\tilde{\phi}(q_i)^\top \sum_j \tilde{\phi}(k_j) + \tilde{\phi}'(q_i)^\top \sum_j \tilde{\phi}'(k_j)}
+\tag{3.5}
+\]
+
+\textbf{Why it works.} The identity:
+
+\[
+\cos(\theta_i - \theta_j) = \cos\theta_i \cos\theta_j + \sin\theta_i \sin\theta_j
+\tag{3.6}
+\]
+
+means the sum $\tilde{\phi}(q_i)^\top \tilde{\phi}(k_j) + \tilde{\phi}'(q_i)^\top \tilde{\phi}'(k_j)$ 
+equals $\phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)$. The 
+cosine decays with $|i - j|$, giving locality.
+
+\subsection{GQA and RoPE}
+
+\textbf{GQA.} $H_{kv} < H$ reduces KV cache. Handled via \texttt{repeat\_kv}.
+
+\textbf{RoPE.} Rotation of $Q, K$ by position-dependent angles. Orthogonal to 
+Cosformer's reweighting; both can coexist.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d$ & Head dimension \\
+$H$ & Query head count \\
+$H_{kv}$ & KV head count \\
+$\phi$ & Kernel feature map \\
+$\theta_i$ & Position angle ($\pi i / 2L$) \\
+$r$ & LoRA rank \\
+$C$ & Chunk size \\
+\bottomrule
+\end{tabular}
+\end{table}
+</parameter>
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -35,7 +35,7 @@ this is $\sim 67$M FLOPs per head per sequence.
 
 \textbf{Empirical evidence.} \textbf{Figure 3.1} shows the cumulative attention mass 
 vs ranked keys for a middle GPT-2 layer. Top 10\% of keys capture 
-\textbf{85\%} of mass; top 50\% capture \textbf{97\%}.
+\textbf{{{TOP10\_MASS}}\%} of mass; top 50\% capture \textbf{{{TOP50\_MASS}}\%}.
 
 \textbf{Implication.} Pruning to the top $k = (1 - \rho) L$ keys retains most 
 of the output quality, at fraction $1 - \rho$ of the compute.
@@ -125,3 +125,8 @@ with $B = 0$ at initialization. ASA uses LoRA for recovery after sparsity
 injection.
 
 \subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

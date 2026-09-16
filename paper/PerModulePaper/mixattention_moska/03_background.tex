@@ -1,3 +1,89 @@
-\section{03 Background}
 
-Draft content for mixattention_moska.
+\section{Background}
+
+\subsection{Scaled Dot-Product Attention}
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_h}}\right)V
+\tag{3.1}
+\]
+
+\textbf{Cost analysis.} The score matrix $QK^\top$ is $O(B H L^2)$. The value 
+matmul $AV$ is $O(B H L^2 d_h)$.
+
+\subsection{Token Pruning}
+
+Replace $K, V$ with subsets $K_{\mathcal{S}}, V_{\mathcal{S}}$:
+
+\[
+\text{Attn}'(Q, K, V) = \text{softmax}\!\left(\frac{QK_{\mathcal{S}}^\top}{\sqrt{d_h}}\right)V_{\mathcal{S}}
+\tag{3.2}
+\]
+
+\textbf{Cost.} $O(B H L \cdot |\mathcal{S}|)$ for scores and $O(B H L |\mathcal{S}| d_h)$ 
+for the value matmul. With $|\mathcal{S}| = rL$, cost reduces by factor $r$.
+
+\subsection{Variance as Importance}
+
+For a token's key vector $k \in \mathbb{R}^{d_h}$:
+
+\[
+\text{Var}(k) = \frac{1}{d_h} \sum_{j=1}^{d_h} (k_j - \bar{k})^2
+\tag{3.3}
+\]
+
+\textbf{Intuition.} Tokens whose keys have high variance have distinctive 
+dimensional activations. They are likely to be attended to because their 
+key inner-products with queries will span a wider range.
+
+\textbf{Counter-argument.} This is a \textbf{heuristic}. Tokens with low-variance 
+keys may still be highly attended if all queries align with them. Conversely, 
+high-variance keys may be noisy and unattended. The signal is imperfect.
+
+\subsection{Attention Sinks}
+
+\textbf{Empirical observation.} The first token receives disproportionate 
+attention in most transformer layers, even without any specific pretraining 
+objective targeting this.
+
+\textbf{Consequence.} Pruning the first token is catastrophic. FASA protects it:
+
+\begin{lstlisting}
+importance[:, 0] = 1e9
+\end{lstlisting}
+
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021):
+
+\[
+W_{\text{eff}} = W_{\text{frozen}} + \frac{\alpha}{r_L} BA
+\tag{3.4}
+\]
+
+Used for recovery after injection.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d_h$ & Head dimension \\
+$H$ & Number of heads \\
+$r$ & Keep ratio \\
+$\mathcal{S}$ & Selected token subset \\
+$\text{Var}(k)$ & Variance of key vector \\
+$r_L$ & LoRA rank \\
+\bottomrule
+\end{tabular}
+\end{table}
+</parameter>
+\begin{lstlisting}
+
+---
+\end{lstlisting}

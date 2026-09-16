@@ -84,7 +84,7 @@ For a single attention layer at $L = 128$, $k = 64$:
 \toprule
 \textbf{Operation} & \textbf{Baseline} & \textbf{TCA} & \textbf{Ratio} \\
 \midrule
-QK^T & $L^2 d_h$ & $L \cdot k \cdot d_h$ & 2.0$\times$ \\
+QK\^{}T & $L^2 d_h$ & $L \cdot k \cdot d_h$ & 2.0$\times$ \\
 Softmax & $L^2$ & $L \cdot k$ & 2.0$\times$ \\
 AV & $L^2 d_h$ & $L \cdot k \cdot d_h$ & 2.0$\times$ \\
 Score net & 0 & $L d_h \cdot 64$ & -- \\
@@ -144,5 +144,8 @@ This is the trade-off: 6.3\% more parameters for 50\% less KV cache.
 \item \textbf{Causal masking is correct} (verified via gradients).
 \item \textbf{KV cache reduction is real} ({{KV\_PCT}}\% at   = {{RATIO}}).
 \item \textbf{Parameter count increases} ({{D\_PARAM\_PCT}}\%) -- honest framing.
-
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -1,3 +1,95 @@
-\section{10 Limitations}
 
-Draft content for salt.
+\section{Limitations}
+
+\subsection{Inference Memory Unchanged}
+
+\textbf{This is the most significant limitation.} Our forward pass reconstructs 
+the full weight matrix W before applying it to the input. As a result, 
+inference VRAM is identical to the baseline.
+
+\textbf{Fix.} Implement the fused forward pass:
+
+\begin{lstlisting}
+z = F.linear(x, self.Vt)
+z = z * (self.S * self.gamma)
+y_svd = F.linear(z, self.U)
+y_lora = F.linear(F.linear(x, self.B), self.A)
+return y_svd + y_lora + self.bias
+\end{lstlisting}
+
+Expected speedup: 2-4$\times$.
+
+\subsection{`raise RuntimeError` in `copy\_weights`}
+
+Unlike other modules in our framework, SALT \textbf{raises} on extraction failure:
+
+\begin{lstlisting}
+except Exception as e:
+    raise RuntimeError(f"copy_weights failed: {e}")
+\end{lstlisting}
+
+This aborts injection for the entire model. Should be a warning.
+
+\subsection{`raise RuntimeError` on Zero Norm}
+
+Same issue for Frobenius norm check.
+
+\subsection{`output\_scale` Unused}
+
+The \texttt{SALTLinear.\_\_init\_\_} defines \texttt{output\_scale} but never uses it. Dead code.
+
+\subsection{Single Rank for SVD and Residual}
+
+We use the same $r$ for SVD truncation and residual rank. These could be 
+independent.
+
+\subsection{GQA Pooling is Lossy}
+
+For Qwen with $H_{kv} < H$, we average KV groups. This loses information.
+
+\subsection{Task Coverage}
+
+Only SST-2. Behavior on generation, multi-class, or token-level tasks is 
+untested.
+
+\subsection{Model Coverage}
+
+Only DistilBERT, RoBERTa, GPT-2. Qwen3.5 not completed.
+
+\subsection{Single Seed}
+
+No multi-seed runs. Differences below 3.4\% may be noise.
+
+\subsection{No Fused Kernel}
+
+We do not provide a Triton or CUDA implementation of the fused forward.
+
+\subsection{No Comparison with PiSSA or OLoRA}
+
+We do not run head-to-head against related methods.
+
+\subsection{No Interaction with Quantization}
+
+The natural combination SALT + INT8 is untested.
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Raising exceptions instead of warnings
+\item Dead \texttt{output\_scale} code
+\item No unit tests for weight extraction
+
+\end{itemize}
+\subsection{What This Paper Is Not}
+
+This is \textbf{not}:
+\begin{itemize}
+\item An inference-optimization method
+\item A state-of-the-art compression method
+\item A fused-kernel paper
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

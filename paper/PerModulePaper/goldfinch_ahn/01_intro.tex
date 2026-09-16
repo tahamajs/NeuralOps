@@ -1,3 +1,118 @@
-\section{01 Intro}
 
-Draft content for goldfinch_ahn.
+\section{Introduction}
+
+\subsection{Motivation}
+
+Hybrid attention architectures combine multiple attention mechanisms with 
+the goal of capturing both short-range and long-range dependencies 
+efficiently. A common pattern is:
+
+\[
+\text{Output} = g \cdot \text{Local}(X) + (1 - g) \cdot \text{Global}(X)
+\tag{1.1}
+\]
+
+where $g$ is a mixing coefficient. The rationale: local attention captures 
+fine-grained context at low cost, while global attention captures long-range 
+semantics.
+
+The \textbf{challenge} is twofold:
+
+\begin{enumerate}
+\item \textbf{Mixing the two branches correctly.} A fixed $g$ (e.g., $0.5$) ignores
+  that different tokens have different local/global needs.
+\item \textbf{Preserving pretrained behavior.} Replacing attention with a new
+  mechanism risks breaking the residual stream that downstream layers
+  depend on.
+
+\end{enumerate}
+\subsection{Our Approach}
+
+\textbf{GoldFinch-AHN} addresses both:
+
+\begin{enumerate}
+\item \textbf{Input-dependent gating.} Per-token gate $g_t = \sigma(W_g x_t)$
+  determines how much each token relies on local vs. global.
+\item \textbf{Preservation gate.} A block-level residual with learnable coefficient:
+  $$
+  Y = \alpha \cdot \text{Block}(X) + (1 - \alpha) \cdot X
+  \tag{1.2}
+  $$
+  with $\alpha = \sigma(2.0) \approx 0.88$ at initialization.
+
+\end{enumerate}
+\subsection{Honest Disclosures}
+
+Two implementation details must be disclosed before the methodology:
+
+\textbf{The "long-memory" branch is a linear projection.} In the code, the class 
+\texttt{GatedDeltaNetLayer} is:
+
+\begin{lstlisting}
+class GatedDeltaNetLayer(nn.Module):
+    def __init__(self, d_model, use_spectral_norm=False):
+        super().__init__()
+        self.net = nn.Linear(d_model, d_model)
+
+    def forward(self, x):
+        return self.net(x)
+\end{lstlisting}
+
+There is no recurrence, no state update, no delta rule. It is a single 
+\texttt{nn.Linear}. In our experiments this branch is essentially a 
+content-independent projection.
+
+\textbf{The preservation gate is a residual connection.} The \texttt{output\_gate} 
+parameter blends the block's output with the block's input -- a learnable 
+residual. It is not an attention mechanism.
+
+We include these disclosures to enable fair evaluation: GoldFinch-AHN 
+should be compared against other attention-replacement methods with the 
+understanding that it is more conservative than they are.
+
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A hybrid attention block} with sliding-window attention, an input-dependent
+  gate, and a preservation gate.
+\item \textbf{An empirical evaluation} on DistilBERT, RoBERTa, and GPT-2 on SST-2.
+\item \textbf{Honest implementation disclosure}: the long-memory branch is a linear
+  projection, not a recurrent mechanism.
+\item \textbf{Full reproducibility}, including code and checkpoints.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews hybrid attention, sliding-window mechanisms, and residual 
+gating. Section 3 provides background on attention, gating, and residuals. 
+Section 4 presents GoldFinch-AHN. Section 5 covers integration. Section 6 
+details the setup. Section 7 reports results. Section 8 analyzes the 
+mechanism. Section 9 discusses. Section 10 lists limitations. Section 11 
+concludes.
+
+
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$X$ & Input hidden states & 1.1 \\
+$g$ & Mixing gate & 1.1 \\
+$\alpha$ & Preservation coefficient & 1.2 \\
+$W$ & Window size & 3.2 \\
+$d$ & Hidden size & 3.1 \\
+$H$ & Number of heads & 3.1 \\
+$r$ & LoRA rank & 4.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+</parameter>
+\begin{lstlisting}
+
+---
+\end{lstlisting}

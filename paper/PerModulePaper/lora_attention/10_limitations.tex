@@ -1,3 +1,85 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for lora_attention.
+\subsection{No Parameter Reduction}
+
+LoRA Attention \textbf{adds} parameters (adapters). This is not a compression 
+method. Post-merge, the model is baseline-sized.
+
+\subsection{Task Coverage}
+
+Only SST-2 evaluated. Behavior on generation tasks unknown.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B--10B & No \\
+>10B & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Single-Seed}
+
+SE ~1.7\%. Differences below 3.4\% may be noise.
+
+\subsection{Hard Failure on Missing Weights}
+
+Unlike some compression modules, LoRA Attention \textbf{raises exceptions} on 
+missing weights. This is intentional (silent failure would corrupt base 
+weights) but reduces robustness.
+
+\subsection{No Comparison with Full FT}
+
+We do not directly compare with full fine-tuning (compute budget). 
+
+\subsection{Rank Selection}
+
+Rank 16 is a default; task-specific tuning may help.
+
+\subsection{The `output\_scale` Parameter}
+
+We add an \texttt{output\_scale} scalar. This is not standard LoRA. Its effect is 
+small but non-zero.
+
+\subsection{Cross-Attention}
+
+The implementation supports cross-attention via \texttt{key\_value\_states}, but 
+we do not systematically evaluate this.
+
+\subsection{Merge Precision}
+
+Merging introduces small numerical error (FP16 rounding). We do not 
+characterize this for very large models.
+
+\subsection{Bias Handling}
+
+Bias parameters are frozen but copied. LoRA does not adapt bias.
+
+\subsection{Initialization}
+
+$B = 0$ ensures exact recovery at start, but may slow initial learning 
+compared to nonzero init.
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling in \texttt{copy\_weights}
+\item Duplicated code in \texttt{inject\_lora\_attention}
+\item Some numerical concerns at FP16
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

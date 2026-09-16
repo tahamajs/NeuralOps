@@ -182,5 +182,6 @@ def inject_flash3_fp8(layer, model_config, comp_config, old_attn=None, **kwargs)
         logger.error(f"Injection failed: {e}")
         return None
 ```
+```
 
 ---

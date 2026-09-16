@@ -1,3 +1,331 @@
-\section{04 Method}
+\section{Method}
 
-Draft content for aegis_v5.
+\subsection{Overview}
+
+AEGIS-V5 has three main stages:
+
+\begin{enumerate}
+\item \textbf{SVD-factorized projections} ( 4.2): each $Q/K/V/O$ projection is
+  decomposed with energy-based rank selection and frozen.
+\item \textbf{Split-head attention} ( 4.3): heads partitioned into local and global.
+\item \textbf{Adaptive gating} ( 4.4): per-head gate fuses local and global.
+
+\end{enumerate}
+\begin{lstlisting}
+        Input X
+           |
+            
+    +------------------+
+    | SVD Q/K/V/O      |  (frozen, energy-ranked)
+    | + LoRA adapters  |  (trainable)
+    +--------+---------+
+             |
+    +--------+---------+
+                        
+ +----------+    +-----------+
+ | Local    |    | Global    |
+ | Window   |    | RFF       |
+ | (2H/3)   |    | (H/3)     |
+ +----+-----+    +-----+-----+
+      |                |
+      +-------+--------+
+               
+      +---------------+
+      | Per-head      |
+      | Gating $\sigma$(g)   |
+      +-------+-------+
+              |
+               
+         Output
+\end{lstlisting}
+
+\subsection{SVD-Factorized Projections}
+
+\subsubsection{Decomposition}
+
+Given a weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
+
+\begin{enumerate}
+\item Compute the SVD:
+  $$
+  W = U \Sigma V\^{}\top
+  \tag{4.1}
+  $$
+\item Select energy-based rank:
+  $$
+  r\^{}* = \min \left\{ r : \frac{\sum\_{i \leq r} \sigma\_i\^{}2}{\sum\_i \sigma\_i\^{}2} \geq \eta \right\}
+  \tag{4.2}
+  $$
+\item Factor into $W \approx U_r V_r$ where:
+  $$
+  U\_r = U\_{:, :r} \Sigma\_{:r, :r}\^{}{1/2}, \quad
+  V\_r = \Sigma\_{:r, :r}\^{}{1/2} V\_{:r, :}\^{}\top
+  \tag{4.3}
+  $$
+
+\end{enumerate}
+\subsubsection{Parameter Reduction}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Configuration} & \textbf{Parameters} \\
+\midrule
+Original & $d_\text{out} \cdot d_\text{in}$ \\
+SVD at rank $r$ & $r(d_\text{out} + d_\text{in})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$ and $r = 384$ (energy 0.95):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
+\midrule
+Original & 589,824 & 1.00$\times$ \\
+SVD r=384 & 589,824 & \textbf{1.00$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical observation.} At $r = 384 = d/2$, SVD parameters equal original. 
+For meaningful compression, we need $r < d/2$.
+
+\subsubsection{LoRA on Frozen Factors}
+
+We freeze $(U_r, V_r)$ and add LoRA adapters:
+
+\[
+y = U_r V_r x + \frac{\alpha}{r_L} B A x
+\tag{4.4}
+\]
+
+Only $A, B$ are trained.
+
+\textbf{Note.} AEGIS-V5 uses a \texttt{FactorisedLinear} that applies SVD as a \textbf{stacked} 
+composition (\texttt{down} then \texttt{up}), not a reconstruction. This is critical for 
+correctness.
+
+\subsection{Split-Head Attention}
+
+\subsubsection{Head Partition}
+
+We split $H$ heads:
+
+\[
+H_\text{local} = \lceil 2H/3 \rceil, \quad
+H_\text{global} = H - H_\text{local}
+\tag{4.5}
+\]
+
+For $H = 12$:
+\begin{itemize}
+\item $H_\text{local} = 8$
+\item $H_\text{global} = 4$
+
+\end{itemize}
+\subsubsection{Local Branch}
+
+Heads $0 \ldots H_\text{local} - 1$ use sliding window attention:
+
+\[
+\text{Out}_\text{local}[i] = \text{softpick}\!\left(\frac{q_i K_\text{local}^\top}{\sqrt{d_h}}\right) \cdot V_\text{local}
+\tag{4.6}
+\]
+
+with a window mask $|i - j| \leq W/2$.
+
+\subsubsection{Global Branch}
+
+Heads $H_\text{local} \ldots H - 1$ use kernel linear attention:
+
+\[
+\text{Out}_\text{global}[i] = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\tag{4.7}
+\]
+
+with RFF feature map $\phi(x) = \exp(W_\text{rff} x) / \sqrt{F}$.
+
+\subsubsection{Concatenation}
+
+The outputs are concatenated:
+
+\[
+\text{Out} = \text{Concat}(\text{Out}_\text{local}, \text{Out}_\text{global}) \in \mathbb{R}^{B \times H \times L \times d_h}
+\tag{4.8}
+\]
+
+\subsection{Adaptive Gating}
+
+\subsubsection{Per-Head Gate}
+
+Each head has a learnable scalar $g_h$:
+
+\[
+\text{Out}_\text{fused}[i] = \sigma(g_h + 2.0) \cdot \text{Out}_\text{local}[i] + (1 - \sigma(g_h + 2.0)) \cdot \text{Out}_\text{global}[i]
+\tag{4.9}
+\]
+
+where $g_h$ is initialized to 0 (so $\sigma(2.0) \approx 0.88$).
+
+\subsubsection{Why Bias 2.0?}
+
+At initialization, we want the model to prioritize local attention (known 
+to be safe). As training progresses, the gate can shift toward global.
+
+\subsection{Decoder Fallback}
+
+For decoder models, the local+global split \textbf{does not preserve causality}:
+
+\begin{itemize}
+\item Local branch: causal window is fine.
+\item Global branch: prefix scan preserves causality.
+
+\end{itemize}
+\textbf{But:} For very short sequences ($N < W$), the local branch covers the 
+whole sequence, making the split redundant. We fall back to standard dense 
+causal attention:
+
+\[
+\text{if } \text{is\_decoder} : \text{standard causal softmax}
+\tag{4.10}
+\]
+
+This preserves correctness at the cost of quadratic complexity for decoders.
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} AEGIS-V5 forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, is_decoder
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1:  Q $\leftarrow$ SVD_Q(X); K $\leftarrow$ SVD_K(X); V $\leftarrow$ SVD_V(X)
+2:  if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
+3:  if GQA: K, V $\leftarrow$ repeat_kv(K, V)
+4:  if is_decoder:
+5:      # Fallback to standard causal attention
+6:      scores $\leftarrow$ Q K^T / $\sqrt{}$d_h
+7:      scores $\leftarrow$ mask_causal(scores)
+8:      out $\leftarrow$ softmax(scores) @ V
+9:  else:
+10:     # Split-head hybrid attention
+11:     Q_local $\leftarrow$ Q[:, :H_local]; K_local $\leftarrow$ K[:, :H_local]; V_local $\leftarrow$ V[:, :H_local]
+12:     Q_global $\leftarrow$ Q[:, H_local:]; K_global $\leftarrow$ K[:, H_local:]; V_global $\leftarrow$ V[:, H_local:]
+13:     Out_local $\leftarrow$ local_window(Q_local, K_local, V_local, W)
+14:     Out_global $\leftarrow$ kernel_linear(Q_global, K_global, V_global,  )
+15:     # Per-head gate
+16:     g $\leftarrow$ $\sigma$(blend_logits + 2.0)
+17:     Out $\leftarrow$ g   Out_local + (1 - g)   Out_global
+18: Y $\leftarrow$ SVD_O(Out)
+19: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Encoder}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Complexity} \\
+\midrule
+SVD projections & $\mathcal{O}(L r (d + d_h))$ \\
+Local attention & $\mathcal{O}(L W d_h \cdot H_\text{local})$ \\
+Kernel attention & $\mathcal{O}(L F d_h \cdot H_\text{global})$ \\
+Output projection & $\mathcal{O}(L r d)$ \\
+\textbf{Total} & $\mathcal{O}(L(W H_\text{local} + F H_\text{global}) d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For fixed $W, F, H_\text{local}, H_\text{global}$: linear in $L$.
+
+\subsubsection{Decoder}
+
+Quadratic fallback: $\mathcal{O}(L^2 d_h)$.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{AEGIS-V5} & \textbf{Change} \\
+\midrule
+Q/K/V/O (SVD) & $4 d^2$ & $4 r(d + d_h)$ & depends on $r$ \\
+LoRA adapters & 0 & $4 r_L (d + d_h)$ & +small \\
+RFF proj & 0 & $H_\text{global} \cdot d_h \cdot F$ & +medium \\
+blend\_logits & 0 & $H$ & +negligible \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical.} Whether AEGIS-V5 reduces parameters depends entirely on $r$.
+
+For $d = 768$, $r = 384$ (energy 0.95 default):
+\begin{itemize}
+\item SVD: no compression (ratio 1.00$\times$)
+\item LoRA: +98,304
+\item RFF: $4 \cdot 64 \cdot 128 = 32,768$
+\item \textbf{Net: +131,072 params per layer}
+
+\end{itemize}
+For $d = 768$, $r = 128$:
+\begin{itemize}
+\item SVD: $128 \cdot 1536 = 196,608$ (vs 589,824) $\to$ \textbf{3$\times$ compression}
+\item LoRA: +98,304
+\item RFF: +32,768
+\item \textbf{Net: -262,144 params per layer}
+
+\end{itemize}
+\textbf{We are explicit:} The parameter effect depends on the SVD rank.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{SVD Approximation Error}
+
+If $W = U\Sigma V^\top$, then:
+
+\[
+\|W - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\tag{4.11}
+\]
+
+The energy-based rank ensures this is below $\sqrt{1 - \eta} \|W\|_F$.
+
+\subsubsection{Kernel Approximation}
+
+Standard RFF bound (Rahimi \& Recht, 2007):
+
+\[
+\sup_{x, y} |\phi(x)^\top \phi(y) - e^{x \cdot y}| \leq \epsilon
+\tag{4.12}
+\]
+
+with $F = \mathcal{O}(d_h \log(1/\epsilon^2))$.
+
+\subsubsection{Causality}
+
+\textbf{Claim.} For decoders, the fallback preserves causality.
+
+\textbf{Proof.} Fallback uses standard causal softmax with triangular mask. $\square$
+
+\textbf{Claim.} For encoders, the split-head design preserves non-causality 
+(no masking needed).
+
+\textbf{Proof.} Local window covers $|i - j| \leq W/2$; kernel attention covers 
+all $j$. Both are bidirectional by design. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -1,0 +1,105 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: A_math.md
+     PURPOSE: Mathematical derivations
+     DEPENDENCIES: 04_method.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix A. Mathematical Derivations
+
+## A.1 Variance Importance
+
+For a key vector $k \in \mathbb{R}^{d_h}$:
+
+$$
+\text{Var}(k) = \frac{1}{d_h} \sum_{j=1}^{d_h} k_j^2 - \left(\frac{1}{d_h} \sum_{j=1}^{d_h} k_j\right)^2
+\tag{A.1}
+$$
+
+For per-head keys $K_{b,h,i,:}$, aggregate:
+
+$$
+\text{imp}(b, i) = \frac{1}{H} \sum_{h=1}^{H} \text{Var}(K_{b,h,i,:})
+\tag{A.2}
+$$
+
+## A.2 Top-$k$ Selection
+
+Given scores $\text{imp} \in \mathbb{R}^{B \times L}$ and keep count $k$:
+
+$$
+\mathcal{S}_b = \text{argsort}_{k}(\text{imp}_{b,:}) \text{ sorted ascending}
+\tag{A.3}
+$$
+
+Sorting ascending preserves positional order for stable gather.
+
+## A.3 CLS Pinning
+
+The pinning operation:
+
+$$
+\text{imp}(b, 0) \leftarrow 10^9
+\tag{A.4}
+$$
+
+ensures $0 \in \mathcal{S}_b$ for all batches.
+
+## A.4 Pruned Attention
+
+$$
+\text{Attn}'(Q, K, V) = \text{softmax}\!\left(\frac{Q K_{\mathcal{S}}^\top}{\sqrt{d_h}}\right)V_{\mathcal{S}}
+\tag{A.5}
+$$
+
+## A.5 Error Bound
+
+**Claim.** For any query $q$, the difference between pruned and full attention is bounded by:
+
+$$
+\|\text{Attn}'(q) - \text{Attn}(q)\|_2 \leq \|V_{\bar{\mathcal{S}}}\|_\infty \cdot \left(1 + \max_i \sigma_i - \min_i \sigma_i\right)
+\tag{A.6}
+$$
+
+where $\sigma_i$ are the softmax weights over the pruned subset.
+
+**Proof sketch.** The pruned attention normalizes over $\mathcal{S}$. The 
+mass of $\bar{\mathcal{S}}$ is redistributed over $\mathcal{S}$, changing 
+each weight. The total error is bounded by the mass of pruned values 
+multiplied by the range of the normalization. $\square$
+
+## A.6 Complexity
+
+For pruned attention:
+
+| Operation | FLOPs |
+|---|---|
+| Scores | $B H L k d_h$ |
+| Softmax | $B H L k$ |
+| Value matmul | $B H L k d_h$ |
+| Gather | $B H k d_h$ |
+| Top-$k$ | $B H L \log k$ |
+| **Total** | $2 B H L k d_h + \text{overhead}$ |
+
+Baseline: $2 B H L^2 d_h$.
+
+**Speedup:** $L/k = 1/r$ in the score and value matmuls. Overhead may 
+dominate for small $L$.
+
+## A.7 Causal Path
+
+For causal decoders, the code chooses:
+
+$$
+\text{Attn}_\text{causal}' = \text{Attn}_\text{full} + \text{mask}
+\tag{A.7}
+$$
+
+No pruning occurs. This guarantees:
+
+$$
+\frac{\partial \text{Attn}_\text{causal}'_i}{\partial x_j} = 0 \text{ for } j > i
+\tag{A.8}
+$$
+```
+
+---

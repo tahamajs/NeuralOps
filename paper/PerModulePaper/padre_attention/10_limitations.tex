@@ -1,3 +1,75 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Formal architectural specifications for \texttt{padre_attention}.
+\subsection{No Kernelization}
+
+The implementation materializes the full $[N \times N]$ attention matrix. 
+No speedup.
+
+\subsection{Polynomial Breaks for Large Scores}
+
+For $|s| > 5$, the Taylor approximation is poor. This limits applicability 
+to peaked attention distributions.
+
+\subsection{Task Coverage}
+
+Only SST-2 evaluated.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Single Seed}
+
+SE ~1.7\%.
+
+\subsection{Raised on Missing Weights}
+
+\texttt{copy\_weights} raises exceptions on missing weights.
+
+\subsection{RoPE Bug}
+
+\texttt{apply\_rotary\_pos\_emb} has a fragile \texttt{'q\_rot' in locals()} check. Fix needed.
+
+\subsection{No Comparison with Performer}
+
+We do not compare with RFF-based methods.
+
+\subsection{No Theoretical Bound}
+
+We provide no bound on downstream accuracy from the polynomial approximation.
+
+\subsection{Order Selection}
+
+Order 2 is a heuristic. Learned orders not tested.
+
+\subsection{Centering Overhead}
+
+Max-centering adds one reduction over the key dimension.
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item \texttt{raise} in copy\_weights
+\item Fragile RoPE check
+\item No fused kernel
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

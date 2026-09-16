@@ -1,3 +1,92 @@
-\section{01 Intro}
+\section{Introduction}
 
-Draft content for lora_attention.
+\subsection{Motivation}
+
+Full fine-tuning of a 7B-parameter language model requires:
+\begin{itemize}
+\item \textbf{~28 GB} of optimizer state (AdamW with FP32)
+\item \textbf{~14 GB} of gradients (FP16)
+\item \textbf{Multiple hours} of GPU time
+\item \textbf{Backprop through every weight}
+
+\end{itemize}
+LoRA (Hu et al., 2021) reduces this dramatically by freezing the base model 
+and training only rank-$r_L$ adapters:
+
+\[
+W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A, \quad
+B \in \mathbb{R}^{d \times r_L}, \quad A \in \mathbb{R}^{r_L \times k}
+\tag{1.1}
+\]
+
+with $r_L \ll \min(d, k)$. For $r_L = 16$ and $d = 768$, this reduces 
+trainable parameters per projection by \textbf{~48$\times$}.
+
+\textbf{Why attention?} Most existing LoRA implementations focus on the FFN 
+because it contains most parameters. However, attention projections contain 
+the \textbf{task-specific} information and benefit disproportionately from 
+fine-tuning (He et al., 2022; Zhang et al., 2023).
+
+\subsection{Problem Statement}
+
+Given a pretrained transformer $\mathcal{M}$ with attention projections 
+$\{W_Q, W_K, W_V, W_O\}$, we seek a parameter-efficient adaptation mechanism 
+$\mathcal{A}'$ such that:
+
+\[
+\text{Params}_\text{trainable}(\mathcal{A}') \ll \text{Params}(\mathcal{M})
+\tag{1.2}
+\]
+
+subject to:
+
+\begin{enumerate}
+\item \textbf{Multi-architecture support:} DistilBERT (flat), RoBERTa (nested),
+  GPT-2 (Conv1D), and Qwen3.5 (GQA + RoPE).
+\item \textbf{Zero inference overhead:} Adapters must be mergeable into base weights.
+\item \textbf{Compatibility with compression:} Must work on top of SVD/pruned/quantized
+  models.
+\item \textbf{Weight transfer:} Must copy base weights exactly before adding adapters.
+
+\end{enumerate}
+\subsection{Our Contributions}
+
+We present \textbf{LoRA Attention}, a production-hardened implementation with:
+
+\subsubsection{Four-Architecture Weight Transfer}
+
+\texttt{copy\_weights} handles:
+\begin{itemize}
+\item \textbf{GPT-2 Conv1D:} Transpose and split fused \texttt{c\_attn}.
+\item \textbf{RoBERTa nested:} Extract from \texttt{self.query/key/value} and \texttt{output.dense}.
+\item \textbf{Qwen GQA:} Handle $H_{kv} < H$.
+\item \textbf{DistilBERT flat:} Direct copy.
+
+\end{itemize}
+\subsubsection{Safe Nested Detection}
+
+We check for \texttt{self.query} \textbf{before} class-name heuristics, correctly 
+classifying DistilBERT (which ends with "SelfAttention" but is flat).
+
+\subsubsection{Explicit Compression Compatibility}
+
+Unlike generic LoRA, our module is designed to attach to \textbf{compressed} 
+attention modules (SVDLinear, A3FactorizedLinear, etc.) as a recovery 
+mechanism.
+
+\subsection{Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on LoRA and 
+attention. Section 4 presents LoRA Attention. Section 5 describes 
+integration. Section 6 details setup. Section 7 reports results. Section 8 
+analyzes trade-offs. Section 9 discusses usage patterns. Section 10 lists 
+limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

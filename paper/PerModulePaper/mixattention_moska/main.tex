@@ -64,10 +64,42 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the mixattention\_moska module within modern transformer architectures.
+
+We present \textbf{FASA} (Frequency/Variance-Aware Sparse Attention), a 
+token-pruning method that reduces the effective KV sequence length in 
+bidirectional transformers by retaining a fixed fraction of tokens based 
+on their key-variance. Given attention keys $K \in \mathbb{R}^{B \times H \times L \times d_h}$, 
+FASA computes a per-token importance score:
+
+\[
+\text{imp}_i = \text{mean}_h \text{Var}_d(K_{i,h,d})
+\]
+
+and retains the top-$r \cdot L$ tokens along with a pinned \textbf{[CLS]} token 
+at index 0. The pruned attention is then computed over a shortened sequence 
+of length $r \cdot L$, reducing attention FLOPs by $r^2$ for the score 
+matrix and $r$ for the value matmul.
+
+\textbf{Two important constraints.} First, FASA is a \textbf{test-time pruning} 
+method: no parameters are trained to select tokens; the selection is 
+entirely heuristic. Second, \textbf{FASA is not applied to causal decoders}: 
+the code path for causal and cross-attention uses full attention to 
+preserve strict lower-triangular causality, so on GPT-2 the method acts 
+as a LoRA-only adapter.
+
+We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA recovery. 
+With \texttt{fasa\_keep\_ratio = 0.5}, FASA achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
+(baseline {{D\_BASE}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa 
+($\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). GPT-2's 
+near-zero delta confirms the decoder path is not pruned.
+
+\textbf{Keywords:} sparse attention, token pruning, KV compression, variance 
+importance, attention sinks
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} mixattention\_moska, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} sparse attention, token pruning, KV compression, variance
 \end{abstract}
 
 \vspace{1em}

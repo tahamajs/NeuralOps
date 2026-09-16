@@ -144,5 +144,6 @@ MinimalNOVA's inference is **faster** than dense attention because:
 3. **LoRA recovery is essential** — without it, accuracy drops significantly.
 4. **Effective rank varies** across layers and models.
 5. **No calibration needed** — MinimalNOVA is training-free.
+```
 
 ---

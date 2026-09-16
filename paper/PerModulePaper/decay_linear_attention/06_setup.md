@@ -93,5 +93,6 @@ python run_all_4_decay_linear.py \
 ## 6.10 Seeds
 
 Single seed ({{SEED}}).
+```
 
 ---

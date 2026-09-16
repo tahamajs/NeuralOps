@@ -59,5 +59,12 @@ We hope this work encourages:
    reimplementing.
 2. **Measure end-to-end time** on target hardware before publishing.
 3. **Document implementation details** for reproducibility.
+```
+
+---
+
+## 📄 `build.py` and `apply_vars.py`
+
+همان‌طور که در مقالات قبلی بود. فقط `SECTIONS` لیست را تغییر بده اگر فایل اضافه/کم شد.
 
 ---

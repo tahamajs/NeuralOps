@@ -64,10 +64,39 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the phantom module within modern transformer architectures.
+Standard transformer attention couples two independent problems: how to 
+project hidden states into query/key/value representations (a **dense linear 
+algebra** problem), and how to compute the attention weights themselves (a 
+\textbf{quadratic matching} problem). We introduce \textbf{PHANTOM} 
+(\textbf{P}arameter-\textbf{H}ashed \textbf{A}ttentio\textbf{N} with \textbf{T}oken-wise 
+\textbf{O}rthogonal \textbf{M}apping), which addresses both problems with a unified 
+architecture. Projections are compressed via **leverage-score CUR matrix 
+decomposition**, replacing each $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ 
+with a low-rank product $C U^+ R$ that preserves statistically important rows 
+and columns. Attention is computed via \textbf{multi-round angular LSH}, which 
+partitions tokens into hash buckets by random projection signs and computes 
+attention only within buckets, reducing effective cost from $\mathcal{O}(L^2)$ 
+to $\mathcal{O}(L \cdot B)$ where $B$ is the average bucket size. We use a 
+\textbf{rectified softpick} activation instead of softmax, which drops far-tail 
+attention weights while falling back to softmax when no candidate survives.
+
+PHANTOM compresses DistilBERT by \textbf{{{D\_RATIO}}$\times$}, RoBERTa by \textbf{{{R\_RATIO}}$\times$}, 
+and GPT-2 by \textbf{{{G\_RATIO}}$\times$}, with SST-2 accuracy drops of only 
+\textbf{{{D\_DELTA}}\%}, \textbf{{{R\_DELTA}}\%}, and \textbf{{{G\_DELTA}}\%} after 
+{{RECOVERY\_STEPS}} LoRA recovery steps. Peak inference VRAM decreases by 
+\textbf{{{VRAM\_REDUCTION}}\%}. Unlike attention-replacement methods that preserve 
+parameter count, PHANTOM achieves genuine parameter reduction from 
+$d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$ via CUR 
+factorization. We provide a production-hardened implementation with strict 
+Frobenius validation, safe per-layer fallback, and multi-architecture support.
+
+\textbf{Keywords:} CUR decomposition, leverage scores, locality-sensitive hashing, 
+sparse attention, transformer compression, softpick
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} phantom, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} CUR decomposition, leverage scores, locality-sensitive hashing,
 \end{abstract}
 
 \vspace{1em}

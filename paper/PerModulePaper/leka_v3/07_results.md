@@ -134,5 +134,6 @@ $W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
 - Landmark + local fusion gives **{{D_ACC}}%** on DistilBERT.
 - Parameters increase by ~7.5% (honest framing).
 - Complexity is linear in $L$ for fixed $L_\text{land}, W$.
+```
 
 ---

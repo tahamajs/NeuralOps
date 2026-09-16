@@ -105,5 +105,6 @@ assert self.bottleneck.W_down.weight.shape == (b, d)
 assert self.bottleneck.W_up.weight.shape == (d, b)
 assert abs(self.alpha.item() - 0.12) < 0.01
 ```
+```
 
 ---

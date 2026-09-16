@@ -84,5 +84,6 @@ torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2 via `datasets`.
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-expert_choice_moe`.
 - **Metrics:** `results/unified_expert_choice_moe/*/summary.csv`.
+```
 
 ---

@@ -1,3 +1,163 @@
-\section{07 Results}
+\section{Results}
 
-Formal architectural specifications for \texttt{padre_attention}.
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Order} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 183 MB \\
+DistilBERT & \textbf{PADRe} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_ORDER}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 712 MB \\
+RoBERTa & \textbf{PADRe} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_ORDER}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 793 MB \\
+GPT-2 & \textbf{PADRe} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_ORDER}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Order Ablation}
+
+\textbf{Table 7.2: Accuracy vs polynomial order.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Order} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+1 & {{D\_O1}} & {{R\_O1}} & {{G\_O1}} \\
+2 & {{D\_O2}} & {{R\_O2}} & {{G\_O2}} \\
+4 & {{D\_O4}} & {{R\_O4}} & {{G\_O4}} \\
+8 & {{D\_O8}} & {{R\_O8}} & {{G\_O8}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Temperature Ablation}
+
+\textbf{Table 7.3: Accuracy vs temperature.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$T$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.5 & {{D\_T05}} & {{R\_T05}} & {{G\_T05}} \\
+1.0 & {{D\_T10}} & {{R\_T10}} & {{G\_T10}} \\
+2.0 & {{D\_T20}} & {{R\_T20}} & {{G\_T20}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Effect of Max-Centering}
+
+\textbf{Table 7.4: Without vs with centering.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+With centering & {{D\_CENTER}} & {{R\_CENTER}} & {{G\_CENTER}} \\
+Without centering & {{D\_NOCENTER}} & {{R\_NOCENTER}} & {{G\_NOCENTER}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Injection Success}
+
+\textbf{Table 7.5: Layers successfully injected.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Total layers} & \textbf{Injected} & \textbf{Skipped} \\
+\midrule
+DistilBERT & 6 & {{D\_INJ}} & {{D\_SKIP}} \\
+RoBERTa & 12 & {{R\_INJ}} & {{R\_SKIP}} \\
+GPT-2 & 12 & {{G\_INJ}} & {{G\_SKIP}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Output Equivalence}
+
+\textbf{Table 7.6: Output equivalence error per model.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Mean error} & \textbf{Max error} & \textbf{Threshold} \\
+\midrule
+DistilBERT & {{D\_EQ\_MEAN}} & {{D\_EQ\_MAX}} & {{MAX\_ERROR}} \\
+RoBERTa & {{R\_EQ\_MEAN}} & {{R\_EQ\_MAX}} & {{MAX\_ERROR}} \\
+GPT-2 & {{G\_EQ\_MEAN}} & {{G\_EQ\_MAX}} & {{MAX\_ERROR}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency}
+
+\textbf{Table 7.7: Inference time and VRAM.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.9 s & 59000 & 183 MB \\
+DistilBERT & PADRe & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+GPT-2 & full & 4.2 s & 26700 & 793 MB \\
+GPT-2 & PADRe & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Steps}
+
+\textbf{Table 7.8: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item PADRe maintains accuracy within {{D\_DELTA}}\% on DistilBERT.
+\item Order 2 is a good default.
+\item Max-centering is essential.
+\item Kernelization not yet implemented; runtime unchanged.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

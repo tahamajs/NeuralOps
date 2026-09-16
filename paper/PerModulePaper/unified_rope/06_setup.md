@@ -101,5 +101,6 @@ All experiments use seed {{SEED}}.
 1. **`full`:** Uncompressed model (original attention).
 2. **`unified_rope`:** Our module.
 3. **Companion methods:** `minimal_svd`, `svd_llm_v2`, `dobi`.
+```
 
 ---

@@ -1,3 +1,80 @@
-\section{11 Conclusion}
 
-Draft content for salt.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{SALT} (Singular Value Adaptation with Low-Rank Tuning), a 
+parameterization that replaces each weight $W$ with a truncated SVD plus 
+trainable singular value modulation $\gamma$ and a low-rank residual $AB$. 
+SALT reduces stored parameters by \textbf{{{D\_PARAM\_RED}}$\times$--{{G\_PARAM\_RED}}$\times$} 
+while preserving accuracy within \textbf{{{MAX\_DELTA}}\%}.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Params} & \textbf{Storage} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_DELTA}}\% & {{D\_PARAM\_RED}}$\times$ & {{D\_STORAGE}} MB \\
+RoBERTa & {{R\_ACC}}\% & {{R\_DELTA}}\% & {{R\_PARAM\_RED}}$\times$ & {{R\_STORAGE}} MB \\
+GPT-2 & {{G\_ACC}}\% & {{G\_DELTA}}\% & {{G\_PARAM\_RED}}$\times$ & {{G\_STORAGE}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{SALT reduces total parameters} by 12$\times$ at rank 16.
+\item \textbf{Accuracy is preserved} within 1\%.
+\item \textbf{Inference memory is unchanged} -- this is a limitation.
+\item \textbf{A fused forward pass would realize the memory benefit.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+
+\begin{itemize}
+\item Implement fused forward pass.
+\item Replace \texttt{raise} with warnings.
+\item Remove dead \texttt{output\_scale}.
+\item Add unit tests.
+
+\end{itemize}
+\subsubsection{Long-Term}
+
+\begin{itemize}
+\item Combine SALT with INT8 quantization.
+\item Distill SALT to smaller model.
+\item Compare with PiSSA, OLoRA.
+\item Scale to 7B+ models.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+SALT is a promising approach for storage-constrained deployment. It combines 
+the interpretability of SVD with the flexibility of LoRA. We release the 
+code and identify the necessary changes to realize the full potential.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented SALT, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

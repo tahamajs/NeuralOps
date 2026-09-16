@@ -213,12 +213,15 @@ Cross-attention & Returns input & No-op \\
 If \texttt{encoder\_hidden\_states} is provided, SVD-Mamba returns 
 \texttt{(hidden\_states, None)} -- a pass-through. This means cross-attention is 
 effectively unsupported.
+\begin{lstlisting}
 
-
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_svd-mamba_4.jpeg}
-\caption{Architectural schematic of svd_mamba.}
-\label{fig:arch_svd_mamba}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of svd\_mamba.}
+\label{fig:arch_svd-mamba}
 \end{figure}
+

@@ -13,7 +13,7 @@
 DistilBERT & Flat & No & No &  \\
 RoBERTa & Nested & No & No &  \\
 GPT-2 & Causal & No & No &  \\
-Qwen3.5 & Causal + RoPE & Yes & Yes & not tested \\
+Qwen3.5 & Causal + RoPE & Yes & Yes & {{Q\_VERIFIED}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -128,10 +128,15 @@ class NativeHybridAttention(BaseAttention): ...
 
 \subsection{Failure Modes}
 
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/nha_compressor_architecture.png}
-\caption{Architectural schematic of nha.}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of nha.}
 \label{fig:arch_nha}
 \end{figure}
+

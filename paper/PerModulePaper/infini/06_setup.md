@@ -91,3 +91,6 @@ Runtime: ~{{RUNTIME}} min.
 | `full` | Uncompressed model |
 | `infini` | Our method |
 | Companion methods | `nha`, `eat`, `aasvd` |
+```
+
+---

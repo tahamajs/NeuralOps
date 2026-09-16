@@ -51,5 +51,6 @@ Efficient attention could:
 But also:
 - Concentrate on expensive hardware.
 - Enable surveillance at scale.
+```
 
 ---

@@ -1,3 +1,92 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for aegis_v5.
+\subsection{Parameter Effect is Conditional}
+
+Whether AEGIS-V5 reduces parameters depends on \texttt{max\_rank}:
+
+\begin{itemize}
+\item \texttt{max\_rank=384}: no reduction
+\item \texttt{max\_rank=128}: ~40\% reduction
+\item \texttt{max\_rank=64}: ~70\% reduction
+
+\end{itemize}
+We do not make a blanket "compression" claim.
+
+\subsection{Decoder Fallback}
+
+For decoders with $L > W$, we fall back to standard causal attention. This 
+preserves correctness but sacrifices linear complexity.
+
+\subsection{Task Coverage}
+
+Only SST-2 evaluated. Behavior on:
+\begin{itemize}
+\item Generation: unknown
+\item Multi-class: unknown
+\item Token-level (NER): unknown
+\item Long-context ($L > 512$): unknown
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B--10B & No \\
+>10B & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Single-Seed Results}
+
+SE ~1.7\%. Differences below 3.4\% may be noise.
+
+\subsection{Energy-Based Rank Selection}
+
+The energy fraction $\eta = 0.95$ is a heuristic. Different values may 
+work better for different models.
+
+\subsection{Softpick Temperature}
+
+The \texttt{softpick\_temperature} is set to 1.0 (i.e., standard softmax). 
+Temperature < 1 (sparsification) was not systematically tested.
+
+\subsection{Head Split Ratio}
+
+The 2:1 split is empirical. We did not test 3:1 or 1:1 systematically.
+
+\subsection{RFF Randomness}
+
+The RFF projection is initialized randomly and not tuned. Seed-dependent 
+variation is unmeasured.
+
+\subsection{No Comparison with Published Baselines}
+
+We do not compare with Performer, Linformer, Longformer, etc.
+
+\subsection{No Theoretical Bound on Downstream Accuracy}
+
+We provide no bound on task accuracy from SVD error.
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling
+\item No fused kernel
+\item Some numerical concerns at FP16
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

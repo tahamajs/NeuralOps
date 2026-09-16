@@ -94,5 +94,6 @@ Three or more Q-K pairs. Result: no improvement.
 3. **Learned α helps.**
 4. **Independent Q for each branch.**
 5. **ReLU prevents sign issues.**
+```
 
 ---

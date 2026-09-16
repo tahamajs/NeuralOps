@@ -88,5 +88,6 @@ to match the H100 speedups on non-Hopper hardware.
 | FlashAttention-3 | Yes | Error | Manual | Manual | Manual | Manual |
 | PyTorch SDPA | No | — | Manual | Manual | Manual | Manual |
 | **Ours** | **Yes** | **SDPA** | **Yes** | **Yes** | **Yes** | **Yes** |
+```
 
 ---

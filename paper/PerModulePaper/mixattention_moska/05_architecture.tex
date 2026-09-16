@@ -1,11 +1,146 @@
-\section{05 Architecture}
 
-Draft content for mixattention_moska.
+\section{Architecture Integration}
 
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{FASA pruning?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No &  \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & (causal) \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & (causal) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight.data
+is_conv1d = "Conv1D" in cls_name or c_w.shape[0] < c_w.shape[1]
+if is_conv1d:
+    c_w = c_w.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+q_w = src.self.query.weight.data
+k_w = src.self.key.weight.data
+v_w = src.self.value.weight.data
+o_w = src.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{DistilBERT Flat}
+
+\begin{lstlisting}
+q_w = src.q_lin.weight.data
+# ... etc
+\end{lstlisting}
+
+\subsubsection{GQA Handling (Qwen)}
+
+For the K/V projections with $H_{kv} < H$:
+
+\begin{lstlisting}
+if src_out == out_d:
+    target_w.data.copy_(w_oriented)
+elif src_out > out_d and src_out % out_d == 0:
+    rep = src_out // out_d
+    target_w.data.copy_(w_oriented.view(out_d, rep, -1).mean(dim=1))
+elif src_out < out_d and out_d % src_out == 0:
+    rep = out_d // src_out
+    target_w.data.copy_(w_oriented.repeat(rep, 1))
+\end{lstlisting}
+
+This handles GQA pooling (mean) or expansion (repeat) as needed.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject FASA
+\begin{lstlisting}
+Input:  layer  , config, old_attn
+Output: new attention in  
+
+1: new $\leftarrow$ MixAttentionMoSKA(config, old=old_attn, fasa_keep_ratio=r)
+2: if copy_weights fails: return None
+3: if   has .attention.self:
+4:      .attention.self $\leftarrow$ new; is_nested $\leftarrow$ True
+5: elif   has .self:  .self $\leftarrow$ new; is_nested $\leftarrow$ True
+6: elif   has .self_attn:  .self_attn $\leftarrow$ new
+7: elif   has .attn:  .attn $\leftarrow$ new
+8: return new
+\end{lstlisting}
+
+\subsection{Masking}
+
+For the pruned path, the padding mask is gathered:
+
+\begin{lstlisting}
+pruned_mask = mask_2d.gather(1, idx)
+\end{lstlisting}
+
+For the causal path, the padding mask is applied directly to the full 
+attention.
+
+\subsection{Nested Encoder Detection}
+
+\begin{lstlisting}
+has_out = any(hasattr(src, x) for x in ["dense", "out_proj", "out_lin", "c_proj", "o_proj"])
+is_nested = cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
+if hasattr(src, "self") and hasattr(src, "output"):
+    is_nested = True
+\end{lstlisting}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("fasa")
+@ATTENTION_REGISTRY.register("fasa_attention")
+@ATTENTION_REGISTRY.register("mixattention_moska")
+class MixAttentionMoSKA(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Common Pitfalls}
+
+\subsubsection{Decoder Path is a No-Op}
+
+For GPT-2, FASA does \textbf{no pruning}. Users expecting speedup should be 
+aware.
+
+\subsubsection{Pruning Every Forward Pass}
+
+The importance score is recomputed every forward pass. This means the 
+selected $\mathcal{S}$ changes between calls on the same input if batch 
+composition changes. Not a bug, but worth documenting.
+
+\subsubsection{`attention\_mask` Fallback}
+
+\begin{lstlisting}
+mask = kwargs.get("mask", None)
+if attention_mask is None and mask is not None:
+    attention_mask = mask
+\end{lstlisting}
+
+Silent fallback. Not harmful but non-obvious.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/mixattention_moska_architecture.png}
-\caption{Architectural overview of mixattention_moska.}
-\label{fig:arch_mixattention_moska}
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of mixattention\_moska.}
+\label{fig:arch_mixattention-moska}
 \end{figure}
+

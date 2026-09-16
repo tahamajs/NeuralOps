@@ -129,3 +129,6 @@
 | Parameter increase | +{{PARAM_CHANGE}}% |
 | Memory Δ | +{{MEMORY_DELTA}} |
 | Inference ratio | {{INFERENCE_RATIO}}× |
+```
+
+---

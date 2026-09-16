@@ -83,5 +83,6 @@ We do not support `encoder_hidden_states`. Attempting to pass it raises
 1. **Always log which path was taken.**
 2. **Do not publish FP8 benchmarks from non-Hopper hardware.**
 3. **Document driver/hardware requirements explicitly.**
+```
 
 ---

@@ -1,3 +1,130 @@
-\section{09 Discussion}
 
-Draft content for performer_attention.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: FAVOR+ is a Strong Linear Attention Baseline}
+
+Performer achieves competitive accuracy on all three models. The FAVOR+ 
+feature map with orthogonal random features is well-founded.
+
+\subsubsection{Takeaway 2: Numerical Stability is Essential}
+
+The max-subtraction and clamp tricks are necessary for FP16. Without them, 
+\texttt{exp($\omega$\^{}T x - ||x|| /2)} overflows.
+
+\subsubsection{Takeaway 3: The Docstring Lies}
+
+\texttt{inject\_performer} claims to return \texttt{None} on failure but raises. **Fix 
+the code or fix the docstring.**
+
+\subsection{When to Use Performer}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Long sequences} where $\mathcal{O}(L)$ memory matters.
+\item \textbf{Research baseline} for kernel attention.
+\item \textbf{When FAVOR+ theory matters.}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Latency-critical inference} -- slower than FlashAttention-2 at short
+  sequences.
+\item \textbf{When you need exact attention} -- FAVOR+ is approximate.
+\item \textbf{Cross-attention tasks} -- not supported.
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Start
+  |
+   
+Is L > 1024? -- No -- FlashAttention-2 is likely better
+  |
+  Yes
+   
+Do you need exact attention? -- Yes -- Use FlashAttention
+  |
+  No
+   
+Is cross-attention needed? -- Yes -- Not supported
+  |
+  No
+   
+Consider Performer
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT on L=128:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Performer} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & {{D\_PARAMS}}M & +{{D\_PARAM\_PCT}}\% \\
+Time & 1.9 s & {{D\_TIME}} s & {{D\_TIME\_R}}$\times$ \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_R}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Verdict.} {{VERDICT}}
+
+\subsection{Comparison with Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Alternative} & \textbf{Accuracy} & \textbf{Speed} & \textbf{Notes} \\
+\midrule
+Full attention & 90.71\% & 1.0$\times$ & Baseline \\
+FlashAttention-2 & ~90\% & 1.1$\times$ & Exact, fast \\
+Cosformer & {{COS\_D}}\% & 4.9$\times$ slower & cos/sin reweighting \\
+\textbf{Performer} & \textbf{{{D\_ACC}}\%} & \textbf{{{D\_TIME\_R}}$\times$} & FAVOR+ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Would larger $F$ help?} Diminishing returns observed.
+\item \textbf{Is orthogonal init essential?} Theoretical justification, empirical
+  small effect.
+\item \textbf{Would fused kernel help?} Likely yes.
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+
+\begin{itemize}
+\item Well-founded theory.
+\item Reproducible.
+
+\end{itemize}
+\subsubsection{Negative}
+
+\begin{itemize}
+\item The \texttt{inject\_performer} raise bug could cause crashes.
+
+\end{itemize}
+\subsection{Deployment Recommendations}
+
+\textbf{Fix the injection raise bug before deploying.} With the fix, Performer 
+is a solid linear attention baseline.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

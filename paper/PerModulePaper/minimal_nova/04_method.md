@@ -347,5 +347,6 @@ MinimalNOVA:
 3. Uses LoRA for recovery.
 4. Handles four attention architectures.
 5. Achieves **real parameter reduction** of $d^2 / (2rd)$ per projection.
+```
 
 ---

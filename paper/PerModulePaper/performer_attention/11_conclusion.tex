@@ -1,3 +1,80 @@
-\section{11 Conclusion}
 
-Draft content for performer_attention.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented a \textbf{production-hardened port} of \textbf{Performer} to pretrained 
+transformers. The implementation supports four architecture families with 
+exact weight transfer, GQA, RoPE, and both bidirectional and causal paths.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Time} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_DELTA}}\% & {{D\_TIME}} s \\
+RoBERTa & {{R\_ACC}}\% & {{R\_DELTA}}\% & {{R\_TIME}} s \\
+GPT-2 & {{G\_ACC}}\% & {{G\_DELTA}}\% & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{FAVOR+ works} but with moderate accuracy drop.
+\item \textbf{Numerical stabilization is essential} for FP16.
+\item \textbf{The \texttt{inject\_performer} raise bug} violates the docstring contract.
+\item \textbf{\texttt{output\_scale} is unnecessary} and should be removed.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Immediate Fixes}
+
+\begin{itemize}
+\item \textbf{Fix the \texttt{inject\_performer} raise} to return \texttt{None}.
+\item \textbf{Remove \texttt{output\_scale}} from \texttt{LoRALinear}.
+
+\end{itemize}
+\subsubsection{Medium-Term}
+
+\begin{itemize}
+\item \textbf{Test larger $F$} on long sequences.
+\item \textbf{Fused Triton kernel} for the feature map.
+
+\end{itemize}
+\subsubsection{Long-Term}
+
+\begin{itemize}
+\item \textbf{Combine with quantization.}
+\item \textbf{Scale to 7B+ models.}
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+Performer remains a strong kernel attention baseline. With the two bugs 
+fixed, it is a solid choice for long-context inference.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}} for feedback.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

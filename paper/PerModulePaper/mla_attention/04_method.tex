@@ -252,12 +252,12 @@ Output: MLA module with initialized weights
 10:
 11: # K, V concatenate and SVD
 12: W_fused $\leftarrow$ concat([W_K, W_V], dim=0)
-13: U,  , V^T $\leftarrow$ svd(W_fused)
-14: r $\leftarrow$ min(c, len( ), ...)
-15: $\gamma$ $\leftarrow$  W_fused _F /   [:r] _F
+13: U, $\Sigma$, V^T $\leftarrow$ svd(W_fused)
+14: r $\leftarrow$ min(c, len($\Sigma$), ...)
+15: $\gamma$ $\leftarrow$  W_fused _F /  $\Sigma$[:r] _F
 16:
 17: kv_down.weight[:r, :] $\leftarrow$ V^T[:r, :]
-18: up $\leftarrow$ U[:, :r]    [:r]   $\gamma$
+18: up $\leftarrow$ U[:, :r]   $\Sigma$[:r]   $\gamma$
 19: k_up.weight[:kv_dim, :r] $\leftarrow$ up[:kv_dim, :r]
 20: v_up.weight[:kv_dim, :r] $\leftarrow$ up[kv_dim:, :r]
 21:
@@ -312,5 +312,8 @@ MLA reproduction:
   GQA expansion.
 \item Uses LoRA for recovery.
 \item Achieves \textbf{{{KV\_REDUCTION}}$\times$} KV-cache reduction.
-
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

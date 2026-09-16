@@ -1,3 +1,98 @@
-\section{06 Setup}
+\section{Experimental Setup}
 
-Draft content for nexus.
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} & \textbf{Causal} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 66.9M & No \\
+RoBERTa & 12 & 768 & 12 & 124.6M & No \\
+GPT-2 & 12 & 768 & 12 & 124.4M & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}: 67,349 train / 872 val / 1,821 test. Majority baseline 50.92\%.
+Max sequence length: 128.
+
+\textbf{Important.} At $N = 128$, the stripe mask ($N > 256$) is inactive.
+
+\subsection{NEXUS Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Default} \\
+\midrule
+\texttt{block\_size} & 16 \\
+\texttt{top\_k\_blocks} & 4 \\
+\texttt{xattn\_stride} & 2 \\
+\texttt{seer\_gate\_rank} & 16 \\
+\texttt{seer\_top\_k\_blocks} & 4 \\
+\texttt{seer\_temperature} & 1.0 \\
+\texttt{stripe\_width} & 4 \\
+\texttt{rectify\_interval} & 4 \\
+\texttt{rff\_features} & 128 \\
+\texttt{softpick\_temperature} & 1.0 \\
+\texttt{sparse\_min\_seq\_len} & 8 \\
+\texttt{enable\_spectraformer} & False \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{LoRA Recovery}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{lora\_rank} & {{LORA\_RANK}} \\
+\texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
+\texttt{recovery\_steps} & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
+LR & {{LR}} \\
+WD & {{WD}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item Accuracy, F1
+\item Peak VRAM, inference time
+\item Active path (dense vs sparse)
+\item Router statistics
+
+\end{itemize}
+\subsection{Quality Gate}
+
+PASS $\ge$ 56\%, PASS\_LOW $\ge$ 50.92\%, FAIL < 50.92\%.
+
+\subsection{Hardware}
+
+RTX 4070 Laptop, 8 GB.
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -48,12 +48,12 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-Default sparsity (encoders) & 0.1 \\
-Default sparsity (decoders) & 0.5 \\
-Temperature $T$ & 0.1 \\
-Chunk size $C$ & 64 \\
-LoRA rank & 16 \\
-LoRA alpha & 32 \\
+Default sparsity (encoders) & {{SPARSITY\_ENC}} \\
+Default sparsity (decoders) & {{SPARSITY}} \\
+Temperature $T$ & {{TEMPERATURE}} \\
+Chunk size $C$ & {{CHUNK\_SIZE}} \\
+LoRA rank & {{LORA\_RANK}} \\
+LoRA alpha & {{LORA\_ALPHA}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,10 +68,10 @@ LoRA alpha & 32 \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & 2e-4 \\
-Weight decay & 1e-2 \\
-Steps & 50 \\
-Batch size & 8 \\
+LR & {{LR}} \\
+Weight decay & {{WD}} \\
+Steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -125,8 +125,8 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
-CUDA & 12.1 \\
-PyTorch & 2.4.0 \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -136,9 +136,14 @@ PyTorch & 2.4.0 \\
 \begin{lstlisting}
 python run_all_4_adaptive_sparse.py \
     --models distilbert,roberta,gpt2 \
-    --sparsity_ratio 0.5 \
-    --recovery_steps 50 \
-    --lora_rank 16
+    --sparsity_ratio {{SPARSITY}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
 \end{lstlisting}
 
 \subsection{Ablations}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

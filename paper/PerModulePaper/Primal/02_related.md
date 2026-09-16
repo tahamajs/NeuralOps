@@ -91,3 +91,6 @@ in optimizers. We use it for attention pseudoinverse.
 model to use different summaries for $Q$ and $K$, capturing the different 
 roles of these projections. This is not possible in standard Nyström 
 approximation.
+```
+
+---

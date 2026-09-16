@@ -121,5 +121,6 @@ $$
 | $F_i$ | Activation energy per dimension |
 | $C_X$ | Input covariance |
 | $r_L$ | LoRA rank |
+```
 
 ---

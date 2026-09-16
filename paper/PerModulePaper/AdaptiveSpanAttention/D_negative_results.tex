@@ -67,11 +67,11 @@ Multiple disjoint windows per head. No improvement.
 \toprule
 \textbf{$R$} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-0.5 & 82.0 & Near hard \\
-1 & 87.0 & Sharp \\
-8 & 88.5 & OK \\
-32 & 89.5 & Best \\
-64 & 88.5 & Too smooth \\
+0.5 & {{D\_R05}} & Near hard \\
+1 & {{D\_R1}} & Sharp \\
+8 & {{D\_R8}} & OK \\
+32 & {{D\_R32}} & Best \\
+64 & {{D\_R64}} & Too smooth \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -84,9 +84,9 @@ Multiple disjoint windows per head. No improvement.
 \toprule
 \textbf{$\lambda$} & \textbf{DistilBERT} \\
 \midrule
-0.1 & 86.0 \\
-0.5 & 78.0 \\
-1.0 & 65.0 \\
+0.1 & {{D\_L1}} \\
+0.5 & {{D\_L5}} \\
+1.0 & {{D\_L10}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -119,11 +119,11 @@ Per-layer $\lambda$ & Quality & No improvement \\
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & 89.5 \\
-123 & 89.3 \\
-456 & 89.7 \\
-\textbf{Mean} & \textbf{89.5} \\
-\textbf{Std} & \textbf{0.2} \\
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -137,3 +137,7 @@ Per-layer $\lambda$ & Quality & No improvement \\
 \item \textbf{$\lambda = 0.01$} balances compression and accuracy.
 \item \textbf{Learned spans are interpretable.}
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

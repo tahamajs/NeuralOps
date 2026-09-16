@@ -109,5 +109,6 @@ logger.info(f"Match: {qkv_w.shape == self.attn.in_proj_weight.shape}")
 - `full` — unmodified model
 - `gated_deltanet` — attention-level GatedDeltaNet
 - `gated_deltanet_block` — this module
+```
 
 ---

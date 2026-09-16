@@ -170,5 +170,6 @@ can be combined with them.
 5. **GQA pooling** is required for Qwen-style models.
 6. **LoRA recovery is necessary** — without it, accuracy drops 
    significantly.
+```
 
 ---

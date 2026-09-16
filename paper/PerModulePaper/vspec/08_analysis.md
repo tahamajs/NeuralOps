@@ -100,5 +100,6 @@ model. We mitigate this with the gate bias init.
 3. **Spectral gate sparsifies** — few singular values retained.
 4. **Head gate provides soft pruning** — most heads near 0.5.
 5. **Router is content-dependent** — no position bias besides CLS.
+```
 
 ---

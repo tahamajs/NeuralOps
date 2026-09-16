@@ -23,7 +23,7 @@ autoregressive generation.
 
 \subsection{No True Speedup at Short $L$}
 
-At $L = 128$, Primal Attention is 1.3$\times$ slower. The overhead of 
+At $L = 128$, Primal Attention is {{D\_TIME\_RATIO}}$\times$ slower. The overhead of 
 computing three factors ($F_1, F_2, F_3$) plus pseudoinverse exceeds the 
 savings from reduced attention matrix.
 
@@ -39,7 +39,7 @@ use compression methods (A3, AASVD).
 
 \subsection{Single Seed}
 
-All results from seed 42.
+All results from seed {{SEED}}.
 
 \subsection{No Comparison with Performer / Linformer}
 
@@ -48,7 +48,7 @@ external validity.
 
 \subsection{Failure Modes}
 
-Causality approximation, long L scalability
+{{UNRESOLVED\_FAILURES}}
 
 \subsection{Code Quality}
 
@@ -58,3 +58,7 @@ at extreme $L$ or $m$.
 \subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

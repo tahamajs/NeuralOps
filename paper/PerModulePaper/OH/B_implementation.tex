@@ -105,3 +105,69 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
         return context, None
     return self.out_proj(context), None
 \end{lstlisting}
+
+\subsection{B.3 The `raise` on Copy Failure}
+
+\textbf{Critical.} OHA's \texttt{copy\_weights} raises \texttt{RuntimeError} on missing projections:
+
+\begin{lstlisting}
+except Exception as e:
+    print(f'copy_weights failed: {e}')
+    raise RuntimeError(f"copy_weights failed: {e}")
+\end{lstlisting}
+
+And \texttt{inject\_oha} also raises:
+
+\begin{lstlisting}
+except Exception:
+    raise RuntimeError("copy_weights failed")
+\end{lstlisting}
+
+\textbf{Implication.} OHA fails hard on any injection problem. Unlike NHA/EAT, 
+there is no silent fallback.
+
+\subsection{B.4 The Unused `output\_scale`}
+
+In \texttt{LoRALinear.\_\_init\_\_}:
+
+\begin{lstlisting}
+if not hasattr(self, 'output_scale'):
+    self.output_scale = nn.Parameter(torch.ones(1))
+\end{lstlisting}
+
+And in \texttt{forward}:
+
+\begin{lstlisting}
+return out * self.output_scale
+\end{lstlisting}
+
+This parameter is initialized to 1.0 and multiplies the output. It is 
+unused in practice (no training signal to change it).
+
+\subsection{B.5 The `output\_scale` in `OptimizedHybridAttention`}
+
+Note: \texttt{output\_scale} is only added in \texttt{LoRALinear}, not in the parent 
+attention module. So the attention output is \texttt{out\_proj(context)}, where 
+\texttt{out\_proj} scales by its own \texttt{output\_scale} (init 1.0).
+
+\subsection{B.6 Common Pitfalls}
+
+\subsubsection{B.6.1 Forgetting Causal Mask in Global Branch}
+
+Without \texttt{torch.tril}, the global branch leaks future information.
+
+\subsubsection{B.6.2 Wrong `is\_nested\_encoder`}
+
+RoBERTa requires \texttt{True}. Otherwise double projection.
+
+\subsubsection{B.6.3 Missing Compression Mask}
+
+Padding tokens must be masked in the compression softmax (\texttt{mask\_inv}).
+
+\subsubsection{B.6.4 GPT-2 Conv1D Transpose}
+
+GPT-2's Conv1D stores weights as \texttt{(in, out)}. Must transpose.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

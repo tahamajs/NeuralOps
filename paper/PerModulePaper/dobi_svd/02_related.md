@@ -87,5 +87,6 @@ Dobi-SVD differs from prior work along three axes:
 **Key distinction.** Unlike fixed or energy-selected rank, Dobi-SVD's rank 
 is **learned jointly with recovery**. After training, gates provide a 
 data-driven signal for which components to keep.
+```
 
 ---

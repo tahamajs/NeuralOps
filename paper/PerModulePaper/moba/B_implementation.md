@@ -1,0 +1,94 @@
+# Appendix B. Implementation Details
+
+## B.1 Core Forward
+
+```python
+def forward(self, hidden_states, attention_mask=None, ...):
+    B, L, D = hidden_states.shape
+    
+    # 1. RoPE
+    if position_embeddings is not None:
+        # apply rotary
+        ...
+    
+    # 2. Two-branch in-projection
+    proj = self.in_proj(hidden_states)
+    p1, p2 = proj.chunk(2, dim=-1)
+    
+    # 3. Decay
+    decay = torch.sigmoid(-torch.exp(self.A_log[:D].clamp(max=5.0)))
+    pos = torch.arange(L)
+    
+    if self.is_decoder and L > 1:
+        dist = (pos.unsqueeze(1) - pos.unsqueeze(0)).clamp(min=0)
+        log_gamma = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))
+        log_weights = dist.unsqueeze(-1) * log_gamma.unsqueeze(0).unsqueeze(0)
+        causal_mask = torch.tril(torch.ones(L, L, dtype=torch.bool)).unsqueeze(-1)
+        log_weights = log_weights.masked_fill(~causal_mask, float("-inf"))
+        weights = torch.softmax(log_weights, dim=1).to(p1.dtype)
+        p1_causal = torch.einsum("ijd,bjd->bid", weights, p1)
+        gated = F.silu(p1_causal) * p2
+    elif L > 1:
+        # bidirectional
+        ...
+    else:
+        gated = F.silu(p1) * p2
+    
+    # 4. Output projection
+    if self.is_nested_encoder:
+        out = gated
+    else:
+        out = self.out_proj(gated)
+    
+    # 5. Preservation gate
+    alpha = torch.sigmoid(self.pres_gate)
+    out = alpha * out + (1.0 - alpha) * hidden_states
+    return out, None
+```
+
+## B.2 Weight Transfer
+
+```python
+# in_proj branch 1 (SSM input): from V
+w_main = w_v if w_v is not None else w_q
+if w_main.shape[0] < D and D % w_main.shape[0] == 0:
+    rep = D // w_main.shape[0]
+    w_main = w_main.repeat(rep, 1)
+self.in_proj.weight.data[:D, :D].copy_(w_main[:D, :D])
+
+# in_proj branch 2 (gate): from Q
+w_gate = w_q if w_q is not None else w_k
+if w_gate.shape[0] < D and D % w_gate.shape[0] == 0:
+    rep = D // w_gate.shape[0]
+    w_gate = w_gate.repeat(rep, 1)
+self.in_proj.weight.data[D:2*D, :D].copy_(w_gate[:D, :D])
+
+# out_proj: from O
+self.out_proj.weight.data.copy_(w_o[:D, :D])
+```
+
+## B.3 Common Pitfalls
+
+### B.3.1 O(L²) Memory
+
+The $[L, L, d]$ tensor is the dominant memory. For $L = 512$, this is 
+~100 MB per layer at FP32.
+
+### B.3.2 Wrong Orientation for Conv1D
+
+GPT-2 Conv1D stores (in, out); must transpose.
+
+### B.3.3 Nested Detection
+
+Check `self.query` **before** class-name heuristics.
+
+### B.3.4 A_log Clamping
+
+`self.A_log.clamp(max=5.0)` prevents $\exp$ overflow.
+
+### B.3.5 Decay Clamping
+
+`decay.clamp(min=1e-4, max=1-1e-4)` prevents $\log(0)$.
+```
+
+---

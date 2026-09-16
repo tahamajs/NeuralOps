@@ -88,5 +88,6 @@ $$
 **Proof.** Each projection is position-wise. The attention mask enforces 
 $j \leq i$. Therefore output at position $i$ depends only on inputs 
 $1..i$. $\square$
+```
 
 ---

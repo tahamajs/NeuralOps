@@ -1,0 +1,124 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 13_references.md
+     PURPOSE: Bibliography
+     DEPENDENCIES: All sections
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# 13. References
+
+```bibtex
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@inproceedings{child2019generating,
+  title={Generating long sequences with sparse transformers},
+  author={Child, Rewon and Gray, Scott and Radford, Alec and Sutskever, Ilya},
+  journal={arXiv preprint arXiv:1904.10509},
+  year={2019}
+}
+
+@article{beltagy2020longformer,
+  title={Longformer: The long-document transformer},
+  author={Beltagy, Iz and Peters, Matthew E and Cohan, Arman},
+  journal={arXiv preprint arXiv:2004.05150},
+  year={2020}
+}
+
+@inproceedings{zaheer2020big,
+  title={Big bird: Transformers for longer sequences},
+  author={Zaheer, Manzil and others},
+  booktitle={NeurIPS},
+  year={2020}
+}
+
+@inproceedings{kitaev2020reformer,
+  title={Reformer: The efficient transformer},
+  author={Kitaev, Nikita and Kaiser, {\L}ukasz and Levskaya, Anselm},
+  booktitle={ICLR},
+  year={2020}
+}
+
+@inproceedings{roy2021efficient,
+  title={Efficient content-based sparse attention with routing transformers},
+  author={Roy, Aurko and Saffar, Mohammad and Vaswani, Ashish and Grangier, David},
+  journal={TACL},
+  year={2021}
+}
+
+@inproceedings{tay2020sparse,
+  title={Sparse sinkhorn attention},
+  author={Tay, Yi and Bahri, Dara and Metzler, Donald and Juan, Da-Cheng and 
+          Zhao, Zhe and Zheng, Che and others},
+  booktitle={ICML},
+  year={2020}
+}
+
+@inproceedings{wang2021cluster,
+  title={Cluster-former: Clustering-based sparse transformer for 
+         question answering},
+  author={Wang, Shuohang and Li, Luowei and Xiong, Chenyan and 
+          Hoi, Steven and Hwu, Wen-mei},
+  booktitle={ACL},
+  year={2021}
+}
+
+@inproceedings{shah2024flashattention3,
+  title={FlashAttention-3: Fast and accurate attention with asynchrony and 
+         low-precision},
+  author={Shah, Jay and others},
+  journal={arXiv preprint arXiv:2407.08608},
+  year={2024}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}: Low-rank adaptation of large language models},
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@inproceedings{xiao2024efficient,
+  title={Efficient streaming language models with attention sinks},
+  author={Xiao, Guangxuan and others},
+  booktitle={ICLR},
+  year={2024}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality over a 
+         sentiment treebank},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@article{sanh2019distilbert,
+  title={{DistilBERT}, a distilled version of {BERT}},
+  author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and 
+          Wolf, Thomas},
+  journal={arXiv preprint arXiv:1910.01108},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title={{RoBERTa}: A robustly optimized {BERT} pretraining approach},
+  author={Liu, Yinhan and others},
+  journal={arXiv preprint arXiv:1907.11692},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and Wu, Jeffrey and Child, Rewon and Luan, David and 
+          Amodei, Dario and Sutskever, Ilya},
+  journal={OpenAI Blog},
+  year={2019}
+}
+```
+```
+
+---

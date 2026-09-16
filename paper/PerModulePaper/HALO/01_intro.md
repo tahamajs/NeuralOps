@@ -110,3 +110,6 @@ Section 11 concludes.
 | $\mathcal{A}_\text{lin}$ | Linear attention |
 | $\alpha$ | LoRA scaling |
 | $r$ | LoRA rank |
+```
+
+---

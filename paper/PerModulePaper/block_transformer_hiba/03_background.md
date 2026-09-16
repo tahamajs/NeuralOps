@@ -36,5 +36,6 @@ $$W_{\text{eff}} = W_{\text{base}} + \frac{\alpha}{r} (B A) \tag{3.5}$$
 
 where $W_{\text{base}}$ is frozen, $A \in \mathbb{R}^{r \times k}$ is initialized from a normal distribution $\mathcal{N}(0, \sigma^2)$, and $B \in \mathbb{R}^{d \times r}$ is initialized to zero. This ensures that at step zero ($\Delta W = 0$), the model behavior is completely dictated by the pretrained weights, allowing for stable recovery fine-tuning.
 
+```
 
 ---

@@ -311,5 +311,6 @@ UnifiedRoPE:
 5. **Does not compress.**
 
 It is a **substrate** for other compression techniques.
+```
 
 ---

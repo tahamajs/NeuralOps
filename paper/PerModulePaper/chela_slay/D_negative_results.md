@@ -97,5 +97,6 @@ Yat-Kernel (cos+sin) is best.
 3. **Yat-Kernel > ELU+1.**
 4. **Dense anchor is non-negotiable.**
 5. **Cumsum memory limits practical batch size.**
+```
 
 ---

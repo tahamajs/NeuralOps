@@ -1,3 +1,215 @@
-\section{07 Results}
+\section{Results}
 
-Draft content for reap_moe.
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{$\Delta$ Params} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & -- & 183 MB \\
+DistilBERT & \textbf{REAP-MoE} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}} & {{D\_PARAM\_CHANGE}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & -- & 712 MB \\
+RoBERTa & \textbf{REAP-MoE} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}} & {{R\_PARAM\_CHANGE}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & -- & 793 MB \\
+GPT-2 & \textbf{REAP-MoE} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}} & {{G\_PARAM\_CHANGE}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observations:}
+
+\begin{enumerate}
+\item \textbf{Accuracy:} {{D\_ACC}}\% on DistilBERT, {{R\_ACC}}\% on RoBERTa, {{G\_ACC}}\% on GPT-2.
+\item \textbf{Parameter change:} {{D\_PARAM\_CHANGE}} on DistilBERT (honest reporting).
+\item \textbf{VRAM:} {{D\_VRAM}} MB.
+
+\end{enumerate}
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Per-layer parameter breakdown (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Original} & \textbf{REAP-MoE} \\
+\midrule
+Attention & 2.36M & 2.36M (unchanged) \\
+FFN (removed) & 2.36M & 0 (replaced) \\
+MoE experts (8) & 0 & ~7.1M \\
+Router & 0 & ~5.9K \\
+LayerNorm (2) & 0 & 3K \\
+\textbf{Total} & \textbf{4.72M} & \textbf{~9.47M} \\
+\textbf{Ratio} & 1.00$\times$ & \textbf{2.01$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Expert Utilization}
+
+\textbf{Table 7.3: Expert routing distribution.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Expert 0} & \textbf{Expert 1} & \textbf{Expert 2} & \textbf{Expert 3} & \textbf{Max/Min} \\
+\midrule
+DistilBERT & {{D\_E0}}\% & {{D\_E1}}\% & {{D\_E2}}\% & {{D\_E3}}\% & {{D\_MAXMIN}} \\
+RoBERTa & {{R\_E0}}\% & {{R\_E1}}\% & {{R\_E2}}\% & {{R\_E3}}\% & {{R\_MAXMIN}} \\
+GPT-2 & {{G\_E0}}\% & {{G\_E1}}\% & {{G\_E2}}\% & {{G\_E3}}\% & {{G\_MAXMIN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Utilization is balanced within \textbf{{{D\_MAXMIN}}$\times$} on DistilBERT.
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.4: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & REAP-MoE & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Number of Experts}
+
+\textbf{Table 7.5: Accuracy vs $E$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$E$} & \textbf{DistilBERT} & \textbf{Params} & \textbf{Ratio} \\
+\midrule
+2 & {{D\_E2\_ACC}} & {{D\_E2\_PARAMS}} & {{D\_E2\_RATIO}}$\times$ \\
+4 & {{D\_E4\_ACC}} & {{D\_E4\_PARAMS}} & {{D\_E4\_RATIO}}$\times$ \\
+8 & {{D\_E8\_ACC}} & {{D\_E8\_PARAMS}} & {{D\_E8\_RATIO}}$\times$ \\
+16 & {{D\_E16\_ACC}} & {{D\_E16\_PARAMS}} & {{D\_E16\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Top-$k$}
+
+\textbf{Table 7.6: Accuracy vs $k$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$k$} & \textbf{DistilBERT} & \textbf{FLOPs} & \textbf{Accuracy} \\
+\midrule
+1 & {{D\_K1\_ACC}} & 1$\times$ & {{D\_K1\_ACC}}\% \\
+2 & {{D\_K2\_ACC}} & 2$\times$ & {{D\_K2\_ACC}}\% \\
+4 & {{D\_K4\_ACC}} & 4$\times$ & {{D\_K4\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: SVD Rank}
+
+\textbf{Table 7.7: Accuracy vs expert SVD rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{Expert params} \\
+\midrule
+$d/8$ & {{D\_R8\_ACC}} & {{D\_R8\_PARAMS}} \\
+$d/4$ & {{D\_R4\_ACC}} & {{D\_R4\_PARAMS}} \\
+$d/2$ & {{D\_R2\_ACC}} & {{D\_R2\_PARAMS}} \\
+$d$ & {{D\_RD\_ACC}} & {{D\_RD\_PARAMS}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Load-Balancing Loss}
+
+\textbf{Table 7.8: Effect of aux loss weight.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$\lambda_\text{aux}$} & \textbf{DistilBERT} & \textbf{Max/Min utilization} \\
+\midrule
+0.0 & {{D\_L0\_ACC}} & {{D\_L0\_MAXMIN}} \\
+0.01 & {{D\_L001\_ACC}} & {{D\_L001\_MAXMIN}} \\
+0.1 & {{D\_L01\_ACC}} & {{D\_L01\_MAXMIN}} \\
+1.0 & {{D\_L1\_ACC}} & {{D\_L1\_MAXMIN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Noise Injection}
+
+\textbf{Table 7.9: Effect of noise std $\sigma$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$\sigma$} & \textbf{DistilBERT} & \textbf{Router entropy} \\
+\midrule
+0.0 & {{D\_S0\_ACC}} & {{D\_S0\_ENT}} \\
+0.01 & {{D\_S001\_ACC}} & {{D\_S001\_ENT}} \\
+0.05 & {{D\_S005\_ACC}} & {{D\_S005\_ENT}} \\
+0.1 & {{D\_S01\_ACC}} & {{D\_S01\_ENT}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Component Contributions}
+
+\textbf{Table 7.10: Component ablation.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{$\Delta$} \\
+\midrule
+Full REAP-MoE & {{D\_FULL}} & -- \\
+No SVD experts & {{D\_NOSVD}} & {{D\_NOSVD\_D}} \\
+No aux loss & {{D\_NOAUX}} & {{D\_NOAUX\_D}} \\
+No noise & {{D\_NONOISE}} & {{D\_NONOISE\_D}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} {{D\_ACC}}\% on DistilBERT
+\item \textbf{Parameter change:} {{D\_PARAM\_CHANGE}} (increase due to MoE)
+\item \textbf{Expert balance:} {{D\_MAXMIN}}$\times$ max/min utilization
+\item \textbf{VRAM:} {{D\_VRAM}} MB
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

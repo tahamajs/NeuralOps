@@ -105,19 +105,7 @@ We use pure PyTorch for portability.
 
 \subsection{Comparison to Companion Modules}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllll}
-\toprule
-\textbf{Module} & \textbf{Attention} & \textbf{Params} & \textbf{Complexity} & \textbf{Streaming} \\
-\midrule
-AASVD & Softmax & \textbf{ 50\%} & $\mathcal{O}(N^2)$ & No \\
-NHA & Local + RFF & +LoRA & $\mathcal{O}(N \cdot W)$ & No \\
-SVD-Mamba & Attention + SSM & +10\% & $\mathcal{O}(N)$ & No \\
-RPC & Sketched softmax & +LoRA & $\mathcal{O}(N^2)$ & No \\
-\textbf{SVD-Linear} & \textbf{Linear + decay} & \textbf{ {{D\_PARAM\_PCT}}\%} & \textbf{$\mathcal{O}(N)$} & \textbf{Yes} \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{lstlisting}
 
+---
+\end{lstlisting}

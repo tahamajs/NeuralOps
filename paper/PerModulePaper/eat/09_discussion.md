@@ -98,5 +98,6 @@ The combined pipeline achieves parameter reduction AND pruning speedup.
 ### Environmental
 - Training: ~{{COMPUTE_HOURS}} GPU-hours
 - Inference: {{INFERENCE_CARBON}} g CO₂eq per 1000 queries
+```
 
 ---

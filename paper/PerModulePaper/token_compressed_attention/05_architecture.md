@@ -138,5 +138,6 @@ Total parameters: `dim * 64 + 64 + 64 + 1 = 65*dim + 65`. For $d = 768$:
 class TokenCompressedAttention(BaseAttention):
     ...
 ```
+```
 
 ---

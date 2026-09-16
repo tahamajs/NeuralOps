@@ -64,10 +64,48 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the moe\_deltakv\_paged module within modern transformer architectures.
+We present \textbf{MoE-DeltaKV-Paged}, a hybrid attention module that combines 
+three orthogonal efficiency techniques:
+
+\begin{enumerate}
+\item \textbf{Mixture-of-Block-Attention (MoBA) routing:} A learned router selects
+  the top-$k$ most relevant pages of keys/values per query page, yielding
+  block-sparse attention.
+\item \textbf{Delta-KV temporal compression:} Adjacent key/value pairs are differenced
+  into temporal deltas, factorized via low-rank SVD, and quantized to
+  4-bit using a Straight-Through Estimator.
+\item \textbf{Paged attention:} The sequence is partitioned into fixed-size pages
+  (default 64 tokens), enabling efficient block-wise computation and
+  page-level routing.
+
+\end{enumerate}
+We are explicit about two critical caveats:
+
+\textbf{Caveat 1.} The Delta-KV and 4-bit quantization steps are \textbf{simulations} 
+implemented with the Straight-Through Estimator (STE). They change the 
+forward-pass behavior of the model (making attention robust to low-precision 
+reconstruction), but they do \textbf{not} reduce the actual KV cache memory 
+footprint at inference time. The reconstructed $K_\text{hat}, V_\text{hat}$ 
+have the same shape as the original.
+
+\textbf{Caveat 2.} The block-sparse routing provides sub-quadratic attention **only 
+when $k_\text{experts} \ll \text{num\_pages}$**. For sequences with fewer than 
+$k_\text{experts} + 1$ pages, the module falls back to dense attention.
+
+On SST-2, MoE-DeltaKV-Paged achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
+(baseline {{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
+{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
+{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA recovery steps. 
+The module includes CLS-token preservation via page-0 logit boosting, an 
+auxiliary load-balancing loss to prevent router collapse, and full multi-architecture weight transfer.
+
+\textbf{Keywords:} mixture of experts, block-sparse attention, delta compression, 
+paged attention, differentiable quantization, straight-through estimator
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} moe\_deltakv\_paged, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} mixture of experts, block-sparse attention, delta compression,
 \end{abstract}
 
 \vspace{1em}

@@ -1,3 +1,137 @@
-\section{01 Intro}
+\section{Introduction}
 
-Draft content for moba.
+\subsection{Motivation}
+
+Transformer self-attention has quadratic complexity in sequence length, 
+motivating a large body of work on efficient alternatives. **State-space 
+models\textbf{ (SSMs), particularly }Mamba** (Gu \& Dao, 2023), have emerged as a 
+compelling family: they achieve $\mathcal{O}(L)$ complexity via selective 
+state updates with input-dependent dynamics.
+
+However, replacing a pretrained transformer's attention with an SSM is 
+non-trivial:
+
+\begin{enumerate}
+\item \textbf{Pretrained weights:} The SSM's input/output projections have no
+  correspondence to the pretrained $W_Q, W_K, W_V, W_O$.
+\item \textbf{Residual flow:} SSMs process the input in a fundamentally different way,
+  changing the residual stream statistics.
+\item \textbf{Training cost:} Training a full SSM from scratch is expensive.
+\item \textbf{Causal vs bidirectional:} SSMs are naturally causal; encoders need
+  bidirectional processing.
+
+\end{enumerate}
+\textbf{Mamba-Inspired Gated State-Space Attention} addresses these challenges:
+
+\begin{itemize}
+\item It \textbf{reuses pretrained weights} by projecting Q, K, V into a two-branch
+  gating structure.
+\item It applies a \textbf{learned exponential decay} to emulate selective state-space
+  dynamics without a true SSM scan.
+\item It adds a \textbf{preservation gate} that blends the new output with the residual
+  input, stabilizing the initial forward pass.
+\item It supports both causal (decoders) and bidirectional (encoders) modes.
+
+\end{itemize}
+\subsection{Problem Statement}
+
+Given a pretrained transformer $\mathcal{M}$ with attention projections 
+$\{W_Q, W_K, W_V, W_O\}$, we seek a replacement mechanism $\mathcal{A}'$ such 
+that:
+
+\[
+\mathcal{A}' \approx \mathcal{A}, \qquad
+\mathcal{A}' \text{ has SSM-inspired structure}
+\tag{1.1}
+\]
+
+subject to:
+
+\begin{enumerate}
+\item \textbf{Weight reuse:} Must copy pretrained weights via \texttt{copy\_weights}.
+\item \textbf{Multi-architecture:} DistilBERT, RoBERTa, GPT-2, Qwen.
+\item \textbf{Causal and bidirectional:} Support both modes.
+\item \textbf{Recovery capacity:} LoRA adapters for fine-tuning.
+\item \textbf{Preservation:} Blend with residual input to stabilize.
+
+\end{enumerate}
+\subsection{Our Approach}
+
+We propose a gated state-space-inspired attention with:
+
+\subsubsection{Two-Branch In-Projection}
+
+The input projection is doubled: $W_\text{in} \in \mathbb{R}^{d \times 2d}$. 
+The output splits into:
+
+\begin{itemize}
+\item $p_1$: SSM input representation (projected from $W_V$ or $W_Q$)
+\item $p_2$: gating representation (projected from $W_Q$ or $W_K$)
+
+\end{itemize}
+\subsubsection{Learned Exponential Decay}
+
+For each dimension $i$, we learn a decay $\gamma_i \in (0, 1)$ via:
+
+\[
+\gamma_i = \sigma(-\exp(A_{\log, i}))
+\tag{1.2}
+\]
+
+The pairwise weight between positions $j$ and $i$ ($j \leq i$):
+
+\[
+w_{ij}^{(d)} = \frac{\exp(\text{dist}_{ij} \cdot \log \gamma_d)}{\sum_{j'} \exp(\text{dist}_{ij'} \cdot \log \gamma_d)}
+\tag{1.3}
+\]
+
+where $\text{dist}_{ij} = \max(0, j - i)$ for causal mode.
+
+\subsubsection{Gated Fusion}
+
+\[
+\text{Out} = \text{SiLU}(p_1^\text{decayed}) \odot p_2
+\tag{1.4}
+\]
+
+\subsubsection{Preservation Gate}
+
+\[
+\text{Final} = \sigma(g) \cdot \text{Out} + (1 - \sigma(g)) \cdot X
+\tag{1.5}
+\]
+
+with $g$ initialized to 2.0 (so $\sigma(g) \approx 0.88$).
+
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A gated SSM-inspired attention.} Reuses pretrained Q/K/V/O weights in a
+  two-branch gated state-space formulation with learned exponential decay.
+\item \textbf{A preservation gate.} Blends the SSM output with the residual input,
+  stabilizing the initial forward pass.
+\item \textbf{Multi-architecture support.} Handles DistilBERT, RoBERTa, GPT-2, and
+  Qwen.
+\item \textbf{Causal and bidirectional modes.} Learned decay for encoders uses both
+  forward and backward directions.
+\item \textbf{Honest complexity reporting.} We acknowledge that the implementation is
+  $\mathcal{O}(L^2 D)$, \textbf{not} $\mathcal{O}(L)$, despite the SSM inspiration.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work on SSMs and efficient attention. Section 3 
+provides background on state-space models, Mamba, and attention. Section 4 
+presents our method. Section 5 describes integration. Section 6 details the 
+setup. Section 7 reports results. Section 8 analyzes the SSM-inspired 
+behavior. Section 9 discusses limitations and trade-offs. Section 10 lists 
+limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -73,5 +73,6 @@ For DistilBERT:
 ### Environmental
 - Training: ~{{COMPUTE_HOURS}} GPU-hours
 - CO₂: ~{{CO2}} kg
+```
 
 ---

@@ -94,5 +94,6 @@ compressed attention. We do both.
 
 For BERT-family models, `[CLS]` is at index 0. For other models, the "sink" 
 token may vary. Our implementation assumes index 0.
+```
 
 ---

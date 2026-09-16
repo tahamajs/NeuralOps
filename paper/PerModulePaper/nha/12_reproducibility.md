@@ -86,3 +86,6 @@ torch.cuda.manual_seed_all(seed)
 - FP32 required for RFF stability
 - Long sequences may need reduced chunk size
 - RoPE fallback may fail on some models
+```
+
+---

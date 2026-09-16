@@ -53,3 +53,6 @@ pretrained benefits.
 2. **FP8 accuracy:** Real vs simulated?
 3. **Long context:** $L > 8192$ untested?
 4. **Training:** FA3 backward path untested?
+```
+
+---

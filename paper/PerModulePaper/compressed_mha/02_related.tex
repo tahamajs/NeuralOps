@@ -1,3 +1,76 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for compressed_mha.
+\subsection{Low-Rank Factorization}
+
+\textbf{Classical SVD.} Eckart-Young theorem gives the optimal rank-$r$ 
+approximation in Frobenius norm. We apply this to attention projections.
+
+\textbf{Linformer} (Wang et al., 2020) projects K, V to a fixed sequence dimension 
+using learned matrices E, F. This is a different axis of compression 
+(sequence, not feature).
+
+\textbf{ALBERT} (Lan et al., 2020) shares parameters across layers, exploiting 
+cross-layer redundancy. Our method exploits \textbf{intra-layer} Q/K/V correlation.
+
+\textbf{Nystr mformer} (Xiong et al., 2021) uses Nystr m landmarks for attention 
+approximation, not projection compression.
+
+\subsection{Attention Compression}
+
+\textbf{Multi-Query Attention (MQA)} (Shazeer, 2019) shares K, V across all query 
+heads, reducing KV parameters by $H/H_{kv}$. \textbf{Grouped-Query Attention (GQA)} 
+(Ainslie et al., 2023) is a generalization.
+
+\textbf{Multi-Head Latent Attention (MLA)} (DeepSeek-V2, 2024) projects KV to a 
+low-rank latent. This is a \textbf{sequence-level} projection.
+
+\textbf{Our distinction.} We compress the \textbf{weight matrices} directly, sharing 
+the input basis across Q, K, V via joint SVD. This is orthogonal to 
+sequence-level compression methods.
+
+\subsection{Structured Pruning}
+
+\textbf{Structured pruning} removes entire channels. \textbf{SVD-based methods} 
+(like ours) factorize instead.
+
+\textbf{Sliding window + SVD} hybrids exist (SVD-LLM, etc.), but we do not 
+combine these.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\textbf{LoRA} (Hu et al., 2021) freezes base weights and trains low-rank adapters. 
+\textbf{AdaLoRA} (Zhang et al., 2023) allocates rank adaptively. \textbf{DoRA} (Liu 
+et al., 2024) decomposes magnitude and direction.
+
+\textbf{Our use.} We freeze SVD factors and apply LoRA on top, allowing 
+recovery fine-tuning without undoing the compression.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Axis} & \textbf{Joint?} & \textbf{Params reduction} \\
+\midrule
+Linformer & Sequence & No & No (adds params) \\
+MQA/GQA & KV heads & No & Yes \\
+MLA & Sequence latent & No & Yes \\
+\textbf{Compressed MHA} & \textbf{Feature (weights)} & \textbf{Yes (QKV)} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Compressed MHA is the first to jointly factorize Q, K, V 
+with a shared input basis, exploiting intra-layer correlation. This yields 
+smaller compressed matrices than independent SVD.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

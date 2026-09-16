@@ -169,5 +169,6 @@ class MinimalAURORAAttention(BaseAttention):
 
 Forward accepts `encoder_hidden_states` and supports cross-attention 
 (though GQA + cross-attention interaction may have edge cases).
+```
 
 ---

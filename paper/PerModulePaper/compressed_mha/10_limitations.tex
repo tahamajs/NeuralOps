@@ -1,3 +1,92 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for compressed_mha.
+\subsection{Task Coverage}
+
+Only SST-2 evaluated. Behavior on:
+\begin{itemize}
+\item Generation: unknown
+\item Multi-class: unknown
+\item Token-level: unknown
+\item Long-context: unknown
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B--10B & No \\
+>10B & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Rank Selection}
+
+Our default rank (\texttt{min(384, all\_head + 2*kv\_head, hidden)}) is often 
+\textbf{= hidden\_size}, providing no compression. Users must explicitly set a 
+lower rank.
+
+\subsection{Nested Detection Assumptions}
+
+We assume:
+\begin{itemize}
+\item Models with \texttt{out\_lin}/\texttt{c\_proj}/\texttt{o\_proj} are flat.
+\item Models with \texttt{self.query} + \texttt{output.dense} are nested.
+
+\end{itemize}
+Custom architectures may violate these assumptions.
+
+\subsection{LoRA Dependency}
+
+Without LoRA recovery, accuracy drops significantly. The method is not 
+"post-training" in the strict sense.
+
+\subsection{Inference Latency}
+
+Two matmuls per projection vs one. On high-bandwidth GPUs, this may 
+slightly increase latency.
+
+\subsection{Single-Seed Results}
+
+SE ~1.7\%. Differences below 3.4\% may be noise.
+
+\subsection{No Theoretical Bound on Downstream Accuracy}
+
+We bound \textbf{reconstruction} error (Frobenius), but not task-level accuracy.
+
+\subsection{Fallback Behavior}
+
+On weight extraction failure, we log a warning and proceed with random init. 
+This may silently degrade accuracy. Users should check logs.
+
+\subsection{Joint SVD Assumption}
+
+We assume Q, K, V share an input subspace. For models with \textbf{very} different 
+Q/K/V distributions, joint SVD may be worse than independent.
+
+\subsection{No Comparison with Distillation}
+
+We do not compare with DistilBERT/TinyBERT-style distillation.
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling
+\item No fused kernel
+\item Some numerical concerns at FP16
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

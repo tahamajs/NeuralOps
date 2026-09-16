@@ -1,3 +1,75 @@
-\section{10 Limitations}
 
-Draft content for rala_attention.
+\section{Limitations}
+
+\subsection{Not a Compression Method}
+
+RALA \textbf{increases} parameter count by \textbf{{{D\_PARAM\_PCT}}\%}. It is an 
+attention replacement, not a compressor.
+
+\subsection{Sequential Prefix Scan}
+
+The causal prefix scan uses a Python loop over sequence length. This 
+dominates runtime and is unsuitable for production. A fused parallel scan 
+is needed.
+
+\subsection{Frozen $U, V$}
+
+Our implementation freezes the augmentation matrices $U, V$ when LoRA is 
+active. This means the rank augmentation is a **fixed random projection 
+scaled by $\alpha$**, not a learned matrix. This is a significant 
+limitation.
+
+\subsection{Scalar Gate}
+
+A single scalar $\alpha$ per layer is shared across all heads and all 
+positions. This is minimal but may not be optimal.
+
+\subsection{Task Coverage}
+
+Only SST-2. Behavior on generation, multi-class, or token-level tasks is 
+untested.
+
+\subsection{Model Coverage}
+
+Only DistilBERT, RoBERTa, GPT-2. Qwen3.5 not completed. No >1B models.
+
+\subsection{No Fused Kernel}
+
+We do not provide a Triton or CUDA implementation of the prefix scan.
+
+\subsection{Single Seed}
+
+Single seed. No confidence intervals.
+
+\subsection{No Comparison with State-of-the-Art Linear Attention}
+
+We do not compare against Delta Net, GLA, Mamba, or RWKV. Our comparison is 
+limited to standard linear attention with elu+1.
+
+\subsection{Numerical Stability}
+
+Prefix sums in FP16 may lose precision for $L > 512$. Consider FP32 for long 
+sequences.
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling in \texttt{inject\_rala}
+\item No unit tests for kernel features
+\item Some warnings instead of errors for weight copy failure
+
+\end{itemize}
+\subsection{What This Paper Is Not}
+
+This is \textbf{not}:
+\begin{itemize}
+\item A compression method
+\item A production-ready attention
+\item A state-of-the-art result
+\item A scaling study
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

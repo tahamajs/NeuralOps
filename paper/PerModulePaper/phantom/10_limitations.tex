@@ -1,3 +1,94 @@
-\section{10 Limitations}
 
-Draft content for phantom.
+\section{Limitations}
+
+\subsection{Task Coverage}
+
+Only SST-2 (classification) is evaluated. PHANTOM may behave differently on:
+\begin{itemize}
+\item Generation tasks (summarization, translation)
+\item Long-context tasks (>512 tokens)
+\item Retrieval (dense passage)
+\item Multi-class classification
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Constraint} & \textbf{Status} \\
+\midrule
+$\le$124M params & Tested \\
+>1B params & Not tested \\
+>24 layers & Not tested \\
+MoE & Not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+All experiments on RTX 4070 Laptop. Not tested on:
+\begin{itemize}
+\item A100/H100
+\item Edge devices
+\item CPU inference
+
+\end{itemize}
+\subsection{Multi-Round LSH Overhead}
+
+4 rounds $\times$ attention = 4$\times$ attention compute. For short sequences 
+($L < 32$), this may dominate.
+
+\subsection{Bucket Imbalance}
+
+LSH buckets can be imbalanced. Some buckets may contain many tokens, 
+negating sparsity benefits.
+
+\subsection{Softpick Fallback}
+
+The softmax fallback activates on ~{{FALLBACK\_FREQ}}\% of rows, losing 
+sparsity for those rows.
+
+\subsection{Single-Seed Results}
+
+All main results from seed {{SEED}}. SE ~1.69\%. Differences below 3.4\% 
+may be noise.
+
+\subsection{No Formal Downstream Bound}
+
+We provide reconstruction bounds for CUR (Prop 4.7.1), but no downstream 
+task bound.
+
+\subsection{CUR Failure Cases}
+
+For rank-deficient or ill-conditioned matrices, pseudoinverse may be 
+numerically unstable. Fallback to Kaiming init is possible but rare.
+
+\subsection{No Comparison with Fixed-Pattern Sparse}
+
+We do not directly compare with Longformer or BigBird (different training 
+paradigms).
+
+\subsection{Failure Modes Not Fully Diagnosed}
+
+{{UNRESOLVED\_FAILURES}}
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling
+\item No unit tests for edge cases
+\item Numerical stability could be improved
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Compression is dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

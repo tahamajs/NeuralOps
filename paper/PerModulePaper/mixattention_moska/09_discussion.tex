@@ -1,3 +1,132 @@
-\section{09 Discussion}
 
-Draft content for mixattention_moska.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Variance is a Weak Signal}
+
+Variance of K correlates weakly with attention received. FASA works better 
+than random pruning but worse than attention-based methods (H2O).
+
+\subsubsection{Takeaway 2: Decoder Support is Missing}
+
+FASA's design explicitly excludes causal decoders to preserve causality. 
+A different design would need to handle the causal case (e.g., with a 
+prefix scan).
+
+\subsubsection{Takeaway 3: Speedup Requires Long Sequences}
+
+At L=128, gather + topk overhead exceeds FLOP savings. FASA would help at 
+$L > 1024$.
+
+\subsection{When to Use FASA}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Bidirectional encoders} with long sequences ($L > 1024$).
+\item \textbf{No-attention-score settings} -- FASA doesn't need attention weights.
+\item \textbf{Research baseline} for token pruning.
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Causal decoders} -- no pruning, no benefit.
+\item \textbf{Short sequences} ($L < 256$) -- overhead dominates.
+\item \textbf{Accuracy-critical tasks} -- variance heuristic is imperfect.
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Start
+  |
+   
+Is the model bidirectional? -- No -- FASA gives no benefit
+  |
+  Yes
+   
+Is L > 1024? -- No -- Overhead dominates
+  |
+  Yes
+   
+Is attention-score access available? -- Yes -- Use H2O instead
+  |
+  No
+   
+Use FASA
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT on L=128:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{FASA} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & {{D\_PARAMS}}M & +{{D\_PARAM\_PCT}}\% \\
+Time & 1.9 s & {{D\_TIME}} s & {{D\_TIME\_R}}$\times$ \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Verdict.} {{VERDICT}}
+
+\subsection{Comparison with Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Alternative} & \textbf{Accuracy} & \textbf{Speed} & \textbf{Requires Attention?} \\
+\midrule
+Full attention & 90.71\% & 1.0$\times$ & -- \\
+H2O & ~{{H2O\_ACC}}\% & 0.6$\times$ & Yes \\
+StreamingLLM & ~{{SLLM\_ACC}}\% & 0.6$\times$ & No \\
+\textbf{FASA} & \textbf{{{D\_ACC}}\%} & \textbf{{{D\_TIME\_R}}$\times$} & \textbf{No} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Would learned importance help?} Likely yes.
+\item \textbf{Would layer-wise keep ratios help?} PyramidKV suggests yes.
+\item \textbf{What about a causal prefix scan?} Would enable decoder support.
+\item \textbf{Fused Triton kernel?} Would eliminate gather overhead.
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+
+\begin{itemize}
+\item Cheaper than H2O (no attention scores).
+\item Simple to implement.
+
+\end{itemize}
+\subsubsection{Negative}
+
+\begin{itemize}
+\item Accuracy drop on encoders.
+\item No benefit for decoders.
+\item Overhead at short sequences.
+
+\end{itemize}
+\subsection{Deployment Recommendations}
+
+**Deploy only for long-sequence bidirectional encoders with a conservative 
+keep ratio ($\ge$ 0.75).**
+\begin{lstlisting}
+
+---
+\end{lstlisting}

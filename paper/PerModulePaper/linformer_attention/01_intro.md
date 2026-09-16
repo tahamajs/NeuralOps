@@ -124,5 +124,6 @@ deployment. Section 10 lists limitations. Section 11 concludes.
 | $d_h$ | Head dimension |
 | $E, F$ | Projection matrices |
 | $\tilde{K}, \tilde{V}$ | Projected keys, values |
+```
 
 ---

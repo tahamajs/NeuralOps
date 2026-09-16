@@ -92,5 +92,6 @@ python run_all_4_svd_linear_attention.py \
 | `full` | Uncompressed model |
 | `svd_linear` | Our method |
 | Companion | `asvd`, `aasvd`, `rpc`, `svd_mamba` |
+```
 
 ---

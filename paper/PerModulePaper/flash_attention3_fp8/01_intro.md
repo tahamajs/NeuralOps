@@ -100,5 +100,6 @@ practical guidance. Section 10 lists limitations. Section 11 concludes.
 | $r$ | LoRA rank | §3.5 |
 | $\text{fp8}$ | 8-bit float format (e4m3fn or e5m2) | §3.4 |
 </parameter>
+```
 
 ---

@@ -99,3 +99,6 @@ python run_all_4_squeezing_heads.py \
 | Head-dim reduction | $\{1.0, 1.5, 2.0, 2.5\}$ |
 | Recovery steps | $\{10, 25, 50, 100\}$ |
 | GQA pooling | $\{\text{mean}, \text{first}\}$ |
+```
+
+---

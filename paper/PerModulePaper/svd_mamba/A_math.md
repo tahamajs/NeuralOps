@@ -89,5 +89,6 @@ $\Delta P \approx 6.4M$ → +9.6% on DistilBERT. $\square$
 - Gating: position-wise.
 
 Therefore output at position $i$ depends only on inputs $1..i$. $\square$
+```
 
 ---

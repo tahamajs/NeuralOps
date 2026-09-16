@@ -71,3 +71,6 @@ to PORF but simpler.
 | FLASH | — | Linear | Fixed | Layer |
 | HALO-ReGLA | — | Linear + Dense | Learnable | Per-head |
 | **NHA** | **Window** | **Orthogonal RFF** | **Learnable** | **Per-token** |
+```
+
+---

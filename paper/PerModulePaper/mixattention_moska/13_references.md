@@ -1,0 +1,144 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 13_references.md
+     PURPOSE: Bibliography
+     DEPENDENCIES: All sections
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# 13. References
+
+```bibtex
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and 
+          Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N and 
+          Kaiser, {\L}ukasz and Polosukhin, Illia},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@inproceedings{zhang2023h2o,
+  title={{H2O}: Heavy-hitter oracle for efficient generative inference 
+         of large language models},
+  author={Zhang, Zhenyu and Sheng, Ying and Zhou, Tianyi and Chen, Tianlong and 
+          Zheng, Lianmin and Cai, Ruisi and Song, Zhao and Tian, Yuandong and 
+          R{\'e}, Christopher and Barrett, Clark and others},
+  booktitle={NeurIPS},
+  year={2023}
+}
+
+@inproceedings{xiao2024efficient,
+  title={Efficient streaming language models with attention sinks},
+  author={Xiao, Guangxuan and Tian, Yuandong and Chen, Beidi and 
+          Han, Song and Lewis, Mike},
+  booktitle={ICLR},
+  year={2024}
+}
+
+@article{li2024snapkv,
+  title={{SnapKV}: {LLM} knows what you are looking for before generation},
+  author={Li, Yuhong and Huang, Yingbing and Yang, Bowen and Venkitesh, Bharat and 
+          Locatelli, Acyr and Ye, Hanchen and Cai, Tianle and Lewis, Patrick and 
+          Chen, Deming},
+  journal={NeurIPS},
+  year={2024}
+}
+
+@article{liu2023scissorhands,
+  title={Scissorhands: Exploiting the persistence of importance hypothesis 
+         for {KV} cache compression at test time},
+  author={Liu, Zichang and Desai, Aditya and Liao, Fangshuo and 
+          Wang, Weitao and Xie, Victor and Xu, Zhaozhuo and Kyrillidis, Anastasios and 
+          Shrivastava, Anshumali},
+  journal={NeurIPS},
+  year={2023}
+}
+
+@article{cai2024pyramidkv,
+  title={{PyramidKV}: Dynamic {KV} cache compression based on pyramidal 
+         information funneling},
+  author={Cai, Zefan and Zhang, Yichi and Gao, Bofei and Liu, Yuliang and 
+          Li, Tianyu and Lu, Yao and Xiong, Yizhe and Dong, Hao and 
+          Chang, Baobao and Hu, Junjie and Xiao, Wen},
+  journal={arXiv preprint arXiv:2406.02069},
+  year={2024}
+}
+
+@article{gu2024attention,
+  title={When attention sink emerges in language models: An empirical view},
+  author={Gu, Xiangming and Pang, Tianyu and Du, Chao and Liu, Qian and 
+          Zhang, Fengzhuo and Du, Cunxiao and Wang, Ye and Lin, Min},
+  journal={arXiv preprint arXiv:2410.10781},
+  year={2024}
+}
+
+@article{beltagy2020longformer,
+  title={Longformer: The long-document transformer},
+  author={Beltagy, Iz and Peters, Matthew E and Cohan, Arman},
+  journal={arXiv preprint arXiv:2004.05150},
+  year={2020}
+}
+
+@inproceedings{zaheer2020big,
+  title={Big bird: Transformers for longer sequences},
+  author={Zaheer, Manzil and Guruganesh, Guru and Dubey, Kumar Avinava and 
+          Ainslie, Joshua and Alberti, Chris and Ontanon, Santiago and others},
+  booktitle={NeurIPS},
+  year={2020}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}: Low-rank adaptation of large language models},
+  author={Hu, Edward J and Shen, Yelong and Wallis, Phillip and 
+          Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and 
+          Wang, Lu and Chen, Weizhu},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@article{su2021roformer,
+  title={Roformer: Enhanced transformer with rotary position embedding},
+  author={Su, Jianlin and Lu, Yu and Pan, Shengfeng and Murtadha, Ahmed and 
+          Wen, Bo and Liu, Yunfeng},
+  journal={arXiv preprint arXiv:2104.09864},
+  year={2021}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality over a 
+         sentiment treebank},
+  author={Socher, Richard and Perelygin, Alex and Wu, Jean and 
+          Chuang, Jason and Manning, Christopher D and Ng, Andrew Y and 
+          Potts, Christopher},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@article{sanh2019distilbert,
+  title={{DistilBERT}, a distilled version of {BERT}: smaller, faster, 
+         cheaper and lighter},
+  author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and 
+          Wolf, Thomas},
+  journal={arXiv preprint arXiv:1910.01108},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title={{RoBERTa}: A robustly optimized {BERT} pretraining approach},
+  author={Liu, Yinhan and Ott, Myle and Goyal, Naman and Du, Jingfei and 
+          Joshi, Mandar and Chen, Danqi and Levy, Omer and Lewis, Mike and 
+          Zettlemoyer, Luke and Stoyanov, Veselin},
+  journal={arXiv preprint arXiv:1907.11692},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and Wu, Jeffrey and Child, Rewon and Luan, David and 
+          Amodei, Dario and Sutskever, Ilya},
+  journal={OpenAI Blog},
+  year={2019}
+}
+```
+```
+
+---

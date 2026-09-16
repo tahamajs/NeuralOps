@@ -10,13 +10,13 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Landmarks $m$ & 64 \\
-Pinv iters $K$ & 4 \\
-Accuracy & 86.5\% \\
-F1 & 0.865 \\
-Attention memory & 12 KB \\
-Inference time & 2.5 s \\
-Peak VRAM & 160 MB \\
+Landmarks $m$ & {{RANK}} \\
+Pinv iters $K$ & {{PINV\_ITERS}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Attention memory & {{D\_ATTN\_MEM}} \\
+Inference time & {{D\_TIME}} s \\
+Peak VRAM & {{D\_VRAM}} MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,11 +30,11 @@ Peak VRAM & 160 MB \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & 74.0\% \\
-F1 & 0.740 \\
-Attention memory & 12 KB \\
-Inference time & 5.3 s \\
-Peak VRAM & 640 MB \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Attention memory & {{R\_ATTN\_MEM}} \\
+Inference time & {{R\_TIME}} s \\
+Peak VRAM & {{R\_VRAM}} MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -48,11 +48,11 @@ Peak VRAM & 640 MB \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & 75.0\% \\
-F1 & 0.750 \\
-Attention memory & 12 KB \\
-Inference time & 5.5 s \\
-Peak VRAM & 700 MB \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Attention memory & {{G\_ATTN\_MEM}} \\
+Inference time & {{G\_TIME}} s \\
+Peak VRAM & {{G\_VRAM}} MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -66,11 +66,11 @@ Peak VRAM & 700 MB \\
 \toprule
 \textbf{$m$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-16 & 78.0 & 65.0 & 67.0 \\
-32 & 83.5 & 70.0 & 71.5 \\
-64 & 86.5 & 74.0 & 75.0 \\
-128 & 88.0 & 75.5 & 76.5 \\
-256 & 88.5 & 76.0 & 77.0 \\
+16 & {{D\_M16}} & {{R\_M16}} & {{G\_M16}} \\
+32 & {{D\_M32}} & {{R\_M32}} & {{G\_M32}} \\
+64 & {{D\_M64}} & {{R\_M64}} & {{G\_M64}} \\
+128 & {{D\_M128}} & {{R\_M128}} & {{G\_M128}} \\
+256 & {{D\_M256}} & {{R\_M256}} & {{G\_M256}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -84,11 +84,11 @@ Peak VRAM & 700 MB \\
 \toprule
 \textbf{$K$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 & 80.0 & 67.0 & 68.0 \\
-2 & 84.0 & 71.0 & 72.0 \\
-4 & 86.5 & 74.0 & 75.0 \\
-6 & 86.7 & 74.2 & 75.2 \\
-8 & 86.8 & 74.3 & 75.3 \\
+0 & {{D\_K0}} & {{R\_K0}} & {{G\_K0}} \\
+2 & {{D\_K2}} & {{R\_K2}} & {{G\_K2}} \\
+4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} \\
+6 & {{D\_K6}} & {{R\_K6}} & {{G\_K6}} \\
+8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,10 +102,10 @@ Peak VRAM & 700 MB \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & 83.0 & 70.0 & 71.0 \\
-8 & 85.0 & 72.0 & 73.0 \\
-16 & 86.5 & 74.0 & 75.0 \\
-32 & 86.7 & 74.5 & 75.3 \\
+4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
+8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
+16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
+32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -119,10 +119,10 @@ Peak VRAM & 700 MB \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & 82.0 & 68.0 & 69.0 \\
-25 & 85.0 & 72.0 & 73.0 \\
-50 & 86.5 & 74.0 & 75.0 \\
-100 & 86.8 & 74.5 & 75.3 \\
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,9 +134,9 @@ Peak VRAM & 700 MB \\
 Step  Loss
 1     {{D_S1}}
 5     {{D_S5}}
-10    82.0
+10    {{D_S10}}
 ...
-50    86.5
+50    {{D_S50}}
 \end{lstlisting}
 
 \subsubsection{RoBERTa}
@@ -144,7 +144,7 @@ Step  Loss
 Step  Loss
 1     {{R_S1}}
 ...
-50    74.0
+50    {{R_S50}}
 \end{lstlisting}
 
 \subsubsection{GPT-2}
@@ -152,7 +152,7 @@ Step  Loss
 Step  Loss
 1     {{G_S1}}
 ...
-50    75.0
+50    {{G_S50}}
 \end{lstlisting}
 
 \subsection{C.9 Raw JSON}
@@ -161,12 +161,12 @@ Step  Loss
 {
   "primal": {
     "distilbert": {
-      "num_landmarks": 64,
-      "pinv_iters": 4,
-      "accuracy_pct": 86.5,
-      "attention_mem_bytes": 12288,
-      "peak_vram_mb": 160,
-      "inference_time_s": 2.5
+      "num_landmarks": {{RANK}},
+      "pinv_iters": {{PINV_ITERS}},
+      "accuracy_pct": {{D_ACC}},
+      "attention_mem_bytes": {{D_ATTN_MEM_BYTES}},
+      "peak_vram_mb": {{D_VRAM}},
+      "inference_time_s": {{D_TIME}}
     },
     "roberta": {...},
     "gpt2": {...}
@@ -184,4 +184,8 @@ python run_all_4_primal.py --rank 64 --pinv_iters 4
 for m in 16 32 64 128 256; do
     python run_all_4_primal.py --rank $m --output_suffix m$m
 done
+\end{lstlisting}
+\begin{lstlisting}
+
+---
 \end{lstlisting}

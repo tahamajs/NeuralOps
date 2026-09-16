@@ -144,3 +144,25 @@ causal_mask = k_orig_pos > q_pos
 if num_heads != num_kv_heads:
     k = repeat_kv(k, num_heads // num_kv_heads)
     v = repeat_kv(v, num_heads // num_kv_heads)
+```
+
+### ۷. محدودیت‌های صادقانه
+
+- **Score network آینده را می‌بیند** — برای generation مناسب نیست
+- **Shared selection** — per-query نیست
+- **Short sequences** ($L < 32$) — افت شدید
+- **میانگین speedup** فقط ~1.25× در $\rho=0.8$
+
+### ۸. نتایج تخمینی
+
+| مدل | PTP | Baseline | Δ |
+|---|---|---|---|
+| DistilBERT | ~89.5% | 90.71% | -1.2% |
+| RoBERTa | ~77.0% | 78.56% | -1.6% |
+| GPT-2 | ~78.0% | 79.36% | -1.4% |
+
+این‌ها تخمینی هستند — از `results/unified_ptp/*/summary.csv` اعداد واقعی را وارد کن.
+
+---
+
+**قدم بعدی: `variables.json` را با اعداد واقعی از `results/unified_ptp/*/summary.csv` پر کن. اگر خواستی من این کار را برایت انجام دهم — فقط اعداد CSV را بفرست.**

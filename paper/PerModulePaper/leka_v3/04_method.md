@@ -305,5 +305,6 @@ $j \leq i$.
 **Proof.** Both the landmark attention (via causal mask on original 
 positions) and the local attention (via triangular mask) enforce $j \leq i$. 
 The gate is a scalar independent of positions. $\square$
+```
 
 ---

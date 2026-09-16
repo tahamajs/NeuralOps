@@ -67,5 +67,6 @@ LayerNorm adds $2d$ params per block (small). Attention + LoRA add more.
 - Not a compression method
 - Not a speedup method
 - Not a recommended replacement for baseline transformer blocks
+```
 
 ---

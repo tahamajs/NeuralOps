@@ -34,3 +34,43 @@ Tested on ≤124M parameter models. Not tested on >1B models.
 ## 10.6 Hardware
 
 All experiments on RTX 4070 Laptop. Not tested on A100, CPU, or edge.
+
+## 10.7 `raise` on Copy Failure
+
+OHA's `copy_weights` **raises** `RuntimeError` on missing projections. If 
+the source attention has an unusual structure, injection fails hard. This 
+is safer than silent fallback but requires more careful source handling.
+
+## 10.8 Nested Encoder Detection
+
+RoBERTa requires `is_nested_encoder = True`. If mis-set, double projection 
+causes scale collapse.
+
+## 10.9 Single-Seed Results
+
+All main results from a single seed. SE ~1.69%. Differences below 3.4% 
+may be noise.
+
+## 10.10 No Theoretical Guarantee
+
+We provide no bound on approximation error vs the baseline attention.
+
+## 10.11 No Comparison with Compressive Transformer
+
+We do not run head-to-head comparison with Compressive Transformer, 
+Recurrent Memory Transformer, or Set Transformer.
+
+## 10.12 Unresolved Failures
+
+{{UNRESOLVED_FAILURES}}
+
+## 10.13 Code Quality
+
+Research-grade implementation. Known issues:
+
+- `raise` in `copy_weights` may be too aggressive
+- No unit tests
+- `output_scale` parameter added but not used
+```
+
+---

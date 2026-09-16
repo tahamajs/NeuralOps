@@ -164,5 +164,6 @@ explicit causal masking.
 
 If `is_nested_encoder` is set wrong, the outer block applies LayerNorm on 
 top of our LayerNorm, leading to **double normalization**.
+```
 
 ---

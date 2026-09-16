@@ -4,7 +4,7 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
+git clone https://github.com/{{ORG}}/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -16,9 +16,9 @@ pip install -r requirements.txt
 \begin{lstlisting}
 python run_all_4_primal.py \
     --models distilbert,roberta,gpt2 \
-    --rank 64 \
-    --pinv_iters 4 \
-    --recovery_steps 50
+    --rank {{RANK}} \
+    --pinv_iters {{PINV_ITERS}} \
+    --recovery_steps {{RECOVERY_STEPS}}
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
@@ -62,9 +62,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Note} \\
 \midrule
-DistilBERT & 86.5\% $\pm$ 1\% & -- \\
-RoBERTa & 74.0\% $\pm$ 1\% & -- \\
-GPT-2 & 75.0\% $\pm$ 1\% & -- \\
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & -- \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & -- \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -73,7 +73,7 @@ GPT-2 & 75.0\% $\pm$ 1\% & -- \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-primal}
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-primal}
 \item \textbf{Metrics:} \texttt{results/unified\_primal/*/summary.csv}
 
 \end{itemize}
@@ -84,3 +84,7 @@ GPT-2 & 75.0\% $\pm$ 1\% & -- \\
 \item Long sequences may OOM on 8 GB GPU
 \item Causal approximation not strict
 \end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

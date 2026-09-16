@@ -152,5 +152,6 @@ For $d = 768$, $k = 64$, $L_\text{max} = 512$:
 | E, F | 65,536 |
 | output_scale | 1 |
 | **Total** | **~163,841 per layer** |
+```
 
 ---

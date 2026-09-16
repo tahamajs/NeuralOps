@@ -1,3 +1,88 @@
-\section{D Negative Results}
 
-Draft content for performer_attention.
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 The `inject\_performer` Raise Bug}
+
+Docstring: \texttt{Safe injection returning None on failure}. Code: \texttt{raise RuntimeError}.
+
+\textbf{Impact.} Crashes the pipeline. Should be fixed.
+
+\subsection{D.2 The `output\_scale` Parameter}
+
+New parameter not in baseline. \texttt{strict=True} loading fails.
+
+\subsection{D.3 Cross-Attention Not Supported}
+
+\texttt{encoder\_hidden\_states} $\to$ input unchanged, no warning.
+
+\subsection{D.4 Feature Map Small $F$ Degrades}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{$F$} & \textbf{DistilBERT} \\
+\midrule
+16 & {{D\_F16}} \\
+32 & {{D\_F32}} \\
+64 & {{D\_F64}} \\
+128 & {{D\_F128}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} $F < 64$ loses significant accuracy.
+
+\subsection{D.5 Kernel Type Trade-offs}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Kernel} & \textbf{Accuracy} & \textbf{Speed} \\
+\midrule
+\texttt{favor\_plus} & Best & Baseline \\
+\texttt{elu} & Slightly worse & Same \\
+\texttt{relu} & Worst & Same \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 Failed Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Attempt} & \textbf{Result} \\
+\midrule
+Remove eps from feature map & NaN possible \\
+Remove max-subtraction & Overflow \\
+Remove orthogonal init & Slightly worse \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.7 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Numerical stability is not optional.} Without it, FP16 overflows.
+\item \textbf{Docstrings can lie.} Trust the code, not the docstring.
+\item \textbf{\texttt{output\_scale} is unnecessary.} No empirical benefit observed.
+
+\end{enumerate}
+\subsection{D.8 Recommendations}
+
+\begin{enumerate}
+\item \textbf{Fix the \texttt{inject\_performer} raise.}
+\item \textbf{Remove \texttt{output\_scale}.}
+\item \textbf{Add a warning for cross-attention bypass.}
+\item \textbf{Use $F \geq 64$.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

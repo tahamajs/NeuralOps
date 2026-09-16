@@ -173,7 +173,7 @@ class ASVDLinear(nn.Module):
 \begin{lstlisting}
 def forward(self, x):
     Vx = F.linear(x, self.V)          # x @ V^T
-    SVx = Vx * self.S                  # scale by  
+    SVx = Vx * self.S                  # scale by $\Sigma$
     out = F.linear(SVx, self.U)        # @ U^T
     if self.bias is not None:
         out = out + self.bias
@@ -220,8 +220,10 @@ Cross-attention & Explicit check & Raises NotImplementedError \\
 if encoder_hidden_states is not None:
     raise NotImplementedError("Cross-attention is not supported in ASVDAttention.")
 \end{lstlisting}
+\begin{lstlisting}
 
-
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering

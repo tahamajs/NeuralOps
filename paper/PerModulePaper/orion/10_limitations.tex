@@ -1,3 +1,87 @@
-\section{10 Limitations}
 
-Draft content for orion.
+\section{Limitations}
+
+\subsection{`copy\_weights` Raises on Failure}
+
+Matches the pattern in AEGIS V4/V5, EAT, RALA, NHA. **Robustness 
+regression** compared to modules that return None.
+
+\subsection{`rff\_proj` is Not Persistent}
+
+\begin{lstlisting}
+persistent=False
+\end{lstlisting}
+
+The RFF projection is re-initialized randomly on reload. **Train/test 
+mismatch** on checkpoint restoration.
+
+\subsection{Softpick Collapses on Masked Rows}
+
+Without a fallback, fully masked rows produce zero attention. Contrast 
+with NASC which has a batch-level fallback.
+
+\subsection{Slower than Baseline}
+
+~{{D\_TIME\_R}}$\times$ slowdown from more kernel launches.
+
+\subsection{Head Split is Heuristic}
+
+The 2/3 : 1/3 split is chosen by \texttt{H // 3}. No principled justification.
+
+\subsection{Rank Selection is Global}
+
+The same \texttt{svd\_max\_rank} is used for all projections. Per-layer rank 
+selection could be better.
+
+\subsection{No Multi-Seed}
+
+Single seed.
+
+\subsection{Task Coverage}
+
+Only SST-2. Behavior on other tasks is untested.
+
+\subsection{Model Coverage}
+
+Only three models. Qwen3.5 untested.
+
+\subsection{RFF Memory}
+
+\texttt{rff\_proj} shape is $(H_k, d_h, F)$. For $H_k = 8$, $d_h = 64$, $F = 256$: 
+131K floats = ~0.5 MB per layer. Small but not negligible.
+
+\subsection{Python Loop in Decoder Kernel}
+
+For $N > 64$, the causal kernel path uses a Python loop. At $N = 128$: 2 
+iterations. At $N = 512$: 8 iterations.
+
+\subsection{The Full Matrix Materialization}
+
+\begin{lstlisting}
+@property
+def weight(self):
+    return torch.matmul(self.up.weight, self.down.weight)
+\end{lstlisting}
+
+Materializes the full $d_\text{out} \times d_\text{in}$ matrix. For large 
+FFN projections, this is a memory spike.
+
+\subsection{Code Quality}
+
+\begin{itemize}
+\item Two bugs (documented)
+\item No logging of head split
+\item No logging of rank selection
+
+\end{itemize}
+\subsection{What This Paper Is Not}
+
+\begin{itemize}
+\item Not a perfectly robust module (two bugs)
+\item Not the fastest method (slower than baseline)
+\item Not validated beyond SST-2
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

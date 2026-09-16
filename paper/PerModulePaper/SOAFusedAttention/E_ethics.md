@@ -53,5 +53,6 @@ Low-rank compression could:
 But also:
 - Enable surveillance at scale.
 - Widen the gap between compressed and full models.
+```
 
 ---

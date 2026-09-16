@@ -86,5 +86,6 @@ A combined pipeline could achieve **4-5× total compression**.
 2. **Interaction with quantization:** INT8-A3 vs INT8-A3+Adaptive SVD?
 3. **Optimal min_rank:** Is 16 the right floor?
 4. **Cross-attention with asymmetric K/V:** Does it change the optimal rank?
+```
 
 ---

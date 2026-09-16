@@ -147,5 +147,6 @@
 - **Lossless initialization** confirmed — no accuracy drop at step 0.
 - **Post-hoc pruning** yields **{{PRUNE_REDUCTION}}%** additional rank reduction.
 - **All three models pass quality gate.**
+```
 
 ---

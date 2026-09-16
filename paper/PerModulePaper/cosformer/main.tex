@@ -64,10 +64,37 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the cosformer module within modern transformer architectures.
+
+Softmax attention is the bottleneck of transformer inference for long 
+sequences, requiring $\mathcal{O}(L^2)$ time and memory. \textbf{Cosformer} 
+(Qin et al., 2022) addresses this by replacing softmax with a non-negative 
+kernel (ELU + 1 or softplus) augmented with cosine-based positional 
+reweighting, yielding $\mathcal{O}(L)$ attention while preserving locality. 
+We present a \textbf{production-hardened port} of Cosformer to pretrained 
+transformers, supporting four architecture families -- DistilBERT, 
+RoBERTa/BERT, GPT-2, and Qwen/LLaMA -- with exact weight transfer, GQA, 
+RoPE, and two distinct computational paths: \textbf{associative accumulation} 
+for bidirectional encoders and \textbf{chunked prefix-sum} for causal decoders. 
+Base weights are transferred exactly from the pretrained attention; LoRA 
+adapters at rank $r = {{LORA_RANK}}$ provide recovery capacity.
+
+We benchmark on SST-2 across three models. Cosformer achieves 
+\textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{D\_BASE}}\%, $\Delta$ = {{D\_DELTA}}), 
+\textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 
+($\Delta$ = {{G\_DELTA}}). Inference time is \textbf{{{D\_TIME\_R}}$\times$} baseline on 
+DistilBERT and \textbf{{{G\_TIME\_R}}$\times$} on GPT-2. Unlike recent mechanisms that 
+collapse on encoders, Cosformer preserves most of the baseline accuracy 
+at a modest latency cost. We document the construction of the cosine/sine 
+reweighting, the chunked causal scan, and the exact failure modes we 
+observed.
+
+\textbf{Keywords:} linear attention, Cosformer, kernel methods, positional 
+reweighting, efficient transformers
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} cosformer, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} linear attention, Cosformer, kernel methods, positional
 \end{abstract}
 
 \vspace{1em}

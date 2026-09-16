@@ -61,3 +61,36 @@ cd D:\SVD_Project\papers\clusterformer
 python apply_vars.py --module clusterformer
 Select-String -Path "*.md" -Pattern "\{\{"
 python build.py --module clusterformer --pdf
+```
+
+---
+
+## 💡 نکات مخصوص ClusterFormer
+
+### ۱. برجسته‌سازی Linear بدون Random Features
+
+تفاوت اصلی با Performer: ClusterFormer **exact** است روی سطح centroid. این را در abstract و method تأکید کن.
+
+### ۲. Crossover Point
+
+ClusterFormer برای $L < 100$ کندتر است. این را صادقانه در discussion بگو.
+
+### ۳. Causal Decoder Fallback
+
+ClusterFormer برای decoder از exact attention استفاده می‌کند. این محدودیت را باید توضیح بدهی.
+
+### ۴. K-Means Quality
+
+Cluster assignments باید visualize شوند. Cluster entropy و effective K را گزارش کن.
+
+### ۵. مقایسه با `routing` Module
+
+`routing` (که قبلاً دیدیم) از cluster-by-cluster loop استفاده می‌کند (کند). ClusterFormer از centroid-to-key استفاده می‌کند (سریع). این تفاوت را برجسته کن.
+
+### ۶. Not Compression
+
+مثل NHA و AdaSplash، ClusterFormer پارامتر اضافه می‌کند. صادق باش.
+
+---
+
+**قدم بعدی: `run_all_4_cluster.py` را اجرا کن و نتایج را بفرست تا `variables.json` را با اعداد واقعی پر کنم.**

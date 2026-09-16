@@ -1,3 +1,79 @@
-\section{02 Related}
 
-Draft content for cosformer.
+\section{Related Work}
+
+\subsection{Linear Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020). Uses $\phi(x) = \text{elu}(x) + 1$ 
+without positional reweighting. First to show $\mathcal{O}(L)$ attention 
+with reasonable performance.
+
+\textbf{Performer} (Choromanski et al., 2021). Uses random Fourier features 
+(RFF) for kernel approximation with theoretical guarantees.
+
+\textbf{Nystr mformer} (Xiong et al., 2021). Uses Nystr m landmarks for low-rank 
+attention approximation.
+
+\subsection{Positional Reweighting}
+
+\textbf{Cosformer} (Qin et al., 2022). The direct inspiration for this work. 
+Uses cosine/sine reweighting to preserve locality.
+
+\textbf{RoPE} (Su et al., 2021). Rotary position embeddings, standard in modern 
+decoders. Not the same as Cosformer's reweighting -- RoPE rotates features, 
+Cosformer scales them.
+
+\textbf{ALiBi} (Press et al., 2022). Linear bias on attention scores. Preserves 
+locality.
+
+\subsection{Causal Linear Attention}
+
+For causal models, naive linear attention is not enough -- the denominator 
+must accumulate causally. Two main approaches:
+
+\textbf{Cumulative sum (cumsum).} Compute running sums over the sequence. 
+$\mathcal{O}(L)$ memory, single kernel.
+
+\textbf{Chunked prefix-sum.} Split sequence into chunks; compute intra-chunk 
+contributions directly, inter-chunk via state. Used in Cosformer, DeltaNet, 
+and others.
+
+\subsection{Pretrained Weight Transfer}
+
+\textbf{DistilBERT} (Sanh et al., 2019). Distillation with weight transfer.
+
+\textbf{LoRA} (Hu et al., 2021). Preserves pretrained weights, adds low-rank 
+adapters.
+
+\textbf{Our approach.} Combines exact weight transfer (Q/K/V/O) with LoRA recovery.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{Ours} \\
+\midrule
+\textbf{Method} & Cosformer (published) & Port to pretrained \\
+\textbf{Weight transfer} & Rare & Exact, four architectures \\
+\textbf{Bidirectional} & Sometimes & Dedicated path \\
+\textbf{RoPE support} & Limited & Full support \\
+\textbf{Recovery} & From scratch & LoRA \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Unlike most linear-attention papers that train from 
+scratch, we focus on \textbf{weight-preserving port} to pretrained models. This 
+requires careful handling of the \texttt{copy\_weights} procedure across 
+architectures.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

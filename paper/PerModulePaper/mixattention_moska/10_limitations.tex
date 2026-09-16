@@ -1,3 +1,80 @@
-\section{10 Limitations}
 
-Draft content for mixattention_moska.
+\section{Limitations}
+
+\subsection{No Causal Support}
+
+FASA \textbf{does not prune} for causal decoders. GPT-2 receives no benefit 
+from the method.
+
+\subsection{Variance is a Weak Signal}
+
+The Spearman correlation between variance and attention received is 
+{{CORR\_MEAN}}, indicating a \textbf{modest} relationship. FASA's pruning is 
+better than random but worse than H2O.
+
+\subsection{Keep Ratio of 0.5 is Aggressive}
+
+At 0.5, FASA drops half the tokens. Accuracy drops by \textbf{{{D\_DROP}}\%} on 
+DistilBERT. Higher keep ratios (0.75+) preserve more.
+
+\subsection{CLS Pinning is Essential}
+
+Without protecting index 0, encoders collapse. This is a fragile design.
+
+\subsection{Gather + TopK Overhead}
+
+The gather and top-k operations add overhead. At $L = 128$, the overhead 
+exceeds the FLOP savings.
+
+\subsection{No Speedup at Short Sequences}
+
+FASA shows slower inference than baseline on DistilBERT. Speedup requires 
+$L \gg 1024$.
+
+\subsection{Naming Confusion}
+
+The class is registered as both \texttt{fasa} and \texttt{mixattention\_moska}. The 
+"MoSKA" name is not explained in the code.
+
+\subsection{Pruning Recomputed Every Forward}
+
+The token subset is recomputed every forward pass. This is expensive 
+relative to cached pruning (e.g., SnapKV).
+
+\subsection{No Multi-Seed}
+
+Single seed.
+
+\subsection{Task Coverage}
+
+Only SST-2. Long-context tasks (where FASA should help) are not tested.
+
+\subsection{Model Coverage}
+
+Only three models. Qwen3.5 untested.
+
+\subsection{No Learned Importance}
+
+The importance signal is purely heuristic. A small learned model could 
+improve accuracy.
+
+\subsection{Code Quality}
+
+\begin{itemize}
+\item \texttt{mixattention\_moska} name is unexplained.
+\item No logging of pruning statistics.
+\item \texttt{importance\_method} supports two options but only \texttt{var} is well-tested.
+
+\end{itemize}
+\subsection{What This Paper Is Not}
+
+\begin{itemize}
+\item Not a new attention mechanism
+\item Not a compression method
+\item Not a causal-decoder method
+\item Not a speedup method for short sequences
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

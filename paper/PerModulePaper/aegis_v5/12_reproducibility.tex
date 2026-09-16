@@ -1,3 +1,90 @@
-\section{12 Reproducibility}
+\section{Reproducibility}
 
-Draft content for aegis_v5.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running AEGIS-V5}
+
+\begin{lstlisting}
+python run_all_4_aegis_v5.py \
+    --models distilbert,roberta,gpt2 \
+    --svd_energy {{ENERGY}} \
+    --max_rank {{MAX_RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --modules full,aegis_v5 \
+    --svd_energy {{ENERGY}} \
+    --max_rank {{MAX_RANK}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+\begin{lstlisting}
+python run_all_4_aegis_v5.py
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (Rank Ablation)}
+\begin{lstlisting}
+for r in 32 64 128 256 384; do
+    python run_all_4_aegis_v5.py --max_rank $r --output_suffix r$r
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.6 (Head Split)}
+\begin{lstlisting}
+python run_all_4_aegis_v5.py --num_local_heads 12 --num_global_heads 0 --output_suffix alllocal
+python run_all_4_aegis_v5.py --num_local_heads 8 --num_global_heads 4 --output_suffix default
+python run_all_4_aegis_v5.py --num_local_heads 0 --num_global_heads 12 --output_suffix allglobal
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Acc} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-aegis\_v5}
+\item \textbf{Metrics:} \texttt{results/unified\_aegis\_v5/*/summary.csv}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

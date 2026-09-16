@@ -118,5 +118,6 @@ because:
 | Theoretical FLOPs speedup (r=32) | 2× |
 | Actual speedup (r=32, L=128) | {{ACTUAL_SPEEDUP}}× |
 | Memory reduction | **0%** |
+```
 
 ---

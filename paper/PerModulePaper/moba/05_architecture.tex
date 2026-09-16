@@ -1,11 +1,202 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Draft content for moba.
+\subsection{Model Support}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Conv1D?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & No \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & Yes \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight.data
+if c_w.shape[0] < c_w.shape[1]:  # Conv1D stores (in, out)
+    c_w = c_w.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+if hasattr(src, "self") and hasattr(src, "output"):
+    is_nested_encoder = True
+    q_w = src.self.query.weight
+    k_w = src.self.key.weight
+    v_w = src.self.value.weight
+    o_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Qwen GQA}
+
+\begin{lstlisting}
+q_w = src.q_proj.weight  # (H d_h, d)
+k_w = src.k_proj.weight  # (H_kv d_h, d)
+v_w = src.v_proj.weight
+o_w = src.o_proj.weight
+\end{lstlisting}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+q_w = src.q_lin.weight
+k_w = src.k_lin.weight
+v_w = src.v_lin.weight
+o_w = src.out_lin.weight
+\end{lstlisting}
+
+\subsection{Weight Reuse Strategy}
+
+\subsubsection{in\_proj Weight Layout}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Branch} & \textbf{Source} & \textbf{Rationale} \\
+\midrule
+$p_1$ (first d) & $W_V$ & SSM input \\
+$p_2$ (second d) & $W_Q$ & Gating signal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Padding/Repeating}
+
+If source weight has $d_\text{out} < d$ (e.g., GQA K/V), we repeat:
+
+\begin{lstlisting}
+if w_main.shape[0] < D and D % w_main.shape[0] == 0:
+    rep = D // w_main.shape[0]
+    w_main = w_main.repeat(rep, 1)
+\end{lstlisting}
+
+\subsubsection{out\_proj Weight Layout}
+
+Direct copy from $W_O$.
+
+\subsubsection{Nested Encoder Output}
+
+For nested encoders, \texttt{out\_proj} is set to identity:
+
+\begin{lstlisting}
+elif self.is_nested_encoder:
+    nn.init.eye_(self.out_proj.weight)
+    if self.out_proj.bias is not None:
+        nn.init.zeros_(self.out_proj.bias)
+\end{lstlisting}
+
+\subsection{The A\_log Parameter}
+
+\begin{lstlisting}
+self.A_log = nn.Parameter(torch.log(torch.arange(1, self.d_model + 1, dtype=torch.float32)))
+\end{lstlisting}
+
+\textbf{Init.} $A_{\log, i} = \log(i)$, so $\gamma_i = \sigma(-i)$.
+
+\textbf{Interpretation.} Higher dimensions have larger $A_{\log}$ $\to$ smaller $\gamma$ 
+$\to$ faster forgetting.
+
+\subsection{The Preservation Gate}
+
+\begin{lstlisting}
+self.pres_gate = nn.Parameter(torch.tensor(2.0))
+\end{lstlisting}
+
+At init, $\alpha = \sigma(2.0) \approx 0.88$. During training, the model can 
+shift $\alpha$ toward 0 (rely on residual) or 1 (rely on SSM output).
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject Mamba-Inspired SSM Attention
+\begin{lstlisting}
+Input:  model M, config
+Output: M with attention replaced
+
+1: for   in transformer_layers(M) do
+2:     src $\leftarrow$ get_attention( )
+3:     new $\leftarrow$ Mamba(d_model, old_attn=src)
+4:     replace( , new)
+5: end for
+6: return M
+\end{lstlisting}
+
+\subsection{Skip Logic}
+
+The injection hook skips:
+
+\begin{itemize}
+\item Layers already injected (\texttt{isinstance(src, Mamba)})
+\item Qwen3.5 hybrid DeltaNet/LinearAttention layers
+
+\end{itemize}
+\begin{lstlisting}
+if "DeltaNet" in c_name or "LinearAttention" in c_name:
+    return None
+\end{lstlisting}
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+UniversalAdapter throws & try/except & \textbf{Raise RuntimeError} \\
+Missing Q/K/V & \texttt{missing\_after} non-empty & \textbf{Raise RuntimeError} \\
+Near-zero norm & Frobenius check & \textbf{Raise RuntimeError} \\
+Injection fail & Exception & Log error, return None \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} \texttt{copy\_weights} raises exceptions (does not gracefully degrade). 
+The injection hook catches them and returns None.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("mamba")
+class Mamba(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Interaction with LoRA Recovery}
+
+Base weights are frozen; LoRA adapters on \texttt{in\_proj} and \texttt{out\_proj} are 
+trainable. Additionally:
+
+\begin{itemize}
+\item \texttt{A\_log}: trainable (decay parameter)
+\item \texttt{pres\_gate}: trainable (preservation scalar)
+
+\end{itemize}
+Trainable parameter count per layer (d = 768, r\_L = 16):
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/moba_architecture.png}
-\caption{Architectural overview of moba.}
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of moba.}
 \label{fig:arch_moba}
 \end{figure}
+

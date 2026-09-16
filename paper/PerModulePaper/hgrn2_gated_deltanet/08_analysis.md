@@ -110,5 +110,6 @@ Possible causes:
 3. **Gate learns** sensible per-token preferences.
 4. **RoBERTa degrades more** than DistilBERT, hypothesis: nested structure.
 5. **Fused CUDA kernel** would eliminate the short-sequence slowdown.
+```
 
 ---

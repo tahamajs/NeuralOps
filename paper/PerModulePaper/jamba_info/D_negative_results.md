@@ -96,5 +96,6 @@ Two bottlenecks (forward + backward). Result: no improvement.
 3. **α init = σ(-2) is best.**
 4. **Bottleneck before SSM.**
 5. **Per-layer bottlenecks.**
+```
 
 ---

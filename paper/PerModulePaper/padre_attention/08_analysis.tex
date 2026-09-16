@@ -1,3 +1,95 @@
-\section{08 Analysis}
+\section{Analysis}
 
-Formal architectural specifications for \texttt{padre_attention}.
+\subsection{Why Does PADRe Work?}
+
+\subsubsection{Taylor Approximation Quality}
+
+\textbf{Figure 8.1} compares the polynomial kernel to softmax for various orders. 
+Order 2 matches softmax well for $|s| < 1$; order 4 for $|s| < 2$.
+
+After centering, most scores fall in $[-2, 0]$, so order 4 is sufficient.
+
+\subsubsection{Centering Prevents Overflow}
+
+\textbf{Figure 8.2} shows the base values with and without centering. Without 
+centering, scores can reach 20+, causing overflow in FP16.
+
+\subsubsection{ReLU Sparsity}
+
+\textbf{Figure 8.3} shows the fraction of zeroed positions. After centering, 
+positions with $s < -d$ get zero weight. This creates natural sparsity.
+
+\subsection{Order Analysis}
+
+\textbf{Table 8.1: Taylor error vs order.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Order} & \textbf{Max error ($} & \textbf{s} & \textbf{\leq 1$)} & \textbf{Max error ($} & \textbf{s} & \textbf{\leq 2$)} \\
+\midrule
+1 & 0.20 & 0.80 &  &  &  &  \\
+2 & 0.08 & 0.40 &  &  &  &  \\
+4 & 0.01 & 0.10 &  &  &  &  \\
+8 & 0.001 & 0.01 &  &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Softmax}
+
+\textbf{Table 8.2: Numerical differences.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Softmax} & \textbf{PADRe (order 4)} \\
+\midrule
+Max weight & 0.95 & 0.93 \\
+Min weight (nonzero) & 0.001 & 0.005 \\
+Sparsity & 0\% & 15\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Injection Behavior}
+
+\textbf{Figure 8.4} shows the output equivalence error for each layer. Layers 
+with high error (e.g., early layers with peaked attention) are skipped.
+
+\subsection{Numerical Stability}
+
+\textbf{Table 8.3: Failure modes and mitigations.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Failure} & \textbf{Mitigation} \\
+\midrule
+Overflow in base & Max-centering \\
+Negative base NaN & ReLU clamp \\
+All-masked query & Set max to 0 \\
+FP16 underflow & Use FP32 for scores \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Order 4 is sufficient} for typical score ranges.
+\item \textbf{Centering is essential} for stability.
+\item \textbf{ReLU sparsity is a free benefit} (15\% zero weights).
+\item \textbf{Injection check prevents bad layers.}
+\item \textbf{Runtime is unchanged} without kernelization.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

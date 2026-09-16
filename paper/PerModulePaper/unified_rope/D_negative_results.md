@@ -103,5 +103,6 @@ Rotary dim < head_dim. Result: similar accuracy.
 4. **LoRA recovery needed for adding RoPE.**
 5. **RoPE base 10000 works best.**
 6. **Full rotary dim is best.**
+```
 
 ---

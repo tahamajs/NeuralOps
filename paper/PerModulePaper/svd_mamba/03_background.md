@@ -152,5 +152,6 @@ $Y \approx Y_b$ at start.
 | $D$ | Skip connection |
 | $U, \Sigma, V$ | SVD factors |
 | $r$ | SVD rank |
+```
 
 ---

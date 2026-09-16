@@ -1,3 +1,134 @@
-\section{C Data}
 
-Draft content for mixattention_moska.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_ACC}}\% \\
+$\Delta$ & {{D\_DELTA}}\% \\
+F1 & {{D\_F1}} \\
+Params (after) & {{D\_PARAMS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Path & Pruned \\
+Keep ratio & {{KEEP\_RATIO}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{R\_ACC}}\% \\
+$\Delta$ & {{R\_DELTA}}\% \\
+F1 & {{R\_F1}} \\
+Params (after) & {{R\_PARAMS}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Inference time & {{R\_TIME}} s \\
+Path & Pruned \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{G\_ACC}}\% \\
+$\Delta$ & {{G\_DELTA}}\% \\
+F1 & {{G\_F1}} \\
+Params (after) & {{G\_PARAMS}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Inference time & {{G\_TIME}} s \\
+Path & \textbf{No prune (causal)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Keep Ratio Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Ratio} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+0.25 & {{D\_K25}} & {{R\_K25}} \\
+0.50 & {{D\_K50}} & {{R\_K50}} \\
+0.75 & {{D\_K75}} & {{R\_K75}} \\
+1.00 & {{D\_K100}} & {{R\_K100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Importance Method}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+\texttt{var} & {{D\_VAR}} & {{R\_VAR}} \\
+\texttt{l2} & {{D\_L2}} & {{R\_L2}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 CLS Protection}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Setting} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+Protect & {{D\_PROTECT\_ON}} & {{R\_PROTECT\_ON}} \\
+No protect & {{D\_PROTECT\_OFF}} & {{R\_PROTECT\_OFF}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {"acc": {{D_ACC}}, "path": "pruned"},
+  "roberta": {"acc": {{R_ACC}}, "path": "pruned"},
+  "gpt2": {"acc": {{G_ACC}}, "path": "no-prune"}
+}
+\end{lstlisting}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_fasa.py --models distilbert,roberta,gpt2
+
+for r in 0.25 0.5 0.75 1.0; do
+    python run_all_4_fasa.py --fasa_keep_ratio $r --output_suffix k$r
+done
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

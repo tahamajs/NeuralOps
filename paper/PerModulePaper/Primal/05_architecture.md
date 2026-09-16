@@ -154,3 +154,6 @@ class PrimalAttention(BaseAttention): ...
 | $F_2$ singular | `linalg.pinv` error | Skip layer |
 | NaN in Schulz | `torch.isnan` | Reset to SVD pinv |
 | CUDA OOM | RuntimeError | Reduce $m$ |
+```
+
+---

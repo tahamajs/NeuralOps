@@ -117,5 +117,6 @@ provides guidance. Section 10 lists limitations. Section 11 concludes.
 | $C_X$ | Input activation covariance |
 | $r_L$ | LoRA rank |
 | $d_h$ | Per-head dimension |
+```
 
 ---

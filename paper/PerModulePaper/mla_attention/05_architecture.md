@@ -183,5 +183,6 @@ are not applicable.
    dimension; we apply it uniformly after up-projection.
 3. **Multi-architecture support.** The original does not target DistilBERT, 
    RoBERTa, or GPT-2.
+```
 
 ---

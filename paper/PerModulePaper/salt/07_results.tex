@@ -1,3 +1,204 @@
-\section{07 Results}
 
-Draft content for salt.
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: SST-2 accuracy.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$} & \textbf{Storage} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 134 MB \\
+DistilBERT & \textbf{salt} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & \textbf{{{D\_PARAM\_RED}}$\times$} & {{D\_STORAGE}} MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 249 MB \\
+RoBERTa & \textbf{salt} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & \textbf{{{R\_PARAM\_RED}}$\times$} & {{R\_STORAGE}} MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 249 MB \\
+GPT-2 & \textbf{salt} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{{{G\_PARAM\_RED}}$\times$} & {{G\_STORAGE}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observations:}
+
+\begin{enumerate}
+\item \textbf{Parameter reduction:} {{D\_PARAM\_RED}}$\times$ (DistilBERT), {{R\_PARAM\_RED}}$\times$
+  (RoBERTa), {{G\_PARAM\_RED}}$\times$ (GPT-2).
+\item \textbf{Accuracy preservation:} within {{MAX\_DELTA}}\%.
+\item \textbf{Storage reduction:} ~{{STORAGE\_REDUCTION}}$\times$.
+
+\end{enumerate}
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After SALT} & \textbf{Reduction} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & \textbf{{{D\_PARAM\_RED}}$\times$} \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & \textbf{{{R\_PARAM\_RED}}$\times$} \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & \textbf{{{G\_PARAM\_RED}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Per-layer breakdown (768$\times$768 projection, r=16):}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Full W & 589,824 \\
+SALT total & 49,936 \\
+\textbf{Reduction} & \textbf{11.8$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{SALT} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 1.9 s & {{D\_TIME}} s & {{D\_TIME\_R}}$\times$ \\
+RoBERTa & 4.1 s & {{R\_TIME}} s & {{R\_TIME\_R}}$\times$ \\
+GPT-2 & 4.2 s & {{G\_TIME}} s & {{G\_TIME\_R}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} SALT is \textbf{slightly slower} at inference due to full matrix 
+reconstruction at each forward pass.
+
+\subsection{Ablation: Rank}
+
+\textbf{Table 7.4: Effect of rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{Params (per layer)} & \textbf{Reduction} \\
+\midrule
+4 & {{D\_R4}} & 12,336 & 47.8$\times$ \\
+8 & {{D\_R8}} & 24,656 & 23.9$\times$ \\
+16 & {{D\_R16}} & 49,296 & 12.0$\times$ \\
+32 & {{D\_R32}} & 98,576 & 5.98$\times$ \\
+64 & {{D\_R64}} & 197,136 & 2.99$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Gamma}
+
+\textbf{Table 7.5: Effect of trainable $\gamma$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+$\gamma$ trainable & {{D\_G}} & {{R\_G}} & {{G\_G}} \\
+$\gamma$ fixed = 1 & {{D\_NOG}} & {{R\_NOG}} & {{G\_NOG}} \\
+$\Delta$ & {{D\_G\_DELTA}} & {{R\_G\_DELTA}} & {{G\_G\_DELTA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Residual AB}
+
+\textbf{Table 7.6: Effect of trainable residual.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+AB trainable & {{D\_AB}} & {{R\_AB}} & {{G\_AB}} \\
+AB = 0 (frozen) & {{D\_NOAB}} & {{R\_NOAB}} & {{G\_NOAB}} \\
+$\Delta$ & {{D\_AB\_DELTA}} & {{R\_AB\_DELTA}} & {{G\_AB\_DELTA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Prior Modules}
+
+\textbf{Table 7.8: Cross-module comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Module} & \textbf{DistilBERT} & \textbf{Params $\Delta$} & \textbf{Storage $\Delta$} \\
+\midrule
+full & 90.71\% & 0\% & 0\% \\
+nha & 90.25\% & +0.88\% & +0.88\% \\
+a3 & {{A3\_ACC}} & \textbf{-80\%} & \textbf{-80\%} \\
+\textbf{salt} & \textbf{{{D\_ACC}}} & \textbf{-92\%} & \textbf{-92\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Loss Curves}
+
+\textbf{Figure 7.1} shows recovery loss.
+
+\begin{itemize}
+\item DistilBERT: {{D\_LOSS\_TRAJ}}
+\item RoBERTa: {{R\_LOSS\_TRAJ}}
+\item GPT-2: {{G\_LOSS\_TRAJ}}
+
+\end{itemize}
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Parameter reduction: {{D\_PARAM\_RED}}$\times$--{{G\_PARAM\_RED}}$\times$}
+\item \textbf{Storage reduction: ~{{STORAGE\_REDUCTION}}$\times$}
+\item \textbf{Accuracy preserved within {{MAX\_DELTA}}\%}
+\item \textbf{Inference memory: unchanged}
+\item \textbf{Inference latency: {{D\_TIME\_R}}$\times$ (slightly slower)}
+\item Verdict: \textbf{{{VERDICT}}}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

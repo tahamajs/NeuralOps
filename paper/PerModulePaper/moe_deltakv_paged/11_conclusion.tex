@@ -1,3 +1,74 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for moe_deltakv_paged.
+\subsection{Summary}
+
+We presented \textbf{MoE-DeltaKV-Paged}, a hybrid attention module combining 
+MoBA-style block routing, Delta-KV temporal compression, and differentiable 
+4-bit quantization. The module includes CLS-token preservation via page-0 
+logit boosting and a MoE-style auxiliary load balancing loss.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Pages} & \textbf{Page-0 rate} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & {{D\_PAGES}} & {{D\_P0\_RATE}}\% \\
+RoBERTa & {{R\_DELTA}}\% & {{R\_PAGES}} & {{R\_P0\_RATE}}\% \\
+GPT-2 & {{G\_DELTA}}\% & {{G\_PAGES}} & {{G\_P0\_RATE}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Techniques compose cleanly.}
+\item \textbf{Delta-KV and 4-bit are simulations} -- no real compression.
+\item \textbf{Router works} with identity init + aux loss.
+\item \textbf{CLS boost is essential.}
+\item \textbf{Block-sparse speedup grows with L.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Materialize the delta compression (real compression)
+\item Fused kernel for 6D gather
+\item Adaptive page sizes
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Combine with quantization for real 4-bit
+\item Theoretical analysis of MoBA + Delta-KV
+\item Cross-task transferability
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+MoE-DeltaKV-Paged is a research prototype demonstrating how MoBA, Delta-KV, 
+and differentiable quantization can be combined. Code released.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed, implemented, ran experiments, wrote paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

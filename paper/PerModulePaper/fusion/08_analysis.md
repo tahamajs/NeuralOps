@@ -78,3 +78,6 @@ The gate MLP adds ~{{GATE_PARAMS}}M parameters but does nothing at L=128.
 3. **Parameter count increases** — LoRA + gate.
 4. **Not a compression method.**
 5. **Theoretical speedup** exists for L ≥ 256.
+```
+
+---

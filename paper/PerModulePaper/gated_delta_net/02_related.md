@@ -84,5 +84,6 @@ model. The algorithm itself follows Yang et al. (2024).
 | Mamba | $O(L)$ | Input | No | No | From scratch |
 | DeltaNet | $O(L)$ | Input | Yes | No | Rare |
 | **Gated DeltaNet** | **$O(L)$** | **Input** | **Yes** | **Yes** | **Yes** |
+```
 
 ---

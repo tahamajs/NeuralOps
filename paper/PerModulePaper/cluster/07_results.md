@@ -99,3 +99,6 @@
 | GPT-2 | {{G_ENTROPY}} | {{G_EFF_K}} / {{NUM_CLUSTERS}} |
 
 High entropy and usage of many clusters indicate good diversity.
+```
+
+---

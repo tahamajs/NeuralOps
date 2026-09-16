@@ -1,0 +1,97 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: A_math.md
+     PURPOSE: Mathematical derivations
+     DEPENDENCIES: 04_method.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix A. Mathematical Derivations
+
+## A.1 Linear Attention Derivation
+
+Starting from softmax attention:
+
+$$
+\text{Attn}(q_i) = \frac{\sum_j e^{q_i^\top k_j} v_j}{\sum_j e^{q_i^\top k_j}}
+\tag{A.1}
+$$
+
+Approximating $e^{q^\top k} \approx \phi(q)^\top \phi(k)$:
+
+$$
+\text{Attn}(q_i) \approx \frac{\sum_j \phi(q_i)^\top \phi(k_j) v_j}{\sum_j \phi(q_i)^\top \phi(k_j)}
+= \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\tag{A.2}
+$$
+
+This is the standard linear attention formula. Complexity: $\mathcal{O}(L m d)$ 
+where $m = \dim \phi$.
+
+## A.2 Rank Augmentation
+
+We add a per-head matrix $M_h = U_h V_h^\top \in \mathbb{R}^{d \times d}$. 
+The augmented output is:
+
+$$
+\text{aug}_i = \frac{\phi(q_i)^\top M_h}{\phi(q_i)^\top z_i}
+\tag{A.3}
+$$
+
+**Causality.** $M_h$ is a static (data-independent) matrix. It applies the 
+same linear map to every query. It does not use any information from position 
+$j > i$, so it is compatible with causal attention.
+
+## A.3 Softplus Properties
+
+The softplus function satisfies:
+
+$$
+\text{softplus}(x) = \log(1 + e^x)
+\tag{A.4}
+$$
+
+**Derivatives:**
+
+$$
+\frac{d}{dx}\text{softplus}(x) = \sigma(x) = \frac{1}{1 + e^{-x}}
+\tag{A.5}
+$$
+
+$$
+\frac{d^2}{dx^2}\text{softplus}(x) = \sigma(x)(1 - \sigma(x))
+\tag{A.6}
+$$
+
+**Both derivatives are continuous and bounded** — the kernel is $C^\infty$.
+
+## A.4 Comparison with elu+1
+
+The elu+1 kernel is:
+
+$$
+\phi_{\text{elu}}(x) = \begin{cases} x + 1 & x > 0 \\ e^x & x \le 0 \end{cases}
+\tag{A.7}
+$$
+
+**Derivative:**
+
+$$
+\phi'_{\text{elu}}(x) = \begin{cases} 1 & x > 0 \\ e^x & x \le 0 \end{cases}
+\tag{A.8}
+$$
+
+**Discontinuity:** The second derivative jumps from 1 to $e$ at $x = 0$.
+
+**Softplus has no such discontinuity.**
+
+## A.5 Complexity of Prefix Scan
+
+**Sequential.** $\mathcal{O}(L)$ depth, $\mathcal{O}(L)$ kernel launches.
+
+**Parallel (Blelloch, 1990).** $\mathcal{O}(\log L)$ depth, $\mathcal{O}(L)$ 
+total work.
+
+For $L = 128$: sequential is 128 steps; parallel is 7 steps. **~18× more 
+efficient.**
+```
+
+---

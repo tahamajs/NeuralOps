@@ -134,3 +134,6 @@ for m in 16 32 64 128 256; do
     python run_all_4_primal.py --rank $m --output_suffix m$m
 done
 ```
+```
+
+---

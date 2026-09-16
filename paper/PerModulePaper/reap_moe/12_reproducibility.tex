@@ -1,3 +1,97 @@
-\section{12 Reproducibility}
+\section{Reproducibility Statement}
 
-Draft content for reap_moe.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running REAP-MoE}
+
+\begin{lstlisting}
+python run_all_4_reap_moe.py \
+    --models distilbert,roberta,gpt2 \
+    --n_experts {{N_EXPERTS}} \
+    --top_k {{TOP_K}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+Runtime: ~{{RUNTIME}} min.
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --modules full,reap_moe \
+    --n_experts {{N_EXPERTS}} \
+    --top_k {{TOP_K}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+\begin{lstlisting}
+python run_all_4_reap_moe.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (Experts)}
+\begin{lstlisting}
+for E in 2 4 8 16; do
+    python run_all_4_reap_moe.py --n_experts $E --output_suffix E$E
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.6 (Top-k)}
+\begin{lstlisting}
+for k in 1 2 4; do
+    python run_all_4_reap_moe.py --top_k $k --output_suffix k$k
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & {{D\_PARAM\_CHANGE}} \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & {{R\_PARAM\_CHANGE}} \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_PARAM\_CHANGE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-reap\_moe}
+\item \textbf{Metrics:} \texttt{results/unified\_reap\_moe/*/summary.csv}
+
+\end{itemize}
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Batch size 4 required for 12-layer models
+\item \texttt{PYTHONIOENCODING=utf-8} on Windows
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -16,9 +16,9 @@ Gates start at $\sigma(3) \approx 0.95$ and shift during training:
 \toprule
 \textbf{Model} & \textbf{Initial} & \textbf{Final mean} & \textbf{Shift} \\
 \midrule
-DistilBERT & 0.95 & 0.75 & -0.20 \\
-RoBERTa & 0.95 & 0.70 & -0.25 \\
-GPT-2 & 0.95 & 0.72 & -0.23 \\
+DistilBERT & 0.95 & {{D\_GATE}} & {{D\_SHIFT}} \\
+RoBERTa & 0.95 & {{R\_GATE}} & {{R\_SHIFT}} \\
+GPT-2 & 0.95 & {{G\_GATE}} & {{G\_SHIFT}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -69,14 +69,14 @@ context.
 \toprule
 \textbf{Fusion} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Fixed 0.5 & 86.0 & 60.0 & 72.0 \\
-Fixed 0.8 & 88.5 & 64.0 & 76.0 \\
-\textbf{Learned} & \textbf{90.25} & \textbf{67.89} & \textbf{78.78} \\
+Fixed 0.5 & {{D\_FIX50}} & {{R\_FIX50}} & {{G\_FIX50}} \\
+Fixed 0.8 & {{D\_FIX80}} & {{R\_FIX80}} & {{G\_FIX80}} \\
+\textbf{Learned} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Learned gate outperforms fixed by 2.0\%.
+\textbf{Observation.} Learned gate outperforms fixed by {{LEARNED\_DELTA}}\%.
 
 \subsection{Comparison with NHA Variants}
 
@@ -87,9 +87,9 @@ Fixed 0.8 & 88.5 & 64.0 & 76.0 \\
 \toprule
 \textbf{Variant} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-NHA (full) & 90.25 & 67.89 & 78.78 \\
-Local only & 85.5 & 60.0 & 72.0 \\
-Global only & 82.0 & 58.0 & 70.0 \\
+NHA (full) & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+Local only & {{D\_LOCAL}} & {{R\_LOCAL}} & {{G\_LOCAL}} \\
+Global only & {{D\_GLOBAL}} & {{R\_GLOBAL}} & {{G\_GLOBAL}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -117,7 +117,7 @@ Invalid K, V are zeroed before cumsum, avoiding contamination.
 We verify causality via finite differences: for input $X$ with $L = 128$, 
 we check $\partial O_i / \partial X_j = 0$ for $j > i$.
 
-\textbf{Result.}   Verified on all three models
+\textbf{Result.} {{CAUSAL\_VERIFIED}}
 
 \subsection{Failure Cases}
 
@@ -130,15 +130,15 @@ we check $\partial O_i / \partial X_j = 0$ for $j > i$.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Drop} \\
 \midrule
-layer.0 & RoBERTa & 12 \\
-layer.3 & GPT-2 & 1.5 \\
+{{FAIL\_LAYER\_1}} & {{FAIL\_MODEL\_1}} & {{FAIL\_DROP\_1}} \\
+{{FAIL\_LAYER\_2}} & {{FAIL\_MODEL\_2}} & {{FAIL\_DROP\_2}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsubsection{Root Causes}
 
-RoBERTa nested encoder mis-set; some heads need global attention
+{{FAIL\_CAUSE}}
 
 \subsection{Summary of Insights}
 
@@ -150,3 +150,7 @@ RoBERTa nested encoder mis-set; some heads need global attention
 \item \textbf{Orthogonal RFF} stabilizes training.
 \item \textbf{Causality preserved} via chunked scan.
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

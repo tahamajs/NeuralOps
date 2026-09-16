@@ -74,5 +74,6 @@ from a heap takes $\mathcal{O}(L \log k)$. Dominant: $\mathcal{O}(L \log L)$. $\
 
 The causal mask sets $S_{ij} = -\infty$ for $j > i$, so softmax assigns zero 
 weight to future tokens. $\square$
+```
 
 ---

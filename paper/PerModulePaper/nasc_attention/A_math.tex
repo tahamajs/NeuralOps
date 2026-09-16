@@ -1,3 +1,134 @@
-\section{A Math}
 
-Draft content for nasc_attention.
+\section{Appendix A. Mathematical Derivations}
+
+\subsection{A.1 Local Window Attention}
+
+\[
+O_{\text{loc}, i} = \frac{\sum_{j: |i - j| \leq W, j \leq i} \exp(q_i^\top k_j / \sqrt{d}) v_j}{\sum_{j} \exp(q_i^\top k_j / \sqrt{d})}
+\tag{A.1}
+\]
+
+Standard softmax over the window.
+
+\subsection{A.2 Sparse Block Scores}
+
+For blocks $i, j$:
+
+\[
+s_{ij} = \frac{\bar{q}_i^\top \bar{k}_j}{\sqrt{d}}, \quad
+\bar{q}_i = \frac{1}{B_s} \sum_{t \in \text{block}_i} q_t
+\tag{A.2}
+\]
+
+Selection:
+
+\[
+\mathcal{B}_i = \text{topk}_{k}\{s_{ij}\}_j, \quad
+O_{\text{sp}, i} = \text{softpick}(Q_i K_{\mathcal{B}_i}^\top / \sqrt{d}) V_{\mathcal{B}_i}
+\tag{A.3}
+\]
+
+\subsection{A.3 RFF Feature Map}
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(\Omega x), \sin(\Omega x)]
+\tag{A.4}
+\]
+
+$\phi(x) \in \mathbb{R}^{2F}$.
+
+\textbf{Approximation.}
+
+\[
+\phi(q)^\top \phi(k) = \frac{1}{F} [\cos(\Omega q)^\top \cos(\Omega k) + \sin(\Omega q)^\top \sin(\Omega k)]
+\tag{A.5}
+\]
+
+For $\Omega$ with orthogonal rows, this approximates $\exp(q^\top k)$.
+
+\subsection{A.4 Causal RFF via Cumsum}
+
+For causal decoder:
+
+\[
+(KV_c)_i = \sum_{j \leq i} \phi(k_j) v_j^\top
+\tag{A.6}
+\]
+
+\[
+(Z_c)_i = \sum_{j \leq i} \phi(k_j)
+\tag{A.7}
+\]
+
+Computed via \texttt{cumsum} along sequence dimension.
+
+\[
+O_{\text{glb}, i} = \frac{\phi(q_i)^\top (KV_c)_i}{\phi(q_i)^\top (Z_c)_i + \epsilon}
+\tag{A.8}
+\]
+
+\subsection{A.5 Gate Computation}
+
+\[
+g = \text{softmax}(W_g \bar{x}), \quad
+\bar{x} = \frac{1}{L} \sum_{t=1}^{L} x_t, \quad
+W_g \in \mathbb{R}^{3 \times d}
+\tag{A.9}
+\]
+
+\subsection{A.6 Fusion}
+
+\[
+O = g_0 O_{\text{loc}} + g_1 O_{\text{sp}} + g_2 O_{\text{glb}}
+\tag{A.10}
+\]
+
+\subsection{A.7 Softpick with Fallback}
+
+\[
+p_i = \text{ReLU}(e^{x_i - m} - e^{-m})
+\tag{A.11}
+\]
+
+where $m = \max_j x_j$ (clamped to $0$ if $m < -10^3$).
+
+\[
+\hat{p}_i = \begin{cases} p_i / \sum_j p_j & \text{if } \sum_j p_j > \epsilon \\ \text{softmax}(x)_i & \text{otherwise} \end{cases}
+\tag{A.12}
+\]
+
+\textbf{Batch-level fallback.} The \texttt{torch.where} is applied element-wise, but 
+the fallback is broadcast to all elements where \texttt{zero\_mask} is True.
+
+\subsection{A.8 Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Branch} & \textbf{FLOPs} \\
+\midrule
+Local window & $B H L W d$ \\
+Sparse block & $B H L k B_s d$ \\
+RFF & $B H L F d$ \\
+Gate & $B L d$ \\
+\textbf{Total} & $B H L (W + k B_s + F) d$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{A.9 Memory of Causal RFF}
+
+The \texttt{KV\_cumsum} tensor size:
+
+\[
+\text{size} = B H L (2F) d
+\tag{A.13}
+\]
+
+For $B=8, H=12, L=128, F=64, d=64$: 50 MB in FP32.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

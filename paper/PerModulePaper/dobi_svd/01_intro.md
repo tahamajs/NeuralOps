@@ -127,5 +127,6 @@ limitations. Section 11 concludes.
 | $\tau_g$ | Gate pruning threshold |
 | $d, H, H_{kv}, d_h$ | Model dims |
 | $\eta$ | Spectral energy threshold (for initialization) |
+```
 
 ---

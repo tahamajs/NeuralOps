@@ -55,3 +55,34 @@ cd D:\SVD_Project\papers\flash3
 python apply_vars.py --module flash3
 Select-String -Path "*.md" -Pattern "\{\{"
 python build.py --module flash3 --pdf
+```
+
+---
+
+## 💡 نکات حیاتی
+
+### ۱. صادقانه بگو FA3 روی RTX 4070 کار نمی‌کند
+
+روی Ada Lovelace، FA3 kernel وجود ندارد. فقط SDPA fallback. این را 
+در abstract و limitations بگو.
+
+### ۲. Exactness — مزیت اصلی
+
+تفاوت با Performer/Longformer/ClusterFormer: FA3 **exact** است. تمام 
+outputها ریاضی معادل هستند.
+
+### ۳. Not Compression
+
+LoRA اضافه می‌کند. صادق باش.
+
+### ۴. H100 Claims
+
+اگر H100 نداری، claimهایت را extrapolated بنویس.
+
+### ۵. FP8 Simulation
+
+روی Ada، FP8 tensor cores نیست. فقط simulate می‌کنی.
+
+---
+
+**قدم بعدی: `run_all_4_flash3.py` را اجرا کن و نتایج را بفرست تا `variables.json` را پر کنم.**

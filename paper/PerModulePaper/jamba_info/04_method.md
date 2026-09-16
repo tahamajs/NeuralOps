@@ -224,5 +224,6 @@ Frozen:
 - Base Q/K/V/O weights.
 
 **Trainable count:** ~{{TRAINABLE}} per layer.
+```
 
 ---

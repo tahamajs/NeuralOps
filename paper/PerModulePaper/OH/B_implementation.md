@@ -110,3 +110,69 @@ def forward(self, hidden_states, attention_mask=None, **kwargs):
     if self.is_nested_encoder:
         return context, None
     return self.out_proj(context), None
+```
+
+## B.3 The `raise` on Copy Failure
+
+**Critical.** OHA's `copy_weights` raises `RuntimeError` on missing projections:
+
+```python
+except Exception as e:
+    print(f'copy_weights failed: {e}')
+    raise RuntimeError(f"copy_weights failed: {e}")
+```
+
+And `inject_oha` also raises:
+
+```python
+except Exception:
+    raise RuntimeError("copy_weights failed")
+```
+
+**Implication.** OHA fails hard on any injection problem. Unlike NHA/EAT, 
+there is no silent fallback.
+
+## B.4 The Unused `output_scale`
+
+In `LoRALinear.__init__`:
+
+```python
+if not hasattr(self, 'output_scale'):
+    self.output_scale = nn.Parameter(torch.ones(1))
+```
+
+And in `forward`:
+
+```python
+return out * self.output_scale
+```
+
+This parameter is initialized to 1.0 and multiplies the output. It is 
+unused in practice (no training signal to change it).
+
+## B.5 The `output_scale` in `OptimizedHybridAttention`
+
+Note: `output_scale` is only added in `LoRALinear`, not in the parent 
+attention module. So the attention output is `out_proj(context)`, where 
+`out_proj` scales by its own `output_scale` (init 1.0).
+
+## B.6 Common Pitfalls
+
+### B.6.1 Forgetting Causal Mask in Global Branch
+
+Without `torch.tril`, the global branch leaks future information.
+
+### B.6.2 Wrong `is_nested_encoder`
+
+RoBERTa requires `True`. Otherwise double projection.
+
+### B.6.3 Missing Compression Mask
+
+Padding tokens must be masked in the compression softmax (`mask_inv`).
+
+### B.6.4 GPT-2 Conv1D Transpose
+
+GPT-2's Conv1D stores weights as `(in, out)`. Must transpose.
+```
+
+---

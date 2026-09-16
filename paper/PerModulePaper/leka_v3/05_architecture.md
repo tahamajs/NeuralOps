@@ -129,5 +129,6 @@ self.landmark_scorer = nn.Sequential(...)  # trainable
 self.W_corr = nn.Parameter(...)              # trainable
 self.gate = nn.Parameter(...)                # trainable
 ```
+```
 
 ---

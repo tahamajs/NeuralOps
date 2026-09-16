@@ -106,3 +106,45 @@ python run_all_4_oha.py --models distilbert,roberta,gpt2 --window_size 64 --comp
 cd D:\SVD_Project\papers\oha
 python apply_vars.py --module oha
 python build.py --module oha
+```
+
+---
+
+## 💡 نکات کلیدی OHA
+
+### ۱. **"Compression" به sequence اشاره دارد**
+
+نه به مدل. این را در abstract، intro، و همه جا صادقانه بگو.
+
+### ۲. **پارامتر اضافه می‌کند**
+
+- `compress_k`, `compress_v`: `2 × d × d_c` per layer
+- Gate: `d × H + H`
+- LoRA: `4 × r(d + H·d_h)`
+
+برای DistilBERT: **+940,104 پارامتر** (+1.40%)
+
+### ۳. **Gate bias = 2.0**
+
+- `σ(2) ≈ 0.88` → local غالب
+- حفظ pretrained behavior
+- در طول training تغییر می‌کند
+
+### ۴. **تفاوت با Infini-Attention**
+
+- Infini: memory matrix **یادگرفته** (ثابت)
+- OHA: compressed summary **محاسبه‌شده** (data-dependent)
+
+### ۵. **`raise` روی copy failure**
+
+OHA سریع می‌میرد اگر projection گم شود. این **بهتر** از silent failure در NHA/EAT است، ولی نیازمند بررسی است.
+
+### ۶. **مزیت اصلی در long context**
+
+- L=128: OHA کندتر از baseline
+- L=2048: **~10-20× سریع‌تر**
+- L=4096: **~40× سریع‌تر**
+
+---
+
+**قدم بعدی: `run_all_4_oha.py` را اجرا کن و `summary.csv` را بفرست تا `variables.json` را با اعداد واقعی پر کنم.**

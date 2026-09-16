@@ -45,5 +45,6 @@ This partial-dimension splicing restored numerical parity with the base Qwen3.5 
 
 Before implementing **Periodic Dense Rectification**, we attempted to train HIBA as a purely sparse model (`rectification_interval = infinity`). While loss decreased during training, the model failed to generalize on validation data involving complex negations (e.g., "Not exactly a very good movie"). The strict block boundary severed the connection between "Not" and "good". The introduction of the dense rectification layer acts as an "attentional highway," allowing these critical long-range linguistic modifiers to route properly.
 
+```
 
 ---

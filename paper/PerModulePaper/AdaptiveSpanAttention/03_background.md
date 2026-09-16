@@ -134,3 +134,6 @@ ASA-Span preserves this bias, applying the ramp **after** adding the bias.
 | $g_z$ | Soft ramp mask |
 | $\lambda$ | Span penalty weight |
 | $S_\text{max}$ | Maximum span |
+```
+
+---

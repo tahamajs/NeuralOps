@@ -116,3 +116,6 @@ $$
 Score clamping bounds $s_i \in [-10^4, 10^4]$, avoiding overflow in 
 sigmoid (which is bounded anyway) and preserving numerical stability 
 in `topk`.
+```
+
+---

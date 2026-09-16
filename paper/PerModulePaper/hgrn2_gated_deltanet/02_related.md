@@ -64,5 +64,6 @@ handles cross-feature interactions. The learned gate selects per token.
 | DeltaNet | $\mathcal{O}(L)$ | High | Fast | Fast |
 | Mamba | $\mathcal{O}(L)$ | High | Fast | Fast |
 | **Ours** | $\mathcal{O}(L)$ | **High** | **Slow (Python loop)** | **Fast** |
+```
 
 ---

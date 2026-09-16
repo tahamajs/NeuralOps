@@ -71,3 +71,6 @@ $$
 | $\bar{K}_j$ | Key block mean |
 | $g(i, j)$ | Gate score |
 | $\tau$ | Gate temperature |
+```
+
+---

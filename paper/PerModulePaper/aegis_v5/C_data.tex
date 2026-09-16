@@ -1,3 +1,110 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for aegis_v5.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Change & {{D\_PARAM\_PCT}}\% \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+SVD energy & {{ENERGY}} \\
+Max rank & {{MAX\_RANK}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{max\_rank} & \textbf{DistilBERT} & \textbf{Params} \\
+\midrule
+32 & {{D\_R32}} & {{D\_R32\_P}}M \\
+64 & {{D\_R64}} & {{D\_R64\_P}}M \\
+128 & {{D\_R128}} & {{D\_R128\_P}}M \\
+256 & {{D\_R256}} & {{D\_R256\_P}}M \\
+384 & {{D\_R384}} & {{D\_R384\_P}}M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Head Split Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+All local & {{D\_ALL\_LOCAL}} & {{R\_ALL\_LOCAL}} & {{G\_ALL\_LOCAL}} \\
+8/4 & {{D\_SPLIT84}} & {{R\_SPLIT84}} & {{G\_SPLIT84}} \\
+6/6 & {{D\_SPLIT66}} & {{R\_SPLIT66}} & {{G\_SPLIT66}} \\
+All global & {{D\_ALL\_GLOBAL}} & {{R\_ALL\_GLOBAL}} & {{G\_ALL\_GLOBAL}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.7 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_aegis_v5.py --svd_energy 0.95 --max_rank 128
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

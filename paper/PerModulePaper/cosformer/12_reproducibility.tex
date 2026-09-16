@@ -1,3 +1,121 @@
-\section{12 Reproducibility}
 
-Draft content for cosformer.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_cosformer.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Downloading Checkpoints}
+
+\begin{lstlisting}
+from huggingface_hub import hf_hub_download
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-cosformer",
+        filename="weights.pt",
+    )
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1}
+
+\begin{lstlisting}
+python run_all_4_cosformer.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (Chunk size)}
+
+\begin{lstlisting}
+for cs in 16 32 64 128; do
+    python run_all_4_cosformer.py --chunk_size $cs --output_suffix cs$cs
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (Activation)}
+
+\begin{lstlisting}
+python run_all_4_cosformer.py --act_fun relu --output_suffix relu
+python run_all_4_cosformer.py --act_fun softplus --output_suffix softplus
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+seed = 42
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Status} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 2\% & {{D\_STATUS}} \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 3\% & {{R\_STATUS}} \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 2\% & {{G\_STATUS}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Diagnostics}
+
+\subsubsection{Verify Cos/Sin Reweighting}
+
+\begin{lstlisting}
+import math
+N = 128
+max_L = 512
+theta = [math.pi * i / (2 * max_L) for i in range(N)]
+assert theta[0] == 0.0
+assert theta[N-1] < math.pi / 2
+\end{lstlisting}
+
+\subsubsection{Verify Causality}
+
+\begin{lstlisting}
+x = torch.randn(1, 128, 768, requires_grad=True)
+y = model(x)
+y[0, 50].sum().backward()
+assert x.grad[0, 51:].abs().max() < 1e-6
+\end{lstlisting}
+
+\subsection{Known Issues}
+
+\begin{itemize}
+\item \textbf{RoBERTa instability}: Default hyperparameters cause drop.
+\item \textbf{Slow decoder}: chunked scan adds overhead.
+\item \textbf{Fragile RoPE extraction}: Triple-nested try/except.
+\item \textbf{Dead \texttt{tau} parameter}.
+
+\end{itemize}
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Code: \texttt{framework/attentions/cosformer.py}
+\item Metrics: \texttt{results/unified\_cosformer/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/cosformer\_*.log}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

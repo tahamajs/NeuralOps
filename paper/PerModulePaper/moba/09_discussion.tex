@@ -1,3 +1,117 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for moba.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: SSM-Inspired, Not True SSM}
+
+We provide an SSM-inspired gating mechanism with learned exponential decay. 
+This is \textbf{not} true Mamba -- we do not perform a selective scan, and the 
+complexity remains $\mathcal{O}(L^2 d)$.
+
+\subsubsection{Takeaway 2: Weight Reuse Works}
+
+Despite the architectural difference, reusing pretrained Q/K/V/O weights is 
+possible and effective. The two-branch formulation maps them to SSM-like 
+inputs.
+
+\subsubsection{Takeaway 3: Preservation Gate is Critical}
+
+The preservation gate prevents the SSM output from initially dominating and 
+destabilizing training.
+
+\subsubsection{Takeaway 4: Decay is Learnable}
+
+The per-dimension decay parameters learn meaningful time constants that 
+correlate with layer depth.
+
+\subsection{When to Use This Module}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{As an SSM-inspired baseline} for comparison
+\item \textbf{When pretrained weight reuse is required}
+\item \textbf{When complexity is not critical}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Long-sequence inference}: quadratic memory
+\item \textbf{When true linear complexity is needed}: use Mamba
+\item \textbf{When the docstring's O(L) claim matters}: it's incorrect
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Want a pretrained-friendly SSM-inspired attention? --- Yes --- Use this
+  | No
+   
+Need true linear complexity? --- Yes --- Use Mamba or other SSM
+  | No
+   
+Keep standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT at L = 128:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Mamba SSM} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M \\
+Accuracy & 90.71\% & {{D\_ACC}}\% \\
+Inference time & 1.9 s & {{D\_TIME}} s \\
+Peak VRAM & 183 MB & {{D\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Published SSMs}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Pretrained} & \textbf{Accuracy} \\
+\midrule
+S4 & $\mathcal{O}(L)$ & No & -- \\
+Mamba & $\mathcal{O}(L)$ & No & -- \\
+RWKV & $\mathcal{O}(L)$ & No & -- \\
+\textbf{Ours} & $\mathcal{O}(L^2 d)$ & \textbf{Yes} & \textbf{{{D\_ACC}}\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{True O(L) implementation:} Can we avoid materializing the $[L, L, d]$
+  weight tensor?
+\item \textbf{Selective decay:} Can $\gamma$ depend on input?
+\item \textbf{Cross-architecture transfer:} Does the learned decay transfer?
+\item \textbf{Combination with Mamba scan:} Hybrid approach?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Provides a pretrained-friendly SSM baseline
+\item Weight reuse enables fine-tuning from existing checkpoints
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Quadratic complexity limits long-context use
+\item Name "Mamba" may be misleading
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

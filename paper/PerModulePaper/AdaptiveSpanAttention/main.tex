@@ -85,11 +85,11 @@ on the total span encourages the model to shrink windows when they are not
 needed, achieving automatic context pruning.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At initialization 
-span $S_\text{max} = 128$, learned spans converge to 
-\textbf{68} on DistilBERT (47\% reduction from max), 
-\textbf{72} on RoBERTa, and \textbf{75} on GPT-2. Accuracy drops by 
-only \textbf{-1.2\%}, \textbf{-2.1\%}, and \textbf{-1.9\%} respectively. 
-Attention memory is reduced by \textbf{2$\times$} at convergence. The 
+span $S_\text{max} = {{MAX_SPAN}}$, learned spans converge to 
+\textbf{{{D\_SPAN}}} on DistilBERT ({{D\_SPAN\_REDUCTION}}\% reduction from max), 
+\textbf{{{R\_SPAN}}} on RoBERTa, and \textbf{{{G\_SPAN}}} on GPT-2. Accuracy drops by 
+only \textbf{{{D\_DELTA}}\%}, \textbf{{{R\_DELTA}}\%}, and \textbf{{{G\_DELTA}}\%} respectively. 
+Attention memory is reduced by \textbf{{{MEM\_REDUCTION}}$\times$} at convergence. The 
 learned spans show systematic head heterogeneity, with some heads converging 
 to local (span $\approx$ 16) and others to global (span $\approx$ max) behavior.
 

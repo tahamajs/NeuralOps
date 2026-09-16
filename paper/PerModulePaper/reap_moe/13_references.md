@@ -1,0 +1,128 @@
+# 13. References
+
+```bibtex
+@article{jacobs1991adaptive,
+  title={Adaptive mixtures of local experts},
+  author={Jacobs, Robert A and Jordan, Michael I and Nowlan, Steven J and Hinton, Geoffrey E},
+  journal={Neural Computation},
+  volume={3},
+  number={1},
+  pages={79--87},
+  year={1991}
+}
+
+@inproceedings{shazeer2017outrageously,
+  title={Outrageously large neural networks: The sparsely-gated mixture-of-experts layer},
+  author={Shazeer, Noam and others},
+  booktitle={ICLR},
+  year={2017}
+}
+
+@inproceedings{fedus2021switch,
+  title={Switch transformers: Scaling to trillion parameter models with simple and efficient sparsity},
+  author={Fedus, William and Zoph, Barret and Shazeer, Noam},
+  journal={JMLR},
+  year={2022}
+}
+
+@inproceedings{lepikhin2021gshard,
+  title={{GShard}: Scaling giant models with conditional computation and automatic sharding},
+  author={Lepikhin, Dmitry and others},
+  booktitle={ICLR},
+  year={2021}
+}
+
+@inproceedings{zhou2022mixture,
+  title={Mixture-of-experts with expert choice routing},
+  author={Zhou, Yanqi and others},
+  booktitle={NeurIPS},
+  year={2022}
+}
+
+@inproceedings{zoph2022st,
+  title={{ST-MoE}: Designing stable and transferable sparse expert models},
+  author={Zoph, Barret and others},
+  journal={arXiv:2202.08906},
+  year={2022}
+}
+
+@inproceedings{chi2022representation,
+  title={On the representation collapse of sparse mixture of experts},
+  author={Chi, Zewen and others},
+  booktitle={NeurIPS},
+  year={2022}
+}
+
+@article{chen2023sembalance,
+  title={Sparse mixture of experts with expert pruning},
+  author={Chen, Tianlong and others},
+  journal={arXiv preprint},
+  year={2023}
+}
+
+@inproceedings{zadouri2023peft,
+  title={{PEFT-MoE}: Parameter-efficient fine-tuning with mixtures of experts},
+  author={Zadouri, Ted and others},
+  booktitle={NeurIPS Workshop},
+  year={2023}
+}
+
+@inproceedings{eckart1936approximation,
+  title={The approximation of one matrix by another of lower rank},
+  author={Eckart, Carl and Young, Gale},
+  journal={Psychometrika},
+  year={1936}
+}
+
+@article{sanh2019distilbert,
+  title={{DistilBERT}},
+  author={Sanh, Victor and others},
+  journal={arXiv:1910.01108},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title={{RoBERTa}},
+  author={Liu, Yinhan and others},
+  journal={arXiv:1907.11692},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{hu2021lora,
+  title={{LoRA}},
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay regularization},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+```
+```
+
+---

@@ -144,3 +144,6 @@ class SqueezingHeadsDistiller(BaseAttention): ...
 | Small Frobenius norm | Warning | Continue |
 | Shape mismatch | Truncated copy | Skip layer |
 | CUDA OOM | RuntimeError | Skip layer |
+```
+
+---

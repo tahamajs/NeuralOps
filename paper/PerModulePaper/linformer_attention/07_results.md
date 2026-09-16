@@ -98,5 +98,6 @@
 - Encoders benefit from linear complexity.
 - Decoders preserve causality via fallback.
 - Parameter count increases by ~7%.
+```
 
 ---

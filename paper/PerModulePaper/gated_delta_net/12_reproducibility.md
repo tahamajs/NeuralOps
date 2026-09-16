@@ -134,5 +134,6 @@ For a fast implementation, use:
 - [ ] Per-step timing measured
 - [ ] Peak VRAM measured
 - [ ] OOM errors captured
+```
 
 ---

@@ -56,5 +56,6 @@ Research-grade. Known issues:
 - Silent injection fallback
 - No unit tests
 - `raise` in `copy_weights` may be too strict
+```
 
 ---

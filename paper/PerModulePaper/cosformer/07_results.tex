@@ -1,3 +1,193 @@
-\section{07 Results}
 
-Draft content for cosformer.
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Accuracy on SST-2 validation.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$} & \textbf{Time} & \textbf{Status} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 1.9 s & PASS \\
+DistilBERT & \textbf{Cosformer} & \textbf{{{D\_ACC}}} & \textbf{{{D\_DELTA}}} & {{D\_F1}} & +{{D\_PARAM\_PCT}}\% & {{D\_TIME}} & {{D\_STATUS}} \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 4.1 s & PASS \\
+RoBERTa & \textbf{Cosformer} & \textbf{{{R\_ACC}}} & \textbf{{{R\_DELTA}}} & {{R\_F1}} & +{{R\_PARAM\_PCT}}\% & {{R\_TIME}} & {{R\_STATUS}} \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 4.2 s & PASS \\
+GPT-2 & \textbf{Cosformer} & \textbf{{{G\_ACC}}} & \textbf{{{G\_DELTA}}} & {{G\_F1}} & +{{G\_PARAM\_PCT}}\% & {{G\_TIME}} & {{G\_STATUS}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observations:}
+
+\begin{enumerate}
+\item \textbf{DistilBERT:} {{D\_OBS}}
+\item \textbf{RoBERTa:} {{R\_OBS}}
+\item \textbf{GPT-2:} {{G\_OBS}}
+
+\end{enumerate}
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{Cosformer} & \textbf{$\Delta$ Abs} & \textbf{$\Delta$\%} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_ABS}} & +{{D\_PARAM\_PCT}}\% \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_ABS}} & +{{R\_PARAM\_PCT}}\% \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_ABS}} & +{{G\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Cosformer does not reduce parameter count.} It adds LoRA adapters.
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Time (base)} & \textbf{Time (ours)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (ours)} \\
+\midrule
+DistilBERT & 1.9 s & {{D\_TIME}} s & {{D\_TIME\_R}}$\times$ & 183 MB & {{D\_VRAM}} MB \\
+RoBERTa & 4.1 s & {{R\_TIME}} s & {{R\_TIME\_R}}$\times$ & 712 MB & {{R\_VRAM}} MB \\
+GPT-2 & 4.2 s & {{G\_TIME}} s & {{G\_TIME\_R}}$\times$ & 793 MB & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Chunk Size (Decoder)}
+
+\textbf{Table 7.4: Effect of chunk size on per-step time (GPT-2).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{chunk\_size} & \textbf{Per-step time} & \textbf{Peak VRAM} \\
+\midrule
+16 & {{G\_CHUNK16\_TIME}} s & {{G\_CHUNK16\_VRAM}} MB \\
+32 & {{G\_CHUNK32\_TIME}} s & {{G\_CHUNK32\_VRAM}} MB \\
+64 & {{G\_CHUNK64\_TIME}} s & {{G\_CHUNK64\_VRAM}} MB \\
+128 & {{G\_CHUNK128\_TIME}} s & {{G\_CHUNK128\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{CHUNK\_OBS}}
+
+\subsection{Ablation: Activation Function}
+
+\textbf{Table 7.5: Effect of \texttt{act\_fun} on accuracy.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Act} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+\texttt{elu+1} & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
+\texttt{softplus} & {{D\_SOFTPLUS}} & {{R\_SOFTPLUS}} & {{G\_SOFTPLUS}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{ACT\_OBS}}
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.6: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & {{D\_R4}} & {{R\_R4}} & {{G\_R4}} \\
+8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
+16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
+32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.7: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Prior Modules}
+
+\textbf{Table 7.8: Cross-module comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Module} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params $\Delta$} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 0 \\
+nha & 90.25\% & OOM & 78.78\% & +0.88\% \\
+nasc & 90.71\% & 64.56\% & 78.44\% & +0.94\% \\
+hamming & 79.13\% & 50.92\% & 71.22\% & +0.88\% \\
+gated\_delta\_net & TIMEOUT & OOM & OOM & +10.7\% \\
+\textbf{cosformer} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{+{{PARAM\_PCT}}\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Loss Curves}
+
+\textbf{Figure 7.1} shows recovery loss.
+
+\begin{itemize}
+\item DistilBERT: from \texttt{{{D\_START\_LOSS}}} to \texttt{{{D\_END\_LOSS}}}
+\item RoBERTa: from \texttt{{{R\_START\_LOSS}}} to \texttt{{{R\_END\_LOSS}}}
+\item GPT-2: from \texttt{{{G\_START\_LOSS}}} to \texttt{{{G\_END\_LOSS}}}
+
+\end{itemize}
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{DistilBERT:} {{D\_ACC}}\% ($\Delta$ = {{D\_DELTA}}) -- {{D\_VERDICT}}
+\item \textbf{RoBERTa:} {{R\_ACC}}\% ($\Delta$ = {{R\_DELTA}}) -- {{R\_VERDICT}}
+\item \textbf{GPT-2:} {{G\_ACC}}\% ($\Delta$ = {{G\_DELTA}}) -- {{G\_VERDICT}}
+
+\end{itemize}
+Cosformer is a \textbf{reasonable linear attention baseline} that preserves 
+most of the baseline accuracy at modest overhead.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

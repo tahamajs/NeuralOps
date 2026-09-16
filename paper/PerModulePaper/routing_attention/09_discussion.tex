@@ -1,3 +1,114 @@
-\section{09 Discussion}
 
-Draft content for routing_attention.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Formulation is Correct}
+
+The formulation of content-based sparse attention via k-means is sound. 
+Accuracy is preserved within 1\% on DistilBERT.
+
+\subsubsection{Takeaway 2: Implementation is Naive}
+
+The cluster loop is inefficient. Real speedups require sparse matmul kernels.
+
+\subsubsection{Takeaway 3: Not a Compression Method}
+
+Routing increases parameters via LoRA. It is not a compressor.
+
+\subsection{When to Use Routing}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Research on sparse attention}
+\item \textbf{Baseline for future efficient implementations}
+\item \textbf{Prototyping with small models}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Production deployment} (slow)
+\item \textbf{Compression tasks}
+\item \textbf{Latency-critical applications}
+\item \textbf{Long sequences} without sparse kernels
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Start
+  |
+   
+Need compression? -- Yes -- Use A3/SDRM
+  |
+  No
+   
+Need speed? -- Yes -- Use FlashAttention/SDPA
+  |
+  No
+   
+Want to study sparse attention? -- Yes -- Use Routing
+  |
+  No
+   
+Consider alternatives
+\end{lstlisting}
+
+\subsection{Comparison with Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Clustering} & \textbf{Speedup?} & \textbf{Complexity} \\
+\midrule
+Reformer & LSH & Sometimes & $\mathcal{O}(L \log L)$ \\
+Routing Transformer & k-means & Sometimes & $\mathcal{O}(L \log L)$ \\
+\textbf{Ours} & \textbf{k-means} & \textbf{No} & \textbf{$\mathcal{O}(K L^2)$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Would sparse matmul help?} Requires custom kernels.
+\item \textbf{Is Q+K better than Q?} Ablation shows minor improvement.
+\item \textbf{Would per-query top-$k$ beat clustering?} Requires experiments.
+\item \textbf{Can k-means be made differentiable?} Gumbel-Softmax is a candidate.
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+
+\begin{itemize}
+\item Contributes to sparse attention literature.
+\item Honest reporting of negative results.
+
+\end{itemize}
+\subsubsection{Negative}
+
+\begin{itemize}
+\item Not deployable as-is.
+
+\end{itemize}
+\subsection{Recommendations for Production}
+
+If you must deploy routing:
+
+\begin{enumerate}
+\item \textbf{Implement sparse matmul kernels.}
+\item \textbf{Precompute cluster assignments} for inference.
+\item \textbf{Use Gumbel-Softmax} for differentiable clustering.
+\item \textbf{Exclude padding} from k-means.
+
+\end{enumerate}
+Without these, routing is not competitive with SDPA or FlashAttention.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

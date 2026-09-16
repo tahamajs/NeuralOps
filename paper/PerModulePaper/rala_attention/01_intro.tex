@@ -1,3 +1,97 @@
-\section{01 Intro}
 
-Draft content for rala_attention.
+\section{Introduction}
+
+\subsection{Motivation}
+
+Standard softmax attention (Vaswani et al., 2017) computes:
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d}}\right) V
+\tag{1.1}
+\]
+
+with $\mathcal{O}(L^2)$ time and memory in sequence length $L$. For long 
+sequences (e.g., documents, code, or genomics), this becomes prohibitive.
+
+\textbf{Linear attention} (Katharopoulos et al., 2020) replaces the softmax with 
+a kernel feature map $\phi$:
+
+\[
+\text{LinAttn}(Q, K, V) = \frac{\phi(Q) \left(\phi(K)^\top V\right)}{\phi(Q) \left(\phi(K)^\top \mathbf{1}\right)}
+\tag{1.2}
+\]
+
+This reorders the computation, yielding $\mathcal{O}(L)$ time and memory. 
+The numerator $\phi(K)^\top V \in \mathbb{R}^{m \times d}$ is computed once 
+and reused for all queries.
+
+\textbf{Limitation.} Linear attention is \textbf{head-agnostic}: the interaction between 
+query head $h_q$ and key head $h_k$ is determined entirely by the kernel 
+feature map, not by a learned interaction matrix. In softmax attention, the 
+full $QK^\top$ matrix provides head-specific structure.
+
+{{MOTIVATION\_PARAGRAPH\_2}}
+
+
+\subsection{Problem Statement}
+
+We seek a linear-attention variant $\mathcal{A}'$ such that:
+
+\begin{enumerate}
+\item \textbf{Complexity:} $\mathcal{O}(L)$ time and memory
+\item \textbf{Expressiveness:} richer than standard linear attention
+\item \textbf{Stability:} strictly positive kernel map
+\item \textbf{Fine-tunability:} compatible with LoRA recovery
+\item \textbf{Causality:} respects strict causality for decoder models
+
+\end{enumerate}
+We do \textbf{not} target parameter reduction; RALA is a computational substitution, 
+not a compression method.
+
+\subsection{Our Approach}
+
+RALA modifies (1.2) as follows:
+
+\begin{enumerate}
+\item \textbf{Softplus kernel.} We use $\phi(x) = \log(1 + e^x)$, which is smooth,
+  strictly positive, and unbounded. Unlike $\mathrm{elu}(x) + 1$, softplus
+  has no kink at $x = 0$.
+
+\item \textbf{Rank-$r$ head interaction.} We add a per-head low-rank matrix
+  $M_h = U_h V_h^\top \in \mathbb{R}^{d \times d}$ with $r \ll d$. This
+  term contributes a rank-$r$ correction to the attention output.
+
+\item \textbf{Scalar gate.} A single learned scalar $\alpha$, initialized to $0$,
+  controls the augmentation strength. At initialization, RALA reduces
+  exactly to standard linear attention.
+
+\end{enumerate}
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A rank-augmented linear attention formulation} with softplus kernel
+  and scalar gate.
+\item \textbf{A correct multi-architecture implementation} supporting DistilBERT,
+  RoBERTa, GPT-2, and Qwen/LLaMA with exact weight transfer.
+\item \textbf{An honest evaluation} showing the accuracy impact on SST-2 across three
+  models, with explicit reporting of parameter overhead and inference cost.
+\item \textbf{A clear identification} of the code's causal scan as a bottleneck,
+  with recommendations for a fused kernel.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews linear attention and rank augmentation. Section 3 provides 
+background on kernels, complexity, and LoRA. Section 4 presents RALA. Section 
+5 describes integration. Section 6 details the setup. Section 7 reports 
+results. Section 8 analyzes accuracy and speed. Section 9 discusses 
+practical guidance. Section 10 lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

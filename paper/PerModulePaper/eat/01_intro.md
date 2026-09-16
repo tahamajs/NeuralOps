@@ -106,5 +106,6 @@ Section 11 concludes.
 | $\alpha$ | LoRA scaling |
 | $W_Q, W_K, W_V, W_O$ | Attention projection matrices |
 | $\pi$ | Token pruning operator |
+```
 
 ---

@@ -2,7 +2,7 @@
 
 \subsection{BAM-UMoE is Not a Compression Method}
 
-\textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~350\%. 
+\textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~{{AVG\_PARAM\_INC}}\%. 
 It should never be described as "compression" or "efficiency". Any paper 
 using BAM-UMoE must disclose the parameter increase.
 
@@ -42,7 +42,7 @@ Only RTX 4070 Laptop. Scaling to datacenter GPUs unknown.
 
 \subsection{Load Balancing}
 
-Auxiliary loss weight $\lambda_\text{aux} = 0.01$ chosen 
+Auxiliary loss weight $\lambda_\text{aux} = {{AUX_WEIGHT}}$ chosen 
 heuristically. Not tuned extensively.
 
 \subsection{Single Seed}
@@ -66,3 +66,7 @@ Research-grade:
 \subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

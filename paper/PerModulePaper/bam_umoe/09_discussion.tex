@@ -10,7 +10,7 @@ technique applicable to any post-hoc capacity expansion.
 
 \subsubsection{Takeaway 2: Parameter Cost is High}
 
-Adding 8 experts per layer increases parameter count by ~350\%. 
+Adding 8 experts per layer increases parameter count by ~{{AVG\_PARAM\_INC}}\%. 
 This is inherent to MoE: $O(E \cdot d^2)$ extra parameters per layer.
 
 \subsubsection{Takeaway 3: Not a Compression Method}
@@ -44,10 +44,10 @@ A3, AASVD, Adaptive SVD, or other compression methods on parameter count.
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{BAM-UMoE} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & 89.5\% & -1.2\% \\
-Params & 66.9M & 293M & +226M \\
-VRAM & 183 MB & 800 MB & +617 MB \\
-Time & 1.90 s & 4.5 s & 2.4$\times$ \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
+VRAM & 183 MB & {{D\_VRAM}} MB & +{{D\_VRAM\_DELTA}} MB \\
+Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -61,9 +61,9 @@ Time & 1.90 s & 4.5 s & 2.4$\times$ \\
 \toprule
 \textbf{Method} & \textbf{Type} & \textbf{Params} & \textbf{Acc} \\
 \midrule
-LoRA (r=16) & Adapter & +0.6M & 88.9 \\
-Full fine-tune & Retrain & 0 & 90.9 \\
-\textbf{BAM-UMoE} & \textbf{Capacity} & \textbf{+226M} & \textbf{89.5} \\
+LoRA (r=16) & Adapter & +0.6M & {{LORA\_ACC}} \\
+Full fine-tune & Retrain & 0 & {{FT\_ACC}} \\
+\textbf{BAM-UMoE} & \textbf{Capacity} & \textbf{+{{D\_PARAM\_DELTA}}M} & \textbf{{{D\_ACC}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -92,4 +92,8 @@ Full fine-tune & Retrain & 0 & 90.9 \\
 
 \end{itemize}
 \subsubsection{Environmental}
-Total compute: ~20 GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

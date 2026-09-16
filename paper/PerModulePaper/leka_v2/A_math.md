@@ -144,5 +144,6 @@ For $d = 768$, $H = 12$, $d_h = 64$, $F = 128$, LoRA rank $r_L = 16$:
 | Local gate | 12 |
 | **Total** | 2.51M |
 | **Increase** | 6.4% |
+```
 
 ---

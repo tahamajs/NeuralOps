@@ -136,3 +136,6 @@ context computation.
 4. **$\lambda = {{LAMBDA}}$** balances compression and accuracy.
 5. **Attention entropy** correlates with learned span.
 6. **No speedup without hard truncation.**
+```
+
+---

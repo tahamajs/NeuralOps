@@ -50,10 +50,4 @@
   year={2021}
 }
 
-@inproceedings{hu2021lora,
-  title={{LoRA}: Low-rank adaptation of large language models},
-  author={Hu, Edward J and others},
-  booktitle={ICLR},
-  year={2022}
-}
-```
+@inproceedings{hu2021l

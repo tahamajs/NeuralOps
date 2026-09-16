@@ -64,5 +64,6 @@ Research-grade:
 ## 10.13 Ethical Considerations
 
 Linear attention is dual-use. See Appendix E.
+```
 
 ---

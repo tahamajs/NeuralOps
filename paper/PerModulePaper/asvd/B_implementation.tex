@@ -28,7 +28,7 @@ class ASVDLinear(nn.Module):
     
     def forward(self, x):
         Vx = F.linear(x, self.V)          # x @ V^T
-        SVx = Vx * self.S                  # scale by  
+        SVx = Vx * self.S                  # scale by $\Sigma$
         out = F.linear(SVx, self.U)        # @ U^T
         if self.bias is not None:
             out = out + self.bias
@@ -119,4 +119,7 @@ compression.
 
 The \texttt{output\_scale} parameter is initialized to 1.0 but unused. Removing 
 it would simplify the module.
+\begin{lstlisting}
 
+---
+\end{lstlisting}

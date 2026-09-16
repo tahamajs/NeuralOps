@@ -95,5 +95,6 @@ We tested MoE without the gate. Result: unstable training.
 3. **Attention output > values** for MoE placement.
 4. **CF ≥ 0.5 required.**
 5. **8 experts is a good default.**
+```
 
 ---

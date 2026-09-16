@@ -1,3 +1,116 @@
-\section{03 Background}
 
-Draft content for salt.
+\section{Background}
+
+\subsection{Singular Value Decomposition}
+
+For $W \in \mathbb{R}^{m \times n}$:
+
+\[
+W = U \Sigma V^\top
+\tag{3.1}
+\]
+
+where $U \in \mathbb{R}^{m \times m}$, $V \in \mathbb{R}^{n \times n}$ are 
+orthogonal, and $\Sigma$ is diagonal with $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
+
+\textbf{Truncated SVD.}
+
+\[
+W_r = U_{:, :r} \Sigma_{:r} V_{:r, :}^\top
+\tag{3.2}
+\]
+
+This is the best rank-$r$ approximation in Frobenius norm (Eckart-Young).
+
+\subsection{Low-Rank Adaptation (LoRA)}
+
+LoRA:
+
+\[
+W_\text{eff} = W + \frac{\alpha}{r} BA
+\tag{3.3}
+\]
+
+with $A \in \mathbb{R}^{r \times d_\text{in}}$, $B \in \mathbb{R}^{d_\text{out} \times r}$.
+
+\subsection{Singular Value Modulation}
+
+Given fixed $U, \Sigma, V$, one can modulate the singular values via a 
+diagonal scale:
+
+\[
+W(\gamma) = U \text{diag}(\Sigma \odot \gamma) V^\top
+\tag{3.4}
+\]
+
+with $\gamma \in \mathbb{R}^r$. Setting $\gamma = \mathbf{1}$ recovers the 
+original.
+
+\textbf{Effect.} Increasing $\gamma_i$ amplifies the $i$-th singular direction. 
+Decreasing suppresses it.
+
+\subsection{Parameter Counting}
+
+For a weight $W \in \mathbb{R}^{m \times n}$ at rank $r$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Representation} & \textbf{Parameters} \\
+\midrule
+Full W & $mn$ \\
+Truncated SVD ($U_r, \Sigma_r, V_r$) & $r(m + n + 1)$ \\
+LoRA ($A, B$) & $r(m + n)$ \\
+SALT ($U_r, \Sigma_r, V_r, \gamma, A, B$) & $2r(m + n) + 2r$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Example (m = n = 768, r = 16):}
+
+\begin{itemize}
+\item Full: 589,824
+\item Truncated SVD: 24,592
+\item LoRA: 24,576
+\item SALT: 49,184 $\to$ \textbf{~12$\times$ reduction vs full}
+
+\end{itemize}
+\subsection{Forward Pass Efficiency}
+
+At inference, computing $y = Wx$ requires:
+
+\begin{itemize}
+\item \textbf{Full W:} one matmul $Wx$ -- cost $\mathcal{O}(mn)$
+\item \textbf{Low-rank W = UV:} two matmuls $Vx$ then $U(\cdot)$ -- cost $\mathcal{O}(r(m+n))$
+\item \textbf{SALT (naive):} reconstruct W then one matmul -- cost $\mathcal{O}(mn + r(m+n))$, \textbf{slower}
+\item \textbf{SALT (fused):} three matmuls -- cost $\mathcal{O}(r(m+n))$
+
+\end{itemize}
+\textbf{Observation.} Realizing the inference benefit requires \textbf{fused kernels} 
+or a forward pass that avoids materializing W.
+
+\subsection{Notation Summary}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$W$ & Weight matrix \\
+$U, \Sigma, V$ & SVD factors \\
+$r$ & Rank \\
+$\gamma$ & Singular value scale \\
+$A, B$ & Low-rank residual \\
+$d_\text{in}, d_\text{out}$ & Input/output dims \\
+\bottomrule
+\end{tabular}
+\end{table}
+</parameter>
+\begin{lstlisting}
+
+---
+\end{lstlisting}

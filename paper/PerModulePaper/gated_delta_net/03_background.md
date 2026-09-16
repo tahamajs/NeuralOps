@@ -101,5 +101,6 @@ So linear attention is **~2× fewer FLOPs** but with worse GPU utilization.
 | $r_L$ | LoRA rank |
 | $C$ | Chunk size (implementation) |
 </parameter>
+```
 
 ---

@@ -1,3 +1,94 @@
-\section{02 Related}
 
-Draft content for salt.
+\section{Related Work}
+
+\subsection{Low-Rank Adaptation}
+
+\subsubsection{LoRA}
+
+LoRA (Hu et al., 2021) parameterizes updates as $\Delta W = \frac{\alpha}{r} BA$. 
+Base weights are frozen.
+
+\textbf{Limitation:} Total parameters unchanged.
+
+\subsubsection{AdaLoRA}
+
+AdaLoRA (Zhang et al., 2023) adaptively allocates rank across layers.
+
+\textbf{Limitation:} Still freezes full base weights.
+
+\subsubsection{DoRA}
+
+DoRA (Liu et al., 2024) decomposes weights into magnitude and direction.
+
+\textbf{Limitation:} Magnitude is scalar per output; still stores full W.
+
+\subsection{Low-Rank Weights}
+
+\subsubsection{SVD Compression}
+
+Classical SVD compression (Denton et al., 2014) replaces W with $U_r \Sigma_r V_r^\top$.
+
+\textbf{Limitation:} No adaptation after compression; accuracy may drop.
+
+\subsubsection{Tensor Decomposition}
+
+Tensor train (Novikov et al., 2015) and Tucker decomposition.
+
+\textbf{Limitation:} Complex to train; not pretrained-friendly.
+
+\subsubsection{ALBERT Factorized Embeddings}
+
+ALBERT (Lan et al., 2020) factorizes the embedding matrix.
+
+\textbf{Limitation:} Only embeddings, not attention weights.
+
+\subsection{Hybrid Methods}
+
+\subsubsection{PiSSA}
+
+PiSSA (Meng et al., 2024) initializes LoRA factors from the SVD of W.
+
+\textbf{Difference from SALT:} PiSSA still stores the full W; SALT stores only 
+$U_r, \Sigma_r, V_r$.
+
+\subsubsection{OLoRA}
+
+OLoRA (B y kaky z, 2024) initializes LoRA with orthogonal matrices.
+
+\textbf{Difference:} OLoRA does not reduce total parameters.
+
+\subsubsection{GaLore}
+
+GaLore (Zhao et al., 2024) projects gradients into a low-rank subspace.
+
+\textbf{Difference:} GaLore reduces gradient memory, not weight storage.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Axis} & \textbf{LoRA} & \textbf{PiSSA} & \textbf{SVD Comp} & \textbf{SALT} \\
+\midrule
+Total params reduced? & No & No & Yes & \textbf{Yes} \\
+Trainable adaptation? & Yes & Yes & No & \textbf{Yes} \\
+Pretrained init? & Base only & SVD init & Base & \textbf{SVD + $\gamma$ + AB} \\
+Inference speedup? & No & No & Yes (if fused) & No (naive) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} SALT reduces \textbf{total} parameters AND supports 
+adaptation AND starts from the pretrained state. Prior work achieves at most 
+two of these three.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

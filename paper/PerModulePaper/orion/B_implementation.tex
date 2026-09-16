@@ -1,3 +1,154 @@
-\section{B Implementation}
 
-Draft content for orion.
+\section{Appendix B. Implementation Details}
+
+\subsection{B.1 FactorisedLinear}
+
+\begin{lstlisting}
+class FactorisedLinear(nn.Module):
+    def __init__(self, in_features, out_features, ..., max_rank=64):
+        self.rank = max(min_rank, min(max_rank, min(in_features, out_features)))
+        self.down = nn.Linear(in_features, self.rank, bias=False)
+        self.up = nn.Linear(self.rank, out_features, bias=True)
+
+    def decompose_from_weight(self, weight, bias=None):
+        U, S, Vt = torch.linalg.svd(weight.float(), full_matrices=False)
+        total = (S ** 2).sum()
+        cum = torch.cumsum(S ** 2, dim=0) / total.clamp(min=1e-8)
+        rank = int((cum < self.energy).sum().item()) + 1
+        rank = max(self.min_rank, min(rank, min(weight.shape), self.max_rank))
+        
+        A = U[:, :rank] * S[:rank].unsqueeze(0)
+        B = Vt[:rank, :]
+        self.down.weight.data = B
+        self.up.weight.data = A
+\end{lstlisting}
+
+\subsection{B.2 Head Split}
+
+\begin{lstlisting}
+self.num_full_heads = max(1, self.num_heads // 3)
+self.num_kernel_heads = self.num_heads - self.num_full_heads
+\end{lstlisting}
+
+\subsection{B.3 Kernel Heads (Linear Attention)}
+
+\begin{lstlisting}
+def _kernel_linear_attention(self, Q, K, V):
+    proj = self.rff_proj[:Hk].float()
+    Q_proj = torch.einsum("bhnd,hdf->bhnf", Q * scale, proj)
+    K_proj = torch.einsum("bhnd,hdf->bhnf", K * scale, proj)
+    Q_feat = torch.cat([torch.cos(Q_proj), torch.sin(Q_proj)], dim=-1) / math.sqrt(2 * F_dim)
+    K_feat = torch.cat([torch.cos(K_proj), torch.sin(K_proj)], dim=-1) / math.sqrt(2 * F_dim)
+    
+    if self.is_decoder:
+        for c in range(num_chunks):
+            # chunked causal attention
+            ...
+    else:
+        KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V)
+        K_sum = K_feat.sum(dim=2)
+        denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)
+        ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
+    return ctx
+\end{lstlisting}
+
+\subsection{B.4 Full Heads (Softpick)}
+
+\begin{lstlisting}
+def _full_softpick_attention(self, Q, K, V, token_valid=None):
+    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+    if self.is_decoder:
+        causal_mask = torch.tril(...)
+        scores = scores.masked_fill(~causal_mask, -1e4)
+    if token_valid is not None:
+        scores = scores.masked_fill(~token_valid, -1e4)
+    attn_w = softpick(scores, dim=-1)
+    return torch.matmul(attn_w, V)
+\end{lstlisting}
+
+\subsection{B.5 The `copy\_weights` Bug}
+
+\begin{lstlisting}
+except Exception as e:
+    print(f'copy_weights failed: {e}')
+    raise RuntimeError(f"copy_weights failed: {e}")  # $\leftarrow$ BUG
+\end{lstlisting}
+
+\textbf{Fix:}
+
+\begin{lstlisting}
+except Exception as e:
+    logger.debug(f"UniversalAdapter failed: {e}")
+    # continue
+\end{lstlisting}
+
+\subsection{B.6 The `rff\_proj` Bug}
+
+\begin{lstlisting}
+self.register_buffer("rff_proj", torch.randn(...), persistent=False)
+\end{lstlisting}
+
+\textbf{Fix:}
+
+\begin{lstlisting}
+self.register_buffer("rff_proj", torch.randn(...), persistent=True)
+\end{lstlisting}
+
+\subsection{B.7 Softpick Masked Row Handling}
+
+If all keys are masked, \texttt{p.sum() = 0}, output is 0. \textbf{Fix:}
+
+\begin{lstlisting}
+def softpick(x, dim=-1):
+    p = F.relu(torch.exp(x.float()) - 1.0)
+    denom = p.sum(dim=dim, keepdim=True)
+    fallback = F.softmax(x.float(), dim=dim)
+    p = torch.where(denom > 1e-8, p / (denom + 1e-8), fallback)
+    return p.to(x.dtype)
+\end{lstlisting}
+
+\subsection{B.8 Common Pitfalls}
+
+\subsubsection{B.8.1 `FactorisedLinear.weight` Materialization}
+
+\begin{lstlisting}
+@property
+def weight(self):
+    return torch.matmul(self.up.weight, self.down.weight)
+\end{lstlisting}
+
+Materializes the full matrix. Used in Frobenius check.
+
+\subsubsection{B.8.2 `rff\_proj` Shape}
+
+$(H_k, d_h, F)$. For $H_k = 8$, $d_h = 64$, $F = 256$: 131K floats.
+
+\subsubsection{B.8.3 Python Loop in Decoder}
+
+For $N = 128$, chunk=64: 2 iterations. Acceptable.
+
+\subsubsection{B.8.4 `num\_full\_heads` Minimum}
+
+\begin{lstlisting}
+self.num_full_heads = max(1, self.num_heads // 3)
+\end{lstlisting}
+
+For $H = 2$: $H_f = 1$, $H_k = 1$.
+
+\subsection{B.9 Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("orion")
+@ATTENTION_REGISTRY.register("orion_attention")
+@ATTENTION_REGISTRY.register("orion_module")
+class ORIONAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{B.10 Injection}
+
+Standard traversal with double-injection guard.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

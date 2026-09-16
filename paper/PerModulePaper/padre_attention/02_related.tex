@@ -1,3 +1,69 @@
-\section{02 Related}
+\section{Related Work}
 
-Formal architectural specifications for \texttt{padre_attention}.
+\subsection{Kernelized Attention}
+
+\textbf{Performer} (Choromanski et al., 2021) uses **positive orthogonal random 
+features (PORF)** to approximate the softmax kernel. 
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020) uses $\phi(x) = \text{elu}(x) + 1$.
+
+\textbf{Random Feature Attention} (Peng et al., 2021) uses Gaussian RFF.
+
+\textbf{Our distinction.} PADRe uses a \textbf{deterministic polynomial kernel} -- no 
+randomness. This is more stable but restricts the kernel family.
+
+\subsection{Polynomial Attention}
+
+\textbf{Poly-NL} (Choromanski et al., 2021) uses polynomial features 
+$\phi(x) = (1, x, x^2, \dots)$ for kernelized attention. 
+
+\textbf{Kacham et al. (2024)} analyze polynomial attention approximation bounds.
+
+\textbf{Our distinction.} PADRe uses a specific degree-$d$ kernel with max-centering 
+for stability, applied to pretrained models with LoRA recovery.
+
+\subsection{Softmax Alternatives}
+
+\textbf{Sigmoid Attention} (Ramapuram et al., 2024) uses element-wise sigmoid 
+in place of softmax. \textbf{Softpick} (Zuhri et al., 2025) uses a rectified 
+exponential. \textbf{Softmax Linear Units} (Softermax, 2023) uses a bounded base.
+
+\textbf{Our distinction.} PADRe specifically targets the polynomial approximation 
+family with an explicit kernelization path.
+
+\subsection{Pretrained Model Adaptation}
+
+\textbf{LoRA} (Hu et al., 2021), \textbf{AdaLoRA} (Zhang et al., 2023), \textbf{DoRA} 
+(Liu et al., 2024) provide parameter-efficient fine-tuning. Our work uses 
+LoRA for post-substitution recovery.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Kernel Family} & \textbf{Kernelized} & \textbf{Pretrained} \\
+\midrule
+Softmax & exponential &  & -- \\
+Performer & RFF &  &  \\
+Linear Transformer & elu+1 &  &  \\
+Poly-NL & polynomial &  &  \\
+\textbf{PADRe} & \textbf{polynomial} & \textbf{Partial} & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} PADRe is the first to apply polynomial-kernel attention 
+to pretrained transformers with multi-architecture weight transfer and 
+LoRA recovery.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -64,10 +64,40 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the salt module within modern transformer architectures.
+
+Low-rank adaptation methods such as LoRA freeze pretrained weights and add a 
+trainable rank-$r$ residual. While LoRA achieves large reductions in trainable 
+parameters, it does not reduce \textbf{total} parameters -- the base weight matrix 
+remains at full size. We introduce \textbf{SALT} (\textbf{S}ingular Value 
+\textbf{A}daptation with \textbf{L}ow-Rank \textbf{T}uning), which replaces each weight matrix 
+$W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ with a three-component 
+representation: (i) a truncated SVD $(U_{:,:r}, \Sigma_{:r}, V_{:r,:})$ stored 
+as \textbf{non-trainable buffers}; (ii) a trainable per-singular-value scale 
+$\gamma \in \mathbb{R}^r$ that modulates the retained singular values; and (iii) 
+a trainable low-rank residual $AB$ initialized to zero.
+
+For $d_\text{out} = d_\text{in} = 768$ and $r = 16$, this reduces stored 
+parameters from 589,824 to \textbf{49,936} -- a \textbf{11.8$\times$ reduction} -- while 
+maintaining the full expressiveness of a rank-$2r$ effective weight matrix. 
+We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2. Accuracy is preserved 
+within \textbf{{{D\_DELTA}}\%} (DistilBERT), \textbf{{{R\_DELTA}}\%} (RoBERTa), and 
+\textbf{{{G\_DELTA}}\%} (GPT-2) after {{RECOVERY\_STEPS}} recovery steps.
+
+We honestly report a key limitation: because our forward pass reconstructs 
+the full weight matrix $W = U \text{diag}(\Sigma \odot \gamma) V^\top + AB$ 
+before calling \texttt{F.linear}, \textbf{inference memory and latency are not reduced}. 
+Storage footprint is reduced by \textbf{{{STORAGE\_REDUCTION}}$\times$}, but runtime 
+efficiency is unchanged (or slightly worse due to reconstruction overhead). 
+We identify the necessary change -- performing the forward as three sequential 
+matmuls -- to realize the inference-time benefits.
+
+\textbf{Keywords:} singular value decomposition, low-rank adaptation, parameter 
+efficiency, fine-tuning, transformer compression
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} salt, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} singular value decomposition, low-rank adaptation, parameter
 \end{abstract}
 
 \vspace{1em}

@@ -292,3 +292,6 @@ $$
 
 The task loss derivative depends on the model, but in practice heads with 
 small gradients converge to small spans.
+```
+
+---

@@ -5,12 +5,12 @@
 
 \subsubsection{Takeaway 1: Token Pruning is Effective}
 
-At $\rho = 0.8$, PTP achieves \textbf{1.25$\times$} speedup with 
-only \textbf{-1.2\%} accuracy drop.
+At $\rho = {{KEEP_RATIO}}$, PTP achieves \textbf{{{D\_SPEEDUP}}$\times$} speedup with 
+only \textbf{{{D\_DELTA}}\%} accuracy drop.
 
 \subsubsection{Takeaway 2: [CLS] Preservation is Essential}
 
-Without [CLS] preservation, accuracy drops by \textbf{15\%}.
+Without [CLS] preservation, accuracy drops by \textbf{{{CLS\_GAIN}}\%}.
 
 \subsubsection{Takeaway 3: Learned Scores Reveal Structure}
 
@@ -64,9 +64,9 @@ For DistilBERT at $L = 128$:
 \textbf{Config} & \textbf{Acc} & \textbf{Speedup} & \textbf{VRAM} \\
 \midrule
 Baseline & 90.71\% & 1.00$\times$ & 183 MB \\
-$\rho = 0.5$ & 85.0\% & 2.00$\times$ & 130 MB \\
-$\rho = 0.7$ & 88.5\% & 1.43$\times$ & 145 MB \\
-$\rho = 0.8$ & \textbf{89.5\%} & \textbf{1.25$\times$} & 155 MB \\
+$\rho = 0.5$ & {{D\_R50}}\% & 2.00$\times$ & {{VRAM50}} MB \\
+$\rho = 0.7$ & {{D\_R70}}\% & 1.43$\times$ & {{VRAM70}} MB \\
+$\rho = 0.8$ & \textbf{{{D\_ACC}}\%} & \textbf{{{D\_SPEEDUP}}$\times$} & {{D\_VRAM}} MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -114,4 +114,8 @@ MoE & (orthogonal) \\
 
 \end{itemize}
 \subsubsection{Environmental}
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

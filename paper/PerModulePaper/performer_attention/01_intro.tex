@@ -1,3 +1,112 @@
-\section{01 Intro}
 
-Draft content for performer_attention.
+\section{Introduction}
+
+\subsection{Motivation}
+
+Softmax attention scales as $\mathcal{O}(L^2)$ because it materializes the 
+$L \times L$ attention matrix. For $L = 8192$, this is 64M entries -- 
+infeasible in memory. Linear attention approximates softmax by reordering 
+the computation:
+
+\[
+\text{Attn}(Q_i, K, V) = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\tag{1.1}
+\]
+
+The sums can be precomputed once, reducing cost to $\mathcal{O}(L d^2)$. The 
+challenge is \textbf{choosing the feature map $\phi$} so the approximation is 
+accurate.
+
+\subsection{The Performer's FAVOR+ Approach}
+
+Performer (Choromanski et al., 2021) proposes \textbf{FAVOR+} (\textbf{F}ast 
+\textbf{A}ttention \textbf{V}ia \textbf{O}rthogonal \textbf{R}andom features). The kernel 
+$\exp(q^\top k)$ is approximated by:
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} \exp\!\left(\omega^\top x - \frac{\|x\|^2}{2}\right)
+\tag{1.2}
+\]
+
+where $\omega \in \mathbb{R}^{d \times F}$ is an \textbf{orthogonal} random 
+matrix. FAVOR+ uses \textbf{positive} random features and provides theoretical 
+bounds on the approximation error.
+
+\subsection{Our Contribution}
+
+Performer is a published method. Our contribution is a **production-hardened 
+port** to pretrained transformers:
+
+\begin{enumerate}
+\item \textbf{Exact weight transfer} across four architecture families (flat,
+  nested, Conv1D, GQA).
+\item \textbf{Two computational paths:} bidirectional (associative accumulation)
+  and causal (prefix-scan with chunk\_size = 64).
+\item \textbf{Numerical stabilization} via max-subtraction and norm-subtraction.
+\item \textbf{LoRA recovery} for fine-tuning after injection.
+
+\end{enumerate}
+\subsection{Two Discrepancies Between Code and Documentation}
+
+\textbf{Discrepancy 1: \texttt{inject\_performer} raises instead of returning None.}
+
+The docstring says:
+
+\begin{lstlisting}
+"""... Safe injection returning None on failure."""
+\end{lstlisting}
+
+But the code:
+
+\begin{lstlisting}
+except Exception as e:
+    logger.warning("PerformerAttention construction/weight copying failed: %s", e)
+    raise RuntimeError(f"Injection failed")  # $\leftarrow$ raises!
+\end{lstlisting}
+
+This is inconsistent with the docstring and could cause unexpected crashes 
+in production.
+
+\textbf{Discrepancy 2: \texttt{LoRALinear.output\_scale} is a new parameter.}
+
+\begin{lstlisting}
+class LoRALinear(nn.Module):
+    def __init__(self, ...):
+        if not hasattr(self, 'output_scale'):
+            self.output_scale = nn.Parameter(torch.ones(1))
+    
+    def forward(self, x):
+        ...
+        return out * self.output_scale
+\end{lstlisting}
+
+This parameter is not present in the baseline checkpoint. On reload, it 
+defaults to 1.0 (which is fine), but its presence causes \texttt{missing\_keys} 
+warnings and could cause issues with strict loading.
+
+\subsection{Contributions Summary}
+
+\begin{itemize}
+\item \textbf{A production port of FAVOR+} to four pretrained transformer families.
+\item \textbf{Two computational paths} for bidirectional and causal attention.
+\item \textbf{An honest disclosure} of two code/documentation discrepancies.
+\item \textbf{Full reproducibility} including code and checkpoints.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work on kernel attention and RFF. Section 3 
+provides background on softmax, kernel approximation, and FAVOR+. Section 4 
+presents our implementation. Section 5 covers integration. Section 6 details 
+the setup. Section 7 reports results. Section 8 analyzes the feature map 
+and discrepancies. Section 9 discusses. Section 10 lists limitations. 
+Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

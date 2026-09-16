@@ -138,5 +138,6 @@ Step  Loss
 - RoBERTa: **OOM** at 12 layers
 - GPT-2: **OOM** at 12 layers
 - Verdict: **not practical without a fused kernel**
+```
 
 ---

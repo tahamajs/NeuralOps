@@ -191,5 +191,6 @@ weights are frozen; only LoRA adapters trained during recovery.
 | **UnifiedRoPE** | **Replacement** | **Portability** |
 
 **UnifiedRoPE is orthogonal** to all compression methods.
+```
 
 ---

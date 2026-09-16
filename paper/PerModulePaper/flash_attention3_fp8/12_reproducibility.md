@@ -129,5 +129,6 @@ To reproduce the FP8 path, you need:
 - Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-flash3_fp8`
 - Metrics: `results/unified_flash3_fp8/*/summary.csv`
 - Logs: `benchmark_logs/flash3_fp8_*.log`
+```
 
 ---

@@ -101,5 +101,6 @@
 - **Parameters:** increase {{D_PARAM_PCT}}% to {{G_PARAM_PCT}}%.
 - **Speed:** slower at L=128, faster at L≥{{BREAKEVEN}}.
 - **VRAM:** similar or slightly higher.
+```
 
 ---

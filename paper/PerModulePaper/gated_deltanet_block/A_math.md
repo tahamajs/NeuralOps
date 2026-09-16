@@ -89,5 +89,6 @@ Per block:
 | LayerNorm $\gamma$ | $d$ |
 | LayerNorm $\beta$ | $d$ |
 | **Total new** | $4 d^2 + \text{LoRA} + 2d$ |
+```
 
 ---

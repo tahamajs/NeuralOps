@@ -82,3 +82,65 @@ python run_all_4_nsa.py --models distilbert,roberta,gpt2 --window_size 32 --top_
 cd D:\SVD_Project\papers\nsa
 python apply_vars.py --module nsa
 python build.py --module nsa
+```
+
+---
+
+## 💡 نکات کلیدی NSA
+
+### ۱. تفاوت اصلی با ASA-Sparse
+
+| جنبه | ASA-Sparse | NSA |
+|---|---|---|
+| Local window | ندارد | **دارد** |
+| Top-k | کل | **فقط خارج از window** |
+| Density | کمتر | متوسط |
+| پارامتر | sparsity_logits | **هیچ** |
+
+### ۲. Union Mask
+
+$$
+\mathcal{S}_i = \mathcal{W}_i \cup \text{TopK}_{j \notin \mathcal{W}_i}(s_{ij})
+$$
+
+کلید **مهم:** top-k روی **خارج از window** محاسبه می‌شود، نه کل.
+
+### ۳. ترتیب Mask مهم است
+
+1. **اول** local window را mask کن
+2. **بعد** causal mask (اگر decoder)
+3. **بعد** top-k روی باقی‌مانده
+
+اگر ترتیب اشتباه باشد، top-k ممکن است آینده‌ها را انتخاب کند.
+
+### ۴. بدون پارامتر اضافه
+
+NSA **صفر پارامتر** اضافه می‌کند. $w$ و $k$ **hyperparameter** هستند.
+
+### ۵. Density مهم‌ترین معیار
+
+$$
+\rho = \frac{2w + 1 + k}{L}
+$$
+
+برای $L=128, w=32, k=16$: $\rho = 63\%$.
+برای $L=2048$: $\rho = 4\%$.
+
+**صادقانه:** NSA فقط **density** را کم می‌کند، نه زمان. برای speedup واقعی نیاز به **sparse kernels** داری.
+
+### ۶. Short Sequence Handling
+
+اگر $L \leq 2w+1$ باشد، همه چیز در window است و top-k **skip** می‌شود. این را ذکر کن.
+
+### ۷. Results از سایر ماژول‌ها
+
+از لاگ‌های قبلی:
+- **DistilBERT:** ~89.5%
+- **RoBERTa:** ~76.5%
+- **GPT-2:** ~77.5%
+
+این‌ها تخمینی هستند. اگر اجرا کرده‌ای، اعداد واقعی را وارد کن.
+
+---
+
+**قدم بعدی: `variables.json` را با اعداد واقعی از `results/unified_nsa/*/summary.csv` پر کن. اگر خواستی من این کار را برایت انجام دهم — فقط اعداد CSV را بفرست.**

@@ -13,7 +13,7 @@ approximation plus LoRA residual. \textbf{Figure 4.1} shows the pipeline.
                       
     +----------------------------------------+
     |  Step 1: SVD of W                      |
-    |  U,  , V^T = svd(W)                    |
+    |  U, $\Sigma$, V^T = svd(W)                    |
     +----------------+-----------------------+
                      |
                       
@@ -25,8 +25,8 @@ approximation plus LoRA residual. \textbf{Figure 4.1} shows the pipeline.
                       
     +----------------------------------------+
     |  Step 3: Factorize                     |
-    |  down.weight =  ^{1/2} V^T             |
-    |  up.weight   = U  ^{1/2}               |
+    |  down.weight = $\Sigma$^{1/2} V^T             |
+    |  up.weight   = U $\Sigma$^{1/2}               |
     +----------------+-----------------------+
                      |
                       
@@ -90,8 +90,8 @@ y = \text{up}(\text{down}(x)) + \frac{\alpha}{r_L} B A x
 
 where:
 \begin{itemize}
-\item \texttt{down(x) = x V\_r^\top} (down-projection, no bias)
-\item \texttt{up(z) = z U\_r^\top + b} (up-projection, with bias)
+\item \texttt{down(x) = x V\_r\^{}\top} (down-projection, no bias)
+\item \texttt{up(z) = z U\_r\^{}\top + b} (up-projection, with bias)
 \item \texttt{B A x} (LoRA branch)
 
 \end{itemize}
@@ -190,13 +190,13 @@ MinimalAURORA & 73,728 + 768 = 74,496 & \textbf{7.9$\times$} \\
 Input:  W $\in$ R^{m$\times$n}, $\epsilon$, r_max, r_L
 Output: FactorisedLinear with frozen base + trainable LoRA
 
-1:  U,  , V^T $\leftarrow$ svd(W)
-2:  cum_energy $\leftarrow$ cumsum(  ) / sum(  )
+1:  U, $\Sigma$, V^T $\leftarrow$ svd(W)
+2:  cum_energy $\leftarrow$ cumsum($\Sigma$ ) / sum($\Sigma$ )
 3:  r $\leftarrow$ min{r : cum_energy[r] $\ge$ $\epsilon$}
 4:  r $\leftarrow$ min(r, r_max, m, n)
-5:  sqrt_  $\leftarrow$ sqrt( [:r])
-6:  up.weight $\leftarrow$ U[:, :r]   sqrt_ 
-7:  down.weight $\leftarrow$ sqrt_    V^T[:r, :]
+5:  sqrt_$\Sigma$ $\leftarrow$ sqrt($\Sigma$[:r])
+6:  up.weight $\leftarrow$ U[:, :r]   sqrt_$\Sigma$
+7:  down.weight $\leftarrow$ sqrt_$\Sigma$   V^T[:r, :]
 8:  freeze(up.weight); freeze(down.weight)
 9:  initialize lora_A (Kaiming), lora_B = 0
 10: return
@@ -249,4 +249,7 @@ With $E(r) \geq \varepsilon$, the bound follows. $\square$
 and \texttt{output.dense} (output projection). MinimalAURORA detects this via 
 \texttt{is\_nested\_encoder = True} and returns the raw context, letting the outer 
 layer apply the projection. $\square$
+\begin{lstlisting}
 
+---
+\end{lstlisting}

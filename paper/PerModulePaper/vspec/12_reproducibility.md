@@ -77,5 +77,6 @@ torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2.
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-vspec`.
 - **Metrics:** `results/unified_vspec/*/summary.csv`.
+```
 
 ---

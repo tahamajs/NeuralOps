@@ -1,3 +1,84 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for aegis_v5.
+\subsection{Sparse and Local Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020) combines a sliding window with a small 
+set of global tokens. \textbf{BigBird} (Zaheer et al., 2020) adds random 
+attention and proves Turing completeness. \textbf{Star-Transformer} (Guo et al., 
+2019) uses a star topology with a single global hub.
+
+\textbf{Our distinction.} AEGIS-V5 uses exact local attention (not a sparse 
+approximation) for the local branch, and a fully-connected kernel 
+attention for the global branch.
+
+\subsection{Kernel and Linear Attention}
+
+\textbf{Performer} (Choromanski et al., 2021) uses positive orthogonal random 
+features (PORF). \textbf{Linear Transformer} (Katharopoulos et al., 2020) uses 
+$\phi(x) = \text{elu}(x) + 1$. \textbf{Random Feature Attention} (Peng et al., 
+2021) uses Gaussian RFF.
+
+\textbf{Our distinction.} AEGIS-V5 applies kernel attention **only to a subset 
+of heads** (the global heads), preserving exact local computation for the 
+rest.
+
+\subsection{Low-Rank Factorization}
+
+\textbf{Linformer} (Wang et al., 2020) projects $K, V$ to a fixed rank. 
+\textbf{Nystr mformer} (Xiong et al., 2021) uses Nystr m landmarks. \textbf{ALBERT} 
+(Lan et al., 2020) shares parameters across layers.
+
+\textbf{Our distinction.} AEGIS-V5 uses \textbf{energy-based rank selection} for each 
+projection independently, and combines SVD with LoRA for recovery.
+
+\subsection{Hybrid Attention}
+
+\textbf{H-Transformer-1D} (Zhu \& Soricut, 2021) uses hierarchical attention. 
+\textbf{NHA} (our prior work) combines local sliding window with global linear 
+attention via a single scalar gate. \textbf{LEKAv3} (our prior work) uses 
+learned landmarks with local window fusion.
+
+\textbf{Our distinction.} AEGIS-V5 uses a \textbf{split-head} architecture: different 
+heads use different attention mechanisms. This is more expressive than 
+combining branches with a single gate.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\textbf{LoRA} (Hu et al., 2021) freezes base weights and trains low-rank 
+adapters. \textbf{AdaLoRA} (Zhang et al., 2023) adaptively allocates rank per 
+layer. \textbf{DoRA} (Liu et al., 2024) decomposes weights into magnitude and 
+direction.
+
+\textbf{Our distinction.} AEGIS-V5 combines SVD factorization of base weights 
+with LoRA adapters on the factorized form, providing both compression and 
+recovery.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Local} & \textbf{Global} & \textbf{Split-head} & \textbf{SVD} \\
+\midrule
+NHA &  &  &  &  \\
+LEKAv3 &  & (landmarks) &  &  \\
+Linformer &  & (projection) &  &  \\
+\textbf{AEGIS-V5} &  & (RFF) & \textbf{ } & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} AEGIS-V5 is the first hybrid attention to (i) split 
+heads into mechanism-specific groups, (ii) use energy-based SVD for 
+projection compression, and (iii) apply LoRA on the frozen factors.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

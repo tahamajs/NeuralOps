@@ -29,10 +29,10 @@ where:
                         |
                          
    +----------------------------------------------+
-   |  SVD: W = U   V^T                             |
+   |  SVD: W = U $\Sigma$ V^T                             |
    |  Rank r selected by energy threshold          |
-   |  U_r = U[:, :r]  [:r]^1/2                     |
-   |  V_r =  [:r]^1/2 V[:r, :]^T                   |
+   |  U_r = U[:, :r] $\Sigma$[:r]^1/2                     |
+   |  V_r = $\Sigma$[:r]^1/2 V[:r, :]^T                   |
    +--------------------+-------------------------+
                         |
                          
@@ -255,9 +255,9 @@ Output: compressed model M'
 
 1:  for each target layer   in M do
 2:      W $\leftarrow$ weight( )
-3:      U,  , V^T $\leftarrow$ svd(W)
-4:      U_r $\leftarrow$ U[:, :r]    [:r]^1/2
-5:      V_r $\leftarrow$  [:r]^1/2   V^T[:r, :]
+3:      U, $\Sigma$, V^T $\leftarrow$ svd(W)
+4:      U_r $\leftarrow$ U[:, :r]   $\Sigma$[:r]^1/2
+5:      V_r $\leftarrow$ $\Sigma$[:r]^1/2   V^T[:r, :]
 6:      V_r $\leftarrow$ V_r / $\sigma$($\alpha$_0)               Gate compensation
 7:
 8:      # Reconstruction validation
@@ -353,5 +353,8 @@ Dobi-SVD:
 \item Trains gates jointly with LoRA recovery.
 \item Optionally prunes gates post-hoc.
 \item Achieves \textbf{real parameter reduction} with \textbf{learnable rank}.
-
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

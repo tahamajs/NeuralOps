@@ -83,5 +83,6 @@ exact attention and no parameter cost**.
 1. **FP8 accuracy on other tasks?** Only SST-2 tested.
 2. **Interaction with quantization?** FA3 + INT8?
 3. **Hopper scaling?** How does it scale to H200?
+```
 
 ---

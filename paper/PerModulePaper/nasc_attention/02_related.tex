@@ -1,3 +1,78 @@
-\section{02 Related}
 
-Draft content for nasc_attention.
+\section{Related Work}
+
+\subsection{Hybrid Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020). Combines sliding-window with global 
+tokens.
+
+\textbf{BigBird} (Zaheer et al., 2020). Sliding-window + random + global.
+
+\textbf{Hybrid Transformer} (Zhu et al., 2021). Local attention + low-rank 
+global.
+
+\textbf{Routing Transformer} (Roy et al., 2021). Content-based clustering.
+
+\textbf{NASC} combines three branches and uses a gate.
+
+\subsection{Sparse Block Attention}
+
+\textbf{BlockBERT} (Qiu et al., 2020). Block-sparse attention patterns.
+
+\textbf{Sparse Transformers} (Child et al., 2019). Fixed sparsity patterns.
+
+\textbf{NASC's block branch} selects blocks dynamically via mean Q/K scores.
+
+\subsection{Random Fourier Features}
+
+\textbf{Performer} (Choromanski et al., 2021). Positive orthogonal random features 
+for softmax approximation.
+
+\textbf{RFF in NASC} uses concatenated cos/sin features:
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(\Omega x), \sin(\Omega x)]
+\tag{2.1}
+\]
+
+where $\Omega \in \mathbb{R}^{d \times F}$ is orthogonally initialized.
+
+\subsection{Softpick / ReLU Attention}
+
+\textbf{ReLU attention} (Katharopoulos et al., 2020). Uses $\text{relu}(\cdot)$ as 
+a kernel feature.
+
+\textbf{Softpick} (Alman \& Song, 2024). A sparse alternative to softmax with 
+reduced numerical overhead.
+
+\textbf{NASC's \texttt{softpick}} is ReLU-based with a batch-level softmax fallback.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{NASC} \\
+\midrule
+\textbf{Branches} & 2 (local + global) & \textbf{3 (local + sparse + RFF)} \\
+\textbf{Gate} & Learned per-token & \textbf{Learned per-batch} \\
+\textbf{Attention} & Softmax & \textbf{Softpick (ReLU + fallback)} \\
+\textbf{Causal path} & Full & \textbf{Prefix-sum for RFF} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} NASC's three-branch structure with batch-level gating 
+is unusual. The gate simplification reduces per-token adaptivity but 
+avoids gate collapse.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

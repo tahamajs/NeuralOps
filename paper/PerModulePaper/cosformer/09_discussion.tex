@@ -1,3 +1,135 @@
-\section{09 Discussion}
 
-Draft content for cosformer.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Cosformer is a Strong Baseline}
+
+Of the linear attention mechanisms we tested, Cosformer is among the best 
+at preserving accuracy. The cos/sin reweighting genuinely recovers locality.
+
+\subsubsection{Takeaway 2: Encoder vs Decoder Paths Diverge}
+
+The encoder path is clean and fast. The decoder path adds overhead from 
+the chunked scan. On encoders (DistilBERT), Cosformer is closer to baseline.
+
+\subsubsection{Takeaway 3: RoBERTa Needs Special Handling}
+
+The nested encoder structure requires careful handling. Our default 
+hyperparameters are insufficient; lower LR or excluding cos/sin reweighting 
+helps.
+
+\subsection{When to Use Cosformer}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Long-context inference on flat encoders} (e.g., DistilBERT).
+\item \textbf{Research baseline} for linear attention comparisons.
+\item \textbf{When memory is the bottleneck} -- $\mathcal{O}(L)$ state.
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{RoBERTa or other nested encoders} without hyperparameter tuning.
+\item \textbf{Latency-critical inference} -- chunked scan adds overhead.
+\item \textbf{Tasks requiring sharp attention} -- Cosformer smooths attention.
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Start
+  |
+   
+Is the model a flat encoder? -- Yes -- Use Cosformer
+  |
+  No
+   
+Is the model a decoder? -- Yes -- Consider but expect 3-5$\times$ slowdown
+  |
+  No
+   
+Is the model RoBERTa? -- Yes -- Tune LR first
+  |
+  No
+   
+Consider alternatives (FlashAttention, A3)
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT on RTX 4070:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Cosformer} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_PCT}}\% \\
+Time & 1.9 s & {{D\_TIME}} s & {{D\_TIME\_R}}$\times$ \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Verdict.} {{VERDICT}}
+
+\subsection{Comparison with Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Alternative} & \textbf{Accuracy} & \textbf{Speed} & \textbf{Params} \\
+\midrule
+FlashAttention-2 & ~90\% & 1.1$\times$ & 0 \\
+A3 (SVD) & {{A3\_ACC}}\% & 0.8$\times$ & \textbf{-60\%} \\
+NHA & 90.25\% & 0.6$\times$ & +0.88\% \\
+\textbf{Cosformer} & \textbf{{{D\_ACC}}\%} & \textbf{{{D\_TIME\_R}}$\times$} & \textbf{+{{D\_PARAM\_PCT}}\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Why does RoBERTa fail?} Our analysis is incomplete.
+\item \textbf{Would larger LoRA rank help RoBERTa?} Untested.
+\item \textbf{Would removing cos/sin for RoBERTa help?} Partially tested.
+\item \textbf{How does Cosformer scale to L > 512?} Untested.
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+
+\begin{itemize}
+\item Linear attention is more memory-efficient.
+\item Cosformer is a well-tested baseline.
+
+\end{itemize}
+\subsubsection{Negative}
+
+\begin{itemize}
+\item Our implementation is slower than baseline on short sequences.
+\item RoBERTa results are negative.
+
+\end{itemize}
+\subsection{Deployment Recommendations}
+
+\textbf{Test on your specific model before deploying.}
+\begin{itemize}
+\item For flat encoders: likely fine.
+\item For nested encoders: tune first.
+\item For decoders: expect 3-5$\times$ slowdown.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

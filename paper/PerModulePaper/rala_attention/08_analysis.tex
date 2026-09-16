@@ -1,3 +1,183 @@
-\section{08 Analysis}
 
-Draft content for rala_attention.
+\section{Analysis}
+
+\subsection{Why Does RALA Work?}
+
+\subsubsection{Softplus Kernel}
+
+\textbf{Figure 8.1} compares the softplus kernel to elu+1. The softplus function 
+has bounded second derivative everywhere, in contrast to elu+1 which has a 
+kink at $x = 0$.
+
+\textbf{Hypothesis.} Smooth kernels improve gradient flow.
+
+\textbf{Evidence.} {{SOFTPLUS\_EVIDENCE}}
+
+\subsubsection{Rank Augmentation}
+
+The augmented branch $M_h = U_h V_h^\top$ adds head-specific structure. 
+Without it, linear attention has no way to distinguish between heads.
+
+\textbf{Ablation.} With $r = 0$ (no augmentation), accuracy drops by 
+\textbf{{{R0\_DROP}}\%}.
+
+\subsubsection{Alpha Gate}
+
+The scalar $\alpha$ allows the model to choose how much augmentation to 
+apply. Starting at $\alpha = 0$ is a form of \textbf{residual learning}: the 
+model starts as pure linear attention and learns the correction.
+
+\textbf{Ablation.} With $\alpha$ frozen at 0, accuracy is {{ALPHA0\_ACC}}\%. With 
+$\alpha$ frozen at 1, accuracy is {{ALPHA1\_ACC}}\%.
+
+\subsection{Why Does the Sequential Scan Hurt?}
+
+The Python loop over sequence length dominates runtime:
+
+\begin{lstlisting}
+for i in range(seq_len):    # 128 iterations
+    S = S + einsum("bhd,bhe->bhde", k_i, v_i)  # kernel launch
+    z = z + k_i                                # kernel launch
+    num_i = einsum("bhd,bhde->bhe", q_i, S)   # kernel launch
+    ...
+\end{lstlisting}
+
+\textbf{Kernel launches.} For $L = 128$ and 12 heads $\times$ 12 layers, this is 
+$128 \times 4 \times 144 = 73{,}728$ kernel launches per forward pass.
+
+\textbf{Comparison.} PyTorch SDPA uses 1--2 kernel launches per attention call.
+
+\textbf{Fix.} A parallel associative scan would reduce depth to $\mathcal{O}(\log L)$.
+
+\subsection{The Frozen U, V Issue}
+
+In our implementation, $U, V$ are frozen when LoRA is active:
+
+\begin{lstlisting}
+if self.freeze_base:
+    self.U.requires_grad = False
+    self.V.requires_grad = False
+\end{lstlisting}
+
+\textbf{Consequence.} The augmentation branch computes 
+$\alpha \cdot (q^\top U V^\top)$, where $U, V$ are \textbf{random}. Only 
+$\alpha$ is trained.
+
+\textbf{This is a serious limitation.} The augmentation is not learned -- it is 
+a random projection scaled by a scalar. We document this in  10.
+
+\textbf{Fix.} Unfreeze $U, V$ for training (they contribute $2 H d r$ params 
+per layer).
+
+\subsection{Per-Layer Analysis}
+
+\textbf{Table 8.1: Reconstruction error per layer (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Q norm} & \textbf{K norm} & \textbf{V norm} & \textbf{Output norm} \\
+\midrule
+0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} \\
+1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} \\
+... & ... & ... & ... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Standard Linear Attention}
+
+\textbf{Table 8.2: RALA vs standard linear attention.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+LinAttn (elu+1) & {{D\_LINATT}} & {{R\_LINATT}} & {{G\_LINATT}} \\
+\textbf{RALA (softplus, rank 8)} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{LINATTN\_COMPARISON}}
+
+\subsection{Failure Cases}
+
+\subsubsection{RoBERTa Collapse}
+
+If RoBERTa collapses to ~50\%, the cause is likely:
+
+\begin{itemize}
+\item \texttt{is\_nested\_encoder} mis-set
+\item Loss not converging
+\item NaN in prefix scan
+
+\end{itemize}
+\subsubsection{GPT-2 Slow Inference}
+
+GPT-2 shows the largest slowdown because:
+\begin{itemize}
+\item 12 layers (vs DistilBERT's 6)
+\item Causal scan executed twice as often
+\item No fused kernel
+
+\end{itemize}
+\subsubsection{OOM on RoBERTa}
+
+If OOM occurs, reduce \texttt{batch\_size} to 4.
+
+\subsection{Inference Cost Breakdown}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Operation} & \textbf{Kernel launches (causal)} \\
+\midrule
+Q/K/V projection & 3 \\
+Softplus & 2 \\
+Prefix scan & $4L$ \\
+Augmentation & 2 \\
+Output projection & 1 \\
+\textbf{Total} & \textbf{$4L + 8$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $L = 128$: \textbf{520 kernel launches per layer}.
+
+\subsection{What We Cannot Measure}
+
+We cannot measure:
+\begin{itemize}
+\item Optimal rank-$r$ per head
+\item Optimal kernel choice
+\item Best $\alpha$ init
+\item Fused scan speedup
+
+\end{itemize}
+We state these as future work.
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Softplus is a reasonable kernel choice} but not clearly better than
+  elu+1.
+\item \textbf{Rank augmentation is a small but positive contribution} when
+  $\alpha > 0$.
+\item \textbf{The sequential scan dominates runtime} and should be replaced with a
+  parallel scan.
+\item \textbf{Frozen $U, V$ limits expressiveness.} Unfreezing them is a cheap
+  improvement.
+\item \textbf{Parameter count increases} -- RALA is not a compressor.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

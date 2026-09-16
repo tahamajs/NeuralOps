@@ -109,5 +109,6 @@ For RoBERTa, `is_nested_encoder=True` skips `out_proj` because the outer
 The `random_proj` buffer is registered with `head_dim` rows. If the 
 pretrained attention has a different head_dim than expected, the buffer is 
 recreated on the fly. This is safe but inefficient.
+```
 
 ---

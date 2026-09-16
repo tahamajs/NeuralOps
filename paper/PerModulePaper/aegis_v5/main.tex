@@ -64,10 +64,40 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the aegis\_v5 module within modern transformer architectures.
+Transformer self-attention has quadratic complexity in sequence length, 
+making long-context inference expensive. We introduce \textbf{AEGIS-V5}, a 
+hybrid attention module that combines a \textbf{local sliding-window branch} 
+with a \textbf{global kernel linear attention branch}, gated per-head by a 
+learnable scalar bias initialized toward local attention. The base 
+projections are \textbf{SVD-factorized with energy-based rank selection} and 
+frozen; trainable capacity is provided by \textbf{LoRA adapters} on each 
+projection.
+
+AEGIS-V5 splits the attention heads into two groups: the first 
+$H_\text{local} = \lceil 2H/3 \rceil$ heads use local windowed attention, 
+and the remaining $H_\text{global}$ heads use kernel linear attention with 
+Random Fourier Features (RFF). The two branch outputs are combined by a 
+per-head gate. For decoder-only models, we fall back to standard causal 
+softmax attention to preserve causality -- a conservative but correctness-
+preserving choice.
+
+On SST-2, AEGIS-V5 achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
+{{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
+{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
+{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA recovery 
+steps. Complexity is $\mathcal{O}(N \cdot W + N \cdot F)$ for encoders 
+where $W$ is window size and $F$ is RFF feature count. We provide a 
+production-hardened implementation supporting DistilBERT, RoBERTa, GPT-2, 
+and Qwen3.5, with strict Frobenius validation, safe fallback, and detailed 
+per-layer error statistics.
+
+\textbf{Keywords:} hybrid attention, SVD factorization, LoRA, local window, 
+kernel attention, energy-based rank
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} aegis\_v5, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} hybrid attention, SVD factorization, LoRA, local window,
 \end{abstract}
 
 \vspace{1em}

@@ -146,5 +146,6 @@ limitations. Section 11 concludes.
 | $\eta$ | Energy threshold |
 | $d, H, H_{kv}, d_h$ | Model dims |
 | $\alpha, r_L$ | LoRA scaling, rank |
+```
 
 ---

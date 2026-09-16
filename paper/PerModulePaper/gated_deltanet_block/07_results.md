@@ -131,5 +131,6 @@ Step  Loss
 - Silent weight transfer failures: {{SILENT_COUNT}} cases
 
 **Verdict:** {{VERDICT}}
+```
 
 ---

@@ -206,5 +206,6 @@ parameters by naming convention.
 | Bias handling | In `up.bias` | In `up.bias` | **Separate parameter** |
 | GQA pooling | General | General | **Per-head mean-pool** |
 | Interpretable Σ | No | No | **Yes** |
+```
 
 ---

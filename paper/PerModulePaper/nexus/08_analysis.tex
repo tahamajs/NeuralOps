@@ -1,3 +1,117 @@
-\section{08 Analysis}
+\section{Analysis}
 
-Draft content for nexus.
+\subsection{Which Components Matter?}
+
+\textbf{Figure 8.1} shows the per-component contribution:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Contribution} \\
+\midrule
+XAttention & {{XA\_CONTRIB}}\% \\
+Seer gate & {{SEER\_CONTRIB}}\% \\
+DuSA & {{DUSA\_CONTRIB}}\% \\
+Softpick & {{SOFTPICK\_CONTRIB}}\% \\
+Stripe & 0\% (inactive) \\
+RFF & 0\% (inactive) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Softpick Behavior}
+
+\textbf{Figure 8.2} shows the softpick output distribution. We observe:
+
+\begin{itemize}
+\item For positive logits: normal softmax-like behavior.
+\item For mixed logits: natural sparsity.
+\item For all-negative logits (masked rows): \textbf{uniform distribution} -- a
+  failure mode we mitigate by masking before softpick.
+
+\end{itemize}
+\subsection{Causal Fallback Analysis}
+
+For GPT-2, the model uses dense attention. \textbf{Figure 8.3} confirms identical 
+timing to standard attention.
+
+\textbf{Why?} Causality + block-sparse interaction is non-trivial. Our current 
+implementation chooses correctness over sparsity.
+
+\subsection{Inactive Components}
+
+\textbf{Table 8.1: Why stripe and RFF are inactive.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Condition} & \textbf{Our Setting} & \textbf{Active?} \\
+\midrule
+Stripe & $N > 256$ & $N = 128$ &  \\
+RFF & \texttt{layer\_idx \% 4 == 0} AND (\texttt{no pretrained} OR \texttt{enable\_spectraformer}) & \texttt{enable\_spectraformer=False} &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Consequence.} Our SST-2 experiments test only 4 of the 6 claimed 
+components.
+
+\subsection{Complexity Verification}
+
+\textbf{Figure 8.4} shows measured time vs $N$ for DistilBERT:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$N$} & \textbf{Standard} & \textbf{NEXUS} & \textbf{Speedup} \\
+\midrule
+128 & {{T128\_STD}} & {{T128\_NEXUS}} & {{S128}}$\times$ \\
+256 & {{T256\_STD}} & {{T256\_NEXUS}} & {{S256}}$\times$ \\
+512 & {{T512\_STD}} & {{T512\_NEXUS}} & {{S512}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Speedup grows with $N$, as expected.
+
+\subsection{Router Behavior}
+
+\textbf{Figure 8.5} shows the Seer gate distribution. Most heads have gate values 
+in $[0.3, 0.7]$, meaning $k_h$ varies between 2 and 8.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Model} & \textbf{Cause} \\
+\midrule
+All-negative softpick & Any & Masked rows \\
+Dense fallback & GPT-2 & Causal \\
+Inactive stripe & All & $N \leq 256$ \\
+Inactive RFF & All & \texttt{enable\_spectraformer=False} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Only 4 of 6 components are active} under default SST-2 setup.
+\item \textbf{Causal decoders get no benefit.}
+\item \textbf{Softpick is fine for mixed logits}, risky for all-negative.
+\item \textbf{Speedup grows with $N$.}
+\item \textbf{Seer gate learns content-dependent budgets.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

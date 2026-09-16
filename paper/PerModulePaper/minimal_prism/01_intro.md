@@ -159,5 +159,6 @@ limitations. Section 11 concludes.
 | $H_{kv}$ | KV head count (GQA) |
 | $d_h$ | Per-head dimension |
 | $\alpha, r_L$ | LoRA scaling, rank |
+```
 
 ---

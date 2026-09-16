@@ -1,3 +1,79 @@
-\section{11 Conclusion}
 
-Draft content for routing_attention.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{Routing Attention}, a content-based sparse attention method 
+that clusters tokens via online k-means on the joint query-key 
+representation, then restricts attention to intra-cluster tokens plus a 
+token-0 anchor. On SST-2, accuracy is preserved within \textbf{{{D\_DELTA}}\%} 
+(DistilBERT), \textbf{{{R\_DELTA}}\%} (RoBERTa), and \textbf{{{G\_DELTA}}\%} (GPT-2).
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Params $\Delta$} & \textbf{Time} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_TIME\_R}}$\times$ \\
+RoBERTa & {{R\_ACC}}\% & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_TIME\_R}}$\times$ \\
+GPT-2 & {{G\_ACC}}\% & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_R}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Formulation preserves accuracy} within 1\%.
+\item \textbf{Implementation is slow} due to naive cluster loop.
+\item \textbf{Not a compression method.}
+\item \textbf{Real speedups require sparse kernels.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+
+\begin{itemize}
+\item Implement sparse matmul via Triton.
+\item Exclude padding from k-means.
+\item Replace \texttt{RuntimeError} with warning.
+\item Add double-injection guard.
+
+\end{itemize}
+\subsubsection{Long-Term}
+
+\begin{itemize}
+\item Gumbel-Softmax for differentiable clustering.
+\item Query-dependent routing.
+\item Comparison with Reformer, Routing Transformer.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+Routing Attention is a research prototype. We release the code honestly, 
+document its current limitations, and outline a path to a production-ready 
+sparse attention.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

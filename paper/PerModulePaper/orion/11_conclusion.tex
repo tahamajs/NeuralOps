@@ -1,3 +1,86 @@
-\section{11 Conclusion}
 
-Draft content for orion.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{ORION}, a hybrid attention mechanism combining SVD 
+factorization, head-wise bifurcation, and random Fourier features. ORION 
+achieves \textbf{{{D\_RED}}$\times$} parameter reduction with \textbf{{{D\_DELTA}}\%} accuracy 
+drop on DistilBERT, and similar results on RoBERTa and GPT-2.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Params} & \textbf{Reduction} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_PARAMS}}M & \textbf{{{D\_RED}}$\times$} \\
+RoBERTa & {{R\_ACC}}\% & {{R\_PARAMS}}M & \textbf{{{R\_RED}}$\times$} \\
+GPT-2 & {{G\_ACC}}\% & {{G\_PARAMS}}M & \textbf{{{G\_RED}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item **ORION is one of the few modules in our framework that genuinely
+  reduces parameters.**
+\item \textbf{The \texttt{copy\_weights} raise} and \textbf{\texttt{rff\_proj} persistence} are two
+  bugs that should be fixed.
+\item \textbf{Head bifurcation} is a novel idea with empirical support.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Immediate Fixes}
+
+\begin{itemize}
+\item \textbf{Replace \texttt{raise} with \texttt{logger.debug}} in \texttt{copy\_weights}.
+\item \textbf{Set \texttt{persistent=True}} for \texttt{rff\_proj}.
+\item \textbf{Add softpick fallback} for masked rows.
+
+\end{itemize}
+\subsubsection{Medium-Term}
+
+\begin{itemize}
+\item \textbf{Per-layer rank selection.}
+\item \textbf{Learn the head split} (2/3 vs 1/3).
+\item \textbf{Test on other tasks.}
+
+\end{itemize}
+\subsubsection{Long-Term}
+
+\begin{itemize}
+\item \textbf{Combine with quantization.}
+\item \textbf{Scale to 7B+ models.}
+\item \textbf{Fused Triton kernel} for factorized projections.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+ORION demonstrates that combining SVD factorization with hybrid attention 
+is viable. With the two bugs fixed, it would be a strong choice for 
+parameter-constrained deployments.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}} for feedback.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

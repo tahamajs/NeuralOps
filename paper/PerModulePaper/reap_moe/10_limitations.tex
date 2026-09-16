@@ -1,3 +1,77 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for reap_moe.
+\subsection{Task Coverage}
+
+Only SST-2 (classification) is evaluated. REAP-MoE may behave differently 
+on generation, retrieval, or multilingual tasks.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Constraint} & \textbf{Status} \\
+\midrule
+$\le$124M params & Tested \\
+>1B params & Not tested \\
+>24 layers & Not tested \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+All experiments on RTX 4070 Laptop.
+
+\subsection{Parameter Growth}
+
+\textbf{REAP-MoE increases parameter count by ~{{D\_PARAM\_CHANGE}}\%.} This is a 
+fundamental limitation of MoE architectures. SVD mitigates but does not 
+eliminate the growth.
+
+\subsection{FFN Duplication}
+
+Because the framework replaces only the attention module, the original FFN 
+still runs. This doubles the effective depth of the FFN stage. Future work 
+should remove the FFN entirely.
+
+\subsection{Inference Overhead}
+
+The router adds overhead (~10-20\%). For latency-critical applications, this 
+may be unacceptable.
+
+\subsection{Expert Specialization}
+
+We do not analyze expert specialization in detail. It is unclear whether 
+experts learn meaningful distinctions or merely distribute randomly.
+
+\subsection{No Formal MoE Bound}
+
+We provide no formal bound on MoE approximation error.
+
+\subsection{Single-Seed Results}
+
+All main results from a single seed.
+
+\subsection{Failure Modes Not Fully Diagnosed}
+
+{{UNRESOLVED\_FAILURES}}
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling
+\item No unit tests
+\item Numerical stability could improve
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

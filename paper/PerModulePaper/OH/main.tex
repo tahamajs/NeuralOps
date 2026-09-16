@@ -81,11 +81,11 @@ with rotary embeddings (Qwen/LLaMA). Base projections are frozen; only LoRA
 adapters, the compression projections, and the gate are trained.
 
 We evaluate OHA on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
-50 LoRA recovery steps. OHA achieves \textbf{89.2\%} on 
-DistilBERT ($\Delta$ = -1.51), \textbf{76.5\%} on RoBERTa ($\Delta$ = -2.06), 
-and \textbf{77.8\%} on GPT-2 ($\Delta$ = -1.56).
+{{RECOVERY\_STEPS}} LoRA recovery steps. OHA achieves \textbf{{{D\_ACC}}\%} on 
+DistilBERT ($\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), 
+and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}).
 
-OHA \textbf{increases} parameter count by \textbf{1.40\%} on DistilBERT 
+OHA \textbf{increases} parameter count by \textbf{{{PARAM\_CHANGE\_PCT}}\%} on DistilBERT 
 due to three additions: (i) the compression projections 
 $W_k^\text{comp}, W_v^\text{comp} \in \mathbb{R}^{d \times d_c}$ 
 (ii) the gate $W_g \in \mathbb{R}^{d \times H}$, and (iii) LoRA adapters on 

@@ -94,8 +94,8 @@ takes the \textbf{short path} and produces output identical to the pretrained
 model with no sparsity benefit.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-50 LoRA recovery steps. FUSIONATTN achieves 
-\textbf{90.48\%} on DistilBERT, \textbf{77.35\%} on RoBERTa, and \textbf{78.90\%} 
+{{RECOVERY\_STEPS}} LoRA recovery steps. FUSIONATTN achieves 
+\textbf{{{D\_ACC}}\%} on DistilBERT, \textbf{{{R\_ACC}}\%} on RoBERTa, and \textbf{{{G\_ACC}}\%} 
 on GPT-2, matching the SDPA baseline within noise.
 
 \textbf{Keywords:} hybrid sparse attention, block gating, MoBA, short-sequence 

@@ -141,5 +141,6 @@ if "DeltaNet" in c_name or "LinearAttention" in c_name:
 | Both branches fail | Both `copy_weights` raise | Raise |
 | One branch fails | One `copy_weights` raises | Bias gate |
 | Cross-attention | `encoder_hidden_states is not None` | Log warning, return identity |
+```
 
 ---

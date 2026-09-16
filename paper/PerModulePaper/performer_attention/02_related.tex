@@ -1,3 +1,67 @@
-\section{02 Related}
 
-Draft content for performer_attention.
+\section{Related Work}
+
+\subsection{Kernel Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020). Uses $\phi(x) = \text{elu}(x) + 1$. 
+Simple, no theoretical bound.
+
+\textbf{Performer} (Choromanski et al., 2021). FAVOR+ with positive orthogonal 
+random features. Theoretical guarantees.
+
+\textbf{Random Feature Attention} (Peng et al., 2021). RFF without orthogonality.
+
+\textbf{Nystr mformer} (Xiong et al., 2021). Nystr m landmarks.
+
+\textbf{Cosformer} (Qin et al., 2022). Cosine reweighting.
+
+\subsection{Random Features}
+
+\textbf{Rahimi \& Recht (2007).} Random Fourier Features (RFF) approximate 
+shift-invariant kernels.
+
+\textbf{Choromanski et al. (2018).} The geometry of random features.
+
+\textbf{FAVOR+ (2021).} Positive orthogonal random features with variance 
+reduction.
+
+\subsection{Efficient Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020). Sparse.
+
+\textbf{BigBird} (Zaheer et al., 2020). Sparse + random.
+
+\textbf{FlashAttention} (Dao et al., 2022). Exact, tiled.
+
+\textbf{Linformer} (Wang et al., 2020). Low-rank.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{Ours} \\
+\midrule
+\textbf{Method} & FAVOR+ (published) & Port to pretrained \\
+\textbf{Weight transfer} & Rare & Exact, four architectures \\
+\textbf{Causal scan} & Yes & Yes (chunk=64) \\
+\textbf{Numerical stability} & Standard & Max-subtraction + norm-sub \\
+\textbf{Bug disclosure} & Rare & Two discrepancies documented \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Unlike the original Performer paper (which trains from 
+scratch), we focus on \textbf{weight-preserving port} to pretrained models. This 
+requires careful handling of the feature map and the prefix scan.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -193,5 +193,6 @@ This ensures recovery training does not touch fallback layers.
 | Post-hoc pruning | ❌ | ❌ | **✅** |
 | Gate compensation | ❌ | ❌ | **✅** |
 | Code lines | ~280 | ~600 | ~450 |
+```
 
 ---

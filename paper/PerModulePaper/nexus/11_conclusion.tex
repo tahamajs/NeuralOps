@@ -1,3 +1,74 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for nexus.
+\subsection{Summary}
+
+We presented NEXUS, a modular framework for combining six sparse attention 
+mechanisms. NEXUS achieves sub-quadratic attention for encoders while 
+falling back to dense for causal models.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Path} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & sparse \\
+RoBERTa & {{R\_DELTA}}\% & sparse \\
+GPT-2 & {{G\_DELTA}}\% & dense \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Modular design enables experimentation.}
+\item \textbf{Encoder-only sparsity} in our implementation.
+\item \textbf{Two components (stripe, RFF) inactive} under default SST-2.
+\item \textbf{Softpick needs care.}
+\item \textbf{Speedup grows with $N$.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Causal block-sparse path
+\item Enable stripe for shorter sequences
+\item Alternative to softpick
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Component interaction study
+\item Theoretical analysis
+\item Multi-task evaluation
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+NEXUS is a research framework for studying combined sparse attention. We 
+release code and checkpoints, and we explicitly document which components 
+are active in our experiments.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed, implemented, ran experiments, wrote paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

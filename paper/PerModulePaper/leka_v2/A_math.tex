@@ -143,21 +143,7 @@ For $L_\text{max} = \rho L$:
 
 For $d = 768$, $H = 12$, $d_h = 64$, $F = 128$, LoRA rank $r_L = 16$:
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Component} & \textbf{Params} \\
-\midrule
-Q/K/V/O (frozen) & $4 d^2 = 2.36M$ \\
-LoRA ($\times$4) & $4 \cdot 2 r_L d = 98K$ \\
-Landmark scorer & $3F \cdot 64 + 64 + 64 = 24.7K$ \\
-Correction matrix & $H d_h^2 = 49K$ \\
-Local gate & 12 \\
-\textbf{Total} & 2.51M \\
-\textbf{Increase} & 6.4\% \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{lstlisting}
 
+---
+\end{lstlisting}

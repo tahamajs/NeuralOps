@@ -72,5 +72,6 @@ python run_all_4_minimal_aurora.py \
 | `full` | Uncompressed model |
 | `minimal_aurora` | Our method |
 | Companion | `asvd`, `aasvd`, `a3`, `res_svd` |
+```
 
 ---

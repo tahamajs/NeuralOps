@@ -119,5 +119,6 @@ with $B = 0$ initially.
 | $g_t$ | Input contribution $(1-f_t) i_t v_t$ |
 | $A_k$ | Cumulative log-forget |
 | $C$ | Chunk size |
+```
 
 ---

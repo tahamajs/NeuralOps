@@ -231,7 +231,7 @@ For DistilBERT ($d=768$, $r_L=16$, $d_h=64$):
 \item \textbf{6 layers: +786,432 params}
 
 \end{itemize}
-\textbf{FUSIONATTN increases parameter count by ~1.17\%.}
+\textbf{FUSIONATTN increases parameter count by ~{{PARAM\_CHANGE}}\%.}
 
 \subsection{Theoretical Notes}
 
@@ -264,3 +264,8 @@ For decoder long path, causal masking is enforced within each selected block:
 Only keys with $j \leq i$ contribute. Causality preserved.
 
 \subsection{Hyperparameter Guidance}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

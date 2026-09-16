@@ -142,5 +142,6 @@ $$
 
 The factorization does not affect causality because it only modifies the 
 projection weights.
+```
 
 ---

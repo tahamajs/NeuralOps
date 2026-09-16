@@ -95,5 +95,6 @@ Research-grade implementation. Known issues:
 ## 10.14 Ethical Considerations
 
 See Appendix E.
+```
 
 ---

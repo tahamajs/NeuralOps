@@ -98,3 +98,6 @@ python run_all_4_primal.py \
 | $K$ (pinv iters) | $\{0, 2, 4, 6, 8\}$ |
 | LoRA rank | $\{4, 8, 16, 32\}$ |
 | Recovery steps | $\{10, 25, 50, 100\}$ |
+```
+
+---

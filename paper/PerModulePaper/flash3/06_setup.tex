@@ -29,9 +29,9 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{use\_fp8} & False \\
-\texttt{lora\_rank} & 16 \\
-\texttt{lora\_alpha} & 32 \\
+\texttt{use\_fp8} & {{USE\_FP8}} \\
+\texttt{lora\_rank} & {{LORA\_RANK}} \\
+\texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
 \texttt{dropout} & 0.1 \\
 \bottomrule
 \end{tabular}
@@ -47,10 +47,10 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & 2e-4 \\
-Weight decay & 1e-2 \\
-Recovery steps & 50 \\
-Batch size & 8 \\
+LR & {{LR}} \\
+Weight decay & {{WD}} \\
+Recovery steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -67,9 +67,9 @@ Precision & FP16 \\
 \midrule
 GPU & RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
-CUDA & 12.1 \\
-PyTorch & 2.4.0 \\
-FlashAttention & not installed (SDPA fallback) \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
+FlashAttention & {{FA\_STATUS}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -95,9 +95,14 @@ PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
 \begin{lstlisting}
 python run_all_4_flash3.py \
     --models distilbert,roberta,gpt2 \
-    --use_fp8 False \
-    --lora_rank 16 \
-    --recovery_steps 50
+    --use_fp8 {{USE_FP8}} \
+    --lora_rank {{LORA_RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}}
 \end{lstlisting}
 
 \subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

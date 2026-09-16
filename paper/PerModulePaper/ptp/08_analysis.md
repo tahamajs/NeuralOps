@@ -129,3 +129,6 @@ If all tokens are padding, we clamp to first token.
 3. **Late layers prune more.**
 4. **Learned MLP beats heuristics.**
 5. **Causality preserved via position comparison.**
+```
+
+---

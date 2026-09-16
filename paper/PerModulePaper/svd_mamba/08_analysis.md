@@ -136,5 +136,6 @@ This means **silent failure is possible** if injection partially succeeds.
 3. **Gate initialization is critical.**
 4. **SSM scan needs careful clamping.**
 5. **Recovery dynamics are unstable.**
+```
 
 ---

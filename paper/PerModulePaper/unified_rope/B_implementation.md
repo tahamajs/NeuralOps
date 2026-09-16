@@ -181,5 +181,6 @@ If sequence length exceeds `max_seq_len`, cache must be rebuilt.
 | Compute | 1.00× | 1.00× | 1.00× |
 | RoPE | ✅ | ❌ | ✅ |
 | Multi-arch | ✅ | ✅ | ✅ |
+```
 
 ---

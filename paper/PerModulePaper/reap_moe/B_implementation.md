@@ -1,0 +1,141 @@
+# Appendix B. Implementation Details
+
+## B.1 The `REAPMoE` Module
+
+```python
+class REAPMoE(nn.Module):
+    def __init__(self, d_model, n_experts, top_k, noise_std, use_svd):
+        self.router_ln = nn.LayerNorm(d_model)
+        self.router = nn.Linear(d_model, n_experts, bias=False)
+        nn.init.uniform_(self.router.weight, -0.01, 0.01)
+        
+        expert_layer = lambda: nn.Sequential(
+            SVDLinear(d_model, 2*d_model, rank=d_model//4),
+            nn.GELU(),
+            SVDLinear(2*d_model, d_model, rank=d_model//4),
+        )
+        self.experts = nn.ModuleList([expert_layer() for _ in range(n_experts)])
+        
+        # Zero-init final layer
+        for exp in self.experts:
+            final = exp[-1]
+            if isinstance(final, SVDLinear):
+                nn.init.zeros_(final.U)
+                nn.init.zeros_(final.S)
+                nn.init.zeros_(final.bias)
+```
+
+## B.2 The `SVDLinear` Module
+
+```python
+class SVDLinear(nn.Module):
+    def __init__(self, in_features, out_features, rank):
+        super().__init__()
+        self.U = nn.Parameter(torch.randn(out_features, rank) * 0.02)
+        self.S = nn.Parameter(torch.ones(rank))
+        self.V = nn.Parameter(torch.randn(in_features, rank) * 0.02)
+        self.bias = nn.Parameter(torch.zeros(out_features))
+    
+    @property
+    def weight(self):
+        return (self.U * self.S.unsqueeze(0)) @ self.V.t()
+    
+    def forward(self, x):
+        return (x @ self.V) * self.S @ self.U.t() + self.bias
+```
+
+## B.3 Forward Pass
+
+```python
+def forward(self, x):
+    B, L, D = x.shape
+    
+    # Router
+    logits = self.router(self.router_ln(x))
+    if self.training and self.noise_std > 0:
+        logits = logits + torch.randn_like(logits) * self.noise_std
+    
+    # Top-k
+    topk_w, topk_i = torch.topk(logits, self.top_k, dim=-1)
+    topk_w = F.softmax(topk_w, dim=-1)
+    
+    # Aux loss
+    router_probs = F.softmax(logits, dim=-1).view(-1, self.n_experts)
+    expert_mask = F.one_hot(topk_i, num_classes=self.n_experts).float()
+    density = expert_mask.sum(dim=2).view(-1, self.n_experts).mean(dim=0)
+    prob_mean = router_probs.mean(dim=0)
+    self.aux_loss = self.n_experts * torch.sum(density * prob_mean)
+    
+    # Expert computation
+    experts_out = torch.stack([e(x) for e in self.experts], dim=2)  # [B, L, E, D]
+    topk_expanded = topk_i.unsqueeze(-1).expand(-1, -1, -1, D)
+    gathered = torch.gather(experts_out, 2, topk_expanded)
+    out = torch.sum(gathered * topk_w.unsqueeze(-1), dim=2)
+    
+    return out * self.output_scale, None
+```
+
+## B.4 Attention + MoE Integration
+
+```python
+def forward(self, x, attention_mask=None):
+    # Attention
+    q = self.q_lin(x).view(B, L, H, d_h).transpose(1, 2)
+    # ... standard attention ...
+    attn_out = torch.matmul(probs, v).permute(0, 2, 1, 3).reshape(B, L, -1)
+    
+    if self.is_nested_encoder:
+        return attn_out, None
+    
+    proj = self.out_lin(attn_out)
+    
+    # Pre-norm
+    h1 = self.norm1(x + self.dropout(proj))
+    
+    # MoE
+    moe_out, _ = self.moe(h1)
+    out = self.norm2(h1 + self.dropout(moe_out))
+    self.aux_loss = self.moe.aux_loss
+    
+    return out, None
+```
+
+## B.5 Common Pitfalls
+
+### B.5.1 Not Zero-Initializing
+
+Without zero-init, the MoE adds random noise at step 0, disrupting training.
+
+### B.5.2 Wrong Aux Loss Scaling
+
+Aux loss should be scaled by `lambda_aux` (typically 0.01).
+
+### B.5.3 Training-Eval Mismatch
+
+Noise should be added only during training:
+
+```python
+if self.training and self.noise_std > 0:
+    logits = logits + torch.randn_like(logits) * self.noise_std
+```
+
+### B.5.4 Expert Output Stacking
+
+Use `torch.stack` for [B, L, E, D] layout:
+
+```python
+experts_out = torch.stack([e(x) for e in self.experts], dim=2)
+```
+
+## B.6 Diagnostics
+
+```python
+# Check expert utilization
+for name, mod in model.named_modules():
+    if isinstance(mod, REAPMoE):
+        density = ...
+        print(f'{name}: density={density}')
+```
+```
+
+---

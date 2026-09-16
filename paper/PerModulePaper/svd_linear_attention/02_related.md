@@ -110,5 +110,6 @@ We use pure PyTorch for portability.
 | SVD-Mamba | Attention + SSM | +10% | $\mathcal{O}(N)$ | No |
 | RPC | Sketched softmax | +LoRA | $\mathcal{O}(N^2)$ | No |
 | **SVD-Linear** | **Linear + decay** | **−{{D_PARAM_PCT}}%** | **$\mathcal{O}(N)$** | **Yes** |
+```
 
 ---

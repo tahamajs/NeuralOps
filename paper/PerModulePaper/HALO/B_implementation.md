@@ -106,3 +106,6 @@ The gate output shape must be `(B, H, L, 1)` for proper broadcasting.
 ### B.6.5 Causality in Linear Stream
 
 Cumulative sum naturally enforces causality. Do not add extra masks.
+```
+
+---

@@ -1,3 +1,63 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for nexus.
+\subsection{XAttention}
+
+\textbf{XAttention} (Xu et al., 2025) proposes \textbf{training-free} block scoring via 
+antidiagonal sub-sampling. Blocks are ranked by the mean magnitude of their 
+antidiagonal entries. We adopt the sub-sampled block scoring approach.
+
+\subsection{SeerAttention}
+
+\textbf{SeerAttention} (Gao et al., 2025) introduces a \textbf{learnable} gating network 
+for block-level sparsity. It predicts per-head sparsity budgets using a 
+low-rank query-key pooling network. We adopt a similar gating structure.
+
+\subsection{DuSA}
+
+\textbf{DuSA} (Cao et al., 2025) uses a \textbf{dual-stage} approach: dense intra-block 
+attention (all tokens within a block) + sparse inter-block attention (top-$k$ 
+blocks). We adopt this two-stage structure.
+
+\subsection{AnchorAttention}
+
+\textbf{AnchorAttention} (Zhu et al., 2025) applies \textbf{stripe band masking} at the 
+token level. Tokens within a stripe group attend to adjacent groups. We adopt 
+a simplified stripe mask.
+
+\subsection{Spectraformer}
+
+\textbf{Spectraformer} (Nguyen et al., 2025) uses RFF for global linear attention. 
+We apply it periodically (every \texttt{rectify\_interval} layers) as a global 
+rectification.
+
+\subsection{Softpick}
+
+\textbf{Softpick} (Zuhri et al., 2025) is a rectified softmax that produces 
+natural sparsity (~47\% activation) without sink tokens. We use it in place 
+of standard softmax.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Learnable?} & \textbf{Training-free?} & \textbf{Complexity} \\
+\midrule
+XAttention & No & Yes & $\mathcal{O}(N B_s + N k B_s)$ \\
+SeerAttention & Yes & No & $\mathcal{O}(N B_s + N k B_s)$ \\
+DuSA & Partial & No & $\mathcal{O}(N B_s + N k B_s)$ \\
+AnchorAttention & No & Yes & $\mathcal{O}(N S_w)$ \\
+Spectraformer & No & Yes & $\mathcal{O}(N F)$ \\
+\textbf{NEXUS} & \textbf{Yes} & \textbf{Partial} & \textbf{$\mathcal{O}(N B_s + N k B_s)$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} NEXUS is the first to combine all six in a single 
+module with modular enable/disable flags.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

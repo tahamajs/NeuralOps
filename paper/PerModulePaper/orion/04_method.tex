@@ -1,3 +1,302 @@
-\section{04 Method}
 
-Draft content for orion.
+\section{Method}
+
+\subsection{Overview}
+
+ORION replaces the standard attention block with:
+
+\begin{enumerate}
+\item \textbf{Factorized projections} ($W_\text{up} W_\text{down}$) instead of full
+  matrices.
+\item \textbf{Bifurcated heads}: kernel and full.
+\item \textbf{RFF-based linear attention} for kernel heads.
+\item \textbf{Softpick full attention} for full heads.
+
+\end{enumerate}
+\begin{lstlisting}
+                Input X
+                   |
+        +----------+----------+
+        |                     |
+                               
+    +-------+            +-------+
+    |  Q    |            |  K/V  |
+    | Factor|            | Factor|
+    +---+---+            +---+---+
+        |                    |
+        +------+-------------+
+               |
+       +-------+--------+
+       |                |
+                         
+   Kernel heads    Full heads
+   (2/3)           (1/3)
+       |                |
+                         
+   RFF linear      Softpick
+   attention       full attention
+       |                |
+       +-------+--------+
+               |
+                
+        Concatenate + out_proj (factorized)
+               |
+                
+            Output Y
+\end{lstlisting}
+
+\subsection{Factorized Projection}
+
+For each projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
+
+\begin{enumerate}
+\item Compute SVD: $W = U \Sigma V^\top$.
+\item Energy threshold: select smallest $r$ with $E(r) \geq \eta$.
+\item Set $W_\text{up} = U_{:, :r} \Sigma_{:r, :r}^{1/2}$, $W_\text{down} = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top$.
+\item Store as \texttt{up} and \texttt{down} linear layers.
+
+\end{enumerate}
+\textbf{Default:} $\eta = 0.95$, min rank 4, max rank 64.
+
+\textbf{Forward:}
+
+\[
+y = W_\text{up}(W_\text{down} x) + b
+\tag{4.1}
+\]
+
+\textbf{LoRA recovery:}
+
+\[
+y = W_\text{up}(W_\text{down} x) + \frac{\alpha_L}{r_L} B(A x) + b
+\tag{4.2}
+\]
+
+\subsection{Head Bifurcation}
+
+For $H$ heads:
+
+\[
+H_f = \max(1, \lfloor H / 3 \rfloor), \quad H_k = H - H_f
+\tag{4.3}
+\]
+
+For $H = 12$: $H_f = 4$, $H_k = 8$.
+
+Kernel heads index $0, \ldots, H_k - 1$; full heads index $H_k, \ldots, H - 1$.
+
+\subsection{Kernel Heads (Linear Attention with RFF)}
+
+For the first $H_k$ heads:
+
+\[
+Q_\phi = \phi(Q_k), \quad K_\phi = \phi(K_k)
+\tag{4.4}
+\]
+
+where $\phi(x) = [\cos(\Omega x), \sin(\Omega x)] / \sqrt{2F}$.
+
+\textbf{Non-causal path:}
+
+\[
+KV = K_\phi^\top V, \quad Z = \sum_j K_\phi^{(j)}
+\tag{4.5}
+\]
+
+\[
+O_{\text{kernel}, i} = \frac{\phi(q_i)^\top KV}{\phi(q_i)^\top Z}
+\tag{4.6}
+\]
+
+\textbf{Causal path (chunked):}
+
+For chunk size $C = 64$, iterate over chunks. Within each chunk, compute 
+intra-chunk causal attention; across chunks, use the running state $S, Z$.
+
+\subsection{Full Heads (Softpick Attention)}
+
+For the last $H_f$ heads:
+
+\[
+\text{scores}_{ij} = \frac{q_i^\top k_j}{\sqrt{d_h}}
+\tag{4.7}
+\]
+
+Mask causal and padding:
+
+\[
+\text{scores}_{ij} \leftarrow \begin{cases} \text{scores}_{ij} & j \leq i \text{ and valid} \\ -10^4 & \text{otherwise} \end{cases}
+\tag{4.8}
+\]
+
+Softpick:
+
+\[
+\text{attn}_{ij} = \frac{\text{ReLU}(e^{\text{scores}_{ij}} - 1)}{\sum_k \text{ReLU}(e^{\text{scores}_{ik}} - 1) + \epsilon}
+\tag{4.9}
+\]
+
+\textbf{Note on masked positions:} For masked positions with score $-10^4$, 
+$e^{-10^4} \approx 0$, $\text{ReLU}(-1) = 0$. So masked keys contribute 
+zero. \textbf{But} if all keys in a row are masked, the denominator becomes 0 
+(plus epsilon) and the output is all zeros -- no attention.
+
+\subsection{Output Fusion}
+
+Concatenate kernel and full heads:
+
+\[
+O = \text{concat}(O_{\text{kernel}}, O_{\text{full}})
+\tag{4.10}
+\]
+
+Then apply the factorized output projection.
+
+\subsection{Parameter Analysis}
+
+For a single projection $W \in \mathbb{R}^{d \times d}$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Variant} & \textbf{Params} \\
+\midrule
+Original & $d^2$ \\
+Factorized (rank $r$) & $r(d + d) = 2rd$ \\
+\textbf{Ratio} & $\frac{d}{2r}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $r = 64$: \textbf{6$\times$ reduction}.
+
+For Q projection, ORION uses $r = 64$ and $d = 768$:
+
+\[
+768 \times 768 = 589,824 \quad \rightarrow \quad 2 \times 64 \times 768 = 98,304
+\]
+
+\textbf{Per layer (DistilBERT):}
+\begin{itemize}
+\item Q, K, V, O factorized: $4 \times 98,304 = 393,216$ vs original $4 \times 589,824 = 2,359,296$.
+\item \textbf{Savings per layer: ~1.97M params.}
+
+\end{itemize}
+For 6 layers: \textbf{~11.8M savings.}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Time} \\
+\midrule
+Kernel heads (linear) & $\mathcal{O}(L F d)$ \\
+Full heads (softpick) & $\mathcal{O}(L^2 d)$ \\
+Fusion & $\mathcal{O}(L d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Total:} $\mathcal{O}(L^2 d) \cdot (H_f / H) + \mathcal{O}(L F d) \cdot (H_k / H)$.
+
+For $H_f / H = 1/3$: \textbf{attention cost reduced by ~3$\times$} compared to full 
+attention (assuming linear cost is negligible for short sequences).
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} ORION forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1: # Factorized projections
+2: Q_all $\leftarrow$ W_Q_up(W_Q_down(X))
+3: K_all $\leftarrow$ W_K_up(W_K_down(X))
+4: V_all $\leftarrow$ W_V_up(W_V_down(X))
+5:
+6: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+7: if GQA: (K, V) $\leftarrow$ repeat_kv(K, V)
+8:
+9: # Split heads
+10: Q_kernel, Q_full $\leftarrow$ Q[:, :H_k], Q[:, H_k:]
+11: K_kernel, K_full $\leftarrow$ K[:, :H_k], K[:, H_k:]
+12: V_kernel, V_full $\leftarrow$ V[:, :H_k], V[:, H_k:]
+13:
+14: # Kernel heads
+15: O_kernel $\leftarrow$ RFF_linear_attention(Q_kernel, K_kernel, V_kernel)
+16:
+17: # Full heads
+18: O_full $\leftarrow$ softpick_attention(Q_full, K_full, V_full)
+19:
+20: # Concatenate + output
+21: O $\leftarrow$ concat(O_kernel, O_full)
+22: Y $\leftarrow$ W_O_up(W_O_down(O))
+23: return Y
+\end{lstlisting}
+
+\subsection{The `copy\_weights` Bug}
+
+\textbf{Critical.} The \texttt{copy\_weights} method contains:
+
+\begin{lstlisting}
+missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+if missing:
+    try:
+        from framework.core.adapters import UniversalAdapter
+        adapter = UniversalAdapter()
+        for k in missing:
+            w, b = adapter.get_weight_bias(src, k)
+            if w is not None:
+                extracted[k] = (w.clone(), b.clone() if b is not None else None)
+    except Exception as e:
+        print(f'copy_weights failed: {e}')
+        raise RuntimeError(f"copy_weights failed: {e}")  # $\leftarrow$ BUG
+\end{lstlisting}
+
+\textbf{Two failure modes:}
+
+\begin{enumerate}
+\item \textbf{UniversalAdapter raises:} $\to$ RuntimeError propagates.
+\item \textbf{UniversalAdapter returns None for all missing:} $\to$ \texttt{extracted[k]} stays None, then \texttt{missing\_after} check triggers another RuntimeError.
+
+\end{enumerate}
+In both cases, the injection aborts. If the caller catches the exception, 
+the module keeps \textbf{random init weights} $\to$ collapse.
+
+\textbf{Fix:}
+
+\begin{lstlisting}
+except Exception as e:
+    logger.debug(f"UniversalAdapter failed: {e}")
+    # Continue
+\end{lstlisting}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{SVD Optimality}
+
+The truncated SVD is the optimal rank-$r$ approximation in Frobenius norm 
+(Eckart-Young).
+
+\subsubsection{RFF Approximation}
+
+RFF approximates the Gaussian kernel $\exp(-\|q - k\|^2 / 2)$. The 
+approximation error decreases as $\mathcal{O}(1/\sqrt{F})$.
+
+\subsubsection{Softpick Properties}
+
+ORION's softpick produces \textbf{sparse} attention: for $x_i$ sufficiently 
+negative, $\text{ReLU}(e^{x_i} - 1) = 0$. This differs from softmax which 
+always produces nonzero weights.
+
+\textbf{Potential issue:} If all $x_i < 0$, all weights are zero $\to$ output is 
+zero. This happens on masked rows.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

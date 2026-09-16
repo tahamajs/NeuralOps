@@ -78,7 +78,7 @@ weight decomposition. ASVD uses standard LoRA.
 \textbf{Axis} & \textbf{Prior work} & \textbf{ASVD} \\
 \midrule
 \textbf{Weighting} & Unweighted or diagonal & Diagonal (activation energy) \\
-\textbf{  handling} & Implicit or folded & \textbf{Explicit matrix} \\
+\textbf{$\Sigma$ handling} & Implicit or folded & \textbf{Explicit matrix} \\
 \textbf{Rank selection} & Fixed or adaptive-retry & \textbf{Energy-based dynamic} \\
 \textbf{Validation} & Rare & \textbf{Strict Frobenius with abort} \\
 \textbf{Pre-flight check} & None & \textbf{Extraction validation} \\
@@ -93,18 +93,7 @@ inspection and rank reduction without re-factorization.
 
 \subsection{Comparison to Companion Modules}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llll}
-\toprule
-\textbf{Module} & \textbf{Weighting} & \textbf{handling} & \textbf{Rank selection} \\
-\midrule
-A3 & Fisher diagonal & Folded & Adaptive retry \\
-AASVD & Full covariance & Folded & Fixed with cap \\
-\textbf{ASVD} & Activation energy & \textbf{Explicit} & \textbf{Energy-based} \\
-SDRM & None & Folded & Budget-proportional \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{lstlisting}
 
+---
+\end{lstlisting}

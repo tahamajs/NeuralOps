@@ -1,3 +1,93 @@
-\section{01 Intro}
 
-Draft content for mixattention_moska.
+\section{Introduction}
+
+\subsection{Motivation}
+
+The quadratic cost of attention is dominated by the product $QK^\top$ and 
+the subsequent multiplication $AV$. Both scale with the number of key/value 
+tokens. If we can reduce the effective number of KV tokens from $L$ to 
+$L' < L$, both operations scale down: $QK^\top$ becomes $O(L \cdot L')$ 
+instead of $O(L^2)$, and $AV$ becomes $O(L \cdot L' \cdot d_h)$.
+
+\textbf{Token pruning} methods exploit this by dropping a subset of KV tokens 
+at inference time. The question is \textbf{which tokens to drop}.
+
+{{MOTIVATION\_PARAGRAPH\_2}}
+
+
+\subsection{Problem Statement}
+
+Given keys $K \in \mathbb{R}^{B \times H \times L \times d_h}$ and values 
+$V \in \mathbb{R}^{B \times H \times L \times d_h}$, select a subset 
+$\mathcal{S} \subset \{1, \ldots, L\}$ with $|\mathcal{S}| = r L$ such that:
+
+\[
+\text{Attn}(Q, K_{\mathcal{S}}, V_{\mathcal{S}}) \approx \text{Attn}(Q, K, V)
+\tag{1.1}
+\]
+
+while computing the left-hand side at a fraction $r$ of the cost.
+
+\subsection{Our Approach}
+
+FASA ranks tokens by the mean-over-heads variance of their key vectors:
+
+\[
+\text{imp}_i = \frac{1}{H} \sum_{h=1}^{H} \text{Var}_d(K_{i,h,d})
+\tag{1.2}
+\]
+
+and retains the top-$rL$ tokens. Index 0 (the CLS token) is always 
+preserved, motivated by the attention-sink literature.
+
+\textbf{Special cases:}
+\begin{itemize}
+\item \textbf{Causal decoders:} FASA does not prune. The causal code path uses full
+  attention to preserve strict lower-triangular masking.
+\item \textbf{Cross-attention:} FASA does not prune. Pruning would break the
+  alignment between query and key positions.
+
+\end{itemize}
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{FASA}, a variance-based token pruning method with a fixed keep ratio.
+\item \textbf{Bidirectional-only application.} We document that causal decoders
+  cannot use FASA without breaking causality.
+\item \textbf{Empirical evaluation} on DistilBERT, RoBERTa, and GPT-2 on SST-2.
+\item \textbf{Full reproducibility}, including code and checkpoints.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews token pruning, KV cache compression, and attention sinks. 
+Section 3 provides background on attention and variance. Section 4 presents 
+FASA. Section 5 covers integration. Section 6 details the setup. Section 7 
+reports results. Section 8 analyzes the pruning behavior. Section 9 
+discusses. Section 10 lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$L$ & Sequence length & 1.1 \\
+$d_h$ & Head dimension & 1.1 \\
+$H$ & Number of heads & 1.2 \\
+$r$ & Keep ratio & 1.3 \\
+$\text{imp}_i$ & Importance score of token $i$ & 1.3 \\
+$\mathcal{S}$ & Selected subset & 1.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+</parameter>
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -126,5 +126,6 @@ results should be **identical**.
 - Accuracy preservation: **{{D_DELTA}}%**, **{{R_DELTA}}%**, **{{G_DELTA}}%**
 - Parameters: **increase** by **{{PARAM_PCT}}%**
 - Verdict: **{{VERDICT}}**
+```
 
 ---

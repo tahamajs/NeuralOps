@@ -292,3 +292,6 @@ $$
 
 **Proof.** The local window has $2w + 1$ keys; the top-$k$ adds at most $k$ 
 more. $\square$
+```
+
+---

@@ -1,3 +1,138 @@
-\section{12 Reproducibility}
 
-Draft content for nasc_attention.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_nasc.py \
+    --models distilbert,roberta,gpt2 \
+    --window_size {{WINDOW_SIZE}} \
+    --block_size {{BLOCK_SIZE}} \
+    --top_k {{TOP_K}} \
+    --rff_features {{RFF_FEATURES}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Downloading Checkpoints}
+
+\begin{lstlisting}
+from huggingface_hub import hf_hub_download
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-nasc",
+        filename="weights.pt",
+    )
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Main Results}
+
+\begin{lstlisting}
+python run_all_4_nasc.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Encoder Cascade Ablation}
+
+\begin{lstlisting}
+python run_all_4_nasc.py --enable_cascade_on_encoders true --output_suffix cascadeon
+python run_all_4_nasc.py --enable_cascade_on_encoders false --output_suffix cascadeoff
+\end{lstlisting}
+
+\subsubsection{Window/Block/TopK Ablation}
+
+\begin{lstlisting}
+for w in 16 32 64 128; do
+    python run_all_4_nasc.py --window_size $w --output_suffix w$w
+done
+
+for b in 16 32 64; do
+    python run_all_4_nasc.py --block_size $b --output_suffix b$b
+done
+
+for k in 1 2 3 4; do
+    python run_all_4_nasc.py --top_k $k --output_suffix k$k
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+seed = 42
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Path} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 2\% & Dense \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 3\% & Dense \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 2\% & Cascade \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Diagnostics}
+
+\subsubsection{Verify Cascade Path}
+
+Add to \texttt{forward}:
+
+\begin{lstlisting}
+logger.info(f"Path: {'dense' if use_dense else 'cascade'}")
+\end{lstlisting}
+
+\subsubsection{Verify Gate}
+
+\begin{lstlisting}
+gates = F.softmax(model.gate_proj(summary), dim=-1)
+print(f"Gate weights: {gates.mean(dim=0)}")
+# Should sum to 1
+\end{lstlisting}
+
+\subsubsection{Verify RFF Memory}
+
+\begin{lstlisting}
+KV_cumsum_size = B * H * L * 2 * F * d
+print(f"KV_cumsum elements: {KV_cumsum_size:,}")
+print(f"Memory (FP32): {KV_cumsum_size * 4 / 1e6:.1f} MB")
+\end{lstlisting}
+
+\subsection{Known Issues}
+
+\begin{itemize}
+\item \textbf{Encoder defaults to dense.} Cascade not exercised.
+\item \textbf{Batch-level gate.} No per-token adaptivity.
+\item \textbf{RFF cumsum OOM} at $L > 512$.
+\item \textbf{Sparse block Python loop.}
+\item \textbf{\texttt{inject\_nasc} raises on failure.}
+
+\end{itemize}
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Code: \texttt{framework/attentions/nasc.py}
+\item Metrics: \texttt{results/unified\_nasc/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/nasc\_*.log}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

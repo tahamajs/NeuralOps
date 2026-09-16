@@ -195,5 +195,6 @@ The pipeline:
 5. Evaluate.
 
 This is the same pipeline as other modules in our framework.
+```
 
 ---

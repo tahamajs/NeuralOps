@@ -23,7 +23,7 @@
 
 \textbf{Goal.} Use attention magnitudes (from last layer) instead of MLP.
 
-\textbf{Result.} Accuracy dropped by 4.0\%.
+\textbf{Result.} Accuracy dropped by {{ATTN\_DROP}}\%.
 
 \textbf{Conclusion.} Learned MLP is better.
 
@@ -31,7 +31,7 @@
 
 \textbf{Goal.} Randomly keep $k$ tokens.
 
-\textbf{Result.} Accuracy dropped by 12\%.
+\textbf{Result.} Accuracy dropped by {{RANDOM\_DROP}}\%.
 
 \textbf{Conclusion.} Selection matters.
 
@@ -67,9 +67,9 @@ Prune multiple times per layer. No benefit.
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} \\
 \midrule
-0.3 & 60.0 \\
-0.4 & 75.0 \\
-0.5 & 85.0 \\
+0.3 & {{D\_R30}} \\
+0.4 & {{D\_R40}} \\
+0.5 & {{D\_R50}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -82,9 +82,9 @@ Prune multiple times per layer. No benefit.
 \toprule
 \textbf{Hidden} & \textbf{DistilBERT} \\
 \midrule
-8 & 82.0 \\
-16 & 86.0 \\
-32 & 88.5 \\
+8 & {{D\_H8}} \\
+16 & {{D\_H16}} \\
+32 & {{D\_H32}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -115,11 +115,11 @@ Learned mask & Quality & No improvement \\
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & 89.5 \\
-123 & 89.3 \\
-456 & 89.7 \\
-\textbf{Mean} & \textbf{89.5} \\
-\textbf{Std} & \textbf{0.2} \\
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,3 +133,7 @@ Learned mask & Quality & No improvement \\
 \item \textbf{Keep ratio 0.8 is a sweet spot.}
 \item \textbf{MLP-64 suffices.}
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

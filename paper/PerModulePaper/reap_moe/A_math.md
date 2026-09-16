@@ -1,0 +1,93 @@
+# Appendix A. Mathematical Derivations
+
+## A.1 Load-Balancing Loss Minimum
+
+**Proposition.** $\mathcal{L}_\text{aux} = E \sum_{i=1}^{E} \rho_i \pi_i$ 
+is minimized at $\mathcal{L}_\text{aux} = 1$ when both $\rho$ and $\pi$ are 
+uniform.
+
+**Proof.** Since $\sum_i \rho_i = 1$ and $\sum_i \pi_i = 1$, by Cauchy-Schwarz:
+
+$$
+\sum_i \rho_i \pi_i \geq \frac{(\sum_i \sqrt{\rho_i \pi_i})^2}{E}
+$$
+
+But more directly, for uniform distributions $\rho_i = \pi_i = 1/E$:
+
+$$
+\mathcal{L}_\text{aux} = E \sum_{i=1}^{E} \frac{1}{E} \cdot \frac{1}{E} = E \cdot E \cdot \frac{1}{E^2} = 1
+$$
+
+For any non-uniform distribution, at least one of $\rho, \pi$ has higher 
+variance, increasing the sum. $\square$
+
+## A.2 SVD Parameter Count
+
+For a two-layer MLP with hidden dim $d$:
+
+$$
+\text{Params}_\text{dense} = d \cdot 2d + 2d \cdot d = 4d^2
+$$
+
+With SVD at rank $r$:
+
+$$
+\text{Params}_\text{SVD} = (d \cdot r + r \cdot 2d) + (2d \cdot r + r \cdot d) = 3dr + 3dr = 6dr
+$$
+
+Reduction factor: $4d^2 / 6dr = 2d / (3r)$. For $r = d/4$:
+
+$$
+\text{Reduction} = \frac{2d}{3 \cdot d/4} = \frac{8}{3} \approx 2.67\times
+$$
+
+## A.3 Top-$k$ Router Probability
+
+For top-$k$ routing with logits $z \in \mathbb{R}^E$:
+
+$$
+g_i = \frac{e^{z_i}}{\sum_{j \in \text{Top-}k(z)} e^{z_j}}, \quad i \in \text{Top-}k(z)
+$$
+
+$g_i = 0$ for $i \notin \text{Top-}k(z)$.
+
+## A.4 Noise Injection
+
+The noisy logits are:
+
+$$
+z' = z + \epsilon, \quad \epsilon \sim \mathcal{N}(0, \sigma^2)
+$$
+
+For top-$k$ selection, the noise acts as exploration. As $\sigma \to 0$, 
+the router becomes deterministic.
+
+## A.5 Zero-Initialization Analysis
+
+With $U_\text{final} = 0$:
+
+$$
+E_i(x) = U_2 \cdot \text{GELU}(U_1 x) = 0 \cdot \text{GELU}(U_1 x) = 0
+$$
+
+So $\text{MoE}(x) = 0$ at step 0, and:
+
+$$
+y = \text{LN}_2(h_1 + 0) = \text{LN}_2(h_1)
+$$
+
+This preserves the residual path.
+
+## A.6 Expert Utilization
+
+For $N$ tokens with top-$k$ routing:
+
+$$
+\rho_i = \frac{1}{N} \sum_{j=1}^{N} \mathbb{1}[i \in \text{Top-}k(z_j)]
+$$
+
+Note that $\sum_i \rho_i = k$, so $\rho_i \in [0, k]$ and the average is 
+$k / E$.
+```
+
+---

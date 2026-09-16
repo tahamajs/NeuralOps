@@ -75,5 +75,6 @@ torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2 via `datasets`.
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-hymba_transx`.
 - **Metrics:** `results/unified_hymba_transx/*/summary.csv`.
+```
 
 ---

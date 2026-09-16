@@ -93,5 +93,6 @@ We tested SVD then LoRA then another SVD. Result: no benefit.
 3. **Symmetric split is preferable.**
 4. **All four projections can be factorized.**
 5. **W_O needs a slightly higher rank than Q/K.**
+```
 
 ---

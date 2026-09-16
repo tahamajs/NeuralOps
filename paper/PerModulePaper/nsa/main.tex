@@ -86,9 +86,9 @@ The union is computed via a boolean mask that is applied before softmax.
 Padding, causality, and GQA are all preserved.
 
 We evaluate NSA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-$w = 32$, $k = 16$. NSA achieves \textbf{89.5\%}, 
-\textbf{76.5\%}, and \textbf{77.5\%} accuracy, within \textbf{-1.2\%}, 
-\textbf{-2.1\%}, and \textbf{-1.9\%} of the dense baselines. Attention 
+$w = {{WINDOW_SIZE}}$, $k = {{TOP_K}}$. NSA achieves \textbf{{{D\_ACC}}\%}, 
+\textbf{{{R\_ACC}}\%}, and \textbf{{{G\_ACC}}\%} accuracy, within \textbf{{{D\_DELTA}}\%}, 
+\textbf{{{R\_DELTA}}\%}, and \textbf{{{G\_DELTA}}\%} of the dense baselines. Attention 
 density drops to \textbf{{{DENSITY}}\%} (from 100\% dense). The dynamic top-$k$ 
 selection shifts systematically with layer depth, revealing head-level 
 content specialization.

@@ -1,3 +1,115 @@
-\section{01 Intro}
 
-Draft content for routing_attention.
+\section{Introduction}
+
+\subsection{Motivation}
+
+Standard softmax attention (Vaswani et al., 2017) computes:
+
+\[
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d}}\right) V
+\tag{1.1}
+\]
+
+with $\mathcal{O}(L^2)$ time and memory. For $L = 4096$ and batch size 8 with 
+12 heads, the intermediate attention matrix alone requires 
+$8 \cdot 12 \cdot 4096^2 \cdot 2 \approx 3.2$ GB in FP16 -- a hard limit on 
+sequence length.
+
+\textbf{Sparse attention} methods (Longformer, BigBird, Reformer) reduce this by 
+restricting each query to a subset of keys. The subset can be defined by:
+
+\begin{itemize}
+\item \textbf{Position} (sliding window, dilated patterns)
+\item \textbf{Content} (learned hashing, clustering)
+\item \textbf{Random} (as in BigBird's random component)
+
+\end{itemize}
+\textbf{Content-based sparsity} is attractive because it adapts to the input: 
+similar tokens attend to each other, dissimilar ones do not.
+
+{{MOTIVATION\_PARAGRAPH\_2}}
+
+
+\subsection{Problem Statement}
+
+We seek a sparse attention mechanism $\mathcal{A}'$ such that:
+
+\begin{enumerate}
+\item \textbf{Sparsity:} each query attends to $O(L/K)$ keys on average, where $K$
+  is the number of clusters
+\item \textbf{Content-awareness:} cluster assignments depend on the input
+\item \textbf{Compatibility:} works with pretrained weights and LoRA recovery
+\item \textbf{Causality:} respects strict causal masking for decoder models
+
+\end{enumerate}
+We \textbf{do not} claim parameter reduction -- this is an architectural 
+substitution, not a compression method.
+
+\subsection{Our Approach}
+
+Routing Attention consists of three steps:
+
+\begin{enumerate}
+\item \textbf{Cluster assignment.} Compute a joint representation $Q + K$
+  (broadcasted as needed), normalize with $\ell_2$, and run $k$-means for
+  \texttt{n\_iters} iterations. This yields cluster IDs per token.
+
+\item \textbf{Cluster-restricted attention.} For each cluster, compute attention
+  among its tokens only. Token 0 is included as a global context anchor.
+
+\item \textbf{Self-token preservation.} Each token always attends to itself,
+  regardless of its cluster.
+
+\end{enumerate}
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A content-based sparse attention formulation} using online k-means on
+  the joint query-key representation, with a token-0 context anchor.
+\item \textbf{A multi-architecture implementation} supporting DistilBERT, RoBERTa,
+  GPT-2, and Qwen/LLaMA with exact weight transfer.
+\item \textbf{An honest evaluation} showing that accuracy is preserved within
+  \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} but that the current implementation does
+  \textbf{not} achieve real speedups due to a naive loop over clusters.
+\item \textbf{A clear roadmap} for making routing practical: sparse matmul kernels,
+  dense clustering with differentiable assignment, and a single-pass
+  implementation.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews sparse attention methods. Section 3 provides background 
+on attention, k-means, and LoRA. Section 4 presents Routing Attention. 
+Section 5 describes architecture integration. Section 6 details the setup. 
+Section 7 reports results. Section 8 analyzes why the naive implementation 
+does not achieve speedups. Section 9 discusses practical guidance. Section 
+10 lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{First appears} \\
+\midrule
+$B$ & Batch size & 1.1 \\
+$L$ & Sequence length & 1.1 \\
+$H$ & Number of heads & 1.1 \\
+$d$ & Head dimension & 1.1 \\
+$K$ & Number of clusters & 1.3 \\
+$K_{\text{num}}$ & Effective number of clusters ($\min(K, L)$) & 4.2 \\
+$n_{\text{iters}}$ & k-means iterations & 4.2 \\
+$r$ & LoRA rank & 4.6 \\
+$\mathcal{C}_k$ & Set of tokens in cluster $k$ & 4.3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+</parameter>
+\begin{lstlisting}
+
+---
+\end{lstlisting}

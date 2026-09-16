@@ -56,7 +56,7 @@ We impose the following constraints:
 \begin{enumerate}
 \item \textbf{Differentiability:} End-to-end trainable w.r.t. the sparsity budget.
 \item \textbf{Per-head adaptation:} Each head has its own sparsity budget.
-\item \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
+\item \textbf{Quality:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
 \item \textbf{Memory bounded:} Peak VRAM must not exceed baseline.
 \item \textbf{Compatibility:} Works with pretrained weights without retraining.
 
@@ -88,7 +88,7 @@ problems above simultaneously:
 
 \item \textbf{Chunked computation.} To bound memory, the query dimension is
   processed in chunks of 64. This keeps peak VRAM at $\mathcal{O}(B H \cdot
-  \text{chunk} \cdot L)$ rather than $\mathcal{O}(B H L^2)$.
+  \text{chunk} \cdot L)$ rather than $\mathcal{O}(B H L\^{}2)$.
 
 \end{enumerate}
 \subsection{Contributions}
@@ -122,3 +122,8 @@ concludes.
 
 
 \subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

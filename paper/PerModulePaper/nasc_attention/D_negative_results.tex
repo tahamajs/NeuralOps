@@ -1,3 +1,115 @@
-\section{D Negative Results}
 
-Draft content for nasc_attention.
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Encoder Default is Dense}
+
+By default, encoders use dense attention. NASC's cascade isn't exercised 
+on DistilBERT/RoBERTa unless explicitly enabled.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} \\
+\midrule
+Cascade enabled & {{D\_CASCADE\_ON}} \\
+Cascade disabled & {{D\_CASCADE\_OFF}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{CASCADE\_ENC\_OBS}}
+
+\subsection{D.2 Gate Collapse}
+
+In some configurations, the gate concentrates on one branch:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Dominant branch} \\
+\midrule
+GPT-2 & $g_0$ (local) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Result.} When the gate collapses, the other branches are dead weight.
+
+\subsection{D.3 RFF Causal Memory}
+
+At $L = 512$, the \texttt{KV\_cumsum} tensor is ~200 MB. At $L = 1024$: ~800 MB. 
+At $L = 2048$: ~3.2 GB. \textbf{OOM} on 8 GB VRAM.
+
+\subsection{D.4 Sparse Block Overhead}
+
+The Python loop in \texttt{\_sparse\_block\_attention} adds 4 kernel launches 
+(for $L = 128$, $B_s = 32$). Each launch has ~5-10  s overhead.
+
+\subsection{D.5 `softpick` Fallback Coarseness}
+
+The fallback triggers if \textbf{any} row has zero denominator, but the 
+\texttt{torch.where} is element-wise. This means:
+\begin{itemize}
+\item If one row in a batch has zero denom, softmax fallback applies only to
+  that row (via torch.where).
+\item But the \texttt{if zero\_mask.any()} is computed over the whole batch.
+
+\end{itemize}
+\subsection{D.6 `inject\_nasc` Raises}
+
+Unlike other modules, \texttt{inject\_nasc} raises on failure. This breaks the 
+"safe injection" contract.
+
+\textbf{Suggested fix:}
+
+\begin{lstlisting}
+except Exception as e:
+    logger.error("inject_nasc failed: %s", e)
+    return None  # instead of raise
+\end{lstlisting}
+
+\subsection{D.7 Failed Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Attempt} & \textbf{Result} \\
+\midrule
+Per-token gate & Slower, no benefit observed \\
+Remove local branch & Accuracy drop \\
+Remove sparse branch & Small drop \\
+Remove global branch & Accuracy drop \\
+Vectorize sparse loop & Not implemented \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.8 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Three branches provide redundancy.} Removing any hurts.
+\item \textbf{Batch-level gate is a simplification.} Per-token might help but
+  wasn't tested.
+\item \textbf{RFF memory is a constraint.} Fused kernel needed for long sequences.
+\item \textbf{Robustness regression.} \texttt{inject\_nasc} should return None.
+
+\end{enumerate}
+\subsection{D.9 Recommendations}
+
+\begin{enumerate}
+\item \textbf{Test encoder cascade} with \texttt{enable\_cascade\_on\_encoders=True}.
+\item \textbf{Vectorize sparse block loop.}
+\item \textbf{Fused Triton kernel} for RFF.
+\item \textbf{Fix \texttt{inject\_nasc}} to return None.
+\item \textbf{Per-token gating} as a future extension.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

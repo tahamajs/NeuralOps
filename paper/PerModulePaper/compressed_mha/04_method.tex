@@ -1,3 +1,426 @@
-\section{04 Method}
+\section{Method}
 
-Draft content for compressed_mha.
+\subsection{Overview}
+
+Compressed MHA has four stages:
+
+\begin{enumerate}
+\item \textbf{Weight extraction} ( 4.2): extract Q, K, V, O from pretrained attention.
+\item \textbf{Joint QKV SVD} ( 4.3): stack and factorize Q, K, V.
+\item \textbf{Separate O SVD} ( 4.4): factorize output projection.
+\item \textbf{LoRA recovery} ( 4.5): add trainable adapters on both branches.
+
+\end{enumerate}
+\begin{lstlisting}
+        Input X
+           |
+            
+    +----------------------+
+    | Joint QKV SVD        |
+    |  Vh_qkv: (r, d)      |  $\leftarrow$ shared input basis
+    |  S_qkv: (r,)         |
+    |  U_qkv: (3d, r)      |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | QKV LoRA             |
+    |  lora_A_qkv, lora_B_qkv |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Attention            |
+    |  softmax(Q K^T) V    |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Separate O SVD       |
+    |  Vh_out, S_out, U_out|
+    +-------+--------------+
+            |
+    +------- --------------+
+    | O LoRA               |
+    +-------+--------------+
+            |
+        Output
+\end{lstlisting}
+
+\subsection{Weight Extraction}
+
+We extract weights via \texttt{copy\_weights}, handling four patterns:
+
+\subsubsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+w_q = src.q_lin.weight
+w_k = src.k_lin.weight
+w_v = src.v_lin.weight
+w_o = src.out_lin.weight
+\end{lstlisting}
+
+\textbf{Nested detection:} \texttt{out\_lin} exists $\to$ \texttt{is\_nested\_encoder = False}.
+
+\subsubsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+if hasattr(src, "self") and hasattr(src, "output"):
+    is_nested_encoder = True
+    w_q = src.self.query.weight
+    w_k = src.self.key.weight
+    w_v = src.self.value.weight
+    w_o = src.output.dense.weight
+\end{lstlisting}
+
+\textbf{Nested detection:} No \texttt{out\_lin}/\texttt{o\_proj}/\texttt{c\_proj} $\to$ \texttt{is\_nested\_encoder = True}.
+
+\subsubsection{GPT-2 (Conv1D)}
+
+\begin{lstlisting}
+w = src.c_attn.weight.t()  # Conv1D stored as (in, out)
+q_w, k_w, v_w = w.chunk(3, dim=0)
+w_o = src.c_proj.weight.t()
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA)}
+
+\begin{lstlisting}
+w_q = src.q_proj.weight
+w_k = src.k_proj.weight
+w_v = src.v_proj.weight
+w_o = src.o_proj.weight
+\end{lstlisting}
+
+\subsection{Joint QKV SVD}
+
+\subsubsection{Stacking}
+
+We concatenate along the output dimension:
+
+\[
+W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix}
+\tag{4.1}
+\]
+
+Shape: $[H d_h + 2 H_{kv} d_h, d]$.
+
+\subsubsection{SVD}
+
+Compute the full SVD:
+
+\[
+W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
+\tag{4.2}
+\]
+
+Truncate to rank $r_{qkv}$:
+
+\[
+r_{qkv} = \min(\text{rank\_qkv}, H d_h + 2 H_{kv} d_h, d)
+\tag{4.3}
+\]
+
+Store the factors:
+
+\[
+U_{QKV, r} \in \mathbb{R}^{(H d_h + 2 H_{kv} d_h) \times r_{qkv}}
+\tag{4.4}
+\]
+
+\[
+S_{QKV, r} \in \mathbb{R}^{r_{qkv}}, \quad
+V_{QKV, r} \in \mathbb{R}^{r_{qkv} \times d}
+\tag{4.5}
+\]
+
+\subsubsection{Forward Pass}
+
+Given input $X$:
+
+\[
+\text{Proj}_1 = X V_{QKV, r}^\top \in \mathbb{R}^{B \times N \times r_{qkv}}
+\tag{4.6}
+\]
+
+\[
+\text{Proj}_2 = \text{Proj}_1 \cdot \text{diag}(S_{QKV, r}) \in \mathbb{R}^{B \times N \times r_{qkv}}
+\tag{4.7}
+\]
+
+\[
+\text{QKV} = \text{Proj}_2 U_{QKV, r}^\top \in \mathbb{R}^{B \times N \times (H d_h + 2 H_{kv} d_h)}
+\tag{4.8}
+\]
+
+Then split into Q, K, V.
+
+\subsubsection{Parameter Count}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Parameters} \\
+\midrule
+$V_{QKV, r}$ & $r_{qkv} \cdot d$ \\
+$S_{QKV, r}$ & $r_{qkv}$ \\
+$U_{QKV, r}$ & $r_{qkv} \cdot (H d_h + 2 H_{kv} d_h)$ \\
+\textbf{Total} & $r_{qkv} (d + H d_h + 2 H_{kv} d_h) + r_{qkv}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $H = H_{kv}$:
+\[
+\text{Total}_{QKV} = r_{qkv} (2d + 2 d_h) = 2 r_{qkv} (d + d_h)
+\tag{4.9}
+\]
+
+\subsection{Separate O SVD}
+
+The output projection $W_O \in \mathbb{R}^{d \times H d_h}$ gets its own SVD:
+
+\[
+W_O = U_O \Sigma_O V_O^\top
+\tag{4.10}
+\]
+
+Truncate to rank $r_{out}$:
+
+\[
+r_{out} = \min(\text{rank\_out}, d, H d_h)
+\tag{4.11}
+\]
+
+Forward:
+
+\[
+\text{Out}_1 = \text{Context} V_{O, r}^\top \in \mathbb{R}^{B \times N \times r_{out}}
+\tag{4.12}
+\]
+
+\[
+\text{Out}_2 = \text{Out}_1 \cdot \text{diag}(S_{O, r}) \in \mathbb{R}^{B \times N \times r_{out}}
+\tag{4.13}
+\]
+
+\[
+\text{Out} = \text{Out}_2 U_{O, r}^\top + b_O \in \mathbb{R}^{B \times N \times d}
+\tag{4.14}
+\]
+
+\textbf{Parameter count:}
+\[
+\text{Total}_O = r_{out} (d + H d_h) + r_{out}
+\tag{4.15}
+\]
+
+\subsection{LoRA Recovery}
+
+Both branches have LoRA adapters:
+
+\subsubsection{QKV LoRA}
+
+\[
+\text{QKV}_\text{LoRA} = \frac{\alpha}{r_L} B_{QKV} A_{QKV} \cdot X
+\tag{4.16}
+\]
+
+Added to the SVD output:
+
+\[
+\text{QKV}_\text{final} = \text{QKV}_\text{SVD} + \text{QKV}_\text{LoRA}
+\tag{4.17}
+\]
+
+\subsubsection{Output LoRA}
+
+\[
+\text{Out}_\text{LoRA} = \frac{\alpha}{r_L} B_O A_O \cdot \text{Context}
+\tag{4.18}
+\]
+
+Added after SVD output.
+
+\subsubsection{Trainable Parameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+$A_{QKV}$ & $r_L \cdot d$ \\
+$B_{QKV}$ & $(H d_h + 2 H_{kv} d_h) \cdot r_L$ \\
+$A_O$ & $r_L \cdot H d_h$ \\
+$B_O$ & $d \cdot r_L$ \\
+\textbf{Total} & $r_L (2d + 2 H d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The Full Forward Pass}
+
+\textbf{Algorithm 1:} Compressed MHA forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$\times$N$\times$d}
+
+ 1: Proj_1 $\leftarrow$ X @ Vh_qkv^T
+ 2: Proj_2 $\leftarrow$ Proj_1 * S_qkv
+ 3: QKV $\leftarrow$ Proj_2 @ U_qkv^T
+ 4: if lora_rank > 0:
+ 5:     QKV $\leftarrow$ QKV + lora_B_qkv(lora_A_qkv(X)) * scaling
+ 6: Q, K, V $\leftarrow$ split(QKV)
+ 7: Q $\leftarrow$ Q + bias_q; K $\leftarrow$ K + bias_k; V $\leftarrow$ V + bias_v
+ 8: if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
+ 9: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
+10: scores $\leftarrow$ Q @ K^T / $\sqrt{}$d_h
+11: if causal: mask(scores)
+12: if padding: mask(scores)
+13: Attn $\leftarrow$ softmax(scores)
+14: Context $\leftarrow$ Attn @ V
+15: if is_nested_encoder:
+16:     return Context  # outer layer applies W_O
+17: Out_1 $\leftarrow$ Context @ Vh_out^T
+18: Out_2 $\leftarrow$ Out_1 * S_out
+19: Out $\leftarrow$ Out_2 @ U_out^T + bias_out
+20: if lora_rank > 0:
+21:     Out $\leftarrow$ Out + lora_B_out(lora_A_out(Context)) * scaling
+22: return Out
+\end{lstlisting}
+
+\subsection{Nested Encoder Handling}
+
+\textbf{Critical detail.} For nested encoders (RoBERTa), our module \textbf{must not} 
+apply its own output projection:
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    out = context
+else:
+    # Apply SVD output projection
+    out = ...
+\end{lstlisting}
+
+The outer \texttt{BertSelfOutput.dense} will apply the projection.
+
+\textbf{Detection rule (in \texttt{copy\_weights}):}
+
+\begin{lstlisting}
+# Check for flat output projections FIRST
+if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
+    self.is_nested_encoder = False
+elif (hasattr(src, "self") and hasattr(src, "output")):
+    self.is_nested_encoder = True
+else:
+    self.is_nested_encoder = False
+\end{lstlisting}
+
+\textbf{Why order matters.} DistilBERT's \texttt{MultiHeadSelfAttention} ends with 
+"SelfAttention" and has \texttt{out\_lin}. An earlier implementation checked the 
+class name \textbf{first}, mistakenly marking DistilBERT as nested $\to$ double 
+projection $\to$ 50.92\% collapse. This version checks \texttt{out\_lin} first.
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Parameter Count}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{Compressed} & \textbf{Ratio} \\
+\midrule
+$W_Q, W_K, W_V$ & $3 d^2$ (approx) & $2 r_{qkv} (d + d_h)$ & depends \\
+$W_O$ & $d^2$ & $r_{out} (d + d_h)$ & depends \\
+LoRA & 0 & $r_L (2d + 2 d_h)$ & +small \\
+\textbf{Total} & $4 d^2$ & $2 r_{qkv} (d+d_h) + r_{out}(d+d_h) + r_L(2d + 2d_h)$ & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $d_h = 64$, $r_{qkv} = r_{out} = 384$, $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Baseline & 2,359,296 \\
+Compressed QKV & $2 \cdot 384 \cdot 832 = 638,976$ \\
+Compressed O & $384 \cdot 832 = 319,488$ \\
+LoRA & $16 \cdot 1664 = 26,624$ \\
+\textbf{Total compressed} & ~985,088 \\
+\textbf{Reduction} & \textbf{2.4$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $r_{qkv} = r_{out} = 64$:
+\begin{itemize}
+\item Compressed QKV: $2 \cdot 64 \cdot 832 = 106,496$
+\item Compressed O: $64 \cdot 832 = 53,248$
+\item LoRA: 26,624
+\item \textbf{Total:} ~186,368 $\to$ \textbf{12.7$\times$ reduction}
+
+\end{itemize}
+\subsubsection{Inference Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Operation} & \textbf{Complexity} \\
+\midrule
+Down-projection QKV & $\mathcal{O}(N r_{qkv} d)$ \\
+Up-projection QKV & $\mathcal{O}(N r_{qkv} (d + d_h))$ \\
+Attention & $\mathcal{O}(N^2 d_h)$ \\
+Down-projection O & $\mathcal{O}(N r_{out} d_h)$ \\
+Up-projection O & $\mathcal{O}(N r_{out} d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The attention dominates for long sequences.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Joint SVD Optimality}
+
+\textbf{Claim.} The joint SVD of stacked $[W_Q; W_K; W_V]$ gives the minimum 
+Frobenius error for any rank-$r$ approximation of the stacked matrix.
+
+\textbf{Proof.} Direct application of Eckart-Young to $W_{QKV}$. $\square$
+
+\subsubsection{Shared Basis}
+
+\textbf{Claim.} The shared basis $V_{QKV, r}$ captures the common structure of Q, 
+K, V in the input space.
+
+\textbf{Proof sketch.} If $W_Q \approx W_Q V V^\top$ for a shared subspace $V$, the 
+joint SVD recovers $V$ as the dominant right singular vectors. $\square$
+
+\subsubsection{Reconstruction Error}
+
+For the joint SVD:
+
+\[
+\|W_{QKV} - U_{QKV, r} \Sigma_r V_{QKV, r}^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\tag{4.19}
+\]
+
+\subsubsection{Causality}
+
+\textbf{Claim.} The causal mask is preserved.
+
+\textbf{Proof.} We apply a triangular mask before softmax, standard for causal 
+attention. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}

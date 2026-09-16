@@ -1,3 +1,79 @@
-\section{11 Conclusion}
 
-Draft content for rala_attention.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{RALA} (Rank-Augmented Linear Attention), a linear-attention 
+variant that combines a softplus kernel with a per-head low-rank augmentation 
+and a scalar gate. RALA preserves accuracy within \textbf{{{D\_DELTA}}\%} on 
+DistilBERT, \textbf{{{R\_DELTA}}\%} on RoBERTa, and \textbf{{{G\_DELTA}}\%} on GPT-2, but 
+increases parameter count by \textbf{{{D\_PARAM\_PCT}}\%} and slows inference by 
+\textbf{{{D\_TIME\_R}}$\times$}.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Params $\Delta$} & \textbf{Time} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_TIME\_R}}$\times$ \\
+RoBERTa & {{R\_ACC}}\% & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_TIME\_R}}$\times$ \\
+GPT-2 & {{G\_ACC}}\% & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_R}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Softplus is a valid kernel choice} but not clearly superior to elu+1.
+\item \textbf{Rank augmentation is a modest contribution} given frozen $U, V$.
+\item \textbf{The prefix scan is the bottleneck.}
+\item \textbf{RALA is not a compression method.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+
+\begin{itemize}
+\item Fused parallel scan (Triton).
+\item Unfrozen $U, V$.
+\item Per-head gate.
+
+\end{itemize}
+\subsubsection{Long-Term}
+
+\begin{itemize}
+\item Compare with Delta Net, GLA, Mamba.
+\item Test on generation tasks.
+\item Scale to 7B+.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+RALA is an experimental contribution to linear attention literature. It is 
+\textbf{not} production-ready and \textbf{not} a compression method. We release the 
+code to enable replication and improvement.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented RALA, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

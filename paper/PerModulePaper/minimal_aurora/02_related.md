@@ -86,5 +86,6 @@ variance. MinimalAURORA applies this to SVD of weights.
 MinimalAURORA is a **baseline-quality** compression method with the 
 simplest possible machinery. It trades algorithmic sophistication for 
 implementation clarity and reliability.
+```
 
 ---

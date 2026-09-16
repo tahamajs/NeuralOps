@@ -1,3 +1,198 @@
-\section{08 Analysis}
 
-Draft content for goldfinch_ahn.
+\section{Analysis}
+
+\subsection{The Long-Memory Branch Contributes Nothing}
+
+\textbf{Test.} We removed the long-memory branch and replaced it with zero:
+
+\begin{lstlisting}
+long_out = torch.zeros_like(x)
+\end{lstlisting}
+
+\textbf{Result:}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Full & {{D\_ACC}}\% & {{R\_ACC}}\% & {{G\_ACC}}\% \\
+Without long-memory & {{D\_NOLONG}}\% & {{R\_NOLONG}}\% & {{G\_NOLONG}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{LONG\_MEMORY\_OBS}}
+
+\textbf{Why.} The long-memory branch is a per-token linear projection. It has no 
+mechanism to carry information across tokens. Its role in attention is 
+therefore no different from an extra MLP.
+
+\subsection{The Preservation Gate Dominates Behavior}
+
+\textbf{Test.} Vary \texttt{output\_gate} init:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Init} & \textbf{$\alpha$} & \textbf{DistilBERT} \\
+\midrule
+0.0 & 0.50 & {{D\_AG0}} \\
+1.0 & 0.73 & {{D\_AG1}} \\
+2.0 & 0.88 & {{D\_AG2}} \\
+5.0 & 0.99 & {{D\_AG5}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{AG\_OBS}}
+
+When $\alpha$ is close to 1, the block is nearly an identity, and accuracy 
+approaches baseline. When $\alpha$ is 0.5, the block's output is mixed equally 
+with the input, and accuracy drops.
+
+\subsection{Gate Mean Over Heads Loses Information}
+
+The gate is per-head: $g_t \in \mathbb{R}^H$. But it is \textbf{mean-pooled}:
+
+\begin{lstlisting}
+gate = torch.sigmoid(self.gate(x)).mean(dim=-1, keepdim=True)
+\end{lstlisting}
+
+\textbf{Effect.} All heads in a layer receive the same gate value. This 
+eliminates head specialization in the gating mechanism.
+
+\textbf{Alternative.} Keep per-head gating:
+
+\begin{lstlisting}
+gate = torch.sigmoid(self.gate(x)).transpose(1, 2).unsqueeze(-1)  # (B, H, L, 1)
+fused = gate * short_out.view(B, H, L, d) + (1 - gate) * long_out.view(B, H, L, d)
+\end{lstlisting}
+
+We did not implement this variant, but it is a natural extension.
+
+\subsection{Sliding-Window Attention is a Good Local Approximation}
+
+\textbf{Test.} Compare sliding-window against full attention:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Window} & \textbf{DistilBERT} \\
+\midrule
+16 & {{D\_W16}} \\
+32 & {{D\_W32}} \\
+64 & {{D\_W64}} \\
+128 & {{D\_W128}} \\
+$\infty$ (full) & {{D\_WINF}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{WINDOW\_OBS}}
+
+For SST-2 with sequence length 128, a window of 64 or 128 captures most of 
+the useful attention. This is consistent with prior work (Longformer, 
+Beltagy et al., 2020).
+
+\subsection{Inference Cost Breakdown}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Operation} & \textbf{Baseline} & \textbf{GoldFinch} \\
+\midrule
+Q/K/V proj & 3 & 3 \\
+RoPE & 0-2 & 0-2 \\
+Attention & 1 (SDPA) & 1 (sliding window) \\
+Long-memory (Linear) & 0 & 1 \\
+Gate & 0 & 2 \\
+Fusion & 0 & 2 \\
+Output proj & 1 & 1 \\
+Preservation gate & 0 & 2 \\
+\textbf{Total launches} & \textbf{~6} & \textbf{~12} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{~2$\times$ more kernel launches} $\to$ ~{{D\_TIME\_R}}$\times$ slowdown.
+
+\subsection{Failure Mode Taxonomy}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure Mode} & \textbf{Symptom} & \textbf{Root Cause} \\
+\midrule
+\textbf{No long-range memory} & Loses global context & Long-memory branch is linear \\
+\textbf{Head-scalar gate} & Reduced head specialization & Mean over heads \\
+\textbf{Conservative output} & Small gains & $\alpha$ $\approx$ 0.88 \\
+\textbf{Extra parameters} & $\Delta$ +5-6\% & LoRA + gate + linear \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Attention Pattern Analysis}
+
+\textbf{Figure 8.1} shows attention maps:
+
+\begin{itemize}
+\item \textbf{Baseline:} Full attention with sharp peaks + global structure.
+\item \textbf{GoldFinch:} Banded structure (window-limited) + smooth global via gate.
+
+\end{itemize}
+\textbf{Entropy:}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{GoldFinch} \\
+\midrule
+Attention entropy & {{BASE\_ENTROPY}} & {{GOLD\_ENTROPY}} \\
+Max weight & {{BASE\_MAX\_W}} & {{GOLD\_MAX\_W}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{Speed} & \textbf{Long-range} \\
+\midrule
+Baseline & 90.71\% & 1.0$\times$ & Full \\
+Cosformer & {{COS\_D}}\% & {{COS\_TIME\_R}}$\times$ & Linear state \\
+\textbf{GoldFinch} & \textbf{{{D\_ACC}}\%} & \textbf{{{D\_TIME\_R}}$\times$} & \textbf{None (window only)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{The long-memory branch contributes nothing.} It should be removed or
+  replaced with a real recurrent mechanism.
+\item \textbf{The preservation gate dominates.} The block is conservative by design.
+\item \textbf{Sliding-window attention is a good local approximation.}
+\item \textbf{Gate mean-pooling loses per-head information.}
+\item \textbf{Extra parameters (+5-6\%) are not justified by gains.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -213,28 +213,15 @@ MinimalSVD integrates cleanly with the framework's LoRA recovery:
 \end{enumerate}
 \subsection{Relationship to Companion Variants}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llll}
-\toprule
-\textbf{Feature} & \textbf{MinimalSVD} & \textbf{NOVA} & \textbf{PRISM} \\
-\midrule
-Whole-model traversal &  &  &  \\
-Pre-test on first layer &  &  &  \\
-Injection-time nested detection &  &  &  \\
-Double-injection guard &  &  &  \\
-Code lines & ~280 & ~500 & ~550 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{lstlisting}
 
-
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
-\caption{High-level architectural diagram of minimal_svd.}
-\label{fig:arch_minimal_svd}
+\caption{High-level architectural diagram of minimal\_svd.}
+\label{fig:arch_minimal-svd}
 \end{figure}
 

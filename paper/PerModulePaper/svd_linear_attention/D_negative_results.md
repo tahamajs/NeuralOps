@@ -119,5 +119,6 @@ similar decay values.
 3. **Decay init needs fixing.**
 4. **r=32 is a good balance.**
 5. **Channel-wise decay is not worth it.**
+```
 
 ---

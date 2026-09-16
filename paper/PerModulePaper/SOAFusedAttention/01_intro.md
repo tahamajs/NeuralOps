@@ -124,5 +124,6 @@ concludes.
 | $\Sigma$ | Singular values |
 | $\tau$ | Reconstruction error threshold |
 | $r_L$ | LoRA rank |
+```
 
 ---

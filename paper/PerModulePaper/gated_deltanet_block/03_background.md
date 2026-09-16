@@ -101,5 +101,6 @@ If the operation fails, the code continues as if nothing happened, with
 | $\mu, \sigma$ | LayerNorm mean and std |
 | $\epsilon$ | LayerNorm numerical constant |
 | $r$ | LoRA rank |
+```
 
 ---

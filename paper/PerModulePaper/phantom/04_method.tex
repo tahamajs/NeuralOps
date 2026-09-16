@@ -1,3 +1,459 @@
-\section{04 Method}
 
-Draft content for phantom.
+\section{Method}
+
+\subsection{Overview}
+
+PHANTOM replaces standard transformer attention with a two-stage compression:
+
+\begin{enumerate}
+\item \textbf{Projection compression} ( 4.2): replace each $W \in \{W_Q, W_K, W_V, W_O\}$
+  with a CUR factorized layer $C U^+ R$.
+\item \textbf{Sparse attention} ( 4.3): compute attention via multi-round angular LSH
+  with rectified softpick.
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+   +--------------------------------------------------+
+   |  Input: hidden_states $\in$ R^{B$\times$L$\times$d}                |
+   +-------------------+------------------------------+
+                       |
+                        
+   +--------------------------------------------------+
+   |  Phase 1: CUR Projections                        |
+   |  Q = CUR_Q(hidden_states)                        |
+   |  K = CUR_K(hidden_states)                        |
+   |  V = CUR_V(hidden_states)                        |
+   +-------------------+------------------------------+
+                       |
+                        
+   +--------------------------------------------------+
+   |  Phase 2: Multi-Round LSH Attention              |
+   |  For round r in 1..R:                            |
+   |    hash_Q, hash_K $\leftarrow$ random proj + sign           |
+   |    match $\leftarrow$ (hash_Q == hash_K)                    |
+   |    attn_r $\leftarrow$ softpick(scores   match)             |
+   |  Output = mean(attn_r   V)                       |
+   +-------------------+------------------------------+
+                       |
+                        
+   +--------------------------------------------------+
+   |  Phase 3: Output Projection (CUR_O)              |
+   +-------------------+------------------------------+
+                       |
+                        
+   +--------------------------------------------------+
+   |  Output: y $\in$ R^{B$\times$L$\times$d}                           |
+   +--------------------------------------------------+
+\end{lstlisting}
+
+\subsection{Phase 1: CUR Projection Compression}
+
+\subsubsection{The Factorized Layer}
+
+Each projection $W$ is replaced by a two-layer factorization:
+
+\[
+y = U_\text{up} \cdot (D_\text{down} \cdot x) + b
+\tag{4.1}
+\]
+
+where:
+\begin{itemize}
+\item $D_\text{down} \in \mathbb{R}^{r \times d_\text{in}}$ is the down projection.
+\item $U_\text{up} \in \mathbb{R}^{d_\text{out} \times r}$ is the up projection.
+
+\end{itemize}
+\textbf{Parameter count:} $r(d_\text{in} + d_\text{out})$ vs $d_\text{in} d_\text{out}$ 
+for the original.
+
+For $d_\text{in} = d_\text{out} = 768$ and $r = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Params} & \textbf{Ratio} \\
+\midrule
+Original & 589,824 & 1.0$\times$ \\
+PHANTOM (r=16) & 24,576 & \textbf{24$\times$} \\
+PHANTOM + LoRA (r=16) & 49,152 & \textbf{12$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Leverage-Score Selection}
+
+Given a weight matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$, 
+we compute its SVD:
+
+\[
+W = U \Sigma V^\top
+\tag{4.2}
+\]
+
+\textbf{Column leverage} (importance of each input dimension):
+
+\[
+\pi_j = \sum_{k=1}^{\min(m, n)} (V_{j, k})^2
+\tag{4.3}
+\]
+
+\textbf{Row leverage} (importance of each output dimension):
+
+\[
+\rho_i = \sum_{k=1}^{\min(m, n)} (U_{i, k})^2
+\tag{4.4}
+\]
+
+We normalize both to sum to 1:
+
+\[
+\tilde{\pi}_j = \frac{\pi_j}{\sum_{j'} \pi_{j'}}, \qquad
+\tilde{\rho}_i = \frac{\rho_i}{\sum_{i'} \rho_{i'}}
+\tag{4.5}
+\]
+
+Then select the top-$r$ columns and rows:
+
+\[
+\mathcal{J} = \text{top}_r(\tilde{\pi}), \qquad
+\mathcal{I} = \text{top}_r(\tilde{\rho})
+\tag{4.6}
+\]
+
+\subsubsection{CUR Reconstruction}
+
+Define:
+
+\[
+C = W[:, \mathcal{J}] \in \mathbb{R}^{d_\text{out} \times r}
+\tag{4.7}
+\]
+
+\[
+R = W[\mathcal{I}, :] \in \mathbb{R}^{r \times d_\text{in}}
+\tag{4.8}
+\]
+
+\[
+W_\text{intersection} = W[\mathcal{I}, \mathcal{J}] \in \mathbb{R}^{r \times r}
+\tag{4.9}
+\]
+
+The reconstruction is:
+
+\[
+W_\text{CUR} = C \cdot W_\text{intersection}^+ \cdot R
+\tag{4.10}
+\]
+
+\subsubsection{Factor Assignment}
+
+We assign the CUR factors to the down/up projections as follows:
+
+\[
+D_\text{down} = R \in \mathbb{R}^{r \times d_\text{in}}
+\tag{4.11}
+\]
+
+\[
+U_\text{up} = C \cdot W_\text{intersection}^+ \in \mathbb{R}^{d_\text{out} \times r}
+\tag{4.12}
+\]
+
+The factorized layer computes:
+
+\[
+y = U_\text{up} \cdot (D_\text{down} \cdot x) + b
+\tag{4.13}
+\]
+
+\subsubsection{Fallback}
+
+If SVD or pseudoinverse fails (e.g., ill-conditioned matrix), we fall back 
+to Kaiming initialization. This rarely occurs but ensures robustness.
+
+\subsection{Phase 2: Multi-Round LSH Attention}
+
+\subsubsection{Angular LSH Construction}
+
+For each of $R_\ell$ rounds:
+
+\begin{enumerate}
+\item Sample a random projection matrix $A^{(r)} \in \mathbb{R}^{d_h \times k}$.
+\item Normalize each column of $A^{(r)}$ to unit norm.
+\item Compute hash codes:
+  $$
+  h\_Q\^{}{(r)} = \sum\_{i=1}\^{}{k} 2\^{}{i-1} \cdot \mathbb{1}\left[\left(Q\_\text{norm} \cdot A\^{}{(r)}\right)\_i > 0\right]
+  \tag{4.14}
+  $$
+  $$
+  h\_K\^{}{(r)} = \sum\_{i=1}\^{}{k} 2\^{}{i-1} \cdot \mathbb{1}\left[\left(K\_\text{norm} \cdot A\^{}{(r)}\right)\_i > 0\right]
+  \tag{4.15}
+  $$
+  where $Q_\text{norm}, K_\text{norm}$ are L2-normalized query/key matrices.
+
+\item Compute the boolean match matrix:
+  $$
+  M\^{}{(r)}\_{ij} = \mathbb{1}[h\_{Q,i}\^{}{(r)} = h\_{K,j}\^{}{(r)}]
+  \tag{4.16}
+  $$
+
+\item Always add the diagonal (self-attention):
+  $$
+  M\^{}{(r)} \leftarrow M\^{}{(r)} \lor I
+  \tag{4.17}
+  $$
+
+\end{enumerate}
+\subsubsection{Masking}
+
+For padding and causality:
+
+\[
+M^{(r)}_{ij} \leftarrow M^{(r)}_{ij} \land \text{valid}_j \land (\neg \text{causal}_{ij})
+\tag{4.18}
+\]
+
+where $\text{causal}_{ij} = \mathbb{1}[i < j]$.
+
+\subsubsection{Attention Computation}
+
+For each round, compute the attention scores:
+
+\[
+S^{(r)}_{ij} = \frac{Q_i \cdot K_j^\top}{\sqrt{d_h}}
+\tag{4.19}
+\]
+
+Then mask and apply softpick:
+
+\[
+S^{(r)}_{ij} \leftarrow S^{(r)}_{ij} + (M^{(r)}_{ij} - 1) \cdot \infty
+\tag{4.20}
+\]
+
+\[
+\alpha^{(r)} = \text{softpick}(S^{(r)}, \tau_s)
+\tag{4.21}
+\]
+
+Apply dropout (if training) and compute the round's output:
+
+\[
+O^{(r)} = \alpha^{(r)} \cdot V
+\tag{4.22}
+\]
+
+\subsubsection{Round Averaging}
+
+The final attention output is the mean over rounds:
+
+\[
+O = \frac{1}{R_\ell} \sum_{r=1}^{R_\ell} O^{(r)}
+\tag{4.23}
+\]
+
+\subsubsection{Choice of Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Default} & \textbf{Rationale} \\
+\midrule
+$R_\ell$ (rounds) & 4 & Balances variance vs compute \\
+$k$ (bits) & 4 & 16 buckets per round \\
+$\tau_s$ & 1.0 & Standard softpick temperature \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+With $k = 4$ bits, the number of buckets per round is $2^4 = 16$. The average 
+bucket size is roughly $L / 16$, so sparse attention cost is 
+$\mathcal{O}(L^2 / 16)$ -- a 16$\times$ reduction.
+
+\subsection{Rectified Softpick}
+
+We define softpick with a fallback to softmax:
+
+\[
+\text{softpick}_i(x) = \text{ReLU}\!\left(e^{(x_i - m)/\tau_s} - e^{-m/\tau_s}\right)
+\tag{4.24}
+\]
+
+where $m = \max_j x_j$. The output is normalized:
+
+\[
+\hat{p}_i = \frac{\text{softpick}_i(x)}{\sum_j \text{softpick}_j(x) + \epsilon}
+\tag{4.25}
+\]
+
+\textbf{Fallback.} If $\sum_j \text{softpick}_j(x) < 10^{-5}$ (all weights zero), 
+we substitute:
+
+\[
+p_i = \text{softmax}(x_i / \tau_s)
+\tag{4.26}
+\]
+
+This handles the case where all attention scores are highly negative (from 
+masking), which would otherwise produce a zero row.
+
+\subsection{The Full Algorithm}
+
+\textbf{Algorithm 1:} PHANTOM forward pass
+\begin{lstlisting}
+Input:  hidden_states $\in$ R^{B$\times$L$\times$d}, mask
+Output: y $\in$ R^{B$\times$L$\times$d}
+
+1:  # Phase 1: CUR projections
+2:  Q $\leftarrow$ CUR_q(hidden_states)
+3:  K $\leftarrow$ CUR_k(hidden_states)
+4:  V $\leftarrow$ CUR_v(hidden_states)
+5:  reshape Q, K, V into heads
+6:
+7:  # Phase 2: Multi-round LSH attention
+8:  accum $\leftarrow$ 0
+9:  for r in 1..R_  do
+10:     A $\leftarrow$ random_projection(d_h, k)
+11:     h_Q $\leftarrow$ lsh_hash(Q, A)
+12:     h_K $\leftarrow$ lsh_hash(K, A)
+13:     M $\leftarrow$ (h_Q == h_K)   I
+14:     M $\leftarrow$ M   valid   ( causal)
+15:     S $\leftarrow$ Q K^T / $\sqrt{}$d_h
+16:     S $\leftarrow$ mask(S, M)
+17:     $\alpha$ $\leftarrow$ softpick(S, $\tau$_s)
+18:     accum $\leftarrow$ accum + $\alpha$ V
+19: end for
+20: context $\leftarrow$ accum / R_ 
+21:
+22: # Phase 3: Output projection
+23: y $\leftarrow$ CUR_o(context)
+24: return y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Parameter Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Original} & \textbf{PHANTOM} \\
+\midrule
+$W_Q$ & $d \cdot d_h H$ & $r(d + d_h H)$ \\
+$W_K$ & $d \cdot d_h H_{kv}$ & $r(d + d_h H_{kv})$ \\
+$W_V$ & $d \cdot d_h H_{kv}$ & $r(d + d_h H_{kv})$ \\
+$W_O$ & $d_h H \cdot d$ & $r(d_h H + d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $H = 12$, $d_h = 64$, $r = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Original} & \textbf{PHANTOM} \\
+\midrule
+$W_Q$ & 589,824 & 24,576 \\
+$W_K$ & 589,824 & 24,576 \\
+$W_V$ & 589,824 & 24,576 \\
+$W_O$ & 589,824 & 24,576 \\
+\textbf{Total per layer} & 2,359,296 & \textbf{98,304} \\
+\textbf{Ratio} & 1.00$\times$ & \textbf{24$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Time Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Original} & \textbf{PHANTOM} \\
+\midrule
+Q/K/V proj & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d r)$ \\
+Attention & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(R_\ell L B d_h)$ \\
+Output proj & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L r d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+where $B \approx L / 2^k$ is the average bucket size.
+
+For $L = 128$, $k = 4$, $B \approx 8$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Phase} & \textbf{Original} & \textbf{PHANTOM} \\
+\midrule
+Attention & 128  = 16,384 ops & 4 $\times$ 128 $\times$ 8 = 4,096 ops \\
+\textbf{Speedup} & -- & \textbf{4$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Memory Complexity}
+
+Attention matrix memory reduces from $\mathcal{O}(B H L^2)$ to 
+$\mathcal{O}(B H L \cdot B)$. For $L = 128$ and $B = 8$, this is a 16$\times$ reduction.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{CUR Approximation Bound}
+
+\textbf{Proposition.} If rows and columns are selected by highest leverage score, then:
+
+\[
+\|W - C U^+ R\|_F \leq \|W - W_r\|_F + \epsilon
+\tag{4.27}
+\]
+
+where $\epsilon$ depends on the leverage score distribution.
+
+\textbf{Proof sketch.} This follows from the deterministic leverage-score CUR bound 
+in Drineas et al. (2008) and the observation that top-$r$ selection is at least 
+as good as probabilistic sampling with the same expected sample size. $\square$
+
+\subsubsection{LSH Collision Probability}
+
+For two unit vectors $q, k$ with angle $\theta$:
+
+\[
+\Pr[h^{(r)}(q) = h^{(r)}(k)] = 1 - \frac{\theta}{\pi}
+\tag{4.28}
+\]
+
+Averaging over $R_\ell$ independent rounds reduces the variance of the 
+attention estimate by factor $R_\ell$.
+
+\subsubsection{Softpick Sparsity}
+
+At temperature $\tau_s$, the fraction of non-zero entries in softpick is 
+approximately:
+
+\[
+\text{sparsity} \approx \frac{\#\{i : x_i > m - \tau_s \log(2)\}}{L}
+\tag{4.29}
+\]
+
+For typical attention distributions with peaked scores, this is 5-15\%.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

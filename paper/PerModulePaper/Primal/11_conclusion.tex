@@ -17,9 +17,9 @@ is computed via differentiable Schulz iteration.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attn mem ratio} \\
 \midrule
-DistilBERT & -4.2\% & \textbf{4$\times$} \\
-RoBERTa & -4.6\% & \textbf{4$\times$} \\
-GPT-2 & -4.4\% & \textbf{4$\times$} \\
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{MEM\_REDUCTION}}$\times$} \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{MEM\_REDUCTION}}$\times$} \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{MEM\_REDUCTION}}$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -27,7 +27,7 @@ GPT-2 & -4.4\% & \textbf{4$\times$} \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{Asymmetric landmarks} give +0.5\% over symmetric Nystr m.
+\item \textbf{Asymmetric landmarks} give +{{ASYM\_GAIN}}\% over symmetric Nystr m.
 \item \textbf{$m = 64$} is optimal for $L = 128$.
 \item \textbf{Schulz from SVD pinv} is best practice.
 \item \textbf{Long $L$ benefits most.}
@@ -70,3 +70,7 @@ We thank {{ACKNOWLEDGMENTS}}.
 \subsection{Conflict of Interest}
 
 None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

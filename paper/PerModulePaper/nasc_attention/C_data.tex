@@ -1,3 +1,169 @@
-\section{C Data}
 
-Draft content for nasc_attention.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_ACC}}\% \\
+$\Delta$ & {{D\_DELTA}}\% \\
+F1 & {{D\_F1}} \\
+Path & {{D\_PATH}} \\
+Params (after) & {{D\_PARAMS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{R\_ACC}}\% \\
+$\Delta$ & {{R\_DELTA}}\% \\
+F1 & {{R\_F1}} \\
+Path & {{R\_PATH}} \\
+Params (after) & {{R\_PARAMS}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Inference time & {{R\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{G\_ACC}}\% \\
+$\Delta$ & {{G\_DELTA}}\% \\
+F1 & {{G\_F1}} \\
+Path & Cascade \\
+Params (after) & {{G\_PARAMS}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Inference time & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Gate Distribution (GPT-2)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$g$} & \textbf{Mean} & \textbf{Std} & \textbf{Min} & \textbf{Max} \\
+\midrule
+$g_0$ (local) & {{G\_G0}} & {{G\_G0\_STD}} & {{G\_G0\_MIN}} & {{G\_G0\_MAX}} \\
+$g_1$ (sparse) & {{G\_G1}} & {{G\_G1\_STD}} & {{G\_G1\_MIN}} & {{G\_G1\_MAX}} \\
+$g_2$ (global) & {{G\_G2}} & {{G\_G2\_STD}} & {{G\_G2\_MIN}} & {{G\_G2\_MAX}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Branch Ablation (GPT-2)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Accuracy} & \textbf{$\Delta$} \\
+\midrule
+All three & {{G\_ACC}}\% & -- \\
+Remove local & {{G\_NOLOC}}\% & {{G\_NOLOC\_D}} \\
+Remove sparse & {{G\_NOSP}}\% & {{G\_NOSP\_D}} \\
+Remove global & {{G\_NOGLB}}\% & {{G\_NOGLB\_D}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Window Size Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Window} & \textbf{GPT-2} & \textbf{Time} \\
+\midrule
+16 & {{G\_W16}} & {{G\_W16\_T}} \\
+32 & {{G\_W32}} & {{G\_W32\_T}} \\
+64 & {{G\_W64}} & {{G\_W64\_T}} \\
+128 & {{G\_W128}} & {{G\_W128\_T}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Top-k Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{k} & \textbf{GPT-2} & \textbf{Time} \\
+\midrule
+1 & {{G\_K1}} & {{G\_K1\_T}} \\
+2 & {{G\_K2}} & {{G\_K2\_T}} \\
+3 & {{G\_K3}} & {{G\_K3\_T}} \\
+4 & {{G\_K4}} & {{G\_K4\_T}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 RFF Features Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Features} & \textbf{GPT-2} & \textbf{Time} \\
+\midrule
+32 & {{G\_F32}} & {{G\_F32\_T}} \\
+64 & {{G\_F64}} & {{G\_F64\_T}} \\
+128 & {{G\_F128}} & {{G\_F128\_T}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {"acc": {{D_ACC}}, "path": "{{D_PATH}}"},
+  "roberta": {"acc": {{R_ACC}}, "path": "{{R_PATH}}"},
+  "gpt2": {"acc": {{G_ACC}}, "path": "cascade", "gate": [{{G_G0}}, {{G_G1}}, {{G_G2}}]}
+}
+\end{lstlisting}
+
+\subsection{C.10 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_nasc.py --models distilbert,roberta,gpt2
+
+for w in 16 32 64 128; do
+    python run_all_4_nasc.py --window_size $w --output_suffix w$w
+done
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

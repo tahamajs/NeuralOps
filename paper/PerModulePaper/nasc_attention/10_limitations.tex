@@ -1,3 +1,86 @@
-\section{10 Limitations}
 
-Draft content for nasc_attention.
+\section{Limitations}
+
+\subsection{Encoder Default is Dense}
+
+The \texttt{use\_dense} flag defaults to standard attention for bidirectional 
+encoders. NASC's cascade path is not exercised on DistilBERT/RoBERTa 
+unless explicitly enabled.
+
+\subsection{Batch-Level Gate}
+
+The gate is computed from the \textbf{batch-mean hidden state}, so all tokens 
+in a batch share the same 3-way mixture. This eliminates per-token 
+adaptivity.
+
+\subsection{`softpick` Batch Fallback}
+
+The fallback to softmax triggers at the \textbf{batch level} (any row triggers 
+fallback for the entire batch via \texttt{torch.where}). This is a coarse fix.
+
+\subsection{Causal RFF Memory}
+
+The \texttt{KV\_cumsum} tensor is $(B, H, L, 2F, d)$. For $L > 512$, this exceeds 
+GPU memory.
+
+\subsection{Python Loop in Sparse Block}
+
+The \texttt{for i in range(nb)} loop adds Python overhead. Vectorization would 
+reduce latency.
+
+\subsection{`inject\_nasc` Raises on Failure}
+
+\begin{lstlisting}
+except Exception as e:
+    logger.error("inject_nasc failed: %s", e)
+    raise e
+\end{lstlisting}
+
+This \textbf{violates the safe-injection contract} used by other modules.
+
+\subsection{Parameter Overhead}
+
+RFF projection ($dF$), gate ($3d$), and LoRA all add parameters.
+
+\subsection{Inference Overhead}
+
+NASC is slower than baseline (~{{G\_TIME\_R}}$\times$) at L=128.
+
+\subsection{Task Coverage}
+
+Only SST-2. Long-context (where NASC's RFF should help) is not tested.
+
+\subsection{Model Coverage}
+
+Only three models. Qwen3.5 untested.
+
+\subsection{Single Seed}
+
+No multi-seed runs.
+
+\subsection{`\_logged\_once` Workaround}
+
+The path logging uses a per-instance flag rather than a proper logging 
+level. Minor.
+
+\subsection{Code Quality}
+
+\begin{itemize}
+\item Sparse block Python loop
+\item \texttt{softpick} fallback is coarse
+\item \texttt{inject\_nasc} raises on failure
+\item Some \texttt{try/except} blocks may mask errors
+
+\end{itemize}
+\subsection{What This Paper Is Not}
+
+\begin{itemize}
+\item Not a causal-decoder method for all cases
+\item Not a compression method
+\item Not a speedup method
+\item Not a per-token adaptive gate method
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

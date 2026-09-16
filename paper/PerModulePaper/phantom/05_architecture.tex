@@ -1,11 +1,233 @@
-\section{05 Architecture}
 
-Draft content for phantom.
+\section{Architecture Integration}
 
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Projections} & \textbf{Attention} & \textbf{Conv1D?} & \textbf{Nested?} \\
+\midrule
+DistilBERT-base & \texttt{q\_lin, k\_lin, v\_lin, out\_lin} & Flat MHA & No & No \\
+RoBERTa-base & \texttt{query, key, value, output.dense} & Nested & No & Yes \\
+GPT-2 & \texttt{c\_attn} (fused), \texttt{c\_proj} & Causal Conv1D & Yes & No \\
+Qwen3.5-0.8B & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} & GQA + RoPE & No & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\subsubsection{DistilBERT (Flat)}
+
+Direct copy from \texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}. Each weight is 
+factorized via CUR.
+
+\begin{lstlisting}
+target.q_proj.copy_cur(src.q_lin.weight, src.q_lin.bias)
+target.k_proj.copy_cur(src.k_lin.weight, src.k_lin.bias)
+target.v_proj.copy_cur(src.v_lin.weight, src.v_lin.bias)
+target.out_proj.copy_cur(src.out_lin.weight, src.out_lin.bias)
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+
+Extract from \texttt{self.query}, \texttt{self.key}, \texttt{self.value}, \texttt{output.dense}.
+
+\begin{lstlisting}
+target.q_proj.copy_cur(src.self.query.weight, src.self.query.bias)
+target.k_proj.copy_cur(src.self.key.weight, src.self.key.bias)
+target.v_proj.copy_cur(src.self.value.weight, src.self.value.bias)
+# out_proj is bypassed via is_nested_encoder = True
+\end{lstlisting}
+
+\subsubsection{GPT-2 (Conv1D)}
+
+GPT-2 fuses Q, K, V into \texttt{c\_attn}:
+
+\begin{lstlisting}
+w = src.c_attn.weight.t()  # Conv1D stores (in, out) $\to$ transpose
+q_w, k_w, v_w = w.chunk(3, dim=0)
+target.q_proj.copy_cur(q_w, q_bias)
+target.k_proj.copy_cur(k_w, k_bias)
+target.v_proj.copy_cur(v_w, v_bias)
+target.out_proj.copy_cur(src.c_proj.weight.t(), src.c_proj.bias)
+\end{lstlisting}
+
+\subsubsection{Qwen3.5 (GQA)}
+
+Direct copy with GQA-preserving shapes.
+
+\subsection{Handling Nested Encoders}
+
+RoBERTa's attention sits inside \texttt{BertAttention}:
+
+\begin{lstlisting}
+class BertAttention:
+    self: BertSelfAttention      # query, key, value
+    output: BertSelfOutput       # dense (output projection)
+\end{lstlisting}
+
+PHANTOM replaces \texttt{attention.self} and sets \texttt{is\_nested\_encoder = True}. The 
+forward pass returns raw context without applying \texttt{out\_proj}, letting the 
+outer \texttt{BertSelfOutput.dense} handle the projection.
+
+\subsection{Handling GQA}
+
+For GQA models ($H_{kv} < H$):
+
+\begin{lstlisting}
+if self.num_heads != self.num_kv_heads:
+    repeats = self.num_heads // self.num_kv_heads
+    K = repeat_kv(K, repeats)
+    V = repeat_kv(V, repeats)
+\end{lstlisting}
+
+Applied after projection, before attention.
+
+\subsection{Handling RoPE}
+
+For models with RoPE (Qwen, LLaMA):
+
+\begin{lstlisting}
+if position_embeddings is not None:
+    cos, sin = position_embeddings
+    Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+\end{lstlisting}
+
+Applied after projection, before GQA expansion.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject PHANTOM into a model
+\begin{lstlisting}
+Input:  model M, config c
+Output: M' with attention replaced
+
+1:  for layer   in transformer_layers(M):
+2:      src $\leftarrow$ extract_attention( )
+3:      if src is None: continue
+4:      new $\leftarrow$ PHANTOMAttention(c, old=src)
+5:      new.copy_weights(src)
+6:      replace_attention( , new)
+7:  end for
+8:  return M'
+\end{lstlisting}
+
+\subsection{The `FactorisedLinear\_CUR` Module}
+
+\begin{lstlisting}
+class FactorisedLinear_CUR(nn.Module):
+    def __init__(self, in_features, out_features, cur_rank=16, ...):
+        super().__init__()
+        self.down = nn.Linear(in_features, cur_rank, bias=False)
+        self.up = nn.Linear(cur_rank, out_features, bias=bias)
+        # Optional LoRA
+        if lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
+            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+    
+    def copy_cur(self, weight, bias):
+        # 1. SVD
+        U, S, Vt = torch.linalg.svd(weight)
+        # 2. Leverage scores
+        col_lev = (Vt ** 2).sum(dim=0)
+        row_lev = (U ** 2).sum(dim=1)
+        # 3. Top-r selection
+        col_idx = torch.topk(col_lev, k=rank).indices
+        row_idx = torch.topk(row_lev, k=rank).indices
+        # 4. CUR factors
+        C = weight[:, col_idx]
+        R = weight[row_idx, :]
+        W_int = weight[row_idx][:, col_idx]
+        # 5. Assign
+        self.down.weight.data = R
+        self.up.weight.data = C @ torch.linalg.pinv(W_int)
+    
+    def forward(self, x):
+        out = self.up(self.down(x))
+        if self.lora_rank > 0:
+            out += F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        return out * self.output_scale
+\end{lstlisting}
+
+\subsection{LSH Attention Module}
+
+\begin{lstlisting}
+def lsh_attention(Q, K, V, rounds=4, bucket_size=4, softpick_temp=1.0, ...):
+    B, H, N, D = Q.shape
+    scale = D ** -0.5
+    n_bits = min(bucket_size, 8)
+    bit_shifts = torch.tensor([2**i for i in range(n_bits)])
+    
+    Q_norm = F.normalize(Q, p=2, dim=-1)
+    K_norm = F.normalize(K, p=2, dim=-1)
+    
+    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+    # ... masking ...
+    
+    accum = torch.zeros_like(V)
+    for _ in range(rounds):
+        proj = F.normalize(torch.randn(D, n_bits), p=2, dim=0)
+        hq = (Q_norm @ proj > 0).float() @ bit_shifts
+        hk = (K_norm @ proj > 0).float() @ bit_shifts
+        match = (hq.unsqueeze(-1) == hk.unsqueeze(-2)) | eye
+        scores_r = scores.masked_fill(~match, -1e4)
+        alpha = softpick(scores_r, dim=-1, temperature=softpick_temp)
+        accum += alpha @ V
+    
+    return accum / rounds
+\end{lstlisting}
+
+\subsection{Fallback and Error Handling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+SVD failure & Exception & Kaiming init \\
+Pseudoinverse failure & NaN/Inf & Kaiming init \\
+Missing weights & \texttt{copy\_weights} raises & Skip layer \\
+Shape mismatch & Assertion & Skip layer \\
+Frobenius norm < 1e-4 & Check after copy & Raise error \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("phantom")
+@ATTENTION_REGISTRY.register("phantom_module")
+class PHANTOMAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Causality Verification}
+
+For decoder models, we verify that the output at position $i$ depends only on 
+inputs $\leq i$ via gradient check:
+
+\begin{lstlisting}
+X = torch.randn(1, N, d, requires_grad=True)
+Y = model(X)
+Y[0, i].sum().backward()
+assert X.grad[0, i+1:].abs().max() < 1e-6
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/phantom_architecture.png}
-\caption{Architectural overview of phantom.}
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of phantom.}
 \label{fig:arch_phantom}
 \end{figure}
+

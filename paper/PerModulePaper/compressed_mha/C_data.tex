@@ -1,3 +1,127 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for compressed_mha.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS\_ABS}} \\
+Ratio & {{D\_RATIO}}$\times$ \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+rank\_qkv & {{RANK\_QKV}} \\
+rank\_out & {{RANK\_OUT}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS\_ABS}} \\
+Ratio & {{R\_RATIO}}$\times$ \\
+Accuracy & {{R\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS\_ABS}} \\
+Ratio & {{G\_RATIO}}$\times$ \\
+Accuracy & {{G\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
+64 & {{D\_R64}} & {{R\_R64}} & {{G\_R64}} \\
+128 & {{D\_R128}} & {{R\_R128}} & {{G\_R128}} \\
+256 & {{D\_R256}} & {{R\_R256}} & {{G\_R256}} \\
+384 & {{D\_R384}} & {{R\_R384}} & {{G\_R384}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Joint vs Independent}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Independent & {{D\_INDEP}} & {{R\_INDEP}} & {{G\_INDEP}} \\
+Joint & {{D\_JOINT}} & {{R\_JOINT}} & {{G\_JOINT}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.7 Nested Detection Test}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Detection order} & \textbf{DistilBERT} \\
+\midrule
+Wrong (class name first) & 50.92\% \\
+Correct (out\_lin first) & {{D\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_compressed_mha.py --rank_qkv 64 --rank_out 64
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

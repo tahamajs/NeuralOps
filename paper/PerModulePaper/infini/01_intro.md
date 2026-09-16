@@ -112,3 +112,6 @@ Section 11 concludes.
 | $\sigma$ | Sigmoid |
 | $W_Q, W_K, W_V, W_O$ | Projection matrices |
 | $r$ | LoRA rank |
+```
+
+---

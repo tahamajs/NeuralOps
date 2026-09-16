@@ -1,3 +1,69 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for reap_moe.
+\subsection{Mixture-of-Experts}
+
+\textbf{Original MoE.} Jacobs et al. (1991) introduced MoE as a mixture of 
+"expert" networks with a "gating" network. Jordan \& Jacobs (1994) extended 
+to hierarchical MoE.
+
+\textbf{Sparsely-Gated MoE.} Shazeer et al. (2017) scaled MoE to 137B parameters 
+using noisy top-$k$ gating with load balancing. REAP-MoE's routing follows 
+this design.
+
+\textbf{Switch Transformer.} Fedus et al. (2021) simplify to top-1 routing with 
+simplified load-balancing loss. This is the closest to our approach.
+
+\textbf{GShard.} Lepikhin et al. (2021) use top-2 routing with auxiliary loss 
+at scale. REAP-MoE uses top-$k$ routing with a similar auxiliary loss.
+
+\textbf{Expert Choice.} Zhou et al. (2022) invert the routing: experts choose 
+tokens. This naturally balances load but has different properties.
+
+\subsection{Load Balancing}
+
+\textbf{Auxiliary loss.} Shazeer et al. (2017) proposed 
+$\mathcal{L}_\text{aux} = E \sum_i \rho_i \pi_i$. This is exactly what REAP-MoE 
+uses.
+
+\textbf{Z-loss.} Zoph et al. (2022) add a regularizer $\mathcal{L}_z = \log^2 \sum_i e^{\text{logit}_i}$ 
+to stabilize router outputs.
+
+\textbf{Router jitter.} Adding noise to router logits during training (as we do).
+
+\textbf{Batch prioritization.} ByCheng et al. (2022) rank tokens by max routing 
+probability. Not used in REAP-MoE.
+
+\subsection{Low-Rank Factorization for MoE}
+
+\textbf{Expert factorization.} Recent work has explored factorizing experts for 
+parameter-efficient MoE. Chen et al. (2023) use SVD on expert weights. 
+REAP-MoE uses the same idea but with a different rank schedule.
+
+\textbf{MoE-LoRA.} Zadouri et al. (2023) add LoRA adapters to experts. REAP-MoE 
+uses full SVD factorization of experts, not LoRA.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Routing} & \textbf{Load-balance} & \textbf{Expert compression} \\
+\midrule
+Shazeer et al. (2017) & Noisy top-k & Yes & None \\
+Switch Transformer & Top-1 & Yes & None \\
+GShard & Top-2 & Yes & None \\
+Expert Choice & Expert-pick & Implicit & None \\
+\textbf{REAP-MoE} & \textbf{Noisy top-k} & \textbf{Yes} & \textbf{SVD} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} REAP-MoE combines standard noisy top-$k$ routing with 
+SVD-factorized experts, uniquely addressing both parameter bloat and load 
+imbalance.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

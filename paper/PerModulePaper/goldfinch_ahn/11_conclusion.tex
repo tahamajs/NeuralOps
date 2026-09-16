@@ -1,3 +1,91 @@
-\section{11 Conclusion}
 
-Draft content for goldfinch_ahn.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{GoldFinch-AHN}, a hybrid attention block combining 
+sliding-window attention, an input-dependent gate, a linear projection 
+branch, and a preservation gate. On SST-2, GoldFinch achieves 
+\textbf{{{D\_ACC}}\%} on DistilBERT, \textbf{{{R\_ACC}}\%} on RoBERTa, and 
+\textbf{{{G\_ACC}}\%} on GPT-2.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Time} & \textbf{Params $\Delta$} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_DELTA}}\% & {{D\_TIME}} s & +{{D\_PARAM\_PCT}}\% \\
+RoBERTa & {{R\_ACC}}\% & {{R\_DELTA}}\% & {{R\_TIME}} s & +{{R\_PARAM\_PCT}}\% \\
+GPT-2 & {{G\_ACC}}\% & {{G\_DELTA}}\% & {{G\_TIME}} s & +{{G\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Conservative hybrid attention preserves accuracy} but also limits
+  gains.
+\item \textbf{The long-memory branch is a linear projection}, not a recurrent
+  mechanism. It should be replaced or removed.
+\item \textbf{The preservation gate dominates behavior} at $\alpha$ $\approx$ 0.88.
+\item \textbf{Extra parameters (+5-6\%) are not justified by gains.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Immediate Fixes}
+
+\begin{itemize}
+\item \textbf{Replace the long-memory branch} with a real recurrent mechanism (e.g.,
+  actual GatedDeltaNet, Mamba, or RWKV).
+\item \textbf{Keep per-head gating} instead of mean-pooling.
+\item \textbf{Log gate statistics} during recovery.
+
+\end{itemize}
+\subsubsection{Medium-Term}
+
+\begin{itemize}
+\item Test on long-context tasks to see if sliding-window is sufficient.
+\item Compare with Longformer-style hybrid attention.
+
+\end{itemize}
+\subsubsection{Long-Term}
+
+\begin{itemize}
+\item Study preservation gate initialization systematically.
+\item Explore learned gate schedules.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+GoldFinch-AHN is a \textbf{conservative hybrid attention} that trades parameter 
+efficiency for accuracy preservation. The preservation gate at $\alpha$ $\approx$ 0.88 
+keeps the block close to identity, minimizing accuracy loss. However, the 
+"long-memory" branch is a linear projection that adds parameters without 
+function, and the overall module does not deliver substantial gains over 
+simpler alternatives. We document these findings honestly to guide future 
+work.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}} for feedback.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

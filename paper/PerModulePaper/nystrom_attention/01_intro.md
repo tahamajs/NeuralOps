@@ -121,5 +121,6 @@ concludes.
 | $\text{pinv}(\cdot)$ | Moore-Penrose pseudoinverse |
 | $A$ | Full attention matrix ($N \times N$) |
 | $\tilde{A}$ | Nyström approximation ($N \times N$) |
+```
 
 ---

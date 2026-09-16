@@ -1,3 +1,94 @@
-\section{D Negative Results}
 
-Draft content for rala_attention.
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 What Didn't Work}
+
+\subsubsection{D.1.1 Frozen $U, V$ is a Limitation}
+
+\textbf{Hypothesis.} Freezing $U, V$ and training only $\alpha$ would be enough.
+
+\textbf{Result.} The augmentation is a random projection. Accuracy improvement 
+over pure linear attention is marginal.
+
+\textbf{Conclusion.} Future work should unfreeze $U, V$ at least at the 
+last few layers.
+
+\subsubsection{D.1.2 Scalar Gate Too Simple}
+
+\textbf{Hypothesis.} A single scalar $\alpha$ per layer is sufficient.
+
+\textbf{Result.} Different heads may need different augmentation strengths.
+
+\textbf{Conclusion.} Per-head gating would be better.
+
+\subsubsection{D.1.3 Softplus vs elu+1}
+
+\textbf{Hypothesis.} Softplus would be measurably better than elu+1.
+
+\textbf{Result.} Difference is within noise: {{SOFT\_VS\_ELU\_DIFF}}\%.
+
+\textbf{Conclusion.} Softplus is not clearly better in practice.
+
+\subsubsection{D.1.4 Sequential Scan}
+
+\textbf{Hypothesis.} The Python loop over sequence length would not be a 
+bottleneck.
+
+\textbf{Result.} It dominates runtime -- up to {{SCAN\_PCT}}\% of forward pass.
+
+\textbf{Conclusion.} Fused parallel scan is essential for production.
+
+\subsection{D.2 Failed Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{LR} & \textbf{DistilBERT} \\
+\midrule
+5e-5 & {{LR\_5e5}} \\
+1e-4 & {{LR\_1e4}} \\
+2e-4 & {{LR\_2e4}} \\
+5e-4 & {{LR\_5e4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.3 Abandoned Variants}
+
+\subsubsection{D.3.1 Per-Head Alpha}
+
+We tried $H$ scalars per layer. Result: modest accuracy improvement (~0.5\%), 
+larger parameter count. Not adopted.
+
+\subsubsection{D.3.2 Rank-1 Augmentation}
+
+We tried $r = 1$ (single rank). Result: minimal effect. Not adopted.
+
+\subsubsection{D.3.3 Unfrozen $U, V$}
+
+We tried unfreezing $U, V$. Result: loss oscillated, did not converge. 
+Requires more tuning.
+
+\subsection{D.4 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Softplus is not a magic kernel.}
+\item \textbf{The sequential scan is a fatal flaw for production.}
+\item \textbf{Frozen $U, V$ limits expressiveness.}
+\item \textbf{A scalar gate is minimal but usable.}
+
+\end{enumerate}
+\subsection{D.5 Recommendations}
+
+\begin{enumerate}
+\item \textbf{Fuse the prefix scan} before any further experiments.
+\item \textbf{Unfreeze $U, V$} for at least some layers.
+\item \textbf{Try per-head gates} if tuning compute allows.
+\item \textbf{Benchmark against Delta Net, GLA, Mamba} for context.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

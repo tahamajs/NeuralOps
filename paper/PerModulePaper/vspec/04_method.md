@@ -291,5 +291,6 @@ to encourage low-variance gates.
 At inference, the variational sampling is replaced by $z = \mu$. This gives 
 a **deterministic** forward pass, matching the training-time mean of the 
 posterior.
+```
 
 ---

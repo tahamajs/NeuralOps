@@ -1,3 +1,87 @@
-\section{12 Reproducibility}
+\section{Reproducibility}
 
-Draft content for moba.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_mamba.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --modules full,mamba \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1}
+\begin{lstlisting}
+python run_all_4_mamba.py
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (Preservation gate ablation)}
+\begin{lstlisting}
+python run_all_4_mamba.py --pres_gate_init 0.0 --output_suffix g0
+python run_all_4_mamba.py --pres_gate_init 2.0 --output_suffix g2
+python run_all_4_mamba.py --pres_gate_init 4.0 --output_suffix g4
+\end{lstlisting}
+
+\subsubsection{Table 7.8 (Scaling)}
+\begin{lstlisting}
+for L in 64 128 256 512; do
+    python run_all_4_mamba.py --max_seq_len $L --output_suffix L$L
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Acc} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-mamba}
+\item \textbf{Metrics:} \texttt{results/unified\_mamba/*/summary.csv}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

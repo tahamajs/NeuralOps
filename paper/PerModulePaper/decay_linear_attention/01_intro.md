@@ -123,5 +123,6 @@ concludes.
 | $z$ | Inter-chunk denominator state |
 | $\phi$ | Feature map |
 | $\epsilon$ | Numerical stability constant |
+```
 
 ---

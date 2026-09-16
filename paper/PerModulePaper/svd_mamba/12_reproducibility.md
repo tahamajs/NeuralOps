@@ -96,5 +96,6 @@ torch.backends.cudnn.deterministic = True
 - Cross-attention returns input (no-op)
 - Complex forward pass with Python loop over chunks
 - Random state-space initialization affects results
+```
 
 ---

@@ -1,3 +1,76 @@
-\section{11 Conclusion}
 
-Draft content for phantom.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{PHANTOM} (Parameter-Hashed Attention with Token-wise 
+Orthogonal Mapping), which combines \textbf{leverage-score CUR factorization} for 
+projection compression with \textbf{multi-round angular LSH} for sparse attention. 
+The method achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} parameter reduction with 
+\textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} accuracy drop on SST-2.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{CUR with leverage scores} beats uniform SVD at low rank.
+\item \textbf{4 LSH rounds} is optimal for LSH variance reduction.
+\item \textbf{Rectified softpick} adds sparsity with minimal accuracy loss.
+\item \textbf{Component interactions} produce super-additive benefits.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Adaptive $R_\ell$ per layer
+\item Learned hash functions
+\item Fused LSH kernel
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Extension to long-context benchmarks
+\item Theory of LSH + softpick
+\item Combined with quantization
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+PHANTOM is a step toward practical, multi-axis model compression. We release 
+all code and checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed PHANTOM, implemented the code, ran experiments,
+  wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback and edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

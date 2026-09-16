@@ -1,3 +1,261 @@
-\section{04 Method}
 
-Draft content for salt.
+\section{Method}
+
+\subsection{Overview}
+
+SALT replaces each linear projection $W$ with a three-component parameterization:
+
+\begin{lstlisting}
+    Weight W $\in$ R^{d_out $\times$ d_in}
+            |
+             
+    +-------------------------+
+    |  Truncated SVD          |
+    |  W $\approx$ U_r $\Sigma$_r V_r^T      |
+    +-----------+-------------+
+                |
+    +-----------+------------+
+                              
+    +--------------+   +-----------------+
+    |  Buffers     |   |  Trainable      |
+    |  U, S, Vt    |   |  $\gamma$, A, B        |
+    |  (frozen)    |   |                 |
+    +--------------+   +-----------------+
+                |                 |
+                +--------+--------+
+                          
+    +--------------------------------------+
+    |  Forward:                             |
+    |  W_eff = U diag(S   $\gamma$) V^T + A B     |
+    |  y = W_eff x + b                      |
+    +--------------------------------------+
+\end{lstlisting}
+
+\subsection{The SVD Skeleton}
+
+Given a pretrained weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$, 
+compute its SVD:
+
+\[
+W = U \Sigma V^\top, \quad U \in \mathbb{R}^{d_\text{out} \times d_\text{out}}, 
+\Sigma \in \mathbb{R}^{d_\text{out}}, V \in \mathbb{R}^{d_\text{in} \times d_\text{in}}
+\tag{4.1}
+\]
+
+Keep the top-$r$:
+
+\[
+U_r = U_{:, :r}, \quad S_r = \Sigma_{:r}, \quad V_r = V_{:r, :}^\top
+\tag{4.2}
+\]
+
+We store $U_r, S_r, V_r$ as \textbf{buffers} (non-trainable), typically in the 
+model's dtype (FP16 or FP32).
+
+\subsection{Singular Value Modulation}
+
+We add a trainable scale $\gamma \in \mathbb{R}^r$, initialized to 1:
+
+\[
+\Sigma_\gamma = S_r \odot \gamma
+\tag{4.3}
+\]
+
+This allows the model to amplify or suppress retained singular directions.
+
+\textbf{Why is this useful?}
+\begin{itemize}
+\item The pretrained SVD is optimal in Frobenius norm but not for the downstream
+  task.
+\item $\gamma$ provides a small number of trainable parameters ($r$) that adjust
+  the spectral profile.
+
+\end{itemize}
+\subsection{Low-Rank Residual}
+
+We add a trainable low-rank residual $AB$:
+
+\[
+A \in \mathbb{R}^{d_\text{out} \times r}, \quad 
+B \in \mathbb{R}^{r \times d_\text{in}}
+\tag{4.4}
+\]
+
+\textbf{Initialization:}
+\begin{itemize}
+\item $A \sim \mathcal{N}(0, 0.01^2)$ (small random)
+\item $B = 0$
+
+\end{itemize}
+So $AB = 0$ at initialization.
+
+\textbf{Why a residual?} The SVD skeleton captures the top-$r$ directions. If 
+these are insufficient, the residual can add capacity -- but starting from 
+zero avoids disrupting the pretrained state.
+
+\subsection{Combined Weight}
+
+The effective weight is:
+
+\[
+W_\text{SALT} = U_r \cdot \text{diag}(S_r \odot \gamma) \cdot V_r + A B
+\tag{4.5}
+\]
+
+\textbf{At initialization:} $W_\text{SALT} = U_r \text{diag}(S_r) V_r$ -- the 
+rank-$r$ truncated SVD of $W_\text{pretrained}$.
+
+\subsection{Forward Pass}
+
+\subsubsection{Naive (Our Implementation)}
+
+\begin{lstlisting}
+def forward(self, x):
+    adapted_S = self.S * self.gamma
+    W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt  # reconstruct
+    W_lora = self.A @ self.B                             # reconstruct
+    W = (W_svd + W_lora).to(dtype=x.dtype)
+    return F.linear(x, W, self.bias)                     # full matmul
+\end{lstlisting}
+
+\textbf{Cost.} $\mathcal{O}(d_\text{out} \cdot r \cdot d_\text{in} + d_\text{out} \cdot d_\text{in})$ 
+per forward -- \textbf{worse than baseline} due to reconstruction.
+
+\subsubsection{Fused (Future Work)}
+
+The ideal forward avoids reconstructing W:
+
+\begin{lstlisting}
+def forward(self, x):
+    # 1. Project to rank space
+    z = F.linear(x, self.Vt)                        # (B, L, r)
+    # 2. Scale by S * gamma
+    z = z * (self.S * self.gamma)
+    # 3. Project back
+    y_svd = F.linear(z, self.U)                     # (B, L, d_out)
+    # 4. LoRA branch
+    y_lora = F.linear(F.linear(x, self.B), self.A)
+    return y_svd + y_lora + self.bias
+\end{lstlisting}
+
+\textbf{Cost.} $\mathcal{O}(r(d_\text{out} + d_\text{in}))$ -- same as low-rank W.
+
+\textbf{We do NOT implement the fused version.} The paper documents the naive 
+version and its limitation.
+
+\subsection{Parameter Counting}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Shape} & \textbf{Trainable?} & \textbf{Params} \\
+\midrule
+$U_r$ & $(d_\text{out}, r)$ & No (buffer) & $d_\text{out} \cdot r$ \\
+$S_r$ & $(r,)$ & No (buffer) & $r$ \\
+$V_r$ & $(r, d_\text{in})$ & No (buffer) & $r \cdot d_\text{in}$ \\
+$\gamma$ & $(r,)$ & Yes & $r$ \\
+$A$ & $(d_\text{out}, r)$ & Yes & $d_\text{out} \cdot r$ \\
+$B$ & $(r, d_\text{in})$ & Yes & $r \cdot d_\text{in}$ \\
+bias & $(d_\text{out},)$ & Yes & $d_\text{out}$ \\
+\textbf{Total} &  &  & $2r(d_\text{out} + d_\text{in}) + 2r + d_\text{out}$ \\
+\textbf{Full W} &  &  & $d_\text{out} \cdot d_\text{in}$ \\
+\textbf{Ratio (768, r=16)} &  &  & \textbf{11.8$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Initialization}
+
+\subsubsection{SVD Buffers}
+
+For each projection, compute SVD of the pretrained weight and keep the 
+top-$r$.
+
+\subsubsection{Trainable Parameters}
+
+\begin{itemize}
+\item $\gamma \leftarrow \mathbf{1}$
+\item $A \sim \mathcal{N}(0, 0.01^2)$
+\item $B \leftarrow \mathbf{0}$
+\item bias $\leftarrow$ pretrained bias
+
+\end{itemize}
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} SALT initialization
+\begin{lstlisting}
+Input:  W $\in$ R^{d_out $\times$ d_in}, bias b, rank r
+Output: SALTLinear module
+
+1: U, S, Vt $\leftarrow$ svd(W, full_matrices=False)
+2: U_r $\leftarrow$ U[:, :r];  S_r $\leftarrow$ S[:r];  Vt_r $\leftarrow$ Vt[:r, :]
+3: register_buffer("U", U_r)
+4: register_buffer("S", S_r)
+5: register_buffer("Vt", Vt_r)
+6: $\gamma$ $\leftarrow$ ones(r)
+7: A $\leftarrow$ randn(d_out, r) * 0.01
+8: B $\leftarrow$ zeros(r, d_in)
+9: bias $\leftarrow$ b
+10: return SALTLinear(U_r, S_r, Vt_r, $\gamma$, A, B, bias)
+\end{lstlisting}
+
+\textbf{Algorithm 2:} SALT forward (naive)
+\begin{lstlisting}
+Input:  x $\in$ R^{B $\times$ L $\times$ d_in}
+Output: y $\in$ R^{B $\times$ L $\times$ d_out}
+
+1: S_$\gamma$ $\leftarrow$ S * $\gamma$
+2: W_svd $\leftarrow$ (U * S_$\gamma$) @ Vt            (d_out, d_in)
+3: W_lora $\leftarrow$ A @ B                     (d_out, d_in)
+4: W $\leftarrow$ W_svd + W_lora
+5: y $\leftarrow$ x @ W^T + bias
+6: return y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Operation} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Naive forward & $\mathcal{O}(BL(d_\text{out} d_\text{in} + r(d_\text{out} + d_\text{in})))$ & $\mathcal{O}(d_\text{out} d_\text{in})$ \\
+Fused forward & $\mathcal{O}(BL r (d_\text{out} + d_\text{in}))$ & $\mathcal{O}(r(d_\text{out} + d_\text{in}))$ \\
+Baseline & $\mathcal{O}(BL d_\text{out} d_\text{in})$ & $\mathcal{O}(d_\text{out} d_\text{in})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{The naive forward has extra work} from reconstruction. The fused forward 
+realizes the low-rank speedup but is not implemented in this work.
+
+\subsection{Design Choices}
+
+\subsubsection{Why SVD Buffers Instead of Trainable?}
+
+Buffers avoid accidental modification. If $U, S, V$ were trainable, the model 
+could drift arbitrarily far from the pretrained state. Freezing them ensures 
+that changes are localized to $\gamma$ and $AB$.
+
+\subsubsection{Why $\gamma$?}
+
+A scalar per singular value provides a minimal but expressive modulation. 
+It has only $r$ parameters (16 for r=16) -- negligible overhead.
+
+\subsubsection{Why A ~ Small Random, B = 0?}
+
+Standard LoRA init. Ensures $AB = 0$ at start, so the model matches the 
+truncated SVD initialization.
+
+\subsubsection{Why the Same Rank for SVD and Residual?}
+
+Using a single rank parameter simplifies the API. In principle, SVD rank and 
+residual rank could differ.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

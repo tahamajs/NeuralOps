@@ -46,12 +46,12 @@ Majority baseline: 50.92\%.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{window\_size} $W$ & 64 \\
-\texttt{compression\_rank} $d_c$ & 32 \\
+\texttt{window\_size} $W$ & {{WINDOW\_SIZE}} \\
+\texttt{compression\_rank} $d_c$ & {{COMPRESSION\_RANK}} \\
 \texttt{gate\_bias} & 2.0 \\
-\texttt{lora\_rank} & 16 \\
-\texttt{lora\_alpha} & 32 \\
-\texttt{rank} & 64 \\
+\texttt{lora\_rank} & {{LORA\_RANK}} \\
+\texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
+\texttt{rank} & {{RANK}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -66,10 +66,10 @@ Majority baseline: 50.92\%.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & 2e-4 \\
-Weight decay & 1e-2 \\
-Recovery steps & 50 \\
-Batch size & 8 \\
+Learning rate & {{LR}} \\
+Weight decay & {{WD}} \\
+Recovery steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -110,8 +110,8 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
-CUDA & 12.1 \\
-PyTorch & 2.4.0 \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -121,9 +121,14 @@ PyTorch & 2.4.0 \\
 \begin{lstlisting}
 python run_all_4_oha.py \
     --models distilbert,roberta,gpt2 \
-    --window_size 64 \
-    --compression_rank 32 \
-    --recovery_steps 50
+    --window_size {{WINDOW_SIZE}} \
+    --compression_rank {{COMPRESSION_RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}}
 \end{lstlisting}
 
 \subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

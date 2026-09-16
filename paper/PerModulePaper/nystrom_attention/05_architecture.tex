@@ -196,24 +196,10 @@ Base weights ($W_Q, W_K, W_V, W_O$) are frozen. Only LoRA adapters trained.
 
 \subsection{Comparison with Original}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Aspect} & \textbf{Original (2021)} & \textbf{Our reproduction} \\
-\midrule
-Target & BERT & Four families \\
-Landmarks & Adaptive pool & Same \\
-Pinv & Newton-Schulz & Direct pinv + NS fallback \\
-Causal & Not addressed & Explicit dense fallback \\
-Short seq & Not specified & Fallback at $N \leq 128$ \\
-Multi-arch & No & Yes \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{lstlisting}
 
-
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering

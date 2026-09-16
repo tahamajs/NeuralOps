@@ -76,5 +76,6 @@ Local sliding window (like StreamingLLM). Result: worse than learned selection.
 3. **ρ = 0.5 is a good default.**
 4. **Score net width 64 is sufficient.**
 5. **Random top-k is much worse.**
+```
 
 ---

@@ -60,3 +60,6 @@
 3. Top-2 is better than top-1.
 4. Skip MoE on cross-attention.
 5. E=8 is a good default.
+```
+
+---

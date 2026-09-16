@@ -62,8 +62,8 @@ For DistilBERT at $L = 512$:
 \textbf{Metric} & \textbf{Baseline} & \textbf{FUSIONATTN} & \textbf{Change} \\
 \midrule
 Attention FLOPs & 262K & 65K & \textbf{4$\times$ reduction} \\
-Accuracy & 90.71\% & 90.48\% & -0.23\% \\
-Params & 66.9M & 67.74M & +786864M \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
 Gate overhead & 0 & ~32K params & +0.05\% \\
 \bottomrule
 \end{tabular}
@@ -102,7 +102,7 @@ MoBA & Block sparse & $O(KL)$ & No \\
 \end{itemize}
 \subsubsection{Parameter Overhead}
 \begin{itemize}
-\item +1.17\% via LoRA + gate.
+\item +{{PARAM\_CHANGE}}\% via LoRA + gate.
 
 \end{itemize}
 \subsection{Open Questions}
@@ -131,4 +131,8 @@ MoBA & Block sparse & $O(KL)$ & No \\
 
 \end{itemize}
 \subsubsection{Environmental}
-Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

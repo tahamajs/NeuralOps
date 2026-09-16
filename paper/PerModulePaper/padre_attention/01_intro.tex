@@ -1,3 +1,117 @@
-\section{01 Intro}
+\section{Introduction}
 
-Formal architectural specifications for \texttt{padre_attention}.
+\subsection{Motivation}
+
+Softmax attention has been the dominant attention mechanism since 
+Vaswani et al. (2017). It is well-behaved, but its \textbf{non-kernelizability} 
+forces the computation of the full $[N \times N]$ attention matrix. This 
+is why standard attention is quadratic.
+
+\textbf{Polynomial alternatives.} A longstanding observation is that the 
+\textbf{softmax kernel} $e^{q \cdot k}$ can be approximated by a \textbf{polynomial}:
+
+\[
+e^x \approx \sum_{n=0}^{d} \frac{x^n}{n!}
+\tag{1.1}
+\]
+
+Truncating this at order $d$ yields a polynomial kernel that \textbf{is} 
+kernelizable:
+
+\[
+(1 + x)^d = \sum_{n=0}^{d} \binom{d}{n} x^n
+\tag{1.2}
+\]
+
+This is the basis of \textbf{polynomial attention} (Choromanski et al., 2021; 
+Kacham et al., 2024). If successful, it enables $\mathcal{O}(N)$ attention 
+via random-feature or explicit polynomial-feature maps.
+
+\textbf{PADRe} explores this polynomial substitution in the context of \textbf{pretrained} 
+transformers. We ask: can we replace softmax attention with a polynomial 
+kernel without retraining from scratch?
+
+\subsection{Problem Statement}
+
+Given a pretrained transformer $\mathcal{M}$ with softmax attention, we 
+seek a replacement attention $\mathcal{A}'$ such that:
+
+\[
+\mathcal{A}' \approx \mathcal{A}, \qquad
+\mathcal{A}' \text{ uses a polynomial kernel}
+\tag{1.3}
+\]
+
+subject to:
+
+\begin{enumerate}
+\item \textbf{Weight reuse:} Pretrained Q, K, V, O weights must be preserved.
+\item \textbf{Numerical stability:} No NaN/overflow during training.
+\item \textbf{Multi-architecture:} DistilBERT, RoBERTa, GPT-2, Qwen.
+\item \textbf{Causal correctness:} Preserve causality for decoders.
+\item \textbf{Recovery compatibility:} LoRA fine-tuning on top.
+
+\end{enumerate}
+\subsection{Our Approach}
+
+PADRe replaces softmax with:
+
+\[
+\text{attn}(q_i, k_j) = \frac{(1 + s_{ij}/\text{order})^\text{order}}{\sum_{j'} (1 + s_{ij'}/\text{order})^\text{order}}
+\tag{1.4}
+\]
+
+where $s_{ij} = (q_i \cdot k_j)/\sqrt{d_h} - m_i$ and $m_i = \max_j s_{ij}$ over valid $j$.
+
+\textbf{Numerical stability tricks:}
+
+\begin{enumerate}
+\item \textbf{Max-centering} of scores over valid positions:
+  $$
+  s\_{ij} \leftarrow s\_{ij} - \max\_j s\_{ij}
+  \tag{1.5}
+  $$
+  This ensures $s_{ij} \leq 0$, so the base $1 + s_{ij}/\text{order}$ is
+  bounded from above by 1.
+
+\item \textbf{ReLU-clamping} of the base:
+  $$
+  \text{base} = \text{ReLU}(1 + s\_{ij}/\text{order})
+  \tag{1.6}
+  $$
+  Prevents negative base raised to a non-integer power.
+
+\item \textbf{Mask handling:} Invalid positions (padding, causal future) are zeroed
+  after exponentiation.
+
+\end{enumerate}
+\subsection{Contributions}
+
+\begin{itemize}
+\item \textbf{A polynomial-kernel attention module} that replaces softmax and can be
+  applied to pretrained transformers.
+\item \textbf{Numerical stability via max-centering}, preventing overflow in the
+  polynomial expansion.
+\item \textbf{Multi-architecture weight transfer} with Frobenius validation.
+\item \textbf{Output-equivalence check} during injection, skipping layers that fail.
+\item \textbf{Honest complexity analysis.} We acknowledge that without kernelization,
+  runtime is still $\mathcal{O}(N^2 d_h)$.
+\item \textbf{Full reproducibility.} Code and checkpoints released.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on softmax 
+and polynomial approximations. Section 4 presents PADRe. Section 5 describes 
+integration. Section 6 details the setup. Section 7 reports results. Section 
+8 analyzes trade-offs. Section 9 discusses usage. Section 10 lists 
+limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

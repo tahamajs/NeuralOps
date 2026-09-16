@@ -71,5 +71,6 @@ all projections are factorized.
 | SOA Fused (k=128) | Fixed | — | 2× | LoRA | {{SOA_D}} |
 | A3 | Fixed | — | 3× | LoRA | {{A3_D}} |
 | **Adaptive SVD** | **Dynamic** | **0.92** | **{{D_RATIO}}×** | **LoRA** | **{{D_ACC}}** |
+```
 
 ---

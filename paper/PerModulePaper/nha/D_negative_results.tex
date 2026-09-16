@@ -15,7 +15,7 @@
 
 \textbf{Goal.} Use i.i.d. Gaussian instead of orthogonal.
 
-\textbf{Result.} Accuracy dropped by 1.5\%.
+\textbf{Result.} Accuracy dropped by {{IID\_DROP}}\%.
 
 \textbf{Conclusion.} Orthogonal matters.
 
@@ -67,11 +67,11 @@ Learn $m$ per head. No improvement.
 \toprule
 \textbf{$w$} & \textbf{DistilBERT} \\
 \midrule
-4 & 75.0 \\
-8 & 83.0 \\
-16 & 88.0 \\
-32 & 89.5 \\
-64 & 90.25 \\
+4 & {{D\_W4}} \\
+8 & {{D\_W8}} \\
+16 & {{D\_W16}} \\
+32 & {{D\_W32}} \\
+64 & {{D\_W64}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -84,9 +84,9 @@ Learn $m$ per head. No improvement.
 \toprule
 \textbf{$m$} & \textbf{DistilBERT} \\
 \midrule
-16 & 85.0 \\
-32 & 88.5 \\
-64 & 89.5 \\
+16 & {{D\_M16}} \\
+32 & {{D\_M32}} \\
+64 & {{D\_M64}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -117,11 +117,11 @@ Separate projection for Q, K & Quality & No improvement \\
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & 90.25 \\
-123 & 90.10 \\
-456 & 90.35 \\
-\textbf{Mean} & \textbf{90.23} \\
-\textbf{Std} & \textbf{0.13} \\
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -135,3 +135,7 @@ Separate projection for Q, K & Quality & No improvement \\
 \item \textbf{Chunked scan is necessary.}
 \item \textbf{ELU > ReLU for stability.}
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

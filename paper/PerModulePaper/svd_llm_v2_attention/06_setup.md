@@ -116,5 +116,6 @@ All experiments use seed {{SEED}}.
 2. **`svd_llm_v2`:** Our method.
 3. **Ablations:** `svd_llm_v2_symmetric`, `svd_llm_v2_no_lora`.
 4. **Companion methods:** `minimal_svd`, `minimal_nova`, `minimal_prism`, `a3`, `aasvd`.
+```
 
 ---

@@ -202,5 +202,6 @@ MinimalSVD integrates cleanly with the framework's LoRA recovery:
 | Injection-time nested detection | ❌ | ❌ | ✅ |
 | Double-injection guard | ❌ | ❌ | ✅ |
 | Code lines | ~280 | ~500 | ~550 |
+```
 
 ---

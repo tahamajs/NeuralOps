@@ -129,5 +129,6 @@ Single seed ({{SEED}}). No multi-seed runs.
 - `full` — unmodified model
 - `flash3_fp8` — our implementation
 - Prior modules: `nha`, `nasc`, `a3`, etc.
+```
 
 ---

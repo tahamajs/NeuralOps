@@ -262,5 +262,6 @@ Nyströmformer:
 4. Falls back to dense for short sequences and decoders.
 5. Does **not** reduce parameter count or KV cache.
 6. Reduces attention **compute**.
+```
 
 ---

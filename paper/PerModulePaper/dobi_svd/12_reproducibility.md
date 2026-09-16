@@ -126,5 +126,6 @@ for model in ["distilbert", "roberta", "gpt2"]:
 - CUDA ≥ 11.8 recommended
 - Gates require at least 30 recovery steps to converge
 - Post-hoc pruning requires a separate script
+```
 
 ---

@@ -172,5 +172,6 @@ Dobi-SVD integrates cleanly with the framework's LoRA recovery:
 3. **Recovery fine-tuning** trains gates + LoRA.
 4. **Post-hoc pruning** (optional) removes near-zero gates.
 5. **Evaluation** uses the compressed model.
+```
 
 ---

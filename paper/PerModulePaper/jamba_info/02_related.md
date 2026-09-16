@@ -64,5 +64,6 @@ attention, SSM, and an explicit information bottleneck.
 | Jamba | $O(L^2 + L)$ | No | No | $7d^2$ |
 | Hymba | $O(L^2 + L)$ | No | No | $7d^2$ |
 | **JambaInfo** | $O(L^2 + L)$ | **Yes** | **Yes** | **$7d^2 + 2bd$** |
+```
 
 ---

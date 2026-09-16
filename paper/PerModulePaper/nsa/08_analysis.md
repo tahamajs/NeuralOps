@@ -119,3 +119,6 @@ assert scores_masked[:, :, :, padding_positions].max() < -1000
 3. **Top-$k$ selection is content-dependent**: varies with input.
 4. **Layer depth affects selection**: early local, late semantic.
 5. **No time speedup** without sparse kernels.
+```
+
+---

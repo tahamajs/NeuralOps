@@ -48,10 +48,10 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-Landmark count $m$ & 64 \\
-Pseudoinverse iterations $K$ & 4 \\
-LoRA rank & 16 \\
-LoRA alpha & 32 \\
+Landmark count $m$ & {{RANK}} \\
+Pseudoinverse iterations $K$ & {{PINV\_ITERS}} \\
+LoRA rank & {{LORA\_RANK}} \\
+LoRA alpha & {{LORA\_ALPHA}} \\
 Dropout & 0.1 \\
 \bottomrule
 \end{tabular}
@@ -67,10 +67,10 @@ Dropout & 0.1 \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & 2e-4 \\
-Weight decay & 1e-2 \\
-Steps & 50 \\
-Batch size & 8 \\
+LR & {{LR}} \\
+Weight decay & {{WD}} \\
+Steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -122,8 +122,8 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
-CUDA & 12.1 \\
-PyTorch & 2.4.0 \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,9 +133,14 @@ PyTorch & 2.4.0 \\
 \begin{lstlisting}
 python run_all_4_primal.py \
     --models distilbert,roberta,gpt2 \
-    --rank 64 \
-    --pinv_iters 4 \
-    --recovery_steps 50
+    --rank {{RANK}} \
+    --pinv_iters {{PINV_ITERS}} \
+    --recovery_steps {{RECOVERY_STEPS}}
 \end{lstlisting}
 
 \subsection{Ablations}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

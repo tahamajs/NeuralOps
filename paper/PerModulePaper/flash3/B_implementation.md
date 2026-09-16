@@ -132,3 +132,6 @@ out_sdpa = F.scaled_dot_product_attention(q, k, v)
 out_naive = torch.softmax(q @ k.T / 8.0, -1) @ v
 print((out_sdpa - out_naive).abs().max())  # < 1e-5
 ```
+```
+
+---

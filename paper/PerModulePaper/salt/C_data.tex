@@ -1,3 +1,190 @@
-\section{C Data}
 
-Draft content for salt.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Reduction & {{D\_PARAM\_RED}}$\times$ \\
+Storage (MB) & {{D\_STORAGE}} \\
+Peak VRAM (MB) & {{D\_VRAM}} \\
+Inference time (s) & {{D\_TIME}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+Reduction & {{R\_PARAM\_RED}}$\times$ \\
+Storage (MB) & {{R\_STORAGE}} \\
+Peak VRAM (MB) & {{R\_VRAM}} \\
+Inference time (s) & {{R\_TIME}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+Reduction & {{G\_PARAM\_RED}}$\times$ \\
+Storage (MB) & {{G\_STORAGE}} \\
+Peak VRAM (MB) & {{G\_VRAM}} \\
+Inference time (s) & {{G\_TIME}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Rank Ablation (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{Acc} & \textbf{Params/layer} & \textbf{Reduction} \\
+\midrule
+4 & {{D\_R4}} & 12,336 & 47.8$\times$ \\
+8 & {{D\_R8}} & 24,656 & 23.9$\times$ \\
+16 & {{D\_R16}} & 49,296 & 12.0$\times$ \\
+32 & {{D\_R32}} & 98,576 & 5.98$\times$ \\
+64 & {{D\_R64}} & 197,136 & 2.99$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Gamma Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+$\gamma$ trainable & {{D\_G}} & {{R\_G}} & {{G\_G}} \\
+$\gamma$ frozen & {{D\_NOG}} & {{R\_NOG}} & {{G\_NOG}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 AB Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+AB trainable & {{D\_AB}} & {{R\_AB}} & {{G\_AB}} \\
+AB frozen & {{D\_NOAB}} & {{R\_NOAB}} & {{G\_NOAB}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsubsection{RoBERTa}
+
+\begin{lstlisting}
+Step  Loss
+1     {{R_S1}}
+...
+50    {{R_S50}}
+\end{lstlisting}
+
+\subsubsection{GPT-2}
+
+\begin{lstlisting}
+Step  Loss
+1     {{G_S1}}
+...
+50    {{G_S50}}
+\end{lstlisting}
+
+\subsection{C.8 Singular Value Statistics}
+
+\subsubsection{DistilBERT, layer 3}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{k} & \textbf{$\sigma$\_k} & \textbf{Energy fraction} \\
+\midrule
+1 & {{D\_SIGMA\_1}} & {{D\_E\_1}}\% \\
+2 & {{D\_SIGMA\_2}} & {{D\_E\_2}}\% \\
+... & ... & ... \\
+16 & {{D\_SIGMA\_16}} & {{D\_E\_16}}\% \\
+17+ & -- & {{D\_E\_REST}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "accuracy": {{D_ACC}},
+    "params_before": 66955010,
+    "params_after": {{D_PARAMS}},
+    "reduction": {{D_PARAM_RED}},
+    "storage_mb": {{D_STORAGE}},
+    "peak_vram_mb": {{D_VRAM}}
+  },
+  ...
+}
+\end{lstlisting}
+
+\subsection{C.10 Reproduction}
+
+\begin{lstlisting}
+python run_all_4_salt.py --models distilbert,roberta,gpt2 --rank {{RANK}}
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

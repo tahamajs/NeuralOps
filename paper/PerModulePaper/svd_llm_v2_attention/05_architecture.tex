@@ -210,24 +210,10 @@ parameters by naming convention.
 
 \subsection{Comparison with Companion Methods}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llll}
-\toprule
-\textbf{Feature} & \textbf{MinimalSVD} & \textbf{MinimalPRISM} & \textbf{SVD-LLM V2} \\
-\midrule
-Factorization & Symmetric & Symmetric & \textbf{Explicit} \\
-Rank per projection & Yes & Yes & Yes \\
-LoRA placement & Inside & Inside & \textbf{Separate per proj} \\
-Bias handling & In \texttt{up.bias} & In \texttt{up.bias} & \textbf{Separate parameter} \\
-GQA pooling & General & General & \textbf{Per-head mean-pool} \\
-Interpretable $\Sigma$ & No & No & \textbf{Yes} \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{lstlisting}
 
-
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering

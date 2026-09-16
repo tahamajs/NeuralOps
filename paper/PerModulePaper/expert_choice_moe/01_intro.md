@@ -126,5 +126,6 @@ concludes.
 | $\gamma$ | MoE gate value |
 | $H$ | Number of heads |
 | $d_h$ | Head dim |
+```
 
 ---

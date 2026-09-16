@@ -84,3 +84,67 @@ python run_all_4_squeezing_heads.py --models distilbert,roberta,gpt2 --lora_rank
 cd D:\SVD_Project\papers\squeezing_heads
 python apply_vars.py --module squeezing_heads
 python build.py --module squeezing_heads
+```
+
+---
+
+## 💡 نکات کلیدی Squeezing Heads
+
+### ۱. تفاوت اصلی با سایر ماژول‌ها
+
+| ماژول | هدف | پارامتر اضافه |
+|---|---|---|
+| ASA-Sparse | sparse attention | sparsity_logits |
+| NHA | hybrid attention | gate |
+| NSA | local+topk | هیچ |
+| **SH** | **head distillation** | **LoRA** |
+
+### ۲. Wrapper، نه جایگزین
+
+SH **attention اصلی را دست نمی‌زند** — فقط LoRA اضافه می‌کند. Forward اول دقیقاً برابر baseline است.
+
+### ۳. Head-Dim Reduction
+
+$$
+W_Q^{(\text{new})} = W_Q^{(\text{old})}_{:d_h' H, :}
+$$
+
+حفظ **leading dimensions** (نه random slice).
+
+### ۴. GQA Pooling
+
+وقتی source heads بیشتر از target است:
+
+$$
+W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
+$$
+
+### ۵. LoRA Recovery — نکته کلیدی
+
+- **بدون LoRA:** head-dim reduction → افت شدید
+- **با LoRA:** افت کم
+- **Gain:** {{LORA_GAIN}}%
+
+### ۶. Trade-off مهم
+
+| فاکتور | Base | با head-dim 2× |
+|---|---|---|
+| Params | 100% | ~50% |
+| Trainable | 100% | ~1% (LoRA) |
+| Inference | پایه | **کمی کندتر** |
+| Storage | 100% | 100% (base+LoRA) |
+
+**صادقانه:** SH **سرعت inference را کم نمی‌کند** مگر LoRA را در base fold کنی.
+
+### ۷. نتایج از لاگ
+
+از لاگ‌های قبلی:
+- **DistilBERT:** ~90.25%
+- **RoBERTa:** ~76.8%
+- **GPT-2:** ~77.5%
+
+این‌ها تخمینی هستند — اگر اجرا کرده‌ای، اعداد واقعی را وارد کن.
+
+---
+
+**قدم بعدی: `variables.json` را با اعداد واقعی از `results/unified_squeezing_heads/*/summary.csv` پر کن. اگر خواستی من این کار را برایت انجام دهم — فقط اعداد CSV را بفرست.**

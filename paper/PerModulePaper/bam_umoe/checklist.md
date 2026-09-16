@@ -58,3 +58,46 @@ cd D:\SVD_Project\papers\bam_umoe
 python apply_vars.py --module bam_umoe
 Select-String -Path "*.md" -Pattern "\{\{"
 python build.py --module bam_umoe --pdf
+```
+
+---
+
+## 💡 نکات حیاتی BAM-UMoE
+
+### ۱. هرگز نگو "Compression"
+
+این ماژول **~350% پارامتر اضافه می‌کند**. اگر در مقاله «compression» بنویسی، 
+**داده تقلبی** است.
+
+### ۲. Step-0 Preservation — نوآوری اصلی
+
+سه‌گانه:
+1. Zero-init final expert layer
+2. Gate bias = -3.0 (sigmoid ≈ 0.047)
+3. Frozen base
+
+این را در abstract برجسته کن.
+
+### ۳. Load Balancing Loss
+
+این برای MoE حیاتی است. در method و analysis توضیح بده.
+
+### ۴. Cross-Attention Skip
+
+MoE روی cross-attention اعمال نمی‌شود — دلیلش حفظ alignment است. این را 
+صادقانه بگو.
+
+### ۵. مقایسه با LoRA تنها
+
+اگر BAM-UMoE دقت مشابه LoRA می‌دهد ولی ۴.۴× پارامتر، این **trade-off بد** 
+است. صادقانه گزارش کن.
+
+### ۶. Where it shines
+
+اگر BAM-UMoE روی **multi-task** یا **capacity-limited** setting بهتر عمل 
+کند، آن را برجسته کن. روی single-task SST-2 احتمالاً ارزشش کمتر است.
+
+---
+
+**قدم بعدی: `run_all_4_bam_umoe.py` را اجرا کن و نتایج را بفرست تا 
+`variables.json` را با اعداد واقعی پر کنم.**

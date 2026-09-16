@@ -1,3 +1,75 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for reap_moe.
+\subsection{Summary}
+
+We presented \textbf{REAP-MoE} (Robust Expert Allocation and Pruning), a 
+mixture-of-experts module that combines \textbf{noisy top-$k$ routing} with 
+\textbf{SVD-factorized experts} and \textbf{load-balancing auxiliary loss}. The method 
+addresses MoE parameter bloat, router collapse, and training instability.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Params $\Delta$} & \textbf{VRAM $\Delta$} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_PARAM\_CHANGE}} & {{D\_VRAM\_CHANGE}} \\
+RoBERTa & {{R\_ACC}}\% & {{R\_PARAM\_CHANGE}} & {{R\_VRAM\_CHANGE}} \\
+GPT-2 & {{G\_ACC}}\% & {{G\_PARAM\_CHANGE}} & {{G\_VRAM\_CHANGE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{SVD reduces expert params} by ~4$\times$.
+\item \textbf{Aux loss prevents collapse.}
+\item \textbf{Zero-init stabilizes training.}
+\item \textbf{Parameter growth is real} -- REAP-MoE is a re-architecture, not a
+  compressor.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Remove FFN duplication
+\item Adaptive $E$ per layer
+\item Expert pruning
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical MoE error bounds
+\item Cross-task expert transfer
+\item Combined MoE + quantization
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+REAP-MoE is a step toward parameter-efficient MoE. We release all code and 
+checkpoints.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}}: designed REAP-MoE, implemented the code, ran experiments,
+  wrote the paper.
+\item \textbf{{{AUTHOR\_2}}}: provided feedback and edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

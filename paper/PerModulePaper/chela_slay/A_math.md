@@ -127,5 +127,6 @@ $$
 
 For typical constants, $L^* \approx 2F \cdot \kappa$ where $\kappa$ is a 
 hardware-dependent constant.
+```
 
 ---

@@ -81,11 +81,11 @@ projections are copied exactly, and only the score network plus LoRA adapters
 are trainable.
 
 We evaluate PTP on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-$k/L = 0.8$. PTP achieves \textbf{89.5\%}, \textbf{77.0\%}, and 
-\textbf{78.0\%} accuracy, within \textbf{-1.2\%}, \textbf{-1.6\%}, and 
-\textbf{-1.4\%} of the dense baselines. Attention memory is reduced by 
-\textbf{1.25$\times$} and inference latency by \textbf{1.25$\times$} at 
-$L = 128$. The learned scores reveal systematic token importance: 
+$k/L = {{KEEP_RATIO}}$. PTP achieves \textbf{{{D\_ACC}}\%}, \textbf{{{R\_ACC}}\%}, and 
+\textbf{{{G\_ACC}}\%} accuracy, within \textbf{{{D\_DELTA}}\%}, \textbf{{{R\_DELTA}}\%}, and 
+\textbf{{{G\_DELTA}}\%} of the dense baselines. Attention memory is reduced by 
+\textbf{{{MEM\_REDUCTION}}$\times$} and inference latency by \textbf{{{TIME\_REDUCTION}}$\times$} at 
+$L = {{SEQ_LEN}}$. The learned scores reveal systematic token importance: 
 the [CLS] token and content words dominate, while function words and 
 duplicate subword tokens are pruned.
 

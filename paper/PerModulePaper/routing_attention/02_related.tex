@@ -1,3 +1,110 @@
-\section{02 Related}
 
-Draft content for routing_attention.
+\section{Related Work}
+
+\subsection{Sparse Attention}
+
+\subsubsection{Fixed Patterns}
+
+\textbf{Sparse Transformer} (Child et al., 2019) uses fixed strided patterns.
+
+\textbf{Longformer} (Beltagy et al., 2020) combines a sliding window with global 
+tokens.
+
+\textbf{BigBird} (Zaheer et al., 2020) adds random attention to the sliding 
+window and proves universal approximation.
+
+\textbf{Limitation.} Fixed patterns do not adapt to content.
+
+\subsubsection{Learned Patterns}
+
+\textbf{Reformer} (Kitaev et al., 2020) uses locality-sensitive hashing (LSH) to 
+assign queries and keys to buckets.
+
+\textbf{Routing Transformer} (Roy et al., 2021) uses online k-means to route 
+tokens to clusters, then restricts attention to intra-cluster pairs.
+
+\textbf{Sinkhorn Attention} (Tay et al., 2020) uses a learned permutation to sort 
+tokens into blocks.
+
+\textbf{Limitation.} LSH is not differentiable; learned permutations are fixed 
+after training.
+
+\subsubsection{Clustering-Based}
+
+\textbf{Cluster-Former} (Wang et al., 2021) applies k-means clustering to queries 
+for long-document question answering.
+
+\textbf{Routing Attention} (this work) uses k-means on the joint query-key 
+representation.
+
+\subsection{Relation to Routing Transformer}
+
+Routing Transformer (Roy et al., 2021) is the closest prior work. Both:
+
+\begin{itemize}
+\item Use k-means for cluster assignment
+\item Restrict attention to intra-cluster pairs
+\item Support causal masking
+
+\end{itemize}
+\textbf{Differences:}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Routing Transformer} & \textbf{Ours} \\
+\midrule
+Clustering feature & Query only & Joint (Q+K) \\
+Anchor token & None & Token 0 \\
+Self-token preservation & Implicit & Explicit \\
+LoRA recovery & Not addressed & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficient Exact Attention}
+
+\textbf{FlashAttention-3} (Shah et al., 2024) achieves exact attention with 
+$\mathcal{O}(L)$ memory via tiling.
+
+\textbf{SDPA} (PyTorch) dispatches to memory-efficient attention backends.
+
+These are \textbf{exact} and typically outperform sparse attention at moderate 
+sequence lengths.
+
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\textbf{LoRA} (Hu et al., 2021) adds trainable rank-$r$ adapters to frozen base 
+weights. We use LoRA to recover accuracy after attention replacement.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{Ours} \\
+\midrule
+Clustering feature & Query (Reformer, Routing) & Q+K \\
+Differentiability & Non-differentiable & Non-differentiable \\
+Complexity & $\mathcal{O}(L \log L)$ claimed & $\mathcal{O}(K \cdot L^2)$ \\
+Speedup & Sometimes & No (naive impl) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observation.} Our implementation is a \textbf{research prototype}, not a 
+production system. It validates the formulation but does not achieve the 
+speedups that the formulation permits with proper kernels.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

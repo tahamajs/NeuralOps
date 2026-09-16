@@ -83,3 +83,66 @@ python run_all_4_halo_regla.py --models distilbert,roberta,gpt2 --gate_init_bias
 cd D:\SVD_Project\papers\halo_regla
 python apply_vars.py --module halo_regla
 python build.py --module halo_regla
+```
+
+---
+
+## 💡 نکات کلیدی HALO-ReGLA
+
+### ۱. تفاوت اصلی با NHA
+
+| جنبه | NHA | HALO-ReGLA |
+|---|---|---|
+| Dense branch | Local window | **Global dense** |
+| Linear branch | RFF | **ELU+1 kernel** |
+| Gate bias init | 3.0 | 1.8 |
+| Cumsum | ندارد | **دارد** |
+
+### ۲. Dense + Linear به صورت موازی
+
+HALO-ReGLA **دو استریم** را همزمان محاسبه می‌کند:
+
+$$
+O_i = g_i \cdot O^\text{dense}_i + (1 - g_i) \cdot O^\text{lin}_i
+$$
+
+### ۳. Gate یادگیرنده per-head
+
+هر head یک گیت مستقل دارد که می‌تواند به سمت dense یا linear برود.
+
+**مقدار اولیه:** $\sigma(1.8) \approx 0.86$ → dense غالب.
+
+### ۴. Kernel انتخاب شده
+
+$$
+\phi(x) = \mathrm{elu}(x) + 1
+$$
+
+**مزایا:**
+- Non-negative → denominator مثبت
+- Smooth → gradient خوب
+- Bounded → بدون overflow
+
+### ۵. Causality با Prefix Sum
+
+در linear stream:
+
+$$
+\text{cum}^{(i)} = \sum_{j \le i} \phi(K_j) V_j^\top
+$$
+
+این به صورت خودکار causality را حفظ می‌کند.
+
+### ۶. بدون Speedup واقعی
+
+**مهم:** HALO-ReGLA هر دو stream را محاسبه می‌کند. برای speedup واقعی:
+
+1. Train با هر دو
+2. شناسایی heads که $\bar{g}_h < 0.1$
+3. تبدیل به pure linear
+
+این limitation را **صادقانه** ذکر کن.
+
+---
+
+**قدم بعدی: `variables.json` را با اعداد واقعی از `results/unified_halo_regla/*/summary.csv` پر کن. اگر خواستی من این کار را برایت انجام دهم — فقط اعداد CSV را بفرست.**

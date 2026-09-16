@@ -79,5 +79,6 @@ gate**.
 | Linear Transformer | $\mathcal{O}(L)$ | $4d^2$ | {{LT_D}} | Retrain |
 | Performer | $\mathcal{O}(L)$ | $4d^2$ | {{PERF_D}} | Retrain |
 | **CHELA-SLAY** | $\mathcal{O}(L^2)$ (dense) + $\mathcal{O}(L)$ (linear) | $4d^2 + \epsilon$ | **{{D_ACC}}** | **LoRA** |
+```
 
 ---

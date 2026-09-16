@@ -1,11 +1,199 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Draft content for moe_deltakv_paged.
+\subsection{Model Support}
 
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Bidirectional?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & Yes & No & No \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\texttt{copy\_weights} extracts weights via five tiers:
+
+\subsubsection{Tier 1: UniversalAdapter}
+
+\begin{lstlisting}
+for proj in ["q", "k", "v", "o"]:
+    try:
+        w, b = UniversalAdapter.get_weight_bias(pretrained_attn, proj)
+        if w is not None:
+            extracted[proj] = (w, b)
+    except Exception:
+        pass
+\end{lstlisting}
+
+\subsubsection{Tier 2: GPT-2 Conv1D}
+
+\begin{lstlisting}
+weight = pretrained_attn.c_attn.weight.data
+if weight.shape[1] == 3 * hidden_size:
+    weight = weight.t()
+q_w, k_w, v_w = weight.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{Tier 3: RoBERTa Nested}
+
+\begin{lstlisting}
+if hasattr(pretrained_attn, "self"):
+    s = pretrained_attn.self
+    extracted["q"] = (s.query.weight, ...)
+    extracted["k"] = (s.key.weight, ...)
+    extracted["v"] = (s.value.weight, ...)
+\end{lstlisting}
+
+\subsubsection{Tier 4: Named Projections}
+
+\begin{lstlisting}
+named_map = {
+    "q": ["q_proj", "q_lin", "query"],
+    "k": ["k_proj", "k_lin", "key"],
+    "v": ["v_proj", "v_lin", "value"],
+    "o": ["o_proj", "out_proj", "out_lin", "dense"],
+}
+\end{lstlisting}
+
+\subsubsection{Tier 5: Repetition for GQA}
+
+If source weight has smaller $d_\text{out}$ (GQA), we repeat:
+
+\begin{lstlisting}
+if w.shape[0] < self.all_head_size and self.all_head_size % w.shape[0] == 0:
+    rep = self.all_head_size // w.shape[0]
+    w = w.repeat(rep, 1)
+\end{lstlisting}
+
+\subsection{Nested Encoder Detection}
+
+\begin{lstlisting}
+is_nested = False
+if hasattr(pretrained_attn, "self") and hasattr(getattr(pretrained_attn, "self"), "query"):
+    is_nested = True
+elif cls_name in ("BertSelfAttention", "RobertaSelfAttention") and not has_out_proj:
+    is_nested = True
+\end{lstlisting}
+
+\subsection{The Router $W_\text{rg}$}
+
+\begin{lstlisting}
+self.W_rg = nn.Linear(self.head_dim, self.head_dim, bias=False)
+nn.init.eye_(self.W_rg.weight)
+\end{lstlisting}
+
+Initialized to identity, so the router starts as the dot product of page-mean 
+queries and keys.
+
+\subsection{Load Balancing Loss}
+
+Stored as a buffer (not a parameter):
+
+\begin{lstlisting}
+self.register_buffer("aux_loss", torch.tensor(0.0), persistent=False)
+\end{lstlisting}
+
+Updated during forward:
+
+\begin{lstlisting}
+router_probs = F.softmax(router_logits, dim=-1)
+expert_mask = F.one_hot(topk_indices, num_classes=num_pages).float()
+density = expert_mask.sum(dim=-2).mean(dim=(0, 1, 2))
+prob_mean = router_probs.mean(dim=(0, 1, 2))
+self.aux_loss = float(num_pages) * torch.sum(density * prob_mean)
+\end{lstlisting}
+
+\textbf{Usage.} The training loop should add \texttt{aux\_loss * $\lambda$} to the classification 
+loss. Typical \texttt{$\lambda$ = 0.01}.
+
+\subsection{The `is\_causal` Flag}
+
+\begin{lstlisting}
+self.is_causal = bool(
+    getattr(config, "is_causal", False)
+    or getattr(config, "is_decoder", False)
+    or any(model_type.startswith(p) for p in ("gpt", "qwen", "llama", ...))
+)
+\end{lstlisting}
+
+For causal models:
+\begin{itemize}
+\item Router logits are masked (upper-triangular).
+\item Full attention path is used when \texttt{num\_pages <= 2}.
+
+\end{itemize}
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject MoE-DeltaKV-Paged
+\begin{lstlisting}
+Input:  model M, config
+Output: M with attention replaced
+
+1: for   in transformer_layers(M) do
+2:     src $\leftarrow$ get_attention( )
+3:     try:
+4:         new $\leftarrow$ MoEDeltaKVPagedAttention(config, pretrained_attn=src)
+5:         replace( , new)
+6:     except Exception as e:
+7:         raise RuntimeError(...)    HARD FAIL
+8: end for
+\end{lstlisting}
+
+\textbf{Note.} Current implementation raises on failure. In production, change 
+to \texttt{logger.error(...); continue}.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing Q/K/V & \texttt{missing} non-empty & \textbf{Raise} \\
+Near-zero norm & Frobenius check & \textbf{Raise} \\
+Injection fail & Exception & \textbf{Raise} \\
+OOM & CUDA error & Abort \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("moe_deltakv_paged", supports_causal=True, supports_gqa=True)
+class MoEDeltaKVPagedAttention(nn.Module):
+    ...
+\end{lstlisting}
+
+\subsection{Interaction with Recovery}
+
+Base weights are frozen; LoRA adapters and $W_\text{rg}$ are trainable.
+
+Per-layer trainable:
+\begin{itemize}
+\item LoRA on query, key, value, out\_proj: $4 r_L (d + d_h)$
+\item $W_\text{rg}$: $d_h^2$
+
+\end{itemize}
+For $d = 768$, $d_h = 64$, $r_L = 16$: ~102K per layer.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_expert_choice_moe.jpeg}
-\caption{Architectural overview of moe_deltakv_paged.}
-\label{fig:arch_moe_deltakv_paged}
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of moe\_deltakv\_paged.}
+\label{fig:arch_moe-deltakv-paged}
 \end{figure}
+

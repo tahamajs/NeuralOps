@@ -1,3 +1,82 @@
-\section{10 Limitations}
 
-Draft content for routing_attention.
+\section{Limitations}
+
+\subsection{Not Faster Than Dense Attention}
+
+The naive loop over clusters computes $K$ full attention matrices. This is 
+\textbf{slower} than dense attention by a factor of $K$. Real speedups require 
+sparse matmul kernels.
+
+\subsection{Non-Differentiable Cluster Assignment}
+
+k-means uses \texttt{argmin}, which is not differentiable. Gradients do not flow 
+through the cluster assignment.
+
+\subsection{Not a Compression Method}
+
+LoRA adapters add \textbf{{{D\_PARAM\_PCT}}\%} parameters. Routing is a computational 
+substitution, not a compressor.
+
+\subsection{K-Means May Degrade on Padded Inputs}
+
+Padding tokens are included in clustering. This may distort centroids.
+
+\subsection{Mask-K Independence}
+
+All queries in cluster $k$ attend to the same set of keys. This limits 
+expressiveness relative to query-specific sparse patterns.
+
+\subsection{Token-0 Anchor is a Hack}
+
+The token-0 anchor is a fixed prior. Its effectiveness depends on the 
+attention-sink phenomenon, which may not hold for all models or tasks.
+
+\subsection{RuntimeError on Zero Norm}
+
+Our \texttt{copy\_weights} raises \texttt{RuntimeError} if any projection has near-zero 
+norm. This can abort injection for the entire model. Should be a warning.
+
+\subsection{No Double-Injection Guard}
+
+Running \texttt{inject\_routing} twice may corrupt the model.
+
+\subsection{Task Coverage}
+
+Only SST-2. Behavior on generation, multi-class, or token-level tasks is 
+untested.
+
+\subsection{Model Coverage}
+
+Only DistilBERT, RoBERTa, GPT-2. Qwen3.5 not completed.
+
+\subsection{Single Seed}
+
+No multi-seed runs. Differences below 3.4\% may be noise.
+
+\subsection{No Sparse Kernel}
+
+We do not provide a Triton or CUDA implementation of sparse attention.
+
+\subsection{Comparison with Published Sparse Methods}
+
+We do not compare head-to-head with Reformer, Routing Transformer, or 
+BigBird. Our analysis is limited to internal comparisons.
+
+\subsection{Numerical Stability}
+
+FP16 attention scores may overflow for long sequences. Consider FP32 for 
+$L > 512$.
+
+\subsection{What This Paper Is Not}
+
+This is \textbf{not}:
+\begin{itemize}
+\item A production sparse attention
+\item A compression method
+\item An efficiency study
+\item A state-of-the-art result
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

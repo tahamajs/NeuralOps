@@ -135,5 +135,6 @@ than the nominal rank, at negligible accuracy cost.
 3. **Effective rank** is 10–20% smaller than nominal.
 4. **Post-hoc pruning** at τ_g=0.5 is the sweet spot.
 5. **Recovery steps ≥ 50** are needed for gate convergence.
+```
 
 ---

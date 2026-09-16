@@ -42,7 +42,7 @@ attention pattern.
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} $\beta$ increased from -5.0 to -3.2 over 50 steps, $\sigma$($\beta$) from 0.007 to 0.039
+\textbf{Observation.} {{BETA\_EVOLUTION}}
 
 \subsection{Per-Layer Analysis}
 
@@ -55,12 +55,12 @@ attention pattern.
 \toprule
 \textbf{Layer} & \textbf{$\beta$ final} & \textbf{$\sigma(\beta)$} & \textbf{Local acc} & \textbf{Mem acc} \\
 \midrule
-0 & -3.5 & 0.029 & 89.0 & 60.0 \\
-1 & -3.2 & 0.039 & 89.5 & 65.0 \\
-2 & -3.0 & 0.047 & 90.0 & 70.0 \\
-3 & -3.0 & 0.047 & 90.2 & 70.0 \\
-4 & -3.2 & 0.039 & 89.8 & 65.0 \\
-5 & -3.5 & 0.029 & 89.5 & 60.0 \\
+0 & {{D\_L0\_B}} & {{D\_L0\_SB}} & {{D\_L0\_LOC}} & {{D\_L0\_MEM}} \\
+1 & {{D\_L1\_B}} & {{D\_L1\_SB}} & {{D\_L1\_LOC}} & {{D\_L1\_MEM}} \\
+2 & {{D\_L2\_B}} & {{D\_L2\_SB}} & {{D\_L2\_LOC}} & {{D\_L2\_MEM}} \\
+3 & {{D\_L3\_B}} & {{D\_L3\_SB}} & {{D\_L3\_LOC}} & {{D\_L3\_MEM}} \\
+4 & {{D\_L4\_B}} & {{D\_L4\_SB}} & {{D\_L4\_LOC}} & {{D\_L4\_MEM}} \\
+5 & {{D\_L5\_B}} & {{D\_L5\_SB}} & {{D\_L5\_LOC}} & {{D\_L5\_MEM}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -75,7 +75,7 @@ attention distribution over memory slots is:
 \item \textbf{Concentrated:} Few slots dominate (memory acts as retrieval)
 
 \end{itemize}
-\textbf{Observation.} Slightly concentrated: top-10 slots receive ~40\% of attention mass
+\textbf{Observation.} {{MEMORY\_UTILIZATION}}
 
 \subsection{Inference Cost}
 
@@ -93,7 +93,7 @@ Local attention & 0 & 0.2 ms \\
 Memory attention & 0 & 0.05 ms \\
 Output projection & 0.2 ms & 0.2 ms \\
 LoRA & 0 & 0.15 ms \\
-\textbf{Total} & 1.9 s & 4.5 s \\
+\textbf{Total} & 1.9 s & {{D\_TIME}} s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,7 +106,7 @@ is a good balance.
 
 \subsection{The Parameter Increase}
 
-The \textbf{+1.82\%} parameter increase comes from:
+The \textbf{+{{D\_PARAM\_PCT}}\%} parameter increase comes from:
 
 \begin{table}[H]
 \centering
@@ -115,9 +115,9 @@ The \textbf{+1.82\%} parameter increase comes from:
 \toprule
 \textbf{Component} & \textbf{Contribution} \\
 \midrule
-Memory & 50\% \\
+Memory & {{MEMORY\_CONTRIB}}\% \\
 Gate & <0.001\% \\
-LoRA & 50\% \\
+LoRA & {{LORA\_CONTRIB}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -160,3 +160,7 @@ Slow & >5$\times$ latency & Extra matmuls \\
 \item \textbf{LoRA dominates for larger.}
 \item \textbf{Not a compressor.} Parameter count increases.
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

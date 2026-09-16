@@ -102,3 +102,6 @@ torch.backends.cudnn.deterministic = True
 - Windows: `PYTHONIOENCODING=utf-8` recommended
 - Cross-attention not supported
 - `raise` in copy_weights may abort injection
+```
+
+---

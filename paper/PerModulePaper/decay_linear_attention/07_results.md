@@ -115,5 +115,6 @@
 - **Accuracy:** {{D_DELTA}}%–{{G_DELTA}}% change.
 - **Breakeven:** $L^* = {{BREAKEVEN}}$.
 - **Cross-attention:** works.
+```
 
 ---

@@ -70,5 +70,6 @@ For DistilBERT at L = 2048:
 2. **Per-head chunk sizes?** Would asymmetric $C$ help?
 3. **Combined with token compression?**
 4. **Scale to L > 32K?**
+```
 
 ---

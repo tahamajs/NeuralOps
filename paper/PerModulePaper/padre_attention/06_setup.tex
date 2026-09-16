@@ -1,3 +1,92 @@
-\section{06 Setup}
+\section{Experimental Setup}
 
-Formal architectural specifications for \texttt{padre_attention}.
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{KV heads} & \textbf{Params} \\
+\midrule
+DistilBERT & 6 & 768 & 12 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2}: 67,349 train / 872 val. Majority baseline 50.92\%. 
+Max sequence length: 128.
+
+\subsection{PADRe Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{order} $d$ & {{ORDER}} \\
+\texttt{temperature} $T$ & {{TEMPERATURE}} \\
+\texttt{max\_error} (inject) & {{MAX\_ERROR}} \\
+\texttt{lora\_rank} & {{LORA\_RANK}} \\
+\texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{LoRA Recovery}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+LR & {{LR}} \\
+WD & {{WD}} \\
+Steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\begin{itemize}
+\item Accuracy, F1
+\item Peak VRAM, inference time
+\item Injection success rate
+\item Output equivalence error
+
+\end{itemize}
+\subsection{Quality Gate}
+
+PASS $\ge$ 56\%, PASS\_LOW $\ge$ 50.92\%, FAIL < 50.92\%.
+
+\subsection{Hardware}
+
+RTX 4070 Laptop, 8 GB.
+
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_padre.py \
+    --models distilbert,roberta,gpt2 \
+    --order {{ORDER}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

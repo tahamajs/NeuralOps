@@ -1,3 +1,92 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Formal architectural specifications for \texttt{padre_attention}.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params & 66.95M \\
+Trainable & {{D\_TRAINABLE}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Order & {{ORDER}} \\
+Temperature & {{TEMPERATURE}} \\
+Injection success & {{D\_INJ}}/6 \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params & 124.6M \\
+Accuracy & {{R\_ACC}}\% \\
+Injection success & {{R\_INJ}}/12 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params & 124.4M \\
+Accuracy & {{G\_ACC}}\% \\
+Injection success & {{G\_INJ}}/12 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Order Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Order} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+1 & {{D\_O1}} & {{R\_O1}} & {{G\_O1}} \\
+2 & {{D\_O2}} & {{R\_O2}} & {{G\_O2}} \\
+4 & {{D\_O4}} & {{R\_O4}} & {{G\_O4}} \\
+8 & {{D\_O8}} & {{R\_O8}} & {{G\_O8}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.6 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_padre.py --order 2 --temperature 1.0
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

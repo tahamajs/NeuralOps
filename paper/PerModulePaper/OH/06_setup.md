@@ -89,3 +89,6 @@ python run_all_4_oha.py \
 | `full` | Uncompressed model |
 | `oha` | Our method |
 | Companion | `nha`, `eat`, `infini` |
+```
+
+---

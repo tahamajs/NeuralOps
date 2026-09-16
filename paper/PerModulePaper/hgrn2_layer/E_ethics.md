@@ -52,5 +52,6 @@ Linear recurrence could:
 But also:
 - Enable surveillance.
 - Concentrate AI capabilities.
+```
 
 ---

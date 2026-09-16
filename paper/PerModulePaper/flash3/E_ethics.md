@@ -46,3 +46,12 @@ Parts drafted with LLM assistance.
 ## E.9 Institutional Review
 
 No human subjects.
+```
+
+---
+
+## 📄 `build.py` و `apply_vars.py`
+
+(مشابه ماژول‌های قبلی — همان کد)
+
+---

@@ -131,3 +131,6 @@ concludes.
 | $T$ | Soft-mask temperature |
 | $\sigma$ | Sigmoid function |
 | $\rho_h$ | Sparsity ratio for head $h$ |
+```
+
+---

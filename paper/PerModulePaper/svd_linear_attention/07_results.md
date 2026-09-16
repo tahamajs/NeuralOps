@@ -151,5 +151,6 @@ $\mathcal{O}(N)$.
 | Accuracy drop | {{D_DELTA}}%–{{G_DELTA}}% |
 | VRAM reduction | {{VRAM_REDUCTION}}% |
 | Long-context speedup (N=1024) | {{S1024}}× |
+```
 
 ---

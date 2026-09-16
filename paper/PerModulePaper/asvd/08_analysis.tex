@@ -17,7 +17,7 @@ For a DistilBERT Q projection, the top 64 singular values capture
 concentrated in \textbf{low-magnitude directions} that contribute little to 
 the output.
 
-\subsubsection{Explicit   Enables Inspection}
+\subsubsection{Explicit $\Sigma$ Enables Inspection}
 
 Unlike A3 and AASVD, ASVD keeps $\Sigma$ as a separate tensor. **Figure 
 8.2** shows the singular value distribution across layers. This enables:
@@ -67,7 +67,7 @@ ${{D_LOSS_FINAL}}$ over {{RECOVERY\_STEPS}} steps.
 \textbf{Aspect} & \textbf{A3} & \textbf{AASVD} & \textbf{ASVD} \\
 \midrule
 Weighting & Fisher diagonal & Full covariance & Activation energy \\
-handling & Folded & Folded & \textbf{Explicit} \\
+$\Sigma$ handling & Folded & Folded & \textbf{Explicit} \\
 Rank selection & Adaptive retry & Fixed with cap & \textbf{Energy-based} \\
 LayerNorm recal & Yes & No & No \\
 Calibration & Required & Required & Optional \\
@@ -217,9 +217,12 @@ NaN & Loss = NaN & Numerical instability \\
 
 \begin{enumerate}
 \item \textbf{ASVD is a real compressor.} Parameters reduce by {{D\_RATIO}}$\times$.
-\item \textbf{Explicit   enables inspection and rank truncation.}
+\item \textbf{Explicit $\Sigma$ enables inspection and rank truncation.}
 \item \textbf{Energy-based rank adapts per layer.}
 \item \textbf{$\epsilon$ = 0.95 is a good default.}
 \item \textbf{\texttt{raise} prevents silent failure but requires careful source handling.}
-
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

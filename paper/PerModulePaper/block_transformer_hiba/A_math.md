@@ -37,5 +37,6 @@ HIBA applies masking at three distinct stages:
 3. **Rectification:** The dense fallback applies a strict $\mathcal{O}(L^2)$ causal mask.
 Since all three pathways enforce $j \le i$, causality is strictly preserved. $\square$
 
+```
 
 ---

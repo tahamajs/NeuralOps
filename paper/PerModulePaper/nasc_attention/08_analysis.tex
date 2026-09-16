@@ -1,3 +1,180 @@
-\section{08 Analysis}
 
-Draft content for nasc_attention.
+\section{Analysis}
+
+\subsection{Why Do Encoders Use Dense?}
+
+The \texttt{use\_dense} flag is \texttt{True} for encoders unless explicitly overridden. 
+Test:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+\texttt{enable\_cascade\_on\_encoders=True} & {{D\_CASCADE\_ON}} & {{R\_CASCADE\_ON}} \\
+\texttt{enable\_cascade\_on\_encoders=False} & {{D\_CASCADE\_OFF}} & {{R\_CASCADE\_OFF}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{CASCADE\_ENC\_OBS}}
+
+If cascade accuracy is much worse, the default \texttt{False} is justified. If 
+comparable, the default should be \texttt{True}.
+
+\subsection{What Does the Gate Learn?}
+
+For GPT-2, we record the gate values during evaluation:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{$g_0$ (local)} & \textbf{$g_1$ (sparse)} & \textbf{$g_2$ (global)} \\
+\midrule
+Mean & {{G\_G0}} & {{G\_G1}} & {{G\_G2}} \\
+Std & {{G\_G0\_STD}} & {{G\_G1\_STD}} & {{G\_G2\_STD}} \\
+Min & {{G\_G0\_MIN}} & {{G\_G1\_MIN}} & {{G\_G2\_MIN}} \\
+Max & {{G\_G0\_MAX}} & {{G\_G1\_MAX}} & {{G\_G2\_MAX}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{GATE\_OBS}}
+
+If the gate concentrates on one branch (e.g., $g_0 \approx 1$), the other 
+two branches are effectively dead. If distributed, all three contribute.
+
+\subsection{Branch Ablation}
+
+\textbf{Test.} Remove each branch and measure accuracy.
+
+\textbf{Table 8.1: Leave-one-out branch ablation (GPT-2).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Accuracy} & \textbf{$\Delta$ from full} \\
+\midrule
+All three & {{G\_ACC}}\% & -- \\
+Remove local & {{G\_NOLOC}}\% & {{G\_NOLOC\_D}} \\
+Remove sparse & {{G\_NOSP}}\% & {{G\_NOSP\_D}} \\
+Remove global & {{G\_NOGLB}}\% & {{G\_NOGLB\_D}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{BRANCH\_ABL\_OBS}}
+
+\subsection{The `softpick` Fallback}
+
+We test three variants:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Variant} & \textbf{GPT-2} & \textbf{Note} \\
+\midrule
+\texttt{softpick} with fallback & {{G\_ACC}}\% & Default \\
+\texttt{softpick} without fallback & {{G\_NOFB}}\% & May produce NaN \\
+Standard \texttt{softmax} & {{G\_SM}}\% & No sparsification \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{SOFTPICK\_OBS}}
+
+\subsection{Causal RFF Memory}
+
+The \texttt{KV\_cumsum} tensor has shape $(B, H, L, 2F, d)$. For:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Tensor Size} & \textbf{FP32 Memory} \\
+\midrule
+$L=64$ & $8 \times 12 \times 64 \times 128 \times 64$ & 25 MB \\
+$L=128$ & $8 \times 12 \times 128 \times 128 \times 64$ & 50 MB \\
+$L=256$ & $8 \times 12 \times 256 \times 128 \times 64$ & 100 MB \\
+$L=512$ & $8 \times 12 \times 512 \times 128 \times 64$ & 200 MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} For $L \le 512$, manageable on 8 GB VRAM. For $L > 1024$, 
+OOM risk.
+
+\subsection{Sparse Block Python Loop}
+
+The \texttt{\_sparse\_block\_attention} uses a Python \texttt{for i in range(nb)} loop. For 
+$L = 128$, $B_s = 32$: 4 iterations. Each iteration does gather + matmul.
+
+\textbf{Overhead.} ~4 extra kernel launches per forward.
+
+\subsection{Inference Cost Breakdown}
+
+For GPT-2 on $L = 128$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Operation} & \textbf{Baseline} & \textbf{NASC} \\
+\midrule
+Q/K/V proj & 3 & 3 \\
+Local window & 1 & ~1 \\
+Sparse block & 0 & ~8 (4 iterations $\times$ 2 ops) \\
+Global RFF & 0 & ~3 \\
+Gate & 0 & 2 \\
+Fusion & 0 & 2 \\
+Output proj & 1 & 1 \\
+\textbf{Total} & \textbf{~6} & \textbf{~20} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{~3$\times$ more kernel launches} $\to$ NASC is slower.
+
+\subsection{Failure Mode Taxonomy}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure Mode} & \textbf{Symptom} & \textbf{Root Cause} \\
+\midrule
+\textbf{RFF causal memory} & OOM at L > 512 & Large cumsum tensor \\
+\textbf{Gate collapse} & $g_i \to 1$ for one branch & Training dynamics \\
+\textbf{Sparse block overhead} & Slower than baseline & Python loop \\
+\textbf{Encoder path ambiguity} & Unexpected path chosen & Config default \\
+\textbf{inject raises} & Crashes on failure & Exception re-raise \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{Three branches provide redundancy.} If one fails, others compensate.
+\item \textbf{Batch-level gate is a simplification.} Per-token would be more
+  adaptive.
+\item \textbf{Encoder path defaults to dense.} NASC's benefit is on decoders.
+\item \textbf{Sparse block loop adds overhead.} Vectorization would help.
+\item \textbf{Causal RFF cumsum is memory-heavy.} OOM risk at long sequences.
+\item \textbf{\texttt{inject\_nasc} raises on failure.} This is a robustness regression.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

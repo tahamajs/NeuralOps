@@ -118,5 +118,6 @@ for model in ["distilbert", "roberta", "gpt2"]:
 - CUDA ≥ 11.8 recommended
 - RoPE cache is non-persistent, so checkpoints do not include it
 - Encoder models need recovery fine-tuning
+```
 
 ---

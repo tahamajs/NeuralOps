@@ -1,3 +1,133 @@
-\section{01 Intro}
+\section{Introduction}
 
-Draft content for aegis_v5.
+\subsection{Motivation}
+
+Transformer self-attention scales quadratically with sequence length $L$, 
+in both compute and memory. For input $X \in \mathbb{R}^{B \times L \times d}$ 
+with $H$ heads, the intermediate attention matrix $Q K^\top \in \mathbb{R}^{L \times L}$ 
+costs $\mathcal{O}(L^2)$ per batch item. At $L = 4096$, this is ~16M 
+entries per head, becoming prohibitive for long-context workloads.
+
+Existing methods address this along three axes:
+
+\begin{enumerate}
+\item \textbf{Sparse attention} (Longformer, BigBird) restricts the attention
+  pattern to $\mathcal{O}(L \sqrt{L})$ connections.
+\item \textbf{Low-rank attention} (Linformer, Nystr mformer) projects $K, V$ to a
+  smaller space.
+\item \textbf{Kernel attention} (Performer, Linear Transformer) factorizes the
+  softmax kernel into feature maps, achieving $\mathcal{O}(L)$.
+
+\end{enumerate}
+Each has trade-offs. Sparse methods lose global context; low-rank methods 
+require fixed rank; kernel methods suffer from approximation error on 
+peaked distributions.
+
+\textbf{Hybrid attention} combines multiple strategies. AEGIS-V5 combines local 
+windowed attention (exact, preserves local detail) with global kernel 
+linear attention (approximate, captures long-range dependencies).
+
+\subsection{Problem Statement}
+
+Given a pretrained transformer $\mathcal{M}$ with $H$ heads, we seek an 
+attention mechanism $\mathcal{A}'$ such that:
+
+\[
+\mathcal{A}' \approx \mathcal{A}, \qquad
+\text{Cost}(\mathcal{A}') \ll \mathcal{O}(L^2)
+\tag{1.1}
+\]
+
+subject to:
+
+\begin{enumerate}
+\item \textbf{Multi-architecture compatibility:} Must work on DistilBERT (flat),
+  RoBERTa (nested), GPT-2 (Conv1D), and Qwen3.5 (GQA + RoPE).
+\item \textbf{Causal correctness:} Decoders must preserve causality.
+\item \textbf{Parameter efficiency:} Base weights frozen; only LoRA adapters trained.
+\item \textbf{Numerical stability:} No NaNs, no silent collapses.
+
+\end{enumerate}
+\subsection{Our Approach}
+
+AEGIS-V5 has four key components:
+
+\subsubsection{Split-Head Architecture}
+
+We partition $H$ heads into:
+
+\begin{itemize}
+\item $H_\text{local} = \lceil 2H/3 \rceil$ heads using \textbf{local windowed attention}
+\item $H_\text{global} = H - H_\text{local}$ heads using \textbf{kernel linear attention}
+
+\end{itemize}
+This design lets the model allocate capacity adaptively: most heads focus 
+on local structure, a few capture global context.
+
+\subsubsection{Energy-Based SVD Factorization}
+
+Each projection $W$ is decomposed via SVD, and the rank $r$ is chosen to 
+capture a target \textbf{energy} fraction:
+
+\[
+r^* = \min \left\{ r : \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2} \geq \eta \right\}
+\tag{1.2}
+\]
+
+where $\eta = 0.95$ by default.
+
+\subsubsection{LoRA on Frozen SVD Factors}
+
+The SVD factors $(U_r, V_r)$ are frozen; LoRA adapters provide trainable 
+capacity:
+
+\[
+\Delta W = \frac{\alpha}{r_L} B A
+\tag{1.3}
+\]
+
+\subsubsection{Per-Head Adaptive Gating}
+
+The local and global outputs are combined with a learnable per-head gate:
+
+\[
+\text{Out} = \sigma(g_h) \cdot \text{Out}_\text{local} + (1 - \sigma(g_h)) \cdot \text{Out}_\text{global}
+\tag{1.4}
+\]
+
+Gate bias is initialized to $+2.0$, giving $\sigma(2.0) \approx 0.88$ 
+(mostly local at start).
+
+\subsection{Contributions}
+
+We make the following contributions:
+
+\begin{itemize}
+\item \textbf{A hybrid split-head attention.} AEGIS-V5 combines local windowed and
+  global kernel attention, with per-head adaptive gating.
+\item \textbf{Energy-based SVD factorization.} Base projections are compressed with
+  a target energy fraction, giving explicit control over rank.
+\item \textbf{A production-hardened implementation.} Handles four architectures with
+  GQA, RoPE, nested encoders, Conv1D, and safe fallback.
+\item \textbf{Numerical stability fixes.} We replaced the original ReLU-based \texttt{softpick}
+  (which returned all-zeros on masked rows) with a stable softmax-based
+  variant, eliminating a subtle collapse mode.
+\item \textbf{Full reproducibility.} Code and checkpoints released.
+
+\end{itemize}
+\subsection{Paper Organization}
+
+Section 2 reviews related work. Section 3 provides background on attention, 
+SVD, LoRA, and kernel methods. Section 4 presents AEGIS-V5. Section 5 
+describes integration. Section 6 details the setup. Section 7 reports 
+results. Section 8 analyzes trade-offs. Section 9 discusses practical 
+guidance. Section 10 lists limitations. Section 11 concludes.
+
+
+
+\subsection{Notation}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

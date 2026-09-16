@@ -1,3 +1,76 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for nexus.
+\subsection{Causal Fallback}
+
+For causal decoders (GPT-2), NEXUS uses dense attention. **No sparsity 
+benefit.**
+
+\subsection{Stripe Inactive}
+
+The stripe component requires $N > 256$. Our SST-2 experiments use 
+$N = 128$, so stripe is inactive.
+
+\subsection{RFF Inactive}
+
+RFF rectification requires \texttt{enable\_spectraformer=True} when pretrained 
+weights are provided. Default is \texttt{False}, so RFF is inactive.
+
+\subsection{Softpick Risky}
+
+Softpick can collapse to uniform distribution when all logits are negative.
+
+\subsection{Copy\_weights Raises}
+
+\texttt{copy\_weights} raises exceptions on missing weights. May abort training.
+
+\subsection{Task Coverage}
+
+Only SST-2 evaluated.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Single Seed}
+
+SE ~1.7\%.
+
+\subsection{Six Components, Four Active}
+
+Only 4 of 6 claimed components are active in our setup. The paper 
+explicitly lists this.
+
+\subsection{No Comparison with Individual Methods}
+
+We do not compare with isolated XAttention, SeerAttention, etc.
+
+\subsection{Complexity for Encoder}
+
+Sub-quadratic \textbf{only when} $k B_s \ll N$.
+
+\subsection{Code Quality}
+
+\begin{itemize}
+\item \texttt{raise} in copy\_weights
+\item No fused kernel
+\item Some logging noise
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

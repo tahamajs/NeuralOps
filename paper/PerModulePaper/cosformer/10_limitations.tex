@@ -1,3 +1,86 @@
-\section{10 Limitations}
 
-Draft content for cosformer.
+\section{Limitations}
+
+\subsection{Not a Novel Method}
+
+Cosformer is a published method (Qin et al., 2022). Our contribution is 
+the \textbf{port} to pretrained transformers, not the algorithm.
+
+\subsection{RoBERTa Instability}
+
+Our implementation shows significant drop on RoBERTa. Possible causes:
+\begin{itemize}
+\item Nested encoder + cos/sin mismatch
+\item Hyperparameter mismatch
+\item Training instability
+
+\end{itemize}
+We did not fully resolve this.
+
+\subsection{Decoder Overhead}
+
+The chunked prefix-sum adds ~5$\times$ overhead compared to baseline SDPA. This 
+limits the practical advantage of linear attention.
+
+\subsection{Parameter Count Increases}
+
+Cosformer adds LoRA adapters, increasing parameter count by ~1-4\%. It is 
+not a compression method.
+
+\subsection{Task Coverage}
+
+Only SST-2. Behavior on:
+\begin{itemize}
+\item Long-context tasks (where Cosformer should shine)
+\item Generation tasks
+\item Retrieval tasks
+\end{itemize}
+is untested.
+
+\subsection{Model Coverage}
+
+Only three models. Qwen3.5 was not tested. No 7B+ models.
+
+\subsection{Single Seed}
+
+No multi-seed runs.
+
+\subsection{No Long-Sequence Testing}
+
+We test only $L = 128$. Cosformer's main advantage is at long sequences. 
+Our results do not demonstrate this.
+
+\subsection{Fragile RoPE Extraction}
+
+The triple-nested try/except for RoPE call signatures is fragile.
+
+\subsection{Dead Code: `self.tau`}
+
+The \texttt{tau} parameter is declared but never used.
+
+\subsection{The `chunk\_size = 32` Choice}
+
+We chose 32 arbitrarily. Smaller chunks would reduce memory but increase 
+Python loop iterations; larger chunks would do the opposite. Optimal value 
+untested.
+
+\subsection{Code Quality}
+
+\begin{itemize}
+\item Some \texttt{try/except} blocks may mask errors
+\item No unit tests for the attention path
+\item Limited logging of the chunked scan state
+
+\end{itemize}
+\subsection{What This Paper Is Not}
+
+\begin{itemize}
+\item Not a new algorithm
+\item Not a compression method
+\item Not a long-context benchmark
+\item Not a scaling study
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

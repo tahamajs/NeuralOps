@@ -1,3 +1,112 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for nexus.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Modular Design Works}
+
+NEXUS cleanly combines four active sparse mechanisms.
+
+\subsubsection{Takeaway 2: Encoder-Only}
+
+For causal models, the module falls back to dense. This is a \textbf{correctness} 
+decision, not a performance one.
+
+\subsubsection{Takeaway 3: Two Components Inactive}
+
+Stripe and RFF are inactive under our setup. Users should enable them 
+explicitly if desired.
+
+\subsubsection{Takeaway 4: Softpick is Delicate}
+
+Temperature tuning is required.
+
+\subsection{When to Use NEXUS}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item Encoder-only models
+\item Sequences $N \gg k B_s$
+\item Research on combined sparse attention
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item Causal decoders (dense fallback)
+\item Short sequences ($N \leq 8$)
+\item When only one mechanism is needed (use that one directly)
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Model is encoder? --- Yes --- Use NEXUS
+  | No
+   
+Causal decoder? --- Yes --- Dense fallback (no benefit)
+  | No
+   
+Use standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT at $L = 512$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{NEXUS} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M \\
+Attention FLOPs & 100\% & {{FLOP\_RATIO}}\% \\
+Inference time & 1.9 s & {{D\_TIME}} s \\
+Accuracy & 90.71\% & {{D\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Published Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Causal} & \textbf{Multi-arch} \\
+\midrule
+XAttention & $\mathcal{O}(N k B_s)$ & Partial & No \\
+SeerAttention & $\mathcal{O}(N k B_s)$ & Partial & No \\
+DuSA & $\mathcal{O}(N k B_s)$ & Partial & No \\
+\textbf{NEXUS} & \textbf{$\mathcal{O}(N k B_s)$} & \textbf{No (dense)} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Causal block-sparse:} Can we implement causal block-sparse safely?
+\item \textbf{Component interaction:} Do the mechanisms interfere?
+\item \textbf{Sparse min seq len:} Optimal value?
+\item \textbf{Softpick stability:} Alternative for all-negative case?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Modular framework for sparse attention research
+\item Multi-architecture support
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Two components inactive in practice
+\item No causal benefit
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

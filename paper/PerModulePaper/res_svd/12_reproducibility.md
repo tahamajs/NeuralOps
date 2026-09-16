@@ -75,5 +75,6 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 - Windows: `PYTHONIOENCODING=utf-8`
 - Cross-attention not supported
 - Silent injection fallback
+```
 
 ---

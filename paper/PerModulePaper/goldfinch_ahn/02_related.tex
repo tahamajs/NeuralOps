@@ -1,3 +1,75 @@
-\section{02 Related}
 
-Draft content for goldfinch_ahn.
+\section{Related Work}
+
+\subsection{Hybrid Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020). Sliding-window + global tokens. 
+Longformer's window is fixed; ours is token-adaptive via a gate.
+
+\textbf{BigBird} (Zaheer et al., 2020). Sliding-window + random + global. 
+Theoretically universal.
+
+\textbf{Hybrid Transformer} (Zhu et al., 2021). Local attention + low-rank 
+global. Similar in spirit.
+
+\textbf{Our approach.} Sliding-window + linear projection + preservation gate.
+
+\subsection{Sliding-Window Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020). The canonical sliding-window 
+implementation.
+
+\textbf{Mistral} (Jiang et al., 2023). Uses sliding window for efficiency.
+
+\textbf{Our approach.} Sliding-window with an input-dependent gate.
+
+\subsection{Residual and Preservation}
+
+\textbf{LayerScale} (Touvron et al., 2021). Multiplies residual branch by small 
+learnable scalar.
+
+\textbf{ReZero} (Bachlechner et al., 2021). Zero-initialized residual branch 
+with learnable scalar. Ensures identity at initialization.
+
+\textbf{Our approach.} Preservation gate blends output with input via learnable 
+$\alpha = \sigma(2.0) \approx 0.88$. Similar to ReZero but with a 
+non-zero initialization.
+
+\subsection{Linear Attention and State-Space}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020). Linear attention.
+
+\textbf{Gated DeltaNet} (Yang et al., 2024). Delta-rule recurrent.
+
+\textbf{Note.} Our long-memory branch is a \textbf{linear projection}, not a recurrent 
+mechanism. See Section 1.3.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{Ours} \\
+\midrule
+\textbf{Local attention} & Sliding window & Sliding window \\
+\textbf{Long memory} & Recurrent & \textbf{Linear projection} \\
+\textbf{Mixing} & Fixed or gate & Input-dependent gate \\
+\textbf{Preservation} & LayerScale, ReZero & Preservation gate \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} GoldFinch-AHN is \textbf{conservative}: the preservation 
+gate keeps the block close to identity. This reduces risk but also reduces 
+potential gains.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -64,10 +64,39 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the goldfinch\_ahn module within modern transformer architectures.
+
+We present \textbf{GoldFinch-AHN} (Adaptive Hybrid Network), a hybrid attention 
+block that combines short-range multi-head sliding-window attention with a 
+long-range \textbf{learned projection} branch, fused via an input-dependent gate 
+and wrapped in a \textbf{learnable preservation gate} that blends the block's 
+output with the original residual stream. The gate is initialized at 
+$\sigma(1.8) \approx 0.86$ so the model initially favors local attention, 
+and the preservation gate at $\sigma(2.0) \approx 0.88$ so the block 
+initially preserves most of the pretrained residual stream.
+
+\textbf{Two important clarifications.} First, the long-memory branch -- referred 
+to in the code as \texttt{GatedDeltaNetLayer} -- is implemented as a single linear 
+projection, not a recurrent state-space mechanism. Second, the preservation 
+gate functions as an explicit residual with learnable coefficient, not as 
+an attention mechanism. We document both facts transparently because they 
+affect how the results should be interpreted.
+
+We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA recovery. 
+GoldFinch-AHN achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{D\_BASE}}\%, 
+$\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), and 
+\textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). Because the preservation gate 
+preserves the original residual at 88\%, the block behaves closer to the 
+baseline than pure attention-replacement methods. Inference latency is 
+\textbf{{{D\_TIME\_R}}$\times$} baseline, and parameters increase by \textbf{{{PARAM\_PCT}}\%} 
+due to LoRA, gating, and calibration parameters.
+
+\textbf{Keywords:} hybrid attention, sliding window, preservation gate, 
+residual stream, LoRA recovery
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} goldfinch\_ahn, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} hybrid attention, sliding window, preservation gate,
 \end{abstract}
 
 \vspace{1em}

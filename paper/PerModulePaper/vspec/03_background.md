@@ -85,5 +85,6 @@ with $s_0 = \infty$ (retain `[CLS]`) and $s_i = -\infty$ for padding.
 | $h$ | Head gate |
 | $s$ | Token salience |
 | $\rho$ | Keep ratio |
+```
 
 ---

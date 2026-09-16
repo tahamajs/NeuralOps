@@ -64,10 +64,39 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the lora\_attention module within modern transformer architectures.
+\textbf{LoRA} (Low-Rank Adaptation) has become the dominant paradigm for 
+parameter-efficient fine-tuning of large language models. However, most 
+existing LoRA implementations target either (a) a single transformer 
+architecture, or (b) the FFN projections only, leaving attention projections 
+under-adapted. We present \textbf{LoRA Attention}, a production-hardened 
+implementation of LoRA on the four attention projections ($W_Q, W_K, W_V, W_O$) 
+that supports four distinct transformer architectures: DistilBERT (flat), 
+RoBERTa (nested), GPT-2 (Conv1D), and Qwen3.5 (GQA + RoPE).
+
+We are explicit that \textbf{this module does not reduce parameter count} -- LoRA 
+adapters add $r_L (2d + 2H d_h)$ parameters per layer on top of the frozen 
+$4 d^2$ base projection parameters. What it does reduce is:
+(i) \textbf{trainable parameters} by a factor of roughly \textbf{${{TRAIN_REDUCTION}}$\times$$},
+(ii) \textbf{training memory} by a factor of roughly \textbf{${{MEM_REDUCTION}}$\times$$}, and
+(iii) \textbf{training time}.
+
+On SST-2, LoRA Attention achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
+(baseline {{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
+{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
+{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using only {{RECOVERY\_STEPS}} steps and 
+{{TRAINABLE\_PARAMS}} trainable parameters.
+
+We position LoRA Attention as a \textbf{recovery mechanism} for compression 
+methods (SVD, pruning, quantization) -- any compressed model can be equipped 
+with LoRA Attention for cheap post-compression fine-tuning.
+
+\textbf{Keywords:} LoRA, parameter-efficient fine-tuning, attention, multi-architecture, 
+recovery, PEFT
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} lora\_attention, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} LoRA, parameter-efficient fine-tuning, attention, multi-architecture,
 \end{abstract}
 
 \vspace{1em}

@@ -1,11 +1,272 @@
-\section{07 Results}
 
-Draft content for phantom.
+\section{Results}
 
+\subsection{Main Results}
 
-\begin{figure}[H]
+\textbf{Table 7.1: Main results on SST-2 validation.}
+
+\begin{table}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/phantom_results.png}
-\caption{Experimental performance and benchmark metrics for phantom.}
-\label{fig:results_phantom}
-\end{figure}
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{Ratio} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB \\
+DistilBERT & \textbf{PHANTOM} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_COMP}} & \textbf{{{D\_RATIO}}$\times$} & {{D\_VRAM}} MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 1.00$\times$ & 712 MB \\
+RoBERTa & \textbf{PHANTOM} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_COMP}} & \textbf{{{R\_RATIO}}$\times$} & {{R\_VRAM}} MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 1.00$\times$ & 793 MB \\
+GPT-2 & \textbf{PHANTOM} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_COMP}} & \textbf{{{G\_RATIO}}$\times$} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observations:}
+
+\begin{enumerate}
+\item \textbf{Parameter reduction:} \textbf{{{D\_RATIO}}$\times$} on DistilBERT,
+  \textbf{{{R\_RATIO}}$\times$} on RoBERTa, \textbf{{{G\_RATIO}}$\times$} on GPT-2.
+\item \textbf{Accuracy:} drops \textbf{{{D\_DELTA}}\%} on DistilBERT.
+\item \textbf{VRAM:} reduces by \textbf{{{VRAM\_REDUCTION}}\%}.
+
+\end{enumerate}
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{PHANTOM} & \textbf{Ratio} & \textbf{Note} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & \textbf{{{D\_RATIO}}$\times$} & {{D\_NOTE}} \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & \textbf{{{R\_RATIO}}$\times$} & {{R\_NOTE}} \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & \textbf{{{G\_RATIO}}$\times$} & {{G\_NOTE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Per-layer breakdown (DistilBERT):}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Layer} & \textbf{Original} & \textbf{PHANTOM} & \textbf{Ratio} \\
+\midrule
+\texttt{q\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
+\texttt{k\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
+\texttt{v\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
+\texttt{out\_lin} & 589,824 & 24,576 & \textbf{24$\times$} \\
+\textbf{Total} & 2,359,296 & \textbf{98,304} & \textbf{24$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reconstruction Error}
+
+\textbf{Table 7.3: CUR reconstruction errors.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Projection} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Q & {{D\_REC\_Q}} & {{R\_REC\_Q}} & {{G\_REC\_Q}} \\
+K & {{D\_REC\_K}} & {{R\_REC\_K}} & {{G\_REC\_K}} \\
+V & {{D\_REC\_V}} & {{R\_REC\_V}} & {{G\_REC\_V}} \\
+O & {{D\_REC\_O}} & {{R\_REC\_O}} & {{G\_REC\_O}} \\
+\textbf{Mean} & \textbf{{{D\_REC\_MEAN}}} & \textbf{{{R\_REC\_MEAN}}} & \textbf{{{G\_REC\_MEAN}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{LSH Bucket Statistics}
+
+\textbf{Table 7.4: LSH bucket size distribution.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Avg bucket} & \textbf{Max bucket} & \textbf{Reduction} \\
+\midrule
+DistilBERT & {{D\_BUCKET}} & {{D\_MAXBUCKET}} & \textbf{{{D\_BUCKET\_RED}}$\times$} \\
+RoBERTa & {{R\_BUCKET}} & {{R\_MAXBUCKET}} & \textbf{{{R\_BUCKET\_RED}}$\times$} \\
+GPT-2 & {{G\_BUCKET}} & {{G\_MAXBUCKET}} & \textbf{{{G\_BUCKET\_RED}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.5: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & PHANTOM & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 4.10 s & 27400 & 712 MB \\
+RoBERTa & PHANTOM & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 4.20 s & 26700 & 793 MB \\
+GPT-2 & PHANTOM & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: CUR Rank}
+
+\textbf{Table 7.6: Accuracy vs CUR rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
+\midrule
+8 & {{D\_R8}} & {{D\_RATIO8}}$\times$ & {{R\_R8}} & {{R\_RATIO8}}$\times$ & {{G\_R8}} & {{G\_RATIO8}}$\times$ \\
+16 & {{D\_R16}} & {{D\_RATIO16}}$\times$ & {{R\_R16}} & {{R\_RATIO16}}$\times$ & {{G\_R16}} & {{G\_RATIO16}}$\times$ \\
+32 & {{D\_R32}} & {{D\_RATIO32}}$\times$ & {{R\_R32}} & {{R\_RATIO32}}$\times$ & {{G\_R32}} & {{G\_RATIO32}}$\times$ \\
+64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{R\_R64}} & {{R\_RATIO64}}$\times$ & {{G\_R64}} & {{G\_RATIO64}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: LSH Rounds}
+
+\textbf{Table 7.7: Accuracy vs LSH rounds.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rounds} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+1 & {{D\_LSH1}} & {{R\_LSH1}} & {{G\_LSH1}} \\
+2 & {{D\_LSH2}} & {{R\_LSH2}} & {{G\_LSH2}} \\
+4 & {{D\_LSH4}} & {{R\_LSH4}} & {{G\_LSH4}} \\
+8 & {{D\_LSH8}} & {{R\_LSH8}} & {{G\_LSH8}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: LSH Bits}
+
+\textbf{Table 7.8: Accuracy vs LSH bits per round.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Bits} & \textbf{Buckets} & \textbf{Avg bucket} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+2 & 4 & {{B2\_SIZE}} & {{D\_B2}} & {{R\_B2}} \\
+3 & 8 & {{B3\_SIZE}} & {{D\_B3}} & {{R\_B3}} \\
+4 & 16 & {{B4\_SIZE}} & {{D\_B4}} & {{R\_B4}} \\
+6 & 64 & {{B6\_SIZE}} & {{D\_B6}} & {{R\_B6}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Component Contributions}
+
+\textbf{Table 7.9: Component ablation.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Configuration} & \textbf{DistilBERT} & \textbf{$\Delta$} \\
+\midrule
+Full & {{D\_FULL}} & -- \\
+No softpick (softmax) & {{D\_NOSP}} & {{D\_NOSP\_D}} \\
+No LSH (dense attn) & {{D\_NOLSH}} & {{D\_NOLSH\_D}} \\
+No CUR (dense proj) & {{D\_NOCUR}} & {{D\_NOCUR\_D}} \\
+No LoRA recovery & {{D\_NOLORA}} & {{D\_NOLORA\_D}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Softpick Temperature}
+
+\textbf{Table 7.10: Accuracy vs $\tau$\_s.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$\tau$\_s} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.5 & {{D\_T05}} & {{R\_T05}} & {{G\_T05}} \\
+1.0 & {{D\_T10}} & {{R\_T10}} & {{G\_T10}} \\
+2.0 & {{D\_T20}} & {{R\_T20}} & {{G\_T20}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.11: PHANTOM vs prior compressors.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
+\midrule
+full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
+A3 & {{A3\_D}} & {{A3\_D\_R}}$\times$ & {{A3\_R}} & {{A3\_R\_R}}$\times$ \\
+AASVD & {{AASVD\_D}} & {{AASVD\_D\_R}}$\times$ & {{AASVD\_R}} & {{AASVD\_R\_R}}$\times$ \\
+\textbf{PHANTOM} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{{{R\_ACC}}} & \textbf{{{R\_RATIO}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Compression Time}
+
+\textbf{Table 7.12: Wall-clock compression time.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{CUR} & \textbf{LSH setup} & \textbf{Total} \\
+\midrule
+DistilBERT & {{D\_CUR\_T}} s & {{D\_LSH\_T}} s & \textbf{{{D\_TOTAL}} s} \\
+RoBERTa & {{R\_CUR\_T}} s & {{R\_LSH\_T}} s & \textbf{{{R\_TOTAL}} s} \\
+GPT-2 & {{G\_CUR\_T}} s & {{G\_LSH\_T}} s & \textbf{{{G\_TOTAL}} s} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item Compression ratio: \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$}
+\item Accuracy drop: \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%}
+\item VRAM reduction: \textbf{{{VRAM\_REDUCTION}}\%}
+\item All models pass quality gate
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

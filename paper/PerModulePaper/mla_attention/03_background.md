@@ -143,5 +143,6 @@ our reproduction to absorb distributional shift from the K/V factorization.
 | $H, H_{kv}, d_h$ | Head counts and dimension |
 | $\gamma$ | Normalization scale |
 | $\rho$ | Compression ratio |
+```
 
 ---

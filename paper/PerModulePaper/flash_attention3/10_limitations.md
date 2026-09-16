@@ -61,5 +61,6 @@ Research-grade:
 ## 10.12 Ethical Considerations
 
 Attention optimization is dual-use. See Appendix E.
+```
 
 ---

@@ -102,3 +102,68 @@ def inject_infini(layer, model_config=None, old_attn=None, **kwargs):
         new_attn.copy_weights(src)
     replace_attention(layer, new_attn)
     return new_attn
+```
+
+## 5.6 The `InfiniAttention` Module Structure
+
+```python
+class InfiniAttention(BaseAttention):
+    def __init__(self, config, rank=64, compress_dim=128,
+                 local_window=128, pretrained_attn=None, ...):
+        super().__init__(config, rank)
+        self.q_proj = LoRALinear(d, H*d_h, lora_rank=r)
+        self.k_proj = LoRALinear(d, H_kv*d_h, lora_rank=r)
+        self.v_proj = LoRALinear(d, H_kv*d_h, lora_rank=r)
+        self.out_proj = LoRALinear(H*d_h, d, lora_rank=r)
+        
+        self.memory = nn.Parameter(torch.randn(1, H, d_c, d_h) * 0.001)
+        self.beta = nn.Parameter(torch.tensor([-5.0]))
+        
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+```
+
+## 5.7 Causality
+
+For decoders, the causal + window mask ensures:
+
+$$
+M_{ij} = \begin{cases} 0 & j \leq i \text{ and } i - j < W \\ -\infty & \text{otherwise} \end{cases}
+\tag{5.1}
+$$
+
+**Verification.** Gradient of output at position $i$ w.r.t. input at 
+position $j > i$ is zero.
+
+## 5.8 Failure Modes
+
+| Failure | Detection | Response |
+|---|---|---|
+| Missing projection | `copy_weights` raises | Injection fails |
+| Small Frobenius norm | Explicit check | Raises RuntimeError |
+| Nested encoder mis-set | Logits differ | Manual fix |
+| OOM | RuntimeError | Reduce batch |
+| NaN in memory | `torch.isnan` | Not handled |
+
+## 5.9 Registry
+
+```python
+@ATTENTION_REGISTRY.register("infini")
+@ATTENTION_REGISTRY.register("infini_attention")
+class InfiniAttention(BaseAttention):
+    ...
+```
+
+## 5.10 Cross-Attention
+
+Infini-Attention **raises NotImplementedError** for cross-attention:
+
+```python
+if kwargs.get("encoder_hidden_states", None) is not None:
+    raise NotImplementedError(...)
+```
+
+This is a limitation for encoder-decoder models.
+```
+
+---

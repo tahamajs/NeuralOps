@@ -1,0 +1,174 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: B_implementation.md
+     PURPOSE: Code details
+     DEPENDENCIES: 05_architecture.md
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# Appendix B. Implementation Details
+
+## B.1 Module Structure
+
+```python
+class RALALinearAttention(BaseAttention):
+    def __init__(self, config, rank=64, pretrained_attn=None, **kwargs):
+        super().__init__(config, rank or 64)
+        
+        # Dimensions
+        self.hidden_size = ...
+        self.num_heads = ...
+        self.head_dim = self.hidden_size // self.num_heads
+        
+        # Augmentation params
+        self.rank_r = 8
+        self.U = nn.Parameter(torch.randn(H, d, r) * 0.01)
+        self.V = nn.Parameter(torch.randn(H, d, r) * 0.01)
+        self.alpha = nn.Parameter(torch.tensor(0.0))
+        
+        # LoRA projections
+        self.q_proj = LoRALinear(...)
+        self.k_proj = LoRALinear(...)
+        self.v_proj = LoRALinear(...)
+        self.out_proj = LoRALinear(...)
+        
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+```
+
+## B.2 Forward Pass (Causal)
+
+```python
+if is_causal:
+    S = torch.zeros(B, H, d, d, device=..., dtype=q.dtype)
+    z = torch.zeros(B, H, d, device=..., dtype=q.dtype)
+    num_list, denom_list = [], []
+    
+    for i in range(seq_len):
+        q_i = q_prime[:, :, i, :]  # (B, H, d)
+        k_i = k_prime[:, :, i, :]
+        v_i = v_masked[:, :, i, :]
+        
+        S = S + torch.einsum("bhd,bhe->bhde", k_i, v_i)
+        z = z + k_i
+        
+        num_i = torch.einsum("bhd,bhde->bhe", q_i, S)
+        denom_i = torch.einsum("bhd,bhd->bh", q_i, z).unsqueeze(-1)
+        num_list.append(num_i)
+        denom_list.append(denom_i)
+    
+    num = torch.stack(num_list, dim=2)
+    denom = torch.stack(denom_list, dim=2).clamp(min=1e-4)
+    lin_out = torch.nan_to_num(num / denom)
+    
+    # Augmentation
+    rank_mat = torch.einsum("hdr,her->hde", self.U, self.V)  # (H, d, d)
+    aug_out = torch.nan_to_num(
+        torch.einsum("bhnd,hde->bhne", q_prime, rank_mat) / denom
+    )
+```
+
+## B.3 Forward Pass (Non-Causal)
+
+```python
+else:
+    kv = torch.einsum("bhnd,bhne->bhde", k_prime, v_masked)  # (B,H,d,d)
+    z = k_prime.sum(dim=2)                                    # (B,H,d)
+    denom = torch.einsum("bhnd,bhd->bhn", q_prime, z).unsqueeze(-1).clamp(min=1e-4)
+    
+    lin_out = torch.nan_to_num(
+        torch.einsum("bhnd,bhde->bhne", q_prime, kv) / denom
+    )
+    
+    rank_mat = torch.einsum("hdr,her->hde", self.U, self.V)
+    aug_out = torch.nan_to_num(
+        torch.einsum("bhnd,hde->bhne", q_prime, rank_mat) / denom
+    )
+```
+
+## B.4 Combination
+
+```python
+out = (lin_out + self.alpha * aug_out) * mask_4d
+out = out.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+
+if self.is_nested_encoder:
+    return out, None
+return self.out_proj(out), None
+```
+
+## B.5 Weight Copy
+
+Standard extraction handles four families:
+
+```python
+if hasattr(src, "c_attn"):        # GPT-2
+    ...
+elif hasattr(src, "self"):        # RoBERTa
+    ...
+else:                             # DistilBERT, Qwen
+    ...
+```
+
+## B.6 Common Pitfalls
+
+### B.6.1 Frozen U, V
+
+When LoRA is active, `freeze_base_weights` sets `U.requires_grad = False`. 
+This disables learning of the augmentation. To unfreeze:
+
+```python
+self.U.requires_grad = True
+self.V.requires_grad = True
+```
+
+### B.6.2 Missing Mask
+
+Without `mask_4d`, padding tokens contribute to prefix sums:
+
+```python
+k_prime = F.softplus(k) * mask_4d  # zero out padding
+v_masked = v * mask_4d
+```
+
+### B.6.3 Denominator Clamp
+
+The denominator $\phi(q)^\top z$ can be near zero. Clamp:
+
+```python
+denom = denom.clamp(min=1e-4)
+```
+
+### B.6.4 Nested Encoder Detection
+
+```python
+if hasattr(src, "out_lin"):      # DistilBERT (flat)
+    is_nested = False
+elif hasattr(src, "self") and hasattr(src.self, "query"):  # RoBERTa
+    is_nested = True
+```
+
+## B.7 Registry
+
+```python
+@ATTENTION_REGISTRY.register("rala")
+@ATTENTION_REGISTRY.register("rala_attention")
+@ATTENTION_REGISTRY.register("rala_linear_attention")
+class RALALinearAttention(BaseAttention):
+    ...
+```
+
+## B.8 Diagnostics
+
+```python
+# Check injection
+for name, mod in model.named_modules():
+    if "attention" in name and "rala" in type(mod).__name__.lower():
+        print(name, type(mod).__name__)
+
+# Check alpha
+for name, mod in model.named_modules():
+    if hasattr(mod, 'alpha'):
+        print(f"{name}: alpha = {mod.alpha.item():.4f}")
+```
+```
+
+---

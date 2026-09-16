@@ -109,3 +109,6 @@ LoRA (Hu et al., 2021) parameterizes a weight update as $BA$ with $B = 0$.
 | $\ell_i$ | Running sum (online softmax) |
 | $O_i$ | Running output |
 | $H_{kv}$ | KV head count |
+```
+
+---

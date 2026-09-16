@@ -1,3 +1,170 @@
-\section{D Negative Results}
 
-Draft content for phantom.
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Learnable Hash Functions}
+
+\textbf{Goal.} Replace random projections with learnable ones.
+
+\textbf{Result.} Accuracy improvement <0.3\%, training instability.
+
+\textbf{Conclusion.} Random projections are sufficient.
+
+\subsubsection{D.1.2 Larger LSH Bits (>8)}
+
+\textbf{Goal.} Finer buckets for more precise matching.
+
+\textbf{Result.} Most buckets had <2 tokens; attention too sparse.
+
+\textbf{Conclusion.} 4-6 bits is optimal.
+
+\subsubsection{D.1.3 Adaptive Rounds}
+
+\textbf{Goal.} Different rounds per layer.
+
+\textbf{Result.} No improvement over uniform 4 rounds.
+
+\textbf{Conclusion.} Uniform is sufficient.
+
+\subsubsection{D.1.4 SVD Instead of CUR}
+
+\textbf{Goal.} Compare with standard SVD.
+
+\textbf{Result.} CUR matches or beats SVD at rank 8-16; SVD better at high rank.
+
+\textbf{Conclusion.} CUR is preferable for aggressive compression.
+
+\subsubsection{D.1.5 Softmax Instead of Softpick}
+
+\textbf{Goal.} Compare with standard softmax.
+
+\textbf{Result.} Softpick gives +{{SP\_GAIN}}\% accuracy from reduced noise.
+
+\textbf{Conclusion.} Softpick is essential.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Random Bucket Sampling}
+
+Instead of hash-based buckets, we tried random buckets. Result: 30\% accuracy 
+drop.
+
+\subsubsection{D.2.2 Per-Head Hash Functions}
+
+We tried different hash functions per head. Result: no improvement.
+
+\subsubsection{D.2.3 Dense Fallback Attention}
+
+We tried mixing LSH attention with dense attention. Result: no gain, 2$\times$ slower.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{LSH Rounds}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Rounds} & \textbf{DistilBERT} & \textbf{Time} \\
+\midrule
+1 & {{D\_LSH1}} & 1.0$\times$ \\
+4 & {{D\_LSH4}} & 4.0$\times$ \\
+16 & {{D\_LSH16}} & 16$\times$ (diminishing) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{CUR Rank}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Rank} & \textbf{Ratio} & \textbf{DistilBERT} \\
+\midrule
+4 & 60$\times$ & {{D\_R4}} (too aggressive) \\
+8 & 30$\times$ & {{D\_R8}} \\
+16 & 15$\times$ & {{D\_R16}} \\
+32 & 8$\times$ & {{D\_R32}} \\
+64 & 4$\times$ & {{D\_R64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Softpick Temperature}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{$\tau$\_s} & \textbf{DistilBERT} \\
+\midrule
+0.1 & {{D\_T01}} (too peaked) \\
+0.5 & {{D\_T05}} \\
+1.0 & {{D\_T10}} \\
+2.0 & {{D\_T20}} (too flat) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Fixes That Didn't Help}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Fix} & \textbf{Problem} & \textbf{Result} \\
+\midrule
+Larger \texttt{n\_bits} & Precision & Sparse attention \\
+Multi-scale LSH & Bucket size variance & No improvement \\
+Per-layer $\tau$\_s & Non-stationarity & No improvement \\
+LayerNorm recalibration & Shift & <0.2\% improvement \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Random projections work} as well as learnable ones.
+\item \textbf{4-6 bits} is the sweet spot for LSH.
+\item \textbf{Uniform rounds} suffice; no need for adaptive.
+\item \textbf{Softpick matters} -- softmax loses {{SP\_GAIN}}\%.
+\item \textbf{CUR beats SVD} at low rank.
+
+\end{enumerate}
+\subsection{D.7 Recommendations}
+
+\begin{enumerate}
+\item \textbf{Use 4 rounds} with 4 bits.
+\item \textbf{Use CUR with rank 16} for aggressive compression.
+\item \textbf{Always use softpick} with $\tau$\_s=1.0.
+\item \textbf{Enable fallback} in production.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

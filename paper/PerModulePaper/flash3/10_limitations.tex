@@ -9,12 +9,12 @@ On other GPUs, the wrapper uses SDPA fallback.
 
 \subsection{Not a Compression Method}
 
-The wrapper \textbf{increases} parameter count by ~0.88\% via LoRA. 
+The wrapper \textbf{increases} parameter count by ~{{PARAM\_CHANGE}}\% via LoRA. 
 It is not suitable for size reduction.
 
 \subsection{FP8 Accuracy}
 
-FP8 introduces ~0.15\% accuracy drop in our simulation. Real 
+FP8 introduces ~{{FP8\_ACC\_DELTA}}\% accuracy drop in our simulation. Real 
 FP8 behavior on Hopper may differ.
 
 \subsection{No H100 Benchmarks}
@@ -50,3 +50,7 @@ Research-grade:
 \subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

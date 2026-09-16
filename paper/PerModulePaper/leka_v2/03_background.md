@@ -106,5 +106,6 @@ Initialized with $g_h = \sigma(-2) \approx 0.12$, biasing toward local.
 | $W_\text{corr}$ | Correction matrix |
 | $g$ | Local gate |
 | $T$ | Temperature |
+```
 
 ---

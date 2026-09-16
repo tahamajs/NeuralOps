@@ -111,5 +111,6 @@ Same memory issue as GatedDeltaNet.
 2. **If block-level is necessary**, copy the pretrained LayerNorm.
 3. **Always verify weight transfer** with logging.
 4. **Test causal masking** explicitly.
+```
 
 ---

@@ -222,7 +222,7 @@ LoRA ($r_L$) & 0 & $8 r_L d$ \\
 
 For DistilBERT ($d=768$, $r_L=16$): \textbf{+589,824 params} across 6 layers.
 
-\textbf{Wrapper increases parameter count by ~0.88\%.}
+\textbf{Wrapper increases parameter count by ~{{PARAM\_CHANGE}}\%.}
 
 \subsection{Theoretical Notes}
 
@@ -251,3 +251,8 @@ to FP8 introduces error $\epsilon \sim 0.06$ per element, which can propagate
 through softmax. Empirically, we observe a small accuracy drop (see Section 8).
 
 \subsection{Hyperparameter Guidance}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

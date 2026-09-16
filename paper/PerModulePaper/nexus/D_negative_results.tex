@@ -1,3 +1,111 @@
-\section{D Negative Results}
+\section{Appendix D. Negative Results}
 
-Draft content for nexus.
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Causal Block-Sparse}
+
+\textbf{Goal.} Block-sparse for GPT-2.
+
+\textbf{Result.} Causality broken, accuracy collapse.
+
+\textbf{Conclusion.} Fallback to dense.
+
+\subsubsection{D.1.2 Stripe at $N=128$}
+
+\textbf{Goal.} Force stripe for short sequences.
+
+\textbf{Result.} Accuracy dropped significantly.
+
+\textbf{Conclusion.} Gate stripe at $N > 256$.
+
+\subsubsection{D.1.3 RFF Without Rectification Gate}
+
+\textbf{Goal.} Always apply RFF.
+
+\textbf{Result.} Degraded encoder accuracy.
+
+\textbf{Conclusion.} Periodic application is better.
+
+\subsubsection{D.1.4 Softpick Without Clamp}
+
+\textbf{Goal.} Remove \texttt{clamp(max=85)}.
+
+\textbf{Result.} NaN from \texttt{exp(large)}.
+
+\textbf{Conclusion.} Clamp is essential.
+
+\subsubsection{D.1.5 No CLS Boost}
+
+\textbf{Goal.} Don't force block 0.
+
+\textbf{Result.} Classifier accuracy dropped by {{CLS\_DROP}}\%.
+
+\textbf{Conclusion.} Block-0 preservation is essential.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Adaptive Block Size}
+
+Different block sizes per layer. No improvement.
+
+\subsubsection{D.2.2 Multiple Seer Gates}
+
+Stacked Seer networks. No improvement.
+
+\subsubsection{D.2.3 Learnable Softpick Temperature}
+
+Learned T. Marginal improvement.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Block Size}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{$B_s$} & \textbf{DistilBERT} \\
+\midrule
+8 & {{D\_B8}} \\
+16 & {{D\_B16}} \\
+32 & {{D\_B32}} \\
+64 & {{D\_B64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sweet spot: 16.
+
+\subsubsection{Sparse Min Seq Len}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{min} & \textbf{DistilBERT} \\
+\midrule
+4 & {{D\_S4}} \\
+8 & {{D\_S8}} \\
+16 & {{D\_S16}} \\
+32 & {{D\_S32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sweet spot: 8.
+
+\subsection{D.4 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Causal block-sparse is hard.}
+\item \textbf{Stripe needs long sequences.}
+\item \textbf{RFF is inactive by default.}
+\item \textbf{Clamping prevents NaN.}
+\item \textbf{Block-0 preservation matters.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

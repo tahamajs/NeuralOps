@@ -101,5 +101,6 @@ $\sigma(-1) \approx 0.27$.
 | $h_t$ | SSM state |
 | $\alpha$ | Fusion scalar |
 | $\theta$ | RoPE angle |
+```
 
 ---

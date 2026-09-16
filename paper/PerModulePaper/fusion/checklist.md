@@ -81,3 +81,26 @@ python build.py --module fusion_attn --pdf
 ```python
 except Exception:
     raise RuntimeError("copy_weights failed")
+```
+
+این باید `return None` باشد. وگرنه با هر خطا، injection می‌ترکد.
+
+### ۴. `output_scale` اضافه
+
+در `LoRALinear`، `output_scale` ساخته می‌شود ولی ممکن است در checkpoint قدیمی نباشد.
+
+### ۵. Long-context فقط
+
+FUSIONATTN برای `L ≥ 256` طراحی شده. برای SST-2 روی L=128، **benefit صفر است**.
+
+### ۶. مقایسه صادقانه
+
+| روش | در L=128 | در L=512 |
+|---|---|---|
+| Adasplash | فعال (α-entmax) | فعال |
+| ClusterFormer | فعال (cluster) | فعال |
+| **FUSIONATTN** | **غیرفعال (short)** | فعال |
+
+---
+
+**قدم بعدی: `run_all_4_fusion_attn.py` را اجرا کن و نتایج را بفرست تا `variables.json` را پر کنم. اگر خواستی threshold را به 64 تغییر بدهیم تا long path فعال شود.**

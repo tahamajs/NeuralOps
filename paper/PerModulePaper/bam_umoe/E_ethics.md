@@ -50,3 +50,17 @@ of parameter cost is essential.
 ## E.10 Institutional Review
 
 No human subjects.
+```
+
+---
+
+## 📄 `build.py` و `apply_vars.py`
+
+(مشابه A3/AASVD/Adaptive SVD/AdaSplash — همان کد)
+
+```python
+# build.py and apply_vars.py: identical structure
+# Change SECTIONS list to same as other modules
+```
+
+---

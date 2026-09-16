@@ -7,7 +7,7 @@
 
 \textbf{Goal.} Let local and global branches start equally.
 
-\textbf{Result.} Accuracy dropped by 4.2\%. Training unstable.
+\textbf{Result.} Accuracy dropped by {{GB0\_DROP}}\%. Training unstable.
 
 \textbf{Conclusion.} Bias 2.0 is essential.
 
@@ -16,7 +16,7 @@
 \textbf{Goal.} Skip padding mask in compression softmax.
 
 \textbf{Result.} Padding tokens polluted the compressed summary. Accuracy 
-dropped by 3.5\%.
+dropped by {{NOMASK\_DROP}}\%.
 
 \textbf{Conclusion.} Masking is essential.
 
@@ -75,10 +75,10 @@ dropped by 3.5\%.
 \toprule
 \textbf{W} & \textbf{DistilBERT} \\
 \midrule
-16 & 87.0 \\
-32 & 88.5 \\
-64 & 89.2 \\
-128 & 89.4 \\
+16 & {{D\_W16}} \\
+32 & {{D\_W32}} \\
+64 & {{D\_W64}} \\
+128 & {{D\_W128}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -92,10 +92,10 @@ dropped by 3.5\%.
 \toprule
 \textbf{dc} & \textbf{DistilBERT} \\
 \midrule
-8 & 87.5 \\
-16 & 88.5 \\
-32 & 89.2 \\
-64 & 89.3 \\
+8 & {{D\_C8}} \\
+16 & {{D\_C16}} \\
+32 & {{D\_C32}} \\
+64 & {{D\_C64}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -109,9 +109,9 @@ dropped by 3.5\%.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-5e-5 & 88.5 \\
-2e-4 & 89.2 \\
-5e-4 & 87.0 \\
+5e-5 & {{D\_LR5e5}} \\
+2e-4 & {{D\_LR2e4}} \\
+5e-4 & {{D\_LR5e4}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -125,11 +125,11 @@ dropped by 3.5\%.
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & 89.2 \\
-123 & 89.1 \\
-456 & 89.3 \\
-Mean & 89.2 \\
-Std & 0.08 \\
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+Mean & {{MEAN}} \\
+Std & {{STD}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -143,3 +143,7 @@ Std & 0.08 \\
 \item \textbf{Softmax-attention beats mean-pool.}
 \item \textbf{\texttt{d\_c = 32} is a good default.}
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

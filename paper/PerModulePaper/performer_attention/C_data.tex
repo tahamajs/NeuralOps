@@ -1,3 +1,112 @@
-\section{C Data}
 
-Draft content for performer_attention.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_ACC}}\% \\
+$\Delta$ & {{D\_DELTA}}\% \\
+F1 & {{D\_F1}} \\
+Params (after) & {{D\_PARAMS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{R\_ACC}}\% \\
+$\Delta$ & {{R\_DELTA}}\% \\
+F1 & {{R\_F1}} \\
+Params (after) & {{R\_PARAMS}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{G\_ACC}}\% \\
+$\Delta$ & {{G\_DELTA}}\% \\
+F1 & {{G\_F1}} \\
+Params (after) & {{G\_PARAMS}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Feature Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$F$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & {{D\_F32}} & {{R\_F32}} & {{G\_F32}} \\
+64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} \\
+128 & {{D\_F128}} & {{R\_F128}} & {{G\_F128}} \\
+256 & {{D\_F256}} & {{R\_F256}} & {{G\_F256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Kernel Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Kernel} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+\texttt{favor\_plus} & {{D\_FAVOR}} & {{R\_FAVOR}} & {{G\_FAVOR}} \\
+\texttt{elu} & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
+\texttt{relu} & {{D\_RELU}} & {{R\_RELU}} & {{G\_RELU}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {"acc": {{D_ACC}}, "params": {{D_PARAMS}}},
+  "roberta": {"acc": {{R_ACC}}, "params": {{R_PARAMS}}},
+  "gpt2": {"acc": {{G_ACC}}, "params": {{G_PARAMS}}}
+}
+\end{lstlisting}
+
+\subsection{C.7 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_performer.py --models distilbert,roberta,gpt2
+
+for F in 32 64 128 256; do
+    python run_all_4_performer.py --num_features $F --output_suffix f$F
+done
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

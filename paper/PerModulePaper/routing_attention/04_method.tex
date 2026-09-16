@@ -1,3 +1,301 @@
-\section{04 Method}
 
-Draft content for routing_attention.
+\section{Method}
+
+\subsection{Overview}
+
+Routing Attention consists of four steps:
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$\times$L$\times$d}
+            |
+             
+    +-------------------------+
+    |  Q/K/V projections (LoRA)|
+    +-------------+-----------+
+                  |
+                   
+    +-------------------------+
+    |  Compute joint feature  |
+    |  F = normalize(Q + K)   |
+    +-------------+-----------+
+                  |
+                   
+    +-------------------------+
+    |  k-means $\to$ cluster IDs  |
+    +-------------+-----------+
+                  |
+                   
+    +-------------------------+
+    |  For each cluster:      |
+    |    Mask to cluster + T0 |
+    |    Softmax + weighted V |
+    +-------------+-----------+
+                  |
+                   
+    +-------------------------+
+    |  Output projection      |
+    +-------------------------+
+\end{lstlisting}
+
+\textbf{Key idea.} Each query attends only to keys in its cluster (plus the first 
+token). Clusters are computed per-input via k-means.
+
+\subsection{Cluster Assignment}
+
+\subsubsection{Joint Feature}
+
+We compute a joint representation of queries and keys:
+
+\[
+F = \text{normalize}(Q + K) \in \mathbb{R}^{B \times H \times L \times d}
+\tag{4.1}
+\]
+
+where \texttt{normalize} is $\ell_2$ normalization along the head dimension. The 
+$Q + K$ sum captures both "who is asking" and "who is being asked", 
+providing a richer feature than Q alone.
+
+\textbf{GQA handling.} If $H_{kv} < H$, we repeat K to match H before summing.
+
+\subsubsection{Online k-Means}
+
+We use Lloyd's algorithm for $n_{\text{iters}}$ iterations:
+
+\textbf{Algorithm 1:} Cluster assignment
+\begin{lstlisting}
+Input:  F $\in$ R^{B$\times$H$\times$L$\times$d}, K clusters, n_iters
+Output: cluster_ids $\in$ {0, ..., K-1}^{B$\times$H$\times$L}
+
+1: step $\leftarrow$ max(1, L // K)
+2: init_idx $\leftarrow$ [0, step, 2*step, ..., (K-1)*step]    Deterministic init
+3: centroids $\leftarrow$ F[:, :, init_idx, :]                  (B, H, K, d)
+4:
+5: for iter = 1 to n_iters do
+6:     dist $\leftarrow$ cdist(F, centroids)                     (B, H, L, K)
+7:     cluster_ids $\leftarrow$ argmin(dist, dim=-1)
+8:     one_hot $\leftarrow$ one_hot(cluster_ids, K)
+9:     counts $\leftarrow$ one_hot.sum(dim=2).clamp(min=1)       (B, H, K)
+10:    sum_f $\leftarrow$ einsum("bhlk,bhld->bhkd", one_hot, F)
+11:    centroids $\leftarrow$ sum_f / counts
+12: end for
+13: return cluster_ids
+\end{lstlisting}
+
+\textbf{Initialization.} We use deterministic stride-based initialization (every 
+\texttt{step}-th token). This avoids the randomness of k-means++ and makes 
+clustering reproducible.
+
+\textbf{Edge case.} If $L < K$, we reduce $K$ to $L$.
+
+\subsection{Cluster-Restricted Attention}
+
+For each cluster $k$, we compute attention over its tokens:
+
+\[
+\mathcal{S}_k = \{j : c_j = k\} \cup \{0\}
+\tag{4.2}
+\]
+
+The union with $\{0\}$ adds the first token as a global context anchor.
+
+The attention output for cluster $k$:
+
+\[
+\text{out}_i^{(k)} = \text{softmax}\!\left(\frac{q_i K_{\mathcal{S}_k}^\top}{\sqrt{d}}\right) V_{\mathcal{S}_k} \quad \text{if } i \in \mathcal{S}_k
+\tag{4.3}
+\]
+
+\subsubsection{Masking Implementation}
+
+In practice, we compute the \textbf{full} $L \times L$ attention matrix and mask 
+it:
+
+\begin{lstlisting}
+for k in range(K_num):
+    mask_k = (cluster_ids == k) | (torch.arange(L).view(1, 1, -1) == 0)
+    mask_k = mask_k & valid_mask_2d.unsqueeze(1)
+    
+    scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+    scores = scores.masked_fill(~mask_k.unsqueeze(2), -1e4)
+    
+    # Self-token preservation
+    eye = torch.eye(L, dtype=torch.bool)
+    scores = scores.masked_fill(eye, 0.0)
+    
+    if is_causal:
+        causal_mask = torch.triu(torch.full((L, L), True), diagonal=1)
+        scores = scores.masked_fill(causal_mask & (~eye), -1e4)
+    
+    attn = F.softmax(scores, dim=-1)
+    out_k = torch.matmul(attn, V)
+    outputs = torch.where(mask_k.unsqueeze(-1), out_k, outputs)
+\end{lstlisting}
+
+\textbf{Cost.} This computes $K$ full attention matrices. \textbf{Slower} than dense.
+
+\subsubsection{Self-Token Preservation}
+
+We force each token to attend to itself by setting the diagonal of the score 
+matrix to 0. This prevents the case where a token is isolated from its own 
+attention.
+
+\subsubsection{Causal Masking}
+
+For decoders, we apply an upper-triangular mask (standard causal):
+
+\[
+\text{causal\_mask}_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j > i \end{cases}
+\tag{4.4}
+\]
+
+Combined with the cluster mask:
+
+\[
+\text{final\_mask} = \text{cluster\_mask} \wedge \text{causal\_mask}
+\tag{4.5}
+\]
+
+\subsubsection{Token-0 Anchor}
+
+Token 0 is added to every cluster's key set. This acts as a **universal 
+context anchor**, since the first token often accumulates summary 
+information (attention sink phenomenon, Xiao et al., 2024).
+
+\textbf{Why is this necessary?} Without it, some clusters may contain only 
+"uninformative" tokens, and the attention output may be dominated by 
+noise. Token 0 provides a stable reference.
+
+\subsection{Output Combination}
+
+The final output is a masked sum over clusters:
+
+\[
+\text{out}_i = \sum_k \mathbb{1}[c_i = k] \cdot \text{out}_i^{(k)}
+\tag{4.6}
+\]
+
+Only the cluster containing token $i$ contributes. This is implemented as 
+\texttt{torch.where(mask\_k.unsqueeze(-1), out\_k, outputs)}.
+
+\subsection{Padding Masking}
+
+Padding tokens do not contribute to any cluster's attention:
+
+\begin{lstlisting}
+mask_k = mask_k & valid_mask_2d.unsqueeze(1)
+\end{lstlisting}
+
+Padding positions in the output are zeroed.
+
+\subsection{LoRA Adaptation}
+
+Each projection is a \texttt{LoRALinear}:
+
+\begin{lstlisting}
+out = F.linear(x, W_frozen, b) + F.linear(F.linear(x, A), B) * scaling
+\end{lstlisting}
+
+Only \texttt{A, B} are trainable; \texttt{W\_frozen} is copied from the pretrained attention.
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 2:} Routing Attention forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V        LoRA projections
+2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+3: if GQA:  (K, V) $\leftarrow$ repeat_kv(K, V)
+4:
+5: F $\leftarrow$ normalize(Q + K)
+6: cluster_ids $\leftarrow$ kmeans(F, K, n_iters)
+7:
+8: outputs $\leftarrow$ zeros_like(Q)
+9: for k = 0 to K-1 do
+10:     mask_k $\leftarrow$ (cluster_ids == k) | (arange(L) == 0)
+11:     mask_k $\leftarrow$ mask_k & valid_mask
+12:
+13:     scores $\leftarrow$ Q K^T / $\sqrt{}$d
+14:     scores $\leftarrow$ masked_fill(scores, ~mask_k, -1e4)
+15:     scores $\leftarrow$ masked_fill(scores, eye, 0)        Self-token
+16:     if causal: scores $\leftarrow$ masked_fill(scores, triu & ~eye, -1e4)
+17:     attn $\leftarrow$ softmax(scores)
+18:     out_k $\leftarrow$ attn V
+19:     outputs $\leftarrow$ where(mask_k, out_k, outputs)
+20: end for
+21:
+22: if not is_nested_encoder: outputs $\leftarrow$ out_proj(outputs)
+23: return outputs
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Q/K/V projection & $\mathcal{O}(BLd^2)$ & $\mathcal{O}(BLd)$ \\
+k-means (per iter) & $\mathcal{O}(BHKLd)$ & $\mathcal{O}(BHKL)$ \\
+Attention loop & $\mathcal{O}(K \cdot BHL^2)$ & $\mathcal{O}(BHL^2)$ \\
+Output projection & $\mathcal{O}(BLd^2)$ & $\mathcal{O}(BLd)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{The attention loop is $\mathcal{O}(K \cdot BHL^2)$} -- $K$ times slower 
+than dense attention.
+
+\textbf{Theoretical sparse cost} (with sparse matmul) would be $\mathcal{O}(L^2/K)$ 
+per head. Our implementation does not use sparse matmul; it computes the 
+full matrix per cluster.
+
+\subsection{Parameter Analysis}
+
+Routing Attention adds LoRA adapters (no new architectural parameters):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Per layer} & \textbf{Total (DistilBERT)} \\
+\midrule
+LoRA (4 proj $\times$ $r$) & 4 $\times$ 2 r d & 6 $\times$ 98,304 = 589,824 \\
+\textbf{Total added} &  & \textbf{~589,824} \\
+\textbf{Percentage} &  & \textbf{+0.88\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Routing Attention increases parameter count.} It is not a compressor.
+
+\subsection{Design Choices}
+
+\subsubsection{Why Q+K Instead of Q?}
+
+Using Q alone (as in Reformer or Routing Transformer) ignores key content. 
+Query and key are both learned projections of the same input, so their sum 
+captures more information.
+
+\subsubsection{Why Deterministic Init?}
+
+k-means++ introduces randomness. Deterministic stride init makes runs 
+reproducible without loss of quality (in our experiments).
+
+\subsubsection{Why Token-0 Anchor?}
+
+Without an anchor, clusters with sparse or noisy content may produce 
+degenerate attention outputs. Token 0 provides a stable reference.
+
+\subsubsection{Why Self-Token Preservation?}
+
+Forcing $j = i$ in the attention pattern prevents a query from being 
+disconnected from its own representation.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

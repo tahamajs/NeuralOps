@@ -105,5 +105,6 @@ All experiments use seed {{SEED}}.
 1. **`full`:** Uncompressed model.
 2. **`mla`:** Our reproduction.
 3. **Companion methods:** `minimal_svd`, `minimal_prism`, `svd_llm_v2`.
+```
 
 ---

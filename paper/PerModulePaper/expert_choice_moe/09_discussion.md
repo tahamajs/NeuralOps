@@ -79,5 +79,6 @@ For DistilBERT:
 2. **Learned capacity factor?** Adaptive CF per layer?
 3. **Batch-size scaling?** Larger batches → better balance?
 4. **Interaction with quantization?** INT8 experts?
+```
 
 ---

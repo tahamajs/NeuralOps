@@ -1,3 +1,113 @@
-\section{02 Related}
 
-Draft content for phantom.
+\section{Related Work}
+
+\subsection{Low-Rank Matrix Decomposition}
+
+\subsubsection{SVD and Eckart--Young}
+
+The truncated SVD is optimal in Frobenius norm (Eckart \& Young, 1936). However, 
+the factors $U, V$ are dense and orthogonal, which limits interpretability.
+
+\subsubsection{CUR Decomposition}
+
+Mahoney \& Drineas (2009) introduced CUR as an interpretable alternative: 
+select $r$ columns and $r$ rows of $W$, then reconstruct as $C \cdot U^+ \cdot R$ 
+where $U$ is the intersection. The key insight is that **statistical leverage 
+scores** (Mahoney et al., 2012) provide the optimal sampling probabilities. 
+PHANTOM uses deterministic top-$r$ selection by leverage score.
+
+\subsubsection{Randomized SVD}
+
+Halko et al. (2011) provide randomized SVD with complexity 
+$\mathcal{O}(d^2 r)$. We use exact SVD for leverage computation because 
+matrix sizes are manageable.
+
+\subsection{Sparse Attention}
+
+\subsubsection{Fixed-Pattern Sparsity}
+
+Longformer (Beltagy et al., 2020) uses a sliding window plus global tokens. 
+BigBird (Zaheer et al., 2020) adds random edges. Both use \textbf{fixed} patterns 
+that do not adapt to input.
+
+\subsubsection{Content-Based Sparsity}
+
+Reformer (Kitaev et al., 2020) uses LSH to group similar queries and keys. 
+Routing Transformer (Roy et al., 2021) uses online k-means. PHANTOM uses 
+\textbf{multi-round angular LSH} with a rectangular hash function that is 
+differentiable through sign operations.
+
+\subsubsection{Comparisons}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Pattern} & \textbf{Adaptive} & \textbf{Complexity} \\
+\midrule
+Longformer & Sliding window + global & No & $\mathcal{O}(L \sqrt{L})$ \\
+BigBird & Window + random + global & No & $\mathcal{O}(L)$ \\
+Reformer & LSH buckets & Yes & $\mathcal{O}(L \log L)$ \\
+Routing & k-means clusters & Yes & $\mathcal{O}(L \log L)$ \\
+\textbf{PHANTOM} & Multi-round angular LSH & Yes & $\mathcal{O}(L \cdot B)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Attention Activations}
+
+\subsubsection{Softmax}
+
+Standard softmax has two limitations: (i) it never reaches exactly zero, so 
+far-tail positions receive non-negligible weight; (ii) it is sensitive to 
+outliers.
+
+\subsubsection{Sparsemax}
+
+Martins \& Astudillo (2016) propose sparsemax, which projects onto the simplex 
+and produces sparse attention. However, sparsemax has no closed-form for 
+batched computation.
+
+\subsubsection{Softpick}
+
+Lu et al. (2024) propose softpick: $\text{ReLU}(e^{(x_i - m)} - e^{-m})$ 
+where $m = \max_j x_j$. This is sparse and has closed form. We use a 
+\textbf{rectified} variant with a softmax fallback when the denominator is zero.
+
+\subsection{Post-Training Compression}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Type} & \textbf{Retrain?} & \textbf{Compression} & \textbf{Attention?} \\
+\midrule
+SVD (Eckart-Young) & Low-rank & No & Ratio $r$ & No \\
+A3 & Fisher-weighted SVD & LoRA & Ratio $r$ & No \\
+AASVD & Covariance-weighted SVD & LoRA & Ratio $r$ & No \\
+SparseGPT & Pruning & No & 50\% & No \\
+\textbf{PHANTOM} & CUR + LSH & LoRA & Ratio $r$ & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} PHANTOM is the only method in this list that compresses 
+both \textbf{projections} (via CUR) \textbf{and attention} (via LSH).
+
+\subsection{Position of Our Work}
+
+PHANTOM is unique in combining:
+\begin{enumerate}
+\item \textbf{CUR decomposition} for interpretable low-rank projections.
+\item \textbf{Multi-round LSH} for content-adaptive sparse attention.
+\item \textbf{Rectified softpick} for stable sparse attention.
+
+\end{enumerate}
+Prior work addresses each of these individually, but no prior method combines 
+all three.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

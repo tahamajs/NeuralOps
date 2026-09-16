@@ -67,9 +67,9 @@ We compare three methods for computing $F_2^{-1}$:
 \toprule
 \textbf{Method} & \textbf{Accuracy} & \textbf{Time} \\
 \midrule
-SVD pinv (exact) & 86.5 & 1.0$\times$ \\
-Schulz from zero & 82.0 & 0.8$\times$ \\
-Schulz from SVD pinv & \textbf{86.5} & 1.2$\times$ \\
+SVD pinv (exact) & {{SVD\_ACC}} & 1.0$\times$ \\
+Schulz from zero & {{SCHULZ0\_ACC}} & 0.8$\times$ \\
+Schulz from SVD pinv & \textbf{{{D\_ACC}}} & 1.2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -83,7 +83,7 @@ $F_2$ is computed from all landmarks, which see the full sequence. This
 means the approximation is not strictly causal.
 
 \textbf{Effect on accuracy.} On GPT-2, causal Primal Attention drops 
-\textbf{3.5\%} compared to bidirectional Primal Attention on the 
+\textbf{{{CAUSAL\_DROP}}\%} compared to bidirectional Primal Attention on the 
 same weights.
 
 \textbf{Impact.} For classification tasks (SST-2), this is tolerable. For 
@@ -124,12 +124,12 @@ $X_0 = F_2^+$ gives $\|I - F_2 X_0\| \approx 0$, ensuring convergence.
 \toprule
 \textbf{Layer} & \textbf{$F_2$ condition} & \textbf{Approx error} \\
 \midrule
-0 & 5.2 & 0.08 \\
-1 & 6.1 & 0.09 \\
-2 & 7.5 & 0.11 \\
-3 & 9.0 & 0.13 \\
-4 & 10.5 & 0.15 \\
-5 & 12.0 & 0.18 \\
+0 & {{D\_L0\_COND}} & {{D\_L0\_ERR}} \\
+1 & {{D\_L1\_COND}} & {{D\_L1\_ERR}} \\
+2 & {{D\_L2\_COND}} & {{D\_L2\_ERR}} \\
+3 & {{D\_L3\_COND}} & {{D\_L3\_ERR}} \\
+4 & {{D\_L4\_COND}} & {{D\_L4\_ERR}} \\
+5 & {{D\_L5\_COND}} & {{D\_L5\_ERR}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -149,8 +149,8 @@ allows asymmetric. Comparison:
 \toprule
 \textbf{Method} & \textbf{Accuracy} & \textbf{Note} \\
 \midrule
-Nystr mformer (sym) & 86.0 & Baseline \\
-\textbf{Primal (asym)} & \textbf{86.5} & +0.5\% \\
+Nystr mformer (sym) & {{NYST\_ACC}} & Baseline \\
+\textbf{Primal (asym)} & \textbf{{{D\_ACC}}} & +{{ASYM\_GAIN}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -160,9 +160,13 @@ Nystr mformer (sym) & 86.0 & Baseline \\
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{Asymmetry helps:} +0.5\% over symmetric Nystr m.
+\item \textbf{Asymmetry helps:} +{{ASYM\_GAIN}}\% over symmetric Nystr m.
 \item \textbf{$m = 64$ is optimal} for $L = 128$.
 \item \textbf{Schulz from SVD pinv} is best.
 \item \textbf{Causality is approximate.}
 \item \textbf{Long $L$ benefits most.}
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

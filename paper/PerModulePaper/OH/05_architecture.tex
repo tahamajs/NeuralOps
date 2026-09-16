@@ -13,7 +13,7 @@
 DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
 RoBERTa & \texttt{BertSelfAttention} (nested) & Yes & No & No &  \\
 GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No &  \\
-Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & not tested \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & {{Q\_VERIFIED}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -143,3 +143,7 @@ class OptimizedHybridAttention(BaseAttention):
 
 OHA does \textbf{not} support cross-attention. The signature raises 
 \texttt{NotImplementedError} if \texttt{encoder\_hidden\_states} is provided.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

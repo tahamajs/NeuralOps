@@ -1,3 +1,174 @@
-\section{08 Analysis}
 
-Draft content for performer_attention.
+\section{Analysis}
+
+\subsection{Feature Map Behavior}
+
+The FAVOR+ feature map:
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} \exp\!\left(\omega^\top x - \max(\omega^\top x) - \frac{\|x\|^2}{2}\right) + \epsilon
+\]
+
+\textbf{Three components:}
+\begin{enumerate}
+\item \textbf{Max-subtraction:} stability.
+\item \textbf{Norm-subtraction:} matches the RFF formula for Gaussian kernel.
+\item \textbf{Epsilon:} positivity guarantee.
+
+\end{enumerate}
+\textbf{Analysis.} The $\epsilon$ adds a constant offset to every feature. This 
+is a slight deviation from the theoretical FAVOR+ but ensures numerical 
+stability.
+
+\subsection{Kernel Type Comparison}
+
+\textbf{Table 8.1: Kernel type ablation.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Kernel} & \textbf{DistilBERT} \\
+\midrule
+\texttt{favor\_plus} & {{D\_FAVOR}} \\
+\texttt{elu} & {{D\_ELU}} \\
+\texttt{relu} & {{D\_RELU}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} {{KERNEL\_OBS}}
+
+\subsection{Number of Features}
+
+\textbf{Table 8.2: Effect of $F$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$F$} & \textbf{DistilBERT} & \textbf{Params} \\
+\midrule
+32 & {{D\_F32}} & {{D\_F32\_P}} \\
+64 & {{D\_F64}} & {{D\_F64\_P}} \\
+128 & {{D\_F128}} & {{D\_F128\_P}} \\
+256 & {{D\_F256}} & {{D\_F256\_P}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Larger $F$ helps but with diminishing returns.
+
+\subsection{Causal Path Analysis}
+
+The causal path uses \textbf{chunk\_size = 64}. For $N = 128$: 2 iterations.
+
+\textbf{Compare with other modules:}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Module} & \textbf{chunk\_size} & \textbf{Iterations (N=128)} \\
+\midrule
+GatedDeltaNet & 8 & 16 \\
+ORION kernel & 64 & 2 \\
+\textbf{Performer} & \textbf{64} & \textbf{2} \\
+NASC sparse & 32 & 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Performer's chunked path is efficient.
+
+\subsection{The `inject\_performer` Raise Bug}
+
+Docstring: \texttt{Safe injection returning None on failure}.
+
+Code: \texttt{raise RuntimeError(f"Injection failed")}.
+
+\textbf{Impact.}
+
+\begin{itemize}
+\item Pipeline crashes instead of skipping.
+\item No graceful degradation.
+\item Inconsistent with the docstring.
+
+\end{itemize}
+\textbf{Fix:}
+
+\begin{lstlisting}
+except Exception as e:
+    logger.warning("PerformerAttention construction failed: %s", e)
+    return None
+\end{lstlisting}
+
+\subsection{The `output\_scale` Parameter}
+
+\texttt{LoRALinear.forward}:
+
+\begin{lstlisting}
+return out * self.output_scale
+\end{lstlisting}
+
+\textbf{Impact.}
+
+\begin{itemize}
+\item New parameter not in baseline checkpoint.
+\item \texttt{strict=True} loading fails.
+\item Defaults to 1.0 (harmless for \texttt{strict=False}).
+
+\end{itemize}
+\subsection{Comparison with Cosformer}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Aspect} & \textbf{Cosformer} & \textbf{Performer} \\
+\midrule
+Feature map & cos/sin of position & FAVOR+ orthogonal \\
+Theory & Locality & Variance reduction \\
+Encoder & Works & Works \\
+Decoder & Chunked prefix & Chunked prefix \\
+Empirical & {{COS\_D}}\% & {{D\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Both are strong linear-attention baselines.}
+
+\subsection{Failure Mode Taxonomy}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure Mode} & \textbf{Symptom} & \textbf{Root Cause} \\
+\midrule
+\textbf{Injection raises} & Crash & \texttt{raise RuntimeError} \\
+\textbf{\texttt{output\_scale} missing key} & Warning & New parameter \\
+\textbf{Encoder degrade} & Moderate drop & Feature approximation \\
+\textbf{Numerical instability} & NaN & Overflow (mitigated) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{FAVOR+ works} but with moderate accuracy drop on small models.
+\item \textbf{Numerical stabilization is essential} -- without it, FP16 overflows.
+\item \textbf{The \texttt{inject\_performer} raise bug} breaks the docstring contract.
+\item \textbf{\texttt{output\_scale} is unnecessary} and should be removed.
+\item \textbf{The feature map's $\epsilon$} slightly deviates from theory.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

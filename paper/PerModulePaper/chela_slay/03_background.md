@@ -129,5 +129,6 @@ with $B = 0$ initially.
 | $F$ | Number of RFF features |
 | $g$ | Adaptive gate |
 | $L, d_h$ | Sequence length, head dim |
+```
 
 ---

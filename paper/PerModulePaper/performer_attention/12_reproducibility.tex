@@ -1,3 +1,125 @@
-\section{12 Reproducibility}
 
-Draft content for performer_attention.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_performer.py \
+    --models distilbert,roberta,gpt2 \
+    --num_features {{NUM_FEATURES}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Downloading Checkpoints}
+
+\begin{lstlisting}
+from huggingface_hub import hf_hub_download
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-performer",
+        filename="weights.pt",
+    )
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Main Results}
+
+\begin{lstlisting}
+python run_all_4_performer.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Feature Ablation}
+
+\begin{lstlisting}
+for F in 32 64 128 256; do
+    python run_all_4_performer.py --num_features $F --output_suffix f$F
+done
+\end{lstlisting}
+
+\subsubsection{Kernel Type Ablation}
+
+\begin{lstlisting}
+python run_all_4_performer.py --kernel_type favor_plus --output_suffix favor
+python run_all_4_performer.py --kernel_type elu --output_suffix elu
+python run_all_4_performer.py --kernel_type relu --output_suffix relu
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+seed = 42
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Status} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 2\% & {{D\_STATUS}} \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 3\% & {{R\_STATUS}} \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 2\% & {{G\_STATUS}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Diagnostics}
+
+\subsubsection{Verify Feature Positivity}
+
+\begin{lstlisting}
+Q_feat = model._feature_map(Q)
+assert (Q_feat >= 0).all(), "Feature map produced negative values!"
+\end{lstlisting}
+
+\subsubsection{Verify Omega Persistence}
+
+\begin{lstlisting}
+sd = model.state_dict()
+assert any('omega' in k for k in sd), "omega NOT persisted!"
+\end{lstlisting}
+
+\subsubsection{Verify Causal Path}
+
+\begin{lstlisting}
+x = torch.randn(1, 128, 768, requires_grad=True)
+y = model(x)
+y[0, 50].sum().backward()
+assert x.grad[0, 51:].abs().max() < 1e-6
+\end{lstlisting}
+
+\subsection{Known Issues}
+
+\begin{itemize}
+\item \textbf{\texttt{inject\_performer} raises} instead of returning None.
+\item \textbf{\texttt{output\_scale}} new parameter.
+\item \textbf{Cross-attention not supported.}
+
+\end{itemize}
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Code: \texttt{framework/attentions/performer.py}
+\item Metrics: \texttt{results/unified\_performer/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/performer\_*.log}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

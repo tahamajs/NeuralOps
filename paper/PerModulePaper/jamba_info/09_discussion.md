@@ -79,5 +79,6 @@ Combined pipeline:
 2. **Human-interpretable concepts:** Can the bottleneck be aligned to human concepts?
 3. **PCA init:** Would PCA initialization help?
 4. **Cross-attention:** How to extend?
+```
 
 ---

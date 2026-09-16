@@ -76,7 +76,7 @@ r^{(\ell)} = \min\left\{ r : \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{\min(m, 
 \]
 
 Each projection is stored as a product $W \approx U V^\top$ with $U \in 
-\mathbb{R}^{d\_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d\_\text{in}}$, 
+\mathbb{R}\^{}{d\_\text{out} \times r}$ and $V \in \mathbb{R}\^{}{r \times d\_\text{in}}$, 
 reducing parameters from $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$. 
 Trainable LoRA residual adapters are added on top with zero initialization, 
 providing task-specific capacity while keeping the SVD base frozen.

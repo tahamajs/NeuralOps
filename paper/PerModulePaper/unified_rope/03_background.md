@@ -147,5 +147,6 @@ so they are not saved with the model state dict.
 | $\omega_k$ | Rotation frequency |
 | $r$ | Rotary dimension |
 | $r_L, \alpha$ | LoRA rank, scaling |
+```
 
 ---

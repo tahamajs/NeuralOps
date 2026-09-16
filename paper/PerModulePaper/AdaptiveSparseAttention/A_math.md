@@ -118,3 +118,6 @@ $$
 
 For $m_j \ll 1$, $\log m_j < 0$, so $H(\tilde{p}) < H(p)$. Sparsity reduces 
 entropy.
+```
+
+---

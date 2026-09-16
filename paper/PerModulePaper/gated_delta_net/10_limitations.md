@@ -94,5 +94,6 @@ match those speeds.
 - Not a practical attention replacement
 - Not a comparison with Mamba or GLA
 - Not a scaling study
+```
 
 ---

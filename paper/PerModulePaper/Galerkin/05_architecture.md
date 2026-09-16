@@ -152,5 +152,6 @@ positions or content. This is the root cause of the negative results.
 
 If `is_nested_encoder` is wrong, the output projection is applied twice 
 (once inside our module, once by the outer block).
+```
 
 ---

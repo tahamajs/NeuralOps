@@ -1,3 +1,72 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for moba.
+\subsection{State-Space Models}
+
+\subsubsection{Classical SSMs}
+
+\textbf{S4} (Gu et al., 2022) introduced structured state-space models with 
+diagonal plus low-rank A matrices, achieving $\mathcal{O}(L)$ complexity. 
+\textbf{S5} (Smith et al., 2023) parallelized the SSM scan across time.
+
+\subsubsection{Selective SSMs (Mamba)}
+
+\textbf{Mamba} (Gu \& Dao, 2023) introduced \textbf{input-dependent} state transitions:
+
+\[
+h_t = \bar{A}(x_t) h_{t-1} + \bar{B}(x_t) x_t
+\tag{2.1}
+\]
+
+where $\bar{A}, \bar{B}$ depend on the input $x_t$. This selective mechanism 
+makes the SSM behave like a learned, content-aware recurrence.
+
+\textbf{Our distinction.} Our implementation \textbf{does not} perform a true selective 
+scan. We use learned exponential decay as a \textbf{proxy} for the selectivity, 
+implemented as a pairwise softmax over positions.
+
+\subsection{Efficient Attention}
+
+\textbf{Linformer} (Wang et al., 2020) projects K, V to a fixed rank. 
+\textbf{Performer} (Choromanski et al., 2021) uses random Fourier features. 
+\textbf{Longformer} (Beltagy et al., 2020) uses sparse local windows.
+
+\textbf{Our distinction.} We exploit SSM-inspired decay rather than a fixed 
+sequence projection or kernel approximation.
+
+\subsection{Attention-Replacement Modules}
+
+\textbf{Hyena} (Poli et al., 2023) uses long convolutions. \textbf{RWKV} (Peng et al., 
+2023) uses a linear recurrence with time-decay. \textbf{RetNet} (Sun et al., 2023) 
+uses a retention mechanism with decay.
+
+\textbf{Our distinction.} We operate on pretrained attention weights, reusing 
+$W_Q, W_K, W_V, W_O$ in the SSM structure.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Reuses pretrained?} & \textbf{Causal} & \textbf{Bidirectional} \\
+\midrule
+Mamba & $\mathcal{O}(L)$ & No & Yes & Yes (Bi-Mamba) \\
+Hyena & $\mathcal{O}(L \log L)$ & No & Yes & Yes \\
+RWKV & $\mathcal{O}(L)$ & No & Yes & No \\
+\textbf{Ours} & \textbf{$\mathcal{O}(L^2 D)$} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} We reuse pretrained attention weights in an SSM-inspired 
+formulation, trading complexity for compatibility with pretrained transformers.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -66,5 +66,6 @@ attention** with **SSM** in a single module with learned fusion.
 | Diff Transformer | $O(L^2)$ | Yes | Yes | $6 d^2$ |
 | Hymba | $O(L^2 + L)$ | No | Yes | $7 d^2$ |
 | **HymbaTransX** | $O(L^2 + L)$ | **Yes** | **Yes** | **$7 d^2$** |
+```
 
 ---

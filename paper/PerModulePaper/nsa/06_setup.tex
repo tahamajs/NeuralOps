@@ -48,10 +48,10 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-Window size $w$ & 32 \\
-Top-$k$ count $k$ & 16 \\
-LoRA rank & 16 \\
-LoRA alpha & 32 \\
+Window size $w$ & {{WINDOW\_SIZE}} \\
+Top-$k$ count $k$ & {{TOP\_K}} \\
+LoRA rank & {{LORA\_RANK}} \\
+LoRA alpha & {{LORA\_ALPHA}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -66,10 +66,10 @@ LoRA alpha & 32 \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & 2e-4 \\
-Weight decay & 1e-2 \\
-Steps & 50 \\
-Batch size & 8 \\
+LR & {{LR}} \\
+Weight decay & {{WD}} \\
+Steps & {{RECOVERY\_STEPS}} \\
+Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -124,8 +124,8 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
-CUDA & 12.1 \\
-PyTorch & 2.4.0 \\
+CUDA & {{CUDA\_VERSION}} \\
+PyTorch & {{TORCH\_VERSION}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -135,9 +135,14 @@ PyTorch & 2.4.0 \\
 \begin{lstlisting}
 python run_all_4_nsa.py \
     --models distilbert,roberta,gpt2 \
-    --window_size 32 \
-    --top_k 16 \
-    --recovery_steps 50
+    --window_size {{WINDOW_SIZE}} \
+    --top_k {{TOP_K}} \
+    --recovery_steps {{RECOVERY_STEPS}}
 \end{lstlisting}
 
 \subsection{Ablations}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -76,5 +76,6 @@ and multi-architecture support, not a new attention algorithm.
 | FlashAttention-3 | **6×** | N/A | ✅ | — |
 | SDPA (builtin) | 3× | 3× | Partial | ✅ |
 | **Ours** | **6×** | **3×** | ✅ | ✅ |
+```
 
 ---

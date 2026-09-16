@@ -1,0 +1,233 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FILE: 04_method.md
+     PURPOSE: The core method
+     DEPENDENCIES: 03_background.md
+     LENGTH TARGET: 3 - 4 pages
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+# 4. Method
+
+## 4.1 Overview
+
+FASA has two paths:
+
+```
+                 Input X
+                    │
+                    ▼
+              ┌───────────┐
+              │  Q/K/V    │
+              │ projection│
+              └─────┬─────┘
+                    │
+                    ▼
+              ┌───────────┐
+              │ is_causal │
+              │ or cross? │
+              └──┬────┬───┘
+                 │ No │ Yes
+                 │    │
+                 ▼    ▼
+       ┌──────────┐  ┌──────────────────┐
+       │ FASA     │  │ Standard full    │
+       │ prune    │  │ attention        │
+       │ K/V      │  │ (no pruning)     │
+       └────┬─────┘  └──────────┬───────┘
+            │                   │
+            └────┬──────────────┘
+                 │
+                 ▼
+           Output Y
+```
+
+## 4.2 Importance Scoring
+
+For keys $K \in \mathbb{R}^{B \times H \times L \times d_h}$:
+
+$$
+\text{imp}(b, i) = \frac{1}{H} \sum_{h=1}^{H} \text{Var}_{d_h}(K_{b,h,i,:})
+\tag{4.1}
+$$
+
+**Two aggregation steps:**
+1. **Variance over head dimension $d_h$.** For each (batch, head, position), 
+   compute the variance of the $d_h$-dimensional key vector.
+2. **Mean over heads.** Aggregate across heads into a per-position score.
+
+**Default method:** `importance_method = "var"`.
+
+**Alternative:** `importance_method = "l2"` uses the L2 norm of the key 
+instead:
+
+$$
+\text{imp}(b, i) = \frac{1}{H} \sum_{h=1}^{H} \|K_{b,h,i,:}\|_2
+\tag{4.2}
+$$
+
+## 4.3 CLS Pinning
+
+Index 0 is always preserved:
+
+$$
+\text{imp}(b, 0) \leftarrow 10^9
+\tag{4.3}
+$$
+
+This ensures CLS is selected by the top-$k$ operation regardless of its 
+variance.
+
+## 4.4 Top-$k$ Selection
+
+Let $r$ be the keep ratio. The number of tokens to keep:
+
+$$
+k = \max\!\left(8, \min\!\left(L, \lfloor r L \rfloor\right)\right)
+\tag{4.4}
+$$
+
+The `max(8, ...)` floor prevents over-pruning short sequences.
+
+The selected indices:
+
+$$
+\mathcal{S} = \text{topk}_k(\text{imp}) \quad \text{(sorted ascending)}
+\tag{4.5}
+$$
+
+Sorting ensures stable gather and preserves positional order.
+
+## 4.5 Pruned Attention
+
+Given $\mathcal{S}$, gather:
+
+$$
+K_{\mathcal{S}} = \text{gather}(K, \mathcal{S}), \quad
+V_{\mathcal{S}} = \text{gather}(V, \mathcal{S})
+\tag{4.6}
+$$
+
+Then compute standard attention:
+
+$$
+\text{Attn}' = \text{softmax}\!\left(\frac{Q K_{\mathcal{S}}^\top}{\sqrt{d_h}}\right)V_{\mathcal{S}}
+\tag{4.7}
+$$
+
+**Cost reduction.** Scores matrix: $L \times L$ → $L \times k$. Value matmul: 
+$L \times L \times d_h$ → $L \times k \times d_h$.
+
+## 4.6 The Decoder Path
+
+**Critical.** For causal attention, FASA **does not prune**. The code:
+
+```python
+is_causal = bool(self.is_decoder and not is_cross and L > 1)
+if is_causal or is_cross:
+    # Standard full attention
+    scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+    if is_causal:
+        causal_mask = torch.triu(...)
+        scores = scores + causal_mask
+    ...
+```
+
+**Why?** Pruning would remove tokens from the middle of the sequence. For 
+causal attention, a query at position $i$ attends to all $j \leq i$; if we 
+prune some $j$, the causal mask's diagonal structure is broken. To preserve 
+strict causality, FASA skips pruning.
+
+**Consequence.** For GPT-2, FASA does **no sparsification** — it acts as a 
+LoRA-only adapter.
+
+## 4.7 Parameter Analysis
+
+| Component | Baseline | FASA |
+|---|---|---|
+| Q/K/V/O projections | $4d^2$ | $4d^2 + \text{LoRA}$ |
+| Other | 0 | 0 |
+
+**FASA does not add non-LoRA parameters.** The pruning is purely 
+algorithmic.
+
+## 4.8 Complexity Analysis
+
+| Path | Time | Memory |
+|---|---|---|
+| Bidirectional (pruned) | $O(L \cdot k \cdot d_h + L d^2)$ | $O(L k)$ |
+| Causal (unpruned) | $O(L^2 d_h + L d^2)$ | $O(L^2)$ |
+| Baseline MHSA | $O(L^2 d_h + L d^2)$ | $O(L^2)$ |
+
+For $k = rL$ with $r = 0.5$: bidirectional scores reduce by factor 2.
+
+## 4.9 Algorithm
+
+**Algorithm 1:** FASA forward
+```
+Input:  X ∈ R^{B×L×d}, is_causal, fasa_keep_ratio r
+Output: Y ∈ R^{B×L×d}
+
+ 1: Q ← X W_Q;  K ← X W_K;  V ← X W_V
+ 2: if RoPE: (Q, K) ← Rotary(Q, K)
+ 3: if GQA: (K, V) ← repeat_kv(K, V)
+ 4:
+ 5: is_causal ← is_decoder and not cross
+ 6:
+ 7: if is_causal or cross:
+ 8:     # Standard full attention (no pruning)
+ 9:     scores ← Q K^T / sqrt(d_h)
+10:     apply causal mask if needed
+11:     attn ← softmax(scores)
+12:     out ← attn @ V
+13: else:
+14:     # FASA pruning path
+15:     imp ← mean_over_heads(Var_over_dh(K))
+16:     imp[:, 0] ← 1e9               ▷ CLS pinning
+17:     k ← max(8, min(L, floor(r * L)))
+18:     S ← sorted_topk(imp, k)
+19:     K_S ← gather(K, S);  V_S ← gather(V, S)
+20:     scores ← Q K_S^T / sqrt(d_h)
+21:     attn ← softmax(scores)
+22:     out ← attn @ V_S
+23:
+24: if nested encoder:
+25:     return out
+26: else:
+27:     return out_proj(out)
+```
+
+## 4.10 Theoretical Notes
+
+### 4.10.1 Pruning Error
+
+**Upper bound.** For any $Q$, the pruned attention differs from full attention by:
+
+$$
+\|\text{Attn}'(Q, K, V) - \text{Attn}(Q, K, V)\|_2 \leq \|V_{\bar{\mathcal{S}}}\|_2 \cdot \max_i \text{softmax}_i
+\tag{4.8}
+$$
+
+where $\bar{\mathcal{S}}$ is the complement of $\mathcal{S}$. The error is 
+proportional to the **mass of pruned values**.
+
+**No formal bound** exists for FASA's variance-based selection. We provide 
+no theoretical guarantee that high-variance keys correspond to high-attention 
+keys.
+
+### 4.10.2 CLS Pinning
+
+The CLS token receives disproportionate attention in practice. Pinning it 
+avoids a catastrophic failure mode.
+
+### 4.10.3 Causal Preservation
+
+For causal decoders, the code explicitly avoids pruning, so causality is 
+preserved exactly. This is a **correctness guarantee**, not a heuristic.
+
+### 4.10.4 Why the Decoder Path is a No-Op
+
+The decoder path uses the **same standard full attention** as the baseline. 
+The only difference is that FASA adds LoRA adapters to the projections. 
+Hence GPT-2's accuracy is essentially unchanged.
+```
+
+---

@@ -152,5 +152,6 @@ parameter count.
 - **Accuracy drop:** {{D_DELTA}}%–{{G_DELTA}}%
 - **All three models pass quality gate.**
 - **Reproduction successful:** MLA ports to four non-DeepSeek families.
+```
 
 ---

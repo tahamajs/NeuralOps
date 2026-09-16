@@ -104,3 +104,6 @@ which kills the injection on any failure. Recommend changing to `return None`.
 | Attention scores | FP32 |
 | Softmax | FP32 |
 | Output | Model dtype |
+```
+
+---

@@ -1,3 +1,180 @@
-\section{07 Results}
 
-Draft content for rala_attention.
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: SST-2 accuracy.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$} & \textbf{Time} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 1.9 s \\
+DistilBERT & \textbf{RALA} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & +{{D\_PARAM\_PCT}}\% & {{D\_TIME}} \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 4.1 s \\
+RoBERTa & \textbf{RALA} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & +{{R\_PARAM\_PCT}}\% & {{R\_TIME}} \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 4.2 s \\
+GPT-2 & \textbf{RALA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & +{{G\_PARAM\_PCT}}\% & {{G\_TIME}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After} & \textbf{$\Delta$} & \textbf{$\Delta$\%} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_ABS}} & +{{D\_PARAM\_PCT}}\% \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_ABS}} & +{{R\_PARAM\_PCT}}\% \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_ABS}} & +{{G\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} RALA is \textbf{not} a compression method. Parameter count increases 
+because of LoRA adapters and the augmentation matrices.
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{RALA} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 1.9 s & {{D\_TIME}} s & {{D\_TIME\_R}}$\times$ \\
+RoBERTa & 4.1 s & {{R\_TIME}} s & {{R\_TIME\_R}}$\times$ \\
+GPT-2 & 4.2 s & {{G\_TIME}} s & {{G\_TIME\_R}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} The slowdown is dominated by the sequential causal prefix scan.
+
+\subsection{Ablation: Augmentation Rank}
+
+\textbf{Table 7.4: Effect of augmentation rank $r$ (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Rank} & \textbf{Acc} & \textbf{Extra params} \\
+\midrule
+1 & {{D\_R1}} & 6,150 \\
+2 & {{D\_R2}} & 12,294 \\
+4 & {{D\_R4}} & 24,582 \\
+8 & {{D\_R8}} & 49,158 \\
+16 & {{D\_R16}} & 98,310 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Alpha Init}
+
+\textbf{Table 7.5: Effect of $\alpha$ initialization.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$\alpha_0$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.0 & {{D\_A0}} & {{R\_A0}} & {{G\_A0}} \\
+0.1 & {{D\_A1}} & {{R\_A1}} & {{G\_A1}} \\
+1.0 & {{D\_A10}} & {{R\_A10}} & {{G\_A10}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Kernel Choice}
+
+\textbf{Table 7.6: Effect of kernel feature map.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Kernel} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+softplus & {{D\_SOFT}} & {{R\_SOFT}} & {{G\_SOFT}} \\
+elu+1 & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
+ReLU & {{D\_RELU}} & {{R\_RELU}} & {{G\_RELU}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Prior Modules}
+
+\textbf{Table 7.8: Cross-module comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Module} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params $\Delta$} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 0 \\
+nha & 90.25\% & FAIL & 78.78\% & +0.88\% \\
+nasc & 90.71\% & 64.56\% & 78.44\% & +0.94\% \\
+\textbf{rala} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & +{{D\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Loss Curves}
+
+\textbf{Figure 7.1} shows recovery loss for RALA.
+
+\begin{itemize}
+\item DistilBERT: {{D\_LOSS\_TRAJ}}
+\item RoBERTa: {{R\_LOSS\_TRAJ}}
+\item GPT-2: {{G\_LOSS\_TRAJ}}
+
+\end{itemize}
+\subsection{Summary}
+
+\begin{itemize}
+\item RALA is a \textbf{linear attention replacement}, not a compressor.
+\item Accuracy drop: {{D\_DELTA}}\%, {{R\_DELTA}}\%, {{G\_DELTA}}\%.
+\item Parameter increase: +{{D\_PARAM\_PCT}}\%.
+\item Inference time: {{D\_TIME\_R}}$\times$ (due to sequential prefix scan).
+\item Verdict: \textbf{{{VERDICT}}}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

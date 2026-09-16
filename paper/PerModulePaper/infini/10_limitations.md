@@ -86,3 +86,6 @@ Research-grade implementation. Known issues:
 - No unit tests
 - Broad exception handling
 - NaN not explicitly handled in memory branch
+```
+
+---

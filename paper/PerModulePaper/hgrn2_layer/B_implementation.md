@@ -137,5 +137,6 @@ Without `res_clip`, states can grow unbounded.
 
 For RoBERTa, forgetting to set `output.dense = nn.Identity()` causes 
 double projection.
+```
 
 ---

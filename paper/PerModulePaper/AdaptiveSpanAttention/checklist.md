@@ -88,3 +88,55 @@ python run_all_4_adaptive_span.py --models distilbert,roberta,gpt2 --max_span 12
 cd D:\SVD_Project\papers\adaptive_span
 python apply_vars.py --module adaptive_span
 python build.py --module adaptive_span
+```
+
+---
+
+## 💡 نکات کلیدی ASA-Span
+
+### ۱. تفاوت اصلی با ASA-Sparse
+
+| جنبه | ASA-Sparse | ASA-Span |
+|---|---|---|
+| انتخاب | top-k (content-aware) | distance-based |
+| پارامتر | sparsity_logit | span_logit |
+| Mask | sigmoid soft top-k | linear ramp |
+| Regularization | ندارد | L1 روی span |
+
+### ۲. Soft Ramp — مزیت اصلی
+
+$$
+g_z(d) = \text{clamp}\left(\frac{R + z - d}{R}, 0, 1\right)
+$$
+
+- **Piecewise linear** → ساده
+- **Differentiable** → قابل یادگیری
+- **No hard cutoff** → بدون artifact مرزی
+
+### ۳. Initialize Open, Learn to Shrink
+
+- Span اولیه = $S_\text{max}$ (کاملاً باز)
+- L1 penalty → باعث shrink تدریجی
+- Equilibrium: span به اندازه‌ای که accuracy حفظ شود
+
+### ۴. Head Heterogeneity — مهم‌ترین تفسیر
+
+از روی learned spans می‌فهمی:
+- کدام heads **local** هستند (span ~16)
+- کدام heads **global** هستند (span ~128)
+- این **ساختار** در روش‌های دیگر دیده نمی‌شود
+
+### ۵. بدون Speedup
+
+ASA-Span **سرعت inference را کم نمی‌کند** چون همه scores محاسبه می‌شوند. برای speedup واقعی:
+
+1. Train با soft ramp
+2. Extract learned spans
+3. Hard truncate at inference
+4. Sparse kernel
+
+این محدودیت را **صادقانه** در abstract و discussion ذکر کن.
+
+---
+
+**قدم بعدی: `variables.json` را با اعداد واقعی از `results/unified_adaptive_span/*/summary.csv` پر کن. اگر خواستی من این کار را برایت انجام دهم — فقط اعداد CSV را بفرست.**

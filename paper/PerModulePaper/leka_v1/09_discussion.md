@@ -76,5 +76,6 @@ LEKAv1 composes with:
 1. **Blocked cumsum:** How to reduce memory?
 2. **Adaptive F:** Should F vary per layer?
 3. **Combined with Performer:** PORF + cos/sin?
+```
 
 ---

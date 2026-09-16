@@ -1,3 +1,297 @@
-\section{04 Method}
+\section{Method}
 
-Draft content for lora_attention.
+\subsection{Overview}
+
+LoRA Attention replaces each of the four attention projections with a 
+\textbf{LoRALinear} module:
+
+\[
+y = \underbrace{W_\text{frozen} x}_{\text{frozen, copied from pretrained}} + 
+    \underbrace{\frac{\alpha}{r_L} B A x}_{\text{trainable LoRA}}
+\tag{4.1}
+\]
+
+\textbf{Figure 4.1} shows the pipeline. The base weight is copied from the 
+pretrained attention via \texttt{copy\_weights}, and LoRA adapters are initialized 
+to zero ($B = 0$), so the initial forward pass exactly matches the baseline.
+
+\begin{lstlisting}
+        Input X
+           |
+            
+    +----------------------+
+    | Base W (frozen)      |
+    | + LoRA (trainable)   |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Q, K, V projections  |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | RoPE (if applicable) |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | GQA repeat (if app.) |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Scaled dot-product   |
+    | attention            |
+    +-------+--------------+
+            |
+    +------- --------------+
+    | Output projection    |
+    | + LoRA               |
+    +-------+--------------+
+            |
+        Output
+\end{lstlisting}
+
+\subsection{LoRALinear Module}
+
+\begin{lstlisting}
+class LoRALinear(nn.Module):
+    def __init__(self, in_features, out_features, bias=True, 
+                 lora_rank=16, lora_alpha=32.0, freeze_base=False):
+        super().__init__()
+        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        
+        if lora_rank > 0:
+            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
+            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+            # A: Kaiming, B: zeros
+            nn.init.kaiming_uniform_(self.lora_A)
+            nn.init.zeros_(self.lora_B)
+        
+        if freeze_base:
+            self.weight.requires_grad = False
+            if self.bias is not None:
+                self.bias.requires_grad = False
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.lora_scaling = lora_alpha / lora_rank if lora_rank > 0 else 1.0
+    
+    def forward(self, x):
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank > 0:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        return out * self.output_scale
+\end{lstlisting}
+
+\textbf{Note.} We add a trainable \texttt{output\_scale} scalar initialized to 1.0. This 
+allows the model to globally re-scale the attention output if needed.
+
+\subsection{Weight Transfer}
+
+\texttt{copy\_weights} extracts base weights from the pretrained attention and 
+copies them into the LoRALinear modules. It handles four patterns:
+
+\subsubsection{Pattern 1: GPT-2 Conv1D}
+
+\begin{lstlisting}
+if hasattr(src, "c_attn"):
+    weight = src.c_attn.weight.data
+    if weight.shape[1] == 3 * self.hidden_size:
+        weight = weight.t()
+    q_w, k_w, v_w = weight.chunk(3, dim=0)
+    extracted["q"] = (q_w, ...)
+    extracted["k"] = (k_w, ...)
+    extracted["v"] = (v_w, ...)
+\end{lstlisting}
+
+\subsubsection{Pattern 2: RoBERTa Nested}
+
+\begin{lstlisting}
+if hasattr(src, "self"):
+    s = src.self
+    extracted["q"] = (s.query.weight, ...)
+    extracted["k"] = (s.key.weight, ...)
+    extracted["v"] = (s.value.weight, ...)
+if hasattr(src, "output") and hasattr(src.output, "dense"):
+    extracted["o"] = (src.output.dense.weight, ...)
+\end{lstlisting}
+
+\subsubsection{Pattern 3: Named Projections}
+
+\begin{lstlisting}
+named_map = {
+    "q": ["q_proj", "q_lin", "query"],
+    "k": ["k_proj", "k_lin", "key"],
+    "v": ["v_proj", "v_lin", "value"],
+    "o": ["o_proj", "out_proj", "out_lin", "dense"],
+}
+\end{lstlisting}
+
+\subsubsection{Pattern 4: UniversalAdapter Fallback}
+
+\begin{lstlisting}
+for proj in ["q", "k", "v", "o"]:
+    try:
+        w, b = UniversalAdapter.get_weight_bias(src, proj)
+        if w is not None:
+            extracted[proj] = (w, b)
+    except Exception:
+        pass
+\end{lstlisting}
+
+\subsection{Nested Detection}
+
+The critical detection logic:
+
+\begin{lstlisting}
+cls_name = src.__class__.__name__
+has_out_proj = any(hasattr(src, attr) for attr in 
+                   ("dense", "out_proj", "c_proj", "out_lin", "o_proj", ...))
+
+is_nested = False
+if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+    is_nested = True
+elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention", ...)
+      or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
+    is_nested = True
+self.is_nested_encoder = bool(is_nested)
+\end{lstlisting}
+
+\textbf{Rule:}
+\begin{itemize}
+\item If \texttt{self.query} exists $\to$ nested (RoBERTa).
+\item If class name is \texttt{BertSelfAttention}/\texttt{RobertaSelfAttention} $\to$ nested.
+\item If class name ends with "SelfAttention" \textbf{AND} lacks any output projection $\to$ nested.
+\item Otherwise $\to$ flat.
+
+\end{itemize}
+\subsection{Forward Pass}
+
+\textbf{Algorithm 1:} LoRA Attention forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ q_proj(X)                         base + LoRA
+ 2: K $\leftarrow$ k_proj(X)                         base + LoRA
+ 3: V $\leftarrow$ v_proj(X)                         base + LoRA
+ 4: Reshape to (B, H, L, d_h)
+ 5: if RoPE: Q, K $\leftarrow$ apply_rotary(Q, K)
+ 6: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
+ 7: scores $\leftarrow$ Q K^T / $\sqrt{}$d_h
+ 8: if causal: mask(scores, tril)
+ 9: if padding: mask(scores, valid)
+10: attn $\leftarrow$ softmax(scores)
+11: Context $\leftarrow$ attn V
+12: Context $\leftarrow$ reshape(B, L, H d_h)
+13: if is_nested_encoder:
+14:     return Context    outer layer applies out_proj
+15: Y $\leftarrow$ out_proj(Context)
+16: return Y
+\end{lstlisting}
+
+\subsection{Parameter Analysis}
+
+Per attention layer (excluding base weights):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+\texttt{lora\_A\_q} & $r_L \cdot d$ \\
+\texttt{lora\_B\_q} & $H d_h \cdot r_L$ \\
+\texttt{lora\_A\_k} & $r_L \cdot d$ \\
+\texttt{lora\_B\_k} & $H_{kv} d_h \cdot r_L$ \\
+\texttt{lora\_A\_v} & $r_L \cdot d$ \\
+\texttt{lora\_B\_v} & $H_{kv} d_h \cdot r_L$ \\
+\texttt{lora\_A\_o} & $r_L \cdot H d_h$ \\
+\texttt{lora\_B\_o} & $d \cdot r_L$ \\
+\texttt{output\_scale} & 1 \\
+\textbf{Total} & $r_L (2d + 2 H d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $d_h = 64$, $H = 12$, $r_L = 16$:
+
+\[
+\text{Trainable}_\text{LoRA} = 16 \cdot (2 \cdot 768 + 2 \cdot 768) = 49,152
+\tag{4.2}
+\]
+
+Per layer: ~49K trainable, compared to 2.36M frozen parameters.
+
+\subsection{Mergeability}
+
+After training, we can merge LoRA into the base weight:
+
+\[
+W_\text{merged} = W_\text{frozen} + \frac{\alpha}{r_L} B A
+\tag{4.3}
+\]
+
+Then:
+
+\[
+y = W_\text{merged} x + b
+\tag{4.4}
+\]
+
+\textbf{Zero inference overhead} -- the merged model is identical in structure to 
+the original.
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Training Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Operation} & \textbf{Full FT} & \textbf{LoRA Attention} \\
+\midrule
+Forward & $\mathcal{O}(L^2 d_h)$ & $\mathcal{O}(L^2 d_h)$ \\
+Backward (base) & $\mathcal{O}(L^2 d_h)$ & 0 \\
+Backward (LoRA) & -- & $\mathcal{O}(L^2 d_h \cdot r_L/d)$ \\
+Optimizer step & $\mathcal{O}(d^2)$ & $\mathcal{O}(r_L d)$ \\
+Memory (per param) & 10 bytes & 10 bytes (only adapters) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Inference Complexity}
+
+After merging: \textbf{identical to baseline}.
+
+Before merging: adds $\mathcal{O}(L \cdot r_L \cdot d)$ per projection.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Zero Initialization}
+
+\textbf{Claim.} At initialization, LoRA Attention is exactly equivalent to the 
+pretrained attention.
+
+\textbf{Proof.} $B = 0$, so $\Delta W = 0$. Thus $W_\text{eff} = W_\text{frozen}$. $\square$
+
+\subsubsection{Mergeability Preserves Expressivity}
+
+\textbf{Claim.} Any parameter set achievable by the LoRA branch is achievable 
+by the merged weight.
+
+\textbf{Proof.} $W_\text{merged} = W_\text{frozen} + BA$. Trivially achievable. $\square$
+
+\subsubsection{Nested Encoder Correctness}
+
+\textbf{Claim.} For nested encoders, skipping the output projection yields 
+correct attention output.
+
+\textbf{Proof.} The nested outer layer applies $W_O$. Our module returning raw 
+context matches the original architecture's flow. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}

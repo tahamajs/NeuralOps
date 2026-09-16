@@ -64,10 +64,38 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the routing\_attention module within modern transformer architectures.
+
+Sparse attention methods aim to reduce the quadratic cost of self-attention by 
+restricting each query to a subset of keys. We introduce \textbf{Routing Attention}, 
+which partitions the sequence into content-based clusters via online k-means 
+on the joint query-key representation, then restricts each query to keys within 
+its own cluster (plus a global context anchor at position 0).
+
+The method has three components: (i) \textbf{content-based clustering} via 
+$k$-means on $\ell_2$-normalized $(Q + K)$ features; (ii) **cluster-restricted 
+attention** where each query attends only to keys in its assigned cluster; 
+and (iii) \textbf{token-0 anchoring} which preserves the first token as a universal 
+context key. Base weights are transferred from the pretrained attention via 
+a multi-architecture \texttt{copy\_weights} procedure, and trainable capacity is 
+provided by LoRA adapters at rank $r = {{LORA_RANK}}$.
+
+We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2. Accuracy is preserved 
+within \textbf{{{D\_DELTA}}\%} (DistilBERT), \textbf{{{R\_DELTA}}\%} (RoBERTa), and 
+\textbf{{{G\_DELTA}}\%} (GPT-2). Parameter count increases by \textbf{{{D\_PARAM\_PCT}}\%} 
+due to LoRA adapters; this is \textbf{not} a compression method. We honestly report 
+that the current implementation does \textbf{not} achieve real sparsity speedups: 
+the loop over $K$ clusters recomputes $K$ full attention matrices, making the 
+naive complexity $\mathcal{O}(K \cdot BHL^2)$ -- worse than dense attention. 
+We identify the necessary changes (sparse kernels, dense clustering with 
+differentiable assignment) to make Routing Attention practical.
+
+\textbf{Keywords:} sparse attention, k-means clustering, content-based routing, 
+efficient transformers
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} routing\_attention, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} sparse attention, k-means clustering, content-based routing,
 \end{abstract}
 
 \vspace{1em}

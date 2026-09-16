@@ -1,3 +1,149 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for reap_moe.
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+$\Delta$ Params & {{D\_PARAM\_CHANGE}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Precision & {{D\_PREC}} \\
+Recall & {{D\_REC}} \\
+Loss & {{D\_LOSS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Time & {{D\_TIME}} s \\
+Aux loss & {{D\_AUX}} \\
+Max/Min utilization & {{D\_MAXMIN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+$\Delta$ Params & {{R\_PARAM\_CHANGE}} \\
+Accuracy & {{R\_ACC}}\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+$\Delta$ Params & {{G\_PARAM\_CHANGE}} \\
+Accuracy & {{G\_ACC}}\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Expert Utilization (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Expert} & \textbf{Utilization} & \textbf{Mean gate prob} \\
+\midrule
+0 & {{D\_E0}}\% & {{D\_P0}} \\
+1 & {{D\_E1}}\% & {{D\_P1}} \\
+2 & {{D\_E2}}\% & {{D\_P2}} \\
+3 & {{D\_E3}}\% & {{D\_P3}} \\
+4 & {{D\_E4}}\% & {{D\_P4}} \\
+5 & {{D\_E5}}\% & {{D\_P5}} \\
+6 & {{D\_E6}}\% & {{D\_P6}} \\
+7 & {{D\_E7}}\% & {{D\_P7}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Number of Experts Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{E} & \textbf{DistilBERT} & \textbf{Params} & \textbf{Ratio} \\
+\midrule
+2 & {{D\_E2\_ACC}} & {{D\_E2\_PARAMS}} & {{D\_E2\_RATIO}} \\
+4 & {{D\_E4\_ACC}} & {{D\_E4\_PARAMS}} & {{D\_E4\_RATIO}} \\
+8 & {{D\_E8\_ACC}} & {{D\_E8\_PARAMS}} & {{D\_E8\_RATIO}} \\
+16 & {{D\_E16\_ACC}} & {{D\_E16\_PARAMS}} & {{D\_E16\_RATIO}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Top-k Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{k} & \textbf{DistilBERT} & \textbf{FLOPs} \\
+\midrule
+1 & {{D\_K1\_ACC}} & 1$\times$ \\
+2 & {{D\_K2\_ACC}} & 2$\times$ \\
+4 & {{D\_K4\_ACC}} & 4$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Aux Loss Weight Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$\lambda$\_aux} & \textbf{DistilBERT} & \textbf{Max/Min} \\
+\midrule
+0.0 & {{D\_L0\_ACC}} & {{D\_L0\_MAXMIN}} \\
+0.01 & {{D\_L001\_ACC}} & {{D\_L001\_MAXMIN}} \\
+0.1 & {{D\_L01\_ACC}} & {{D\_L01\_MAXMIN}} \\
+1.0 & {{D\_L1\_ACC}} & {{D\_L1\_MAXMIN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+# Full benchmark
+python run_all_4_reap_moe.py --models distilbert,roberta,gpt2
+
+# Experts sweep
+for E in 2 4 8 16; do
+    python run_all_4_reap_moe.py --n_experts $E --output_suffix E$E
+done
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

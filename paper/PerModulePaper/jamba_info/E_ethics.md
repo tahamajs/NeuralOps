@@ -51,5 +51,6 @@ Information-bottlenecked architectures could:
 But also:
 - Increase parameter counts.
 - Concentrate AI capabilities.
+```
 
 ---

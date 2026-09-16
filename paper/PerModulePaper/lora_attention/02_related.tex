@@ -1,3 +1,99 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for lora_attention.
+\subsection{Parameter-Efficient Fine-Tuning}
+
+\subsubsection{Adapters}
+
+Houlsby et al. (2019) insert small bottleneck layers between transformer 
+blocks. \textbf{Adapters} require inference-time forward passes through the 
+adapter, adding latency.
+
+\textbf{Our distinction.} LoRA Attention adapters are \textbf{mergeable} -- 
+$W_\text{merged} = W_\text{frozen} + \Delta W$ gives zero inference 
+overhead.
+
+\subsubsection{Prefix Tuning}
+
+Li \& Liang (2021) prepend learnable prefix tokens. This **changes the 
+attention distribution** and requires KV cache modification.
+
+\textbf{Our distinction.} LoRA Attention modifies projection \textbf{weights}, not 
+the input sequence.
+
+\subsubsection{LoRA}
+
+Hu et al. (2021) proposed LoRA for any linear layer. Subsequent work 
+extends:
+\begin{itemize}
+\item \textbf{AdaLoRA} (Zhang et al., 2023): adaptive rank allocation.
+\item \textbf{DoRA} (Liu et al., 2024): magnitude-direction decomposition.
+\item \textbf{LoRA+} (Hayou et al., 2024): asymmetric learning rates.
+
+\end{itemize}
+\textbf{Our distinction.} We provide a **production-hardened multi-architecture 
+implementation** specifically targeting attention projections, with 
+compatibility with compression methods.
+
+\subsubsection{QLoRA}
+
+Dettmers et al. (2023) combine LoRA with 4-bit quantization of the base 
+model. Our work is \textbf{orthogonal} -- LoRA Attention can be applied on top of 
+any quantized model.
+
+\subsection{Attention-Specific LoRA}
+
+Most LoRA implementations target FFN layers. Notable exceptions:
+\begin{itemize}
+\item \textbf{LoRA on Q/V only} (Hu et al., 2021 original ablation).
+\item \textbf{AttnLoRA} (Wu et al., 2024): attention-only LoRA for vision transformers.
+
+\end{itemize}
+\textbf{Our distinction.} We implement LoRA on \textbf{all four} attention 
+projections with multi-architecture weight transfer.
+
+\subsection{Multi-Architecture Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Framework} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Qwen} \\
+\midrule
+HuggingFace PEFT &  &  &  &  \\
+PEFT-LoRA (custom) & Partial & Partial & Partial & Partial \\
+\textbf{LoRA Attention} &  &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Feature} & \textbf{Standard LoRA} & \textbf{LoRA Attention} \\
+\midrule
+Target & FFN & Attention \\
+Architectures & 1-2 & \textbf{4} \\
+Mergeable &  &  \\
+Compression-compatible & No & \textbf{Yes} \\
+Safe nested detection & Varies &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} LoRA Attention is designed as a \textbf{recovery mechanism} 
+for compression pipelines, with verified compatibility across four model 
+families.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

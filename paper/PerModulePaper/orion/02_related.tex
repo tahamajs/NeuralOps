@@ -1,3 +1,72 @@
-\section{02 Related}
 
-Draft content for orion.
+\section{Related Work}
+
+\subsection{Low-Rank Compression}
+
+\textbf{SVD factorization} (Eckart \& Young, 1936). The optimal rank-$r$ 
+approximation in Frobenius norm.
+
+\textbf{ALBERT} (Lan et al., 2020). Cross-layer parameter sharing.
+
+\textbf{Tensor train} (Novikov et al., 2015). Higher-order factorization.
+
+\textbf{ORION uses SVD} with energy-based rank selection.
+
+\subsection{Linear Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020). $\phi(x) = \text{elu}(x) + 1$.
+
+\textbf{Performer} (Choromanski et al., 2021). Random Fourier Features.
+
+\textbf{Cosformer} (Qin et al., 2022). Cosine reweighting.
+
+\textbf{ORION uses RFF} for the kernel heads.
+
+\subsection{Hybrid Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020). Sliding-window + global.
+
+\textbf{BigBird} (Zaheer et al., 2020). Sliding-window + random + global.
+
+\textbf{NASC} (this framework). Three-branch cascade.
+
+\textbf{ORION bifurcates by head}, not by branch -- different heads use different 
+mechanisms.
+
+\subsection{Softpick}
+
+\textbf{Alman \& Song (2024).} Sparse alternative to softmax.
+
+\textbf{NASC's softpick} uses ReLU with fallback.
+
+\textbf{ORION's softpick} uses $\text{ReLU}(e^x - 1)$, simpler.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{ORION} \\
+\midrule
+\textbf{Factorization} & Post-hoc SVD & Zero-shot SVD \\
+\textbf{Head mechanism} & Uniform & Bifurcated (2/3, 1/3) \\
+\textbf{Parameter reduction} & Often none & \textbf{~6$\times$} \\
+\textbf{Robustness} & Varies & \textbf{\texttt{copy\_weights} raises} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} ORION is one of the few modules in our framework 
+that \textbf{actually reduces parameters}. It combines three orthogonal 
+techniques, though one of them (the \texttt{copy\_weights} raise) is a bug.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

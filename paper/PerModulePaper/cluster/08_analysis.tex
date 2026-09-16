@@ -56,9 +56,9 @@ clustering has near-uniform distribution.
 \toprule
 \textbf{Model} & \textbf{Min tokens/cluster} & \textbf{Max tokens/cluster} & \textbf{Ideal} \\
 \midrule
-DistilBERT & 5 & 12 & 8 \\
-RoBERTa & 4 & 13 & 8 \\
-GPT-2 & 5 & 12 & 8 \\
+DistilBERT & {{D\_MIN\_TOK}} & {{D\_MAX\_TOK}} & 8 \\
+RoBERTa & {{R\_MIN\_TOK}} & {{R\_MAX\_TOK}} & 8 \\
+GPT-2 & {{G\_MIN\_TOK}} & {{G\_MAX\_TOK}} & 8 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -95,10 +95,10 @@ Local context & None & Yes (window) \\
 \textbf{Config} & \textbf{D acc} \\
 \midrule
 Baseline & 90.71\% \\
-+ Frozen base + LoRA & 88.5 \\
-+ Centroid attention (no local) & 88.8 \\
-+ Local window & 89.7 \\
-+ Learnable temp/blend & 89.91 \\
++ Frozen base + LoRA & {{ABL1}} \\
++ Centroid attention (no local) & {{ABL2}} \\
++ Local window & {{ABL3}} \\
++ Learnable temp/blend & {{D\_ACC}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -119,7 +119,7 @@ $\tau$ is clamped to $[0.1, 10.0]$ to avoid degenerate softmax.
 
 \subsection{Failure Analysis}
 
-No systematic failures observed.
+{{FAILURES}}
 
 \subsection{Summary of Insights}
 
@@ -130,3 +130,7 @@ No systematic failures observed.
 \item \textbf{Learned $\tau$ and $\alpha$ help} -- small gains from learnable scalars.
 \item \textbf{Not a compression method} -- parameter count increases.
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

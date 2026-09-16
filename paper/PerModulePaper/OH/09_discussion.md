@@ -98,3 +98,6 @@ For DistilBERT at L=128:
 ### Environmental
 - Training: ~{{COMPUTE_HOURS}} GPU-hours
 - Inference: {{INFERENCE_CARBON}} g CO₂eq per 1000 queries
+```
+
+---

@@ -3,7 +3,7 @@
 
 \subsection{Main Results}
 
-\textbf{Table 7.1: SST-2 results with $r_L = 16$, no head-dim reduction.}
+\textbf{Table 7.1: SST-2 results with $r_L = {{LORA_RANK}}$, no head-dim reduction.}
 
 \begin{table}[H]
 \centering
@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Trainable} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB & 1.9 s \\
-DistilBERT & \textbf{SH} & \textbf{90.25} & -0.46 & 0.9055 & \textbf{589824} & 200 MB & 2.3 s \\
+DistilBERT & \textbf{SH} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & \textbf{{{D\_LORA}}} & {{D\_VRAM}} MB & {{D\_TIME}} s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB & 4.1 s \\
-RoBERTa & \textbf{SH} & \textbf{76.8} & -1.8 & 0.768 & \textbf{1179648} & 720 MB & 4.5 s \\
+RoBERTa & \textbf{SH} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & \textbf{{{R\_LORA}}} & {{R\_VRAM}} MB & {{R\_TIME}} s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB & 4.2 s \\
-GPT-2 & \textbf{SH} & \textbf{77.5} & -1.9 & 0.775 & \textbf{1179648} & 800 MB & 4.6 s \\
+GPT-2 & \textbf{SH} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{{{G\_LORA}}} & {{G\_VRAM}} MB & {{G\_TIME}} s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,10 +33,10 @@ GPT-2 & \textbf{SH} & \textbf{77.5} & -1.9 & 0.775 & \textbf{1179648} & 800 MB &
 \toprule
 \textbf{$s$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Param ratio} \\
 \midrule
-1.0 (base) & 90.25 & 76.8 & 77.5 & 1.00$\times$ \\
-1.5 & 89.5 & 75.5 & 76.5 & 1.5$\times$ \\
-2.0 & 88.0 & 74.0 & 74.5 & 2.0$\times$ \\
-2.5 & 85.5 & 71.5 & 72.0 & 2.5$\times$ \\
+1.0 (base) & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} & 1.00$\times$ \\
+1.5 & {{D\_S15}} & {{R\_S15}} & {{G\_S15}} & {{RATIO15}}$\times$ \\
+2.0 & {{D\_S20}} & {{R\_S20}} & {{G\_S20}} & {{RATIO20}}$\times$ \\
+2.5 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} & {{RATIO25}}$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -52,9 +52,9 @@ GPT-2 & \textbf{SH} & \textbf{77.5} & -1.9 & 0.775 & \textbf{1179648} & 800 MB &
 \toprule
 \textbf{Model} & \textbf{Baseline trainable} & \textbf{SH trainable} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66.9M & 589824 & 113$\times$ \\
-RoBERTa & 124.6M & 1179648 & 105$\times$ \\
-GPT-2 & 124.4M & 1179648 & 105$\times$ \\
+DistilBERT & 66.9M & {{D\_LORA}} & {{D\_LORA\_R}}$\times$ \\
+RoBERTa & 124.6M & {{R\_LORA}} & {{R\_LORA\_R}}$\times$ \\
+GPT-2 & 124.4M & {{G\_LORA}} & {{G\_LORA\_R}}$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,10 +70,10 @@ GPT-2 & 124.4M & 1179648 & 105$\times$ \\
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & 88.5 & 74.5 & 75.5 \\
-8 & 89.5 & 75.8 & 76.5 \\
-16 & 90.25 & 76.8 & 77.5 \\
-32 & 90.3 & 76.9 & 77.6 \\
+4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
+8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
+16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
+32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,10 +89,10 @@ GPT-2 & 124.4M & 1179648 & 105$\times$ \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & 85.0 & 72.0 & 73.0 \\
-25 & 88.0 & 74.5 & 75.5 \\
-50 & 90.25 & 76.8 & 77.5 \\
-100 & 90.4 & 76.9 & 77.7 \\
+10 & {{D\_S10\_STEP}} & {{R\_S10\_STEP}} & {{G\_S10\_STEP}} \\
+25 & {{D\_S25\_STEP}} & {{R\_S25\_STEP}} & {{G\_S25\_STEP}} \\
+50 & {{D\_S50\_STEP}} & {{R\_S50\_STEP}} & {{G\_S50\_STEP}} \\
+100 & {{D\_S100\_STEP}} & {{R\_S100\_STEP}} & {{G\_S100\_STEP}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -108,8 +108,8 @@ GPT-2 & 124.4M & 1179648 & 105$\times$ \\
 \toprule
 \textbf{Method} & \textbf{Accuracy} \\
 \midrule
-Mean pooling & 76.5 \\
-First head & 74.0 \\
+Mean pooling & {{MEAN\_POOL}} \\
+First head & {{FIRST\_POOL}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -126,10 +126,10 @@ First head & 74.0 \\
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Trainable} \\
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% & Baseline & 100\% \\
-GQA & 88.5 & 75.5 & 77.0 & KV reduce & ~95\% \\
-AASVD & 85.0 & 72.0 & 73.0 & Low-rank & 100\% \\
-LoRA only & 89.5 & 75.0 & 76.0 & Adapter & ~1\% \\
-\textbf{SH} & \textbf{90.25} & \textbf{76.8} & \textbf{77.5} & \textbf{Distill} & \textbf{~1\%} \\
+GQA & {{GQA\_D}} & {{GQA\_R}} & {{GQA\_G}} & KV reduce & ~95\% \\
+AASVD & {{AASVD\_D}} & {{AASVD\_R}} & {{AASVD\_G}} & Low-rank & 100\% \\
+LoRA only & {{LORA\_D}} & {{LORA\_R}} & {{LORA\_G}} & Adapter & ~1\% \\
+\textbf{SH} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{Distill} & \textbf{~1\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -145,9 +145,9 @@ LoRA only & 89.5 & 75.0 & 76.0 & Adapter & ~1\% \\
 \toprule
 \textbf{Training} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Full FT & 90.5 & 77.2 & 78.0 \\
-LoRA only & 90.25 & 76.8 & 77.5 \\
-LoRA gain & 0.5 & 0.3 & 0.4 \\
+Full FT & {{FULLFT\_D}} & {{FULLFT\_R}} & {{FULLFT\_G}} \\
+LoRA only & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+LoRA gain & {{LORA\_GAIN}} & {{LORA\_GAIN\_R}} & {{LORA\_GAIN\_G}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -163,9 +163,13 @@ LoRA gain & 0.5 & 0.3 & 0.4 \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Accuracy:} -0.46\%---1.9\% drop.
+\item \textbf{Accuracy:} {{D\_DELTA}}\%--{{G\_DELTA}}\% drop.
 \item \textbf{Trainable params:} ~1\% of full.
-\item \textbf{Head-dim reduction:} up to 1.0$\times$ without major loss.
-\item \textbf{LoRA recovery:} 0.5\% gain over baseline.
+\item \textbf{Head-dim reduction:} up to {{HEAD\_DIM\_REDUCTION}}$\times$ without major loss.
+\item \textbf{LoRA recovery:} {{LORA\_GAIN}}\% gain over baseline.
 \item \textbf{All models pass quality gate.}
 \end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

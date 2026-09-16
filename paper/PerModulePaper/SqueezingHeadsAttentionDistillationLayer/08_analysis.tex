@@ -7,12 +7,12 @@
 
 \subsubsection{Rank Saturation}
 
-Accuracy saturates around $r_L = 16$. Beyond this, more 
+Accuracy saturates around $r_L = {{SATURATION_RANK}}$. Beyond this, more 
 parameters add no benefit.
 
 \subsubsection{Minimum Rank}
 
-At $r_L = 1$, accuracy drops by 8\% -- LoRA with rank 1 is 
+At $r_L = 1$, accuracy drops by {{LR1\_DROP}}\% -- LoRA with rank 1 is 
 insufficient. Minimum useful rank is ~4.
 
 \subsubsection{Per-Projection Rank}
@@ -26,10 +26,10 @@ If we allocate rank differently per projection:
 \toprule
 \textbf{Projection} & \textbf{Optimal rank} \\
 \midrule
-$W_Q$ & 16 \\
-$W_K$ & 8 \\
-$W_V$ & 8 \\
-$W_O$ & 16 \\
+$W_Q$ & {{Q\_OPT\_RANK}} \\
+$W_K$ & {{K\_OPT\_RANK}} \\
+$W_V$ & {{V\_OPT\_RANK}} \\
+$W_O$ & {{O\_OPT\_RANK}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -54,9 +54,9 @@ $W_O$ & 16 \\
 \textbf{$s$} & \textbf{Effective $d_h$} & \textbf{Retained info} \\
 \midrule
 1.0 & 64 & 100\% \\
-1.5 & 42 & 90\% \\
-2.0 & 32 & 85\% \\
-2.5 & 25 & 75\% \\
+1.5 & 42 & {{INFO15}}\% \\
+2.0 & 32 & {{INFO20}}\% \\
+2.5 & 25 & {{INFO25}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -72,13 +72,13 @@ $W_O$ & 16 \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Prune 50\% heads & 78.0 & 68.0 & 70.0 \\
-SH dim-reduce 2$\times$ & \textbf{88.0} & \textbf{74.0} & \textbf{74.5} \\
+Prune 50\% heads & {{PRUNE50\_D}} & {{PRUNE50\_R}} & {{PRUNE50\_G}} \\
+SH dim-reduce 2$\times$ & \textbf{{{D\_S20}}} & \textbf{{{R\_S20}}} & \textbf{{{G\_S20}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} SH preserves 2.0\% more accuracy by not dropping 
+\textbf{Observation.} SH preserves {{SH\_GAIN}}\% more accuracy by not dropping 
 heads.
 
 \subsection{Per-Layer Analysis}
@@ -92,12 +92,12 @@ heads.
 \toprule
 \textbf{Layer} & \textbf{Accuracy drop} \\
 \midrule
-0 & 0.8 \\
-1 & 0.5 \\
-2 & 0.4 \\
-3 & 0.3 \\
-4 & 0.3 \\
-5 & 0.2 \\
+0 & {{D\_L0\_DROP}} \\
+1 & {{D\_L1\_DROP}} \\
+2 & {{D\_L2\_DROP}} \\
+3 & {{D\_L3\_DROP}} \\
+4 & {{D\_L4\_DROP}} \\
+5 & {{D\_L5\_DROP}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -124,7 +124,7 @@ silent failures.
 \textbf{Figure 8.3} shows the difference between SH-with-LoRA and SH-without-LoRA 
 (i.e., head-dim reduction only).
 
-\textbf{Observation.} LoRA recovers \textbf{0.5\%} of the accuracy lost by 
+\textbf{Observation.} LoRA recovers \textbf{{{LORA\_GAIN}}\%} of the accuracy lost by 
 head-dim reduction.
 
 \subsection{Failure Cases}
@@ -138,22 +138,26 @@ head-dim reduction.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Drop} \\
 \midrule
-layer.0 & GPT-2 & 1.5 \\
-layer.5 & RoBERTa & 2.0 \\
+{{FAIL\_LAYER\_1}} & {{FAIL\_MODEL\_1}} & {{FAIL\_DROP\_1}} \\
+{{FAIL\_LAYER\_2}} & {{FAIL\_MODEL\_2}} & {{FAIL\_DROP\_2}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsubsection{Root Causes}
 
-Head-dim reduction too aggressive for early layers
+{{FAIL\_CAUSE}}
 
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{LoRA recovers 0.5\%} of head-dim reduction loss.
+\item \textbf{LoRA recovers {{LORA\_GAIN}}\%} of head-dim reduction loss.
 \item \textbf{Rank 16 suffices} -- no benefit beyond.
 \item \textbf{Head-dim reduction $s=2$} is a sweet spot.
 \item \textbf{Early layers more sensitive} than late layers.
-\item \textbf{SH beats head pruning} by 2.0\%.
+\item \textbf{SH beats head pruning} by {{SH\_GAIN}}\%.
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -1,3 +1,138 @@
-\section{12 Reproducibility}
 
-Draft content for phantom.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+numpy & {{NUMPY\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running PHANTOM}
+
+\begin{lstlisting}
+python run_all_4_phantom.py \
+    --models distilbert,roberta,gpt2 \
+    --cur_rank {{CUR_RANK}} \
+    --lsh_rounds 4 \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}} \
+    --batch_size {{BATCH_SIZE}}
+\end{lstlisting}
+
+\textbf{Runtime:} ~{{RUNTIME}} minutes on RTX 4070.
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --dataset sst2 \
+    --output_dir results/unified_phantom/distilbert \
+    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --modules full,phantom \
+    --cur_rank {{CUR_RANK}} \
+    --lsh_rounds 4 \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+
+\begin{lstlisting}
+python run_all_4_phantom.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.6 (CUR rank)}
+
+\begin{lstlisting}
+for r in 8 16 32 64; do
+    python run_all_4_phantom.py --cur_rank $r --output_suffix r$r
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.7 (LSH rounds)}
+
+\begin{lstlisting}
+for rounds in 1 2 4 8; do
+    python run_all_4_phantom.py --lsh_rounds $rounds --output_suffix lsh$rounds
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.8 (LSH bits)}
+
+\begin{lstlisting}
+for bits in 2 3 4 6; do
+    python run_all_4_phantom.py --lsh_bucket_size $bits --output_suffix k$bits
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & {{D\_RATIO}}$\times$ \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & {{R\_RATIO}}$\times$ \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-phantom}
+\item \textbf{Metrics:} \texttt{results/unified\_phantom/*/summary.csv}
+
+\end{itemize}
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Windows: set \texttt{PYTHONIOENCODING=utf-8}
+\item CUDA $\ge$ 11.8 for FP16
+\item Batch size 4 required for 12-layer models on 8 GB GPU
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

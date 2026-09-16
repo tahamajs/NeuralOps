@@ -98,3 +98,6 @@ python run_all_4_halo_regla.py \
 | Kernel | $\{\text{elu}, \text{relu}, \text{softplus}\}$ |
 | Fusion | $\{\text{learned}, \text{fixed 0.5}, \text{fixed 0.8}\}$ |
 | LoRA rank | $\{4, 8, 16, 32\}$ |
+```
+
+---

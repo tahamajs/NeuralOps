@@ -124,5 +124,6 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 | $W_\text{corr}$ | Correction matrix |
 | $g$ | Local gate |
 | $T$ | Softpick temperature |
+```
 
 ---

@@ -134,5 +134,6 @@ RoBERTa's output projection is outside the inner attention. Requires
 4. **3 pinv iterations suffice**.
 5. **Nyströmformer ports cleanly** to non-BERT architectures.
 6. **Nyströmformer is orthogonal** to weight/KV compression.
+```
 
 ---

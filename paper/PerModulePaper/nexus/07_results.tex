@@ -1,3 +1,198 @@
-\section{07 Results}
+\section{Results}
 
-Draft content for nexus.
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Path} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & dense & 183 MB \\
+DistilBERT & \textbf{NEXUS} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & sparse & {{D\_VRAM}} MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & dense & 712 MB \\
+RoBERTa & \textbf{NEXUS} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & sparse & {{R\_VRAM}} MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & dense & 793 MB \\
+GPT-2 & \textbf{NEXUS} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{dense fallback} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observations:}
+
+\begin{enumerate}
+\item DistilBERT and RoBERTa use the sparse path.
+\item GPT-2 falls back to dense (causal).
+\item NEXUS provides \textbf{no compute savings on GPT-2}.
+
+\end{enumerate}
+\subsection{Ablation: Components}
+
+\textbf{Table 7.2: Effect of each NEXUS component.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Full NEXUS & {{D\_FULL}} & {{R\_FULL}} & {{G\_FULL}} \\
+XAttention & {{D\_NOXA}} & {{R\_NOXA}} & -- \\
+Seer gate & {{D\_NOSEER}} & {{R\_NOSEER}} & -- \\
+Stripe & {{D\_NOSTRIPE}} & {{R\_NOSTRIPE}} & -- \\
+Softpick & {{D\_NOSOFTPICK}} & {{R\_NOSOFTPICK}} & -- \\
+Dense only & {{D\_DENSE}} & {{R\_DENSE}} & {{G\_DENSE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Block Size}
+
+\textbf{Table 7.3: Accuracy vs block size.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$B_s$} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+8 & {{D\_B8}} & {{R\_B8}} \\
+16 & {{D\_B16}} & {{R\_B16}} \\
+32 & {{D\_B32}} & {{R\_B32}} \\
+64 & {{D\_B64}} & {{R\_B64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Top-K Blocks}
+
+\textbf{Table 7.4: Accuracy vs $k$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$k$} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+1 & {{D\_K1}} & {{R\_K1}} \\
+2 & {{D\_K2}} & {{R\_K2}} \\
+4 & {{D\_K4}} & {{R\_K4}} \\
+8 & {{D\_K8}} & {{R\_K8}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Softpick Temperature}
+
+\textbf{Table 7.5: Accuracy vs softpick temperature.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$T$} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+0.5 & {{D\_T05}} & {{R\_T05}} \\
+1.0 & {{D\_T10}} & {{R\_T10}} \\
+2.0 & {{D\_T20}} & {{R\_T20}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Sparse Min Seq Len}
+
+\textbf{Table 7.6: Effect of \texttt{sparse\_min\_seq\_len}.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{min\_seq\_len} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+4 & {{D\_S4}} & {{R\_S4}} \\
+8 & {{D\_S8}} & {{R\_S8}} \\
+16 & {{D\_S16}} & {{R\_S16}} \\
+32 & {{D\_S32}} & {{R\_S32}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.7: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{Peak VRAM} \\
+\midrule
+DistilBERT & full & 1.9 s & 59000 & 183 MB \\
+DistilBERT & NEXUS & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+GPT-2 & full & 4.2 s & 26700 & 793 MB \\
+GPT-2 & NEXUS (dense) & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Router Statistics}
+
+\textbf{Table 7.8: Seer gate behavior.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Mean gate} & \textbf{Mean kept blocks} \\
+\midrule
+DistilBERT & {{D\_MEANGATE}} & {{D\_MEANKEEP}} \\
+RoBERTa & {{R\_MEANGATE}} & {{R\_MEANKEEP}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Component Activation Summary}
+
+\textbf{Table 7.9: Which components are active per model.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+XAttention &  &  & (dense fallback) \\
+Seer gate &  &  &  \\
+DuSA &  &  &  \\
+Stripe & ($N \leq 256$) &  &  \\
+RFF rectification & (default) &  &  \\
+Softpick &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Critical observation.} Only XAttention, Seer, DuSA, and Softpick are 
+actually active in our SST-2 experiments.
+
+\subsection{Summary}
+
+\begin{itemize}
+\item NEXUS provides sub-quadratic attention for encoders.
+\item No benefit on causal decoders.
+\item Several components (stripe, RFF) are inactive under our setup.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -5,7 +5,7 @@
 
 \subsubsection{Takeaway 1: Infini-Attention is Not a Compressor}
 
-Parameter count increases by ~1.82\% due to memory + LoRA.
+Parameter count increases by ~{{D\_PARAM\_PCT}}\% due to memory + LoRA.
 
 \subsubsection{Takeaway 2: Long-Context Efficiency}
 
@@ -59,10 +59,10 @@ For DistilBERT at L=128:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Infini} & \textbf{Change} \\
 \midrule
-Params & 66.95M & 68175110M & +1.82\% \\
-VRAM & 183 MB & 220 MB & +37 \\
-Time & 1.90 s & 4.5 s & 2.4$\times$ \\
-Accuracy & 90.71\% & 89.5\% & -1.21\% \\
+Params & 66.95M & {{D\_PARAMS}}M & +{{D\_PARAM\_PCT}}\% \\
+VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_DELTA}} \\
+Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -116,6 +116,10 @@ Time (est.) & ~30 s & ~3 s & 10$\times$ faster \\
 \end{itemize}
 \subsubsection{Environmental}
 \begin{itemize}
-\item Training: ~12 GPU-hours
-\item Inference: 0.2 g CO$_2$eq per 1000 queries
+\item Training: ~{{COMPUTE\_HOURS}} GPU-hours
+\item Inference: {{INFERENCE\_CARBON}} g CO$_2$eq per 1000 queries
 \end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

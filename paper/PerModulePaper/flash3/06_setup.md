@@ -74,3 +74,6 @@ python run_all_4_flash3.py \
 | `flash3` | Our wrapper |
 | `flash3_fp8` | Wrapper + FP8 (Hopper only) |
 | `sdpa_only` | Direct SDPA (no wrapper) |
+```
+
+---

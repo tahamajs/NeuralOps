@@ -111,5 +111,6 @@ $\sim$8× reduction.
 | $S_t, Z_t$ | Memory state |
 | $C$ | Chunk size |
 | $\tau$ | Decay time = $-\log \lambda$ |
+```
 
 ---

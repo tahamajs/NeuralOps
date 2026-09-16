@@ -10,14 +10,14 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Sparsity (learned mean) & 0.42 \\
-Accuracy & 88.5\% \\
-F1 & 0.885 \\
-Peak VRAM & 120 MB \\
-Inference time & 2.1 s \\
-$\rho_\text{min}$ & 0.05 \\
-$\rho_\text{max}$ & 0.85 \\
-$\rho_\text{std}$ & 0.28 \\
+Sparsity (learned mean) & {{D\_SP}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+$\rho_\text{min}$ & {{D\_RHO\_MIN}} \\
+$\rho_\text{max}$ & {{D\_RHO\_MAX}} \\
+$\rho_\text{std}$ & {{D\_RHO\_STD}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,11 +31,11 @@ $\rho_\text{std}$ & 0.28 \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Sparsity & 0.45 \\
-Accuracy & 76.0\% \\
-F1 & 0.760 \\
-Peak VRAM & 500 MB \\
-Inference time & 4.5 s \\
+Sparsity & {{R\_SP}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Inference time & {{R\_TIME}} s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -49,11 +49,11 @@ Inference time & 4.5 s \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Sparsity & 0.48 \\
-Accuracy & 76.5\% \\
-F1 & 0.765 \\
-Peak VRAM & 550 MB \\
-Inference time & 4.6 s \\
+Sparsity & {{G\_SP}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Inference time & {{G\_TIME}} s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -67,11 +67,11 @@ Inference time & 4.6 s \\
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.1 & 89.5 & 77.5 & 78.0 \\
-0.3 & 89.0 & 77.0 & 77.5 \\
-0.5 & 88.5 & 76.0 & 76.5 \\
-0.7 & 86.0 & 73.5 & 74.0 \\
-0.9 & 80.0 & 68.0 & 68.5 \\
+0.1 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+0.3 & {{D\_S30}} & {{R\_S30}} & {{G\_S30}} \\
+0.5 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+0.7 & {{D\_S70}} & {{R\_S70}} & {{G\_S70}} \\
+0.9 & {{D\_S90}} & {{R\_S90}} & {{G\_S90}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,10 +85,10 @@ Inference time & 4.6 s \\
 \toprule
 \textbf{$T$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.01 & 85.0 & 72.0 & 73.0 \\
-0.1 & 88.5 & 76.0 & 76.5 \\
-0.5 & 88.0 & 75.5 & 76.0 \\
-1.0 & 87.0 & 74.5 & 75.0 \\
+0.01 & {{D\_T01}} & {{R\_T01}} & {{G\_T01}} \\
+0.1 & {{D\_T1}} & {{R\_T1}} & {{G\_T1}} \\
+0.5 & {{D\_T5}} & {{R\_T5}} & {{G\_T5}} \\
+1.0 & {{D\_T10}} & {{R\_T10}} & {{G\_T10}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,10 +102,10 @@ Inference time & 4.6 s \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & 85.0 & 72.0 & 72.0 \\
-8 & 87.0 & 74.0 & 74.5 \\
-16 & 88.5 & 76.0 & 76.5 \\
-32 & 88.7 & 76.3 & 76.7 \\
+4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
+8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
+16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
+32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -119,10 +119,10 @@ Inference time & 4.6 s \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & 85.0 & 72.0 & 73.0 \\
-25 & 87.5 & 74.5 & 75.0 \\
-50 & 88.5 & 76.0 & 76.5 \\
-100 & 88.7 & 76.3 & 76.8 \\
+10 & {{D\_S10\_R}} & {{R\_S10\_R}} & {{G\_S10\_R}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50\_R}} & {{R\_S50\_R}} & {{G\_S50\_R}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -152,9 +152,9 @@ Inference time & 4.6 s \\
 Step  Loss  Sparsity
 1     {{D_S1}}  {{D_SP1}}
 5     {{D_S5}}  {{D_SP5}}
-10    89.5 {{D_SP10}}
+10    {{D_S10}} {{D_SP10}}
 ...
-50    88.5 {{D_SP50}}
+50    {{D_S50}} {{D_SP50}}
 \end{lstlisting}
 
 \subsection{C.10 Raw JSON}
@@ -163,10 +163,10 @@ Step  Loss  Sparsity
 {
   "adaptive_sparse": {
     "distilbert": {
-      "accuracy_pct": 88.5,
-      "learned_sparsity": 0.42,
-      "peak_vram_mb": 120,
-      "inference_time_s": 2.1
+      "accuracy_pct": {{D_ACC}},
+      "learned_sparsity": {{D_SP}},
+      "peak_vram_mb": {{D_VRAM}},
+      "inference_time_s": {{D_TIME}}
     },
     "roberta": {...},
     "gpt2": {...}
@@ -184,4 +184,8 @@ python run_all_4_adaptive_sparse.py --sparsity_ratio 0.5
 for rho in 0.1 0.3 0.5 0.7 0.9; do
     python run_all_4_adaptive_sparse.py --sparsity_ratio $rho
 done
+\end{lstlisting}
+\begin{lstlisting}
+
+---
 \end{lstlisting}

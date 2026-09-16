@@ -71,5 +71,6 @@ python run_all_4_res_svd.py \
 | `full` | Uncompressed model |
 | `res_svd` | Our method |
 | Companion | `asvd`, `aasvd`, `a3`, `svd_linear` |
+```
 
 ---

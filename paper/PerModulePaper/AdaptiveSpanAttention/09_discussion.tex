@@ -12,7 +12,7 @@ methods.
 \subsubsection{Takeaway 2: Span Regularization Works}
 
 The L1 penalty causes spans to shrink gracefully, with minimal accuracy loss 
-at $\lambda = 0.01$.
+at $\lambda = {{LAMBDA}}$.
 
 \subsubsection{Takeaway 3: No Speedup Without Hard Truncation}
 
@@ -91,9 +91,9 @@ For DistilBERT at $L = 128$:
 \textbf{Config} & \textbf{Accuracy} & \textbf{Mean span} & \textbf{Reduction} \\
 \midrule
 Baseline & 90.71\% & -- & -- \\
-ASA-Span $\lambda=0$ & 90.5\% & 126 & 0\% \\
-ASA-Span $\lambda=0.01$ & 89.5\% & 68 & 47\% \\
-ASA-Span $\lambda=0.1$ & 86.0\% & 32 & 75\% \\
+ASA-Span $\lambda=0$ & {{D\_L0}}\% & {{D\_SPAN0}} & 0\% \\
+ASA-Span $\lambda=0.01$ & {{D\_L01}}\% & {{D\_SPAN01}} & {{D\_RED01}}\% \\
+ASA-Span $\lambda=0.1$ & {{D\_L1}}\% & {{D\_SPAN1}} & {{D\_RED1}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -136,4 +136,8 @@ To realize speedup, one can:
 
 \end{itemize}
 \subsubsection{Environmental}
-Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

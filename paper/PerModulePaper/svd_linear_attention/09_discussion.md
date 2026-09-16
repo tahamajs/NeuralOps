@@ -115,5 +115,6 @@ errors. FP16 for the output is safe.
 ### Environmental
 - Training: ~{{COMPUTE_HOURS}} GPU-hours
 - CO₂: ~{{CO2}} kg
+```
 
 ---

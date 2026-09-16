@@ -1,3 +1,82 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for moe_deltakv_paged.
+\subsection{Delta-KV is Simulation Only}
+
+The Delta-KV step does not reduce KV cache memory at inference. The 
+reconstructed tensor has the same shape as the original.
+
+\subsection{4-bit Quantization is Simulation Only}
+
+The STE-quantized deltas are stored in FP16/FP32. No bit-level savings.
+
+\subsection{SVD in Forward Pass}
+
+The forward pass includes a full SVD of the deltas. For long sequences, 
+this is expensive:
+\begin{itemize}
+\item Time: $\mathcal{O}(\min(N d_h^2, N^2 d_h))$
+\item This may dominate the block-sparse savings
+
+\end{itemize}
+\subsection{6D Gather Memory}
+
+The \texttt{[B, H, N\_p, k\_exp, P, d\_h]} intermediate tensor is memory-heavy. At 
+$N = 512$, $k = 4$, $P = 64$, $d_h = 64$: ~256 MB per layer.
+
+\subsection{Hard Failure on Missing Weights}
+
+\texttt{copy\_weights} and \texttt{inject\_moe\_deltakv\_paged} raise exceptions on failure. 
+This is safer than silent failure but less robust.
+
+\subsection{Task Coverage}
+
+Only SST-2 evaluated.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Single Seed}
+
+SE ~1.7\%.
+
+\subsection{Block-Sparse Speedup Saturation}
+
+Speedup is $\min(N_p/k_\text{exp}, \ldots)$. For small $N$, no benefit.
+
+\subsection{No Comparison with Actual PagedAttention}
+
+We do not compare with vLLM's PagedAttention.
+
+\subsection{Causal Fallback}
+
+For $N_p \leq 2$, we fall back to dense attention. This defeats the purpose 
+for short sequences.
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item \texttt{raise} in inject
+\item No fused kernel
+\item SVD in forward
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

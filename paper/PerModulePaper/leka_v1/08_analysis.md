@@ -104,5 +104,6 @@ the residual is ignored.
 3. **Head-wise LN stabilizes input.**
 4. **Preservation gate provides safety.**
 5. **Linear scaling enables long-context inference.**
+```
 
 ---

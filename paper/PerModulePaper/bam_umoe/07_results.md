@@ -87,3 +87,6 @@ Well-balanced: min/max within ±{{IMBALANCE}}% of ideal.
 - **Parameters:** +{{AVG_PARAM_INC}}% (expansion).
 - **Load balancing:** well-behaved.
 - **Step-0 preservation:** verified (see Section 8.1).
+```
+
+---

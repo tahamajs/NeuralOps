@@ -117,5 +117,6 @@ For DistilBERT on RTX 4070:
    implementation of a fast algorithm is still slow.
 2. **Python loops are the enemy.** Always measure wall-clock time.
 3. **The gap between theory and practice can be 10-100×.**
+```
 
 ---

@@ -85,5 +85,6 @@ torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2 via `datasets`
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-leka_v3`
 - **Metrics:** `results/unified_leka_v3/*/summary.csv`
+```
 
 ---

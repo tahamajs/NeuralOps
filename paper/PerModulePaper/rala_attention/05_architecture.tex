@@ -1,11 +1,175 @@
-\section{05 Architecture}
 
-Draft content for rala_attention.
+\section{Architecture Integration}
 
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & {{R\_VERIFIED}} \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No & {{G\_VERIFIED}} \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & {{Q\_VERIFIED}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+The \texttt{copy\_weights} method handles three patterns:
+
+\subsubsection{GPT-2 (Fused Conv1D)}
+
+\begin{lstlisting}
+if hasattr(src, "c_attn"):
+    w = src.c_attn.weight.data
+    if isinstance(src.c_attn, Conv1D):
+        w = w.t()  # (in, out) $\to$ (out, in)
+    q_w, k_w, v_w = w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+elif hasattr(src, "self") and hasattr(src.self, "query"):
+    extracted["q"] = src.self.query.weight.data
+    extracted["k"] = src.self.key.weight.data
+    extracted["v"] = src.self.value.weight.data
+    extracted["o"] = src.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+else:
+    extracted["q"] = src.q_lin.weight.data
+    extracted["k"] = src.k_lin.weight.data
+    extracted["v"] = src.v_lin.weight.data
+    extracted["o"] = src.out_lin.weight.data
+\end{lstlisting}
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, \texttt{out\_lin} is outside the attention. We set 
+\texttt{is\_nested\_encoder = True} and skip \texttt{out\_proj} in the forward pass.
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    return out, None
+output = self.out_proj(out)
+\end{lstlisting}
+
+For DistilBERT, \texttt{out\_lin} is inside; \texttt{is\_nested\_encoder = False}.
+
+\subsection{GQA Support}
+
+For Qwen3.5 with $H_{kv} < H$:
+
+\begin{lstlisting}
+if self.num_heads != self.num_kv_heads:
+    repeats = self.num_heads // self.num_kv_heads
+    k = repeat_kv(k, repeats)
+    v = repeat_kv(v, repeats)
+\end{lstlisting}
+
+\subsection{RoPE Support}
+
+We support partial RoPE:
+
+\begin{lstlisting}
+if position_embeddings is not None:
+    cos, sin = position_embeddings
+    q, k = apply_rotary_pos_emb(q, k, cos, sin)
+\end{lstlisting}
+
+\texttt{apply\_rotary\_pos\_emb} handles cases where \texttt{rotary\_dim < head\_dim}.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject RALA into a layer
+\begin{lstlisting}
+Input:  layer, config, old_attn
+Output: new attention module
+
+1: new $\leftarrow$ RALALinearAttention(config, old_attn=old_attn)
+2: if copy_weights failed:
+3:     log warning
+4: if layer.attention.self:
+5:     layer.attention.self $\leftarrow$ new; new.is_nested_encoder $\leftarrow$ True
+6: elif layer.attention:
+7:     layer.attention $\leftarrow$ new
+8: elif layer.self_attn:
+9:     layer.self_attn $\leftarrow$ new
+10: return new
+\end{lstlisting}
+
+\subsection{Double-Injection Guard}
+
+We check for prior injection:
+
+\begin{lstlisting}
+if isinstance(src_attn, RALALinearAttention):
+    return None
+if "RALA" in src_attn.__class__.__name__:
+    return None
+\end{lstlisting}
+
+\subsection{Qwen3.5 DeltaNet Skip}
+
+Some Qwen layers use GatedDeltaNet, which is incompatible with RALA. We 
+skip these:
+
+\begin{lstlisting}
+if "DeltaNet" in c_name or "LinearAttention" in c_name:
+    return None
+\end{lstlisting}
+
+\subsection{Failure Handling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weight & \texttt{copy\_weights} logs & Random init for that proj \\
+Shape mismatch & Shape check & Truncate or repeat \\
+Zero norm & Norm check & Warning, continue \\
+Injection exception & try/except & Return None \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Compatibility Notes}
+
+\subsubsection{Cross-Attention}
+
+RALA does \textbf{not} support cross-attention. \texttt{encoder\_hidden\_states} is ignored.
+
+\subsubsection{Padded Sequences}
+
+Padding tokens are masked via \texttt{get\_token\_valid\_mask}. The prefix scan 
+respects this mask: padded positions do not contribute to $S$ or $z$.
+
+\subsubsection{Mixed Precision}
+
+RALA runs in the base model's dtype (FP16 typically). The prefix sums are 
+computed in FP16, which may lose precision for long sequences. Consider 
+FP32 for $L > 512$.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
-\caption{Architectural overview of rala_attention.}
-\label{fig:arch_rala_attention}
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of rala\_attention.}
+\label{fig:arch_rala-attention}
 \end{figure}
+

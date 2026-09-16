@@ -1,3 +1,348 @@
-\section{04 Method}
 
-Draft content for cosformer.
+\section{Method}
+
+\subsection{Overview}
+
+Our CosformerAttention module has two computational paths:
+
+\begin{enumerate}
+\item \textbf{Encoder (bidirectional):} associative accumulation.
+\item \textbf{Decoder (causal):} chunked prefix-sum.
+
+\end{enumerate}
+Both share the same feature map $\phi(\cdot) = \text{ELU} + 1$ (or softplus) 
+and cosine/sine reweighting.
+
+\begin{lstlisting}
+                    Input X
+                       |
+        +--------------+--------------+
+        |              |              |
+                                       
+    +------+       +------+      +------+
+    |  Q   |       |  K   |      |  V   |
+    | proj |       | proj |      | proj |
+    +--+---+       +--+---+      +--+---+
+       |              |              |
+       |              |              |
+                                     |
+   +-----------------------+         |
+   |   ( ) = ELU+1         |         |
+   +---------+-------------+         |
+             |                       |
+                                     |
+   +-----------------------+         |
+   |  Cos/Sin reweighting  |         |
+   +---------+-------------+         |
+             |                       |
+             +-----------+-----------+
+             |           |           |
+                                      
+        +--------------------------------+
+        | is_decoder?                    |
+        +--+-------------------------+---+
+           | No                      | Yes
+           |                         |
+                                      
+    +--------------+          +--------------+
+    | Associative  |          | Chunked      |
+    | accumulation |          | prefix-sum   |
+    +------+-------+          +------+-------+
+           |                         |
+           +------------+------------+
+                        |
+                         
+                   Output Y
+\end{lstlisting}
+
+\subsection{Feature Map}
+
+We support two feature maps:
+
+\[
+\phi(x) = \begin{cases}
+\text{elu}(x) + 1 & \text{(default)} \\
+\text{softplus}(x) & \text{(alternative)}
+\end{cases}
+\tag{4.1}
+\]
+
+Both are non-negative, deterministic, and cheap.
+
+\textbf{Why not ReLU?} ReLU has zero derivative for negative inputs, which can 
+cause dead neurons. ELU + 1 has a non-zero gradient everywhere.
+
+\textbf{Why not RFF?} RFF is stochastic and requires more features for the same 
+accuracy. ELU + 1 is deterministic and works well in practice.
+
+\subsection{Positional Reweighting}
+
+For sequence length $N$ and max position $M = \max(\text{max\_seq\_len}, N)$:
+
+\[
+\theta_i = \frac{\pi i}{2 M}, \quad i = 0, 1, \dots, N-1
+\tag{4.2}
+\]
+
+The cosine and sine factors are:
+
+\[
+c_i = \cos(\theta_i), \quad s_i = \sin(\theta_i)
+\tag{4.3}
+\]
+
+Applied to $Q, K$:
+
+\[
+\tilde{Q} = Q \odot c, \quad \tilde{Q}' = Q \odot s, \quad
+\tilde{K} = K \odot c, \quad \tilde{K}' = K \odot s
+\tag{4.4}
+\]
+
+Broadcasting: $c, s \in \mathbb{R}^{1 \times 1 \times N \times 1}$, 
+$Q, K \in \mathbb{R}^{B \times H \times N \times d}$.
+
+\subsection{Encoder Path: Associative Accumulation}
+
+For bidirectional attention:
+
+\[
+\begin{aligned}
+KV_c &= \tilde{K}^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
+KV_s &= \tilde{K}'^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
+Z_c &= \sum_j \tilde{K}_j \in \mathbb{R}^{B \times H \times 1 \times d} \\
+Z_s &= \sum_j \tilde{K}'_j \in \mathbb{R}^{B \times H \times 1 \times d}
+\end{aligned}
+\tag{4.5}
+\]
+
+The output:
+
+\[
+\text{num} = \tilde{Q} KV_c + \tilde{Q}' KV_s, \quad
+\text{den} = \tilde{Q} Z_c^\top + \tilde{Q}' Z_s^\top + \epsilon
+\tag{4.6}
+\]
+
+\[
+\text{context} = \frac{\text{num}}{\text{den}}
+\tag{4.7}
+\]
+
+\textbf{Complexity.} Each matmul is $\mathcal{O}(L d^2)$ or $\mathcal{O}(d^2 L)$. 
+Total: $\mathcal{O}(L d^2)$ time, $\mathcal{O}(d^2)$ memory for the state.
+
+\subsection{Decoder Path: Chunked Prefix-Sum}
+
+For causal attention:
+
+\begin{enumerate}
+\item Pad sequence to multiple of \texttt{chunk\_size = 32}.
+\item Split into \texttt{num\_chunks = L / 32} chunks.
+\item For each chunk:
+\end{enumerate}
+\begin{itemize}
+\item Compute \textbf{intra-chunk} scores (with causal mask).
+\item Compute \textbf{inter-chunk} contributions via running state $(S, Z)$.
+\item Append output.
+\item Update state.
+
+\end{itemize}
+\textbf{Intra-chunk:}
+
+\[
+\text{num}_\text{intra} = \text{masked}(\tilde{Q}_c \tilde{K}_c^\top) V_c
+\tag{4.8}
+\]
+
+\textbf{Inter-chunk:}
+
+\[
+\text{num}_\text{inter} = \tilde{Q}_c S_c + \tilde{Q}_c' S_s
+\tag{4.9}
+\]
+
+\textbf{State update:}
+
+\[
+S_c \mathrel{+}= \tilde{K}_c^\top V_c, \quad
+Z_c \mathrel{+}= \tilde{K}_c^\top \mathbf{1}
+\tag{4.10}
+\]
+
+The output for chunk $c$:
+
+\[
+\text{context}_c = \frac{\text{num}_\text{intra} + \text{num}_\text{inter}}{\text{den}_\text{intra} + \text{den}_\text{inter} + \epsilon}
+\tag{4.11}
+\]
+
+\textbf{Complexity.} Outer Python loop over \texttt{num\_chunks} iterations (4 for $L = 128$). 
+Each iteration does a small matmul. Total wall-clock: dominated by 4 kernel 
+launches per chunk $\times$ 2 chunks.
+
+\subsection{Weight Transfer}
+
+\subsubsection{Standard (DistilBERT)}
+
+\begin{lstlisting}
+q_w = src.q_lin.weight.data
+k_w = src.k_lin.weight.data
+v_w = src.v_lin.weight.data
+o_w = src.out_lin.weight.data
+\end{lstlisting}
+
+\subsubsection{Nested (RoBERTa)}
+
+\begin{lstlisting}
+q_w = src.self.query.weight.data
+k_w = src.self.key.weight.data
+v_w = src.self.value.weight.data
+o_w = src.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{Fused (GPT-2)}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight.data.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+o_w = src.c_proj.weight.data.t()
+\end{lstlisting}
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{Cosformer} \\
+\midrule
+Q projection & $d^2$ & $d^2$ + LoRA \\
+K projection & $d^2$ & $d^2$ + LoRA \\
+V projection & $d^2$ & $d^2$ + LoRA \\
+O projection & $d^2$ & $d^2$ + LoRA \\
+\textbf{Per block} & $4d^2$ & $4d^2 + 4 \cdot r(d + d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Example (DistilBERT, $r = 16$, $d = 768$):}
+
+Per block: $4 \cdot 768\^{}2 + 4 \cdot 16 \cdot 1536 = 2{,}359{,}296 + 98{,}304 
+= 2{,}457{,}600$.
+
+$\Delta$\% per block: $+4.17\%$.
+
+\textbf{Cosformer does not reduce parameter count.}
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Path} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Encoder & $\mathcal{O}(L d^2)$ & $\mathcal{O}(d^2)$ \\
+Decoder & $\mathcal{O}(L d^2)$ & $\mathcal{O}(d^2)$ \\
+Baseline MHSA & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{For $L = 128$, $d = 64$:}
+\begin{itemize}
+\item Cosformer: ~128 $\times$ 64  = 524K operations per head.
+\item Baseline: ~128  $\times$ 64 = 1M operations per head.
+\item \textbf{Cosformer has ~2$\times$ fewer FLOPs.}
+
+\end{itemize}
+\textbf{Wall-clock:} Cosformer has overhead from:
+\begin{itemize}
+\item Kernel feature map (ELU)
+\item Cos/sin reweighting
+\item Chunked scan (decoder only)
+
+\end{itemize}
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} CosformerAttention forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, chunk_size C
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
+2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+3: if GQA: (K, V) $\leftarrow$ repeat_kv(K, V)
+4:
+5: # Feature map
+6: Q $\leftarrow$ ELU(Q) + 1
+7: K $\leftarrow$ ELU(K) + 1
+8:
+9: # Positional reweighting
+10: $\theta$ $\leftarrow$   * arange(L) / (2 * max_seq_len)
+11: Q_c $\leftarrow$ Q   cos($\theta$); Q_s $\leftarrow$ Q   sin($\theta$)
+12: K_c $\leftarrow$ K   cos($\theta$); K_s $\leftarrow$ K   sin($\theta$)
+13:
+14: if is_decoder:
+15:     Y $\leftarrow$ chunked_prefix_sum(Q_c, Q_s, K_c, K_s, V, C)
+16: else:
+17:     KV_c $\leftarrow$ K_c^T @ V
+18:     KV_s $\leftarrow$ K_s^T @ V
+19:     Z_c $\leftarrow$ sum(K_c); Z_s $\leftarrow$ sum(K_s)
+20:     num $\leftarrow$ Q_c @ KV_c + Q_s @ KV_s
+21:     den $\leftarrow$ Q_c @ Z_c^T + Q_s @ Z_s^T
+22:     Y $\leftarrow$ num / (den + $\epsilon$)
+23:
+24: if not is_nested_encoder:
+25:     Y $\leftarrow$ out_proj(Y)
+26: return Y
+\end{lstlisting}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Kernel Approximation}
+
+ELU + 1 is \textbf{not} a good approximation of $\exp(q^\top k)$. The 
+approximation error is bounded by:
+
+\[
+\left|\phi(q)^\top \phi(k) - e^{q^\top k}\right| \leq \epsilon_\text{ELU}
+\tag{4.12}
+\]
+
+where $\epsilon_\text{ELU}$ grows with $\|q\|$ and $\|k\|$.
+
+\textbf{Why it works anyway.} The \textbf{softmax is scale-invariant} -- only the 
+relative ordering of $q^\top k$ matters. ELU + 1 preserves the ordering 
+approximately.
+
+\subsubsection{Locality Recovery}
+
+The Cosformer reweighting gives:
+
+\[
+\tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = \phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)
+\tag{4.13}
+\]
+
+The cosine term decays from 1 at $|i - j| = 0$ to 0 at $|i - j| = L$ 
+(approximately). This restores locality.
+
+\subsubsection{Causality}
+
+The causal path preserves causality:
+
+\[
+\frac{\partial Y_i}{\partial X_j} = 0 \text{ for } j > i
+\tag{4.14}
+\]
+
+because intra-chunk scores are masked and inter-chunk uses only 
+previously-processed state.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

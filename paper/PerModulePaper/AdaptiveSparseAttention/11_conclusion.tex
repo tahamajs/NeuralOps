@@ -18,9 +18,9 @@ peak memory.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Sparsity} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & -2.2\% & 0.42 & -8$\times$ \\
-RoBERTa & -2.6\% & 0.45 & -8$\times$ \\
-GPT-2 & -2.9\% & 0.48 & -8$\times$ \\
+DistilBERT & {{D\_DELTA}}\% & {{D\_SP}} & -{{MEM\_REDUCTION}}$\times$ \\
+RoBERTa & {{R\_DELTA}}\% & {{R\_SP}} & -{{MEM\_REDUCTION}}$\times$ \\
+GPT-2 & {{G\_DELTA}}\% & {{G\_SP}} & -{{MEM\_REDUCTION}}$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,7 +32,7 @@ GPT-2 & -2.9\% & 0.48 & -8$\times$ \\
 \item \textbf{Soft top-$k$ is differentiable and effective.}
 \item \textbf{Chunking bounds memory} without hurting quality.
 \item \textbf{No parameter reduction} -- compute-only optimization.
-\item \textbf{Attention is highly concentrated}: top 10\% of keys captures 85\%.
+\item \textbf{Attention is highly concentrated}: top 10\% of keys captures {{MASS10}}\%.
 
 \end{enumerate}
 \subsection{Future Work}
@@ -71,3 +71,7 @@ We thank {{ACKNOWLEDGMENTS}}.
 \subsection{Conflict of Interest}
 
 None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -24,7 +24,7 @@ adaptively per layer based on spectral energy.
                         |
                          
        +------------------------------------------+
-       |  Compute SVD: W = U   V^T                |
+       |  Compute SVD: W = U $\Sigma$ V^T                |
        +----------------+-------------------------+
                         |
                          
@@ -35,9 +35,9 @@ adaptively per layer based on spectral energy.
                         |
                          
        +------------------------------------------+
-       |  Truncate to r_eff, symmetrize           |
-       |  U_r = U[:, :r]   $\sqrt{}$ _r                   |
-       |  V_r = $\sqrt{}$ _r   V[:r, :]^T                 |
+       |  Truncate to r_eff, symmetrize $\Sigma$         |
+       |  U_r = U[:, :r]   $\sqrt{}$$\Sigma$_r                   |
+       |  V_r = $\sqrt{}$$\Sigma$_r   V[:r, :]^T                 |
        +----------------+-------------------------+
                         |
                          
@@ -63,7 +63,7 @@ where:
 \begin{itemize}
 \item \texttt{down: nn.Linear(d\_in, r)} -- down-projection, weights $V_r \in \mathbb{R}^{r \times d_\text{in}}$
 \item \texttt{up: nn.Linear(r, d\_out)} -- up-projection, weights $U_r \in \mathbb{R}^{d_\text{out} \times r}$
-\item \texttt{LoRA(x) = (x A^\top) B^\top \cdot s} -- optional adapter
+\item \texttt{LoRA(x) = (x A\^{}\top) B\^{}\top \cdot s} -- optional adapter
 
 \end{itemize}
 \subsubsection{Parameter Count}
@@ -314,11 +314,11 @@ Output: model M' with factorized attention
 3:      extract Q, K, V, O from src  (architecture-dependent)
 4:
 5:      for (W, target) in [(Q, q_proj), (K, k_proj), (V, v_proj), (O, out_proj)] do
-6:          U,  , V $\leftarrow$ svd(W)
-7:          E(r) $\leftarrow$ cumsum(  ) / sum(  )
+6:          U, $\Sigma$, V $\leftarrow$ svd(W)
+7:          E(r) $\leftarrow$ cumsum($\Sigma$ ) / sum($\Sigma$ )
 8:          r_eff $\leftarrow$ min(r_max, |{i: E(i) <  }| + 1)
-9:          U_r $\leftarrow$ U[:, :r]   $\sqrt{}$ [:r]
-10:         V_r $\leftarrow$ $\sqrt{}$ [:r]   V[:r, :]
+9:          U_r $\leftarrow$ U[:, :r]   $\sqrt{}$$\Sigma$[:r]
+10:         V_r $\leftarrow$ $\sqrt{}$$\Sigma$[:r]   V[:r, :]
 11:         target.down.weight[:r_eff, :] $\leftarrow$ V_r
 12:         target.up.weight[:, :r_eff] $\leftarrow$ U_r
 13:     end for
@@ -390,5 +390,8 @@ MinimalNOVA:
 \item Uses LoRA for recovery.
 \item Handles four attention architectures.
 \item Achieves \textbf{real parameter reduction} of $d^2 / (2rd)$ per projection.
-
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

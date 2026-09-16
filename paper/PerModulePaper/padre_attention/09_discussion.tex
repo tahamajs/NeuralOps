@@ -1,3 +1,114 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Formal architectural specifications for \texttt{padre_attention}.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Polynomial Substitution Works}
+
+The Taylor approximation of softmax is accurate enough for pretrained 
+transformers with orders $\ge$ 2.
+
+\subsubsection{Takeaway 2: Centering is Critical}
+
+Without max-centering, the polynomial kernel overflows in FP16. This is 
+the most important engineering detail.
+
+\subsubsection{Takeaway 3: Kernelization is Left to Future Work}
+
+The module is \textbf{kernelizable in theory}, but not in this implementation. 
+Runtime is still $\mathcal{O}(N^2 d_h)$.
+
+\subsubsection{Takeaway 4: Order 2 is a Good Default}
+
+Higher orders give diminishing returns.
+
+\subsection{When to Use PADRe}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item As a baseline for polynomial attention research
+\item When testing kernelization strategies
+\item When dropout regularization on attention is desired
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item When runtime speedup is the goal (no kernelization)
+\item When exact softmax is required
+\item When $|s| > 5$ (polynomial breaks down)
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Want polynomial attention? --- Yes --- Use PADRe
+  | No
+   
+Want softmax alternative? --- Yes --- Consider Softpick
+  | No
+   
+Keep standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT at $L = 128$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{PADRe} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M \\
+Attention FLOPs & 100\% & 100\% \\
+Inference time & 1.9 s & {{D\_TIME}} s \\
+Accuracy & 90.71\% & {{D\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Published Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Kernel} & \textbf{Kernelized} & \textbf{Pretrained} \\
+\midrule
+Softmax & exp &  & -- \\
+Performer & RFF &  &  \\
+Linear Transformer & elu+1 &  &  \\
+\textbf{PADRe} & \textbf{poly} & \textbf{Partial} & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Kernelization:} What's the practical feature dimension?
+\item \textbf{Order selection:} Learned or fixed?
+\item \textbf{Interaction with GQA:} Does kernelization preserve GQA?
+\item \textbf{Cross-architecture transfer:} Does order 2 work everywhere?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Provides polynomial attention baseline
+\item Multi-architecture support
+\item Dropout regularization on attention
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item No actual speedup
+\item Kernelization deferred
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

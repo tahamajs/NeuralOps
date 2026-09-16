@@ -95,5 +95,6 @@ landmark values onto important subspaces.
 | **Total** | $\mathcal{O}(L(L_\text{land} + W) d_h)$ |
 
 For $L_\text{land}, W \sim \mathcal{O}(1)$: **linear in $L$**.
+```
 
 ---

@@ -1,3 +1,151 @@
-\section{C Data}
 
-Draft content for goldfinch_ahn.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_ACC}}\% \\
+$\Delta$ & {{D\_DELTA}}\% \\
+F1 & {{D\_F1}} \\
+Params (before) & 66,955,010 \\
+Params (after) & {{D\_PARAMS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{R\_ACC}}\% \\
+$\Delta$ & {{R\_DELTA}}\% \\
+F1 & {{R\_F1}} \\
+Params (after) & {{R\_PARAMS}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Inference time & {{R\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{G\_ACC}}\% \\
+$\Delta$ & {{G\_DELTA}}\% \\
+F1 & {{G\_F1}} \\
+Params (after) & {{G\_PARAMS}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Inference time & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Window Size Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Window} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+16 & {{D\_W16}} & {{R\_W16}} & {{G\_W16}} \\
+32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} \\
+64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} \\
+128 & {{D\_W128}} & {{R\_W128}} & {{G\_W128}} \\
+$\infty$ (full) & {{D\_WINF}} & {{R\_WINF}} & {{G\_WINF}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Gate Bias Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Bias} & \textbf{Initial g} & \textbf{DistilBERT} \\
+\midrule
+0.0 & 0.50 & {{D\_BIAS0}} \\
+1.0 & 0.73 & {{D\_BIAS1}} \\
+1.8 & 0.86 & {{D\_BIAS18}} \\
+3.0 & 0.95 & {{D\_BIAS3}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Preservation Gate Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Init} & \textbf{Initial $\alpha$} & \textbf{DistilBERT} \\
+\midrule
+0.0 & 0.50 & {{D\_AG0}} \\
+1.0 & 0.73 & {{D\_AG1}} \\
+2.0 & 0.88 & {{D\_AG2}} \\
+5.0 & 0.99 & {{D\_AG5}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Remove Long-Memory Branch}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} \\
+\midrule
+Full & {{D\_ACC}}\% \\
+Without long-memory & {{D\_NOLONG}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {"acc": {{D_ACC}}, "params": {{D_PARAMS}}},
+  "roberta": {"acc": {{R_ACC}}, "params": {{R_PARAMS}}},
+  "gpt2": {"acc": {{G_ACC}}, "params": {{G_PARAMS}}}
+}
+\end{lstlisting}
+
+\subsection{C.9 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_goldfinch_ahn.py --models distilbert,roberta,gpt2
+
+for W in 16 32 64 128; do
+    python run_all_4_goldfinch_ahn.py --window_size $W --output_suffix w$W
+done
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

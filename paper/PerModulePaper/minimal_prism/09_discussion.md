@@ -113,5 +113,6 @@ Larger batches benefit more due to better cache utilization.
 
 ### Environmental
 Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+```
 
 ---

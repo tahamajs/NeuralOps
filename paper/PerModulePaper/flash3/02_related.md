@@ -68,3 +68,6 @@ framework with pretrained models.
 | FlashAttention-2 | Kernel | $O(L^2)$ memory $O(L)$ | Ampere+ | Yes |
 | **FlashAttention-3** | Kernel | $O(L^2)$ memory $O(L)$ | Hopper | Yes |
 | Performer | Approx. | $O(L)$ | Any | No |
+```
+
+---

@@ -110,5 +110,6 @@ per_step = elapsed / 5
 - `full` — unmodified model (baseline timing reference)
 - `gated_delta_net` — our method
 - Prior modules: `nha`, `nasc`, `a3`
+```
 
 ---

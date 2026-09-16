@@ -126,5 +126,6 @@ for model in ["distilbert", "roberta", "gpt2"]:
 - CUDA ≥ 11.8 recommended
 - Some baselines may need re-download
 - MinimalSVD has no whole-model traversal; use a wrapper script if needed
+```
 
 ---

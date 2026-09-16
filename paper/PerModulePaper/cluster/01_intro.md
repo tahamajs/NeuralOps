@@ -144,3 +144,6 @@ limitations. Section 11 concludes.
 | $C$ | Cluster centroids |
 | $V_\text{cent}$ | Centroid contexts |
 | $r_L$ | LoRA rank |
+```
+
+---

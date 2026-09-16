@@ -250,5 +250,6 @@ For $d = 768$, $F = 256$, $H = 12$, $d_h = 64$, LoRA $r_L = 16$:
 | **Increase** | — | **+12%** |
 
 The parameter increase is modest: **~12%**.
+```
 
 ---

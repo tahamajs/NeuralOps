@@ -113,3 +113,6 @@ Even at density 100% (large $w + k$), accuracy doesn't exceed baseline
 3. **Fixed $w, k$ suffices.**
 4. **No time speedup without sparse kernels.**
 5. **Density decreases with $L$.**
+```
+
+---

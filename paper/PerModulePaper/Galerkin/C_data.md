@@ -134,5 +134,6 @@ for steps in 10 25 50 100; do
     python run_all_4_galerkin.py --recovery_steps $steps --output_suffix s$steps
 done
 ```
+```
 
 ---

@@ -1,11 +1,156 @@
-\section{05 Architecture}
 
-Draft content for goldfinch_ahn.
+\section{Architecture Integration}
 
+\subsection{Model Support Matrix}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\subsubsection{GPT-2 (Conv1D)}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight.data
+if is_conv1d:
+    c_w = c_w.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+
+\begin{lstlisting}
+q_w = src.self.query.weight.data
+k_w = src.self.key.weight.data
+v_w = src.self.value.weight.data
+o_w = src.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{DistilBERT (Flat)}
+
+\begin{lstlisting}
+q_w = src.q_lin.weight.data
+k_w = src.k_lin.weight.data
+v_w = src.v_lin.weight.data
+o_w = src.out_lin.weight.data
+\end{lstlisting}
+
+\subsection{Gate Initialization}
+
+\begin{lstlisting}
+self.gate = nn.Linear(self.dim, self.num_heads)
+self.gate.bias.data.fill_(gate_init_bias)  # default 1.8
+\end{lstlisting}
+
+With \texttt{gate\_init\_bias = 1.8}: $\sigma(1.8) \approx 0.86$. The gate initially 
+favors the short (sliding-window) branch.
+
+\subsection{Preservation Gate Initialization}
+
+\begin{lstlisting}
+self.output_gate = nn.Parameter(torch.tensor(2.0))
+\end{lstlisting}
+
+At initialization: $\alpha = \sigma(2.0) \approx 0.88$.
+
+\subsection{RoPE Extraction}
+
+For Qwen:
+
+\begin{lstlisting}
+if position_embeddings is not None:
+    cos, sin = position_embeddings
+    q, k = apply_rotary_pos_emb(q, k, cos, sin)
+elif self.rotary_emb is not None:
+    try:
+        cos, sin = rotary_module(q, seq_len=L)
+    except Exception:
+        try:
+            cos, sin = rotary_module(q, pos_ids)
+        except Exception:
+            cos, sin = None, None
+\end{lstlisting}
+
+\subsection{GQA Support}
+
+\begin{lstlisting}
+if self.kv_repeat > 1:
+    k = repeat_kv(k, self.kv_repeat)
+    v = repeat_kv(v, self.kv_repeat)
+\end{lstlisting}
+
+\subsection{Injection}
+
+\textbf{Algorithm 2:} Inject GoldFinch-AHN
+\begin{lstlisting}
+1: new $\leftarrow$ GoldFinchAHNBlock(config, old=old_attn)
+2: if copy_weights fails: return None
+3: if   has .attention.self:
+4:      .attention.self $\leftarrow$ new; is_nested $\leftarrow$ True
+5: elif   has .attention:
+6:      .attention $\leftarrow$ new
+7: elif   has .self:  .self $\leftarrow$ new; is_nested $\leftarrow$ True
+8: elif   has .attn:  .attn $\leftarrow$ new
+9: return new
+\end{lstlisting}
+
+\subsection{Common Pitfalls}
+
+\subsubsection{The `GatedDeltaNetLayer` is a Linear Projection}
+
+The name is misleading. The class does not implement a recurrent mechanism.
+
+\subsubsection{`output\_scale` Redundancy}
+
+\texttt{LoRALinear} has \texttt{self.output\_scale = nn.Parameter(torch.ones(1))} applied 
+at the end of \texttt{forward}. Additionally, \texttt{GoldFinchAHNBlock} has its own 
+\texttt{self.output\_scale}. \textbf{Double scaling} can occur.
+
+\subsubsection{Gate Mean Over Heads}
+
+The gate is computed per-head but then \textbf{mean-pooled}:
+
+\begin{lstlisting}
+gate = torch.sigmoid(self.gate(x)).mean(dim=-1, keepdim=True)
+\end{lstlisting}
+
+This destroys per-head differentiation. The resulting \texttt{gate} has shape 
+\texttt{(B, L, 1)} -- a single scalar per token, applied uniformly across all heads.
+
+\subsubsection{Preservation Gate Means High Residual}
+
+With $\alpha \approx 0.88$, only ~12\% of the block's output reaches the 
+next layer. This makes the block \textbf{conservative}.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("goldfinch_ahn")
+@ATTENTION_REGISTRY.register("goldfinch")
+class GoldFinchAHNBlock(BaseAttention):
+    ...
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/goldfinch_ahn_architecture.png}
-\caption{Architectural overview of goldfinch_ahn.}
-\label{fig:arch_goldfinch_ahn}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of goldfinch\_ahn.}
+\label{fig:arch_goldfinch-ahn}
 \end{figure}
+

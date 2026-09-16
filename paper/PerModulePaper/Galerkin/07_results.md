@@ -118,5 +118,6 @@ to **the basis itself**.
 - Decoder fallback: **no-op** (0% delta)
 - Parameters: **increase** by ~0.9%
 - Verdict: **not recommended for any use case tested**
+```
 
 ---

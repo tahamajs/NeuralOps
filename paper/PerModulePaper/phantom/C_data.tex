@@ -1,3 +1,226 @@
-\section{C Data}
 
-Draft content for phantom.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Ratio & {{D\_RATIO}}$\times$ \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Precision & {{D\_PREC}} \\
+Recall & {{D\_REC}} \\
+Loss & {{D\_LOSS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Compressed layers & {{D\_COMP}} \\
+Fallback layers & {{D\_FALLBACK}} \\
+Avg bucket size & {{D\_BUCKET}} \\
+Compression time & {{D\_TOTAL}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+Ratio & {{R\_RATIO}}$\times$ \\
+Accuracy & {{R\_ACC}}\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+Ratio & {{G\_RATIO}}$\times$ \\
+Accuracy & {{G\_ACC}}\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Per-Layer Reconstruction Error (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{Out} \\
+\midrule
+0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} \\
+1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} \\
+2 & {{D\_L2\_Q}} & {{D\_L2\_K}} & {{D\_L2\_V}} & {{D\_L2\_O}} \\
+3 & {{D\_L3\_Q}} & {{D\_L3\_K}} & {{D\_L3\_V}} & {{D\_L3\_O}} \\
+4 & {{D\_L4\_Q}} & {{D\_L4\_K}} & {{D\_L4\_V}} & {{D\_L4\_O}} \\
+5 & {{D\_L5\_Q}} & {{D\_L5\_K}} & {{D\_L5\_V}} & {{D\_L5\_O}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 LSH Bucket Statistics}
+
+\subsubsection{C.5.1 Bucket Size Distribution (DistilBERT, k=4)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Bucket size} & \textbf{Count} & \textbf{Frequency} \\
+\midrule
+0 & {{B0\_CNT}} & {{B0\_FREQ}}\% \\
+1-4 & {{B14\_CNT}} & {{B14\_FREQ}}\% \\
+5-16 & {{B516\_CNT}} & {{B516\_FREQ}}\% \\
+17-64 & {{B1764\_CNT}} & {{B1764\_FREQ}}\% \\
+>64 & {{B64\_CNT}} & {{B64\_FREQ}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Ablation: CUR Rank}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
+\midrule
+8 & {{D\_R8}} & {{D\_RATIO8}}$\times$ & {{R\_R8}} & {{R\_RATIO8}}$\times$ & {{G\_R8}} & {{G\_RATIO8}}$\times$ \\
+16 & {{D\_R16}} & {{D\_RATIO16}}$\times$ & {{R\_R16}} & {{R\_RATIO16}}$\times$ & {{G\_R16}} & {{G\_RATIO16}}$\times$ \\
+32 & {{D\_R32}} & {{D\_RATIO32}}$\times$ & {{R\_R32}} & {{R\_RATIO32}}$\times$ & {{G\_R32}} & {{G\_RATIO32}}$\times$ \\
+64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{R\_R64}} & {{R\_RATIO64}}$\times$ & {{G\_R64}} & {{G\_RATIO64}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Ablation: LSH Rounds}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rounds} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+1 & {{D\_LSH1}} & {{R\_LSH1}} & {{G\_LSH1}} \\
+2 & {{D\_LSH2}} & {{R\_LSH2}} & {{G\_LSH2}} \\
+4 & {{D\_LSH4}} & {{R\_LSH4}} & {{G\_LSH4}} \\
+8 & {{D\_LSH8}} & {{R\_LSH8}} & {{G\_LSH8}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Ablation: LSH Bits}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Bits} & \textbf{Buckets} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+2 & 4 & {{D\_B2}} & {{R\_B2}} \\
+3 & 8 & {{D\_B3}} & {{R\_B3}} \\
+4 & 16 & {{D\_B4}} & {{R\_B4}} \\
+6 & 64 & {{D\_B6}} & {{R\_B6}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Ablation: Component Contributions}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{$\Delta$} \\
+\midrule
+Full & {{D\_FULL}} & -- \\
+No softpick & {{D\_NOSP}} & {{D\_NOSP\_D}} \\
+No LSH & {{D\_NOLSH}} & {{D\_NOLSH\_D}} \\
+No CUR & {{D\_NOCUR}} & {{D\_NOCUR\_D}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.10 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsubsection{RoBERTa}
+\begin{lstlisting}
+Step  Loss
+1     {{R_S1}}
+...
+50    {{R_S50}}
+\end{lstlisting}
+
+\subsection{C.11 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "params_before": 66955010,
+    "params_after": {{D_PARAMS}},
+    "ratio": {{D_RATIO}},
+    "accuracy_pct": {{D_ACC}},
+    "f1": {{D_F1}},
+    "compressed_layers": {{D_COMP}},
+    "avg_bucket_size": {{D_BUCKET}},
+    "compression_time_s": {{D_TOTAL}}
+  },
+  "roberta": {...},
+  "gpt2": {...}
+}
+\end{lstlisting}
+
+\subsection{C.12 Reproduction Commands}
+
+\begin{lstlisting}
+# Full benchmark
+python run_all_4_phantom.py --models distilbert,roberta,gpt2
+
+# Rank sweep
+for r in 8 16 32 64; do
+    python run_all_4_phantom.py --cur_rank $r --output_suffix r$r
+done
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

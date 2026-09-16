@@ -122,5 +122,6 @@ concludes.
 | TMA | Tensor Memory Accelerator |
 | HBM | High-Bandwidth Memory |
 | SRAM | Shared memory on chip |
+```
 
 ---

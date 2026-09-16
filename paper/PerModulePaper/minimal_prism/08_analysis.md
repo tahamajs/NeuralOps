@@ -156,5 +156,6 @@ MinimalPRISM's inference is **faster** than dense attention:
 4. **Effective rank varies** across layers and models.
 5. **No calibration needed.**
 6. **Injection safety matters** — pre-test prevents catastrophic failures.
+```
 
 ---

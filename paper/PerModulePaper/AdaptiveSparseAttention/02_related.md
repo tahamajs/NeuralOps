@@ -90,3 +90,6 @@ special training procedures.
 | Reformer | Yes | No | No | Yes |
 | Top-K Attn | Yes | No | No | Yes |
 | **ASA** | **Yes** | **Yes** | **Yes** | **Yes** |
+```
+
+---

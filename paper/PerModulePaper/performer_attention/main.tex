@@ -64,10 +64,38 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the performer\_attention module within modern transformer architectures.
+
+The Transformer's self-attention has $\mathcal{O}(L^2)$ time and memory 
+complexity, which is prohibitive for long sequences. \textbf{Performer} 
+(Choromanski et al., ICLR 2021) addresses this by approximating the softmax 
+kernel with \textbf{positive orthogonal random features} (FAVOR+), achieving 
+$\mathcal{O}(L)$ complexity while preserving attention's expressiveness. We 
+present a \textbf{production-hardened port} of Performer to pretrained 
+transformers, supporting four architecture families -- DistilBERT, 
+RoBERTa/BERT, GPT-2, and Qwen/LLaMA -- with exact weight transfer, GQA, 
+RoPE, and two computational paths: a \textbf{bidirectional} path via 
+associative accumulation and a \textbf{causal prefix-scan} path with 
+chunk\_size = 64 for decoders. The feature map includes numerical 
+stabilization via max-subtraction and norm-subtraction, avoiding overflow 
+in FP16.
+
+We evaluate Performer on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA 
+recovery at rank $r_L = {{LORA_RANK}}$ and $F = {{NUM_FEATURES}}$ features. 
+Performer achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{D\_BASE}}\%, 
+$\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), and 
+\textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). We document two important 
+discrepancies between the code and its documentation: (a) \texttt{inject\_performer} 
+\textbf{raises} on failure rather than returning \texttt{None} as the docstring claims, 
+and (b) \texttt{LoRALinear} contains an extra \texttt{output\_scale} parameter not present 
+in the baseline checkpoint.
+
+\textbf{Keywords:} Performer, FAVOR+, random features, kernel attention, linear 
+attention, production port
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} performer\_attention, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} Performer, FAVOR+, random features, kernel attention, linear
 \end{abstract}
 
 \vspace{1em}

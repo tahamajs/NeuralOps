@@ -192,5 +192,6 @@ Base weights ($W_Q, W_K, W_V, W_O$) are frozen. Only LoRA adapters trained.
 | Causal | Not addressed | Explicit dense fallback |
 | Short seq | Not specified | Fallback at $N \leq 128$ |
 | Multi-arch | No | Yes |
+```
 
 ---

@@ -171,5 +171,6 @@ This is transposed relative to `nn.Linear`. MinimalSVD detects Conv1D via
 | $d, d_h, H, H_{kv}$ | Model dims |
 | $r_L, \alpha$ | LoRA rank, scaling |
 | $B, L$ | Batch size, sequence length |
+```
 
 ---

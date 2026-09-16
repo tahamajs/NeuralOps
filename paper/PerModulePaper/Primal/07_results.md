@@ -127,3 +127,6 @@
 - **Parameter count:** unchanged.
 - **Inference time:** {{D_TIME_RATIO}}× slower at $L = 128$; faster at $L > 512$.
 - **All models pass quality gate.**
+```
+
+---

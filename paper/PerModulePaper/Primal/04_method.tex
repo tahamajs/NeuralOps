@@ -146,7 +146,7 @@ provides a good starting point for the Schulz iteration.
 
 \subsubsection{Iteration}
 
-For $K$ iterations (default $K = 4$):
+For $K$ iterations (default $K = {{PINV_ITERS}}$):
 
 \[
 X_{t+1} = X_t (2I - F_2 X_t)
@@ -173,7 +173,7 @@ numerically.
 
 \subsubsection{Number of Iterations}
 
-We use $K = 4$ iterations. Empirically, $K = 4$ suffices for 
+We use $K = {{PINV_ITERS}}$ iterations. Empirically, $K = 4$ suffices for 
 $m \le 128$; larger $m$ may benefit from more.
 
 \subsection{Causality}
@@ -306,3 +306,7 @@ If $\|E_0\| \le \rho < 1$, then after $K$ iterations:
 \]
 
 For $\rho = 0.5$ and $K = 4$: $\|E_K\| \le 2^{-16} \approx 10^{-5}$.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -31,14 +31,14 @@ ASVD compresses each targeted linear projection in four phases:
                         
     +---------------------------------------------+
     |  Phase 3: SVD + energy-based rank           |
-    |  U,  , V = svd(W_weighted)                  |
+    |  U, $\Sigma$, V = svd(W_weighted)                  |
     |  r = min{r : E(r) $\ge$ $\epsilon$}                      |
     +------------------+--------------------------+
                        |
                         
     +---------------------------------------------+
     |  Phase 4: Validate + replace                |
-    |  err =  W - U V^T _F /  W _F                |
+    |  err =  W - U$\Sigma$V^T _F /  W _F                |
     |  if err $\le$ $\tau$: replace with ASVDLinear        |
     |  else: abort injection                      |
     +---------------------------------------------+
@@ -254,19 +254,19 @@ Output: compressed model M'
 11:             W = W   diag($\sqrt{}$F)
 12:
 13:         # SVD
-14:         U,  , Vt $\leftarrow$ svd(W)
-15:         cum_energy $\leftarrow$ cumsum(  ) / sum(  )
+14:         U, $\Sigma$, Vt $\leftarrow$ svd(W)
+15:         cum_energy $\leftarrow$ cumsum($\Sigma$ ) / sum($\Sigma$ )
 16:         r $\leftarrow$ min{r : cum_energy[r] $\ge$ $\epsilon$}
 17:         r $\leftarrow$ max(r, r_min)
 18:         r $\leftarrow$ min(r, min(m, n))
 19:
 20:         # Validate
-21:         W_rec $\leftarrow$ U[:, :r]  [:r] Vt[:r, :]
+21:         W_rec $\leftarrow$ U[:, :r] $\Sigma$[:r] Vt[:r, :]
 22:         err $\leftarrow$  W - W_rec _F /  W _F
 23:         if err > $\tau$:
 24:             raise RuntimeError(...)
 25:
-26:         target.set_svd_factors(U[:, :r], Vt[:r, :],  [:r])
+26:         target.set_svd_factors(U[:, :r], Vt[:r, :], $\Sigma$[:r])
 27:     end for
 28: end for
 29: return M'
@@ -390,4 +390,7 @@ W \to W' = U_{:, :r'} \Sigma_{:r'} V_{:r', :}^\top
 \]
 
 This is immediate; no additional SVD is required. $\square$
+\begin{lstlisting}
 
+---
+\end{lstlisting}

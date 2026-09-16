@@ -1,3 +1,113 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for nexus.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params & 66.95M \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Active path & sparse \\
+Block size & 16 \\
+Top-k & 4 \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Mean gate & {{D\_MEANGATE}} \\
+Mean kept blocks & {{D\_MEANKEEP}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params & 124.6M \\
+Accuracy & {{R\_ACC}}\% \\
+Active path & sparse \\
+Mean gate & {{R\_MEANGATE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params & 124.4M \\
+Accuracy & {{G\_ACC}}\% \\
+Active path & \textbf{dense (causal)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Component Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+Full & {{D\_FULL}} & {{R\_FULL}} \\
+XAttention & {{D\_NOXA}} & {{R\_NOXA}} \\
+Seer & {{D\_NOSEER}} & {{R\_NOSEER}} \\
+Stripe (inactive) & -- & -- \\
+Softpick & {{D\_NOSOFTPICK}} & {{R\_NOSOFTPICK}} \\
+Dense only & {{D\_DENSE}} & {{R\_DENSE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Block Size Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$B_s$} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+8 & {{D\_B8}} & {{R\_B8}} \\
+16 & {{D\_B16}} & {{R\_B16}} \\
+32 & {{D\_B32}} & {{R\_B32}} \\
+64 & {{D\_B64}} & {{R\_B64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.7 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_nexus.py --recovery_steps 50
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

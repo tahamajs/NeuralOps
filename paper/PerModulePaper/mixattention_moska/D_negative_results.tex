@@ -1,3 +1,148 @@
-\section{D Negative Results}
 
-Draft content for mixattention_moska.
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Decoder Path is a No-Op}
+
+For GPT-2, FASA \textbf{does not prune}. Comparing configurations:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{GPT-2} \\
+\midrule
+Baseline & 79.36\% \\
+FASA keep=0.5 & {{G\_ACC}}\% \\
+FASA keep=0.1 & {{G\_ACC\_K10}}\% \\
+FASA keep=0.9 & {{G\_ACC\_K90}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} No difference between keep ratios. Confirms the decoder 
+path skips pruning.
+
+\subsection{D.2 Aggressive Keep Ratio Hurts}
+
+At keep=0.25 (32/128 tokens):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Keep=0.25} & \textbf{Keep=0.5} & \textbf{Keep=0.75} \\
+\midrule
+DistilBERT & {{D\_K25}} & {{D\_K50}} & {{D\_K75}} \\
+RoBERTa & {{R\_K25}} & {{R\_K50}} & {{R\_K75}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} 0.25 is too aggressive.
+
+\subsection{D.3 L2 Method Performs Similarly}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
+\midrule
+\texttt{var} & {{D\_VAR}} & {{R\_VAR}} \\
+\texttt{l2} & {{D\_L2}} & {{R\_L2}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} No significant difference. Both heuristics are weak.
+
+\subsection{D.4 Without CLS Pinning, Collapse}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Setting} & \textbf{DistilBERT} \\
+\midrule
+Protect CLS & {{D\_PROTECT\_ON}} \\
+No protect & {{D\_PROTECT\_OFF}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Accuracy collapses without CLS pinning.
+
+\subsection{D.5 Overhead at Short Sequences}
+
+At L=128, gather + topk overhead exceeds FLOP savings:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Phase} & \textbf{Time} \\
+\midrule
+Standard attention & ~2 ms \\
+FASA gather + topk & ~1 ms \\
+FASA attention (pruned) & ~1 ms \\
+\textbf{Total FASA} & \textbf{~2 ms + overhead} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Result.} FASA is \textbf{slower} than baseline at L=128.
+
+\subsection{D.6 Failed Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Attempt} & \textbf{Result} \\
+\midrule
+Remove CLS pinning & Collapse \\
+Use only L2 norm & Same \\
+Recompute pruning every layer & Extra cost \\
+Fused gather (manual) & No improvement \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.7 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Variance is a weak importance signal.} Weaker than attention scores.
+\item \textbf{CLS pinning is not optional.} It's a load-bearing design choice.
+\item \textbf{Short sequences see no benefit.} Overhead dominates.
+\item \textbf{Decoder support requires different design.} Causal prefix scan needed.
+\item \textbf{The "MoSKA" name is unexplained.} Should be documented or renamed.
+
+\end{enumerate}
+\subsection{D.8 Recommendations}
+
+\begin{enumerate}
+\item \textbf{Test at long sequences ($L > 1024$)} where FASA should help.
+\item \textbf{Use keep\_ratio $\ge$ 0.75.}
+\item \textbf{Learn importance scores} with a small head.
+\item \textbf{Consider H2O or SnapKV} if attention scores are available.
+\item \textbf{Add causal support} via prefix scan if decoders are target.
+
+\end{enumerate}
+\subsection{D.9 What Would Make This Work?}
+
+\begin{enumerate}
+\item \textbf{Learned importance}: Train a small head to predict importance.
+\item \textbf{Layer-wise keep ratios}: PyramidKV-style allocation.
+\item \textbf{Fused kernel}: Eliminate gather overhead.
+\item \textbf{Causal prefix scan}: Enable decoder pruning.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

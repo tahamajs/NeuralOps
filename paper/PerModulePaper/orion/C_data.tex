@@ -1,3 +1,135 @@
-\section{C Data}
 
-Draft content for orion.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_ACC}}\% \\
+$\Delta$ & {{D\_DELTA}}\% \\
+F1 & {{D\_F1}} \\
+Params (before) & 66,955,010 \\
+Params (after) & {{D\_PARAMS}} \\
+Reduction & {{D\_RED}}$\times$ \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{R\_ACC}}\% \\
+$\Delta$ & {{R\_DELTA}}\% \\
+F1 & {{R\_F1}} \\
+Params (before) & 124,647,170 \\
+Params (after) & {{R\_PARAMS}} \\
+Reduction & {{R\_RED}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{G\_ACC}}\% \\
+$\Delta$ & {{G\_DELTA}}\% \\
+F1 & {{G\_F1}} \\
+Params (before) & 124,441,344 \\
+Params (after) & {{G\_PARAMS}} \\
+Reduction & {{G\_RED}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 SVD Energy Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Energy} & \textbf{DistilBERT} & \textbf{Reduction} \\
+\midrule
+0.90 & {{D\_E90}} & {{D\_E90\_R}}$\times$ \\
+0.95 & {{D\_E95}} & {{D\_E95\_R}}$\times$ \\
+0.99 & {{D\_E99}} & {{D\_E99\_R}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Head Split Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Split} & \textbf{DistilBERT} \\
+\midrule
+1/2:1/2 & {{D\_SPLIT\_HALF}} \\
+2/3:1/3 & {{D\_ACC}} \\
+3/4:1/4 & {{D\_SPLIT\_34}} \\
+1:0 & {{D\_ALL\_KERNEL}} \\
+0:1 & {{D\_ALL\_FULL}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Per-Layer Rank Selection (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Layer} & \textbf{q\_rank} & \textbf{k\_rank} & \textbf{v\_rank} & \textbf{o\_rank} \\
+\midrule
+0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} \\
+1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} \\
+... & ... & ... & ... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {"acc": {{D_ACC}}, "params": {{D_PARAMS}}, "reduction": {{D_RED}}},
+  "roberta": {"acc": {{R_ACC}}, "params": {{R_PARAMS}}, "reduction": {{R_RED}}},
+  "gpt2": {"acc": {{G_ACC}}, "params": {{G_PARAMS}}, "reduction": {{G_RED}}}
+}
+\end{lstlisting}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_orion.py --models distilbert,roberta,gpt2
+
+for e in 0.90 0.95 0.99; do
+    python run_all_4_orion.py --svd_energy $e --output_suffix e$e
+done
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

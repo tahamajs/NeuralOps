@@ -72,7 +72,7 @@ We initialize $\ell_h$ to a target sparsity $\rho_0$:
 \tag{4.3}
 \]
 
-For encoders, $\rho_0 = 0.1$; for decoders, $\rho_0 = 0.5$.
+For encoders, $\rho_0 = {{SPARSITY_ENC}}$; for decoders, $\rho_0 = {{SPARSITY}}$.
 
 \subsubsection{Differentiability}
 
@@ -109,7 +109,7 @@ m_j = \sigma\!\left(\frac{s_j - \tau}{T}\right)
 \tag{4.6}
 \]
 
-where $T = 0.1$ is a temperature. The masked score is:
+where $T = {{TEMPERATURE}}$ is a temperature. The masked score is:
 
 \[
 \tilde{s}_j = s_j + \log(m_j + \epsilon)
@@ -195,8 +195,8 @@ Attention output & $\mathcal{O}(B H L^2 d_h)$ & $\mathcal{O}(B H C L d_h)$ \\
 \end{tabular}
 \end{table}
 
-For $C = 64$ and $L = 512$, memory is reduced by 
-\textbf{8$\times$}. Time is unchanged (we still compute all scores); 
+For $C = {{CHUNK_SIZE}}$ and $L = 512$, memory is reduced by 
+\textbf{{{MEM\_REDUCTION}}$\times$}. Time is unchanged (we still compute all scores); 
 only memory is saved. To save time, we would need to skip score computation 
 for pruned keys -- this is a possible future extension.
 
@@ -258,3 +258,7 @@ With chunk size $C$:
 
 independent of the query length. This enables processing arbitrarily long 
 sequences.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

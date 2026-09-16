@@ -151,5 +151,6 @@ def diagnose_block(model):
                 w = mod.attn.in_proj_weight
                 print(f"  in_proj_weight norm: {w.norm().item():.4f}")
 ```
+```
 
 ---

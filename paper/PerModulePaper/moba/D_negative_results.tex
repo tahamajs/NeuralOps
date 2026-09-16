@@ -1,3 +1,109 @@
-\section{D Negative Results}
+\section{Appendix D. Negative Results}
 
-Draft content for moba.
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 No Preservation Gate}
+
+\textbf{Goal.} Remove the preservation gate.
+
+\textbf{Result.} Initial loss higher; convergence slower. Accuracy dropped.
+
+\textbf{Conclusion.} Gate is essential.
+
+\subsubsection{D.1.2 Fixed Decay}
+
+\textbf{Goal.} Use $\gamma = 0.99$ for all dimensions.
+
+\textbf{Result.} Accuracy dropped by {{FIXED\_DROP}}\%.
+
+\textbf{Conclusion.} Learned decay is better.
+
+\subsubsection{D.1.3 No Decay}
+
+\textbf{Goal.} $\gamma = 1$ (no forgetting).
+
+\textbf{Result.} Accuracy collapsed significantly.
+
+\textbf{Conclusion.} Decay is essential.
+
+\subsubsection{D.1.4 True O(L) Attempt}
+
+\textbf{Goal.} Implement chunked scan for O(L).
+
+\textbf{Result.} Complex, unstable, did not converge.
+
+\textbf{Conclusion.} Deferred to future work.
+
+\subsubsection{D.1.5 Single Direction Only}
+
+\textbf{Goal.} Use only forward decay for encoders.
+
+\textbf{Result.} Accuracy dropped by {{UNIDIR\_DROP}}\%.
+
+\textbf{Conclusion.} Bidirectional is better for encoders.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Conv1d Preprocessing}
+
+Added Conv1d before SSM. No improvement.
+
+\subsubsection{D.2.2 Input-Dependent Decay}
+
+Made $\gamma$ input-dependent (selective). Caused instability.
+
+\subsubsection{D.2.3 Multiple Layers of SSM}
+
+Stacked two SSM blocks. Diminishing returns.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{A\_log Init}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Init} & \textbf{DistilBERT} \\
+\midrule
+$\log(1..d)$ & {{D\_ALOG\_DEFAULT}} \\
+Zeros & {{D\_ALOG\_ZERO}} \\
+Random & {{D\_ALOG\_RAND}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Default (log) works best.
+
+\subsubsection{Pres Gate Init}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Init} & \textbf{DistilBERT} \\
+\midrule
+0.0 & {{D\_G0}} \\
+2.0 & {{D\_PRES}} \\
+4.0 & {{D\_G4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Init 2.0 is near-optimal.
+
+\subsection{D.4 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Preservation gate is critical.}
+\item \textbf{Learned decay beats fixed.}
+\item \textbf{Bidirectional for encoders.}
+\item \textbf{True O(L) is non-trivial.}
+\item \textbf{A\_log log-init is good.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

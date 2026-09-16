@@ -126,5 +126,6 @@ This prevents a silent backward failure.
 class SOAFusedAttention(BaseAttention):
     ...
 ```
+```
 
 ---

@@ -111,5 +111,6 @@ nested structure and 12 layers of compounding error.
 3. **V, O need larger rank** than Q, K.
 4. **τ = 0.92 is a sweet spot.**
 5. **T5 relative bias preserved correctly.**
+```
 
 ---

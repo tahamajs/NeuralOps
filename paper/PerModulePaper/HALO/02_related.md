@@ -75,3 +75,6 @@ trains only LoRA + gate parameters, preserving the pretrained knowledge.
 | FLASH | Yes | Layer | No | No | No |
 | Hyena | No | No | No | No | No |
 | **HALO-ReGLA** | **Yes** | **Yes** | **Yes** | **Yes** | **Yes** |
+```
+
+---

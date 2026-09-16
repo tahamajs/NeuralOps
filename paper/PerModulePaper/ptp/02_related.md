@@ -66,3 +66,6 @@ matching.
 | TR-BERT | RL policy | RL | ❌ | ❌ |
 | LTP | Threshold | CE | ❌ | ❌ |
 | **PTP** | **MLP** | **CE** | **✅** | **✅** |
+```
+
+---

@@ -24,7 +24,7 @@ adaptively per layer based on spectral energy.
                         |
                          
    +----------------------------------------------+
-   |  SVD: W = U   V^T                             |
+   |  SVD: W = U $\Sigma$ V^T                             |
    |  Compute cumulative energy E(r)              |
    |  r_eff = min(r_max, argmin E(r) $\ge$  )         |
    +--------------------+-------------------------+
@@ -32,8 +32,8 @@ adaptively per layer based on spectral energy.
                          
    +----------------------------------------------+
    |  Truncate and symmetrize                      |
-   |  U_r = U[:, :r]   $\sqrt{}$ [:r]                     |
-   |  V_r = $\sqrt{}$ [:r]   V[:r, :]^T                   |
+   |  U_r = U[:, :r]   $\sqrt{}$$\Sigma$[:r]                     |
+   |  V_r = $\sqrt{}$$\Sigma$[:r]   V[:r, :]^T                   |
    +--------------------+-------------------------+
                         |
                          
@@ -59,7 +59,7 @@ where:
 \begin{itemize}
 \item \texttt{down: nn.Linear(d\_in, r, bias=False)} -- stores $V_r \in \mathbb{R}^{r \times d_\text{in}}$
 \item \texttt{up: nn.Linear(r, d\_out, bias=True)} -- stores $U_r \in \mathbb{R}^{d_\text{out} \times r}$
-\item \texttt{LoRA(x) = (x A^\top) B^\top \cdot s} -- optional adapter
+\item \texttt{LoRA(x) = (x A\^{}\top) B\^{}\top \cdot s} -- optional adapter
 
 \end{itemize}
 \subsubsection{Parameter Count}
@@ -105,7 +105,7 @@ Given weight $W$ and hyperparameters $r_\text{max}$ (cap) and $\eta$ (energy):
 \item Compute SVD: $W = U \Sigma V^\top$.
 \item Compute cumulative energy:
   $$
-  E(r) = \frac{\sum\_{i=1}^{r} \sigma\_i^2}{\sum\_i \sigma\_i^2}
+  E(r) = \frac{\sum\_{i=1}\^{}{r} \sigma\_i\^{}2}{\sum\_i \sigma\_i\^{}2}
   \tag{4.3}
   $$
 \item Find the smallest $r$ with $E(r) \geq \eta$:
@@ -375,5 +375,8 @@ MinimalSVD:
 \item Uses LoRA for recovery.
 \item Handles four attention architectures.
 \item Achieves \textbf{real parameter reduction} of $d^2 / (r(d_\text{in} + d_\text{out}))$.
-
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

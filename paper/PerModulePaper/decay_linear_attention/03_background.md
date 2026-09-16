@@ -143,5 +143,6 @@ $$
 | $S, z$ | Running state |
 | $\phi$ | ELU+1 feature map |
 | $C$ | Chunk size |
+```
 
 ---

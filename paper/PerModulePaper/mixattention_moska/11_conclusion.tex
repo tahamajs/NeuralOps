@@ -1,3 +1,88 @@
-\section{11 Conclusion}
 
-Draft content for mixattention_moska.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{FASA}, a token-pruning method that retains top-$rL$ tokens 
+by variance of the key representation, with CLS pinning. FASA applies 
+exclusively to \textbf{bidirectional encoders}; the causal decoder path skips 
+pruning to preserve strict causality.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Path} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Time} \\
+\midrule
+DistilBERT & Pruned & {{D\_ACC}}\% & {{D\_DELTA}}\% & {{D\_TIME}} s \\
+RoBERTa & Pruned & {{R\_ACC}}\% & {{R\_DELTA}}\% & {{R\_TIME}} s \\
+GPT-2 & \textbf{No prune} & {{G\_ACC}}\% & {{G\_DELTA}}\% & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Variance is a weaker signal than attention scores.} FASA trades
+  accuracy for lower cost.
+\item \textbf{Decoder support is missing.} FASA is bidirectional-only.
+\item \textbf{Short sequences see no speedup.} Gather + topk overhead dominates.
+\item \textbf{CLS pinning is essential.} Without it, encoders collapse.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+
+\begin{itemize}
+\item Test with \texttt{fasa\_keep\_ratio} $\ge$ 0.75.
+\item Fused Triton kernel to eliminate gather overhead.
+\item Log pruning statistics during evaluation.
+
+\end{itemize}
+\subsubsection{Medium-Term}
+
+\begin{itemize}
+\item Learn importance scores with a small head.
+\item Layer-wise keep ratios (PyramidKV-style).
+\item Causal prefix scan for decoder support.
+
+\end{itemize}
+\subsubsection{Long-Term}
+
+\begin{itemize}
+\item Scale to $L > 4096$.
+\item Combine with quantization.
+\item Compare with H2O on long-context benchmarks.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+FASA is a \textbf{simple, cheap pruning method} that trades accuracy for 
+compute. It is not competitive with attention-based methods (H2O, SnapKV) 
+but is useful when attention scores are unavailable. On long sequences, 
+the overhead of gather and top-k becomes amortized, and FASA may become 
+competitive.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}} for feedback.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

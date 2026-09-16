@@ -121,5 +121,6 @@ $$
 $$
 
 Applied to all four projections for recovery.
+```
 
 ---

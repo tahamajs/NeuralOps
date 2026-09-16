@@ -109,3 +109,6 @@
 - **Head-dim reduction:** up to {{HEAD_DIM_REDUCTION}}× without major loss.
 - **LoRA recovery:** {{LORA_GAIN}}% gain over baseline.
 - **All models pass quality gate.**
+```
+
+---

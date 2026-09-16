@@ -1,2 +1,138 @@
 
 \section{Appendix B. Implementation Details}
+
+\subsection{B.1 The `NativeSparseAttention` Class}
+
+\begin{lstlisting}
+class NativeSparseAttention(BaseAttention):
+    def __init__(self, config=None, window_size=32, top_k=16, ...):
+        super().__init__(config, rank)
+        
+        # ... resolve dim, num_heads ...
+        
+        self.window_size = window_size
+        self.top_k = top_k
+        
+        # Projections with LoRA
+        self.q_proj = LoRALinear(...)
+        self.k_proj = LoRALinear(...)
+        self.v_proj = LoRALinear(...)
+        self.out_proj = LoRALinear(...)
+\end{lstlisting}
+
+\subsection{B.2 Forward Pass -- Local + Top-K Mask}
+
+\begin{lstlisting}
+def forward(self, hidden_states, attention_mask=None, ...):
+    B, L, D = hidden_states.shape
+    
+    Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
+    K = self.k_proj(hidden_states).view(B, L, G, d).permute(0, 2, 1, 3)
+    V = self.v_proj(hidden_states).view(B, L, G, d).permute(0, 2, 1, 3)
+    
+    # RoPE, GQA
+    ...
+    
+    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+    
+    # Valid mask
+    valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
+    key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
+    
+    # Local window mask
+    idx = torch.arange(L, device=device)
+    if self.is_decoder:
+        local_mask = (idx.unsqueeze(1) - idx.unsqueeze(0) <= self.window_size) \
+                   & (idx.unsqueeze(1) >= idx.unsqueeze(0))
+    else:
+        local_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
+    local_mask_4d = local_mask.unsqueeze(0).unsqueeze(0)
+    
+    # Union mask
+    if L <= (2 * self.window_size + 1):
+        total_mask = local_mask_4d & key_valid_4d
+    else:
+        non_local_scores = scores.masked_fill(local_mask_4d | (~key_valid_4d), -1e4)
+        if is_dec:
+            causal_tril = torch.tril(torch.ones(L, L, dtype=torch.bool, device=device))
+            non_local_scores = non_local_scores.masked_fill(~causal_tril, -1e4)
+        k_val = min(self.top_k, max(1, L - (2 * self.window_size + 1)))
+        _, topk_ind = torch.topk(non_local_scores, k=k_val, dim=-1)
+        topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_ind, True)
+        total_mask = (local_mask_4d | topk_mask) & key_valid_4d
+    
+    if is_dec:
+        causal_tril = torch.tril(torch.ones(L, L, dtype=torch.bool, device=device))
+        total_mask = total_mask & causal_tril
+    
+    # Softmax on masked scores
+    scores = scores.masked_fill(~total_mask, -1e4)
+    attn = F.softmax(scores, dim=-1).to(dtype)
+    attn = torch.nan_to_num(attn, nan=0.0)
+    attn = self.dropout(attn)
+    
+    context = torch.matmul(attn, V)
+    ...
+\end{lstlisting}
+
+\subsection{B.3 Handling Short Sequences}
+
+If $L \leq 2w + 1$, every key is already in the window. Skip top-$k$:
+
+\begin{lstlisting}
+if L <= (2 * self.window_size + 1):
+    total_mask = local_mask_4d & key_valid_4d
+\end{lstlisting}
+
+\subsection{B.4 Causal Mask Ordering}
+
+\textbf{Critical:} causal mask is applied \textbf{before} top-$k$ selection.
+
+\begin{lstlisting}
+# 1. Mask local window + padding
+non_local_scores = scores.masked_fill(local_mask_4d | (~key_valid_4d), -1e4)
+
+# 2. Mask future (for decoder)
+if is_dec:
+    non_local_scores = non_local_scores.masked_fill(~causal_tril, -1e4)
+
+# 3. Top-k on remaining
+_, topk_ind = torch.topk(non_local_scores, k=k_val, dim=-1)
+\end{lstlisting}
+
+\subsection{B.5 Common Pitfalls}
+
+\subsubsection{B.5.1 Wrong Top-K Timing}
+
+If you compute top-$k$ before causal masking, it may select future keys. 
+Always mask first.
+
+\subsubsection{B.5.2 Missing Padding Mask}
+
+Without masking padding in top-$k$, padding keys with high scores get 
+selected.
+
+\subsubsection{B.5.3 Wrong `is\_causal` Detection}
+
+For RoBERTa/BERT, \texttt{is\_decoder = False}. For GPT-2, \texttt{is\_decoder = True}. 
+Check via \texttt{config.is\_decoder} or \texttt{model\_type}.
+
+\subsubsection{B.5.4 `is\_nested\_encoder` Mis-set}
+
+For RoBERTa, \texttt{is\_nested\_encoder = True} $\to$ skip \texttt{out\_proj}. Otherwise the 
+output is double-projected.
+
+\subsubsection{B.5.5 Top-K on All Keys}
+
+If you don't mask the local window before top-$k$, the $k$ selections may 
+duplicate the window, wasting budget.
+
+\subsubsection{B.5.6 Memory for Mask Construction}
+
+The \texttt{torch.zeros\_like(scores, dtype=torch.bool)} allocates 
+$\mathcal{O}(B H L^2)$ booleans. For very long $L$, use \texttt{sparse} tensors 
+or a custom kernel.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

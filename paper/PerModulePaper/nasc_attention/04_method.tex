@@ -1,3 +1,257 @@
-\section{04 Method}
 
-Draft content for nasc_attention.
+\section{Method}
+
+\subsection{Overview}
+
+NASC has two paths, chosen by the flag \texttt{use\_dense}:
+
+\begin{lstlisting}
+use_dense = is_cross or (not self.is_decoder and not self.enable_cascade_on_encoders)
+\end{lstlisting}
+
+\begin{itemize}
+\item \textbf{Cross-attention:} dense (standard softmax).
+\item \textbf{Encoders:} dense by default (unless \texttt{enable\_cascade\_on\_encoders=True}).
+\item \textbf{Decoders:} cascade.
+
+\end{itemize}
+The cascade path combines three branches:
+
+\begin{lstlisting}
+                    Input X
+                       |
+        +--------------+--------------+--------------+
+        |              |              |              |
+                                                      
+    +------+       +------+       +------+      +------+
+    |  Q   |       |  K   |       |  V   |      | Gate |
+    +--+---+       +--+---+       +--+---+      +--+---+
+       |              |              |              |
+       +------+-------+--------------+              |
+              |                      |              |
+   +----------+-----------+          |              |
+   |          |           |          |              |
+                                                     
+ +-----+   +------+  +--------+   +------+      [g ,g$_1$,g$_2$]
+ |Local|   |Block |  |RFF     |   |      |       softmax
+ |Win  |   |Sparse|  |Global  |   |      |       per-batch
+ +--+--+   +--+---+  +---+----+   |      |
+    |         |          |         |      |
+    +---------+----------+---------+      |
+              |                            |
+                                            
+        g  O_loc + g$_1$ O_sp + g$_2$ O_glb
+              |
+               
+        Output Y
+\end{lstlisting}
+
+\subsection{Local Window Branch}
+
+Standard scaled dot-product attention with window mask:
+
+\[
+\text{scores}_{ij} = \frac{q_i^\top k_j}{\sqrt{d}}
+\tag{4.1}
+\]
+
+Mask:
+
+\[
+M_{ij} = \begin{cases} 1 & |i - j| \leq W \text{ and } j \leq i \text{ (if causal)} \\ 0 & \text{otherwise} \end{cases}
+\tag{4.2}
+\]
+
+Standard softmax attention within the window.
+
+\subsection{Sparse Block Branch}
+
+\subsubsection{Block-Level Scores}
+
+Partition into $n_b = \lceil L / B_s \rceil$ blocks. Compute mean Q and K:
+
+\[
+\bar{q}_i = \text{mean}(Q_{\text{block } i}), \quad
+\bar{k}_j = \text{mean}(K_{\text{block } j})
+\tag{4.3}
+\]
+
+Block scores:
+
+\[
+s_{ij} = \frac{\bar{q}_i^\top \bar{k}_j}{\sqrt{d}}
+\tag{4.4}
+\]
+
+\subsubsection{Top-$k$ Selection}
+
+For each query block $i$, select top-$k$ key blocks:
+
+\[
+\mathcal{B}_i = \text{topk}_{k}(\{s_{ij}\}_j)
+\tag{4.5}
+\]
+
+\subsubsection{Causal Handling}
+
+For causal decoders, blocks $j > i$ are masked. Also, block 0 is always 
+selected (an attention sink).
+
+\subsubsection{Attention Within Selected Blocks}
+
+Concatenate the selected blocks' K, V, compute softpick attention:
+
+\[
+O_{\text{sp}, i} = \text{softpick}(Q_i K_{\mathcal{B}_i}^\top / \sqrt{d}) V_{\mathcal{B}_i}
+\tag{4.6}
+\]
+
+\textbf{Implementation note.} The block loop uses a Python \texttt{for} loop over 
+$n_b$ iterations, gathering selected blocks each time. For $L = 128$, 
+$B_s = 32$, $n_b = 4$.
+
+\subsection{Global Spectral RFF Branch}
+
+\subsubsection{Feature Map}
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(\Omega x), \sin(\Omega x)] \in \mathbb{R}^{2F}
+\tag{4.7}
+\]
+
+where $\Omega \in \mathbb{R}^{d \times F}$ is orthogonally initialized.
+
+\subsubsection{Non-Causal Path}
+
+\[
+KV = \phi(K)^\top V, \quad Z = \sum_j \phi(K_j)
+\tag{4.8}
+\]
+
+\[
+O_{\text{glb}, i} = \frac{\phi(q_i)^\top KV}{\phi(q_i)^\top Z}
+\tag{4.9}
+\]
+
+\subsubsection{Causal Path via Prefix Sums}
+
+For causal decoders:
+
+\[
+KV_c = \text{cumsum}(\phi(K) \otimes V) \in \mathbb{R}^{B \times H \times L \times 2F \times d}
+\tag{4.10}
+\]
+
+\[
+Z_c = \text{cumsum}(\phi(K))
+\tag{4.11}
+\]
+
+Then per-token:
+
+\[
+O_{\text{glb}, i} = \frac{\phi(q_i)^\top KV_{c,i}}{\phi(q_i)^\top Z_{c,i} + \epsilon}
+\tag{4.12}
+\]
+
+\textbf{Memory concern.} $KV_c$ is $B \times H \times L \times 2F \times d$. For 
+$B = 8$, $H = 12$, $L = 128$, $F = 64$, $d = 64$: 
+$8 \times 12 \times 128 \times 128 \times 64 = 8 \times 10^9$ elements.
+
+\textbf{This is 32 GB in FP32.} In practice, PyTorch's cumsum and einsum might 
+materialize this, causing OOM on RTX 4070.
+
+\subsection{Gate}
+
+Per-batch gate:
+
+\[
+\bar{x}_b = \frac{1}{L} \sum_t x_{b,t}
+\tag{4.13}
+\]
+
+\[
+g = \text{softmax}(W_g \bar{x}_b) \in \mathbb{R}^3
+\tag{4.14}
+\]
+
+where $W_g \in \mathbb{R}^{3 \times d}$.
+
+\textbf{All tokens in a batch share the same $g$.} No per-token adaptivity.
+
+\subsection{Fusion}
+
+\[
+O = g_0 \cdot O_{\text{loc}} + g_1 \cdot O_{\text{sp}} + g_2 \cdot O_{\text{glb}}
+\tag{4.15}
+\]
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Q/K/V/O projections & $4 d^2$ \\
+RFF $\Omega$ & $d \times F$ (frozen) \\
+Gate $W_g$ & $3 d$ \\
+LoRA & $4 \cdot 2 r_L d$ \\
+\textbf{Non-LoRA addition} & $d F + 3d$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768, F = 64$: RFF = 49,152 + gate = 2,304.
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Branch} & \textbf{Time} & \textbf{Memory} \\
+\midrule
+Local window & $O(L W d)$ & $O(L W)$ \\
+Sparse block & $O(L k B_s d)$ & $O(L k B_s)$ \\
+RFF (non-causal) & $O(L F d)$ & $O(F d)$ \\
+RFF (causal) & $O(L F d)$ & $O(L F d)$ $\leftarrow$ high \\
+Gate & $O(L d)$ & $O(d)$ \\
+\textbf{Total (cascade)} & $O(L(W + k B_s + F) d)$ & $O(L F d)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} NASC forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, is_cross, W, B_s, k, F
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ X W_Q; K $\leftarrow$ X W_K; V $\leftarrow$ X W_V
+ 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
+ 3: if GQA: (K, V) $\leftarrow$ repeat_kv(K, V)
+ 4:
+ 5: if is_cross or (not is_decoder and not enable_cascade):
+ 6:     # Dense path
+ 7:     O $\leftarrow$ softmax(Q K^T / sqrt(d)) V
+ 8: else:
+ 9:     # Cascade path
+10:     g $\leftarrow$ softmax(W_g   mean(X, dim=1))     per-batch gate
+11:     O_loc $\leftarrow$ local_window_attention(Q, K, V, W)
+12:     O_sp $\leftarrow$ sparse_block_attention(Q, K, V, B_s, k)
+13:     O_glb $\leftarrow$ spectral_rff_attention(Q, K, V, F)
+14:     O $\leftarrow$ g[0] O_loc + g[1] O_sp + g[2] O_glb
+15:
+16: if head_mask: apply
+17: if is_nested_encoder: return O
+18: else: return out_proj(O)
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

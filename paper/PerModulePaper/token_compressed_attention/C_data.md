@@ -72,5 +72,6 @@ Step  Loss
 ```bash
 python run_all_4_token_compressed.py --compression_ratio 0.5
 ```
+```
 
 ---

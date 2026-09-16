@@ -64,10 +64,47 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the moba module within modern transformer architectures.
+State-space models (SSMs), particularly Mamba (Gu \& Dao, 2023), have emerged 
+as strong alternatives to attention for sequence modeling. However, replacing 
+attention in a \textbf{pretrained} transformer with an SSM requires careful 
+handling of the pretrained weights and preservation of the residual 
+information flow. We present \textbf{Mamba-Inspired Gated State-Space Attention}, 
+a drop-in replacement for multi-head attention that:
+
+\begin{enumerate}
+\item Reuses pretrained Q, K, V, O weights by projecting them into a two-branch
+  gated state-space formulation,
+\item Applies a \textbf{learned exponential decay} over sequence positions to
+  emulate selective state-space dynamics,
+\item Adds a \textbf{preservation gate} that blends the new output with the residual
+  input via a learnable scalar $\alpha = \sigma(g)$ initialized toward the
+  SSM branch,
+\item Supports causal masking for decoders (exponential-decay causal softmax)
+  and bidirectional processing for encoders (forward + backward decay).
+
+\end{enumerate}
+We are explicit about a \textbf{critical limitation}: despite the SSM-inspired 
+formulation, the implementation materializes an $[L \times L \times D]$ 
+weight tensor, resulting in $\mathcal{O}(L^2 D)$ memory and time, \textbf{not} 
+$\mathcal{O}(L)$. The SSM-inspired decay enforces a soft causal structure 
+but does not achieve the linear complexity of true Mamba.
+
+On SST-2, Mamba-Inspired Gated SSM Attention achieves \textbf{{{D\_ACC}}\%} on 
+DistilBERT (baseline {{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa 
+(baseline {{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 
+(baseline {{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA 
+recovery steps. We position this module as a **state-space-inspired 
+alternative** to standard attention with a preservation gate, and we 
+explicitly discuss the gap between the SSM formulation and the actual 
+implementation complexity.
+
+\textbf{Keywords:} state-space models, gated attention, preservation gate, 
+SSM-inspired, multi-architecture
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} moba, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} state-space models, gated attention, preservation gate,
 \end{abstract}
 
 \vspace{1em}

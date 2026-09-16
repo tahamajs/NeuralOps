@@ -133,3 +133,6 @@ We use LoRA to recover quality after attention replacement.
 | $X_t$ | $t$-th Schulz iterate |
 | $r$ | LoRA rank |
 | $\sigma$ | Softmax |
+```
+
+---

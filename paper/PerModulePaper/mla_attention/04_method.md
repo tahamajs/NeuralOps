@@ -293,5 +293,6 @@ MLA reproduction:
    GQA expansion.
 5. Uses LoRA for recovery.
 6. Achieves **{{KV_REDUCTION}}×** KV-cache reduction.
+```
 
 ---

@@ -173,5 +173,6 @@ GPT-2's Conv1D stores weights as `(in, out)`. Must transpose.
 ### B.6.3 Not Freezing Base Weights
 
 Base weights must have `requires_grad = False` after copy.
+```
 
 ---

@@ -105,3 +105,48 @@ python run_all_4_infini.py --models distilbert,roberta,gpt2 --recovery_steps 50 
 cd D:\SVD_Project\papers\infini
 python apply_vars.py --module infini
 python build.py --module infini
+```
+
+---
+
+## 💡 نکات کلیدی Infini-Attention
+
+### ۱. **"Compressive" به memory اشاره دارد**
+
+نه به compression مدل. این را در abstract، intro و همه جا صادقانه بگو.
+
+### ۲. **پارامتر اضافه می‌کند**
+
+- Memory: `H × d_c × d_h` per layer
+- Gate β: 1
+- LoRA: 4 projections
+
+برای DistilBERT: **+1.18M پارامتر** (+1.8%)
+
+### ۳. **β = -5 strategy**
+
+- `σ(-5) ≈ 0.0067` → memory فقط 0.7% در ابتدا
+- این حفظ pretrained behavior است
+- در طول training β یاد می‌گیرد
+
+### ۴. **Local window = 128**
+
+Trade-off:
+- کوچک: memory مهم‌تر
+- بزرگ: local مهم‌تر
+
+`W = 128` sweet spot است.
+
+### ۵. **مزیت اصلی در long context**
+
+در L=128، Infini کندتر از baseline است. مزیت در L>512 ظاهر می‌شود:
+- L=2048: **~10× سریع‌تر**
+- L=4096: **~16× سریع‌تر**
+
+### ۶. **Multi-architecture پشتیبانی**
+
+مثل NHA/EAT/AASVD، از flat/nested/causal/GQA پشتیبانی می‌کند.
+
+---
+
+**قدم بعدی: `run_all_4_infini.py` را اجرا کن و `summary.csv` را بفرست تا `variables.json` را با اعداد واقعی پر کنم.**

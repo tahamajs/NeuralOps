@@ -1,3 +1,64 @@
-\section{10 Limitations}
 
-Draft content for performer_attention.
+\section{Limitations}
+
+\subsection{`inject\_performer` Raises on Failure}
+
+Contrary to the docstring, \texttt{inject\_performer} raises \texttt{RuntimeError} on 
+construction failure. This is a \textbf{robustness regression} compared to 
+modules that return \texttt{None}.
+
+\subsection{`output\_scale` is a New Parameter}
+
+\texttt{LoRALinear.output\_scale} is not in baseline checkpoints. It defaults to 
+1.0 but causes \texttt{missing\_keys} warnings.
+
+\subsection{Cross-Attention Not Supported}
+
+\texttt{encoder\_hidden\_states} $\to$ returns input unchanged.
+
+\subsection{Feature Approximation Error}
+
+FAVOR+ approximates softmax. The approximation error is $\mathcal{O}(1/\sqrt{F})$. 
+Small $F$ $\to$ larger error.
+
+\subsection{Slower than FlashAttention-2}
+
+At short sequences, the extra operations (feature map, gather, etc.) make 
+Performer slower than FlashAttention-2.
+
+\subsection{Task Coverage}
+
+Only SST-2. Long-context tasks not tested.
+
+\subsection{Model Coverage}
+
+Only three models. Qwen untested.
+
+\subsection{Single Seed}
+
+No multi-seed runs.
+
+\subsection{Feature Map Epsilon}
+
+The $+\epsilon$ in the feature map deviates slightly from theory.
+
+\subsection{`kernel\_type` Options}
+
+Three options (\texttt{favor\_plus}, \texttt{elu}, \texttt{relu}), but the paper only advocates 
+\texttt{favor\_plus}.
+
+\subsection{Python Loop in Causal Path}
+
+For $N = 128$, chunk=64: 2 iterations. Acceptable.
+
+\subsection{What This Paper Is Not}
+
+\begin{itemize}
+\item Not a new algorithm (Performer is published).
+\item Not the fastest method.
+\item Not a compression method.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

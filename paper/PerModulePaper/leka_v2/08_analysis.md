@@ -100,5 +100,6 @@ If $g_h \to 0$ or $g_h \to 1$, one branch is ignored.
 3. **Dual-scale helps.**
 4. **Softpick stabilizes.**
 5. **LEKAv2 is not truly linear at ρ = 0.5.**
+```
 
 ---

@@ -1,3 +1,132 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for moe_deltakv_paged.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS\_ABS}} \\
+Trainable & {{D\_TRAINABLE}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Page size & 64 \\
+k\_experts & 4 \\
+SVD rank & 16 \\
+Num pages & {{D\_PAGES}} \\
+Page-0 rate & {{D\_P0\_RATE}}\% \\
+Aux loss & {{D\_AUX}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS\_ABS}} \\
+Accuracy & {{R\_ACC}}\% \\
+Page-0 rate & {{R\_P0\_RATE}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS\_ABS}} \\
+Accuracy & {{G\_ACC}}\% \\
+Page-0 rate & {{G\_P0\_RATE}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 k\_experts Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{k} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+1 & {{D\_K1}} & {{R\_K1}} & {{G\_K1}} \\
+2 & {{D\_K2}} & {{R\_K2}} & {{G\_K2}} \\
+4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} \\
+8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Page Size Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{P} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+16 & {{D\_P16}} & {{R\_P16}} & {{G\_P16}} \\
+32 & {{D\_P32}} & {{R\_P32}} & {{G\_P32}} \\
+64 & {{D\_P64}} & {{R\_P64}} & {{G\_P64}} \\
+128 & {{D\_P128}} & {{R\_P128}} & {{G\_P128}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.7 Scaling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{L} & \textbf{Standard} & \textbf{MoE-DeltaKV} \\
+\midrule
+128 & {{T128\_STD}} & {{T128\_MOE}} \\
+256 & {{T256\_STD}} & {{T256\_MOE}} \\
+512 & {{T512\_STD}} & {{T512\_MOE}} \\
+1024 & {{T1024\_STD}} & {{T1024\_MOE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_moe_deltakv_paged.py --page_size 64 --k_experts 4
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

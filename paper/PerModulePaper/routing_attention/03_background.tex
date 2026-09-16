@@ -1,3 +1,101 @@
-\section{03 Background}
 
-Draft content for routing_attention.
+\section{Background}
+
+\subsection{Multi-Head Self-Attention}
+
+Standard MHSA:
+
+\[
+\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d}}\right) V_h
+\tag{3.1}
+\]
+
+\[
+\text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+\tag{3.2}
+\]
+
+\subsection{Sparse Attention Formulation}
+
+A sparse attention restricts the softmax to a subset $\mathcal{S}_i$ of keys 
+for each query $i$:
+
+\[
+\text{SparseAttn}_i = \frac{\sum_{j \in \mathcal{S}_i} e^{q_i^\top k_j / \sqrt{d}} v_j}{\sum_{j \in \mathcal{S}_i} e^{q_i^\top k_j / \sqrt{d}}}
+\tag{3.3}
+\]
+
+If $|\mathcal{S}_i| = O(L/K)$, the theoretical cost is $O(L^2/K)$.
+
+\textbf{Practical caveat.} Realizing this speedup requires \textbf{sparse matmul} or 
+\textbf{block-sparse kernels}. Naively computing the full $L \times L$ matrix and 
+masking does not reduce compute; it only reduces effective memory if using 
+sparse ops.
+
+\subsection{k-Means Clustering}
+
+Given $N$ points $\{x_i\} \subset \mathbb{R}^d$ and $K$ clusters, k-means 
+minimizes:
+
+\[
+\mathcal{L}(\mathcal{C}, \mu) = \sum_{k=1}^{K} \sum_{i \in \mathcal{C}_k} \|x_i - \mu_k\|_2^2
+\tag{3.4}
+\]
+
+\textbf{Lloyd's algorithm} alternates:
+
+\begin{enumerate}
+\item \textbf{Assignment:} $c_i = \arg\min_k \|x_i - \mu_k\|_2$
+\item \textbf{Update:} $\mu_k = \frac{1}{|\mathcal{C}_k|} \sum_{i \in \mathcal{C}_k} x_i$
+
+\end{enumerate}
+\textbf{Non-differentiability.} The $\arg\min$ in step 1 is non-differentiable. 
+Gradients cannot flow through the cluster assignment.
+
+\subsection{Content-Aware Routing}
+
+Routing decides which tokens attend to which. Content-aware routing uses 
+the token representations themselves:
+
+\[
+\mathcal{S}_i = \{j : c_i = c_j\}
+\tag{3.5}
+\]
+
+where $c_i$ is the cluster assignment of token $i$.
+
+\subsection{LoRA}
+
+LoRA (Hu et al., 2021) adds a low-rank update:
+
+\[
+\Delta W = \frac{\alpha}{r} B A
+\tag{3.6}
+\]
+
+with $B = 0$ at init.
+
+\subsection{Complexity Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Time} & \textbf{Memory} & \textbf{Notes} \\
+\midrule
+Dense attention & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ & Baseline \\
+Sparse (theory) & $\mathcal{O}(L \cdot L/K \cdot d)$ & $\mathcal{O}(L^2/K)$ & Requires sparse ops \\
+Sparse (naive) & $\mathcal{O}(K \cdot L^2 d)$ & $\mathcal{O}(L^2)$ & Our implementation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{The naive implementation is slower, not faster.}
+
+\subsection{Notation Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

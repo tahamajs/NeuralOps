@@ -110,3 +110,6 @@ limitations. Section 11 concludes.
 | $d$ | Query-key distance |
 | $g_z(d)$ | Soft ramp mask |
 | $\lambda$ | L1 span penalty weight |
+```
+
+---

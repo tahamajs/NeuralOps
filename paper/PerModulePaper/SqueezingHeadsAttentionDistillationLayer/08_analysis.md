@@ -119,3 +119,6 @@ head-dim reduction.
 3. **Head-dim reduction $s=2$** is a sweet spot.
 4. **Early layers more sensitive** than late layers.
 5. **SH beats head pruning** by {{SH_GAIN}}%.
+```
+
+---

@@ -316,3 +316,6 @@ See Appendix A.5 for details.
 - $K = 16$: balanced (default)
 - $K = 32$: more fidelity, slower
 - $K = L$: no compression (full attention)
+```
+
+---

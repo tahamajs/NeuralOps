@@ -1,3 +1,74 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for aegis_v5.
+\subsection{Summary}
+
+We presented \textbf{AEGIS-V5}, a hybrid attention module combining local 
+sliding-window attention with global kernel linear attention through a 
+split-head architecture. Base projections are SVD-factorized with energy-
+based rank selection and frozen; LoRA adapters provide trainable capacity. 
+Per-head gates fuse local and global branches.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{VRAM $\Delta$} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & {{D\_PARAM\_PCT}}\% & {{D\_VRAM\_DELTA}}\% \\
+RoBERTa & {{R\_DELTA}}\% & {{R\_PARAM\_PCT}}\% & {{R\_VRAM\_DELTA}}\% \\
+GPT-2 & {{G\_DELTA}}\% & {{G\_PARAM\_PCT}}\% & {{G\_VRAM\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Split-head architecture works.}
+\item \textbf{Softpick fix prevents collapse} (V4 vs V5).
+\item \textbf{Parameter effect depends on \texttt{max\_rank}.}
+\item \textbf{Decoder fallback is essential} for causality.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernels for local + kernel attention
+\item Adaptive per-layer SVD rank
+\item INT8 + AEGIS-V5
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Causal-safe hybrid attention
+\item Theoretical analysis of head split
+\item Cross-task transferability
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+Code and checkpoints released.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed AEGIS-V5, implemented, ran experiments, wrote
+  paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

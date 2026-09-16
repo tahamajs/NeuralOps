@@ -18,13 +18,13 @@ sample SST-2 input.
 \textbf{POS tag} & \textbf{Mean score} \\
 \midrule
 [CLS] & 1.00 (fixed) \\
-Noun & 0.75 \\
-Verb & 0.72 \\
-Adjective & 0.82 \\
-Adverb & 0.68 \\
-Determiner & 0.25 \\
-Preposition & 0.22 \\
-Punctuation & 0.15 \\
+Noun & {{SCORE\_NOUN}} \\
+Verb & {{SCORE\_VERB}} \\
+Adjective & {{SCORE\_ADJ}} \\
+Adverb & {{SCORE\_ADV}} \\
+Determiner & {{SCORE\_DET}} \\
+Preposition & {{SCORE\_PREP}} \\
+Punctuation & {{SCORE\_PUNCT}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -37,7 +37,7 @@ scores; function words (determiners, prepositions) have lower.
 We compute the Pearson correlation between learned scores and TF-IDF:
 
 \[
-\rho_\text{Pearson} = \text{corr}(s, \text{TF-IDF}) = 0.65
+\rho_\text{Pearson} = \text{corr}(s, \text{TF-IDF}) = {{TFIDF_CORR}}
 \tag{8.1}
 \]
 
@@ -55,12 +55,12 @@ importance measure.
 \toprule
 \textbf{Layer} & \textbf{Kept ratio} & \textbf{$\Delta$ from target} \\
 \midrule
-0 & 85\% & 5\% \\
-1 & 82\% & 2\% \\
-2 & 80\% & 0\% \\
-3 & 78\% & -2\% \\
-4 & 77\% & -3\% \\
-5 & 76\% & -4\% \\
+0 & {{D\_L0\_KEPT}}\% & {{D\_L0\_DELTA}}\% \\
+1 & {{D\_L1\_KEPT}}\% & {{D\_L1\_DELTA}}\% \\
+2 & {{D\_L2\_KEPT}}\% & {{D\_L2\_DELTA}}\% \\
+3 & {{D\_L3\_KEPT}}\% & {{D\_L3\_DELTA}}\% \\
+4 & {{D\_L4\_KEPT}}\% & {{D\_L4\_DELTA}}\% \\
+5 & {{D\_L5\_KEPT}}\% & {{D\_L5\_DELTA}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -78,14 +78,14 @@ importance measure.
 \toprule
 \textbf{Scoring} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Attention magnitude & 85.5 & 73.0 & 74.0 \\
-Token magnitude & 82.0 & 70.0 & 71.0 \\
-\textbf{Learned MLP} & \textbf{89.5} & \textbf{77.0} & \textbf{78.0} \\
+Attention magnitude & {{ATTN\_D}} & {{ATTN\_R}} & {{ATTN\_G}} \\
+Token magnitude & {{MAG\_D}} & {{MAG\_R}} & {{MAG\_G}} \\
+\textbf{Learned MLP} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Learned MLP improves by 3.5\%.
+\textbf{Observation.} Learned MLP improves by {{LEARNED\_GAIN}}\%.
 
 \subsection{Causality Verification}
 
@@ -98,7 +98,7 @@ out[0, i].sum().backward()
 assert x.grad[0, i+1:].abs().max() < 1e-6
 \end{lstlisting}
 
-\textbf{Result.}   Verified on all three models
+\textbf{Result.} {{CAUSAL\_VERIFIED}}
 
 \subsection{Effect of Score Network Depth}
 
@@ -111,9 +111,9 @@ assert x.grad[0, i+1:].abs().max() < 1e-6
 \toprule
 \textbf{Depth} & \textbf{DistilBERT} & \textbf{Params/layer} \\
 \midrule
-Linear (1 layer) & 87.5 & ~768 \\
-MLP-64 (2 layers) & \textbf{89.5} & ~50K \\
-MLP-64-64 (3 layers) & 89.5 & ~55K \\
+Linear (1 layer) & {{DEPTH1}} & ~768 \\
+MLP-64 (2 layers) & \textbf{{{D\_ACC}}} & ~50K \\
+MLP-64-64 (3 layers) & {{DEPTH3}} & ~55K \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -131,16 +131,16 @@ MLP-64-64 (3 layers) & 89.5 & ~55K \\
 \toprule
 \textbf{Input type} & \textbf{Accuracy drop} \\
 \midrule
-Very short sequences ($L < 16$) & 5 \\
-Adversarial inputs & 15 \\
-Rare-word inputs & 3 \\
+Very short sequences ($L < 16$) & {{FAIL\_SHORT}} \\
+Adversarial inputs & {{FAIL\_ADV}} \\
+Rare-word inputs & {{FAIL\_RARE}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsubsection{Root Causes}
 
-Score network relies on content; adversarial inputs confuse it
+{{FAIL\_CAUSE}}
 
 \subsection{Numerical Stability}
 
@@ -165,3 +165,7 @@ If all tokens are padding, we clamp to first token.
 \item \textbf{Learned MLP beats heuristics.}
 \item \textbf{Causality preserved via position comparison.}
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

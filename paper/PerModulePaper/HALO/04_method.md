@@ -278,3 +278,6 @@ or the gate is at a boundary ($g_h \to 0$ or $g_h \to 1$).
 The causal prefix-sum formulation ensures position $i$ only attends to 
 $j \le i$. This is because $\text{cum}^{(i)}$ depends only on $\{\phi(K_j), 
 V_j : j \le i\}$. $\square$
+```
+
+---

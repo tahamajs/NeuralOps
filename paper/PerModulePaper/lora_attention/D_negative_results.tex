@@ -1,3 +1,108 @@
-\section{D Negative Results}
+\section{Appendix D. Negative Results}
 
-Draft content for lora_attention.
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 LoRA on FFN Only}
+
+\textbf{Goal.} LoRA on FFN (standard).
+
+\textbf{Result.} Accuracy {{FFN\_ACC}}\% vs LoRA Attention {{D\_ACC}}\%.
+
+\textbf{Conclusion.} Attention LoRA is more effective for classification.
+
+\subsubsection{D.1.2 Q-Only LoRA}
+
+\textbf{Goal.} Reduce trainable params further.
+
+\textbf{Result.} Accuracy dropped by {{Q\_ONLY\_DROP}}\%.
+
+\textbf{Conclusion.} All projections matter.
+
+\subsubsection{D.1.3 Very High Rank}
+
+\textbf{Goal.} $r_L = 256$.
+
+\textbf{Result.} No improvement, 4$\times$ more params.
+
+\textbf{Conclusion.} Rank 16 is sufficient.
+
+\subsubsection{D.1.4 Very Low Rank}
+
+\textbf{Goal.} $r_L = 2$.
+
+\textbf{Result.} Accuracy dropped significantly.
+
+\textbf{Conclusion.} Rank 4 is the practical minimum.
+
+\subsubsection{D.1.5 Non-Zero B Init}
+
+\textbf{Goal.} Random init for B.
+
+\textbf{Result.} Initial loss much higher; slower convergence.
+
+\textbf{Conclusion.} Zero-init B is essential.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 LoRA with Dropout on Adapters}
+
+Tested dropout on LoRA branch. No improvement.
+
+\subsubsection{D.2.2 LoRA + Full FT on Classifier}
+
+Trained classifier head fully. Marginal improvement, defeats purpose.
+
+\subsubsection{D.2.3 Different LR for A, B}
+
+Asymmetric LR (LoRA+ style). Small improvement, not worth complexity.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Learning Rate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{LR} & \textbf{DistilBERT} \\
+\midrule
+1e-5 & {{D\_LR1e5}} \\
+5e-5 & {{D\_LR5e5}} \\
+2e-4 & {{D\_LR2e4}} \\
+5e-4 & {{D\_LR5e4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Alpha}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{alpha} & \textbf{DistilBERT} \\
+\midrule
+8 & {{D\_A8}} \\
+16 & {{D\_A16}} \\
+32 & {{D\_A32}} \\
+64 & {{D\_A64}} \\
+128 & {{D\_A128}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Attention LoRA > FFN LoRA.}
+\item \textbf{All four projections matter.}
+\item \textbf{Zero-init B is essential.}
+\item \textbf{Rank 16 is a good default.}
+\item \textbf{LR 2e-4 works well.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

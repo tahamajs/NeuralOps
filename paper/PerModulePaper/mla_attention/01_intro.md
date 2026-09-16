@@ -124,5 +124,6 @@ Section 10 lists limitations. Section 11 concludes.
 | $L$ | Sequence length |
 | $B$ | Batch size |
 | $N_l$ | Number of layers |
+```
 
 ---

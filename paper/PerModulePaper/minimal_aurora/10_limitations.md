@@ -61,5 +61,6 @@ Research-grade. Known issues:
 - `output_scale` drift
 - Silent injection failure
 - No unit tests
+```
 
 ---

@@ -96,3 +96,6 @@ $\tau$ is clamped to $[0.1, 10.0]$ to avoid degenerate softmax.
 3. **Crossover at $L \approx 100$** — beneficial for long sequences.
 4. **Learned $\tau$ and $\alpha$ help** — small gains from learnable scalars.
 5. **Not a compression method** — parameter count increases.
+```
+
+---

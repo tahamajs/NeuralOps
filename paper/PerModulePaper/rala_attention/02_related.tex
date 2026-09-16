@@ -1,3 +1,92 @@
-\section{02 Related}
 
-Draft content for rala_attention.
+\section{Related Work}
+
+\subsection{Linear Attention}
+
+\textbf{Katharopoulos et al. (2020)} introduced the reordering trick:
+
+\[
+\text{LinAttn}(Q, K, V)_i = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\tag{2.1}
+\]
+
+with $\phi(x) = \mathrm{elu}(x) + 1$. Complexity: $\mathcal{O}(L d^2)$ -- 
+linear in $L$ but quadratic in $d$. Since $d \ll L$ for long sequences, 
+this is a win.
+
+\textbf{Choromanski et al. (2021)} used positive orthogonal random features 
+(PORF) to approximate the softmax kernel more accurately. Performer achieves 
+unbiased estimation but requires $m \gg d$ features for low error.
+
+\textbf{Schlag et al. (2021)} showed that linear attention with $\phi(x) = 
+\mathrm{ReLU}(x)$ or $\mathrm{elu}(x) + 1$ cannot represent certain 
+induction-head behaviors.
+
+\textbf{Zhang et al. (2024)} generalized linear attention to GLA (Gated Linear 
+Attention) with data-dependent decay.
+
+\subsection{Rank-Augmented Attention}
+
+\textbf{Low-rank attention.} Linformer (Wang et al., 2020) projects $K, V$ to a 
+low rank globally. This reduces the KV-cache but loses head-specific 
+structure.
+
+\textbf{Nystr mformer} (Xiong et al., 2021). Nystr m approximation of the attention 
+matrix. Landmark points are selected globally.
+
+\textbf{Rank-1 attention.} Some efficient attention variants add a rank-1 
+correction to the linear attention output (e.g., Delta Net, Yang et al., 
+2024). RALA generalizes this to rank-$r$ per head.
+
+\subsection{Kernel Feature Maps}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Kernel} & \textbf{$\phi(x)$} & \textbf{Reference} \\
+\midrule
+elu+1 & $\mathrm{elu}(x) + 1$ & Katharopoulos et al., 2020 \\
+ReLU & $\max(0, x)$ & Schlag et al., 2021 \\
+Softplus & $\log(1 + e^x)$ & This work \\
+Squared ReLU & $\max(0, x)^2$ & Zhang et al., 2024 \\
+Exponential & $e^x$ (unstable) & -- \\
+RFF & $\cos(\omega x + b)$ & Choromanski et al., 2021 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Why softplus?} Smooth, strictly positive, unbounded. No kink at $x = 0$ 
+(unlike elu+1). Numerically stable (in contrast to $e^x$).
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{RALA} \\
+\midrule
+Complexity & $\mathcal{O}(L)$ & $\mathcal{O}(L)$ \\
+Kernel & elu+1 / ReLU / RFF & Softplus \\
+Augmentation & None / rank-1 & Rank-$r$ per head \\
+Gate & None & Scalar $\alpha$ (init 0) \\
+Parameter reduction & Sometimes & No (increases) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} RALA adds a \textbf{low-rank per-head correction} to linear 
+attention. This is closest to Delta Net (Yang et al., 2024) but uses a 
+\textbf{learned scalar gate} rather than a data-dependent update.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

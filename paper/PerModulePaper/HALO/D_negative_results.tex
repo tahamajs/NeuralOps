@@ -7,7 +7,7 @@
 
 \textbf{Goal.} Equal mix of dense and linear.
 
-\textbf{Result.} Accuracy dropped by 3.5\%.
+\textbf{Result.} Accuracy dropped by {{FIXED\_DROP}}\%.
 
 \textbf{Conclusion.} Learned gates are essential.
 
@@ -67,10 +67,10 @@ Add local window as third branch. Marginal improvement.
 \toprule
 \textbf{$b_h$} & \textbf{DistilBERT} \\
 \midrule
-0 & 85.0 \\
-0.5 & 87.0 \\
-1.0 & 88.5 \\
-1.8 & 89.5 \\
+0 & {{D\_B0}} \\
+0.5 & {{D\_B05}} \\
+1.0 & {{D\_B1}} \\
+1.8 & {{D\_B18}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -83,8 +83,8 @@ Add local window as third branch. Marginal improvement.
 \toprule
 \textbf{$b_h$} & \textbf{DistilBERT} \\
 \midrule
-3.0 & 89.0 \\
-5.0 & 88.0 \\
+3.0 & {{D\_B3}} \\
+5.0 & {{D\_B5}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -115,11 +115,11 @@ Gate gradient clipping & Stability & No improvement \\
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & 89.5 \\
-123 & 89.3 \\
-456 & 89.7 \\
-\textbf{Mean} & \textbf{89.5} \\
-\textbf{Std} & \textbf{0.2} \\
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,3 +133,7 @@ Gate gradient clipping & Stability & No improvement \\
 \item \textbf{Cumsum needs FP32.}
 \item \textbf{No speedup without hard routing.}
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -113,5 +113,6 @@ The optimal pruning ratio depends on the task.
 | Parameter increase | +{{PARAM_CHANGE}}% |
 | Inference overhead | {{INFERENCE_RATIO}}× |
 | Pruning speedup (r=0.5) | {{PRUNE_SPEEDUP}}× |
+```
 
 ---

@@ -99,5 +99,6 @@ baseline.
 3. **Only the residual is trained**, making the base frozen.
 4. **Silent injection failure** is a risk.
 5. **Smaller total rank = more compression but more accuracy drop.**
+```
 
 ---

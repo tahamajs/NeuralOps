@@ -81,5 +81,6 @@ $$
 | $\sigma_i$ | Singular value |
 | $B, A$ | LoRA factors |
 | $r_L$ | LoRA rank |
+```
 
 ---

@@ -1,3 +1,99 @@
-\section{12 Reproducibility}
 
-Draft content for routing_attention.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_routing.py \
+    --models distilbert,roberta,gpt2 \
+    --num_clusters {{NUM_CLUSTERS}} \
+    --n_iters {{N_ITERS}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\textbf{Runtime:} ~{{RUNTIME}} minutes.
+
+\subsection{Downloading Checkpoints}
+
+\begin{lstlisting}
+from huggingface_hub import hf_hub_download
+
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-routing",
+        filename="weights.pt",
+    )
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1}
+
+\begin{lstlisting}
+python run_all_4_routing.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (num\_clusters ablation)}
+
+\begin{lstlisting}
+for K in 4 8 16 32; do
+    python run_all_4_routing.py --num_clusters $K --output_suffix K$K
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Known Issues}
+
+\begin{itemize}
+\item Windows \texttt{cp1256} codec errors: set \texttt{PYTHONIOENCODING=utf-8}.
+\item FP16 attention may overflow for $L > 512$.
+\item Padding distorts k-means clustering.
+
+\end{itemize}
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Code: \texttt{framework/attentions/routing\_attention.py}
+\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-routing}
+\item Metrics: \texttt{results/unified\_routing/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/routing\_*.log}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -64,10 +64,36 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the compressed\_mha module within modern transformer architectures.
+We present \textbf{Compressed MHA}, a low-rank compression module for transformer 
+attention that performs \textbf{joint truncated SVD} on the stacked query, key, and 
+value projection matrices $[W_Q; W_K; W_V]$, and separate truncated SVD on the 
+output projection $W_O$. The joint decomposition shares the input-space basis 
+across Q, K, V, exploiting the strong correlation between these projections 
+in pretrained transformers. Base SVD factors are frozen; trainable LoRA 
+adapters on both the QKV and output branches provide recovery capacity.
+
+For a typical transformer with $d = 768$ and head dimension $d_h = 64$, the 
+default configuration achieves \textbf{{{D\_RATIO}}$\times$} parameter reduction on 
+attention projections (from $4d^2$ to $2r(d + d_h)$ where $r$ is the SVD 
+rank). On SST-2, Compressed MHA achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
+(baseline {{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
+{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
+{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA recovery steps.
+
+The implementation is production-hardened across four architectures 
+(DistilBERT flat, RoBERTa nested, GPT-2 Conv1D, Qwen GQA+RoPE) with:
+(i) \textbf{correct nested-encoder detection} that checks for \texttt{out\_lin} before 
+nested structure, avoiding a subtle double-projection bug, (ii) **safe failure 
+handling\textbf{ using \texttt{logger.warning} instead of \texttt{raise}, and (iii) }per-layer 
+fallback** preserving original layers on weight extraction failure.
+
+\textbf{Keywords:} joint SVD, low-rank attention, LoRA recovery, multi-architecture 
+compression, nested encoder
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} compressed\_mha, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} joint SVD, low-rank attention, LoRA recovery, multi-architecture
 \end{abstract}
 
 \vspace{1em}

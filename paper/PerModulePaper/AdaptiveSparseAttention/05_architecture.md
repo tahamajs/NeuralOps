@@ -152,3 +152,6 @@ LoRA is used for recovery:
 | $W_V$ | $r_L$ | Full LoRA |
 | $W_O$ (nested) | $r_L$ | Wrapped outer dense |
 | Sparsity logits | N/A | Directly trainable |
+```
+
+---

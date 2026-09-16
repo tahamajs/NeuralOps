@@ -80,5 +80,6 @@ Result: **quality + compression** in a single pipeline.
 2. **Per-head α:** Would per-head gates be better?
 3. **Compression of the SSM:** Can SSM be factorized?
 4. **Cross-attention:** How to extend to encoder-decoder?
+```
 
 ---

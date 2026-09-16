@@ -119,3 +119,6 @@ PTP applies RoPE to Q, K before pruning.
 | $s_i$ | Score of token $i$ |
 | $\mathcal{T}$ | Retained indices |
 | $f_\theta$ | Score network |
+```
+
+---

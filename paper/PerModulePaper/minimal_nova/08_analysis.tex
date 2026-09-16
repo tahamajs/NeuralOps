@@ -130,7 +130,7 @@ accuracy at similar compression.
 MinimalNOVA's inference is \textbf{faster} than dense attention because:
 
 \begin{enumerate}
-\item \textbf{Fewer FLOPs.} The projection \texttt{x @ W^T} requires $2 \times 768 \times 768 = 1.18M$
+\item \textbf{Fewer FLOPs.} The projection \texttt{x @ W\^{}T} requires $2 \times 768 \times 768 = 1.18M$
   FLOPs per token. The factorized version requires $2 \times (768 \times 64 + 64 \times 768) = 196K$
   FLOPs -- \textbf{6$\times$ fewer}.
 \item \textbf{Smaller weights.} The factorized weights fit in L2 cache better.
@@ -199,5 +199,8 @@ Nested encoder & Buggy & Buggy & Correct \\
 \item \textbf{LoRA recovery is essential} -- without it, accuracy drops significantly.
 \item \textbf{Effective rank varies} across layers and models.
 \item \textbf{No calibration needed} -- MinimalNOVA is training-free.
-
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

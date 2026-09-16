@@ -86,5 +86,6 @@ torch.cuda.manual_seed_all(seed)
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-adaptive_svd`.
 - **Metrics:** `results/unified_adaptive_svd/*/summary.csv`.
 - **No calibration data required.**
+```
 
 ---

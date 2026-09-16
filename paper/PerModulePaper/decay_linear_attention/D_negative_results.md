@@ -94,5 +94,6 @@ converged to 0.5 anyway.
 3. **Chunking enables O(1) memory.**
 4. **ELU+1 is sufficient.**
 5. **Bidirectional average at 0.5 is fine.**
+```
 
 ---

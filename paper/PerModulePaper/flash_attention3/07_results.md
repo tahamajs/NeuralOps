@@ -98,5 +98,6 @@ baseline accuracy at step 0.
 - **Path used:** {{D_PATH}}.
 - **Params:** +{{D_PARAM_PCT}}% (LoRA only).
 - **Attention is exact.**
+```
 
 ---

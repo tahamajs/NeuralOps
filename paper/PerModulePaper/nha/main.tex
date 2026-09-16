@@ -80,14 +80,14 @@ biasing the model toward the local stream at initialization. The RFF stream
 uses an \textbf{orthogonal projection matrix} built from block QR factorization, 
 giving variance-reduced kernel approximation. For causal models, the RFF 
 stream uses a \textbf{chunked prefix scan} with cumulative state $S \in 
-\mathbb{R}^{m \times d\_h}$ and $Z \in \mathbb{R}^m$, preserving strict 
+\mathbb{R}\^{}{m \times d\_h}$ and $Z \in \mathbb{R}\^{}m$, preserving strict 
 causality.
 
 We evaluate NHA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. With LoRA 
-recovery at rank 16, NHA achieves \textbf{90.25\%}, \textbf{67.89\%}, 
-and \textbf{78.78\%} accuracy, within \textbf{-0.46\%}, \textbf{-10.67\%}, and 
-\textbf{-0.58\%} of the respective dense baselines. Attention memory is 
-reduced by up to \textbf{2$\times$} for long sequences. Learned gates 
+recovery at rank {{LORA\_RANK}}, NHA achieves \textbf{{{D\_ACC}}\%}, \textbf{{{R\_ACC}}\%}, 
+and \textbf{{{G\_ACC}}\%} accuracy, within \textbf{{{D\_DELTA}}\%}, \textbf{{{R\_DELTA}}\%}, and 
+\textbf{{{G\_DELTA}}\%} of the respective dense baselines. Attention memory is 
+reduced by up to \textbf{{{MEM\_REDUCTION}}$\times$} for long sequences. Learned gates 
 show systematic token-level structure that correlates with attention entropy.
 
 \textbf{Keywords:} hybrid attention, local window, Random Fourier Features, 

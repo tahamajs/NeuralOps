@@ -96,5 +96,6 @@ For $d = 768$, $E = 8$: ~$18.9$M per layer.
 
 **Comparison to token-choice:** Same asymptotics; expert-choice is simpler 
 (no auxiliary loss).
+```
 
 ---

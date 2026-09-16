@@ -138,3 +138,31 @@ The +{{D_PARAM_PCT}}% parameter increase comes from:
 | Collapse | Acc ≈ 50.92% | Weight copy failed |
 | Overfitting | Train >> val | Gate/compress too large |
 | Slow | >3× latency | Extra matmuls |
+
+## 8.10 The `raise` Problem
+
+**Critical.** OHA's `copy_weights` **raises** `RuntimeError` on missing 
+projections:
+
+```python
+except Exception as e:
+    print(f'copy_weights failed: {e}')
+    raise RuntimeError(f"copy_weights failed: {e}")
+```
+
+Unlike NHA and EAT (which log warnings and continue), OHA fails hard. This 
+is safer but means **any** missing projection aborts injection. In our 
+experiments:
+
+{{RAISE_PROBLEM_DISCUSSION}}
+
+## 8.11 Summary of Insights
+
+1. **OHA is not a compressor.** Parameters increase by ~{{D_PARAM_PCT}}%.
+2. **Gate bias = 2.0 preserves pretrained behavior.**
+3. **Compression rank 32 is a sweet spot.**
+4. **Sequence compression provides global context.**
+5. **`raise` on copy failure is safer than silent fallback.**
+```
+
+---

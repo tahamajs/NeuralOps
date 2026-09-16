@@ -113,3 +113,6 @@ usage. Section 10 lists limitations. Section 11 concludes.
 | $\mathcal{A}$ | Original attention module |
 | $\mathcal{A}'$ | Wrapper |
 | $r_L$ | LoRA rank |
+```
+
+---

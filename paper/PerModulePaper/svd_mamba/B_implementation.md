@@ -134,5 +134,6 @@ RoBERTa requires `is_nested_encoder = True`.
 
 The rank must satisfy $r < \min(d_\text{in}, d_\text{out})$ for 
 compression. If $r = \min$, no compression.
+```
 
 ---

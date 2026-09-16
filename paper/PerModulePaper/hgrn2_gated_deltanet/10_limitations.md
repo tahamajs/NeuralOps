@@ -72,5 +72,6 @@ Research-grade:
 ## 10.14 Ethical Considerations
 
 Recurrent attention is dual-use. See Appendix E.
+```
 
 ---

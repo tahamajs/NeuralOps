@@ -143,25 +143,25 @@ Initialize $S = 0$, $Z = 0$. For each chunk $[start, end)$:
 \begin{enumerate}
 \item Compute intra-chunk causal scores:
   $$
-  A^\text{intra} = \phi(Q\_c) \phi(K\_c)^\top \odot \text{tril}(1)
+  A\^{}\text{intra} = \phi(Q\_c) \phi(K\_c)\^{}\top \odot \text{tril}(1)
   \tag{4.7}
   $$
 
 \item Compute inter-chunk contribution:
   $$
-  O^\text{inter} = \phi(Q\_c) S
+  O\^{}\text{inter} = \phi(Q\_c) S
   \tag{4.8}
   $$
 
 \item Combine:
   $$
-  O\_c = \frac{A^\text{intra} V\_c + O^\text{inter}}{(A^\text{intra} \cdot 1 + \phi(Q\_c) Z) + \epsilon}
+  O\_c = \frac{A\^{}\text{intra} V\_c + O\^{}\text{inter}}{(A\^{}\text{intra} \cdot 1 + \phi(Q\_c) Z) + \epsilon}
   \tag{4.9}
   $$
 
 \item Update state:
   $$
-  S \leftarrow S + \phi(K\_c)^\top V\_c, \quad Z \leftarrow Z + \sum \phi(K\_c)
+  S \leftarrow S + \phi(K\_c)\^{}\top V\_c, \quad Z \leftarrow Z + \sum \phi(K\_c)
   \tag{4.10}
   $$
 
@@ -332,3 +332,7 @@ O_i^\text{global} = f(\phi(Q_j), \phi(K_j), V_j : j \leq i)
 \]
 
 No future information leaks.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

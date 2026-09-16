@@ -86,3 +86,6 @@ input-adaptive.
 | Infini-Attention | Learned memory | N/A | +memory+LoRA |
 | EAT | Token pruning | Pruning | +LoRA |
 | **OHA** | **Soft-attn pooling** | **Sequence** | **+compress+gate+LoRA** |
+```
+
+---

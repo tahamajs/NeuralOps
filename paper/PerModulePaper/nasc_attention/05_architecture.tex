@@ -1,11 +1,150 @@
-\section{05 Architecture}
 
-Draft content for nasc_attention.
+\section{Architecture Integration}
 
+\subsection{Model Support Matrix}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Default path} \\
+\midrule
+DistilBERT & No & No & No & \textbf{Dense} (encoder) \\
+RoBERTa & Yes & No & No & \textbf{Dense} (encoder) \\
+GPT-2 & No & No & No & \textbf{Cascade} (decoder) \\
+Qwen3.5 & No & Yes & Yes & \textbf{Cascade} (decoder) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Why Encoders Use Dense by Default}
+
+The flag \texttt{enable\_cascade\_on\_encoders} defaults to \texttt{True} **in the config 
+but the \texttt{use\_dense} decision also checks**:
+
+\begin{lstlisting}
+use_dense = is_cross or (not self.is_decoder and not self.enable_cascade_on_encoders)
+\end{lstlisting}
+
+If \texttt{enable\_cascade\_on\_encoders=True} (default), encoders use cascade. If 
+\texttt{False}, encoders use dense. \textbf{Ambiguity in the default} is a design 
+concern.
+
+\subsection{Weight Transfer}
+
+Standard four-architecture copy:
+
+\begin{lstlisting}
+# GPT-2
+c_w = src.c_attn.weight.data
+if is_conv1d:
+    c_w = c_w.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+o_w = src.c_proj.weight.data.t()
+
+# RoBERTa
+q_w = src.self.query.weight.data
+k_w = src.self.key.weight.data
+v_w = src.self.value.weight.data
+o_w = src.output.dense.weight.data
+
+# DistilBERT
+q_w = src.q_lin.weight.data
+# ...
+\end{lstlisting}
+
+\subsection{GQA Handling}
+
+\begin{lstlisting}
+if proj_key in ("k", "v"):
+    if src_out == out_d:
+        target_w.data.copy_(w_oriented)
+    elif src_out > out_d and src_out % out_d == 0:
+        # Mean-pool
+        rep = src_out // out_d
+        target_w.data.copy_(w_oriented.view(out_d, rep, -1).mean(dim=1))
+    elif src_out < out_d and out_d % src_out == 0:
+        # Repeat
+        rep = out_d // src_out
+        target_w.data.copy_(w_oriented.repeat(rep, 1))
+\end{lstlisting}
+
+This handles GQA where $H_{kv} < H$ (Qwen, LLaMA).
+
+\subsection{Injection}
+
+\textbf{Algorithm 2:} Inject NASC
+\begin{lstlisting}
+1: new $\leftarrow$ NASCAttention(config, old=old_attn)
+2: if copy_weights fails: raise (NOT return None)
+3: if   has .attention.self:
+4:      .attention.self $\leftarrow$ new; is_nested $\leftarrow$ True
+5: elif   has .attention:  .attention $\leftarrow$ new
+6: elif   has .self:  .self $\leftarrow$ new; is_nested $\leftarrow$ True
+7: elif   has .self_attn:  .self_attn $\leftarrow$ new
+8: elif   has .attn:  .attn $\leftarrow$ new
+9: return new
+\end{lstlisting}
+
+\textbf{Important.} Unlike other modules, \texttt{inject\_nasc} \textbf{raises} on failure:
+
+\begin{lstlisting}
+except Exception as e:
+    logger.error("inject_nasc failed: %s", e)
+    raise e
+\end{lstlisting}
+
+This violates the "safe injection returning None" contract.
+
+\subsection{Common Pitfalls}
+
+\subsubsection{RFF Causal Path Memory}
+
+The \texttt{KV\_cumsum} tensor in \texttt{\_global\_spectral\_rff\_attention} has shape 
+$(B, H, L, 2F, d)$. For $L = 128$, this is manageable. For $L = 512$, it 
+may OOM.
+
+\subsubsection{Batch-Level Gate}
+
+The gate is computed from \texttt{hidden\_states.mean(dim=1)}, which averages over 
+all tokens. This eliminates per-token adaptivity.
+
+\subsubsection{`softpick` Batch Fallback}
+
+The fallback triggers when \textbf{any} row has zero denominator (batch-level), 
+not per-row:
+
+\begin{lstlisting}
+zero_mask = denom <= 1e-8  # shape (B, H, L, 1)
+if zero_mask.any():
+    fallback = F.softmax(x, dim=dim)
+    p = torch.where(zero_mask, fallback, p / (denom + 1e-8))
+\end{lstlisting}
+
+The \texttt{torch.where} uses per-element fallback, but the \texttt{if} only triggers 
+if any element is affected. This is slightly better than fully batch-level.
+
+\subsubsection{The `\_logged\_once` Pattern}
+
+NASC logs the path once per instance:
+
+\begin{lstlisting}
+if not hasattr(self, '_logged_once'):
+    logger.debug("NASCAttention: L=%d, ...")
+    self._logged_once = True
+\end{lstlisting}
+
+This is a fix from previous log spam.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
-\caption{Architectural overview of nasc_attention.}
-\label{fig:arch_nasc_attention}
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of nasc\_attention.}
+\label{fig:arch_nasc-attention}
 \end{figure}
+

@@ -127,3 +127,6 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 | $X$ | Running pseudoinverse estimate |
 | $r$ | LoRA rank (recovery) |
 | $\sigma$ | Softmax function |
+```
+
+---

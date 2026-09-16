@@ -1,11 +1,142 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Formal architectural specifications for \texttt{padre_attention}.
+\subsection{Model Support}
 
-
-\begin{figure}[H]
+\begin{table}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
-\caption{Architectural schematic of padre_attention.}
-\label{fig:arch_padre_attention}
-\end{figure}
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Causal?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & No \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & Yes \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+\texttt{copy\_weights} extracts weights via four tiers:
+
+\begin{enumerate}
+\item \textbf{GPT-2 Conv1D} -- transpose and chunk.
+\item \textbf{RoBERTa nested} -- \texttt{self.query}, \texttt{self.key}, \texttt{self.value}, \texttt{output.dense}.
+\item \textbf{Named projections} -- \texttt{q\_proj}, \texttt{q\_lin}, \texttt{query}, etc.
+\item \textbf{UniversalAdapter fallback.}
+
+\end{enumerate}
+\subsection{Nested Encoder Detection}
+
+\begin{lstlisting}
+if (hasattr(src, "self") and hasattr(src.self, "query")
+    and hasattr(src, "output") and hasattr(src.output, "dense")):
+    is_nested = True
+elif cls_name in ("BertSelfAttention", "RobertaSelfAttention") and not has_out_lin:
+    is_nested = True
+\end{lstlisting}
+
+\subsection{Frobenius Validation}
+
+For each projection:
+
+\[
+\|W\|_F \geq 10^{-4}
+\tag{5.1}
+\]
+
+Otherwise raise. This catches corrupt weight extraction.
+
+\subsection{Output Equivalence Check}
+
+In \texttt{inject\_padre}, we validate the output against the source module:
+
+\begin{lstlisting}
+dummy_x = torch.randn(1, 4, hidden_size)
+with torch.no_grad():
+    orig_out = source_module(dummy_x)[0]
+    new_out = new_attn(dummy_x)[0]
+    err = torch.norm(orig_out - new_out) / torch.norm(orig_out)
+    if err > max_err:
+        logger.warning("Skipping replacement, error %.4f", err)
+        return None
+\end{lstlisting}
+
+This prevents injecting PADRe into layers where it doesn't preserve the 
+output.
+
+\subsection{Failure Modes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing Q/K/V & \texttt{missing\_after} non-empty & \textbf{Raise} \\
+Near-zero norm & Frobenius check & \textbf{Raise} \\
+Output error > max & Equivalence check & Skip layer, return None \\
+Injection exception & try/except & Log, return None \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("padre")
+@ATTENTION_REGISTRY.register("padre_attention")
+class PADReAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{LoRA Recovery}
+
+Base weights frozen; LoRA adapters trainable.
+
+Per-layer trainable (d = 768, r\_L = 16): ~98K parameters.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject PADRe
+\begin{lstlisting}
+Input:  model M, config, order d
+Output: M with PADRe where equivalence check passes
+
+1: for   in transformer_layers(M) do
+2:     src $\leftarrow$ get_attention( )
+3:     new $\leftarrow$ PADReAttention(config, order=d, pretrained_attn=src)
+4:     err $\leftarrow$ output_equivalence(src, new)
+5:     if err $\le$ max_error:
+6:         replace( , new)
+7:     else:
+8:         freeze(src)
+9:         log_skip( , err)
+10: end for
+\end{lstlisting}
+
+\subsection{Numerical Stability Details}
+
+\subsubsection{FP16 Handling}
+
+\texttt{fill\_val = -1e4} for FP16/BF16, \texttt{-1e9} for FP32.
+
+\subsubsection{All-Masked Guard}
+
+\begin{lstlisting}
+thresh = -5e3 if scores.dtype in (fp16, bf16) else -1e8
+max_scores = torch.where(max_scores <= thresh, torch.zeros_like(max_scores), max_scores)
+\end{lstlisting}
+
+Prevents NaN when a query has no valid keys.
+
+\subsubsection{ReLU Clamp}
+
+\texttt{torch.clamp(1.0 + s/order, min=0.0)} prevents NaN from negative base.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

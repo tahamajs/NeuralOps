@@ -84,5 +84,6 @@ torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2 via `datasets`.
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-decay_linear`.
 - **Metrics:** `results/unified_decay_linear/*/summary.csv`.
+```
 
 ---

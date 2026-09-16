@@ -82,5 +82,6 @@ reproduce MLA and study its portability to non-DeepSeek architectures.
 
 **Key distinction.** We do not claim to improve MLA. We reproduce it and 
 study its behavior on models it was not designed for.
+```
 
 ---

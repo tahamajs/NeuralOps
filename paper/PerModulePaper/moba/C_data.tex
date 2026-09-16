@@ -1,3 +1,142 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for moba.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS\_ABS}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+LoRA rank & {{LORA\_RANK}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS\_ABS}} \\
+Accuracy & {{R\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS\_ABS}} \\
+Accuracy & {{G\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Preservation Gate Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Init} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.0 & {{D\_G0}} & {{R\_G0}} & {{G\_G0}} \\
+2.0 & {{D\_PRES}} & {{R\_PRES}} & {{G\_PRES}} \\
+4.0 & {{D\_G4}} & {{R\_G4}} & {{G\_G4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Decay Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Decay} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Learned & {{D\_LEARNED}} & {{R\_LEARNED}} & {{G\_LEARNED}} \\
+Fixed 0.99 & {{D\_FIXED99}} & {{R\_FIXED99}} & {{G\_FIXED99}} \\
+Fixed 0.9 & {{D\_FIXED9}} & {{R\_FIXED9}} & {{G\_FIXED9}} \\
+None & {{D\_NODECAY}} & {{R\_NODECAY}} & {{G\_NODECAY}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & {{D\_R4}} & {{R\_R4}} & {{G\_R4}} \\
+8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
+16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
+32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
+64 & {{D\_R64}} & {{R\_R64}} & {{G\_R64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.8 Scaling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{L} & \textbf{Standard} & \textbf{Mamba} & \textbf{Ratio} \\
+\midrule
+64 & {{T64\_STD}} & {{T64\_MAMBA}} & {{R64}}$\times$ \\
+128 & {{T128\_STD}} & {{T128\_MAMBA}} & {{R128}}$\times$ \\
+256 & {{T256\_STD}} & {{T256\_MAMBA}} & {{R256}}$\times$ \\
+512 & {{T512\_STD}} & {{T512\_MAMBA}} & {{R512}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.9 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_mamba.py --recovery_steps 50
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

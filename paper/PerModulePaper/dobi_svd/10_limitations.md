@@ -85,5 +85,6 @@ Research-grade. Known issues:
 ## 10.15 Ethical Considerations
 
 See Appendix E.
+```
 
 ---

@@ -131,5 +131,6 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 | $r_a$ | Residual adapter rank |
 | $U_r, V_r$ | Factorized SVD components |
 | $A, B$ | Residual adapter matrices |
+```
 
 ---

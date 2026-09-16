@@ -1,3 +1,97 @@
-\section{12 Reproducibility}
+\section{Reproducibility}
 
-Draft content for nexus.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_nexus.py \
+    --models distilbert,roberta,gpt2 \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --modules full,nexus \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1}
+\begin{lstlisting}
+python run_all_4_nexus.py
+\end{lstlisting}
+
+\subsubsection{Table 7.3 (Block size)}
+\begin{lstlisting}
+for bs in 8 16 32 64; do
+    python run_all_4_nexus.py --block_size $bs --output_suffix bs$bs
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (Top-k)}
+\begin{lstlisting}
+for k in 1 2 4 8; do
+    python run_all_4_nexus.py --top_k_blocks $k --output_suffix k$k
+done
+\end{lstlisting}
+
+\subsection{Enabling Inactive Components}
+
+\begin{lstlisting}
+# Enable stripe (needs N > 256)
+python run_all_4_nexus.py --max_seq_len 512 --stripe_enabled true
+
+# Enable RFF rectification
+python run_all_4_nexus.py --enable_spectraformer true
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Acc} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-nexus}
+\item \textbf{Metrics:} \texttt{results/unified\_nexus/*/summary.csv}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -12,7 +12,7 @@
 DistilBERT & Flat & No & No & No &  \\
 RoBERTa & Nested & Yes & No & No &  \\
 GPT-2 & Causal & No & No & No &  \\
-Qwen3.5 & GQA+RoPE & No & Yes & Yes & partial \\
+Qwen3.5 & GQA+RoPE & No & Yes & Yes & {{QWEN\_VERIFIED}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -124,10 +124,15 @@ Zero Frobenius & Check < 1e-4 & Raise error \\
 
 \subsection{Numerical Stability}
 
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/cluster_attention_architecture.png}
-\caption{Architectural schematic of cluster.}
+\includegraphics[width=\linewidth]{figures/architecture.jpeg}
+\caption{High-level architectural diagram of cluster.}
 \label{fig:arch_cluster}
 \end{figure}
+

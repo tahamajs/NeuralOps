@@ -1,3 +1,111 @@
-\section{12 Reproducibility}
+\section{Reproducibility}
 
-Draft content for lora_attention.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running LoRA Attention}
+
+\begin{lstlisting}
+python run_all_4_lora_attention.py \
+    --models distilbert,roberta,gpt2 \
+    --lora_rank {{LORA_RANK}} \
+    --lora_alpha {{LORA_ALPHA}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --modules full,lora_attention \
+    --lora_rank {{LORA_RANK}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1}
+\begin{lstlisting}
+python run_all_4_lora_attention.py
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (Which projections)}
+\begin{lstlisting}
+# Q only
+python run_all_4_lora_attention.py --targets q
+
+# Q,V
+python run_all_4_lora_attention.py --targets q,v
+
+# All
+python run_all_4_lora_attention.py --targets q,k,v,o
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (Rank ablation)}
+\begin{lstlisting}
+for r in 4 8 16 32 64; do
+    python run_all_4_lora_attention.py --lora_rank $r --output_suffix r$r
+done
+\end{lstlisting}
+
+\subsection{Merge Test}
+
+\begin{lstlisting}
+from framework.attentions.lora_attention import merge_lora
+
+# Before merge
+out_before = model(x)
+
+# Merge
+merge_lora(model)
+
+# After merge
+out_after = model(x)
+diff = (out_before - out_after).abs().max()
+assert diff < 1e-4
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed); np.random.seed(seed)
+torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Trainable} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & {{D\_TRAINABLE}} \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & {{R\_TRAINABLE}} \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_TRAINABLE}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-lora\_attention}
+\item \textbf{Metrics:} \texttt{results/unified\_lora\_attention/*/summary.csv}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -1,3 +1,74 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for moe_deltakv_paged.
+\subsection{Sparse and Block Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020) uses a sliding window plus global 
+tokens. \textbf{BigBird} (Zaheer et al., 2020) adds random attention. 
+\textbf{Block-sparse attention} restricts attention to fixed blocks.
+
+\textbf{MoBA} (Lu et al., 2024) introduces a \textbf{learned router} that selects 
+the top-$k$ key blocks per query block, achieving dynamic sparsity.
+
+\textbf{Our distinction.} We combine MoBA-style routing with Delta-KV temporal 
+compression and differentiable quantization.
+
+\subsection{KV Cache Compression}
+
+\textbf{H2O} (Zhang et al., 2023) evicts low-attention tokens. \textbf{StreamingLLM} 
+(Xiao et al., 2024) preserves attention sinks. \textbf{Delta-KV} stores deltas 
+between consecutive KV pairs, exploiting temporal smoothness.
+
+\textbf{Our distinction.} We apply SVD + 4-bit quantization to the deltas, and 
+use the reconstruction as input to block-sparse attention.
+
+\subsection{Paged Attention}
+
+\textbf{vLLM} (Kwon et al., 2023) introduced PagedAttention for efficient KV cache 
+management. Our module operates on fixed-size pages but does not manage a 
+global cache.
+
+\subsection{Mixture of Experts}
+
+\textbf{Switch Transformer} (Fedus et al., 2021) uses top-1 routing to experts. 
+\textbf{GShard} (Lepikhin et al., 2021) uses top-2. Load balancing loss prevents 
+expert collapse.
+
+\textbf{Our distinction.} We treat \textbf{pages} as experts, not parameters. The 
+routing selects which key pages to attend to.
+
+\subsection{Differentiable Quantization}
+
+\textbf{STE} (Bengio et al., 2013) is the standard technique for training 
+quantized models. \textbf{LSQ} (Esser et al., 2020) learns quantization step 
+sizes. \textbf{QAT} (Jacob et al., 2018) simulates quantization during training.
+
+\textbf{Our distinction.} We apply STE to temporal deltas after low-rank SVD.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Routing} & \textbf{Delta} & \textbf{Quant} & \textbf{Paged} \\
+\midrule
+MoBA &  &  &  &  \\
+Delta-KV &  &  & Partial &  \\
+Switch &  &  &  &  \\
+\textbf{Ours} & \textbf{ } & \textbf{ } & \textbf{4-bit} & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} MoE-DeltaKV-Paged is the first module to combine all 
+four techniques in a single attention layer.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

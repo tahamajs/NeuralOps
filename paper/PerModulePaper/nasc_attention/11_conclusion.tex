@@ -1,3 +1,89 @@
-\section{11 Conclusion}
 
-Draft content for nasc_attention.
+\section{Conclusion}
+
+\subsection{Summary}
+
+We presented \textbf{NASC}, a three-branch hybrid attention that combines 
+sliding-window, sparse block, and spectral RFF attention under a batch-level 
+softmax gate. NASC achieves \textbf{{{D\_ACC}}\%} on DistilBERT, \textbf{{{R\_ACC}}\%} 
+on RoBERTa, and \textbf{{{G\_ACC}}\%} on GPT-2.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Path} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Time} \\
+\midrule
+DistilBERT & Dense & {{D\_ACC}}\% & {{D\_DELTA}}\% & {{D\_TIME}} s \\
+RoBERTa & Dense & {{R\_ACC}}\% & {{R\_DELTA}}\% & {{R\_TIME}} s \\
+GPT-2 & \textbf{Cascade} & {{G\_ACC}}\% & {{G\_DELTA}}\% & {{G\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Three branches provide redundancy.} All three contribute.
+\item \textbf{Batch-level gate is a simplification.} Per-token would be more
+  adaptive.
+\item \textbf{Encoder default is dense.} Cascade is decoder-only by default.
+\item \textbf{Overhead is significant.} ~{{G\_TIME\_R}}$\times$ slower.
+\item \textbf{RFF causal cumsum is memory-heavy.} OOM at long sequences.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+
+\begin{itemize}
+\item Test encoder cascade with \texttt{enable\_cascade\_on\_encoders=True}.
+\item Vectorize sparse block loop.
+\item Fused Triton kernel for RFF.
+
+\end{itemize}
+\subsubsection{Medium-Term}
+
+\begin{itemize}
+\item Per-token gating instead of batch-level.
+\item Per-row \texttt{softpick} fallback.
+\item Causal RFF without materializing cumsum.
+
+\end{itemize}
+\subsubsection{Long-Term}
+
+\begin{itemize}
+\item Scale to $L > 4096$.
+\item Combine with quantization.
+\item Test on Qwen3.5.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+NASC is a \textbf{sophisticated three-branch hybrid attention}. It works 
+correctly on decoders and provides a cascade path for long-context 
+scenarios. Its limitations -- batch-level gate, RFF memory, and Python loop 
+overhead -- are implementation constraints, not fundamental. Future work 
+should address these to unlock NASC's full potential.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}} for feedback.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

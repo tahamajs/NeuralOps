@@ -1,3 +1,58 @@
-\section{E Ethics}
 
-Draft content for mixattention_moska.
+\section{Appendix E. Ethical Considerations}
+
+\subsection{E.1 Broader Impact}
+
+\subsubsection{E.1.1 Positive}
+
+\begin{itemize}
+\item \textbf{Cheaper than attention-based pruning} -- no attention scores needed.
+\item \textbf{Simple to implement} -- no learned parameters.
+
+\end{itemize}
+\subsubsection{E.1.2 Negative}
+
+\begin{itemize}
+\item \textbf{Accuracy drop on encoders} -- not suitable for all deployments.
+\item \textbf{No decoder support} -- limited applicability.
+
+\end{itemize}
+\subsection{E.2 Environmental Impact}
+
+\begin{itemize}
+\item GPU-hours: ~{{COMPUTE\_HOURS}}
+\item CO$_2$: ~{{CO2\_KG}} kg
+
+\end{itemize}
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item SST-2 public dataset.
+\item No PII.
+
+\end{itemize}
+\subsection{E.4 LLM Usage Disclosure}
+
+Parts of this paper were drafted with LLM assistance. All technical content 
+reviewed by authors.
+
+\subsection{E.5 Conflicts of Interest}
+
+None.
+
+\subsection{E.6 Long-Term Considerations}
+
+Token pruning methods trade accuracy for compute. It is important to 
+document their limitations accurately so practitioners can make informed 
+decisions. Our analysis of FASA's heuristic weakness and decoder-path 
+no-op is intended to enable such decision-making.
+\begin{lstlisting}
+
+---
+
+##   `build.py` and `apply_vars.py`
+
+Same as previous templates.
+
+---
+\end{lstlisting}

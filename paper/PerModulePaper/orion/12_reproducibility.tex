@@ -1,3 +1,129 @@
-\section{12 Reproducibility}
 
-Draft content for orion.
+\section{Reproducibility Statement}
+
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_orion.py \
+    --models distilbert,roberta,gpt2 \
+    --svd_energy {{SVD_ENERGY}} \
+    --svd_max_rank {{SVD_MAX_RANK}} \
+    --rff_features {{RFF_FEATURES}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Downloading Checkpoints}
+
+\begin{lstlisting}
+from huggingface_hub import hf_hub_download
+for model in ["distilbert", "roberta", "gpt2"]:
+    path = hf_hub_download(
+        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-orion",
+        filename="weights.pt",
+    )
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Main Results}
+
+\begin{lstlisting}
+python run_all_4_orion.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+
+\subsubsection{SVD Energy Ablation}
+
+\begin{lstlisting}
+for e in 0.90 0.95 0.99; do
+    python run_all_4_orion.py --svd_energy $e --output_suffix e$e
+done
+\end{lstlisting}
+
+\subsubsection{Head Split Ablation}
+
+\begin{lstlisting}
+for split in "half" "23_13" "34_14" "all_kernel" "all_full"; do
+    python run_all_4_orion.py --head_split $split --output_suffix $split
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+seed = 42
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Reduction} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 2\% & {{D\_RED}}$\times$ \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 3\% & {{R\_RED}}$\times$ \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 2\% & {{G\_RED}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Diagnostics}
+
+\subsubsection{Check Parameter Count}
+
+\begin{lstlisting}
+for name, mod in model.named_modules():
+    if hasattr(mod, 'down') and hasattr(mod, 'up'):
+        orig = mod.in_features * mod.out_features
+        new = mod.down.weight.numel() + mod.up.weight.numel()
+        print(f"{name}: {orig} $\to$ {new} ({orig/new:.1f}$\times$)")
+\end{lstlisting}
+
+\subsubsection{Check Head Split}
+
+\begin{lstlisting}
+print(f"Kernel heads: {model.num_kernel_heads}")
+print(f"Full heads: {model.num_full_heads}")
+\end{lstlisting}
+
+\subsubsection{Check rff\_proj Persistence}
+
+\begin{lstlisting}
+sd = model.state_dict()
+assert any('rff_proj' in k for k in sd), "rff_proj NOT in state_dict!"  # This will FAIL
+\end{lstlisting}
+
+\subsection{Known Issues}
+
+\begin{itemize}
+\item \textbf{\texttt{copy\_weights} raises} on UniversalAdapter failure.
+\item \textbf{\texttt{rff\_proj} not persisted} in state\_dict.
+\item \textbf{Softpick zeros} on masked rows.
+\item \textbf{Slower than baseline} at short sequences.
+
+\end{itemize}
+\subsection{Data Availability}
+
+\begin{itemize}
+\item Code: \texttt{framework/attentions/orion.py}
+\item Metrics: \texttt{results/unified\_orion/*/summary.csv}
+\item Logs: \texttt{benchmark\_logs/orion\_*.log}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

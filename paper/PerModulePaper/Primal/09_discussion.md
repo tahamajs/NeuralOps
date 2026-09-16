@@ -78,3 +78,6 @@ For GPT-2 at $L = 2048$, $B = 1$:
 
 ### Environmental
 Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+```
+
+---

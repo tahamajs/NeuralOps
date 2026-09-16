@@ -257,5 +257,6 @@ if w_norm < 1e-4:
 | Injection-time nested detection | ❌ | ❌ | ✅ |
 | Double-injection guard | ❌ | ❌ | ✅ |
 | Line count | ~280 | ~500 | ~550 |
+```
 
 ---

@@ -51,5 +51,6 @@ Variational attention could:
 But also:
 - Increase training cost.
 - Concentrate AI capabilities.
+```
 
 ---

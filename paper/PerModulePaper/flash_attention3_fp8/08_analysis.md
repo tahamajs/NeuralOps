@@ -165,5 +165,6 @@ We state these as **explicit limitations**.
    limitation, not a hidden failure.
 4. **LoRA provides marginal benefit.** Accuracy is preserved but not 
    improved.
+```
 
 ---

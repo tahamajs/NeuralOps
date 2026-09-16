@@ -1,3 +1,204 @@
-\section{C Data}
 
-Draft content for rala_attention.
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Precision & {{D\_PREC}} \\
+Recall & {{D\_REC}} \\
+Loss & {{D\_LOSS}} \\
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+Tokens/sec & {{D\_TPS}} \\
+Alpha final & {{D\_ALPHA\_FINAL}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+Peak VRAM & {{R\_VRAM}} MB \\
+Inference time & {{R\_TIME}} s \\
+Alpha final & {{R\_ALPHA\_FINAL}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+Peak VRAM & {{G\_VRAM}} MB \\
+Inference time & {{G\_TIME}} s \\
+Alpha final & {{G\_ALPHA\_FINAL}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Alpha Trajectory}
+
+\subsubsection{DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Step} & \textbf{Alpha} \\
+\midrule
+0 & 0.0000 \\
+10 & {{D\_A10}} \\
+25 & {{D\_A25}} \\
+50 & {{D\_A50}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Step} & \textbf{Alpha} \\
+\midrule
+0 & 0.0000 \\
+10 & {{R\_A10}} \\
+25 & {{R\_A25}} \\
+50 & {{R\_A50}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Step} & \textbf{Alpha} \\
+\midrule
+0 & 0.0000 \\
+50 & {{G\_A50}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Rank Ablation (DistilBERT)}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{Acc} & \textbf{Extra params} & \textbf{Time} \\
+\midrule
+1 & {{D\_R1}} & 6,150 & {{D\_R1\_T}} \\
+2 & {{D\_R2}} & 12,294 & {{D\_R2\_T}} \\
+4 & {{D\_R4}} & 24,582 & {{D\_R4\_T}} \\
+8 & {{D\_R8}} & 49,158 & {{D\_R8\_T}} \\
+16 & {{D\_R16}} & 98,310 & {{D\_R16\_T}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Kernel Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Kernel} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+softplus & {{D\_SOFT}} & {{R\_SOFT}} & {{G\_SOFT}} \\
+elu+1 & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
+ReLU & {{D\_RELU}} & {{R\_RELU}} & {{G\_RELU}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Training Loss Curves}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsubsection{RoBERTa}
+
+\begin{lstlisting}
+Step  Loss
+1     {{R_S1}}
+...
+50    {{R_S50}}
+\end{lstlisting}
+
+\subsubsection{GPT-2}
+
+\begin{lstlisting}
+Step  Loss
+1     {{G_S1}}
+...
+50    {{G_S50}}
+\end{lstlisting}
+
+\subsection{C.8 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "accuracy": {{D_ACC}},
+    "params_after": {{D_PARAMS}},
+    "alpha_final": {{D_ALPHA_FINAL}},
+    "peak_vram_mb": {{D_VRAM}}
+  },
+  "roberta": {...},
+  "gpt2": {...}
+}
+\end{lstlisting}
+
+\subsection{C.9 Per-Layer Alpha}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

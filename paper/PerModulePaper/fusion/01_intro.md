@@ -120,3 +120,6 @@ dispatch and block-sparsity behavior. Section 9 discusses usage. Section
 | $g(i, j)$ | Gate score for block pair $(i, j)$ |
 | $\tau$ | Gate temperature |
 | $r_L$ | LoRA rank |
+```
+
+---

@@ -1,3 +1,131 @@
-\section{D Negative Results}
 
-Draft content for goldfinch_ahn.
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 The Long-Memory Branch is Fake}
+
+The \texttt{GatedDeltaNetLayer} is a linear projection. When removed:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} \\
+\midrule
+Full & {{D\_ACC}}\% \\
+Without long-memory & {{D\_NOLONG}}\% \\
+$\Delta$ & {{D\_NOLONG\_D}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Conclusion.} The long-memory branch contributes little; its 590K 
+parameters per layer are mostly wasted.
+
+\subsection{D.2 Gate Mean-Pooling}
+
+We tested keeping per-head gating:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} \\
+\midrule
+Mean-pooled gate & {{D\_ACC}}\% \\
+Per-head gate & {{D\_PERHEAD}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Result.} {{PERHEAD\_RESULT}}
+
+\subsection{D.3 Preservation Gate Dominance}
+
+Varying $\alpha$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{$\alpha$} & \textbf{DistilBERT} \\
+\midrule
+0.50 & {{D\_AG0}} \\
+0.73 & {{D\_AG1}} \\
+0.88 & {{D\_AG2}} \\
+0.99 & {{D\_AG5}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Higher $\alpha$ preserves accuracy but reduces the block's 
+contribution.
+
+\subsection{D.4 Window Size}
+
+Smaller windows are faster but lose accuracy:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Window} & \textbf{DistilBERT} & \textbf{Time} \\
+\midrule
+16 & {{D\_W16}} & {{D\_W16\_T}} \\
+32 & {{D\_W32}} & {{D\_W32\_T}} \\
+64 & {{D\_W64}} & {{D\_W64\_T}} \\
+128 & {{D\_W128}} & {{D\_W128\_T}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Failed Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Attempt} & \textbf{Result} \\
+\midrule
+Use real GatedDeltaNet & OOM \\
+Use Mamba-style SSM & Not implemented \\
+Remove preservation gate & Accuracy drop \\
+Increase gate init bias & No change \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.6 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Naming is not implementation.} \texttt{GatedDeltaNetLayer} is \texttt{nn.Linear}.
+\item \textbf{Mean-pooling loses information.} Per-head gating would be better.
+\item \textbf{Conservative init preserves accuracy.} $\alpha$ $\approx$ 0.88 works.
+\item \textbf{Sliding-window is a good local approximation.}
+
+\end{enumerate}
+\subsection{D.7 Recommendations}
+
+\begin{enumerate}
+\item \textbf{Replace the long-memory branch} with a real recurrent mechanism.
+\item \textbf{Keep per-head gating.}
+\item \textbf{Test with sliding-window-only baseline} to isolate contributions.
+\item \textbf{Log gate statistics} during training.
+
+\end{enumerate}
+\subsection{D.8 What Would Make This Work?}
+
+\begin{enumerate}
+\item Real GatedDeltaNet (or Mamba, RWKV) for the long-memory branch.
+\item Per-head gating instead of mean-pooling.
+\item Fused Triton kernel for the sliding window.
+\item Careful initialization study.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

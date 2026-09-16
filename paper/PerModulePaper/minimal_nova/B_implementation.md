@@ -228,5 +228,6 @@ self.lora_B = nn.Parameter(torch.randn(...))
 # RIGHT
 self.lora_B = nn.Parameter(torch.zeros(...))   # B = 0 at init
 ```
+```
 
 ---

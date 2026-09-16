@@ -87,3 +87,6 @@ For layer with $d$ hidden, $d_h$ head_dim, $r_L$ LoRA rank:
 | **Total per layer** | $8 r_L d + 4 d_h^2 + O(d_h)$ |
 
 For $d = 768$, $r_L = 16$, $d_h = 64$: **~131K params per layer**.
+```
+
+---

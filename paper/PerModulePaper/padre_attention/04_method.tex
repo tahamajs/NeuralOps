@@ -1,3 +1,328 @@
-\section{04 Method}
+\section{Method}
 
-Formal architectural specifications for \texttt{padre_attention}.
+\subsection{Overview}
+
+PADRe replaces softmax attention with a \textbf{polynomial kernel}. The forward 
+pass:
+
+\begin{enumerate}
+\item \textbf{Project Q, K, V} via standard LoRALinear.
+\item \textbf{Apply RoPE} if applicable.
+\item \textbf{GQA expansion} of K, V.
+\item \textbf{Score computation:} $s_{ij} = (q_i \cdot k_j)/\sqrt{d_h}$.
+\item \textbf{Masking:} invalid positions set to large negative before centering.
+\item \textbf{Max-centering:} subtract $\max_j s_{ij}$ from all scores.
+\item \textbf{Polynomial activation:} $\text{attn} = (1 + s/d)^d$ with ReLU clamp.
+\item \textbf{Masking again:} zero invalid positions.
+\item \textbf{Normalize:} divide by the sum over $j$.
+\item \textbf{Dropout.}
+\item \textbf{Context:} $\text{attn} \cdot V$.
+
+\end{enumerate}
+\begin{lstlisting}
+        Input X
+           |
+            
+    +------------------+
+    | Q/K/V projection |
+    | + RoPE           |
+    +--------+---------+
+             |
+    +-------- ---------+
+    | GQA expansion    |
+    +--------+---------+
+             |
+    +-------- ---------+
+    | Scores: QK^T/$\sqrt{}$d_h|
+    +--------+---------+
+             |
+    +-------- ---------+
+    | Apply masks      |
+    | (causal, padding)|
+    +--------+---------+
+             |
+    +-------- ---------+
+    | Max-center       |
+    | s $\leftarrow$ s - max(s)   |
+    +--------+---------+
+             |
+    +-------- ---------+
+    | Polynomial       |
+    | (1 + s/d)^d      |
+    | ReLU-clamp base  |
+    +--------+---------+
+             |
+    +-------- ---------+
+    | Zero-invalid     |
+    | Normalize        |
+    +--------+---------+
+             |
+    +-------- ---------+
+    | Dropout          |
+    +--------+---------+
+             |
+    +-------- ---------+
+    | attn @ V         |
+    +--------+---------+
+             |
+    +-------- ---------+
+    | out_proj         |
+    +--------+---------+
+             |
+        Output
+\end{lstlisting}
+
+\subsection{Score Computation}
+
+Standard scaled dot-product:
+
+\[
+s_{ij} = \frac{q_i \cdot k_j}{\sqrt{d_h}}
+\tag{4.1}
+\]
+
+For GQA models, $K$ is expanded via \texttt{repeat\_kv} before this step.
+
+\subsection{Masking}
+
+We combine two masks:
+
+\begin{enumerate}
+\item \textbf{Padding mask:} $k_j$ is a padding token.
+\item \textbf{Causal mask} (decoders only): $j > i$.
+
+\end{enumerate}
+Both are combined into a single boolean \texttt{invalid\_mask}:
+
+\[
+\text{invalid}_{ij} = \text{pad}(j) \lor \text{causal}(i, j)
+\tag{4.2}
+\]
+
+\subsection{Max-Centering}
+
+For each query $i$, find the maximum score over \textbf{valid} keys:
+
+\[
+m_i = \max_{j: \text{valid}_{ij}} s_{ij}
+\tag{4.3}
+\]
+
+If all keys are invalid (rare), we set $m_i = 0$ to avoid NaN:
+
+\begin{lstlisting}
+thresh = -5e3 if scores.dtype in (fp16, bf16) else -1e8
+max_scores = torch.where(max_scores <= thresh, torch.zeros_like(max_scores), max_scores)
+\end{lstlisting}
+
+Then center:
+
+\[
+s_{ij} \leftarrow (s_{ij} - m_i) / T
+\tag{4.4}
+\]
+
+where $T$ is a temperature.
+
+\subsection{Polynomial Activation}
+
+Apply the polynomial kernel:
+
+\[
+\text{base}_{ij} = \text{ReLU}\!\left(1 + \frac{s_{ij}}{d}\right)
+\tag{4.5}
+\]
+
+\[
+\text{attn}_{ij} = \text{base}_{ij}^d
+\tag{4.6}
+\]
+
+\textbf{Why ReLU?} If $s_{ij} < -d$ (very negative), the base is negative. Raising 
+a negative number to a non-integer power gives NaN. The ReLU prevents this 
+and also creates natural sparsity (positions with $s_{ij} < -d$ get zero weight).
+
+\textbf{Why $1/d$ scaling?} It keeps the base close to 1 for moderate scores:
+
+\[
+\left(1 + \frac{s}{d}\right)^d \approx e^s \quad \text{for large } d
+\tag{4.7}
+\]
+
+So PADRe is a \textbf{first-order approximation of the softmax kernel}.
+
+\subsection{Zero Invalid Positions}
+
+After the polynomial activation, we zero invalid positions:
+
+\[
+\text{attn}_{ij} \leftarrow 0 \quad \text{if invalid}_{ij}
+\tag{4.8}
+\]
+
+\textbf{Why after, not before?} Because masking before centering would put 
+$-\infty$ into the max, which produces $-\infty$ everywhere. We mask 
+before centering (using a large finite value like $-10^4$) for the max, 
+then zero after the polynomial for the final normalization.
+
+\subsection{Normalization}
+
+\[
+\text{attn}_{ij} \leftarrow \frac{\text{attn}_{ij}}{\sum_{j'} \text{attn}_{ij'} + \epsilon}
+\tag{4.9}
+\]
+
+\subsection{Dropout}
+
+Standard dropout on attention weights:
+
+\[
+\text{attn}_{ij} \leftarrow \text{Dropout}(\text{attn}_{ij}, p)
+\tag{4.10}
+\]
+
+This is the "dropout regularization" part of PADRe.
+
+\subsection{Context and Output}
+
+\[
+\text{Context} = \text{attn} \cdot V
+\tag{4.11}
+\]
+
+For nested encoders (RoBERTa), the context is returned directly. For flat 
+encoders and decoders, it's passed through \texttt{out\_proj}:
+
+\[
+\text{Output} = W_O \cdot \text{Context} + b_O
+\tag{4.12}
+\]
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} PADRe forward
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask, position_embeddings
+        order d, temperature T, is_decoder
+Output: Y $\in$ R^{B$\times$N$\times$d}
+
+ 1: Q $\leftarrow$ q_proj(X); K $\leftarrow$ k_proj(X); V $\leftarrow$ v_proj(X)
+ 2: if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K)
+ 3: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
+ 4: s $\leftarrow$ QK^T / $\sqrt{}$d_h
+ 5: invalid $\leftarrow$ pad_mask | causal_mask
+ 6: m $\leftarrow$ max(s.masked_fill(invalid, -1e4), dim=-1)
+ 7: m $\leftarrow$ where(m < -5e3, 0, m)                          All-masked guard
+ 8: s_centered $\leftarrow$ (s - m) / T
+ 9: base $\leftarrow$ ReLU(1 + s_centered / d)
+10: attn $\leftarrow$ base^d
+11: attn $\leftarrow$ attn.masked_fill(invalid, 0)
+12: denom $\leftarrow$ attn.sum(dim=-1, keepdim=True) + 1e-8
+13: attn $\leftarrow$ attn / denom
+14: attn $\leftarrow$ dropout(attn)
+15: context $\leftarrow$ attn @ V
+16: Y $\leftarrow$ out_proj(context)
+17: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Time Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Operation} & \textbf{Complexity} \\
+\midrule
+Q/K/V projections & $\mathcal{O}(N d^2)$ \\
+Scores & $\mathcal{O}(N^2 d_h)$ \\
+Polynomial & $\mathcal{O}(N^2)$ \\
+Normalize & $\mathcal{O}(N^2)$ \\
+Context & $\mathcal{O}(N^2 d_h)$ \\
+Output & $\mathcal{O}(N d^2)$ \\
+\textbf{Total} & $\mathcal{O}(N^2 d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{This is identical to standard softmax attention.}
+
+\subsubsection{Kernelized Complexity (Future)}
+
+If we implement the kernelization:
+
+\[
+\text{attn} \cdot V = \frac{\phi(Q) \cdot (\phi(K)^\top V)}{\phi(Q) \cdot \phi(K)^\top \mathbf{1}}
+\tag{4.13}
+\]
+
+The complexity becomes:
+
+\[
+\mathcal{O}(N \cdot F \cdot d_h)
+\tag{4.14}
+\]
+
+where $F = \binom{d + d_h}{d}$ is the feature dimension.
+
+\textbf{Not implemented in this version.}
+
+\subsection{Parameter Analysis}
+
+PADRe has the same parameter count as standard attention (plus LoRA adapters):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Q/K/V/O (frozen) & $4 d^2$ \\
+LoRA (4 proj) & $4 r_L (d + d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $r_L = 16$: ~98K trainable per layer.
+
+\textbf{No parameter reduction.}
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Taylor Approximation Error}
+
+For $|s| \ll d$:
+
+\[
+\left(1 + \frac{s}{d}\right)^d = e^s \cdot (1 + \mathcal{O}(s^2/d))
+\tag{4.15}
+\]
+
+Error decreases as $d$ grows.
+
+\subsubsection{Centering and Stability}
+
+\textbf{Claim.} After max-centering, the maximum value of the base is 1.
+
+\textbf{Proof.} $s_{ij} \leq 0$ after centering, so $1 + s_{ij}/d \leq 1$. $\square$
+
+\subsubsection{ReLU Sparsity}
+
+\textbf{Claim.} Positions with $s_{ij} < -d$ get zero attention weight.
+
+\textbf{Proof.} ReLU$(1 + s_{ij}/d) = 0$ when $s_{ij} < -d$. $\square$
+
+\subsubsection{Causality}
+
+\textbf{Claim.} For decoders, causality is preserved.
+
+\textbf{Proof.} The causal mask sets \texttt{invalid\_mask[i, j] = True} for $j > i$. 
+These positions are zeroed after the polynomial step, so they don't 
+contribute to the context. $\square$
+\begin{lstlisting}
+
+---
+\end{lstlisting}

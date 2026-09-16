@@ -126,5 +126,6 @@ algorithm is identical across all three variants.
 5. **No calibration required — a feature, not a bug.**
 6. **Injection protocol differences (SVD vs NOVA vs PRISM) do not affect 
    accuracy** — only engineering robustness.
+```
 
 ---

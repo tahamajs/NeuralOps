@@ -114,5 +114,6 @@ lists limitations. Section 11 concludes.
 | $\lambda$ | Diff damping ($= 0.2$) |
 | $\alpha$ | Fusion gate |
 | $z$ | Concept representation |
+```
 
 ---

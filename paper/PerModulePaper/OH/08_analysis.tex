@@ -35,14 +35,14 @@ summary.
 \textbf{Step} & \textbf{$\gamma$ (mean) DistilBERT} & \textbf{$\gamma$ RoBERTa} \\
 \midrule
 0 & 0.88 & 0.88 \\
-10 & 0.82 & {{R\_G10}} \\
-25 & 0.78 & {{R\_G25}} \\
-50 & 0.75 & {{R\_G50}} \\
+10 & {{D\_G10}} & {{R\_G10}} \\
+25 & {{D\_G25}} & {{R\_G25}} \\
+50 & {{D\_G50}} & {{R\_G50}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Gate mean decreases from 0.88 to 0.75 over 50 steps
+\textbf{Observation.} {{GATE\_EVOLUTION}}
 
 \subsection{Per-Head Analysis}
 
@@ -55,23 +55,23 @@ summary.
 \toprule
 \textbf{Head} & \textbf{$\gamma$ final} \\
 \midrule
-0 & 0.72 \\
-1 & 0.68 \\
-2 & 0.80 \\
-3 & 0.75 \\
-4 & 0.82 \\
-5 & 0.65 \\
-6 & 0.78 \\
-7 & 0.72 \\
-8 & 0.85 \\
-9 & 0.70 \\
-10 & 0.77 \\
-11 & 0.80 \\
+0 & {{D\_H0}} \\
+1 & {{D\_H1}} \\
+2 & {{D\_H2}} \\
+3 & {{D\_H3}} \\
+4 & {{D\_H4}} \\
+5 & {{D\_H5}} \\
+6 & {{D\_H6}} \\
+7 & {{D\_H7}} \\
+8 & {{D\_H8}} \\
+9 & {{D\_H9}} \\
+10 & {{D\_H10}} \\
+11 & {{D\_H11}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Some heads prefer local ($\gamma$$\to$0.85), others global ($\gamma$$\to$0.65)
+\textbf{Observation.} {{HEAD\_ANALYSIS}}
 
 \subsection{Compression Quality}
 
@@ -79,7 +79,7 @@ summary.
 The distribution over $d_c$ slots is roughly uniform (each slot captures 
 a different pattern).
 
-\textbf{Observation.} Slots capture distinct patterns, roughly orthogonal
+\textbf{Observation.} {{COMPRESSION\_QUALITY}}
 
 \subsection{Effect of Compression Rank}
 
@@ -92,10 +92,10 @@ a different pattern).
 \toprule
 \textbf{$d_c$} & \textbf{DistilBERT} & \textbf{Inference time} \\
 \midrule
-8 & 87.5 & 4.0 \\
-16 & 88.5 & 4.1 \\
-32 & 89.2 & 4.2 \\
-64 & 89.3 & 4.4 \\
+8 & {{D\_C8}} & {{D\_T8}} \\
+16 & {{D\_C16}} & {{D\_T16}} \\
+32 & {{D\_C32}} & {{D\_T32}} \\
+64 & {{D\_C64}} & {{D\_T64}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -132,9 +132,9 @@ Causality & Trivial & Requires masking \\
 \toprule
 \textbf{Model} & \textbf{Infini} & \textbf{OHA} \\
 \midrule
-DistilBERT & 89.5\% & 89.2\% \\
-RoBERTa & 76.5\% & 76.5\% \\
-GPT-2 & 77.5\% & 77.8\% \\
+DistilBERT & 89.5\% & {{D\_ACC}}\% \\
+RoBERTa & 76.5\% & {{R\_ACC}}\% \\
+GPT-2 & 77.5\% & {{G\_ACC}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -157,14 +157,14 @@ Global attention & 0 & 0.03 ms \\
 Gate & 0 & 0.02 ms \\
 Output proj & 0.2 ms & 0.2 ms \\
 LoRA & 0 & 0.15 ms \\
-\textbf{Total} & 1.9 s & 4.2 s \\
+\textbf{Total} & 1.9 s & {{D\_TIME}} s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{The Parameter Increase}
 
-The +1.40\% parameter increase comes from:
+The +{{D\_PARAM\_PCT}}\% parameter increase comes from:
 
 \begin{table}[H]
 \centering
@@ -173,11 +173,57 @@ The +1.40\% parameter increase comes from:
 \toprule
 \textbf{Component} & \textbf{Contribution} \\
 \midrule
-$W_k^\text{comp}, W_v^\text{comp}$ & 52\% \\
-Gate & 6\% \\
-LoRA & 42\% \\
+$W_k^\text{comp}, W_v^\text{comp}$ & {{COMPRESS\_CONTRIB}}\% \\
+Gate & {{GATE\_CONTRIB}}\% \\
+LoRA & {{LORA\_CONTRIB}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Failure Mode Taxonomy}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Symptom} & \textbf{Root cause} \\
+\midrule
+Crash during injection & \texttt{RuntimeError} & Missing projection \\
+Collapse & Acc $\approx$ 50.92\% & Weight copy failed \\
+Overfitting & Train >> val & Gate/compress too large \\
+Slow & >3$\times$ latency & Extra matmuls \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The `raise` Problem}
+
+\textbf{Critical.} OHA's \texttt{copy\_weights} \textbf{raises} \texttt{RuntimeError} on missing 
+projections:
+
+\begin{lstlisting}
+except Exception as e:
+    print(f'copy_weights failed: {e}')
+    raise RuntimeError(f"copy_weights failed: {e}")
+\end{lstlisting}
+
+Unlike NHA and EAT (which log warnings and continue), OHA fails hard. This 
+is safer but means \textbf{any} missing projection aborts injection. In our 
+experiments:
+
+{{RAISE\_PROBLEM\_DISCUSSION}}
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{OHA is not a compressor.} Parameters increase by ~{{D\_PARAM\_PCT}}\%.
+\item \textbf{Gate bias = 2.0 preserves pretrained behavior.}
+\item \textbf{Compression rank 32 is a sweet spot.}
+\item \textbf{Sequence compression provides global context.}
+\item \textbf{\texttt{raise} on copy failure is safer than silent fallback.}
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

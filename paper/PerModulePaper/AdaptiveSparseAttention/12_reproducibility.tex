@@ -4,7 +4,7 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
+git clone https://github.com/{{ORG}}/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -16,9 +16,9 @@ pip install -r requirements.txt
 \begin{lstlisting}
 python run_all_4_adaptive_sparse.py \
     --models distilbert,roberta,gpt2 \
-    --sparsity_ratio 0.5 \
-    --recovery_steps 50 \
-    --lora_rank 16
+    --sparsity_ratio {{SPARSITY}} \
+    --recovery_steps {{RECOVERY_STEPS}} \
+    --lora_rank {{LORA_RANK}}
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
@@ -62,9 +62,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Sparsity} \\
 \midrule
-DistilBERT & 88.5\% $\pm$ 1\% & ~0.42 \\
-RoBERTa & 76.0\% $\pm$ 1\% & ~0.45 \\
-GPT-2 & 76.5\% $\pm$ 1\% & ~0.48 \\
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & ~{{D\_SP}} \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & ~{{R\_SP}} \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_SP}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -73,7 +73,7 @@ GPT-2 & 76.5\% $\pm$ 1\% & ~0.48 \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive\_sparse}
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-adaptive\_sparse}
 \item \textbf{Metrics:} \texttt{results/unified\_adaptive\_sparse/*/summary.csv}
 
 \end{itemize}
@@ -84,3 +84,7 @@ GPT-2 & 76.5\% $\pm$ 1\% & ~0.48 \\
 \item Chunk boundary effects at small $C$
 \item RoPE fallback may fail on some models
 \end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

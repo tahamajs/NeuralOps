@@ -1,11 +1,177 @@
-\section{05 Architecture}
 
-Draft content for routing_attention.
+\section{Architecture Integration}
 
+\subsection{Model Support Matrix}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Architecture} & \textbf{Class} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Verified} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No &  \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & {{R\_VERIFIED}} \\
+GPT-2 & \texttt{GPT2Attention} (Conv1D) & No & No & No & {{G\_VERIFIED}} \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & {{Q\_VERIFIED}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+The \texttt{copy\_weights} method handles three extraction patterns:
+
+\subsubsection{GPT-2 (Fused Conv1D)}
+
+\begin{lstlisting}
+if hasattr(src, "c_attn"):
+    c_w = src.c_attn.weight.data.clone()
+    if src.c_attn.__class__.__name__ == "Conv1D":
+        c_w = c_w.t()
+    q_w, k_w, v_w = c_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa (Nested)}
+
+We unwrap the nested structure:
+
+\begin{lstlisting}
+elif hasattr(src, "self"):
+    s = src
+    while hasattr(s, "self") and not any(
+        hasattr(s, attr) for attr in ["query", "key", "value"]
+    ):
+        s = s.self
+    # Now s is BertSelfAttention with query/key/value
+\end{lstlisting}
+
+The output projection is taken from \texttt{src.output.dense}.
+
+\subsubsection{DistilBERT (Flat)}
+
+Direct extraction:
+
+\begin{lstlisting}
+extracted["q"] = src.q_lin.weight.data
+extracted["k"] = src.k_lin.weight.data
+extracted["v"] = src.v_lin.weight.data
+extracted["o"] = src.out_lin.weight.data
+\end{lstlisting}
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, we set \texttt{is\_nested\_encoder = True} and skip our own \texttt{out\_proj}:
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    return context, None
+output = self.out_proj(context)
+\end{lstlisting}
+
+The outer \texttt{BertSelfOutput.dense} applies the projection.
+
+\subsection{GQA Support}
+
+For Qwen with $H_{kv} < H$:
+
+\begin{lstlisting}
+if self.num_heads != self.num_kv_heads:
+    K = repeat_kv(K, self.num_heads // self.num_kv_heads)
+    V = repeat_kv(V, self.num_heads // self.num_kv_heads)
+\end{lstlisting}
+
+This is applied \textbf{before} the joint feature computation.
+
+\subsection{RoPE Support}
+
+Partial RoPE supported via \texttt{apply\_rotary\_pos\_emb}.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 3:} Inject Routing Attention
+\begin{lstlisting}
+Input:  layer  , config, old_attn
+Output: new attention module
+
+1: new $\leftarrow$ RoutingAttention(config, pretrained_attn=old_attn)
+2: if layer.attention.self: 
+3:     layer.attention.self $\leftarrow$ new; new.is_nested_encoder $\leftarrow$ True
+4: elif layer.self_attn: layer.self_attn $\leftarrow$ new
+5: elif layer.attn: layer.attn $\leftarrow$ new
+6: elif layer.self: layer.self $\leftarrow$ new; new.is_nested_encoder $\leftarrow$ True
+7: return new
+\end{lstlisting}
+
+\subsection{Failure Handling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weight & \texttt{copy\_weights} sets \texttt{(None, None)} & Random init \\
+Shape mismatch & Runtime check & Truncate to min \\
+Zero norm & \texttt{RuntimeError} raised & Injection aborts \\
+Injection exception & try/except in \texttt{inject\_routing} & Return \texttt{None} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{`RuntimeError` on Zero Norm}
+
+Unlike other modules, this one \textbf{raises} if a weight has near-zero norm:
+
+\begin{lstlisting}
+w_norm = float(torch.norm(target_mod.weight.data).item())
+if w_norm < 1e-4:
+    raise RuntimeError(f"RoutingAttention weight verification failed for '{proj_key}': "
+                       f"norm too small ({w_norm:.2e})")
+\end{lstlisting}
+
+\textbf{This is a bug.} If any projection weight is legitimately small, the 
+injection fails for the entire model. Consider replacing with a warning.
+
+\subsection{Double-Injection Guard}
+
+The \texttt{inject\_routing} function does \textbf{not} check for prior injection. Running 
+it twice could corrupt the model.
+
+\subsection{Diagnostics}
+
+\begin{lstlisting}
+# Verify injection
+for name, mod in model.named_modules():
+    if 'routing' in type(mod).__name__.lower():
+        print(name, type(mod).__name__)
+\end{lstlisting}
+
+\subsection{Common Pitfalls}
+
+\subsubsection{Cluster IDs on Padded Sequences}
+
+Padding tokens are included in k-means clustering, which may distort 
+centroids. Ideally, exclude padding before clustering.
+
+\subsubsection{Token-0 Anchor on Long Sequences}
+
+If token 0 is itself a padding token (rare), the anchor becomes meaningless. 
+Consider using the first valid token instead.
+
+\subsubsection{Nested Encoder Double-Projection}
+
+If \texttt{is\_nested\_encoder} is wrong, the output projection is applied twice.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
-\caption{Architectural overview of routing_attention.}
-\label{fig:arch_routing_attention}
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of routing\_attention.}
+\label{fig:arch_routing-attention}
 \end{figure}
+

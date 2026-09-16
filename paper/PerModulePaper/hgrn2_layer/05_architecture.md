@@ -137,5 +137,6 @@ and sums the results, giving each token access to both past and future context.
 
 **Chunk size = 32.** Chosen as a balance between parallelism (more chunks = 
 more parallel work) and memory (larger chunks = larger intra-chunk matrices).
+```
 
 ---

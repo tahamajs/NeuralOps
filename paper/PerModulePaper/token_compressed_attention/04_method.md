@@ -214,5 +214,6 @@ The compression ratio $\rho$ trades off:
 | 0.1 | 90% | severe |
 
 We recommend $\rho = 0.5$ as a default.
+```
 
 ---

@@ -247,3 +247,6 @@ Only keys with $j \leq i$ contribute. Causality preserved.
 | Top-K | 4 | Larger = more context, more cost |
 | Threshold | 128 | Larger = more short-path |
 | LoRA rank | 16 | Higher = more recovery |
+```
+
+---

@@ -260,5 +260,6 @@ For a typical trained model, the selected ranks are:
 | O | {{R_O_MEAN}} | {{R_O_MIN}} | {{R_O_MAX}} |
 
 Across all layers, average rank: **{{AVG_RANK}}**.
+```
 
 ---

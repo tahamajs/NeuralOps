@@ -105,3 +105,6 @@ Prune multiple times per layer. No benefit.
 3. **Learned MLP beats heuristics.**
 4. **Keep ratio 0.8 is a sweet spot.**
 5. **MLP-64 suffices.**
+```
+
+---

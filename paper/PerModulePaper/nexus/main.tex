@@ -64,10 +64,50 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the nexus module within modern transformer architectures.
+We present \textbf{NEXUS} (\textbf{N}eural \textbf{E}fficient \textbf{X}-scoring \textbf{U}nified \textbf{S}parse 
+attention), a modular attention framework that unifies six recent advances in 
+sparse attention: (1) XAttention antidiagonal block scoring (training-free), 
+(2) SeerAttention learnable gating, (3) DuSA dual-stage intra/inter-block 
+sparsity, (4) AnchorAttention stripe band masking, (5) Spectraformer-style 
+Random Fourier Feature global rectification, and (6) softpick rectified softmax.
+
+The core mechanism partitions the sequence into blocks of size $B_s$, scores 
+block-to-block interaction with coarse subsampled correlations, retains the 
+top-$k$ key blocks per query block, and computes exact intra-block attention 
+with optional stripe masking. A learnable Seer gating network provides a 
+data-dependent override, and periodic RFF layers inject a global receptive 
+field.
+
+On SST-2, NEXUS achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{BASE\_D}}\%, 
+$\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), 
+and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using 
+{{RECOVERY\_STEPS}} LoRA recovery steps.
+
+\textbf{Important honest caveats:}
+
+\begin{itemize}
+\item \textbf{Encoder-only sparsity.} The block-sparse path is used only for
+  non-causal models. Causal decoders (GPT-2) always fall back to dense
+  attention, so NEXUS provides \textbf{no compute savings on GPT-2}.
+\item \textbf{Stripe masking is gated at $N > 256$.} For SST-2 ($N = 128$), the stripe
+  component is inactive.
+\item \textbf{RFF rectification is disabled by default} when pretrained weights are
+  provided. It activates only when \texttt{enable\_spectraformer=True}.
+\item \textbf{Softpick activation} occasionally produces near-uniform distributions
+  when all logits are negative; this is mitigated by our temperature
+  parameter.
+
+\end{itemize}
+We present NEXUS as a \textbf{modular framework} for studying sparse attention 
+combinations, not as a single breakthrough method.
+
+\textbf{Keywords:} sparse attention, block routing, mixture of block attention, 
+softpick, random Fourier features, multi-scale sparsity
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} nexus, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} sparse attention, block routing, mixture of block attention,
 \end{abstract}
 
 \vspace{1em}

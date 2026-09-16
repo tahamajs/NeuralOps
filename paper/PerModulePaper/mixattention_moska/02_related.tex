@@ -1,3 +1,66 @@
-\section{02 Related}
 
-Draft content for mixattention_moska.
+\section{Related Work}
+
+\subsection{Token Pruning and KV Compression}
+
+\textbf{H2O} (Zhang et al., 2023). Keeps "heavy-hitter" tokens based on 
+accumulated attention scores. Requires attention scores at each step, which 
+FASA does not.
+
+\textbf{StreamingLLM} (Xiao et al., 2024). Pins the first few tokens as attention 
+sinks and keeps a sliding window. FASA's CLS-pinning is inspired by this.
+
+\textbf{SnapKV} (Li et al., 2024). Uses attention scores from a prefix window to 
+select which tokens to keep. FASA uses variance instead.
+
+\textbf{Scissorhands} (Liu et al., 2023). Uses an importance criterion based on 
+past attention patterns.
+
+\textbf{PyramidKV} (Cai et al., 2024). Allocates different budgets to different 
+layers.
+
+\subsection{Attention Sinks}
+
+\textbf{Xiao et al. (2024)} and \textbf{Gu et al. (2024)} show that transformers 
+allocate disproportionate attention to the first few tokens. This is the 
+basis for CLS-pinning in FASA.
+
+\subsection{Sparse Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020). Sliding-window + global.
+
+\textbf{BigBird} (Zaheer et al., 2020). Sliding-window + random + global.
+
+\textbf{FASA differs from these} in that sparsity is \textbf{data-dependent} 
+(variance of K) rather than architecturally fixed.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{FASA} \\
+\midrule
+\textbf{Importance criterion} & Attention scores (H2O, SnapKV) & \textbf{Variance of K} \\
+\textbf{Sink pinning} & First few tokens & \textbf{CLS only} \\
+\textbf{Causal support} & Yes (with careful masking) & \textbf{No (skips pruning)} \\
+\textbf{Training required} & No & No \\
+\textbf{Parameters added} & None & LoRA only \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} FASA's importance criterion is \textbf{cheaper} than H2O 
+(no attention scores needed) but is \textbf{weaker} as a signal. Our ablation 
+in Section 8 quantifies this.
+
+
+
+\subsection{Comparison Table}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -97,5 +97,6 @@
 - **Parameters:** increase {{D_PARAM_PCT}}% to {{G_PARAM_PCT}}%.
 - **Differential attention** helps by {{DIFF_GAIN}}%.
 - **SSM fusion** helps by {{SSM_GAIN}}%.
+```
 
 ---

@@ -1,3 +1,127 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for compressed_mha.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Joint SVD is Efficient}
+
+Sharing the input basis across Q, K, V yields \textbf{{{JOINT\_GAIN}}\%} fewer 
+parameters than independent SVD at the same accuracy.
+
+\subsubsection{Takeaway 2: Nested Detection Matters}
+
+The detection order fix restored DistilBERT from 50.92\% collapse to 
+{{D\_ACC}}\%.
+
+\subsubsection{Takeaway 3: LoRA Recovery is Essential}
+
+Without LoRA, accuracy drops by {{NOLORA\_DROP}}\%. With LoRA (rank 16), it 
+recovers most of the gap.
+
+\subsection{When to Use Compressed MHA}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Memory-constrained deployment}
+\item \textbf{Fine-tuning pipelines} with LoRA
+\item \textbf{Multi-architecture} codebases
+\item \textbf{Base for quantization} (compress then quantize)
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Latency-critical}: two matmuls vs one
+\item \textbf{Extremely small models} ($d < 256$)
+\item \textbf{Extremely large rank needed}: $r > d/2$
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Want to compress attention projections? --- Yes --- Use Compressed MHA
+  | No
+   
+Need sequence-level compression? --- Yes --- Use Linformer/LEKAv3
+  | No
+   
+Keep standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT with rank 64:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Compressed} & \textbf{Change} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M & \textbf{{{D\_PARAM\_PCT}}\%} \\
+Attention params & 14.2M & {{D\_ATTN\_PARAMS}}M & \textbf{{{D\_ATTN\_RATIO}}$\times$} \\
+Peak VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_PCT}}\% \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Prior Compression Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Axis} & \textbf{Joint} & \textbf{Params red.} & \textbf{Accuracy} \\
+\midrule
+Linformer & Sequence & No & No & {{LIN\_ACC}} \\
+A3 (SVD) & Feature & No & Yes & {{A3\_ACC}} \\
+AASVD & Feature & No & Yes & {{AASVD\_ACC}} \\
+\textbf{Compressed MHA} & \textbf{Feature (joint)} & \textbf{Yes} & \textbf{Yes} & \textbf{{{D\_ACC}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Deployment Considerations}
+
+\subsubsection{Memory}
+
+Compression ratio {{D\_RATIO}}$\times$ reduces both disk and VRAM footprint.
+
+\subsubsection{Latency}
+
+Two matmuls per projection vs one for baseline. On modern GPUs, the smaller 
+matrices are often faster due to reduced memory bandwidth.
+
+\subsubsection{Batching}
+
+Compression scales well with batch size -- the smaller weight matrices fit 
+better in cache.
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Optimal rank allocation:} Per-layer rank schedules?
+\item \textbf{Joint with output:} Can we joint-factorize Q/K/V/O?
+\item \textbf{Cross-layer SVD:} Share factors across layers?
+\item \textbf{Interaction with quantization:} Combined INT8 + SVD?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Reduces model size for edge deployment
+\item Complements other compression methods
+\item Multi-architecture support aids adoption
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Requires fine-tuning for recovery
+\item Adds complexity vs simpler pruning
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

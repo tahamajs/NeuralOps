@@ -49,5 +49,12 @@ Block-level replacement is a promising direction for hybrid architectures
 
 We hope this work contributes to more rigorous block-level replacement 
 research.
+```
+
+---
+
+## 📄 `build.py` and `apply_vars.py`
+
+Same as previous templates.
 
 ---

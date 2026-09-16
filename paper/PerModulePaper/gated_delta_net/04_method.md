@@ -237,5 +237,6 @@ Output: Y ∈ R^{B×L×d}
 
 The **Z projection is the largest overhead**. It is not present in baseline 
 attention.
+```
 
 ---

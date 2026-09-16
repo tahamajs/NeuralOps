@@ -4,23 +4,23 @@
 
 \subsubsection{D.1.1 Too Few Clusters (K=2)}
 
-\textbf{Result.} Accuracy dropped to 85.0\%. Centroids too coarse.
+\textbf{Result.} Accuracy dropped to {{K2\_ACC}}\%. Centroids too coarse.
 
 \subsubsection{D.1.2 No Local Window}
 
-\textbf{Result.} 88.2\%. Local structure lost.
+\textbf{Result.} {{NO\_LOCAL\_ACC}}\%. Local structure lost.
 
 \subsubsection{D.1.3 No Global Clustering}
 
-\textbf{Result.} 87.0\%. Equivalent to local-only (Longformer-like).
+\textbf{Result.} {{NO\_GLOBAL\_ACC}}\%. Equivalent to local-only (Longformer-like).
 
 \subsubsection{D.1.4 Hard Assignment (no temperature)}
 
-\textbf{Result.} 85.5\%. Non-differentiable, unstable.
+\textbf{Result.} {{HARD\_ACC}}\%. Non-differentiable, unstable.
 
 \subsubsection{D.1.5 Very Small Window (W=2)}
 
-\textbf{Result.} 86.5\%. Local branch too narrow.
+\textbf{Result.} {{W2\_ACC}}\%. Local branch too narrow.
 
 \subsubsection{D.1.6 10+ K-Means Iterations}
 
@@ -35,10 +35,10 @@
 \toprule
 \textbf{LR} & \textbf{D acc} \\
 \midrule
-5e-5 & 89.2 \\
-1e-4 & 89.8 \\
-2e-4 & 89.91 \\
-5e-4 & 88.5 (unstable) \\
+5e-5 & {{D\_LR5e5}} \\
+1e-4 & {{D\_LR1e4}} \\
+2e-4 & {{D\_ACC}} \\
+5e-4 & {{D\_LR5e4}} (unstable) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -52,11 +52,11 @@
 \toprule
 \textbf{Seed} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-42 & 89.91 & 77.50 & 78.98 \\
-123 & 89.85 & 77.45 & 78.90 \\
-456 & 89.95 & 77.55 & 79.00 \\
-Mean & 89.90 & 77.50 & 78.96 \\
-Std & 0.05 & 0.05 & 0.05 \\
+42 & {{SEED42\_D}} & {{SEED42\_R}} & {{SEED42\_G}} \\
+123 & {{SEED123\_D}} & {{SEED123\_R}} & {{SEED123\_G}} \\
+456 & {{SEED456\_D}} & {{SEED456\_R}} & {{SEED456\_G}} \\
+Mean & {{MEAN\_D}} & {{MEAN\_R}} & {{MEAN\_G}} \\
+Std & {{STD\_D}} & {{STD\_R}} & {{STD\_G}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,3 +70,7 @@ Std & 0.05 & 0.05 & 0.05 \\
 \item 3 iterations sufficient.
 \item Causal decoders need exact attention (not clustering).
 \end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

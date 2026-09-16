@@ -101,3 +101,6 @@ python run_all_4_adaptive_sparse.py \
 | Temperature $T$ | $\{0.01, 0.1, 0.5, 1.0\}$ |
 | Chunk size $C$ | $\{32, 64, 128\}$ |
 | LoRA rank | $\{4, 8, 16, 32\}$ |
+```
+
+---

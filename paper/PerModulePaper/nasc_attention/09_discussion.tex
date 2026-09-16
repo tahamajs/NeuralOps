@@ -1,3 +1,128 @@
-\section{09 Discussion}
 
-Draft content for nasc_attention.
+\section{Discussion}
+
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Cascade Works for Decoders}
+
+NASC's cascade path is used for GPT-2 and achieves {{G\_DELTA}}\% delta.
+
+\subsubsection{Takeaway 2: Encoder Default is Dense}
+
+By default, DistilBERT and RoBERTa use standard attention, so NASC's 
+cascade doesn't apply.
+
+\subsubsection{Takeaway 3: Overhead is Significant}
+
+The three-branch cascade adds ~{{G\_TIME\_R}}$\times$ latency compared to baseline.
+
+\subsection{When to Use NASC}
+
+\subsubsection{Recommended}
+
+\begin{itemize}
+\item \textbf{Decoder-only models} where cascade is triggered.
+\item \textbf{When you need RFF global attention} with prefix-sum causality.
+\item \textbf{Research baseline} for hybrid attention.
+
+\end{itemize}
+\subsubsection{Not Recommended}
+
+\begin{itemize}
+\item \textbf{Encoders} (dense path by default).
+\item \textbf{Long sequences} ($L > 512$ for RFF cumsum OOM).
+\item \textbf{Latency-critical} inference (~{{G\_TIME\_R}}$\times$ slower).
+\item \textbf{When you need per-token adaptive gating.}
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Start
+  |
+   
+Is the model a decoder? -- No -- NASC's cascade doesn't apply
+  |
+  Yes
+   
+Is L <= 512? -- No -- OOM risk in RFF cumsum
+  |
+  Yes
+   
+Is latency critical? -- Yes -- Use FlashAttention instead
+  |
+  No
+   
+Consider NASC
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For GPT-2 on L=128:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{NASC} & \textbf{Change} \\
+\midrule
+Accuracy & 79.36\% & {{G\_ACC}}\% & {{G\_DELTA}}\% \\
+Params & 124.44M & {{G\_PARAMS}}M & +{{G\_PARAM\_PCT}}\% \\
+Time & 4.2 s & {{G\_TIME}} s & {{G\_TIME\_R}}$\times$ \\
+VRAM & 793 MB & {{G\_VRAM}} MB & {{G\_VRAM\_RATIO}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Verdict.} {{VERDICT}}
+
+\subsection{Comparison with Alternatives}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Alternative} & \textbf{Accuracy} & \textbf{Speed} & \textbf{Notes} \\
+\midrule
+Full attention & 79.36\% & 1.0$\times$ & Baseline \\
+FlashAttention-2 & ~79\% & 1.1$\times$ & Faster \\
+Cosformer & {{COS\_G}}\% & 4.9$\times$ slower & Linear attention \\
+\textbf{NASC} & \textbf{{{G\_ACC}}\%} & \textbf{{{G\_TIME\_R}}$\times$} & 3-branch cascade \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Would per-token gating help?} Likely yes.
+\item \textbf{Would vectorizing sparse block help?} Yes.
+\item \textbf{Would fused RFF kernel reduce memory?} Yes.
+\item \textbf{Why does the encoder default to dense?} Design or performance?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+
+\begin{itemize}
+\item Demonstrates 3-branch hybrid attention.
+\item Documents \texttt{softpick} fix.
+
+\end{itemize}
+\subsubsection{Negative}
+
+\begin{itemize}
+\item Raises on failure (robustness regression).
+\item Significant inference overhead.
+
+\end{itemize}
+\subsection{Deployment Recommendations}
+
+\textbf{Deploy only for decoders with L $\le$ 512 and non-critical latency.}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

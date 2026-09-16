@@ -189,5 +189,6 @@ class SVDMamba(BaseAttention):
 If `encoder_hidden_states` is provided, SVD-Mamba returns 
 `(hidden_states, None)` — a pass-through. This means cross-attention is 
 effectively unsupported.
+```
 
 ---

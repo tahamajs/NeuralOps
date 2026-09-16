@@ -143,5 +143,6 @@ MinimalSVD's inference is **faster** than dense attention:
 5. **No calibration needed.**
 6. **Companion variants (NOVA, PRISM) achieve the same accuracy** — 
    engineering differences only.
+```
 
 ---

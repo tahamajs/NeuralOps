@@ -88,5 +88,6 @@ is a **drop-in replacement** for MHSA that works on pretrained transformers.
 | OHA | Local + compressed global | +compress+gate+LoRA | Yes |
 | RPC | Q/K sketching | +LoRA | Yes |
 | **SVD-Mamba** | **Attention + SSM + global** | **+SSM+global+gate+LoRA** | **Yes** |
+```
 
 ---

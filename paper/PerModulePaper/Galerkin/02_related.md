@@ -69,5 +69,6 @@ suggest this trade-off is not worth it for attention.
 | FNet | Fourier | No | 66.9M | ~85% |
 | Random Synthesizer | Random | No | 66.9M | ~85% |
 | **Galerkin** | **DCT** | **No** | **+0.9%** | **{{D_ACC}}%** |
+```
 
 ---

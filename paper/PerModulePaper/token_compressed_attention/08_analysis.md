@@ -105,5 +105,6 @@ This is the trade-off: 6.3% more parameters for 50% less KV cache.
 3. **Causal masking is correct** (verified via gradients).
 4. **KV cache reduction is real** ({{KV_PCT}}% at ρ = {{RATIO}}).
 5. **Parameter count increases** ({{D_PARAM_PCT}}%) — honest framing.
+```
 
 ---

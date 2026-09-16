@@ -1,3 +1,74 @@
-\section{E Ethics}
+\section{Appendix E. Ethical Considerations}
 
-Draft content for nexus.
+\subsection{E.1 Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Modular framework for sparse attention research
+\item Multi-architecture support
+\item Honest complexity reporting
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Two components inactive in practice
+\item Dense fallback for causal models
+
+\end{itemize}
+\subsection{E.2 Environmental}
+
+\begin{itemize}
+\item GPU-hours: ~{{COMPUTE\_HOURS}}
+\item CO$_2$: {{CO2\_KG}} kg
+
+\end{itemize}
+\subsection{E.3 Data Ethics}
+
+\begin{itemize}
+\item SST-2 public
+\item No PII
+\item English-only
+
+\end{itemize}
+\subsection{E.4 Model Ethics}
+
+\subsubsection{Bias}
+Not audited.
+
+\subsubsection{Misuse}
+Standard dual-use.
+
+\subsection{E.5 Authorship}
+
+See  11.7.
+
+\subsection{E.6 Conflicts}
+
+None.
+
+\subsection{E.7 Funding}
+
+{{FUNDING}}
+
+\subsection{E.8 LLM Usage}
+
+Drafted with LLM assistance. Content reviewed by authors.
+
+\subsection{E.9 Honesty Notes}
+
+We explicitly document:
+\begin{itemize}
+\item \textbf{Stripe and RFF inactive} under default SST-2 setup
+\item \textbf{Dense fallback} for causal models
+\item \textbf{Only 4 of 6 components active} in practice
+\end{itemize}
+\begin{lstlisting}
+
+---
+
+##   `build.py`, `apply_vars.py`, `checklist.md`
+
+(                    --           )
+
+---
+\end{lstlisting}

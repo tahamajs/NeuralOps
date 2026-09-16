@@ -88,3 +88,6 @@ $$
 $$
 
 For $B=8, H=12, m=128, d_h=64$, FP32: $8 \times 12 \times 128 \times 64 \times 4 = 3.1$ MB per layer. **Practical.**
+```
+
+---

@@ -170,3 +170,6 @@ class AdaptiveSpanAttention(BaseAttention): ...
 | DeltaNet layer | Class name check | Skip layer |
 | RoPE unavailable | Exception | Fallback |
 | CUDA OOM | RuntimeError | Reduce batch |
+```
+
+---

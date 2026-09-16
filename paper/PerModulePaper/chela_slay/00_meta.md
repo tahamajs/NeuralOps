@@ -108,5 +108,6 @@ gate ≈ {{GATE_INIT}} toward dense) and gradually learns to blend.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
+```
 
 ---

@@ -1,3 +1,84 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for moba.
+\subsection{Quadratic Complexity}
+
+Despite the SSM inspiration, our implementation is \textbf{$\mathcal{O}(L^2 d)$} in 
+time and memory, not $\mathcal{O}(L)$. The docstring's claim of "strictly 
+O(L)" is incorrect.
+
+\subsection{Not True Mamba}
+
+We do not perform selective scan, input-dependent state transitions, or 
+conv1d preprocessing. This is \textbf{Mamba-inspired}, not Mamba.
+
+\subsection{Weight Reuse is Approximate}
+
+The $p_1$ and $p_2$ branches are populated with Q/V or Q/K weights by 
+heuristic. There is no theoretical justification for this specific mapping.
+
+\subsection{Task Coverage}
+
+Only SST-2 evaluated. Behavior on generation, multi-class, and long-context 
+tasks unknown.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B--10B & No \\
+>10B & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Single-Seed}
+
+SE ~1.7\%. Differences below 3.4\% may be noise.
+
+\subsection{Memory Scaling}
+
+At $L = 1024$, the $[L, L, d]$ weight tensor is ~750 MB per layer at FP16. 
+This limits scalability.
+
+\subsection{copy\_weights Raises}
+
+\texttt{copy\_weights} raises exceptions on failure, which may abort training if 
+not caught by the injector.
+
+\subsection{A\_log Initialization}
+
+Init $A_{\log, i} = \log(i)$ may not be optimal for all tasks. Different 
+initializations could help.
+
+\subsection{Preservation Gate Interaction}
+
+The preservation gate $\alpha$ is shared across all heads. A per-head gate 
+might be more expressive.
+
+\subsection{No Comparison with Actual Mamba}
+
+We do not compare with true Mamba (different parameter counts, different 
+architecture).
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Docstring complexity claim is incorrect
+\item \texttt{raise} in copy\_weights
+\item No fused kernel
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

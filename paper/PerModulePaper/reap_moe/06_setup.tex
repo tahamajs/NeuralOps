@@ -1,3 +1,159 @@
-\section{06 Setup}
+\section{Experimental Setup}
 
-Draft content for reap_moe.
+\subsection{Models}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Hidden} & \textbf{Heads} & \textbf{Params} \\
+\midrule
+DistilBERT-base & 6 & 768 & 12 & 66.9M \\
+RoBERTa-base & 12 & 768 & 12 & 124.6M \\
+GPT-2 & 12 & 768 & 12 & 124.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset}
+
+\textbf{SST-2} (Socher et al., 2013):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Split} & \textbf{Size} \\
+\midrule
+Train & 67,349 \\
+Validation & 872 \\
+Test & 1,821 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Majority baseline: 50.92\%. Sequence length: 128.
+
+\subsection{Compression Hyperparameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+\texttt{n\_experts} $E$ & {{N\_EXPERTS}} \\
+\texttt{top\_k} $k$ & {{TOP\_K}} \\
+\texttt{noise\_std} $\sigma$ & 0.05 \\
+\texttt{use\_svd} & True \\
+SVD rank $r$ & $d/4$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recovery Fine-Tuning}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimizer & AdamW \\
+Learning rate & {{LR}} \\
+Weight decay & {{WD}} \\
+Recovery steps & {{RECOVERY\_STEPS}} \\
+LoRA rank & {{LORA\_RANK}} \\
+Batch size & {{BATCH\_SIZE}} \\
+Precision & FP16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Evaluation}
+
+\subsubsection{Quality}
+\begin{itemize}
+\item Accuracy, F1, precision, recall
+\item Validation loss
+
+\end{itemize}
+\subsubsection{Efficiency}
+\begin{itemize}
+\item Total parameters
+\item Expert utilization (from aux loss)
+\item Peak VRAM
+\item Inference time
+
+\end{itemize}
+\subsubsection{MoE-specific}
+\begin{itemize}
+\item Router entropy
+\item Load balance metric (max/mean expert usage)
+\item Auxiliary loss value
+
+\end{itemize}
+\subsection{Quality Gate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Status} & \textbf{Accuracy} \\
+\midrule
+PASS & $\ge$ 56.0\% \\
+PASS\_LOW & 50.92\% -- 56.0\% \\
+FAIL & < 50.92\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+\begin{itemize}
+\item GPU: NVIDIA RTX 4070 Laptop (8 GB)
+\item CUDA: {{CUDA\_VERSION}}
+\item PyTorch: {{TORCH\_VERSION}}
+\item Transformers: {{HF\_VERSION}}
+
+\end{itemize}
+\subsection{Reproduction}
+
+\begin{lstlisting}
+python run_all_4_reap_moe.py \
+    --models distilbert,roberta,gpt2 \
+    --n_experts {{N_EXPERTS}} \
+    --top_k {{TOP_K}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Baselines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Uncompressed \\
+\texttt{reap\_moe} & Our method \\
+\texttt{reap\_moe\_no\_svd} & Dense experts \\
+\texttt{reap\_moe\_no\_aux} & No load-balancing loss \\
+\texttt{reap\_moe\_no\_noise} & Deterministic routing \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Seeds}
+
+All experiments use seed {{SEED}}.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

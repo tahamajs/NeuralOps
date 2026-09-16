@@ -136,3 +136,6 @@ allows asymmetric. Comparison:
 3. **Schulz from SVD pinv** is best.
 4. **Causality is approximate.**
 5. **Long $L$ benefits most.**
+```
+
+---

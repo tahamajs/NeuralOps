@@ -1,3 +1,113 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for moe_deltakv_paged.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Combining Techniques Works}
+
+The three components (MoBA, Delta-KV, 4-bit quantization) compose cleanly 
+with modest accuracy loss.
+
+\subsubsection{Takeaway 2: Simulation is Not Compression}
+
+The Delta-KV and 4-bit steps are \textbf{simulations}. They do not reduce 
+inference memory. Users should be aware of this distinction.
+
+\subsubsection{Takeaway 3: Router Needs Careful Initialization}
+
+The identity initialization of $W_\text{rg}$ + load balancing loss prevents 
+router collapse.
+
+\subsection{When to Use This Module}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{As a training-time regularization} for future quantization
+\item \textbf{When block-sparse attention is desired}
+\item \textbf{As a research baseline} for MoBA + Delta-KV combinations
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{When memory reduction is the goal}: no actual savings
+\item \textbf{When SVD-in-forward is expensive}: consider pre-computed deltas
+\item \textbf{When 6D gather OOM is a risk}: reduce page count
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Want block-sparse attention? --- Yes --- Use MoBA (simpler)
+  | No
+   
+Want Delta-KV training-time reg? --- Yes --- Use this
+  | No
+   
+Want actual compression? --- Yes --- Use A3/AASVD instead
+  | No
+   
+Keep standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT at L = 512:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{MoE-DeltaKV} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M \\
+Attention FLOPs & 100\% & {{FLOP\_RATIO}}\% \\
+Inference time & 1.9 s & {{D\_TIME}} s \\
+Accuracy & 90.71\% & {{D\_ACC}}\% \\
+KV memory & unchanged & \textbf{unchanged} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Published Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Block-sparse} & \textbf{Delta} & \textbf{4-bit} & \textbf{Real compression} \\
+\midrule
+MoBA &  &  &  &  \\
+Delta-KV &  &  &  & Partial \\
+KVQuant &  &  &  &  \\
+\textbf{Ours} &  &  &  & (simulation) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Real compression:} Can the delta SVD be materialized?
+\item \textbf{Adaptive page size:} Can pages vary in size?
+\item \textbf{Router refinement:} Can the router attend to partial pages?
+\item \textbf{Combined with quantization:} INT8 + Delta-KV?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Provides a MoBA + Delta-KV baseline
+\item Demonstrates STE for temporal deltas
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Memory savings are simulated
+\item 6D gather is memory-heavy
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

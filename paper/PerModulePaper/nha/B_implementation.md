@@ -5,3 +5,144 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 # Appendix B. Implementation Details
+
+## B.1 The `NativeHybridAttention` Class
+
+```python
+class NativeHybridAttention(BaseAttention):
+    def __init__(self, config=None, window_size=64, rff_features=128, ...):
+        super().__init__(config, rank)
+        
+        # ... resolve dim, num_heads ...
+        
+        # Projections with LoRA
+        self.q_proj = LoRALinear(...)
+        self.k_proj = LoRALinear(...)
+        self.v_proj = LoRALinear(...)
+        self.out_proj = LoRALinear(...)
+        
+        # RFF projection buffer
+        omega = self._build_orthogonal_matrix(self.head_dim, rff_features)
+        self.register_buffer("rff_proj", omega)
+        
+        # Token gate
+        self.gate = nn.Linear(self.dim, 1)
+        nn.init.zeros_(self.gate.weight)
+        nn.init.constant_(self.gate.bias, 3.0)
+```
+
+## B.2 Orthogonal Matrix Construction
+
+```python
+def _build_orthogonal_matrix(self, d, m):
+    blocks = []
+    remaining = m
+    while remaining > 0:
+        block_size = min(d, remaining)
+        g = torch.randn(d, block_size)
+        q, _ = torch.linalg.qr(g)
+        blocks.append(q)
+        remaining -= block_size
+    W = torch.cat(blocks, dim=1) * math.sqrt(d)
+    return W
+```
+
+## B.3 Local Window Attention (Chunked)
+
+```python
+def _local_window_attention(self, Q, K, V, valid_mask, is_causal=False):
+    B, H, N, d = Q.shape
+    scale = 1.0 / math.sqrt(d)
+    chunk = 64
+    window = self.window_size
+    out = torch.zeros_like(V)
+    
+    for i in range(0, N, chunk):
+        end = min(i + chunk, N)
+        q_block = Q[:, :, i:end]
+        k_start = max(0, i - window)
+        k_end = min(N, end + window) if not is_causal else end
+        k_block = K[:, :, k_start:k_end]
+        v_block = V[:, :, k_start:k_end]
+        
+        scores = torch.matmul(q_block.float(), k_block.float().transpose(-2, -1)) * scale
+        # ... band mask, causal mask, padding mask ...
+        attn = F.softmax(scores, dim=-1).to(Q.dtype)
+        attn = torch.nan_to_num(attn, nan=0.0)
+        out[:, :, i:end] = torch.matmul(attn, v_block)
+    return out
+```
+
+## B.4 Global RFF Attention (Chunked Prefix Scan)
+
+```python
+def _global_rff_attention(self, Q, K, V, valid_mask, is_causal=False):
+    B, H, N, d = Q.shape
+    scale = d ** -0.25
+    Q_scaled = Q * scale
+    K_scaled = K * scale
+    
+    proj = self.rff_proj.to(dtype=Q.dtype, device=Q.device)
+    Qf = torch.matmul(Q_scaled, proj)
+    Kf = torch.matmul(K_scaled, proj)
+    
+    norm = 1.0 / math.sqrt(self.rff_features)
+    phi_Q = (F.elu(Qf) + 1.0) * norm
+    phi_K = (F.elu(Kf) + 1.0) * norm
+    
+    pad = valid_mask.unsqueeze(1).unsqueeze(-1).to(Q.dtype)
+    phi_K = phi_K * pad
+    phi_Q = phi_Q * pad
+    V_masked = V * pad
+    
+    with torch.autocast(device_type=Q.device.type, enabled=False):
+        # ... FP32 computation ...
+        if is_causal:
+            # Chunked prefix scan
+            chunk_size = min(64, N)
+            S = torch.zeros(B, H, self.rff_features, d, dtype=torch.float32)
+            Z = torch.zeros(B, H, self.rff_features, dtype=torch.float32)
+            out_list = []
+            for c in range(num_chunks):
+                # ... intra + inter chunk computation ...
+                S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+                Z = Z + k_c.sum(dim=2)
+            out = torch.cat(out_list, dim=2) * pad
+        else:
+            KV = torch.matmul(phi_K_f.transpose(-2, -1), V_f)
+            Z = phi_K_f.sum(dim=-2, keepdim=True)
+            num = torch.matmul(phi_Q_f, KV)
+            den = torch.matmul(phi_Q_f, Z.transpose(-2, -1)).clamp(min=1e-6)
+            out = (num / den).to(Q.dtype) * pad
+    return out
+```
+
+## B.5 Common Pitfalls
+
+### B.5.1 Missing FP32 in RFF
+
+FP16 overflows for $L > 512$. Always cast to FP32.
+
+### B.5.2 Zero Padding Contamination
+
+Zero out invalid K, V before cumsum to avoid accumulating padding.
+
+### B.5.3 Gate Initialization
+
+`nn.init.zeros_(gate.weight)` and `nn.init.constant_(gate.bias, 3.0)` — 
+ensures $\sigma(3) \approx 0.95$ at start.
+
+### B.5.4 RoPE Before Streams
+
+Apply RoPE to Q, K before both streams.
+
+### B.5.5 GQA Repeat Before Streams
+
+Apply `repeat_kv` before local and global streams.
+
+### B.5.6 Nested Encoder Output
+
+For RoBERTa, `is_nested_encoder=True` → skip own `out_proj`.
+```
+
+---

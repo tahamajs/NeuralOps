@@ -100,5 +100,6 @@ Are you on Ampere/older? ── Yes ── Use SDPA fallback (this module works 
 2. **Log which path was taken.** Add `logger.info("FP8 path taken: %s", use_fp8_path)`.
 3. **Test on target hardware** before deploying.
 4. **Do not benchmark on laptops** and generalize to servers.
+```
 
 ---

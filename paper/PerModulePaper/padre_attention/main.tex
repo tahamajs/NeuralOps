@@ -64,10 +64,52 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the padre\_attention module within modern transformer architectures.
+We introduce \textbf{PADRe} (\textbf{P}olynomial \textbf{A}ttention with \textbf{D}ropout \textbf{R}egularization), 
+a multi-architecture attention module that replaces the softmax normalization 
+of standard attention with a \textbf{polynomial kernel}:
+
+\[
+\text{attn}(q_i, k_j) = \frac{(1 + s_{ij}/\text{order})^\text{order}}{\sum_{j'} (1 + s_{ij'}/\text{order})^\text{order}}
+\]
+
+where $s_{ij}$ is the scaled, centered dot-product score. This polynomial 
+kernel is a \textbf{Taylor approximation} of $\exp(s)$ and, unlike softmax, is 
+\textbf{kernelizable} -- it can be expressed as $\phi(q) \cdot \phi(k)$ where $\phi$ 
+is a finite-dimensional feature map. This property has the potential to enable 
+$\mathcal{O}(N)$ attention.
+
+\textbf{However, the current implementation is not kernelized.} The attention 
+weights are materialized as an $[N \times N]$ matrix, so the runtime is 
+$\mathcal{O}(N^2 d_h)$ -- identical to standard softmax attention. The 
+polynomial kernel does not, by itself, provide speedup without the 
+corresponding kernelization step.
+
+\textbf{What PADRe does provide:}
+
+\begin{enumerate}
+\item \textbf{Numerical stability via max-centering} of scores over valid positions,
+  preventing overflow in the polynomial expansion.
+\item \textbf{Dropout regularization} on the polynomial attention weights.
+\item \textbf{Multi-architecture support} across DistilBERT, RoBERTa, GPT-2, and Qwen.
+\item \textbf{Frobenius-norm weight-copy validation} with output-equivalence check.
+\item \textbf{Nested encoder bypass} for RoBERTa-style architectures.
+
+\end{enumerate}
+On SST-2, PADRe achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{BASE\_D}}\%, 
+$\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%, 
+$\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%, 
+$\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA recovery steps. We 
+position PADRe as a \textbf{research module} for exploring polynomial attention 
+in pretrained transformers, with the kernelization step explicitly left to 
+future work.
+
+\textbf{Keywords:} polynomial attention, kernelized attention, Taylor approximation, 
+softmax replacement, multi-architecture
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} padre\_attention, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} polynomial attention, kernelized attention, Taylor approximation,
 \end{abstract}
 
 \vspace{1em}

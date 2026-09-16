@@ -1,3 +1,128 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for lora_attention.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Model params & 66,955,010 \\
+Trainable (LoRA) & {{D\_TRAINABLE}} \\
+Trainable \% & {{D\_TRAIN\_PCT}}\% \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Training time & {{D\_TIME}} s \\
+Peak VRAM & {{D\_VRAM}} MB \\
+LoRA rank & {{LORA\_RANK}} \\
+LoRA alpha & {{LORA\_ALPHA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Model params & 124,647,170 \\
+Trainable (LoRA) & {{R\_TRAINABLE}} \\
+Accuracy & {{R\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Model params & 124,441,344 \\
+Trainable (LoRA) & {{G\_TRAINABLE}} \\
+Accuracy & {{G\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{Trainable} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & {{D\_R4}} & {{D\_R4\_T}} & {{R\_R4}} & {{G\_R4}} \\
+8 & {{D\_R8}} & {{D\_R8\_T}} & {{R\_R8}} & {{G\_R8}} \\
+16 & {{D\_R16}} & {{D\_R16\_T}} & {{R\_R16}} & {{G\_R16}} \\
+32 & {{D\_R32}} & {{D\_R32\_T}} & {{R\_R32}} & {{G\_R32}} \\
+64 & {{D\_R64}} & {{D\_R64\_T}} & {{R\_R64}} & {{G\_R64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Target Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Target} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Q only & {{D\_Q}} & {{R\_Q}} & {{G\_Q}} \\
+Q,V & {{D\_QV}} & {{R\_QV}} & {{G\_QV}} \\
+Q,K,V & {{D\_QKV}} & {{R\_QKV}} & {{G\_QKV}} \\
+All four & {{D\_ALL}} & {{R\_ALL}} & {{G\_ALL}} \\
+FFN only & {{D\_FFN}} & {{R\_FFN}} & {{G\_FFN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.7 Compression Recovery}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Compression} & \textbf{Before LoRA} & \textbf{After 50 steps} & \textbf{Recovery} \\
+\midrule
+SVD r=384 & {{R384\_BEFORE}} & {{R384\_AFTER}} & {{R384\_REC}} \\
+SVD r=128 & {{R128\_BEFORE}} & {{R128\_AFTER}} & {{R128\_REC}} \\
+SVD r=64 & {{R64\_BEFORE}} & {{R64\_AFTER}} & {{R64\_REC}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_lora_attention.py --lora_rank 16 --lora_alpha 32
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

@@ -108,3 +108,6 @@ No improvement beyond $K = 4$.
 3. **Schulz from SVD pinv is essential.**
 4. **$K = 4$ iterations suffice.**
 5. **FP32 required for stability.**
+```
+
+---

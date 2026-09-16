@@ -80,5 +80,6 @@ This is a clear avenue for future work.
 2. **Fused kernels:** How much can a Triton implementation help?
 3. **Cross-layer gating:** Should γ be shared across layers?
 4. **Combining with SSM:** Can HGRN-2 be replaced by Mamba?
+```
 
 ---

@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Sparsity} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 0\% & 183 MB & 1.9 s \\
-DistilBERT & \textbf{ASA} & \textbf{88.5} & -2.2 & 0.885 & 0.42 & 120 MB & 2.1 s \\
+DistilBERT & \textbf{ASA} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_SP}} & {{D\_VRAM}} MB & {{D\_TIME}} s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 0\% & 712 MB & 4.1 s \\
-RoBERTa & \textbf{ASA} & \textbf{76.0} & -2.6 & 0.760 & 0.45 & 500 MB & 4.5 s \\
+RoBERTa & \textbf{ASA} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_SP}} & {{R\_VRAM}} MB & {{R\_TIME}} s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 0\% & 793 MB & 4.2 s \\
-GPT-2 & \textbf{ASA} & \textbf{76.5} & -2.9 & 0.765 & 0.48 & 550 MB & 4.6 s \\
+GPT-2 & \textbf{ASA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_SP}} & {{G\_VRAM}} MB & {{G\_TIME}} s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,9 +33,9 @@ GPT-2 & \textbf{ASA} & \textbf{76.5} & -2.9 & 0.765 & 0.48 & 550 MB & 4.6 s \\
 \toprule
 \textbf{Model} & \textbf{Min $\rho_h$} & \textbf{Max $\rho_h$} & \textbf{Mean} & \textbf{Std} \\
 \midrule
-DistilBERT & 0.05 & 0.85 & 0.42 & 0.28 \\
-RoBERTa & 0.08 & 0.88 & 0.45 & 0.30 \\
-GPT-2 & 0.10 & 0.90 & 0.48 & 0.30 \\
+DistilBERT & {{D\_RHO\_MIN}} & {{D\_RHO\_MAX}} & {{D\_RHO\_MEAN}} & {{D\_RHO\_STD}} \\
+RoBERTa & {{R\_RHO\_MIN}} & {{R\_RHO\_MAX}} & {{R\_RHO\_MEAN}} & {{R\_RHO\_STD}} \\
+GPT-2 & {{G\_RHO\_MIN}} & {{G\_RHO\_MAX}} & {{G\_RHO\_MEAN}} & {{G\_RHO\_STD}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -55,9 +55,9 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 \textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
 \midrule
 DistilBERT & full & 183 MB & 1.90 s \\
-DistilBERT & ASA & 120 MB & 2.1 s \\
+DistilBERT & ASA & {{D\_VRAM}} MB & {{D\_TIME}} s \\
 GPT-2 & full & 793 MB & 4.20 s \\
-GPT-2 & ASA & 550 MB & 4.6 s \\
+GPT-2 & ASA & {{G\_VRAM}} MB & {{G\_TIME}} s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -73,11 +73,11 @@ GPT-2 & ASA & 550 MB & 4.6 s \\
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Eff. sparsity} \\
 \midrule
-0.1 & 89.5 & 77.5 & 78.0 & 0.12 \\
-0.3 & 89.0 & 77.0 & 77.5 & 0.32 \\
-0.5 & 88.5 & 76.0 & 76.5 & 0.50 \\
-0.7 & 86.0 & 73.5 & 74.0 & 0.68 \\
-0.9 & 80.0 & 68.0 & 68.5 & 0.88 \\
+0.1 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} & {{EFF10}} \\
+0.3 & {{D\_S30}} & {{R\_S30}} & {{G\_S30}} & {{EFF30}} \\
+0.5 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} & {{EFF50}} \\
+0.7 & {{D\_S70}} & {{R\_S70}} & {{G\_S70}} & {{EFF70}} \\
+0.9 & {{D\_S90}} & {{R\_S90}} & {{G\_S90}} & {{EFF90}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,15 +93,15 @@ GPT-2 & ASA & 550 MB & 4.6 s \\
 \toprule
 \textbf{$T$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.01 & 85.0 & 72.0 & 73.0 \\
-0.1 & 88.5 & 76.0 & 76.5 \\
-0.5 & 88.0 & 75.5 & 76.0 \\
-1.0 & 87.0 & 74.5 & 75.0 \\
+0.01 & {{D\_T01}} & {{R\_T01}} & {{G\_T01}} \\
+0.1 & {{D\_T1}} & {{R\_T1}} & {{G\_T1}} \\
+0.5 & {{D\_T5}} & {{R\_T5}} & {{G\_T5}} \\
+1.0 & {{D\_T10}} & {{R\_T10}} & {{G\_T10}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} $T = 0.1$ is best; smaller is too aggressive, 
+\textbf{Observation.} $T = {{TEMPERATURE}}$ is best; smaller is too aggressive, 
 larger is too soft.
 
 \subsection{Ablation: Chunk Size}
@@ -115,10 +115,10 @@ larger is too soft.
 \toprule
 \textbf{$C$} & \textbf{DistilBERT VRAM} & \textbf{Time} & \textbf{RoBERTa VRAM} \\
 \midrule
-32 & 115 & 2.1 & 480 \\
-64 & 120 & 2.1 & 500 \\
-128 & 135 & {{D\_C128\_T}} & 540 \\
-256 & 160 & {{D\_C256\_T}} & 640 \\
+32 & {{D\_C32\_VRAM}} & {{D\_C32\_T}} & {{R\_C32\_VRAM}} \\
+64 & {{D\_C64\_VRAM}} & {{D\_C64\_T}} & {{R\_C64\_VRAM}} \\
+128 & {{D\_C128\_VRAM}} & {{D\_C128\_T}} & {{R\_C128\_VRAM}} \\
+256 & {{D\_C256\_VRAM}} & {{D\_C256\_T}} & {{R\_C256\_VRAM}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,10 +134,10 @@ larger is too soft.
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & 85.0 & 72.0 & 72.0 \\
-8 & 87.0 & 74.0 & 74.5 \\
-16 & 88.5 & 76.0 & 76.5 \\
-32 & 88.7 & 76.3 & 76.7 \\
+4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
+8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
+16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
+32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -153,10 +153,10 @@ larger is too soft.
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & 85.0 & 72.0 & 73.0 \\
-25 & 87.5 & 74.5 & 75.0 \\
-50 & 88.5 & 76.0 & 76.5 \\
-100 & 88.7 & 76.3 & 76.8 \\
+10 & {{D\_S10\_R}} & {{R\_S10\_R}} & {{G\_S10\_R}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50\_R}} & {{R\_S50\_R}} & {{G\_S50\_R}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -173,9 +173,9 @@ larger is too soft.
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Params $\Delta$} & \textbf{Attn FLOPs} \\
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% & Dense & 1.00$\times$ & 1.00$\times$ \\
-GQA & 88.5 & 75.5 & 77.0 & KV reduce & 0.95$\times$ & 1.00$\times$ \\
-Primal & 86.5 & 74.0 & 75.0 & Low-rank & 1.00$\times$ & \textbf{2$\times$} \\
-\textbf{ASA} & \textbf{88.5} & \textbf{76.0} & \textbf{76.5} & Sparse & 1.00$\times$ & \textbf{2$\times$} \\
+GQA & {{GQA\_D}} & {{GQA\_R}} & {{GQA\_G}} & KV reduce & 0.95$\times$ & 1.00$\times$ \\
+Primal & {{PRIMAL\_D}} & {{PRIMAL\_R}} & {{PRIMAL\_G}} & Low-rank & 1.00$\times$ & \textbf{{{PRIMAL\_FLOP}}$\times$} \\
+\textbf{ASA} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & Sparse & 1.00$\times$ & \textbf{{{FLOP\_REDUCTION}}$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -191,9 +191,9 @@ Primal & 86.5 & 74.0 & 75.0 & Low-rank & 1.00$\times$ & \textbf{2$\times$} \\
 \toprule
 \textbf{Sparsity} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.1 & 85\% & 84\% & 86\% \\
-0.5 & 97\% & 96\% & 97\% \\
-0.9 & 99\% & 99\% & 99\% \\
+0.1 & {{D\_MASS10}}\% & {{R\_MASS10}}\% & {{G\_MASS10}}\% \\
+0.5 & {{D\_MASS50}}\% & {{R\_MASS50}}\% & {{G\_MASS50}}\% \\
+0.9 & {{D\_MASS90}}\% & {{R\_MASS90}}\% & {{G\_MASS90}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -205,9 +205,13 @@ Primal & 86.5 & 74.0 & 75.0 & Low-rank & 1.00$\times$ & \textbf{2$\times$} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Accuracy:} drops only -2.2\%---2.9\%.
+\item \textbf{Accuracy:} drops only {{D\_DELTA}}\%--{{G\_DELTA}}\%.
 \item \textbf{Sparsity:} learned per-head budgets are heterogeneous.
-\item \textbf{VRAM:} reduced by 8$\times$ via chunking.
+\item \textbf{VRAM:} reduced by {{MEM\_REDUCTION}}$\times$ via chunking.
 \item \textbf{No parameter reduction} -- sparsity is compute-only.
 \item \textbf{All models pass quality gate.}
 \end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

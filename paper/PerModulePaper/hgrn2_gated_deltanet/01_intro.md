@@ -119,5 +119,6 @@ limitations. Section 11 concludes.
 | $\gamma$ | Fusion gate |
 | $\sigma$ | Sigmoid function |
 | $\odot$ | Element-wise product |
+```
 
 ---

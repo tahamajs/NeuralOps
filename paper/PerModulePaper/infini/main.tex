@@ -89,13 +89,13 @@ projections are frozen; only the LoRA adapters, memory matrix, and $\beta$
 are trained.
 
 We evaluate on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
-50 LoRA recovery steps. Infini-Attention achieves 
-\textbf{89.5\%} on DistilBERT ($\Delta$ = -1.21), \textbf{76.5\%} on RoBERTa 
-($\Delta$ = -2.06), and \textbf{77.5\%} on GPT-2 ($\Delta$ = -1.86). 
+{{RECOVERY\_STEPS}} LoRA recovery steps. Infini-Attention achieves 
+\textbf{{{D\_ACC}}\%} on DistilBERT ($\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa 
+($\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). 
 
-Infini-Attention \textbf{increases} parameter count by \textbf{1.76\%} 
-on DistilBERT, \textbf{1.89\%} on RoBERTa, and 
-\textbf{1.89\%} on GPT-2, due to three additions: (i) the 
+Infini-Attention \textbf{increases} parameter count by \textbf{{{PARAM\_CHANGE\_PCT}}\%} 
+on DistilBERT, \textbf{{{PARAM\_CHANGE\_PCT\_R}}\%} on RoBERTa, and 
+\textbf{{{PARAM\_CHANGE\_PCT\_G}}\%} on GPT-2, due to three additions: (i) the 
 per-head compressive memory ($H \cdot d_c \cdot d_h$ per layer), (ii) the 
 scalar gating parameter $\beta$, and (iii) LoRA adapters on four projections. 
 The "compressive" in the name refers to the memory summarizing long context, 

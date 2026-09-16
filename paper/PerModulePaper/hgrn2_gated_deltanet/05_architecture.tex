@@ -142,28 +142,15 @@ if "DeltaNet" in c_name or "LinearAttention" in c_name:
 
 \subsection{Failure Modes}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
-\midrule
-No Q/K/V weights & \texttt{\_unpack\_weight\_bias} returns None & Raise \\
-No O weights & Search loop fails & Raise \\
-Both branches fail & Both \texttt{copy\_weights} raise & Raise \\
-One branch fails & One \texttt{copy\_weights} raises & Bias gate \\
-Cross-attention & \texttt{encoder\_hidden\_states is not None} & Log warning, return identity \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{lstlisting}
 
-
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
-\caption{High-level architectural diagram of hgrn2_gated_deltanet.}
-\label{fig:arch_hgrn2_gated_deltanet}
+\caption{High-level architectural diagram of hgrn2\_gated\_deltanet.}
+\label{fig:arch_hgrn2-gated-deltanet}
 \end{figure}
 

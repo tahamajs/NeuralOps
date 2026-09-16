@@ -1,11 +1,164 @@
-\section{05 Architecture}
 
-Draft content for performer_attention.
+\section{Architecture Integration}
 
+\subsection{Model Support Matrix}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Architecture} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Path} \\
+\midrule
+DistilBERT & No & No & No & Bidirectional \\
+RoBERTa & Yes & No & No & Bidirectional \\
+GPT-2 & No & No & No & Causal \\
+Qwen3.5 & No & Yes & Yes & Causal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+Standard four-architecture copy.
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight.data
+if is_conv1d:
+    c_w = c_w.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+q_w = src.self.query.weight.data
+k_w = src.self.key.weight.data
+v_w = src.self.value.weight.data
+o_w = src.output.dense.weight.data
+\end{lstlisting}
+
+\subsubsection{DistilBERT Flat}
+
+\begin{lstlisting}
+q_w = src.q_lin.weight.data
+# ...
+\end{lstlisting}
+
+\subsection{Feature Map and Masking}
+
+\textbf{Encoder path} masks both K and Q:
+
+\begin{lstlisting}
+K_feat = self._feature_map(K) * mask_expanded
+Q_feat = self._feature_map(Q) * mask_expanded  # $\leftarrow$ Important
+\end{lstlisting}
+
+Masking Q ensures that padding queries do not contribute to the output.
+
+\textbf{Decoder path} only masks K:
+
+\begin{lstlisting}
+K_feat = self._feature_map(K) * mask_expanded
+# Q_feat is not masked
+\end{lstlisting}
+
+Because causal attention already limits the influence of future tokens.
+
+\subsection{Causal Chunked Scan}
+
+\begin{lstlisting}
+chunk_size = min(64, N)
+num_chunks = (N + chunk_size - 1) // chunk_size
+\end{lstlisting}
+
+For $N = 128$: 2 chunks.
+
+\textbf{Intra-chunk attention:}
+
+\begin{lstlisting}
+causal_mask = torch.tril(torch.ones(L, L, ...))
+intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
+\end{lstlisting}
+
+\textbf{Inter-chunk via running state:}
+
+\begin{lstlisting}
+inter_num = torch.matmul(q_c, S)
+S = S + torch.matmul(k_c.transpose(-1, -2), v_c)
+\end{lstlisting}
+
+\subsection{Injection}
+
+\textbf{Algorithm 2:} Inject Performer
+\begin{lstlisting}
+1: src $\leftarrow$ extract_attention( )
+2: new $\leftarrow$ PerformerAttention(config, old=src)
+3: if copy_weights fails: raise (BUG -- should return None)
+4: install new in  .attention.self (or .attn, .self_attn)
+5: return new
+\end{lstlisting}
+
+\subsection{Common Pitfalls}
+
+\subsubsection{Injection Raises}
+
+The docstring claims \texttt{returning None on failure} but the code raises. 
+Wrap the call in \texttt{try/except} if you need None-return behavior.
+
+\subsubsection{`output\_scale` Redundancy}
+
+Each \texttt{LoRALinear} has its own \texttt{output\_scale}. If you wrap Performer in 
+another module that also scales, double-scaling can occur.
+
+\subsubsection{Cross-Attention Bypass}
+
+\begin{lstlisting}
+if encoder_hidden_states is not None:
+    return hidden_states, None
+\end{lstlisting}
+
+Cross-attention is \textbf{not supported}. The module returns the input 
+unchanged.
+
+\subsubsection{The `omega` Buffer is Persistent}
+
+\begin{lstlisting}
+self.register_buffer("omega", omega, persistent=True)
+\end{lstlisting}
+
+Good -- the RFF projection is saved and reloaded.
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("performer")
+@ATTENTION_REGISTRY.register("performer_attention")
+class PerformerAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Integration with LoRA Recovery}
+
+Standard pipeline:
+\begin{enumerate}
+\item Load pretrained model.
+\item Inject Performer via \texttt{inject\_performer}.
+\item Freeze base weights, keep LoRA trainable.
+\item Run {{RECOVERY\_STEPS}} recovery steps.
+\item Evaluate.
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
-\caption{Architectural overview of performer_attention.}
-\label{fig:arch_performer_attention}
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of performer\_attention.}
+\label{fig:arch_performer-attention}
 \end{figure}
+

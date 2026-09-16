@@ -133,5 +133,6 @@ $B = 0$ at initialization.
 | $A, B$ | Adapter matrices |
 | $H$ | Number of heads |
 | $d_h$ | Head dim |
+```
 
 ---

@@ -13,11 +13,11 @@ behavior is extrapolated.
 
 \subsection{Not a Compression Method}
 
-Parameter count increases by ~1.17\%.
+Parameter count increases by ~{{PARAM\_CHANGE}}\%.
 
 \subsection{Gate MLP Overhead}
 
-The gate MLP adds ~0.20M parameters per model but is unused at 
+The gate MLP adds ~{{GATE\_PARAMS}}M parameters per model but is unused at 
 L $\le$ 128.
 
 \subsection{Task Coverage}
@@ -68,3 +68,7 @@ This kills injection on any failure. Recommend changing to \texttt{return None}.
 \subsection{Ethical Considerations}
 
 Dual-use. See Appendix E.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

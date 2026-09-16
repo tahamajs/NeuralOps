@@ -119,5 +119,6 @@ For DistilBERT with Path A (MHA):
    complexity for marginal benefit.
 4. **Causal masking is not optional for decoders.** `nn.MultiheadAttention` 
    needs explicit masking.
+```
 
 ---

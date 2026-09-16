@@ -10,7 +10,7 @@ by head-dim reduction.
 
 \subsubsection{Takeaway 2: Head-Dim Reduction Works}
 
-Reducing head dimension by 2$\times$ gives ~2$\times$ parameter 
+Reducing head dimension by 2$\times$ gives ~{{PARAM\_REDUCTION}}$\times$ parameter 
 reduction with acceptable loss.
 
 \subsubsection{Takeaway 3: Drop-In Wrapper}
@@ -83,8 +83,8 @@ For DistilBERT at $L = 128$:
 \textbf{Config} & \textbf{Trainable} & \textbf{Acc} & \textbf{$\Delta$} \\
 \midrule
 Full FT & 66.9M & 90.71\% & -- \\
-SH $r_L=16$ & 589824 & 90.25\% & -0.46\% \\
-SH + $s=2$ & 589824 & 88.0\% & -2.25\% \\
+SH $r_L=16$ & {{D\_LORA}} & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+SH + $s=2$ & {{D\_LORA}} & {{D\_S20}}\% & {{D\_S20\_D}}\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -114,4 +114,8 @@ SH + $s=2$ & 589824 & 88.0\% & -2.25\% \\
 
 \end{itemize}
 \subsubsection{Environmental}
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+\begin{lstlisting}
+
+---
+\end{lstlisting}

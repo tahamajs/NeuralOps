@@ -114,3 +114,6 @@ class ClusterAttention(BaseAttention):
 | Centroid scores | FP32 then cast |
 | Softmax | FP32 |
 | Attention output | Model dtype |
+```
+
+---

@@ -84,5 +84,6 @@ LEKAv2 composes with:
 2. **Adaptive ρ:** Can ρ be learned?
 3. **Cross-attention:** How to extend?
 4. **Landmark transfer:** Do learned landmarks transfer across tasks?
+```
 
 ---

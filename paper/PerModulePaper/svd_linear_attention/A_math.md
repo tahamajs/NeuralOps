@@ -136,5 +136,6 @@ for large $\tau_h$. Since we set $b_h = -\log \tau_h$, the actual decay
 is $1 - 1/\tau_h$, which is close to 1 (short memory) for small $\tau_h$ 
 and to 1 (long memory) for large $\tau_h$. The heads are therefore 
 **incorrectly initialized**.
+```
 
 ---

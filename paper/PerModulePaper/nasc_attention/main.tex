@@ -64,10 +64,39 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the nasc\_attention module within modern transformer architectures.
+
+We present \textbf{NASC} (NEXUS-AEGIS Spectral Cascade Attention), a hybrid 
+attention block that combines three complementary mechanisms: (i) a 
+\textbf{local sliding-window attention} with strict causal masking, (ii) a 
+\textbf{sparse block attention} that selects the top-$k$ key blocks by query-key 
+mean alignment, and (iii) a \textbf{global spectral RFF attention} that projects 
+queries and keys onto random Fourier features for linear-time global 
+context. The three branches are fused with a learned softmax gate 
+conditioned on the mean hidden state per batch:
+
+\[
+\text{Output} = g_0 \cdot \text{Local} + g_1 \cdot \text{Sparse} + g_2 \cdot \text{Global}
+\]
+
+where $g_0 + g_1 + g_2 = 1$.
+
+We evaluate NASC on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA 
+recovery. NASC achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{D\_BASE}}\%, 
+$\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), and 
+\textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). We document three implementation 
+caveats honestly: (a) the gate is \textbf{batch-level}, so all tokens in a 
+batch share the same branch mixture; (b) \texttt{softpick} falls back to standard 
+softmax when all rows in a batch have zero denominator, which is a coarse 
+fix compared to per-row handling; and (c) \texttt{inject\_nasc} \textbf{raises} on 
+failure, unlike other modules in our framework.
+
+\textbf{Keywords:} hybrid attention, sparse block, random Fourier features, 
+sliding window, gating
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} nasc\_attention, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} hybrid attention, sparse block, random Fourier features,
 \end{abstract}
 
 \vspace{1em}

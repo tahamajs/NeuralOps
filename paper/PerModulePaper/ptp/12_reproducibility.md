@@ -76,3 +76,6 @@ torch.cuda.manual_seed_all(seed)
 - Score network sees future tokens (not for generation)
 - Very short sequences lose accuracy
 - Shared selection across queries
+```
+
+---

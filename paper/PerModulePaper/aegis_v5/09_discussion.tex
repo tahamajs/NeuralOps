@@ -1,3 +1,112 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for aegis_v5.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Split-Head is Expressive}
+
+The head partition allows the model to learn which heads should focus on 
+local patterns and which on global context. \textbf{Figure 9.1} shows the 
+learned partition converges within 20 recovery steps.
+
+\subsubsection{Takeaway 2: Energy-Based SVD Requires Careful $r$}
+
+The default \texttt{max\_rank=384} provides no compression. For real compression, 
+lower to 128 or 192.
+
+\subsubsection{Takeaway 3: Softpick Fix Matters}
+
+The V4$\to$V5 improvement on problematic layers is significant (see Section 7.9).
+
+\subsubsection{Takeaway 4: Decoder Fallback is Conservative}
+
+For decoders, we sacrifice complexity for correctness. Other methods (like 
+LEKAv3) attempt to preserve both.
+
+\subsection{When to Use AEGIS-V5}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Encoder-only models} (BERT-family)
+\item \textbf{Variable-length sequences} (adaptive window)
+\item \textbf{Combined with quantization} for INT8 deployment
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Long-sequence decoders}: fallback negates benefit
+\item \textbf{Parameter-critical deployments}: check \texttt{max\_rank}
+\item \textbf{Very short sequences} ($N < W$): fallback to standard
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Model is encoder? --- Yes --- Use AEGIS-V5 (with tuned max_rank)
+  | No
+   
+Accept quadratic fallback? --- Yes --- Use AEGIS-V5
+  | No
+   
+Consider LEKAv3 or other causal-efficient methods
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT at $L = 128$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{AEGIS-V5 (r=384)} & \textbf{AEGIS-V5 (r=128)} \\
+\midrule
+Params & 66.95M & {{D\_P\_384}}M & {{D\_P\_128}}M \\
+Accuracy & 90.71\% & {{D\_ACC\_384}}\% & {{D\_ACC\_128}}\% \\
+Inference time & 1.9 s & {{D\_T\_384}} s & {{D\_T\_128}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Prior AEGIS Versions}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Version} & \textbf{Split-head} & \textbf{Softpick} & \textbf{SVD} & \textbf{Multi-arch} \\
+\midrule
+V4 &  & Broken &  &  \\
+\textbf{V5} & \textbf{ } & \textbf{Fixed} & \textbf{ } & \textbf{ } \\
+V6 &  & Fixed &  & +fusion \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Optimal head split:} Is 2:1 optimal? Or task-dependent?
+\item \textbf{Adaptive rank:} Can SVD rank be learned per layer?
+\item \textbf{Causal-efficient:} Can we avoid the decoder fallback?
+\item \textbf{Interaction with quantization:} AEGIS-V5 + INT8?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Enables efficient attention on consumer hardware
+\item Reduces compute for long-context encoders
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Parameter count is unpredictable (depends on \texttt{max\_rank})
+\item Conservative decoder fallback limits benefit
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

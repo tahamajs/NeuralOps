@@ -79,3 +79,6 @@ Total per layer: $8 r_L d$.
 Across $N_l$ layers: $8 r_L d N_l$.
 
 For DistilBERT ($d=768$, $r_L=16$, $N_l=6$): $8 \times 16 \times 768 \times 6 = 589{,}824$.
+```
+
+---

@@ -230,5 +230,6 @@ When `w_k.shape[0] != self.kv_head_size`, must mean-pool.
 | Interpretable Σ | No | Yes |
 | GQA pooling | In `decompose` | In `copy_weights` |
 | Bias param | In `up.bias` | Separate |
+```
 
 ---

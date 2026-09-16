@@ -74,19 +74,7 @@ recovery.
 
 \subsection{Comparison Table}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllll}
-\toprule
-\textbf{Method} & \textbf{Type} & \textbf{Params} & \textbf{KV bytes} & \textbf{Learnable} \\
-\midrule
-Baseline & -- & $P$ & $2 H_{kv} L d_h$ & -- \\
-H2O & Eviction & $P$ & $2 H_{kv} k d_h$ & No \\
-StreamingLLM & Sink + window & $P$ & $2 H_{kv} (s + w) d_h$ & No \\
-KIVI (2-bit) & Quantization & $P$ & $\frac{1}{4} \cdot 2 H_{kv} L d_h$ & No \\
-\textbf{TCA} & \textbf{Learnable selection} & $P + \epsilon$ & $2 H_{kv} k d_h$ & \textbf{Yes} \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{lstlisting}
 
+---
+\end{lstlisting}
