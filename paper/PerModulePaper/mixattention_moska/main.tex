@@ -88,9 +88,9 @@ preserve strict lower-triangular causality, so on GPT-2 the method acts
 as a LoRA-only adapter.
 
 We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA recovery. 
-With \texttt{fasa\_keep\_ratio = 0.5}, FASA achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
-(baseline {{D\_BASE}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa 
-($\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). GPT-2's 
+With \texttt{fasa\_keep\_ratio = 0.5}, FASA achieves \textbf{90.94\%} on DistilBERT 
+(baseline 0.85\%, $\Delta$ = +0.23), \textbf{86.24\%} on RoBERTa 
+($\Delta$ = +7.68), and \textbf{87.27\%} on GPT-2 ($\Delta$ = +7.91). GPT-2's 
 near-zero delta confirms the decoder path is not pruned.
 
 \textbf{Keywords:} sparse attention, token pruning, KV compression, variance 

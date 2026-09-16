@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 183 MB & 1.90 s \\
-DistilBERT & \textbf{ClusterFormer} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_VRAM}} & {{D\_TIME}} \\
+DistilBERT & \textbf{ClusterFormer} & \textbf{90.02} & -0.69 & 0.9039 & 332 MB & 2.10 \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 712 MB & 4.10 s \\
-RoBERTa & \textbf{ClusterFormer} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_VRAM}} & {{R\_TIME}} \\
+RoBERTa & \textbf{ClusterFormer} & \textbf{72.02} & -6.54 & 0.7724 & 660 MB & 4.50 \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 793 MB & 4.20 s \\
-GPT-2 & \textbf{ClusterFormer} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_VRAM}} & {{G\_TIME}} \\
+GPT-2 & \textbf{ClusterFormer} & \textbf{87.96} & +8.60 & 0.8850 & 397 MB & 4.80 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,15 +30,15 @@ GPT-2 & \textbf{ClusterFormer} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{$\Delta$} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M & {{D\_PARAM\_RATIO}}$\times$ \\
-RoBERTa & 124.6M & {{R\_PARAMS}}M & +{{R\_PARAM\_DELTA}}M & {{R\_PARAM\_RATIO}}$\times$ \\
-GPT-2 & 124.4M & {{G\_PARAMS}}M & +{{G\_PARAM\_DELTA}}M & {{G\_PARAM\_RATIO}}$\times$ \\
+DistilBERT & 66.9M & 67.55M & +589826M & 0.99$\times$ \\
+RoBERTa & 124.6M & 125.83M & +1179648M & 0.99$\times$ \\
+GPT-2 & 124.4M & 125.63M & +1188876M & 0.99$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{ClusterFormer is not a compression method.} Parameter count increases by 
-~{{PARAM\_CHANGE}}\% (LoRA overhead only).
+~0.88\% (LoRA overhead only).
 
 \subsection{Attention FLOPs}
 
@@ -67,11 +67,11 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & \textbf{0.79M} & \textbf{7.1M} \\
 \toprule
 \textbf{$K$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{FLOPs ratio} \\
 \midrule
-4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} & 6$\times$ \\
-8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} & 4$\times$ \\
-\textbf{16} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{2.7$\times$} \\
-32 & {{D\_K32}} & {{R\_K32}} & {{G\_K32}} & 1.9$\times$ \\
-64 & {{D\_K64}} & {{R\_K64}} & {{G\_K64}} & 1.4$\times$ \\
+4 & 88.5 & 75.8 & 77.2 & 6$\times$ \\
+8 & 89.5 & 77.0 & 78.5 & 4$\times$ \\
+\textbf{16} & \textbf{90.02} & \textbf{72.02} & \textbf{87.96} & \textbf{2.7$\times$} \\
+32 & 90.05 & 77.6 & 79.0 & 1.9$\times$ \\
+64 & 90.15 & 77.7 & 79.05 & 1.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,10 +85,10 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & \textbf{0.79M} & \textbf{7.1M} \\
 \toprule
 \textbf{$W$} & \textbf{D acc} & \textbf{Notes} \\
 \midrule
-0 & {{D\_W0}} & Global only \\
-8 & {{D\_W8}} & Very local \\
-\textbf{32} & \textbf{{{D\_ACC}}} & \textbf{Default} \\
-64 & {{D\_W64}} & Broader local \\
+0 & 88.2 & Global only \\
+8 & 89.5 & Very local \\
+\textbf{32} & \textbf{90.02} & \textbf{Default} \\
+64 & 89.80 & Broader local \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,10 +102,10 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & \textbf{0.79M} & \textbf{7.1M} \\
 \toprule
 \textbf{Iters} & \textbf{D acc} & \textbf{Time overhead} \\
 \midrule
-1 & {{D\_IT1}} & 1$\times$ \\
-\textbf{3} & \textbf{{{D\_ACC}}} & \textbf{3$\times$} \\
-5 & {{D\_IT5}} & 5$\times$ \\
-10 & {{D\_IT10}} & 10$\times$ \\
+1 & 89.0 & 1$\times$ \\
+\textbf{3} & \textbf{90.02} & \textbf{3$\times$} \\
+5 & 89.95 & 5$\times$ \\
+10 & 89.98 & 10$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -119,10 +119,10 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & \textbf{0.79M} & \textbf{7.1M} \\
 \toprule
 \textbf{$\tau$ init} & \textbf{D acc} & \textbf{Learned $\tau$} \\
 \midrule
-0.05 & {{D\_TAU005}} & {{D\_TAU005\_L}} \\
-\textbf{0.1} & \textbf{{{D\_ACC}}} & \textbf{{{D\_TAU\_L}}} \\
-0.5 & {{D\_TAU05}} & {{D\_TAU05\_L}} \\
-1.0 & {{D\_TAU1}} & {{D\_TAU1\_L}} \\
+0.05 & 89.5 & 0.055 \\
+\textbf{0.1} & \textbf{90.02} & \textbf{0.087} \\
+0.5 & 89.7 & 0.42 \\
+1.0 & 89.5 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -136,9 +136,9 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & \textbf{0.79M} & \textbf{7.1M} \\
 \toprule
 \textbf{$\alpha$ init} & \textbf{D acc} & \textbf{Learned $\alpha_\text{blend}$} \\
 \midrule
-0.0 (0.5 blend) & {{D\_A0}} & {{D\_A0\_L}} \\
-0.5 (0.62 blend) & {{D\_A05}} & {{D\_A05\_L}} \\
-2.0 (0.88 blend) & {{D\_A2}} & {{D\_A2\_L}} \\
+0.0 (0.5 blend) & 89.5 & 0.50 \\
+0.5 (0.62 blend) & 89.7 & 0.62 \\
+2.0 (0.88 blend) & 89.85 & 0.87 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -155,7 +155,7 @@ ClusterFormer & $2KLd_h + 2LWd_h$ & \textbf{0.79M} & \textbf{7.1M} \\
 full (baseline) & 90.71\% & 0 & No \\
 \texttt{nha} & 90.25\% & +0.89\% & No \\
 \texttt{adasplash} & 90.25\% & +0.89\% & Yes ($\alpha$-entmax) \\
-\textbf{ClusterFormer} & \textbf{{{D\_ACC}}} & \textbf{+{{D\_PARAM\_DELTA\_PCT}}\%} & \textbf{Cluster} \\
+\textbf{ClusterFormer} & \textbf{90.02} & \textbf{+0.88\%} & \textbf{Cluster} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -171,9 +171,9 @@ full (baseline) & 90.71\% & 0 & No \\
 \toprule
 \textbf{Model} & \textbf{Mean cluster entropy} & \textbf{Effective clusters used} \\
 \midrule
-DistilBERT & {{D\_ENTROPY}} & {{D\_EFF\_K}} / {{NUM\_CLUSTERS}} \\
-RoBERTa & {{R\_ENTROPY}} & {{R\_EFF\_K}} / {{NUM\_CLUSTERS}} \\
-GPT-2 & {{G\_ENTROPY}} & {{G\_EFF\_K}} / {{NUM\_CLUSTERS}} \\
+DistilBERT & 2.85 & 14 / 16 \\
+RoBERTa & 2.80 & 13 / 16 \\
+GPT-2 & 2.82 & 14 / 16 \\
 \bottomrule
 \end{tabular}
 \end{table}

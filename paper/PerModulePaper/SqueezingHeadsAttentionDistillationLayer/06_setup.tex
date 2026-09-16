@@ -48,10 +48,10 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-LoRA rank $r_L$ & {{LORA\_RANK}} \\
-LoRA alpha $\alpha$ & {{LORA\_ALPHA}} \\
-Head-dim reduction $s$ & {{HEAD\_DIM\_REDUCTION}}$\times$ \\
-Target head\_dim $d_h'$ & {{HEAD\_DIM}} \\
+LoRA rank $r_L$ & 16 \\
+LoRA alpha $\alpha$ & 32 \\
+Head-dim reduction $s$ & 1.0$\times$ \\
+Target head\_dim $d_h'$ & 64 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,8 +68,8 @@ Target head\_dim $d_h'$ & {{HEAD\_DIM}} \\
 Optimizer & AdamW \\
 LR & 2e-4 \\
 Weight decay & 1e-2 \\
-Steps & {{RECOVERY\_STEPS}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Steps & 50 \\
+Batch size & 8 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -123,8 +123,8 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
 \bottomrule
 \end{tabular}
 \end{table}

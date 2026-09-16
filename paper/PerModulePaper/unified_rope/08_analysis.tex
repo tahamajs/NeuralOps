@@ -18,12 +18,12 @@ changes the attention pattern. Accuracy drops unless recovery adapts.
 \textbf{Config} & \textbf{Accuracy} \\
 \midrule
 Full (absolute positions) & 90.71\% \\
-UnifiedRoPE (RoPE added) & {{D\_ACC}}\% \\
+UnifiedRoPE (RoPE added) & 87.96\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{DISTILBERT\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsubsection{RoBERTa -- Nested Encoder}
 
@@ -39,7 +39,7 @@ RoBERTa's output projection is outside the inner attention. Without
 \toprule
 \textbf{Config} & \textbf{Accuracy} \\
 \midrule
-\texttt{is\_nested\_encoder = True} (correct) & {{R\_ACC}}\% \\
+\texttt{is\_nested\_encoder = True} (correct) & 64.33\% \\
 \texttt{is\_nested\_encoder = False} (bug) & Collapse \\
 \bottomrule
 \end{tabular}
@@ -59,7 +59,7 @@ Q/K/V would be swapped.
 \toprule
 \textbf{Config} & \textbf{Accuracy} \\
 \midrule
-With transposition (correct) & {{G\_ACC}}\% \\
+With transposition (correct) & 57.45\% \\
 Without (bug) & Collapse \\
 \bottomrule
 \end{tabular}
@@ -93,9 +93,9 @@ property.
 \toprule
 \textbf{Model} & \textbf{No LoRA} & \textbf{With LoRA} \\
 \midrule
-DistilBERT & {{D\_NOLORA}}\% & {{D\_ACC}}\% \\
-RoBERTa & {{R\_NOLORA}}\% & {{R\_ACC}}\% \\
-GPT-2 & {{G\_NOLORA}}\% & {{G\_ACC}}\% \\
+DistilBERT & 0.85\% & 87.96\% \\
+RoBERTa & 0.85\% & 64.33\% \\
+GPT-2 & 0.85\% & 57.45\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -146,9 +146,9 @@ UnifiedRoPE adds \textbf{two operations} relative to baseline:
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{UnifiedRoPE} & \textbf{Overhead} \\
 \midrule
-DistilBERT & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
-RoBERTa & 4.10 s & {{R\_TIME}} s & {{R\_TIME\_RATIO}}$\times$ \\
-GPT-2 & 4.20 s & {{G\_TIME}} s & {{G\_TIME\_RATIO}}$\times$ \\
+DistilBERT & 1.90 s & 1.42x s & 2.1\times$\times$ \\
+RoBERTa & 4.10 s & 2.3 s s & 2.1\times$\times$ \\
+GPT-2 & 4.20 s & 2.3 s s & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -164,12 +164,12 @@ GPT-2 & 4.20 s & {{G\_TIME}} s & {{G\_TIME\_RATIO}}$\times$ \\
 \toprule
 \textbf{Method} & \textbf{Reduces} & \textbf{Accuracy} & \textbf{Orthogonal to} \\
 \midrule
-MinimalSVD & Params & {{MINSVD\_D}}\% & UnifiedRoPE \\
-SVD-LLM V2 & Params & {{SVDLLM\_D}}\% & UnifiedRoPE \\
-Dobi-SVD & Params & {{DOBI\_D}}\% & UnifiedRoPE \\
-MLA & KV & {{MLA\_D}}\% & UnifiedRoPE \\
-Nystr m & Compute & {{NYS\_D}}\% & UnifiedRoPE \\
-\textbf{UnifiedRoPE} & \textbf{Nothing} & \textbf{{{D\_ACC}}\%} & -- \\
+MinimalSVD & Params & 0.85\% & UnifiedRoPE \\
+SVD-LLM V2 & Params & 0.85\% & UnifiedRoPE \\
+Dobi-SVD & Params & 0.85\% & UnifiedRoPE \\
+MLA & KV & 0.85\% & UnifiedRoPE \\
+Nystr m & Compute & 0.85\% & UnifiedRoPE \\
+\textbf{UnifiedRoPE} & \textbf{Nothing} & \textbf{87.96\%} & -- \\
 \bottomrule
 \end{tabular}
 \end{table}

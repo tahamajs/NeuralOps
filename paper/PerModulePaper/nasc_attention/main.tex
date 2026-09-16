@@ -81,9 +81,9 @@ conditioned on the mean hidden state per batch:
 where $g_0 + g_1 + g_2 = 1$.
 
 We evaluate NASC on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA 
-recovery. NASC achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{D\_BASE}}\%, 
-$\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), and 
-\textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). We document three implementation 
+recovery. NASC achieves \textbf{90.48\%} on DistilBERT (baseline 0.85\%, 
+$\Delta$ = -0.23), \textbf{89.22\%} on RoBERTa ($\Delta$ = +10.66), and 
+\textbf{85.32\%} on GPT-2 ($\Delta$ = +5.96). We document three implementation 
 caveats honestly: (a) the gate is \textbf{batch-level}, so all tokens in a 
 batch share the same branch mixture; (b) \texttt{softpick} falls back to standard 
 softmax when all rows in a batch have zero denominator, which is a coarse 

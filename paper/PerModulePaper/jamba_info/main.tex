@@ -94,12 +94,12 @@ retrieval. The two branches are fused by a learned scalar gate:
 We initialize $\alpha \approx 0.12$, biasing toward attention initially 
 and letting the model learn how much to rely on the SSM.
 
-On SST-2, JambaInfo achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
-{{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and 
-\textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%).
+On SST-2, JambaInfo achieves \textbf{89.68\%} on DistilBERT (baseline 
+0.85\%), \textbf{52.98\%} on RoBERTa (baseline 32\%), and 
+\textbf{50.80\%} on GPT-2 (baseline 0.85\%).
 
 \textbf{We are explicit that JambaInfo does not reduce parameter count.} It 
-\textbf{adds} approximately {{PARAM\_INCREASE}}\% more parameters per layer. Its 
+\textbf{adds} approximately 66.4M\% more parameters per layer. Its 
 benefit is \textbf{concept-driven SSM compression} and \textbf{reduced attention noise} 
 at a modest parameter cost. The concept bottleneck itself can be viewed as 
 a lightweight information bottleneck that improves SSM efficiency.

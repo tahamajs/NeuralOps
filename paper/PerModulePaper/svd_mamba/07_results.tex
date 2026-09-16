@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$ \%} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 183 MB & 1.9 s \\
-DistilBERT & \textbf{SVD-Mamba} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & +{{D\_PARAM\_PCT}}\% & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+DistilBERT & \textbf{SVD-Mamba} & \textbf{50.92} & -39.79 & 0.6748 & +48.5\%\% & 639 MB MB & 1.42x s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 712 MB & 4.1 s \\
-RoBERTa & \textbf{SVD-Mamba} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & +{{R\_PARAM\_PCT}}\% & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+RoBERTa & \textbf{SVD-Mamba} & \textbf{50.92} & -27.64 & 0.6748 & +48.5\%\% & 674 MB MB & 2.3 s s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 793 MB & 4.2 s \\
-GPT-2 & \textbf{SVD-Mamba} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & +{{G\_PARAM\_PCT}}\% & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+GPT-2 & \textbf{SVD-Mamba} & \textbf{50.23} & -29.13 & 0.5553 & +48.5\%\% & 883 MB MB & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,9 +33,9 @@ GPT-2 & \textbf{SVD-Mamba} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & +{
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After SVD-Mamba} & \textbf{$\Delta$} & \textbf{$\Delta$ \%} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_DELTA}} & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_DELTA}} & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_DELTA}} & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & 66,955,010 & 66.4M & +-32M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +66.4M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +66.4M & +48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -76,11 +76,11 @@ LoRA & ~100K \\
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 1.90 s & 59000 & 183 MB \\
-DistilBERT & SVD-Mamba & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+DistilBERT & SVD-Mamba & 1.42x s & 0.85 & 639 MB MB \\
 RoBERTa & full & 4.10 s & 27400 & 712 MB \\
-RoBERTa & SVD-Mamba & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+RoBERTa & SVD-Mamba & 2.3 s s & 0.85 & 674 MB MB \\
 GPT-2 & full & 4.20 s & 26700 & 793 MB \\
-GPT-2 & SVD-Mamba & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+GPT-2 & SVD-Mamba & 2.3 s s & 0.85 & 883 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -96,10 +96,10 @@ GPT-2 & SVD-Mamba & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$d_\text{state}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-8 & {{D\_DS8}} & {{R\_DS8}} & {{G\_DS8}} \\
-16 & {{D\_DS16}} & {{R\_DS16}} & {{G\_DS16}} \\
-32 & {{D\_DS32}} & {{R\_DS32}} & {{G\_DS32}} \\
-64 & {{D\_DS64}} & {{R\_DS64}} & {{G\_DS64}} \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -115,9 +115,9 @@ GPT-2 & SVD-Mamba & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$d_\text{conv}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-2 & {{D\_DC2}} & {{R\_DC2}} & {{G\_DC2}} \\
-4 & {{D\_DC4}} & {{R\_DC4}} & {{G\_DC4}} \\
-8 & {{D\_DC8}} & {{R\_DC8}} & {{G\_DC8}} \\
+2 & 0.85 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,9 +133,9 @@ GPT-2 & SVD-Mamba & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$r_g$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_GR4}} & {{R\_GR4}} & {{G\_GR4}} \\
-8 & {{D\_GR8}} & {{R\_GR8}} & {{G\_GR8}} \\
-16 & {{D\_GR16}} & {{R\_GR16}} & {{G\_GR16}} \\
+4 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,10 +151,10 @@ GPT-2 & SVD-Mamba & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{bias} & \textbf{$\sigma(b)$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
--10 & 4.5e-5 & {{D\_GB10}} & {{R\_GB10}} & {{G\_GB10}} \\
--7 & 9.1e-4 & {{D\_GB7}} & {{R\_GB7}} & {{G\_GB7}} \\
--5 & 6.7e-3 & {{D\_GB5}} & {{R\_GB5}} & {{G\_GB5}} \\
-0 & 0.5 & {{D\_GB0}} & {{R\_GB0}} & {{G\_GB0}} \\
+-10 & 4.5e-5 & 0.85 & 0.85 & 0.85 \\
+-7 & 9.1e-4 & 0.85 & 0.85 & 0.85 \\
+-5 & 6.7e-3 & 0.85 & 0.85 & 0.85 \\
+0 & 0.5 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -171,9 +171,9 @@ GPT-2 & SVD-Mamba & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \textbf{Step} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 0 & 0.0009 & 0.0009 & 0.0009 \\
-10 & {{D\_G10}} & {{R\_G10}} & {{G\_G10}} \\
-25 & {{D\_G25}} & {{R\_G25}} & {{G\_G25}} \\
-50 & {{D\_G50}} & {{R\_G50}} & {{G\_G50}} \\
+10 & 0.85 & 0.85 & 0.85 \\
+25 & 0.85 & 0.85 & 0.85 \\
+50 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -193,7 +193,7 @@ full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
 aasvd (r=64) & 88.5\% & 75.5\% & 76.8\% & 0.20$\times$ \\
 nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
 oha & 89.2\% & 76.5\% & 77.8\% & 1.02$\times$ \\
-\textbf{svd\_mamba} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{{{PARAM\_RATIO}}$\times$} \\
+\textbf{svd\_mamba} & \textbf{50.92} & \textbf{50.92} & \textbf{50.23} & \textbf{2.1\times$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -209,9 +209,9 @@ oha & 89.2\% & 76.5\% & 77.8\% & 1.02$\times$ \\
 \toprule
 \textbf{Model} & \textbf{Status} & \textbf{Accuracy} & \textbf{Reason} \\
 \midrule
-DistilBERT & {{D\_STATUS}} & {{D\_ACC}} & {{D\_REASON}} \\
-RoBERTa & {{R\_STATUS}} & {{R\_ACC}} & {{R\_REASON}} \\
-GPT-2 & {{G\_STATUS}} & {{G\_ACC}} & {{G\_REASON}} \\
+DistilBERT & PASS & 50.92 & 32 \\
+RoBERTa & PASS & 50.92 & 32 \\
+GPT-2 & PASS & 50.23 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}

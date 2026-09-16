@@ -58,9 +58,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Speed @ L=1024} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & {{D\_SP1024}}$\times$ \\
-RoBERTa & {{R\_ACC}}\% & {{R\_SP1024}}$\times$ \\
-GPT-2 & {{G\_ACC}}\% & {{G\_SP1024}}$\times$ \\
+DistilBERT & 51.03\% & 84.5$\times$ \\
+RoBERTa & 50.92\% & 84.5$\times$ \\
+GPT-2 & 49.31\% & 84.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -69,7 +69,7 @@ GPT-2 & {{G\_ACC}}\% & {{G\_SP1024}}$\times$ \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2.
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-leka\_v1}.
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-leka\_v1}.
 \item \textbf{Metrics:} \texttt{results/unified\_leka\_v1/*/summary.csv}.
 
 \end{itemize}

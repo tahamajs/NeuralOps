@@ -68,9 +68,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
+DistilBERT & 89.91\% $\pm$ 1\% \\
+RoBERTa & 83.94\% $\pm$ 1\% \\
+GPT-2 & 82.00\% $\pm$ 1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -79,7 +79,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
 
 \begin{itemize}
 \item Dataset: SST-2
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-flash3}
+\item Checkpoints: \texttt{efficiency-lab/svd-linear-attention-*-flash3}
 \item Metrics: \texttt{results/unified\_flash3/*/summary.csv}
 
 \end{itemize}

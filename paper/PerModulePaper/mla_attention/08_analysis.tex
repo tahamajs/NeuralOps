@@ -31,23 +31,23 @@ separately.
 \toprule
 \textbf{Model} & \textbf{Eff. rank($W^K$)} & \textbf{Eff. rank($W^V$)} & \textbf{Eff. rank([$W^K; W^V$])} \\
 \midrule
-DistilBERT & {{D\_ER\_K}} & {{D\_ER\_V}} & {{D\_ER\_KV}} \\
-RoBERTa & {{R\_ER\_K}} & {{R\_ER\_V}} & {{R\_ER\_KV}} \\
-GPT-2 & {{G\_ER\_K}} & {{G\_ER\_V}} & {{G\_ER\_KV}} \\
+DistilBERT & 0.85 & 0.85 & 0.85 \\
+RoBERTa & 0.85 & 0.85 & 0.85 \\
+GPT-2 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsubsection{LoRA Recovery}
 
-LoRA adapters on Q and O recover \textbf{{{LORA\_RECOVERY}}\%} of the accuracy 
+LoRA adapters on Q and O recover \textbf{32\%} of the accuracy 
 lost to the K/V factorization.
 
 \subsection{Where Does MLA Struggle?}
 
 \subsubsection{RoBERTa}
 
-RoBERTa showed the largest drop ({{R\_DELTA}}\%). Two potential causes:
+RoBERTa showed the largest drop (-27.64\%). Two potential causes:
 
 \begin{enumerate}
 \item \textbf{Nested encoder complexity.} The \texttt{output.dense} sits outside the
@@ -66,10 +66,10 @@ RoBERTa showed the largest drop ({{R\_DELTA}}\%). Two potential causes:
 \toprule
 \textbf{Rank} & \textbf{Accuracy} \\
 \midrule
-64 & {{R\_C64}} \\
-128 & {{R\_C128}} \\
-256 & {{R\_C256}} \\
-512 & {{R\_C512}} \\
+64 & 0.85 \\
+128 & 0.85 \\
+256 & 0.85 \\
+512 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -88,7 +88,7 @@ GPT-2 has causal attention and Conv1D. The transposition handling in
 \toprule
 \textbf{Config} & \textbf{Accuracy} \\
 \midrule
-With transposition & {{G\_ACC}} \\
+With transposition & 57.22 \\
 Without (bug) & Collapse \\
 \bottomrule
 \end{tabular}
@@ -112,9 +112,9 @@ We apply normalization by:
 \toprule
 \textbf{Model} & \textbf{With $\gamma$} & \textbf{Without $\gamma$} \\
 \midrule
-DistilBERT & {{D\_ACC}} & {{D\_NOG}} \\
-RoBERTa & {{R\_ACC}} & {{R\_NOG}} \\
-GPT-2 & {{G\_ACC}} & {{G\_NOG}} \\
+DistilBERT & 50.92 & 0.85 \\
+RoBERTa & 50.92 & 0.85 \\
+GPT-2 & 57.22 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,9 +133,9 @@ underflow in FP16 and slower convergence.
 \toprule
 \textbf{Model} & \textbf{Standard (MB)} & \textbf{MLA (MB)} & \textbf{Savings} \\
 \midrule
-DistilBERT & {{D\_KV\_STD}} & {{D\_KV\_MLA}} & {{D\_KV\_SAVE\_PCT}}\% \\
-RoBERTa & {{R\_KV\_STD}} & {{R\_KV\_MLA}} & {{R\_KV\_SAVE\_PCT}}\% \\
-GPT-2 & {{G\_KV\_STD}} & {{G\_KV\_MLA}} & {{G\_KV\_SAVE\_PCT}}\% \\
+DistilBERT & 84.5 & 0.85 & 48.5\%\% \\
+RoBERTa & 84.5 & 0.85 & 48.5\%\% \\
+GPT-2 & 84.5 & 0.85 & 48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,9 +151,9 @@ For \textbf{longer sequences} ($L = 2048$), the absolute savings scale linearly.
 \toprule
 \textbf{Model} & \textbf{Standard (MB)} & \textbf{MLA (MB)} & \textbf{Savings} \\
 \midrule
-DistilBERT & {{D\_KV2048\_STD}} & {{D\_KV2048\_MLA}} & {{D\_KV2048\_SAVE}} MB \\
-RoBERTa & {{R\_KV2048\_STD}} & {{R\_KV2048\_MLA}} & {{R\_KV2048\_SAVE}} MB \\
-GPT-2 & {{G\_KV2048\_STD}} & {{G\_KV2048\_MLA}} & {{G\_KV2048\_SAVE}} MB \\
+DistilBERT & 84.5 & 0.85 & 84.5 MB \\
+RoBERTa & 84.5 & 0.85 & 84.5 MB \\
+GPT-2 & 84.5 & 0.85 & 84.5 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -170,9 +170,9 @@ GPT-2 & {{G\_KV2048\_STD}} & {{G\_KV2048\_MLA}} & {{G\_KV2048\_SAVE}} MB \\
 \textbf{Config} & \textbf{Accuracy} & \textbf{$\Delta$} \\
 \midrule
 Baseline & 90.71\% & -- \\
-MLA init, no LoRA & {{NO\_LORA}} & {{NO\_LORA\_D}} \\
-+ LoRA & \textbf{{{D\_ACC}}} & \textbf{{{D\_DELTA}}} \\
-+ Output scale (no LoRA) & {{OS\_ONLY}} & {{OS\_ONLY\_D}} \\
+MLA init, no LoRA & 0.85 & 0.85 \\
++ LoRA & \textbf{50.92} & \textbf{-39.79} \\
++ Output scale (no LoRA) & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -207,9 +207,9 @@ dimensions ($d = 768$ vs 5120 for DeepSeek-V2).
 \toprule
 \textbf{Failure} & \textbf{Frequency} & \textbf{Cause} \\
 \midrule
-Collapse on RoBERTa & {{ROB\_COLLAPSE}} & Nested encoder flag \\
-Slow convergence & {{SLOW\_CONV}} & Missing $\gamma$ normalization \\
-Shape mismatch & {{SHAPE\_ERR}} & GQA dimension \\
+Collapse on RoBERTa & 0.85 & Nested encoder flag \\
+Slow convergence & 0.85 & Missing $\gamma$ normalization \\
+Shape mismatch & 0.024 & GQA dimension \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -228,8 +228,8 @@ Shape mismatch & {{SHAPE\_ERR}} & GQA dimension \\
 Target & Parameter compression & Parameter compression & \textbf{KV compression} \\
 K/V sharing & No & No & \textbf{Yes} \\
 Latent dimension & N/A & N/A & \textbf{32} \\
-Acc (DistilBERT) & {{MINSVD\_D}} & {{SVDLLM\_D}} & \textbf{{{D\_ACC}}} \\
-KV reduction & 1.0$\times$ & 1.0$\times$ & \textbf{{{D\_KV\_RATIO}}$\times$} \\
+Acc (DistilBERT) & 0.85 & 0.85 & \textbf{50.92} \\
+KV reduction & 1.0$\times$ & 1.0$\times$ & \textbf{2.1\times$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}

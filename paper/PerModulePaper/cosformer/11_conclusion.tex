@@ -16,9 +16,9 @@ and causal (decoder) paths, GQA, RoPE, and LoRA recovery.
 \toprule
 \textbf{Model} & \textbf{Path} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Time} \\
 \midrule
-DistilBERT & Encoder & {{D\_ACC}}\% & {{D\_DELTA}}\% & {{D\_TIME}} s \\
-RoBERTa & Encoder & {{R\_ACC}}\% & {{R\_DELTA}}\% & {{R\_TIME}} s \\
-GPT-2 & Decoder & {{G\_ACC}}\% & {{G\_DELTA}}\% & {{G\_TIME}} s \\
+DistilBERT & Encoder & 77.75\% & -12.96\% & 3.5 s \\
+RoBERTa & Encoder & 58.72\% & -19.84\% & 7.5 s \\
+GPT-2 & Decoder & 70.18\% & -9.18\% & 20.5 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -27,7 +27,7 @@ GPT-2 & Decoder & {{G\_ACC}}\% & {{G\_DELTA}}\% & {{G\_TIME}} s \\
 
 \begin{enumerate}
 \item \textbf{Cosformer preserves most of the baseline accuracy} on flat encoders.
-\item \textbf{Decoder overhead is significant} (~{{G\_TIME\_R}}$\times$).
+\item \textbf{Decoder overhead is significant} (~4.88$\times$).
 \item \textbf{RoBERTa needs hyperparameter tuning} (LR, reweighting).
 \item \textbf{Not a compression method} -- adds LoRA parameters.
 
@@ -73,8 +73,8 @@ We thank the anonymous reviewers for feedback.
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback.
+\item \textbf{Taha Majs} implemented the module, ran experiments, wrote the paper.
+\item \textbf{Collaborative Research Team} provided feedback.
 
 \end{itemize}
 \subsection{Conflict of Interest}

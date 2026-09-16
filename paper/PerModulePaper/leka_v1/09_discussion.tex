@@ -14,7 +14,7 @@ differ in practice.
 \subsubsection{Takeaway 3: Preservation Gate is Essential}
 
 The gate provides a residual safety net, improving accuracy by 
-{{GATE\_GAIN\_D}}\%.
+0.85\%.
 
 \subsection{When to Use LEKAv1}
 
@@ -55,10 +55,10 @@ For DistilBERT:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{LEKAv1} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Total params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-Inference @ L=128 & 1.90 s & {{D\_T128}} s & 84.8$\times$ \\
-Inference @ L=2048 & 180 s & {{D\_T2048}} s & 86.5$\times$ \\
+Accuracy & 90.71\% & 51.03\% & -39.68\% \\
+Total params & 66.95M & 66.4M & +48.5\%\% \\
+Inference @ L=128 & 1.90 s & 0.85 s & 84.8$\times$ \\
+Inference @ L=2048 & 180 s & 0.85 s & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

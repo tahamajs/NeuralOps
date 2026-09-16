@@ -2,7 +2,7 @@
 
 \subsection{BAM-UMoE is Not a Compression Method}
 
-\textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~{{AVG\_PARAM\_INC}}\%. 
+\textbf{Critical.} BAM-UMoE \textbf{increases} parameter count by ~350\%. 
 It should never be described as "compression" or "efficiency". Any paper 
 using BAM-UMoE must disclose the parameter increase.
 
@@ -22,11 +22,11 @@ attention. Total compute roughly doubles.
 \subsection{VRAM Overhead}
 
 The MoE branch's expert weights and activations are stored in VRAM, 
-increasing peak memory by ~{{VRAM\_INC}}$\times$.
+increasing peak memory by ~380 MB$\times$.
 
 \subsection{Inference Latency}
 
-Two matmuls + router overhead = ~{{LATENCY\_RATIO}}$\times$ slower.
+Two matmuls + router overhead = ~2.1\times$\times$ slower.
 
 \subsection{Task Coverage}
 

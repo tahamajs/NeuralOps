@@ -81,10 +81,10 @@ per-head gate. For decoder-only models, we fall back to standard causal
 softmax attention to preserve causality -- a conservative but correctness-
 preserving choice.
 
-On SST-2, AEGIS-V5 achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
-{{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
-{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
-{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA recovery 
+On SST-2, AEGIS-V5 achieves \textbf{83.72\%} on DistilBERT (baseline 
+90.71\%, $\Delta$ = -6.99), \textbf{86.47\%} on RoBERTa (baseline 
+78.56\%, $\Delta$ = +7.91), and \textbf{69.50\%} on GPT-2 (baseline 
+79.36\%, $\Delta$ = -9.86), using 50 LoRA recovery 
 steps. Complexity is $\mathcal{O}(N \cdot W + N \cdot F)$ for encoders 
 where $W$ is window size and $F$ is RFF feature count. We provide a 
 production-hardened implementation supporting DistilBERT, RoBERTa, GPT-2, 

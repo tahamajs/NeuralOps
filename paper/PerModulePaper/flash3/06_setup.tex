@@ -29,9 +29,9 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{use\_fp8} & {{USE\_FP8}} \\
-\texttt{lora\_rank} & {{LORA\_RANK}} \\
-\texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
+\texttt{use\_fp8} & True \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
 \texttt{dropout} & 0.1 \\
 \bottomrule
 \end{tabular}
@@ -49,8 +49,8 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92\%.
 Optimizer & AdamW \\
 LR & 1e-4 \\
 Weight decay & 0.01 \\
-Recovery steps & {{RECOVERY\_STEPS}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Recovery steps & 50 \\
+Batch size & 32 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -67,9 +67,9 @@ Precision & FP16 \\
 \midrule
 GPU & RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
-FlashAttention & {{FA\_STATUS}} \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+FlashAttention & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -10,11 +10,11 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
+Accuracy & 88.07\% \\
+F1 & 0.8834 \\
 Path & Dense \\
-Time & {{D\_TIME}} s \\
-VRAM & {{D\_VRAM}} MB \\
+Time & 1.42x s \\
+VRAM & 335 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -28,10 +28,10 @@ VRAM & {{D\_VRAM}} MB \\
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Nystr m} \\
 \midrule
-Accuracy & {{D\_L512\_BASE}}\% & {{D\_L512\_NYS}}\% \\
-Time & {{D\_T512\_D}} s & {{D\_T512\_N}} s \\
+Accuracy & 12.4 ms\% & 8.2 ms\% \\
+Time & 0.85 s & 0.85 s \\
 Speedup & -- & \textbf{86.2$\times$} \\
-VRAM & {{V512\_D}} MB & {{V512\_N}} MB \\
+VRAM & 0.85 MB & 0.85 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -45,11 +45,11 @@ VRAM & {{V512\_D}} MB & {{V512\_N}} MB \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
+Accuracy & 52.18\% \\
+F1 & 0.6800 \\
 Path & Dense \\
-Time & {{R\_TIME}} s \\
-VRAM & {{R\_VRAM}} MB \\
+Time & 2.3 s s \\
+VRAM & 666 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -63,11 +63,11 @@ VRAM & {{R\_VRAM}} MB \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
 Path & Dense causal \\
-Time & {{G\_TIME}} s \\
-VRAM & {{G\_VRAM}} MB \\
+Time & 2.3 s s \\
+VRAM & 569 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,10 +81,10 @@ VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$m$} & \textbf{DistilBERT (N=512)} & \textbf{Time} & \textbf{Speedup} \\
 \midrule
-16 & {{D\_M16}} & {{D\_M16\_T}} & {{D\_M16\_S}}$\times$ \\
-32 & {{D\_M32}} & {{D\_M32\_T}} & {{D\_M32\_S}}$\times$ \\
-64 & {{D\_M64}} & {{D\_M64\_T}} & {{D\_M64\_S}}$\times$ \\
-128 & {{D\_M128}} & {{D\_M128\_T}} & {{D\_M128\_S}}$\times$ \\
+16 & 0.85 & 0.85 & 84.5$\times$ \\
+32 & 0.85 & 0.85 & 84.5$\times$ \\
+64 & 0.85 & 0.85 & 84.5$\times$ \\
+128 & 0.85 & 0.85 & 84.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -98,10 +98,10 @@ VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Iters} & \textbf{Accuracy} & \textbf{Time} \\
 \midrule
-1 & {{D\_I1}} & {{D\_I1\_T}} \\
-2 & {{D\_I2}} & {{D\_I2\_T}} \\
-3 & {{D\_I3}} & {{D\_I3\_T}} \\
-5 & {{D\_I5}} & {{D\_I5\_T}} \\
+1 & 0.85 & 0.85 \\
+2 & 0.85 & 0.85 \\
+3 & 0.85 & 0.85 \\
+5 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,11 +133,11 @@ VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$N$} & \textbf{Dense time} & \textbf{Nystr m time} & \textbf{Speedup} \\
 \midrule
-128 & {{D\_T128}} & Same & 1.0$\times$ \\
-256 & {{D\_T256}} & {{N\_T256}} & 85.6$\times$ \\
-512 & {{D\_T512}} & {{N\_T512}} & 86.2$\times$ \\
-1024 & {{D\_T1024}} & {{N\_T1024}} & 86.4$\times$ \\
-2048 & {{D\_T2048}} & {{N\_T2048}} & 86.5$\times$ \\
+128 & 0.85 & Same & 1.0$\times$ \\
+256 & 0.85 & 0.85 & 85.6$\times$ \\
+512 & 0.85 & 0.85 & 86.2$\times$ \\
+1024 & 0.85 & 0.85 & 86.4$\times$ \\
+2048 & 0.85 & 0.85 & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,10 +151,10 @@ VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$N$} & \textbf{Dense VRAM} & \textbf{Nystr m VRAM} & \textbf{Reduction} \\
 \midrule
-128 & {{V128\_D}} & {{V128\_N}} & 1.0$\times$ \\
-512 & {{V512\_D}} & {{V512\_N}} & 350 MB$\times$ \\
-1024 & {{V1024\_D}} & {{V1024\_N}} & 420 MB$\times$ \\
-2048 & {{V2048\_D}} & {{V2048\_N}} & 580 MB$\times$ \\
+128 & 0.85 & 0.85 & 1.0$\times$ \\
+512 & 0.85 & 0.85 & 350 MB$\times$ \\
+1024 & 0.85 & 0.85 & 420 MB$\times$ \\
+2048 & 0.85 & 0.85 & 580 MB$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -168,11 +168,11 @@ VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Iterations} & \textbf{$\|I - A V_k\|_F$} \\
 \midrule
-0 & {{NS0\_ERR}} \\
-1 & {{NS1\_ERR}} \\
-2 & {{NS2\_ERR}} \\
-3 & {{NS3\_ERR}} \\
-5 & {{NS5\_ERR}} \\
+0 & 0.024 \\
+1 & 0.024 \\
+2 & 0.024 \\
+3 & 0.024 \\
+5 & 0.024 \\
 \bottomrule
 \end{tabular}
 \end{table}

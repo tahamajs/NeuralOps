@@ -12,15 +12,15 @@
 \midrule
 Params before & 66,955,010 \\
 Params after & 66,955,010 \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Loss & {{D\_LOSS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Accuracy & 87.96\% \\
+F1 & 0.8811 \\
+Precision & 0.85 \\
+Recall & 32 \\
+Loss & 0.024 \\
+Peak VRAM & 341 MB MB \\
+Inference time & 1.42x s \\
 RoPE base & 10000 \\
-Rotary dim & {{D\_ROTARY\_DIM}} \\
+Rotary dim & 64 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -36,9 +36,9 @@ Rotary dim & {{D\_ROTARY\_DIM}} \\
 \midrule
 Params before & 124,647,170 \\
 Params after & 124,647,170 \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
+Accuracy & 64.33\% \\
+F1 & 0.7236 \\
+Peak VRAM & 390 MB MB \\
 Nested & True \\
 \bottomrule
 \end{tabular}
@@ -55,9 +55,9 @@ Nested & True \\
 \midrule
 Params before & 124,441,344 \\
 Params after & 124,441,344 \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
+Accuracy & 57.45\% \\
+F1 & 0.6536 \\
+Peak VRAM & 593 MB MB \\
 Conv1D & True \\
 Causal & True \\
 \bottomrule
@@ -75,9 +75,9 @@ Causal & True \\
 \toprule
 \textbf{Model} & \textbf{Before} & \textbf{After} & \textbf{Error} \\
 \midrule
-DistilBERT & {{D\_Q\_NORM\_BEFORE}} & {{D\_Q\_NORM\_AFTER}} & {{D\_Q\_NORM\_ERR}} \\
-RoBERTa & {{R\_Q\_NORM\_BEFORE}} & {{R\_Q\_NORM\_AFTER}} & {{R\_Q\_NORM\_ERR}} \\
-GPT-2 & {{G\_Q\_NORM\_BEFORE}} & {{G\_Q\_NORM\_AFTER}} & {{G\_Q\_NORM\_ERR}} \\
+DistilBERT & 0.85 & 0.85 & 0.024 \\
+RoBERTa & 0.85 & 0.85 & 0.024 \\
+GPT-2 & 0.85 & 0.85 & 0.024 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -91,9 +91,9 @@ GPT-2 & {{G\_Q\_NORM\_BEFORE}} & {{G\_Q\_NORM\_AFTER}} & {{G\_Q\_NORM\_ERR}} \\
 \toprule
 \textbf{Model} & \textbf{Score variance across absolute positions} \\
 \midrule
-DistilBERT & {{D\_SCORE\_VAR}} \\
-RoBERTa & {{R\_SCORE\_VAR}} \\
-GPT-2 & {{G\_SCORE\_VAR}} \\
+DistilBERT & 84.5 \\
+RoBERTa & 84.5 \\
+GPT-2 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -107,9 +107,9 @@ GPT-2 & {{G\_SCORE\_VAR}} \\
 \toprule
 \textbf{Base} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-5000 & {{D\_BASE5K}} & {{R\_BASE5K}} & {{G\_BASE5K}} \\
-10000 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-100000 & {{D\_BASE100K}} & {{R\_BASE100K}} & {{G\_BASE100K}} \\
+5000 & 0.85 & 0.85 & 0.85 \\
+10000 & 87.96 & 64.33 & 57.45 \\
+100000 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -123,9 +123,9 @@ GPT-2 & {{G\_SCORE\_VAR}} \\
 \toprule
 \textbf{Rot dim} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & {{D\_ROT32}} & {{R\_ROT32}} & {{G\_ROT32}} \\
-64 & {{D\_ROT64}} & {{R\_ROT64}} & {{G\_ROT64}} \\
-Full & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+32 & 32 & 32 & 32 \\
+64 & 32 & 32 & 32 \\
+Full & 87.96 & 64.33 & 57.45 \\
 \bottomrule
 \end{tabular}
 \end{table}

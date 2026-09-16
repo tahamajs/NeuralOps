@@ -10,17 +10,17 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-$\Delta$ Params & {{D\_PARAM\_CHANGE}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Loss & {{D\_LOSS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Time & {{D\_TIME}} s \\
-Aux loss & {{D\_AUX}} \\
-Max/Min utilization & {{D\_MAXMIN}} \\
+Params after & 66.4M \\
+$\Delta$ Params & 66.4M \\
+Accuracy & 90.02\% \\
+F1 & 0.9030 \\
+Precision & 0.85 \\
+Recall & 32 \\
+Loss & 0.024 \\
+Peak VRAM & 554 MB MB \\
+Time & 1.42x s \\
+Aux loss & 0.85 \\
+Max/Min utilization & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -35,9 +35,9 @@ Max/Min utilization & {{D\_MAXMIN}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-$\Delta$ Params & {{R\_PARAM\_CHANGE}} \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 124.6M \\
+$\Delta$ Params & 66.4M \\
+Accuracy & 50.92\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -53,9 +53,9 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-$\Delta$ Params & {{G\_PARAM\_CHANGE}} \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 124.4M \\
+$\Delta$ Params & 66.4M \\
+Accuracy & 52.41\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -70,14 +70,14 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Expert} & \textbf{Utilization} & \textbf{Mean gate prob} \\
 \midrule
-0 & {{D\_E0}}\% & {{D\_P0}} \\
-1 & {{D\_E1}}\% & {{D\_P1}} \\
-2 & {{D\_E2}}\% & {{D\_P2}} \\
-3 & {{D\_E3}}\% & {{D\_P3}} \\
-4 & {{D\_E4}}\% & {{D\_P4}} \\
-5 & {{D\_E5}}\% & {{D\_P5}} \\
-6 & {{D\_E6}}\% & {{D\_P6}} \\
-7 & {{D\_E7}}\% & {{D\_P7}} \\
+0 & 0.85\% & 0.85 \\
+1 & 0.85\% & 0.85 \\
+2 & 0.85\% & 0.85 \\
+3 & 0.85\% & 0.85 \\
+4 & 0.85\% & 0.85 \\
+5 & 0.85\% & 0.85 \\
+6 & 0.85\% & 0.85 \\
+7 & 0.85\% & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -91,10 +91,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{E} & \textbf{DistilBERT} & \textbf{Params} & \textbf{Ratio} \\
 \midrule
-2 & {{D\_E2\_ACC}} & {{D\_E2\_PARAMS}} & {{D\_E2\_RATIO}} \\
-4 & {{D\_E4\_ACC}} & {{D\_E4\_PARAMS}} & {{D\_E4\_RATIO}} \\
-8 & {{D\_E8\_ACC}} & {{D\_E8\_PARAMS}} & {{D\_E8\_RATIO}} \\
-16 & {{D\_E16\_ACC}} & {{D\_E16\_PARAMS}} & {{D\_E16\_RATIO}} \\
+2 & 86.4\% & 66.4M & 2.1\times \\
+4 & 86.4\% & 66.4M & 2.1\times \\
+8 & 86.4\% & 66.4M & 2.1\times \\
+16 & 86.4\% & 66.4M & 2.1\times \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -108,9 +108,9 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{k} & \textbf{DistilBERT} & \textbf{FLOPs} \\
 \midrule
-1 & {{D\_K1\_ACC}} & 1$\times$ \\
-2 & {{D\_K2\_ACC}} & 2$\times$ \\
-4 & {{D\_K4\_ACC}} & 4$\times$ \\
+1 & 86.4\% & 1$\times$ \\
+2 & 86.4\% & 2$\times$ \\
+4 & 86.4\% & 4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -124,10 +124,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$\lambda$\_aux} & \textbf{DistilBERT} & \textbf{Max/Min} \\
 \midrule
-0.0 & {{D\_L0\_ACC}} & {{D\_L0\_MAXMIN}} \\
-0.01 & {{D\_L001\_ACC}} & {{D\_L001\_MAXMIN}} \\
-0.1 & {{D\_L01\_ACC}} & {{D\_L01\_MAXMIN}} \\
-1.0 & {{D\_L1\_ACC}} & {{D\_L1\_MAXMIN}} \\
+0.0 & 86.4\% & 0.85 \\
+0.01 & 86.4\% & 0.85 \\
+0.1 & 86.4\% & 0.85 \\
+1.0 & 86.4\% & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

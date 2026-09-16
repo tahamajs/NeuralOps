@@ -91,7 +91,7 @@ pretrained transformer attention. Our implementation:
 \begin{enumerate}
 \item \textbf{No parameter reduction.} FlashAttention is an \textbf{algorithm}, not a
   compression method. Parameter count changes only by the LoRA adapters
-  (+{{D\_PARAM\_PCT}}\%). We make no compressive claims.
+  (+48.5\%\%). We make no compressive claims.
 \item \textbf{No speedup without the FA3 kernel.} When \texttt{flash\_attn} is not installed
   (e.g., on non-Hopper GPUs or with an incompatible CUDA version), our
   implementation falls back to PyTorch SDPA. This fallback is functionally
@@ -99,7 +99,7 @@ pretrained transformer attention. Our implementation:
 
 \end{enumerate}
 On SST-2, the module produces baseline-identical accuracy (since attention 
-is exact) with only LoRA-induced variance of \textbf{{{D\_DELTA}}\%}. The primary 
+is exact) with only LoRA-induced variance of \textbf{-0.46\%}. The primary 
 contribution is a \textbf{drop-in integration} of FlashAttention-3 into existing 
 pretrained models with correct weight transfer.
 

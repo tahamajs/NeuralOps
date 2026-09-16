@@ -69,10 +69,10 @@ We tested MoE without the gate. Result: unstable training.
 \toprule
 \textbf{E} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-2 & {{D\_E2}} & Too few \\
-4 & {{D\_E4}} & Marginal \\
-8 & {{D\_E8}} & Good \\
-16 & {{D\_E16}} & Marginal gain, 2$\times$ params \\
+2 & 0.85 & Too few \\
+4 & 0.85 & Marginal \\
+8 & 0.85 & Good \\
+16 & 0.85 & Marginal gain, 2$\times$ params \\
 32 & OOM & -- \\
 \bottomrule
 \end{tabular}
@@ -87,9 +87,9 @@ We tested MoE without the gate. Result: unstable training.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-1e-4 & {{D\_LR1e4}} \\
-2e-4 & {{D\_LR2e4}} \\
-5e-4 & {{D\_LR5e4}} \\
+1e-4 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

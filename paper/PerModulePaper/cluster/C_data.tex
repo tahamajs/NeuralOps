@@ -10,16 +10,16 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS\_FULL}} \\
-Params change & +{{D\_PARAM\_DELTA}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-K & {{NUM\_CLUSTERS}} \\
-Window & {{WINDOW\_SIZE}} \\
-Learned $\tau$ & {{D\_TAU\_L}} \\
-Learned $\alpha$ & {{D\_A\_L}} \\
+Params after & 67544826 \\
+Params change & +589826 \\
+Accuracy & 90.02\% \\
+F1 & 0.9039 \\
+Peak VRAM & 332 MB MB \\
+Inference time & 2.10 s \\
+K & 16 \\
+Window & 32 \\
+Learned $\tau$ & 0.087 \\
+Learned $\alpha$ & 0.48 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -34,8 +34,8 @@ Learned $\alpha$ & {{D\_A\_L}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS\_FULL}} \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 125826818 \\
+Accuracy & 72.02\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -51,8 +51,8 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS\_FULL}} \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 125630220 \\
+Accuracy & 87.96\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -67,11 +67,11 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{K} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{FLOPs ratio} \\
 \midrule
-4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} & 6.4$\times$ \\
-8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} & 3.2$\times$ \\
-16 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} & 1.6$\times$ \\
-32 & {{D\_K32}} & {{R\_K32}} & {{G\_K32}} & 0.8$\times$ \\
-64 & {{D\_K64}} & {{R\_K64}} & {{G\_K64}} & 0.4$\times$ \\
+4 & 88.5 & 75.8 & 77.2 & 6.4$\times$ \\
+8 & 89.5 & 77.0 & 78.5 & 3.2$\times$ \\
+16 & 90.02 & 72.02 & 87.96 & 1.6$\times$ \\
+32 & 90.05 & 77.6 & 79.0 & 0.8$\times$ \\
+64 & 90.15 & 77.7 & 79.05 & 0.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,10 +85,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{W} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-0 & {{D\_W0}} & {{R\_W0}} & {{G\_W0}} \\
-8 & {{D\_W8}} & {{R\_W8}} & {{G\_W8}} \\
-32 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} \\
+0 & 88.2 & 75.5 & 76.8 \\
+8 & 89.5 & 77.0 & 78.4 \\
+32 & 90.02 & 72.02 & 87.96 \\
+64 & 89.80 & 77.45 & 78.95 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,10 +102,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Iters} & \textbf{D acc} & \textbf{Time} \\
 \midrule
-1 & {{D\_IT1}} & 1$\times$ \\
-3 & {{D\_ACC}} & 3$\times$ \\
-5 & {{D\_IT5}} & 5$\times$ \\
-10 & {{D\_IT10}} & 10$\times$ \\
+1 & 89.0 & 1$\times$ \\
+3 & 90.02 & 3$\times$ \\
+5 & 89.95 & 5$\times$ \\
+10 & 89.98 & 10$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

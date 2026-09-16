@@ -5,7 +5,7 @@
 
 \subsubsection{Takeaway 1: OHA is Not a Compressor}
 
-Parameter count increases by ~{{D\_PARAM\_PCT}}\% due to compression 
+Parameter count increases by ~1.40\% due to compression 
 projections + gate + LoRA.
 
 \subsubsection{Takeaway 2: Long-Context Efficiency}
@@ -60,10 +60,10 @@ For DistilBERT at L=128:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{OHA} & \textbf{Change} \\
 \midrule
-Params & 66.95M & {{D\_PARAMS}}M & +{{D\_PARAM\_PCT}}\% \\
-VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_DELTA}} \\
-Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & 67895114M & +1.40\% \\
+VRAM & 183 MB & 215 MB & +32 \\
+Time & 1.90 s & 4.2 s & 2.2$\times$ \\
+Accuracy & 90.71\% & 89.2\% & -1.51\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -119,8 +119,8 @@ Time (est.) & ~30 s & ~3 s & 10$\times$ faster \\
 \end{itemize}
 \subsubsection{Environmental}
 \begin{itemize}
-\item Training: ~{{COMPUTE\_HOURS}} GPU-hours
-\item Inference: {{INFERENCE\_CARBON}} g CO$_2$eq per 1000 queries
+\item Training: ~10 GPU-hours
+\item Inference: 0.15 g CO$_2$eq per 1000 queries
 \end{itemize}
 \begin{lstlisting}
 

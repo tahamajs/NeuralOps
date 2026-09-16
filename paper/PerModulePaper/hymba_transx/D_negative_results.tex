@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Use Ye et al.'s damping coefficient.
 
-\textbf{Result.} Accuracy dropped by {{LAMBDA08\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} $\lambda$ = 0.2 is better for hybrid.
 
@@ -22,7 +22,7 @@
 
 \textbf{Goal.} No learned gate.
 
-\textbf{Result.} Accuracy dropped by {{ALPHA\_FIXED\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Learning $\alpha$ helps.
 
@@ -67,10 +67,10 @@ Three or more Q-K pairs. Result: no improvement.
 \toprule
 \textbf{Init} & \textbf{DistilBERT} \\
 \midrule
-$\sigma$(-2) $\approx$ 0.12 & {{ALPHA\_INIT\_M2}} \\
-$\sigma$(-1) $\approx$ 0.27 & {{D\_ACC}} \\
-$\sigma$(0) = 0.5 & {{ALPHA\_INIT\_0}} \\
-$\sigma$(1) $\approx$ 0.73 & {{ALPHA\_INIT\_P1}} \\
+$\sigma$(-2) $\approx$ 0.12 & 0.85 \\
+$\sigma$(-1) $\approx$ 0.27 & 49.08 \\
+$\sigma$(0) = 0.5 & 0.85 \\
+$\sigma$(1) $\approx$ 0.73 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

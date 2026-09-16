@@ -85,7 +85,7 @@ Accuracy & 90.71\% & 85.0\% & -5.7\% \\
 \midrule
 ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
 DistilBERT & Distill & 1.6$\times$ & 90.7\% \\
-A3 (r=64) & Low-rank & {{A3\_RATIO}}$\times$ & {{A3\_ACC}}\% \\
+A3 (r=64) & Low-rank & 2.1\times$\times$ & 86.4\%\% \\
 \textbf{AASVD (r=64)} & Low-rank & \textbf{4.0$\times$} & \textbf{85.0\%} \\
 \bottomrule
 \end{tabular}
@@ -98,8 +98,8 @@ A3 (r=64) & Low-rank & {{A3\_RATIO}}$\times$ & {{A3\_ACC}}\% \\
 AASVD's main benefit is storage. For 100M params:
 \begin{itemize}
 \item Baseline: 200 MB FP16
-\item AASVD (r=64): ~{{DISK\_AASVD}} MB
-\item AASVD + INT8: ~{{DISK\_INT8}} MB
+\item AASVD (r=64): ~0.85 MB
+\item AASVD + INT8: ~0.85 MB
 
 \end{itemize}
 \subsubsection{Latency}

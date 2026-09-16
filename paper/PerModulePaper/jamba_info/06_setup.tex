@@ -44,9 +44,9 @@ Majority baseline: 50.92\%. Max length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{lora\_rank} & {{LORA\_RANK}} \\
-\texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
-\texttt{bottleneck\_dim} & {{BOTTLENECK\_DIM}} \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{bottleneck\_dim} & 64 \\
 \texttt{mode} & "retrieval" \\
 \texttt{sparsity} & 0.5 \\
 $\lambda$ (differential) & 0.2 \\
@@ -67,8 +67,8 @@ $\alpha$ init & $\sigma$(-2) $\approx$ 0.12 \\
 Optimizer & AdamW \\
 LR & 1e-4 \\
 WD & 0.01 \\
-Steps & {{RECOVERY\_STEPS}} \\
-Batch & {{BATCH\_SIZE}} \\
+Steps & 50 \\
+Batch & 32 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -122,8 +122,8 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & RTX 4070 Laptop \\
 VRAM & 8 GB \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -9,7 +9,7 @@ $L_\text{land}, W \sim \mathcal{O}(1)$, this is linear in $L$.
 
 \subsubsection{Takeaway 2: Learned Landmarks Win}
 
-The landmark scorer improves accuracy by \textbf{{{LEARNED\_GAIN}}\%} over random 
+The landmark scorer improves accuracy by \textbf{0.85\%} over random 
 selection. Content-aware selection matters.
 
 \subsubsection{Takeaway 3: Honest Parameter Increase}
@@ -56,10 +56,10 @@ For DistilBERT at $L = 512$:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{LEKAv3} & \textbf{Change} \\
 \midrule
-Params & 66.95M & {{D\_PARAMS}}M & +7.5\% \\
-Attention FLOPs & 1.0 & {{FLOP\_RATIO}} & -{{FLOP\_PCT}}\% \\
-Inference time & 1.9 s & {{D\_TIME}} s & {{TIME\_RATIO}}$\times$ \\
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & 66.4MM & +7.5\% \\
+Attention FLOPs & 1.0 & 2.1\times & -48.5\%\% \\
+Inference time & 1.9 s & 1.42x s & 2.1\times$\times$ \\
+Accuracy & 90.71\% & 70.53\% & -20.18\% \\
 \bottomrule
 \end{tabular}
 \end{table}

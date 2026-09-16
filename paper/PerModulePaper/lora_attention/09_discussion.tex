@@ -4,8 +4,8 @@
 
 \subsubsection{Takeaway 1: LoRA Reduces Training Cost}
 
-Trainable parameters reduced by \textbf{{{TRAIN\_RATIO}}$\times$}. Training memory 
-reduced by \textbf{{{MEM\_RATIO}}$\times$}. This makes fine-tuning feasible on consumer 
+Trainable parameters reduced by \textbf{2.1\times$\times$}. Training memory 
+reduced by \textbf{2.1\times$\times$}. This makes fine-tuning feasible on consumer 
 GPUs.
 
 \subsubsection{Takeaway 2: Attention LoRA is Effective}
@@ -62,10 +62,10 @@ For DistilBERT fine-tuning:
 \toprule
 \textbf{Metric} & \textbf{Full FT} & \textbf{LoRA Attention} \\
 \midrule
-Trainable params & 66.9M & {{D\_TRAINABLE}} \\
-Optimizer state & ~670 MB & ~{{D\_OPT}} MB \\
-Training time (50 steps) & OOM & {{D\_TIME}} s \\
-Accuracy & 90.71\% & {{D\_ACC}}\% \\
+Trainable params & 66.9M & 0.85 \\
+Optimizer state & ~670 MB & ~0.85 MB \\
+Training time (50 steps) & OOM & 1.42x s \\
+Accuracy & 90.71\% & 89.91\% \\
 Inference after merge & Baseline & Baseline \\
 \bottomrule
 \end{tabular}
@@ -92,7 +92,7 @@ Prefix Tuning & Various & KV & No \\
 
 \subsubsection{Pre-Merge}
 
-LoRA adapters add ~{{ADAPTER\_SIZE}} MB per model. This is small but 
+LoRA adapters add ~84.5 MB per model. This is small but 
 non-zero.
 
 \subsubsection{Post-Merge}
@@ -113,7 +113,7 @@ model.load_lora("task_b.pt")
 # Inference...
 \end{lstlisting}
 
-Each adapter is only ~{{ADAPTER\_SIZE}} MB.
+Each adapter is only ~84.5 MB.
 
 \subsection{Open Questions}
 

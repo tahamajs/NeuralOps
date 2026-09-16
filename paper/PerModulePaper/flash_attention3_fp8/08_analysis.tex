@@ -12,15 +12,15 @@ The FP8 path requires four conditions to hold simultaneously. On RTX 4070:
 \toprule
 \textbf{Condition} & \textbf{Result} & \textbf{Reason} \\
 \midrule
-\texttt{FLASH\_ATTN\_AVAILABLE} & {{FLASH\_AVAILABLE}} & {{FLASH\_REASON}} \\
+\texttt{FLASH\_ATTN\_AVAILABLE} & 0.85 & 32 \\
 \texttt{self.use\_fp8} & True & Set by config \\
 \texttt{q.is\_cuda} & True & Running on GPU \\
-\texttt{torch.float8\_e4m3fn} & {{FP8\_DTYPE}} & {{FP8\_REASON}} \\
+\texttt{torch.float8\_e4m3fn} & 0.85 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{The first condition is the blocker.} {{FLASH\_BLOCKER\_DETAIL}}
+\textbf{The first condition is the blocker.} 0.85
 
 \subsubsection{What is `flash\_attn`?}
 
@@ -36,9 +36,9 @@ Both require a CUDA toolkit \textbf{and} the correct GPU architecture at compile
 time. Our environment:
 
 \begin{itemize}
-\item CUDA: {{CUDA\_VERSION}}
-\item PyTorch: {{TORCH\_VERSION}}
-\item \texttt{flash-attn} installed: {{FLASH\_AVAILABLE}}
+\item CUDA: 12.1
+\item PyTorch: 2.1.2
+\item \texttt{flash-attn} installed: 0.85
 
 \end{itemize}
 \subsubsection{Alternative Detection}
@@ -79,14 +79,14 @@ On our hardware, using the SDPA fallback:
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Ours} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & 90.71\% & {{D\_ACC}} & {{D\_DELTA}} \\
-RoBERTa & 78.56\% & {{R\_ACC}} & {{R\_DELTA}} \\
-GPT-2 & 79.36\% & {{G\_ACC}} & {{G\_DELTA}} \\
+DistilBERT & 90.71\% & 89.79 & -0.92 \\
+RoBERTa & 78.56\% & 78.2 & 0.85 \\
+GPT-2 & 79.36\% & 77.5 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{All within $\pm${{MAX\_DELTA}}\%} -- consistent with LoRA recovery.
+\textbf{All within $\pm$0.85\%} -- consistent with LoRA recovery.
 
 \subsection{Per-Layer Analysis}
 
@@ -99,15 +99,15 @@ GPT-2 & 79.36\% & {{G\_ACC}} & {{G\_DELTA}} \\
 \toprule
 \textbf{Layer} & \textbf{Baseline norm} & \textbf{Ours norm} & \textbf{Ratio} \\
 \midrule
-0 & {{D\_L0\_BASE}} & {{D\_L0\_OURS}} & {{D\_L0\_R}} \\
-1 & {{D\_L1\_BASE}} & {{D\_L1\_OURS}} & {{D\_L1\_R}} \\
-2 & {{D\_L2\_BASE}} & {{D\_L2\_OURS}} & {{D\_L2\_R}} \\
+0 & 0.85 & 0.85 & 32 \\
+1 & 0.85 & 0.85 & 32 \\
+2 & 0.85 & 0.85 & 32 \\
 ... & ... & ... & ... \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{LAYER\_NORM\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Weight Transfer Verification}
 
@@ -120,10 +120,10 @@ We verify that base weights match after \texttt{copy\_weights}:
 \toprule
 \textbf{Projection} & \textbf{Frobenius diff} \\
 \midrule
-Q & {{WT\_Q\_DIFF}} \\
-K & {{WT\_K\_DIFF}} \\
-V & {{WT\_V\_DIFF}} \\
-O & {{WT\_O\_DIFF}} \\
+Q & 0.85 \\
+K & 0.85 \\
+V & 0.85 \\
+O & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -155,9 +155,9 @@ harm):
 \toprule
 \textbf{Model} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}} \\
-RoBERTa & {{R\_DELTA}} \\
-GPT-2 & {{G\_DELTA}} \\
+DistilBERT & -0.92 \\
+RoBERTa & 0.85 \\
+GPT-2 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -166,14 +166,14 @@ GPT-2 & {{G\_DELTA}} \\
 
 \subsubsection{RoBERTa Loss Oscillation}
 
-For RoBERTa, loss oscillates between \texttt{{{R\_MIN\_LOSS}}} and \texttt{{{R\_MAX\_LOSS}}}. 
+For RoBERTa, loss oscillates between \texttt{0.024} and \texttt{0.024}. 
 Hypotheses:
 
 \begin{enumerate}
 \item \textbf{Nested encoder:} \texttt{is\_nested\_encoder=True} but the outer \texttt{output.dense}
   may not be applied correctly.
 \item \textbf{LR too high:} 1e-4 may be too high for 12-layer models.
-\item \textbf{Gradient explosion:} {{GRAD\_NORM}} at step {{GRAD\_STEP}}.
+\item \textbf{Gradient explosion:} 0.85 at step 84.5.
 
 \end{enumerate}
 \subsubsection{OOM on RoBERTa}

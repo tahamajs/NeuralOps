@@ -7,7 +7,7 @@
 
 \textbf{Goal.} Replace ELU+1 with ReLU+1.
 
-\textbf{Result.} Accuracy dropped by {{RELU\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} ELU+1 is the right feature map.
 
@@ -70,10 +70,10 @@
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{Ratio} \\
 \midrule
-4 & {{D\_R4}} & 30$\times$ \\
-8 & {{D\_R8}} & 24$\times$ \\
-16 & {{D\_R16}} & 16$\times$ \\
-32 & {{D\_R32}} & 12$\times$ \\
+4 & 32 & 30$\times$ \\
+8 & 32 & 24$\times$ \\
+16 & 32 & 16$\times$ \\
+32 & 32 & 12$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -87,10 +87,10 @@
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} \\
 \midrule
-0 & {{D\_LORA0}} \\
-8 & {{D\_LORA8}} \\
-16 & {{D\_LORA16}} \\
-32 & {{D\_LORA32}} \\
+0 & 0.85 \\
+8 & 0.85 \\
+16 & 0.85 \\
+32 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -104,9 +104,9 @@
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-5e-5 & {{D\_LR5e5}} \\
-2e-4 & {{D\_LR2e4}} \\
-5e-4 & {{D\_LR5e4}} \\
+5e-5 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

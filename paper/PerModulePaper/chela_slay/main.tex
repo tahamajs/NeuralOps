@@ -96,9 +96,9 @@ The linear stream combines three components:
 
 \end{enumerate}
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. CHELA-SLAY 
-achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{BASE\_D}}\%), 
-\textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and \textbf{{{G\_ACC}}\%} on 
-GPT-2 (baseline {{BASE\_G}}\%) using {{RECOVERY\_STEPS}} LoRA recovery steps.
+achieves \textbf{89.91\%} on DistilBERT (baseline 90.71\%), 
+\textbf{83.83\%} on RoBERTa (baseline 78.56\%), and \textbf{85.89\%} on 
+GPT-2 (baseline 79.36\%) using 50 LoRA recovery steps.
 
 \textbf{We report two limitations honestly.}
 
@@ -106,7 +106,7 @@ GPT-2 (baseline {{BASE\_G}}\%) using {{RECOVERY\_STEPS}} LoRA recovery steps.
 \item \textbf{Memory.} The causal cumsum path materializes a
   $(\text{B}, \text{H}, L, 2F, d_h)$ intermediate, which for
   $L = 128$, $F = 128$, $d_h = 64$ is roughly
-  \textbf{{{CUMSUM\_MEM}} MB} per layer at FP32.
+  \textbf{8192 MB} per layer at FP32.
 \item \textbf{Speed.} On SST-2 ($L = 128$), CHELA-SLAY is \textbf{2.2$\times$ slower}
   than baseline because both dense and linear streams are computed
   simultaneously, and the cumsum has overhead.

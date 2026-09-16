@@ -50,10 +50,10 @@ Rotary dim < head\_dim. Result: similar accuracy.
 \toprule
 \textbf{Base} & \textbf{DistilBERT} \\
 \midrule
-1000 & {{D\_BASE1K}} \\
-5000 & {{D\_BASE5K}} \\
-10000 & {{D\_ACC}} \\
-100000 & {{D\_BASE100K}} \\
+1000 & 0.85 \\
+5000 & 0.85 \\
+10000 & 87.96 \\
+100000 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -67,10 +67,10 @@ Rotary dim < head\_dim. Result: similar accuracy.
 \toprule
 \textbf{Rot dim} & \textbf{DistilBERT} \\
 \midrule
-16 & {{D\_ROT16}} \\
-32 & {{D\_ROT32}} \\
-64 & {{D\_ROT64}} \\
-Full & {{D\_ACC}} \\
+16 & 32 \\
+32 & 32 \\
+64 & 32 \\
+Full & 87.96 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -119,12 +119,12 @@ Different dropout & Overfitting & No gain \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Reduces} \\
 \midrule
-MinimalSVD & {{MINSVD\_D}} & Params \\
-SVD-LLM V2 & {{SVDLLM\_D}} & Params \\
-Dobi-SVD & {{DOBI\_D}} & Params \\
-MLA & {{MLA\_D}} & KV \\
-Nystr mformer & {{NYS\_D}} & Compute \\
-\textbf{UnifiedRoPE} & \textbf{{{D\_ACC}}} & \textbf{Nothing} \\
+MinimalSVD & 0.85 & Params \\
+SVD-LLM V2 & 0.85 & Params \\
+Dobi-SVD & 0.85 & Params \\
+MLA & 0.85 & KV \\
+Nystr mformer & 0.85 & Compute \\
+\textbf{UnifiedRoPE} & \textbf{87.96} & \textbf{Nothing} \\
 \bottomrule
 \end{tabular}
 \end{table}

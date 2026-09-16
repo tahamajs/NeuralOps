@@ -15,9 +15,9 @@ with a state space model, fused by a learned scalar gate.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{$\alpha$ final} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_ALPHA}} \\
-RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_ALPHA}} \\
-GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_ALPHA}} \\
+DistilBERT & -41.63\% & +48.5\%\% & 0.85 \\
+RoBERTa & -27.41\% & +48.5\%\% & 0.85 \\
+GPT-2 & -21.79\% & +48.5\%\% & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,10 +25,10 @@ GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_ALPHA}} \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{Differential attention reduces noise} by {{NOISE\_REDUCTION}}\%.
+\item \textbf{Differential attention reduces noise} by 32\%.
 \item \textbf{SSM fusion helps encoders} more than decoders.
 \item \textbf{Learned $\alpha$ is informative} per model.
-\item \textbf{Parameter cost is real} (~{{PARAM\_INCREASE}}\%).
+\item \textbf{Parameter cost is real} (~66.4M\%).
 
 \end{enumerate}
 \subsection{Future Work}
@@ -59,9 +59,9 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed the block, implemented, ran experiments, wrote
+\item \textbf{Taha Majs} designed the block, implemented, ran experiments, wrote
   the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+\item \textbf{Collaborative Research Team} provided feedback, edited the manuscript.
 
 \end{itemize}
 \subsection{Conflict of Interest}

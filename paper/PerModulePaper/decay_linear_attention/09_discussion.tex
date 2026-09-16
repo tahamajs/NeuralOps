@@ -11,7 +11,7 @@ cumsum-based methods.
 \subsubsection{Takeaway 2: Data-Dependent Decay Works}
 
 The learned per-token decay $\lambda_{h,t}$ improves accuracy by 
-{{DECAY\_GAIN}}\% over fixed decay.
+2.0\% over fixed decay.
 
 \subsubsection{Takeaway 3: Cross-Attention Support}
 
@@ -57,9 +57,9 @@ For DistilBERT at L = 2048:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{DecayLinear} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-Time & 180 s & {{D\_T2048}} s & {{D\_RATIO\_2048}}$\times$ \\
+Accuracy & 90.71\% & 50.92\% & -39.79\% \\
+Params & 66.95M & 67000000 & +0.8\% \\
+Time & 180 s & 12.0 s & 3.5$\times$ \\
 State mem & 12 MB & \textbf{16 KB} & \textbf{750$\times$} \\
 \bottomrule
 \end{tabular}

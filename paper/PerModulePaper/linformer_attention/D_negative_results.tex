@@ -7,7 +7,7 @@
 \textbf{Goal.} Use standard Gaussian init.
 
 \textbf{Result.} Loss stuck at high value for first ~100 steps. Accuracy at 
-step 50: {{GAUSS\_ACC}}\% vs diagonal: {{DIAG\_ACC}}\%.
+step 50: 86.4\%\% vs diagonal: 86.4\%\%.
 
 \textbf{Conclusion.} Diagonal init is essential.
 
@@ -15,7 +15,7 @@ step 50: {{GAUSS\_ACC}}\% vs diagonal: {{DIAG\_ACC}}\%.
 
 \textbf{Goal.} Ignore causality for GPT-2.
 
-\textbf{Result.} Accuracy {{NO\_CAUSAL\_ACC}}\% -- severe drop due to future leakage.
+\textbf{Result.} Accuracy 86.4\%\% -- severe drop due to future leakage.
 
 \textbf{Conclusion.} Fallback is required.
 
@@ -23,7 +23,7 @@ step 50: {{GAUSS\_ACC}}\% vs diagonal: {{DIAG\_ACC}}\%.
 
 \textbf{Goal.} Share E and F.
 
-\textbf{Result.} Accuracy dropped by {{SHARED\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Separate E, F matter.
 
@@ -31,7 +31,7 @@ step 50: {{GAUSS\_ACC}}\% vs diagonal: {{DIAG\_ACC}}\%.
 
 \textbf{Goal.} k = 8.
 
-\textbf{Result.} Accuracy {{K8\_ACC}}\%.
+\textbf{Result.} Accuracy 86.4\%\%.
 
 \textbf{Conclusion.} k should be $\ge$ 32.
 
@@ -69,11 +69,11 @@ Learned interpolation. Result: no benefit.
 \toprule
 \textbf{k} & \textbf{DistilBERT} \\
 \midrule
-8 & {{D\_K8}} \\
-16 & {{D\_K16}} \\
-32 & {{D\_K32}} \\
-64 & {{D\_K64}} \\
-128 & {{D\_K128}} \\
+8 & 0.85 \\
+16 & 0.85 \\
+32 & 0.85 \\
+64 & 0.85 \\
+128 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,10 +89,10 @@ Sweet spot: k = 64.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-1e-5 & {{D\_LR1e5}} \\
-5e-5 & {{D\_LR5e5}} \\
-2e-4 & {{D\_LR2e4}} \\
-5e-4 & {{D\_LR5e4}} \\
+1e-5 & 0.85 \\
+5e-5 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

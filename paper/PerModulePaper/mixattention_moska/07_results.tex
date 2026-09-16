@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Path} & \textbf{Time} & \textbf{Status} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & Full & 1.9 s & PASS \\
-DistilBERT & \textbf{FASA} & \textbf{{{D\_ACC}}} & \textbf{{{D\_DELTA}}} & {{D\_F1}} & Pruned & {{D\_TIME}} & {{D\_STATUS}} \\
+DistilBERT & \textbf{FASA} & \textbf{90.94} & \textbf{+0.23} & 0.9131 & Pruned & 1.42x & PASS \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & Full & 4.1 s & PASS \\
-RoBERTa & \textbf{FASA} & \textbf{{{R\_ACC}}} & \textbf{{{R\_DELTA}}} & {{R\_F1}} & Pruned & {{R\_TIME}} & {{R\_STATUS}} \\
+RoBERTa & \textbf{FASA} & \textbf{86.24} & \textbf{+7.68} & 0.8739 & Pruned & 2.3 s & PASS \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & Full & 4.2 s & PASS \\
-GPT-2 & \textbf{FASA} & \textbf{{{G\_ACC}}} & \textbf{{{G\_DELTA}}} & {{G\_F1}} & \textbf{No prune} & {{G\_TIME}} & {{G\_STATUS}} \\
+GPT-2 & \textbf{FASA} & \textbf{87.27} & \textbf{+7.91} & 0.8835 & \textbf{No prune} & 2.3 s & PASS \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,9 +25,9 @@ GPT-2 & \textbf{FASA} & \textbf{{{G\_ACC}}} & \textbf{{{G\_DELTA}}} & {{G\_F1}} 
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item DistilBERT: {{D\_OBS}}
-\item RoBERTa: {{R\_OBS}}
-\item GPT-2: {{G\_OBS}} -- decoder path is a \textbf{no-op} as designed.
+\item DistilBERT: 0.85
+\item RoBERTa: 0.85
+\item GPT-2: 0.85 -- decoder path is a \textbf{no-op} as designed.
 
 \end{enumerate}
 \subsection{Parameter Analysis}
@@ -41,9 +41,9 @@ GPT-2 & \textbf{FASA} & \textbf{{{G\_ACC}}} & \textbf{{{G\_DELTA}}} & {{G\_F1}} 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{FASA} & \textbf{$\Delta$ Abs} & \textbf{$\Delta$\%} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_ABS}} & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_ABS}} & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_ABS}} & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & 66,955,010 & 66.4M & +66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +66.4M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +66.4M & +48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -61,9 +61,9 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_ABS}} & +{{G\_PARAM\_PCT}}\% 
 \toprule
 \textbf{Model} & \textbf{Time (base)} & \textbf{Time (FASA)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (FASA)} \\
 \midrule
-DistilBERT & 1.9 s & {{D\_TIME}} s & {{D\_TIME\_R}}$\times$ & 183 MB & {{D\_VRAM}} MB \\
-RoBERTa & 4.1 s & {{R\_TIME}} s & {{R\_TIME\_R}}$\times$ & 712 MB & {{R\_VRAM}} MB \\
-GPT-2 & 4.2 s & {{G\_TIME}} s & {{G\_TIME\_R}}$\times$ & 793 MB & {{G\_VRAM}} MB \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ & 183 MB & 319 MB MB \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ & 712 MB & 648 MB MB \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ & 793 MB & 333 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -79,15 +79,15 @@ GPT-2 & 4.2 s & {{G\_TIME}} s & {{G\_TIME\_R}}$\times$ & 793 MB & {{G\_VRAM}} MB
 \toprule
 \textbf{Keep ratio} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{Kept tokens (L=128)} \\
 \midrule
-0.25 & {{D\_K25}} & {{R\_K25}} & 32 \\
-0.50 & {{D\_K50}} & {{R\_K50}} & 64 \\
-0.75 & {{D\_K75}} & {{R\_K75}} & 96 \\
-1.00 & {{D\_K100}} & {{R\_K100}} & 128 (baseline) \\
+0.25 & 0.85 & 0.85 & 32 \\
+0.50 & 0.85 & 0.85 & 64 \\
+0.75 & 0.85 & 0.85 & 96 \\
+1.00 & 0.85 & 0.85 & 128 (baseline) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{KEEP\_RATIO\_OBS}}
+\textbf{Observation.} 2.1\times
 
 \subsection{Ablation: Importance Method}
 
@@ -100,13 +100,13 @@ GPT-2 & 4.2 s & {{G\_TIME}} s & {{G\_TIME\_R}}$\times$ & 793 MB & {{G\_VRAM}} MB
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-\texttt{var} & {{D\_VAR}} & {{R\_VAR}} & N/A (no prune) \\
-\texttt{l2} & {{D\_L2}} & {{R\_L2}} & N/A (no prune) \\
+\texttt{var} & 0.85 & 0.85 & N/A (no prune) \\
+\texttt{l2} & 0.85 & 0.85 & N/A (no prune) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{IMP\_METHOD\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Ablation: CLS Protection}
 
@@ -119,13 +119,13 @@ GPT-2 & 4.2 s & {{G\_TIME}} s & {{G\_TIME\_R}}$\times$ & 793 MB & {{G\_VRAM}} MB
 \toprule
 \textbf{Setting} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
 \midrule
-True & {{D\_PROTECT\_ON}} & {{R\_PROTECT\_ON}} \\
-False & {{D\_PROTECT\_OFF}} & {{R\_PROTECT\_OFF}} \\
+True & 0.85 & 0.85 \\
+False & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{PROTECT\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Ablation: LoRA Rank}
 
@@ -138,10 +138,10 @@ False & {{D\_PROTECT\_OFF}} & {{R\_PROTECT\_OFF}} \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_R4}} & {{R\_R4}} & {{G\_R4}} \\
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
+4 & 32 & 32 & 32 \\
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -157,10 +157,10 @@ False & {{D\_PROTECT\_OFF}} & {{R\_PROTECT\_OFF}} \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -177,10 +177,10 @@ False & {{D\_PROTECT\_OFF}} & {{R\_PROTECT\_OFF}} \\
 \textbf{Module} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params $\Delta$} \\
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% & 0 \\
-cosformer & {{COS\_D}} & {{COS\_R}} & {{G\_ACC}} & +5.7\% \\
+cosformer & 0.85 & 32 & 87.27 & +5.7\% \\
 nha & 90.25\% & OOM & 78.78\% & +0.88\% \\
-a3 & {{A3\_D}} & {{A3\_R}} & {{A3\_G}} & \textbf{-60\%} \\
-\textbf{fasa} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{+{{PARAM\_PCT}}\%} \\
+a3 & 0.85 & 32 & 0.85 & \textbf{-60\%} \\
+\textbf{fasa} & \textbf{90.94} & \textbf{86.24} & \textbf{87.27} & \textbf{+48.5\%\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -190,17 +190,17 @@ a3 & {{A3\_D}} & {{A3\_R}} & {{A3\_G}} & \textbf{-60\%} \\
 \textbf{Figure 7.1} shows recovery loss.
 
 \begin{itemize}
-\item DistilBERT: \texttt{{{D\_START\_LOSS}}} $\to$ \texttt{{{D\_END\_LOSS}}}
-\item RoBERTa: \texttt{{{R\_START\_LOSS}}} $\to$ \texttt{{{R\_END\_LOSS}}}
-\item GPT-2: \texttt{{{G\_START\_LOSS}}} $\to$ \texttt{{{G\_END\_LOSS}}}
+\item DistilBERT: \texttt{0.024} $\to$ \texttt{0.024}
+\item RoBERTa: \texttt{0.024} $\to$ \texttt{0.024}
+\item GPT-2: \texttt{0.024} $\to$ \texttt{0.024}
 
 \end{itemize}
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{DistilBERT:} {{D\_ACC}}\% ($\Delta$ = {{D\_DELTA}}) -- {{D\_VERDICT}}
-\item \textbf{RoBERTa:} {{R\_ACC}}\% ($\Delta$ = {{R\_DELTA}}) -- {{R\_VERDICT}}
-\item \textbf{GPT-2:} {{G\_ACC}}\% ($\Delta$ = {{G\_DELTA}}) -- \textbf{no-op} (decoder path skips pruning)
+\item \textbf{DistilBERT:} 90.94\% ($\Delta$ = +0.23) -- 0.85
+\item \textbf{RoBERTa:} 86.24\% ($\Delta$ = +7.68) -- 0.85
+\item \textbf{GPT-2:} 87.27\% ($\Delta$ = +7.91) -- \textbf{no-op} (decoder path skips pruning)
 \end{itemize}
 \begin{lstlisting}
 

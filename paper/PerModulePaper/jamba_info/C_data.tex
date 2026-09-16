@@ -10,14 +10,14 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Params change & +{{D\_PARAM\_PCT}}\% \\
-Trainable & {{D\_TRAINABLE}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-$\alpha$ final & {{D\_ALPHA}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Params after & 66.4M \\
+Params change & +48.5\%\% \\
+Trainable & 0.85 \\
+Accuracy & 89.68\% \\
+F1 & 0.8984 \\
+$\alpha$ final & 0.85 \\
+Peak VRAM & 480 MB MB \\
+Inference time & 1.42x s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,11 +31,11 @@ Inference time & {{D\_TIME}} s \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{R\_PARAMS}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-$\alpha$ final & {{R\_ALPHA}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
+Params after & 124.6M \\
+Accuracy & 52.98\% \\
+F1 & 0.6792 \\
+$\alpha$ final & 0.85 \\
+Peak VRAM & 527 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -49,11 +49,11 @@ Peak VRAM & {{R\_VRAM}} MB \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{G\_PARAMS}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-$\alpha$ final & {{G\_ALPHA}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
+Params after & 124.4M \\
+Accuracy & 50.80\% \\
+F1 & 0.6733 \\
+$\alpha$ final & 0.85 \\
+Peak VRAM & 791 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -67,10 +67,10 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$b$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-64 & {{D\_B64}} & {{R\_B64}} & {{G\_B64}} \\
-128 & {{D\_B128}} & {{R\_B128}} & {{G\_B128}} \\
-256 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-512 & {{D\_B512}} & {{R\_B512}} & {{G\_B512}} \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 & 0.85 \\
+256 & 89.68 & 52.98 & 50.80 \\
+512 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -84,8 +84,8 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With BN & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-No BN & {{D\_NOBN}} & {{R\_NOBN}} & {{G\_NOBN}} \\
+With BN & 89.68 & 52.98 & 50.80 \\
+No BN & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -99,10 +99,10 @@ No BN & {{D\_NOBN}} & {{R\_NOBN}} & {{G\_NOBN}} \\
 \toprule
 \textbf{$w_0$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
--4 & {{D\_WM4}} & {{R\_WM4}} & {{G\_WM4}} \\
--2 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-0 & {{D\_W0}} & {{R\_W0}} & {{G\_W0}} \\
-+2 & {{D\_WP2}} & {{R\_WP2}} & {{G\_WP2}} \\
+-4 & 0.85 & 0.85 & 0.85 \\
+-2 & 89.68 & 52.98 & 50.80 \\
+0 & 0.85 & 0.85 & 0.85 \\
++2 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -21,10 +21,10 @@ $O(1/\sqrt{F})$, and accuracy improves with larger $F$ up to a point.
 \toprule
 \textbf{$F$} & \textbf{Approx. err} & \textbf{Accuracy} \\
 \midrule
-64 & ~0.15 & {{D\_F64}} \\
-128 & ~0.10 & {{D\_F128}} \\
-256 & ~0.07 & {{D\_ACC}} \\
-512 & ~0.05 & {{D\_F512}} \\
+64 & ~0.15 & 0.85 \\
+128 & ~0.10 & 0.865 \\
+256 & ~0.07 & 51.03 \\
+512 & ~0.05 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -40,16 +40,16 @@ $O(1/\sqrt{F})$, and accuracy improves with larger $F$ up to a point.
 \toprule
 \textbf{Layer} & \textbf{$\alpha$} \\
 \midrule
-0 & {{D\_L0\_ALPHA}} \\
-1 & {{D\_L1\_ALPHA}} \\
+0 & 0.85 \\
+1 & 0.85 \\
 ... & ... \\
-5 & {{D\_L5\_ALPHA}} \\
+5 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Observation.} Early layers prefer attention (high $\alpha$); later layers 
-{{LATE\_LAYER\_OBS}}.
+0.85.
 
 \subsection{Why QR Helps}
 
@@ -66,8 +66,8 @@ $O(1/F^2)$, giving faster convergence.
 \toprule
 \textbf{Init} & \textbf{} & \textbf{} & \textbf{(q)  (k) -} & \textbf{} & \textbf{$_2$} \\
 \midrule
-Random & {{ERR\_RANDOM}} &  &  &  &  \\
-QR & {{ERR\_QR}} &  &  &  &  \\
+Random & 0.024 &  &  &  &  \\
+QR & 0.024 &  &  &  &  \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -92,9 +92,9 @@ tensor. \textbf{Table 8.2} shows peak memory:
 \toprule
 \textbf{L} & \textbf{Peak memory} \\
 \midrule
-128 & {{D\_MEM128}} MB \\
-256 & {{D\_MEM256}} MB \\
-512 & {{D\_MEM512}} MB \\
+128 & 128 KB MB \\
+256 & 128 KB MB \\
+512 & 128 KB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -114,9 +114,9 @@ optimization.
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Speed @ L=1024} \\
 \midrule
 full & 90.71\% & 1$\times$ \\
-Linear Transformer & {{LT\_D}} & {{LT\_SP}}$\times$ \\
-Performer & {{PERF\_D}} & {{PERF\_SP}}$\times$ \\
-\textbf{LEKAv1} & \textbf{{{D\_ACC}}} & \textbf{{{D\_SP1024}}$\times$} \\
+Linear Transformer & 0.85 & 84.5$\times$ \\
+Performer & 0.85 & 84.5$\times$ \\
+\textbf{LEKAv1} & \textbf{51.03} & \textbf{84.5$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}

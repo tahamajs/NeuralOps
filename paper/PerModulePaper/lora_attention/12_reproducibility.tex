@@ -91,9 +91,9 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Trainable} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & {{D\_TRAINABLE}} \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & {{R\_TRAINABLE}} \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_TRAINABLE}} \\
+DistilBERT & 89.91\% $\pm$ 1\% & 0.85 \\
+RoBERTa & 58.03\% $\pm$ 1\% & 0.85 \\
+GPT-2 & 51.26\% $\pm$ 1\% & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,7 +102,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_TRAINABLE}} \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-lora\_attention}
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-lora\_attention}
 \item \textbf{Metrics:} \texttt{results/unified\_lora\_attention/*/summary.csv}
 \end{itemize}
 \begin{lstlisting}

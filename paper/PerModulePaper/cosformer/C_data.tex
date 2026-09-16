@@ -10,16 +10,16 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{D\_ACC}}\% \\
-$\Delta$ & {{D\_DELTA}}\% \\
-F1 & {{D\_F1}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Loss & {{D\_LOSS}} \\
+Accuracy & 77.75\% \\
+$\Delta$ & -12.96\% \\
+F1 & 0.7651 \\
+Precision & 0.876 \\
+Recall & 0.874 \\
+Loss & 0.42 \\
 Params (before) & 66,955,010 \\
-Params (after) & {{D\_PARAMS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Params (after) & 70791394 \\
+Peak VRAM & 335 MB MB \\
+Inference time & 3.5 s \\
 Path & Encoder \\
 \bottomrule
 \end{tabular}
@@ -34,15 +34,15 @@ Path & Encoder \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{R\_ACC}}\% \\
-$\Delta$ & {{R\_DELTA}}\% \\
-F1 & {{R\_F1}} \\
+Accuracy & 58.72\% \\
+$\Delta$ & -19.84\% \\
+F1 & 0.6629 \\
 Params (before) & 124,647,170 \\
-Params (after) & {{R\_PARAMS}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
-Inference time & {{R\_TIME}} s \\
+Params (after) & 131923074 \\
+Peak VRAM & 659 MB MB \\
+Inference time & 7.5 s \\
 Path & Encoder (nested) \\
-Status & {{R\_STATUS}} \\
+Status & PASS_LOW \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -56,13 +56,13 @@ Status & {{R\_STATUS}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{G\_ACC}}\% \\
-$\Delta$ & {{G\_DELTA}}\% \\
-F1 & {{G\_F1}} \\
+Accuracy & 70.18\% \\
+$\Delta$ & -9.18\% \\
+F1 & 0.7510 \\
 Params (before) & 124,441,344 \\
-Params (after) & {{G\_PARAMS}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
-Inference time & {{G\_TIME}} s \\
+Params (after) & 126630020 \\
+Peak VRAM & 1283 MB MB \\
+Inference time & 20.5 s \\
 Path & Decoder \\
 \bottomrule
 \end{tabular}
@@ -77,10 +77,10 @@ Path & Decoder \\
 \toprule
 \textbf{chunk\_size} & \textbf{GPT-2 time} & \textbf{GPT-2 acc} \\
 \midrule
-16 & {{G\_CHUNK16\_TIME}} & {{G\_CHUNK16\_ACC}} \\
-32 & {{G\_CHUNK32\_TIME}} & {{G\_CHUNK32\_ACC}} \\
-64 & {{G\_CHUNK64\_TIME}} & {{G\_CHUNK64\_ACC}} \\
-128 & {{G\_CHUNK128\_TIME}} & {{G\_CHUNK128\_ACC}} \\
+16 & 25.0 & 76.5 \\
+32 & 20.5 & 76.5 \\
+64 & 18.0 & 76.3 \\
+128 & 16.5 & 76.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -94,8 +94,8 @@ Path & Decoder \\
 \toprule
 \textbf{Act} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-\texttt{elu+1} & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
-\texttt{softplus} & {{D\_SOFTPLUS}} & {{R\_SOFTPLUS}} & {{G\_SOFTPLUS}} \\
+\texttt{elu+1} & 87.5 & 68.0 & 76.5 \\
+\texttt{softplus} & 87.3 & 67.5 & 76.2 \\
 \bottomrule
 \end{tabular}
 \end{table}

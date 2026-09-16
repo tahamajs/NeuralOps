@@ -59,10 +59,10 @@ For DistilBERT on RTX 4070 (SDPA path):
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Wrapper} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Params & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
-Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
-VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & 89.91\% & -0.80\% \\
+Params & 66.9M & 66.4MM & +-32MM \\
+Time & 1.90 s & 1.42x s & 2.1\times$\times$ \\
+VRAM & 183 MB & 317 MB MB & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -108,7 +108,7 @@ TensorRT & NVIDIA & Yes & No \\
 
 \end{itemize}
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~12.4 kg CO$_2$eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
 \begin{lstlisting}
 
 ---

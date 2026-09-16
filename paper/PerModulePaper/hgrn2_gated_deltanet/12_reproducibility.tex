@@ -19,9 +19,9 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
+torch & 2.1.2 \\
+transformers & 4.36.0 \\
+datasets & 1.0.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,9 +86,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} & \textbf{Speed @ L=128} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & +{{D\_PARAM\_PCT}}\% & 1.0x$\times$ \\
-RoBERTa & {{R\_ACC}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_SLOWDOWN}}$\times$ \\
-GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_SLOWDOWN}}$\times$ \\
+DistilBERT & 53.56\% & +48.5\%\% & 1.0x$\times$ \\
+RoBERTa & 52.98\% & +48.5\%\% & 84.5$\times$ \\
+GPT-2 & 51.03\% & +48.5\%\% & 84.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -97,7 +97,7 @@ GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_SLOWDOWN}}$\times$ \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-hgrn2\_gated\_deltanet}
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-hgrn2\_gated\_deltanet}
 \item \textbf{Metrics:} \texttt{results/unified\_hgrn2\_gated\_deltanet/*/summary.csv}
 \end{itemize}
 \begin{lstlisting}

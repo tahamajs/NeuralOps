@@ -19,9 +19,9 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,9 +89,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Attention ratio} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & {{D\_RATIO}}$\times$ \\
-RoBERTa & {{R\_ACC}}\% & {{R\_RATIO}}$\times$ \\
-GPT-2 & {{G\_ACC}}\% & {{G\_RATIO}}$\times$ \\
+DistilBERT & 81.31\% & 1.92$\times$ \\
+RoBERTa & 50.92\% & 1.92$\times$ \\
+GPT-2 & 50.92\% & 1.92$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -100,7 +100,7 @@ GPT-2 & {{G\_ACC}}\% & {{G\_RATIO}}$\times$ \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}.
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-soa\_fused}.
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-soa\_fused}.
 \item \textbf{Metrics:} \texttt{results/unified\_soa\_fused/*/summary.csv}.
 \item \textbf{No calibration data required.}
 

@@ -94,14 +94,14 @@ input, controlled by a scalar $\alpha = \sigma(w)$:
 
 with $w_0 = 2$ (initial $\alpha \approx 0.88$).
 
-On SST-2, LEKAv1 achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
-{{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and 
-\textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%). Inference scales linearly 
-in sequence length: at $L = LONG_L$, LEKAv1 is \textbf{{{SPEEDUP\_LONG}}$\times$} 
+On SST-2, LEKAv1 achieves \textbf{51.03\%} on DistilBERT (baseline 
+0.85\%), \textbf{50.92\%} on RoBERTa (baseline 32\%), and 
+\textbf{49.31\%} on GPT-2 (baseline 0.85\%). Inference scales linearly 
+in sequence length: at $L = LONG_L$, LEKAv1 is \textbf{0.85$\times$} 
 faster than standard attention.
 
 \textbf{We are explicit that LEKAv1 does not reduce parameter count.} It adds 
-approximately {{PARAM\_INCREASE}}\% parameters due to LoRA, the projection 
+approximately 66.4M\% parameters due to LoRA, the projection 
 matrix, and the preservation gate. Its benefit is **$\mathcal{O}(L)$ 
 inference\textbf{ and }kernel-based attention** that composes with GQA and 
 RoPE.

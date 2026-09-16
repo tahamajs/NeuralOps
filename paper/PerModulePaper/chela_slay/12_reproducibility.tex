@@ -19,9 +19,9 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -88,9 +88,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} & \textbf{Time Ratio} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_TIME\_RATIO}}$\times$ \\
-RoBERTa & {{R\_ACC}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_TIME\_RATIO}}$\times$ \\
-GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_RATIO}}$\times$ \\
+DistilBERT & 89.91\% & +0.8\% & 2.2$\times$ \\
+RoBERTa & 83.83\% & +0.8\% & 2.2$\times$ \\
+GPT-2 & 85.89\% & +0.8\% & 2.3$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -99,7 +99,7 @@ GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_RATIO}}$\times$ \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}.
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-chela\_slay}.
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-chela\_slay}.
 \item \textbf{Metrics:} \texttt{results/unified\_chela\_slay/*/summary.csv}.
 
 \end{itemize}

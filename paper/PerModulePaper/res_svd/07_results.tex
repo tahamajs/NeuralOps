@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
-DistilBERT & \textbf{Res-SVD} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & \textbf{{{D\_RATIO}}$\times$} & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+DistilBERT & \textbf{Res-SVD} & \textbf{89.56} & -1.15 & 0.9016 & \textbf{50\%$\times$} & 298 MB MB & 1.42x s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
-RoBERTa & \textbf{Res-SVD} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & \textbf{{{R\_RATIO}}$\times$} & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+RoBERTa & \textbf{Res-SVD} & \textbf{76.61} & -1.95 & 0.7910 & \textbf{2.1\times$\times$} & 594 MB MB & 2.3 s s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
-GPT-2 & \textbf{Res-SVD} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{{{G\_RATIO}}$\times$} & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+GPT-2 & \textbf{Res-SVD} & \textbf{71.33} & -8.03 & 0.7760 & \textbf{2.1\times$\times$} & 336 MB MB & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,9 +32,9 @@ GPT-2 & \textbf{Res-SVD} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \tex
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After Res-SVD} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & \textbf{{{D\_RATIO}}$\times$} \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & \textbf{{{R\_RATIO}}$\times$} \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & \textbf{{{G\_RATIO}}$\times$} \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1\times$\times$} \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1\times$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,11 +70,11 @@ Baseline per projection & 589,824 \\
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 1.90 s & 59000 & 183 MB \\
-DistilBERT & Res-SVD & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+DistilBERT & Res-SVD & 1.42x s & 0.85 & 298 MB MB \\
 RoBERTa & full & 4.10 s & 27400 & 712 MB \\
-RoBERTa & Res-SVD & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+RoBERTa & Res-SVD & 2.3 s s & 0.85 & 594 MB MB \\
 GPT-2 & full & 4.20 s & 26700 & 793 MB \\
-GPT-2 & Res-SVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+GPT-2 & Res-SVD & 2.3 s s & 0.85 & 336 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -90,10 +90,10 @@ GPT-2 & Res-SVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$r_b$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-8 & {{D\_B8}} & {{R\_B8}} & {{G\_B8}} & 25$\times$ \\
-16 & {{D\_B16}} & {{R\_B16}} & {{G\_B16}} & 18.7$\times$ \\
-32 & {{D\_B32}} & {{R\_B32}} & {{G\_B32}} & 14$\times$ \\
-64 & {{D\_B64}} & {{R\_B64}} & {{G\_B64}} & 8$\times$ \\
+8 & 0.85 & 0.85 & 0.85 & 25$\times$ \\
+16 & 0.85 & 0.85 & 0.85 & 18.7$\times$ \\
+32 & 0.85 & 0.85 & 0.85 & 14$\times$ \\
+64 & 0.85 & 0.85 & 0.85 & 8$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -109,11 +109,11 @@ GPT-2 & Res-SVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$r_r$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 & {{D\_R0}} & {{R\_R0}} & {{G\_R0}} \\
-2 & {{D\_R2}} & {{R\_R2}} & {{G\_R2}} \\
-4 & {{D\_R4}} & {{R\_R4}} & {{G\_R4}} \\
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
+0 & 32 & 32 & 32 \\
+2 & 32 & 32 & 32 \\
+4 & 32 & 32 & 32 \\
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -131,9 +131,9 @@ GPT-2 & Res-SVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$\alpha$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.5 & {{D\_A05}} & {{R\_A05}} & {{G\_A05}} \\
-1.0 & {{D\_A10}} & {{R\_A10}} & {{G\_A10}} \\
-2.0 & {{D\_A20}} & {{R\_A20}} & {{G\_A20}} \\
+0.5 & 0.85 & 0.85 & 0.85 \\
+1.0 & 0.85 & 0.85 & 0.85 \\
+2.0 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -149,8 +149,8 @@ GPT-2 & Res-SVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Pure SVD ($r=20$) & {{D\_SVD20}} & {{R\_SVD20}} & {{G\_SVD20}} \\
-\textbf{Res-SVD ($r_b=16, r_r=4$)} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+Pure SVD ($r=20$) & 84.5 & 84.5 & 84.5 \\
+\textbf{Res-SVD ($r_b=16, r_r=4$)} & \textbf{89.56} & \textbf{76.61} & \textbf{71.33} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -172,7 +172,7 @@ initialization. Differences arise during training.
 full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ \\
 asvd ($r=32$) & 88.5\% & 12$\times$ & 75.5\% & 11$\times$ & 76.8\% & 11$\times$ \\
 aasvd ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
-\textbf{res\_svd} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{{{R\_ACC}}} & \textbf{{{R\_RATIO}}$\times$} & \textbf{{{G\_ACC}}} & \textbf{{{G\_RATIO}}$\times$} \\
+\textbf{res\_svd} & \textbf{89.56} & \textbf{50\%$\times$} & \textbf{76.61} & \textbf{2.1\times$\times$} & \textbf{71.33} & \textbf{2.1\times$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}

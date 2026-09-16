@@ -70,9 +70,9 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
+DistilBERT & 83.72\% $\pm$ 1\% \\
+RoBERTa & 86.47\% $\pm$ 1\% \\
+GPT-2 & 69.50\% $\pm$ 1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,7 +81,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-aegis\_v5}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-aegis\_v5}
 \item \textbf{Metrics:} \texttt{results/unified\_aegis\_v5/*/summary.csv}
 \end{itemize}
 \begin{lstlisting}

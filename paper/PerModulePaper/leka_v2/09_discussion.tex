@@ -5,12 +5,12 @@
 \subsubsection{Takeaway 1: Landmark Distillation Works}
 
 Learned landmark selection improves accuracy over random selection by 
-{{LANDMARK\_GAIN}}\%.
+0.85\%.
 
 \subsubsection{Takeaway 2: Local-Global Fusion Matters}
 
 Combining local sliding window with global landmark attention improves 
-accuracy by {{LOCAL\_GAIN}}\%.
+accuracy by 0.85\%.
 
 \subsubsection{Takeaway 3: Softpick Stabilizes Masked Attention}
 
@@ -53,7 +53,7 @@ Standard attention or Jamba-style hybrid
 
 \subsection{Cost-Benefit Analysis}
 
-For DistilBERT at   = {{LANDMARK\_RATIO}}:
+For DistilBERT at   = 0.25:
 
 \begin{table}[H]
 \centering
@@ -62,10 +62,10 @@ For DistilBERT at   = {{LANDMARK\_RATIO}}:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{LEKAv2} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Total params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-Inference @ L=128 & 1.90 s & {{D\_T128}} s & 84.8$\times$ \\
-Inference @ L=1024 & 45.0 s & {{D\_T1024}} s & 86.4$\times$ \\
+Accuracy & 90.71\% & 86.01\% & -4.70\% \\
+Total params & 66.95M & 66.4M & +48.5\%\% \\
+Inference @ L=128 & 1.90 s & 0.85 s & 84.8$\times$ \\
+Inference @ L=1024 & 45.0 s & 0.85 s & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

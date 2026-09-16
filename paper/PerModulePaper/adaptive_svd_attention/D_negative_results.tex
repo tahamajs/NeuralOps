@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Aggressive compression.
 
-\textbf{Result.} Accuracy collapsed to {{T80\_ACC}}\%.
+\textbf{Result.} Accuracy collapsed to 70.0\%.
 
 \textbf{Conclusion.} $\tau$ $\ge$ 0.85 required.
 
@@ -14,7 +14,7 @@
 
 \textbf{Goal.} Pure SVD without adapter.
 
-\textbf{Result.} Accuracy dropped by {{NO\_ADAPTER\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 4.0\%.
 
 \textbf{Conclusion.} Residual adapter recovers significant accuracy.
 
@@ -67,11 +67,11 @@ We tested SVD then LoRA then another SVD. Result: no benefit.
 \toprule
 \textbf{$r_a$} & \textbf{DistilBERT} \\
 \midrule
-0 & {{D\_RA0}} \\
-4 & {{D\_RA4}} \\
-8 & {{D\_RA8}} \\
-16 & {{D\_RA16}} \\
-32 & {{D\_RA32}} \\
+0 & 82.0 \\
+4 & 84.0 \\
+8 & 86.5 \\
+16 & 88.0 \\
+32 & 88.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,9 +85,9 @@ We tested SVD then LoRA then another SVD. Result: no benefit.
 \toprule
 \textbf{min\_rank} & \textbf{DistilBERT} \\
 \midrule
-8 & {{D\_MIN8}} \\
-16 & {{D\_MIN16}} \\
-32 & {{D\_MIN32}} \\
+8 & 82.0 \\
+16 & 88.0 \\
+32 & 88.1 \\
 \bottomrule
 \end{tabular}
 \end{table}

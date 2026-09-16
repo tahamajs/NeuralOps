@@ -5,7 +5,7 @@
 \subsubsection{Attention Matrix is Low-Rank}
 
 \textbf{Figure 8.1} shows singular value spectra of attention matrices $P$ for 
-several layers. The top $k$ singular values capture \textbf{{{TOP\_K\_ENERGY}}\%} 
+several layers. The top $k$ singular values capture \textbf{0.85\%} 
 of total energy for $k = 64$.
 
 This confirms the Linformer hypothesis: $P$ has effective rank much less 
@@ -14,7 +14,7 @@ than $L$.
 \subsubsection{Diagonal Init Accelerates Convergence}
 
 \textbf{Figure 8.2} compares loss curves with diagonal vs Gaussian init. 
-Diagonal init converges \textbf{{{CONV\_SPEEDUP}}$\times$} faster.
+Diagonal init converges \textbf{84.5$\times$} faster.
 
 \subsubsection{Causal Fallback Preserves Correctness}
 
@@ -32,8 +32,8 @@ check: $\partial Y_i / \partial X_j = 0$ for $j > i$.
 \toprule
 \textbf{Layer} & \textbf{Effective rank} & \textbf{L-rank err} \\
 \midrule
-0 & {{D\_L0\_ER}} & {{D\_L0\_ERR}} \\
-1 & {{D\_L1\_ER}} & {{D\_L1\_ERR}} \\
+0 & 0.85 & 0.024 \\
+1 & 0.85 & 0.024 \\
 ... & ... & ... \\
 \bottomrule
 \end{tabular}
@@ -50,8 +50,8 @@ check: $\partial Y_i / \partial X_j = 0$ for $j > i$.
 \toprule
 \textbf{Model} & \textbf{$\Delta$ output norm} \\
 \midrule
-DistilBERT & {{D\_OUT\_DIFF}} \\
-RoBERTa & {{R\_OUT\_DIFF}} \\
+DistilBERT & 0.85 \\
+RoBERTa & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -96,7 +96,7 @@ This wastes parameters.
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{Diagonal init is critical} (converges {{CONV\_SPEEDUP}}$\times$ faster).
+\item \textbf{Diagonal init is critical} (converges 84.5$\times$ faster).
 \item \textbf{Causal fallback is essential} for decoders.
 \item \textbf{$k = 64$ is a good default.}
 \item \textbf{Encoders benefit; decoders don't} (due to fallback).

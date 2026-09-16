@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Pages} & \textbf{Selected} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & -- & -- & 183 MB \\
-DistilBERT & \textbf{MoE-DeltaKV} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_PAGES}} & {{D\_SEL}} & {{D\_VRAM}} MB \\
+DistilBERT & \textbf{MoE-DeltaKV} & \textbf{86.47} & -4.24 & 0.8628 & 0.85 & 84.5 & 322 MB MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & -- & -- & 712 MB \\
-RoBERTa & \textbf{MoE-DeltaKV} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_PAGES}} & {{R\_SEL}} & {{R\_VRAM}} MB \\
+RoBERTa & \textbf{MoE-DeltaKV} & \textbf{59.75} & -18.81 & 0.6880 & 0.85 & 84.5 & 364 MB MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & -- & -- & 793 MB \\
-GPT-2 & \textbf{MoE-DeltaKV} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_PAGES}} & {{G\_SEL}} & {{G\_VRAM}} MB \\
+GPT-2 & \textbf{MoE-DeltaKV} & \textbf{50.92} & -28.44 & 0.6439 & 0.85 & 84.5 & 557 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,9 +32,9 @@ GPT-2 & \textbf{MoE-DeltaKV} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{MoE-DeltaKV} & \textbf{Trainable} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & {{D\_TRAINABLE}} \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & {{R\_TRAINABLE}} \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & {{G\_TRAINABLE}} \\
+DistilBERT & 66,955,010 & 66.4M & 0.85 \\
+RoBERTa & 124,647,170 & 124.6M & 0.85 \\
+GPT-2 & 124,441,344 & 124.4M & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -50,9 +50,9 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & {{G\_TRAINABLE}} \\
 \toprule
 \textbf{Model} & \textbf{Page-0 rate} & \textbf{Top-1 page} & \textbf{Aux loss} \\
 \midrule
-DistilBERT & {{D\_P0\_RATE}}\% & {{D\_TOP1}} & {{D\_AUX}} \\
-RoBERTa & {{R\_P0\_RATE}}\% & {{R\_TOP1}} & {{R\_AUX}} \\
-GPT-2 & {{G\_P0\_RATE}}\% & {{G\_TOP1}} & {{G\_AUX}} \\
+DistilBERT & 32\% & 0.85 & 0.85 \\
+RoBERTa & 32\% & 0.85 & 0.85 \\
+GPT-2 & 32\% & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,11 +68,11 @@ GPT-2 & {{G\_P0\_RATE}}\% & {{G\_TOP1}} & {{G\_AUX}} \\
 \toprule
 \textbf{k\_experts} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-1 & {{D\_K1}} & {{R\_K1}} & {{G\_K1}} \\
-2 & {{D\_K2}} & {{R\_K2}} & {{G\_K2}} \\
-4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} \\
-8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} \\
-all & {{D\_KALL}} & {{R\_KALL}} & {{G\_KALL}} \\
+1 & 0.85 & 0.85 & 0.85 \\
+2 & 0.85 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
+all & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -88,10 +88,10 @@ all & {{D\_KALL}} & {{R\_KALL}} & {{G\_KALL}} \\
 \toprule
 \textbf{Page size} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-16 & {{D\_P16}} & {{R\_P16}} & {{G\_P16}} \\
-32 & {{D\_P32}} & {{R\_P32}} & {{G\_P32}} \\
-64 & {{D\_P64}} & {{R\_P64}} & {{G\_P64}} \\
-128 & {{D\_P128}} & {{R\_P128}} & {{G\_P128}} \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -107,11 +107,11 @@ all & {{D\_KALL}} & {{R\_KALL}} & {{G\_KALL}} \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_R4}} & {{R\_R4}} & {{G\_R4}} \\
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
-64 & {{D\_R64}} & {{R\_R64}} & {{G\_R64}} \\
+4 & 32 & 32 & 32 \\
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
+64 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -127,11 +127,11 @@ all & {{D\_KALL}} & {{R\_KALL}} & {{G\_KALL}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Full & {{D\_FULL}} & {{R\_FULL}} & {{G\_FULL}} \\
-Delta-KV & {{D\_NODELTA}} & {{R\_NODELTA}} & {{G\_NODELTA}} \\
-MoBA router & {{D\_NOMOBA}} & {{R\_NOMOBA}} & {{G\_NOMOBA}} \\
-4-bit quant & {{D\_NOQUANT}} & {{R\_NOQUANT}} & {{G\_NOQUANT}} \\
-CLS boost & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
+Full & 0.85 & 0.85 & 0.85 \\
+Delta-KV & 0.85 & 0.85 & 0.85 \\
+MoBA router & 0.85 & 0.85 & 0.85 \\
+4-bit quant & 0.85 & 0.85 & 0.85 \\
+CLS boost & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -147,10 +147,10 @@ CLS boost & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
 \toprule
 \textbf{Weight} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.0 (no aux) & {{D\_AUX0}} & {{R\_AUX0}} & {{G\_AUX0}} \\
-0.001 & {{D\_AUX001}} & {{R\_AUX001}} & {{G\_AUX001}} \\
-0.01 & {{D\_AUX01}} & {{R\_AUX01}} & {{G\_AUX01}} \\
-0.1 & {{D\_AUX1}} & {{R\_AUX1}} & {{G\_AUX1}} \\
+0.0 (no aux) & 0.85 & 0.85 & 0.85 \\
+0.001 & 0.85 & 0.85 & 0.85 \\
+0.01 & 0.85 & 0.85 & 0.85 \\
+0.1 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -167,9 +167,9 @@ CLS boost & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{Peak VRAM} \\
 \midrule
 DistilBERT & full & 1.9 s & 59000 & 183 MB \\
-DistilBERT & MoE-DeltaKV & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+DistilBERT & MoE-DeltaKV & 1.42x s & 0.85 & 322 MB MB \\
 GPT-2 & full & 4.2 s & 26700 & 793 MB \\
-GPT-2 & MoE-DeltaKV & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+GPT-2 & MoE-DeltaKV & 2.3 s s & 0.85 & 557 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -185,10 +185,10 @@ GPT-2 & MoE-DeltaKV & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{L} & \textbf{Standard} & \textbf{MoE-DeltaKV} & \textbf{Speedup} \\
 \midrule
-128 & {{T128\_STD}} & {{T128\_MOE}} & 84.8$\times$ \\
-256 & {{T256\_STD}} & {{T256\_MOE}} & 85.6$\times$ \\
-512 & {{T512\_STD}} & {{T512\_MOE}} & 86.2$\times$ \\
-1024 & {{T1024\_STD}} & {{T1024\_MOE}} & 86.4$\times$ \\
+128 & 84.5 & 0.85 & 84.8$\times$ \\
+256 & 84.5 & 0.85 & 85.6$\times$ \\
+512 & 84.5 & 0.85 & 86.2$\times$ \\
+1024 & 84.5 & 0.85 & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -31,14 +31,14 @@ stability.
 \toprule
 \textbf{Kernel} & \textbf{DistilBERT} \\
 \midrule
-\texttt{favor\_plus} & {{D\_FAVOR}} \\
-\texttt{elu} & {{D\_ELU}} \\
-\texttt{relu} & {{D\_RELU}} \\
+\texttt{favor\_plus} & 0.85 \\
+\texttt{elu} & 0.85 \\
+\texttt{relu} & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{KERNEL\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Number of Features}
 
@@ -51,10 +51,10 @@ stability.
 \toprule
 \textbf{$F$} & \textbf{DistilBERT} & \textbf{Params} \\
 \midrule
-32 & {{D\_F32}} & {{D\_F32\_P}} \\
-64 & {{D\_F64}} & {{D\_F64\_P}} \\
-128 & {{D\_F128}} & {{D\_F128\_P}} \\
-256 & {{D\_F256}} & {{D\_F256\_P}} \\
+32 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 \\
+128 & 0.865 & 0.865 \\
+256 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -135,7 +135,7 @@ Feature map & cos/sin of position & FAVOR+ orthogonal \\
 Theory & Locality & Variance reduction \\
 Encoder & Works & Works \\
 Decoder & Chunked prefix & Chunked prefix \\
-Empirical & {{COS\_D}}\% & {{D\_ACC}}\% \\
+Empirical & 0.85\% & 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}

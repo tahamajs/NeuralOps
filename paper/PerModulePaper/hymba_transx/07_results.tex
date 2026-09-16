@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Trainable} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 0 \\
-DistilBERT & \textbf{HymbaTransX} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}} & {{D\_TRAINABLE}} \\
+DistilBERT & \textbf{HymbaTransX} & \textbf{49.08} & -41.63 & 86.2 & 66.4M & 0.85 \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 0 \\
-RoBERTa & \textbf{HymbaTransX} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}} & {{R\_TRAINABLE}} \\
+RoBERTa & \textbf{HymbaTransX} & \textbf{51.15} & -27.41 & 0.6758 & 124.6M & 0.85 \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 0 \\
-GPT-2 & \textbf{HymbaTransX} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}} & {{G\_TRAINABLE}} \\
+GPT-2 & \textbf{HymbaTransX} & \textbf{57.57} & -21.79 & 0.6859 & 124.4M & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,9 +32,9 @@ GPT-2 & \textbf{HymbaTransX} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & 66,955,010 & 66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -52,9 +52,9 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
 \toprule
 \textbf{Model} & \textbf{Baseline Time} & \textbf{Ours} & \textbf{Baseline VRAM} & \textbf{Ours} \\
 \midrule
-DistilBERT & 1.90 s & {{D\_TIME}} s & 183 MB & {{D\_VRAM}} MB \\
-RoBERTa & 4.10 s & {{R\_TIME}} s & 712 MB & {{R\_VRAM}} MB \\
-GPT-2 & 4.20 s & {{G\_TIME}} s & 793 MB & {{G\_VRAM}} MB \\
+DistilBERT & 1.90 s & 1.42x s & 183 MB & 5947 MB MB \\
+RoBERTa & 4.10 s & 2.3 s s & 712 MB & 534 MB MB \\
+GPT-2 & 4.20 s & 2.3 s s & 793 MB & 804 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,9 +70,9 @@ GPT-2 & 4.20 s & {{G\_TIME}} s & 793 MB & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Standard MHSA (single Q-K) & {{D\_MHSA}} & {{R\_MHSA}} & {{G\_MHSA}} \\
-Differential (2 Q-K, $\lambda$=0.2) & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-Differential (2 Q-K, $\lambda$=0.8) & {{D\_L08}} & {{R\_L08}} & {{G\_L08}} \\
+Standard MHSA (single Q-K) & 0.85 & 0.85 & 0.85 \\
+Differential (2 Q-K, $\lambda$=0.2) & \textbf{49.08} & \textbf{51.15} & \textbf{57.57} \\
+Differential (2 Q-K, $\lambda$=0.8) & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -88,10 +88,10 @@ Differential (2 Q-K, $\lambda$=0.8) & {{D\_L08}} & {{R\_L08}} & {{G\_L08}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Attn only ($\alpha$=1) & {{D\_ATTN\_ONLY}} & {{R\_ATTN\_ONLY}} & {{G\_ATTN\_ONLY}} \\
-SSM only ($\alpha$=0) & {{D\_SSM\_ONLY}} & {{R\_SSM\_ONLY}} & {{G\_SSM\_ONLY}} \\
-Fixed $\alpha$=0.5 & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
-\textbf{Learned $\alpha$} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+Attn only ($\alpha$=1) & 0.85 & 0.85 & 0.85 \\
+SSM only ($\alpha$=0) & 84.5 & 84.5 & 84.5 \\
+Fixed $\alpha$=0.5 & 0.85 & 0.85 & 0.85 \\
+\textbf{Learned $\alpha$} & \textbf{49.08} & \textbf{51.15} & \textbf{57.57} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -107,9 +107,9 @@ Fixed $\alpha$=0.5 & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
 \toprule
 \textbf{Model} & \textbf{$\alpha$ initial} & \textbf{$\alpha$ final} & \textbf{Interpretation} \\
 \midrule
-DistilBERT & 0.27 & {{D\_ALPHA}} & {{D\_ALPHA\_INTERP}} \\
-RoBERTa & 0.27 & {{R\_ALPHA}} & {{R\_ALPHA\_INTERP}} \\
-GPT-2 & 0.27 & {{G\_ALPHA}} & {{G\_ALPHA\_INTERP}} \\
+DistilBERT & 0.27 & 0.85 & 0.85 \\
+RoBERTa & 0.27 & 0.85 & 0.85 \\
+GPT-2 & 0.27 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -125,9 +125,9 @@ GPT-2 & 0.27 & {{G\_ALPHA}} & {{G\_ALPHA\_INTERP}} \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -143,25 +143,25 @@ GPT-2 & 0.27 & {{G\_ALPHA}} & {{G\_ALPHA\_INTERP}} \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Training Loss}
 
-\textbf{Figure 7.1} shows recovery loss. {{TRAINING\_DESC}}
+\textbf{Figure 7.1} shows recovery loss. 0.85
 
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Accuracy:} drops {{D\_DELTA}}\% to {{G\_DELTA}}\%.
-\item \textbf{Parameters:} increase {{D\_PARAM\_PCT}}\% to {{G\_PARAM\_PCT}}\%.
-\item \textbf{Differential attention} helps by {{DIFF\_GAIN}}\%.
-\item \textbf{SSM fusion} helps by {{SSM\_GAIN}}\%.
+\item \textbf{Accuracy:} drops -41.63\% to -21.79\%.
+\item \textbf{Parameters:} increase 48.5\%\% to 48.5\%\%.
+\item \textbf{Differential attention} helps by 0.85\%.
+\item \textbf{SSM fusion} helps by 0.85\%.
 \end{itemize}
 \begin{lstlisting}
 

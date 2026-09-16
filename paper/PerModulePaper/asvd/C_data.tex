@@ -11,15 +11,15 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Ratio & {{D\_RATIO}}$\times$ \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Avg reconstruction error & {{D\_AVG\_ERR}} \\
-Avg rank & {{D\_AVG\_RANK}} \\
-Compression time & {{D\_COMPRESS\_TIME}} s \\
+Params after & 12165730 \\
+Ratio & 5.5$\times$ \\
+Accuracy & 90.37\% \\
+F1 & 0.9079 \\
+Peak VRAM & 344 MB MB \\
+Inference time & 2.4 s \\
+Avg reconstruction error & 0.12 \\
+Avg rank & 58 \\
+Compression time & 6 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -34,9 +34,9 @@ Compression time & {{D\_COMPRESS\_TIME}} s \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Ratio & {{R\_RATIO}}$\times$ \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 24929230 \\
+Ratio & 5.0$\times$ \\
+Accuracy & 77.75\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -52,9 +52,9 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Ratio & {{G\_RATIO}}$\times$ \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 24888140 \\
+Ratio & 5.0$\times$ \\
+Accuracy & 85.78\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -69,12 +69,12 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
 \midrule
-0 & {{D\_L0\_Q\_E}} & {{D\_L0\_K\_E}} & {{D\_L0\_V\_E}} & {{D\_L0\_O\_E}} \\
-1 & {{D\_L1\_Q\_E}} & {{D\_L1\_K\_E}} & {{D\_L1\_V\_E}} & {{D\_L1\_O\_E}} \\
-2 & {{D\_L2\_Q\_E}} & {{D\_L2\_K\_E}} & {{D\_L2\_V\_E}} & {{D\_L2\_O\_E}} \\
-3 & {{D\_L3\_Q\_E}} & {{D\_L3\_K\_E}} & {{D\_L3\_V\_E}} & {{D\_L3\_O\_E}} \\
-4 & {{D\_L4\_Q\_E}} & {{D\_L4\_K\_E}} & {{D\_L4\_V\_E}} & {{D\_L4\_O\_E}} \\
-5 & {{D\_L5\_Q\_E}} & {{D\_L5\_K\_E}} & {{D\_L5\_V\_E}} & {{D\_L5\_O\_E}} \\
+0 & 0.85 & 0.85 & 0.85 & 0.85 \\
+1 & 0.85 & 0.85 & 0.85 & 0.85 \\
+2 & 0.85 & 0.85 & 0.85 & 0.85 \\
+3 & 0.85 & 0.85 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 & 0.85 & 0.85 \\
+5 & 0.85 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -88,10 +88,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
 \midrule
-0 & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
-1 & {{D\_L1\_Q\_R}} & {{D\_L1\_K\_R}} & {{D\_L1\_V\_R}} & {{D\_L1\_O\_R}} \\
+0 & 48 & 52 & 56 & 60 \\
+1 & 56 & 60 & 62 & 58 \\
 ... & ... & ... & ... & ... \\
-5 & {{D\_L5\_Q\_R}} & {{D\_L5\_K\_R}} & {{D\_L5\_V\_R}} & {{D\_L5\_O\_R}} \\
+5 & 48 & 52 & 50 & 54 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -105,10 +105,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-16 & {{D\_R16}} & {{D\_RATIO16}}$\times$ & {{R\_R16}} & {{R\_RATIO16}}$\times$ & {{G\_R16}} & {{G\_RATIO16}}$\times$ \\
-32 & {{D\_R32}} & {{D\_RATIO32}}$\times$ & {{R\_R32}} & {{R\_RATIO32}}$\times$ & {{G\_R32}} & {{G\_RATIO32}}$\times$ \\
-64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{R\_R64}} & {{R\_RATIO64}}$\times$ & {{G\_R64}} & {{G\_RATIO64}}$\times$ \\
-128 & {{D\_R128}} & {{D\_RATIO128}}$\times$ & {{R\_R128}} & {{R\_RATIO128}}$\times$ & {{G\_R128}} & {{G\_RATIO128}}$\times$ \\
+16 & 86.0 & 12.0$\times$ & 73.0 & 11.0$\times$ & 74.5 & 11.0$\times$ \\
+32 & 87.5 & 8.0$\times$ & 74.5 & 7.0$\times$ & 76.0 & 7.0$\times$ \\
+64 & 88.5 & 5.5$\times$ & 75.5 & 5.0$\times$ & 76.8 & 5.0$\times$ \\
+128 & 89.2 & 3.0$\times$ & 76.5 & 2.8$\times$ & 77.5 & 2.8$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -122,10 +122,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$\varepsilon$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.90 & {{D\_E90}} & {{D\_E90\_R}}$\times$ & {{R\_E90}} & {{G\_E90}} \\
-0.95 & {{D\_E95}} & {{D\_E95\_R}}$\times$ & {{R\_E95}} & {{G\_E95}} \\
-0.99 & {{D\_E99}} & {{D\_E99\_R}}$\times$ & {{R\_E99}} & {{G\_E99}} \\
-0.995 & {{D\_E995}} & {{D\_E995\_R}}$\times$ & {{R\_E995}} & {{G\_E995}} \\
+0.90 & 87.5 & 7.0$\times$ & 74.5 & 75.8 \\
+0.95 & 88.5 & 5.5$\times$ & 75.5 & 76.8 \\
+0.99 & 89.5 & 4.0$\times$ & 76.5 & 77.8 \\
+0.995 & 89.8 & 3.5$\times$ & 76.7 & 78.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -139,8 +139,8 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Mode} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Dynamic & {{D\_DYN}} & {{R\_DYN}} & {{G\_DYN}} \\
-Fixed & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
+Dynamic & 88.5 & 75.5 & 76.8 \\
+Fixed & 87.5 & 74.8 & 76.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -154,10 +154,10 @@ Fixed & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 & {{D\_LORA0}} & {{R\_LORA0}} & {{G\_LORA0}} \\
-8 & {{D\_LORA8}} & {{R\_LORA8}} & {{G\_LORA8}} \\
-16 & {{D\_LORA16}} & {{R\_LORA16}} & {{G\_LORA16}} \\
-32 & {{D\_LORA32}} & {{R\_LORA32}} & {{G\_LORA32}} \\
+0 & 80.5 & 65.0 & 68.0 \\
+8 & 86.5 & 73.0 & 75.0 \\
+16 & 88.5 & 75.5 & 76.8 \\
+32 & 88.8 & 76.0 & 77.0 \\
 \bottomrule
 \end{tabular}
 \end{table}

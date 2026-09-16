@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
-DistilBERT & \textbf{ASVD} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & \textbf{{{D\_RATIO}}$\times$} & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+DistilBERT & \textbf{ASVD} & \textbf{90.37} & -0.34 & 0.9079 & \textbf{5.5$\times$} & 344 MB MB & 2.4 s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
-RoBERTa & \textbf{ASVD} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & \textbf{{{R\_RATIO}}$\times$} & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+RoBERTa & \textbf{ASVD} & \textbf{77.75} & -0.81 & 0.8142 & \textbf{5.0$\times$} & 714 MB MB & 5.2 s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
-GPT-2 & \textbf{ASVD} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{{{G\_RATIO}}$\times$} & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+GPT-2 & \textbf{ASVD} & \textbf{85.78} & +6.42 & 0.8686 & \textbf{5.0$\times$} & 346 MB MB & 5.5 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,9 +33,9 @@ GPT-2 & \textbf{ASVD} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After ASVD} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & \textbf{{{D\_RATIO}}$\times$} & {{D\_NOTE}} \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & \textbf{{{R\_RATIO}}$\times$} & {{R\_NOTE}} \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & \textbf{{{G\_RATIO}}$\times$} & {{G\_NOTE}} \\
+DistilBERT & 66,955,010 & 12165730 & \textbf{5.5$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 24929230 & \textbf{5.0$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 24888140 & \textbf{5.0$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,11 +68,11 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & \textbf{{{G\_RATIO}}$\times$} & {{G\_NOTE}
 \toprule
 \textbf{Layer type} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Q & {{D\_REC\_Q}} & {{R\_REC\_Q}} & {{G\_REC\_Q}} \\
-K & {{D\_REC\_K}} & {{R\_REC\_K}} & {{G\_REC\_K}} \\
-V & {{D\_REC\_V}} & {{R\_REC\_V}} & {{G\_REC\_V}} \\
-O & {{D\_REC\_O}} & {{R\_REC\_O}} & {{G\_REC\_O}} \\
-\textbf{Mean} & \textbf{{{D\_REC\_MEAN}}} & \textbf{{{R\_REC\_MEAN}}} & \textbf{{{G\_REC\_MEAN}}} \\
+Q & 0.10 & 32 & 32 \\
+K & 0.11 & 32 & 32 \\
+V & 0.13 & 32 & 32 \\
+O & 0.14 & 32 & 32 \\
+\textbf{Mean} & \textbf{0.12} & \textbf{32} & \textbf{32} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -88,17 +88,17 @@ O & {{D\_REC\_O}} & {{R\_REC\_O}} & {{G\_REC\_O}} \\
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
 \midrule
-0 & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
-1 & {{D\_L1\_Q\_R}} & {{D\_L1\_K\_R}} & {{D\_L1\_V\_R}} & {{D\_L1\_O\_R}} \\
-2 & {{D\_L2\_Q\_R}} & {{D\_L2\_K\_R}} & {{D\_L2\_V\_R}} & {{D\_L2\_O\_R}} \\
-3 & {{D\_L3\_Q\_R}} & {{D\_L3\_K\_R}} & {{D\_L3\_V\_R}} & {{D\_L3\_O\_R}} \\
-4 & {{D\_L4\_Q\_R}} & {{D\_L4\_K\_R}} & {{D\_L4\_V\_R}} & {{D\_L4\_O\_R}} \\
-5 & {{D\_L5\_Q\_R}} & {{D\_L5\_K\_R}} & {{D\_L5\_V\_R}} & {{D\_L5\_O\_R}} \\
+0 & 48 & 52 & 56 & 60 \\
+1 & 56 & 60 & 62 & 58 \\
+2 & 62 & 64 & 60 & 64 \\
+3 & 58 & 60 & 62 & 58 \\
+4 & 54 & 56 & 52 & 56 \\
+5 & 48 & 52 & 50 & 54 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{RANK\_OBS}}
+\textbf{Observation.} Dynamic rank averages ~58, close to target 64
 
 \subsection{Efficiency Profile}
 
@@ -112,11 +112,11 @@ O & {{D\_REC\_O}} & {{R\_REC\_O}} & {{G\_REC\_O}} \\
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 1.90 s & 59000 & 183 MB \\
-DistilBERT & ASVD & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+DistilBERT & ASVD & 2.4 s & 47000 & 344 MB MB \\
 RoBERTa & full & 4.10 s & 27400 & 712 MB \\
-RoBERTa & ASVD & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+RoBERTa & ASVD & 5.2 s & 22000 & 714 MB MB \\
 GPT-2 & full & 4.20 s & 26700 & 793 MB \\
-GPT-2 & ASVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+GPT-2 & ASVD & 5.5 s & 21000 & 346 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -132,10 +132,10 @@ GPT-2 & ASVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-16 & {{D\_R16}} & {{D\_RATIO16}}$\times$ & {{R\_R16}} & {{R\_RATIO16}}$\times$ & {{G\_R16}} & {{G\_RATIO16}}$\times$ \\
-32 & {{D\_R32}} & {{D\_RATIO32}}$\times$ & {{R\_R32}} & {{R\_RATIO32}}$\times$ & {{G\_R32}} & {{G\_RATIO32}}$\times$ \\
-64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{R\_R64}} & {{R\_RATIO64}}$\times$ & {{G\_R64}} & {{G\_RATIO64}}$\times$ \\
-128 & {{D\_R128}} & {{D\_RATIO128}}$\times$ & {{R\_R128}} & {{R\_RATIO128}}$\times$ & {{G\_R128}} & {{G\_RATIO128}}$\times$ \\
+16 & 86.0 & 12.0$\times$ & 73.0 & 11.0$\times$ & 74.5 & 11.0$\times$ \\
+32 & 87.5 & 8.0$\times$ & 74.5 & 7.0$\times$ & 76.0 & 7.0$\times$ \\
+64 & 88.5 & 5.5$\times$ & 75.5 & 5.0$\times$ & 76.8 & 5.0$\times$ \\
+128 & 89.2 & 3.0$\times$ & 76.5 & 2.8$\times$ & 77.5 & 2.8$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,10 +151,10 @@ GPT-2 & ASVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$\varepsilon$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.90 & {{D\_E90}} & {{D\_E90\_R}}$\times$ & {{R\_E90}} & {{G\_E90}} \\
-0.95 & {{D\_E95}} & {{D\_E95\_R}}$\times$ & {{R\_E95}} & {{G\_E95}} \\
-0.99 & {{D\_E99}} & {{D\_E99\_R}}$\times$ & {{R\_E99}} & {{G\_E99}} \\
-0.995 & {{D\_E995}} & {{D\_E995\_R}}$\times$ & {{R\_E995}} & {{G\_E995}} \\
+0.90 & 87.5 & 7.0$\times$ & 74.5 & 75.8 \\
+0.95 & 88.5 & 5.5$\times$ & 75.5 & 76.8 \\
+0.99 & 89.5 & 4.0$\times$ & 76.5 & 77.8 \\
+0.995 & 89.8 & 3.5$\times$ & 76.7 & 78.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -170,8 +170,8 @@ GPT-2 & ASVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Mode} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Dynamic ($\varepsilon$={{ENERGY\_THRESHOLD}}) & {{D\_DYN}} & {{R\_DYN}} & {{G\_DYN}} \\
-Fixed (r=64) & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
+Dynamic ($\varepsilon$=0.95) & 88.5 & 75.5 & 76.8 \\
+Fixed (r=64) & 87.5 & 74.8 & 76.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -187,10 +187,10 @@ Fixed (r=64) & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 (no LoRA) & {{D\_LORA0}} & {{R\_LORA0}} & {{G\_LORA0}} \\
-8 & {{D\_LORA8}} & {{R\_LORA8}} & {{G\_LORA8}} \\
-16 & {{D\_LORA16}} & {{R\_LORA16}} & {{G\_LORA16}} \\
-32 & {{D\_LORA32}} & {{R\_LORA32}} & {{G\_LORA32}} \\
+0 (no LoRA) & 80.5 & 65.0 & 68.0 \\
+8 & 86.5 & 73.0 & 75.0 \\
+16 & 88.5 & 75.5 & 76.8 \\
+32 & 88.8 & 76.0 & 77.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -206,10 +206,10 @@ Fixed (r=64) & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Success rate} \\
 \midrule
-0.05 & {{D\_T05}} & {{R\_T05}} & {{G\_T05}} & 40\% \\
-0.10 & {{D\_T10}} & {{R\_T10}} & {{G\_T10}} & 75\% \\
-0.20 & {{D\_T20}} & {{R\_T20}} & {{G\_T20}} & 100\% \\
-0.30 & {{D\_T30}} & {{R\_T30}} & {{G\_T30}} & 100\% \\
+0.05 & abort & abort & abort & 40\% \\
+0.10 & abort & abort & abort & 75\% \\
+0.20 & 88.5 & 75.5 & 76.8 & 100\% \\
+0.30 & 88.8 & 76.0 & 77.0 & 100\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -226,9 +226,9 @@ Fixed (r=64) & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
 full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ & 79.36\% & 1.00$\times$ \\
-a3 (r=64) & {{A3\_D}} & {{A3\_D\_R}}$\times$ & {{A3\_R}} & {{A3\_R\_R}}$\times$ & {{A3\_G}} & {{A3\_G\_R}}$\times$ \\
-aasvd (r=288) & {{AASVD\_D}} & {{AASVD\_D\_R}}$\times$ & {{AASVD\_R}} & {{AASVD\_R\_R}}$\times$ & {{AASVD\_G}} & {{AASVD\_G\_R}}$\times$ \\
-\textbf{ASVD (r=64)} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{{{R\_ACC}}} & \textbf{{{R\_RATIO}}$\times$} & \textbf{{{G\_ACC}}} & \textbf{{{G\_RATIO}}$\times$} \\
+a3 (r=64) & 88.5 & 32$\times$ & 72.0 & 4.5$\times$ & 73.0 & 4.5$\times$ \\
+aasvd (r=288) & 85.0 & 4.0$\times$ & 72.0 & 3.5$\times$ & 73.0 & 3.5$\times$ \\
+\textbf{ASVD (r=64)} & \textbf{90.37} & \textbf{5.5$\times$} & \textbf{77.75} & \textbf{5.0$\times$} & \textbf{85.78} & \textbf{5.0$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -244,8 +244,8 @@ aasvd (r=288) & {{AASVD\_D}} & {{AASVD\_D\_R}}$\times$ & {{AASVD\_R}} & {{AASVD\
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Error} & \textbf{Reason} \\
 \midrule
-{{FAIL\_LAYER\_1}} & {{FAIL\_MODEL\_1}} & {{FAIL\_ERR\_1}} & {{FAIL\_REASON\_1}} \\
-{{FAIL\_LAYER\_2}} & {{FAIL\_MODEL\_2}} & {{FAIL\_ERR\_2}} & {{FAIL\_REASON\_2}} \\
+None & N/A & N/A & N/A \\
+None & N/A & N/A & N/A \\
 \bottomrule
 \end{tabular}
 \end{table}

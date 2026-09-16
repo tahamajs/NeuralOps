@@ -7,7 +7,7 @@
 
 \textbf{Hypothesis.} With SALT, inference would be 2-4$\times$ faster due to low-rank.
 
-\textbf{Result.} Naive forward is \textbf{slower} ({{D\_TIME\_R}}$\times$). Reconstruction 
+\textbf{Result.} Naive forward is \textbf{slower} (2.3 s$\times$). Reconstruction 
 overhead dominates.
 
 \textbf{Conclusion.} Need fused forward.
@@ -16,7 +16,7 @@ overhead dominates.
 
 \textbf{Hypothesis.} SVD truncation alone is sufficient; $\gamma$ provides no benefit.
 
-\textbf{Result.} Accuracy drops by {{D\_G\_DELTA}}\% without trainable $\gamma$.
+\textbf{Result.} Accuracy drops by 0.85\% without trainable $\gamma$.
 
 \textbf{Conclusion.} $\gamma$ helps.
 
@@ -24,7 +24,7 @@ overhead dominates.
 
 \textbf{Hypothesis.} SVD only is enough.
 
-\textbf{Result.} Accuracy drops by {{D\_AB\_DELTA}}\%.
+\textbf{Result.} Accuracy drops by 0.85\%.
 
 \textbf{Conclusion.} Residual AB is essential.
 
@@ -32,7 +32,7 @@ overhead dominates.
 
 \textbf{Hypothesis.} r=4 is sufficient.
 
-\textbf{Result.} Accuracy drops significantly ({{D\_R4}}\%).
+\textbf{Result.} Accuracy drops significantly (32\%).
 
 \textbf{Conclusion.} r=16 is a good minimum.
 
@@ -45,12 +45,12 @@ overhead dominates.
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Comment} \\
 \midrule
-2 & {{D\_R2}} & Too aggressive \\
-4 & {{D\_R4}} & Marginal \\
-8 & {{D\_R8}} & OK \\
-16 & {{D\_R16}} & Default \\
-32 & {{D\_R32}} & Overkill \\
-64 & {{D\_R64}} & No benefit \\
+2 & 32 & Too aggressive \\
+4 & 32 & Marginal \\
+8 & 32 & OK \\
+16 & 32 & Default \\
+32 & 32 & Overkill \\
+64 & 32 & No benefit \\
 \bottomrule
 \end{tabular}
 \end{table}

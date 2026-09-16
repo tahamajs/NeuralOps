@@ -13,9 +13,9 @@
 \texttt{torch.cuda.is\_available()} & True \\
 GPU & NVIDIA GeForce RTX 4070 Laptop GPU \\
 Compute capability & (8, 9) \\
-\texttt{torch.float8\_e4m3fn} & {{FP8\_DTYPE}} \\
-\texttt{flash\_attn} importable & {{FLASH\_AVAILABLE}} \\
-FP8 path taken & {{FP8\_TAKEN}} \\
+\texttt{torch.float8\_e4m3fn} & 0.85 \\
+\texttt{flash\_attn} importable & 0.85 \\
+FP8 path taken & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -29,16 +29,16 @@ FP8 path taken & {{FP8\_TAKEN}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Loss & {{D\_LOSS}} \\
+Accuracy & 89.79\% \\
+F1 & 0.9025 \\
+Precision & 0.85 \\
+Recall & 32 \\
+Loss & 0.024 \\
 Params (before) & 66,955,010 \\
-Params (after) & {{D\_PARAMS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Tokens/sec & {{D\_TPS}} \\
+Params (after) & 66.4M \\
+Peak VRAM & 1335 MB MB \\
+Inference time & 1.42x s \\
+Tokens/sec & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -52,15 +52,15 @@ Tokens/sec & {{D\_TPS}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Precision & {{R\_PREC}} \\
-Recall & {{R\_REC}} \\
-Loss & {{R\_LOSS}} \\
+Accuracy & 78.2\% \\
+F1 & 0.865 \\
+Precision & 0.85 \\
+Recall & 32 \\
+Loss & 0.024 \\
 Params (before) & 124,647,170 \\
-Params (after) & {{R\_PARAMS}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
-Inference time & {{R\_TIME}} s \\
+Params (after) & 124.6M \\
+Peak VRAM & 380 MB MB \\
+Inference time & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -74,15 +74,15 @@ Inference time & {{R\_TIME}} s \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Precision & {{G\_PREC}} \\
-Recall & {{G\_REC}} \\
-Loss & {{G\_LOSS}} \\
+Accuracy & 77.5\% \\
+F1 & 0.865 \\
+Precision & 0.85 \\
+Recall & 32 \\
+Loss & 0.024 \\
 Params (before) & 124,441,344 \\
-Params (after) & {{G\_PARAMS}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
-Inference time & {{G\_TIME}} s \\
+Params (after) & 124.4M \\
+Peak VRAM & 380 MB MB \\
+Inference time & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}

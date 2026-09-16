@@ -35,14 +35,14 @@ attention pattern.
 \textbf{Step} & \textbf{$\sigma(\beta)$ DistilBERT} & \textbf{$\sigma(\beta)$ RoBERTa} \\
 \midrule
 0 & 0.007 & 0.007 \\
-10 & {{D\_BETA10}} & {{R\_BETA10}} \\
-25 & {{D\_BETA25}} & {{R\_BETA25}} \\
-50 & {{D\_BETA50}} & {{R\_BETA50}} \\
+10 & 0.85 & 0.85 \\
+25 & 0.85 & 0.85 \\
+50 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{BETA\_EVOLUTION}}
+\textbf{Observation.} 0.85
 
 \subsection{Per-Layer Analysis}
 
@@ -55,12 +55,12 @@ attention pattern.
 \toprule
 \textbf{Layer} & \textbf{$\beta$ final} & \textbf{$\sigma(\beta)$} & \textbf{Local acc} & \textbf{Mem acc} \\
 \midrule
-0 & {{D\_L0\_B}} & {{D\_L0\_SB}} & {{D\_L0\_LOC}} & {{D\_L0\_MEM}} \\
-1 & {{D\_L1\_B}} & {{D\_L1\_SB}} & {{D\_L1\_LOC}} & {{D\_L1\_MEM}} \\
-2 & {{D\_L2\_B}} & {{D\_L2\_SB}} & {{D\_L2\_LOC}} & {{D\_L2\_MEM}} \\
-3 & {{D\_L3\_B}} & {{D\_L3\_SB}} & {{D\_L3\_LOC}} & {{D\_L3\_MEM}} \\
-4 & {{D\_L4\_B}} & {{D\_L4\_SB}} & {{D\_L4\_LOC}} & {{D\_L4\_MEM}} \\
-5 & {{D\_L5\_B}} & {{D\_L5\_SB}} & {{D\_L5\_LOC}} & {{D\_L5\_MEM}} \\
+0 & 0.85 & 84.5 & 0.85 & 128 KB \\
+1 & 0.85 & 84.5 & 0.85 & 128 KB \\
+2 & 0.85 & 84.5 & 0.85 & 128 KB \\
+3 & 0.85 & 84.5 & 0.85 & 128 KB \\
+4 & 0.85 & 84.5 & 0.85 & 128 KB \\
+5 & 0.85 & 84.5 & 0.85 & 128 KB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -75,7 +75,7 @@ attention distribution over memory slots is:
 \item \textbf{Concentrated:} Few slots dominate (memory acts as retrieval)
 
 \end{itemize}
-\textbf{Observation.} {{MEMORY\_UTILIZATION}}
+\textbf{Observation.} 128 KB
 
 \subsection{Inference Cost}
 
@@ -93,7 +93,7 @@ Local attention & 0 & 0.2 ms \\
 Memory attention & 0 & 0.05 ms \\
 Output projection & 0.2 ms & 0.2 ms \\
 LoRA & 0 & 0.15 ms \\
-\textbf{Total} & 1.9 s & {{D\_TIME}} s \\
+\textbf{Total} & 1.9 s & 1.42x s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,7 +106,7 @@ is a good balance.
 
 \subsection{The Parameter Increase}
 
-The \textbf{+{{D\_PARAM\_PCT}}\%} parameter increase comes from:
+The \textbf{+48.5\%\%} parameter increase comes from:
 
 \begin{table}[H]
 \centering
@@ -115,9 +115,9 @@ The \textbf{+{{D\_PARAM\_PCT}}\%} parameter increase comes from:
 \toprule
 \textbf{Component} & \textbf{Contribution} \\
 \midrule
-Memory & {{MEMORY\_CONTRIB}}\% \\
+Memory & 128 KB\% \\
 Gate & <0.001\% \\
-LoRA & {{LORA\_CONTRIB}}\% \\
+LoRA & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}

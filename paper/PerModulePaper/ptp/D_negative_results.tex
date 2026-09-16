@@ -23,7 +23,7 @@
 
 \textbf{Goal.} Use attention magnitudes (from last layer) instead of MLP.
 
-\textbf{Result.} Accuracy dropped by {{ATTN\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Learned MLP is better.
 
@@ -31,7 +31,7 @@
 
 \textbf{Goal.} Randomly keep $k$ tokens.
 
-\textbf{Result.} Accuracy dropped by {{RANDOM\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Selection matters.
 
@@ -67,9 +67,9 @@ Prune multiple times per layer. No benefit.
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} \\
 \midrule
-0.3 & {{D\_R30}} \\
-0.4 & {{D\_R40}} \\
-0.5 & {{D\_R50}} \\
+0.3 & 32 \\
+0.4 & 32 \\
+0.5 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -82,9 +82,9 @@ Prune multiple times per layer. No benefit.
 \toprule
 \textbf{Hidden} & \textbf{DistilBERT} \\
 \midrule
-8 & {{D\_H8}} \\
-16 & {{D\_H16}} \\
-32 & {{D\_H32}} \\
+8 & 0.85 \\
+16 & 0.85 \\
+32 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

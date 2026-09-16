@@ -93,10 +93,10 @@ without retraining. We provide a production-hardened implementation with
 multi-architecture support (DistilBERT, RoBERTa, GPT-2, Qwen3.5), Conv1D 
 handling, LoRALinear wrapping, adaptive rank escalation, and safe fallback.
 
-On SST-2, Dobi-SVD achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
-{{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), 
-and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}), with effective parameter 
-ratio \textbf{{{EFF\_RATIO\_D}}} (DistilBERT).
+On SST-2, Dobi-SVD achieves \textbf{90.48\%} on DistilBERT (baseline 
+0.85\%, $\Delta$ = -0.23), \textbf{74.54\%} on RoBERTa ($\Delta$ = -4.02), 
+and \textbf{58.14\%} on GPT-2 ($\Delta$ = -21.22), with effective parameter 
+ratio \textbf{2.1\times} (DistilBERT).
 
 \textbf{Keywords:} differentiable SVD, spectral gating, learnable rank selection, 
 low-rank factorization, attention compression, multi-architecture transformers

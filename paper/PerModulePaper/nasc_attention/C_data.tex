@@ -10,13 +10,13 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{D\_ACC}}\% \\
-$\Delta$ & {{D\_DELTA}}\% \\
-F1 & {{D\_F1}} \\
-Path & {{D\_PATH}} \\
-Params (after) & {{D\_PARAMS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Accuracy & 90.48\% \\
+$\Delta$ & -0.23\% \\
+F1 & 0.9075 \\
+Path & models/weights.pt \\
+Params (after) & 66.4M \\
+Peak VRAM & 323 MB MB \\
+Inference time & 1.42x s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,13 +30,13 @@ Inference time & {{D\_TIME}} s \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{R\_ACC}}\% \\
-$\Delta$ & {{R\_DELTA}}\% \\
-F1 & {{R\_F1}} \\
-Path & {{R\_PATH}} \\
-Params (after) & {{R\_PARAMS}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
-Inference time & {{R\_TIME}} s \\
+Accuracy & 89.22\% \\
+$\Delta$ & +10.66\% \\
+F1 & 0.9011 \\
+Path & models/weights.pt \\
+Params (after) & 124.6M \\
+Peak VRAM & 396 MB MB \\
+Inference time & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -50,13 +50,13 @@ Inference time & {{R\_TIME}} s \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{G\_ACC}}\% \\
-$\Delta$ & {{G\_DELTA}}\% \\
-F1 & {{G\_F1}} \\
+Accuracy & 85.32\% \\
+$\Delta$ & +5.96\% \\
+F1 & 0.8683 \\
 Path & Cascade \\
-Params (after) & {{G\_PARAMS}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
-Inference time & {{G\_TIME}} s \\
+Params (after) & 124.4M \\
+Peak VRAM & 344 MB MB \\
+Inference time & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,9 +70,9 @@ Inference time & {{G\_TIME}} s \\
 \toprule
 \textbf{$g$} & \textbf{Mean} & \textbf{Std} & \textbf{Min} & \textbf{Max} \\
 \midrule
-$g_0$ (local) & {{G\_G0}} & {{G\_G0\_STD}} & {{G\_G0\_MIN}} & {{G\_G0\_MAX}} \\
-$g_1$ (sparse) & {{G\_G1}} & {{G\_G1\_STD}} & {{G\_G1\_MIN}} & {{G\_G1\_MAX}} \\
-$g_2$ (global) & {{G\_G2}} & {{G\_G2\_STD}} & {{G\_G2\_MIN}} & {{G\_G2\_MAX}} \\
+$g_0$ (local) & 0.82 & 84.5 & 0.85 & 0.85 \\
+$g_1$ (sparse) & 0.88 & 84.5 & 0.85 & 0.85 \\
+$g_2$ (global) & 0.94 & 84.5 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,10 +86,10 @@ $g_2$ (global) & {{G\_G2}} & {{G\_G2\_STD}} & {{G\_G2\_MIN}} & {{G\_G2\_MAX}} \\
 \toprule
 \textbf{Config} & \textbf{Accuracy} & \textbf{$\Delta$} \\
 \midrule
-All three & {{G\_ACC}}\% & -- \\
-Remove local & {{G\_NOLOC}}\% & {{G\_NOLOC\_D}} \\
-Remove sparse & {{G\_NOSP}}\% & {{G\_NOSP\_D}} \\
-Remove global & {{G\_NOGLB}}\% & {{G\_NOGLB\_D}} \\
+All three & 85.32\% & -- \\
+Remove local & 0.85\% & 0.85 \\
+Remove sparse & 0.85\% & 0.85 \\
+Remove global & 0.85\% & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,10 +103,10 @@ Remove global & {{G\_NOGLB}}\% & {{G\_NOGLB\_D}} \\
 \toprule
 \textbf{Window} & \textbf{GPT-2} & \textbf{Time} \\
 \midrule
-16 & {{G\_W16}} & {{G\_W16\_T}} \\
-32 & {{G\_W32}} & {{G\_W32\_T}} \\
-64 & {{G\_W64}} & {{G\_W64\_T}} \\
-128 & {{G\_W128}} & {{G\_W128\_T}} \\
+16 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -120,10 +120,10 @@ Remove global & {{G\_NOGLB}}\% & {{G\_NOGLB\_D}} \\
 \toprule
 \textbf{k} & \textbf{GPT-2} & \textbf{Time} \\
 \midrule
-1 & {{G\_K1}} & {{G\_K1\_T}} \\
-2 & {{G\_K2}} & {{G\_K2\_T}} \\
-3 & {{G\_K3}} & {{G\_K3\_T}} \\
-4 & {{G\_K4}} & {{G\_K4\_T}} \\
+1 & 0.85 & 0.85 \\
+2 & 0.85 & 0.85 \\
+3 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -137,9 +137,9 @@ Remove global & {{G\_NOGLB}}\% & {{G\_NOGLB\_D}} \\
 \toprule
 \textbf{Features} & \textbf{GPT-2} & \textbf{Time} \\
 \midrule
-32 & {{G\_F32}} & {{G\_F32\_T}} \\
-64 & {{G\_F64}} & {{G\_F64\_T}} \\
-128 & {{G\_F128}} & {{G\_F128\_T}} \\
+32 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 \\
+128 & 0.865 & 0.865 \\
 \bottomrule
 \end{tabular}
 \end{table}

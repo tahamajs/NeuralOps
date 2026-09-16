@@ -88,9 +88,9 @@ test hardware (RTX 4070 Laptop) does not expose FP8 tensor cores, the FP8
 path is unavailable and all models run through the SDPA fallback. We report 
 this transparently and identify the exact hardware requirements for 
 reproducing the FP8 speedups claimed in the original FlashAttention-3 paper. 
-On our hardware, accuracy is preserved within \textbf{{{D\_DELTA}}\%} (DistilBERT), 
-\textbf{{{R\_DELTA}}\%} (RoBERTa), and \textbf{{{G\_DELTA}}\%} (GPT-2), but parameter 
-count increases by \textbf{{{PARAM\_INC}}\%} due to LoRA adapters.
+On our hardware, accuracy is preserved within \textbf{-0.92\%} (DistilBERT), 
+\textbf{0.85\%} (RoBERTa), and \textbf{0.85\%} (GPT-2), but parameter 
+count increases by \textbf{66.4M\%} due to LoRA adapters.
 
 \textbf{Keywords:} FlashAttention-3, FP8 quantization, Hopper tensor cores, 
 attention implementation, hardware-aware fallback

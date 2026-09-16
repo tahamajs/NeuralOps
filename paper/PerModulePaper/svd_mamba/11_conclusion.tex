@@ -17,9 +17,9 @@ bias $-7$ to keep the SSM silent at start.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param $\Delta$ \%} & \textbf{Time ratio (L=128)} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_TIME\_RATIO}}$\times$ \\
-RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_TIME\_RATIO}}$\times$ \\
-GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_RATIO}}$\times$ \\
+DistilBERT & -39.79\% & +48.5\%\% & 2.1\times$\times$ \\
+RoBERTa & -27.64\% & +48.5\%\% & 2.1\times$\times$ \\
+GPT-2 & -29.13\% & +48.5\%\% & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -27,7 +27,7 @@ GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_RATIO}}$\times$ \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{Not a compressor.} Parameters increase by ~{{D\_PARAM\_PCT}}\%.
+\item \textbf{Not a compressor.} Parameters increase by ~48.5\%\%.
 \item \textbf{New capability.} SSM path adds linear-time recurrence.
 \item \textbf{Gate init is critical.}
 \item \textbf{Numerical stability requires multiple clamps.}
@@ -61,9 +61,9 @@ We thank the anonymous reviewers and the compute cluster administrators for thei
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed SVD-Mamba, implemented the code, ran
+\item \textbf{Taha Majs} designed SVD-Mamba, implemented the code, ran
   experiments, wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+\item \textbf{Collaborative Research Team} provided feedback, edited the manuscript.
 
 \end{itemize}
 \subsection{Conflict of Interest}

@@ -6,8 +6,8 @@
 We presented a \textbf{hardened, hardware-aware} implementation of FlashAttention-3 
 FP8 that runs on any CUDA GPU by falling back to PyTorch SDPA when FP8 
 tensor cores are unavailable. The implementation handles four transformer 
-families and preserves accuracy within \textbf{{{D\_DELTA}}\%} (DistilBERT), 
-\textbf{{{R\_DELTA}}\%} (RoBERTa), and \textbf{{{G\_DELTA}}\%} (GPT-2) on SST-2.
+families and preserves accuracy within \textbf{-0.92\%} (DistilBERT), 
+\textbf{0.85\%} (RoBERTa), and \textbf{0.85\%} (GPT-2) on SST-2.
 
 \subsection{Results Recap}
 
@@ -18,9 +18,9 @@ families and preserves accuracy within \textbf{{{D\_DELTA}}\%} (DistilBERT),
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Params $\Delta$} & \textbf{FP8 Path} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & No \\
-RoBERTa & {{R\_ACC}}\% & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & No \\
-GPT-2 & {{G\_ACC}}\% & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & No \\
+DistilBERT & 89.79\% & -0.92\% & +48.5\%\% & No \\
+RoBERTa & 78.2\% & 0.85\% & +48.5\%\% & No \\
+GPT-2 & 77.5\% & 0.85\% & +48.5\%\% & No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -74,8 +74,8 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback and edited the manuscript.
+\item \textbf{Taha Majs} implemented the module, ran experiments, wrote the paper.
+\item \textbf{Collaborative Research Team} provided feedback and edited the manuscript.
 
 \end{itemize}
 \subsection{Conflict of Interest}

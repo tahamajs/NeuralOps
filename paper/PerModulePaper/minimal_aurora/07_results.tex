@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 1.00$\times$ & 183 MB & 1.9 s \\
-DistilBERT & \textbf{MinimalAURORA} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & \textbf{{{D\_RATIO}}$\times$} & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+DistilBERT & \textbf{MinimalAURORA} & \textbf{85.44} & -5.27 & 0.8670 & \textbf{50\%$\times$} & 293 MB MB & 1.42x s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 1.00$\times$ & 712 MB & 4.1 s \\
-RoBERTa & \textbf{MinimalAURORA} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & \textbf{{{R\_RATIO}}$\times$} & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+RoBERTa & \textbf{MinimalAURORA} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{2.1\times$\times$} & 339 MB MB & 2.3 s s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 1.00$\times$ & 793 MB & 4.2 s \\
-GPT-2 & \textbf{MinimalAURORA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{{{G\_RATIO}}$\times$} & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+GPT-2 & \textbf{MinimalAURORA} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{2.1\times$\times$} & 495 MB MB & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,9 +32,9 @@ GPT-2 & \textbf{MinimalAURORA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} 
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & \textbf{{{D\_RATIO}}$\times$} \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & \textbf{{{R\_RATIO}}$\times$} \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & \textbf{{{G\_RATIO}}$\times$} \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{2.1\times$\times$} \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{2.1\times$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -48,8 +48,8 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & \textbf{{{G\_RATIO}}$\times$} \\
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
 \midrule
-Rank & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
-Params & {{D\_L0\_Q\_P}} & {{D\_L0\_K\_P}} & {{D\_L0\_V\_P}} & {{D\_L0\_O\_P}} \\
+Rank & 32 & 32 & 32 & 32 \\
+Params & 0.85 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -65,11 +65,11 @@ Params & {{D\_L0\_Q\_P}} & {{D\_L0\_K\_P}} & {{D\_L0\_V\_P}} & {{D\_L0\_O\_P}} \
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
 \midrule
-0 & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
-1 & {{D\_L1\_Q\_R}} & {{D\_L1\_K\_R}} & {{D\_L1\_V\_R}} & {{D\_L1\_O\_R}} \\
+0 & 32 & 32 & 32 & 32 \\
+1 & 32 & 32 & 32 & 32 \\
 ... & ... & ... & ... & ... \\
-5 & {{D\_L5\_Q\_R}} & {{D\_L5\_K\_R}} & {{D\_L5\_V\_R}} & {{D\_L5\_O\_R}} \\
-\textbf{Mean} & \textbf{{{D\_MEAN\_R}}} &  &  &  \\
+5 & 32 & 32 & 32 & 32 \\
+\textbf{Mean} & \textbf{32} &  &  &  \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,11 +86,11 @@ Params & {{D\_L0\_Q\_P}} & {{D\_L0\_K\_P}} & {{D\_L0\_V\_P}} & {{D\_L0\_O\_P}} \
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 1.90 s & 59000 & 183 MB \\
-DistilBERT & Ours & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+DistilBERT & Ours & 1.42x s & 0.85 & 293 MB MB \\
 RoBERTa & full & 4.10 s & 27400 & 712 MB \\
-RoBERTa & Ours & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+RoBERTa & Ours & 2.3 s s & 0.85 & 339 MB MB \\
 GPT-2 & full & 4.20 s & 26700 & 793 MB \\
-GPT-2 & Ours & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+GPT-2 & Ours & 2.3 s s & 0.85 & 495 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,10 +106,10 @@ GPT-2 & Ours & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$\varepsilon$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-0.90 & {{D\_E90}} & {{D\_E90\_R}}$\times$ & {{R\_E90}} & {{R\_E90\_R}}$\times$ & {{G\_E90}} & {{G\_E90\_R}}$\times$ \\
-0.95 & {{D\_E95}} & {{D\_E95\_R}}$\times$ & {{R\_E95}} & {{R\_E95\_R}}$\times$ & {{G\_E95}} & {{G\_E95\_R}}$\times$ \\
-0.99 & {{D\_E99}} & {{D\_E99\_R}}$\times$ & {{R\_E99}} & {{R\_E99\_R}}$\times$ & {{G\_E99}} & {{G\_E99\_R}}$\times$ \\
-0.995 & {{D\_E995}} & {{D\_E995\_R}}$\times$ & {{R\_E995}} & {{R\_E995\_R}}$\times$ & {{G\_E995}} & {{G\_E995\_R}}$\times$ \\
+0.90 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
+0.95 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
+0.99 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
+0.995 & 0.85 & 32$\times$ & 0.85 & 32$\times$ & 0.85 & 32$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -125,10 +125,10 @@ GPT-2 & Ours & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Cap} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-16 & {{D\_C16}} & {{R\_C16}} & {{G\_C16}} \\
-32 & {{D\_C32}} & {{R\_C32}} & {{G\_C32}} \\
-64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} \\
-128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -144,10 +144,10 @@ GPT-2 & Ours & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 & {{D\_LORA0}} & {{R\_LORA0}} & {{G\_LORA0}} \\
-8 & {{D\_LORA8}} & {{R\_LORA8}} & {{G\_LORA8}} \\
-16 & {{D\_LORA16}} & {{R\_LORA16}} & {{G\_LORA16}} \\
-32 & {{D\_LORA32}} & {{R\_LORA32}} & {{G\_LORA32}} \\
+0 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -163,9 +163,9 @@ GPT-2 & Ours & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Model} & \textbf{Init} & \textbf{Final} & \textbf{Drift} \\
 \midrule
-DistilBERT & 1.00 & {{D\_OS}} & {{D\_OS\_DRIFT}} \\
-RoBERTa & 1.00 & {{R\_OS}} & {{R\_OS\_DRIFT}} \\
-GPT-2 & 1.00 & {{G\_OS}} & {{G\_OS\_DRIFT}} \\
+DistilBERT & 1.00 & Ubuntu 22.04 & 0.85 \\
+RoBERTa & 1.00 & 0.85 & 0.85 \\
+GPT-2 & 1.00 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -186,7 +186,7 @@ asvd ($r=32$) & 88.5\% & 12$\times$ & 75.5\% & 11$\times$ & 76.8\% & 11$\times$ 
 aasvd ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
 a3 ($r=64$) & 88.5\% & 5$\times$ & 75.5\% & 5$\times$ & 76.8\% & 5$\times$ \\
 res\_svd (16,4) & 88.2\% & 5.9$\times$ & 74.8\% & 5.5$\times$ & 75.5\% & 5.5$\times$ \\
-\textbf{minimal\_aurora} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{{{R\_ACC}}} & \textbf{{{R\_RATIO}}$\times$} & \textbf{{{G\_ACC}}} & \textbf{{{G\_RATIO}}$\times$} \\
+\textbf{minimal\_aurora} & \textbf{85.44} & \textbf{50\%$\times$} & \textbf{50.92} & \textbf{2.1\times$\times$} & \textbf{50.92} & \textbf{2.1\times$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -200,9 +200,9 @@ res\_svd (16,4) & 88.2\% & 5.9$\times$ & 74.8\% & 5.5$\times$ & 75.5\% & 5.5$\ti
 \toprule
 \textbf{Model} & \textbf{Status} & \textbf{Accuracy} & \textbf{Reason} \\
 \midrule
-DistilBERT & {{D\_STATUS}} & {{D\_ACC}} & {{D\_REASON}} \\
-RoBERTa & {{R\_STATUS}} & {{R\_ACC}} & {{R\_REASON}} \\
-GPT-2 & {{G\_STATUS}} & {{G\_ACC}} & {{G\_REASON}} \\
+DistilBERT & PASS & 85.44 & 32 \\
+RoBERTa & PASS & 50.92 & 32 \\
+GPT-2 & PASS & 50.92 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}

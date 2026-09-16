@@ -62,9 +62,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Density} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & ~{{D\_DENSITY}}\% \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & ~{{R\_DENSITY}}\% \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_DENSITY}}\% \\
+DistilBERT & 90.83\% $\pm$ 1\% & ~50\%\% \\
+RoBERTa & 50.92\% $\pm$ 1\% & ~0.85\% \\
+GPT-2 & 50.92\% $\pm$ 1\% & ~0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -73,7 +73,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_DENSITY}}\% \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-nsa}
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-nsa}
 \item \textbf{Metrics:} \texttt{results/unified\_nsa/*/summary.csv}
 
 \end{itemize}

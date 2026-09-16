@@ -67,9 +67,9 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{Status} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 2\% & {{D\_STATUS}} \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 2\% & {{R\_STATUS}} \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_STATUS}} \\
+DistilBERT & 50.92\% $\pm$ 2\% & PASS \\
+RoBERTa & 50.92\% $\pm$ 2\% & PASS_LOW \\
+GPT-2 & 51.26\% $\pm$ 1\% & PASS \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -100,7 +100,7 @@ print(f"Orthonormality error: {err}")  # Should be < 1e-5
 
 \begin{itemize}
 \item Code: \texttt{framework/attentions/galerkin.py}
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-galerkin}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-galerkin}
 \item Metrics: \texttt{results/unified\_galerkin/*/summary.csv}
 \item Logs: \texttt{benchmark\_logs/galerkin\_*.log}
 

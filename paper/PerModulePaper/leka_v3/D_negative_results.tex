@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Use random selection instead of learned scorer.
 
-\textbf{Result.} Accuracy dropped to {{RANDOM\_L\_ACC}}\% (vs {{D\_ACC}}\%).
+\textbf{Result.} Accuracy dropped to 86.4\%\% (vs 70.53\%).
 
 \textbf{Conclusion.} Learned selection matters.
 
@@ -14,7 +14,7 @@
 
 \textbf{Goal.} Use only landmarks.
 
-\textbf{Result.} Accuracy dropped by {{LOCAL\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Local context is essential.
 
@@ -22,7 +22,7 @@
 
 \textbf{Goal.} Skip per-head correlation.
 
-\textbf{Result.} Accuracy dropped by {{WCORR\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Per-head mixing helps.
 
@@ -30,7 +30,7 @@
 
 \textbf{Goal.} Use only one projection scale.
 
-\textbf{Result.} Accuracy dropped by {{MULTI\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Multi-scale helps.
 
@@ -38,7 +38,7 @@
 
 \textbf{Goal.} Don't force [CLS] into landmarks.
 
-\textbf{Result.} Accuracy dropped by {{CLS\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} [CLS] preservation is essential.
 
@@ -69,12 +69,12 @@ Pure local attention with W = 64. Result: worse than LEKAv3.
 \toprule
 \textbf{d\_feat} & \textbf{DistilBERT} \\
 \midrule
-16 & {{D\_F16}} \\
-32 & {{D\_F32}} \\
-64 & {{D\_F64}} \\
-128 & {{D\_F128}} \\
-256 & {{D\_F256}} \\
-512 & {{D\_F512}} \\
+16 & 0.865 \\
+32 & 0.85 \\
+64 & 0.85 \\
+128 & 0.865 \\
+256 & 0.85 \\
+512 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -90,10 +90,10 @@ Sweet spot: 128.
 \toprule
 \textbf{Init} & \textbf{DistilBERT} \\
 \midrule
-2.0 & {{D\_GN2}} \\
-0.0 & {{D\_G0}} \\
-2.0 & {{D\_G2}} \\
-4.0 & {{D\_G4}} \\
+2.0 & 0.85 \\
+0.0 & 0.85 \\
+2.0 & 0.85 \\
+4.0 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

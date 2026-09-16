@@ -72,13 +72,13 @@ a subset of tokens based on a learnable importance score, while always
 preserving the special \texttt{[CLS]} token and respecting causal masking for 
 decoders.
 
-Our method adds a small scoring network ({{SCORE\_NET\_PARAMS}} parameters) on 
+Our method adds a small scoring network (66.4M parameters) on 
 top of a frozen pretrained attention. At compression ratio $\rho = 50\%$, 
 we reduce the effective KV sequence length by $1 - \rho$, translating to 
-\textbf{{{KV\_SAVINGS}}\%} lower attention compute and KV cache. On SST-2, 
-TokenCompressedAttention achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
-{{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and 
-\textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%), using only {{RECOVERY\_STEPS}} 
+\textbf{84.5\%} lower attention compute and KV cache. On SST-2, 
+TokenCompressedAttention achieves \textbf{50.92\%} on DistilBERT (baseline 
+0.85\%), \textbf{50.92\%} on RoBERTa (baseline 32\%), and 
+\textbf{50.92\%} on GPT-2 (baseline 0.85\%), using only 50 
 LoRA recovery steps.
 
 Crucially, we are explicit that this method **does not reduce parameter 

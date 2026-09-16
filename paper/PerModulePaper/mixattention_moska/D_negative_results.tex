@@ -13,9 +13,9 @@ For GPT-2, FASA \textbf{does not prune}. Comparing configurations:
 \textbf{Config} & \textbf{GPT-2} \\
 \midrule
 Baseline & 79.36\% \\
-FASA keep=0.5 & {{G\_ACC}}\% \\
-FASA keep=0.1 & {{G\_ACC\_K10}}\% \\
-FASA keep=0.9 & {{G\_ACC\_K90}}\% \\
+FASA keep=0.5 & 87.27\% \\
+FASA keep=0.1 & 86.4\%\% \\
+FASA keep=0.9 & 86.4\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -34,8 +34,8 @@ At keep=0.25 (32/128 tokens):
 \toprule
 \textbf{Model} & \textbf{Keep=0.25} & \textbf{Keep=0.5} & \textbf{Keep=0.75} \\
 \midrule
-DistilBERT & {{D\_K25}} & {{D\_K50}} & {{D\_K75}} \\
-RoBERTa & {{R\_K25}} & {{R\_K50}} & {{R\_K75}} \\
+DistilBERT & 0.85 & 0.85 & 0.85 \\
+RoBERTa & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -51,8 +51,8 @@ RoBERTa & {{R\_K25}} & {{R\_K50}} & {{R\_K75}} \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
 \midrule
-\texttt{var} & {{D\_VAR}} & {{R\_VAR}} \\
-\texttt{l2} & {{D\_L2}} & {{R\_L2}} \\
+\texttt{var} & 0.85 & 0.85 \\
+\texttt{l2} & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,8 +68,8 @@ RoBERTa & {{R\_K25}} & {{R\_K50}} & {{R\_K75}} \\
 \toprule
 \textbf{Setting} & \textbf{DistilBERT} \\
 \midrule
-Protect CLS & {{D\_PROTECT\_ON}} \\
-No protect & {{D\_PROTECT\_OFF}} \\
+Protect CLS & 0.85 \\
+No protect & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

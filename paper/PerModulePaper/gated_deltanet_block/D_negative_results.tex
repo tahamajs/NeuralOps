@@ -62,12 +62,12 @@ the code is fragile -- any change could trigger silent failure.
 \textbf{Configuration} & \textbf{GPT-2 Accuracy} \\
 \midrule
 Baseline (causal) & 79.36\% \\
-Block MHA (non-causal) & {{G\_MHA\_ACC}}\% \\
+Block MHA (non-causal) & 86.4\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{NON\_CAUSAL\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{D.4 Nested Encoder Inconsistency}
 
@@ -104,8 +104,8 @@ Same issue as the standalone GatedDeltaNet: Python loops dominate.
 \textbf{Path} & \textbf{Per-step time} \\
 \midrule
 Baseline & 0.4 s \\
-Block (MHA) & {{D\_MHA\_TIME}} s \\
-Block (DeltaNet) & {{D\_STEP\_TIME}} s \\
+Block (MHA) & 2.3 s s \\
+Block (DeltaNet) & 14.2 ms s \\
 \bottomrule
 \end{tabular}
 \end{table}

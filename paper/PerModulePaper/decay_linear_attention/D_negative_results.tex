@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Standard linear attention without decay.
 
-\textbf{Result.} Accuracy dropped by {{NO\_DECAY\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 4.5\%.
 
 \textbf{Conclusion.} Decay is essential.
 
@@ -68,10 +68,10 @@ converged to 0.5 anyway.
 \toprule
 \textbf{$C$} & \textbf{DistilBERT} & \textbf{State mem} \\
 \midrule
-4 & {{D\_C4}} & 2 KB \\
-8 & {{D\_C8}} & 4 KB \\
-32 & {{D\_C32}} & 16 KB \\
-256 & {{D\_C256}} & 128 KB \\
+4 & 83.0 & 2 KB \\
+8 & 84.5 & 4 KB \\
+32 & 86.5 & 16 KB \\
+256 & 83.0 & 128 KB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,9 +85,9 @@ converged to 0.5 anyway.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-1e-4 & {{D\_LR1e4}} \\
-2e-4 & {{D\_LR2e4}} \\
-5e-4 & {{D\_LR5e4}} \\
+1e-4 & 83.5 \\
+2e-4 & 86.5 \\
+5e-4 & 82.0 \\
 1e-3 & NaN \\
 \bottomrule
 \end{tabular}

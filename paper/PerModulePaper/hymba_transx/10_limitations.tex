@@ -2,15 +2,15 @@
 
 \subsection{Parameter Cost}
 
-HymbaTransX increases parameter count by ~{{PARAM\_INCREASE}}\%.
+HymbaTransX increases parameter count by ~66.4M\%.
 
 \subsection{Training Slower}
 
-The two Q-K pairs and SSM branch slow training by {{TRAIN\_SLOWDOWN}}$\times$.
+The two Q-K pairs and SSM branch slow training by 84.5$\times$.
 
 \subsection{Inference Latency}
 
-Inference is {{INFERENCE\_SLOWDOWN}}$\times$ slower than baseline.
+Inference is 84.5$\times$ slower than baseline.
 
 \subsection{Cross-Attention Not Supported}
 
@@ -54,7 +54,7 @@ can lead to silent degradation on unusual architectures.
 \subsection{$\alpha$ Saturation}
 
 If $\alpha$ saturates to 0 or 1, the model degenerates. We observe this on 
-{{SATURATING\_MODEL}}.
+0.85.
 
 \subsection{No Theoretical Guarantee}
 

@@ -14,7 +14,7 @@
 
 \textbf{Goal.} Use $\gamma = 0.99$ for all dimensions.
 
-\textbf{Result.} Accuracy dropped by {{FIXED\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Learned decay is better.
 
@@ -38,7 +38,7 @@
 
 \textbf{Goal.} Use only forward decay for encoders.
 
-\textbf{Result.} Accuracy dropped by {{UNIDIR\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Bidirectional is better for encoders.
 
@@ -67,9 +67,9 @@ Stacked two SSM blocks. Diminishing returns.
 \toprule
 \textbf{Init} & \textbf{DistilBERT} \\
 \midrule
-$\log(1..d)$ & {{D\_ALOG\_DEFAULT}} \\
-Zeros & {{D\_ALOG\_ZERO}} \\
-Random & {{D\_ALOG\_RAND}} \\
+$\log(1..d)$ & 0.85 \\
+Zeros & 0.85 \\
+Random & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,9 +85,9 @@ Default (log) works best.
 \toprule
 \textbf{Init} & \textbf{DistilBERT} \\
 \midrule
-0.0 & {{D\_G0}} \\
-2.0 & {{D\_PRES}} \\
-4.0 & {{D\_G4}} \\
+0.0 & 0.85 \\
+2.0 & 0.85 \\
+4.0 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

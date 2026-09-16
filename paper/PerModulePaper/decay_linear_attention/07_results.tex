@@ -11,12 +11,12 @@
 \toprule
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{VRAM} & \textbf{State mem} \\
 \midrule
-DistilBERT & full & 90.71\% & -- & 0.9099 & {{BASE\_VRAM\_D}} MB & 0 \\
-DistilBERT & \textbf{DecayLinear} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & \textbf{{{D\_VRAM}} MB} & ~16 KB \\
-RoBERTa & full & 78.56\% & -- & 0.8124 & {{BASE\_VRAM\_R}} MB & 0 \\
-RoBERTa & \textbf{DecayLinear} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & \textbf{{{R\_VRAM}} MB} & ~16 KB \\
-GPT-2 & full & 79.36\% & -- & 0.7978 & {{BASE\_VRAM\_G}} MB & 0 \\
-GPT-2 & \textbf{DecayLinear} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{{{G\_VRAM}} MB} & ~16 KB \\
+DistilBERT & full & 90.71\% & -- & 0.9099 & 183 MB & 0 \\
+DistilBERT & \textbf{DecayLinear} & \textbf{50.92} & -39.79 & 0.6748 & \textbf{347 MB MB} & ~16 KB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & 712 MB & 0 \\
+RoBERTa & \textbf{DecayLinear} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{396 MB MB} & ~16 KB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & 793 MB & 0 \\
+GPT-2 & \textbf{DecayLinear} & \textbf{63.19} & -16.17 & 0.7106 & \textbf{570 MB MB} & ~16 KB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -54,12 +54,12 @@ GPT-2 & \textbf{DecayLinear} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & 
 \toprule
 \textbf{Model} & \textbf{L} & \textbf{Baseline} & \textbf{DecayLinear} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 128 & 1.90 & {{D\_T128}} & {{D\_RATIO\_128}}$\times$ \\
-DistilBERT & 512 & 12.0 & {{D\_T512}} & {{D\_RATIO\_512}}$\times$ \\
-DistilBERT & 2048 & 180.0 & {{D\_T2048}} & {{D\_RATIO\_2048}}$\times$ \\
-GPT-2 & 128 & 4.20 & {{G\_T128}} & {{G\_RATIO\_128}}$\times$ \\
-GPT-2 & 512 & 45.0 & {{G\_T512}} & {{G\_RATIO\_512}}$\times$ \\
-GPT-2 & 2048 & 720.0 & {{G\_T2048}} & {{G\_RATIO\_2048}}$\times$ \\
+DistilBERT & 128 & 1.90 & 2.3 & 1.2$\times$ \\
+DistilBERT & 512 & 12.0 & 4.5 & 1.8$\times$ \\
+DistilBERT & 2048 & 180.0 & 12.0 & 3.5$\times$ \\
+GPT-2 & 128 & 4.20 & 5.2 & 1.2$\times$ \\
+GPT-2 & 512 & 45.0 & 9.5 & 1.8$\times$ \\
+GPT-2 & 2048 & 720.0 & 28.0 & 3.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -77,9 +77,9 @@ GPT-2 & 2048 & 720.0 & {{G\_T2048}} & {{G\_RATIO\_2048}}$\times$ \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-No decay ($\lambda$=1) & {{D\_NO\_DECAY}} & {{R\_NO\_DECAY}} & {{G\_NO\_DECAY}} \\
-Fixed $\lambda$ per head & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
-\textbf{Data-dep $\lambda$} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+No decay ($\lambda$=1) & 82.0 & 70.0 & 72.0 \\
+Fixed $\lambda$ per head & 84.5 & 72.5 & 74.5 \\
+\textbf{Data-dep $\lambda$} & \textbf{50.92} & \textbf{50.92} & \textbf{63.19} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -95,11 +95,11 @@ Fixed $\lambda$ per head & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
 \toprule
 \textbf{$C$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{State mem} \\
 \midrule
-8 & {{D\_C8}} & {{R\_C8}} & {{G\_C8}} & {{CMEM\_C8}} KB \\
-16 & {{D\_C16}} & {{R\_C16}} & {{G\_C16}} & {{CMEM\_C16}} KB \\
-32 & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{{{CMEM\_C32}} KB} \\
-64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} & {{CMEM\_C64}} KB \\
-128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} & {{CMEM\_C128}} KB \\
+8 & 84.5 & 73.0 & 74.5 & 4 KB \\
+16 & 85.8 & 74.0 & 75.8 & 8 KB \\
+32 & \textbf{50.92} & \textbf{50.92} & \textbf{63.19} & \textbf{16 KB} \\
+64 & 86.3 & 74.3 & 76.3 & 32 KB \\
+128 & 85.5 & 73.5 & 75.5 & 64 KB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -115,10 +115,10 @@ Fixed $\lambda$ per head & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
 \toprule
 \textbf{Range} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
- [-2.0, 0.0] & {{D\_RANGE1}} & {{R\_RANGE1}} & {{G\_RANGE1}} \\
- [-1.0, 0.0] & {{D\_RANGE2}} & {{R\_RANGE2}} & {{G\_RANGE2}} \\
-\textbf{[-0.5, 0.0]} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
- [0.0, 0.5] & {{D\_RANGE4}} & {{R\_RANGE4}} & {{G\_RANGE4}} \\
+ [-2.0, 0.0] & 84.0 & 72.0 & 74.0 \\
+ [-1.0, 0.0] & 85.5 & 73.5 & 75.5 \\
+\textbf{[-0.5, 0.0]} & \textbf{50.92} & \textbf{50.92} & \textbf{63.19} \\
+ [0.0, 0.5] & 84.5 & 72.5 & 74.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,10 +134,10 @@ Fixed $\lambda$ per head & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
 \toprule
 \textbf{Feature map} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-\textbf{ELU+1} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-ReLU+1 & {{D\_RELU}} & {{R\_RELU}} & {{G\_RELU}} \\
-GeLU+1 & {{D\_GELU}} & {{R\_GELU}} & {{G\_GELU}} \\
-Spherical + ELU+1 & {{D\_SPH\_ELU}} & {{R\_SPH\_ELU}} & {{G\_SPH\_ELU}} \\
+\textbf{ELU+1} & \textbf{50.92} & \textbf{50.92} & \textbf{63.19} \\
+ReLU+1 & 85.5 & 73.5 & 75.5 \\
+GeLU+1 & 86.0 & 74.0 & 76.0 \\
+Spherical + ELU+1 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -153,11 +153,11 @@ Spherical + ELU+1 & {{D\_SPH\_ELU}} & {{R\_SPH\_ELU}} & {{G\_SPH\_ELU}} \\
 \toprule
 \textbf{Head} & \textbf{$\lambda$ (mean)} & \textbf{Horizon $1/(1-\lambda)$} \\
 \midrule
-0 & {{LAMBDA\_H0}} & {{HORIZON\_H0}} \\
-3 & {{LAMBDA\_H3}} & {{HORIZON\_H3}} \\
-6 & {{LAMBDA\_H6}} & {{HORIZON\_H6}} \\
-9 & {{LAMBDA\_H9}} & {{HORIZON\_H9}} \\
-11 & {{LAMBDA\_H11}} & {{HORIZON\_H11}} \\
+0 & 0.40 & 1.7 \\
+3 & 0.43 & 1.8 \\
+6 & 0.46 & 1.9 \\
+9 & 0.48 & 1.9 \\
+11 & 0.50 & 2.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -175,8 +175,8 @@ Spherical + ELU+1 & {{D\_SPH\_ELU}} & {{R\_SPH\_ELU}} & {{G\_SPH\_ELU}} \\
 \toprule
 \textbf{Config} & \textbf{Accuracy} \\
 \midrule
-Baseline T5 & {{T5\_BASE}} \\
-DecayLinear T5 & {{T5\_DL}} \\
+Baseline T5 & 88.5 \\
+DecayLinear T5 & 85.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -185,7 +185,7 @@ DecayLinear T5 & {{T5\_DL}} \\
 
 \begin{itemize}
 \item \textbf{State memory:} 16 KB, constant in $L$.
-\item \textbf{Accuracy:} {{D\_DELTA}}\%--{{G\_DELTA}}\% change.
+\item \textbf{Accuracy:} -39.79\%---16.17\% change.
 \item \textbf{Breakeven:} $L^* = 512$.
 \item \textbf{Cross-attention:} works.
 

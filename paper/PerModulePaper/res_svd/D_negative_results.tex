@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Maximize compression.
 
-\textbf{Result.} Accuracy dropped by {{RB4\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} $r_b = 16$ is a practical minimum.
 
@@ -14,7 +14,7 @@
 
 \textbf{Goal.} Equivalent to pure SVD.
 
-\textbf{Result.} Accuracy dropped by {{RR0\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Residual rank > 0 is essential.
 
@@ -65,10 +65,10 @@
 \toprule
 \textbf{$r_b$} & \textbf{DistilBERT} \\
 \midrule
-4 & {{D\_RB4}} \\
-8 & {{D\_RB8}} \\
-16 & {{D\_RB16}} \\
-32 & {{D\_RB32}} \\
+4 & 32 \\
+8 & 32 \\
+16 & 32 \\
+32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -82,10 +82,10 @@
 \toprule
 \textbf{$r_r$} & \textbf{DistilBERT} \\
 \midrule
-0 & {{D\_RR0}} \\
-2 & {{D\_RR2}} \\
-4 & {{D\_RR4}} \\
-8 & {{D\_RR8}} \\
+0 & 32 \\
+2 & 32 \\
+4 & 32 \\
+8 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -45,11 +45,11 @@ Sequence length truncated to 128.
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-\texttt{window\_size} & {{WINDOW\_SIZE}} (default 64) \\
-\texttt{block\_size} & {{BLOCK\_SIZE}} (default 32) \\
-\texttt{top\_k} & {{TOP\_K}} (default 2) \\
-\texttt{rff\_features} & {{RFF\_FEATURES}} (default 64) \\
-\texttt{enable\_cascade\_on\_encoders} & {{ENABLE\_CASCADE\_ENCODERS}} \\
+\texttt{window\_size} & 128 (default 64) \\
+\texttt{block\_size} & 64 (default 32) \\
+\texttt{top\_k} & 2 (default 2) \\
+\texttt{rff\_features} & 64 (default 64) \\
+\texttt{enable\_cascade\_on\_encoders} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -65,10 +65,10 @@ Sequence length truncated to 128.
 \midrule
 Optimizer & AdamW \\
 Learning rate & 1e-4 \\
-Recovery steps & {{RECOVERY\_STEPS}} \\
-LoRA rank & {{LORA\_RANK}} \\
-LoRA alpha & {{LORA\_ALPHA}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Recovery steps & 50 \\
+LoRA rank & 8 \\
+LoRA alpha & 16 \\
+Batch size & 32 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -111,8 +111,8 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
 \bottomrule
 \end{tabular}
 \end{table}

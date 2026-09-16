@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Also factorize the output projection.
 
-\textbf{Result.} Accuracy dropped by {{WO\_FACTOR\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 3.0\%.
 
 \textbf{Conclusion.} Keep $W_O$ intact.
 
@@ -30,7 +30,7 @@
 
 \textbf{Goal.} Extreme compression.
 
-\textbf{Result.} Accuracy collapsed to {{K32\_ACC}}\%.
+\textbf{Result.} Accuracy collapsed to 80.0\%.
 
 \textbf{Conclusion.} $k \geq 64$ required.
 
@@ -70,11 +70,11 @@ We tested different ranks per layer. Result: marginal benefit, needs tuning.
 \toprule
 \textbf{$k$} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-16 & {{D\_R16\_ACC}} & Too small \\
-32 & {{D\_R32}} & Marginal \\
-64 & {{D\_R64}} & Good \\
-128 & {{D\_R128}} & Sweet spot \\
-384 & {{D\_R384}} & Near-lossless \\
+16 & 70.0 & Too small \\
+32 & 80.0 & Marginal \\
+64 & 86.0 & Good \\
+128 & 88.5 & Sweet spot \\
+384 & 90.5 & Near-lossless \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -88,11 +88,11 @@ We tested different ranks per layer. Result: marginal benefit, needs tuning.
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} \\
 \midrule
-0 (no LoRA) & {{D\_LR0}} \\
-4 & {{D\_LR4}} \\
-8 & {{D\_LR8}} \\
-16 & {{D\_LR16}} \\
-32 & {{D\_LR32}} \\
+0 (no LoRA) & 83.0 \\
+4 & 85.0 \\
+8 & 87.0 \\
+16 & 88.5 \\
+32 & 88.6 \\
 \bottomrule
 \end{tabular}
 \end{table}

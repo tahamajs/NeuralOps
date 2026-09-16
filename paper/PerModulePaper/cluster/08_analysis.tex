@@ -56,9 +56,9 @@ clustering has near-uniform distribution.
 \toprule
 \textbf{Model} & \textbf{Min tokens/cluster} & \textbf{Max tokens/cluster} & \textbf{Ideal} \\
 \midrule
-DistilBERT & {{D\_MIN\_TOK}} & {{D\_MAX\_TOK}} & 8 \\
-RoBERTa & {{R\_MIN\_TOK}} & {{R\_MAX\_TOK}} & 8 \\
-GPT-2 & {{G\_MIN\_TOK}} & {{G\_MAX\_TOK}} & 8 \\
+DistilBERT & 5 & 12 & 8 \\
+RoBERTa & 4 & 13 & 8 \\
+GPT-2 & 5 & 12 & 8 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -98,7 +98,7 @@ Baseline & 90.71\% \\
 + Frozen base + LoRA & 88.5 \\
 + Centroid attention (no local) & 88.8 \\
 + Local window & 89.7 \\
-+ Learnable temp/blend & {{D\_ACC}} \\
++ Learnable temp/blend & 90.02 \\
 \bottomrule
 \end{tabular}
 \end{table}

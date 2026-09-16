@@ -80,8 +80,8 @@ a multi-architecture \texttt{copy\_weights} procedure, and trainable capacity is
 provided by LoRA adapters at rank $r = 8$.
 
 We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2. Accuracy is preserved 
-within \textbf{{{D\_DELTA}}\%} (DistilBERT), \textbf{{{R\_DELTA}}\%} (RoBERTa), and 
-\textbf{{{G\_DELTA}}\%} (GPT-2). Parameter count increases by \textbf{{{D\_PARAM\_PCT}}\%} 
+within \textbf{-26.95\%} (DistilBERT), \textbf{-27.64\%} (RoBERTa), and 
+\textbf{-28.44\%} (GPT-2). Parameter count increases by \textbf{48.5\%\%} 
 due to LoRA adapters; this is \textbf{not} a compression method. We honestly report 
 that the current implementation does \textbf{not} achieve real sparsity speedups: 
 the loop over $K$ clusters recomputes $K$ full attention matrices, making the 

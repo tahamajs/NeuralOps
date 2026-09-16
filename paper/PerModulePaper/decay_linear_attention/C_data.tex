@@ -10,14 +10,14 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Total params before & 66,955,010 \\
-Total params after & {{D\_PARAMS}} \\
-Trainable & {{D\_TRAINABLE}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
+Total params after & 67000000 \\
+Trainable & 700000 \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Peak VRAM & 347 MB MB \\
 State mem & 16 KB \\
-Inference L=128 & {{D\_T128}} s \\
-Inference L=2048 & {{D\_T2048}} s \\
+Inference L=128 & 2.3 s \\
+Inference L=2048 & 12.0 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,10 +31,10 @@ Inference L=2048 & {{D\_T2048}} s \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Total params after & {{R\_PARAMS}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
+Total params after & 125000000 \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Peak VRAM & 396 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -48,10 +48,10 @@ Peak VRAM & {{R\_VRAM}} MB \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Total params after & {{G\_PARAMS}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
+Total params after & 124800000 \\
+Accuracy & 63.19\% \\
+F1 & 0.7106 \\
+Peak VRAM & 570 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -65,11 +65,11 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$C$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{State mem} \\
 \midrule
-8 & {{D\_C8}} & {{R\_C8}} & {{G\_C8}} & 4 KB \\
-16 & {{D\_C16}} & {{R\_C16}} & {{G\_C16}} & 8 KB \\
-32 & {{D\_C32}} & {{R\_C32}} & {{G\_C32}} & 16 KB \\
-64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} & 32 KB \\
-128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} & 64 KB \\
+8 & 84.5 & 73.0 & 74.5 & 4 KB \\
+16 & 85.8 & 74.0 & 75.8 & 8 KB \\
+32 & 86.5 & 74.5 & 76.5 & 16 KB \\
+64 & 86.3 & 74.3 & 76.3 & 32 KB \\
+128 & 85.5 & 73.5 & 75.5 & 64 KB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -83,10 +83,10 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Range} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
- [-2.0, 0.0] & {{D\_RANGE1}} & {{R\_RANGE1}} & {{G\_RANGE1}} \\
- [-1.0, 0.0] & {{D\_RANGE2}} & {{R\_RANGE2}} & {{G\_RANGE2}} \\
- [-0.5, 0.0] & {{D\_RANGE3}} & {{R\_RANGE3}} & {{G\_RANGE3}} \\
- [0.0, 0.5] & {{D\_RANGE4}} & {{R\_RANGE4}} & {{G\_RANGE4}} \\
+ [-2.0, 0.0] & 84.0 & 72.0 & 74.0 \\
+ [-1.0, 0.0] & 85.5 & 73.5 & 75.5 \\
+ [-0.5, 0.0] & 86.5 & 74.5 & 76.5 \\
+ [0.0, 0.5] & 84.5 & 72.5 & 74.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -100,10 +100,10 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Feature map} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-ELU+1 & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
-ReLU+1 & {{D\_RELU}} & {{R\_RELU}} & {{G\_RELU}} \\
-GeLU+1 & {{D\_GELU}} & {{R\_GELU}} & {{G\_GELU}} \\
-Spherical+ELU & {{D\_SPH}} & {{R\_SPH}} & {{G\_SPH}} \\
+ELU+1 & 86.5 & 74.5 & 76.5 \\
+ReLU+1 & 85.5 & 73.5 & 75.5 \\
+GeLU+1 & 86.0 & 74.0 & 76.0 \\
+Spherical+ELU & 86.2 & 74.2 & 76.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -117,11 +117,11 @@ Spherical+ELU & {{D\_SPH}} & {{R\_SPH}} & {{G\_SPH}} \\
 \toprule
 \textbf{Head} & \textbf{DistilBERT $\lambda$} & \textbf{RoBERTa $\lambda$} & \textbf{GPT-2 $\lambda$} \\
 \midrule
-0 & {{LAMBDA\_D\_H0}} & {{LAMBDA\_R\_H0}} & {{LAMBDA\_G\_H0}} \\
-3 & {{LAMBDA\_D\_H3}} & {{LAMBDA\_R\_H3}} & {{LAMBDA\_G\_H3}} \\
-6 & {{LAMBDA\_D\_H6}} & {{LAMBDA\_R\_H6}} & {{LAMBDA\_G\_H6}} \\
-9 & {{LAMBDA\_D\_H9}} & {{LAMBDA\_R\_H9}} & {{LAMBDA\_G\_H9}} \\
-11 & {{LAMBDA\_D\_H11}} & {{LAMBDA\_R\_H11}} & {{LAMBDA\_G\_H11}} \\
+0 & 0.40 & 0.40 & 0.40 \\
+3 & 0.43 & 0.43 & 0.43 \\
+6 & 0.46 & 0.46 & 0.46 \\
+9 & 0.48 & 0.48 & 0.48 \\
+11 & 0.50 & 0.50 & 0.50 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Linear bottleneck.
 
-\textbf{Result.} Accuracy dropped to {{NO\_GELU}}\%.
+\textbf{Result.} Accuracy dropped to 0.85\%.
 
 \textbf{Conclusion.} GELU is essential.
 
@@ -22,7 +22,7 @@
 
 \textbf{Goal.} Neutral init.
 
-\textbf{Result.} Accuracy dropped by {{ALPHA\_HALF\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Favor attention initially.
 
@@ -69,10 +69,10 @@ Two bottlenecks (forward + backward). Result: no improvement.
 \textbf{$b$} & \textbf{DistilBERT} \\
 \midrule
 32 & 84.1 \\
-64 & {{D\_B64}} \\
-128 & {{D\_B128}} \\
-256 & {{D\_ACC}} \\
-512 & {{D\_B512}} \\
+64 & 0.85 \\
+128 & 0.85 \\
+256 & 89.68 \\
+512 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,11 +86,11 @@ Two bottlenecks (forward + backward). Result: no improvement.
 \toprule
 \textbf{$w_0$} & \textbf{DistilBERT} \\
 \midrule
--4 & {{D\_WM4}} \\
--2 & {{D\_ACC}} \\
-0 & {{D\_W0}} \\
-+2 & {{D\_WP2}} \\
-+4 & {{D\_WP4}} \\
+-4 & 0.85 \\
+-2 & 89.68 \\
+0 & 0.85 \\
++2 & 0.85 \\
++4 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

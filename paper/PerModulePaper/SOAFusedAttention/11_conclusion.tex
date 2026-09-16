@@ -5,7 +5,7 @@
 We presented \textbf{SOA Fused Attention}, a zero-shot low-rank factorization of 
 attention projections. The method replaces Q, K, V with factorized pairs 
 initialized from the truncated SVD of the pretrained weights, achieving 
-\textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} parameter reduction on attention projections 
+\textbf{1.92$\times$--1.92$\times$} parameter reduction on attention projections 
 without any calibration data.
 
 \subsection{Results Recap}
@@ -17,9 +17,9 @@ without any calibration data.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attention Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
-RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
-GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+DistilBERT & -9.40\% & \textbf{1.92$\times$} & -10\% \\
+RoBERTa & -27.64\% & \textbf{1.92$\times$} & -10\% \\
+GPT-2 & -28.44\% & \textbf{1.92$\times$} & -10\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -29,8 +29,8 @@ GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% 
 \begin{enumerate}
 \item \textbf{Zero-shot SVD works} -- no calibration needed.
 \item \textbf{$W_O$ should stay} -- factorizing it compounds error.
-\item \textbf{LoRA recovers} {{LORA\_GAIN}}\% of the accuracy drop.
-\item \textbf{Attention parameters reduce by {{D\_RATIO}}$\times$.}
+\item \textbf{LoRA recovers} 5.5\% of the accuracy drop.
+\item \textbf{Attention parameters reduce by 1.92$\times$.}
 
 \end{enumerate}
 \subsection{Future Work}
@@ -61,9 +61,9 @@ We thank The authors acknowledge the high-performance computing support and open
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed the method, implemented, ran experiments, wrote
+\item \textbf{Taha Majs} designed the method, implemented, ran experiments, wrote
   the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+\item \textbf{Collaborative Research Team} provided feedback, edited the manuscript.
 
 \end{itemize}
 \subsection{Conflict of Interest}

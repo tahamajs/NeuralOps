@@ -5,8 +5,8 @@
 
 We presented \textbf{NASC}, a three-branch hybrid attention that combines 
 sliding-window, sparse block, and spectral RFF attention under a batch-level 
-softmax gate. NASC achieves \textbf{{{D\_ACC}}\%} on DistilBERT, \textbf{{{R\_ACC}}\%} 
-on RoBERTa, and \textbf{{{G\_ACC}}\%} on GPT-2.
+softmax gate. NASC achieves \textbf{90.48\%} on DistilBERT, \textbf{89.22\%} 
+on RoBERTa, and \textbf{85.32\%} on GPT-2.
 
 \subsection{Results Recap}
 
@@ -17,9 +17,9 @@ on RoBERTa, and \textbf{{{G\_ACC}}\%} on GPT-2.
 \toprule
 \textbf{Model} & \textbf{Path} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Time} \\
 \midrule
-DistilBERT & Dense & {{D\_ACC}}\% & {{D\_DELTA}}\% & {{D\_TIME}} s \\
-RoBERTa & Dense & {{R\_ACC}}\% & {{R\_DELTA}}\% & {{R\_TIME}} s \\
-GPT-2 & \textbf{Cascade} & {{G\_ACC}}\% & {{G\_DELTA}}\% & {{G\_TIME}} s \\
+DistilBERT & Dense & 90.48\% & -0.23\% & 1.42x s \\
+RoBERTa & Dense & 89.22\% & +10.66\% & 2.3 s s \\
+GPT-2 & \textbf{Cascade} & 85.32\% & +5.96\% & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,7 +31,7 @@ GPT-2 & \textbf{Cascade} & {{G\_ACC}}\% & {{G\_DELTA}}\% & {{G\_TIME}} s \\
 \item \textbf{Batch-level gate is a simplification.} Per-token would be more
   adaptive.
 \item \textbf{Encoder default is dense.} Cascade is decoder-only by default.
-\item \textbf{Overhead is significant.} ~{{G\_TIME\_R}}$\times$ slower.
+\item \textbf{Overhead is significant.} ~2.3 s$\times$ slower.
 \item \textbf{RFF causal cumsum is memory-heavy.} OOM at long sequences.
 
 \end{enumerate}
@@ -76,8 +76,8 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback.
+\item \textbf{Taha Majs} implemented the module, ran experiments, wrote the paper.
+\item \textbf{Collaborative Research Team} provided feedback.
 
 \end{itemize}
 \subsection{Conflict of Interest}

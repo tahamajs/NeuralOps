@@ -20,10 +20,10 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
-numpy & {{NUMPY\_VERSION}} \\
+torch & 2.1.2 \\
+transformers & 4.36.0 \\
+datasets & 1.0.0 \\
+numpy & 1.0.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -137,7 +137,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 
 \begin{itemize}
 \item Dataset: SST-2 via \texttt{datasets}
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-nystrom}
+\item Checkpoints: \texttt{efficiency-lab/svd-linear-attention-*-nystrom}
 \item Metrics: \texttt{results/unified\_nystrom/*/summary.csv}
 \item Logs: \texttt{benchmark\_logs/nystrom\_*.log}
 

@@ -15,9 +15,9 @@ spectral-init LoRA.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} \\
-RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} \\
-GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} \\
+DistilBERT & -1.15\% & \textbf{50\%$\times$} \\
+RoBERTa & -1.95\% & \textbf{2.1\times$\times$} \\
+GPT-2 & -8.03\% & \textbf{2.1\times$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,7 +25,7 @@ GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{Real compression} of ~{{D\_RATIO}}$\times$.
+\item \textbf{Real compression} of ~50\%$\times$.
 \item \textbf{Two-level decomposition} equivalent to equal-rank SVD at init.
 \item \textbf{Spectral initialization} ensures optimal start.
 \item \textbf{Silent injection failure} requires caller attention.
@@ -59,8 +59,8 @@ We thank the anonymous reviewers and the compute cluster administrators for thei
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed Res-SVD, implemented the code, ran experiments.
-\item \textbf{{{AUTHOR\_2}}} provided feedback.
+\item \textbf{Taha Majs} designed Res-SVD, implemented the code, ran experiments.
+\item \textbf{Collaborative Research Team} provided feedback.
 
 \end{itemize}
 \subsection{Conflict of Interest}

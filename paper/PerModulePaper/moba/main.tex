@@ -89,10 +89,10 @@ weight tensor, resulting in $\mathcal{O}(L^2 D)$ memory and time, \textbf{not}
 $\mathcal{O}(L)$. The SSM-inspired decay enforces a soft causal structure 
 but does not achieve the linear complexity of true Mamba.
 
-On SST-2, Mamba-Inspired Gated SSM Attention achieves \textbf{{{D\_ACC}}\%} on 
-DistilBERT (baseline {{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa 
-(baseline {{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 
-(baseline {{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA 
+On SST-2, Mamba-Inspired Gated SSM Attention achieves \textbf{73.62\%} on 
+DistilBERT (baseline 0.85\%, $\Delta$ = -17.09), \textbf{84.17\%} on RoBERTa 
+(baseline 32\%, $\Delta$ = +5.61), and \textbf{50.92\%} on GPT-2 
+(baseline 0.85\%, $\Delta$ = -28.44), using 50 LoRA 
 recovery steps. We position this module as a **state-space-inspired 
 alternative** to standard attention with a preservation gate, and we 
 explicitly discuss the gap between the SSM formulation and the actual 

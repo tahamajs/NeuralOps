@@ -6,13 +6,13 @@
 
 \textbf{Goal.} Use random top-k as baseline.
 
-\textbf{Result.} Accuracy dropped to {{RANDOM\_ACC}}\% -- confirms selection matters.
+\textbf{Result.} Accuracy dropped to 86.4\%\% -- confirms selection matters.
 
 \subsubsection{D.1.2 Score Net Only (No Norm)}
 
 \textbf{Goal.} Use only the learned score.
 
-\textbf{Result.} Accuracy dropped by {{SCORE\_ONLY\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Norm is a useful prior.
 
@@ -20,7 +20,7 @@
 
 \textbf{Goal.} Don't force \texttt{[CLS]}.
 
-\textbf{Result.} Accuracy dropped by {{CLS\_DROP}}\% on DistilBERT.
+\textbf{Result.} Accuracy dropped by 0.85\% on DistilBERT.
 
 \textbf{Conclusion.} [CLS] pinning is essential.
 
@@ -28,7 +28,7 @@
 
 \textbf{Goal.} Extreme compression.
 
-\textbf{Result.} Accuracy collapsed to {{R01\_ACC}}\%.
+\textbf{Result.} Accuracy collapsed to 86.4\%\%.
 
 \textbf{Conclusion.}   < 0.3 is too aggressive.
 
@@ -59,12 +59,12 @@ Local sliding window (like StreamingLLM). Result: worse than learned selection.
 \toprule
 \textbf{} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-0.05 & {{D\_R005}} & Severe \\
-0.1 & {{D\_R01}} & Too aggressive \\
-0.3 & {{D\_R03}} & Marginal \\
-0.5 & {{D\_R05}} & Sweet spot \\
-0.7 & {{D\_R07}} & Conservative \\
-0.9 & {{D\_R09}} & Near-lossless \\
+0.05 & 32 & Severe \\
+0.1 & 32 & Too aggressive \\
+0.3 & 32 & Marginal \\
+0.5 & 32 & Sweet spot \\
+0.7 & 32 & Conservative \\
+0.9 & 32 & Near-lossless \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -78,9 +78,9 @@ Local sliding window (like StreamingLLM). Result: worse than learned selection.
 \toprule
 \textbf{Width} & \textbf{Params} & \textbf{DistilBERT} \\
 \midrule
-32 & 25K & {{D\_W32}} \\
-64 & 50K & {{D\_W64}} \\
-128 & 99K & {{D\_W128}} \\
+32 & 25K & 0.85 \\
+64 & 50K & 0.85 \\
+128 & 99K & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

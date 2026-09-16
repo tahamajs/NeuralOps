@@ -13,8 +13,8 @@ documenting what failed.
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-RoBERTa & 78.56\% & {{R\_ACC}}\% & {{R\_DELTA}}\% \\
+DistilBERT & 90.71\% & 50.92\% & -39.79\% \\
+RoBERTa & 78.56\% & 50.92\% & -27.64\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -36,11 +36,11 @@ We tested $r \in \{8, 16, 32, 64, 128\}$:
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} \\
 \midrule
-8 & {{D\_R8}} \\
-16 & {{D\_R16}} \\
-32 & {{D\_R32}} \\
-64 & {{D\_R64}} \\
-128 & {{D\_R128}} \\
+8 & 45.0 \\
+16 & 52.0 \\
+32 & 60.0 \\
+64 & 65.94 \\
+128 & 68.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -69,8 +69,8 @@ Without $\sqrt{N/r}$ correction:
 \toprule
 \textbf{Config} & \textbf{DistilBERT} \\
 \midrule
-With correction & {{D\_ACC}}\% \\
-Without & {{D\_WITHOUT\_CORR}}\% \\
+With correction & 50.92\% \\
+Without & 62.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -92,11 +92,11 @@ See D.3.1.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-1e-5 & {{LR\_1e5}} \\
-5e-5 & {{LR\_5e5}} \\
-1e-4 & {{LR\_1e4}} \\
-2e-4 & {{LR\_2e4}} (default) \\
-5e-4 & {{LR\_5e4}} (NaN) \\
+1e-5 & 55.0 \\
+5e-5 & 62.0 \\
+1e-4 & 65.0 \\
+2e-4 & 65.94 (default) \\
+5e-4 & 45.0 (NaN) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -110,10 +110,10 @@ See D.3.1.
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} \\
+10 & 58.0 & 45.0 \\
+25 & 62.0 & 47.0 \\
+50 & 65.94 & 48.97 \\
+100 & 66.5 & 49.2 \\
 \bottomrule
 \end{tabular}
 \end{table}

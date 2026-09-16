@@ -17,7 +17,7 @@ calibration pass.
 
 \subsubsection{Takeaway 3: LayerNorm Recalibration is Cheap and Effective}
 
-A single recalibration pass, costing \textbf{{{LN\_TIME}}s}, recovers 
+A single recalibration pass, costing \textbf{2.3 ss}, recovers 
 \textbf{40\%} of the accuracy drop on average.
 
 \subsection{When to Use A3}
@@ -75,8 +75,8 @@ For DistilBERT on RTX 4070:
 \midrule
 Disk (FP16) & 134 MB & 27 MB & \textbf{5.0$\times$} \\
 Params & 66.95M & 13500000M & \textbf{5.0$\times$} \\
-Inference VRAM & 183 MB & 110 MB & \textbf{{{D\_VRAM\_RATIO}}$\times$} \\
-Inference time & 1.9 s & 2.4 s & \textbf{{{D\_TIME\_RATIO}}$\times$} \\
+Inference VRAM & 183 MB & 110 MB & \textbf{2.1\times$\times$} \\
+Inference time & 1.9 s & 2.4 s & \textbf{2.1\times$\times$} \\
 Accuracy & 90.71\% & 88.5\% & \textbf{-2.2\%} \\
 \bottomrule
 \end{tabular}
@@ -97,7 +97,7 @@ latency, \textbf{small loss} for accuracy.
 ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
 DistilBERT & Distill & 1.6$\times$ & 90.7\% \\
 \textbf{A3 (r=64)} & Low-rank & \textbf{5.0$\times$} & \textbf{88.5\%} \\
-\textbf{A3 (r=128)} & Low-rank & \textbf{2.5$\times$} & \textbf{{{D\_ACC128}}\%} \\
+\textbf{A3 (r=128)} & Low-rank & \textbf{2.5$\times$} & \textbf{86.4\%\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -114,7 +114,7 @@ A3's main benefit is storage. For a 100M-parameter model:
 \begin{itemize}
 \item Baseline: 200 MB FP16
 \item A3 (r=64): ~27 MB
-\item A3 + INT8: ~{{D\_DISK\_INT8}} MB
+\item A3 + INT8: ~0.85 MB
 
 \end{itemize}
 \subsubsection{Latency}

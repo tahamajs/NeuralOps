@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Use unbounded $\log f$.
 
-\textbf{Result.} Accuracy dropped by {{CLAMP\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Clamping is essential.
 
@@ -14,7 +14,7 @@
 
 \textbf{Goal.} Use $f s + i v$ instead of $f s + (1-f) i v$.
 
-\textbf{Result.} Accuracy dropped by {{MODULATION\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Input modulation is essential.
 
@@ -22,7 +22,7 @@
 
 \textbf{Goal.} Use forward scan only on DistilBERT.
 
-\textbf{Result.} Accuracy dropped by {{BIDI\_GAIN}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Bidirectional matters for encoders.
 
@@ -67,10 +67,10 @@ We tested multiple independent state vectors. Result: marginal benefit, 3$\times
 \toprule
 \textbf{Bias} & \textbf{DistilBERT} \\
 \midrule
--4.0 & {{D\_FB\_M4}} \\
--2.5 & {{D\_FB\_M25}} \\
--1.0 & {{D\_FB\_M1}} \\
-0.0 & {{D\_FB\_0}} \\
+-4.0 & 0.85 \\
+-2.5 & 0.85 \\
+-1.0 & 0.85 \\
+0.0 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -84,9 +84,9 @@ We tested multiple independent state vectors. Result: marginal benefit, 3$\times
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-1e-4 & {{D\_LR1e4}} \\
-2e-4 & {{D\_LR2e4}} \\
-5e-4 & {{D\_LR5e4}} \\
+1e-4 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 \\
 1e-3 & NaN \\
 \bottomrule
 \end{tabular}

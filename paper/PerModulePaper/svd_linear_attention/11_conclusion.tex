@@ -6,7 +6,7 @@
 We presented \textbf{SVD-Linear Attention}, a compression-and-efficiency module 
 combining SVD-factorized projections, kernelized linear attention, exponential 
 decay gating, and chunked parallel scan. The method reduces parameter count 
-by {{D\_RATIO}}$\times$ and attention complexity from $\mathcal{O}(N^2)$ to 
+by 50\%$\times$ and attention complexity from $\mathcal{O}(N^2)$ to 
 $\mathcal{O}(N)$.
 
 \subsection{Results Recap}
@@ -18,9 +18,9 @@ $\mathcal{O}(N)$.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Param Ratio} & \textbf{Time Ratio (N=128)} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & {{D\_TIME\_RATIO}}$\times$ \\
-RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & {{R\_TIME\_RATIO}}$\times$ \\
-GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & {{G\_TIME\_RATIO}}$\times$ \\
+DistilBERT & -9.98\% & \textbf{50\%$\times$} & 2.1\times$\times$ \\
+RoBERTa & -27.64\% & \textbf{2.1\times$\times$} & 2.1\times$\times$ \\
+GPT-2 & 0.85\% & \textbf{2.1\times$\times$} & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -28,7 +28,7 @@ GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & {{G\_TIME\_RATIO}}$\tim
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{Real compression.} Parameters reduce by {{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$.
+\item \textbf{Real compression.} Parameters reduce by 50\%$\times$--2.1\times$\times$.
 \item \textbf{Real speedup.} Complexity scales linearly.
 \item \textbf{Streaming-ready.} \texttt{step\_recurrent} supports $\mathcal{O}(1)$ inference.
 \item \textbf{Multi-architecture.} Same code, four families.
@@ -62,9 +62,9 @@ We thank the anonymous reviewers and the compute cluster administrators for thei
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed SVD-Linear Attention, implemented the code,
+\item \textbf{Taha Majs} designed SVD-Linear Attention, implemented the code,
   ran experiments, wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+\item \textbf{Collaborative Research Team} provided feedback, edited the manuscript.
 
 \end{itemize}
 \subsection{Conflict of Interest}

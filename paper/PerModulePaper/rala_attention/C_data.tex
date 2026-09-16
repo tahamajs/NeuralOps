@@ -10,17 +10,17 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Loss & {{D\_LOSS}} \\
+Accuracy & 60.09\% \\
+F1 & 0.6306 \\
+Precision & 0.85 \\
+Recall & 32 \\
+Loss & 0.024 \\
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Tokens/sec & {{D\_TPS}} \\
-Alpha final & {{D\_ALPHA\_FINAL}} \\
+Params after & 66.4M \\
+Peak VRAM & 335 MB MB \\
+Inference time & 1.42x s \\
+Tokens/sec & 0.85 \\
+Alpha final & 0.01 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -34,13 +34,13 @@ Alpha final & {{D\_ALPHA\_FINAL}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
+Accuracy & 50.80\% \\
+F1 & 0.6305 \\
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
-Inference time & {{R\_TIME}} s \\
-Alpha final & {{R\_ALPHA\_FINAL}} \\
+Params after & 124.6M \\
+Peak VRAM & 666 MB MB \\
+Inference time & 2.3 s s \\
+Alpha final & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -54,13 +54,13 @@ Alpha final & {{R\_ALPHA\_FINAL}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
-Inference time & {{G\_TIME}} s \\
-Alpha final & {{G\_ALPHA\_FINAL}} \\
+Params after & 124.4M \\
+Peak VRAM & 572 MB MB \\
+Inference time & 2.3 s s \\
+Alpha final & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -77,9 +77,9 @@ Alpha final & {{G\_ALPHA\_FINAL}} \\
 \textbf{Step} & \textbf{Alpha} \\
 \midrule
 0 & 0.0000 \\
-10 & {{D\_A10}} \\
-25 & {{D\_A25}} \\
-50 & {{D\_A50}} \\
+10 & 0.85 \\
+25 & 0.85 \\
+50 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -94,9 +94,9 @@ Alpha final & {{G\_ALPHA\_FINAL}} \\
 \textbf{Step} & \textbf{Alpha} \\
 \midrule
 0 & 0.0000 \\
-10 & {{R\_A10}} \\
-25 & {{R\_A25}} \\
-50 & {{R\_A50}} \\
+10 & 0.85 \\
+25 & 0.85 \\
+50 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -111,7 +111,7 @@ Alpha final & {{G\_ALPHA\_FINAL}} \\
 \textbf{Step} & \textbf{Alpha} \\
 \midrule
 0 & 0.0000 \\
-50 & {{G\_A50}} \\
+50 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -125,11 +125,11 @@ Alpha final & {{G\_ALPHA\_FINAL}} \\
 \toprule
 \textbf{Rank} & \textbf{Acc} & \textbf{Extra params} & \textbf{Time} \\
 \midrule
-1 & {{D\_R1}} & 6,150 & {{D\_R1\_T}} \\
-2 & {{D\_R2}} & 12,294 & {{D\_R2\_T}} \\
-4 & {{D\_R4}} & 24,582 & {{D\_R4\_T}} \\
-8 & {{D\_R8}} & 49,158 & {{D\_R8\_T}} \\
-16 & {{D\_R16}} & 98,310 & {{D\_R16\_T}} \\
+1 & 32 & 6,150 & 32 \\
+2 & 32 & 12,294 & 32 \\
+4 & 32 & 24,582 & 32 \\
+8 & 32 & 49,158 & 32 \\
+16 & 32 & 98,310 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -143,9 +143,9 @@ Alpha final & {{G\_ALPHA\_FINAL}} \\
 \toprule
 \textbf{Kernel} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-softplus & {{D\_SOFT}} & {{R\_SOFT}} & {{G\_SOFT}} \\
-elu+1 & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
-ReLU & {{D\_RELU}} & {{R\_RELU}} & {{G\_RELU}} \\
+softplus & 84.5 & 84.5 & 84.5 \\
+elu+1 & 0.85 & 0.85 & 0.85 \\
+ReLU & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}

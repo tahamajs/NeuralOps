@@ -10,16 +10,16 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Params change & +{{D\_PARAM\_PCT}}\% \\
-Attention params & {{D\_ATTN}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Landmark ratio & {{D\_LR}} \\
-Mean local gate & {{D\_G\_MEAN}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Time @ L=128 & {{D\_T128}} s \\
-Time @ L=1024 & {{D\_T1024}} s \\
+Params after & 66.4M \\
+Params change & +48.5\%\% \\
+Attention params & 0.85 \\
+Accuracy & 86.01\% \\
+F1 & 0.8688 \\
+Landmark ratio & 0.85 \\
+Mean local gate & 0.85 \\
+Peak VRAM & 369 MB MB \\
+Time @ L=128 & 0.85 s \\
+Time @ L=1024 & 0.85 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,11 +33,11 @@ Time @ L=1024 & {{D\_T1024}} s \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{R\_PARAMS}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Landmark ratio & {{R\_LR}} \\
-Mean gate & {{R\_G\_MEAN}} \\
+Params after & 124.6M \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Landmark ratio & 0.85 \\
+Mean gate & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -51,11 +51,11 @@ Mean gate & {{R\_G\_MEAN}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{G\_PARAMS}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Landmark ratio & {{G\_LR}} \\
-Mean gate & {{G\_G\_MEAN}} \\
+Params after & 124.4M \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Landmark ratio & 0.85 \\
+Mean gate & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -69,10 +69,10 @@ Mean gate & {{G\_G\_MEAN}} \\
 \toprule
 \textbf{} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.25 & {{D\_RHO25}} & {{R\_RHO25}} & {{G\_RHO25}} \\
-0.50 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-0.75 & {{D\_RHO75}} & {{R\_RHO75}} & {{G\_RHO75}} \\
-1.00 & {{D\_RHO100}} & {{R\_RHO100}} & {{G\_RHO100}} \\
+0.25 & 32 & 32 & 32 \\
+0.50 & 86.01 & 50.92 & 50.92 \\
+0.75 & 32 & 32 & 32 \\
+1.00 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,10 +86,10 @@ Mean gate & {{G\_G\_MEAN}} \\
 \toprule
 \textbf{F} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} \\
-128 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-256 & {{D\_F256}} & {{R\_F256}} & {{G\_F256}} \\
-512 & {{D\_F512}} & {{R\_F512}} & {{G\_F512}} \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 86.01 & 50.92 & 50.92 \\
+256 & 0.85 & 0.85 & 0.85 \\
+512 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,9 +103,9 @@ Mean gate & {{G\_G\_MEAN}} \\
 \toprule
 \textbf{W} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} \\
-128 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-256 & {{D\_W256}} & {{R\_W256}} & {{G\_W256}} \\
+32 & 0.85 & 0.85 & 0.85 \\
+128 & 86.01 & 50.92 & 50.92 \\
+256 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

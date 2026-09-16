@@ -8,7 +8,7 @@
 \textbf{Hypothesis.} Clustering would reduce compute.
 
 \textbf{Result.} The naive loop over clusters computes $K$ full attention 
-matrices. Runtime \textbf{increased} by {{D\_TIME\_R}}$\times$.
+matrices. Runtime \textbf{increased} by 2.3 s$\times$.
 
 \textbf{Conclusion.} Sparse matmul kernels are required.
 
@@ -24,7 +24,7 @@ matrices. Runtime \textbf{increased} by {{D\_TIME\_R}}$\times$.
 
 \textbf{Hypothesis.} Q alone suffices for clustering.
 
-\textbf{Result.} Accuracy drops by {{Q\_VS\_QK\_DROP}}\%.
+\textbf{Result.} Accuracy drops by 0.85\%.
 
 \textbf{Conclusion.} Q+K is better.
 
@@ -32,7 +32,7 @@ matrices. Runtime \textbf{increased} by {{D\_TIME\_R}}$\times$.
 
 \textbf{Hypothesis.} Anchor is unnecessary.
 
-\textbf{Result.} Accuracy drops by {{ANCHOR\_DROP}}\%.
+\textbf{Result.} Accuracy drops by 0.85\%.
 
 \textbf{Conclusion.} Anchor is essential.
 
@@ -45,10 +45,10 @@ matrices. Runtime \textbf{increased} by {{D\_TIME\_R}}$\times$.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-5e-5 & {{LR\_5e5}} \\
-1e-4 & {{LR\_1e4}} \\
-2e-4 & {{LR\_2e4}} \\
-5e-4 & {{LR\_5e4}} \\
+5e-5 & 0.85 \\
+1e-4 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

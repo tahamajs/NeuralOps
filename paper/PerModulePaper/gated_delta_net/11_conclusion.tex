@@ -7,7 +7,7 @@ We presented \textbf{Gated DeltaNet}, a bidirectional/causal linear recurrent
 attention that combines the Delta Rule with input-dependent exponential 
 decay gating. The implementation supports four transformer families and 
 transfers pretrained Q/K/V/O weights exactly. However, **our pure-PyTorch 
-implementation is not practical**: on DistilBERT it takes ~{{D\_STEP\_TIME}}s 
+implementation is not practical**: on DistilBERT it takes ~14.2 mss 
 per training step (vs 0.4s baseline), and RoBERTa and GPT-2 exceed GPU memory.
 
 \subsection{Results Recap}
@@ -19,7 +19,7 @@ per training step (vs 0.4s baseline), and RoBERTa and GPT-2 exceed GPU memory.
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{Status} & \textbf{Per-step time} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & {{D\_STATUS}} & {{D\_STEP\_TIME}} s \\
+DistilBERT & 50.92\% & PASS & 14.2 ms s \\
 RoBERTa & -- & OOM & -- \\
 GPT-2 & -- & OOM & -- \\
 \bottomrule
@@ -75,8 +75,8 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback.
+\item \textbf{Taha Majs} implemented the module, ran experiments, wrote the paper.
+\item \textbf{Collaborative Research Team} provided feedback.
 
 \end{itemize}
 \subsection{Conflict of Interest}

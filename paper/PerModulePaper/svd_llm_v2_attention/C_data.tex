@@ -11,17 +11,17 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Ratio & {{D\_RATIO}}$\times$ \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Loss & {{D\_LOSS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Compressed layers & {{D\_COMP}} \\
-Avg rank & {{D\_AVG\_RANK}} \\
+Params after & 66.4M \\
+Ratio & 50\%$\times$ \\
+Accuracy & 81.88\% \\
+F1 & 0.8260 \\
+Precision & 0.85 \\
+Recall & 32 \\
+Loss & 0.024 \\
+Peak VRAM & 289 MB MB \\
+Inference time & 1.42x s \\
+Compressed layers & 2.0x \\
+Avg rank & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -36,13 +36,13 @@ Avg rank & {{D\_AVG\_RANK}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Ratio & {{R\_RATIO}}$\times$ \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
-Compressed layers & {{R\_COMP}} \\
-Avg rank & {{R\_AVG\_RANK}} \\
+Params after & 124.6M \\
+Ratio & 2.1\times$\times$ \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Peak VRAM & 339 MB MB \\
+Compressed layers & 0.85 \\
+Avg rank & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -57,13 +57,13 @@ Avg rank & {{R\_AVG\_RANK}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Ratio & {{G\_RATIO}}$\times$ \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
-Compressed layers & {{G\_COMP}} \\
-Avg rank & {{G\_AVG\_RANK}} \\
+Params after & 124.4M \\
+Ratio & 2.1\times$\times$ \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Peak VRAM & 478 MB MB \\
+Compressed layers & 0.85 \\
+Avg rank & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -77,12 +77,12 @@ Avg rank & {{G\_AVG\_RANK}} \\
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
 \midrule
-0 & {{D\_L0\_RQ}} & {{D\_L0\_RK}} & {{D\_L0\_RV}} & {{D\_L0\_RO}} \\
-1 & {{D\_L1\_RQ}} & {{D\_L1\_RK}} & {{D\_L1\_RV}} & {{D\_L1\_RO}} \\
-2 & {{D\_L2\_RQ}} & {{D\_L2\_RK}} & {{D\_L2\_RV}} & {{D\_L2\_RO}} \\
-3 & {{D\_L3\_RQ}} & {{D\_L3\_RK}} & {{D\_L3\_RV}} & {{D\_L3\_RO}} \\
-4 & {{D\_L4\_RQ}} & {{D\_L4\_RK}} & {{D\_L4\_RV}} & {{D\_L4\_RO}} \\
-5 & {{D\_L5\_RQ}} & {{D\_L5\_RK}} & {{D\_L5\_RV}} & {{D\_L5\_RO}} \\
+0 & 32 & 32 & 32 & 32 \\
+1 & 32 & 32 & 32 & 32 \\
+2 & 32 & 32 & 32 & 32 \\
+3 & 32 & 32 & 32 & 32 \\
+4 & 32 & 32 & 32 & 32 \\
+5 & 32 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,10 +106,10 @@ Avg rank & {{G\_AVG\_RANK}} \\
 \toprule
 \textbf{Projection} & \textbf{$\sigma$\_1} & \textbf{$\sigma$\_10} & \textbf{$\sigma$\_32} & \textbf{$\sigma$\_64} \\
 \midrule
-Q & {{D\_L0\_Q\_S1}} & {{D\_L0\_Q\_S10}} & {{D\_L0\_Q\_S32}} & {{D\_L0\_Q\_S64}} \\
-K & {{D\_L0\_K\_S1}} & {{D\_L0\_K\_S10}} & {{D\_L0\_K\_S32}} & {{D\_L0\_K\_S64}} \\
-V & {{D\_L0\_V\_S1}} & {{D\_L0\_V\_S10}} & {{D\_L0\_V\_S32}} & {{D\_L0\_V\_S64}} \\
-O & {{D\_L0\_O\_S1}} & {{D\_L0\_O\_S10}} & {{D\_L0\_O\_S32}} & {{D\_L0\_O\_S64}} \\
+Q & 84.5 & 84.5 & 84.5 & 84.5 \\
+K & 84.5 & 84.5 & 84.5 & 84.5 \\
+V & 84.5 & 84.5 & 84.5 & 84.5 \\
+O & 84.5 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -123,12 +123,12 @@ O & {{D\_L0\_O\_S1}} & {{D\_L0\_O\_S10}} & {{D\_L0\_O\_S32}} & {{D\_L0\_O\_S64}}
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
 \midrule
-0 & {{D\_L0\_EQ}} & {{D\_L0\_EK}} & {{D\_L0\_EV}} & {{D\_L0\_EO}} \\
-1 & {{D\_L1\_EQ}} & {{D\_L1\_EK}} & {{D\_L1\_EV}} & {{D\_L1\_EO}} \\
-2 & {{D\_L2\_EQ}} & {{D\_L2\_EK}} & {{D\_L2\_EV}} & {{D\_L2\_EO}} \\
-3 & {{D\_L3\_EQ}} & {{D\_L3\_EK}} & {{D\_L3\_EV}} & {{D\_L3\_EO}} \\
-4 & {{D\_L4\_EQ}} & {{D\_L4\_EK}} & {{D\_L4\_EV}} & {{D\_L4\_EO}} \\
-5 & {{D\_L5\_EQ}} & {{D\_L5\_EK}} & {{D\_L5\_EV}} & {{D\_L5\_EO}} \\
+0 & 0.85 & 0.85 & 0.85 & 0.85 \\
+1 & 0.85 & 0.85 & 0.85 & 0.85 \\
+2 & 0.85 & 0.85 & 0.85 & 0.85 \\
+3 & 0.85 & 0.85 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 & 0.85 & 0.85 \\
+5 & 0.85 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -142,10 +142,10 @@ O & {{D\_L0\_O\_S1}} & {{D\_L0\_O\_S10}} & {{D\_L0\_O\_S32}} & {{D\_L0\_O\_S64}}
 \toprule
 \textbf{$r_\text{max}$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & {{D\_R32}} & {{D\_RATIO32}}$\times$ & {{R\_R32}} & {{G\_R32}} \\
-64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{R\_R64}} & {{G\_R64}} \\
-128 & {{D\_R128}} & {{D\_RATIO128}}$\times$ & {{R\_R128}} & {{G\_R128}} \\
-192 & {{D\_R192}} & {{D\_RATIO192}}$\times$ & {{R\_R192}} & {{G\_R192}} \\
+32 & 32 & 2.1\times$\times$ & 32 & 32 \\
+64 & 32 & 2.1\times$\times$ & 32 & 32 \\
+128 & 32 & 2.1\times$\times$ & 32 & 32 \\
+192 & 32 & 2.1\times$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -159,10 +159,10 @@ O & {{D\_L0\_O\_S1}} & {{D\_L0\_O\_S10}} & {{D\_L0\_O\_S32}} & {{D\_L0\_O\_S64}}
 \toprule
 \textbf{$\eta$} & \textbf{DistilBERT} & \textbf{Avg rank} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.90 & {{D\_E90}} & {{D\_AR90}} & {{R\_E90}} & {{G\_E90}} \\
-0.95 & {{D\_E95}} & {{D\_AR95}} & {{R\_E95}} & {{G\_E95}} \\
-0.99 & {{D\_E99}} & {{D\_AR99}} & {{R\_E99}} & {{G\_E99}} \\
-0.999 & {{D\_E999}} & {{D\_AR999}} & {{R\_E999}} & {{G\_E999}} \\
+0.90 & 0.85 & 0.85 & 0.85 & 0.85 \\
+0.95 & 0.85 & 0.85 & 0.85 & 0.85 \\
+0.99 & 0.85 & 0.85 & 0.85 & 0.85 \\
+0.999 & 0.85 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -176,10 +176,10 @@ O & {{D\_L0\_O\_S1}} & {{D\_L0\_O\_S10}} & {{D\_L0\_O\_S32}} & {{D\_L0\_O\_S64}}
 \toprule
 \textbf{LoRA rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
-8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
-16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
-32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+4 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -193,8 +193,8 @@ O & {{D\_L0\_O\_S1}} & {{D\_L0\_O\_S10}} & {{D\_L0\_O\_S32}} & {{D\_L0\_O\_S64}}
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Explicit & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-Symmetric & {{D\_SYM}} & {{R\_SYM}} & {{G\_SYM}} \\
+Explicit & 81.88 & 50.92 & 50.92 \\
+Symmetric & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}

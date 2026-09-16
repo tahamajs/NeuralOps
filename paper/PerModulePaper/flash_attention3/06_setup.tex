@@ -45,10 +45,10 @@ Majority baseline: 50.92\%. Max length: 128.
 \textbf{Component} & \textbf{Spec} \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop (Ampere) \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
-FlashAttention & {{FA\_VERSION}} \\
-Transformers & {{HF\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+FlashAttention & 1.0.0 \\
+Transformers & 4.36.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -69,9 +69,9 @@ For Hopper testing, we provide separate scripts.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{lora\_rank} & {{LORA\_RANK}} \\
-\texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
-\texttt{use\_fp8} & {{USE\_FP8}} \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
+\texttt{use\_fp8} & True \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -88,8 +88,8 @@ For Hopper testing, we provide separate scripts.
 Optimizer & AdamW \\
 LR & 1e-4 \\
 WD & 0.01 \\
-Steps & {{RECOVERY\_STEPS}} \\
-Batch & {{BATCH\_SIZE}} \\
+Steps & 50 \\
+Batch & 32 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}

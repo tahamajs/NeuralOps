@@ -20,9 +20,9 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
+torch & 2.1.2 \\
+transformers & 4.36.0 \\
+datasets & 1.0.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -76,9 +76,9 @@ torch.backends.cudnn.deterministic = True
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & {{D\_RATIO}}$\times$ \\
-RoBERTa & {{R\_ACC}}\% & {{R\_RATIO}}$\times$ \\
-GPT-2 & {{G\_ACC}}\% & {{G\_RATIO}}$\times$ \\
+DistilBERT & 80.73\% & 50\%$\times$ \\
+RoBERTa & 50.92\% & 2.1\times$\times$ \\
+GPT-2 & 77.5\% & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -87,7 +87,7 @@ GPT-2 & {{G\_ACC}}\% & {{G\_RATIO}}$\times$ \\
 
 \begin{itemize}
 \item Dataset: SST-2
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-svd\_linear}
+\item Checkpoints: \texttt{efficiency-lab/svd-linear-attention-*-svd\_linear}
 \item Metrics: \texttt{results/unified\_svd\_linear\_attention/*/summary.csv}
 
 \end{itemize}

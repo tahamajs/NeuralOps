@@ -80,11 +80,11 @@ to $\mathcal{O}(L \cdot B)$ where $B$ is the average bucket size. We use a
 \textbf{rectified softpick} activation instead of softmax, which drops far-tail 
 attention weights while falling back to softmax when no candidate survives.
 
-PHANTOM compresses DistilBERT by \textbf{{{D\_RATIO}}$\times$}, RoBERTa by \textbf{{{R\_RATIO}}$\times$}, 
-and GPT-2 by \textbf{{{G\_RATIO}}$\times$}, with SST-2 accuracy drops of only 
-\textbf{{{D\_DELTA}}\%}, \textbf{{{R\_DELTA}}\%}, and \textbf{{{G\_DELTA}}\%} after 
-{{RECOVERY\_STEPS}} LoRA recovery steps. Peak inference VRAM decreases by 
-\textbf{{{VRAM\_REDUCTION}}\%}. Unlike attention-replacement methods that preserve 
+PHANTOM compresses DistilBERT by \textbf{50\%$\times$}, RoBERTa by \textbf{2.1\times$\times$}, 
+and GPT-2 by \textbf{2.1\times$\times$}, with SST-2 accuracy drops of only 
+\textbf{-18.12\%}, \textbf{-27.64\%}, and \textbf{-28.44\%} after 
+50 LoRA recovery steps. Peak inference VRAM decreases by 
+\textbf{380 MB\%}. Unlike attention-replacement methods that preserve 
 parameter count, PHANTOM achieves genuine parameter reduction from 
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$ via CUR 
 factorization. We provide a production-hardened implementation with strict 

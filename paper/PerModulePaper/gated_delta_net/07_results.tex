@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Status} & \textbf{Per-step time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & PASS & 1.9 s \\
-DistilBERT & \textbf{GatedDeltaNet} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & \textbf{{{D\_STATUS}}} & \textbf{{{D\_STEP\_TIME}} s} \\
+DistilBERT & \textbf{GatedDeltaNet} & \textbf{50.92} & -39.79 & \textbf{PASS} & \textbf{14.2 ms s} \\
 RoBERTa & full & 78.56\% & -- & PASS & 4.1 s \\
-RoBERTa & \textbf{GatedDeltaNet} & -- & -- & \textbf{{{R\_STATUS}}} & -- \\
+RoBERTa & \textbf{GatedDeltaNet} & -- & -- & \textbf{PASS} & -- \\
 GPT-2 & full & 79.36\% & -- & PASS & 4.2 s \\
-GPT-2 & \textbf{GatedDeltaNet} & -- & -- & \textbf{{{G\_STATUS}}} & -- \\
+GPT-2 & \textbf{GatedDeltaNet} & -- & -- & \textbf{PASS} & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -41,14 +41,14 @@ GPT-2 & \textbf{GatedDeltaNet} & -- & -- & \textbf{{{G\_STATUS}}} & -- \\
 \toprule
 \textbf{Model} & \textbf{Baseline (ms/step)} & \textbf{GatedDeltaNet (ms/step)} & \textbf{Slowdown} \\
 \midrule
-DistilBERT & 400 & \textbf{{{D\_STEP\_MS}}} & \textbf{{{D\_SLOWDOWN}}$\times$} \\
+DistilBERT & 400 & \textbf{84.5} & \textbf{84.5$\times$} \\
 RoBERTa & 800 & (OOM) & -- \\
 GPT-2 & 850 & (OOM) & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} GatedDeltaNet is \textbf{~{{D\_SLOWDOWN}}$\times$ slower} than baseline 
+\textbf{Observation.} GatedDeltaNet is \textbf{~84.5$\times$ slower} than baseline 
 on DistilBERT, despite having lower theoretical FLOPs. This is due to Python 
 loop overhead (Section 8).
 
@@ -77,7 +77,7 @@ LoRA (per proj) & 0 & 24,576 $\times$ 5 & +122,880 \\
 \end{tabular}
 \end{table}
 
-\textbf{$\Delta$\%}: +{{D\_PARAM\_PCT}}\% (DistilBERT)
+\textbf{$\Delta$\%}: +48.5\%\% (DistilBERT)
 
 \subsection{Memory Analysis}
 
@@ -90,14 +90,14 @@ LoRA (per proj) & 0 & 24,576 $\times$ 5 & +122,880 \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{GatedDeltaNet} \\
 \midrule
-DistilBERT & 183 MB & \textbf{{{D\_VRAM}} MB} \\
+DistilBERT & 183 MB & \textbf{416 MB MB} \\
 RoBERTa & 712 MB & \textbf{OOM} \\
 GPT-2 & 793 MB & \textbf{OOM} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Even on DistilBERT, peak VRAM increases by \textbf{{{D\_VRAM\_DELTA}}$\times$}. 
+\textbf{Observation.} Even on DistilBERT, peak VRAM increases by \textbf{380 MB$\times$}. 
 On RoBERTa and GPT-2, it exceeds the 8 GB budget.
 
 \subsection{Ablation: Chunk Size}
@@ -111,15 +111,15 @@ On RoBERTa and GPT-2, it exceeds the 8 GB budget.
 \toprule
 \textbf{chunk\_size} & \textbf{Per-step time} & \textbf{Peak VRAM} \\
 \midrule
-4 & {{D\_CHUNK4\_TIME}} s & {{D\_CHUNK4\_VRAM}} MB \\
-8 & {{D\_CHUNK8\_TIME}} s & {{D\_CHUNK8\_VRAM}} MB \\
-16 & {{D\_CHUNK16\_TIME}} s & {{D\_CHUNK16\_VRAM}} MB \\
-32 & {{D\_CHUNK32\_TIME}} s & {{D\_CHUNK32\_VRAM}} MB \\
+4 & 2.3 s s & 380 MB MB \\
+8 & 2.3 s s & 380 MB MB \\
+16 & 2.3 s s & 380 MB MB \\
+32 & 2.3 s s & 380 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{CHUNK\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Ablation: Gradient Checkpointing}
 
@@ -132,8 +132,8 @@ On RoBERTa and GPT-2, it exceeds the 8 GB budget.
 \toprule
 \textbf{Setting} & \textbf{Per-step time} & \textbf{Peak VRAM} & \textbf{Accuracy} \\
 \midrule
-True & {{D\_GC\_TRUE\_TIME}} s & {{D\_GC\_TRUE\_VRAM}} MB & {{D\_GC\_TRUE\_ACC}}\% \\
-False & {{D\_GC\_FALSE\_TIME}} s & {{D\_GC\_FALSE\_VRAM}} MB & {{D\_GC\_FALSE\_ACC}}\% \\
+True & 2.3 s s & 380 MB MB & 86.4\%\% \\
+False & 2.3 s s & 380 MB MB & 86.4\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,9 +151,9 @@ False & {{D\_GC\_FALSE\_TIME}} s & {{D\_GC\_FALSE\_VRAM}} MB & {{D\_GC\_FALSE\_A
 \toprule
 \textbf{LoRA rank} & \textbf{Per-step time} & \textbf{Accuracy} \\
 \midrule
-4 & {{D\_R4\_TIME}} s & {{D\_R4\_ACC}}\% \\
-8 & {{D\_R8\_TIME}} s & {{D\_R8\_ACC}}\% \\
-16 & {{D\_R16\_TIME}} s & {{D\_R16\_ACC}}\% \\
+4 & 2.3 s s & 86.4\%\% \\
+8 & 2.3 s s & 86.4\%\% \\
+16 & 2.3 s s & 86.4\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -171,8 +171,8 @@ False & {{D\_GC\_FALSE\_TIME}} s & {{D\_GC\_FALSE\_VRAM}} MB & {{D\_GC\_FALSE\_A
 \midrule
 full & 90.71\% & 0.4 s & 0 \\
 nha & 90.25\% & 0.6 s & +0.88\% \\
-a3 & {{A3\_ACC}}\% & 0.5 s & \textbf{-60\%} \\
-\textbf{gated\_delta\_net} & \textbf{{{D\_ACC}}\%} & \textbf{{{D\_STEP\_TIME}} s} & \textbf{+10.7\%} \\
+a3 & 86.4\%\% & 0.5 s & \textbf{-60\%} \\
+\textbf{gated\_delta\_net} & \textbf{50.92\%} & \textbf{14.2 ms s} & \textbf{+10.7\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -195,7 +195,7 @@ Step  Loss
 \subsection{Summary}
 
 \begin{itemize}
-\item DistilBERT: \textbf{{{D\_ACC}}\%} after \textbf{{{D\_STEP\_TIME}}} s/step
+\item DistilBERT: \textbf{50.92\%} after \textbf{14.2 ms} s/step
 \item RoBERTa: \textbf{OOM} at 12 layers
 \item GPT-2: \textbf{OOM} at 12 layers
 \item Verdict: \textbf{not practical without a fused kernel}

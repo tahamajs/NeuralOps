@@ -30,12 +30,12 @@ GPT-2 & 12 & 768 & 12 & 124.4M & 64 \\
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-\texttt{svd\_energy} & {{SVD\_ENERGY}} (default 0.95) \\
-\texttt{svd\_min\_rank} & {{SVD\_MIN\_RANK}} (default 4) \\
-\texttt{svd\_max\_rank} & {{SVD\_MAX\_RANK}} (default 64) \\
+\texttt{svd\_energy} & 95\% (default 0.95) \\
+\texttt{svd\_min\_rank} & 32 (default 4) \\
+\texttt{svd\_max\_rank} & 64 (default 64) \\
 \texttt{num\_kernel\_heads} & Auto: 2/3 of heads \\
 \texttt{num\_full\_heads} & Auto: 1/3 of heads \\
-\texttt{rff\_features} & {{RFF\_FEATURES}} (default 256) \\
+\texttt{rff\_features} & 64 (default 256) \\
 \texttt{softpick\_temperature} & 1.0 (default 1.0) \\
 \bottomrule
 \end{tabular}
@@ -52,10 +52,10 @@ GPT-2 & 12 & 768 & 12 & 124.4M & 64 \\
 \midrule
 Optimizer & AdamW \\
 Learning rate & 1e-4 \\
-Recovery steps & {{RECOVERY\_STEPS}} \\
-LoRA rank & {{LORA\_RANK}} \\
-LoRA alpha & {{LORA\_ALPHA}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Recovery steps & 50 \\
+LoRA rank & 8 \\
+LoRA alpha & 16 \\
+Batch size & 32 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -98,8 +98,8 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
 \bottomrule
 \end{tabular}
 \end{table}

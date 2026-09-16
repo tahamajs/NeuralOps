@@ -73,12 +73,12 @@ in pretrained transformers. Base SVD factors are frozen; trainable LoRA
 adapters on both the QKV and output branches provide recovery capacity.
 
 For a typical transformer with $d = 768$ and head dimension $d_h = 64$, the 
-default configuration achieves \textbf{{{D\_RATIO}}$\times$} parameter reduction on 
+default configuration achieves \textbf{1.38$\times$} parameter reduction on 
 attention projections (from $4d^2$ to $2r(d + d_h)$ where $r$ is the SVD 
-rank). On SST-2, Compressed MHA achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
-(baseline {{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
-{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
-{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA recovery steps.
+rank). On SST-2, Compressed MHA achieves \textbf{50.92\%} on DistilBERT 
+(baseline 90.71\%, $\Delta$ = -39.79), \textbf{50.92\%} on RoBERTa (baseline 
+78.56\%, $\Delta$ = -27.64), and \textbf{50.92\%} on GPT-2 (baseline 
+79.36\%, $\Delta$ = -28.44), using 50 LoRA recovery steps.
 
 The implementation is production-hardened across four architectures 
 (DistilBERT flat, RoBERTa nested, GPT-2 Conv1D, Qwen GQA+RoPE) with:

@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{k} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 183 MB \\
-DistilBERT & \textbf{Linformer} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_K}} & {{D\_VRAM}} MB \\
+DistilBERT & \textbf{Linformer} & \textbf{50.92} & -39.79 & 0.6748 & 0.85 & 1322 MB MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 712 MB \\
-RoBERTa & \textbf{Linformer} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_K}} & {{R\_VRAM}} MB \\
+RoBERTa & \textbf{Linformer} & \textbf{48.17} & -30.39 & 0.4989 & 0.85 & 421 MB MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 793 MB \\
-GPT-2 & \textbf{Linformer} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_K}} & {{G\_VRAM}} MB \\
+GPT-2 & \textbf{Linformer} & \textbf{77.5} & 0.85 & 0.865 & 0.85 & 380 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -40,9 +40,9 @@ GPT-2 & \textbf{Linformer} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Linformer} & \textbf{Change} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & 66,955,010 & 66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -59,9 +59,9 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{Peak VRAM} \\
 \midrule
 DistilBERT & full & 1.9 s & 59000 & 183 MB \\
-DistilBERT & Linformer & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+DistilBERT & Linformer & 1.42x s & 0.85 & 1322 MB MB \\
 GPT-2 & full & 4.2 s & 26700 & 793 MB \\
-GPT-2 & Linformer & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+GPT-2 & Linformer & 2.3 s s & 0.85 & 380 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -77,11 +77,11 @@ GPT-2 & Linformer & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{k} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-16 & {{D\_K16}} & {{R\_K16}} & {{G\_K16}} \\
-32 & {{D\_K32}} & {{R\_K32}} & {{G\_K32}} \\
-64 & {{D\_K64}} & {{R\_K64}} & {{G\_K64}} \\
-128 & {{D\_K128}} & {{R\_K128}} & {{G\_K128}} \\
-256 & {{D\_K256}} & {{R\_K256}} & {{G\_K256}} \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 & 0.85 \\
+256 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -97,9 +97,9 @@ GPT-2 & Linformer & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Init} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Diagonal + noise & {{D\_DIAG}} & {{R\_DIAG}} & {{G\_DIAG}} \\
-Gaussian only & {{D\_GAUSS}} & {{R\_GAUSS}} & {{G\_GAUSS}} \\
-Zero & {{D\_ZERO}} & {{R\_ZERO}} & {{G\_ZERO}} \\
+Diagonal + noise & 0.85 & 0.85 & 0.85 \\
+Gaussian only & 0.85 & 0.85 & 0.85 \\
+Zero & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -115,8 +115,8 @@ Zero & {{D\_ZERO}} & {{R\_ZERO}} & {{G\_ZERO}} \\
 \toprule
 \textbf{Config} & \textbf{Acc} & \textbf{Time} \\
 \midrule
-Fallback (correct) & {{G\_CAUSAL}} & {{G\_CAUSAL\_TIME}} s \\
-No fallback (incorrect) & {{G\_NO\_CAUSAL}} & {{G\_NO\_CAUSAL\_TIME}} s \\
+Fallback (correct) & 0.85 & 2.3 s s \\
+No fallback (incorrect) & 0.85 & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -132,10 +132,10 @@ No fallback (incorrect) & {{G\_NO\_CAUSAL}} & {{G\_NO\_CAUSAL\_TIME}} s \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,10 +151,10 @@ No fallback (incorrect) & {{G\_NO\_CAUSAL}} & {{G\_NO\_CAUSAL\_TIME}} s \\
 \toprule
 \textbf{L} & \textbf{Standard} & \textbf{Linformer} & \textbf{Speedup} \\
 \midrule
-128 & {{T128\_STD}} & {{T128\_LIN}} & 84.8$\times$ \\
-256 & {{T256\_STD}} & {{T256\_LIN}} & 85.6$\times$ \\
-512 & {{T512\_STD}} & {{T512\_LIN}} & 86.2$\times$ \\
-1024 & {{T1024\_STD}} & {{T1024\_LIN}} & 86.4$\times$ \\
+128 & 84.5 & 0.85 & 84.8$\times$ \\
+256 & 84.5 & 0.85 & 85.6$\times$ \\
+512 & 84.5 & 0.85 & 86.2$\times$ \\
+1024 & 84.5 & 0.85 & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

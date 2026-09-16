@@ -87,11 +87,11 @@ and grouped-query with rotary embeddings (Qwen/LLaMA). Base projections
 are frozen; only LoRA adapters are trained.
 
 We evaluate RPC on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
-{{RECOVERY\_STEPS}} LoRA recovery steps. RPC achieves \textbf{{{D\_ACC}}\%} on 
-DistilBERT ($\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), 
-and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}).
+50 LoRA recovery steps. RPC achieves \textbf{87.84\%} on 
+DistilBERT ($\Delta$ = -2.87), \textbf{66.97\%} on RoBERTa ($\Delta$ = -11.59), 
+and \textbf{57.34\%} on GPT-2 ($\Delta$ = -22.02).
 
-RPC \textbf{increases} parameter count by \textbf{{{PARAM\_CHANGE\_PCT}}\%} due to LoRA 
+RPC \textbf{increases} parameter count by \textbf{48.5\%\%} due to LoRA 
 adapters on four projections. RPC \textbf{does not reduce memory}: the attention 
 score matrix remains $L \times L$, only its content is computed in a lower 
 dimension. The "compressed" in the name refers to the Q/K representations, 

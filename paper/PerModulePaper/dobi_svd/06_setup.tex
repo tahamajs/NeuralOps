@@ -47,9 +47,9 @@ Majority baseline: \textbf{50.92\%}.
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
 Rank $r$ & 32 & Nominal rank \\
-\texttt{init\_rank\_ratio} & {{INIT\_RANK\_RATIO}} & When \texttt{rank=None} \\
-\texttt{init\_gate\_val} & {{INIT\_GATE}} & Sigmoid init $\approx$ {{INIT\_SIGMA}} \\
-\texttt{max\_error} & {{MAX\_ERROR}} & Frobenius threshold \\
+\texttt{init\_rank\_ratio} & 2.1\times & When \texttt{rank=None} \\
+\texttt{init\_gate\_val} & 0.5 & Sigmoid init $\approx$ 1.0 \\
+\texttt{max\_error} & 0.024 & Frobenius threshold \\
 \texttt{max\_retries} & 2 & Rank escalation \\
 \texttt{fallback\_to\_original} & True & Safe fallback \\
 \texttt{target\_attention\_only} & True & Only attention \\
@@ -70,8 +70,8 @@ Rank cap & 128 & Maximum rank \\
 Optimizer & AdamW \\
 Learning rate & 1e-4 \\
 Weight decay & 0.01 \\
-Recovery steps & {{RECOVERY\_STEPS}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Recovery steps & 50 \\
+Batch size & 32 \\
 Precision & FP16 \\
 Trainable & Gates + LoRA \\
 \bottomrule
@@ -127,9 +127,9 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB GDDR6 \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
-Transformers & {{HF\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+Transformers & 4.36.0 \\
 \bottomrule
 \end{tabular}
 \end{table}

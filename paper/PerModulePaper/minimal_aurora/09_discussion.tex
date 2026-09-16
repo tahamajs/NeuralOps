@@ -4,7 +4,7 @@
 
 \subsubsection{Takeaway 1: Real Compression}
 
-MinimalAURORA reduces parameters by {{D\_RATIO}}$\times$.
+MinimalAURORA reduces parameters by 50\%$\times$.
 
 \subsubsection{Takeaway 2: Simplicity}
 
@@ -60,10 +60,10 @@ For DistilBERT:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{MinimalAURORA} & \textbf{Change} \\
 \midrule
-Params & 66.95M & {{D\_PARAMS}}M & \textbf{{{D\_RATIO}}$\times$} \\
-VRAM & 183 MB & {{D\_VRAM}} MB & -{{VRAM\_PCT}}\% \\
-Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
+VRAM & 183 MB & 293 MB MB & -48.5\%\% \\
+Time & 1.90 s & 1.42x s & 2.1\times$\times$ \\
+Accuracy & 90.71\% & 85.44\% & -5.27\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,7 +81,7 @@ ASVD & 88.5\% & 12$\times$ & No & Low \\
 AASVD & 88.5\% & 5$\times$ & Yes & High \\
 A3 & 88.5\% & 5$\times$ & Yes & Medium \\
 Res-SVD & 88.2\% & 5.9$\times$ & No & Medium \\
-\textbf{MinimalAURORA} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{No} & \textbf{Low} \\
+\textbf{MinimalAURORA} & \textbf{85.44} & \textbf{50\%$\times$} & \textbf{No} & \textbf{Low} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -113,7 +113,7 @@ Res-SVD & 88.2\% & 5.9$\times$ & No & Medium \\
 \end{itemize}
 \subsubsection{Environmental}
 \begin{itemize}
-\item Training: ~{{COMPUTE\_HOURS}} GPU-hours
+\item Training: ~12.5 GPU-hours
 \item CO$_2$: ~12.4 kg
 
 \end{itemize}

@@ -16,9 +16,9 @@ and serves as an effective recovery mechanism for compression methods.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Trainable} & \textbf{Merge fidelity} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & {{D\_TRAINABLE}} &  \\
-RoBERTa & {{R\_DELTA}}\% & {{R\_TRAINABLE}} &  \\
-GPT-2 & {{G\_DELTA}}\% & {{G\_TRAINABLE}} &  \\
+DistilBERT & -0.80\% & 0.85 &  \\
+RoBERTa & -20.53\% & 0.85 &  \\
+GPT-2 & -28.10\% & 0.85 &  \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -26,7 +26,7 @@ GPT-2 & {{G\_DELTA}}\% & {{G\_TRAINABLE}} &  \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{Trainable parameters reduced by {{TRAIN\_RATIO}}$\times$.}
+\item \textbf{Trainable parameters reduced by 2.1\times$\times$.}
 \item \textbf{Attention LoRA outperforms FFN LoRA} for classification.
 \item \textbf{Merge preserves accuracy} to numerical precision.
 \item \textbf{Effective recovery mechanism for compression} -- 90\%+ recovery.
@@ -60,9 +60,9 @@ We thank the anonymous reviewers and the compute cluster administrators for thei
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed LoRA Attention, implemented, ran experiments,
+\item \textbf{Taha Majs} designed LoRA Attention, implemented, ran experiments,
   wrote paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback, edited manuscript.
+\item \textbf{Collaborative Research Team} provided feedback, edited manuscript.
 
 \end{itemize}
 \subsection{Conflict of Interest}

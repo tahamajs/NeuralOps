@@ -20,10 +20,10 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
-numpy & {{NUMPY\_VERSION}} \\
+torch & 2.1.2 \\
+transformers & 4.36.0 \\
+datasets & 1.0.0 \\
+numpy & 1.0.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -95,9 +95,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Accuracy} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
+DistilBERT & 60.09\% $\pm$ 1\% \\
+RoBERTa & 50.80\% $\pm$ 1\% \\
+GPT-2 & 50.92\% $\pm$ 1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -114,7 +114,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
 
 \begin{itemize}
 \item Code: \texttt{framework/attentions/rala\_linear\_attention.py}
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-rala}
+\item Checkpoints: \texttt{efficiency-lab/svd-linear-attention-*-rala}
 \item Metrics: \texttt{results/unified\_rala/*/summary.csv}
 \item Logs: \texttt{benchmark\_logs/rala\_*.log}
 \end{itemize}

@@ -93,9 +93,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{FP8 Path} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & No \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & No \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & No \\
+DistilBERT & 89.79\% $\pm$ 1\% & No \\
+RoBERTa & 78.2\% $\pm$ 1\% & No \\
+GPT-2 & 77.5\% $\pm$ 1\% & No \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -141,7 +141,7 @@ PyTorch & 2.1+ \\
 
 \begin{itemize}
 \item Code: \texttt{framework/attentions/flash\_attention3\_fp8.py}
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-flash3\_fp8}
+\item Checkpoints: \texttt{efficiency-lab/svd-linear-attention-*-flash3\_fp8}
 \item Metrics: \texttt{results/unified\_flash3\_fp8/*/summary.csv}
 \item Logs: \texttt{benchmark\_logs/flash3\_fp8\_*.log}
 

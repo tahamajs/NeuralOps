@@ -19,9 +19,9 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -72,9 +72,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & +{{D\_PARAM\_DELTA}}M \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & +{{R\_PARAM\_DELTA}}M \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & +{{G\_PARAM\_DELTA}}M \\
+DistilBERT & 90.02\% $\pm$ 1\% & +589826M \\
+RoBERTa & 72.02\% $\pm$ 1\% & +1179648M \\
+GPT-2 & 87.96\% $\pm$ 1\% & +1188876M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -83,7 +83,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & +{{G\_PARAM\_DELTA}}M \\
 
 \begin{itemize}
 \item Dataset: SST-2 via \texttt{datasets}
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-cluster}
+\item Checkpoints: \texttt{Hooshaai/svd-linear-attention-*-cluster}
 \item Metrics: \texttt{results/unified\_cluster/*/summary.csv}
 
 \end{itemize}

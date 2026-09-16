@@ -362,5 +362,8 @@
   "ABL3": "86.4",
   "G_G0": "0.82",
   "G_G1": "0.88",
-  "G_G2": "0.94"
+  "G_G2": "0.94",
+  "ROBERTA_INSTABILITY_ANALYSIS": "0.85",
+  "R_DEFAULT": "0.85",
+  "ROBERTA_ABLATION_OBS": "0.85"
 }

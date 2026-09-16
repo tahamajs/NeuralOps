@@ -35,8 +35,8 @@ GPT-2 & 12 & 768 & 12 & 124.4M \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{base\_rank} $r_b$ & {{BASE\_RANK}} \\
-\texttt{residual\_rank} $r_r$ & {{RESIDUAL\_RANK}} \\
+\texttt{base\_rank} $r_b$ & 32 \\
+\texttt{residual\_rank} $r_r$ & 16 \\
 \texttt{scaling} $\alpha$ & 1.0 \\
 \texttt{factorize\_base} & True \\
 \texttt{freeze\_base} & True \\
@@ -56,8 +56,8 @@ GPT-2 & 12 & 768 & 12 & 124.4M \\
 Optimizer & AdamW \\
 Learning rate & 1e-4 \\
 Weight decay & 0.01 \\
-Steps & {{RECOVERY\_STEPS}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Steps & 50 \\
+Batch size & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}

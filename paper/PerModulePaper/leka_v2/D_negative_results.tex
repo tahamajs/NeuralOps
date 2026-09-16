@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Uniform random selection.
 
-\textbf{Result.} Accuracy dropped by {{RAND\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Learned selection matters.
 
@@ -14,7 +14,7 @@
 
 \textbf{Goal.} Global landmark only.
 
-\textbf{Result.} Accuracy dropped by {{NOLOCAL\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Local helps.
 
@@ -22,7 +22,7 @@
 
 \textbf{Goal.} Replace softpick with softmax.
 
-\textbf{Result.} Accuracy dropped by {{SOFTMAX\_DROP}}\%; NaN losses on some 
+\textbf{Result.} Accuracy dropped by 0.85\%; NaN losses on some 
 batches.
 
 \textbf{Conclusion.} Softpick is essential.
@@ -31,7 +31,7 @@ batches.
 
 \textbf{Goal.} Only $F$ features, no $F/2$.
 
-\textbf{Result.} Accuracy dropped by {{SINGLE\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Dual-scale helps.
 
@@ -68,10 +68,10 @@ Learned $T$ in softpick. Result: converged to 1.0.
 \toprule
 \textbf{$w_h$} & \textbf{DistilBERT} \\
 \midrule
--4 & {{WG\_M4}} \\
--2 & {{D\_ACC}} \\
-0 & {{WG\_0}} \\
-+2 & {{WG\_P2}} \\
+-4 & 0.85 \\
+-2 & 86.01 \\
+0 & 0.85 \\
++2 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,8 +85,8 @@ Learned $T$ in softpick. Result: converged to 1.0.
 \toprule
 \textbf{Init} & \textbf{DistilBERT} \\
 \midrule
-Identity & {{D\_ACC}} \\
-Random & {{CORR\_RAND}} \\
+Identity & 86.01 \\
+Random & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}

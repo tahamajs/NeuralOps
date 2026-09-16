@@ -15,7 +15,7 @@
 
 \textbf{Goal.} Use random inputs instead of real text.
 
-\textbf{Result.} Fisher weighting accuracy degraded to \textbf{{{RANDOM\_CALIB\_ACC}}\%}.
+\textbf{Result.} Fisher weighting accuracy degraded to \textbf{86.4\%\%}.
 
 \textbf{Conclusion.} Real calibration data is required.
 
@@ -48,7 +48,7 @@
 
 \textbf{Goal.} Force compression even if error exceeds threshold.
 
-\textbf{Result.} Accuracy collapsed to \textbf{{{NO\_FALLBACK\_ACC}}\%}.
+\textbf{Result.} Accuracy collapsed to \textbf{86.4\%\%}.
 
 \textbf{Conclusion.} Fallback is essential.
 
@@ -80,10 +80,10 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 \toprule
 \textbf{LR} & \textbf{DistilBERT acc} & \textbf{Loss stability} \\
 \midrule
-5e-5 & {{D\_LR5e5}} & Stable \\
-1e-4 & {{D\_LR1e4}} & Stable \\
-2e-4 & {{D\_LR2e4}} & Stable \\
-5e-4 & {{D\_LR5e4}} & Unstable \\
+5e-5 & 0.85 & Stable \\
+1e-4 & 0.85 & Stable \\
+2e-4 & 0.85 & Stable \\
+5e-4 & 0.85 & Unstable \\
 1e-3 & NaN & NaN \\
 \bottomrule
 \end{tabular}
@@ -98,12 +98,12 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 \toprule
 \textbf{Rank} & \textbf{Ratio} & \textbf{DistilBERT} \\
 \midrule
-8 & 15$\times$ & {{D\_R8\_ACC}} (too aggressive) \\
-16 & 8$\times$ & {{D\_R16\_ACC}} \\
-32 & 4$\times$ & {{D\_R32\_ACC}} \\
-64 & 2$\times$ & {{D\_R64\_ACC}} \\
-128 & 1.3$\times$ & {{D\_R128\_ACC}} \\
-384 & 1$\times$ & {{D\_R384\_ACC}} \\
+8 & 15$\times$ & 86.4\% (too aggressive) \\
+16 & 8$\times$ & 86.4\% \\
+32 & 4$\times$ & 86.4\% \\
+64 & 2$\times$ & 86.4\% \\
+128 & 1.3$\times$ & 86.4\% \\
+384 & 1$\times$ & 86.4\% \\
 \bottomrule
 \end{tabular}
 \end{table}

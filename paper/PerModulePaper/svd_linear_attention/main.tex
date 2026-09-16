@@ -72,7 +72,7 @@ mechanisms within a single drop-in replacement for multi-head self-attention:
 
 \begin{enumerate}
 \item \textbf{SVD-factorized projections:} $W_Q, W_K, W_V, W_O$ stored as $U V^\top$
-  with rank $r$, reducing projection parameters by factor ~{{D\_RATIO}}$\times$ at
+  with rank $r$, reducing projection parameters by factor ~50\%$\times$ at
   $r = 32$.
 \item \textbf{Kernelized linear attention:} $\phi(x) = \text{ELU}(x) + 1$ feature map,
   enabling the identity
@@ -91,14 +91,14 @@ embeddings (Qwen/LLaMA) -- and provides both a \textbf{batch mode} and a
 \textbf{step-recurrent mode} (\texttt{step\_recurrent}) for incremental streaming inference 
 with $\mathcal{O}(1)$ per-step cost.
 
-On SST-2 with {{RECOVERY\_STEPS}} LoRA recovery steps, SVD-Linear Attention 
-achieves \textbf{{{D\_ACC}}\%} on DistilBERT ($\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on 
-RoBERTa ($\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}), 
-with peak VRAM reductions of \textbf{{{VRAM\_REDUCTION}}\%}.
+On SST-2 with 50 LoRA recovery steps, SVD-Linear Attention 
+achieves \textbf{80.73\%} on DistilBERT ($\Delta$ = -9.98), \textbf{50.92\%} on 
+RoBERTa ($\Delta$ = -27.64), and \textbf{77.5\%} on GPT-2 ($\Delta$ = 0.85), 
+with peak VRAM reductions of \textbf{380 MB\%}.
 
 Unlike attention-replacement methods that add parameters (NHA, EAT, OHA, 
 Infini-Attention, SVD-Mamba), SVD-Linear Attention \textbf{reduces} parameter count 
-by factor {{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$. LoRA adapters add a small number of 
+by factor 50\%$\times$--2.1\times$\times$. LoRA adapters add a small number of 
 recovery parameters on top.
 
 \textbf{Keywords:} linear attention, SVD factorization, exponential decay, 

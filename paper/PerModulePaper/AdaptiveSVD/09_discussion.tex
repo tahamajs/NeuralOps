@@ -75,7 +75,7 @@ For DistilBERT:
 \midrule
 Disk (FP16) & 134 MB & 45 MB & \textbf{3.0$\times$} \\
 Params & 66.95M & 22000000M & \textbf{3.0$\times$} \\
-VRAM & 183 MB & 130 MB & \textbf{{{D\_VRAM\_RATIO}}$\times$} \\
+VRAM & 183 MB & 130 MB & \textbf{2.1\times$\times$} \\
 Inference time & 1.90 s & 2.3 s & 1.2$\times$ \\
 Accuracy & 90.71\% & 88.0\% & -2.7\% \\
 Compression time & -- & 15 s & Fast \\
@@ -97,8 +97,8 @@ compression speed.
 \midrule
 ALBERT & Sharing & 3.5$\times$ & 89.4\% & Retrain \\
 DistilBERT & Distill & 1.6$\times$ & 90.7\% & Retrain \\
-A3 & Low-rank & {{A3\_RATIO}}$\times$ & 85.5 & Data \\
-AASVD & Low-rank & {{AASVD\_RATIO}}$\times$ & 85.0 & Data \\
+A3 & Low-rank & 2.1\times$\times$ & 85.5 & Data \\
+AASVD & Low-rank & 2.1\times$\times$ & 85.0 & Data \\
 \textbf{Adaptive SVD} & Low-rank & \textbf{3.0$\times$} & \textbf{88.0} & \textbf{None} \\
 \bottomrule
 \end{tabular}

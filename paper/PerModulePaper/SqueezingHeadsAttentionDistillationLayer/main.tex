@@ -81,14 +81,14 @@ wrapper** -- the pretrained weights are copied verbatim; only LoRA parameters
 are trainable.
 
 We evaluate Squeezing Heads on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. 
-With LoRA rank {{LORA\_RANK}}, Squeezing Heads achieves \textbf{{{D\_ACC}}\%}, 
-\textbf{{{R\_ACC}}\%}, and \textbf{{{G\_ACC}}\%} accuracy, within \textbf{{{D\_DELTA}}\%}, 
-\textbf{{{R\_DELTA}}\%}, and \textbf{{{G\_DELTA}}\%} of the respective baselines. When 
-combined with head-dimension reduction to \textbf{{{HEAD\_DIM}}\%} of the original, 
-parameters drop by \textbf{{{PARAM\_REDUCTION}}$\times$} with only \textbf{{{DIM\_DELTA}}\%} 
+With LoRA rank 16, Squeezing Heads achieves \textbf{90.25\%}, 
+\textbf{76.8\%}, and \textbf{77.5\%} accuracy, within \textbf{-0.46\%}, 
+\textbf{-1.8\%}, and \textbf{-1.9\%} of the respective baselines. When 
+combined with head-dimension reduction to \textbf{64\%} of the original, 
+parameters drop by \textbf{2$\times$} with only \textbf{0.85\%} 
 accuracy loss. The LoRA adapters recover a substantial portion of the 
 information lost by dimension reduction, outperforming direct fine-tuning by 
-\textbf{{{LORA\_GAIN}}\%}.
+\textbf{0.5\%}.
 
 \textbf{Keywords:} knowledge distillation, head compression, LoRA, attention, 
 efficient transformer

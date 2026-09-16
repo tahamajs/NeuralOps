@@ -63,10 +63,10 @@ For DistilBERT at L = 128:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Mamba SSM} \\
 \midrule
-Params & 66.95M & {{D\_PARAMS}}M \\
-Accuracy & 90.71\% & {{D\_ACC}}\% \\
-Inference time & 1.9 s & {{D\_TIME}} s \\
-Peak VRAM & 183 MB & {{D\_VRAM}} MB \\
+Params & 66.95M & 66.4MM \\
+Accuracy & 90.71\% & 73.62\% \\
+Inference time & 1.9 s & 1.42x s \\
+Peak VRAM & 183 MB & 329 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -83,7 +83,7 @@ Peak VRAM & 183 MB & {{D\_VRAM}} MB \\
 S4 & $\mathcal{O}(L)$ & No & -- \\
 Mamba & $\mathcal{O}(L)$ & No & -- \\
 RWKV & $\mathcal{O}(L)$ & No & -- \\
-\textbf{Ours} & $\mathcal{O}(L^2 d)$ & \textbf{Yes} & \textbf{{{D\_ACC}}\%} \\
+\textbf{Ours} & $\mathcal{O}(L^2 d)$ & \textbf{Yes} & \textbf{73.62\%} \\
 \bottomrule
 \end{tabular}
 \end{table}

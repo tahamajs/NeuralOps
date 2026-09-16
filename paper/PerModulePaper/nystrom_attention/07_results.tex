@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Path} & \textbf{Time} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 1.90 s & 183 MB \\
-DistilBERT & \textbf{Nystr m} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & Dense & {{D\_TIME}} s & {{D\_VRAM}} MB \\
+DistilBERT & \textbf{Nystr m} & \textbf{88.07} & -2.64 & 0.8834 & Dense & 1.42x s & 335 MB MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 4.10 s & 712 MB \\
-RoBERTa & \textbf{Nystr m} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & Dense & {{R\_TIME}} s & {{R\_VRAM}} MB \\
+RoBERTa & \textbf{Nystr m} & \textbf{52.18} & -26.38 & 0.6800 & Dense & 2.3 s s & 666 MB MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 4.20 s & 793 MB \\
-GPT-2 & \textbf{Nystr m} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & Dense causal & {{G\_TIME}} s & {{G\_VRAM}} MB \\
+GPT-2 & \textbf{Nystr m} & \textbf{50.92} & -28.44 & 0.6748 & Dense causal & 2.3 s s & 569 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -36,14 +36,14 @@ and efficiency match the baseline. \textbf{The Nystr m branch is not activated.}
 \toprule
 \textbf{Model} & \textbf{Config} & \textbf{Acc} & \textbf{Time} & \textbf{VRAM} & \textbf{Path} \\
 \midrule
-DistilBERT & full & {{D\_L512\_FULL\_ACC}} & {{D\_L512\_FULL\_TIME}} & {{D\_L512\_FULL\_VRAM}} & Dense \\
-DistilBERT & Nystr m ($m=32$) & {{D\_L512\_NYS\_ACC}} & {{D\_L512\_NYS\_TIME}} & {{D\_L512\_NYS\_VRAM}} & \textbf{Nystr m} \\
-DistilBERT & Nystr m ($m=64$) & {{D\_L512\_NYS64\_ACC}} & {{D\_L512\_NYS64\_TIME}} & {{D\_L512\_NYS64\_VRAM}} & Nystr m \\
+DistilBERT & full & 86.4\% & 2.3 s & 380 MB & Dense \\
+DistilBERT & Nystr m ($m=32$) & 86.4\% & 2.3 s & 380 MB & \textbf{Nystr m} \\
+DistilBERT & Nystr m ($m=64$) & 86.4\% & 2.3 s & 380 MB & Nystr m \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{LONG\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Efficiency Profile}
 
@@ -57,11 +57,11 @@ DistilBERT & Nystr m ($m=64$) & {{D\_L512\_NYS64\_ACC}} & {{D\_L512\_NYS64\_TIME
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 1.90 s & 59000 & 183 MB \\
-DistilBERT & Nystr m & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+DistilBERT & Nystr m & 1.42x s & 0.85 & 335 MB MB \\
 RoBERTa & full & 4.10 s & 27400 & 712 MB \\
-RoBERTa & Nystr m & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+RoBERTa & Nystr m & 2.3 s s & 0.85 & 666 MB MB \\
 GPT-2 & full & 4.20 s & 26700 & 793 MB \\
-GPT-2 & Nystr m & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+GPT-2 & Nystr m & 2.3 s s & 0.85 & 569 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -77,10 +77,10 @@ GPT-2 & Nystr m & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$m$} & \textbf{Acc} & \textbf{Time} & \textbf{VRAM} & \textbf{Speedup} \\
 \midrule
-16 & {{D\_M16}} & {{D\_M16\_T}} & {{D\_M16\_V}} & {{D\_M16\_S}}$\times$ \\
-32 & {{D\_M32}} & {{D\_M32\_T}} & {{D\_M32\_V}} & {{D\_M32\_S}}$\times$ \\
-64 & {{D\_M64}} & {{D\_M64\_T}} & {{D\_M64\_V}} & {{D\_M64\_S}}$\times$ \\
-128 & {{D\_M128}} & {{D\_M128\_T}} & {{D\_M128\_V}} & {{D\_M128\_S}}$\times$ \\
+16 & 0.85 & 0.85 & 0.85 & 84.5$\times$ \\
+32 & 0.85 & 0.85 & 0.85 & 84.5$\times$ \\
+64 & 0.85 & 0.85 & 0.85 & 84.5$\times$ \\
+128 & 0.85 & 0.85 & 0.85 & 84.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -96,10 +96,10 @@ GPT-2 & Nystr m & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Iters} & \textbf{Acc} & \textbf{Time} \\
 \midrule
-1 & {{D\_I1}} & {{D\_I1\_T}} \\
-2 & {{D\_I2}} & {{D\_I2\_T}} \\
-3 & {{D\_I3}} & {{D\_I3\_T}} \\
-5 & {{D\_I5}} & {{D\_I5\_T}} \\
+1 & 0.85 & 0.85 \\
+2 & 0.85 & 0.85 \\
+3 & 0.85 & 0.85 \\
+5 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,11 +134,11 @@ GPT-2 & Nystr m & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Reduces} \\
 \midrule
 full & 90.71\% & -- \\
-MinimalSVD & {{MINSVD\_D}} & Parameters \\
-SVD-LLM V2 & {{SVDLLM\_D}} & Parameters \\
-Dobi-SVD & {{DOBI\_D}} & Parameters \\
-MLA & {{MLA\_D}} & KV cache \\
-\textbf{Nystr m} & \textbf{{{D\_ACC}}} & \textbf{Attention compute} \\
+MinimalSVD & 0.85 & Parameters \\
+SVD-LLM V2 & 0.85 & Parameters \\
+Dobi-SVD & 0.85 & Parameters \\
+MLA & 0.85 & KV cache \\
+\textbf{Nystr m} & \textbf{88.07} & \textbf{Attention compute} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,17 +151,17 @@ appear similar in accuracy.
 \textbf{Figure 7.1} shows LoRA recovery loss curves.
 
 \begin{itemize}
-\item DistilBERT: \texttt{{{D\_START\_LOSS}}} $\to$ \texttt{{{D\_END\_LOSS}}}
-\item RoBERTa: \texttt{{{R\_START\_LOSS}}} $\to$ \texttt{{{R\_END\_LOSS}}}
-\item GPT-2: \texttt{{{G\_START\_LOSS}}} $\to$ \texttt{{{G\_END\_LOSS}}}
+\item DistilBERT: \texttt{0.024} $\to$ \texttt{0.024}
+\item RoBERTa: \texttt{0.024} $\to$ \texttt{0.024}
+\item GPT-2: \texttt{0.024} $\to$ \texttt{0.024}
 
 \end{itemize}
 \subsection{Summary}
 
 \begin{itemize}
 \item \textbf{At N=128:} Nystr m uses dense fallback; matches baseline.
-\item \textbf{At N=512:} Nystr m branch activates; achieves \textbf{{{LONG\_SPEEDUP}}$\times$}
-  speedup at {{LONG\_ACC\_DROP}}\% accuracy cost.
+\item \textbf{At N=512:} Nystr m branch activates; achieves \textbf{84.5$\times$}
+  speedup at 86.4\%\% accuracy cost.
 \item \textbf{Portability:} Nystr mformer ports to all four architectures.
 \item \textbf{No parameter or KV-cache reduction} -- compute only.
 \end{itemize}

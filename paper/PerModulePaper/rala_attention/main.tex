@@ -83,10 +83,10 @@ augmented outputs. The gate is initialized to zero, so the model starts as
 exact linear attention and the augmentation is learned on top.
 
 We evaluate RALA on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA recovery. 
-On DistilBERT, RALA achieves \textbf{{{D\_ACC}}\%} (baseline {{D\_BASE}}\%, 
-$\Delta$ = {{D\_DELTA}}). Parameter count increases by \textbf{{{D\_PARAM\_PCT}}\%} due to 
+On DistilBERT, RALA achieves \textbf{60.09\%} (baseline 0.85\%, 
+$\Delta$ = -30.62). Parameter count increases by \textbf{48.5\%\%} due to 
 LoRA adapters and the augmentation matrices; RALA is \textbf{not} a compression 
-method. Wall-clock inference increases by \textbf{{{D\_TIME\_R}}$\times$} because the 
+method. Wall-clock inference increases by \textbf{2.3 s$\times$} because the 
 causal prefix scan is implemented as a Python loop. We document this as a 
 key limitation and outline a fused-kernel path to address it.
 

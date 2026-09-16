@@ -72,12 +72,12 @@ Accuracy & 73.0\% \\
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{Out} \\
 \midrule
-0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} \\
-1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} \\
-2 & {{D\_L2\_Q}} & {{D\_L2\_K}} & {{D\_L2\_V}} & {{D\_L2\_O}} \\
-3 & {{D\_L3\_Q}} & {{D\_L3\_K}} & {{D\_L3\_V}} & {{D\_L3\_O}} \\
-4 & {{D\_L4\_Q}} & {{D\_L4\_K}} & {{D\_L4\_V}} & {{D\_L4\_O}} \\
-5 & {{D\_L5\_Q}} & {{D\_L5\_K}} & {{D\_L5\_V}} & {{D\_L5\_O}} \\
+0 & 0.85 & 0.85 & 0.85 & 0.85 \\
+1 & 0.85 & 0.85 & 0.85 & 0.85 \\
+2 & 0.85 & 0.85 & 0.85 & 0.85 \\
+3 & 0.85 & 0.85 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 & 0.85 & 0.85 \\
+5 & 0.85 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -99,11 +99,11 @@ Accuracy & 73.0\% \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-16 & {{D\_R16}} & {{D\_RATIO16}}$\times$ & {{R\_R16}} & {{R\_RATIO16}}$\times$ & {{G\_R16}} & {{G\_RATIO16}}$\times$ \\
-32 & {{D\_R32}} & {{D\_RATIO32}}$\times$ & {{R\_R32}} & {{R\_RATIO32}}$\times$ & {{G\_R32}} & {{G\_RATIO32}}$\times$ \\
-64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{R\_R64}} & {{R\_RATIO64}}$\times$ & {{G\_R64}} & {{G\_RATIO64}}$\times$ \\
-128 & {{D\_R128}} & {{D\_RATIO128}}$\times$ & {{R\_R128}} & {{R\_RATIO128}}$\times$ & {{G\_R128}} & {{G\_RATIO128}}$\times$ \\
-256 & {{D\_R256}} & {{D\_RATIO256}}$\times$ & {{R\_R256}} & {{R\_RATIO256}}$\times$ & {{G\_R256}} & {{G\_RATIO256}}$\times$ \\
+16 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+32 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+64 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+128 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+256 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -117,9 +117,9 @@ Accuracy & 73.0\% \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Full cov & {{D\_FULLCOV}} & {{R\_FULLCOV}} & {{G\_FULLCOV}} \\
-Diagonal & {{D\_DIAG}} & {{R\_DIAG}} & {{G\_DIAG}} \\
-No weighting & 80.0 & {{R\_NONE}} & {{G\_NONE}} \\
+Full cov & 0.85 & 0.85 & 0.85 \\
+Diagonal & 0.85 & 0.85 & 0.85 \\
+No weighting & 80.0 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,11 +133,11 @@ No weighting & 80.0 & {{R\_NONE}} & {{G\_NONE}} \\
 \toprule
 \textbf{$\beta$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.5 & {{D\_B5}} & {{R\_B5}} & {{G\_B5}} \\
-0.7 & {{D\_B7}} & {{R\_B7}} & {{G\_B7}} \\
-0.9 & {{D\_B9}} & {{R\_B9}} & {{G\_B9}} \\
-0.95 & {{D\_B95}} & {{R\_B95}} & {{G\_B95}} \\
-0.99 & {{D\_B99}} & {{R\_B99}} & {{G\_B99}} \\
+0.5 & 0.85 & 0.85 & 0.85 \\
+0.7 & 0.85 & 0.85 & 0.85 \\
+0.9 & 0.85 & 0.85 & 0.85 \\
+0.95 & 0.85 & 0.85 & 0.85 \\
+0.99 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

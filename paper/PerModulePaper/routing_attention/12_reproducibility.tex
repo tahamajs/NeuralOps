@@ -70,9 +70,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Accuracy} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
+DistilBERT & 63.76\% $\pm$ 1\% \\
+RoBERTa & 50.92\% $\pm$ 1\% \\
+GPT-2 & 50.92\% $\pm$ 1\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,7 +89,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
 
 \begin{itemize}
 \item Code: \texttt{framework/attentions/routing\_attention.py}
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-routing}
+\item Checkpoints: \texttt{efficiency-lab/svd-linear-attention-*-routing}
 \item Metrics: \texttt{results/unified\_routing/*/summary.csv}
 \item Logs: \texttt{benchmark\_logs/routing\_*.log}
 \end{itemize}

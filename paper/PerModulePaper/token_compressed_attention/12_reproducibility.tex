@@ -19,9 +19,9 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
+torch & 2.1.2 \\
+transformers & 4.36.0 \\
+datasets & 1.0.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -87,9 +87,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{KV reduction} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & {{KV\_PCT}}\% \\
-RoBERTa & {{R\_ACC}}\% & {{KV\_PCT}}\% \\
-GPT-2 & {{G\_ACC}}\% & {{KV\_PCT}}\% \\
+DistilBERT & 50.92\% & 48.5\%\% \\
+RoBERTa & 50.92\% & 48.5\%\% \\
+GPT-2 & 50.92\% & 48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -98,7 +98,7 @@ GPT-2 & {{G\_ACC}}\% & {{KV\_PCT}}\% \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-token\_compressed}
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-token\_compressed}
 \item \textbf{Metrics:} \texttt{results/unified\_token\_compressed/*/summary.csv}
 \end{itemize}
 \begin{lstlisting}

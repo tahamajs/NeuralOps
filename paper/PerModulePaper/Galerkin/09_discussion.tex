@@ -84,10 +84,10 @@ For DistilBERT on RTX 4070:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Galerkin} & \textbf{Trade-off} \\
 \midrule
-Accuracy & 90.71\% & {{D\_ACC}}\% & \textbf{-{{D\_DROP}}\%} \\
-Params & 66.95M & {{D\_PARAMS}} & +0.88\% \\
-Inference VRAM & 183 MB & {{D\_VRAM}} MB & +{{D\_VRAM\_DELTA}}\% \\
-Inference time & 1.9 s & {{D\_TIME}} s & {{D\_TIME\_R}}$\times$ \\
+Accuracy & 90.71\% & 50.92\% & \textbf{-24.77\%} \\
+Params & 66.95M & 67544834 & +0.88\% \\
+Inference VRAM & 183 MB & 341 MB MB & +380 MB\% \\
+Inference time & 1.9 s & 7.0 s & 3.7$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -121,7 +121,7 @@ Inference time & 1.9 s & {{D\_TIME}} s & {{D\_TIME\_R}}$\times$ \\
 \end{itemize}
 \subsubsection{Environmental}
 
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~0.8 kg CO$_2$eq.
+Total compute: ~4 GPU-hours, ~0.8 kg CO$_2$eq.
 
 \subsection{Deployment Recommendations}
 

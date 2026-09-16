@@ -78,10 +78,10 @@ with optional stripe masking. A learnable Seer gating network provides a
 data-dependent override, and periodic RFF layers inject a global receptive 
 field.
 
-On SST-2, NEXUS achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{BASE\_D}}\%, 
-$\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), 
-and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using 
-{{RECOVERY\_STEPS}} LoRA recovery steps.
+On SST-2, NEXUS achieves \textbf{50.92\%} on DistilBERT (baseline 0.85\%, 
+$\Delta$ = -39.79), \textbf{50.92\%} on RoBERTa (baseline 32\%, $\Delta$ = -27.64), 
+and \textbf{51.61\%} on GPT-2 (baseline 0.85\%, $\Delta$ = -27.75), using 
+50 LoRA recovery steps.
 
 \textbf{Important honest caveats:}
 

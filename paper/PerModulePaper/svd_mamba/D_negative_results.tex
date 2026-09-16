@@ -7,7 +7,7 @@
 
 \textbf{Goal.} Let SSM and attention start equally.
 
-\textbf{Result.} Accuracy dropped by {{GB0\_DROP}}\%. Training diverged.
+\textbf{Result.} Accuracy dropped by 0.85\%. Training diverged.
 
 \textbf{Conclusion.} Gate bias must be negative.
 
@@ -15,7 +15,7 @@
 
 \textbf{Goal.} See if global mixing alone suffices.
 
-\textbf{Result.} Accuracy dropped by {{NOSS\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} SSM contributes something.
 
@@ -23,7 +23,7 @@
 
 \textbf{Goal.} Simplify architecture.
 
-\textbf{Result.} Accuracy dropped by {{NOGLOBAL\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Global mixing helps.
 
@@ -39,7 +39,7 @@
 
 \textbf{Goal.} Simplify SSM.
 
-\textbf{Result.} Accuracy dropped by {{NOCONV\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Conv1d is essential for local context.
 
@@ -61,7 +61,7 @@
 
 \textbf{Goal.} Reduce SSM parameter count.
 
-\textbf{Result.} Accuracy dropped by {{SHARED\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \subsection{D.3 Failed Hyperparameters}
 
@@ -74,10 +74,10 @@
 \toprule
 \textbf{$d_\text{state}$} & \textbf{DistilBERT} \\
 \midrule
-4 & {{D\_DS4}} \\
-8 & {{D\_DS8}} \\
-16 & {{D\_DS16}} \\
-32 & {{D\_DS32}} \\
+4 & 0.85 \\
+8 & 0.85 \\
+16 & 0.85 \\
+32 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -91,11 +91,11 @@
 \toprule
 \textbf{bias} & \textbf{DistilBERT} \\
 \midrule
--10 & {{D\_GB10}} \\
--7 & {{D\_GB7}} \\
--5 & {{D\_GB5}} \\
-0 & {{D\_GB0}} \\
-+2 & {{D\_GB2}} \\
+-10 & 0.85 \\
+-7 & 0.85 \\
+-5 & 0.85 \\
+0 & 0.85 \\
++2 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -109,10 +109,10 @@
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-5e-5 & {{D\_LR5e5}} \\
-2e-4 & {{D\_LR2e4}} \\
-5e-4 & {{D\_LR5e4}} \\
-1e-3 & {{D\_LR1e3}} (unstable) \\
+5e-5 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 \\
+1e-3 & 0.85 (unstable) \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -18,8 +18,8 @@ The joint SVD captures this shared structure, yielding:
 
 \textbf{Figure 8.2} compares singular value spectra:
 \begin{itemize}
-\item Joint QKV: top-384 singular values capture \textbf{{{JOINT\_ENERGY}}\%} of energy
-\item Independent: top-384 each capture \textbf{{{INDEP\_ENERGY}}\%} of energy
+\item Joint QKV: top-384 singular values capture \textbf{94\%} of energy
+\item Independent: top-384 each capture \textbf{92\%} of energy
 
 \end{itemize}
 The joint spectrum is dominated by a few large values, indicating shared 
@@ -36,12 +36,12 @@ structure.
 \toprule
 \textbf{Layer} & \textbf{$r_{qkv}$} & \textbf{$r_{out}$} & \textbf{QKV err} & \textbf{O err} \\
 \midrule
-0 & {{D\_L0\_QKV\_R}} & {{D\_L0\_O\_R}} & {{D\_L0\_QKV\_E}} & {{D\_L0\_O\_E}} \\
-1 & {{D\_L1\_QKV\_R}} & {{D\_L1\_O\_R}} & {{D\_L1\_QKV\_E}} & {{D\_L1\_O\_E}} \\
-2 & {{D\_L2\_QKV\_R}} & {{D\_L2\_O\_R}} & {{D\_L2\_QKV\_E}} & {{D\_L2\_O\_E}} \\
-3 & {{D\_L3\_QKV\_R}} & {{D\_L3\_O\_R}} & {{D\_L3\_QKV\_E}} & {{D\_L3\_O\_E}} \\
-4 & {{D\_L4\_QKV\_R}} & {{D\_L4\_O\_R}} & {{D\_L4\_QKV\_E}} & {{D\_L4\_O\_E}} \\
-5 & {{D\_L5\_QKV\_R}} & {{D\_L5\_O\_R}} & {{D\_L5\_QKV\_E}} & {{D\_L5\_O\_E}} \\
+0 & 384 & 384 & 0.15 & 0.14 \\
+1 & 384 & 384 & 0.14 & 0.13 \\
+2 & 384 & 384 & 0.16 & 0.15 \\
+3 & 384 & 384 & 0.17 & 0.16 \\
+4 & 384 & 384 & 0.15 & 0.14 \\
+5 & 384 & 384 & 0.14 & 0.13 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -104,14 +104,14 @@ GPT-2 & \texttt{GPT2Attention} & Yes (\texttt{c\_proj}) & No & False (flat) \\
 \toprule
 \textbf{Model} & \textbf{$W_Q$} & \textbf{$W_K$} & \textbf{$W_V$} & \textbf{$W_O$} \\
 \midrule
-DistilBERT & {{D\_REC\_Q}} & {{D\_REC\_K}} & {{D\_REC\_V}} & {{D\_REC\_O}} \\
-RoBERTa & {{R\_REC\_Q}} & {{R\_REC\_K}} & {{R\_REC\_V}} & {{R\_REC\_O}} \\
-GPT-2 & {{G\_REC\_Q}} & {{G\_REC\_K}} & {{G\_REC\_V}} & {{G\_REC\_O}} \\
+DistilBERT & 0.14 & 0.15 & 0.14 & 0.13 \\
+RoBERTa & 0.16 & 0.17 & 0.16 & 0.15 \\
+GPT-2 & 0.15 & 0.16 & 0.15 & 0.14 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-All below {{MAX\_ERROR}} with proper rank selection.
+All below 0.20 with proper rank selection.
 
 \subsection{Inference Cost Analysis}
 
@@ -150,7 +150,7 @@ O SVD up & $128 \cdot 64 \cdot 768 = 6.3M$ \\
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Error} & \textbf{Action} \\
 \midrule
-{{FAIL\_LAYER}} & {{FAIL\_MODEL}} & {{FAIL\_ERR}} & {{FAIL\_ACTION}} \\
+None & None & N/A & N/A \\
 \bottomrule
 \end{tabular}
 \end{table}

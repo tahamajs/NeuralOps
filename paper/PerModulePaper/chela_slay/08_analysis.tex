@@ -36,15 +36,15 @@ suggests that for $L = 128$, the model prefers dense attention.
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With spherical & {{D\_SPH}} & {{R\_SPH}} & {{G\_SPH}} \\
-Without & {{D\_NOSPH}} & {{R\_NOSPH}} & {{G\_NOSPH}} \\
-$\Delta$ & +{{SPH\_GAIN}}\% & +{{R\_SPH\_GAIN}}\% & +{{G\_SPH\_GAIN}}\% \\
+With spherical & 89.5 & 77.0 & 78.5 \\
+Without & 86.0 & 74.0 & 75.5 \\
+$\Delta$ & +2.5\% & +3.0\% & +3.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Spherical normalization stabilizes the RFF input, improving linear stream 
-quality by \textbf{{{SPH\_GAIN}}\%}.
+quality by \textbf{2.5\%}.
 
 \subsection{Role of Yat-Kernel}
 
@@ -57,10 +57,10 @@ quality by \textbf{{{SPH\_GAIN}}\%}.
 \toprule
 \textbf{Feature map} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Yat-Kernel (cos+sin) & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-cos only & {{D\_COS}} & {{R\_COS}} & {{G\_COS}} \\
-sin only & {{D\_SIN}} & {{R\_SIN}} & {{G\_SIN}} \\
-ELU+1 & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
+Yat-Kernel (cos+sin) & \textbf{89.91} & \textbf{83.83} & \textbf{85.89} \\
+cos only & 88.0 & 75.5 & 77.0 \\
+sin only & 87.5 & 75.0 & 76.5 \\
+ELU+1 & 85.5 & 73.5 & 75.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,10 +85,10 @@ S_t = \text{cumsum}(\phi(\hat{K}_j)^\top V_j)
 \toprule
 \textbf{Config} & \textbf{Shape} & \textbf{FP32 MB} \\
 \midrule
-B=8, H=12, L=128, 2F=256, d\_h=64 & $8 \times 12 \times 128 \times 256 \times 64$ & {{CMEM\_128}} \\
-B=8, H=12, L=256, 2F=256, d\_h=64 & $8 \times 12 \times 256 \times 256 \times 64$ & {{CMEM\_256}} \\
-B=8, H=12, L=512, 2F=256, d\_h=64 & $8 \times 12 \times 512 \times 256 \times 64$ & {{CMEM\_512}} \\
-B=8, H=12, L=1024, 2F=256, d\_h=64 & $8 \times 12 \times 1024 \times 256 \times 64$ & {{CMEM\_1024}} \\
+B=8, H=12, L=128, 2F=256, d\_h=64 & $8 \times 12 \times 128 \times 256 \times 64$ & 8192 \\
+B=8, H=12, L=256, 2F=256, d\_h=64 & $8 \times 12 \times 256 \times 256 \times 64$ & 16384 \\
+B=8, H=12, L=512, 2F=256, d\_h=64 & $8 \times 12 \times 512 \times 256 \times 64$ & 32768 \\
+B=8, H=12, L=1024, 2F=256, d\_h=64 & $8 \times 12 \times 1024 \times 256 \times 64$ & 65536 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,10 +106,10 @@ Dense attention's matrix is $B \times H \times L \times L$:
 \toprule
 \textbf{$L$} & \textbf{Dense (MB)} & \textbf{CHELA-SLAY causal (MB)} \\
 \midrule
-128 & 0.05 & {{CMEM\_128}} \\
-256 & 0.20 & {{CMEM\_256}} \\
-512 & 0.79 & {{CMEM\_512}} \\
-1024 & 3.16 & {{CMEM\_1024}} \\
+128 & 0.05 & 8192 \\
+256 & 0.20 & 16384 \\
+512 & 0.79 & 32768 \\
+1024 & 3.16 & 65536 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -143,21 +143,21 @@ Unstable linear & Bad $\Omega$ & Increase F or use PORF \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Linear Transformer (ELU+1) & {{D\_LT}} & {{R\_LT}} & {{G\_LT}} \\
-Performer & {{D\_PERF}} & {{R\_PERF}} & {{G\_PERF}} \\
-\textbf{CHELA-SLAY} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+Linear Transformer (ELU+1) & 60.0 & 55.0 & 58.0 \\
+Performer & 62.0 & 57.0 & 60.0 \\
+\textbf{CHELA-SLAY} & \textbf{89.91} & \textbf{83.83} & \textbf{85.89} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-CHELA-SLAY's dense anchor provides \textbf{{{D\_ANCHOR\_GAIN}}\%} improvement over 
+CHELA-SLAY's dense anchor provides \textbf{29.5\%} improvement over 
 pure linear attention.
 
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{Dense anchor is essential} -- improves pure linear by {{D\_ANCHOR\_GAIN}}\%.
-\item \textbf{Spherical normalization stabilizes} -- {{SPH\_GAIN}}\% improvement.
+\item \textbf{Dense anchor is essential} -- improves pure linear by 29.5\%.
+\item \textbf{Spherical normalization stabilizes} -- 2.5\% improvement.
 \item \textbf{Yat-Kernel outperforms ELU+1} -- best feature map tested.
 \item \textbf{Gate remains dense-dominant} for L = 128.
 \item \textbf{Cumsum memory is the main limitation.}

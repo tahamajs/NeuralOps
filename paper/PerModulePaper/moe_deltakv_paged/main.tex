@@ -92,10 +92,10 @@ have the same shape as the original.
 when $k_\text{experts} \ll \text{num\_pages}$**. For sequences with fewer than 
 $k_\text{experts} + 1$ pages, the module falls back to dense attention.
 
-On SST-2, MoE-DeltaKV-Paged achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
-(baseline {{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
-{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
-{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA recovery steps. 
+On SST-2, MoE-DeltaKV-Paged achieves \textbf{86.47\%} on DistilBERT 
+(baseline 0.85\%, $\Delta$ = -4.24), \textbf{59.75\%} on RoBERTa (baseline 
+32\%, $\Delta$ = -18.81), and \textbf{50.92\%} on GPT-2 (baseline 
+0.85\%, $\Delta$ = -28.44), using 50 LoRA recovery steps. 
 The module includes CLS-token preservation via page-0 logit boosting, an 
 auxiliary load-balancing loss to prevent router collapse, and full multi-architecture weight transfer.
 

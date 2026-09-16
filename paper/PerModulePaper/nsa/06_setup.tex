@@ -48,10 +48,10 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-Window size $w$ & {{WINDOW\_SIZE}} \\
-Top-$k$ count $k$ & {{TOP\_K}} \\
-LoRA rank & {{LORA\_RANK}} \\
-LoRA alpha & {{LORA\_ALPHA}} \\
+Window size $w$ & 128 \\
+Top-$k$ count $k$ & 2 \\
+LoRA rank & 8 \\
+LoRA alpha & 16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,8 +68,8 @@ LoRA alpha & {{LORA\_ALPHA}} \\
 Optimizer & AdamW \\
 LR & 1e-4 \\
 Weight decay & 0.01 \\
-Steps & {{RECOVERY\_STEPS}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Steps & 50 \\
+Batch size & 32 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -124,8 +124,8 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
 \bottomrule
 \end{tabular}
 \end{table}

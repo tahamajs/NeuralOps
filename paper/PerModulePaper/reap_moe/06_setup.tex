@@ -45,8 +45,8 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{n\_experts} $E$ & {{N\_EXPERTS}} \\
-\texttt{top\_k} $k$ & {{TOP\_K}} \\
+\texttt{n\_experts} $E$ & 8 \\
+\texttt{top\_k} $k$ & 2 \\
 \texttt{noise\_std} $\sigma$ & 0.05 \\
 \texttt{use\_svd} & True \\
 SVD rank $r$ & $d/4$ \\
@@ -66,9 +66,9 @@ SVD rank $r$ & $d/4$ \\
 Optimizer & AdamW \\
 Learning rate & 1e-4 \\
 Weight decay & 0.01 \\
-Recovery steps & {{RECOVERY\_STEPS}} \\
-LoRA rank & {{LORA\_RANK}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Recovery steps & 50 \\
+LoRA rank & 8 \\
+Batch size & 32 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -117,9 +117,9 @@ FAIL & < 50.92\% \\
 
 \begin{itemize}
 \item GPU: NVIDIA RTX 4070 Laptop (8 GB)
-\item CUDA: {{CUDA\_VERSION}}
-\item PyTorch: {{TORCH\_VERSION}}
-\item Transformers: {{HF\_VERSION}}
+\item CUDA: 12.1
+\item PyTorch: 2.1.2
+\item Transformers: 4.36.0
 
 \end{itemize}
 \subsection{Reproduction}

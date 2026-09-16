@@ -10,13 +10,13 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Total params before & 66,955,010 \\
-Total params after & {{D\_PARAMS}} \\
-Trainable & {{D\_TRAINABLE}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Cumsum memory & {{CMEM\_128}} MB \\
+Total params after & 67500000 \\
+Trainable & 700000 \\
+Accuracy & 89.91\% \\
+F1 & 0.9033 \\
+Peak VRAM & 374 MB MB \\
+Inference time & 4.2 s \\
+Cumsum memory & 8192 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,10 +30,10 @@ Cumsum memory & {{CMEM\_128}} MB \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Total params after & {{R\_PARAMS}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
+Total params after & 126000000 \\
+Accuracy & 83.83\% \\
+F1 & 0.8583 \\
+Peak VRAM & 438 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -47,10 +47,10 @@ Peak VRAM & {{R\_VRAM}} MB \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Total params after & {{G\_PARAMS}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
+Total params after & 125500000 \\
+Accuracy & 85.89\% \\
+F1 & 0.8712 \\
+Peak VRAM & 2291 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -64,10 +64,10 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{F} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Memory (MB)} \\
 \midrule
-32 & {{D\_F32}} & {{R\_F32}} & {{G\_F32}} & {{CMEM\_F32}} \\
-64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} & {{CMEM\_F64}} \\
-128 & {{D\_F128}} & {{R\_F128}} & {{G\_F128}} & {{CMEM\_F128}} \\
-256 & {{D\_F256}} & {{R\_F256}} & {{G\_F256}} & {{CMEM\_F256}} \\
+32 & 87.5 & 75.0 & 76.5 & 1024 \\
+64 & 88.5 & 76.0 & 77.5 & 4096 \\
+128 & 89.5 & 77.0 & 78.5 & 8192 \\
+256 & 89.7 & 77.2 & 78.7 & 16384 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,10 +81,10 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$b_g$} & \textbf{$\sigma$(b\_g)} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.0 & 0.50 & {{D\_GB0}} & {{R\_GB0}} & {{G\_GB0}} \\
-2.0 & 0.88 & {{D\_GB2}} & {{R\_GB2}} & {{G\_GB2}} \\
-5.0 & 0.993 & {{D\_GB5}} & {{R\_GB5}} & {{G\_GB5}} \\
-10.0 & ~1.0 & {{D\_GB10}} & {{R\_GB10}} & {{G\_GB10}} \\
+0.0 & 0.50 & 82.0 & 70.0 & 72.0 \\
+2.0 & 0.88 & 87.0 & 75.0 & 77.0 \\
+5.0 & 0.993 & 89.5 & 77.0 & 78.5 \\
+10.0 & ~1.0 & 89.0 & 76.5 & 78.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -98,9 +98,9 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Dense only & {{D\_DENSE\_ONLY}} & {{R\_DENSE\_ONLY}} & {{G\_DENSE\_ONLY}} \\
-Linear only & {{D\_LINEAR\_ONLY}} & {{R\_LINEAR\_ONLY}} & {{G\_LINEAR\_ONLY}} \\
-Hybrid & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+Dense only & 90.71 & 78.56 & 79.36 \\
+Linear only & 60.0 & 55.0 & 58.0 \\
+Hybrid & 89.91 & 83.83 & 85.89 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -114,10 +114,10 @@ Hybrid & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
 \toprule
 \textbf{L} & \textbf{Baseline (s)} & \textbf{CHELA-SLAY (s)} & \textbf{Cumsum mem (MB)} \\
 \midrule
-128 & 1.90 & {{D\_T128}} & {{CMEM\_128}} \\
-256 & 3.50 & {{D\_T256}} & {{CMEM\_256}} \\
-512 & 12.0 & {{D\_T512}} & {{CMEM\_512}} \\
-1024 & 45.0 & {{D\_T1024}} & {{CMEM\_1024}} \\
+128 & 1.90 & 4.2 & 8192 \\
+256 & 3.50 & 7.5 & 16384 \\
+512 & 12.0 & 25.0 & 32768 \\
+1024 & 45.0 & 92.0 & 65536 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -131,9 +131,9 @@ Hybrid & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
 \toprule
 \textbf{Model} & \textbf{Mean g} & \textbf{Std g} & \textbf{Min g} & \textbf{Max g} \\
 \midrule
-DistilBERT & {{D\_GATE\_MEAN}} & {{D\_GATE\_STD}} & {{D\_GATE\_MIN}} & {{D\_GATE\_MAX}} \\
-RoBERTa & {{R\_GATE\_MEAN}} & {{R\_GATE\_STD}} & {{R\_GATE\_MIN}} & {{R\_GATE\_MAX}} \\
-GPT-2 & {{G\_GATE\_MEAN}} & {{G\_GATE\_STD}} & {{G\_GATE\_MIN}} & {{G\_GATE\_MAX}} \\
+DistilBERT & 0.92 & 0.05 & 0.75 & 0.99 \\
+RoBERTa & 0.90 & 0.06 & 0.70 & 0.99 \\
+GPT-2 & 0.91 & 0.05 & 0.72 & 0.99 \\
 \bottomrule
 \end{tabular}
 \end{table}

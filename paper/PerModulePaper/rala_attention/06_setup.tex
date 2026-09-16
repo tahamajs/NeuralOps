@@ -45,12 +45,12 @@ Sequence length truncated to 128.
 \toprule
 \textbf{Parameter} & \textbf{Value} & \textbf{Note} \\
 \midrule
-Rank $r$ (augmentation) & {{RALA\_RANK}} & Per-head rank \\
+Rank $r$ (augmentation) & 32 & Per-head rank \\
 \texttt{alpha} init & 0.0 & Pure linear attention at start \\
 Softplus kernel & Yes & -- \\
-Frozen $U, V$ & {{U\_V\_FROZEN}} & If LoRA active \\
-LoRA rank & {{LORA\_RANK}} & -- \\
-LoRA alpha & {{LORA\_ALPHA}} & -- \\
+Frozen $U, V$ & 0.85 & If LoRA active \\
+LoRA rank & 8 & -- \\
+LoRA alpha & 16 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -67,8 +67,8 @@ LoRA alpha & {{LORA\_ALPHA}} & -- \\
 Optimizer & AdamW \\
 Learning rate & 1e-4 \\
 Weight decay & 0.01 \\
-Recovery steps & {{RECOVERY\_STEPS}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Recovery steps & 50 \\
+Batch size & 32 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -110,9 +110,9 @@ FAIL & < 50.92\% \\
 \textbf{Component} & \textbf{Spec} \\
 \midrule
 GPU & RTX 4070 Laptop (8 GB) \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
-Transformers & {{HF\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+Transformers & 4.36.0 \\
 \bottomrule
 \end{tabular}
 \end{table}

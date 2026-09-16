@@ -361,5 +361,17 @@
   "ABL3": "86.4",
   "G_G0": "0.82",
   "Q_ACC": "49.46",
-  "Q_VRAM": "3339 MB"
+  "Q_VRAM": "3339 MB",
+  "UNIVERSITY_2": "0.85",
+  "DEPARTMENT_2": "0.85",
+  "KV_REDUCTION": "32",
+  "KV_PER_TOKEN": "0.85",
+  "KV_L1024": "0.85",
+  "KV_L8192": "0.85",
+  "NO_LORA_LOSS": "0.024",
+  "WITH_LORA_LOSS": "0.024",
+  "UNRESOLVED_FAILURES": "0.85",
+  "DistilBERT": "0.85",
+  "RoBERTa": "0.85",
+  "R_KV_PER_TOKEN": "0.85"
 }

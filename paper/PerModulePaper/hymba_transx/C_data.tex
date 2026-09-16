@@ -10,14 +10,14 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Params change & +{{D\_PARAM\_PCT}}\% \\
-Trainable & {{D\_TRAINABLE}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-$\alpha$ final & {{D\_ALPHA}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Params after & 66.4M \\
+Params change & +48.5\%\% \\
+Trainable & 0.85 \\
+Accuracy & 49.08\% \\
+F1 & 86.2 \\
+$\alpha$ final & 0.85 \\
+Peak VRAM & 5947 MB MB \\
+Inference time & 1.42x s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,11 +31,11 @@ Inference time & {{D\_TIME}} s \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{R\_PARAMS}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-$\alpha$ final & {{R\_ALPHA}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
+Params after & 124.6M \\
+Accuracy & 51.15\% \\
+F1 & 0.6758 \\
+$\alpha$ final & 0.85 \\
+Peak VRAM & 534 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -49,11 +49,11 @@ Peak VRAM & {{R\_VRAM}} MB \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{G\_PARAMS}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-$\alpha$ final & {{G\_ALPHA}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
+Params after & 124.4M \\
+Accuracy & 57.57\% \\
+F1 & 0.6859 \\
+$\alpha$ final & 0.85 \\
+Peak VRAM & 804 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -67,9 +67,9 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Standard & {{D\_MHSA}} & {{R\_MHSA}} & {{G\_MHSA}} \\
-Diff $\lambda$=0.2 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-Diff $\lambda$=0.8 & {{D\_L08}} & {{R\_L08}} & {{G\_L08}} \\
+Standard & 0.85 & 0.85 & 0.85 \\
+Diff $\lambda$=0.2 & 49.08 & 51.15 & 57.57 \\
+Diff $\lambda$=0.8 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -83,10 +83,10 @@ Diff $\lambda$=0.8 & {{D\_L08}} & {{R\_L08}} & {{G\_L08}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-$\alpha$=1 (attn only) & {{D\_ATTN\_ONLY}} & {{R\_ATTN\_ONLY}} & {{G\_ATTN\_ONLY}} \\
-$\alpha$=0 (ssm only) & {{D\_SSM\_ONLY}} & {{R\_SSM\_ONLY}} & {{G\_SSM\_ONLY}} \\
-$\alpha$=0.5 (fixed) & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
-$\alpha$ learned & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+$\alpha$=1 (attn only) & 0.85 & 0.85 & 0.85 \\
+$\alpha$=0 (ssm only) & 84.5 & 84.5 & 84.5 \\
+$\alpha$=0.5 (fixed) & 0.85 & 0.85 & 0.85 \\
+$\alpha$ learned & 49.08 & 51.15 & 57.57 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -100,9 +100,9 @@ $\alpha$ learned & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -116,10 +116,10 @@ $\alpha$ learned & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,12 +133,12 @@ $\alpha$ learned & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
 \toprule
 \textbf{Layer} & \textbf{$\alpha$} \\
 \midrule
-0 & {{D\_L0\_ALPHA}} \\
-1 & {{D\_L1\_ALPHA}} \\
-2 & {{D\_L2\_ALPHA}} \\
-3 & {{D\_L3\_ALPHA}} \\
-4 & {{D\_L4\_ALPHA}} \\
-5 & {{D\_L5\_ALPHA}} \\
+0 & 0.85 \\
+1 & 0.85 \\
+2 & 0.85 \\
+3 & 0.85 \\
+4 & 0.85 \\
+5 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

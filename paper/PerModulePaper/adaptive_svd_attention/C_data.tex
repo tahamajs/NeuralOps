@@ -10,15 +10,15 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Total params before & 66,955,010 \\
-Total params after & {{D\_TOTAL}} \\
+Total params after & 64896000 \\
 Attention params before & 2,359,296 \\
-Attention params after & {{D\_ATTN}} \\
-Attention ratio & {{D\_RATIO}}$\times$ \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Avg rank & {{AVG\_RANK}} \\
+Attention params after & 983040 \\
+Attention ratio & 2.4$\times$ \\
+Accuracy & 87.96\% \\
+F1 & 0.8855 \\
+Peak VRAM & 290 MB MB \\
+Inference time & 2.1 s \\
+Avg rank & 160 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,11 +32,11 @@ Avg rank & {{AVG\_RANK}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Total params after & {{R\_TOTAL}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
-Avg rank & {{R\_AVG\_RANK}} \\
+Total params after & 120500000 \\
+Accuracy & 77.64\% \\
+F1 & 0.7730 \\
+Peak VRAM & 586 MB MB \\
+Avg rank & 160 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -50,11 +50,11 @@ Avg rank & {{R\_AVG\_RANK}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Total params after & {{G\_TOTAL}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
-Avg rank & {{G\_AVG\_RANK}} \\
+Total params after & 120300000 \\
+Accuracy & 76.38\% \\
+F1 & 0.8034 \\
+Peak VRAM & 302 MB MB \\
+Avg rank & 160 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,12 +68,12 @@ Avg rank & {{G\_AVG\_RANK}} \\
 \toprule
 \textbf{Layer} & \textbf{Q r*} & \textbf{K r*} & \textbf{V r*} & \textbf{O r*} \\
 \midrule
-0 & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
-1 & {{D\_L1\_Q\_R}} & {{D\_L1\_K\_R}} & {{D\_L1\_V\_R}} & {{D\_L1\_O\_R}} \\
-2 & {{D\_L2\_Q\_R}} & {{D\_L2\_K\_R}} & {{D\_L2\_V\_R}} & {{D\_L2\_O\_R}} \\
-3 & {{D\_L3\_Q\_R}} & {{D\_L3\_K\_R}} & {{D\_L3\_V\_R}} & {{D\_L3\_O\_R}} \\
-4 & {{D\_L4\_Q\_R}} & {{D\_L4\_K\_R}} & {{D\_L4\_V\_R}} & {{D\_L4\_O\_R}} \\
-5 & {{D\_L5\_Q\_R}} & {{D\_L5\_K\_R}} & {{D\_L5\_V\_R}} & {{D\_L5\_O\_R}} \\
+0 & 128 & 128 & 192 & 192 \\
+1 & 128 & 128 & 192 & 192 \\
+2 & 128 & 128 & 192 & 192 \\
+3 & 128 & 128 & 192 & 192 \\
+4 & 128 & 128 & 192 & 192 \\
+5 & 128 & 128 & 192 & 192 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -87,11 +87,11 @@ Avg rank & {{G\_AVG\_RANK}} \\
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Avg Rank} & \textbf{Ratio} \\
 \midrule
-0.80 & {{D\_T80}} & {{D\_T80\_R}} & {{RATIO\_80}}$\times$ \\
-0.85 & {{D\_T85}} & {{D\_T85\_R}} & {{RATIO\_85}}$\times$ \\
-0.92 & {{D\_T92}} & {{AVG\_RANK}} & {{D\_RATIO}}$\times$ \\
-0.95 & {{D\_T95}} & {{D\_T95\_R}} & {{RATIO\_95}}$\times$ \\
-0.99 & {{D\_T99}} & {{D\_T99\_R}} & {{RATIO\_99}}$\times$ \\
+0.80 & 82.0 & 80 & 3.8$\times$ \\
+0.85 & 86.0 & 112 & 2.9$\times$ \\
+0.92 & 88.0 & 160 & 2.4$\times$ \\
+0.95 & 88.8 & 224 & 1.6$\times$ \\
+0.99 & 90.5 & 384 & 1.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -105,10 +105,10 @@ Avg rank & {{G\_AVG\_RANK}} \\
 \toprule
 \textbf{$r_a$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 & {{D\_RA0}} & {{R\_RA0}} & {{G\_RA0}} \\
-8 & {{D\_RA8}} & {{R\_RA8}} & {{G\_RA8}} \\
-16 & {{D\_RA16}} & {{R\_RA16}} & {{G\_RA16}} \\
-32 & {{D\_RA32}} & {{R\_RA32}} & {{G\_RA32}} \\
+0 & 82.0 & 69.0 & 71.0 \\
+8 & 86.5 & 73.5 & 75.5 \\
+16 & 88.0 & 75.5 & 77.0 \\
+32 & 88.2 & 75.7 & 77.2 \\
 \bottomrule
 \end{tabular}
 \end{table}

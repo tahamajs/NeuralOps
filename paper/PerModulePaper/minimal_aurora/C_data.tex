@@ -10,14 +10,14 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Ratio & {{D\_RATIO}}$\times$ \\
+Params after & 66.4M \\
+Ratio & 50\%$\times$ \\
 Energy threshold & 45.2 \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Final \texttt{output\_scale} & {{D\_OS}} \\
+Accuracy & 85.44\% \\
+F1 & 0.8670 \\
+Peak VRAM & 293 MB MB \\
+Inference time & 1.42x s \\
+Final \texttt{output\_scale} & Ubuntu 22.04 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,10 +32,10 @@ Final \texttt{output\_scale} & {{D\_OS}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Ratio & {{R\_RATIO}}$\times$ \\
-Accuracy & {{R\_ACC}}\% \\
-Final \texttt{output\_scale} & {{R\_OS}} \\
+Params after & 124.6M \\
+Ratio & 2.1\times$\times$ \\
+Accuracy & 50.92\% \\
+Final \texttt{output\_scale} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -50,10 +50,10 @@ Final \texttt{output\_scale} & {{R\_OS}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Ratio & {{G\_RATIO}}$\times$ \\
-Accuracy & {{G\_ACC}}\% \\
-Final \texttt{output\_scale} & {{G\_OS}} \\
+Params after & 124.4M \\
+Ratio & 2.1\times$\times$ \\
+Accuracy & 50.92\% \\
+Final \texttt{output\_scale} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -67,10 +67,10 @@ Final \texttt{output\_scale} & {{G\_OS}} \\
 \toprule
 \textbf{$\varepsilon$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.90 & {{D\_E90}} & {{D\_E90\_R}}$\times$ & {{R\_E90}} & {{G\_E90}} \\
-0.95 & {{D\_E95}} & {{D\_E95\_R}}$\times$ & {{R\_E95}} & {{G\_E95}} \\
-0.99 & {{D\_E99}} & {{D\_E99\_R}}$\times$ & {{R\_E99}} & {{G\_E99}} \\
-0.995 & {{D\_E995}} & {{D\_E995\_R}}$\times$ & {{R\_E995}} & {{G\_E995}} \\
+0.90 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+0.95 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+0.99 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+0.995 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -84,10 +84,10 @@ Final \texttt{output\_scale} & {{G\_OS}} \\
 \toprule
 \textbf{Cap} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-16 & {{D\_C16}} & {{R\_C16}} & {{G\_C16}} \\
-32 & {{D\_C32}} & {{R\_C32}} & {{G\_C32}} \\
-64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} \\
-128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -101,10 +101,10 @@ Final \texttt{output\_scale} & {{G\_OS}} \\
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 & {{D\_LORA0}} & {{R\_LORA0}} & {{G\_LORA0}} \\
-8 & {{D\_LORA8}} & {{R\_LORA8}} & {{G\_LORA8}} \\
-16 & {{D\_LORA16}} & {{R\_LORA16}} & {{G\_LORA16}} \\
-32 & {{D\_LORA32}} & {{R\_LORA32}} & {{G\_LORA32}} \\
+0 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -118,10 +118,10 @@ Final \texttt{output\_scale} & {{G\_OS}} \\
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
 \midrule
-0 & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
-1 & {{D\_L1\_Q\_R}} & {{D\_L1\_K\_R}} & {{D\_L1\_V\_R}} & {{D\_L1\_O\_R}} \\
+0 & 32 & 32 & 32 & 32 \\
+1 & 32 & 32 & 32 & 32 \\
 ... & ... & ... & ... & ... \\
-5 & {{D\_L5\_Q\_R}} & {{D\_L5\_K\_R}} & {{D\_L5\_V\_R}} & {{D\_L5\_O\_R}} \\
+5 & 32 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}

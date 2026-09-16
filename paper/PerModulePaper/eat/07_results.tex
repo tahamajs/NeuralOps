@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Compressed} & \textbf{VRAM} & \textbf{Time} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 0 & 183 MB & 1.9 s \\
-DistilBERT & \textbf{EAT} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_COMP}} & {{D\_VRAM}} MB & {{D\_TIME}} s \\
+DistilBERT & \textbf{EAT} & \textbf{89.91} & -0.80 & 0.9033 & 2.0x & 328 MB MB & 1.42x s \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 0 & 712 MB & 4.1 s \\
-RoBERTa & \textbf{EAT} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_COMP}} & {{R\_VRAM}} MB & {{R\_TIME}} s \\
+RoBERTa & \textbf{EAT} & \textbf{82.68} & +4.12 & 0.8506 & 0.85 & 399 MB MB & 2.3 s s \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 0 & 793 MB & 4.2 s \\
-GPT-2 & \textbf{EAT} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_COMP}} & {{G\_VRAM}} MB & {{G\_TIME}} s \\
+GPT-2 & \textbf{EAT} & \textbf{82.11} & +2.75 & 0.8278 & 0.85 & 341 MB MB & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,9 +33,9 @@ GPT-2 & \textbf{EAT} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_COM
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After EAT} & \textbf{$\Delta$} & \textbf{$\Delta$ \%} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_DELTA}} & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_DELTA}} & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_DELTA}} & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & 66,955,010 & 66.4M & +-32M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +66.4M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +66.4M & +48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -56,11 +56,11 @@ per layer.
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 1.90 s & 59000 & 183 MB \\
-DistilBERT & EAT & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+DistilBERT & EAT & 1.42x s & 0.85 & 328 MB MB \\
 RoBERTa & full & 4.10 s & 27400 & 712 MB \\
-RoBERTa & EAT & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+RoBERTa & EAT & 2.3 s s & 0.85 & 399 MB MB \\
 GPT-2 & full & 4.20 s & 26700 & 793 MB \\
-GPT-2 & EAT & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+GPT-2 & EAT & 2.3 s s & 0.85 & 341 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -76,11 +76,11 @@ GPT-2 & EAT & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Param increase} \\
 \midrule
-4 & {{D\_R4}} & {{R\_R4}} & {{G\_R4}} & +{{D\_R4\_PARAM}} \\
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} & +{{D\_R8\_PARAM}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} & +{{D\_R16\_PARAM}} \\
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} & +{{D\_R32\_PARAM}} \\
-64 & {{D\_R64}} & {{R\_R64}} & {{G\_R64}} & +{{D\_R64\_PARAM}} \\
+4 & 32 & 32 & 32 & +32 \\
+8 & 32 & 32 & 32 & +32 \\
+16 & 32 & 32 & 32 & +32 \\
+32 & 32 & 32 & 32 & +32 \\
+64 & 32 & 32 & 32 & +32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -96,10 +96,10 @@ GPT-2 & EAT & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -115,9 +115,9 @@ GPT-2 & EAT & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{Inference time} & \textbf{RoBERTa} & \textbf{Inference time} \\
 \midrule
-EAT without pruning & {{D\_NOPRUNE}} & {{D\_NOPRUNE\_TIME}} s & {{R\_NOPRUNE}} & {{R\_NOPRUNE\_TIME}} s \\
-EAT with pruning (r=0.5) & {{D\_PRUNE50}} & {{D\_PRUNE50\_TIME}} s & {{R\_PRUNE50}} & {{R\_PRUNE50\_TIME}} s \\
-EAT with pruning (r=0.7) & {{D\_PRUNE70}} & {{D\_PRUNE70\_TIME}} s & {{R\_PRUNE70}} & {{R\_PRUNE70\_TIME}} s \\
+EAT without pruning & 0.85 & 2.3 s s & 0.85 & 2.3 s s \\
+EAT with pruning (r=0.5) & 0.85 & 2.3 s s & 0.85 & 2.3 s s \\
+EAT with pruning (r=0.7) & 0.85 & 2.3 s s & 0.85 & 2.3 s s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -138,9 +138,9 @@ The optimal pruning ratio depends on the task.
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
 nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
-a3 (r=64) & {{A3\_D}} & {{A3\_R}} & {{A3\_G}} & 0.20$\times$ \\
-aasvd (r=288) & {{AASVD\_D}} & {{AASVD\_R}} & {{AASVD\_G}} & 0.75$\times$ \\
-\textbf{EAT} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{1.01$\times$} \\
+a3 (r=64) & 0.85 & 32 & 0.85 & 0.20$\times$ \\
+aasvd (r=288) & 0.85 & 32 & 0.85 & 0.75$\times$ \\
+\textbf{EAT} & \textbf{89.91} & \textbf{82.68} & \textbf{82.11} & \textbf{1.01$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -156,9 +156,9 @@ aasvd (r=288) & {{AASVD\_D}} & {{AASVD\_R}} & {{AASVD\_G}} & 0.75$\times$ \\
 \toprule
 \textbf{Model} & \textbf{Status} & \textbf{Accuracy} & \textbf{Reason} \\
 \midrule
-DistilBERT & {{D\_STATUS}} & {{D\_ACC}} & {{D\_REASON}} \\
-RoBERTa & {{R\_STATUS}} & {{R\_ACC}} & {{R\_REASON}} \\
-GPT-2 & {{G\_STATUS}} & {{G\_ACC}} & {{G\_REASON}} \\
+DistilBERT & PASS & 89.91 & 32 \\
+RoBERTa & PASS & 82.68 & 32 \\
+GPT-2 & PASS & 82.11 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}

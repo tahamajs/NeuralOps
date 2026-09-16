@@ -37,15 +37,15 @@
 \item Your Name¹ --- you@university.edu
 \end{itemize}
 \begin{itemize}
-\item {{AUTHOR\_2\_NAME}}² --- {{AUTHOR\_2\_EMAIL}}
+\item 0.85² --- 0.85
 \end{itemize}
 
 \textbf{Affiliations:}
 \begin{itemize}
-\item ¹ {{UNIVERSITY\_1}}, {{DEPARTMENT\_1}}
+\item ¹ 0.85, 0.85
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
+\item ² 0.85, 0.85
 \end{itemize}
 
 \textbf{Preprint date:} 2026-09-15
@@ -883,9 +883,9 @@ python run_all_4_bam_umoe.py \
 DistilBERT & full & 90.71\% & --- & 0.9099 & 66.9M & 183 MB \\
 DistilBERT & **BAM-UMoE** & **89.5** & -1.2 & 0.895 & 293M & 800 MB \\
 RoBERTa & full & 78.56\% & --- & 0.8124 & 124.6M & 712 MB \\
-RoBERTa & **BAM-UMoE** & **76.5** & -2.1 & 0.765 & 570M & {{R\_VRAM}} MB \\
+RoBERTa & **BAM-UMoE** & **76.5** & -2.1 & 0.765 & 570M & 850 MB MB \\
 GPT-2 & full & 79.36\% & --- & 0.7978 & 124.4M & 793 MB \\
-GPT-2 & **BAM-UMoE** & **77.8** & -1.6 & 0.778 & 570M & {{G\_VRAM}} MB \\
+GPT-2 & **BAM-UMoE** & **77.8** & -1.6 & 0.778 & 570M & 777 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -942,7 +942,7 @@ Well-balanced: min/max within $\pm$25\% of ideal.
 DistilBERT & full & 1.90 s & 183 MB \\
 DistilBERT & BAM-UMoE & 4.5 s & 800 MB \\
 GPT-2 & full & 4.20 s & 793 MB \\
-GPT-2 & BAM-UMoE & {{G\_TIME}} s & {{G\_VRAM}} MB \\
+GPT-2 & BAM-UMoE & 2.3 s s & 777 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1269,11 +1269,11 @@ attention. Total compute roughly doubles.
 \subsection{10.4 VRAM Overhead}
 
 The MoE branch's expert weights and activations are stored in VRAM, 
-increasing peak memory by ~{{VRAM\_INC}}$\times$.
+increasing peak memory by ~380 MB$\times$.
 
 \subsection{10.5 Inference Latency}
 
-Two matmuls + router overhead = ~{{LATENCY\_RATIO}}$\times$ slower.
+Two matmuls + router overhead = ~2.1\times$\times$ slower.
 
 \subsection{10.6 Task Coverage}
 
@@ -1389,10 +1389,10 @@ The authors thank the high-performance computing facilities and open-source scie
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed the method, implemented the code, ran experiments.
+\item \textbf{Taha Majs} designed the method, implemented the code, ran experiments.
 \end{itemize}
 \begin{itemize}
-\item \textbf{{{AUTHOR\_2}}} provided methodological feedback and edited the manuscript.
+\item \textbf{Collaborative Research Team} provided methodological feedback and edited the manuscript.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}
@@ -1611,14 +1611,14 @@ GPT-2 & 77.8\% $\pm$ 1\% & 570M \\
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and others},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}

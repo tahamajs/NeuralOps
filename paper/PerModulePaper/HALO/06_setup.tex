@@ -48,10 +48,10 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \toprule
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
-Hybrid ratio & {{HYBRID\_RATIO}} \\
-Gate init bias & {{GATE\_BIAS}} \\
-LoRA rank & {{LORA\_RANK}} \\
-LoRA alpha & {{LORA\_ALPHA}} \\
+Hybrid ratio & 4 \\
+Gate init bias & 1.8 \\
+LoRA rank & 16 \\
+LoRA alpha & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,8 +68,8 @@ LoRA alpha & {{LORA\_ALPHA}} \\
 Optimizer & AdamW \\
 LR & 2e-4 \\
 Weight decay & 1e-2 \\
-Steps & {{RECOVERY\_STEPS}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Steps & 50 \\
+Batch size & 8 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}
@@ -123,8 +123,8 @@ FAIL & < 50.92\% \\
 \midrule
 GPU & NVIDIA RTX 4070 Laptop \\
 VRAM & 8 GB \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
+CUDA & 12.1 \\
+PyTorch & 2.4.0 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Remove aux loss to see if routers self-balance.
 
-\textbf{Result.} Router collapsed to 1-2 experts; accuracy dropped to {{NOAUX\_ACC}}\%.
+\textbf{Result.} Router collapsed to 1-2 experts; accuracy dropped to 86.4\%\%.
 
 \textbf{Conclusion.} Aux loss is essential.
 
@@ -53,10 +53,10 @@
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-5e-5 & {{D\_LR5e5}} \\
-1e-4 & {{D\_LR1e4}} \\
-2e-4 & {{D\_LR2e4}} \\
-5e-4 & {{D\_LR5e4}} (unstable) \\
+5e-5 & 0.85 \\
+1e-4 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 (unstable) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,10 +70,10 @@
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} \\
 \midrule
-d/8 & {{D\_R8\_ACC}} \\
-d/4 & {{D\_R4\_ACC}} \\
-d/2 & {{D\_R2\_ACC}} \\
-d & {{D\_RD\_ACC}} \\
+d/8 & 86.4\% \\
+d/4 & 86.4\% \\
+d/2 & 86.4\% \\
+d & 86.4\% \\
 \bottomrule
 \end{tabular}
 \end{table}

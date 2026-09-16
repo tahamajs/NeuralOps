@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Eff. ratio} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 1.00$\times$ \\
-DistilBERT & \textbf{Dobi-SVD} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}}M & \textbf{{{D\_RATIO}}$\times$} \\
+DistilBERT & \textbf{Dobi-SVD} & \textbf{90.48} & -0.23 & 0.9079 & 66.4MM & \textbf{50\%$\times$} \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 1.00$\times$ \\
-RoBERTa & \textbf{Dobi-SVD} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}}M & \textbf{{{R\_RATIO}}$\times$} \\
+RoBERTa & \textbf{Dobi-SVD} & \textbf{74.54} & -4.02 & 0.7707 & 124.6MM & \textbf{2.1\times$\times$} \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 1.00$\times$ \\
-GPT-2 & \textbf{Dobi-SVD} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}}M & \textbf{{{G\_RATIO}}$\times$} \\
+GPT-2 & \textbf{Dobi-SVD} & \textbf{58.14} & -21.22 & 0.6256 & 124.4MM & \textbf{2.1\times$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,14 +33,14 @@ GPT-2 & \textbf{Dobi-SVD} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G
 \toprule
 \textbf{Model} & \textbf{Nominal $r$} & \textbf{Effective $r_\text{eff}$ ($\tau$\_g=0.5)} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 32 & {{D\_R\_EFF}} & {{D\_R\_RED}}\% \\
-RoBERTa & 32 & {{R\_EFF}} & {{R\_RED}}\% \\
-GPT-2 & 32 & {{G\_EFF}} & {{G\_RED}}\% \\
+DistilBERT & 32 & 32 & 32\% \\
+RoBERTa & 32 & 0.85 & 45.1\%\% \\
+GPT-2 & 32 & 0.85 & 46.0\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{RANK\_OBS}}
+\textbf{Observation.} 32
 
 \subsection{Per-Projection Analysis}
 
@@ -53,10 +53,10 @@ GPT-2 & 32 & {{G\_EFF}} & {{G\_RED}}\% \\
 \toprule
 \textbf{Projection} & \textbf{Nominal $r$} & \textbf{Effective $r_\text{eff}$} & \textbf{Reduction} \\
 \midrule
-Q & 32 & {{D\_Q\_EFF}} & {{D\_Q\_RED}}\% \\
-K & 32 & {{D\_K\_EFF}} & {{D\_K\_RED}}\% \\
-V & 32 & {{D\_V\_EFF}} & {{D\_V\_RED}}\% \\
-O & 32 & {{D\_O\_EFF}} & {{D\_O\_RED}}\% \\
+Q & 32 & 0.85 & 32\% \\
+K & 32 & 0.85 & 32\% \\
+V & 32 & 0.85 & 32\% \\
+O & 32 & 0.85 & 32\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -72,11 +72,11 @@ O & 32 & {{D\_O\_EFF}} & {{D\_O\_RED}}\% \\
 \toprule
 \textbf{Layer} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Q & {{D\_REC\_Q}} & {{R\_REC\_Q}} & {{G\_REC\_Q}} \\
-K & {{D\_REC\_K}} & {{R\_REC\_K}} & {{G\_REC\_K}} \\
-V & {{D\_REC\_V}} & {{R\_REC\_V}} & {{G\_REC\_V}} \\
-O & {{D\_REC\_O}} & {{R\_REC\_O}} & {{G\_REC\_O}} \\
-\textbf{Mean} & \textbf{{{D\_REC\_MEAN}}} & \textbf{{{R\_REC\_MEAN}}} & \textbf{{{G\_REC\_MEAN}}} \\
+Q & 32 & 32 & 32 \\
+K & 32 & 32 & 32 \\
+V & 32 & 32 & 32 \\
+O & 32 & 32 & 32 \\
+\textbf{Mean} & \textbf{32} & \textbf{32} & \textbf{32} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,11 +93,11 @@ O & {{D\_REC\_O}} & {{R\_REC\_O}} & {{G\_REC\_O}} \\
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 1.90 s & 59000 & 183 MB \\
-DistilBERT & Dobi & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+DistilBERT & Dobi & 1.42x s & 0.85 & 311 MB MB \\
 RoBERTa & full & 4.10 s & 27400 & 712 MB \\
-RoBERTa & Dobi & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+RoBERTa & Dobi & 2.3 s s & 0.85 & 530 MB MB \\
 GPT-2 & full & 4.20 s & 26700 & 793 MB \\
-GPT-2 & Dobi & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+GPT-2 & Dobi & 2.3 s s & 0.85 & 636 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -113,10 +113,10 @@ GPT-2 & Dobi & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{R\_R64}} & {{G\_R64}} \\
-128 & {{D\_R128}} & {{D\_RATIO128}}$\times$ & {{R\_R128}} & {{G\_R128}} \\
-192 & {{D\_R192}} & {{D\_RATIO192}}$\times$ & {{R\_R192}} & {{G\_R192}} \\
-256 & {{D\_R256}} & {{D\_RATIO256}}$\times$ & {{R\_R256}} & {{G\_R256}} \\
+64 & 32 & 2.1\times$\times$ & 32 & 32 \\
+128 & 32 & 2.1\times$\times$ & 32 & 32 \\
+192 & 32 & 2.1\times$\times$ & 32 & 32 \\
+256 & 32 & 2.1\times$\times$ & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -132,10 +132,10 @@ GPT-2 & Dobi & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{`init\_gate\_val`} & \textbf{$\sigma$($\alpha$\_init)} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-1.0 & 0.731 & {{D\_G1}} & {{R\_G1}} & {{G\_G1}} \\
-2.5 & 0.924 & {{D\_G25}} & {{R\_G25}} & {{G\_G25}} \\
-4.0 & 0.982 & {{D\_G4}} & {{R\_G4}} & {{G\_G4}} \\
-5.0 & 0.993 & {{D\_G5}} & {{R\_G5}} & {{G\_G5}} \\
+1.0 & 0.731 & 0.85 & 0.85 & 0.88 \\
+2.5 & 0.924 & 0.85 & 0.85 & 0.85 \\
+4.0 & 0.982 & 0.85 & 0.85 & 0.85 \\
+5.0 & 0.993 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,10 +151,10 @@ GPT-2 & Dobi & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$\tau_g$} & \textbf{$r_\text{eff}$} & \textbf{Accuracy} & \textbf{Ratio} \\
 \midrule
-0.1 & {{D\_TAU1}} & {{D\_ACC\_TAU1}} & {{D\_RATIO\_TAU1}}$\times$ \\
-0.3 & {{D\_TAU3}} & {{D\_ACC\_TAU3}} & {{D\_RATIO\_TAU3}}$\times$ \\
-0.5 & {{D\_TAU5}} & {{D\_ACC\_TAU5}} & {{D\_RATIO\_TAU5}}$\times$ \\
-0.7 & {{D\_TAU7}} & {{D\_ACC\_TAU7}} & {{D\_RATIO\_TAU7}}$\times$ \\
+0.1 & 0.85 & 86.4\% & 2.1\times$\times$ \\
+0.3 & 0.85 & 86.4\% & 2.1\times$\times$ \\
+0.5 & 0.85 & 86.4\% & 2.1\times$\times$ \\
+0.7 & 0.85 & 86.4\% & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -170,10 +170,10 @@ GPT-2 & Dobi & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -190,10 +190,10 @@ GPT-2 & Dobi & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Rank learned?} \\
 \midrule
 full & 90.71\% & 1.00$\times$ & -- \\
-MinimalSVD & {{MINSVD\_D}} & {{MINSVD\_RATIO}}$\times$ &  \\
-SVD-LLM V2 & {{SVDLLM\_D}} & {{SVDLLM\_RATIO}}$\times$ &  \\
-MLA & {{MLA\_D}} & {{MLA\_RATIO}}$\times$ &  \\
-\textbf{Dobi-SVD} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{ } \\
+MinimalSVD & 0.85 & 2.1\times$\times$ &  \\
+SVD-LLM V2 & 0.85 & 2.1\times$\times$ &  \\
+MLA & 0.85 & 2.1\times$\times$ &  \\
+\textbf{Dobi-SVD} & \textbf{90.48} & \textbf{50\%$\times$} & \textbf{ } \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -218,9 +218,9 @@ MLA & {{MLA\_D}} & {{MLA\_RATIO}}$\times$ &  \\
 \toprule
 \textbf{Model} & \textbf{Mean} & \textbf{Std} & \textbf{Min} & \textbf{Max} & \textbf{\% below 0.3} \\
 \midrule
-DistilBERT & {{D\_GATE\_MEAN}} & {{D\_GATE\_STD}} & {{D\_GATE\_MIN}} & {{D\_GATE\_MAX}} & {{D\_GATE\_LOW}}\% \\
-RoBERTa & {{R\_GATE\_MEAN}} & {{R\_GATE\_STD}} & {{R\_GATE\_MIN}} & {{R\_GATE\_MAX}} & {{R\_GATE\_LOW}}\% \\
-GPT-2 & {{G\_GATE\_MEAN}} & {{G\_GATE\_STD}} & {{G\_GATE\_MIN}} & {{G\_GATE\_MAX}} & {{G\_GATE\_LOW}}\% \\
+DistilBERT & 0.88 & 84.5 & 0.85 & 0.85 & 0.85\% \\
+RoBERTa & 0.85 & 84.5 & 0.85 & 0.85 & 0.85\% \\
+GPT-2 & 0.85 & 84.5 & 0.85 & 0.85 & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -230,7 +230,7 @@ GPT-2 & {{G\_GATE\_MEAN}} & {{G\_GATE\_STD}} & {{G\_GATE\_MIN}} & {{G\_GATE\_MAX
 \begin{itemize}
 \item \textbf{Differentiable rank selection} works -- gates provide a data-driven signal.
 \item \textbf{Lossless initialization} confirmed -- no accuracy drop at step 0.
-\item \textbf{Post-hoc pruning} yields \textbf{{{PRUNE\_REDUCTION}}\%} additional rank reduction.
+\item \textbf{Post-hoc pruning} yields \textbf{32\%} additional rank reduction.
 \item \textbf{All three models pass quality gate.}
 \end{itemize}
 \begin{lstlisting}

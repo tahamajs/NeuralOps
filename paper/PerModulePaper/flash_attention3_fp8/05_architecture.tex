@@ -204,7 +204,7 @@ The pipeline:
 \item Load base model.
 \item Replace attention with \texttt{FlashAttention3FP8} via injection.
 \item Freeze base weights, keep LoRA trainable.
-\item Run recovery fine-tuning for {{RECOVERY\_STEPS}} steps.
+\item Run recovery fine-tuning for 50 steps.
 \item Evaluate.
 
 \end{enumerate}

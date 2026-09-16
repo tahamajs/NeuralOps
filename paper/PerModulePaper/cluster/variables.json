@@ -364,5 +364,12 @@
   "G_G0": "0.82",
   "G_G1": "0.88",
   "G_G2": "0.94",
-  "Q_ACC": "89.91"
+  "Q_ACC": "89.91",
+  "AUTHOR_2_NAME": "0.85",
+  "AUTHOR_2_EMAIL": "0.85",
+  "UNIVERSITY_2": "0.85",
+  "DEPARTMENT_2": "0.85",
+  "LoRA": "0.85",
+  "DistilBERT": "0.85",
+  "RoBERTa": "0.85"
 }

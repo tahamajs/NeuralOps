@@ -73,7 +73,7 @@ that factorizes each matrix as $W \approx U V$ with $U \in \mathbb{R}^{d \times 
 and $V \in \mathbb{R}^{r \times d}$, achieving parameter count 
 $r(d + d) = 2rd$ instead of $d^2$. For $d = 768$ and $r = 64$, this yields a 
 \textbf{6$\times$ parameter reduction per projection} while maintaining accuracy within 
-\textbf{{{D\_DELTA}}\%} on SST-2.
+\textbf{-2.06\%} on SST-2.
 
 Our key novelty is \textbf{energy-adaptive rank selection}: instead of fixing 
 $r$ uniformly across layers, MinimalNOVA computes the cumulative spectral 
@@ -91,10 +91,10 @@ families (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with:
 (v) LoRA adapters initialized to zero for recovery fine-tuning.
 
 On DistilBERT, RoBERTa, and GPT-2 with rank cap $r = 32$ and energy 
-$\eta = 45.2$, MinimalNOVA achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
-parameter reduction with accuracy drops of only \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} 
-after {{RECOVERY\_STEPS}} LoRA recovery steps. Peak inference VRAM decreases 
-by \textbf{{{VRAM\_REDUCTION}}\%}.
+$\eta = 45.2$, MinimalNOVA achieves \textbf{50\%$\times$--2.1\times$\times$} 
+parameter reduction with accuracy drops of only \textbf{-2.06\%--+0.00\%} 
+after 50 LoRA recovery steps. Peak inference VRAM decreases 
+by \textbf{380 MB\%}.
 
 \textbf{Keywords:} low-rank factorization, energy-adaptive rank, SVD, attention 
 compression, LoRA recovery, multi-architecture transformers

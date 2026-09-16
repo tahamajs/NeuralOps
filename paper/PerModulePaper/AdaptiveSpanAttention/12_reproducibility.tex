@@ -69,9 +69,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Mean span} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & ~{{D\_SPAN}} \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & ~{{R\_SPAN}} \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_SPAN}} \\
+DistilBERT & 89.5\% $\pm$ 1\% & ~68 \\
+RoBERTa & 76.5\% $\pm$ 1\% & ~72 \\
+GPT-2 & 77.5\% $\pm$ 1\% & ~75 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -80,7 +80,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_SPAN}} \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-adaptive\_span}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive\_span}
 \item \textbf{Metrics:} \texttt{results/unified\_adaptive\_span/*/summary.csv}
 
 \end{itemize}

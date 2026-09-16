@@ -4,8 +4,8 @@
 
 We presented \textbf{LEKAv2}, a linear-time kernel attention with landmark 
 distillation, dual-scale RFF, softpick, and local-global fusion. The 
-module achieves \textbf{{{D\_ACC}}\%} on DistilBERT, \textbf{{{R\_ACC}}\%} on RoBERTa, 
-and \textbf{{{G\_ACC}}\%} on GPT-2, with modest parameter cost.
+module achieves \textbf{86.01\%} on DistilBERT, \textbf{50.92\%} on RoBERTa, 
+and \textbf{50.92\%} on GPT-2, with modest parameter cost.
 
 \subsection{Results Recap}
 
@@ -16,9 +16,9 @@ and \textbf{{{G\_ACC}}\%} on GPT-2, with modest parameter cost.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Landmark ratio} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_LR}} \\
-RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_LR}} \\
-GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_LR}} \\
+DistilBERT & -4.70\% & +48.5\%\% & 0.85 \\
+RoBERTa & -27.64\% & +48.5\%\% & 0.85 \\
+GPT-2 & -28.44\% & +48.5\%\% & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -61,9 +61,9 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed the method, implemented, ran experiments,
+\item \textbf{Taha Majs} designed the method, implemented, ran experiments,
   wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+\item \textbf{Collaborative Research Team} provided feedback, edited the manuscript.
 
 \end{itemize}
 \subsection{Conflict of Interest}

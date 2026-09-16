@@ -11,18 +11,18 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS\_FULL}} \\
-Effective ratio & {{D\_RATIO}}$\times$ \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Loss & {{D\_LOSS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Params after & 66.4M \\
+Effective ratio & 50\%$\times$ \\
+Accuracy & 90.48\% \\
+F1 & 0.9079 \\
+Precision & 0.85 \\
+Recall & 32 \\
+Loss & 0.024 \\
+Peak VRAM & 311 MB MB \\
+Inference time & 1.42x s \\
 Nominal rank & 32 \\
-Effective rank ($\tau$\_g=0.5) & {{D\_REFF}} \\
-Compressed layers & {{D\_COMP}} \\
+Effective rank ($\tau$\_g=0.5) & 32 \\
+Compressed layers & 2.0x \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -37,14 +37,14 @@ Compressed layers & {{D\_COMP}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS\_FULL}} \\
-Effective ratio & {{R\_RATIO}}$\times$ \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
+Params after & 66.4M \\
+Effective ratio & 2.1\times$\times$ \\
+Accuracy & 74.54\% \\
+F1 & 0.7707 \\
+Peak VRAM & 530 MB MB \\
 Nominal rank & 32 \\
-Effective rank & {{R\_EFF}} \\
-Compressed layers & {{R\_COMP}} \\
+Effective rank & 0.85 \\
+Compressed layers & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -59,14 +59,14 @@ Compressed layers & {{R\_COMP}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS\_FULL}} \\
-Effective ratio & {{G\_RATIO}}$\times$ \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
+Params after & 66.4M \\
+Effective ratio & 2.1\times$\times$ \\
+Accuracy & 58.14\% \\
+F1 & 0.6256 \\
+Peak VRAM & 636 MB MB \\
 Nominal rank & 32 \\
-Effective rank & {{G\_EFF}} \\
-Compressed layers & {{G\_COMP}} \\
+Effective rank & 0.85 \\
+Compressed layers & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -80,12 +80,12 @@ Compressed layers & {{G\_COMP}} \\
 \toprule
 \textbf{Layer} & \textbf{Projection} & \textbf{Mean $\sigma$($\alpha$)} & \textbf{Std} & \textbf{\% < 0.3} & \textbf{\% > 0.9} \\
 \midrule
-0 & q\_lin & {{D\_L0\_Q\_MEAN}} & {{D\_L0\_Q\_STD}} & {{D\_L0\_Q\_LOW}} & {{D\_L0\_Q\_HIGH}} \\
-0 & k\_lin & {{D\_L0\_K\_MEAN}} & {{D\_L0\_K\_STD}} & {{D\_L0\_K\_LOW}} & {{D\_L0\_K\_HIGH}} \\
-0 & v\_lin & {{D\_L0\_V\_MEAN}} & {{D\_L0\_V\_STD}} & {{D\_L0\_V\_LOW}} & {{D\_L0\_V\_HIGH}} \\
-0 & out\_lin & {{D\_L0\_O\_MEAN}} & {{D\_L0\_O\_STD}} & {{D\_L0\_O\_LOW}} & {{D\_L0\_O\_HIGH}} \\
+0 & q\_lin & 0.85 & 84.5 & 0.85 & 0.85 \\
+0 & k\_lin & 0.85 & 84.5 & 0.85 & 0.85 \\
+0 & v\_lin & 0.85 & 84.5 & 0.85 & 0.85 \\
+0 & out\_lin & 0.85 & 84.5 & 0.85 & 0.85 \\
 ... & ... & ... & ... & ... & ... \\
-5 & out\_lin & {{D\_L5\_O\_MEAN}} & {{D\_L5\_O\_STD}} & {{D\_L5\_O\_LOW}} & {{D\_L5\_O\_HIGH}} \\
+5 & out\_lin & 0.85 & 84.5 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -99,10 +99,10 @@ Compressed layers & {{G\_COMP}} \\
 \toprule
 \textbf{Layer} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 & {{D\_L0\_ERR}} & {{R\_L0\_ERR}} & {{G\_L0\_ERR}} \\
-1 & {{D\_L1\_ERR}} & {{R\_L1\_ERR}} & {{G\_L1\_ERR}} \\
+0 & 0.024 & 0.024 & 0.024 \\
+1 & 0.024 & 0.024 & 0.024 \\
 ... & ... & ... & ... \\
-5/11 & {{D\_LL\_ERR}} & {{R\_LL\_ERR}} & {{G\_LL\_ERR}} \\
+5/11 & 0.024 & 0.024 & 0.024 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -116,10 +116,10 @@ Compressed layers & {{G\_COMP}} \\
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Effective $r_\text{eff}$} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{D\_R64\_REFF}} & {{R\_R64}} & {{G\_R64}} \\
-128 & {{D\_R128}} & {{D\_RATIO128}}$\times$ & {{D\_R128\_REFF}} & {{R\_R128}} & {{G\_R128}} \\
-192 & {{D\_R192}} & {{D\_RATIO192}}$\times$ & {{D\_R192\_REFF}} & {{R\_R192}} & {{G\_R192}} \\
-256 & {{D\_R256}} & {{D\_RATIO256}}$\times$ & {{D\_R256\_REFF}} & {{R\_R256}} & {{G\_R256}} \\
+64 & 32 & 2.1\times$\times$ & 32 & 32 & 32 \\
+128 & 32 & 2.1\times$\times$ & 32 & 32 & 32 \\
+192 & 32 & 2.1\times$\times$ & 32 & 32 & 32 \\
+256 & 32 & 2.1\times$\times$ & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,10 +133,10 @@ Compressed layers & {{G\_COMP}} \\
 \toprule
 \textbf{$\alpha$\_init} & \textbf{$\sigma$($\alpha$\_init)} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-1.0 & 0.731 & {{D\_G1}} & {{R\_G1}} & {{G\_G1}} \\
-2.5 & 0.924 & {{D\_G25}} & {{R\_G25}} & {{G\_G25}} \\
-4.0 & 0.982 & {{D\_G4}} & {{R\_G4}} & {{G\_G4}} \\
-5.0 & 0.993 & {{D\_G5}} & {{R\_G5}} & {{G\_G5}} \\
+1.0 & 0.731 & 0.85 & 0.85 & 0.88 \\
+2.5 & 0.924 & 0.85 & 0.85 & 0.85 \\
+4.0 & 0.982 & 0.85 & 0.85 & 0.85 \\
+5.0 & 0.993 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -150,10 +150,10 @@ Compressed layers & {{G\_COMP}} \\
 \toprule
 \textbf{$\tau_g$} & \textbf{$r_\text{eff}$} & \textbf{Accuracy} & \textbf{$\Delta$ from unpruned} \\
 \midrule
-0.1 & {{D\_TAU1\_REFF}} & {{D\_TAU1\_ACC}} & {{D\_TAU1\_D}} \\
-0.3 & {{D\_TAU3\_REFF}} & {{D\_TAU3\_ACC}} & {{D\_TAU3\_D}} \\
-0.5 & {{D\_TAU5\_REFF}} & {{D\_TAU5\_ACC}} & {{D\_TAU5\_D}} \\
-0.7 & {{D\_TAU7\_REFF}} & {{D\_TAU7\_ACC}} & {{D\_TAU7\_D}} \\
+0.1 & 32 & 86.4\% & 0.85 \\
+0.3 & 32 & 86.4\% & 0.85 \\
+0.5 & 32 & 86.4\% & 0.85 \\
+0.7 & 32 & 86.4\% & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

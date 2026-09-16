@@ -4,7 +4,7 @@
 
 \subsubsection{Takeaway 1: Dense Anchor is Essential}
 
-Pure linear attention loses ~{{ANCHOR\_GAIN}}\% accuracy. The dense anchor 
+Pure linear attention loses ~28.0\% accuracy. The dense anchor 
 recovers this.
 
 \subsubsection{Takeaway 2: Spherical + Yat-Kernel Improves Linear}
@@ -56,10 +56,10 @@ For DistilBERT at L = 128:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{CHELA-SLAY} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
-VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & 89.91\% & -0.80\% \\
+Params & 66.95M & 67500000 & +0.8\% \\
+Time & 1.90 s & 4.2 s & 2.2$\times$ \\
+VRAM & 183 MB & 374 MB MB & 4.9$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

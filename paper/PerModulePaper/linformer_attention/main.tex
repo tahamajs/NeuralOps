@@ -75,15 +75,15 @@ $E$ and $F$ based on $L$ vs $k$ vs the pre-allocated maximum sequence
 length, and (iii) falls back to exact dense causal attention when the 
 projection would break causality.
 
-On SST-2, our Linformer implementation achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
-(baseline {{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
-{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
-{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA recovery 
+On SST-2, our Linformer implementation achieves \textbf{50.92\%} on DistilBERT 
+(baseline 0.85\%, $\Delta$ = -39.79), \textbf{48.17\%} on RoBERTa (baseline 
+32\%, $\Delta$ = -30.39), and \textbf{77.5\%} on GPT-2 (baseline 
+0.85\%, $\Delta$ = 0.85), using 50 LoRA recovery 
 steps. Complexity is $\mathcal{O}(L \cdot k \cdot d_h)$ -- linear in $L$ for 
 fixed $k$.
 
 The implementation increases parameter count by approximately 
-\textbf{{{PARAM\_INC}}\%} per layer due to the $E, F$ matrices, LoRA adapters, and 
+\textbf{66.4M\%} per layer due to the $E, F$ matrices, LoRA adapters, and 
 output scale. We are explicit that this is an \textbf{inference-compute} 
 optimization, not a parameter reduction.
 

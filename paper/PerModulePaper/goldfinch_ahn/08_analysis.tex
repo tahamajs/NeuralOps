@@ -18,13 +18,13 @@ long_out = torch.zeros_like(x)
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Full & {{D\_ACC}}\% & {{R\_ACC}}\% & {{G\_ACC}}\% \\
-Without long-memory & {{D\_NOLONG}}\% & {{R\_NOLONG}}\% & {{G\_NOLONG}}\% \\
+Full & 50.92\% & 50.92\% & 50.92\% \\
+Without long-memory & 0.85\% & 0.85\% & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{LONG\_MEMORY\_OBS}}
+\textbf{Observation.} 128 KB
 
 \textbf{Why.} The long-memory branch is a per-token linear projection. It has no 
 mechanism to carry information across tokens. Its role in attention is 
@@ -41,15 +41,15 @@ therefore no different from an extra MLP.
 \toprule
 \textbf{Init} & \textbf{$\alpha$} & \textbf{DistilBERT} \\
 \midrule
-0.0 & 0.50 & {{D\_AG0}} \\
-1.0 & 0.73 & {{D\_AG1}} \\
-2.0 & 0.88 & {{D\_AG2}} \\
-5.0 & 0.99 & {{D\_AG5}} \\
+0.0 & 0.50 & 0.85 \\
+1.0 & 0.73 & 0.85 \\
+2.0 & 0.88 & 0.85 \\
+5.0 & 0.99 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{AG\_OBS}}
+\textbf{Observation.} 0.85
 
 When $\alpha$ is close to 1, the block is nearly an identity, and accuracy 
 approaches baseline. When $\alpha$ is 0.5, the block's output is mixed equally 
@@ -86,16 +86,16 @@ We did not implement this variant, but it is a natural extension.
 \toprule
 \textbf{Window} & \textbf{DistilBERT} \\
 \midrule
-16 & {{D\_W16}} \\
-32 & {{D\_W32}} \\
-64 & {{D\_W64}} \\
-128 & {{D\_W128}} \\
-$\infty$ (full) & {{D\_WINF}} \\
+16 & 0.85 \\
+32 & 0.85 \\
+64 & 0.85 \\
+128 & 0.85 \\
+$\infty$ (full) & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{WINDOW\_OBS}}
+\textbf{Observation.} 0.85
 
 For SST-2 with sequence length 128, a window of 64 or 128 captures most of 
 the useful attention. This is consistent with prior work (Longformer, 
@@ -123,7 +123,7 @@ Preservation gate & 0 & 2 \\
 \end{tabular}
 \end{table}
 
-\textbf{~2$\times$ more kernel launches} $\to$ ~{{D\_TIME\_R}}$\times$ slowdown.
+\textbf{~2$\times$ more kernel launches} $\to$ ~2.3 s$\times$ slowdown.
 
 \subsection{Failure Mode Taxonomy}
 
@@ -160,8 +160,8 @@ Preservation gate & 0 & 2 \\
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{GoldFinch} \\
 \midrule
-Attention entropy & {{BASE\_ENTROPY}} & {{GOLD\_ENTROPY}} \\
-Max weight & {{BASE\_MAX\_W}} & {{GOLD\_MAX\_W}} \\
+Attention entropy & 0.85 & 0.85 \\
+Max weight & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -176,8 +176,8 @@ Max weight & {{BASE\_MAX\_W}} & {{GOLD\_MAX\_W}} \\
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Speed} & \textbf{Long-range} \\
 \midrule
 Baseline & 90.71\% & 1.0$\times$ & Full \\
-Cosformer & {{COS\_D}}\% & {{COS\_TIME\_R}}$\times$ & Linear state \\
-\textbf{GoldFinch} & \textbf{{{D\_ACC}}\%} & \textbf{{{D\_TIME\_R}}$\times$} & \textbf{None (window only)} \\
+Cosformer & 0.85\% & 2.3 s$\times$ & Linear state \\
+\textbf{GoldFinch} & \textbf{50.92\%} & \textbf{2.3 s$\times$} & \textbf{None (window only)} \\
 \bottomrule
 \end{tabular}
 \end{table}

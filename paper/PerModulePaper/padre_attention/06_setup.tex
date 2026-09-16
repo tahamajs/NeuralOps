@@ -32,9 +32,9 @@ Max sequence length: 128.
 \midrule
 \texttt{order} $d$ & 2 \\
 \texttt{temperature} $T$ & 1.0 \\
-\texttt{max\_error} (inject) & {{MAX\_ERROR}} \\
-\texttt{lora\_rank} & {{LORA\_RANK}} \\
-\texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
+\texttt{max\_error} (inject) & 0.024 \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -51,8 +51,8 @@ Max sequence length: 128.
 Optimizer & AdamW \\
 LR & 1e-4 \\
 WD & 0.01 \\
-Steps & {{RECOVERY\_STEPS}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Steps & 50 \\
+Batch size & 32 \\
 Precision & FP16 \\
 \bottomrule
 \end{tabular}

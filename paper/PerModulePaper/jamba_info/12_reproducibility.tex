@@ -58,9 +58,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & {{R\_ACC}}\% & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & 89.68\% & +48.5\%\% \\
+RoBERTa & 52.98\% & +48.5\%\% \\
+GPT-2 & 50.80\% & +48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -69,7 +69,7 @@ GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2.
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-jamba\_info}.
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-jamba\_info}.
 \item \textbf{Metrics:} \texttt{results/unified\_jamba\_info/*/summary.csv}.
 \end{itemize}
 \begin{lstlisting}

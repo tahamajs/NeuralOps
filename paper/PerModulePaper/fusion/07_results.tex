@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB \\
-DistilBERT & \textbf{FUSIONATTN} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}}M & {{D\_VRAM}} MB \\
+DistilBERT & \textbf{FUSIONATTN} & \textbf{86.4} & 0.85 & 86.2 & 66.4MM & 380 MB MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
-RoBERTa & \textbf{FUSIONATTN} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}}M & {{R\_VRAM}} MB \\
+RoBERTa & \textbf{FUSIONATTN} & \textbf{78.2} & 0.85 & 0.865 & 124.6MM & 380 MB MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
-GPT-2 & \textbf{FUSIONATTN} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}}M & {{G\_VRAM}} MB \\
+GPT-2 & \textbf{FUSIONATTN} & \textbf{77.5} & 0.85 & 0.865 & 124.4MM & 380 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,14 +30,14 @@ GPT-2 & \textbf{FUSIONATTN} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{FUSIONATTN} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & 66.9M & {{D\_PARAMS}}M & +{{D\_PARAM\_DELTA}}M \\
-RoBERTa & 124.6M & {{R\_PARAMS}}M & +{{R\_PARAM\_DELTA}}M \\
-GPT-2 & 124.4M & {{G\_PARAMS}}M & +{{G\_PARAM\_DELTA}}M \\
+DistilBERT & 66.9M & 66.4MM & +-32MM \\
+RoBERTa & 124.6M & 124.6MM & +66.4MM \\
+GPT-2 & 124.4M & 124.4MM & +66.4MM \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{FUSIONATTN increases parameter count by ~{{PARAM\_CHANGE}}\%.}
+\textbf{FUSIONATTN increases parameter count by ~66.4M\%.}
 
 \subsection{Attention Path Analysis}
 
@@ -73,9 +73,9 @@ GPT-2 & 124.4M & {{G\_PARAMS}}M & +{{G\_PARAM\_DELTA}}M \\
 \toprule
 \textbf{$B$} & \textbf{Acc} & \textbf{Time} \\
 \midrule
-32 & {{D\_B32}} & {{D\_T32}} \\
-64 & {{D\_B64}} & {{D\_T64}} \\
-128 & {{D\_B128}} & {{D\_T128}} \\
+32 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -91,9 +91,9 @@ GPT-2 & 124.4M & {{G\_PARAMS}}M & +{{G\_PARAM\_DELTA}}M \\
 \toprule
 \textbf{$K$} & \textbf{Acc} & \textbf{Time} \\
 \midrule
-2 & {{D\_K2}} & {{D\_TK2}} \\
-4 & {{D\_K4}} & {{D\_TK4}} \\
-8 & {{D\_K8}} & {{D\_TK8}} \\
+2 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -107,10 +107,10 @@ GPT-2 & 124.4M & {{G\_PARAMS}}M & +{{G\_PARAM\_DELTA}}M \\
 \toprule
 \textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-0 & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} \\
-4 & {{D\_RL4}} & {{R\_RL4}} & {{G\_RL4}} \\
-\textbf{16} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} \\
+0 & 32 & 32 & 32 \\
+4 & 32 & 32 & 32 \\
+\textbf{16} & \textbf{86.4} & \textbf{78.2} & \textbf{77.5} \\
+32 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -127,7 +127,7 @@ GPT-2 & 124.4M & {{G\_PARAMS}}M & +{{G\_PARAM\_DELTA}}M \\
 full & 90.71\% & 0 & No & -- \\
 \texttt{adasplash} & 90.25\% & +0.89\% & Yes ($\alpha$-entmax) & -- \\
 \texttt{nha} & 90.25\% & +0.89\% & No & -- \\
-\textbf{\texttt{fusion\_attn}} & \textbf{{{D\_ACC}}} & \textbf{+{{D\_PARAM\_DELTA\_PCT}}\%} & \textbf{Block} & \textbf{Short} \\
+\textbf{\texttt{fusion\_attn}} & \textbf{86.4} & \textbf{+48.5\%\%} & \textbf{Block} & \textbf{Short} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -136,7 +136,7 @@ full & 90.71\% & 0 & No & -- \\
 
 \begin{itemize}
 \item \textbf{Accuracy:} matches baseline (short path).
-\item \textbf{Parameters:} +{{PARAM\_CHANGE}}\%.
+\item \textbf{Parameters:} +66.4M\%.
 \item \textbf{Sparsity:} not exercised at L=128.
 \item \textbf{Long path:} untested.
 

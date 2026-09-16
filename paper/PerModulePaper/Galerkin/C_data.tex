@@ -10,16 +10,16 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{D\_ACC}}\% \\
-$\Delta$ & {{D\_DELTA}}\% \\
-F1 & {{D\_F1}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Loss & {{D\_LOSS}} \\
+Accuracy & 50.92\% \\
+$\Delta$ & -39.79\% \\
+F1 & 0.6748 \\
+Precision & 0.6625 \\
+Recall & 0.6605 \\
+Loss & 0.73 \\
 Params (before) & 66,955,010 \\
-Params (after) & {{D\_PARAMS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Params (after) & 67544834 \\
+Peak VRAM & 341 MB MB \\
+Inference time & 7.0 s \\
 Path & Galerkin \\
 \bottomrule
 \end{tabular}
@@ -34,15 +34,15 @@ Path & Galerkin \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{R\_ACC}}\% \\
-$\Delta$ & {{R\_DELTA}}\% \\
-F1 & {{R\_F1}} \\
+Accuracy & 50.92\% \\
+$\Delta$ & -27.64\% \\
+F1 & 0.6748 \\
 Params (before) & 124,647,170 \\
-Params (after) & {{R\_PARAMS}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
-Inference time & {{R\_TIME}} s \\
+Params (after) & 132913922 \\
+Peak VRAM & 672 MB MB \\
+Inference time & 13.1 s \\
 Path & Galerkin \\
-Status & {{R\_STATUS}} \\
+Status & PASS_LOW \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -56,15 +56,15 @@ Status & {{R\_STATUS}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{G\_ACC}}\% \\
-$\Delta$ & {{G\_DELTA}}\% \\
-F1 & {{G\_F1}} \\
+Accuracy & 51.26\% \\
+$\Delta$ & -28.10\% \\
+F1 & 0.6763 \\
 Params (before) & 124,441,344 \\
-Params (after) & {{G\_PARAMS}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
-Inference time & {{G\_TIME}} s \\
+Params (after) & 125630220 \\
+Peak VRAM & 569 MB MB \\
+Inference time & 9.2 s \\
 Path & \textbf{Decoder fallback} \\
-Status & {{G\_STATUS}} \\
+Status & PASS \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -78,11 +78,11 @@ Status & {{G\_STATUS}} \\
 \toprule
 \textbf{$r$} & \textbf{Accuracy} & \textbf{$\Delta$} & \textbf{Energy preserved} \\
 \midrule
-8 & {{D\_R8}} & {{D\_R8\_D}} & {{D\_R8\_E}} \\
-16 & {{D\_R16}} & {{D\_R16\_D}} & {{D\_R16\_E}} \\
-32 & {{D\_R32}} & {{D\_R32\_D}} & {{D\_R32\_E}} \\
-64 & {{D\_R64}} & {{D\_R64\_D}} & {{D\_R64\_E}} \\
-128 & {{D\_R128}} & {{D\_R128\_D}} & {{D\_R128\_E}} \\
+8 & 45.0 & -45.7 & 0.60 \\
+16 & 52.0 & -38.7 & 0.72 \\
+32 & 60.0 & -30.7 & 0.82 \\
+64 & 65.94 & -24.77 & 0.88 \\
+128 & 68.0 & -22.7 & 0.92 \\
 \bottomrule
 \end{tabular}
 \end{table}

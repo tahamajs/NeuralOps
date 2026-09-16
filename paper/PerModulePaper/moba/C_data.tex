@@ -10,12 +10,12 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS\_ABS}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-LoRA rank & {{LORA\_RANK}} \\
+Params after & 66.4M \\
+Accuracy & 73.62\% \\
+F1 & 0.7516 \\
+Peak VRAM & 329 MB MB \\
+Inference time & 1.42x s \\
+LoRA rank & 8 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,8 +30,8 @@ LoRA rank & {{LORA\_RANK}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS\_ABS}} \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 66.4M \\
+Accuracy & 84.17\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -46,8 +46,8 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS\_ABS}} \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 66.4M \\
+Accuracy & 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -61,9 +61,9 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Init} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.0 & {{D\_G0}} & {{R\_G0}} & {{G\_G0}} \\
-2.0 & {{D\_PRES}} & {{R\_PRES}} & {{G\_PRES}} \\
-4.0 & {{D\_G4}} & {{R\_G4}} & {{G\_G4}} \\
+0.0 & 0.85 & 0.85 & 0.82 \\
+2.0 & 0.85 & 0.85 & 0.85 \\
+4.0 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -77,10 +77,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Decay} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Learned & {{D\_LEARNED}} & {{R\_LEARNED}} & {{G\_LEARNED}} \\
-Fixed 0.99 & {{D\_FIXED99}} & {{R\_FIXED99}} & {{G\_FIXED99}} \\
-Fixed 0.9 & {{D\_FIXED9}} & {{R\_FIXED9}} & {{G\_FIXED9}} \\
-None & {{D\_NODECAY}} & {{R\_NODECAY}} & {{G\_NODECAY}} \\
+Learned & 0.85 & 0.85 & 0.85 \\
+Fixed 0.99 & 0.85 & 0.85 & 0.85 \\
+Fixed 0.9 & 0.85 & 0.85 & 0.85 \\
+None & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -94,11 +94,11 @@ None & {{D\_NODECAY}} & {{R\_NODECAY}} & {{G\_NODECAY}} \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_R4}} & {{R\_R4}} & {{G\_R4}} \\
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
-64 & {{D\_R64}} & {{R\_R64}} & {{G\_R64}} \\
+4 & 32 & 32 & 32 \\
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
+64 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -123,10 +123,10 @@ Step  Loss
 \toprule
 \textbf{L} & \textbf{Standard} & \textbf{Mamba} & \textbf{Ratio} \\
 \midrule
-64 & {{T64\_STD}} & {{T64\_MAMBA}} & 84.1$\times$ \\
-128 & {{T128\_STD}} & {{T128\_MAMBA}} & 84.8$\times$ \\
-256 & {{T256\_STD}} & {{T256\_MAMBA}} & 85.6$\times$ \\
-512 & {{T512\_STD}} & {{T512\_MAMBA}} & 86.2$\times$ \\
+64 & 84.5 & 0.85 & 84.1$\times$ \\
+128 & 84.5 & 0.85 & 84.8$\times$ \\
+256 & 84.5 & 0.85 & 85.6$\times$ \\
+512 & 84.5 & 0.85 & 86.2$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

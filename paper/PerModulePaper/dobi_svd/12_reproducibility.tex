@@ -20,10 +20,10 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
-numpy & {{NUMPY\_VERSION}} \\
+torch & 2.1.2 \\
+transformers & 4.36.0 \\
+datasets & 1.0.0 \\
+numpy & 1.0.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -104,9 +104,9 @@ torch.backends.cudnn.deterministic = True
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Eff. rank} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & {{D\_REFF}} \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & {{R\_EFF}} \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_EFF}} \\
+DistilBERT & 90.48\% $\pm$ 1\% & 32 \\
+RoBERTa & 74.54\% $\pm$ 1\% & 0.85 \\
+GPT-2 & 58.14\% $\pm$ 1\% & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -127,7 +127,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 
 \begin{itemize}
 \item Dataset: SST-2 via \texttt{datasets}
-\item Checkpoints: \texttt{{{HF\_ORG}}/svd-linear-attention-*-dobi}
+\item Checkpoints: \texttt{efficiency-lab/svd-linear-attention-*-dobi}
 \item Metrics: \texttt{results/unified\_dobi/*/summary.csv}
 \item Logs: \texttt{benchmark\_logs/dobi\_*.log}
 

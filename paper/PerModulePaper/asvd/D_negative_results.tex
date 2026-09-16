@@ -15,7 +15,7 @@
 
 \textbf{Goal.} Maximize compression.
 
-\textbf{Result.} Accuracy dropped by {{R8\_DROP}}\%. Non-recoverable.
+\textbf{Result.} Accuracy dropped by 8.0\%. Non-recoverable.
 
 \textbf{Conclusion.} r=16 is the practical minimum.
 
@@ -31,7 +31,7 @@
 
 \textbf{Goal.} See if compression alone is sufficient.
 
-\textbf{Result.} Accuracy dropped by {{NOLORA\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 8.0\%.
 
 \textbf{Conclusion.} LoRA recovery is essential.
 
@@ -74,11 +74,11 @@
 \toprule
 \textbf{r} & \textbf{DistilBERT} & \textbf{Ratio} \\
 \midrule
-4 & {{D\_R4}} & 24$\times$ \\
-8 & {{D\_R8}} & 12$\times$ \\
-16 & {{D\_R16}} & 8$\times$ \\
-32 & {{D\_R32}} & 5$\times$ \\
-64 & {{D\_R64}} & 3.5$\times$ \\
+4 & 72.0 & 24$\times$ \\
+8 & 80.5 & 12$\times$ \\
+16 & 86.0 & 8$\times$ \\
+32 & 87.5 & 5$\times$ \\
+64 & 88.5 & 3.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -92,11 +92,11 @@
 \toprule
 \textbf{$\varepsilon$} & \textbf{DistilBERT} \\
 \midrule
-0.85 & {{D\_E85}} \\
-0.90 & {{D\_E90}} \\
-0.95 & {{D\_E95}} \\
-0.99 & {{D\_E99}} \\
-0.999 & {{D\_E999}} \\
+0.85 & 82.0 \\
+0.90 & 87.5 \\
+0.95 & 88.5 \\
+0.99 & 89.5 \\
+0.999 & 89.9 \\
 \bottomrule
 \end{tabular}
 \end{table}

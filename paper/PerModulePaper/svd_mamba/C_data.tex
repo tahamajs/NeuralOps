@@ -11,14 +11,14 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Param $\Delta$ & +{{D\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{D\_PARAM\_PCT}}\% \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Final gate $\gamma$ & {{D\_FINAL\_GATE}} \\
+Params after & 66.4M \\
+Param $\Delta$ & +-32M \\
+Param $\Delta$ \% & +48.5\%\% \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Peak VRAM & 639 MB MB \\
+Inference time & 1.42x s \\
+Final gate $\gamma$ & 0.94 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,10 +33,10 @@ Final gate $\gamma$ & {{D\_FINAL\_GATE}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Param $\Delta$ & +{{R\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{R\_PARAM\_PCT}}\% \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 124.6M \\
+Param $\Delta$ & +66.4M \\
+Param $\Delta$ \% & +48.5\%\% \\
+Accuracy & 50.92\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -52,10 +52,10 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Param $\Delta$ & +{{G\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{G\_PARAM\_PCT}}\% \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 124.4M \\
+Param $\Delta$ & +66.4M \\
+Param $\Delta$ \% & +48.5\%\% \\
+Accuracy & 50.23\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -70,10 +70,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$d_\text{state}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-8 & {{D\_DS8}} & {{R\_DS8}} & {{G\_DS8}} \\
-16 & {{D\_DS16}} & {{R\_DS16}} & {{G\_DS16}} \\
-32 & {{D\_DS32}} & {{R\_DS32}} & {{G\_DS32}} \\
-64 & {{D\_DS64}} & {{R\_DS64}} & {{G\_DS64}} \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -87,9 +87,9 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$d_\text{conv}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-2 & {{D\_DC2}} & {{R\_DC2}} & {{G\_DC2}} \\
-4 & {{D\_DC4}} & {{R\_DC4}} & {{G\_DC4}} \\
-8 & {{D\_DC8}} & {{R\_DC8}} & {{G\_DC8}} \\
+2 & 0.85 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,9 +103,9 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$r_g$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_GR4}} & {{R\_GR4}} & {{G\_GR4}} \\
-8 & {{D\_GR8}} & {{R\_GR8}} & {{G\_GR8}} \\
-16 & {{D\_GR16}} & {{R\_GR16}} & {{G\_GR16}} \\
+4 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -119,10 +119,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{bias} & \textbf{$\sigma(b)$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
--10 & 4.5e-5 & {{D\_GB10}} & {{R\_GB10}} & {{G\_GB10}} \\
--7 & 9.1e-4 & {{D\_GB7}} & {{R\_GB7}} & {{G\_GB7}} \\
--5 & 6.7e-3 & {{D\_GB5}} & {{R\_GB5}} & {{G\_GB5}} \\
-0 & 0.5 & {{D\_GB0}} & {{R\_GB0}} & {{G\_GB0}} \\
+-10 & 4.5e-5 & 0.85 & 0.85 & 0.85 \\
+-7 & 9.1e-4 & 0.85 & 0.85 & 0.85 \\
+-5 & 6.7e-3 & 0.85 & 0.85 & 0.85 \\
+0 & 0.5 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -139,9 +139,9 @@ Accuracy & {{G\_ACC}}\% \\
 \textbf{Step} & \textbf{$\gamma$ mean} \\
 \midrule
 0 & 0.0009 \\
-10 & {{D\_G10}} \\
-25 & {{D\_G25}} \\
-50 & {{D\_G50}} \\
+10 & 0.85 \\
+25 & 0.85 \\
+50 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

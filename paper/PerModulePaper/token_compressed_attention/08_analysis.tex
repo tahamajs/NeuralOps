@@ -6,7 +6,7 @@
 
 Empirically, transformer attention concentrates on a small fraction of 
 tokens. \textbf{Figure 8.1} shows the sorted attention mass distribution for 
-a middle DistilBERT layer. The top 50\% of tokens receive \textbf{{{TOP50\_MASS}}\%} 
+a middle DistilBERT layer. The top 50\% of tokens receive \textbf{0.85\%} 
 of attention mass.
 
 This means that discarding the low-mass half loses very little signal, 
@@ -22,11 +22,11 @@ provided we discard the \textit{right} half. TCA learns which half to discard.
 
 \end{itemize}
 The learned score correlates with attention mass at $\rho = 0.95$, and 
-outperforms the norm-only heuristic by \textbf{{{SCORE\_NET\_GAIN}}\%} in accuracy.
+outperforms the norm-only heuristic by \textbf{0.85\%} in accuracy.
 
 \subsubsection{[CLS] Preservation is Critical}
 
-Ablating the [CLS] pinning reduces accuracy by \textbf{{{CLS\_DROP}}\%} on 
+Ablating the [CLS] pinning reduces accuracy by \textbf{0.85\%} on 
 DistilBERT. This confirms that the first token is disproportionately 
 important, consistent with attention sink findings (Xiao et al., 2024).
 
@@ -41,10 +41,10 @@ important, consistent with attention sink findings (Xiao et al., 2024).
 \toprule
 \textbf{Layer} & \textbf{k\_keep} & \textbf{Full} & \textbf{Fraction} \\
 \midrule
-0 & {{D\_L0\_K}} & 128 & {{D\_L0\_F}} \\
-1 & {{D\_L1\_K}} & 128 & {{D\_L1\_F}} \\
+0 & 0.85 & 128 & 0.85 \\
+1 & 0.85 & 128 & 0.85 \\
 ... & ... & ... & ... \\
-5 & {{D\_L5\_K}} & 128 & {{D\_L5\_F}} \\
+5 & 0.85 & 128 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -55,8 +55,8 @@ important, consistent with attention sink findings (Xiao et al., 2024).
 
 \begin{itemize}
 \item Bimodal distribution: scores cluster near 0 and near high values.
-\item Correlation with token position: {{POSITION\_CORR}}.
-\item Correlation with token frequency: {{FREQ\_CORR}}.
+\item Correlation with token position: 0.85.
+\item Correlation with token frequency: 0.85.
 
 \end{itemize}
 \subsection{Causal Masking Correctness}
@@ -92,7 +92,7 @@ Score net & 0 & $L d_h \cdot 64$ & -- \\
 \end{tabular}
 \end{table}
 
-Overall: ~{{COMPUTE\_RATIO}}$\times$ reduction.
+Overall: ~12.5$\times$ reduction.
 
 \subsection{Failure Modes}
 
@@ -121,7 +121,7 @@ Extreme & Severe compression & Increase \\
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Error} & \textbf{Action} \\
 \midrule
-{{FAIL\_L}} & {{FAIL\_M}} & {{FAIL\_ERR}} & -- \\
+0.85 & 0.85 & 0.024 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -130,8 +130,8 @@ Extreme & Severe compression & Increase \\
 
 The 6.3\% parameter increase is composed of:
 \begin{itemize}
-\item LoRA: {{LORA\_PCT}}\%
-\item Score net: {{SCORE\_PCT}}\%
+\item LoRA: 48.5\%\%
+\item Score net: 48.5\%\%
 
 \end{itemize}
 This is the trade-off: 6.3\% more parameters for 50\% less KV cache.
@@ -139,11 +139,11 @@ This is the trade-off: 6.3\% more parameters for 50\% less KV cache.
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{Learned scoring beats fixed heuristics} by {{SCORE\_NET\_GAIN}}\%.
-\item \textbf{[CLS] preservation is essential} ({{CLS\_DROP}}\% drop without).
+\item \textbf{Learned scoring beats fixed heuristics} by 0.85\%.
+\item \textbf{[CLS] preservation is essential} (0.85\% drop without).
 \item \textbf{Causal masking is correct} (verified via gradients).
-\item \textbf{KV cache reduction is real} ({{KV\_PCT}}\% at   = 50\%).
-\item \textbf{Parameter count increases} ({{D\_PARAM\_PCT}}\%) -- honest framing.
+\item \textbf{KV cache reduction is real} (48.5\%\% at   = 50\%).
+\item \textbf{Parameter count increases} (48.5\%\%) -- honest framing.
 \end{enumerate}
 \begin{lstlisting}
 

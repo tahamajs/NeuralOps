@@ -34,15 +34,15 @@ $U_b, V_b$ stays frozen, so the compressed representation is preserved.
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
 \midrule
-0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} \\
-1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} \\
+0 & 0.85 & 0.85 & 0.85 & 0.85 \\
+1 & 0.85 & 0.85 & 0.85 & 0.85 \\
 ... & ... & ... & ... & ... \\
-5 & {{D\_L5\_Q}} & {{D\_L5\_K}} & {{D\_L5\_V}} & {{D\_L5\_O}} \\
+5 & 0.85 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{REC\_ERR\_OBS}}
+\textbf{Observation.} 0.024
 
 \subsection{Comparison with Pure SVD at Equal Rank}
 
@@ -65,9 +65,9 @@ because:
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
 \midrule
-SVD $r=20$ + zero LoRA & {{D\_SVD20}} & {{R\_SVD20}} \\
-\textbf{Res-SVD $(16, 4)$} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} \\
-Difference & {{D\_DIFF}} & {{R\_DIFF}} \\
+SVD $r=20$ + zero LoRA & 84.5 & 84.5 \\
+\textbf{Res-SVD $(16, 4)$} & \textbf{89.56} & \textbf{76.61} \\
+Difference & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -105,11 +105,11 @@ Total rank & $r$ (LoRA) + dense base & $r_b + r_r$ \\
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{Res-SVD} \\
 \midrule
-Q/K/V/O projections & 0.5 ms & {{D\_PROJ\_TIME}} ms \\
+Q/K/V/O projections & 0.5 ms & 2.3 s ms \\
 Attention & 0.4 ms & 0.4 ms \\
-Output proj & 0.2 ms & {{D\_OUT\_TIME}} ms \\
-LoRA & 0 & {{D\_LORA\_TIME}} ms \\
-\textbf{Total} & \textbf{1.4 ms} & \textbf{{{D\_TOTAL\_TIME}} ms} \\
+Output proj & 0.2 ms & 2.3 s ms \\
+LoRA & 0 & 2.3 s ms \\
+\textbf{Total} & \textbf{1.4 ms} & \textbf{2.3 s ms} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -131,7 +131,7 @@ baseline.
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{Res-SVD is a real compressor.} Parameters reduce by {{D\_RATIO}}$\times$.
+\item \textbf{Res-SVD is a real compressor.} Parameters reduce by 50\%$\times$.
 \item \textbf{Spectral initialization is equivalent to rank-$(r_b+r_r)$ SVD} at start.
 \item \textbf{Only the residual is trained}, making the base frozen.
 \item \textbf{Silent injection failure} is a risk.

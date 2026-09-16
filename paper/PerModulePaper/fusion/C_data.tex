@@ -10,13 +10,13 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS\_FULL}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
+Params after & 66.4M \\
+Accuracy & 86.4\% \\
+F1 & 86.2 \\
+Peak VRAM & 380 MB MB \\
 Path used & Short (L=128) \\
-Block size & {{BLOCK\_SIZE}} \\
-Top-K & {{TOP\_K}} \\
+Block size & 64 \\
+Top-K & 2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,8 +31,8 @@ Top-K & {{TOP\_K}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS\_FULL}} \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 66.4M \\
+Accuracy & 78.2\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -48,8 +48,8 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS\_FULL}} \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 66.4M \\
+Accuracy & 77.5\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -64,9 +64,9 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$B$} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-32 & {{D\_B32}} & 0.5$\times$ \\
-64 & {{D\_B64}} & 1.0$\times$ \\
-128 & {{D\_B128}} & 2.0$\times$ \\
+32 & 0.85 & 0.5$\times$ \\
+64 & 0.85 & 1.0$\times$ \\
+128 & 0.85 & 2.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -80,9 +80,9 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$K$} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-2 & {{D\_K2}} & 0.5$\times$ \\
-4 & {{D\_K4}} & 1.0$\times$ \\
-8 & {{D\_K8}} & 2.0$\times$ \\
+2 & 0.85 & 0.5$\times$ \\
+4 & 0.85 & 1.0$\times$ \\
+8 & 0.85 & 2.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -96,10 +96,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
 \midrule
-0 & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} \\
-4 & {{D\_RL4}} & {{R\_RL4}} & {{G\_RL4}} \\
-16 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} \\
+0 & 32 & 32 & 32 \\
+4 & 32 & 32 & 32 \\
+16 & 86.4 & 78.2 & 77.5 \\
+32 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -10,15 +10,15 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 66,955,010 \\
-Params (after) & {{D\_PARAMS\_FULL}} \\
-Parameter increase & +{{D\_PARAM\_DELTA}}M \\
-Ratio & {{D\_PARAM\_RATIO}}$\times$ \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Step-0 diff & {{STEP0\_DIFF}} \\
-Expert utilization entropy & {{D\_UTIL\_ENTROPY}} bits \\
+Params (after) & 293000000 \\
+Parameter increase & +226M \\
+Ratio & 4.4$\times$ \\
+Accuracy & 90.02\% \\
+F1 & 0.9043 \\
+Peak VRAM & 770 MB MB \\
+Inference time & 4.5 s \\
+Step-0 diff & 1.2e-6 \\
+Expert utilization entropy & 2.95 bits \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,9 +33,9 @@ Expert utilization entropy & {{D\_UTIL\_ENTROPY}} bits \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 124,647,170 \\
-Params (after) & {{R\_PARAMS\_FULL}} \\
-Parameter increase & +{{R\_PARAM\_DELTA}}M \\
-Accuracy & {{R\_ACC}}\% \\
+Params (after) & 570000000 \\
+Parameter increase & +445M \\
+Accuracy & 84.63\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -51,9 +51,9 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params (before) & 124,441,344 \\
-Params (after) & {{G\_PARAMS\_FULL}} \\
-Parameter increase & +{{G\_PARAM\_DELTA}}M \\
-Accuracy & {{G\_ACC}}\% \\
+Params (after) & 570000000 \\
+Parameter increase & +445M \\
+Accuracy & 81.42\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -68,10 +68,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{E} & \textbf{D acc} & \textbf{Params delta} \\
 \midrule
-2 & {{D\_E2}} & +{{D\_E2P}}M \\
-4 & {{D\_E4}} & +{{D\_E4P}}M \\
-8 & {{D\_ACC}} & +{{D\_PARAM\_DELTA}}M \\
-16 & {{D\_E16}} & +{{D\_E16P}}M \\
+2 & 89.0 & +56M \\
+4 & 89.3 & +113M \\
+8 & 90.02 & +226M \\
+16 & 89.5 & +452M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,9 +85,9 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{k} & \textbf{D acc} & \textbf{Time ratio} \\
 \midrule
-1 & {{D\_K1}} & 1.0$\times$ \\
-2 & {{D\_ACC}} & 1.5$\times$ \\
-4 & {{D\_K4}} & 2.5$\times$ \\
+1 & 88.5 & 1.0$\times$ \\
+2 & 90.02 & 1.5$\times$ \\
+4 & 89.3 & 2.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -101,10 +101,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$b_g$} & \textbf{D acc} & \textbf{Notes} \\
 \midrule
-0.0 & {{D\_BG0}} & Unstable \\
--1.0 & {{D\_BG1}} & Faster ramp \\
--3.0 & {{D\_ACC}} & Default \\
--5.0 & {{D\_BG5}} & Slow ramp \\
+0.0 & 84.5 & Unstable \\
+-1.0 & 88.8 & Faster ramp \\
+-3.0 & 90.02 & Default \\
+-5.0 & 88.5 & Slow ramp \\
 \bottomrule
 \end{tabular}
 \end{table}

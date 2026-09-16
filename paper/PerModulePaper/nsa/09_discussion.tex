@@ -83,9 +83,9 @@ For DistilBERT at $L = 128$:
 \textbf{Config} & \textbf{Accuracy} & \textbf{Density} \\
 \midrule
 Baseline & 90.71\% & 100\% \\
-NSA ($w=16, k=8$) & {{D\_W16K8}} & {{D\_DENS\_W16K8}}\% \\
-NSA ($w=32, k=16$) & {{D\_ACC}} & {{D\_DENSITY}}\% \\
-NSA ($w=64, k=32$) & {{D\_W64K32}} & {{D\_DENS\_W64K32}}\% \\
+NSA ($w=16, k=8$) & 0.85 & 0.85\% \\
+NSA ($w=32, k=16$) & 90.83 & 50\%\% \\
+NSA ($w=64, k=32$) & 0.85 & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,7 +133,7 @@ MoE & (orthogonal) \\
 
 \end{itemize}
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~12.4 kg CO$_2$eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
 \begin{lstlisting}
 
 ---

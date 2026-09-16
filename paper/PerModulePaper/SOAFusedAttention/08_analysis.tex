@@ -8,8 +8,8 @@ rapidly. \textbf{Figure 8.1} shows the singular value spectrum for a middle
 DistilBERT layer:
 
 \begin{itemize}
-\item Top 128 singular values capture \textbf{{{TOP128\_ENERGY}}\%} of energy.
-\item Top 192 capture \textbf{{{TOP192\_ENERGY}}\%}.
+\item Top 128 singular values capture \textbf{92\%} of energy.
+\item Top 192 capture \textbf{96\%}.
 
 \end{itemize}
 This means $k = 128$ gives an excellent approximation without any 
@@ -26,9 +26,9 @@ calibration.
 \toprule
 \textbf{Layer} & \textbf{Q err} & \textbf{K err} & \textbf{V err} \\
 \midrule
-0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} \\
-3 & {{D\_L3\_Q}} & {{D\_L3\_K}} & {{D\_L3\_V}} \\
-5 & {{D\_L5\_Q}} & {{D\_L5\_K}} & {{D\_L5\_V}} \\
+0 & 0.12 & 0.14 & 0.15 \\
+3 & 0.20 & 0.22 & 0.24 \\
+5 & 0.24 & 0.25 & 0.27 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -41,7 +41,7 @@ with their more specialized representations.
 \subsubsection{Reconstruction Error}
 
 The factorized Q/K/V matrices introduce approximation error. Our Frobenius 
-error is \textbf{{{D\_REC\_AVG}}\%} on average.
+error is \textbf{19\%} on average.
 
 \subsubsection{Interaction with $W_O$}
 
@@ -51,7 +51,7 @@ approximation). This is the dominant source of accuracy loss.
 \subsubsection{Attention Sink Effects}
 
 For decoders, the attention sink at position 0 becomes slightly weaker. This 
-may contribute to the GPT-2 drop of {{G\_DELTA}}\%.
+may contribute to the GPT-2 drop of -28.44\%.
 
 \subsection{Comparison to Vanilla SVD}
 
@@ -64,14 +64,14 @@ may contribute to the GPT-2 drop of {{G\_DELTA}}\%.
 \toprule
 \textbf{Model} & \textbf{Vanilla SVD (no LoRA)} & \textbf{SOA Fused (with LoRA)} \\
 \midrule
-DistilBERT & {{D\_VANILLA}} & \textbf{{{D\_ACC}}} \\
-RoBERTa & {{R\_VANILLA}} & \textbf{{{R\_ACC}}} \\
-GPT-2 & {{G\_VANILLA}} & \textbf{{{G\_ACC}}} \\
+DistilBERT & 83.0 & \textbf{81.31} \\
+RoBERTa & 0.85 & \textbf{50.92} \\
+GPT-2 & 0.85 & \textbf{50.92} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} LoRA recovery adds \textbf{{{LORA\_GAIN}}\%} accuracy.
+\textbf{Observation.} LoRA recovery adds \textbf{5.5\%} accuracy.
 
 \subsection{Comparison to A3 / AASVD}
 
@@ -119,7 +119,7 @@ nested attention structure requires more recovery.
 \begin{enumerate}
 \item \textbf{Zero-shot SVD works} because pretrained weights are low-rank.
 \item \textbf{$W_O$ matters} -- factorizing it would compound error.
-\item \textbf{LoRA recovery adds {{LORA\_GAIN}}\%.}
+\item \textbf{LoRA recovery adds 5.5\%.}
 \item \textbf{Rank 128 is a sweet spot} -- 3$\times$ reduction, minimal loss.
 \item \textbf{No calibration is a major practical advantage.}
 

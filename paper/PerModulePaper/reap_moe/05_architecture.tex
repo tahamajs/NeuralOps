@@ -10,8 +10,8 @@
 \textbf{Architecture} & \textbf{Attention path} & \textbf{FFN path} & \textbf{Verified} \\
 \midrule
 DistilBERT-base & \texttt{attention.q\_lin, k\_lin, v\_lin, out\_lin} & \texttt{ffn.lin1, lin2} &  \\
-RoBERTa-base & \texttt{attention.self.query/key/value, output.dense} & \texttt{intermediate.dense, output.dense} & {{R\_VERIFIED}} \\
-GPT-2 & \texttt{attn.c\_attn, c\_proj} & \texttt{mlp.c\_fc, c\_proj} & {{G\_VERIFIED}} \\
+RoBERTa-base & \texttt{attention.self.query/key/value, output.dense} & \texttt{intermediate.dense, output.dense} & 0.85 \\
+GPT-2 & \texttt{attn.c\_attn, c\_proj} & \texttt{mlp.c\_fc, c\_proj} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

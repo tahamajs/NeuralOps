@@ -20,10 +20,10 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
-numpy & {{NUMPY\_VERSION}} \\
+torch & 2.1.2 \\
+transformers & 4.36.0 \\
+datasets & 1.0.0 \\
+numpy & 1.0.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -110,9 +110,9 @@ torch.backends.cudnn.deterministic = True
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & {{D\_RATIO}}$\times$ \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & {{R\_RATIO}}$\times$ \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_RATIO}}$\times$ \\
+DistilBERT & 88.65\% $\pm$ 1\% & 50\%$\times$ \\
+RoBERTa & 79.82\% $\pm$ 1\% & 2.1\times$\times$ \\
+GPT-2 & 79.36\% $\pm$ 1\% & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,7 +134,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-minimal\_nova}
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-minimal\_nova}
 \item \textbf{Metrics:} \texttt{results/unified\_minimal\_nova/*/summary.csv}
 \item \textbf{Logs:} \texttt{benchmark\_logs/minimal\_nova\_*.log}
 

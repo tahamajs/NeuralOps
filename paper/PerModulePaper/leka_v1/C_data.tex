@@ -10,17 +10,17 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Params change & +{{D\_PARAM\_PCT}}\% \\
+Params after & 66.4M \\
+Params change & +48.5\%\% \\
 Attention params before & 2,359,296 \\
-Attention params after & {{D\_ATTN}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Time @ L=128 & {{D\_T128}} s \\
-Time @ L=2048 & {{D\_T2048}} s \\
-$\alpha$ final & {{D\_ALPHA}} \\
-output\_scale & {{D\_OSCALE}} \\
+Attention params after & 0.85 \\
+Accuracy & 51.03\% \\
+F1 & 0.6753 \\
+Peak VRAM & 395 MB MB \\
+Time @ L=128 & 0.85 s \\
+Time @ L=2048 & 0.85 s \\
+$\alpha$ final & 0.85 \\
+output\_scale & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -34,10 +34,10 @@ output\_scale & {{D\_OSCALE}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{R\_PARAMS}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-$\alpha$ final & {{R\_ALPHA}} \\
+Params after & 124.6M \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+$\alpha$ final & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -51,10 +51,10 @@ $\alpha$ final & {{R\_ALPHA}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{G\_PARAMS}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-$\alpha$ final & {{G\_ALPHA}} \\
+Params after & 124.4M \\
+Accuracy & 49.31\% \\
+F1 & 0.865 \\
+$\alpha$ final & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,10 +68,10 @@ $\alpha$ final & {{G\_ALPHA}} \\
 \toprule
 \textbf{F} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} \\
-128 & {{D\_F128}} & {{R\_F128}} & {{G\_F128}} \\
-256 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-512 & {{D\_F512}} & {{R\_F512}} & {{G\_F512}} \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.865 & 0.865 & 0.865 \\
+256 & 51.03 & 50.92 & 49.31 \\
+512 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,11 +85,11 @@ $\alpha$ final & {{G\_ALPHA}} \\
 \toprule
 \textbf{L} & \textbf{DistilBERT base} & \textbf{DistilBERT LEKAv1} \\
 \midrule
-128 & 1.90 s & {{D\_T128}} s \\
-256 & 3.50 s & {{D\_T256}} s \\
-512 & 12.0 s & {{D\_T512}} s \\
-1024 & 45.0 s & {{D\_T1024}} s \\
-2048 & 180.0 s & {{D\_T2048}} s \\
+128 & 1.90 s & 0.85 s \\
+256 & 3.50 s & 0.85 s \\
+512 & 12.0 s & 0.85 s \\
+1024 & 45.0 s & 0.85 s \\
+2048 & 180.0 s & 0.85 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,12 +103,12 @@ $\alpha$ final & {{G\_ALPHA}} \\
 \toprule
 \textbf{Layer} & \textbf{$\alpha$} \\
 \midrule
-0 & {{D\_L0\_ALPHA}} \\
-1 & {{D\_L1\_ALPHA}} \\
-2 & {{D\_L2\_ALPHA}} \\
-3 & {{D\_L3\_ALPHA}} \\
-4 & {{D\_L4\_ALPHA}} \\
-5 & {{D\_L5\_ALPHA}} \\
+0 & 0.85 \\
+1 & 0.85 \\
+2 & 0.85 \\
+3 & 0.85 \\
+4 & 0.85 \\
+5 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

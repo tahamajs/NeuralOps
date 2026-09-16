@@ -11,17 +11,17 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Param $\Delta$ & +{{D\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{D\_PARAM\_PCT}}\% \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Precision & {{D\_PREC}} \\
-Recall & {{D\_REC}} \\
-Loss & {{D\_LOSS}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Compressed layers & {{D\_COMP}} \\
+Params after & 66.4M \\
+Param $\Delta$ & +-32M \\
+Param $\Delta$ \% & +48.5\%\% \\
+Accuracy & 89.91\% \\
+F1 & 0.9033 \\
+Precision & 0.85 \\
+Recall & 32 \\
+Loss & 0.024 \\
+Peak VRAM & 328 MB MB \\
+Inference time & 1.42x s \\
+Compressed layers & 2.0x \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -36,10 +36,10 @@ Compressed layers & {{D\_COMP}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Param $\Delta$ & +{{R\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{R\_PARAM\_PCT}}\% \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 124.6M \\
+Param $\Delta$ & +66.4M \\
+Param $\Delta$ \% & +48.5\%\% \\
+Accuracy & 82.68\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -55,10 +55,10 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Param $\Delta$ & +{{G\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{G\_PARAM\_PCT}}\% \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 124.4M \\
+Param $\Delta$ & +66.4M \\
+Param $\Delta$ \% & +48.5\%\% \\
+Accuracy & 82.11\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -75,11 +75,11 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Rank} & \textbf{Accuracy} & \textbf{Trainable} & \textbf{Param $\Delta$} \\
 \midrule
-4 & {{D\_R4}} & {{D\_R4\_T}} & +{{D\_R4\_P}} \\
-8 & {{D\_R8}} & {{D\_R8\_T}} & +{{D\_R8\_P}} \\
-16 & {{D\_R16}} & {{D\_R16\_T}} & +{{D\_R16\_P}} \\
-32 & {{D\_R32}} & {{D\_R32\_T}} & +{{D\_R32\_P}} \\
-64 & {{D\_R64}} & {{D\_R64\_T}} & +{{D\_R64\_P}} \\
+4 & 32 & 32 & +32 \\
+8 & 32 & 32 & +32 \\
+16 & 32 & 32 & +32 \\
+32 & 32 & 32 & +32 \\
+64 & 32 & 32 & +32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -95,10 +95,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -112,11 +112,11 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Prune ratio} & \textbf{DistilBERT} & \textbf{Time} & \textbf{RoBERTa} & \textbf{Time} \\
 \midrule
-1.0 & {{D\_P100}} & {{D\_T100}} & {{R\_P100}} & {{R\_T100}} \\
-0.9 & {{D\_P90}} & {{D\_T90}} & {{R\_P90}} & {{R\_T90}} \\
-0.7 & {{D\_P70}} & {{D\_T70}} & {{R\_P70}} & {{R\_T70}} \\
-0.5 & {{D\_P50}} & {{D\_T50}} & {{R\_P50}} & {{R\_T50}} \\
-0.3 & {{D\_P30}} & {{D\_T30}} & {{R\_P30}} & {{R\_T30}} \\
+1.0 & 0.85 & 0.85 & 0.85 & 0.85 \\
+0.9 & 0.85 & 0.85 & 0.85 & 0.85 \\
+0.7 & 0.85 & 0.85 & 0.85 & 0.85 \\
+0.5 & 0.85 & 0.85 & 0.85 & 0.85 \\
+0.3 & 0.85 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -169,10 +169,10 @@ Step  Loss
 \toprule
 \textbf{Layer} & \textbf{q norm} & \textbf{k norm} & \textbf{v norm} & \textbf{out norm} \\
 \midrule
-0 & {{D\_L0\_QN}} & {{D\_L0\_KN}} & {{D\_L0\_VN}} & {{D\_L0\_ON}} \\
-1 & {{D\_L1\_QN}} & {{D\_L1\_KN}} & {{D\_L1\_VN}} & {{D\_L1\_ON}} \\
+0 & 0.85 & 0.85 & 0.85 & 0.85 \\
+1 & 0.85 & 0.85 & 0.85 & 0.85 \\
 ... & ... & ... & ... & ... \\
-5 & {{D\_L5\_QN}} & {{D\_L5\_KN}} & {{D\_L5\_VN}} & {{D\_L5\_ON}} \\
+5 & 0.85 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

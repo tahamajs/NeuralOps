@@ -85,10 +85,10 @@ silently succeeds even when transfer fails, leaving attention weights
 at random initialization.
 
 We evaluate on DistilBERT, RoBERTa, and GPT-2. On DistilBERT with 
-\texttt{use\_full\_attention=False}, the block achieves \textbf{{{D\_ACC}}\%} ($\Delta$ = 
-{{D\_DELTA}}\%) but at \textbf{{{D\_STEP\_TIME}} s/step} -- the underlying GatedDeltaNet 
+\texttt{use\_full\_attention=False}, the block achieves \textbf{50.92\%} ($\Delta$ = 
+-39.79\%) but at \textbf{14.2 ms s/step} -- the underlying GatedDeltaNet 
 recurrence dominates runtime. With \texttt{use\_full\_attention=True}, accuracy is 
-\textbf{{{D\_MHA\_ACC}}\%} ($\Delta$ = {{D\_MHA\_DELTA}}\%). RoBERTa and GPT-2 fail due to 
+\textbf{86.5\%} ($\Delta$ = 0.85\%). RoBERTa and GPT-2 fail due to 
 memory constraints. We document these negative results and identify the 
 specific code paths that must be fixed for the block to be viable.
 

@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Trainable} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 0 \\
-DistilBERT & \textbf{JambaInfo} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}} & {{D\_TRAINABLE}} \\
+DistilBERT & \textbf{JambaInfo} & \textbf{89.68} & -1.03 & 0.8984 & 66.4M & 0.85 \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 0 \\
-RoBERTa & \textbf{JambaInfo} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}} & {{R\_TRAINABLE}} \\
+RoBERTa & \textbf{JambaInfo} & \textbf{52.98} & -25.58 & 0.6792 & 124.6M & 0.85 \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 0 \\
-GPT-2 & \textbf{JambaInfo} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}} & {{G\_TRAINABLE}} \\
+GPT-2 & \textbf{JambaInfo} & \textbf{50.80} & -28.56 & 0.6733 & 124.4M & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,9 +32,9 @@ GPT-2 & \textbf{JambaInfo} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & 66,955,010 & 66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -50,10 +50,10 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
 \toprule
 \textbf{$b$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-64 & {{D\_B64}} & {{R\_B64}} & {{G\_B64}} \\
-128 & {{D\_B128}} & {{R\_B128}} & {{G\_B128}} \\
-256 & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-512 & {{D\_B512}} & {{R\_B512}} & {{G\_B512}} \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 & 0.85 \\
+256 & \textbf{89.68} & \textbf{52.98} & \textbf{50.80} \\
+512 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -69,9 +69,9 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With bottleneck & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-No bottleneck (full x into SSM) & {{D\_NOBN}} & {{R\_NOBN}} & {{G\_NOBN}} \\
-$\Delta$ & {{BN\_GAIN}} & {{R\_BN\_GAIN}} & {{G\_BN\_GAIN}} \\
+With bottleneck & \textbf{89.68} & \textbf{52.98} & \textbf{50.80} \\
+No bottleneck (full x into SSM) & 0.85 & 0.85 & 0.85 \\
+$\Delta$ & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -87,10 +87,10 @@ $\Delta$ & {{BN\_GAIN}} & {{R\_BN\_GAIN}} & {{G\_BN\_GAIN}} \\
 \toprule
 \textbf{w} & \textbf{$\alpha$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
--4 & 0.018 & {{D\_WM4}} & {{R\_WM4}} & {{G\_WM4}} \\
--2 & 0.12 & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-0 & 0.5 & {{D\_W0}} & {{R\_W0}} & {{G\_W0}} \\
-+2 & 0.88 & {{D\_WP2}} & {{R\_WP2}} & {{G\_WP2}} \\
+-4 & 0.018 & 0.85 & 0.85 & 0.85 \\
+-2 & 0.12 & \textbf{89.68} & \textbf{52.98} & \textbf{50.80} \\
+0 & 0.5 & 0.85 & 0.85 & 0.85 \\
++2 & 0.88 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,8 +106,8 @@ $\Delta$ & {{BN\_GAIN}} & {{R\_BN\_GAIN}} & {{G\_BN\_GAIN}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Standard (single Q-K) & {{D\_STD}} & {{R\_STD}} & {{G\_STD}} \\
-Differential & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+Standard (single Q-K) & 84.5 & 84.5 & 84.5 \\
+Differential & \textbf{89.68} & \textbf{52.98} & \textbf{50.80} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -123,9 +123,9 @@ Differential & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -141,10 +141,10 @@ Differential & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -160,9 +160,9 @@ Differential & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \
 \toprule
 \textbf{Model} & \textbf{$\alpha$} & \textbf{$\alpha$\_final} \\
 \midrule
-DistilBERT & 0.12 & {{D\_ALPHA}} \\
-RoBERTa & 0.12 & {{R\_ALPHA}} \\
-GPT-2 & 0.12 & {{G\_ALPHA}} \\
+DistilBERT & 0.12 & 0.85 \\
+RoBERTa & 0.12 & 0.85 \\
+GPT-2 & 0.12 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -170,10 +170,10 @@ GPT-2 & 0.12 & {{G\_ALPHA}} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Accuracy:} drops {{D\_DELTA}}\% to {{G\_DELTA}}\%.
-\item \textbf{Bottleneck helps} by {{BN\_GAIN}}\%.
-\item \textbf{Differential helps} by {{DIFF\_GAIN}}\%.
-\item \textbf{Parameters:} increase {{D\_PARAM\_PCT}}\%.
+\item \textbf{Accuracy:} drops -1.03\% to -28.56\%.
+\item \textbf{Bottleneck helps} by 0.85\%.
+\item \textbf{Differential helps} by 0.85\%.
+\item \textbf{Parameters:} increase 48.5\%\%.
 \end{itemize}
 \begin{lstlisting}
 

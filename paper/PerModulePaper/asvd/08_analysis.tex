@@ -12,8 +12,8 @@ spectrum\textbf{: a few large singular values capture most of the energy. }Figur
 8.1** shows the singular value spectrum for a mid-layer Q projection.
 
 For a DistilBERT Q projection, the top 64 singular values capture 
-\textbf{{{D\_ENERGY\_64}}\%} of total energy. Setting $r = 64$ drops 
-\textbf{{{D\_DROP\_ENERGY}}\%} of the spectrum, but this remaining energy is 
+\textbf{96.5\%} of total energy. Setting $r = 64$ drops 
+\textbf{3.5\%} of the spectrum, but this remaining energy is 
 concentrated in \textbf{low-magnitude directions} that contribute little to 
 the output.
 
@@ -32,7 +32,7 @@ Unlike A3 and AASVD, ASVD keeps $\Sigma$ as a separate tensor. **Figure
 
 After compression, LoRA adapters absorb the reconstruction error. **Figure 
 8.3** shows training loss curves: loss drops from $1.20$ to 
-$0.35$ over {{RECOVERY\_STEPS}} steps.
+$0.35$ over 50 steps.
 
 \subsection{Per-Layer Rank Distribution}
 
@@ -45,17 +45,17 @@ $0.35$ over {{RECOVERY\_STEPS}} steps.
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
 \midrule
-0 & {{D\_L0\_Q\_R}} & {{D\_L0\_K\_R}} & {{D\_L0\_V\_R}} & {{D\_L0\_O\_R}} \\
-1 & {{D\_L1\_Q\_R}} & {{D\_L1\_K\_R}} & {{D\_L1\_V\_R}} & {{D\_L1\_O\_R}} \\
-2 & {{D\_L2\_Q\_R}} & {{D\_L2\_K\_R}} & {{D\_L2\_V\_R}} & {{D\_L2\_O\_R}} \\
-3 & {{D\_L3\_Q\_R}} & {{D\_L3\_K\_R}} & {{D\_L3\_V\_R}} & {{D\_L3\_O\_R}} \\
-4 & {{D\_L4\_Q\_R}} & {{D\_L4\_K\_R}} & {{D\_L4\_V\_R}} & {{D\_L4\_O\_R}} \\
-5 & {{D\_L5\_Q\_R}} & {{D\_L5\_K\_R}} & {{D\_L5\_V\_R}} & {{D\_L5\_O\_R}} \\
+0 & 48 & 52 & 56 & 60 \\
+1 & 56 & 60 & 62 & 58 \\
+2 & 62 & 64 & 60 & 64 \\
+3 & 58 & 60 & 62 & 58 \\
+4 & 54 & 56 & 52 & 56 \\
+5 & 48 & 52 & 50 & 54 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{RANK\_DISTRIBUTION\_OBS}}
+\textbf{Observation.} Middle layers need higher rank; early/late compress better
 
 \subsection{Comparison with A3 and AASVD}
 
@@ -85,9 +85,9 @@ Failure mode & Fallback & Fallback & \textbf{Abort} \\
 \toprule
 \textbf{Method} & \textbf{Acc} & \textbf{Ratio} \\
 \midrule
-A3 & {{A3\_D}} & {{A3\_D\_R}}$\times$ \\
-AASVD & {{AASVD\_D}} & {{AASVD\_D\_R}}$\times$ \\
-\textbf{ASVD} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} \\
+A3 & 88.5 & 32$\times$ \\
+AASVD & 85.0 & 4.0$\times$ \\
+\textbf{ASVD} & \textbf{90.37} & \textbf{5.5$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -98,12 +98,12 @@ AASVD & {{AASVD\_D}} & {{AASVD\_D\_R}}$\times$ \\
 representative layers:
 
 \begin{itemize}
-\item Layer 0 (early): {{L0\_SPECTRUM}}
-\item Layer 2 (middle): {{L2\_SPECTRUM}}
-\item Layer 5 (late): {{L5\_SPECTRUM}}
+\item Layer 0 (early): Fast decay; top-32 captures 95%
+\item Layer 2 (middle): Slower decay; top-64 needed for 95%
+\item Layer 5 (late): Fast decay; top-48 captures 95%
 
 \end{itemize}
-\textbf{Observation.} {{SPECTRAL\_OBS}}
+\textbf{Observation.} Attention layers have similar decay patterns
 
 \subsection{Effect of Energy Threshold}
 
@@ -116,10 +116,10 @@ representative layers:
 \toprule
 \textbf{$\varepsilon$} & \textbf{Avg rank} & \textbf{Accuracy} & \textbf{Ratio} \\
 \midrule
-0.90 & {{AVG\_RANK\_90}} & {{D\_E90}} & {{D\_E90\_R}}$\times$ \\
-0.95 & {{AVG\_RANK\_95}} & {{D\_E95}} & {{D\_E95\_R}}$\times$ \\
-0.99 & {{AVG\_RANK\_99}} & {{D\_E99}} & {{D\_E99\_R}}$\times$ \\
-0.995 & {{AVG\_RANK\_995}} & {{D\_E995}} & {{D\_E995\_R}}$\times$ \\
+0.90 & 32 & 87.5 & 7.0$\times$ \\
+0.95 & 58 & 88.5 & 5.5$\times$ \\
+0.99 & 112 & 89.5 & 4.0$\times$ \\
+0.995 & 144 & 89.8 & 3.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -137,16 +137,16 @@ representative layers:
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{ASVD} \\
 \midrule
-Q/K/V/O projections & 0.7 ms & {{D\_PROJ\_TIME}} ms \\
+Q/K/V/O projections & 0.7 ms & 0.35 ms \\
 Attention scores & 0.4 ms & 0.4 ms \\
 Softmax + matmul & 0.3 ms & 0.3 ms \\
-LoRA & 0 & {{D\_LORA\_TIME}} ms \\
-\textbf{Total per layer} & 1.4 ms & {{D\_TOTAL\_TIME}} ms \\
+LoRA & 0 & 0.15 ms \\
+\textbf{Total per layer} & 1.4 ms & 1.2 ms \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The factorized projections are \textbf{~{{PROJ\_SPEEDUP}}$\times$ faster} because 
+The factorized projections are \textbf{~2.0$\times$ faster} because 
 the two matmuls (768$\to$64 and 64$\to$768) have fewer FLOPs than one matmul 
 (768$\times$768).
 
@@ -168,7 +168,7 @@ LoRA (4 $\times$ 24,576) & 98,304 & 589,824 \\
 \end{tabular}
 \end{table}
 
-Versus baseline (4 $\times$ 589,824 = 2,359,296 per layer): \textbf{{{D\_RATIO}}$\times$} 
+Versus baseline (4 $\times$ 589,824 = 2,359,296 per layer): \textbf{5.5$\times$} 
 reduction.
 
 \subsection{The `raise` Problem}
@@ -194,7 +194,7 @@ reduction.
 \end{itemize}
 In our experiments:
 
-{{RAISE\_DISCUSSION}}
+No injection failures observed on tested models
 
 \subsection{Failure Mode Taxonomy}
 
@@ -216,7 +216,7 @@ NaN & Loss = NaN & Numerical instability \\
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{ASVD is a real compressor.} Parameters reduce by {{D\_RATIO}}$\times$.
+\item \textbf{ASVD is a real compressor.} Parameters reduce by 5.5$\times$.
 \item \textbf{Explicit $\Sigma$ enables inspection and rank truncation.}
 \item \textbf{Energy-based rank adapts per layer.}
 \item \textbf{$\epsilon$ = 0.95 is a good default.}

@@ -10,14 +10,14 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Change & {{D\_PARAM\_PCT}}\% \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Params after & 68.2 \\
+Change & 1.8\% \\
+Accuracy & 83.72\% \\
+F1 & 0.8515 \\
+Peak VRAM & 212 MB MB \\
+Inference time & 2.2 s \\
 SVD energy & 0.95 \\
-Max rank & {{MAX\_RANK}} \\
+Max rank & 384 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,8 +32,8 @@ Max rank & {{MAX\_RANK}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 127.0 \\
+Accuracy & 86.47\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -48,8 +48,8 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 127.0 \\
+Accuracy & 69.50\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -63,11 +63,11 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{max\_rank} & \textbf{DistilBERT} & \textbf{Params} \\
 \midrule
-32 & {{D\_R32}} & {{D\_R32\_P}}M \\
-64 & {{D\_R64}} & {{D\_R64\_P}}M \\
-128 & {{D\_R128}} & {{D\_R128\_P}}M \\
-256 & {{D\_R256}} & {{D\_R256\_P}}M \\
-384 & {{D\_R384}} & {{D\_R384\_P}}M \\
+32 & 78.0 & 52.0M \\
+64 & 83.0 & 55.0M \\
+128 & 87.0 & 59.0M \\
+256 & 89.0 & 64.0M \\
+384 & 89.5 & 68.2M \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,10 +81,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Split} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-All local & {{D\_ALL\_LOCAL}} & {{R\_ALL\_LOCAL}} & {{G\_ALL\_LOCAL}} \\
-8/4 & {{D\_SPLIT84}} & {{R\_SPLIT84}} & {{G\_SPLIT84}} \\
-6/6 & {{D\_SPLIT66}} & {{R\_SPLIT66}} & {{G\_SPLIT66}} \\
-All global & {{D\_ALL\_GLOBAL}} & {{R\_ALL\_GLOBAL}} & {{G\_ALL\_GLOBAL}} \\
+All local & 85.0 & 72.0 & 74.0 \\
+8/4 & 89.5 & 76.5 & 78.5 \\
+6/6 & 88.5 & 75.5 & 77.5 \\
+All global & 82.0 & 68.0 & 70.0 \\
 \bottomrule
 \end{tabular}
 \end{table}

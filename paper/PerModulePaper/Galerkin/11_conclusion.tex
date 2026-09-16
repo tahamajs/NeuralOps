@@ -6,7 +6,7 @@
 We presented \textbf{Galerkin Attention}, a Petrov-Galerkin projection of 
 transformer self-attention onto a fixed DCT basis. The method was evaluated 
 on three pretrained models on SST-2. \textbf{Results are negative for encoders}: 
-DistilBERT drops {{D\_DELTA}}\% and RoBERTa collapses to {{R\_ACC}}\%. GPT-2 
+DistilBERT drops -39.79\% and RoBERTa collapses to 50.92\%. GPT-2 
 shows no change because the causal path falls back to standard attention.
 
 \subsection{Results Recap}
@@ -18,9 +18,9 @@ shows no change because the causal path falls back to standard attention.
 \toprule
 \textbf{Model} & \textbf{Path} & \textbf{Accuracy} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & Galerkin & {{D\_ACC}}\% & {{D\_DELTA}} \\
-RoBERTa & Galerkin & {{R\_ACC}}\% & {{R\_DELTA}} \\
-GPT-2 & Fallback & {{G\_ACC}}\% & {{G\_DELTA}} \\
+DistilBERT & Galerkin & 50.92\% & -39.79 \\
+RoBERTa & Galerkin & 50.92\% & -27.64 \\
+GPT-2 & Fallback & 51.26\% & -28.10 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,8 +68,8 @@ We thank the anonymous reviewers for feedback.
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} implemented the module, ran experiments, wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback.
+\item \textbf{Taha Majs} implemented the module, ran experiments, wrote the paper.
+\item \textbf{Collaborative Research Team} provided feedback.
 
 \end{itemize}
 \subsection{Conflict of Interest}

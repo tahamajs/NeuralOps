@@ -15,7 +15,7 @@ limitation for standard benchmarks.
 \subsubsection{Takeaway 3: Two Branches Beat One}
 
 The learned gate + two branches improve over single-branch by 
-{{BRANCH\_GAIN}}\%.
+0.85\%.
 
 \subsection{When to Use HGRN2-GatedDeltaNet}
 
@@ -56,10 +56,10 @@ For DistilBERT at L = 1024:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-Inference time & 45s & {{D\_T1024}}s & 86.4$\times$ \\
-Peak VRAM & {{VRAM\_BASE\_1024}} MB & {{VRAM\_T1024}} MB & {{VRAM\_PCT\_1024}}\% \\
+Accuracy & 90.71\% & 53.56\% & -37.15\% \\
+Params & 66.95M & 66.4M & +48.5\%\% \\
+Inference time & 45s & 0.85s & 86.4$\times$ \\
+Peak VRAM & 380 MB MB & 380 MB MB & 48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}

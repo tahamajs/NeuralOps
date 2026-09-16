@@ -3,7 +3,7 @@
 
 \subsection{D.1 Slow Implementation}
 
-\textbf{The primary negative result.} Gated DeltaNet is ~{{D\_SLOWDOWN}}$\times$ slower 
+\textbf{The primary negative result.} Gated DeltaNet is ~84.5$\times$ slower 
 than baseline on DistilBERT despite having fewer FLOPs.
 
 \subsubsection{D.1.1 Attempted Fixes}
@@ -83,8 +83,8 @@ Without key normalization:
 \toprule
 \textbf{Config} & \textbf{DistilBERT} \\
 \midrule
-With normalization & {{D\_ACC}}\% \\
-Without & {{D\_NO\_NORM}}\% \\
+With normalization & 50.92\% \\
+Without & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -100,8 +100,8 @@ Without & {{D\_NO\_NORM}}\% \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} \\
 \midrule
-With denominator & {{D\_ACC}}\% \\
-Without & {{D\_NO\_DENOM}}\% \\
+With denominator & 50.92\% \\
+Without & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -117,8 +117,8 @@ Without & {{D\_NO\_DENOM}}\% \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} \\
 \midrule
-Input-dependent gates & {{D\_ACC}}\% \\
-Fixed gates ($\alpha$=0.5, $\beta$=0.9) & {{D\_FIXED\_GATES}}\% \\
+Input-dependent gates & 50.92\% \\
+Fixed gates ($\alpha$=0.5, $\beta$=0.9) & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}

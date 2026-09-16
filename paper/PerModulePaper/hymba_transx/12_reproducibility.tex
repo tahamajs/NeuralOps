@@ -71,9 +71,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Params $\Delta$} & \textbf{$\alpha$} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_ALPHA}} \\
-RoBERTa & {{R\_ACC}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_ALPHA}} \\
-GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_ALPHA}} \\
+DistilBERT & 49.08\% & +48.5\%\% & 0.85 \\
+RoBERTa & 51.15\% & +48.5\%\% & 0.85 \\
+GPT-2 & 57.57\% & +48.5\%\% & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -82,7 +82,7 @@ GPT-2 & {{G\_ACC}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_ALPHA}} \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}.
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-hymba\_transx}.
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-hymba\_transx}.
 \item \textbf{Metrics:} \texttt{results/unified\_hymba\_transx/*/summary.csv}.
 \end{itemize}
 \begin{lstlisting}

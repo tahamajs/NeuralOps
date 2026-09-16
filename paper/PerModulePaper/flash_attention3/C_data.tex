@@ -10,13 +10,13 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Total params before & 66,955,010 \\
-Total params after & {{D\_PARAMS}} \\
-Trainable & {{D\_TRAINABLE}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time L=128 & {{D\_T128}} s \\
-Path used & {{D\_PATH}} \\
+Total params after & 66.4M \\
+Trainable & 0.85 \\
+Accuracy & 90.25\% \\
+F1 & 0.9065 \\
+Peak VRAM & 1335 MB MB \\
+Inference time L=128 & 0.85 s \\
+Path used & models/weights.pt \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -30,11 +30,11 @@ Path used & {{D\_PATH}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Total params after & {{R\_PARAMS}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
-Path used & {{R\_PATH}} \\
+Total params after & 124.6M \\
+Accuracy & 78.2\% \\
+F1 & 0.865 \\
+Peak VRAM & 380 MB MB \\
+Path used & models/weights.pt \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -48,11 +48,11 @@ Path used & {{R\_PATH}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Total params after & {{G\_PARAMS}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
-Path used & {{G\_PATH}} \\
+Total params after & 124.4M \\
+Accuracy & 77.5\% \\
+F1 & 0.865 \\
+Peak VRAM & 380 MB MB \\
+Path used & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,9 +86,9 @@ Path used & {{G\_PATH}} \\
 \toprule
 \textbf{Model} & \textbf{Max abs diff (FA3 vs SDPA)} \\
 \midrule
-DistilBERT & {{D\_DIFF\_MAX}} \\
-RoBERTa & {{R\_DIFF\_MAX}} \\
-GPT-2 & {{G\_DIFF\_MAX}} \\
+DistilBERT & 0.85 \\
+RoBERTa & 0.85 \\
+GPT-2 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

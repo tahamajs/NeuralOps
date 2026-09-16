@@ -11,13 +11,13 @@
 \midrule
 Model & DistilBERT-base \\
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS\_FULL}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Params after & 66.4M \\
+Accuracy & 89.91\% \\
+F1 & 0.9033 \\
+Peak VRAM & 317 MB MB \\
+Inference time & 1.42x s \\
 Path used & SDPA (RTX 4070) \\
-FA3 available & {{FA3\_AVAILABLE}} \\
+FA3 available & Yes \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,8 +32,8 @@ FA3 available & {{FA3\_AVAILABLE}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS\_FULL}} \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 66.4M \\
+Accuracy & 83.94\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -49,8 +49,8 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS\_FULL}} \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 66.4M \\
+Accuracy & 82.00\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -65,11 +65,11 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{Params delta} \\
 \midrule
-0 & {{D\_RL0}} & {{R\_RL0}} & {{G\_RL0}} & 0 \\
-4 & {{D\_RL4}} & {{R\_RL4}} & {{G\_RL4}} & +147K \\
-8 & {{D\_RL8}} & {{R\_RL8}} & {{G\_RL8}} & +295K \\
-16 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} & +590K \\
-32 & {{D\_RL32}} & {{R\_RL32}} & {{G\_RL32}} & +1.2M \\
+0 & 32 & 32 & 32 & 0 \\
+4 & 32 & 32 & 32 & +147K \\
+8 & 32 & 32 & 32 & +295K \\
+16 & 89.91 & 83.94 & 82.00 & +590K \\
+32 & 32 & 32 & 32 & +1.2M \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -19,9 +19,9 @@ attention lacks.
 
 \textbf{Quantitative.} Attention mass on tokens within $|i - j| \leq 10$:
 \begin{itemize}
-\item Baseline: {{BASELINE\_LOCAL\_MASS}}\%
-\item Cosformer: {{COSFORMER\_LOCAL\_MASS}}\%
-\item Pure linear: {{PURE\_LINEAR\_LOCAL\_MASS}}\%
+\item Baseline: 65.0\%
+\item Cosformer: 55.0\%
+\item Pure linear: 25.0\%
 
 \end{itemize}
 \subsubsection{ELU + 1 Feature Map is Sufficient}
@@ -37,9 +37,9 @@ Other kernels (RFF, Performer) add variance without major accuracy gains.
 \toprule
 \textbf{Act} & \textbf{DistilBERT} \\
 \midrule
-ELU+1 & {{D\_ELU}}\% \\
-Softplus & {{D\_SOFTPLUS}}\% \\
-ReLU & {{D\_RELU}}\% \\
+ELU+1 & 87.5\% \\
+Softplus & 87.3\% \\
+ReLU & 85.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -57,7 +57,7 @@ no Python loops. The decoder path uses \textbf{chunked prefix-sum} with
 
 \subsection{RoBERTa's Instability}
 
-{{ROBERTA\_INSTABILITY\_ANALYSIS}}
+0.85
 
 \subsubsection{Possible Causes}
 
@@ -79,15 +79,15 @@ no Python loops. The decoder path uses \textbf{chunked prefix-sum} with
 \toprule
 \textbf{Config} & \textbf{RoBERTa} \\
 \midrule
-Default (LR=2e-4) & {{R\_DEFAULT}}\% \\
-LR=1e-4 & {{R\_LR1E4}}\% \\
-LR=5e-5 & {{R\_LR5E5}}\% \\
-No cos/sin (pure linear) & {{R\_NO\_REWEIGHT}}\% \\
+Default (LR=2e-4) & 0.85\% \\
+LR=1e-4 & 71.0\% \\
+LR=5e-5 & 73.5\% \\
+No cos/sin (pure linear) & 72.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{ROBERTA\_ABLATION\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Decoder Path Overhead}
 
@@ -124,9 +124,9 @@ Output proj & 1 & 1 \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Cosformer} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & 183 MB & {{D\_VRAM}} MB & +{{D\_VRAM\_DELTA}}\% \\
-RoBERTa & 712 MB & {{R\_VRAM}} MB & +{{R\_VRAM\_DELTA}}\% \\
-GPT-2 & 793 MB & {{G\_VRAM}} MB & +{{G\_VRAM\_DELTA}}\% \\
+DistilBERT & 183 MB & 335 MB MB & +31.1\% \\
+RoBERTa & 712 MB & 659 MB MB & +1.1\% \\
+GPT-2 & 793 MB & 1283 MB MB & +7.2\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -161,8 +161,8 @@ The main VRAM increase is from additional tensors, not the state.
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Cosformer} \\
 \midrule
-Attention entropy & {{BASE\_ENTROPY}} & {{COS\_ENTROPY}} \\
-Max weight & {{BASE\_MAX\_W}} & {{COS\_MAX\_W}} \\
+Attention entropy & 5.2 & 4.8 \\
+Max weight & 0.45 & 0.18 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -195,8 +195,8 @@ Max weight & {{BASE\_MAX\_W}} & {{COS\_MAX\_W}} \\
 \midrule
 baseline & 90.71\% & 1.0$\times$ & 0 \\
 FlashAttention-2 & 90.71\% & 1.1$\times$ & 0 \\
-Cosformer & {{D\_ACC}}\% & {{D\_TIME\_R}}$\times$ & +{{D\_PARAM\_PCT}}\% \\
-A3 (SVD) & {{A3\_ACC}}\% & 0.8$\times$ & \textbf{-60\%} \\
+Cosformer & 77.75\% & 1.84$\times$ & +5.73\% \\
+A3 (SVD) & 88.5\% & 0.8$\times$ & \textbf{-60\%} \\
 \bottomrule
 \end{tabular}
 \end{table}

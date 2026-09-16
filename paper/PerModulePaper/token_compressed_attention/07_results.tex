@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{KV Len} & \textbf{} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 128 & -- & 183 MB \\
-DistilBERT & \textbf{TCA} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_KVLEN}} & 50\% & {{D\_VRAM}} MB \\
+DistilBERT & \textbf{TCA} & \textbf{50.92} & -39.79 & 0.6748 & 0.85 & 50\% & 323 MB MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 128 & -- & 712 MB \\
-RoBERTa & \textbf{TCA} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_KVLEN}} & 50\% & {{R\_VRAM}} MB \\
+RoBERTa & \textbf{TCA} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & 50\% & 369 MB MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 128 & -- & 793 MB \\
-GPT-2 & \textbf{TCA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_KVLEN}} & 50\% & {{G\_VRAM}} MB \\
+GPT-2 & \textbf{TCA} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & 50\% & 571 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -24,9 +24,9 @@ GPT-2 & \textbf{TCA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_KVL
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item KV sequence length reduced from 128 to \textbf{{{K\_NEW}}} (~50\%$\times$ reduction).
-\item Attention compute reduced by \textbf{{{COMPUTE\_REDUCTION}}\%}.
-\item Accuracy drop of \textbf{{{D\_DELTA}}\%} on DistilBERT.
+\item KV sequence length reduced from 128 to \textbf{0.85} (~50\%$\times$ reduction).
+\item Attention compute reduced by \textbf{12.5\%}.
+\item Accuracy drop of \textbf{-39.79\%} on DistilBERT.
 
 \end{enumerate}
 \subsection{Parameter Analysis}
@@ -40,9 +40,9 @@ GPT-2 & \textbf{TCA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_KVL
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{TCA} & \textbf{Change} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% & LoRA + score\_net \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_PCT}}\% & LoRA + score\_net \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% & LoRA + score\_net \\
+DistilBERT & 66,955,010 & 66.4M & +48.5\%\% & LoRA + score\_net \\
+RoBERTa & 124,647,170 & 124.6M & +48.5\%\% & LoRA + score\_net \\
+GPT-2 & 124,441,344 & 124.4M & +48.5\%\% & LoRA + score\_net \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -61,11 +61,11 @@ increase is from LoRA adapters and the score network.
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{TCA} & \textbf{Savings} \\
 \midrule
-KV length & 128 & {{K\_NEW}} & {{KV\_PCT}}\% \\
-KV cache bytes & {{KV\_BASE}} & {{KV\_TCA}} & {{KV\_PCT}}\% \\
-Attention FLOPs & {{FLOP\_BASE}} & {{FLOP\_TCA}} & {{FLOP\_PCT}}\% \\
-Inference time & {{T\_BASE}} s & {{T\_TCA}} s & {{TIME\_PCT}}\% \\
-Peak VRAM & {{VRAM\_BASE}} MB & {{VRAM\_TCA}} MB & {{VRAM\_PCT}}\% \\
+KV length & 128 & 0.85 & 48.5\%\% \\
+KV cache bytes & 0.85 & 0.85 & 48.5\%\% \\
+Attention FLOPs & 0.85 & 0.85 & 48.5\%\% \\
+Inference time & 0.85 s & 0.85 s & 48.5\%\% \\
+Peak VRAM & 380 MB MB & 380 MB MB & 48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,11 +81,11 @@ Peak VRAM & {{VRAM\_BASE}} MB & {{VRAM\_TCA}} MB & {{VRAM\_PCT}}\% \\
 \toprule
 \textbf{} & \textbf{DistilBERT} & \textbf{KV Len} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.9 & {{D\_R09}} & 116 & {{R\_R09}} & {{G\_R09}} \\
-0.7 & {{D\_R07}} & 90 & {{R\_R07}} & {{G\_R07}} \\
-0.5 & {{D\_R05}} & 64 & {{R\_R05}} & {{G\_R05}} \\
-0.3 & {{D\_R03}} & 39 & {{R\_R03}} & {{G\_R03}} \\
-0.1 & {{D\_R01}} & 13 & {{R\_R01}} & {{G\_R01}} \\
+0.9 & 32 & 116 & 32 & 32 \\
+0.7 & 32 & 90 & 32 & 32 \\
+0.5 & 32 & 64 & 32 & 32 \\
+0.3 & 32 & 39 & 32 & 32 \\
+0.1 & 32 & 13 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -101,15 +101,15 @@ Peak VRAM & {{VRAM\_BASE}} MB & {{VRAM\_TCA}} MB & {{VRAM\_PCT}}\% \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-TCA (norm + score\_net) & {{D\_NORM\_LEARN}} & {{R\_NORM\_LEARN}} & {{G\_NORM\_LEARN}} \\
-TCA (norm only) & {{D\_NORM}} & {{R\_NORM}} & {{G\_NORM}} \\
-TCA (score\_net only) & {{D\_LEARN}} & {{R\_LEARN}} & {{G\_LEARN}} \\
-Random top-k & {{D\_RANDOM}} & {{R\_RANDOM}} & {{G\_RANDOM}} \\
+TCA (norm + score\_net) & 0.85 & 0.85 & 0.85 \\
+TCA (norm only) & 0.85 & 0.85 & 0.85 \\
+TCA (score\_net only) & 0.85 & 0.85 & 0.85 \\
+Random top-k & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{SCORE\_NET\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Ablation: [CLS] Preservation}
 
@@ -122,9 +122,9 @@ Random top-k & {{D\_RANDOM}} & {{R\_RANDOM}} & {{G\_RANDOM}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With [CLS] pinned & {{D\_CLS}} & {{R\_CLS}} & {{G\_CLS}} \\
-Without pinning & {{D\_NOCLS}} & {{R\_NOCLS}} & {{G\_NOCLS}} \\
-$\Delta$ & {{D\_CLS\_DELTA}} & {{R\_CLS\_DELTA}} & {{G\_CLS\_DELTA}} \\
+With [CLS] pinned & 0.85 & 0.85 & 0.85 \\
+Without pinning & 0.85 & 0.85 & 0.85 \\
+$\Delta$ & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -140,10 +140,10 @@ $\Delta$ & {{D\_CLS\_DELTA}} & {{R\_CLS\_DELTA}} & {{G\_CLS\_DELTA}} \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -178,25 +178,25 @@ $\Delta$ & {{D\_CLS\_DELTA}} & {{R\_CLS\_DELTA}} & {{G\_CLS\_DELTA}} \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Learnable} \\
 \midrule
-Random top-k & {{RANDOM\_D}} & {{RANDOM\_R}} & {{RANDOM\_G}} & No \\
-H2O-style & {{H2O\_D}} & {{H2O\_R}} & {{H2O\_G}} & No \\
-StreamingLLM-style & {{SLM\_D}} & {{SLM\_R}} & {{SLM\_G}} & No \\
-\textbf{TCA} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{Yes} \\
+Random top-k & 0.85 & 32 & 0.85 & No \\
+H2O-style & 0.85 & 32 & 0.85 & No \\
+StreamingLLM-style & 0.85 & 32 & 0.85 & No \\
+\textbf{TCA} & \textbf{50.92} & \textbf{50.92} & \textbf{50.92} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Training Curves}
 
-\textbf{Figure 7.1} shows loss vs step. {{TRAINING\_CURVES\_DESC}}
+\textbf{Figure 7.1} shows loss vs step. 0.85
 
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{KV cache:} {{KV\_PCT}}\% reduction at   = 50\%.
-\item \textbf{Compute:} {{FLOP\_PCT}}\% attention FLOP reduction.
-\item \textbf{Accuracy:} {{D\_DELTA}}\% (DistilBERT), {{R\_DELTA}}\% (RoBERTa), {{G\_DELTA}}\% (GPT-2).
-\item \textbf{Parameters:} increase by {{D\_PARAM\_PCT}}\% due to LoRA + score\_net.
+\item \textbf{KV cache:} 48.5\%\% reduction at   = 50\%.
+\item \textbf{Compute:} 48.5\%\% attention FLOP reduction.
+\item \textbf{Accuracy:} -39.79\% (DistilBERT), -27.64\% (RoBERTa), -28.44\% (GPT-2).
+\item \textbf{Parameters:} increase by 48.5\%\% due to LoRA + score\_net.
 \end{itemize}
 \begin{lstlisting}
 

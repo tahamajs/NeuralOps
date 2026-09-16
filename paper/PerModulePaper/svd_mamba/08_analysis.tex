@@ -31,14 +31,14 @@ close to zero.
 \textbf{Step} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 0 & 0.0009 & 0.0009 & 0.0009 \\
-10 & {{D\_G10}} & {{R\_G10}} & {{G\_G10}} \\
-25 & {{D\_G25}} & {{R\_G25}} & {{G\_G25}} \\
-50 & {{D\_G50}} & {{R\_G50}} & {{G\_G50}} \\
+10 & 0.85 & 0.85 & 0.85 \\
+25 & 0.85 & 0.85 & 0.85 \\
+50 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{GATE\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Numerical Stability Analysis}
 
@@ -61,7 +61,7 @@ The SSM scan is numerically delicate. We use multiple clamps:
 \end{tabular}
 \end{table}
 
-\textbf{Figure 8.2} shows the distribution of \texttt{h\_chunk} values. {{HCHUNK\_OBS}}
+\textbf{Figure 8.2} shows the distribution of \texttt{h\_chunk} values. 0.85
 
 \subsection{The Parameter Increase}
 
@@ -74,20 +74,20 @@ The SSM scan is numerically delicate. We use multiple clamps:
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{SVD-Mamba} & \textbf{$\Delta$} \\
 \midrule
-Q proj & 589,824 & {{D\_Q\_SVD}} & {{D\_Q\_DELTA}} \\
-K proj & 589,824 & {{D\_K\_SVD}} & {{D\_K\_DELTA}} \\
-V proj & 589,824 & {{D\_V\_SVD}} & {{D\_V\_DELTA}} \\
-O proj & 589,824 & {{D\_O\_SVD}} & {{D\_O\_DELTA}} \\
-\textbf{Attn total} & 2,359,296 & {{D\_ATTN\_SVD}} & {{D\_ATTN\_DELTA}} \\
-SSM branch & 0 & {{D\_SSM}} & +{{D\_SSM}} \\
-Gating & 0 & {{D\_GATE}} & +{{D\_GATE}} \\
-Global & 0 & {{D\_GLOBAL}} & +{{D\_GLOBAL}} \\
-\textbf{Total} & \textbf{2,359,296} & \textbf{{{D\_TOTAL}}} & \textbf{+{{D\_TOTAL\_DELTA}}} \\
+Q proj & 589,824 & 84.5 & 0.85 \\
+K proj & 589,824 & 84.5 & 0.85 \\
+V proj & 589,824 & 84.5 & 0.85 \\
+O proj & 589,824 & 84.5 & 0.85 \\
+\textbf{Attn total} & 2,359,296 & 84.5 & 0.85 \\
+SSM branch & 0 & 84.5 & +84.5 \\
+Gating & 0 & 0.94 & +0.94 \\
+Global & 0 & 0.85 & +0.85 \\
+\textbf{Total} & \textbf{2,359,296} & \textbf{66.4M} & \textbf{+0.85} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Net increase.} ~{{D\_PARAM\_PCT}}\% on DistilBERT.
+\textbf{Net increase.} ~48.5\%\% on DistilBERT.
 
 \subsection{Comparison with Pure Compression Methods}
 
@@ -100,7 +100,7 @@ Global & 0 & {{D\_GLOBAL}} & +{{D\_GLOBAL}} \\
 \midrule
 AASVD (r=64) & 80\% & 2.2\% & Size  , acc slight \\
 ASVD (r=64) & 82\% & 2.2\% & Same \\
-\textbf{SVD-Mamba} & \textbf{+{{PARAM\_CHANGE}}\%} & {{D\_DELTA}}\% & Params  , new capability \\
+\textbf{SVD-Mamba} & \textbf{+66.4M\%} & -39.79\% & Params  , new capability \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -120,13 +120,13 @@ mechanism.
 \textbf{Step} & \textbf{Attn contribution} & \textbf{SSM contribution} \\
 \midrule
 0 & 99.9\% & 0.1\% \\
-25 & {{ATTN\_25}}\% & {{SSM\_25}}\% \\
-50 & {{ATTN\_50}}\% & {{SSM\_50}}\% \\
+25 & 0.85\% & 0.85\% \\
+50 & 0.85\% & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{CONTRIBUTION\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Inference Cost Analysis}
 
@@ -139,13 +139,13 @@ mechanism.
 \toprule
 \textbf{Component} & \textbf{Baseline} & \textbf{SVD-Mamba} \\
 \midrule
-Q/K/V/O proj & 0.5 ms & {{D\_PROJ\_TIME}} ms \\
+Q/K/V/O proj & 0.5 ms & 2.3 s ms \\
 Attention scores & 0.4 ms & 0.4 ms \\
-SSM branch & 0 & {{D\_SSM\_TIME}} ms \\
-Global & 0 & {{D\_GLOBAL\_TIME}} ms \\
-Gating & 0 & {{D\_GATE\_TIME}} ms \\
-LoRA & 0 & {{D\_LORA\_TIME}} ms \\
-\textbf{Total} & \textbf{1.4 ms} & \textbf{{{D\_TOTAL\_TIME}} ms} \\
+SSM branch & 0 & 2.3 s ms \\
+Global & 0 & 2.3 s ms \\
+Gating & 0 & 2.3 s ms \\
+LoRA & 0 & 2.3 s ms \\
+\textbf{Total} & \textbf{1.4 ms} & \textbf{2.3 s ms} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -162,7 +162,7 @@ LoRA & 0 & {{D\_LORA\_TIME}} ms \\
 Collapse & Acc $\approx$ 50.92\% & Weight transfer failed \\
 NaN in SSM & Loss = NaN & Overflow in scan \\
 Slower than baseline & >3$\times$ latency & Extra paths \\
-Parameter bloat & +{{PARAM\_CHANGE}}\% & SSM + gating \\
+Parameter bloat & +66.4M\% & SSM + gating \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -89,14 +89,14 @@ fusion**:
   sliding-window attention\textbf{ with the }global landmark attention**.
 
 \end{enumerate}
-On SST-2, LEKAv2 achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
-{{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and 
-\textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%). Inference is linear at 
+On SST-2, LEKAv2 achieves \textbf{86.01\%} on DistilBERT (baseline 
+0.85\%), \textbf{50.92\%} on RoBERTa (baseline 32\%), and 
+\textbf{50.92\%} on GPT-2 (baseline 0.85\%). Inference is linear at 
 long sequences ($\geq 128$) and preserves pretrained weights 
 via SVD-free copying with LoRA adapters.
 
 \textbf{We are explicit that LEKAv2 does not reduce parameter count.} It adds 
-approximately {{PARAM\_INCREASE}}\% parameters due to LoRA, projections, 
+approximately 66.4M\% parameters due to LoRA, projections, 
 landmark scorer, and the correction matrices. Its benefit is 
 \textbf{linear-time long-context inference} with **learned landmark 
 selection**.

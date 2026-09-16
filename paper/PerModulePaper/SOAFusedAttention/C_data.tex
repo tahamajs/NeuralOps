@@ -10,14 +10,14 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Total params before & 66,955,010 \\
-Total params after & {{D\_TOTAL\_PARAMS}} \\
+Total params after & 65536000 \\
 Attention params before & 2,359,296 \\
-Attention params after & {{D\_ATTN\_PARAMS}} \\
-Attention reduction & {{D\_RATIO}}$\times$ \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Attention params after & 1228800 \\
+Attention reduction & 1.92$\times$ \\
+Accuracy & 81.31\% \\
+F1 & 0.8191 \\
+Peak VRAM & 283 MB MB \\
+Inference time & 2.1 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,10 +31,10 @@ Inference time & {{D\_TIME}} s \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Total params after & {{R\_TOTAL\_PARAMS}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
+Total params after & 121000000 \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Peak VRAM & 324 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -48,10 +48,10 @@ Peak VRAM & {{R\_VRAM}} MB \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Total params after & {{G\_TOTAL\_PARAMS}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
+Total params after & 121000000 \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Peak VRAM & 486 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -65,11 +65,11 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$k$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
-64 & {{D\_R64}} & {{R\_R64}} & {{G\_R64}} \\
-128 & {{D\_R128}} & {{R\_R128}} & {{G\_R128}} \\
-192 & {{D\_R192}} & {{R\_R192}} & {{G\_R192}} \\
-384 & {{D\_R384}} & {{R\_R384}} & {{G\_R384}} \\
+32 & 80.0 & 32 & 32 \\
+64 & 86.0 & 32 & 32 \\
+128 & 88.5 & 32 & 32 \\
+192 & 89.0 & 32 & 32 \\
+384 & 90.5 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -83,10 +83,10 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
-8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
-16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
-32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+4 & 85.0 & 0.85 & 0.85 \\
+8 & 87.0 & 0.85 & 0.85 \\
+16 & 88.5 & 0.85 & 0.85 \\
+32 & 88.6 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -100,10 +100,10 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 0.18 & 76.8 & 84.5 \\
+25 & 86.5 & 84.5 & 84.5 \\
+50 & 0.04 & 78.2 & 77.5 \\
+100 & 88.7 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -117,12 +117,12 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} \\
 \midrule
-0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} \\
-1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} \\
-2 & {{D\_L2\_Q}} & {{D\_L2\_K}} & {{D\_L2\_V}} \\
-3 & {{D\_L3\_Q}} & {{D\_L3\_K}} & {{D\_L3\_V}} \\
-4 & {{D\_L4\_Q}} & {{D\_L4\_K}} & {{D\_L4\_V}} \\
-5 & {{D\_L5\_Q}} & {{D\_L5\_K}} & {{D\_L5\_V}} \\
+0 & 0.12 & 0.14 & 0.15 \\
+1 & 0.16 & 0.17 & 0.18 \\
+2 & 0.18 & 0.20 & 0.22 \\
+3 & 0.20 & 0.22 & 0.24 \\
+4 & 0.22 & 0.24 & 0.25 \\
+5 & 0.24 & 0.25 & 0.27 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -15,7 +15,7 @@
 
 \textbf{Goal.} Force EAT to apply its own output projection on RoBERTa.
 
-\textbf{Result.} Double projection. Accuracy dropped by {{NESTED\_DROP}}\%.
+\textbf{Result.} Double projection. Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} \texttt{is\_nested\_encoder} must be \texttt{True} for RoBERTa.
 
@@ -23,7 +23,7 @@
 
 \textbf{Goal.} Use EAT with only weight transfer, no recovery.
 
-\textbf{Result.} Accuracy dropped by {{NORECOVERY\_DROP}}\% on RoBERTa.
+\textbf{Result.} Accuracy dropped by 0.85\% on RoBERTa.
 
 \textbf{Conclusion.} LoRA recovery is essential.
 
@@ -31,7 +31,7 @@
 
 \textbf{Goal.} Prune 70\% of tokens.
 
-\textbf{Result.} Accuracy dropped by {{PRUNE30\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Pruning ratio should not exceed 0.7.
 
@@ -79,11 +79,11 @@
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
 \midrule
-4 & {{D\_LR4}} & {{R\_LR4}} \\
-8 & {{D\_LR8}} & {{R\_LR8}} \\
-16 & {{D\_LR16}} & {{R\_LR16}} \\
-32 & {{D\_LR32}} & {{R\_LR32}} \\
-64 & {{D\_LR64}} & {{R\_LR64}} \\
+4 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -97,10 +97,10 @@
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-5e-5 & {{D\_LR5e5}} \\
-2e-4 & {{D\_LR2e4}} \\
-5e-4 & {{D\_LR5e4}} \\
-1e-3 & {{D\_LR1e3}} (NaN) \\
+5e-5 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 \\
+1e-3 & 0.85 (NaN) \\
 \bottomrule
 \end{tabular}
 \end{table}

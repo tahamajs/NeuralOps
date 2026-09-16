@@ -19,9 +19,9 @@ pip install -r requirements.txt
 \toprule
 \textbf{Package} & \textbf{Version} \\
 \midrule
-torch & {{TORCH\_VERSION}} \\
-transformers & {{HF\_VERSION}} \\
-datasets & {{DATASETS\_VERSION}} \\
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,9 +89,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Attention Ratio} & \textbf{Avg Rank} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & {{D\_RATIO}}$\times$ & {{AVG\_RANK}} \\
-RoBERTa & {{R\_ACC}}\% & {{R\_RATIO}}$\times$ & {{R\_AVG\_RANK}} \\
-GPT-2 & {{G\_ACC}}\% & {{G\_RATIO}}$\times$ & {{G\_AVG\_RANK}} \\
+DistilBERT & 87.96\% & 2.4$\times$ & 160 \\
+RoBERTa & 77.64\% & 2.4$\times$ & 160 \\
+GPT-2 & 76.38\% & 2.4$\times$ & 160 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -100,7 +100,7 @@ GPT-2 & {{G\_ACC}}\% & {{G\_RATIO}}$\times$ & {{G\_AVG\_RANK}} \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2 via \texttt{datasets}.
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-adaptive\_svd}.
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive\_svd}.
 \item \textbf{Metrics:} \texttt{results/unified\_adaptive\_svd/*/summary.csv}.
 \item \textbf{No calibration data required.}
 

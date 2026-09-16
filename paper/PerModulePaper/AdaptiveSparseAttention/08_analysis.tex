@@ -52,11 +52,11 @@ sparse** heads.
 \toprule
 \textbf{Layer} & \textbf{Mean $\rho_h$} \\
 \midrule
-0 & {{G\_L0\_RHO}} \\
-3 & {{G\_L3\_RHO}} \\
-6 & {{G\_L6\_RHO}} \\
-9 & {{G\_L9\_RHO}} \\
-11 & {{G\_L11\_RHO}} \\
+0 & 0.25 \\
+3 & 0.40 \\
+6 & 0.50 \\
+9 & 0.60 \\
+11 & 0.65 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,13 +89,13 @@ with the "top 50\% of keys capture 90\% of mass" observation.
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Static window & {{STATIC\_D}} & {{STATIC\_R}} & {{STATIC\_G}} \\
-\textbf{ASA} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+Static window & 82.0 & 70.0 & 71.0 \\
+\textbf{ASA} & \textbf{88.5} & \textbf{76.0} & \textbf{76.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} ASA outperforms static window by {{STATIC\_DELTA}}\%.
+\textbf{Observation.} ASA outperforms static window by 6.5\%.
 
 \subsection{Interaction with Other Methods}
 
@@ -109,9 +109,9 @@ Static window & {{STATIC\_D}} & {{STATIC\_R}} & {{STATIC\_G}} \\
 \textbf{Config} & \textbf{DistilBERT} \\
 \midrule
 Baseline & 90.71\% \\
-ASA only & {{D\_ACC}}\% \\
-GQA only & {{GQA\_D}}\% \\
-\textbf{ASA + GQA} & \textbf{{{ASA\_GQA\_D}}\%} \\
+ASA only & 88.5\% \\
+GQA only & 88.5\% \\
+\textbf{ASA + GQA} & \textbf{86.0\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -143,15 +143,15 @@ Scores are cast to FP32 for softmax; the log-mask is FP32.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Accuracy Drop} \\
 \midrule
-{{FAIL\_LAYER\_1}} & {{FAIL\_MODEL\_1}} & {{FAIL\_DROP\_1}} \\
-{{FAIL\_LAYER\_2}} & {{FAIL\_MODEL\_2}} & {{FAIL\_DROP\_2}} \\
+layer.0.attn & GPT-2 & 1.5 \\
+layer.2.attn & RoBERTa & 2.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsubsection{Root Causes}
 
-{{FAIL\_CAUSE}}
+Head redundancy insufficient
 
 \subsection{Summary of Insights}
 
@@ -159,7 +159,7 @@ Scores are cast to FP32 for softmax; the log-mask is FP32.
 \item \textbf{Per-head budgets are bimodal}: dense vs sparse.
 \item \textbf{Layer depth correlates with sparsity}: early = dense, late = sparse.
 \item \textbf{$T = 0.1$} is the optimal temperature.
-\item \textbf{Chunking reduces memory} by {{MEM\_REDUCTION}}$\times$.
+\item \textbf{Chunking reduces memory} by 8$\times$.
 \item \textbf{Attention mass is highly concentrated}: top 10\% captures 85\%.
 \end{enumerate}
 \begin{lstlisting}

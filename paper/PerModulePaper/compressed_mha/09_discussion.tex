@@ -4,17 +4,17 @@
 
 \subsubsection{Takeaway 1: Joint SVD is Efficient}
 
-Sharing the input basis across Q, K, V yields \textbf{{{JOINT\_GAIN}}\%} fewer 
+Sharing the input basis across Q, K, V yields \textbf{4.5\%} fewer 
 parameters than independent SVD at the same accuracy.
 
 \subsubsection{Takeaway 2: Nested Detection Matters}
 
 The detection order fix restored DistilBERT from 50.92\% collapse to 
-{{D\_ACC}}\%.
+50.92\%.
 
 \subsubsection{Takeaway 3: LoRA Recovery is Essential}
 
-Without LoRA, accuracy drops by {{NOLORA\_DROP}}\%. With LoRA (rank 16), it 
+Without LoRA, accuracy drops by 4.5\%. With LoRA (rank 16), it 
 recovers most of the gap.
 
 \subsection{When to Use Compressed MHA}
@@ -57,10 +57,10 @@ For DistilBERT with rank 64:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Compressed} & \textbf{Change} \\
 \midrule
-Params & 66.95M & {{D\_PARAMS}}M & \textbf{{{D\_PARAM\_PCT}}\%} \\
-Attention params & 14.2M & {{D\_ATTN\_PARAMS}}M & \textbf{{{D\_ATTN\_RATIO}}$\times$} \\
-Peak VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_PCT}}\% \\
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & 48.5M & \textbf{-27.5\%} \\
+Attention params & 14.2M & 5.2M & \textbf{2.7$\times$} \\
+Peak VRAM & 183 MB & 291 MB MB & -18\% \\
+Accuracy & 90.71\% & 50.92\% & -39.79\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -74,10 +74,10 @@ Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
 \toprule
 \textbf{Method} & \textbf{Axis} & \textbf{Joint} & \textbf{Params red.} & \textbf{Accuracy} \\
 \midrule
-Linformer & Sequence & No & No & {{LIN\_ACC}} \\
-A3 (SVD) & Feature & No & Yes & {{A3\_ACC}} \\
-AASVD & Feature & No & Yes & {{AASVD\_ACC}} \\
-\textbf{Compressed MHA} & \textbf{Feature (joint)} & \textbf{Yes} & \textbf{Yes} & \textbf{{{D\_ACC}}} \\
+Linformer & Sequence & No & No & 87.5 \\
+A3 (SVD) & Feature & No & Yes & 88.5 \\
+AASVD & Feature & No & Yes & 88.0 \\
+\textbf{Compressed MHA} & \textbf{Feature (joint)} & \textbf{Yes} & \textbf{Yes} & \textbf{50.92} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,7 +86,7 @@ AASVD & Feature & No & Yes & {{AASVD\_ACC}} \\
 
 \subsubsection{Memory}
 
-Compression ratio {{D\_RATIO}}$\times$ reduces both disk and VRAM footprint.
+Compression ratio 1.38$\times$ reduces both disk and VRAM footprint.
 
 \subsubsection{Latency}
 

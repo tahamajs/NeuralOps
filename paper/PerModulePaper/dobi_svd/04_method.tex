@@ -171,7 +171,7 @@ r < \frac{d^2}{2d + 1} \approx \frac{d}{2}
 Dobi-SVD uses an upper bound:
 
 \[
-r_\text{max} = \max\!\left(1, \min\!\left(d_\text{in} - 1, d_\text{out} - 1, \left\lfloor \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out}} \right\rfloor - 1, {{RANK\_CAP}}\right)\right)
+r_\text{max} = \max\!\left(1, \min\!\left(d_\text{in} - 1, d_\text{out} - 1, \left\lfloor \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out}} \right\rfloor - 1, 32\right)\right)
 \tag{4.7}
 \]
 
@@ -182,7 +182,7 @@ Default \texttt{RANK\_CAP = 128}.
 If \texttt{rank} is not specified, use:
 
 \[
-r_\text{init} = \max\!\left(1, \text{round}({{INIT\_RANK\_RATIO}} \cdot \min(d_\text{in}, d_\text{out}))\right)
+r_\text{init} = \max\!\left(1, \text{round}(2.1\times \cdot \min(d_\text{in}, d_\text{out}))\right)
 \tag{4.8}
 \]
 

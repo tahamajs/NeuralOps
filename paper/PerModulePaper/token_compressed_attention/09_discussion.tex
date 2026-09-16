@@ -4,17 +4,17 @@
 
 \subsubsection{Takeaway 1: KV Cache Reduction is Real}
 
-TCA reduces KV cache size by {{KV\_PCT}}\% at   = 50\%, translating 
+TCA reduces KV cache size by 48.5\%\% at   = 50\%, translating 
 to real memory savings during long-context inference.
 
 \subsubsection{Takeaway 2: Learnable Scoring Wins}
 
-The score net improves accuracy by \textbf{{{SCORE\_NET\_GAIN}}\%} over the norm-only 
+The score net improves accuracy by \textbf{0.85\%} over the norm-only 
 heuristic. This confirms that content-specific importance is learnable.
 
 \subsubsection{Takeaway 3: [CLS] Preservation Matters}
 
-Pinning token 0 recovers \textbf{{{CLS\_DROP}}\%} accuracy -- a free win.
+Pinning token 0 recovers \textbf{0.85\%} accuracy -- a free win.
 
 \subsection{When to Use TCA}
 
@@ -59,10 +59,10 @@ For DistilBERT at L = 512:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{TCA ( =0.5)} & \textbf{Change} \\
 \midrule
-Params & 66.95M & {{D\_PARAMS}}M & +6.3\% \\
-KV cache & {{KV\_BASE}} & {{KV\_TCA}} & -50\% \\
-Inference time & {{T\_BASE}} s & {{T\_TCA}} s & {{T\_RATIO}}$\times$ \\
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & 66.4MM & +6.3\% \\
+KV cache & 0.85 & 0.85 & -50\% \\
+Inference time & 0.85 s & 0.85 s & 2.1\times$\times$ \\
+Accuracy & 90.71\% & 50.92\% & -39.79\% \\
 \bottomrule
 \end{tabular}
 \end{table}

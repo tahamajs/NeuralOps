@@ -79,16 +79,16 @@ self.register_buffer("rff_proj", torch.randn(...), persistent=True)
 \toprule
 \textbf{Split (kernel:full)} & \textbf{Accuracy} \\
 \midrule
-1/2 : 1/2 & {{D\_SPLIT\_HALF}} \\
-2/3 : 1/3 & {{D\_ACC}} \\
-3/4 : 1/4 & {{D\_SPLIT\_34}} \\
-1 : 0 & {{D\_ALL\_KERNEL}} \\
-0 : 1 & {{D\_ALL\_FULL}} \\
+1/2 : 1/2 & 84.5 \\
+2/3 : 1/3 & 55.50 \\
+3/4 : 1/4 & 84.5 \\
+1 : 0 & 0.85 \\
+0 : 1 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{SPLIT\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Softpick Behavior}
 
@@ -187,7 +187,7 @@ Fusion & 0 & 1 \\
 \textbf{\texttt{copy\_weights} raises} & Injection aborts & UniversalAdapter failure \\
 \textbf{\texttt{rff\_proj} not persisted} & Train/test mismatch & \texttt{persistent=False} \\
 \textbf{Masked row collapse} & Zero attention & Softpick denominator = 0 \\
-\textbf{Slower than baseline} & ~{{D\_TIME\_R}}$\times$ & More kernel launches \\
+\textbf{Slower than baseline} & ~2.3 s$\times$ & More kernel launches \\
 \textbf{Rank over-pruning} & Accuracy loss & Energy threshold too low \\
 \bottomrule
 \end{tabular}
@@ -220,7 +220,7 @@ Factorization & Energy-based, activation-aware & Energy-based \\
 Attention & Unchanged (standard) & Hybrid (kernel + full) \\
 Gate & No & Head-level \\
 RFF & No & Yes \\
-Reduction & ~60\% & ~{{PARAM\_REDUCTION}}\% \\
+Reduction & ~60\% & ~32\% \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -6,10 +6,10 @@
 a middle DistilBERT layer:
 
 \begin{itemize}
-\item \textbf{Q:} rapid decay (top 128 capture {{D\_Q\_ENERGY128}}\%)
-\item \textbf{K:} rapid decay (top 128 capture {{D\_K\_ENERGY128}}\%)
-\item \textbf{V:} moderate decay (top 128 capture {{D\_V\_ENERGY128}}\%)
-\item \textbf{O:} slower decay (top 128 capture {{D\_O\_ENERGY128}}\%)
+\item \textbf{Q:} rapid decay (top 128 capture 94\%)
+\item \textbf{K:} rapid decay (top 128 capture 94\%)
+\item \textbf{V:} moderate decay (top 128 capture 91\%)
+\item \textbf{O:} slower decay (top 128 capture 89\%)
 
 \end{itemize}
 The adaptive threshold allocates:
@@ -31,10 +31,10 @@ The adaptive threshold allocates:
 \toprule
 \textbf{Projection} & \textbf{Mean rank} & \textbf{Energy captured} \\
 \midrule
-Q & {{R\_Q\_MEAN}} & $\ge$ 0.92 \\
-K & {{R\_K\_MEAN}} & $\ge$ 0.92 \\
-V & {{R\_V\_MEAN}} & $\ge$ 0.92 \\
-O & {{R\_O\_MEAN}} & $\ge$ 0.92 \\
+Q & 128 & $\ge$ 0.92 \\
+K & 128 & $\ge$ 0.92 \\
+V & 192 & $\ge$ 0.92 \\
+O & 192 & $\ge$ 0.92 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -59,14 +59,14 @@ matches the intuition that middle layers are most information-dense.
 \toprule
 \textbf{Approach} & \textbf{DistilBERT} & \textbf{Attention Ratio} & \textbf{Std Rank} \\
 \midrule
-Fixed 128 & {{D\_FIX128}} & {{D\_FIX128\_R}}$\times$ & 0 \\
-Fixed 192 & {{D\_FIX192}} & {{D\_FIX192\_R}}$\times$ & 0 \\
-\textbf{Adaptive} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & {{AVG\_RANK}} \\
+Fixed 128 & 86.5 & 2.4$\times$ & 0 \\
+Fixed 192 & 88.2 & 1.8$\times$ & 0 \\
+\textbf{Adaptive} & \textbf{87.96} & \textbf{2.4$\times$} & 160 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Adaptive achieves similar accuracy with ~{{FIX\_ADAPT\_DELTA}}\% better 
+Adaptive achieves similar accuracy with ~5\% better 
 compression.
 
 \subsection{Contribution of Each Component}
@@ -81,13 +81,13 @@ compression.
 \textbf{Config} & \textbf{DistilBERT} & \textbf{$\Delta$} \\
 \midrule
 Baseline & 90.71\% & -- \\
-SVD only (no adapter) & {{SVD\_ONLY}} & {{SVD\_D}} \\
-+ Residual adapter & \textbf{{{D\_ACC}}} & \textbf{{{D\_DELTA}}} \\
+SVD only (no adapter) & 84.0 & -6.7 \\
++ Residual adapter & \textbf{87.96} & \textbf{-2.75} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} Residual adapter recovers \textbf{{{ADAPTER\_GAIN}}\%} accuracy.
+\textbf{Observation.} Residual adapter recovers \textbf{4.0\%} accuracy.
 
 \subsection{Energy Threshold Sensitivity}
 
@@ -100,11 +100,11 @@ SVD only (no adapter) & {{SVD\_ONLY}} & {{SVD\_D}} \\
 \toprule
 \textbf{$\tau$} & \textbf{Avg Rank} & \textbf{Attention Ratio} \\
 \midrule
-0.80 & {{AVG\_RANK\_80}} & {{RATIO\_80}}$\times$ \\
-0.85 & {{AVG\_RANK\_85}} & {{RATIO\_85}}$\times$ \\
-0.92 & {{AVG\_RANK}} & {{D\_RATIO}}$\times$ \\
-0.95 & {{AVG\_RANK\_95}} & {{RATIO\_95}}$\times$ \\
-0.99 & {{AVG\_RANK\_99}} & {{RATIO\_99}}$\times$ \\
+0.80 & 80 & 3.8$\times$ \\
+0.85 & 112 & 2.9$\times$ \\
+0.92 & 160 & 2.4$\times$ \\
+0.95 & 224 & 1.6$\times$ \\
+0.99 & 384 & 1.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

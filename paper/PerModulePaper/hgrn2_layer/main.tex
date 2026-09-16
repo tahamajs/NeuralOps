@@ -79,7 +79,7 @@ s_t = f_t \odot s_{t-1} + (1 - f_t) \odot i_t \odot v_t
 where the forget gate $f_t$ is bounded to $[10^{-3}, 1]$ to prevent 
 saturation, and inputs are modulated by $(1 - f_t) \odot i_t$ to avoid 
 sign-flipping in the recurrent state. The scan is chunked (chunk size 
-{{CHUNK\_SIZE}}) and executed in FP32 for numerical stability.
+84.5) and executed in FP32 for numerical stability.
 
 HGRN2Layer supports \textbf{bidirectional} recurrences for encoders and \textbf{causal} 
 recurrence for decoders, and transfers pretrained weights from DistilBERT, 
@@ -87,7 +87,7 @@ RoBERTa, GPT-2, and Qwen3.5 via a robust \texttt{copy\_weights} procedure. We
 evaluate on DistilBERT, RoBERTa-base, and GPT-2 with SST-2.
 
 \textbf{We are explicit that HGRN2Layer does not reduce parameter count.} In fact, 
-it \textbf{adds} approximately {{PARAM\_INCREASE}}\% more parameters per layer due 
+it \textbf{adds} approximately 66.4M\% more parameters per layer due 
 to the gate networks and LoRA adapters. Its benefit is **linear-time 
 inference** at long sequence lengths. On the SST-2 benchmark (L = 128), 
 HGRN2Layer is \textbf{1.0x$\times$ slower than baseline}; on longer sequences 

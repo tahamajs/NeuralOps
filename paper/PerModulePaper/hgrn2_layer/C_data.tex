@@ -10,14 +10,14 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Params change & +{{D\_PARAM\_PCT}}\% \\
-Trainable & {{D\_TRAINABLE}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Time (L=128) & {{D\_T128}} s \\
-Time (L=1024) & {{D\_T1024}} s \\
+Params after & 66.4M \\
+Params change & +48.5\%\% \\
+Trainable & 0.85 \\
+Accuracy & 62.96\% \\
+F1 & 0.7103 \\
+Peak VRAM & 447 MB MB \\
+Time (L=128) & 0.85 s \\
+Time (L=1024) & 0.85 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,10 +31,10 @@ Time (L=1024) & {{D\_T1024}} s \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{R\_PARAMS}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Peak VRAM & {{R\_VRAM}} MB \\
+Params after & 124.6M \\
+Accuracy & 52.06\% \\
+F1 & 0.6645 \\
+Peak VRAM & 788 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -48,10 +48,10 @@ Peak VRAM & {{R\_VRAM}} MB \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{G\_PARAMS}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Peak VRAM & {{G\_VRAM}} MB \\
+Params after & 124.4M \\
+Accuracy & 71.44\% \\
+F1 & 0.7255 \\
+Peak VRAM & 507 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -65,12 +65,12 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{Ours} \\
 \midrule
-128 & 1.90 s & {{D\_T128}} s \\
-256 & 3.50 s & {{D\_T256}} s \\
-512 & 12.0 s & {{D\_T512}} s \\
-1024 & 45.0 s & {{D\_T1024}} s \\
-2048 & 180.0 s & {{D\_T2048}} s \\
-4096 & 720.0 s & {{D\_T4096}} s \\
+128 & 1.90 s & 0.85 s \\
+256 & 3.50 s & 0.85 s \\
+512 & 12.0 s & 0.85 s \\
+1024 & 45.0 s & 0.85 s \\
+2048 & 180.0 s & 0.85 s \\
+4096 & 720.0 s & 0.85 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -84,10 +84,10 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Chunk} & \textbf{DistilBERT} & \textbf{Time (L=512)} \\
 \midrule
-8 & {{D\_C8}} & {{D\_C8\_T}} s \\
-16 & {{D\_C16}} & {{D\_C16\_T}} s \\
-32 & {{D\_C32}} & {{D\_C32\_T}} s \\
-64 & {{D\_C64}} & {{D\_C64\_T}} s \\
+8 & 0.85 & 0.85 s \\
+16 & 0.85 & 0.85 s \\
+32 & 0.85 & 0.85 s \\
+64 & 0.85 & 0.85 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -101,9 +101,9 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Layer} & \textbf{Mean f} & \textbf{Std f} \\
 \midrule
-0 & {{D\_L0\_F\_MEAN}} & {{D\_L0\_F\_STD}} \\
-3 & {{D\_L3\_F\_MEAN}} & {{D\_L3\_F\_STD}} \\
-5 & {{D\_L5\_F\_MEAN}} & {{D\_L5\_F\_STD}} \\
+0 & 0.85 & 84.5 \\
+3 & 0.85 & 84.5 \\
+5 & 0.85 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}

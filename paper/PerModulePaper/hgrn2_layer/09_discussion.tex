@@ -5,7 +5,7 @@
 \subsubsection{Takeaway 1: Element-Wise Recurrence Works}
 
 HGRN2Layer replaces attention with $\mathcal{O}(L d)$ element-wise recurrence, 
-achieving accuracy within {{D\_DELTA}}\% of baseline on DistilBERT.
+achieving accuracy within -27.75\% of baseline on DistilBERT.
 
 \subsubsection{Takeaway 2: Short Sequences are Slow}
 
@@ -14,7 +14,7 @@ chunk loops.
 
 \subsubsection{Takeaway 3: Parameters Increase}
 
-HGRN2Layer increases parameters by \textbf{{{D\_PARAM\_PCT}}\%} per layer. We are 
+HGRN2Layer increases parameters by \textbf{48.5\%\%} per layer. We are 
 honest about this.
 
 \subsection{When to Use HGRN2Layer}
@@ -56,10 +56,10 @@ For DistilBERT at L = 1024:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-Time & 45 s & {{D\_T1024}} s & 86.4$\times$ \\
-VRAM & 1500 MB & {{VRAM\_1024}} MB & {{VRAM\_1024\_PCT}}\% \\
+Accuracy & 90.71\% & 62.96\% & -27.75\% \\
+Params & 66.95M & 66.4M & +48.5\%\% \\
+Time & 45 s & 0.85 s & 86.4$\times$ \\
+VRAM & 1500 MB & 380 MB MB & 48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}

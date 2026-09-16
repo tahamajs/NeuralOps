@@ -88,9 +88,9 @@ gate**.
 \textbf{Method} & \textbf{Complexity} & \textbf{Params} & \textbf{SST-2} & \textbf{Recoverable?} \\
 \midrule
 Baseline MHSA & $\mathcal{O}(L^2)$ & $4d^2$ & 90.71\% & -- \\
-Linear Transformer & $\mathcal{O}(L)$ & $4d^2$ & {{LT\_D}} & Retrain \\
-Performer & $\mathcal{O}(L)$ & $4d^2$ & {{PERF\_D}} & Retrain \\
-\textbf{CHELA-SLAY} & $\mathcal{O}(L^2)$ (dense) + $\mathcal{O}(L)$ (linear) & $4d^2 + \epsilon$ & \textbf{{{D\_ACC}}} & \textbf{LoRA} \\
+Linear Transformer & $\mathcal{O}(L)$ & $4d^2$ & 0.85 & Retrain \\
+Performer & $\mathcal{O}(L)$ & $4d^2$ & 0.85 & Retrain \\
+\textbf{CHELA-SLAY} & $\mathcal{O}(L^2)$ (dense) + $\mathcal{O}(L)$ (linear) & $4d^2 + \epsilon$ & \textbf{89.91} & \textbf{LoRA} \\
 \bottomrule
 \end{tabular}
 \end{table}

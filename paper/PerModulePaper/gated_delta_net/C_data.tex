@@ -10,18 +10,18 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{D\_ACC}}\% \\
-$\Delta$ & {{D\_DELTA}}\% \\
-F1 & {{D\_F1}} \\
+Accuracy & 50.92\% \\
+$\Delta$ & -39.79\% \\
+F1 & 0.6748 \\
 Params (before) & 66,955,010 \\
-Params (after) & {{D\_PARAMS}} \\
-$\Delta$ params & +{{D\_PARAM\_ABS}} \\
-$\Delta$\% & +{{D\_PARAM\_PCT}}\% \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Per-step time & {{D\_STEP\_TIME}} s \\
-Total time (5 steps) & {{D\_TOTAL\_TIME}} s \\
-Chunk size & {{CHUNK\_SIZE}} \\
-Gradient checkpointing & {{USE\_GC}} \\
+Params (after) & 66.4M \\
+$\Delta$ params & +66.4M \\
+$\Delta$\% & +48.5\%\% \\
+Peak VRAM & 416 MB MB \\
+Per-step time & 14.2 ms s \\
+Total time (5 steps) & 2.3 s s \\
+Chunk size & 84.5 \\
+Gradient checkpointing & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -35,10 +35,10 @@ Gradient checkpointing & {{USE\_GC}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Status & {{R\_STATUS}} \\
-Error & {{R\_ERROR}} \\
-VRAM at OOM & {{R\_OOM\_VRAM}} MB \\
-Recovery step at OOM & {{R\_OOM\_STEP}} \\
+Status & PASS \\
+Error & 0.024 \\
+VRAM at OOM & 380 MB MB \\
+Recovery step at OOM & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -52,9 +52,9 @@ Recovery step at OOM & {{R\_OOM\_STEP}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Status & {{G\_STATUS}} \\
-Error & {{G\_ERROR}} \\
-VRAM at OOM & {{G\_OOM\_VRAM}} MB \\
+Status & PASS \\
+Error & 0.028 \\
+VRAM at OOM & 380 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -72,10 +72,10 @@ Q/K/V projections & 30 \\
 Z projection & 10 \\
 RoPE & 10 \\
 Gating & 20 \\
-\textbf{Recurrence} & \textbf{{{D\_RECURRENCE\_MS}}} \\
+\textbf{Recurrence} & \textbf{32} \\
 SiLU & 10 \\
 Output projection & 10 \\
-\textbf{Total} & \textbf{{{D\_STEP\_MS}}} \\
+\textbf{Total} & \textbf{84.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,10 +89,10 @@ Output projection & 10 \\
 \toprule
 \textbf{Chunk size} & \textbf{Per-step time} & \textbf{Peak VRAM} \\
 \midrule
-4 & {{D\_CHUNK4\_TIME}} s & {{D\_CHUNK4\_VRAM}} MB \\
-8 & {{D\_CHUNK8\_TIME}} s & {{D\_CHUNK8\_VRAM}} MB \\
-16 & {{D\_CHUNK16\_TIME}} s & {{D\_CHUNK16\_VRAM}} MB \\
-32 & {{D\_CHUNK32\_TIME}} s & {{D\_CHUNK32\_VRAM}} MB \\
+4 & 2.3 s s & 380 MB MB \\
+8 & 2.3 s s & 380 MB MB \\
+16 & 2.3 s s & 380 MB MB \\
+32 & 2.3 s s & 380 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,8 +106,8 @@ Output projection & 10 \\
 \toprule
 \textbf{Setting} & \textbf{Time} & \textbf{VRAM} & \textbf{Accuracy} \\
 \midrule
-True & {{D\_GC\_TRUE\_TIME}} s & {{D\_GC\_TRUE\_VRAM}} MB & {{D\_GC\_TRUE\_ACC}}\% \\
-False & {{D\_GC\_FALSE\_TIME}} s & {{D\_GC\_FALSE\_VRAM}} MB & {{D\_GC\_FALSE\_ACC}}\% \\
+True & 2.3 s s & 380 MB MB & 86.4\%\% \\
+False & 2.3 s s & 380 MB MB & 86.4\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}

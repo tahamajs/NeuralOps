@@ -5,10 +5,10 @@
 
 We presented \textbf{RALA} (Rank-Augmented Linear Attention), a linear-attention 
 variant that combines a softplus kernel with a per-head low-rank augmentation 
-and a scalar gate. RALA preserves accuracy within \textbf{{{D\_DELTA}}\%} on 
-DistilBERT, \textbf{{{R\_DELTA}}\%} on RoBERTa, and \textbf{{{G\_DELTA}}\%} on GPT-2, but 
-increases parameter count by \textbf{{{D\_PARAM\_PCT}}\%} and slows inference by 
-\textbf{{{D\_TIME\_R}}$\times$}.
+and a scalar gate. RALA preserves accuracy within \textbf{-30.62\%} on 
+DistilBERT, \textbf{-27.76\%} on RoBERTa, and \textbf{-28.44\%} on GPT-2, but 
+increases parameter count by \textbf{48.5\%\%} and slows inference by 
+\textbf{2.3 s$\times$}.
 
 \subsection{Results Recap}
 
@@ -19,9 +19,9 @@ increases parameter count by \textbf{{{D\_PARAM\_PCT}}\%} and slows inference by
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Params $\Delta$} & \textbf{Time} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_TIME\_R}}$\times$ \\
-RoBERTa & {{R\_ACC}}\% & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_TIME\_R}}$\times$ \\
-GPT-2 & {{G\_ACC}}\% & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_R}}$\times$ \\
+DistilBERT & 60.09\% & -30.62\% & +48.5\%\% & 2.3 s$\times$ \\
+RoBERTa & 50.80\% & -27.76\% & +48.5\%\% & 2.3 s$\times$ \\
+GPT-2 & 50.92\% & -28.44\% & +48.5\%\% & 2.3 s$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -66,8 +66,8 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} implemented RALA, ran experiments, wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback.
+\item \textbf{Taha Majs} implemented RALA, ran experiments, wrote the paper.
+\item \textbf{Collaborative Research Team} provided feedback.
 
 \end{itemize}
 \subsection{Conflict of Interest}

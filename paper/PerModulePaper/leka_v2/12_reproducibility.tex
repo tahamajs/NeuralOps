@@ -61,9 +61,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Landmark ratio} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & {{D\_LR}} \\
-RoBERTa & {{R\_ACC}}\% & {{R\_LR}} \\
-GPT-2 & {{G\_ACC}}\% & {{G\_LR}} \\
+DistilBERT & 86.01\% & 0.85 \\
+RoBERTa & 50.92\% & 0.85 \\
+GPT-2 & 50.92\% & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -72,7 +72,7 @@ GPT-2 & {{G\_ACC}}\% & {{G\_LR}} \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2.
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-leka\_v2}.
+\item \textbf{Checkpoints:} \texttt{efficiency-lab/svd-linear-attention-*-leka\_v2}.
 \item \textbf{Metrics:} \texttt{results/unified\_leka\_v2/*/summary.csv}.
 \end{itemize}
 \begin{lstlisting}

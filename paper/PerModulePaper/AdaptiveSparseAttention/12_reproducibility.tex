@@ -62,9 +62,9 @@ torch.cuda.manual_seed_all(seed)
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{Sparsity} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% $\pm$ 1\% & ~{{D\_SP}} \\
-RoBERTa & {{R\_ACC}}\% $\pm$ 1\% & ~{{R\_SP}} \\
-GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_SP}} \\
+DistilBERT & 88.5\% $\pm$ 1\% & ~0.42 \\
+RoBERTa & 76.0\% $\pm$ 1\% & ~0.45 \\
+GPT-2 & 76.5\% $\pm$ 1\% & ~0.48 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -73,7 +73,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & ~{{G\_SP}} \\
 
 \begin{itemize}
 \item \textbf{Dataset:} SST-2
-\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-adaptive\_sparse}
+\item \textbf{Checkpoints:} \texttt{Hooshaai/svd-linear-attention-*-adaptive\_sparse}
 \item \textbf{Metrics:} \texttt{results/unified\_adaptive\_sparse/*/summary.csv}
 
 \end{itemize}

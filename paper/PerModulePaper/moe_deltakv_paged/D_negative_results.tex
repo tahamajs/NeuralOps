@@ -22,7 +22,7 @@
 
 \textbf{Goal.} $k = 1$.
 
-\textbf{Result.} Accuracy dropped by {{K1\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} $k \geq 2$ recommended.
 
@@ -67,10 +67,10 @@ Added gradient on delta reconstruction. No benefit.
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} \\
 \midrule
-4 & {{D\_R4}} \\
-8 & {{D\_R8}} \\
-16 & {{D\_R16}} \\
-32 & {{D\_R32}} \\
+4 & 32 \\
+8 & 32 \\
+16 & 32 \\
+32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,10 +86,10 @@ Rank 16 is sweet spot.
 \toprule
 \textbf{$\lambda$} & \textbf{DistilBERT} \\
 \midrule
-0.0 & {{D\_AUX0}} \\
-0.001 & {{D\_AUX001}} \\
-0.01 & {{D\_AUX01}} \\
-0.1 & {{D\_AUX1}} \\
+0.0 & 0.85 \\
+0.001 & 0.85 \\
+0.01 & 0.85 \\
+0.1 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

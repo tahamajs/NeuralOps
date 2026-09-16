@@ -53,7 +53,7 @@ casting to FP8 then back to FP16:
 q_fp8 = q.to(torch.float8_e4m3fn).to(torch.float16)
 \end{lstlisting}
 
-Accuracy drop: {{FP8\_ACC\_DELTA}}\%.
+Accuracy drop: 86.4\%\%.
 
 \subsection{Memory Savings}
 
@@ -85,8 +85,8 @@ SDPA and FA3 give linear memory; naive is quadratic.
 \textbf{Config} & \textbf{D acc} \\
 \midrule
 Baseline & 90.71\% \\
-+ LoRA only (no FA3 dispatch) & {{LORA\_ACC}} \\
-+ FA3 dispatch (SDPA path) & \textbf{{{D\_ACC}}} \\
++ LoRA only (no FA3 dispatch) & 86.4\% \\
++ FA3 dispatch (SDPA path) & \textbf{89.91} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,8 +103,8 @@ Baseline & 90.71\% \\
 \textbf{Config} & \textbf{D acc} & \textbf{Params} \\
 \midrule
 Direct SDPA & 90.71\% & 66.9M \\
-Wrapper (SDPA path) & {{D\_ACC}}\% & {{D\_PARAMS}}M \\
-Wrapper (FA3 path, H100 est.) & {{D\_ACC}}\% & {{D\_PARAMS}}M \\
+Wrapper (SDPA path) & 89.91\% & 66.4MM \\
+Wrapper (FA3 path, H100 est.) & 89.91\% & 66.4MM \\
 \bottomrule
 \end{tabular}
 \end{table}

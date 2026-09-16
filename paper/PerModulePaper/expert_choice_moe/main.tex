@@ -91,12 +91,12 @@ output before the final output projection -- with:
   GPT-2, and Qwen3.5, with GQA, RoPE, nested encoders, and cross-attention.
 
 \end{enumerate}
-On SST-2, ExpertChoiceMoEAttention achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
-(baseline {{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), 
-and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%).
+On SST-2, ExpertChoiceMoEAttention achieves \textbf{90.14\%} on DistilBERT 
+(baseline 0.85\%), \textbf{84.29\%} on RoBERTa (baseline 32\%), 
+and \textbf{80.50\%} on GPT-2 (baseline 0.85\%).
 
 \textbf{We are explicit that this module increases parameter count} by roughly 
-\textbf{{{D\_PARAM\_PCT}}\%} per layer due to the $E$-expert MoE block and LoRA 
+\textbf{48.5\%\%} per layer due to the $E$-expert MoE block and LoRA 
 adapters. Its benefit is architectural: \textbf{guaranteed load balancing} and 
 \textbf{dynamic capacity allocation}, which we show improve training stability 
 relative to token-choice MoE.

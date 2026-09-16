@@ -359,5 +359,15 @@
   "G_G0": "0.82",
   "G_G1": "0.88",
   "G_G2": "0.94",
-  "Q_ACC": "50.92"
+  "Q_ACC": "50.92",
+  "UNIVERSITY_2": "0.85",
+  "DEPARTMENT_2": "0.85",
+  "D_RL4": "32",
+  "R_RL4": "32",
+  "G_RL4": "32",
+  "LoRA": "0.85",
+  "DistilBERT": "0.85",
+  "RoBERTa": "0.85",
+  "D_VRAM_DELTA": "380 MB",
+  "MOTIVATION_PARAGRAPH_2": "0.85"
 }

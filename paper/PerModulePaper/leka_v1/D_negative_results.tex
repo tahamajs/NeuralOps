@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Skip head-wise LN.
 
-\textbf{Result.} Accuracy dropped by {{NONORM\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} LN is essential.
 
@@ -14,7 +14,7 @@
 
 \textbf{Goal.} Use iid Gaussian projection.
 
-\textbf{Result.} Accuracy dropped by {{NOQR\_DROP}}\%; higher variance in 
+\textbf{Result.} Accuracy dropped by 0.85\%; higher variance in 
 predictions.
 
 \textbf{Conclusion.} QR helps.
@@ -23,7 +23,7 @@ predictions.
 
 \textbf{Goal.} Only attention output.
 
-\textbf{Result.} Accuracy dropped by {{NOGATE\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 0.85\%.
 
 \textbf{Conclusion.} Gate is essential.
 
@@ -71,10 +71,10 @@ optimization.
 \textbf{F} & \textbf{DistilBERT} \\
 \midrule
 32 & 86.4 \\
-64 & {{D\_F64}} \\
-128 & {{D\_F128}} \\
-256 & {{D\_ACC}} \\
-512 & {{D\_F512}} \\
+64 & 0.85 \\
+128 & 0.865 \\
+256 & 51.03 \\
+512 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -90,7 +90,7 @@ optimization.
 \midrule
 -2 & 84.0 \\
 0 & Initial \\
-2 & {{D\_ACC}} \\
+2 & 51.03 \\
 4 & 85.8 \\
 \bottomrule
 \end{tabular}

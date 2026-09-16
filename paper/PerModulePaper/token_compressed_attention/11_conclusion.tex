@@ -16,9 +16,9 @@ respecting causality.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{KV reduction} & \textbf{Params $\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & {{KV\_PCT}}\% & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & {{R\_DELTA}}\% & {{KV\_PCT}}\% & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & {{G\_DELTA}}\% & {{KV\_PCT}}\% & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & -39.79\% & 48.5\%\% & +48.5\%\% \\
+RoBERTa & -27.64\% & 48.5\%\% & +48.5\%\% \\
+GPT-2 & -28.44\% & 48.5\%\% & +48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -26,9 +26,9 @@ GPT-2 & {{G\_DELTA}}\% & {{KV\_PCT}}\% & +{{G\_PARAM\_PCT}}\% \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{KV reduction is real} ({{KV\_PCT}}\% at   = 50\%).
-\item \textbf{Learned scoring beats fixed heuristics} by {{SCORE\_NET\_GAIN}}\%.
-\item \textbf{[CLS] pinning matters} ({{CLS\_DROP}}\% drop without).
+\item \textbf{KV reduction is real} (48.5\%\% at   = 50\%).
+\item \textbf{Learned scoring beats fixed heuristics} by 0.85\%.
+\item \textbf{[CLS] pinning matters} (0.85\% drop without).
 \item \textbf{Parameter count increases} -- we are honest about this.
 
 \end{enumerate}
@@ -60,8 +60,8 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed TCA, implemented, ran experiments, wrote paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback, edited manuscript.
+\item \textbf{Taha Majs} designed TCA, implemented, ran experiments, wrote paper.
+\item \textbf{Collaborative Research Team} provided feedback, edited manuscript.
 
 \end{itemize}
 \subsection{Conflict of Interest}

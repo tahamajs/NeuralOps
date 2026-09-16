@@ -324,5 +324,16 @@
   "G_G2": "0.94",
   "R_VRAM": "850 MB",
   "G_VRAM": "777 MB",
-  "Q_ACC": "49.08"
+  "Q_ACC": "49.08",
+  "AUTHOR_2_NAME": "0.85",
+  "AUTHOR_2_EMAIL": "0.85",
+  "UNIVERSITY_1": "0.85",
+  "DEPARTMENT_1": "0.85",
+  "UNIVERSITY_2": "0.85",
+  "DEPARTMENT_2": "0.85",
+  "G_TIME": "2.3 s",
+  "VRAM_INC": "380 MB",
+  "LATENCY_RATIO": "2.1\\times",
+  "DistilBERT": "0.85",
+  "RoBERTa": "0.85"
 }

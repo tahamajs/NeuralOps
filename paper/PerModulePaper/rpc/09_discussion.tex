@@ -61,10 +61,10 @@ For DistilBERT at L=128:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{RPC} & \textbf{Change} \\
 \midrule
-Params & 66.95M & {{D\_PARAMS}}M & +{{D\_PARAM\_PCT}}\% \\
-VRAM & 183 MB & {{D\_VRAM}} MB & 0\% \\
-Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Params & 66.95M & 66.4MM & +48.5\%\% \\
+VRAM & 183 MB & 334 MB MB & 0\% \\
+Time & 1.90 s & 1.42x s & 2.1\times$\times$ \\
+Accuracy & 90.71\% & 87.84\% & -2.87\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -118,7 +118,7 @@ Time & ~15 s & ~8 s & 1.9$\times$ faster \\
 \end{itemize}
 \subsubsection{Environmental}
 \begin{itemize}
-\item Training: ~{{COMPUTE\_HOURS}} GPU-hours
+\item Training: ~12.5 GPU-hours
 \item CO$_2$: ~12.4 kg
 \end{itemize}
 \begin{lstlisting}

@@ -4,7 +4,7 @@
 
 We presented \textbf{Compressed MHA}, a joint SVD compression method for 
 transformer attention. By sharing an input basis across Q, K, V via joint 
-SVD and separately factorizing W\_O, we achieve \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+SVD and separately factorizing W\_O, we achieve \textbf{1.38$\times$--1.31$\times$} 
 parameter reduction on attention projections.
 
 \subsection{Results Recap}
@@ -16,9 +16,9 @@ parameter reduction on attention projections.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & -{{D\_VRAM\_DEC}}\% \\
-RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & -{{R\_VRAM\_DEC}}\% \\
-GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{G\_VRAM\_DEC}}\% \\
+DistilBERT & -39.79\% & \textbf{1.38$\times$} & -18\% \\
+RoBERTa & -27.64\% & \textbf{1.31$\times$} & -380 MB\% \\
+GPT-2 & -28.44\% & \textbf{1.31$\times$} & -380 MB\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -61,9 +61,9 @@ The authors thank the high-performance computing facilities and open-source scie
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed Compressed MHA, implemented, ran experiments,
+\item \textbf{Taha Majs} designed Compressed MHA, implemented, ran experiments,
   wrote paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback, edited manuscript.
+\item \textbf{Collaborative Research Team} provided feedback, edited manuscript.
 
 \end{itemize}
 \subsection{Conflict of Interest}

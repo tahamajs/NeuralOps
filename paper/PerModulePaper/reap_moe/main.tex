@@ -74,18 +74,18 @@ experts per token. However, standard MoE implementations face three problems:
 by combining \textbf{SVD-factorized expert networks} with **load-balancing 
 regularization\textbf{ and }noise-injected routing**. Each expert is a two-layer 
 MLP whose weights are factored into $U \Sigma V^\top$, reducing per-expert 
-parameters by \textbf{{{SVD\_REDUCTION}}$\times$} while preserving expressive capacity. 
+parameters by \textbf{32$\times$} while preserving expressive capacity. 
 The router uses top-$k$ selection with auxiliary load-balancing loss 
 $\mathcal{L}_\text{aux} = E \sum_i \rho_i \pi_i$, where $\rho_i$ is expert 
 utilization and $\pi_i$ is the mean routing probability. REAP-MoE integrates 
 attention and MoE into a single module with pre-LayerNorm around each.
 
 On SST-2 with DistilBERT, RoBERTa-base, and GPT-2, REAP-MoE achieves 
-\textbf{{{D\_ACC}}\%}, \textbf{{{R\_ACC}}\%}, and \textbf{{{G\_ACC}}\%} respectively after 
-{{RECOVERY\_STEPS}} LoRA recovery steps, compared to baselines of 90.71\%, 
-78.56\%, and 79.36\%. Parameter count changes by \textbf{{{D\_PARAM\_CHANGE}}\%} 
-because MoE replaces the FFN block: with {{N\_EXPERTS}} experts at SVD rank 
-{{SVD\_RANK}}, per-layer parameters scale as {{N\_EXPERTS}}$\times$ the FFN size, 
+\textbf{90.02\%}, \textbf{50.92\%}, and \textbf{52.41\%} respectively after 
+50 LoRA recovery steps, compared to baselines of 90.71\%, 
+78.56\%, and 79.36\%. Parameter count changes by \textbf{66.4M\%} 
+because MoE replaces the FFN block: with 8 experts at SVD rank 
+32, per-layer parameters scale as 8$\times$ the FFN size, 
 mitigated by SVD factorization. We report honest negative results for 
 parameter-sensitive deployments.
 

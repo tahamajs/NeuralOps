@@ -77,8 +77,8 @@ to standard scaled dot-product attention to preserve causality.
 
 We evaluate on three pretrained models -- DistilBERT, RoBERTa, and GPT-2 -- 
 on SST-2 with LoRA recovery. Our results are \textbf{negative for encoders}: 
-DistilBERT drops from 90.71\% to \textbf{{{D\_ACC}}\%} ($\Delta$ = {{D\_DELTA}}) and RoBERTa 
-collapses from 78.56\% to \textbf{{{R\_ACC}}\%} ($\Delta$ = {{R\_DELTA}}), the latter at 
+DistilBERT drops from 90.71\% to \textbf{50.92\%} ($\Delta$ = -39.79) and RoBERTa 
+collapses from 78.56\% to \textbf{50.92\%} ($\Delta$ = -27.64), the latter at 
 chance level. GPT-2 shows no change ($\Delta$ = 0.00\%) because the causal fallback 
 path leaves attention unmodified. We attribute encoder failures to the 
 \textbf{data-independent, fixed DCT basis}, which cannot capture the 

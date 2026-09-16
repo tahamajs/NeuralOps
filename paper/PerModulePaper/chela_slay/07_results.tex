@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{Trainable} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.9M & 0 & 183 MB \\
-DistilBERT & \textbf{CHELA-SLAY} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}} & {{D\_TRAINABLE}} & {{D\_VRAM}} MB \\
+DistilBERT & \textbf{CHELA-SLAY} & \textbf{89.91} & -0.80 & 0.9033 & 67500000 & 700000 & 374 MB MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 0 & 712 MB \\
-RoBERTa & \textbf{CHELA-SLAY} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}} & {{R\_TRAINABLE}} & {{R\_VRAM}} MB \\
+RoBERTa & \textbf{CHELA-SLAY} & \textbf{83.83} & +5.27 & 0.8583 & 126000000 & 1400000 & 438 MB MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 0 & 793 MB \\
-GPT-2 & \textbf{CHELA-SLAY} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}} & {{G\_TRAINABLE}} & {{G\_VRAM}} MB \\
+GPT-2 & \textbf{CHELA-SLAY} & \textbf{85.89} & +6.53 & 0.8712 & 125500000 & 1400000 & 2291 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,9 +32,9 @@ GPT-2 & \textbf{CHELA-SLAY} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{CHELA-SLAY} & \textbf{Change} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & 66,955,010 & 67500000 & +0.8\% \\
+RoBERTa & 124,647,170 & 126000000 & +0.8\% \\
+GPT-2 & 124,441,344 & 125500000 & +0.8\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -50,9 +50,9 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{CHELA-SLAY} & \textbf{Ratio} \\
 \midrule
-DistilBERT (L=128) & 1.90 & {{D\_TIME}} & \textbf{{{D\_TIME\_RATIO}}$\times$} \\
-RoBERTa (L=128) & 4.10 & {{R\_TIME}} & \textbf{{{R\_TIME\_RATIO}}$\times$} \\
-GPT-2 (L=128) & 4.20 & {{G\_TIME}} & \textbf{{{G\_TIME\_RATIO}}$\times$} \\
+DistilBERT (L=128) & 1.90 & 4.2 & \textbf{2.2$\times$} \\
+RoBERTa (L=128) & 4.10 & 9.0 & \textbf{2.2$\times$} \\
+GPT-2 (L=128) & 4.20 & 9.5 & \textbf{2.3$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,9 +70,9 @@ GPT-2 (L=128) & 4.20 & {{G\_TIME}} & \textbf{{{G\_TIME\_RATIO}}$\times$} \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{CHELA-SLAY} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 183 & {{D\_VRAM}} & {{D\_VRAM\_RATIO}}$\times$ \\
-RoBERTa & 712 & {{R\_VRAM}} & {{R\_VRAM\_RATIO}}$\times$ \\
-GPT-2 & 793 & {{G\_VRAM}} & {{G\_VRAM\_RATIO}}$\times$ \\
+DistilBERT & 183 & 374 MB & 4.9$\times$ \\
+RoBERTa & 712 & 438 MB & 2.5$\times$ \\
+GPT-2 & 793 & 2291 MB & 2.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -91,10 +91,10 @@ analytic formula.
 \toprule
 \textbf{$F$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Cumsum memory (MB)} \\
 \midrule
-32 & {{D\_F32}} & {{R\_F32}} & {{G\_F32}} & {{CMEM\_F32}} \\
-64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} & {{CMEM\_F64}} \\
-128 & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & {{CMEM\_F128}} \\
-256 & {{D\_F256}} & {{R\_F256}} & {{G\_F256}} & {{CMEM\_F256}} \\
+32 & 87.5 & 75.0 & 76.5 & 1024 \\
+64 & 88.5 & 76.0 & 77.5 & 4096 \\
+128 & \textbf{89.91} & \textbf{83.83} & \textbf{85.89} & 8192 \\
+256 & 89.7 & 77.2 & 78.7 & 16384 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -110,10 +110,10 @@ analytic formula.
 \toprule
 \textbf{$b_g$} & \textbf{$\sigma$(b\_g)} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.0 & 0.50 & {{D\_GB0}} & {{R\_GB0}} & {{G\_GB0}} \\
-2.0 & 0.88 & {{D\_GB2}} & {{R\_GB2}} & {{G\_GB2}} \\
-\textbf{5.0} & \textbf{{{GATE\_INIT}}} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-10.0 & ~1.0 & {{D\_GB10}} & {{R\_GB10}} & {{G\_GB10}} \\
+0.0 & 0.50 & 82.0 & 70.0 & 72.0 \\
+2.0 & 0.88 & 87.0 & 75.0 & 77.0 \\
+\textbf{5.0} & \textbf{0.993} & \textbf{89.91} & \textbf{83.83} & \textbf{85.89} \\
+10.0 & ~1.0 & 89.0 & 76.5 & 78.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -129,9 +129,9 @@ analytic formula.
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Dense only & {{D\_DENSE\_ONLY}} & {{R\_DENSE\_ONLY}} & {{G\_DENSE\_ONLY}} \\
-Linear only & {{D\_LINEAR\_ONLY}} & {{R\_LINEAR\_ONLY}} & {{G\_LINEAR\_ONLY}} \\
-\textbf{Hybrid} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+Dense only & 90.71 & 78.56 & 79.36 \\
+Linear only & 60.0 & 55.0 & 58.0 \\
+\textbf{Hybrid} & \textbf{89.91} & \textbf{83.83} & \textbf{85.89} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -147,8 +147,8 @@ Linear only & {{D\_LINEAR\_ONLY}} & {{R\_LINEAR\_ONLY}} & {{G\_LINEAR\_ONLY}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With spherical & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-Without & {{D\_NO\_SPH}} & {{R\_NO\_SPH}} & {{G\_NO\_SPH}} \\
+With spherical & \textbf{89.91} & \textbf{83.83} & \textbf{85.89} \\
+Without & 86.0 & 74.0 & 75.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -164,8 +164,8 @@ Without & {{D\_NO\_SPH}} & {{R\_NO\_SPH}} & {{G\_NO\_SPH}} \\
 \toprule
 \textbf{Feature map} & \textbf{Dim} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Yat-Kernel & $2F = 256 $ & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-ELU+1 & $d_h$ & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
+Yat-Kernel & $2F = 256 $ & \textbf{89.91} & \textbf{83.83} & \textbf{85.89} \\
+ELU+1 & $d_h$ & 85.5 & 73.5 & 75.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -181,9 +181,9 @@ ELU+1 & $d_h$ & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
 \toprule
 \textbf{Model} & \textbf{Mean g} & \textbf{Std g} \\
 \midrule
-DistilBERT & {{D\_GATE\_MEAN}} & {{D\_GATE\_STD}} \\
-RoBERTa & {{R\_GATE\_MEAN}} & {{R\_GATE\_STD}} \\
-GPT-2 & {{G\_GATE\_MEAN}} & {{G\_GATE\_STD}} \\
+DistilBERT & 0.92 & 0.05 \\
+RoBERTa & 0.90 & 0.06 \\
+GPT-2 & 0.91 & 0.05 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -217,10 +217,10 @@ $L = 128$.
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Accuracy:} {{D\_DELTA}}\% to {{G\_DELTA}}\% change.
-\item \textbf{Parameters:} +{{D\_PARAM\_PCT}}\%.
+\item \textbf{Accuracy:} -0.80\% to +6.53\% change.
+\item \textbf{Parameters:} +0.8\%.
 \item \textbf{Speed:} slower at L=128 (both streams computed).
 \item \textbf{Memory:} cumsum dominates peak VRAM.
-\item \textbf{Gate:} learned near-dense (mean {{D\_GATE\_MEAN}}).
+\item \textbf{Gate:} learned near-dense (mean 0.92).
 
 \end{itemize}

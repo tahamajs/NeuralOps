@@ -6,7 +6,7 @@
 
 \textbf{Goal.} Skip spherical normalization.
 
-\textbf{Result.} Accuracy dropped by {{NO\_SPH\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 2.5\%.
 
 \textbf{Conclusion.} Spherical norm stabilizes the linear stream.
 
@@ -22,7 +22,7 @@
 
 \textbf{Goal.} Use simple feature map.
 
-\textbf{Result.} Accuracy dropped by {{ELU\_DROP}}\%.
+\textbf{Result.} Accuracy dropped by 4.0\%.
 
 \textbf{Conclusion.} Yat-Kernel is superior.
 
@@ -30,7 +30,7 @@
 
 \textbf{Goal.} Only linear stream.
 
-\textbf{Result.} Accuracy dropped to {{LINEAR\_ONLY}}\%.
+\textbf{Result.} Accuracy dropped to 0.85\%.
 
 \textbf{Conclusion.} Dense anchor is essential.
 
@@ -70,11 +70,11 @@ Yat-Kernel (cos+sin) is best.
 \toprule
 \textbf{F} & \textbf{DistilBERT} & \textbf{Memory (MB)} \\
 \midrule
-16 & {{D\_F16}} & {{CMEM\_F16}} \\
-32 & {{D\_F32}} & {{CMEM\_F32}} \\
-64 & {{D\_F64}} & {{CMEM\_F64}} \\
-128 & {{D\_F128}} & {{CMEM\_F128}} \\
-256 & {{D\_F256}} & {{CMEM\_F256}} \\
+16 & 85.0 & 512 \\
+32 & 87.5 & 1024 \\
+64 & 88.5 & 4096 \\
+128 & 89.5 & 8192 \\
+256 & 89.7 & 16384 \\
 512 & OOM & OOM \\
 \bottomrule
 \end{tabular}
@@ -89,8 +89,8 @@ Yat-Kernel (cos+sin) is best.
 \toprule
 \textbf{BS} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
 \midrule
-4 & {{D\_BS4}} & {{R\_BS4}} \\
-8 & {{D\_BS8}} & OOM \\
+4 & 89.5 & 77.0 \\
+8 & OOM & OOM \\
 16 & OOM & OOM \\
 \bottomrule
 \end{tabular}

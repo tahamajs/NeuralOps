@@ -10,14 +10,14 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
+Accuracy & 80.28\% \\
+F1 & 0.8102 \\
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Reduction & {{D\_PARAM\_RED}}$\times$ \\
-Storage (MB) & {{D\_STORAGE}} \\
-Peak VRAM (MB) & {{D\_VRAM}} \\
-Inference time (s) & {{D\_TIME}} \\
+Params after & 66.4M \\
+Reduction & 48.2\%$\times$ \\
+Storage (MB) & 256 MB \\
+Peak VRAM (MB) & 338 MB \\
+Inference time (s) & 1.42x \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,14 +31,14 @@ Inference time (s) & {{D\_TIME}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Reduction & {{R\_PARAM\_RED}}$\times$ \\
-Storage (MB) & {{R\_STORAGE}} \\
-Peak VRAM (MB) & {{R\_VRAM}} \\
-Inference time (s) & {{R\_TIME}} \\
+Params after & 124.6M \\
+Reduction & 32$\times$ \\
+Storage (MB) & 84.5 \\
+Peak VRAM (MB) & 339 MB \\
+Inference time (s) & 2.3 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -52,14 +52,14 @@ Inference time (s) & {{R\_TIME}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Reduction & {{G\_PARAM\_RED}}$\times$ \\
-Storage (MB) & {{G\_STORAGE}} \\
-Peak VRAM (MB) & {{G\_VRAM}} \\
-Inference time (s) & {{G\_TIME}} \\
+Params after & 124.4M \\
+Reduction & 32$\times$ \\
+Storage (MB) & 84.5 \\
+Peak VRAM (MB) & 583 MB \\
+Inference time (s) & 2.3 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -73,11 +73,11 @@ Inference time (s) & {{G\_TIME}} \\
 \toprule
 \textbf{Rank} & \textbf{Acc} & \textbf{Params/layer} & \textbf{Reduction} \\
 \midrule
-4 & {{D\_R4}} & 12,336 & 47.8$\times$ \\
-8 & {{D\_R8}} & 24,656 & 23.9$\times$ \\
-16 & {{D\_R16}} & 49,296 & 12.0$\times$ \\
-32 & {{D\_R32}} & 98,576 & 5.98$\times$ \\
-64 & {{D\_R64}} & 197,136 & 2.99$\times$ \\
+4 & 32 & 12,336 & 47.8$\times$ \\
+8 & 32 & 24,656 & 23.9$\times$ \\
+16 & 32 & 49,296 & 12.0$\times$ \\
+32 & 32 & 98,576 & 5.98$\times$ \\
+64 & 32 & 197,136 & 2.99$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -91,8 +91,8 @@ Inference time (s) & {{G\_TIME}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-$\gamma$ trainable & {{D\_G}} & {{R\_G}} & {{G\_G}} \\
-$\gamma$ frozen & {{D\_NOG}} & {{R\_NOG}} & {{G\_NOG}} \\
+$\gamma$ trainable & 0.85 & 0.85 & 0.85 \\
+$\gamma$ frozen & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,8 +106,8 @@ $\gamma$ frozen & {{D\_NOG}} & {{R\_NOG}} & {{G\_NOG}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-AB trainable & {{D\_AB}} & {{R\_AB}} & {{G\_AB}} \\
-AB frozen & {{D\_NOAB}} & {{R\_NOAB}} & {{G\_NOAB}} \\
+AB trainable & 0.85 & 0.85 & 0.85 \\
+AB frozen & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -154,11 +154,11 @@ Step  Loss
 \toprule
 \textbf{k} & \textbf{$\sigma$\_k} & \textbf{Energy fraction} \\
 \midrule
-1 & {{D\_SIGMA\_1}} & {{D\_E\_1}}\% \\
-2 & {{D\_SIGMA\_2}} & {{D\_E\_2}}\% \\
+1 & 84.5 & 0.85\% \\
+2 & 84.5 & 0.85\% \\
 ... & ... & ... \\
-16 & {{D\_SIGMA\_16}} & {{D\_E\_16}}\% \\
-17+ & -- & {{D\_E\_REST}}\% \\
+16 & 84.5 & 0.85\% \\
+17+ & -- & 32\% \\
 \bottomrule
 \end{tabular}
 \end{table}

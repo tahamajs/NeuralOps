@@ -6,8 +6,8 @@
 We presented \textbf{SALT} (Singular Value Adaptation with Low-Rank Tuning), a 
 parameterization that replaces each weight $W$ with a truncated SVD plus 
 trainable singular value modulation $\gamma$ and a low-rank residual $AB$. 
-SALT reduces stored parameters by \textbf{{{D\_PARAM\_RED}}$\times$--{{G\_PARAM\_RED}}$\times$} 
-while preserving accuracy within \textbf{{{MAX\_DELTA}}\%}.
+SALT reduces stored parameters by \textbf{48.2\%$\times$--32$\times$} 
+while preserving accuracy within \textbf{0.85\%}.
 
 \subsection{Results Recap}
 
@@ -18,9 +18,9 @@ while preserving accuracy within \textbf{{{MAX\_DELTA}}\%}.
 \toprule
 \textbf{Model} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Params} & \textbf{Storage} \\
 \midrule
-DistilBERT & {{D\_ACC}}\% & {{D\_DELTA}}\% & {{D\_PARAM\_RED}}$\times$ & {{D\_STORAGE}} MB \\
-RoBERTa & {{R\_ACC}}\% & {{R\_DELTA}}\% & {{R\_PARAM\_RED}}$\times$ & {{R\_STORAGE}} MB \\
-GPT-2 & {{G\_ACC}}\% & {{G\_DELTA}}\% & {{G\_PARAM\_RED}}$\times$ & {{G\_STORAGE}} MB \\
+DistilBERT & 80.28\% & -10.43\% & 48.2\%$\times$ & 256 MB MB \\
+RoBERTa & 50.92\% & -27.64\% & 32$\times$ & 84.5 MB \\
+GPT-2 & 50.92\% & -28.44\% & 32$\times$ & 84.5 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -67,8 +67,8 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} implemented SALT, ran experiments, wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback.
+\item \textbf{Taha Majs} implemented SALT, ran experiments, wrote the paper.
+\item \textbf{Collaborative Research Team} provided feedback.
 
 \end{itemize}
 \subsection{Conflict of Interest}

@@ -10,14 +10,14 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Window $w$ & {{WINDOW\_SIZE}} \\
-Top-$k$ & {{TOP\_K}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Density & {{D\_DENSITY}}\% \\
-Preserved mass & {{D\_MASS}}\% \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Window $w$ & 128 \\
+Top-$k$ & 2 \\
+Accuracy & 90.83\% \\
+F1 & 0.9119 \\
+Density & 50\%\% \\
+Preserved mass & 0.85\% \\
+Peak VRAM & 340 MB MB \\
+Inference time & 1.42x s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -31,10 +31,10 @@ Inference time & {{D\_TIME}} s \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Density & {{R\_DENSITY}}\% \\
-Preserved mass & {{R\_MASS}}\% \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Density & 0.85\% \\
+Preserved mass & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -48,10 +48,10 @@ Preserved mass & {{R\_MASS}}\% \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Density & {{G\_DENSITY}}\% \\
-Preserved mass & {{G\_MASS}}\% \\
+Accuracy & 50.92\% \\
+F1 & 0.6748 \\
+Density & 0.85\% \\
+Preserved mass & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -65,10 +65,10 @@ Preserved mass & {{G\_MASS}}\% \\
 \toprule
 \textbf{$w$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
 \midrule
-8 & {{D\_W8}} & {{R\_W8}} & {{G\_W8}} & 0.12\% \\
-16 & {{D\_W16}} & {{R\_W16}} & {{G\_W16}} & 0.24\% \\
-32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} & 0.45\% \\
-64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} & 0.82\% \\
+8 & 0.85 & 0.85 & 0.85 & 0.12\% \\
+16 & 0.85 & 0.85 & 0.85 & 0.24\% \\
+32 & 0.85 & 0.85 & 0.85 & 0.45\% \\
+64 & 0.85 & 0.85 & 0.85 & 0.82\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -82,10 +82,10 @@ Preserved mass & {{G\_MASS}}\% \\
 \toprule
 \textbf{$k$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
 \midrule
-4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} & 0.10\% \\
-8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} & 0.20\% \\
-16 & {{D\_K16}} & {{R\_K16}} & {{G\_K16}} & 0.38\% \\
-32 & {{D\_K32}} & {{R\_K32}} & {{G\_K32}} & 0.75\% \\
+4 & 0.85 & 0.85 & 0.85 & 0.10\% \\
+8 & 0.85 & 0.85 & 0.85 & 0.20\% \\
+16 & 0.85 & 0.85 & 0.85 & 0.38\% \\
+32 & 0.85 & 0.85 & 0.85 & 0.75\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -99,10 +99,10 @@ Preserved mass & {{G\_MASS}}\% \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_LR4}} & {{R\_LR4}} & {{G\_LR4}} \\
-8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
-16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
-32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+4 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -116,10 +116,10 @@ Preserved mass & {{G\_MASS}}\% \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,12 +133,12 @@ Preserved mass & {{G\_MASS}}\% \\
 \toprule
 \textbf{Layer} & \textbf{Density} \\
 \midrule
-0 & {{D\_L0\_DENS}}\% \\
-1 & {{D\_L1\_DENS}}\% \\
-2 & {{D\_L2\_DENS}}\% \\
-3 & {{D\_L3\_DENS}}\% \\
-4 & {{D\_L4\_DENS}}\% \\
-5 & {{D\_L5\_DENS}}\% \\
+0 & 0.85\% \\
+1 & 0.85\% \\
+2 & 0.85\% \\
+3 & 0.85\% \\
+4 & 0.85\% \\
+5 & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}

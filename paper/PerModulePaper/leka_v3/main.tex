@@ -79,10 +79,10 @@ features** of keys, giving $\mathcal{O}(L \cdot d_\text{feat})$ selection
 cost. The kernel feature map uses cos/sin projections at two scales, 
 providing a bounded approximation of the softmax kernel.
 
-On SST-2, LEKAv3 achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
-{{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
-{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
-{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA recovery steps. 
+On SST-2, LEKAv3 achieves \textbf{70.53\%} on DistilBERT (baseline 
+0.85\%, $\Delta$ = -20.18), \textbf{50.92\%} on RoBERTa (baseline 
+32\%, $\Delta$ = -27.64), and \textbf{50.92\%} on GPT-2 (baseline 
+0.85\%, $\Delta$ = -28.44), using 50 LoRA recovery steps. 
 The landmark count scales as $L_\text{land} = \min(L, \max(L_0, \lceil L/2 \rceil))$ 
 where $L_0$ is the base landmark budget. Complexity is 
 $\mathcal{O}(L L_\text{land} + L W)$ -- linear in $L$ when $L_\text{land}, W \sim \mathcal{O}(1)$.

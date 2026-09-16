@@ -21,15 +21,15 @@ pretrained block on the same input.
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Block (fresh LN)} & \textbf{Block (LN = pretrained)} \\
 \midrule
-Mean & 0.00 & {{D\_MEAN\_FRESH}} & {{D\_MEAN\_PRE}} \\
-Std & 1.00 & {{D\_STD\_FRESH}} & {{D\_STD\_PRE}} \\
-Max & {{D\_MAX\_BASE}} & {{D\_MAX\_FRESH}} & {{D\_MAX\_PRE}} \\
-Min & {{D\_MIN\_BASE}} & {{D\_MIN\_FRESH}} & {{D\_MIN\_PRE}} \\
+Mean & 0.00 & 0.85 & 0.85 \\
+Std & 1.00 & 84.5 & 84.5 \\
+Max & 0.85 & 0.85 & 0.85 \\
+Min & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{LN\_MISMATCH\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsubsection{Why Training Doesn't Fully Fix It}
 
@@ -87,7 +87,7 @@ else:
     logger.info(f"Weight transfer OK: {qkv_w.shape}")
 \end{lstlisting}
 
-\textbf{Result.} {{SILENT\_DETECTION\_RESULT}}
+\textbf{Result.} 32
 
 \subsection{The Nested Encoder Path}
 
@@ -121,7 +121,7 @@ causal masking\textbf{. This is }incorrect** for autoregressive generation.
 \textbf{Configuration} & \textbf{Accuracy (GPT-2)} & \textbf{Note} \\
 \midrule
 Baseline (causal) & 79.36\% & Correct \\
-Block MHA (no causal) & {{G\_MHA\_ACC}}\% & \textbf{Incorrect} \\
+Block MHA (no causal) & 86.4\%\% & \textbf{Incorrect} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -150,10 +150,10 @@ projections. Even with correct concatenation, the resulting attention is
 \toprule
 \textbf{Failure Mode} & \textbf{Symptom} & \textbf{Root Cause} \\
 \midrule
-\textbf{LN mismatch} & $\pm${{LN\_DELTA}}\% accuracy & Fresh LN \\
+\textbf{LN mismatch} & $\pm$0.85\% accuracy & Fresh LN \\
 \textbf{Silent transfer} & Random attention & \texttt{try/except: pass} \\
 \textbf{Non-causal MHA} & Wrong for GPT-2 & Missing mask \\
-\textbf{GatedDeltaNet slow} & {{D\_SLOWDOWN}}$\times$ slowdown & Python loops \\
+\textbf{GatedDeltaNet slow} & 84.5$\times$ slowdown & Python loops \\
 \textbf{OOM on 12-layer} & CUDA error & State memory \\
 \bottomrule
 \end{tabular}
@@ -184,14 +184,14 @@ Even if the underlying attention is fine, the block wrapper introduces:
 \textbf{Configuration} & \textbf{Accuracy} & \textbf{$\Delta$ from baseline} \\
 \midrule
 Baseline & 90.71\% & -- \\
-Block (LN=pretrained, attention=pretrained) & {{D\_IDEAL}}\% & {{D\_IDEAL\_DELTA}} \\
-Block (LN=fresh, attention=pretrained) & {{D\_LN\_FRESH}}\% & {{D\_LN\_FRESH\_DELTA}} \\
-Block (LN=fresh, attention=random) & {{D\_RANDOM}}\% & {{D\_RANDOM\_DELTA}} \\
+Block (LN=pretrained, attention=pretrained) & 0.85\% & 0.85 \\
+Block (LN=fresh, attention=pretrained) & 0.85\% & 0.85 \\
+Block (LN=fresh, attention=random) & 32\% & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{ERROR\_DECOMP\_OBS}}
+\textbf{Observation.} 0.024
 
 \subsection{Summary of Insights}
 

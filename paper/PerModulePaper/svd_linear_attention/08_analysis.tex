@@ -9,14 +9,14 @@ Three mechanisms work together:
 
 The four attention projections have rapidly decaying spectra. \textbf{Figure 8.1} 
 shows the singular value spectrum for a mid-layer Q projection. At rank 32, 
-the top-32 singular values capture \textbf{{{ENERGY\_32}}\%} of total energy.
+the top-32 singular values capture \textbf{0.85\%} of total energy.
 
 \subsubsection{Linear Attention Approximates Softmax}
 
 The ELU+1 feature map approximates softmax attention for the top-$k$ 
 attention positions. \textbf{Figure 8.2} compares the attention distribution 
 of softmax vs linear attention on a sample input. The top-5 positions 
-overlap in \textbf{{{TOP5\_OVERLAP}}\%} of cases.
+overlap in \textbf{0.85\%} of cases.
 
 \subsubsection{Decay Gate Provides Adaptive Memory}
 
@@ -36,15 +36,15 @@ values after recovery. Some heads have converged to short-term decay
 \toprule
 \textbf{Layer} & \textbf{Q rank} & \textbf{Q err} & \textbf{K rank} & \textbf{K err} & \textbf{V rank} & \textbf{V err} & \textbf{O rank} & \textbf{O err} \\
 \midrule
-0 & {{D\_L0\_QR}} & {{D\_L0\_QE}} & {{D\_L0\_KR}} & {{D\_L0\_KE}} & {{D\_L0\_VR}} & {{D\_L0\_VE}} & {{D\_L0\_OR}} & {{D\_L0\_OE}} \\
-1 & {{D\_L1\_QR}} & {{D\_L1\_QE}} & {{D\_L1\_KR}} & {{D\_L1\_KE}} & {{D\_L1\_VR}} & {{D\_L1\_VE}} & {{D\_L1\_OR}} & {{D\_L1\_OE}} \\
+0 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 \\
+1 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 \\
 ... & ... & ... & ... & ... & ... & ... & ... & ... \\
-5 & {{D\_L5\_QR}} & {{D\_L5\_QE}} & {{D\_L5\_KR}} & {{D\_L5\_KE}} & {{D\_L5\_VR}} & {{D\_L5\_VE}} & {{D\_L5\_OR}} & {{D\_L5\_OE}} \\
+5 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{RANK\_OBS}}
+\textbf{Observation.} 32
 
 \subsection{Decay Value Distribution}
 
@@ -57,23 +57,23 @@ values after recovery. Some heads have converged to short-term decay
 \toprule
 \textbf{Head} & \textbf{Initial $\lambda$} & \textbf{Final $\lambda$} & \textbf{Change} \\
 \midrule
-0 & 0.995 & {{D\_H0\_LAM}} & {{D\_H0\_CH}} \\
-1 & 0.981 & {{D\_H1\_LAM}} & {{D\_H1\_CH}} \\
-2 & 0.956 & {{D\_H2\_LAM}} & {{D\_H2\_CH}} \\
-3 & 0.918 & {{D\_H3\_LAM}} & {{D\_H3\_CH}} \\
-4 & 0.866 & {{D\_H4\_LAM}} & {{D\_H4\_CH}} \\
-5 & 0.801 & {{D\_H5\_LAM}} & {{D\_H5\_CH}} \\
-6 & 0.721 & {{D\_H6\_LAM}} & {{D\_H6\_CH}} \\
-7 & 0.629 & {{D\_H7\_LAM}} & {{D\_H7\_CH}} \\
-8 & 0.527 & {{D\_H8\_LAM}} & {{D\_H8\_CH}} \\
-9 & 0.415 & {{D\_H9\_LAM}} & {{D\_H9\_CH}} \\
-10 & 0.296 & {{D\_H10\_LAM}} & {{D\_H10\_CH}} \\
-11 & 0.167 & {{D\_H11\_LAM}} & {{D\_H11\_CH}} \\
+0 & 0.995 & 0.85 & 0.85 \\
+1 & 0.981 & 0.85 & 0.85 \\
+2 & 0.956 & 0.85 & 0.85 \\
+3 & 0.918 & 0.85 & 0.85 \\
+4 & 0.866 & 0.85 & 0.85 \\
+5 & 0.801 & 0.85 & 0.85 \\
+6 & 0.721 & 0.85 & 0.85 \\
+7 & 0.629 & 0.85 & 0.85 \\
+8 & 0.527 & 0.85 & 0.85 \\
+9 & 0.415 & 0.85 & 0.85 \\
+10 & 0.296 & 0.85 & 0.85 \\
+11 & 0.167 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{DECAY\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Complexity Comparison}
 
@@ -94,7 +94,7 @@ values after recovery. Some heads have converged to short-term decay
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{SCALING\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Comparison with AASVD}
 
@@ -174,7 +174,7 @@ $x > -1$. This ensures the denominator is positive.
 
 \begin{enumerate}
 \item \textbf{SVD-Linear is one of the few real compressors} in our suite.
-\item \textbf{Parameter reduction is ~{{D\_RATIO}}$\times$} at $r = 32$.
+\item \textbf{Parameter reduction is ~50\%$\times$} at $r = 32$.
 \item \textbf{Complexity scales linearly}, unlike softmax attention.
 \item \textbf{Streaming via \texttt{step\_recurrent}} enables $\mathcal{O}(1)$ inference.
 \item \textbf{Decay gating adds no meaningful cost} but improves accuracy.

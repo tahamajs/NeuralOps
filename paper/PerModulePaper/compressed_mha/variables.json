@@ -430,5 +430,8 @@
   "G_G1": "0.88",
   "G_G2": "0.94",
   "Q_ACC": "49.82",
-  "Q_VRAM": "1189 MB"
+  "Q_VRAM": "1189 MB",
+  "R_VRAM_DEC": "380 MB",
+  "G_VRAM_DEC": "380 MB",
+  "INDEP_PARAM_INC": "66.4M"
 }

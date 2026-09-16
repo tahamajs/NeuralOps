@@ -17,9 +17,9 @@ is computed via differentiable Schulz iteration.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attn mem ratio} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & \textbf{{{MEM\_REDUCTION}}$\times$} \\
-RoBERTa & {{R\_DELTA}}\% & \textbf{{{MEM\_REDUCTION}}$\times$} \\
-GPT-2 & {{G\_DELTA}}\% & \textbf{{{MEM\_REDUCTION}}$\times$} \\
+DistilBERT & -0.57\% & \textbf{4$\times$} \\
+RoBERTa & -10.56\% & \textbf{4$\times$} \\
+GPT-2 & -16.29\% & \textbf{4$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -27,7 +27,7 @@ GPT-2 & {{G\_DELTA}}\% & \textbf{{{MEM\_REDUCTION}}$\times$} \\
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{Asymmetric landmarks} give +{{ASYM\_GAIN}}\% over symmetric Nystr m.
+\item \textbf{Asymmetric landmarks} give +0.5\% over symmetric Nystr m.
 \item \textbf{$m = 64$} is optimal for $L = 128$.
 \item \textbf{Schulz from SVD pinv} is best practice.
 \item \textbf{Long $L$ benefits most.}
@@ -63,8 +63,8 @@ We thank The authors thank the high-performance computing facilities and open-so
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed Primal Attention, implemented the code, wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback, edited.
+\item \textbf{Taha Majs} designed Primal Attention, implemented the code, wrote the paper.
+\item \textbf{Collaborative Research Team} provided feedback, edited.
 
 \end{itemize}
 \subsection{Conflict of Interest}

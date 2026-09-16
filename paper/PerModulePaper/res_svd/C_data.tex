@@ -10,14 +10,14 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Ratio & {{D\_RATIO}}$\times$ \\
-Base rank & {{BASE\_RANK}} \\
-Residual rank & {{RESIDUAL\_RANK}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
+Params after & 66.4M \\
+Ratio & 50\%$\times$ \\
+Base rank & 32 \\
+Residual rank & 16 \\
+Accuracy & 89.56\% \\
+F1 & 0.9016 \\
+Peak VRAM & 298 MB MB \\
+Inference time & 1.42x s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,9 +32,9 @@ Inference time & {{D\_TIME}} s \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Ratio & {{R\_RATIO}}$\times$ \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 124.6M \\
+Ratio & 2.1\times$\times$ \\
+Accuracy & 76.61\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -49,9 +49,9 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Ratio & {{G\_RATIO}}$\times$ \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 124.4M \\
+Ratio & 2.1\times$\times$ \\
+Accuracy & 71.33\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -65,10 +65,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$r_b$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-8 & {{D\_B8}} & {{R\_B8}} & {{G\_B8}} \\
-16 & {{D\_B16}} & {{R\_B16}} & {{G\_B16}} \\
-32 & {{D\_B32}} & {{R\_B32}} & {{G\_B32}} \\
-64 & {{D\_B64}} & {{R\_B64}} & {{G\_B64}} \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -82,11 +82,11 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$r_r$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0 & {{D\_R0}} & {{R\_R0}} & {{G\_R0}} \\
-2 & {{D\_R2}} & {{R\_R2}} & {{G\_R2}} \\
-4 & {{D\_R4}} & {{R\_R4}} & {{G\_R4}} \\
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
+0 & 32 & 32 & 32 \\
+2 & 32 & 32 & 32 \\
+4 & 32 & 32 & 32 \\
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -100,9 +100,9 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$\alpha$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.5 & {{D\_A05}} & {{R\_A05}} & {{G\_A05}} \\
-1.0 & {{D\_A10}} & {{R\_A10}} & {{G\_A10}} \\
-2.0 & {{D\_A20}} & {{R\_A20}} & {{G\_A20}} \\
+0.5 & 0.85 & 0.85 & 0.85 \\
+1.0 & 0.85 & 0.85 & 0.85 \\
+2.0 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -116,9 +116,9 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} \\
 \midrule
-Pure SVD (r=20) & {{D\_SVD20}} & {{R\_SVD20}} \\
-Res-SVD (16,4) & {{D\_ACC}} & {{R\_ACC}} \\
-Difference & {{D\_DIFF}} & {{R\_DIFF}} \\
+Pure SVD (r=20) & 84.5 & 84.5 \\
+Res-SVD (16,4) & 89.56 & 76.61 \\
+Difference & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

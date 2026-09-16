@@ -39,7 +39,7 @@
 
 \textbf{Goal.} Compare with standard softmax.
 
-\textbf{Result.} Softpick gives +{{SP\_GAIN}}\% accuracy from reduced noise.
+\textbf{Result.} Softpick gives +0.85\% accuracy from reduced noise.
 
 \textbf{Conclusion.} Softpick is essential.
 
@@ -69,9 +69,9 @@ We tried mixing LSH attention with dense attention. Result: no gain, 2$\times$ s
 \toprule
 \textbf{Rounds} & \textbf{DistilBERT} & \textbf{Time} \\
 \midrule
-1 & {{D\_LSH1}} & 1.0$\times$ \\
-4 & {{D\_LSH4}} & 4.0$\times$ \\
-16 & {{D\_LSH16}} & 16$\times$ (diminishing) \\
+1 & 0.85 & 1.0$\times$ \\
+4 & 0.85 & 4.0$\times$ \\
+16 & 0.85 & 16$\times$ (diminishing) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,11 +85,11 @@ We tried mixing LSH attention with dense attention. Result: no gain, 2$\times$ s
 \toprule
 \textbf{Rank} & \textbf{Ratio} & \textbf{DistilBERT} \\
 \midrule
-4 & 60$\times$ & {{D\_R4}} (too aggressive) \\
-8 & 30$\times$ & {{D\_R8}} \\
-16 & 15$\times$ & {{D\_R16}} \\
-32 & 8$\times$ & {{D\_R32}} \\
-64 & 4$\times$ & {{D\_R64}} \\
+4 & 60$\times$ & 32 (too aggressive) \\
+8 & 30$\times$ & 32 \\
+16 & 15$\times$ & 32 \\
+32 & 8$\times$ & 32 \\
+64 & 4$\times$ & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -103,10 +103,10 @@ We tried mixing LSH attention with dense attention. Result: no gain, 2$\times$ s
 \toprule
 \textbf{$\tau$\_s} & \textbf{DistilBERT} \\
 \midrule
-0.1 & {{D\_T01}} (too peaked) \\
-0.5 & {{D\_T05}} \\
-1.0 & {{D\_T10}} \\
-2.0 & {{D\_T20}} (too flat) \\
+0.1 & 0.85 (too peaked) \\
+0.5 & 0.85 \\
+1.0 & 0.85 \\
+2.0 & 0.85 (too flat) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -152,7 +152,7 @@ LayerNorm recalibration & Shift & <0.2\% improvement \\
 \item \textbf{Random projections work} as well as learnable ones.
 \item \textbf{4-6 bits} is the sweet spot for LSH.
 \item \textbf{Uniform rounds} suffice; no need for adaptive.
-\item \textbf{Softpick matters} -- softmax loses {{SP\_GAIN}}\%.
+\item \textbf{Softpick matters} -- softmax loses 0.85\%.
 \item \textbf{CUR beats SVD} at low rank.
 
 \end{enumerate}

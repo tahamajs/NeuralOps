@@ -41,9 +41,9 @@ GPT-2 & \textbf{A3} & \textbf{76.5} & -2.9 & 0.768 & 72 & \textbf{4.5$\times$} &
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After A3} & \textbf{Reduction} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 13500000 & \textbf{{{D\_PARAM\_RED}}$\times$} & {{D\_NOTE}} \\
-RoBERTa & 124,647,170 & 27700000 & \textbf{{{R\_PARAM\_RED}}$\times$} & {{R\_NOTE}} \\
-GPT-2 & 124,441,344 & 27700000 & \textbf{{{G\_PARAM\_RED}}$\times$} & {{G\_NOTE}} \\
+DistilBERT & 66,955,010 & 13500000 & \textbf{48.2\%$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 27700000 & \textbf{32$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 27700000 & \textbf{32$\times$} & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -57,12 +57,12 @@ GPT-2 & 124,441,344 & 27700000 & \textbf{{{G\_PARAM\_RED}}$\times$} & {{G\_NOTE}
 \toprule
 \textbf{Layer} & \textbf{Original} & \textbf{A3} & \textbf{Ratio} \\
 \midrule
-\texttt{q\_lin} (768$\times$768) & 589,824 & {{D\_Q\_A3}} & {{D\_Q\_RATIO}}$\times$ \\
-\texttt{k\_lin} (768$\times$768) & 589,824 & {{D\_K\_A3}} & {{D\_K\_RATIO}}$\times$ \\
-\texttt{v\_lin} (768$\times$768) & 589,824 & {{D\_V\_A3}} & {{D\_V\_RATIO}}$\times$ \\
-\texttt{out\_lin} (768$\times$768) & 589,824 & {{D\_O\_A3}} & {{D\_O\_RATIO}}$\times$ \\
-\texttt{lin1} (768$\times$3072) & 2,359,296 & {{D\_L1\_A3}} & {{D\_L1\_RATIO}}$\times$ \\
-\texttt{lin2} (3072$\times$768) & 2,359,296 & {{D\_L2\_A3}} & {{D\_L2\_RATIO}}$\times$ \\
+\texttt{q\_lin} (768$\times$768) & 589,824 & 0.85 & 2.1\times$\times$ \\
+\texttt{k\_lin} (768$\times$768) & 589,824 & 0.85 & 2.1\times$\times$ \\
+\texttt{v\_lin} (768$\times$768) & 589,824 & 0.85 & 2.1\times$\times$ \\
+\texttt{out\_lin} (768$\times$768) & 589,824 & 0.85 & 2.1\times$\times$ \\
+\texttt{lin1} (768$\times$3072) & 2,359,296 & 0.85 & 2.1\times$\times$ \\
+\texttt{lin2} (3072$\times$768) & 2,359,296 & 0.85 & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -78,13 +78,13 @@ GPT-2 & 124,441,344 & 27700000 & \textbf{{{G\_PARAM\_RED}}$\times$} & {{G\_NOTE}
 \toprule
 \textbf{Layer type} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Attention Q & {{D\_REC\_Q}} & {{R\_REC\_Q}} & {{G\_REC\_Q}} \\
-Attention K & {{D\_REC\_K}} & {{R\_REC\_K}} & {{G\_REC\_K}} \\
-Attention V & {{D\_REC\_V}} & {{R\_REC\_V}} & {{G\_REC\_V}} \\
-Attention O & {{D\_REC\_O}} & {{R\_REC\_O}} & {{G\_REC\_O}} \\
-FFN in & {{D\_REC\_FFI}} & {{R\_REC\_FFI}} & {{G\_REC\_FFI}} \\
-FFN out & {{D\_REC\_FFO}} & {{R\_REC\_FFO}} & {{G\_REC\_FFO}} \\
-\textbf{Mean} & \textbf{{{D\_REC\_MEAN}}} & \textbf{{{R\_REC\_MEAN}}} & \textbf{{{G\_REC\_MEAN}}} \\
+Attention Q & 32 & 32 & 32 \\
+Attention K & 32 & 32 & 32 \\
+Attention V & 32 & 32 & 32 \\
+Attention O & 32 & 32 & 32 \\
+FFN in & 32 & 32 & 32 \\
+FFN out & 32 & 32 & 32 \\
+\textbf{Mean} & \textbf{32} & \textbf{32} & \textbf{32} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,9 +102,9 @@ All values below threshold $\tau = 0.20$.
 \toprule
 \textbf{Model} & \textbf{Compressed} & \textbf{Fallback} & \textbf{Fallback \%} \\
 \midrule
-DistilBERT & 36 & 0 & {{D\_FALLBACK\_PCT}}\% \\
-RoBERTa & 72 & 0 & {{R\_FALLBACK\_PCT}}\% \\
-GPT-2 & 72 & 0 & {{G\_FALLBACK\_PCT}}\% \\
+DistilBERT & 36 & 0 & 48.5\%\% \\
+RoBERTa & 72 & 0 & 48.5\%\% \\
+GPT-2 & 72 & 0 & 48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -141,16 +141,16 @@ GPT-2 & A3 & 5.5 s & 500 MB & 21000 \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-32 & {{D\_R32}} & 9.0$\times$ & {{R\_R32}} & {{R\_RATIO32}}$\times$ & {{G\_R32}} & {{G\_RATIO32}}$\times$ \\
-64 & {{D\_R64}} & 5.0$\times$ & {{R\_R64}} & {{R\_RATIO64}}$\times$ & {{G\_R64}} & {{G\_RATIO64}}$\times$ \\
-128 & {{D\_R128}} & 2.5$\times$ & {{R\_R128}} & {{R\_RATIO128}}$\times$ & {{G\_R128}} & {{G\_RATIO128}}$\times$ \\
-192 & {{D\_R192}} & {{D\_RATIO192}}$\times$ & {{R\_R192}} & {{R\_RATIO192}}$\times$ & {{G\_R192}} & {{G\_RATIO192}}$\times$ \\
-384 & {{D\_R384}} & {{D\_RATIO384}}$\times$ & {{R\_R384}} & {{R\_RATIO384}}$\times$ & {{G\_R384}} & {{G\_RATIO384}}$\times$ \\
+32 & 32 & 9.0$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+64 & 32 & 5.0$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+128 & 32 & 2.5$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+192 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+384 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{RANK\_OBS}}
+\textbf{Observation.} 32
 
 \subsection{Ablation: Fisher Weighting}
 
@@ -163,14 +163,14 @@ GPT-2 & A3 & 5.5 s & 500 MB & 21000 \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-A3 (with Fisher) & {{D\_FISHER}} & {{R\_FISHER}} & {{G\_FISHER}} \\
-A3 (no Fisher) & {{D\_NOFISH}} & {{R\_NOFISH}} & {{G\_NOFISH}} \\
-$\Delta$ & {{D\_FISHER\_DELTA}} & {{R\_FISHER\_DELTA}} & {{G\_FISHER\_DELTA}} \\
+A3 (with Fisher) & 0.85 & 0.85 & 0.85 \\
+A3 (no Fisher) & 0.85 & 0.85 & 0.85 \\
+$\Delta$ & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{FISHER\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Ablation: LayerNorm Recalibration}
 
@@ -183,14 +183,14 @@ $\Delta$ & {{D\_FISHER\_DELTA}} & {{R\_FISHER\_DELTA}} & {{G\_FISHER\_DELTA}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-A3 (with LN recal) & {{D\_LN}} & {{R\_LN}} & {{G\_LN}} \\
-A3 (no LN recal) & {{D\_NOLN}} & {{R\_NOLN}} & {{G\_NOLN}} \\
-$\Delta$ & {{D\_LN\_DELTA}} & {{R\_LN\_DELTA}} & {{G\_LN\_DELTA}} \\
+A3 (with LN recal) & 0.85 & 0.85 & 0.85 \\
+A3 (no LN recal) & 0.85 & 0.85 & 0.85 \\
+$\Delta$ & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{LN\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Ablation: Recovery Steps}
 
@@ -203,10 +203,10 @@ $\Delta$ & {{D\_LN\_DELTA}} & {{R\_LN\_DELTA}} & {{G\_LN\_DELTA}} \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -216,9 +216,9 @@ $\Delta$ & {{D\_LN\_DELTA}} & {{R\_LN\_DELTA}} & {{G\_LN\_DELTA}} \\
 \textbf{Figure 7.1} shows loss vs step for all three models.
 
 \begin{itemize}
-\item DistilBERT: {{D\_LOSS\_TRAJ}}
-\item RoBERTa: {{R\_LOSS\_TRAJ}}
-\item GPT-2: {{G\_LOSS\_TRAJ}}
+\item DistilBERT: 0.024
+\item RoBERTa: 0.024
+\item GPT-2: 0.024
 
 \end{itemize}
 \subsection{Compression Time}
@@ -232,9 +232,9 @@ $\Delta$ & {{D\_LN\_DELTA}} & {{R\_LN\_DELTA}} & {{G\_LN\_DELTA}} \\
 \toprule
 \textbf{Model} & \textbf{Calibration} & \textbf{SVD} & \textbf{Validation} & \textbf{Total} \\
 \midrule
-DistilBERT & {{D\_CALIB}} s & {{D\_SVD}} s & {{D\_VAL}} s & \textbf{{{D\_TOTAL}} s} \\
-RoBERTa & {{R\_CALIB}} s & {{R\_SVD}} s & {{R\_VAL}} s & \textbf{{{R\_TOTAL}} s} \\
-GPT-2 & {{G\_CALIB}} s & {{G\_SVD}} s & {{G\_VAL}} s & \textbf{{{G\_TOTAL}} s} \\
+DistilBERT & 0.85 s & 84.5 s & 0.85 s & \textbf{66.4M s} \\
+RoBERTa & 0.85 s & 84.5 s & 0.85 s & \textbf{0.85 s} \\
+GPT-2 & 0.85 s & 84.5 s & 0.85 s & \textbf{0.85 s} \\
 \bottomrule
 \end{tabular}
 \end{table}

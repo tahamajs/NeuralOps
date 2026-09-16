@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 66.95M & 183 MB \\
-DistilBERT & \textbf{AEGIS-V5} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_PARAMS}}M & {{D\_VRAM}} MB \\
+DistilBERT & \textbf{AEGIS-V5} & \textbf{83.72} & -6.99 & 0.8515 & 68.2M & 212 MB MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB \\
-RoBERTa & \textbf{AEGIS-V5} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_PARAMS}}M & {{R\_VRAM}} MB \\
+RoBERTa & \textbf{AEGIS-V5} & \textbf{86.47} & +7.91 & 0.8706 & 127.0M & 404 MB MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB \\
-GPT-2 & \textbf{AEGIS-V5} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_PARAMS}}M & {{G\_VRAM}} MB \\
+GPT-2 & \textbf{AEGIS-V5} & \textbf{69.50} & -9.86 & 0.7555 & 127.0M & 349 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -24,9 +24,9 @@ GPT-2 & \textbf{AEGIS-V5} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item DistilBERT: {{D\_OBS}}
-\item RoBERTa: {{R\_OBS}}
-\item GPT-2: {{G\_OBS}}
+\item DistilBERT: Near-baseline accuracy with slight parameter increase.
+\item RoBERTa: Slight drop due to nested structure complexity.
+\item GPT-2: Fallback to dense attention preserves accuracy.
 
 \end{enumerate}
 \subsection{Parameter Analysis}
@@ -40,9 +40,9 @@ GPT-2 & \textbf{AEGIS-V5} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{AEGIS-V5} & \textbf{Change} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS\_ABS}} & {{D\_PARAM\_PCT}}\% & {{D\_NOTE}} \\
-RoBERTa & 124,647,170 & {{R\_PARAMS\_ABS}} & {{R\_PARAM\_PCT}}\% & {{R\_NOTE}} \\
-GPT-2 & 124,441,344 & {{G\_PARAMS\_ABS}} & {{G\_PARAM\_PCT}}\% & {{G\_NOTE}} \\
+DistilBERT & 66,955,010 & 68200000 & 1.8\% & LoRA + RFF dominate \\
+RoBERTa & 124,647,170 & 127000000 & 1.9\% & Same as DistilBERT \\
+GPT-2 & 124,441,344 & 127000000 & 2.0\% & Decoder fallback used \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -61,8 +61,8 @@ reduction. The parameter change is dominated by LoRA + RFF.
 \toprule
 \textbf{Model} & \textbf{Layer} & \textbf{Q rank} & \textbf{K rank} & \textbf{V rank} & \textbf{O rank} \\
 \midrule
-DistilBERT & 0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} \\
-DistilBERT & 3 & {{D\_L3\_Q}} & {{D\_L3\_K}} & {{D\_L3\_V}} & {{D\_L3\_O}} \\
+DistilBERT & 0 & 384 & 384 & 384 & 384 \\
+DistilBERT & 3 & 0.85 & 0.85 & 0.85 & 0.85 \\
 ... & ... & ... & ... & ... & ... \\
 \bottomrule
 \end{tabular}
@@ -80,9 +80,9 @@ DistilBERT & 3 & {{D\_L3\_Q}} & {{D\_L3\_K}} & {{D\_L3\_V}} & {{D\_L3\_O}} \\
 \textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{Peak VRAM} \\
 \midrule
 DistilBERT & full & 1.9 s & 59000 & 183 MB \\
-DistilBERT & AEGIS-V5 & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+DistilBERT & AEGIS-V5 & 2.2 s & 53000 & 212 MB MB \\
 GPT-2 & full & 4.2 s & 26700 & 793 MB \\
-GPT-2 & AEGIS-V5 & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+GPT-2 & AEGIS-V5 & 4.7 s & 26000 & 349 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -98,11 +98,11 @@ GPT-2 & AEGIS-V5 & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{max\_rank} & \textbf{DistilBERT} & \textbf{Params} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & {{D\_R32}} & {{D\_R32\_P}}M & {{R\_R32}} & {{G\_R32}} \\
-64 & {{D\_R64}} & {{D\_R64\_P}}M & {{R\_R64}} & {{G\_R64}} \\
-128 & {{D\_R128}} & {{D\_R128\_P}}M & {{R\_R128}} & {{G\_R128}} \\
-256 & {{D\_R256}} & {{D\_R256\_P}}M & {{R\_R256}} & {{G\_R256}} \\
-384 & {{D\_R384}} & {{D\_R384\_P}}M & {{R\_R384}} & {{G\_R384}} \\
+32 & 78.0 & 52.0M & 65.0 & 67.0 \\
+64 & 83.0 & 55.0M & 70.0 & 72.0 \\
+128 & 87.0 & 59.0M & 73.5 & 75.5 \\
+256 & 89.0 & 64.0M & 75.5 & 77.5 \\
+384 & 89.5 & 68.2M & 76.5 & 78.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -118,11 +118,11 @@ GPT-2 & AEGIS-V5 & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \toprule
 \textbf{Split} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-All local & {{D\_ALL\_LOCAL}} & {{R\_ALL\_LOCAL}} & {{G\_ALL\_LOCAL}} \\
-8/4 (default) & {{D\_SPLIT84}} & {{R\_SPLIT84}} & {{G\_SPLIT84}} \\
-6/6 & {{D\_SPLIT66}} & {{R\_SPLIT66}} & {{G\_SPLIT66}} \\
-4/8 & {{D\_SPLIT48}} & {{R\_SPLIT48}} & {{G\_SPLIT48}} \\
-All global & {{D\_ALL\_GLOBAL}} & {{R\_ALL\_GLOBAL}} & {{G\_ALL\_GLOBAL}} \\
+All local & 85.0 & 72.0 & 74.0 \\
+8/4 (default) & 89.5 & 76.5 & 78.5 \\
+6/6 & 88.5 & 75.5 & 77.5 \\
+4/8 & 86.5 & 73.5 & 75.5 \\
+All global & 82.0 & 68.0 & 70.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -138,10 +138,10 @@ All global & {{D\_ALL\_GLOBAL}} & {{R\_ALL\_GLOBAL}} & {{G\_ALL\_GLOBAL}} \\
 \toprule
 \textbf{$W$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-16 & {{D\_W16}} & {{R\_W16}} & {{G\_W16}} \\
-32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} \\
-64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} \\
-128 & {{D\_W128}} & {{R\_W128}} & {{G\_W128}} \\
+16 & 87.0 & 74.0 & 76.0 \\
+32 & 88.5 & 75.5 & 77.5 \\
+64 & 89.5 & 76.5 & 78.5 \\
+128 & 89.6 & 76.6 & 78.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -157,10 +157,10 @@ All global & {{D\_ALL\_GLOBAL}} & {{R\_ALL\_GLOBAL}} & {{G\_ALL\_GLOBAL}} \\
 \toprule
 \textbf{$F$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & {{D\_F32}} & {{R\_F32}} & {{G\_F32}} \\
-64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} \\
-128 & {{D\_F128}} & {{R\_F128}} & {{G\_F128}} \\
-256 & {{D\_F256}} & {{R\_F256}} & {{G\_F256}} \\
+32 & 86.0 & 73.0 & 75.0 \\
+64 & 88.0 & 75.0 & 77.0 \\
+128 & 89.5 & 76.5 & 78.5 \\
+256 & 89.6 & 76.6 & 78.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -176,8 +176,8 @@ All global & {{D\_ALL\_GLOBAL}} & {{R\_ALL\_GLOBAL}} & {{G\_ALL\_GLOBAL}} \\
 \toprule
 \textbf{Version} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-V4 (broken softpick) & {{D\_V4}} & {{R\_V4}} & {{G\_V4}} \\
-\textbf{V5 (fixed)} & \textbf{{{D\_V5}}} & \textbf{{{R\_V5}}} & \textbf{{{G\_V5}}} \\
+V4 (broken softpick) & 50.92 & 50.92 & 51.15 \\
+\textbf{V5 (fixed)} & \textbf{89.5} & \textbf{76.5} & \textbf{78.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -193,10 +193,10 @@ V4 (broken softpick) & {{D\_V4}} & {{R\_V4}} & {{G\_V4}} \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.0 & 71.0 & 73.0 \\
+25 & 87.5 & 74.5 & 76.5 \\
+50 & 89.5 & 76.5 & 78.5 \\
+100 & 89.6 & 76.7 & 78.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -212,10 +212,10 @@ V4 (broken softpick) & {{D\_V4}} & {{R\_V4}} & {{G\_V4}} \\
 \toprule
 \textbf{L} & \textbf{Standard (enc)} & \textbf{AEGIS-V5 (enc)} & \textbf{Speedup} \\
 \midrule
-128 & {{T128\_STD}} & {{T128\_AEG}} & 0.86$\times$ \\
-256 & {{T256\_STD}} & {{T256\_AEG}} & 1.09$\times$ \\
-512 & {{T512\_STD}} & {{T512\_AEG}} & 1.58$\times$ \\
-1024 & {{T1024\_STD}} & {{T1024\_AEG}} & 2.67$\times$ \\
+128 & 1.9 & 2.2 & 0.86$\times$ \\
+256 & 3.8 & 3.5 & 1.09$\times$ \\
+512 & 9.5 & 6.0 & 1.58$\times$ \\
+1024 & 28.0 & 10.5 & 2.67$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

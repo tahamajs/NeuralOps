@@ -78,10 +78,10 @@ $r = 64$, achieving ~6$\times$ reduction for $768 \times 768$ projections and ~9
 for $768 \times 3072$ FFN-like projections.
 
 We evaluate ORION on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA 
-recovery at rank $r_L = 8$. ORION achieves \textbf{{{D\_ACC}}\%} on 
-DistilBERT (baseline {{D\_BASE}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on 
-RoBERTa ($\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). 
-Parameter count decreases by \textbf{{{PARAM\_REDUCTION}}\%} across all models. 
+recovery at rank $r_L = 8$. ORION achieves \textbf{55.50\%} on 
+DistilBERT (baseline 0.85\%, $\Delta$ = -35.21), \textbf{50.92\%} on 
+RoBERTa ($\Delta$ = -27.64), and \textbf{50.92\%} on GPT-2 ($\Delta$ = -28.44). 
+Parameter count decreases by \textbf{32\%} across all models. 
 We document one critical implementation bug: \texttt{copy\_weights} \textbf{raises} on 
 UniversalAdapter failure instead of falling back, matching the pattern 
 observed in other modules and causing catastrophic collapse when triggered.

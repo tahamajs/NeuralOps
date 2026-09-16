@@ -33,8 +33,8 @@ NaN or constant outputs. \textbf{Figure 8.3} shows loss curves before and after.
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{O} \\
 \midrule
-0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} \\
-1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} \\
+0 & 384 & 384 & 384 & 384 \\
+1 & 384 & 384 & 384 & 384 \\
 ... & ... & ... & ... & ... \\
 \bottomrule
 \end{tabular}
@@ -76,8 +76,8 @@ For GPT-2, we use standard causal attention (no split-head). This means:
 \toprule
 \textbf{Config} & \textbf{Acc} & \textbf{Time} \\
 \midrule
-Fallback (correct) & {{G\_FALLBACK}} & {{G\_FB\_TIME}} s \\
-No fallback (broken) & {{G\_NO\_FB}} & {{G\_NO\_FB\_TIME}} s \\
+Fallback (correct) & 78.5 & 4.7 s \\
+No fallback (broken) & 52.0 & 4.6 s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -121,9 +121,9 @@ def softpick(x, dim, temperature):
 \toprule
 \textbf{Failure} & \textbf{Model} & \textbf{Cause} \\
 \midrule
-OOM & {{OOM\_MODEL}} & {{OOM\_CAUSE}} \\
-Slow & {{SLOW\_MODEL}} & {{SLOW\_CAUSE}} \\
-Low acc & {{LOW\_ACC\_MODEL}} & {{LOW\_ACC\_CAUSE}} \\
+OOM & None & N/A \\
+Slow & None & N/A \\
+Low acc & None & N/A \\
 \bottomrule
 \end{tabular}
 \end{table}

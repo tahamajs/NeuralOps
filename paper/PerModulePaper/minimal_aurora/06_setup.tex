@@ -37,8 +37,8 @@ GPT-2 & 12 & 768 & 12 & 124.4M \\
 \midrule
 \texttt{energy} $\varepsilon$ & 45.2 \\
 \texttt{rank} (max cap) & 32 \\
-\texttt{lora\_rank} & {{LORA\_RANK}} \\
-\texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
+\texttt{lora\_rank} & 8 \\
+\texttt{lora\_alpha} & 16 \\
 \texttt{dropout} & 0.1 \\
 \bottomrule
 \end{tabular}
@@ -56,8 +56,8 @@ GPT-2 & 12 & 768 & 12 & 124.4M \\
 Optimizer & AdamW \\
 Learning rate & 1e-4 \\
 Weight decay & 0.01 \\
-Steps & {{RECOVERY\_STEPS}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Steps & 50 \\
+Batch size & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}

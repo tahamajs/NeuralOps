@@ -254,7 +254,7 @@ We copy base weights from the pretrained attention:
 \begin{itemize}
 \item \textbf{Q, K, V, O}: copied into \texttt{LoRALinear} modules.
 \item \textbf{$\Omega$ (RFF)}: randomly initialized (no pretrained equivalent).
-\item \textbf{Gate}: zero-weight, bias = {{GATE\_INIT\_BIAS}}.
+\item \textbf{Gate}: zero-weight, bias = 5.0.
 
 \end{itemize}
 Four architectures supported: DistilBERT, RoBERTa (nested), GPT-2 (Conv1D), 

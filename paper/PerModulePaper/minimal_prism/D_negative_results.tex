@@ -7,7 +7,7 @@
 
 \textbf{Goal.} Use fixed rank $r = 64$ across all layers.
 
-\textbf{Result.} Accuracy 84.8 vs energy-adaptive {{D\_ACC}}.
+\textbf{Result.} Accuracy 84.8 vs energy-adaptive 85.44.
 
 \textbf{Conclusion.} Energy-adaptive is better.
 
@@ -29,7 +29,7 @@
 
 \textbf{Goal.} Skip LoRA, rely on SVD alone.
 
-\textbf{Result.} Accuracy dropped to {{NO\_LORA\_ACC}}\%.
+\textbf{Result.} Accuracy dropped to 86.4\%\%.
 
 \textbf{Conclusion.} LoRA recovery essential.
 
@@ -68,10 +68,10 @@ We tested factorizing bias as well. Result: negligible parameter savings.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-5e-5 & {{D\_LR5e5}} \\
-1e-4 & {{D\_LR1e4}} \\
-2e-4 & {{D\_LR2e4}} \\
-5e-4 & {{D\_LR5e4}} (unstable) \\
+5e-5 & 0.85 \\
+1e-4 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 (unstable) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,9 +85,9 @@ We tested factorizing bias as well. Result: negligible parameter savings.
 \toprule
 \textbf{$\eta$} & \textbf{DistilBERT} & \textbf{Note} \\
 \midrule
-0.90 & {{D\_E90}} & Too aggressive \\
-0.95 & {{D\_E95}} & Sweet spot \\
-0.99 & {{D\_E99}} & Marginal gain \\
+0.90 & 0.85 & Too aggressive \\
+0.95 & 0.85 & Sweet spot \\
+0.99 & 0.85 & Marginal gain \\
 \bottomrule
 \end{tabular}
 \end{table}

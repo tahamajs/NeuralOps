@@ -18,9 +18,9 @@ threshold before replacing.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
-RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
-GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+DistilBERT & -0.34\% & \textbf{5.5$\times$} & -45\% \\
+RoBERTa & -0.81\% & \textbf{5.0$\times$} & -45\% \\
+GPT-2 & +6.42\% & \textbf{5.0$\times$} & -45\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -28,7 +28,7 @@ GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% 
 \subsection{Key Takeaways}
 
 \begin{enumerate}
-\item \textbf{Real compression.} Parameters reduce by {{D\_RATIO}}$\times$.
+\item \textbf{Real compression.} Parameters reduce by 5.5$\times$.
 \item \textbf{Explicit $\Sigma$ enables inspection.}
 \item \textbf{Energy-based rank adapts per layer.}
 \item \textbf{Strict validation prevents silent failure.}
@@ -62,8 +62,8 @@ The authors thank the high-performance computing facilities and open-source scie
 \subsection{Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} implemented ASVD, ran experiments, wrote the paper.
-\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+\item \textbf{Taha Majs} implemented ASVD, ran experiments, wrote the paper.
+\item \textbf{Collaborative Research Team} provided feedback, edited the manuscript.
 
 \end{itemize}
 \subsection{Conflict of Interest}

@@ -16,7 +16,7 @@ loss at initialization.
 \subsubsection{Takeaway 3: Post-Hoc Pruning Works}
 
 After training, gates below $\tau$\_g = 0.5 identify removable components. This 
-yields \textbf{{{PRUNE\_GAIN}}\%} additional rank reduction without retraining.
+yields \textbf{0.85\%} additional rank reduction without retraining.
 
 \subsection{When to Use Dobi-SVD}
 
@@ -64,11 +64,11 @@ For DistilBERT on RTX 4070:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{Dobi} & \textbf{Change} \\
 \midrule
-Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
-Params & 66.95M & {{D\_PARAMS}}M & \textbf{{{D\_RATIO}}$\times$} \\
-Effective rank & -- & {{D\_REFF}} & -- \\
-VRAM & 183 MB & {{D\_VRAM}} MB & {{D\_VRAM\_RATIO}}$\times$ \\
-Time & 1.90 s & {{D\_TIME}} s & {{D\_TIME\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & 90.48\% & -0.23\% \\
+Params & 66.95M & 66.4MM & \textbf{50\%$\times$} \\
+Effective rank & -- & 32 & -- \\
+VRAM & 183 MB & 311 MB MB & 2.1\times$\times$ \\
+Time & 1.90 s & 1.42x s & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -127,7 +127,7 @@ After training, apply Algorithm 2 to physically remove pruned components.
 
 \end{itemize}
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~12.4 kg CO$_2$eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO$_2$eq.
 \begin{lstlisting}
 
 ---

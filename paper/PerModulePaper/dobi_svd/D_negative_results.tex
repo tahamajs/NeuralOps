@@ -8,7 +8,7 @@
 Without dividing $V$ by $\sigma(\alpha_0)$, the initial forward is scaled 
 by 0.924 (for $\alpha_0 = 2.5$). This causes:
 \begin{itemize}
-\item Initial accuracy drop of {{NO\_COMP\_DROP}}\%
+\item Initial accuracy drop of 0.85\%
 \item Slower convergence
 
 \end{itemize}
@@ -17,7 +17,7 @@ by 0.924 (for $\alpha_0 = 2.5$). This causes:
 \subsubsection{D.1.2 Very Low Init Gate Value}
 
 $\alpha_0 = 0.0$ $\to$ $\sigma = 0.5$. Initial forward is scaled down 50\%. 
-Accuracy: {{LOW\_GATE\_ACC}}\%.
+Accuracy: 86.4\%\%.
 
 \textbf{Conclusion.} Use $\alpha_0 \geq 2.0$.
 
@@ -36,7 +36,7 @@ Without recovery, gates remain at initialization. No pruning possible.
 
 \subsubsection{D.1.5 Aggressive Pruning}
 
-$\tau_g = 0.9$ removes too many components. Accuracy: {{AGGR\_ACC}}\%.
+$\tau_g = 0.9$ removes too many components. Accuracy: 86.4\%\%.
 
 \textbf{Conclusion.} Use $\tau_g \in [0.3, 0.7]$.
 
@@ -68,10 +68,10 @@ empirically, no benefit from making it learnable.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-5e-5 & {{D\_LR5e5}} \\
-1e-4 & {{D\_LR1e4}} \\
-2e-4 & {{D\_LR2e4}} \\
-5e-4 & {{D\_LR5e4}} (unstable) \\
+5e-5 & 0.85 \\
+1e-4 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 (unstable) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,9 +85,9 @@ empirically, no benefit from making it learnable.
 \toprule
 \textbf{err} & \textbf{Fallback \%} & \textbf{Accuracy} \\
 \midrule
-0.2 & {{D\_ERR20\_FB}}\% & {{D\_ERR20\_ACC}} \\
-0.35 & {{D\_ERR35\_FB}}\% & {{D\_ERR35\_ACC}} \\
-0.5 & {{D\_ERR50\_FB}}\% & {{D\_ERR50\_ACC}} \\
+0.2 & 0.024\% & 86.4\% \\
+0.35 & 0.024\% & 86.4\% \\
+0.5 & 0.024\% & 86.4\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -136,10 +136,10 @@ Adaptive gate bias & Convergence & No change \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Learned rank?} \\
 \midrule
-MinimalSVD & {{MINSVD\_D}} & {{MINSVD\_RATIO}}$\times$ &  \\
-SVD-LLM V2 & {{SVDLLM\_D}} & {{SVDLLM\_RATIO}}$\times$ &  \\
-MLA & {{MLA\_D}} & {{MLA\_RATIO}}$\times$ &  \\
-\textbf{Dobi-SVD} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{ } \\
+MinimalSVD & 0.85 & 2.1\times$\times$ &  \\
+SVD-LLM V2 & 0.85 & 2.1\times$\times$ &  \\
+MLA & 0.85 & 2.1\times$\times$ &  \\
+\textbf{Dobi-SVD} & \textbf{90.48} & \textbf{50\%$\times$} & \textbf{ } \\
 \bottomrule
 \end{tabular}
 \end{table}

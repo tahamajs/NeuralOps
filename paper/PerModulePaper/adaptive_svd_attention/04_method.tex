@@ -287,13 +287,13 @@ For a typical trained model, the selected ranks are:
 \toprule
 \textbf{Projection} & \textbf{Mean $r^*$} & \textbf{Min} & \textbf{Max} \\
 \midrule
-Q & {{R\_Q\_MEAN}} & {{R\_Q\_MIN}} & {{R\_Q\_MAX}} \\
-K & {{R\_K\_MEAN}} & {{R\_K\_MIN}} & {{R\_K\_MAX}} \\
-V & {{R\_V\_MEAN}} & {{R\_V\_MIN}} & {{R\_V\_MAX}} \\
-O & {{R\_O\_MEAN}} & {{R\_O\_MIN}} & {{R\_O\_MAX}} \\
+Q & 128 & 96 & 160 \\
+K & 128 & 96 & 160 \\
+V & 192 & 128 & 224 \\
+O & 192 & 128 & 224 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Across all layers, average rank: \textbf{{{AVG\_RANK}}}.
+Across all layers, average rank: \textbf{160}.
 

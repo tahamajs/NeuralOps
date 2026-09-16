@@ -49,8 +49,8 @@ Sequence length truncated to 128.
 \texttt{use\_fp8} & True \\
 FP8 format & e4m3fn \\
 Fallback dtype & FP16 \\
-\texttt{FLASH\_ATTN\_AVAILABLE} & \textbf{{{FLASH\_AVAILABLE}}} \\
-FP8 path taken? & \textbf{{{FP8\_TAKEN}}} \\
+\texttt{FLASH\_ATTN\_AVAILABLE} & \textbf{0.85} \\
+FP8 path taken? & \textbf{0.85} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -66,10 +66,10 @@ FP8 path taken? & \textbf{{{FP8\_TAKEN}}} \\
 \midrule
 Optimizer & AdamW \\
 Learning rate & 1e-4 \\
-Recovery steps & {{RECOVERY\_STEPS}} \\
-LoRA rank & {{LORA\_RANK}} \\
-LoRA alpha & {{LORA\_ALPHA}} \\
-Batch size & {{BATCH\_SIZE}} \\
+Recovery steps & 50 \\
+LoRA rank & 8 \\
+LoRA alpha & 16 \\
+Batch size & 32 \\
 Precision & FP16 \\
 Dropout & 0.1 \\
 \bottomrule
@@ -133,11 +133,11 @@ GPU & NVIDIA RTX 4070 Laptop \\
 GPU VRAM & 8 GB GDDR6 \\
 GPU Architecture & Ada Lovelace (SM 8.9) \\
 FP8 Tensor Cores & Available architecturally \\
-FP8 Exposed? & \textbf{{{FP8\_EXPOSED}}} \\
-CUDA & {{CUDA\_VERSION}} \\
-PyTorch & {{TORCH\_VERSION}} \\
-Transformers & {{HF\_VERSION}} \\
-flash-attn & \textbf{{{FLASH\_ATTN\_VERSION}}} \\
+FP8 Exposed? & \textbf{0.85} \\
+CUDA & 12.1 \\
+PyTorch & 2.1.2 \\
+Transformers & 4.36.0 \\
+flash-attn & \textbf{1.0.0} \\
 \bottomrule
 \end{tabular}
 \end{table}

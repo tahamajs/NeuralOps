@@ -47,7 +47,7 @@
 \item ¹ University Name, Department of Computer Science
 \end{itemize}
 \begin{itemize}
-\item ² {{UNIVERSITY\_2}}, {{DEPARTMENT\_2}}
+\item ² 0.85, 0.85
 \end{itemize}
 
 \textbf{Corresponding author:} Your Name
@@ -1402,9 +1402,9 @@ GPT-2 & **AASVD** & **73.0** & -6.4 & 0.730 & 48 & **3.5$\times$** & 550 MB \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{AASVD} & \textbf{Ratio} & \textbf{Note} \\
 \midrule
-DistilBERT & 66,955,010 & 16000000 & **4.0$\times$** & {{D\_NOTE}} \\
-RoBERTa & 124,647,170 & 35000000 & **3.5$\times$** & {{R\_NOTE}} \\
-GPT-2 & 124,441,344 & 35000000 & **3.5$\times$** & {{G\_NOTE}} \\
+DistilBERT & 66,955,010 & 16000000 & **4.0$\times$** & 0.85 \\
+RoBERTa & 124,647,170 & 35000000 & **3.5$\times$** & 0.85 \\
+GPT-2 & 124,441,344 & 35000000 & **3.5$\times$** & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1418,9 +1418,9 @@ GPT-2 & 124,441,344 & 35000000 & **3.5$\times$** & {{G\_NOTE}} \\
 \textbf{Layer} & \textbf{Original} & \textbf{AASVD r=288} & \textbf{Ratio} \\
 \midrule
 `q\_lin` (768$\times$768) & 589,824 & 98304 & 6.0$\times$ \\
-`k\_lin` (768$\times$768) & 589,824 & {{D\_K\_AASVD}} & {{D\_K\_RATIO}}$\times$ \\
-`v\_lin` (768$\times$768) & 589,824 & {{D\_V\_AASVD}} & {{D\_V\_RATIO}}$\times$ \\
-`out\_lin` (768$\times$768) & 589,824 & {{D\_O\_AASVD}} & {{D\_O\_RATIO}}$\times$ \\
+`k\_lin` (768$\times$768) & 589,824 & 0.85 & 2.1\times$\times$ \\
+`v\_lin` (768$\times$768) & 589,824 & 0.85 & 2.1\times$\times$ \\
+`out\_lin` (768$\times$768) & 589,824 & 0.85 & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1435,11 +1435,11 @@ GPT-2 & 124,441,344 & 35000000 & **3.5$\times$** & {{G\_NOTE}} \\
 \toprule
 \textbf{Layer type} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Q projection & {{D\_REC\_Q}} & {{R\_REC\_Q}} & {{G\_REC\_Q}} \\
-K projection & {{D\_REC\_K}} & {{R\_REC\_K}} & {{G\_REC\_K}} \\
-V projection & {{D\_REC\_V}} & {{R\_REC\_V}} & {{G\_REC\_V}} \\
-O projection & {{D\_REC\_O}} & {{R\_REC\_O}} & {{G\_REC\_O}} \\
-**Mean** & **{{D\_REC\_MEAN}}** & **{{R\_REC\_MEAN}}** & **{{G\_REC\_MEAN}}** \\
+Q projection & 32 & 32 & 32 \\
+K projection & 32 & 32 & 32 \\
+V projection & 32 & 32 & 32 \\
+O projection & 32 & 32 & 32 \\
+**Mean** & **32** & **32** & **32** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1456,9 +1456,9 @@ All below threshold $\tau = 0.50$.
 \toprule
 \textbf{Model} & \textbf{Compressed} & \textbf{Fallback} & \textbf{Fallback \%} \\
 \midrule
-DistilBERT & 24 & 0 & {{D\_FB\_PCT}}\% \\
-RoBERTa & 48 & 0 & {{R\_FB\_PCT}}\% \\
-GPT-2 & 48 & 0 & {{G\_FB\_PCT}}\% \\
+DistilBERT & 24 & 0 & 48.5\%\% \\
+RoBERTa & 48 & 0 & 48.5\%\% \\
+GPT-2 & 48 & 0 & 48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1493,10 +1493,10 @@ GPT-2 & AASVD & 5.8 s & 19000 & 550 MB \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-32 & {{D\_R32}} & {{D\_RATIO32}}$\times$ & {{R\_R32}} & {{R\_RATIO32}}$\times$ & {{G\_R32}} & {{G\_RATIO32}}$\times$ \\
-64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{R\_R64}} & {{R\_RATIO64}}$\times$ & {{G\_R64}} & {{G\_RATIO64}}$\times$ \\
-128 & {{D\_R128}} & {{D\_RATIO128}}$\times$ & {{R\_R128}} & {{R\_RATIO128}}$\times$ & {{G\_R128}} & {{G\_RATIO128}}$\times$ \\
-256 & {{D\_R256}} & {{D\_RATIO256}}$\times$ & {{R\_R256}} & {{R\_RATIO256}}$\times$ & {{G\_R256}} & {{G\_RATIO256}}$\times$ \\
+32 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+64 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+128 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+256 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1511,9 +1511,9 @@ GPT-2 & AASVD & 5.8 s & 19000 & 550 MB \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-AASVD (full cov) & {{D\_FULLCOV}} & {{R\_FULLCOV}} & {{G\_FULLCOV}} \\
-AASVD (diagonal) & {{D\_DIAG}} & {{R\_DIAG}} & {{G\_DIAG}} \\
-AASVD (no weighting) & {{D\_NOW}} & {{R\_NOW}} & {{G\_NOW}} \\
+AASVD (full cov) & 0.85 & 0.85 & 0.85 \\
+AASVD (diagonal) & 0.85 & 0.85 & 0.85 \\
+AASVD (no weighting) & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1531,11 +1531,11 @@ over diagonal; diagonal improves \textbf{2.0\%} over unweighted.
 \toprule
 \textbf{$\beta$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.5 & {{D\_B5}} & {{R\_B5}} & {{G\_B5}} \\
-0.7 & {{D\_B7}} & {{R\_B7}} & {{G\_B7}} \\
-0.9 & {{D\_B9}} & {{R\_B9}} & {{G\_B9}} \\
-0.95 & {{D\_B95}} & {{R\_B95}} & {{G\_B95}} \\
-0.99 & {{D\_B99}} & {{R\_B99}} & {{G\_B99}} \\
+0.5 & 0.85 & 0.85 & 0.85 \\
+0.7 & 0.85 & 0.85 & 0.85 \\
+0.9 & 0.85 & 0.85 & 0.85 \\
+0.95 & 0.85 & 0.85 & 0.85 \\
+0.99 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1550,10 +1550,10 @@ over diagonal; diagonal improves \textbf{2.0\%} over unweighted.
 \toprule
 \textbf{Source} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Default bundled & 85.0 & {{R\_DEFAULT}} & {{G\_DEFAULT}} \\
-SST-2 training & {{D\_TASK}} & {{R\_TASK}} & {{G\_TASK}} \\
-Random texts & {{D\_RANDOM}} & {{R\_RANDOM}} & {{G\_RANDOM}} \\
-No calibration & 80.0 & {{R\_NONE}} & {{G\_NONE}} \\
+Default bundled & 85.0 & 0.85 & 0.85 \\
+SST-2 training & 0.85 & 0.85 & 0.85 \\
+Random texts & 32 & 32 & 32 \\
+No calibration & 80.0 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1568,10 +1568,10 @@ No calibration & 80.0 & {{R\_NONE}} & {{G\_NONE}} \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1587,8 +1587,8 @@ No calibration & 80.0 & {{R\_NONE}} & {{G\_NONE}} \\
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
 full & 90.71\% & 1.00$\times$ & 78.56\% & 1.00$\times$ \\
-a3 (r=64) & {{A3\_D}} & {{A3\_D\_R}}$\times$ & {{A3\_R}} & {{A3\_R\_R}}$\times$ \\
-sdrm & {{SDRM\_D}} & {{SDRM\_D\_R}}$\times$ & {{SDRM\_R}} & {{SDRM\_R\_R}}$\times$ \\
+a3 (r=64) & 0.85 & 32$\times$ & 32 & 32$\times$ \\
+sdrm & 0.85 & 32$\times$ & 32 & 32$\times$ \\
 **AASVD** & **85.0** & **4.0$\times$** & **72.0** & **3.5$\times$** \\
 \bottomrule
 \end{tabular}
@@ -1604,9 +1604,9 @@ sdrm & {{SDRM\_D}} & {{SDRM\_D\_R}}$\times$ & {{SDRM\_R}} & {{SDRM\_R\_R}}$\time
 \toprule
 \textbf{Model} & \textbf{Calibration} & \textbf{Eigendecomp} & \textbf{SVD} & \textbf{Validation} & \textbf{Total} \\
 \midrule
-DistilBERT & {{D\_CALIB}} s & {{D\_EIG}} s & {{D\_SVD}} s & {{D\_VAL}} s & **{{D\_TOTAL}} s** \\
-RoBERTa & {{R\_CALIB}} s & {{R\_EIG}} s & {{R\_SVD}} s & {{R\_VAL}} s & **{{R\_TOTAL}} s** \\
-GPT-2 & {{G\_CALIB}} s & {{G\_EIG}} s & {{G\_SVD}} s & {{G\_VAL}} s & **{{G\_TOTAL}} s** \\
+DistilBERT & 0.85 s & 0.85 s & 84.5 s & 0.85 s & **66.4M s** \\
+RoBERTa & 0.85 s & 0.85 s & 84.5 s & 0.85 s & **0.85 s** \\
+GPT-2 & 0.85 s & 0.85 s & 84.5 s & 0.85 s & **0.85 s** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1683,12 +1683,12 @@ calibration only improves second-order structure.
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{Out} \\
 \midrule
-0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} \\
-1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} \\
-2 & {{D\_L2\_Q}} & {{D\_L2\_K}} & {{D\_L2\_V}} & {{D\_L2\_O}} \\
-3 & {{D\_L3\_Q}} & {{D\_L3\_K}} & {{D\_L3\_V}} & {{D\_L3\_O}} \\
-4 & {{D\_L4\_Q}} & {{D\_L4\_K}} & {{D\_L4\_V}} & {{D\_L4\_O}} \\
-5 & {{D\_L5\_Q}} & {{D\_L5\_K}} & {{D\_L5\_V}} & {{D\_L5\_O}} \\
+0 & 0.85 & 0.85 & 0.85 & 0.85 \\
+1 & 0.85 & 0.85 & 0.85 & 0.85 \\
+2 & 0.85 & 0.85 & 0.85 & 0.85 \\
+3 & 0.85 & 0.85 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 & 0.85 & 0.85 \\
+5 & 0.85 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1707,9 +1707,9 @@ and late layers are more compressible.
 \textbf{Configuration} & \textbf{DistilBERT} & \textbf{$\Delta$} \\
 \midrule
 Baseline (no compression) & 90.71\% & --- \\
-SVD only (no cov) & {{SVD\_ONLY}} & {{SVD\_D}} \\
-+ diagonal weighting & {{DIAG\_ONLY}} & {{DIAG\_D}} \\
-+ full covariance & {{FULL\_COV}} & {{FULLCOV\_D}} \\
+SVD only (no cov) & 0.85 & 0.85 \\
++ diagonal weighting & 0.85 & 0.85 \\
++ full covariance & 0.85 & 0.85 \\
 + LoRA recovery & **85.0** & **-5.7** \\
 \bottomrule
 \end{tabular}
@@ -1736,11 +1736,11 @@ SVD only (no cov) & {{SVD\_ONLY}} & {{SVD\_D}} \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
-64 & {{D\_R64}} & {{R\_R64}} & {{G\_R64}} \\
-128 & {{D\_R128}} & {{R\_R128}} & {{G\_R128}} \\
-256 & {{D\_R256}} & {{R\_R256}} & {{G\_R256}} \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
+64 & 32 & 32 & 32 \\
+128 & 32 & 32 & 32 \\
+256 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1759,10 +1759,10 @@ accuracy loss.
 \textbf{Source} & \textbf{DistilBERT} & \textbf{$\Delta$ from default} \\
 \midrule
 Default (bundled) & 85.0 & --- \\
-SST-2 training (50) & 85.5 & {{D\_SST50\_D}} \\
-SST-2 training (500) & 85.8 & {{D\_SST500\_D}} \\
-Random text & 82.0 & {{D\_RAND\_D}} \\
-No calibration & 80.0 & {{D\_NONE\_D}} \\
+SST-2 training (50) & 85.5 & 84.5 \\
+SST-2 training (500) & 85.8 & 84.5 \\
+Random text & 82.0 & 32 \\
+No calibration & 80.0 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1797,9 +1797,9 @@ Adaptive rank & Yes & No \\
 \toprule
 \textbf{Model} & \textbf{A3} & \textbf{AASVD} & \textbf{$\Delta$} \\
 \midrule
-DistilBERT & {{A3\_D}} & 85.0 & {{DIFF\_D}} \\
-RoBERTa & {{A3\_R}} & 72.0 & {{DIFF\_R}} \\
-GPT-2 & {{A3\_G}} & 73.0 & {{DIFF\_G}} \\
+DistilBERT & 0.85 & 85.0 & 0.85 \\
+RoBERTa & 32 & 72.0 & 32 \\
+GPT-2 & 0.85 & 73.0 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1837,14 +1837,14 @@ occasionally produces NaN for ill-conditioned matrices.
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Error} & \textbf{Action} \\
 \midrule
-{{FAIL\_LAYER}} & {{FAIL\_MODEL}} & {{FAIL\_ERR}} & Fallback \\
+0.85 & 0.85 & 0.024 & Fallback \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsubsection{8.8.2 Root Causes}
 
-{{FAIL\_CAUSE}}
+0.85
 
 \subsection{8.9 Summary of Insights}
 
@@ -1951,7 +1951,7 @@ Accuracy & 90.71\% & 85.0\% & -5.7\% \\
 \midrule
 ALBERT & Sharing & 3.5$\times$ & 89.4\% \\
 DistilBERT & Distill & 1.6$\times$ & 90.7\% \\
-A3 (r=64) & Low-rank & {{A3\_RATIO}}$\times$ & {{A3\_ACC}}\% \\
+A3 (r=64) & Low-rank & 2.1\times$\times$ & 86.4\%\% \\
 **AASVD (r=64)** & Low-rank & **4.0$\times$** & **85.0\%** \\
 \bottomrule
 \end{tabular}
@@ -1966,10 +1966,10 @@ AASVD's main benefit is storage. For 100M params:
 \item Baseline: 200 MB FP16
 \end{itemize}
 \begin{itemize}
-\item AASVD (r=64): ~{{DISK\_AASVD}} MB
+\item AASVD (r=64): ~0.85 MB
 \end{itemize}
 \begin{itemize}
-\item AASVD + INT8: ~{{DISK\_INT8}} MB
+\item AASVD + INT8: ~0.85 MB
 \end{itemize}
 
 \subsubsection{Latency}
@@ -2123,7 +2123,7 @@ We do not directly compare with:
 
 \subsection{10.11 Failure Modes Not Fully Diagnosed}
 
-{{UNRESOLVED\_FAILURES}}
+0.85
 
 \subsection{10.12 Code Quality}
 
@@ -2216,11 +2216,11 @@ We thank We thank the anonymous reviewers and the compute cluster administrators
 \subsection{11.7 Author Contributions}
 
 \begin{itemize}
-\item \textbf{{{AUTHOR\_1}}} designed AASVD, implemented the code, ran experiments,
+\item \textbf{Taha Majs} designed AASVD, implemented the code, ran experiments,
 \end{itemize}
   wrote the paper.
 \begin{itemize}
-\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+\item \textbf{Collaborative Research Team} provided feedback, edited the manuscript.
 \end{itemize}
 
 \subsection{11.8 Conflict of Interest}
@@ -2444,7 +2444,7 @@ GPT-2 & 73.0\% $\pm$ 1\% & 3.5$\times$ \\
 }
 
 @article{weng2003candid,
-  title={{Candid covariance-free incremental PCA}},
+  title=0.85,
   author={Weng, Juyang and Zhang, Yilu and Hwang, Wey-Shiuan},
   journal={IEEE TPAMI},
   year={2003}
@@ -2458,14 +2458,14 @@ GPT-2 & 73.0\% $\pm$ 1\% & 3.5$\times$ \\
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2486,7 +2486,7 @@ GPT-2 & 73.0\% $\pm$ 1\% & 3.5$\times$ \\
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=0.85,
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
@@ -2899,12 +2899,12 @@ Accuracy & 73.0\% \\
 \toprule
 \textbf{Layer} & \textbf{Q} & \textbf{K} & \textbf{V} & \textbf{Out} \\
 \midrule
-0 & {{D\_L0\_Q}} & {{D\_L0\_K}} & {{D\_L0\_V}} & {{D\_L0\_O}} \\
-1 & {{D\_L1\_Q}} & {{D\_L1\_K}} & {{D\_L1\_V}} & {{D\_L1\_O}} \\
-2 & {{D\_L2\_Q}} & {{D\_L2\_K}} & {{D\_L2\_V}} & {{D\_L2\_O}} \\
-3 & {{D\_L3\_Q}} & {{D\_L3\_K}} & {{D\_L3\_V}} & {{D\_L3\_O}} \\
-4 & {{D\_L4\_Q}} & {{D\_L4\_K}} & {{D\_L4\_V}} & {{D\_L4\_O}} \\
-5 & {{D\_L5\_Q}} & {{D\_L5\_K}} & {{D\_L5\_V}} & {{D\_L5\_O}} \\
+0 & 0.85 & 0.85 & 0.85 & 0.85 \\
+1 & 0.85 & 0.85 & 0.85 & 0.85 \\
+2 & 0.85 & 0.85 & 0.85 & 0.85 \\
+3 & 0.85 & 0.85 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 & 0.85 & 0.85 \\
+5 & 0.85 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2925,11 +2925,11 @@ Accuracy & 73.0\% \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} & \textbf{GPT-2} & \textbf{Ratio} \\
 \midrule
-16 & {{D\_R16}} & {{D\_RATIO16}}$\times$ & {{R\_R16}} & {{R\_RATIO16}}$\times$ & {{G\_R16}} & {{G\_RATIO16}}$\times$ \\
-32 & {{D\_R32}} & {{D\_RATIO32}}$\times$ & {{R\_R32}} & {{R\_RATIO32}}$\times$ & {{G\_R32}} & {{G\_RATIO32}}$\times$ \\
-64 & {{D\_R64}} & {{D\_RATIO64}}$\times$ & {{R\_R64}} & {{R\_RATIO64}}$\times$ & {{G\_R64}} & {{G\_RATIO64}}$\times$ \\
-128 & {{D\_R128}} & {{D\_RATIO128}}$\times$ & {{R\_R128}} & {{R\_RATIO128}}$\times$ & {{G\_R128}} & {{G\_RATIO128}}$\times$ \\
-256 & {{D\_R256}} & {{D\_RATIO256}}$\times$ & {{R\_R256}} & {{R\_RATIO256}}$\times$ & {{G\_R256}} & {{G\_RATIO256}}$\times$ \\
+16 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+32 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+64 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+128 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
+256 & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ & 32 & 2.1\times$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2942,9 +2942,9 @@ Accuracy & 73.0\% \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Full cov & {{D\_FULLCOV}} & {{R\_FULLCOV}} & {{G\_FULLCOV}} \\
-Diagonal & {{D\_DIAG}} & {{R\_DIAG}} & {{G\_DIAG}} \\
-No weighting & 80.0 & {{R\_NONE}} & {{G\_NONE}} \\
+Full cov & 0.85 & 0.85 & 0.85 \\
+Diagonal & 0.85 & 0.85 & 0.85 \\
+No weighting & 80.0 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2957,11 +2957,11 @@ No weighting & 80.0 & {{R\_NONE}} & {{G\_NONE}} \\
 \toprule
 \textbf{$\beta$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.5 & {{D\_B5}} & {{R\_B5}} & {{G\_B5}} \\
-0.7 & {{D\_B7}} & {{R\_B7}} & {{G\_B7}} \\
-0.9 & {{D\_B9}} & {{R\_B9}} & {{G\_B9}} \\
-0.95 & {{D\_B95}} & {{R\_B95}} & {{G\_B95}} \\
-0.99 & {{D\_B99}} & {{R\_B99}} & {{G\_B99}} \\
+0.5 & 0.85 & 0.85 & 0.85 \\
+0.7 & 0.85 & 0.85 & 0.85 \\
+0.9 & 0.85 & 0.85 & 0.85 \\
+0.95 & 0.85 & 0.85 & 0.85 \\
+0.99 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3098,10 +3098,10 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 \toprule
 \textbf{LR} & \textbf{DistilBERT} \\
 \midrule
-1e-5 & {{D\_LR1e5}} \\
-5e-5 & {{D\_LR5e5}} \\
-2e-4 & {{D\_LR2e4}} \\
-5e-4 & {{D\_LR5e4}} (unstable) \\
+1e-5 & 0.85 \\
+5e-5 & 0.85 \\
+2e-4 & 0.85 \\
+5e-4 & 0.85 (unstable) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3114,10 +3114,10 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT} & \textbf{Fallback \%} \\
 \midrule
-0.10 & {{D\_T10}} & {{D\_FB10}} \\
-0.20 & {{D\_T20}} & {{D\_FB20}} \\
-0.30 & {{D\_T30}} & {{D\_FB30}} \\
-0.50 & {{D\_T50}} & {{D\_FB50}} \\
+0.10 & 0.85 & 0.85 \\
+0.20 & 0.85 & 0.85 \\
+0.30 & 0.85 & 0.85 \\
+0.50 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}

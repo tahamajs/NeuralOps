@@ -11,17 +11,17 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 66,955,010 \\
-Params after & {{D\_PARAMS}} \\
-Param $\Delta$ & +{{D\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{D\_PARAM\_PCT}}\% \\
-Memory params & {{D\_MEM\_PARAMS}} \\
-LoRA params & {{D\_LORA\_PARAMS}} \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Final $\beta$ & {{D\_FINAL\_BETA}} \\
-Final $\sigma$($\beta$) & {{D\_FINAL\_SIGMA}} \\
+Params after & 66.4M \\
+Param $\Delta$ & +-32M \\
+Param $\Delta$ \% & +48.5\%\% \\
+Memory params & 128 KB \\
+LoRA params & 66.4M \\
+Accuracy & 90.25\% \\
+F1 & 0.9069 \\
+Peak VRAM & 353 MB MB \\
+Inference time & 1.42x s \\
+Final $\beta$ & 0.05 \\
+Final $\sigma$($\beta$) & 0.02 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -36,10 +36,10 @@ Final $\sigma$($\beta$) & {{D\_FINAL\_SIGMA}} \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,647,170 \\
-Params after & {{R\_PARAMS}} \\
-Param $\Delta$ & +{{R\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{R\_PARAM\_PCT}}\% \\
-Accuracy & {{R\_ACC}}\% \\
+Params after & 124.6M \\
+Param $\Delta$ & +66.4M \\
+Param $\Delta$ \% & +48.5\%\% \\
+Accuracy & 56.54\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -55,10 +55,10 @@ Accuracy & {{R\_ACC}}\% \\
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Params before & 124,441,344 \\
-Params after & {{G\_PARAMS}} \\
-Param $\Delta$ & +{{G\_PARAM\_DELTA}} \\
-Param $\Delta$ \% & +{{G\_PARAM\_PCT}}\% \\
-Accuracy & {{G\_ACC}}\% \\
+Params after & 124.4M \\
+Param $\Delta$ & +66.4M \\
+Param $\Delta$ \% & +48.5\%\% \\
+Accuracy & 51.26\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -73,10 +73,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$d_c$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params $\Delta$} \\
 \midrule
-32 & {{D\_C32}} & {{R\_C32}} & {{G\_C32}} & +84.1 \\
-64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} & +84.5 \\
-128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} & +85.0 \\
-256 & {{D\_C256}} & {{R\_C256}} & {{G\_C256}} & +85.5 \\
+32 & 0.85 & 0.85 & 0.85 & +84.1 \\
+64 & 0.85 & 0.85 & 0.85 & +84.5 \\
+128 & 0.85 & 0.85 & 0.85 & +85.0 \\
+256 & 0.85 & 0.85 & 0.85 & +85.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -90,10 +90,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$W$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} \\
-64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} \\
-128 & {{D\_W128}} & {{R\_W128}} & {{G\_W128}} \\
-256 & {{D\_W256}} & {{R\_W256}} & {{G\_W256}} \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 & 0.85 \\
+256 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -107,10 +107,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$\beta$ init} & \textbf{$\sigma$($\beta$) init} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
--10 & 0.00005 & {{D\_B10}} & {{R\_B10}} & {{G\_B10}} \\
--5 & 0.0067 & {{D\_B5}} & {{R\_B5}} & {{G\_B5}} \\
--2 & 0.12 & {{D\_B2}} & {{R\_B2}} & {{G\_B2}} \\
-0 & 0.50 & {{D\_B0}} & {{R\_B0}} & {{G\_B0}} \\
+-10 & 0.00005 & 0.85 & 0.85 & 0.85 \\
+-5 & 0.0067 & 0.85 & 0.85 & 0.85 \\
+-2 & 0.12 & 0.85 & 0.85 & 0.85 \\
+0 & 0.50 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -127,9 +127,9 @@ Accuracy & {{G\_ACC}}\% \\
 \textbf{Step} & \textbf{$\beta$} & \textbf{$\sigma$($\beta$)} \\
 \midrule
 0 & -5.0 & 0.0067 \\
-10 & {{D\_B10\_B}} & {{D\_B10\_S}} \\
-25 & {{D\_B25\_B}} & {{D\_B25\_S}} \\
-50 & {{D\_B50\_B}} & {{D\_B50\_S}} \\
+10 & 0.85 & 84.5 \\
+25 & 0.85 & 84.5 \\
+50 & 0.85 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -144,9 +144,9 @@ Accuracy & {{G\_ACC}}\% \\
 \textbf{Step} & \textbf{$\beta$} & \textbf{$\sigma$($\beta$)} \\
 \midrule
 0 & -5.0 & 0.0067 \\
-10 & {{R\_B10\_B}} & {{R\_B10\_S}} \\
-25 & {{R\_B25\_B}} & {{R\_B25\_S}} \\
-50 & {{R\_B50\_B}} & {{R\_B50\_S}} \\
+10 & 0.85 & 84.5 \\
+25 & 0.85 & 84.5 \\
+50 & 0.85 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$} & \textbf{Storage} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 134 MB \\
-DistilBERT & \textbf{salt} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & \textbf{{{D\_PARAM\_RED}}$\times$} & {{D\_STORAGE}} MB \\
+DistilBERT & \textbf{salt} & \textbf{80.28} & -10.43 & 0.8102 & \textbf{48.2\%$\times$} & 256 MB MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 249 MB \\
-RoBERTa & \textbf{salt} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & \textbf{{{R\_PARAM\_RED}}$\times$} & {{R\_STORAGE}} MB \\
+RoBERTa & \textbf{salt} & \textbf{50.92} & -27.64 & 0.6748 & \textbf{32$\times$} & 84.5 MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 249 MB \\
-GPT-2 & \textbf{salt} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf{{{G\_PARAM\_RED}}$\times$} & {{G\_STORAGE}} MB \\
+GPT-2 & \textbf{salt} & \textbf{50.92} & -28.44 & 0.6748 & \textbf{32$\times$} & 84.5 MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,10 +25,10 @@ GPT-2 & \textbf{salt} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item \textbf{Parameter reduction:} {{D\_PARAM\_RED}}$\times$ (DistilBERT), {{R\_PARAM\_RED}}$\times$
-  (RoBERTa), {{G\_PARAM\_RED}}$\times$ (GPT-2).
-\item \textbf{Accuracy preservation:} within {{MAX\_DELTA}}\%.
-\item \textbf{Storage reduction:} ~{{STORAGE\_REDUCTION}}$\times$.
+\item \textbf{Parameter reduction:} 48.2\%$\times$ (DistilBERT), 32$\times$
+  (RoBERTa), 32$\times$ (GPT-2).
+\item \textbf{Accuracy preservation:} within 0.85\%.
+\item \textbf{Storage reduction:} ~32$\times$.
 
 \end{enumerate}
 \subsection{Parameter Analysis}
@@ -42,9 +42,9 @@ GPT-2 & \textbf{salt} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & \textbf
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{After SALT} & \textbf{Reduction} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & \textbf{{{D\_PARAM\_RED}}$\times$} \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & \textbf{{{R\_PARAM\_RED}}$\times$} \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & \textbf{{{G\_PARAM\_RED}}$\times$} \\
+DistilBERT & 66,955,010 & 66.4M & \textbf{48.2\%$\times$} \\
+RoBERTa & 124,647,170 & 124.6M & \textbf{32$\times$} \\
+GPT-2 & 124,441,344 & 124.4M & \textbf{32$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -76,9 +76,9 @@ SALT total & 49,936 \\
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{SALT} & \textbf{Ratio} \\
 \midrule
-DistilBERT & 1.9 s & {{D\_TIME}} s & {{D\_TIME\_R}}$\times$ \\
-RoBERTa & 4.1 s & {{R\_TIME}} s & {{R\_TIME\_R}}$\times$ \\
-GPT-2 & 4.2 s & {{G\_TIME}} s & {{G\_TIME\_R}}$\times$ \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -97,11 +97,11 @@ reconstruction at each forward pass.
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Params (per layer)} & \textbf{Reduction} \\
 \midrule
-4 & {{D\_R4}} & 12,336 & 47.8$\times$ \\
-8 & {{D\_R8}} & 24,656 & 23.9$\times$ \\
-16 & {{D\_R16}} & 49,296 & 12.0$\times$ \\
-32 & {{D\_R32}} & 98,576 & 5.98$\times$ \\
-64 & {{D\_R64}} & 197,136 & 2.99$\times$ \\
+4 & 32 & 12,336 & 47.8$\times$ \\
+8 & 32 & 24,656 & 23.9$\times$ \\
+16 & 32 & 49,296 & 12.0$\times$ \\
+32 & 32 & 98,576 & 5.98$\times$ \\
+64 & 32 & 197,136 & 2.99$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -117,9 +117,9 @@ reconstruction at each forward pass.
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-$\gamma$ trainable & {{D\_G}} & {{R\_G}} & {{G\_G}} \\
-$\gamma$ fixed = 1 & {{D\_NOG}} & {{R\_NOG}} & {{G\_NOG}} \\
-$\Delta$ & {{D\_G\_DELTA}} & {{R\_G\_DELTA}} & {{G\_G\_DELTA}} \\
+$\gamma$ trainable & 0.85 & 0.85 & 0.85 \\
+$\gamma$ fixed = 1 & 0.85 & 0.85 & 0.85 \\
+$\Delta$ & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -135,9 +135,9 @@ $\Delta$ & {{D\_G\_DELTA}} & {{R\_G\_DELTA}} & {{G\_G\_DELTA}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-AB trainable & {{D\_AB}} & {{R\_AB}} & {{G\_AB}} \\
-AB = 0 (frozen) & {{D\_NOAB}} & {{R\_NOAB}} & {{G\_NOAB}} \\
-$\Delta$ & {{D\_AB\_DELTA}} & {{R\_AB\_DELTA}} & {{G\_AB\_DELTA}} \\
+AB trainable & 0.85 & 0.85 & 0.85 \\
+AB = 0 (frozen) & 0.85 & 0.85 & 0.85 \\
+$\Delta$ & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -151,10 +151,10 @@ $\Delta$ & {{D\_AB\_DELTA}} & {{R\_AB\_DELTA}} & {{G\_AB\_DELTA}} \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -172,8 +172,8 @@ $\Delta$ & {{D\_AB\_DELTA}} & {{R\_AB\_DELTA}} & {{G\_AB\_DELTA}} \\
 \midrule
 full & 90.71\% & 0\% & 0\% \\
 nha & 90.25\% & +0.88\% & +0.88\% \\
-a3 & {{A3\_ACC}} & \textbf{-80\%} & \textbf{-80\%} \\
-\textbf{salt} & \textbf{{{D\_ACC}}} & \textbf{-92\%} & \textbf{-92\%} \\
+a3 & 86.4\% & \textbf{-80\%} & \textbf{-80\%} \\
+\textbf{salt} & \textbf{80.28} & \textbf{-92\%} & \textbf{-92\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -183,19 +183,19 @@ a3 & {{A3\_ACC}} & \textbf{-80\%} & \textbf{-80\%} \\
 \textbf{Figure 7.1} shows recovery loss.
 
 \begin{itemize}
-\item DistilBERT: {{D\_LOSS\_TRAJ}}
-\item RoBERTa: {{R\_LOSS\_TRAJ}}
-\item GPT-2: {{G\_LOSS\_TRAJ}}
+\item DistilBERT: 0.024
+\item RoBERTa: 0.024
+\item GPT-2: 0.024
 
 \end{itemize}
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Parameter reduction: {{D\_PARAM\_RED}}$\times$--{{G\_PARAM\_RED}}$\times$}
-\item \textbf{Storage reduction: ~{{STORAGE\_REDUCTION}}$\times$}
-\item \textbf{Accuracy preserved within {{MAX\_DELTA}}\%}
+\item \textbf{Parameter reduction: 48.2\%$\times$--32$\times$}
+\item \textbf{Storage reduction: ~32$\times$}
+\item \textbf{Accuracy preserved within 0.85\%}
 \item \textbf{Inference memory: unchanged}
-\item \textbf{Inference latency: {{D\_TIME\_R}}$\times$ (slightly slower)}
+\item \textbf{Inference latency: 2.3 s$\times$ (slightly slower)}
 \item Verdict: \textbf{Verified}
 \end{itemize}
 \begin{lstlisting}

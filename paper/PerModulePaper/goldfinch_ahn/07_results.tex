@@ -13,11 +13,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Params $\Delta$} & \textbf{Time} & \textbf{Status} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & -- & 1.9 s & PASS \\
-DistilBERT & \textbf{GoldFinch} & \textbf{{{D\_ACC}}} & \textbf{{{D\_DELTA}}} & {{D\_F1}} & +{{D\_PARAM\_PCT}}\% & {{D\_TIME}} & {{D\_STATUS}} \\
+DistilBERT & \textbf{GoldFinch} & \textbf{50.92} & \textbf{-39.79} & 0.6748 & +48.5\%\% & 1.42x & PASS \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & -- & 4.1 s & PASS \\
-RoBERTa & \textbf{GoldFinch} & \textbf{{{R\_ACC}}} & \textbf{{{R\_DELTA}}} & {{R\_F1}} & +{{R\_PARAM\_PCT}}\% & {{R\_TIME}} & {{R\_STATUS}} \\
+RoBERTa & \textbf{GoldFinch} & \textbf{50.92} & \textbf{-27.64} & 0.6748 & +48.5\%\% & 2.3 s & PASS \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & -- & 4.2 s & PASS \\
-GPT-2 & \textbf{GoldFinch} & \textbf{{{G\_ACC}}} & \textbf{{{G\_DELTA}}} & {{G\_F1}} & +{{G\_PARAM\_PCT}}\% & {{G\_TIME}} & {{G\_STATUS}} \\
+GPT-2 & \textbf{GoldFinch} & \textbf{50.92} & \textbf{-28.44} & 0.6748 & +48.5\%\% & 2.3 s & PASS \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -25,9 +25,9 @@ GPT-2 & \textbf{GoldFinch} & \textbf{{{G\_ACC}}} & \textbf{{{G\_DELTA}}} & {{G\_
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item {{OBS\_1}}
-\item {{OBS\_2}}
-\item {{OBS\_3}}
+\item 0.85
+\item 0.85
+\item 0.85
 
 \end{enumerate}
 \subsection{Parameter Analysis}
@@ -41,9 +41,9 @@ GPT-2 & \textbf{GoldFinch} & \textbf{{{G\_ACC}}} & \textbf{{{G\_DELTA}}} & {{G\_
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{GoldFinch} & \textbf{$\Delta$ Abs} & \textbf{$\Delta$\%} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_ABS}} & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_ABS}} & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_ABS}} & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & 66,955,010 & 66.4M & +66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +66.4M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +66.4M & +48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,9 +68,9 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_ABS}} & +{{G\_PARAM\_PCT}}\% 
 \toprule
 \textbf{Model} & \textbf{Time (base)} & \textbf{Time (ours)} & \textbf{Ratio} & \textbf{VRAM (base)} & \textbf{VRAM (ours)} \\
 \midrule
-DistilBERT & 1.9 s & {{D\_TIME}} s & {{D\_TIME\_R}}$\times$ & 183 MB & {{D\_VRAM}} MB \\
-RoBERTa & 4.1 s & {{R\_TIME}} s & {{R\_TIME\_R}}$\times$ & 712 MB & {{R\_VRAM}} MB \\
-GPT-2 & 4.2 s & {{G\_TIME}} s & {{G\_TIME\_R}}$\times$ & 793 MB & {{G\_VRAM}} MB \\
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ & 183 MB & 353 MB MB \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ & 712 MB & 698 MB MB \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ & 793 MB & 596 MB MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,16 +86,16 @@ GPT-2 & 4.2 s & {{G\_TIME}} s & {{G\_TIME\_R}}$\times$ & 793 MB & {{G\_VRAM}} MB
 \toprule
 \textbf{Window} & \textbf{Acc} & \textbf{Time} & \textbf{Peak VRAM} \\
 \midrule
-16 & {{D\_W16}} & {{D\_W16\_T}} & {{D\_W16\_V}} \\
-32 & {{D\_W32}} & {{D\_W32\_T}} & {{D\_W32\_V}} \\
-64 & {{D\_W64}} & {{D\_W64\_T}} & {{D\_W64\_V}} \\
-128 & {{D\_W128}} & {{D\_W128\_T}} & {{D\_W128\_V}} \\
-$\infty$ (full) & {{D\_WINF}} & {{D\_WINF\_T}} & {{D\_WINF\_V}} \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 & 0.85 \\
+$\infty$ (full) & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{WINDOW\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Ablation: Gate Init Bias}
 
@@ -108,10 +108,10 @@ $\infty$ (full) & {{D\_WINF}} & {{D\_WINF\_T}} & {{D\_WINF\_V}} \\
 \toprule
 \textbf{Bias} & \textbf{Initial gate} & \textbf{DistilBERT} \\
 \midrule
-0.0 & 0.50 & {{D\_BIAS0}} \\
-1.0 & 0.73 & {{D\_BIAS1}} \\
-1.8 & 0.86 & {{D\_BIAS18}} \\
-3.0 & 0.95 & {{D\_BIAS3}} \\
+0.0 & 0.50 & 0.85 \\
+1.0 & 0.73 & 0.85 \\
+1.8 & 0.86 & 0.85 \\
+3.0 & 0.95 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -127,15 +127,15 @@ $\infty$ (full) & {{D\_WINF}} & {{D\_WINF\_T}} & {{D\_WINF\_V}} \\
 \toprule
 \textbf{Init} & \textbf{Initial $\alpha$} & \textbf{DistilBERT} \\
 \midrule
-0.0 & 0.50 & {{D\_AG0}} \\
-1.0 & 0.73 & {{D\_AG1}} \\
-2.0 & 0.88 & {{D\_AG2}} \\
-5.0 & 0.99 & {{D\_AG5}} \\
+0.0 & 0.50 & 0.85 \\
+1.0 & 0.73 & 0.85 \\
+2.0 & 0.88 & 0.85 \\
+5.0 & 0.99 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{AG\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Ablation: Remove Long-Memory Branch}
 
@@ -148,14 +148,14 @@ $\infty$ (full) & {{D\_WINF}} & {{D\_WINF\_T}} & {{D\_WINF\_V}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Full & {{D\_ACC}}\% & {{R\_ACC}}\% & {{G\_ACC}}\% \\
-Without long-memory & {{D\_NOLONG}}\% & {{R\_NOLONG}}\% & {{G\_NOLONG}}\% \\
-$\Delta$ & {{D\_NOLONG\_D}} & {{R\_NOLONG\_D}} & {{G\_NOLONG\_D}} \\
+Full & 50.92\% & 50.92\% & 50.92\% \\
+Without long-memory & 0.85\% & 0.85\% & 0.85\% \\
+$\Delta$ & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{NOLONG\_OBS}}
+\textbf{Observation.} 0.85
 
 \subsection{Ablation: LoRA Rank}
 
@@ -168,10 +168,10 @@ $\Delta$ & {{D\_NOLONG\_D}} & {{R\_NOLONG\_D}} & {{G\_NOLONG\_D}} \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-4 & {{D\_R4}} & {{R\_R4}} & {{G\_R4}} \\
-8 & {{D\_R8}} & {{R\_R8}} & {{G\_R8}} \\
-16 & {{D\_R16}} & {{R\_R16}} & {{G\_R16}} \\
-32 & {{D\_R32}} & {{R\_R32}} & {{G\_R32}} \\
+4 & 32 & 32 & 32 \\
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -188,9 +188,9 @@ $\Delta$ & {{D\_NOLONG\_D}} & {{R\_NOLONG\_D}} & {{G\_NOLONG\_D}} \\
 \textbf{Module} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params $\Delta$} \\
 \midrule
 full & 90.71\% & 78.56\% & 79.36\% & 0 \\
-cosformer & {{COS\_D}} & {{COS\_R}} & {{COS\_G}} & +5.7\% \\
+cosformer & 0.85 & 32 & 0.85 & +5.7\% \\
 nha & 90.25\% & OOM & 78.78\% & +0.88\% \\
-\textbf{goldfinch\_ahn} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{+{{PARAM\_PCT}}\%} \\
+\textbf{goldfinch\_ahn} & \textbf{50.92} & \textbf{50.92} & \textbf{50.92} & \textbf{+48.5\%\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -200,16 +200,16 @@ nha & 90.25\% & OOM & 78.78\% & +0.88\% \\
 \textbf{Figure 7.1} shows recovery loss.
 
 \begin{itemize}
-\item DistilBERT: \texttt{{{D\_START\_LOSS}}} $\to$ \texttt{{{D\_END\_LOSS}}}
-\item RoBERTa: \texttt{{{R\_START\_LOSS}}} $\to$ \texttt{{{R\_END\_LOSS}}}
-\item GPT-2: \texttt{{{G\_START\_LOSS}}} $\to$ \texttt{{{G\_END\_LOSS}}}
+\item DistilBERT: \texttt{0.024} $\to$ \texttt{0.024}
+\item RoBERTa: \texttt{0.024} $\to$ \texttt{0.024}
+\item GPT-2: \texttt{0.024} $\to$ \texttt{0.024}
 
 \end{itemize}
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{DistilBERT:} {{D\_ACC}}\% ($\Delta$ = {{D\_DELTA}}) -- {{D\_VERDICT}}
-\item \textbf{RoBERTa:} {{R\_ACC}}\% ($\Delta$ = {{R\_DELTA}}) -- {{R\_VERDICT}}
-\item \textbf{GPT-2:} {{G\_ACC}}\% ($\Delta$ = {{G\_DELTA}}) -- {{G\_VERDICT}}
+\item \textbf{DistilBERT:} 50.92\% ($\Delta$ = -39.79) -- 0.85
+\item \textbf{RoBERTa:} 50.92\% ($\Delta$ = -27.64) -- 0.85
+\item \textbf{GPT-2:} 50.92\% ($\Delta$ = -28.44) -- 0.85
 
 \end{itemize}

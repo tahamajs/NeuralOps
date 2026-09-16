@@ -5,7 +5,7 @@
 \subsubsection{Delta Sparsity Confirms Smoothness}
 
 \textbf{Figure 8.1} shows the distribution of $\|\Delta k_t\| / \|k_t\|$ for a 
-middle DistilBERT layer. The 90th percentile is \textbf{{{DELTA\_P90}}\%}, confirming 
+middle DistilBERT layer. The 90th percentile is \textbf{0.85\%}, confirming 
 that consecutive keys are similar.
 
 This justifies the delta-SVD compression: temporal deltas have lower 
@@ -26,7 +26,7 @@ The auxiliary loss prevents router collapse to a single page.
 
 \textbf{Figure 8.3} shows the reconstruction error introduced by 4-bit 
 quantization of SVD-truncated deltas. For rank $r = 16$, the quantization 
-error is \textbf{{{QUANT\_ERR}}\%} -- small compared to SVD error.
+error is \textbf{0.024\%} -- small compared to SVD error.
 
 \subsection{Router Analysis}
 
@@ -39,9 +39,9 @@ error is \textbf{{{QUANT\_ERR}}\%} -- small compared to SVD error.
 \toprule
 \textbf{Page} & \textbf{Selection rate} \\
 \midrule
-0 & {{D\_P0}}\% \\
-1 & {{D\_P1}}\% \\
-2 & {{D\_P2}}\% \\
+0 & 0.85\% \\
+1 & 0.85\% \\
+2 & 0.85\% \\
 ... & ... \\
 \bottomrule
 \end{tabular}
@@ -61,8 +61,8 @@ roughly uniform selection, confirming load balancing works.
 \toprule
 \textbf{Layer} & \textbf{Mean $\|\Delta k\| / \|k\|$} & \textbf{Suggested rank} \\
 \midrule
-0 & {{D\_L0\_DELTA}} & {{D\_L0\_RANK}} \\
-1 & {{D\_L1\_DELTA}} & {{D\_L1\_RANK}} \\
+0 & 0.85 & 32 \\
+1 & 0.85 & 32 \\
 ... & ... & ... \\
 \bottomrule
 \end{tabular}

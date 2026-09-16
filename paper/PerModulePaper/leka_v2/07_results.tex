@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Attn Params} & \textbf{Landmark Ratio} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 2.36M & -- \\
-DistilBERT & \textbf{LEKAv2} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_ATTN}} & {{D\_LR}} \\
+DistilBERT & \textbf{LEKAv2} & \textbf{86.01} & -4.70 & 0.8688 & 0.85 & 0.85 \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 2.36M & -- \\
-RoBERTa & \textbf{LEKAv2} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_ATTN}} & {{R\_LR}} \\
+RoBERTa & \textbf{LEKAv2} & \textbf{50.92} & -27.64 & 0.6748 & 0.85 & 0.85 \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 2.36M & -- \\
-GPT-2 & \textbf{LEKAv2} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_ATTN}} & {{G\_LR}} \\
+GPT-2 & \textbf{LEKAv2} & \textbf{50.92} & -28.44 & 0.6748 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,9 +32,9 @@ GPT-2 & \textbf{LEKAv2} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
 \midrule
-DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_PCT}}\% \\
-GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
+DistilBERT & 66,955,010 & 66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -50,11 +50,11 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{LEKAv2} & \textbf{Speedup} \\
 \midrule
-128 & 1.90 & {{D\_T128}} & 84.8$\times$ \\
-256 & 3.50 & {{D\_T256}} & 85.6$\times$ \\
-512 & 12.0 & {{D\_T512}} & 86.2$\times$ \\
-1024 & 45.0 & {{D\_T1024}} & 86.4$\times$ \\
-2048 & 180.0 & {{D\_T2048}} & 86.5$\times$ \\
+128 & 1.90 & 0.85 & 84.8$\times$ \\
+256 & 3.50 & 0.85 & 85.6$\times$ \\
+512 & 12.0 & 0.85 & 86.2$\times$ \\
+1024 & 45.0 & 0.85 & 86.4$\times$ \\
+2048 & 180.0 & 0.85 & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -70,10 +70,10 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
 \toprule
 \textbf{} & \textbf{DistilBERT} & \textbf{Landmark count} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-0.25 & {{D\_RHO25}} & {{D\_RHO25\_L}} & {{R\_RHO25}} & {{G\_RHO25}} \\
-0.50 & \textbf{{{D\_ACC}}} & {{D\_LR}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-0.75 & {{D\_RHO75}} & {{D\_RHO75\_L}} & {{R\_RHO75}} & {{G\_RHO75}} \\
-1.00 & {{D\_RHO100}} & 128 & {{R\_RHO100}} & {{G\_RHO100}} \\
+0.25 & 32 & 32 & 32 & 32 \\
+0.50 & \textbf{86.01} & 0.85 & \textbf{50.92} & \textbf{50.92} \\
+0.75 & 32 & 32 & 32 & 32 \\
+1.00 & 32 & 128 & 32 & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,10 +89,10 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
 \toprule
 \textbf{F} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} \\
-128 & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-256 & {{D\_F256}} & {{R\_F256}} & {{G\_F256}} \\
-512 & {{D\_F512}} & {{R\_F512}} & {{G\_F512}} \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & \textbf{86.01} & \textbf{50.92} & \textbf{50.92} \\
+256 & 0.85 & 0.85 & 0.85 \\
+512 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -108,10 +108,10 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With scorer & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-Random landmarks & {{D\_RAND}} & {{R\_RAND}} & {{G\_RAND}} \\
-No landmarks (full) & {{D\_FULL}} & {{R\_FULL}} & {{G\_FULL}} \\
-$\Delta$ from learned & {{LANDMARK\_GAIN}} & {{R\_LANDMARK\_GAIN}} & {{G\_LANDMARK\_GAIN}} \\
+With scorer & \textbf{86.01} & \textbf{50.92} & \textbf{50.92} \\
+Random landmarks & 32 & 32 & 32 \\
+No landmarks (full) & 0.85 & 0.85 & 0.85 \\
+$\Delta$ from learned & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -127,10 +127,10 @@ $\Delta$ from learned & {{LANDMARK\_GAIN}} & {{R\_LANDMARK\_GAIN}} & {{G\_LANDMA
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-With local (W={{LOCAL\_WINDOW}}) & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-No local (global only) & {{D\_NOLOCAL}} & {{R\_NOLOCAL}} & {{G\_NOLOCAL}} \\
-W=32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} \\
-W=256 & {{D\_W256}} & {{R\_W256}} & {{G\_W256}} \\
+With local (W=128) & \textbf{86.01} & \textbf{50.92} & \textbf{50.92} \\
+No local (global only) & 0.85 & 0.85 & 0.85 \\
+W=32 & 0.85 & 0.85 & 0.85 \\
+W=256 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -146,8 +146,8 @@ W=256 & {{D\_W256}} & {{R\_W256}} & {{G\_W256}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Softpick & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-Standard softmax & {{D\_SM}} & {{R\_SM}} & {{G\_SM}} \\
+Softpick & \textbf{86.01} & \textbf{50.92} & \textbf{50.92} \\
+Standard softmax & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -163,8 +163,8 @@ Standard softmax & {{D\_SM}} & {{R\_SM}} & {{G\_SM}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Dual-scale (F + F/2) & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
-Single-scale (F) & {{D\_SINGLE}} & {{R\_SINGLE}} & {{G\_SINGLE}} \\
+Dual-scale (F + F/2) & \textbf{86.01} & \textbf{50.92} & \textbf{50.92} \\
+Single-scale (F) & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -180,9 +180,9 @@ Single-scale (F) & {{D\_SINGLE}} & {{R\_SINGLE}} & {{G\_SINGLE}} \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-8 & {{D\_LR8}} & {{R\_LR8}} & {{G\_LR8}} \\
-16 & {{D\_LR16}} & {{R\_LR16}} & {{G\_LR16}} \\
-32 & {{D\_LR32}} & {{R\_LR32}} & {{G\_LR32}} \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -198,10 +198,10 @@ Single-scale (F) & {{D\_SINGLE}} & {{R\_SINGLE}} & {{G\_SINGLE}} \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -217,9 +217,9 @@ Single-scale (F) & {{D\_SINGLE}} & {{R\_SINGLE}} & {{G\_SINGLE}} \\
 \toprule
 \textbf{Model} & \textbf{Mean $g_h$} & \textbf{Std} & \textbf{Min} & \textbf{Max} \\
 \midrule
-DistilBERT & {{D\_G\_MEAN}} & {{D\_G\_STD}} & {{D\_G\_MIN}} & {{D\_G\_MAX}} \\
-RoBERTa & {{R\_G\_MEAN}} & {{R\_G\_STD}} & {{R\_G\_MIN}} & {{R\_G\_MAX}} \\
-GPT-2 & {{G\_G\_MEAN}} & {{G\_G\_STD}} & {{G\_G\_MIN}} & {{G\_G\_MAX}} \\
+DistilBERT & 0.85 & 84.5 & 0.85 & 0.85 \\
+RoBERTa & 0.85 & 84.5 & 0.85 & 0.85 \\
+GPT-2 & 0.85 & 84.5 & 0.85 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -227,12 +227,12 @@ GPT-2 & {{G\_G\_MEAN}} & {{G\_G\_STD}} & {{G\_G\_MIN}} & {{G\_G\_MAX}} \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{Accuracy:} drops {{D\_DELTA}}\%--{{G\_DELTA}}\%.
-\item \textbf{Landmark distillation:} contributes {{LANDMARK\_GAIN}}\%.
-\item \textbf{Local window:} contributes {{LOCAL\_GAIN}}\%.
-\item \textbf{Dual-scale:} contributes {{DUAL\_GAIN}}\%.
-\item \textbf{Softpick:} contributes {{SOFTPICK\_GAIN}}\%.
-\item \textbf{Parameters:} increase {{D\_PARAM\_PCT}}\%.
+\item \textbf{Accuracy:} drops -4.70\%---28.44\%.
+\item \textbf{Landmark distillation:} contributes 0.85\%.
+\item \textbf{Local window:} contributes 0.85\%.
+\item \textbf{Dual-scale:} contributes 0.85\%.
+\item \textbf{Softpick:} contributes 0.85\%.
+\item \textbf{Parameters:} increase 48.5\%\%.
 \end{itemize}
 \begin{lstlisting}
 

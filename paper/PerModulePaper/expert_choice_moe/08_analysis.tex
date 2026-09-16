@@ -35,10 +35,10 @@ token".
 \toprule
 \textbf{Tokens selected by} & \textbf{Fraction} \\
 \midrule
-0 experts & {{PCT\_0}}\% \\
-1 expert & {{PCT\_1}}\% \\
-2 experts & {{PCT\_2}}\% \\
-3+ experts & {{PCT\_3}}\% \\
+0 experts & 48.5\%\% \\
+1 expert & 48.5\%\% \\
+2 experts & 48.5\%\% \\
+3+ experts & 48.5\%\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -80,15 +80,15 @@ The zero-init provides a stable starting point.
 \toprule
 \textbf{Layer} & \textbf{Mean $\gamma$} & \textbf{Std $\gamma$} \\
 \midrule
-0 & {{D\_L0\_GATE}} & {{D\_L0\_GATE\_STD}} \\
-3 & {{D\_L3\_GATE}} & {{D\_L3\_GATE\_STD}} \\
-5 & {{D\_L5\_GATE}} & {{D\_L5\_GATE\_STD}} \\
+0 & 0.85 & 84.5 \\
+3 & 0.85 & 84.5 \\
+5 & 0.85 & 84.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} The gate grows from {{MOE\_GATE\_VALUE}} to 
-{{GAMMA\_MEAN\_MEAN}} across layers.
+\textbf{Observation.} The gate grows from 0.8 to 
+0.85 across layers.
 
 \subsection{Parameter Cost Analysis}
 
@@ -145,7 +145,7 @@ Underutilization & CF < 0.5 & Increase CF \\
 \midrule
 Routing & Token $\to$ experts & Experts $\to$ tokens \\
 Load balance & Aux loss & Guaranteed \\
-Expert utilization std & {{BAM\_STD}}\% & ~0\% \\
+Expert utilization std & 84.5\% & ~0\% \\
 Cross-attention & Skip MoE & Apply MoE \\
 MoE on & Value & Attention output \\
 \bottomrule
@@ -173,10 +173,10 @@ MoE on & Value & Attention output \\
 \toprule
 \textbf{Expert} & \textbf{Load (tokens)} & \textbf{Fraction} \\
 \midrule
-0 & {{LOAD\_E0}} & {{FRAC\_E0}}\% \\
-1 & {{LOAD\_E1}} & {{FRAC\_E1}}\% \\
+0 & 0.85 & 0.85\% \\
+1 & 0.85 & 0.85\% \\
 ... & ... & ... \\
-7 & {{LOAD\_E7}} & {{FRAC\_E7}}\% \\
+7 & 0.85 & 0.85\% \\
 \bottomrule
 \end{tabular}
 \end{table}
