@@ -104,8 +104,8 @@ class SVDLLMV2Attention(BaseAttention):
         self,
         config: Optional[Any] = None,
         old_attn: Optional[nn.Module] = None,
-        rank: Optional[int] = 64,
-        energy_threshold: float = 0.95,
+        rank: Optional[int] = 192,
+        energy_threshold: float = 0.999,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         is_decoder: Optional[bool] = None,
@@ -116,7 +116,7 @@ class SVDLLMV2Attention(BaseAttention):
         actual_rank = (
             rank
             if rank is not None
-            else _cfg_get(comp_config, "rank", _cfg_get(config, "svd_rank", _cfg_get(config, "rank", 64)))
+            else _cfg_get(comp_config, "rank", _cfg_get(config, "svd_rank", _cfg_get(config, "rank", 192)))
         )
         super().__init__(config, actual_rank)
 
@@ -591,7 +591,7 @@ def inject_svd_llm_v2(
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     lora_rank: int = 16,
-    rank: Optional[int] = 64,
+    rank: Optional[int] = 192,
     **kwargs: Any,
 ) -> Optional[Any]:
     """Safely constructs and injects SVDLLMV2Attention into a model or transformer layer."""

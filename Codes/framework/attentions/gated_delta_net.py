@@ -100,8 +100,8 @@ def chunked_delta_rule_scan(
     v: torch.Tensor,
     beta: torch.Tensor,
     alpha: torch.Tensor,
-    chunk_size: int = 8,
-    use_checkpoint: bool = True,
+    chunk_size: int = 32,
+    use_checkpoint: bool = False,
 ) -> torch.Tensor:
     r"""
     True chunked recurrence for Delta-Rule recurrent attention with O(num_chunks) outer recurrence.
@@ -147,20 +147,13 @@ def chunked_delta_rule_scan(
     S = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
     outputs = []
 
-    from torch.utils.checkpoint import checkpoint
-    
     for c in range(num_chunks):
         q_i = q_c[:, :, c]
         k_i = k_c[:, :, c]
         v_i = v_c[:, :, c]
         beta_i = beta_c[:, :, c]
         alpha_i = alpha_c[:, :, c]
-
-        if getattr(q, "requires_grad", False): # Use checkpointing if we need gradients
-            y_i, S = checkpoint(_delta_chunk_forward, S, q_i, k_i, v_i, beta_i, alpha_i, use_reentrant=False)
-        else:
-            y_i, S = _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i)
-            
+        y_i, S = _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i)
         outputs.append(y_i)
 
     y = torch.cat(outputs, dim=2)
@@ -405,7 +398,7 @@ class GatedDeltaNet(BaseAttention):
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         self.comp_config: Optional[Any] = comp_config
         self.chunk_size: int = int(_cfg_get(comp_config, "chunk_size", kwargs.get("chunk_size", 32)))
-        self.use_gradient_checkpointing: bool = kwargs.get("use_gradient_checkpointing", True)
+        self.use_gradient_checkpointing: bool = False
         self.max_seq_len_for_recurrence: int = int(_cfg_get(comp_config, "max_seq_len_for_recurrence", kwargs.get("max_seq_len_for_recurrence", 256)))
 
         if source_attn is not None:
@@ -645,7 +638,7 @@ class GatedDeltaNet(BaseAttention):
             v_f = v_f * m_f.unsqueeze(-1)
 
         # Chunked associative recurrence via vectorised intra-chunk matrix multiplications
-        chunk_size = getattr(self, "chunk_size", 16)
+        chunk_size = getattr(self, "chunk_size", 32)
         use_checkpoint = getattr(self, "use_gradient_checkpointing", False)
         logger.debug("Using chunked delta scan with chunk_size=%d, checkpointing=%s", chunk_size, use_checkpoint)
 

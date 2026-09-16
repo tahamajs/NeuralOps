@@ -387,6 +387,8 @@ class RALALinearAttention(BaseAttention):
                 mod.freeze_base_weights()
             self.U.requires_grad = False
             self.V.requires_grad = False
+            if hasattr(self, 'alpha') and isinstance(self.alpha, nn.Parameter):
+                self.alpha.requires_grad = False
 
     def forward(
         self,

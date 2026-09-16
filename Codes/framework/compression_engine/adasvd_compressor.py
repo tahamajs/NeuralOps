@@ -68,7 +68,7 @@ class AdaSVDCompressor(BaseCompressor):
         rank: Optional[int] = None,
         target_param_ratio: float = 0.7,
         num_iters: int = 5,
-        max_error: float = 0.70,
+        max_error: float = 0.40,
         fallback_to_original: bool = True,
         target_attention_only: bool = True,
         min_rank: int = 16,
@@ -461,7 +461,7 @@ def adasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Mod
     )
     num_iters = kwargs.pop("num_iters", _cfg_get(comp_config, "adasvd_iters", _cfg_get(comp_config, "num_iters", 5)))
     max_error = kwargs.pop(
-        "max_error", _cfg_get(comp_config, "adasvd_max_error", _cfg_get(comp_config, "max_error", 0.70))
+        "max_error", _cfg_get(comp_config, "adasvd_max_error", _cfg_get(comp_config, "max_error", 0.40))
     )
     fallback = kwargs.pop(
         "fallback_to_original", _cfg_get(comp_config, "adasvd_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))

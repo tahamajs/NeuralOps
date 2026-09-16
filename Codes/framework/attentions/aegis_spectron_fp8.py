@@ -559,6 +559,7 @@ class AegisSpectronFP8Attention(BaseAttention):
 
             # 3. RoBERTa / BERT nested self-attention (old_attn.self)
             elif hasattr(old_attn, "self") and proj in ["q", "k", "v"]:
+                w, b = None, None
                 s = getattr(old_attn, "self")
                 name_map = {"q": "query", "k": "key", "v": "value"}
                 if hasattr(s, name_map[proj]):
@@ -839,19 +840,17 @@ class AegisSpectronFP8Attention(BaseAttention):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, D = hidden_states.shape
 
-        # Functional FP8 simulation (E4M3/E5M2) on input hidden states
-        X_fp8 = fp8_cast_simulate(hidden_states, format=getattr(self.config, "fp8_format", "e4m3"))
-
-        # Token-level routing
-        alpha = self.router(X_fp8)  # [B, N, 3]
+        # Token-level routing on hidden_states
+        alpha = self.router(hidden_states)  # [B, N, 3]
         alpha_loc = alpha[:, :, 0].unsqueeze(1).unsqueeze(-1)   # [B, 1, N, 1]
         alpha_glob = alpha[:, :, 1].unsqueeze(1).unsqueeze(-1)  # [B, 1, N, 1]
         alpha_lin = alpha[:, :, 2].unsqueeze(1).unsqueeze(-1)   # [B, 1, N, 1]
 
-        # Projections via FactorizedLinear (base + LoRA)
-        Q = self.q_proj(X_fp8).view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
-        K = self.k_proj(X_fp8).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
-        V = self.v_proj(X_fp8).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
+        # Projections via FactorizedLinear (base + LoRA) with FP8 cast applied to projections
+        fp8_fmt = getattr(self.config, "fp8_format", "e4m3")
+        Q = fp8_cast_simulate(self.q_proj(hidden_states), format=fp8_fmt).view(B, N, self.config.num_heads, self.config.head_dim).transpose(1, 2)
+        K = fp8_cast_simulate(self.k_proj(hidden_states), format=fp8_fmt).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
+        V = fp8_cast_simulate(self.v_proj(hidden_states), format=fp8_fmt).view(B, N, self.num_kv_heads, self.config.head_dim).transpose(1, 2)
 
         # Apply Rotary Position Embeddings (RoPE) immediately after projections and BEFORE branching
         position_embeddings = kwargs.get("position_embeddings", None)

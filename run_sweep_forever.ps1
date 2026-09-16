@@ -6,24 +6,21 @@ $PythonExe = "C:\Users\Hadi Schumacher\anaconda3\python.exe"
 $LogFile = "D:\SVD_Project\sweep_forever.log"
 $Script = "D:\SVD_Project\run_agnews_multi_class_sweep.py"
 
-Add-Content -Path $LogFile -Value "======================================================"
-Add-Content -Path $LogFile -Value "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Starting infinite sweep monitor..."
-Add-Content -Path $LogFile -Value "======================================================"
+[System.IO.File]::AppendAllText($LogFile, "======================================================`n[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Starting infinite sweep monitor...`n======================================================`n", [System.Text.Encoding]::ASCII)
 
 while ($true) {
-    Add-Content -Path $LogFile -Value "`n[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Launching sweep script..."
+    [System.IO.File]::AppendAllText($LogFile, "`n[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Launching sweep script...`n", [System.Text.Encoding]::ASCII)
     
-    # Run the sweep and pipe output to log
     Set-Location $RepoDir
-    & $PythonExe -u $Script --models distilbert,roberta,gpt2 --recovery_steps 25 | Out-File -FilePath $LogFile -Append
+    & $PythonExe -u $Script --models distilbert,roberta,gpt2 --recovery_steps 25 2>&1 | Out-File -FilePath $LogFile -Append -Encoding ascii
     
     $exitCode = $LASTEXITCODE
     
     if ($exitCode -eq 0) {
-        Add-Content -Path $LogFile -Value "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Sweep completed successfully (Exit Code 0). Exiting loop."
+        [System.IO.File]::AppendAllText($LogFile, "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Sweep completed successfully (Exit Code 0). Exiting loop.`n", [System.Text.Encoding]::ASCII)
         break
     } else {
-        Add-Content -Path $LogFile -Value "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Sweep crashed or aborted (Exit Code $exitCode). Restarting in 10 seconds..."
+        [System.IO.File]::AppendAllText($LogFile, "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] Sweep crashed or aborted (Exit Code $exitCode). Restarting in 10 seconds...`n", [System.Text.Encoding]::ASCII)
         Start-Sleep -Seconds 10
     }
 }
