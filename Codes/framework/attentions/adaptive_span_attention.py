@@ -246,30 +246,33 @@ class AdaptiveSpanAttention(BaseAttention):
             or (source_cls.endswith(("SelfAttention", "SelfAttn")) and "distil" not in source_cls.lower() and "gpt" not in source_cls.lower() and "qwen" not in source_cls.lower())
         )
         self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", is_nested))
-
         self.has_relative_attention_bias: bool = False
         self.relative_attention_bias: Optional[nn.Embedding] = None
+
         if config is not None:
             self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32)
             self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
-            self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)))
-            self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+            resolved_lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)))
+            resolved_lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         elif comp_config is not None:
             self.relative_attention_num_buckets = 32
             self.relative_attention_max_distance = 128
-            self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))
-            self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+            resolved_lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))
+            resolved_lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
         else:
             self.relative_attention_num_buckets = 32
             self.relative_attention_max_distance = 128
+            resolved_lora_rank = kwargs.get("lora_rank", lora_rank)
+            resolved_lora_alpha = kwargs.get("lora_alpha", 32.0)
+
         target_dtype = kwargs.get("dtype", None)
         if target_dtype is None and source_attn is not None:
             target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
             if not isinstance(target_dtype, torch.dtype):
                 target_dtype = torch.float32
 
-        self.lora_rank = kwargs.get("lora_rank", lora_rank)
-        self.lora_alpha = kwargs.get("lora_alpha", 32.0)
+        self.lora_rank = int(resolved_lora_rank)
+        self.lora_alpha = float(resolved_lora_alpha)
         self.freeze_base: bool = (self.lora_rank > 0)
 
         self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base, dtype=target_dtype)
@@ -475,12 +478,12 @@ class AdaptiveSpanAttention(BaseAttention):
             if w is not None:
                 norm = torch.linalg.norm(w.float())
                 if norm < 1e-4:
-                    logger.warning(f"AdaptiveSpanAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+                    raise RuntimeError(f"AdaptiveSpanAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
 
         if not self.is_nested_encoder and extracted["o"][0] is not None:
             norm_o = torch.linalg.norm(extracted["o"][0].float())
             if norm_o < 1e-4:
-                logger.warning(f"AdaptiveSpanAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+                raise RuntimeError(f"AdaptiveSpanAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
 
         # Copy into projection modules
         with torch.no_grad():
