@@ -63,7 +63,7 @@ AWQ & Quantization & 4$\times$ & No & No \\
 A3 & Low-rank + Fisher & 5$\times$ & LoRA & No \\
 AASVD & Low-rank + covariance & 5$\times$ & LoRA & No \\
 MinimalSVD & Low-rank + energy & 3-6$\times$ & LoRA & No \\
-\textbf{SVD-LLM V2} & \textbf{Low-rank + explicit $\Sigma$} & \textbf{{{D\_RATIO}}$\times$} & \textbf{LoRA} & \textbf{Yes} \\
+\textbf{SVD-LLM V2} & \textbf{Low-rank + explicit  } & \textbf{{{D\_RATIO}}$\times$} & \textbf{LoRA} & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -79,7 +79,7 @@ SVD-LLM V2 differs from prior work along three axes:
 \toprule
 \textbf{Axis} & \textbf{Prior} & \textbf{SVD-LLM V2} \\
 \midrule
-\textbf{Factorization} & Symmetric & \textbf{Explicit (U, $\Sigma$, V\^{}H)} \\
+\textbf{Factorization} & Symmetric & \textbf{Explicit (U,  , V^H)} \\
 \textbf{Interpretability} & Limited & \textbf{Full} \\
 \textbf{Downstream flexibility} & Low & \textbf{High} \\
 \bottomrule
@@ -103,7 +103,7 @@ the cost of slight numerical sensitivity in FP16.
 \textbf{Feature} & \textbf{MinimalSVD} & \textbf{MinimalNOVA} & \textbf{MinimalPRISM} & \textbf{\textbf{SVD-LLM V2}} \\
 \midrule
 Factorization & Symmetric & Symmetric & Symmetric & \textbf{Explicit} \\
-Interpretable $\Sigma$ & No & No & No & \textbf{Yes} \\
+Interpretable & No & No & No & \textbf{Yes} \\
 Pre-test & No & Yes & Yes & Yes \\
 Whole-model & No & Yes & Yes & Yes \\
 GQA pooling & General & General & General & \textbf{Per-head} \\

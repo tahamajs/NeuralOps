@@ -226,8 +226,8 @@ When \texttt{w\_k.shape[0] != self.kv\_head\_size}, must mean-pool.
 \textbf{Feature} & \textbf{MinimalSVD} & \textbf{SVD-LLM V2} \\
 \midrule
 Factorization & Symmetric & Explicit \\
-Storage & \texttt{U$\sqrt{}$$\Sigma$}, \texttt{$\sqrt{}$$\Sigma$V} & \texttt{U}, \texttt{$\Sigma$}, \texttt{V} \\
-Interpretable $\Sigma$ & No & Yes \\
+Storage & \texttt{U$\sqrt{}$ }, \texttt{$\sqrt{}$ V} & \texttt{U}, \texttt{ }, \texttt{V} \\
+Interpretable & No & Yes \\
 GQA pooling & In \texttt{decompose} & In \texttt{copy\_weights} \\
 Bias param & In \texttt{up.bias} & Separate \\
 \bottomrule

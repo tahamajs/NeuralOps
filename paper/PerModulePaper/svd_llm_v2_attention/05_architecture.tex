@@ -222,7 +222,7 @@ Rank per projection & Yes & Yes & Yes \\
 LoRA placement & Inside & Inside & \textbf{Separate per proj} \\
 Bias handling & In \texttt{up.bias} & In \texttt{up.bias} & \textbf{Separate parameter} \\
 GQA pooling & General & General & \textbf{Per-head mean-pool} \\
-Interpretable $\Sigma$ & No & No & \textbf{Yes} \\
+Interpretable & No & No & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -231,8 +231,7 @@ Interpretable $\Sigma$ & No & No & \textbf{Yes} \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/architecture.jpeg}
-\caption{High-level architectural diagram of svd\_llm\_v2\_attention.}
-\label{fig:arch_svd-llm-v2-attention}
+\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
+\caption{Architectural schematic of svd_llm_v2_attention.}
+\label{fig:arch_svd_llm_v2_attention}
 \end{figure}
-

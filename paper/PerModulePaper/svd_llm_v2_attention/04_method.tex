@@ -30,7 +30,7 @@ recovery.
                         |
                          
    +----------------------------------------------+
-   |  SVD: W = U $\Sigma$ V^H                             |
+   |  SVD: W = U   V^H                             |
    |  Compute cumulative energy E(r)              |
    |  r_eff = min(r_max, argmin E(r) $\ge$  )         |
    +--------------------+-------------------------+
@@ -39,13 +39,13 @@ recovery.
    +----------------------------------------------+
    |  Store explicitly:                            |
    |  U  $\in$ R^{d_out $\times$ r}                           |
-   |  $\Sigma$  $\in$ R^r (diagonal)                          |
+   |     $\in$ R^r (diagonal)                          |
    |  V^H $\in$ R^{r $\times$ d_in}                           |
    +--------------------+-------------------------+
                         |
                          
    +----------------------------------------------+
-   |  Freeze U, $\Sigma$, V^H. Add LoRA (A, B=0)          |
+   |  Freeze U,  , V^H. Add LoRA (A, B=0)          |
    +----------------------------------------------+
 \end{lstlisting}
 
@@ -80,7 +80,7 @@ Where \texttt{*} is one of \texttt{query}, \texttt{key}, \texttt{value}, \texttt
 \textbf{Config} & \textbf{Params} \\
 \midrule
 Original & 589,824 \\
-Explicit (U + $\Sigma$ + V\^{}H) & $768 \times 128 + 128 + 128 \times 768 = 196{,}736$ \\
+Explicit (U +   + V^H) & $768 \times 128 + 128 + 128 \times 768 = 196{,}736$ \\
 Ratio & \textbf{3.0$\times$} \\
 \bottomrule
 \end{tabular}

@@ -50,13 +50,13 @@ replacement, not a compression method.
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{llll}
+\begin{tabular}{llllllll}
 \toprule
-\textbf{Model} & \textbf{$\|q\|_2$ before} & \textbf{$\|\tilde{q}\|_2$ after} & \textbf{Error} \\
+\textbf{Model} & \textbf{$\} & \textbf{q\} & \textbf{\_2$ before} & \textbf{$\} & \textbf{\tilde{q}\} & \textbf{\_2$ after} & \textbf{Error} \\
 \midrule
-DistilBERT & {{D\_Q\_NORM\_BEFORE}} & {{D\_Q\_NORM\_AFTER}} & {{D\_Q\_NORM\_ERR}} \\
-RoBERTa & {{R\_Q\_NORM\_BEFORE}} & {{R\_Q\_NORM\_AFTER}} & {{R\_Q\_NORM\_ERR}} \\
-GPT-2 & {{G\_Q\_NORM\_BEFORE}} & {{G\_Q\_NORM\_AFTER}} & {{G\_Q\_NORM\_ERR}} \\
+DistilBERT & {{D\_Q\_NORM\_BEFORE}} & {{D\_Q\_NORM\_AFTER}} & {{D\_Q\_NORM\_ERR}} &  &  &  &  \\
+RoBERTa & {{R\_Q\_NORM\_BEFORE}} & {{R\_Q\_NORM\_AFTER}} & {{R\_Q\_NORM\_ERR}} &  &  &  &  \\
+GPT-2 & {{G\_Q\_NORM\_BEFORE}} & {{G\_Q\_NORM\_AFTER}} & {{G\_Q\_NORM\_ERR}} &  &  &  &  \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -219,3 +219,11 @@ Nystr mformer & {{NYS\_D}} & Compute \\
 \item \textbf{All four architectures supported.}
 
 \end{itemize}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/unified_rope_results.png}
+\caption{Empirical benchmark performance and resource utilization for unified_rope.}
+\label{fig:results_unified_rope}
+\end{figure}
