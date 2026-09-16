@@ -456,13 +456,35 @@ def evaluate_comprehensive(model, tokenizer, ds, name, seq_len, batch_size, devi
     total_tokens = 0
 
     for x, y in batches:
-        with torch.autocast(device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
-            outputs = model(**x)
-            logits = outputs.logits
-            if hasattr(outputs, "loss") and outputs.loss is not None:
-                loss_val = float(outputs.loss.item())
+        try:
+            with torch.autocast(device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
+                with torch.no_grad():
+                    outputs = model(**x)
+                    logits = outputs.logits
+                    if hasattr(outputs, "loss") and outputs.loss is not None:
+                        loss_val = float(outputs.loss.item())
+                    else:
+                        loss_val = float(loss_fn(logits.view(-1, logits.size(-1)), y.to(logits.device).view(-1)).item())
+        except RuntimeError as exc:
+            if "out of memory" in str(exc).lower() or "allocate" in str(exc).lower():
+                torch.cuda.empty_cache()
+                # Subdivide the batch into halves to recover from OOM
+                b_size = y.size(0)
+                sub_size = max(1, b_size // 2)
+                logits_list = []
+                loss_sum = 0.0
+                for i in range(0, b_size, sub_size):
+                    sub_x = {k: v[i:i+sub_size] for k, v in x.items()}
+                    sub_y = y[i:i+sub_size]
+                    with torch.autocast(device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"):
+                        with torch.no_grad():
+                            sub_out = model(**sub_x)
+                            logits_list.append(sub_out.logits)
+                            loss_sum += loss_fn(sub_out.logits, sub_y).item() * sub_y.size(0)
+                logits = torch.cat(logits_list, dim=0)
+                loss_val = float(loss_sum / b_size)
             else:
-                loss_val = float(loss_fn(logits.view(-1, logits.size(-1)), y.to(logits.device).view(-1)).item())
+                raise exc
 
         preds = logits.argmax(-1).cpu()
         targets = y.cpu()
@@ -592,9 +614,9 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
         if "qwen" in str(name).lower():
             target_micro = 8
         elif total_vram_gb >= 7.0:
-            target_micro = 64 if curr_batch_size >= 64 else (32 if curr_batch_size >= 32 else curr_batch_size)
+            target_micro = min(curr_batch_size, 512)
         else:
-            target_micro = 16
+            target_micro = min(curr_batch_size, 32)
         micro_bs = min(curr_batch_size, target_micro)
     else:
         micro_bs = curr_batch_size
@@ -668,6 +690,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
     ap.add_argument("--dataset_dir", default=None); ap.add_argument("--dataset", default="sst2")
+    ap.add_argument("--cached_batches_dir", default=None,
+                    help="Path to a directory containing pre-cached tokenized batches "
+                         "(eval_batches.pt, train_batches.pt). If provided, skips dataset "
+                         "loading and tokenization entirely for this run.")
     ap.add_argument("--num_labels", type=int, default=None, help="Number of classification labels (auto-detected if None)")
     ap.add_argument("--output_dir", default=None); ap.add_argument("--modules", default=["all"], nargs="*")
     ap.add_argument("--module_filter", dest="modules", nargs="*", help="Alias for --modules")
@@ -1413,8 +1439,30 @@ def main():
     except Exception as e:
         LOG.warning("Could not write finetune_metadata.json: %s", e)
     LOG.info("Precomputing validation and training batches directly on device %s...", device)
-    eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
-    train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)))
+    # Fast-path: load pre-tokenized batches from disk cache to skip dataset tokenization entirely
+    _cached_dir = Path(args.cached_batches_dir) if getattr(args, "cached_batches_dir", None) else None
+    _eval_cache = _cached_dir / "eval_batches.pt" if _cached_dir else None
+    _train_cache = _cached_dir / "train_batches.pt" if _cached_dir else None
+    if _eval_cache and _eval_cache.exists() and _train_cache and _train_cache.exists():
+        LOG.info("Loading pre-cached batches from %s (skipping tokenization)", _cached_dir)
+        eval_batches = [(d, t.to(device)) for d, t in [
+            ({k: v.to(device) for k, v in x.items()}, y) for x, y in torch.load(str(_eval_cache), map_location="cpu", weights_only=False)
+        ]]
+        _max_train = max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10))
+        all_train = torch.load(str(_train_cache), map_location="cpu", weights_only=False)
+        train_batches = [({k: v.to(device) for k, v in x.items()}, y.to(device)) for x, y in all_train[:_max_train]]
+    else:
+        eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
+        train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)))
+        # Auto-save to cache dir if one was specified but files didn't exist yet
+        if _cached_dir:
+            try:
+                _cached_dir.mkdir(parents=True, exist_ok=True)
+                torch.save([({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in eval_batches], str(_eval_cache))
+                torch.save([({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in train_batches], str(_train_cache))
+                LOG.info("Saved pre-tokenized batch cache to %s (will be reused by subsequent module runs)", _cached_dir)
+            except Exception as _cache_err:
+                LOG.warning("Could not save batch cache: %s", _cache_err)
     LOG.info("Prepared %d eval batches and %d train batches directly on GPU.", len(eval_batches), len(train_batches))
     # Pre-evaluate base model to get baseline benchmark accuracy for reference
     base.to(device)
