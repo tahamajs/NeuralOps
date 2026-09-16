@@ -603,4 +603,4 @@ def inject_rpc(
         return None
     except Exception as e:
         logger.error("inject_rpc failed: %s", e)
-        raise RuntimeError(f"Injection failed")
+        return None

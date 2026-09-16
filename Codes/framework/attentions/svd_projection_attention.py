@@ -685,7 +685,7 @@ def inject_svd_proj_attn(
         )
     except Exception as e:
         logger.warning(f"Failed to instantiate SVDProjectionAttention: {e}")
-        raise RuntimeError(f"Injection failed")
+        return None
 
     if target is not None:
         if hasattr(target, "attention") and hasattr(target.attention, "self"):

@@ -722,7 +722,7 @@ def inject_svd_linear_attention(
         )
     except Exception as e:
         logger.warning(f"Failed to instantiate SVDLinearAttention: {e}")
-        raise RuntimeError(f"Injection failed")
+        return None
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):

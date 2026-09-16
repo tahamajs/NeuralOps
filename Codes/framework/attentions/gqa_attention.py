@@ -282,8 +282,7 @@ class GroupedQueryAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -560,7 +559,7 @@ def inject_gqa(
         )
     except Exception as ex:
         logger.warning("Failed to instantiate GroupedQueryAttention: %s", ex)
-        raise RuntimeError(f"Injection failed")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):

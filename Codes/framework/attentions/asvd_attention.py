@@ -618,8 +618,7 @@ class ASVDAttention(BaseAttention):
                     cos, sin = rotary_out[0], rotary_out[1]
                     q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
         # 3. GQA Expansion: Expand key/value heads to match query heads if kv_H < H
         if kv_H < H:

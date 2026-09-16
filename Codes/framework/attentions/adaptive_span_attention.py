@@ -373,8 +373,7 @@ class AdaptiveSpanAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                logger.error("AdaptiveSpanAttention copy_weights failed for projection %s: %s", proj, e)
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("AdaptiveSpanAttention UniversalAdapter fallback for %s: %s", proj, e)
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):

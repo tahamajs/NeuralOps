@@ -365,8 +365,7 @@ class SpectraV2Attention(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -605,7 +604,7 @@ def inject_spectra_v2(
             if replaced > 0:
                 return target
         except Exception:
-            raise RuntimeError("copy_weights failed")
+            return None
 
     src_attn = old_attn
     if src_attn is None and target is not None:
@@ -656,4 +655,4 @@ def inject_spectra_v2(
                 target.attention = new_attn
         return new_attn
     except Exception:
-        raise RuntimeError("copy_weights failed")
+        return None

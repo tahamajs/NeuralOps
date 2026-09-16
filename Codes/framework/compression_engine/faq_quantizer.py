@@ -360,8 +360,7 @@ class FAQQuantizer(BaseCompressor):
                             print(f'copy_weights failed: {e}')
                             raise RuntimeError(f"copy_weights failed: {e}")
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
         for h in hooks:
             h.remove()

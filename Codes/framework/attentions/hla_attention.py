@@ -537,7 +537,7 @@ def inject_hla(
             new_block.copy_weights(src)
         except Exception as e:
             logger.error('inject_hla copy_weights failed: %s', e)
-            raise RuntimeError(f"Injection failed")
+            return None
 
         for attr in ("attention", "self_attn", "attn", "self"):
             if hasattr(layer, attr):
@@ -547,4 +547,4 @@ def inject_hla(
         return new_block
     except Exception as e:
         logger.error("inject_hla failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None

@@ -258,8 +258,7 @@ class ZeroSAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -616,4 +615,4 @@ def inject_zeros_attention(
         layer.attention = new_attn
         return new_attn
     except Exception:
-        raise RuntimeError("copy_weights failed")
+        return None
