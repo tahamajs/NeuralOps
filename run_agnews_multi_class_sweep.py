@@ -20,6 +20,37 @@ REPO_DIR = Path(r"D:\SVD_Project") if sys.platform == "win32" else Path(__file__
 
 sys.path.insert(0, str(REPO_DIR))
 
+SKIP_MODULES_BY_MODEL = {
+    "distilbert": [
+        "jamba2", "jamba", "decay_gated_linear_attention", "gfws_d",
+        "spectral_residual_svd", "compression_unified_rope",
+        "hgrn2_gated_deltanet", "hgrn2_layer", "gated_delta_net",
+        "gated_deltanet_block", "svd_mamba",
+    ],
+    "roberta": [
+        "jamba2", "jamba", "decay_gated_linear_attention", "gfws_d",
+        "hgrn2_gated_deltanet", "hgrn2_layer", "gated_delta_net",
+        "gated_deltanet_block", "svd_mamba",
+    ],
+    "gpt2": ["hgrn2_layer"],
+}
+
+BATCH_SIZE_BY_MODEL = {
+    "distilbert": 32,
+    "roberta": 16,
+    "gpt2": 16,
+}
+
+RECOVERY_OVERRIDES = {
+    "svd_linear": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+    "svd_llm_v2": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+    "svd_mamba": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+    "a3": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+    "aasvd": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+    "asvd": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+    "mla": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+}
+
 # All 83 canonical thesis modules
 THESIS_MODULES = [
     "fusion_attn", "primal", "gqa", "adaptive_sparse_attention", "adaptive_span",
@@ -149,21 +180,7 @@ def main():
         },
     }
 
-    BATCH_SIZE_BY_MODEL = {
-        "distilbert": 32,
-        "roberta": 16,
-        "gpt2": 16,
-    }
 
-    RECOVERY_OVERRIDES = {
-        "svd_linear": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
-        "svd_llm_v2": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
-        "svd_mamba": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
-        "a3": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
-        "aasvd": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
-        "asvd": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
-        "mla": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
-    }
 
     def get_batch_size(m_name: str) -> int:
         return BATCH_SIZE_BY_MODEL.get(m_name.lower(), 32)
