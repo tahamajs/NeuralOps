@@ -1,26 +1,39 @@
 #!/usr/bin/env python3
 """
-Background Auto-Uploader & Verifier for Hugging Face Hub.
+Background Auto-Uploader & Verifier for Hugging Face Hub (Hooshaai Organization).
 
-Monitors results/ directory, finds ALL model checkpoints and summary_records,
-and ensures that:
-1. Every repo exists on Hooshaai.
-2. A comprehensive, publication-ready model card (README.md) is ALWAYS generated
-   and uploaded, incorporating model stats, architecture details, and GLUE metrics.
-3. weights.pt is completely uploaded for PASS modules (retries indefinitely until verified).
-4. All auxiliary configs/metrics/tokenizers are uploaded.
-5. PASS_LOW and FAIL modules get a lightweight model card uploaded (no weights, but metrics).
-6. Master results JSON is always kept up-to-date on HF.
+Monitors the results/ directory across all evaluation sweeps:
+- results/agnews_unified_* (AG News 4-class multi-class benchmark)
+- results/mnli_unified_*   (MNLI multi-class benchmark)
+- results/unified_*        (GLUE SST-2 benchmark)
+
+Standardized Repo Naming:
+- Hooshaai/svd-<dataset>-<model_family>-<module_slug>
+  e.g.:
+    Hooshaai/svd-agnews-distilbert-adaptive-span
+    Hooshaai/svd-sst2-roberta-svd-mamba
+    Hooshaai/svd-mnli-distilbert-primal
+
+Ensures:
+1. Every repo exists on Hooshaai with clean, human-readable repository slugs.
+2. A comprehensive, publication-ready model card (README.md) is ALWAYS generated and uploaded,
+   dynamically highlighting the correct dataset, multi-class accuracy, F1 scores, compression stats,
+   and parameter counts.
+3. weights.pt is uploaded for PASS and valid factorized/compressed models.
+4. All auxiliary configs, metrics, and tokenizer files are synced.
+5. PASS_LOW, PASS_NO_COMPRESSION, and FAIL modules get a clean model card + metrics uploaded.
+6. Master benchmark results JSON and CSV dataset are kept up-to-date on HF (Hooshaai/svd-benchmark-master-results).
 """
 
 import os
-os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
+os.environ["HF_HUB_DISABLE_XET"] = "1"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
 import sys
 import time
 import json
 import glob
 import csv
-import pandas as pd
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from huggingface_hub import HfApi
@@ -29,30 +42,68 @@ HF_ORG = "Hooshaai"
 CHECK_INTERVAL_S = 180  # Check every 3 minutes
 MASTER_RESULTS_REPO = f"{HF_ORG}/svd-benchmark-master-results"
 
-def get_repo_id(model_family: str, mod_name: str) -> str:
-    slug = mod_name.replace("_", "-")
-    return f"{HF_ORG}/svd-linear-attention-{model_family}-{slug}"
+def normalize_dataset_name(raw_dataset: str) -> str:
+    raw = (raw_dataset or "").lower().replace("_", "-").strip()
+    if "ag" in raw or "news" in raw:
+        return "agnews"
+    if "mnli" in raw:
+        return "mnli"
+    if "sst" in raw or "sst2" in raw:
+        return "sst2"
+    return raw if raw else "sst2"
 
-def generate_model_card(mod_name: str, model_name: str, metrics: dict, doc_content: str = "", status: str = "PASS") -> str:
+def get_repo_id(model_family: str, mod_name: str, dataset: str = "sst2") -> str:
+    norm_ds = normalize_dataset_name(dataset)
+    clean_model = model_family.lower().replace("_", "-").replace("models/", "").replace("-sst2", "")
+    slug = mod_name.lower().replace("_", "-").strip()
+    return f"{HF_ORG}/svd-{norm_ds}-{clean_model}-{slug}"
+
+def generate_model_card(
+    mod_name: str,
+    model_name: str,
+    dataset_name: str,
+    metrics: dict,
+    doc_content: str = "",
+    status: str = "PASS",
+) -> str:
     acc = metrics.get("accuracy_pct") or metrics.get("recovery_pct") or "N/A"
     f1 = metrics.get("f1_score") or "N/A"
     f1_macro = metrics.get("f1_macro") or "N/A"
     precision = metrics.get("precision") or "N/A"
     recall = metrics.get("recall") or "N/A"
     val_loss = metrics.get("val_loss") or "N/A"
-    comp_rate = metrics.get("compression_rate") or metrics.get("compression_ratio_pct") or "N/A"
+    comp_rate = metrics.get("compression_rate") or metrics.get("compression_ratio_pct") or "1.00"
     peak_vram = metrics.get("peak_vram_mb") or "N/A"
     eval_time = metrics.get("elapsed_s") or metrics.get("eval_time_s") or "N/A"
     tokens_per_sec = metrics.get("tokens_per_sec") or "N/A"
     total_params_before = metrics.get("total_params_before") or "N/A"
     total_params_after = metrics.get("total_params_after") or "N/A"
-    num_compressed = metrics.get("num_compressed_layers") or metrics.get("num_injected_attention_layers") or "N/A"
+    num_compressed = metrics.get("num_compressed_layers") or metrics.get("num_injected_attention_layers") or "0"
     lora_params = metrics.get("lora_params") or "N/A"
-    pass_threshold = metrics.get("pass_threshold_pct") or 56.0
+    pass_threshold = metrics.get("pass_threshold_pct") or "31.63"
     timestamp = metrics.get("timestamp") or datetime.now().isoformat()
 
-    status_badge = "✅ PASS" if status == "PASS" else ("⚠️ PASS_LOW" if status == "PASS_LOW" else f"❌ {status}")
-    weights_note = "Trained weights (`weights.pt`) are included in this repository." if status == "PASS" else "Note: Full weights not included (module did not meet quality threshold). Metrics and model card are preserved for research reference."
+    norm_ds = normalize_dataset_name(dataset_name)
+    ds_display = "AG News (4 Classes)" if norm_ds == "agnews" else ("MNLI (3 Classes)" if norm_ds == "mnli" else "GLUE SST-2 (Binary)")
+    hf_dataset_tag = "ag_news" if norm_ds == "agnews" else ("glue" if norm_ds in ("sst2", "mnli") else norm_ds)
+
+    if status == "PASS":
+        status_badge = "✅ PASS"
+    elif status == "PASS_LOW":
+        status_badge = "⚠️ PASS_LOW (Below Threshold)"
+    elif status == "PASS_NO_COMPRESSION":
+        status_badge = "ℹ️ PASS (Efficient Attention / Zero Param Reduction)"
+    else:
+        status_badge = f"❌ {status}"
+
+    weights_note = (
+        "Trained weights (`weights.pt`) are included in this repository."
+        if status in ("PASS", "PASS_NO_COMPRESSION") and metrics.get("has_weights", False)
+        else "Note: Weights not bundled or pruned; comprehensive profiling metrics, configurations, and verification card are preserved for research reproducibility."
+    )
+
+    clean_mod_title = mod_name.replace("_", " ").upper()
+    clean_model_title = model_name.replace("_", " ").upper()
 
     card = f"""---
 language:
@@ -62,94 +113,111 @@ tags:
 - svd-linear-attention
 - pytorch
 - efficient-attention
-- compression
+- model-compression
 - {model_name}
 - {mod_name}
 - benchmark-result
 - status-{status.lower()}
 datasets:
-- glue
+- {hf_dataset_tag}
 metrics:
 - accuracy
 - f1
 pipeline_tag: text-classification
 ---
 
-# {mod_name.replace('_', ' ').upper()} — {model_name.upper()} Benchmark Result
+# {clean_mod_title} — {clean_model_title} Benchmark Result
 
-**Status:** {status_badge}
+**Status:** {status_badge}  
+**Dataset:** `{ds_display}`  
+**Architecture:** `{model_name}`  
+**Module:** `{mod_name}`  
 
-This repository hosts the benchmark results for the **`{mod_name}`** module applied to **`{model_name}`** on GLUE SST-2.
+This repository hosts empirical benchmark results and factorized checkpoints for **`{mod_name}`** applied to **`{model_name}`** on **`{ds_display}`**.
 
 {weights_note}
 
-## Benchmark Performance (recovery_steps=50, GLUE SST-2)
+## Benchmark Performance Metrics
 
 | Metric | Value |
 |:---|:---|
 | **Model Family** | `{model_name}` |
 | **Module / Method** | `{mod_name}` |
-| **Status** | **{status}** |
+| **Dataset** | **{ds_display}** |
+| **Validation Status** | **{status}** |
 | **Validation Accuracy** | **{acc}%** |
-| **Pass Threshold** | {pass_threshold}% |
-| **F1 Score (macro)** | {f1_macro} |
-| **F1 Score (weighted)** | {f1} |
+| **Pass Threshold (3*SE Margin)** | {pass_threshold}% |
+| **F1 Score (Macro)** | {f1_macro} |
+| **F1 Score (Weighted)** | {f1} |
 | **Precision** | {precision} |
 | **Recall** | {recall} |
 | **Validation Loss** | {val_loss} |
-| **Compression Rate** | {comp_rate}x |
+| **Compression Factor** | {comp_rate}x |
 | **Peak GPU VRAM** | {peak_vram} MB |
 | **Inference Throughput** | {tokens_per_sec} tokens/sec |
-| **Total Eval Time** | {eval_time} s |
-| **Parameters (before)** | {total_params_before} |
-| **Parameters (after)** | {total_params_after} |
+| **Evaluation Time** | {eval_time} s |
+| **Parameters (Before)** | {total_params_before} |
+| **Parameters (After)** | {total_params_after} |
 | **Compressed Layers** | {num_compressed} |
-| **LoRA Recovery Params** | {lora_params} |
+| **LoRA Trainable Params** | {lora_params} |
 | **Benchmark Timestamp** | {timestamp} |
 
-## Architecture & Module Details
+## Architecture & Module Specification
 
-{doc_content if doc_content else f"The `{mod_name}` attention/compression engine integrates into the **Hoosha AI NeuralOps** benchmark suite, replacing standard quadratic attention or dense projection layers with subquadratic approximations using SVD and low-rank state recurrence."}
+{doc_content if doc_content else f"The `{mod_name}` module is evaluated under the **Hoosha AI NeuralOps SVD & Linear Attention Suite**, benchmarking subquadratic attention and rank-adaptive tensor factorization against full quadratic baselines."}
 
-## Framework
+## Framework & Verification
 
 Developed and benchmarked using the **SVD Linear Attention Framework** — Universal GPU Benchmark Suite.
-- **Benchmark Suite:** [tahamajs/SVD_linear_Attention](https://github.com/tahamajs/SVD_linear_Attention)
+- **Repository:** [tahamajs/SVD_linear_Attention](https://github.com/tahamajs/SVD_linear_Attention)
 - **Organization:** [Hooshaai](https://huggingface.co/Hooshaai)
 """
     return card
 
 def collect_master_results(results_base: Path) -> list:
-    """Collect all results from all summary CSVs across all modules and models."""
     all_results = []
     seen = set()
-    
-    # 1. From per-model summary CSVs
-    for csv_path in results_base.glob("unified_*/*/summary.csv"):
+
+    # 1. From summary.csv across all unified directories (agnews_unified_*, mnli_unified_*, unified_*)
+    for csv_path in results_base.glob("*unified_*/*/summary.csv"):
         parts = str(csv_path).replace("\\", "/").split("/")
         if len(parts) >= 3:
-            mod = parts[-3].replace("unified_", "")
+            dir_name = parts[-3]
             model = parts[-2]
+            
+            # Extract dataset from directory name
+            if dir_name.startswith("agnews_unified_"):
+                mod = dir_name.replace("agnews_unified_", "")
+                ds = "ag_news"
+            elif dir_name.startswith("mnli_unified_"):
+                mod = dir_name.replace("mnli_unified_", "")
+                ds = "mnli"
+            else:
+                mod = dir_name.replace("unified_", "")
+                ds = "sst2"
+
             try:
                 with open(csv_path, encoding="utf-8") as f:
                     for row in csv.DictReader(f):
                         module_name = row.get("module_name", "")
                         if module_name in ("full", "", "nan"):
                             continue
-                        key = f"{mod}|{model}|{module_name}"
+                        row_ds = row.get("dataset") or ds
+                        key = f"{mod}|{model}|{module_name}|{row_ds}"
                         if key not in seen:
                             seen.add(key)
                             all_results.append({
                                 "module": module_name,
-                                "model_dir": mod,
+                                "model_dir": dir_name,
                                 "model_family": model,
+                                "dataset": row_ds,
                                 **row
                             })
             except Exception:
                 pass
-    
-    # 2. From summary_record.json (lightweight records for non-PASS modules)
-    for srec_path in results_base.glob("unified_*/*/checkpoints/*/summary_record.json"):
+
+    # 2. From summary_record.json
+    for srec_path in results_base.glob("*unified_*/*/checkpoints/*/summary_record.json"):
         try:
             with open(srec_path, encoding="utf-8") as f:
                 rec = json.load(f)
@@ -159,94 +227,11 @@ def collect_master_results(results_base: Path) -> list:
                 all_results.append(rec)
         except Exception:
             pass
-    
+
     return all_results
 
-def sync_and_verify_hf():
-    repo_dir = Path(os.environ.get("SVD_PROJECT_ROOT",
-                                   "D:\\SVD_Project" if os.path.exists("D:\\SVD_Project") else "."))
-    results_base = repo_dir / "results"
-    docs_base = repo_dir / "Docs" / "content"
-    if not results_base.exists():
-        return
-
-    api = HfApi()
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Running sweep across {results_base}...")
-
-    # -------------------------------------------------------------------------
-    # 1. Ensure master results repo exists
-    # -------------------------------------------------------------------------
-    try:
-        api.create_repo(repo_id=MASTER_RESULTS_REPO, exist_ok=True, private=True, repo_type="dataset")
-    except Exception:
-        pass
-
-    # -------------------------------------------------------------------------
-    # 2. Collect ALL results and upload master JSON
-    # -------------------------------------------------------------------------
-    all_results = collect_master_results(results_base)
-    if all_results:
-        master_payload = {
-            "generated_at": datetime.now().isoformat(),
-            "total_results": len(all_results),
-            "results": all_results
-        }
-        try:
-            api.upload_file(
-                path_or_fileobj=json.dumps(master_payload, indent=2).encode("utf-8"),
-                path_in_repo="master_benchmark_results.json",
-                repo_id=MASTER_RESULTS_REPO,
-                commit_message=f"Update master results: {len(all_results)} records at {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-                repo_type="dataset"
-            )
-            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Updated master results JSON ({len(all_results)} records)")
-        except Exception as e:
-            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Master JSON upload failed: {e}")
-
-    # -------------------------------------------------------------------------
-    # 3. Upload per-module results (PASS with weights, PASS_LOW/FAIL with card)
-    # -------------------------------------------------------------------------
-    # Collect candidate checkpoints (weights.pt = PASS, summary_record.json = any status)
-    handled = set()
-    
-    # PASS modules: upload full weights + card
-    for wf in results_base.glob("unified_*/*/checkpoints/*/weights.pt"):
-        ckpt_dir = wf.parent
-        if ckpt_dir.name == "full":
-            continue
-        model_dir = ckpt_dir.parent.parent
-        model_name = model_dir.name
-        mod_name = model_dir.parent.name.replace("unified_", "")
-        key = f"{mod_name}|{model_name}"
-        if key in handled:
-            continue
-        handled.add(key)
-        _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, docs_base, status_override=None)
-
-    # PASS_LOW / FAIL modules: upload model card only (no weights)
-    for srec_path in results_base.glob("unified_*/*/checkpoints/*/summary_record.json"):
-        ckpt_dir = srec_path.parent
-        model_dir = ckpt_dir.parent.parent
-        model_name = model_dir.name
-        mod_name = model_dir.parent.name.replace("unified_", "")
-        key = f"{mod_name}|{model_name}"
-        if key in handled:
-            continue
-        handled.add(key)
-        try:
-            with open(srec_path, encoding="utf-8") as f:
-                srec = json.load(f)
-            _upload_module_result(api, None, ckpt_dir, model_name, mod_name, docs_base,
-                                  status_override=srec.get("status"), metrics_override=srec)
-        except Exception as e:
-            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Failed to process summary_record for {mod_name}/{model_name}: {e}")
-
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Handled {len(handled)} module-model combinations.")
-
-
-def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, docs_base, status_override=None, metrics_override=None):
-    """Upload results for one module/model combination to HuggingFace."""
-    repo_id = get_repo_id(model_name, mod_name)
+def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, dataset_name, docs_base, status_override=None, metrics_override=None):
+    repo_id = get_repo_id(model_name, mod_name, dataset_name)
 
     # Determine status
     status = status_override
@@ -255,7 +240,7 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, docs_base, st
     if not status:
         status = "UNKNOWN"
 
-    # Get metrics
+    # Gather metrics
     metrics = metrics_override or {}
     if not metrics:
         summary_csv = ckpt_dir.parent.parent / "summary.csv"
@@ -264,12 +249,12 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, docs_base, st
                 with open(summary_csv, encoding="utf-8") as f:
                     for row in csv.DictReader(f):
                         if row.get("module_name") not in ("full", "", "nan"):
-                            metrics = row
+                            metrics = dict(row)
                             break
             except Exception:
                 pass
-    
-    # Check for metrics.json
+
+    # Also check for metrics.json inside hf_export
     metrics_json = ckpt_dir / "hf_export" / "metrics.json"
     if metrics_json.exists():
         try:
@@ -280,10 +265,17 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, docs_base, st
         except Exception:
             pass
 
-    # Read doc content
+    has_weights = bool(wf and wf.exists())
+    metrics["has_weights"] = has_weights
+
+    # Read module documentation if available
     doc_content = ""
-    for cand_doc in [docs_base / "attentions" / f"{mod_name}.md",
-                     docs_base / "compressions" / f"{mod_name}.md"]:
+    for cand_doc in [
+        docs_base / "attentions" / f"{mod_name}.md",
+        docs_base / "attentions" / f"{mod_name}_attention.md",
+        docs_base / "compressions" / f"{mod_name}.md",
+        docs_base / "compressions" / f"{mod_name}_compressor.md",
+    ]:
         if cand_doc.exists():
             try:
                 doc_content = cand_doc.read_text(encoding="utf-8")
@@ -291,11 +283,11 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, docs_base, st
             except Exception:
                 pass
 
-    # 1. Ensure repo exists
+    # 1. Ensure repo exists on Hooshaai
     try:
         api.create_repo(repo_id=repo_id, exist_ok=True, private=True)
-    except Exception:
-        pass
+    except Exception as e_cr:
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] create_repo warning for {repo_id}: {e_cr}")
 
     # 2. Check remote files
     remote_files = []
@@ -304,20 +296,27 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, docs_base, st
     except Exception:
         pass
 
-    # 3. Always upload README.md (overwrite if status changed)
+    # 3. Always upload / update README.md
     try:
-        readme_text = generate_model_card(mod_name, model_name, metrics, doc_content, status=status)
+        readme_text = generate_model_card(
+            mod_name=mod_name,
+            model_name=model_name,
+            dataset_name=dataset_name,
+            metrics=metrics,
+            doc_content=doc_content,
+            status=status,
+        )
         api.upload_file(
             path_or_fileobj=readme_text.encode("utf-8"),
             path_in_repo="README.md",
             repo_id=repo_id,
-            commit_message=f"Update model card for {model_name}-{mod_name} (status={status})",
+            commit_message=f"Update model card for {model_name}-{mod_name} on {dataset_name} [{status}]",
         )
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] README.md -> {repo_id} [{status}]")
     except Exception as e_rm:
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] README upload failed for {repo_id}: {e_rm}")
 
-    # 4. Upload metrics JSON always
+    # 4. Upload benchmark_metrics.json
     try:
         api.upload_file(
             path_or_fileobj=json.dumps(metrics, indent=2, default=str).encode("utf-8"),
@@ -328,15 +327,17 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, docs_base, st
     except Exception:
         pass
 
-    # 5. Upload weights.pt only for PASS modules
-    if wf and wf.exists() and status == "PASS" and "weights.pt" not in remote_files:
+    # 5. Upload weights.pt if PASS and exists
+    if has_weights and status in ("PASS", "PASS_NO_COMPRESSION") and "weights.pt" not in remote_files:
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Uploading weights.pt ({wf.stat().st_size / 1e6:.1f} MB) -> {repo_id}...")
         for attempt in range(1, 4):
             try:
-                import subprocess
-                res = subprocess.run(["hf", "upload", repo_id, str(wf), "weights.pt"], capture_output=True)
-                if res.returncode != 0:
-                    raise Exception(res.stderr.decode("utf-8"))
+                api.upload_file(
+                    path_or_fileobj=str(wf),
+                    path_in_repo="weights.pt",
+                    repo_id=repo_id,
+                    commit_message=f"Upload weights for {model_name}-{mod_name} on {dataset_name}",
+                )
                 print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] SUCCESS: weights.pt -> {repo_id}")
                 break
             except Exception as e_up:
@@ -345,8 +346,7 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, docs_base, st
 
     # 6. Upload auxiliary files (config.json, tokenizer files, etc.)
     for extra in ckpt_dir.glob("*"):
-        if extra.is_file() and extra.name not in ("weights.pt", "pytorch_model.bin",
-                                                    "README.md", "summary_record.json"):
+        if extra.is_file() and extra.name not in ("weights.pt", "pytorch_model.bin", "README.md", "summary_record.json"):
             if extra.name not in remote_files:
                 try:
                     api.upload_file(
@@ -374,6 +374,126 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, docs_base, st
                     except Exception:
                         pass
 
+def sync_and_verify_hf():
+    repo_dir = Path(os.environ.get("SVD_PROJECT_ROOT",
+                                   "D:\\SVD_Project" if os.path.exists("D:\\SVD_Project") else "."))
+    results_base = repo_dir / "results"
+    docs_base = repo_dir / "Docs" / "content"
+    if not results_base.exists():
+        return
+
+    api = HfApi()
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Running sweep across {results_base}...")
+
+    # 1. Master results dataset repo
+    try:
+        api.create_repo(repo_id=MASTER_RESULTS_REPO, exist_ok=True, private=True, repo_type="dataset")
+    except Exception:
+        pass
+
+    all_results = collect_master_results(results_base)
+    if all_results:
+        master_payload = {
+            "generated_at": datetime.now().isoformat(),
+            "total_results": len(all_results),
+            "results": all_results
+        }
+        try:
+            api.upload_file(
+                path_or_fileobj=json.dumps(master_payload, indent=2).encode("utf-8"),
+                path_in_repo="master_benchmark_results.json",
+                repo_id=MASTER_RESULTS_REPO,
+                commit_message=f"Update master results: {len(all_results)} records at {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                repo_type="dataset"
+            )
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Updated master results JSON ({len(all_results)} records)")
+        except Exception as e:
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Master JSON upload failed: {e}")
+
+    # 2. Upload per-module results across agnews_unified_*, mnli_unified_*, unified_*
+    handled = set()
+
+    # Process all directories matching *unified_*/*/checkpoints/*
+    for ckpt_dir in results_base.glob("*unified_*/*/checkpoints/*"):
+        if not ckpt_dir.is_dir() or ckpt_dir.name in ("full", "hf_export"):
+            continue
+
+        model_dir = ckpt_dir.parent.parent
+        model_name = model_dir.name
+        dir_name = model_dir.parent.name
+        mod_name = ckpt_dir.name
+
+        if dir_name.startswith("agnews_unified_"):
+            dataset_name = "ag_news"
+        elif dir_name.startswith("mnli_unified_"):
+            dataset_name = "mnli"
+        else:
+            dataset_name = "sst2"
+
+        key = f"{dataset_name}|{model_name}|{mod_name}"
+        if key in handled:
+            continue
+        handled.add(key)
+
+        wf = ckpt_dir / "weights.pt"
+        srec_path = ckpt_dir / "summary_record.json"
+
+        srec = None
+        if srec_path.exists():
+            try:
+                with open(srec_path, encoding="utf-8") as f:
+                    srec = json.load(f)
+            except Exception:
+                pass
+
+        status = srec.get("status") if srec else ("PASS" if wf.exists() else None)
+        _upload_module_result(
+            api=api,
+            wf=wf if wf.exists() else None,
+            ckpt_dir=ckpt_dir,
+            model_name=model_name,
+            mod_name=mod_name,
+            dataset_name=dataset_name,
+            docs_base=docs_base,
+            status_override=status,
+            metrics_override=srec,
+        )
+
+    # Also handle results where checkpoints were cleared but summary.csv exists
+    for csv_path in results_base.glob("*unified_*/*/summary.csv"):
+        model_dir = csv_path.parent
+        model_name = model_dir.name
+        dir_name = model_dir.parent.name
+        if dir_name.startswith("agnews_unified_"):
+            dataset_name = "ag_news"
+            mod_name = dir_name.replace("agnews_unified_", "")
+        elif dir_name.startswith("mnli_unified_"):
+            dataset_name = "mnli"
+            mod_name = dir_name.replace("mnli_unified_", "")
+        else:
+            dataset_name = "sst2"
+            mod_name = dir_name.replace("unified_", "")
+
+        key = f"{dataset_name}|{model_name}|{mod_name}"
+        if key in handled:
+            continue
+        handled.add(key)
+
+        ckpt_dir = model_dir / "checkpoints" / mod_name
+        ckpt_dir.mkdir(parents=True, exist_ok=True)
+        _upload_module_result(
+            api=api,
+            wf=None,
+            ckpt_dir=ckpt_dir,
+            model_name=model_name,
+            mod_name=mod_name,
+            dataset_name=dataset_name,
+            docs_base=docs_base,
+            status_override=None,
+            metrics_override=None,
+        )
+
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Processed {len(handled)} module/model/dataset targets.")
 
 def loop(interval_s: int = CHECK_INTERVAL_S):
     while True:
@@ -384,7 +504,6 @@ def loop(interval_s: int = CHECK_INTERVAL_S):
         if interval_s <= 0:
             break
         time.sleep(interval_s)
-
 
 if __name__ == "__main__":
     interval = int(sys.argv[1]) if len(sys.argv) > 1 else CHECK_INTERVAL_S
