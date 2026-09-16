@@ -1,8 +1,0 @@
-{
-  "timestamp": "2026-08-23T05:29:30.112087",
-  "compressor": "kronecker_tt_lora",
-  "original_size_mb": 255.41,
-  "compressed_size_mb": 260.95,
-  "reduction_ratio": 0.979,
-  "compression_rank": 64
-}

@@ -1,3 +1,0 @@
-module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-full,PASS,90.94,0.9125,0.9093,0.9101,0.9091,0.3103,1.18,389.51,149492.01,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T20:57:04.065363
-samba_m3,PASS,89.45,0.8991,0.8943,0.896,0.894,0.4664,10.18,425.24,31470.26,66955010,82331930,1698074,0.8132,-22.97,0.0,0,0,,,6,1105920,,legacy_bert,2026-09-11T20:57:14.394625

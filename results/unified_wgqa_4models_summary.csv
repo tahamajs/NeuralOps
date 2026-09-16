@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,WGQA Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.94%,90.71%,-0.23%,0.9109,PASS,0,0.99x,329.4 MB,18.8
-roberta,0,75.46%,50.92%,-24.54%,0.6748,PASS_LOW,0,0.94x,658.1 MB,24.8
-gpt2,0,57.91%,51.03%,-6.88%,0.6753,PASS_LOW,0,0.99x,568.6 MB,28.2

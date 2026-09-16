@@ -1,8 +1,0 @@
-{
-  "timestamp": "2026-08-23T03:23:07.977490",
-  "compressor": "direct_svd_encoder",
-  "original_size_mb": 255.41,
-  "compressed_size_mb": 111.79,
-  "reduction_ratio": 2.285,
-  "compression_rank": 64
-}

@@ -1,2 +1,0 @@
-model,slug,baseline_acc,acc,delta_acc,f1,status,passed_gate,vram_peak_mb,out_dir,hf_repo
-roberta,roberta,0.7856000000000001,0.6651,-0.12049999999999997,0.6198,PASS,True,687.46,results\unified_adaptive_sparse\roberta,Hooshaai/svd-linear-attention-roberta-adaptive-sparse

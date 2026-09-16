@@ -1,2 +1,0 @@
-module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
-soafusedattention,PASS,40.6,0.3041,0.3041,0.2807,0.3977,1.094,7.08,307.32,52615.92,66955779,58495491,387072,1.1446,12.64,0.0,0,0,,,6,387072,,legacy_bert,2026-09-16T03:22:17.091360

@@ -1,1 +1,0 @@
-{"batch_size": 128, "num_workers": 4, "learning_rate": 0.0002, "epochs": 3, "seed": 42, "attn": "compress_cur_moe", "task": "sst2"}

@@ -1,8 +1,0 @@
-module_name,status,accuracy_pct,elapsed_s,error,path,timestamp
-full,PASS,75.46,10.94,,native_qwen,2026-08-31T21:24:34.483492
-faq,PASS,75.23,8.74,,adapted_qwen,2026-08-31T21:24:44.360923
-astro,PASS,68.23,7.77,,adapted_qwen,2026-08-31T21:24:52.413091
-a3,PASS,50.23,34.45,"fp32 retry: ""geqrf_cuda"" not implemented for 'Half'",native_qwen,2026-08-31T21:25:27.142046
-admm,PASS,49.2,17.65,,adapted_qwen,2026-08-31T21:25:45.613811
-mamba,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-08-31T21:25:45.984538
-adaptive_span,SKIP_NO_SUPPORT,0.0,0.0,unsupported_family,unsupported,2026-08-31T21:25:45.984967

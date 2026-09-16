@@ -1,4 +1,0 @@
-Model,Exit Code,Baseline Acc,UniQL Compressor Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
-distilbert,0,90.48%,90.14%,-0.34%,0.9027,PASS,0,1.00x,339.2 MB,17.5
-roberta,0,75.11%,82.45%,+7.34%,0.8468,PASS,0,1.00x,359.0 MB,23.6
-gpt2,0,60.78%,60.89%,+0.11%,0.6634,PASS,0,1.00x,635.0 MB,21.6

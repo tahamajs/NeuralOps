@@ -1,1 +1,0 @@
-{"batch_size": 16, "num_workers": 4, "learning_rate": 3e-05, "epochs": 0.5, "seed": 42, "attn": "svd_linear", "task": "mrpc"}
