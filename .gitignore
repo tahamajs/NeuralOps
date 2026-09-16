@@ -187,8 +187,8 @@ experiments/
 !Codes/framework/experiments/**
 benchmark_results/
 **/benchmark_results/
-!results/
-!results/**
+# !results/
+# !results/**
 !submissions/
 !submissions/**
 !paper/**/*.pdf
@@ -238,3 +238,101 @@ temp_modules_docs/
 results/*.log
 */**/*.log
 *.pdf
+
+# ═══════════════════════════════════════════════
+# Python
+# ═══════════════════════════════════════════════
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.conda/
+
+# ═══════════════════════════════════════════════
+# Test & Benchmark Outputs
+# ═══════════════════════════════════════════════
+results/
+benchmark_logs/
+logs/
+*.log
+
+# ═══════════════════════════════════════════════
+# Paper artifacts (generated, not source)
+# ═══════════════════════════════════════════════
+papers/modules/*/figures/
+papers/modules/*/tables/
+papers/modules/*/metrics/
+papers/modules/*/examples/
+papers/modules/*/logs/
+papers/modules/*/model_cards/
+papers/modules/*/runs/
+papers/modules/*/paper.md
+papers/_rank_ablation/modules.txt
+papers/_rank_ablation/*.log
+papers/_rank_ablation/progress.log
+
+!papers/modules/.gitkeep
+!papers/_rank_ablation/.gitkeep
+
+# ═══════════════════════════════════════════════
+# Model checkpoints
+# ═══════════════════════════════════════════════
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+checkpoints/
+
+# ═══════════════════════════════════════════════
+# Runtime logs
+# ═══════════════════════════════════════════════
+sweep_forever.log
+paper_artifacts_forever.log
+sweep_service.log
+*.jsonl
+
+# ═══════════════════════════════════════════════
+# Temporary / debug files
+# ═══════════════════════════════════════════════
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# ═══════════════════════════════════════════════
+# Ad-hoc test scripts
+# ═══════════════════════════════════════════════
+check_nha.py
+check_nha2.py
+check_svd_count.py
+fix_gen.py
+test_*.py
+debug_*.py
+
+# ═══════════════════════════════════════════════
+# IDE
+# ═══════════════════════════════════════════════
+.vscode/
+.idea/
+*.code-workspace
+
