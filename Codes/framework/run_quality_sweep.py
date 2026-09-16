@@ -639,6 +639,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
             step_loss = 0.0
             
             # Micro-batch accumulation to strictly prevent VRAM OOM while preserving batch_size=64 semantics
+            t_fwd_start = time.time()
             for c_start in range(0, total_n, micro_bs):
                 c_end = min(c_start + micro_bs, total_n)
                 cx = {k: v[c_start:c_end] for k, v in bx.items()}
@@ -651,9 +652,10 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
 
                 if not torch.isfinite(out.loss):
                     had_nan = True
-                step_loss += float(out.loss) * frac
+                step_loss_tensor = out.loss.detach() * frac if c_start == 0 else step_loss_tensor + out.loss.detach() * frac
                 scaler.scale(loss_chunk).backward()
 
+            t_bwd_end = time.time()
             try:
                 scaler.unscale_(opt)
                 torch.nn.utils.clip_grad_norm_(trainable, max_norm=1.0)
@@ -662,10 +664,17 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
             except (RuntimeError, ValueError):
                 opt.step()
             scheduler.step()
+            t_opt_end = time.time()
             
-            step_time = time.time() - step_start_time
-            if (step + 1) % 5 == 0 or step == steps - 1 or step == 0:
-                LOG.info("LoRA fine-tune step %d/%d loss=%.4f (bs=%d, micro_bs=%d) took %.2fs", step + 1, steps, step_loss, total_n, micro_bs, step_time)
+            step_time = t_opt_end - step_start_time
+            if (step + 1) <= 5 or (step + 1) % 5 == 0 or step == steps - 1:
+                step_loss = float(step_loss_tensor)
+                fwd_bwd_time = t_bwd_end - t_fwd_start
+                opt_time = t_opt_end - t_bwd_end
+                LOG.info(
+                    "Timing step %d/%d: fwd_bwd=%.3fs opt=%.3fs total=%.3fs (loss=%.4f, bs=%d, micro_bs=%d)",
+                    step + 1, steps, fwd_bwd_time, opt_time, step_time, step_loss, total_n, micro_bs
+                )
             step += 1
         except torch.cuda.OutOfMemoryError:
             opt.zero_grad(set_to_none=True)

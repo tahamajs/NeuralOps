@@ -184,6 +184,8 @@ class GatedDeltaNetBlock(BaseAttention):
                 delta_out = F.pad(delta_out, (0, x.shape[-1] - delta_out.shape[-1])) if delta_out.shape[-1] < x.shape[-1] else delta_out[..., :x.shape[-1]]
             if self.is_nested_encoder:
                 return delta_out, None
+            if getattr(self, "is_nested_encoder", False):
+                return delta_out, None
             out = self.norm(x + delta_out)
             return out, None
 
@@ -267,6 +269,7 @@ def inject_gated_deltanet_block(
             new_block.is_nested_encoder = False
             new_block.deltanet.is_nested_encoder = False
             layer.self_attn = new_block
+        assert new_block.is_nested_encoder == new_block.deltanet.is_nested_encoder, "GatedDeltaNetBlock nested flag desynced"
 
         return new_block
     except Exception as e:

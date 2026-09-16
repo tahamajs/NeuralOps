@@ -138,7 +138,7 @@ class ADMMPruner(BaseCompressor):
         self,
         model: nn.Module,
         sparsity: float = 0.5,
-        rho: float = 0.1,
+        rho: float = 1e-3,
         max_iter: int = 6,
         structured_24: bool = True,
         block_size: Tuple[int, int] = (4, 4),

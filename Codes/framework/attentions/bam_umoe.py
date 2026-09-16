@@ -231,6 +231,8 @@ class UnifiedMoE(nn.Module):
         B, L, D = x.shape
         x_norm = self.router_ln(x)
         logits = self.router(x_norm)  # (B, L, E)
+        if self.training:
+            logits += torch.randn_like(logits) * 0.05
 
         if self.training and self.noise_std > 0:
             noise = torch.randn_like(logits) * self.noise_std

@@ -120,8 +120,7 @@ class SVDLinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ):
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
+        
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -183,7 +182,7 @@ class SVDLinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("svd_mamba", supports_causal=True)
@@ -281,12 +280,12 @@ class SVDMamba(BaseAttention):
         # Gating for dynamic aggregation (negative initial bias preserves pretrained attention path)
         self.gating = nn.Linear(self.d_model, self.d_model)
         nn.init.zeros_(self.gating.weight)
-        nn.init.constant_(self.gating.bias, -7.0)
+        nn.init.constant_(self.gating.bias, -2.0)
 
         # Attention output projection
         self.attn_out_proj = SVDLinear(
             self.all_head_size, self.d_model,
-            rank=max(1, min(self.all_head_size, self.d_model) // 4),
+            rank=max(1, min(self.all_head_size, self.d_model) // 2),
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
 
@@ -301,14 +300,12 @@ class SVDMamba(BaseAttention):
             rank=max(1, min(self.inner_dim, self.d_model) // 2),
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True, dtype=target_dtype
         )
-        self.x_proj = SVDLinear(
-            self.inner_dim, self.dt_rank + 2 * self.d_state,
-            rank=self.dt_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=False, dtype=target_dtype
-        )
-        self.dt_proj = SVDLinear(
-            self.dt_rank, self.inner_dim,
-            rank=self.dt_rank, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=False, dtype=target_dtype
-        )
+        self.x_proj = nn.Linear(self.inner_dim, self.dt_rank + 2 * self.d_state, bias=True)
+        nn.init.uniform_(self.x_proj.weight, -0.01, 0.01)
+        nn.init.zeros_(self.x_proj.bias)
+        self.dt_proj = nn.Linear(self.dt_rank, self.inner_dim, bias=True)
+        nn.init.uniform_(self.dt_proj.weight, -0.01, 0.01)
+        nn.init.zeros_(self.dt_proj.bias)
 
         # Causal depthwise convolution
         self.conv1d = nn.Conv1d(
@@ -608,7 +605,7 @@ class SVDMamba(BaseAttention):
         C_ssm = x_proj[:, :, self.dt_rank + self.d_state :]
 
         delta = self.dt_proj(delta)
-        delta = F.softplus(delta + self.dt_bias).clamp(min=1e-3, max=0.1)
+        delta = F.softplus(delta + self.dt_bias).clamp(min=1e-4, max=1.0)
 
         A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x_conv.dtype)
 
