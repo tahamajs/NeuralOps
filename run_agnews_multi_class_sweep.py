@@ -134,6 +134,15 @@ def main():
         },
     }
 
+    BATCH_SIZE_BY_MODEL = {
+        "distilbert": 64,
+        "roberta": 32,
+        "gpt2": 32,
+    }
+
+    def get_batch_size(m_name: str) -> int:
+        return BATCH_SIZE_BY_MODEL.get(m_name.lower(), 32)
+
     sweep_script = REPO_DIR / "Codes" / "framework" / "run_quality_sweep.py"
     uploader_script = REPO_DIR / "auto_upload_hf_results.py"
 
@@ -150,6 +159,8 @@ def main():
         # One shared batch cache per backbone - created on first module run, reused by all others
         cached_batches_dir = REPO_DIR / "results" / f"{model_name}_agnews_batch_cache"
         cached_batches_dir.mkdir(parents=True, exist_ok=True)
+        
+        current_batch_size = get_batch_size(model_name)
 
         # Step 1: Ensure baseline is pre-tuned on AG News
         if not base_ckpt.exists():
@@ -161,7 +172,7 @@ def main():
                 "--dataset", "ag_news",
                 "--output_dir", str(base_out_dir),
                 "--modules", "full",
-                "--batch_size", str(args.batch_size),
+                "--batch_size", str(current_batch_size),
                 "--finetune_steps", "600",
                 "--precision", "fp16",
                 "--fresh",
