@@ -211,13 +211,23 @@ class NEXUSConfig:
 # Utility: Softpick rectified softmax
 # ============================================================================
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    import torch.nn.functional as F
     orig_dtype = x.dtype
+    x_f = x.float()
     temp = max(temperature, 1e-6)
-    x_scaled = torch.clamp(x.float() / temp, max=85.0)
-    p = F.relu(torch.exp(x_scaled) - 1.0)
-    denom = p.sum(dim=dim, keepdim=True) + 1e-8
-    return (p / denom).to(orig_dtype)
+    m = x_f.max(dim=dim, keepdim=True).values
+    m = torch.where(m < -1e3, torch.zeros_like(m), m)
+    z = x_f - m
+    exp_z = torch.exp(z / temp)
+    exp_neg_m = torch.exp((-m) / temp).clamp(max=1e4)
+    p = F.relu(exp_z - exp_neg_m)
+    denom = p.sum(dim=dim, keepdim=True)
+    zero_mask = denom <= 1e-8
+    if zero_mask.any():
+        fallback = F.softmax(x_f, dim=dim)
+        p = torch.where(zero_mask, fallback, p / (denom + 1e-8))
+    else:
+        p = p / denom
+    return p.to(orig_dtype)
 
 
 # ============================================================================

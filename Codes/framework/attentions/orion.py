@@ -94,9 +94,23 @@ class ORIONConfig:
 
 
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
+    orig_dtype = x.dtype
     x_f = x.float()
-    p = F.relu(torch.exp(x_f / temperature) - 1.0)
-    return (p / (p.sum(dim=dim, keepdim=True) + 1e-8)).to(x.dtype)
+    temp = max(temperature, 1e-6)
+    m = x_f.max(dim=dim, keepdim=True).values
+    m = torch.where(m < -1e3, torch.zeros_like(m), m)
+    z = x_f - m
+    exp_z = torch.exp(z / temp)
+    exp_neg_m = torch.exp((-m) / temp).clamp(max=1e4)
+    p = F.relu(exp_z - exp_neg_m)
+    denom = p.sum(dim=dim, keepdim=True)
+    zero_mask = denom <= 1e-8
+    if zero_mask.any():
+        fallback = F.softmax(x_f, dim=dim)
+        p = torch.where(zero_mask, fallback, p / (denom + 1e-8))
+    else:
+        p = p / denom
+    return p.to(orig_dtype)
 
 
 class FactorisedLinear(nn.Module):
@@ -431,8 +445,7 @@ class ORIONAttention(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:

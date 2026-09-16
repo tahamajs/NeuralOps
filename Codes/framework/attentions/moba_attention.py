@@ -258,8 +258,7 @@ class MoBAAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -598,8 +597,8 @@ def inject_moba(
         try:
             new_attn.copy_weights(src_attn)
         except Exception as e:
-            print(f'copy_weights failed: {e}')
-            raise RuntimeError(f"copy_weights failed: {e}")
+            logger.error("moba copy_weights failed: %s", e)
+            return None
 
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):

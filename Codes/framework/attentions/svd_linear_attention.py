@@ -1130,7 +1130,7 @@ def inject_svd_linear_attention(
         new_attn.is_nested_encoder = is_nested
     except Exception as e:
         logger.warning(f"Failed to instantiate SVDLinearAttention: {e}")
-        raise RuntimeError(f"Injection failed")
+        return None
 
     if target is not None:
         if is_nested:

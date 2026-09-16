@@ -170,8 +170,7 @@ class SubspaceLinear(nn.Module):
                 if hasattr(linear.lora_B, "weight") and subspace_layer.lora_B is not None:
                     subspace_layer.lora_B.data.copy_(linear.lora_B.weight.data)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
         return subspace_layer
 

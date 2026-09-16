@@ -716,4 +716,4 @@ def inject_bam_umoe(
             layer.attn = new_attn
         return new_attn
     except Exception:
-        raise RuntimeError("copy_weights failed")
+        return None

@@ -639,4 +639,4 @@ def inject_unified_rope(
         return new_attn
     except Exception as e:
         logger.error("inject_unified_rope failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None

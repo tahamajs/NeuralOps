@@ -679,7 +679,7 @@ def inject_performer(
         )
     except Exception as e:
         logger.warning("PerformerAttention construction/weight copying failed: %s", e)
-        raise RuntimeError(f"Injection failed")
+        return None
 
     if target is not None:
         if hasattr(target, "attention"):

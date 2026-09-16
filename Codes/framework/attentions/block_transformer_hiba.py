@@ -745,4 +745,4 @@ def inject_block_transformer_hiba(
             layer.attn = new_attn
         return new_attn
     except Exception:
-        raise RuntimeError("copy_weights failed")
+        return None

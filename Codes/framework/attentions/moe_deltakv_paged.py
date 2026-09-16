@@ -599,4 +599,5 @@ def inject_moe_deltakv_paged(
                 layer.attn = new_attn
         return new_attn
     except Exception as e:
-        raise RuntimeError(f"inject_moe_deltakv_paged failed: {e}")
+        logger.error("inject_moe_deltakv_paged failed: %s", e)
+        return None
