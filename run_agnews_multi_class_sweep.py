@@ -72,7 +72,11 @@ def check_result_status(mod_out_dir, mod_name):
         pass
     return "UNKNOWN", 0.0
 
-def run_module_eval(sweep_script, cfg, base_ckpt, mod_out_dir, mod, batch_size, recovery_steps, cached_batches_dir=None, timeout=300):
+def run_module_eval(sweep_script, cfg, base_ckpt, mod_out_dir, mod, batch_size, recovery_steps, cached_batches_dir=None, timeout=300, override_args=None):
+
+        if mod in SKIP_MODULES_BY_MODEL.get(model_name, []):
+            print(f"Skipping {mod} on {model_name} (SKIP_NON_CAUSAL_BACKBONE)")
+            return "SKIP_NON_CAUSAL_BACKBONE", 0.0
     cmd = [
         PYTHON_EXEC, "-u", str(sweep_script),
         "--model", cfg["model_path"],
@@ -90,6 +94,16 @@ def run_module_eval(sweep_script, cfg, base_ckpt, mod_out_dir, mod, batch_size, 
     ]
     if cached_batches_dir:
         cmd += ["--cached_batches_dir", str(cached_batches_dir)]
+
+    if override_args:
+        if "recovery_steps" in override_args:
+            # Replace existing recovery_steps
+            idx = cmd.index("--recovery_steps")
+            cmd[idx+1] = str(override_args["recovery_steps"])
+        if "lora_rank" in override_args:
+            cmd.extend(["--lora_rank", str(override_args["lora_rank"])])
+        if "lora_alpha" in override_args:
+            cmd.extend(["--lora_alpha", str(override_args["lora_alpha"])])
     t0 = time.time()
     try:
         subprocess.run(cmd, cwd=str(REPO_DIR), check=False)
@@ -201,7 +215,7 @@ def main():
             else:
                 print(f"\n[{idx}/{len(all_modules)}] Evaluating {mod} on {model_name} (AG News 4-class)...")
 
-            elapsed = run_module_eval(sweep_script, cfg, base_ckpt, mod_out_dir, mod, args.batch_size, rec_steps, cached_batches_dir=cached_batches_dir)
+            elapsed = run_module_eval(sweep_script, cfg, base_ckpt, mod_out_dir, mod, get_batch_size(model_name), rec_steps, cached_batches_dir=cached_batches_dir, override_args=RECOVERY_OVERRIDES.get(mod, None))
             print(f"Completed {mod} in {elapsed:.1f}s.")
 
             # Check outcome

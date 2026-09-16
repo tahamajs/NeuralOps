@@ -120,8 +120,11 @@ def chunked_delta_rule_scan(
     # Normalize keys and queries per token to ensure stable error feedback
     k_norm = torch.norm(k_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
     k_unit = k_f / k_norm
+    del k_f, k_norm
+
     q_norm = torch.norm(q_f, p=2, dim=-1, keepdim=True).clamp(min=1e-6)
     q_unit = q_f / q_norm
+    del q_f, q_norm
 
     # Pad sequence to multiple of chunk_size
     pad_len = (chunk_size - L % chunk_size) % chunk_size
@@ -145,7 +148,7 @@ def chunked_delta_rule_scan(
     outputs = []
 
     from torch.utils.checkpoint import checkpoint
-
+    
     for c in range(num_chunks):
         q_i = q_c[:, :, c]
         k_i = k_c[:, :, c]
@@ -153,12 +156,11 @@ def chunked_delta_rule_scan(
         beta_i = beta_c[:, :, c]
         alpha_i = alpha_c[:, :, c]
 
-        if use_checkpoint and q.requires_grad:
-            y_i, S = checkpoint(
-                _delta_chunk_forward, S, q_i, k_i, v_i, beta_i, alpha_i, use_reentrant=False
-            )
+        if getattr(q, "requires_grad", False): # Use checkpointing if we need gradients
+            y_i, S = checkpoint(_delta_chunk_forward, S, q_i, k_i, v_i, beta_i, alpha_i, use_reentrant=False)
         else:
             y_i, S = _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i)
+            
         outputs.append(y_i)
 
     y = torch.cat(outputs, dim=2)
@@ -402,7 +404,7 @@ class GatedDeltaNet(BaseAttention):
         self.source_attn = source_attn
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         self.comp_config: Optional[Any] = comp_config
-        self.chunk_size: int = int(_cfg_get(comp_config, "chunk_size", kwargs.get("chunk_size", 8)))
+        self.chunk_size: int = int(_cfg_get(comp_config, "chunk_size", kwargs.get("chunk_size", 32)))
         self.use_gradient_checkpointing: bool = kwargs.get("use_gradient_checkpointing", True)
         self.max_seq_len_for_recurrence: int = int(_cfg_get(comp_config, "max_seq_len_for_recurrence", kwargs.get("max_seq_len_for_recurrence", 256)))
 

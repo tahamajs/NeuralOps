@@ -267,7 +267,7 @@ class DecayLinearAttention(BaseAttention):
         self.v_proj = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.decay_gate = nn.Linear(self.dim, self.num_heads, bias=True)
         # Bounded initialization spanning [sigmoid(-0.5), sigmoid(0.0)] = [0.38, 0.50] for head diversity and wide context horizon
-        self.log_decay = nn.Parameter(torch.linspace(-0.5, 0.0, self.num_heads))
+        self.log_decay = nn.Parameter(torch.linspace(2.0, 4.0, self.num_heads))
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         nn.init.zeros_(self.decay_gate.weight)
@@ -646,7 +646,7 @@ class DecayLinearAttention(BaseAttention):
 
         # Data-dependent decay lambdas in (0, 1) with bounded negative log decay bias
         decay_logits = self.decay_gate(hidden_states).transpose(1, 2) + self.log_decay.view(1, -1, 1)
-        lambdas = torch.sigmoid(decay_logits).clamp(min=1e-4, max=1.0 - 1e-4)
+        lambdas = torch.sigmoid(decay_logits).clamp(min=0.85, max=0.999)
 
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
         mask_bool = None

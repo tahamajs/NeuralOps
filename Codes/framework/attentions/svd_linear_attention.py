@@ -467,6 +467,7 @@ class SVDLinearAttention(BaseAttention):
             # Nested encoder container handling
             if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
                 src = old_attn.self
+                self.is_nested_encoder = True
                 if hasattr(old_attn.output, "dense"):
                     w_o = old_attn.output.dense.weight
                     b_o = old_attn.output.dense.bias
