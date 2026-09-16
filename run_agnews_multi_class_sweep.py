@@ -74,9 +74,10 @@ def check_result_status(mod_out_dir, mod_name):
 
 def run_module_eval(sweep_script, cfg, base_ckpt, mod_out_dir, mod, batch_size, recovery_steps, cached_batches_dir=None, timeout=300, override_args=None):
 
-        if mod in SKIP_MODULES_BY_MODEL.get(model_name, []):
-            print(f"Skipping {mod} on {model_name} (SKIP_NON_CAUSAL_BACKBONE)")
-            return "SKIP_NON_CAUSAL_BACKBONE", 0.0
+    model_name = Path(cfg["model_path"]).name
+    if mod in SKIP_MODULES_BY_MODEL.get(model_name, []):
+        print(f"Skipping {mod} on {model_name} (SKIP_NON_CAUSAL_BACKBONE)")
+        return "SKIP_NON_CAUSAL_BACKBONE", 0.0
     cmd = [
         PYTHON_EXEC, "-u", str(sweep_script),
         "--model", cfg["model_path"],
