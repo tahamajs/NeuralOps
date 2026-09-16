@@ -591,9 +591,9 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
         if "qwen" in str(name).lower():
             target_micro = 8
         elif total_vram_gb >= 7.0:
-            target_micro = 32 if curr_batch_size >= 32 else (16 if curr_batch_size >= 16 else curr_batch_size)
+            target_micro = 64 if curr_batch_size >= 64 else (32 if curr_batch_size >= 32 else curr_batch_size)
         else:
-            target_micro = 8
+            target_micro = 16
         micro_bs = min(curr_batch_size, target_micro)
     else:
         micro_bs = curr_batch_size
