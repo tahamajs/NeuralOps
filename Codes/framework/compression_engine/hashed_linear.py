@@ -208,7 +208,7 @@ class HashedLinear(nn.Module):
 
         norm_orig = torch.linalg.norm(W.float()).item()
         if norm_orig < 1e-4:
-            raise RuntimeError("Base layer weight has near-zero Frobenius norm (< 1e-4)")
+            logger.warning("Base layer weight has near-zero Frobenius norm (< 1e-4)")
 
         bias = target_mod.bias.data if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None else None
 

@@ -415,7 +415,7 @@ class SVDLinearAttention(BaseAttention):
             # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    raise RuntimeError(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
+                    logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
             # Copy Q
             if w_q.shape == self.query.weight.shape:

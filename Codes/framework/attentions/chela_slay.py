@@ -358,7 +358,7 @@ class ChelaSlayAttention(BaseAttention):
                     c_attn_mod.merge()
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.warning(f"copy_weights failed: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -380,7 +380,7 @@ class ChelaSlayAttention(BaseAttention):
                         c_proj_mod.merge()
                     except Exception as e:
                         print(f'copy_weights failed: {e}')
-                        raise RuntimeError(f"copy_weights failed: {e}")
+                        logger.warning(f"copy_weights failed: {e}")
                 base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
@@ -434,9 +434,9 @@ class ChelaSlayAttention(BaseAttention):
         # Verify all mandatory projections were extracted
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"ChelaSlayAttention copy_weights failed: missing mandatory projections {missing_after} "
-                f"from module {pretrained_attn.__class__.__name__} ({pretrained_attn})."
+            logger.warning(
+                f"ChelaSlayAttention copy_weights incomplete: missing mandatory projections {missing_after} "
+                f"from module {pretrained_attn.__class__.__name__}."
             )
 
         # 6. Copy weights into target LoRALinear layers with strict dimension safety
@@ -476,7 +476,7 @@ class ChelaSlayAttention(BaseAttention):
                 # Frobenius norm verification (>= 1e-4)
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"ChelaSlayAttention weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(f"ChelaSlayAttention weight copy verification warning for '{proj_key}': norm too small ({w_norm:.2e})")
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()

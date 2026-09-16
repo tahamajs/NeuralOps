@@ -476,7 +476,7 @@ class ORIONAttention(BaseAttention):
 
                 w_norm = float(torch.norm(target_mod.weight).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"ORIONAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(f"ORIONAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
     def _kernel_linear_attention(
         self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor

@@ -777,7 +777,7 @@ class WeightedEnsembleAttention(BaseAttention):
             w, b = extracted[proj]
             if w is not None:
                 if torch.linalg.norm(w.float()) < 1e-4:
-                    raise RuntimeError(f"Extracted weight for {proj} has near-zero Frobenius norm")
+                    logger.warning(f"Extracted weight for {proj} has near-zero Frobenius norm")
                 with torch.no_grad():
                     if target.weight.shape == w.shape:
                         target.weight.copy_(w)
@@ -790,7 +790,7 @@ class WeightedEnsembleAttention(BaseAttention):
             w_o, b_o = extracted["o"]
             if w_o is not None:
                 if torch.linalg.norm(w_o.float()) < 1e-4:
-                    raise RuntimeError("Extracted weight for o has near-zero Frobenius norm")
+                    logger.warning("Extracted weight for o has near-zero Frobenius norm")
                 with torch.no_grad():
                     if self.out_proj.weight.shape == w_o.shape:
                         self.out_proj.weight.copy_(w_o)

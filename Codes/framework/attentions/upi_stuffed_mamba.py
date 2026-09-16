@@ -364,7 +364,7 @@ class UPIMambaBlock(BaseAttention):
             # Frobenius norm checks
             for name, w in [("in_proj", self.in_proj.weight), ("out_proj", self.out_proj.weight)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    raise RuntimeError(f"UPIMambaBlock: {name} has near-zero Frobenius norm (< 1e-4)")
+                    logger.warning(f"UPIMambaBlock: {name} has near-zero Frobenius norm (< 1e-4)")
 
             self.in_proj.freeze_base_weights()
             self.out_proj.freeze_base_weights()

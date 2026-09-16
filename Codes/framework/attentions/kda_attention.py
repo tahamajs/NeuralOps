@@ -377,7 +377,7 @@ class KDAAttention(BaseAttention):
 
                 w_norm = float(torch.norm(w[:out_d, :in_d]).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"KDAAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(f"KDAAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()

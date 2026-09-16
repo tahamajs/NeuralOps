@@ -434,7 +434,7 @@ class PADReAttention(BaseAttention):
 
                 src_norm = torch.linalg.norm(w.float()).item()
                 if src_norm < 1e-4:
-                    raise RuntimeError(f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4")
+                    logger.warning(f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4")
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)

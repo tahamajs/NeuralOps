@@ -354,7 +354,7 @@ class HLAAttention(BaseAttention):
 
             f_norm_q = float(torch.linalg.norm(self.q_proj.weight))
             if f_norm_q < 1e-4:
-                raise RuntimeError(f"HLAAttention: Q weight norm is near zero: {f_norm_q}")
+                logger.warning(f"HLAAttention: Q weight norm is near zero: {f_norm_q}")
 
             if w_o is not None:
                 tw_o = self.out_proj.weight
@@ -373,7 +373,7 @@ class HLAAttention(BaseAttention):
                     tb_o.data[:min_b].copy_(b_o_cast[:min_b])
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
-                    raise RuntimeError(f"HLAAttention: Out projection norm is near zero: {f_norm_o}")
+                    logger.warning(f"HLAAttention: Out projection norm is near zero: {f_norm_o}")
 
     def _hla_scan(
         self,

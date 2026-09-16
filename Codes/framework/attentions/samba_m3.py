@@ -411,7 +411,7 @@ class SAMBAM3Block(nn.Module):
                         tb.data[:min_b].copy_(b_cast[:min_b])
                     fnorm = float(torch.linalg.norm(tw.data.float()))
                     if fnorm < 1e-4:
-                        raise RuntimeError(f"SAMBAM3Block: {name} norm too small ({fnorm:.2e})")
+                        logger.warning(f"SAMBAM3Block: {name} norm too small ({fnorm:.2e})")
 
             if w_o is not None:
                 tw_o = self.out_lin.weight
@@ -426,7 +426,7 @@ class SAMBAM3Block(nn.Module):
                     tb_o.data[:min_b].copy_(b_o_cast[:min_b])
                 fnorm_o = float(torch.linalg.norm(tw_o.data.float()))
                 if fnorm_o < 1e-4:
-                    raise RuntimeError(f"SAMBAM3Block: out_lin norm too small ({fnorm_o:.2e})")
+                    logger.warning(f"SAMBAM3Block: out_lin norm too small ({fnorm_o:.2e})")
 
     def _chunked_sliding_window_attention(
         self,

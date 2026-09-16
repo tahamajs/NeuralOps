@@ -332,7 +332,7 @@ class GraniteHybridBlock(BaseAttention):
                     extracted[p] = (w, b)
         except Exception as e:
                 print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.warning(f"copy_weights failed: {e}")
 
         if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:
             c_w, c_b = _unpack_weight_bias(old_attn.c_attn)

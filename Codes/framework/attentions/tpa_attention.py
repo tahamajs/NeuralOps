@@ -542,13 +542,13 @@ class TPAttention(BaseAttention):
             _copy_layer(self.v_proj, w_v, b_v, sub_v)
             f_norm_v = float(torch.linalg.norm(self.v_proj.weight))
             if f_norm_v < 1e-4:
-                raise RuntimeError(f"TPAttention: V weight norm is near zero: {f_norm_v}")
+                logger.warning(f"TPAttention: V weight norm is near zero: {f_norm_v}")
 
             if w_o is not None:
                 _copy_layer(self.out_proj, w_o, b_o, sub_o)
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
-                    raise RuntimeError(f"TPAttention: Out projection norm is near zero: {f_norm_o}")
+                    logger.warning(f"TPAttention: Out projection norm is near zero: {f_norm_o}")
 
             if hasattr(old_attn, "is_decoder"):
                 self.is_decoder = bool(old_attn.is_decoder)

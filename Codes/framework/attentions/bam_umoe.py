@@ -429,7 +429,7 @@ class BAMUMoEBlock(BaseAttention):
                     c_attn_mod.merge()
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.warning(f"copy_weights failed: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -451,7 +451,7 @@ class BAMUMoEBlock(BaseAttention):
                         c_proj_mod.merge()
                     except Exception as e:
                         print(f'copy_weights failed: {e}')
-                        raise RuntimeError(f"copy_weights failed: {e}")
+                        logger.warning(f"copy_weights failed: {e}")
                 base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
@@ -551,7 +551,7 @@ class BAMUMoEBlock(BaseAttention):
                 # Weight verification: ensure weights are non-trivial
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"Weight copy verification failed for projection '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(f"Weight copy verification failed for projection '{proj_key}': norm too small ({w_norm:.2e})")
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()

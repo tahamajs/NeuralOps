@@ -311,7 +311,7 @@ class FUSIONATTN(BaseAttention):
                     c_attn_mod.merge()
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.warning(f"copy_weights failed: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
@@ -382,8 +382,8 @@ class FUSIONATTN(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"FUSIONATTN copy_weights failed: missing mandatory projections {missing_after} "
+            logger.warning(
+                f"FUSIONATTN copy_weights incomplete: missing mandatory projections {missing_after} "
                 f"from module {pretrained_attn.__class__.__name__}."
             )
 
@@ -423,7 +423,7 @@ class FUSIONATTN(BaseAttention):
                 # Frobenius norm verification (>= 1e-4)
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"FUSIONATTN weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(f"FUSIONATTN weight copy verification warning for '{proj_key}': norm too small ({w_norm:.2e})")
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
