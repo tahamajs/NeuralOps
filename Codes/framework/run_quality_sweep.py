@@ -1143,6 +1143,12 @@ def main():
         torch.cuda.manual_seed_all(args.seed)
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+        # Allow full GPU allocation
+        try:
+            torch.cuda.set_per_process_memory_fraction(0.98)
+            LOG.info("Configured PyTorch CUDA maximum memory fraction to 98%% for full GPU utilization.")
+        except Exception as frac_err:
+            LOG.debug("Could not set CUDA memory fraction: %s", frac_err)
         try:
             free_bytes, total_bytes = torch.cuda.mem_get_info()
             free_gb = free_bytes / (1024 ** 3)
