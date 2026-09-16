@@ -430,11 +430,11 @@ class FlashAttention3FP8(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                logger.warning(f"UniversalAdapter fallback warning: {e}")
+                logger.debug(f"UniversalAdapter fallback warning: {e}")
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            logger.warning(
+            logger.debug(
                 f"FlashAttention3FP8 copy_weights: missing mandatory projections {missing_after} "
                 f"from module {src.__class__.__name__}."
             )
