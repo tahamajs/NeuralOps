@@ -101,7 +101,7 @@ def run_module_eval(sweep_script, cfg, base_ckpt, mod_out_dir, mod, batch_size, 
 def main():
     parser = argparse.ArgumentParser(description="Multi-class AG News (4 Classes) benchmark sweep with auto-retrain")
     parser.add_argument("--models", default="distilbert,roberta,gpt2", help="Comma-separated models")
-    parser.add_argument("--batch_size", type=int, default=256)
+    parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--recovery_steps", type=int, default=25)
     parser.add_argument("--modules", nargs="*", default=None, help="Subset of modules to run")
     parser.add_argument("--skip_modules", nargs="*", default=["mla", "hgrn2_gated_deltanet", "hgrn2_layer"], help="Modules to skip")
