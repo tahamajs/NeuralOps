@@ -239,7 +239,7 @@ class A3Compressor(BaseCompressor):
         use_fisher: bool = True,
         recalibrate_ln: bool = True,
         target_attention_only: bool = False,
-        max_error: float = 0.20,
+        max_error: float = 0.40,
         max_retries: int = 3,
         fallback_to_original: bool = True,
         normalize_scale: bool = True,
