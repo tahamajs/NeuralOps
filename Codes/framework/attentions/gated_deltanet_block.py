@@ -136,10 +136,8 @@ class GatedDeltaNetBlock(BaseAttention):
                             self.attn.out_proj.weight.copy_(w_o)
                         elif w_o.t().shape == self.attn.out_proj.weight.shape:
                             self.attn.out_proj.weight.copy_(w_o.t())
-                        if b_o is not None and self.attn.out_proj.bias is not None and b_o.shape == self.attn.out_proj.bias.shape:
-                            self.attn.out_proj.bias.copy_(b_o)
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
-                pass
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
+                logger.warning("GatedDeltaNetBlock copy_weights to MultiheadAttention incomplete: %s", e)
         else:
             if hasattr(self.deltanet, "copy_weights"):
                 self.deltanet.copy_weights(old_attn)

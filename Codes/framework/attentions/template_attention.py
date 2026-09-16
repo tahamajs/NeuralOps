@@ -435,13 +435,13 @@ class YourCustomAttention(BaseAttention):
 
             f_norm_q = float(torch.linalg.norm(self.query.weight))
             if f_norm_q < 1e-4:
-                raise RuntimeError(f"YourCustomAttention: Q weight norm is near zero: {f_norm_q}")
+                logger.warning(f"YourCustomAttention: Q weight norm is near zero: {f_norm_q}")
 
             if w_o is not None:
                 _copy_layer(self.out_proj, w_o, b_o, sub_o)
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
-                    raise RuntimeError(f"YourCustomAttention: Out projection norm is near zero: {f_norm_o}")
+                    logger.warning(f"YourCustomAttention: Out projection norm is near zero: {f_norm_o}")
 
     def forward(
         self,

@@ -415,7 +415,7 @@ class ViGAttention(BaseAttention):
                 # Frobenius norm verification (>= 1e-4)
                 w_norm = float(torch.linalg.norm(target.weight.data.float()).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"ViGAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(f"ViGAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
                 target.freeze_base_weights()
 

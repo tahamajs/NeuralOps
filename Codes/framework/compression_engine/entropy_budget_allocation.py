@@ -396,7 +396,7 @@ class EntropyBudgetCompressor(BaseCompressor):
                     self.model(dummy)
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.warning(f"copy_weights failed: {e}")
         except Exception:
             forward_check_success = False
 

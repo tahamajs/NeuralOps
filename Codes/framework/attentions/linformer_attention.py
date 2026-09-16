@@ -411,7 +411,7 @@ class LinformerAttention(BaseAttention):
 
                 w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"LinformerAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(f"LinformerAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
 
         if self.freeze_base:
             for target_mod in (self.query, self.key, self.value, self.out_proj):

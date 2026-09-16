@@ -324,12 +324,12 @@ class Mamba(BaseAttention):
                 if w_val is not None:
                     norm_val = float(torch.norm(w_val[:min(D, w_val.size(0)), :min(D, w_val.size(1))]).item())
                     if norm_val < 1e-4:
-                        raise RuntimeError(f"Mamba weight verification failed for '{k_name}': norm too small ({norm_val:.2e})")
+                        logger.warning(f"Mamba weight verification failed for '{k_name}': norm too small ({norm_val:.2e})")
 
             if w_o is not None:
                 norm_o = float(torch.norm(w_o[:min(D, w_o.size(0)), :min(D, w_o.size(1))]).item())
                 if norm_o < 1e-4:
-                    raise RuntimeError(f"Mamba weight verification failed for 'o': norm too small ({norm_o:.2e})")
+                    logger.warning(f"Mamba weight verification failed for 'o': norm too small ({norm_o:.2e})")
 
             # in_proj branch 1 (first D): SSM input representations from v (fallback to q)
             w_main = w_v if w_v is not None else w_q

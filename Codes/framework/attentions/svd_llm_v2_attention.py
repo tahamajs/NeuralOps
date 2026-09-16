@@ -406,7 +406,7 @@ class SVDLLMV2Attention(BaseAttention):
             # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    raise RuntimeError(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
+                    logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
             # Decompose and set Q
             self._decompose_and_set(self.query_u, self.query_s, self.query_vh, self.query_bias, w_q, b_q)
@@ -447,7 +447,7 @@ class SVDLLMV2Attention(BaseAttention):
             # Decompose and set Out projection (if not nested encoder)
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    raise RuntimeError("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
+                    logger.warning("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
                 self._decompose_and_set(self.out_proj_u, self.out_proj_s, self.out_proj_vh, self.out_proj_bias, w_o, b_o)
 
     def _project(

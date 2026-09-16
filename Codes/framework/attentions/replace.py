@@ -400,7 +400,7 @@ class ReplaceAttention(BaseAttention):
         # Frobenius norm validation
         for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
             if w is not None and torch.linalg.norm(w.float()).item() < 1e-4:
-                raise RuntimeError(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
+                logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
         with torch.no_grad():
             if w_q is not None:

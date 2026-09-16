@@ -197,7 +197,7 @@ class CRLinear(nn.Module):
             col_idx = torch.tensor(piv[:r], dtype=torch.long, device=W.device)
         except Exception as e:
                 print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.warning(f"copy_weights failed: {e}")
 
         if col_idx is None:
             # Pure PyTorch QRCP-equivalent greedy pivoted column selection

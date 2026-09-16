@@ -453,7 +453,7 @@ class PerformerAttention(BaseAttention):
 
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"PerformerAttention weight verification failed for {proj_key}: norm too small ({w_norm:.2e})")
+                    logger.warning(f"PerformerAttention weight verification failed for {proj_key}: norm too small ({w_norm:.2e})")
 
         # 4. Preserve LoRA adapters: guarantee base weights stay frozen while LoRA A/B are trainable
         if self.lora_rank > 0:

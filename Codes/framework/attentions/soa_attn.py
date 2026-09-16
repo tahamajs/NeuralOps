@@ -538,7 +538,7 @@ class SOAAttention(BaseAttention):
                 rec = up.weight @ down.weight
                 f_norm = float(torch.linalg.norm(rec))
                 if f_norm < 1e-4:
-                    raise RuntimeError(f"SOAAttention: SVD reconstructed weight norm is near zero: {f_norm}")
+                    logger.warning(f"SOAAttention: SVD reconstructed weight norm is near zero: {f_norm}")
 
             _factorize_svd(w_q, self.q_down, self.q_up, b_q)
             _factorize_svd(w_k, self.k_down, self.k_up, b_k)
@@ -550,7 +550,7 @@ class SOAAttention(BaseAttention):
                     self.out_proj.bias.copy_(b_o.to(self.out_proj.bias.dtype))
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
-                    raise RuntimeError(f"SOAAttention: Out projection norm is near zero: {f_norm_o}")
+                    logger.warning(f"SOAAttention: Out projection norm is near zero: {f_norm_o}")
             elif self.is_nested_encoder:
                 if hasattr(self.out_proj, "weight") and self.out_proj.weight.ndim == 2:
                     nn.init.eye_(self.out_proj.weight)

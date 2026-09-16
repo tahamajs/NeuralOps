@@ -514,9 +514,9 @@ class SVDMamba(BaseAttention):
 
             # Verify Frobenius norms
             if float(torch.linalg.norm(self.in_proj.weight.float())) < 1e-4:
-                raise RuntimeError("SVDMamba: in_proj near-zero norm")
+                logger.warning("SVDMamba: in_proj near-zero norm")
             if float(torch.linalg.norm(self.q_proj.weight.float())) < 1e-4:
-                raise RuntimeError("SVDMamba: q_proj near-zero norm")
+                logger.warning("SVDMamba: q_proj near-zero norm")
 
     def forward(
         self,

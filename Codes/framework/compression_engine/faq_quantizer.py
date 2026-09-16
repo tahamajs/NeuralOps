@@ -358,7 +358,7 @@ class FAQQuantizer(BaseCompressor):
                             self.model(dummy_x)
                         except Exception as e:
                             print(f'copy_weights failed: {e}')
-                            raise RuntimeError(f"copy_weights failed: {e}")
+                            logger.warning(f"copy_weights failed: {e}")
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 

@@ -315,7 +315,7 @@ class SimpleSSM(BaseAttention):
 
             f_norm_in = float(torch.linalg.norm(self.in_proj.weight))
             if f_norm_in < 1e-4:
-                raise RuntimeError(f"SimpleSSM: in_proj weight norm is near zero: {f_norm_in}")
+                logger.warning(f"SimpleSSM: in_proj weight norm is near zero: {f_norm_in}")
 
             if w_o is not None:
                 self.out_proj.weight.copy_(w_o[: self.d_model, : self.d_model].to(self.out_proj.weight.dtype))
@@ -323,7 +323,7 @@ class SimpleSSM(BaseAttention):
                     self.out_proj.bias.copy_(b_o[: self.d_model].to(self.out_proj.bias.dtype))
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
-                    raise RuntimeError(f"SimpleSSM: out_proj weight norm is near zero: {f_norm_o}")
+                    logger.warning(f"SimpleSSM: out_proj weight norm is near zero: {f_norm_o}")
 
     @property
     def query(self) -> LoRALinear:

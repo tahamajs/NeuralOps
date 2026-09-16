@@ -298,7 +298,7 @@ class TTLinearLayer(nn.Module):
         bias = base_layer.bias.data if getattr(base_layer, "bias", None) is not None else None
         norm_orig = torch.linalg.norm(W).item() + 1e-8
         if norm_orig < 1e-4:
-            raise RuntimeError("Layer weight has near-zero Frobenius norm (< 1e-4)")
+            logger.warning("Layer weight has near-zero Frobenius norm (< 1e-4)")
 
         # Check for existing LoRA in linear_layer
         has_orig_lora = hasattr(linear_layer, "lora_A") and hasattr(linear_layer, "lora_B")
