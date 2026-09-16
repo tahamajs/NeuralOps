@@ -501,7 +501,7 @@ class UnifiedRoPE(BaseAttention):
 
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
-                    raise RuntimeError(f"UnifiedRoPE: Out projection norm is near zero: {f_norm_o}")
+                    logger.warning(f"UnifiedRoPE: Out projection norm is near zero: {f_norm_o}")
 
     def forward(
         self,

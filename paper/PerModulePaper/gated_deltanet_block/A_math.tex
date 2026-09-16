@@ -80,7 +80,18 @@ produces ~10\% output error.
 
 Per block:
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Attention & $4 d^2 + \text{LoRA}$ \\
+LayerNorm $\gamma$ & $d$ \\
+LayerNorm $\beta$ & $d$ \\
+\textbf{Total new} & $4 d^2 + \text{LoRA} + 2d$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

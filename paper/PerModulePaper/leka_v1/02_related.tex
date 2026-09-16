@@ -77,7 +77,18 @@ Residual gate & None & \textbf{Preservation gate} \\
 
 \subsection{Comparison Table}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Time} & \textbf{Space} & \textbf{Kernel} & \textbf{RFF} \\
+\midrule
+MHSA & $O(L^2)$ & $O(L^2)$ & softmax & -- \\
+Linear Transformer & $O(L)$ & $O(L)$ & elu+1 & No \\
+Performer & $O(L)$ & $O(L)$ & exp & Yes (PORF) \\
+\textbf{LEKAv1} & $O(L \cdot F)$ & $O(L \cdot F)$ & \textbf{Gaussian} & \textbf{Yes (cos/sin)} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

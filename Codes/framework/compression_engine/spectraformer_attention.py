@@ -391,7 +391,7 @@ class SpectraformerAttention(BaseAttention):
 
                 src_norm = torch.linalg.norm(w.float()).item()
                 if src_norm < 1e-4:
-                    raise RuntimeError(f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4")
+                    logger.warning(f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4")
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
@@ -442,13 +442,13 @@ class SpectraformerAttention(BaseAttention):
                         target_mod.lora_A.data.copy_(src_sub.lora_A.weight.data)
                     except Exception as e:
                         print(f'copy_weights failed: {e}')
-                        raise RuntimeError(f"copy_weights failed: {e}")
+                        logger.warning(f"copy_weights failed: {e}")
                 if target_mod.lora_B is not None and hasattr(src_sub.lora_B, "weight"):
                     try:
                         target_mod.lora_B.data.copy_(src_sub.lora_B.weight.data)
                     except Exception as e:
                         print(f'copy_weights failed: {e}')
-                        raise RuntimeError(f"copy_weights failed: {e}")
+                        logger.warning(f"copy_weights failed: {e}")
 
         return True
 

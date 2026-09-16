@@ -130,7 +130,26 @@ concludes.
 
 \subsection{Notation}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d$ & Hidden dimension \\
+$d_h$ & Head dimension \\
+$H$ & Number of heads \\
+$H_{kv}$ & KV head count \\
+$F$ & Number of RFF features \\
+$\Omega$ & RFF projection matrix \\
+$\phi(\cdot)$ & Yat-Kernel feature map \\
+$g$ & Adaptive gate \\
+$b_g$ & Gate bias \\
+$\hat{Q}, \hat{K}$ & Spherically normalized Q, K \\
+$\epsilon$ & Numerical stability constant \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

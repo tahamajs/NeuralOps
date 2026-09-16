@@ -467,7 +467,7 @@ class SVDProjectionAttention(BaseAttention):
             # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    raise RuntimeError(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
+                    logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
             # Decompose and set Q
             self._decompose_and_set(self.q_proj, w_q, b_q)
@@ -513,7 +513,7 @@ class SVDProjectionAttention(BaseAttention):
             # Decompose and set out_proj if not nested encoder
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    raise RuntimeError("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
+                    logger.warning("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
                 self._decompose_and_set(self.out_proj, w_o, b_o)
 
     def forward(

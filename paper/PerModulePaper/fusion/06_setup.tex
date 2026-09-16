@@ -78,7 +78,18 @@ python run_all_4_fusion_attn.py \
 
 \subsection{Baselines}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Unmodified model \\
+\texttt{fusion\_attn} & Our method \\
+\texttt{fusion\_attn\_no\_gate} & No gate, uniform block selection \\
+\texttt{fusion\_attn\_always\_long} & Force long path \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

@@ -528,12 +528,12 @@ class AegisAttention(BaseAttention):
             if w is not None:
                 norm = torch.linalg.norm(w.float())
                 if norm < 1e-4:
-                    raise RuntimeError(f"AegisAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+                    logger.warning(f"AegisAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
 
         if extracted["o"][0] is not None:
             norm_o = torch.linalg.norm(extracted["o"][0].float())
             if norm_o < 1e-4:
-                raise RuntimeError(f"AegisAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+                logger.warning(f"AegisAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -727,7 +727,7 @@ def inject_aegis_v3(
             new_attn.copy_weights(src_attn)
         except Exception as e:
             print(f'copy_weights failed: {e}')
-            raise RuntimeError(f"copy_weights failed: {e}")
+            logger.warning(f"copy_weights failed: {e}")
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)

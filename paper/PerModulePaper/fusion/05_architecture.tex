@@ -112,10 +112,24 @@ which kills the injection on any failure. Recommend changing to \texttt{return N
 
 \subsection{Numerical Stability}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Precision} \\
+\midrule
+Base weights & Model dtype \\
+LoRA & Model dtype \\
+Gate MLP & Model dtype \\
+Attention scores & FP32 \\
+Softmax & FP32 \\
+Output & Model dtype \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}
+
 
 \begin{figure}[H]
 \centering

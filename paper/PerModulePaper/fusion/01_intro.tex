@@ -119,7 +119,23 @@ dispatch and block-sparsity behavior. Section 9 discusses usage. Section
 
 \subsection{Notation}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$L_\text{threshold}$ & Dispatch threshold (128) \\
+$B$ & Block size (64) \\
+$K$ & Top-K blocks (4) \\
+$d_h$ & Per-head dimension \\
+$\bar{Q}_i$ & Mean of query block $i$ \\
+$g(i, j)$ & Gate score for block pair $(i, j)$ \\
+$\tau$ & Gate temperature \\
+$r_L$ & LoRA rank \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

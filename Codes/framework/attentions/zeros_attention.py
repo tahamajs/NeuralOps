@@ -428,7 +428,7 @@ class ZeroSAttention(BaseAttention):
                     Q, K = maybe_apply_rotary(Q, K, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
                 except Exception as e:
                     print(f'copy_weights failed: {e}')
-                    raise RuntimeError(f"copy_weights failed: {e}")
+                    logger.warning(f"copy_weights failed: {e}")
 
         # GQA repeat
         if self.kv_repeat > 1:

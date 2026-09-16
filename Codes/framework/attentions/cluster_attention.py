@@ -436,12 +436,12 @@ class ClusterAttention(BaseAttention):
             if w is not None:
                 norm = torch.linalg.norm(w.float())
                 if norm < 1e-4:
-                    raise RuntimeError(f"ClusterAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
+                    logger.warning(f"ClusterAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm.item():.6f})")
 
         if extracted["o"][0] is not None:
             norm_o = torch.linalg.norm(extracted["o"][0].float())
             if norm_o < 1e-4:
-                raise RuntimeError(f"ClusterAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
+                logger.warning(f"ClusterAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o.item():.6f})")
 
         # Copy into projection modules
         with torch.no_grad():

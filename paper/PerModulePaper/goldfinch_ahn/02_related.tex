@@ -69,7 +69,19 @@ potential gains.
 
 \subsection{Comparison Table}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Local} & \textbf{Long} & \textbf{Gate} & \textbf{Preserve} \\
+\midrule
+Longformer & Window & Global tokens & Fixed & No \\
+BigBird & Window & Random + global & Fixed & No \\
+ReZero & N/A & N/A & N/A & Yes \\
+LayerScale & N/A & N/A & N/A & Yes \\
+\textbf{GoldFinch-AHN} & \textbf{Window} & \textbf{Linear} & \textbf{Input} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}
