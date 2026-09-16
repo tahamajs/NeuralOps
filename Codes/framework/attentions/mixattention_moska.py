@@ -3,6 +3,7 @@ MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA).
 Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
 """
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -14,6 +15,8 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
