@@ -1169,10 +1169,10 @@ def main():
         torch.cuda.manual_seed_all(args.seed)
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
-        # Allow full GPU allocation
+        # 80% VRAM cap: leaves headroom for memory transfers, avoids memory-bound bottleneck
         try:
-            torch.cuda.set_per_process_memory_fraction(0.98)
-            LOG.info("Configured PyTorch CUDA maximum memory fraction to 98%% for full GPU utilization.")
+            torch.cuda.set_per_process_memory_fraction(0.80)
+            LOG.info("Configured PyTorch CUDA maximum memory fraction to 80%% for optimal GPU throughput.")
         except Exception as frac_err:
             LOG.debug("Could not set CUDA memory fraction: %s", frac_err)
         try:
