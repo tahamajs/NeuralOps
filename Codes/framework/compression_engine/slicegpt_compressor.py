@@ -3,11 +3,20 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from framework.compression_engine.slicegpt import (
+    SliceGPTCompressor,
+    slicegpt_factory,
+)
 from framework.compression_engine.slicegpt_pca import (
     SliceGPTPCACompressor,
     slicegpt_pca_factory,
 )
 from framework.core.registry import COMPRESSOR_REGISTRY
 
-__all__ = ["SliceGPTPCACompressor", "slicegpt_pca_factory"]
+__all__ = [
+    "SliceGPTCompressor",
+    "slicegpt_factory",
+    "SliceGPTPCACompressor",
+    "slicegpt_pca_factory",
+]
 
