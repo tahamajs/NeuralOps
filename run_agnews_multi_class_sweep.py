@@ -36,9 +36,17 @@ SKIP_MODULES_BY_MODEL = {
 }
 
 BATCH_SIZE_BY_MODEL = {
-    "distilbert": 32,
-    "roberta": 16,
-    "gpt2": 16,
+    "distilbert": 128,
+    "roberta": 64,
+    "gpt2": 64,
+}
+
+COMPILE_SAFE_MODULES = {
+    "svd_linear", "svd_llm_v2", "a3", "aasvd", "asvd",
+    "mla", "low_rank", "sdrm", "compressed_mha",
+    "compressed_attention", "compressed_attention_layer",
+    "fused_svd_kernel", "kronecker", "hamming",
+    "galerkin", "galerkin_attention", "nasc", "nasc_attention",
 }
 
 RECOVERY_OVERRIDES = {
@@ -103,42 +111,68 @@ def check_result_status(mod_out_dir, mod_name):
         pass
     return "UNKNOWN", 0.0
 
-def run_module_eval(sweep_script, cfg, base_ckpt, mod_out_dir, mod, batch_size, recovery_steps, cached_batches_dir=None, timeout=300, override_args=None):
+def run_module_eval(sweep_script, cfg, base_ckpt, mod_out_dir, mod, batch_size, recovery_steps, cached_batches_dir=None, timeout=300, override_args=None, extra_args=None):
 
     model_name = Path(cfg["model_path"]).name
     if mod in SKIP_MODULES_BY_MODEL.get(model_name, []):
         print(f"Skipping {mod} on {model_name} (SKIP_NON_CAUSAL_BACKBONE)")
         return "SKIP_NON_CAUSAL_BACKBONE", 0.0
-    cmd = [
-        PYTHON_EXEC, "-u", str(sweep_script),
-        "--model", cfg["model_path"],
-        "--model_family", cfg["family"],
-        "--dataset", "ag_news",
-        "--output_dir", str(mod_out_dir),
-        "--parent_checkpoint", str(base_ckpt),
-        "--modules", mod,
-        "--batch_size", str(batch_size),
-        "--recovery_steps", str(recovery_steps),
-        "--precision", "fp16",
-        "--fresh",
-        "--defer_export",
-        "--timeout", str(timeout),
-    ]
-    if cached_batches_dir:
-        cmd += ["--cached_batches_dir", str(cached_batches_dir)]
 
-    if override_args:
-        if "recovery_steps" in override_args:
-            # Replace existing recovery_steps
-            idx = cmd.index("--recovery_steps")
-            cmd[idx+1] = str(override_args["recovery_steps"])
-        if "lora_rank" in override_args:
-            cmd.extend(["--lora_rank", str(override_args["lora_rank"])])
-        if "lora_alpha" in override_args:
-            cmd.extend(["--lora_alpha", str(override_args["lora_alpha"])])
+    def build_cmd(curr_bs):
+        c = [
+            PYTHON_EXEC, "-u", str(sweep_script),
+            "--model", cfg["model_path"],
+            "--model_family", cfg["family"],
+            "--dataset", "ag_news",
+            "--output_dir", str(mod_out_dir),
+            "--parent_checkpoint", str(base_ckpt),
+            "--modules", mod,
+            "--batch_size", str(curr_bs),
+            "--recovery_steps", str(recovery_steps),
+            "--precision", "fp16",
+            "--fresh",
+            "--defer_export",
+            "--timeout", str(timeout),
+        ]
+        if cached_batches_dir:
+            c += ["--cached_batches_dir", str(cached_batches_dir)]
+        if extra_args:
+            c += extra_args
+        if override_args:
+            if "recovery_steps" in override_args:
+                idx = c.index("--recovery_steps")
+                c[idx+1] = str(override_args["recovery_steps"])
+            if "lora_rank" in override_args:
+                c.extend(["--lora_rank", str(override_args["lora_rank"])])
+            if "lora_alpha" in override_args:
+                c.extend(["--lora_alpha", str(override_args["lora_alpha"])])
+        return c
+
+    env = os.environ.copy()
+    if mod in COMPILE_SAFE_MODULES:
+        env["SVD_COMPILE"] = "1"
+    else:
+        env.pop("SVD_COMPILE", None)
+
     t0 = time.time()
+    cmd = build_cmd(batch_size)
     try:
-        subprocess.run(cmd, cwd=str(REPO_DIR), check=False)
+        proc = subprocess.run(cmd, cwd=str(REPO_DIR), env=env, check=False, capture_output=True, text=True)
+        combined_output = (proc.stdout or "") + (proc.stderr or "")
+        if "CUDA out of memory" in combined_output or "OutOfMemoryError" in combined_output:
+            fallback_bs = max(8, batch_size // 2)
+            print(f"[OOM-FALLBACK] CUDA out of memory on {mod} with batch={batch_size}. Retrying with batch={fallback_bs}...")
+            cmd_retry = build_cmd(fallback_bs)
+            proc_retry = subprocess.run(cmd_retry, cwd=str(REPO_DIR), env=env, check=False, capture_output=True, text=True)
+            if proc_retry.stdout:
+                print(proc_retry.stdout, end="")
+            if proc_retry.stderr:
+                print(proc_retry.stderr, end="", file=sys.stderr)
+        else:
+            if proc.stdout:
+                print(proc.stdout, end="")
+            if proc.stderr:
+                print(proc.stderr, end="", file=sys.stderr)
     except Exception as exc:
         print(f"Failed to run {mod}: {exc}")
     elapsed = time.time() - t0
@@ -243,7 +277,11 @@ def main():
             else:
                 print(f"\n[{idx}/{len(all_modules)}] Evaluating {mod} on {model_name} (AG News 4-class)...")
 
-            elapsed = run_module_eval(sweep_script, cfg, base_ckpt, mod_out_dir, mod, get_batch_size(model_name), rec_steps, cached_batches_dir=cached_batches_dir, override_args=RECOVERY_OVERRIDES.get(mod, None))
+            extra_args = []
+            if model_name in ("roberta", "gpt2"):
+                extra_args += ["--eval_seq_len", "256"]
+
+            elapsed = run_module_eval(sweep_script, cfg, base_ckpt, mod_out_dir, mod, get_batch_size(model_name), rec_steps, cached_batches_dir=cached_batches_dir, override_args=RECOVERY_OVERRIDES.get(mod, None), extra_args=extra_args)
             print(f"Completed {mod} in {elapsed:.1f}s.")
 
             # Check outcome
