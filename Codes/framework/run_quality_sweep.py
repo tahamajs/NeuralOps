@@ -670,7 +670,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
             step_idx = step + 1
             if step_idx == 1 or step_idx % 5 == 0 or step == steps - 1:
                 step_loss = float(step_loss_tensor)
-                LOG.info(f"Step {step_idx}/{steps} took {step_time:.2f}s (bs={total_n}, micro={micro_bs})")
+                LOG.info(f"Step {step_idx}/{steps} took {step_time:.2f}s (loss={step_loss:.4f}, bs={total_n}, micro={micro_bs})")
             step += 1
         except torch.cuda.OutOfMemoryError:
             opt.zero_grad(set_to_none=True)
@@ -727,6 +727,8 @@ def main():
     ap.add_argument("--precision", choices=("fp32", "fp16"), default="fp16")
     ap.add_argument("--freeze_clf", action="store_true", help="Freeze classifier head during recovery")
     ap.add_argument("--seq_len", type=int, default=128)
+    ap.add_argument("--eval_seq_len", type=int, default=None,
+                    help="Optional sequence length override for evaluation pass")
     ap.add_argument("--config", type=str, default=None,
                     help="Path to YAML configuration file (e.g. configs/qwen3_5.yaml)")
     ap.add_argument("--timeout", type=int, default=3600)
@@ -1238,6 +1240,14 @@ def main():
     base.tokenizer = tokenizer
     if hasattr(base, "config") and base.config is not None:
         base.config.tokenizer = tokenizer
+
+    if os.environ.get("SVD_COMPILE", "0") == "1":
+        try:
+            base = torch.compile(base, mode="max-autotune", fullgraph=False)
+            LOG.info("torch.compile enabled (max-autotune)")
+        except Exception as e:
+            LOG.warning(f"torch.compile failed: {e}")
+
     qwen = is_qwen_model(base)
     family = detect_family(base) if args.model_family == "auto" else args.model_family
     adapter = ModelAdapter(base, family)
@@ -1448,6 +1458,7 @@ def main():
     _cached_dir = Path(args.cached_batches_dir) if getattr(args, "cached_batches_dir", None) else None
     _eval_cache = _cached_dir / "eval_batches.pt" if _cached_dir else None
     _train_cache = _cached_dir / "train_batches.pt" if _cached_dir else None
+    eval_seq_len = args.eval_seq_len if args.eval_seq_len is not None else args.seq_len
     if _eval_cache and _eval_cache.exists() and _train_cache and _train_cache.exists():
         LOG.info("Loading pre-cached batches from %s (skipping tokenization)", _cached_dir)
         eval_batches = [(d, t.to(device)) for d, t in [
@@ -1457,7 +1468,7 @@ def main():
         all_train = torch.load(str(_train_cache), map_location="cpu", weights_only=False)
         train_batches = [({k: v.to(device) for k, v in x.items()}, y.to(device)) for x, y in all_train[:_max_train]]
     else:
-        eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, args.seq_len, args.batch_size, device)
+        eval_batches = prepare_eval_batches(tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device)
         train_batches = prepare_train_batches(tokenizer, train, args.dataset, args.seq_len, args.batch_size, device, max_batches=max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)))
         # Auto-save to cache dir if one was specified but files didn't exist yet
         if _cached_dir:
@@ -1471,7 +1482,7 @@ def main():
     LOG.info("Prepared %d eval batches and %d train batches directly on GPU.", len(eval_batches), len(train_batches))
     # Pre-evaluate base model to get baseline benchmark accuracy for reference
     base.to(device)
-    base_benchmark_acc = round(evaluate(base, tokenizer, val, args.dataset, args.seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
+    base_benchmark_acc = round(evaluate(base, tokenizer, val, args.dataset, eval_seq_len, args.batch_size, device, fp16=args.precision == "fp16", precomputed_batches=eval_batches), 2)
     base.to("cpu")
     LOG.info("Baseline model benchmark accuracy on validation set: %.2f%%", base_benchmark_acc)
 
@@ -2310,7 +2321,7 @@ def main():
 
                 try:
                     perf_metrics = evaluate_comprehensive(
-                        model, tokenizer, val, args.dataset, args.seq_len, effective_batch_size, device,
+                        model, tokenizer, val, args.dataset, eval_seq_len, effective_batch_size, device,
                         fp16=args.precision == "fp16", precomputed_batches=eval_batches
                     )
                     eval_acc = perf_metrics["accuracy_pct"]
@@ -2322,7 +2333,7 @@ def main():
                         # 1. Comprehensive Profiling Metrics Export
                         collect_and_export_full_metrics(
                             model, eval_batches, f"{model_slug}_{name}",
-                            seq_len=args.seq_len, device=device, fp16=args.precision == "fp16",
+                            seq_len=eval_seq_len, device=device, fp16=args.precision == "fp16",
                             out_dir=str(out),
                             perf_metrics=perf_metrics,
                             comp_metrics=comp_metrics,
