@@ -283,6 +283,24 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, dataset_name,
             except Exception:
                 pass
 
+    # Filter out bad results: do NOT upload repos for FAIL, PASS_LOW, or sub-threshold accuracy
+    raw_acc = metrics.get("accuracy_pct") or metrics.get("recovery_pct") or 0.0
+    try:
+        acc_float = float(raw_acc)
+    except (ValueError, TypeError):
+        acc_float = 0.0
+
+    raw_thresh = metrics.get("pass_threshold_pct")
+    try:
+        thresh_float = float(raw_thresh) if raw_thresh is not None else 31.63
+    except (ValueError, TypeError):
+        thresh_float = 31.63
+
+    # Reject bad results: must not be FAIL/PASS_LOW/UNKNOWN and must exceed pass threshold
+    if status in ("FAIL", "PASS_LOW", "UNKNOWN") or acc_float < thresh_float:
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Skipping bad/low result: {repo_id} (status={status}, acc={acc_float:.2f}% < thresh={thresh_float:.2f}%)")
+        return
+
     # 1. Ensure repo exists on Hooshaai
     try:
         api.create_repo(repo_id=repo_id, exist_ok=True, private=True)
