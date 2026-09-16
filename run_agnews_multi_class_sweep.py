@@ -135,9 +135,9 @@ def main():
     }
 
     BATCH_SIZE_BY_MODEL = {
-        "distilbert": 64,
-        "roberta": 32,
-        "gpt2": 32,
+        "distilbert": 32,
+        "roberta": 16,
+        "gpt2": 16,
     }
 
     def get_batch_size(m_name: str) -> int:
