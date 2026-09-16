@@ -86,7 +86,7 @@ class AegisConfigV3:
     max_global_tokens: int = 1024
     kernel_method: str = "orthogonal"
     kernel_clamp_min: float = -20.0
-    kernel_clamp_max: float = 20.0
+    kernel_clamp_max: float = 8.0
     kernel_use_float64: bool = False
     kernel_seed: Optional[int] = None
     fusion_gate_bias: float = 1.8
@@ -144,8 +144,7 @@ class FactorisedLowRankProjection(nn.Module):
         pretrained_bias: Optional[torch.Tensor] = None,
     ):
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
+
         self.in_features = in_features
         self.out_features = out_features
         self.svd_rank = min(svd_rank, in_features, out_features)
@@ -255,7 +254,7 @@ class KernelFeatureConfig:
     num_features: int
     method: str = "orthogonal"
     clamp_min: float = -20.0
-    clamp_max: float = 20.0
+    clamp_max: float = 8.0
     use_float64_exp: bool = False
     eps: float = 1e-5
     scaling: Optional[float] = None
@@ -290,12 +289,14 @@ class StableKernelFeatureMap(nn.Module):
             return torch.randn(d, m) * math.sqrt(d)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        phi = torch.matmul(x, self.proj_buf.to(x.dtype))
-        norm_sq = (x * x).sum(dim=-1, keepdim=True) / 2.0
-        exp_in = phi - norm_sq
-        exp_in = torch.clamp(exp_in, min=self.cfg.clamp_min, max=self.cfg.clamp_max)
-        out = self.scale * torch.exp(exp_in)
-        return out
+        with torch.autocast(device_type=x.device.type, enabled=False):
+            x_f = x.float()
+            phi = torch.matmul(x_f, self.proj_buf.float())
+            norm_sq = (x_f * x_f).sum(dim=-1, keepdim=True) / 2.0
+            exp_in = phi - norm_sq
+            exp_in = torch.clamp(exp_in, min=self.cfg.clamp_min, max=min(self.cfg.clamp_max, 8.0))
+            out = self.scale * torch.exp(exp_in)
+        return out.to(x.dtype)
 
 
 class GatingModule(nn.Module):

@@ -49,7 +49,7 @@ class KroneckerCompressor(BaseCompressor):
         self,
         model: Optional[nn.Module] = None,
         rank: Optional[int] = None,
-        max_error: float = 0.35,
+        max_error: float = 0.80,
         fallback_to_original: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -315,7 +315,7 @@ def kronecker_factory(
 ) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
     """Kronecker compressor factory function."""
     rank = rank or _cfg_get(comp_config, "kronecker_rank", _cfg_get(comp_config, "rank", 128))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "kronecker_max_error", _cfg_get(comp_config, "max_error", 0.35)))
+    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "kronecker_max_error", _cfg_get(comp_config, "max_error", 0.80)))
     fallback = kwargs.pop("fallback_to_original", _cfg_get(
         comp_config, "kronecker_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
     ))

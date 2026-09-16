@@ -480,9 +480,6 @@ class FlashAttention3FP8(BaseAttention):
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
 
-                if self.freeze_base:
-                    target_mod.freeze_base_weights()
-
     def forward(
         self,
         hidden_states: torch.Tensor,

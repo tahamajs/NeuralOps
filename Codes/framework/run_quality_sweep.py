@@ -667,14 +667,10 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
             t_opt_end = time.time()
             
             step_time = t_opt_end - step_start_time
-            if (step + 1) <= 5 or (step + 1) % 5 == 0 or step == steps - 1:
+            step_idx = step + 1
+            if step_idx == 1 or step_idx % 5 == 0 or step == steps - 1:
                 step_loss = float(step_loss_tensor)
-                fwd_bwd_time = t_bwd_end - t_fwd_start
-                opt_time = t_opt_end - t_bwd_end
-                LOG.info(
-                    "Timing step %d/%d: fwd_bwd=%.3fs opt=%.3fs total=%.3fs (loss=%.4f, bs=%d, micro_bs=%d)",
-                    step + 1, steps, fwd_bwd_time, opt_time, step_time, step_loss, total_n, micro_bs
-                )
+                LOG.info(f"Step {step_idx}/{steps} took {step_time:.2f}s (bs={total_n}, micro={micro_bs})")
             step += 1
         except torch.cuda.OutOfMemoryError:
             opt.zero_grad(set_to_none=True)

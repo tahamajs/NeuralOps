@@ -154,7 +154,7 @@ class LoRALinear(nn.Module):
 class SVDMambaSub(nn.Module):
     def __init__(self, d_model: int = 768, config: Optional[Any] = None, rank: Optional[int] = None, is_decoder: bool = False, **kwargs: Any) -> None:
         super().__init__()
-        self.output_scale = nn.Parameter(torch.ones(1))
+
         if d_model is None and config is not None:
             d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768)))
         d_model = int(d_model or 768)
@@ -168,7 +168,7 @@ class SVDMambaSub(nn.Module):
         ssm_out = self.ssm(x_proj, attention_mask=attention_mask)
         if isinstance(ssm_out, tuple):
             ssm_out = ssm_out[0]
-        ssm_out = ssm_out * self.output_scale
+
         out = self.out_proj(ssm_out)
         return out, None
 
@@ -242,7 +242,7 @@ class Jamba2Block(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
+
 
         # LoRA config: independent inspection of config, comp_config, and kwargs
         if config is not None:
@@ -513,11 +513,10 @@ class Jamba2Block(BaseAttention):
 
         attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        if self.is_nested_encoder:
-            out = attn_out
-            return out, (probs if output_attentions else None)
-        else:
+        if not self.is_nested_encoder:
             attn_proj = self.out_lin(attn_out)
+        else:
+            attn_proj = attn_out
 
         x2 = self.norm2(x1 + self.dropout(attn_proj))
 

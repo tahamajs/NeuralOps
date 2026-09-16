@@ -271,7 +271,7 @@ class SVDLinearAttention(BaseAttention):
         use_rms_norm: bool = False,
         **kwargs: Any,
     ) -> None:
-        actual_rank = rank or _cfg_get(config, "svd_rank", _cfg_get(config, "rank", 32))
+        actual_rank = rank or _cfg_get(config, "svd_rank", _cfg_get(config, "rank", 192))
         super().__init__(config, rank=actual_rank)
 
         # 1. Dimensions & Architecture
@@ -1052,7 +1052,7 @@ def inject_svd_linear_attention(
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     lora_rank: int = 16,
-    rank: Optional[int] = 32,
+    rank: Optional[int] = 192,
     mode: str = "exact",
     **kwargs: Any,
 ) -> Optional[Any]:
