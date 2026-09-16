@@ -162,6 +162,7 @@ def modules() -> list[str]:
 
 def fields(name: str) -> tuple[str, str]:
     if name in {"sst2", "cola"}: return ("sentence", None)
+    if name in {"ag_news", "imdb"}: return ("text", None)
     if name == "mrpc": return ("sentence1", "sentence2")
     if name == "mnli": return ("premise", "hypothesis")
     return ("sentence1", "sentence2")
