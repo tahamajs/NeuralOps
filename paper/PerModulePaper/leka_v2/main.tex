@@ -64,10 +64,50 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the leka\_v2 module within modern transformer architectures.
+Linear attention scales as $\mathcal{O}(L)$ in sequence length by replacing 
+softmax with a kernel feature map, but achieves this at the cost of 
+\textbf{uniform aggregation}: every query attends to the full aggregated 
+KV state, losing the ability to selectively focus on important 
+positions. We introduce \textbf{LEKAv2}, which extends the linear-attention 
+primitive with \textbf{landmark distillation} and **learned local-global 
+fusion**:
+
+\begin{enumerate}
+\item \textbf{Dual-scale random features.} We map Q/K through two independent
+  RFF projections ($F$ and $F/2$ dimensions) and concatenate the
+  resulting cos/sin features, enriching the kernel representation.
+\item \textbf{Landmark distillation.} A learned scorer selects $L_\text{max} = \rho L$
+  landmark tokens whose features are used in the linear-attention
+  aggregation. Position 0 (or \texttt{[CLS]}) is always retained.
+\item \textbf{Softpick.} We replace softmax with a ReLU-damped variant that
+  stabilizes masked attention:
+  
+  $$
+  \text{softpick}(x)\_i = \text{ReLU}\!\left(\frac{e\^{}{(x\_i - m)/T} - e\^{}{-m/T}}{\sum\_j \text{ReLU}(e\^{}{(x\_j - m)/T} - e\^{}{-m/T})}\right)
+  $$
+\item \textbf{Local-global fusion.} A learned per-head gate blends a **local
+  sliding-window attention\textbf{ with the }global landmark attention**.
+
+\end{enumerate}
+On SST-2, LEKAv2 achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
+{{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and 
+\textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%). Inference is linear at 
+long sequences ($\geq {{BREAKEVEN}}$) and preserves pretrained weights 
+via SVD-free copying with LoRA adapters.
+
+\textbf{We are explicit that LEKAv2 does not reduce parameter count.} It adds 
+approximately {{PARAM\_INCREASE}}\% parameters due to LoRA, projections, 
+landmark scorer, and the correction matrices. Its benefit is 
+\textbf{linear-time long-context inference} with **learned landmark 
+selection**.
+
+\textbf{Keywords:} linear attention, random Fourier features, landmark 
+distillation, local-global attention, kernel approximation
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} leka\_v2, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} linear attention, random Fourier features, landmark
 \end{abstract}
 
 \vspace{1em}

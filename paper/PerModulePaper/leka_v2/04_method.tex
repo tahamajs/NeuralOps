@@ -1,3 +1,298 @@
-\section{04 Method}
+\section{Method}
 
-Draft content for leka_v2.
+\subsection{Overview}
+
+LEKAv2 replaces standard attention with a hybrid pipeline:
+
+\begin{enumerate}
+\item \textbf{Project} Q, K, V (frozen base + LoRA).
+\item \textbf{Map} to dual-scale RFF features.
+\item \textbf{Select} landmarks via a learned scorer.
+\item \textbf{Compute} global landmark attention with \textbf{softpick}.
+\item \textbf{Compute} local sliding-window attention.
+\item \textbf{Fuse} via per-head gates.
+
+\end{enumerate}
+\textbf{Figure 4.1} shows the pipeline.
+
+\begin{lstlisting}
+    Input X $\in$ R^{B$\times$L$\times$d}
+              |
+         Q/K/V Projection (frozen + LoRA)
+              |
+       +------+------+
+                      
+      Q      K      V
+       |      |      |
+                     |
+      (Q)    (K)     |  (Dual-scale RFF)
+       |      |      |
+       |             |
+       |  Landmark  |
+       |  Scorer    |
+       |      |      |
+       |             |
+       |  K_land, V_land
+       |      |      |
+       +------+------+
+               
+      +---------------+
+      |  Softpick     |
+      |  Attention    |
+      |  (Global)     |
+      +-------+-------+
+              |
+      +-------+-------+
+                       
+    Local   Global   Gate
+    Attn    Attn    ($\sigma$(w_h))
+      |       |       |
+      +-------+-------+
+               
+      (1-g)Local + g Global
+              |
+               
+          out_proj
+              |
+               
+           Output Y
+\end{lstlisting}
+
+\subsection{Dual-Scale Random Features}
+
+Two projections:
+
+\[
+W_1 \in \mathbb{R}^{d_h \times F}, \quad W_2 \in \mathbb{R}^{d_h \times F/2}
+\tag{4.1}
+\]
+
+Both initialized as $\mathcal{N}(0, 1/\sqrt{d_h})$ (scaled Gaussian).
+
+\textbf{Feature map:}
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(x W_1) \| \sin(x W_1)] \| \frac{1}{\sqrt{F/2}} [\cos(x W_2) \| \sin(x W_2)]
+\tag{4.2}
+\]
+
+Output dimension: $2F + F = 3F$.
+
+\textbf{Why two scales?} The two projections capture different frequency 
+bands, similar to multi-resolution analysis.
+
+\subsection{Landmark Distillation}
+
+\textbf{Scorer.} A small MLP:
+
+\[
+s_\theta(\phi(k)) = \text{MLP}(\text{LN}(\phi(k))) \in \mathbb{R}
+\tag{4.3}
+\]
+
+with architecture: LayerNorm($3F$) $\to$ Linear($3F$, 64) $\to$ GELU $\to$ Linear(64, 1).
+
+\textbf{Selection.}
+
+\[
+L_\text{max} = \min\!\left(\max(L_\text{min}, \lceil \rho L \rceil), L\right)
+\tag{4.4}
+\]
+
+\[
+\mathcal{S}_\text{land} = \text{TopK}(s_\theta, L_\text{max})
+\tag{4.5}
+\]
+
+\textbf{Position 0 guarantee.} We set $s_\theta[:, 0] \leftarrow 10^4$ to force 
+retention.
+
+\textbf{Gather.} $K_\text{land} = K[\mathcal{S}_\text{land}]$, $V_\text{land} = V[\mathcal{S}_\text{land}]$.
+
+\subsection{Correction Matrix}
+
+Per-head learnable correction applied to landmark values:
+
+\[
+V_\text{land}^\text{adj} = V_\text{land} \cdot W_\text{corr}^h
+\tag{4.6}
+\]
+
+where $W_\text{corr} \in \mathbb{R}^{H \times d_h \times d_h}$ is 
+initialized to the identity per head.
+
+\textbf{Purpose.} Allows the model to learn head-specific value transformations 
+during recovery.
+
+\subsection{Softpick Attention}
+
+\textbf{Scores.}
+
+\[
+\text{scores}_{ij} = \phi(q_i)^\top \phi(K_\text{land})_j^\top
+\tag{4.7}
+\]
+
+\textbf{Masking.} Padding and causal masks applied.
+
+\textbf{Softpick.}
+
+\[
+m_i = \max_j \text{scores}_{ij}, \quad
+p_{ij} = \text{ReLU}\!\left(e^{(\text{scores}_{ij} - m_i)/T} - e^{-m_i/T}\right)
+\tag{4.8}
+\]
+
+with $T = 1.0$ and fallback to uniform when $\sum_j p_{ij} < 10^{-6}$.
+
+\textbf{Global context.}
+
+\[
+A_\text{global} = \sum_j p_{ij} V_{\text{land}, j}^\text{adj}
+\tag{4.9}
+\]
+
+\subsection{Local Sliding Window}
+
+\textbf{Window mask.}
+
+\[
+\text{mask}_{ij} = \begin{cases} 1 & |i - j| \leq W/2 \\ 0 & \text{otherwise} \end{cases}
+\tag{4.10}
+\]
+
+\textbf{Local scores.} Standard scaled dot-product:
+
+\[
+\text{local}_{ij} = \frac{q_i \cdot k_j}{\sqrt{d_h}} \cdot \text{mask}_{ij}
+\tag{4.11}
+\]
+
+Then causal + padding masks.
+
+\textbf{Local attention.}
+
+\[
+A_\text{local} = \text{softmax}(\text{local}) \cdot V
+\tag{4.12}
+\]
+
+\subsection{Local-Global Fusion}
+
+Per-head gate:
+
+\[
+g_h = \sigma(w_h), \quad w_h^{(0)} = -2
+\tag{4.13}
+\]
+
+\textbf{Fusion.}
+
+\[
+\text{out}_h = (1 - g_h) \cdot A_\text{local}^h + g_h \cdot A_\text{global}^h
+\tag{4.14}
+\]
+
+With $g_h^{(0)} \approx 0.12$, the local branch dominates initially.
+
+\subsection{Algorithm}
+
+\textbf{Algorithm 1:} LEKAv2 forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ query(X);  K $\leftarrow$ key(X);  V $\leftarrow$ value(X)
+ 2: reshape to (B, H, L, d_h)
+ 3: if RoPE: Q, K $\leftarrow$ rotary(Q, K)
+ 4: if GQA:  K, V $\leftarrow$ repeat_kv
+ 5:  _Q $\leftarrow$ dual_rff(Q)                   (B, H, L, 3F)
+ 6:  _K $\leftarrow$ dual_rff(K)
+ 7: L_max $\leftarrow$ max(min_landmarks,   L)
+ 8: scores $\leftarrow$ landmark_scorer( _K)       (B, H, L)
+ 9: scores[:, :, 0] $\leftarrow$ 1e4
+10: idx $\leftarrow$ topk(scores, L_max)
+11: K_land $\leftarrow$ gather( _K, idx); V_land $\leftarrow$ gather(V, idx)
+12: V_land_adj $\leftarrow$ V_land   W_corr
+13: A_glob $\leftarrow$ softpick( _Q @ K_land^T) @ V_land_adj
+14: A_loc $\leftarrow$ softmax(masked(QK^T)) @ V    window + causal
+15: g $\leftarrow$ sigmoid(local_gate)              (H,)
+16: out $\leftarrow$ (1-g) A_loc + g A_glob
+17: reshape to (B, L, d); out_proj
+18: return Y
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+Per block:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Time} & \textbf{Params} \\
+\midrule
+Q/K/V projections & $O(L d^2)$ & $3 d^2$ \\
+Dual RFF & $O(L d (3F))$ & 0 (buffers) \\
+Landmark scorer & $O(L \cdot 3F)$ & $O(F)$ \\
+Landmark attention & $O(L \cdot L_\text{max} \cdot 3F)$ & 0 \\
+Local window attention & $O(L \cdot W \cdot d_h)$ & 0 \\
+Correction matrix & $O(L_\text{max} \cdot d_h^2)$ & $H d_h^2$ \\
+Fusion & $O(L d)$ & $H$ \\
+Output & $O(L d^2)$ & $d^2$ \\
+\textbf{Total} & $O(L d^2 + L \cdot L_\text{max} \cdot F)$ & $\sim 4 d^2 + H d_h^2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $\rho = 0.5$ and $L \gg F$, the landmark term is 
+$O(L^2 \cdot F)$ -- \textbf{quadratic} in $L$! But with $L_\text{max} = \rho L$ 
+and $\rho = 0.5$, we get $O(L^2)$ again.
+
+\textbf{Note.} LEKAv2 is \textbf{not truly linear} unless we set $L_\text{max} = $ 
+constant. The current implementation uses $L_\text{max} = \rho L$ -- this 
+is effectively \textbf{linear-quadratic} (still $O(L^2)$ but with a smaller 
+constant).
+
+\subsection{Parameter Analysis}
+
+For $d = 768$, $H = 12$, $d_h = 64$, $F = 128$, LoRA $r_L = 16$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{LEKAv2} \\
+\midrule
+Q/K/V/O & $4 d^2 = 2.36M$ & $2.36M$ (frozen) \\
+LoRA & 0 & $98K$ \\
+RFF buffers & 0 & 0 (not params) \\
+Landmark scorer & 0 & ~$9K$ \\
+Correction matrix & 0 & $H d_h^2 = 49K$ \\
+Local gate & 0 & 12 \\
+\textbf{Total per layer} & 2.36M & 2.51M \\
+\textbf{Increase} & -- & \textbf{+6\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Modest parameter increase.
+
+\subsection{Training}
+
+Trainable:
+\begin{itemize}
+\item LoRA adapters (frozen base).
+\item Landmark scorer.
+\item Correction matrix.
+\item Local gate.
+
+\end{itemize}
+Frozen:
+\begin{itemize}
+\item Q/K/V/O base weights.
+\item Random projection buffers (not parameters).
+
+\end{itemize}

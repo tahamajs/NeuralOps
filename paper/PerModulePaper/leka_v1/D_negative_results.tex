@@ -1,3 +1,134 @@
-\section{D Negative Results}
+\section{Appendix D. Negative Results}
 
-Draft content for leka_v1.
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 No LayerNorm Before Projection}
+
+\textbf{Goal.} Skip head-wise LN.
+
+\textbf{Result.} Accuracy dropped by {{NONORM\_DROP}}\%.
+
+\textbf{Conclusion.} LN is essential.
+
+\subsubsection{D.1.2 Random (No QR) Projection}
+
+\textbf{Goal.} Use iid Gaussian projection.
+
+\textbf{Result.} Accuracy dropped by {{NOQR\_DROP}}\%; higher variance in 
+predictions.
+
+\textbf{Conclusion.} QR helps.
+
+\subsubsection{D.1.3 No Preservation Gate}
+
+\textbf{Goal.} Only attention output.
+
+\textbf{Result.} Accuracy dropped by {{NOGATE\_DROP}}\%.
+
+\textbf{Conclusion.} Gate is essential.
+
+\subsubsection{D.1.4 Very Small F (32)}
+
+\textbf{Goal.} Aggressive feature reduction.
+
+\textbf{Result.} Accuracy collapsed to {{F32}}\%.
+
+\textbf{Conclusion.} F $\ge$ 64 required.
+
+\subsubsection{D.1.5 No Masking}
+
+\textbf{Goal.} Skip padding mask.
+
+\textbf{Result.} Accuracy collapsed (padding dominates).
+
+\textbf{Conclusion.} Mask is essential.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Complex RFF}
+
+We tested using the full complex exponential $e^{i \omega^\top x}$ 
+instead of cos/sin. Result: no improvement.
+
+\subsubsection{D.2.2 Per-Head F}
+
+Different F per head. Result: no improvement.
+
+\subsubsection{D.2.3 Blocked Cumsum}
+
+Chunked cumsum to reduce memory. Result: correct but slower; needs 
+optimization.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Feature Dim}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{F} & \textbf{DistilBERT} \\
+\midrule
+32 & {{F32}} \\
+64 & {{D\_F64}} \\
+128 & {{D\_F128}} \\
+256 & {{D\_ACC}} \\
+512 & {{D\_F512}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Preservation Gate Init}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{w} & \textbf{DistilBERT} \\
+\midrule
+-2 & {{WM2}} \\
+0 & {{W0}} \\
+2 & {{D\_ACC}} \\
+4 & {{WP4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Seed} & \textbf{DistilBERT} \\
+\midrule
+42 & {{SEED42}} \\
+123 & {{SEED123}} \\
+456 & {{SEED456}} \\
+\textbf{Mean} & \textbf{{{MEAN}}} \\
+\textbf{Std} & \textbf{{{STD}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Head-wise LN is essential.}
+\item \textbf{QR projection reduces variance.}
+\item \textbf{Preservation gate is essential.}
+\item \textbf{F = 256 is a sweet spot.}
+\item \textbf{Masking must be applied before aggregation.}
+
+\end{enumerate}
+\subsection{D.6 Recommended Fixes}
+
+\begin{enumerate}
+\item Replace \texttt{raise RuntimeError} in \texttt{copy\_weights} with a soft fallback.
+\item Implement blocked cumsum for large L.
+\item Consider dropping the \texttt{output\_scale} parameter (not in checkpoint).
+
+\end{enumerate}

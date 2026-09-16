@@ -1,3 +1,99 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for leka_v3.
+\subsection{Task Coverage}
+
+Only SST-2 evaluated. Behavior on:
+\begin{itemize}
+\item Generation: unknown
+\item Multi-class: unknown
+\item Very long sequences ($L > 512$): partially tested
+
+\end{itemize}
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Constraint} & \textbf{Tested} \\
+\midrule
+$\le$124M params & Yes \\
+>1B params & No \\
+>24 layers & Not fully \\
+MoE & No \\
+Vision & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Increase}
+
+LEKAv3 adds ~7.5\% parameters per layer. This is a real cost:
+\begin{itemize}
+\item LoRA: +{{LORA\_PCT}}\%
+\item Kernel projections: +{{KERNEL\_PCT}}\%
+\item Landmark scorer: +{{SCORER\_PCT}}\%
+\item W\_corr: +{{WCORR\_PCT}}\%
+
+\end{itemize}
+\subsection{Inference Overhead}
+
+At short $L$ (< 64), landmark scoring may dominate:
+\begin{itemize}
+\item Scorer cost: $\mathcal{O}(L d_\text{feat} \cdot 64)$
+\item For small $L$, this is comparable to attention itself
+
+\end{itemize}
+\subsection{Approximation Error}
+
+RFF-based approximation has inherent error. On peaked attention 
+distributions (typical for transformers), the error may be larger than 
+the RFF bound suggests.
+
+\subsection{Single-Seed Results}
+
+SE ~1.7\%. Differences below 3.4\% may be noise.
+
+\subsection{No Formal Downstream Bound}
+
+We provide no bound on downstream accuracy loss.
+
+\subsection{Causality for Cross-Attention}
+
+LEKAv3 is designed for self-attention. Cross-attention is not supported 
+(explicitly raises NotImplementedError).
+
+\subsection{The `softpick` Function}
+
+Our sparsifying softpick differs from standard softmax. It introduces 
+additional hyperparameters (temperature) that we did not tune.
+
+\subsection{W\_corr Memory}
+
+$W_\text{corr} \in \mathbb{R}^{H \times d_h \times d_h}$ costs 
+$H d_h^2$ parameters per layer. For $H = 12, d_h = 64$: 49,152 params.
+
+\subsection{No Comparison with All Baselines}
+
+We do not compare with:
+\begin{itemize}
+\item Performer (would need their exact implementation)
+\item Nystr mformer
+\item Reformer
+\item Longformer with global tokens
+
+\end{itemize}
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling
+\item No fused Triton kernels
+\item Some numerical stability issues at extreme feature dims
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Dual-use. See Appendix E.
+

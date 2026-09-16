@@ -1,3 +1,107 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for leka_v2.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Landmark Distillation Works}
+
+Learned landmark selection improves accuracy over random selection by 
+{{LANDMARK\_GAIN}}\%.
+
+\subsubsection{Takeaway 2: Local-Global Fusion Matters}
+
+Combining local sliding window with global landmark attention improves 
+accuracy by {{LOCAL\_GAIN}}\%.
+
+\subsubsection{Takeaway 3: Softpick Stabilizes Masked Attention}
+
+Softpick prevents uniform collapse on fully masked rows.
+
+\subsubsection{Takeaway 4: Not Truly Linear at   = 0.5}
+
+The current implementation is $O(L \cdot (W + \rho L))$, which is 
+still quadratic. To be truly linear, set $\rho$ to a small constant 
+ratio.
+
+\subsection{When to Use LEKAv2}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Moderate-length sequences} (L $\le$ 2048) with moderate  .
+\item \textbf{Tasks where some positions are much more important} (e.g., long
+  document classification with prominent sections).
+\item \textbf{When local context matters} as much as global.
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Very long sequences} (L > 4096): the landmark term becomes expensive.
+\item \textbf{Latency-critical applications.}
+\item \textbf{Encoder-decoder models.}
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+L $\le$ 2048? --- Yes --- LEKAv2
+  | No
+   
+Need truly linear? --- Yes --- LEKAv1 or Performer
+  | No
+   
+Standard attention or Jamba-style hybrid
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT at   = {{LANDMARK\_RATIO}}:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{LEKAv2} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Total params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+Inference @ L=128 & 1.90 s & {{D\_T128}} s & {{S128}}$\times$ \\
+Inference @ L=1024 & 45.0 s & {{D\_T1024}} s & {{S1024}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Composition with Other Methods}
+
+LEKAv2 composes with:
+
+\begin{itemize}
+\item \textbf{GQA:} reduces KV head count.
+\item \textbf{RoPE:} position encoding.
+\item \textbf{LoRA:} recovery capacity.
+\item \textbf{Quantization:} INT8 on projection weights.
+
+\end{itemize}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Learnable landmark selection.
+\item Local-global fusion.
+\item Robust masked attention.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Not truly linear at default  .
+\item Modest parameter increase.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Truly linear version:} Can we set $L_\text{max} = $ constant?
+\item \textbf{Adaptive  :} Can   be learned?
+\item \textbf{Cross-attention:} How to extend?
+\item \textbf{Landmark transfer:} Do learned landmarks transfer across tasks?
+
+\end{enumerate}

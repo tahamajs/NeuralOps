@@ -1,3 +1,79 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for leka_v3.
+\subsection{Kernel and Linear Attention}
+
+\textbf{Performer} (Choromanski et al., 2021) uses positive orthogonal random 
+features (PORF) to approximate the softmax kernel. \textbf{Linear Transformer} 
+(Katharopoulos et al., 2020) uses $\phi(x) = \text{elu}(x) + 1$. 
+\textbf{Random Feature Attention} (Peng et al., 2021) uses Gaussian RFF.
+
+LEKAv3 differs by using \textbf{multi-scale cos/sin features} and by applying 
+the kernel to a \textbf{selected set of landmarks} rather than all keys.
+
+\subsection{Landmark-Based Attention}
+
+\textbf{Nystr mformer} (Xiong et al., 2021) selects landmarks by Nystr m 
+approximation, using fixed sampling. \textbf{Luna} (Ma et al., 2021) uses 
+learned landmarks with a query-averaging heuristic.
+
+LEKAv3's landmark scorer is \textbf{learned} and operates on \textbf{kernel features} 
+(not raw keys), giving $\mathcal{O}(L d_\text{feat})$ cost.
+
+\subsection{Sparse and Local Attention}
+
+\textbf{Longformer} (Beltagy et al., 2020) combines a sliding window with global 
+tokens. \textbf{BigBird} (Zaheer et al., 2020) adds random attention. 
+\textbf{Star-Transformer} (Guo et al., 2019) uses a star topology.
+
+LEKAv3's local branch uses a \textbf{causal-aware sliding window} with a learnable 
+fusion gate.
+
+\subsection{Hybrid Attention}
+
+\textbf{H-Transformer-1D} (Zhu \& Soricut, 2021) uses hierarchical attention. 
+\textbf{Reformer} (Kitaev et al., 2020) uses LSH-bucketed attention. LEKAv3's 
+landmark selection is a form of content-based routing.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Learnable selector?} & \textbf{Local branch?} & \textbf{Causal?} \\
+\midrule
+Performer & $\mathcal{O}(L)$ & No (fixed features) & No & Partial \\
+Nystr mformer & $\mathcal{O}(L)$ & No & No & Partial \\
+Longformer & $\mathcal{O}(L W)$ & No & Yes & Yes \\
+BigBird & $\mathcal{O}(L W)$ & No & Yes & Yes \\
+\textbf{LEKAv3} & $\mathcal{O}(L \cdot L_\text{land} + L W)$ & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} LEKAv3 is the first landmark-based attention where the 
+landmark selection is \textbf{trained jointly} with the downstream model, rather 
+than fixed at initialization.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Global} & \textbf{Local} & \textbf{Selector} & \textbf{Complexity} \\
+\midrule
+Standard &  &  & -- & $\mathcal{O}(L^2)$ \\
+Performer &  &  & fixed & $\mathcal{O}(L)$ \\
+Nystr mformer &  &  & fixed & $\mathcal{O}(L)$ \\
+Longformer &  &  & fixed & $\mathcal{O}(L W)$ \\
+NHA &  &  & fixed & $\mathcal{O}(L^2)$ \\
+\textbf{LEKAv3} &  &  & \textbf{learned} & $\mathcal{O}(L L_\text{land} + L W)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+

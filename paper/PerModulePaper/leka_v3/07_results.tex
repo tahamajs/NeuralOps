@@ -1,3 +1,227 @@
-\section{07 Results}
+\section{Results}
 
-Draft content for leka_v3.
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{L\_land} & \textbf{W} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & 0.9099 & -- & -- & 183 MB \\
+DistilBERT & \textbf{LEKAv3} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_LLAND}} & {{D\_W}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 78.56\% & -- & 0.8124 & -- & -- & 712 MB \\
+RoBERTa & \textbf{LEKAv3} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_LLAND}} & {{R\_W}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 79.36\% & -- & 0.7978 & -- & -- & 793 MB \\
+GPT-2 & \textbf{LEKAv3} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_LLAND}} & {{G\_W}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{LEKAv3} & \textbf{Change} \\
+\midrule
+DistilBERT & 66,955,010 & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+RoBERTa & 124,647,170 & {{R\_PARAMS}} & +{{R\_PARAM\_PCT}}\% \\
+GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{LEKAv3 adds parameters} for kernel projections, landmark scorer, 
+$W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{Peak VRAM} \\
+\midrule
+DistilBERT & full & 1.9 s & 59000 & 183 MB \\
+DistilBERT & LEKAv3 & {{D\_TIME}} s & {{D\_TPS}} & {{D\_VRAM}} MB \\
+RoBERTa & full & 4.1 s & 27400 & 712 MB \\
+RoBERTa & LEKAv3 & {{R\_TIME}} s & {{R\_TPS}} & {{R\_VRAM}} MB \\
+GPT-2 & full & 4.2 s & 26700 & 793 MB \\
+GPT-2 & LEKAv3 & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Landmark Count}
+
+\textbf{Table 7.4: Accuracy vs base landmark count $L_0$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$L_0$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & {{D\_L8}} & {{R\_L8}} & {{G\_L8}} \\
+16 & {{D\_L16}} & {{R\_L16}} & {{G\_L16}} \\
+32 & {{D\_L32}} & {{R\_L32}} & {{G\_L32}} \\
+64 & {{D\_L64}} & {{R\_L64}} & {{G\_L64}} \\
+128 & {{D\_L128}} & {{R\_L128}} & {{G\_L128}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Local Window Size}
+
+\textbf{Table 7.5: Accuracy vs $W$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$W$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & {{D\_W8}} & {{R\_W8}} & {{G\_W8}} \\
+16 & {{D\_W16}} & {{R\_W16}} & {{G\_W16}} \\
+32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} \\
+64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Feature Dimension}
+
+\textbf{Table 7.6: Accuracy vs $d_\text{feat}$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$d_\text{feat}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & {{D\_F32}} & {{R\_F32}} & {{G\_F32}} \\
+64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} \\
+128 & {{D\_F128}} & {{R\_F128}} & {{G\_F128}} \\
+256 & {{D\_F256}} & {{R\_F256}} & {{G\_F256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Component Contribution}
+
+\textbf{Table 7.7: Effect of removing each component.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Configuration} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Full LEKAv3 & {{D\_FULL}} & {{R\_FULL}} & {{G\_FULL}} \\
+landmark scorer & {{D\_NO\_SCORER}} & {{R\_NO\_SCORER}} & {{G\_NO\_SCORER}} \\
+local branch & {{D\_NO\_LOCAL}} & {{R\_NO\_LOCAL}} & {{G\_NO\_LOCAL}} \\
+W\_corr & {{D\_NO\_WCORR}} & {{R\_NO\_WCORR}} & {{G\_NO\_WCORR}} \\
+multi-scale & {{D\_NO\_MULTI}} & {{R\_NO\_MULTI}} & {{G\_NO\_MULTI}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Gate Initialization}
+
+\textbf{Table 7.8: Effect of gate init value.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Init} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.0 (50/50) & {{D\_G0}} & {{R\_G0}} & {{G\_G0}} \\
+1.0 (73/27) & {{D\_G1}} & {{R\_G1}} & {{G\_G1}} \\
+2.0 (88/12) & {{D\_G2}} & {{R\_G2}} & {{G\_G2}} \\
+4.0 (98/2) & {{D\_G4}} & {{R\_G4}} & {{G\_G4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.9: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
+25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
+50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
+100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scaling with Sequence Length}
+
+\textbf{Table 7.10: Inference time vs $L$ (GPT-2).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$L$} & \textbf{Standard} & \textbf{LEKAv3} & \textbf{Speedup} \\
+\midrule
+128 & {{T128\_STD}} s & {{T128\_LEKA}} s & {{S128}}$\times$ \\
+256 & {{T256\_STD}} s & {{T256\_LEKA}} s & {{S256}}$\times$ \\
+512 & {{T512\_STD}} s & {{T512\_LEKA}} s & {{S512}}$\times$ \\
+1024 & {{T1024\_STD}} s & {{T1024\_LEKA}} s & {{S1024}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.11: LEKAv3 vs prior attention modules.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% \\
+nha & 90.25\% & FAIL & 78.78\% \\
+nasc & 90.71\% & 64.56\% & 78.44\% \\
+\textbf{LEKAv3} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item Landmark + local fusion gives \textbf{{{D\_ACC}}\%} on DistilBERT.
+\item Parameters increase by ~7.5\% (honest framing).
+\item Complexity is linear in $L$ for fixed $L_\text{land}, W$.
+
+\end{itemize}

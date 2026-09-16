@@ -1,3 +1,132 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for leka_v2.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Params change & +{{D\_PARAM\_PCT}}\% \\
+Attention params & {{D\_ATTN}} \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+Landmark ratio & {{D\_LR}} \\
+Mean local gate & {{D\_G\_MEAN}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Time @ L=128 & {{D\_T128}} s \\
+Time @ L=1024 & {{D\_T1024}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+F1 & {{R\_F1}} \\
+Landmark ratio & {{R\_LR}} \\
+Mean gate & {{R\_G\_MEAN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+F1 & {{G\_F1}} \\
+Landmark ratio & {{G\_LR}} \\
+Mean gate & {{G\_G\_MEAN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4   Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.25 & {{D\_RHO25}} & {{R\_RHO25}} & {{G\_RHO25}} \\
+0.50 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+0.75 & {{D\_RHO75}} & {{R\_RHO75}} & {{G\_RHO75}} \\
+1.00 & {{D\_RHO100}} & {{R\_RHO100}} & {{G\_RHO100}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Feature Dim}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{F} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} \\
+128 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+256 & {{D\_F256}} & {{R\_F256}} & {{G\_F256}} \\
+512 & {{D\_F512}} & {{R\_F512}} & {{G\_F512}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Window Size}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{W} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} \\
+128 & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
+256 & {{D\_W256}} & {{R\_W256}} & {{G\_W256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+10    {{D_S10}}
+20    {{D_S20}}
+30    {{D_S30}}
+40    {{D_S40}}
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.8 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_leka_v2.py --models distilbert,roberta,gpt2
+\end{lstlisting}
+

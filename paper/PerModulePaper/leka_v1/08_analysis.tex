@@ -1,3 +1,149 @@
-\section{08 Analysis}
+\section{Analysis}
 
-Draft content for leka_v1.
+\subsection{Kernel Approximation Quality}
+
+\textbf{Figure 8.1} compares the empirical kernel $\phi(q)^\top \phi(k)$ 
+against the true softmax kernel $\exp(q^\top k / \sqrt{d_h})$ and the 
+Gaussian kernel $\exp(-\|q - k\|^2 / 2)$.
+
+\textbf{Observation.} The RFF approximation is closer to the Gaussian kernel 
+than the softmax kernel, as expected from theory.
+
+\subsection{Effect of Feature Dimension}
+
+\textbf{Figure 8.2} shows accuracy vs $F$. Approximation error scales as 
+$O(1/\sqrt{F})$, and accuracy improves with larger $F$ up to a point.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$F$} & \textbf{Approx. err} & \textbf{Accuracy} \\
+\midrule
+64 & ~0.15 & {{D\_F64}} \\
+128 & ~0.10 & {{D\_F128}} \\
+256 & ~0.07 & {{D\_ACC}} \\
+512 & ~0.05 & {{D\_F512}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Preservation Gate Analysis}
+
+\textbf{Figure 8.3} shows the learned $\alpha$ per layer for DistilBERT.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Layer} & \textbf{$\alpha$} \\
+\midrule
+0 & {{D\_L0\_ALPHA}} \\
+1 & {{D\_L1\_ALPHA}} \\
+... & ... \\
+5 & {{D\_L5\_ALPHA}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Early layers prefer attention (high $\alpha$); later layers 
+{{LATE\_LAYER\_OBS}}.
+
+\subsection{Why QR Helps}
+
+Sampling $\omega_i \sim \mathcal{N}(0, I)$ gives an unbiased estimator 
+with variance $\sigma^2 = O(1/F)$. Orthogonalizing reduces this to 
+$O(1/F^2)$, giving faster convergence.
+
+\textbf{Table 8.1: Empirical kernel error.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Init} & \textbf{} & \textbf{} & \textbf{(q)  (k) -} & \textbf{} & \textbf{$_2$} \\
+\midrule
+Random & {{ERR\_RANDOM}} &  &  &  &  \\
+QR & {{ERR\_QR}} &  &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{LayerNorm Before Projection}
+
+Without LN, the input to the random projection has varying scale, which 
+biases the kernel approximation. LN normalizes this.
+
+\textbf{Figure 8.4} shows the distribution of $f = \tilde{x} W$ with and 
+without LN.
+
+\subsection{Causal Cumsum Memory}
+
+For decoders, the cumsum over the outer product materializes a large 
+tensor. \textbf{Table 8.2} shows peak memory:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{L} & \textbf{Peak memory} \\
+\midrule
+128 & {{D\_MEM128}} MB \\
+256 & {{D\_MEM256}} MB \\
+512 & {{D\_MEM512}} MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $L > 512$, memory becomes a bottleneck. See Appendix D for 
+optimization.
+
+\subsection{Comparison to Other Linear Attention}
+
+\textbf{Table 8.3: LEKAv1 vs other linear attention.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{Speed @ L=1024} \\
+\midrule
+full & 90.71\% & 1$\times$ \\
+Linear Transformer & {{LT\_D}} & {{LT\_SP}}$\times$ \\
+Performer & {{PERF\_D}} & {{PERF\_SP}}$\times$ \\
+\textbf{LEKAv1} & \textbf{{{D\_ACC}}} & \textbf{{{D\_SP1024}}$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Modes}
+
+\subsubsection{Extractor Failure}
+
+The current \texttt{copy\_weights} raises \texttt{RuntimeError} if UniversalAdapter fails. 
+This \textbf{kills the module} and can lead to collapse.
+
+\subsubsection{Cumsum OOM}
+
+At large L, the cumsum materializes a huge tensor and can cause OOM.
+
+\subsubsection{Preservation Gate Saturation}
+
+If $\alpha$ saturates to 0, the attention branch is ignored. If $\alpha$ saturates to 1, 
+the residual is ignored.
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{RFF works} for attention approximation.
+\item \textbf{QR projection reduces variance.}
+\item \textbf{Head-wise LN stabilizes input.}
+\item \textbf{Preservation gate provides safety.}
+\item \textbf{Linear scaling enables long-context inference.}
+
+\end{enumerate}

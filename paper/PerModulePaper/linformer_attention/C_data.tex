@@ -1,3 +1,108 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for linformer_attention.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Change & +{{D\_PARAM\_PCT}}\% \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+k & {{D\_K}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+k & {{R\_K}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+k & {{G\_K}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 k Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{k} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+16 & {{D\_K16}} & {{R\_K16}} & {{G\_K16}} \\
+32 & {{D\_K32}} & {{R\_K32}} & {{G\_K32}} \\
+64 & {{D\_K64}} & {{R\_K64}} & {{G\_K64}} \\
+128 & {{D\_K128}} & {{R\_K128}} & {{G\_K128}} \\
+256 & {{D\_K256}} & {{R\_K256}} & {{G\_K256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Init Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Init} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Diagonal + noise & {{D\_DIAG}} & {{R\_DIAG}} & {{G\_DIAG}} \\
+Gaussian only & {{D\_GAUSS}} & {{R\_GAUSS}} & {{G\_GAUSS}} \\
+Zero & {{D\_ZERO}} & {{R\_ZERO}} & {{G\_ZERO}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+5     {{D_S5}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.7 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_linformer.py --linformer_k 64
+\end{lstlisting}
+

@@ -1,3 +1,111 @@
-\section{B Implementation}
+\section{Appendix B. Implementation Details}
 
-Draft content for leka_v3.
+\subsection{B.1 Kernel Feature Map}
+
+\begin{lstlisting}
+def kernel_feature_map(self, x):
+    proj1 = self.proj1.to(device=x.device, dtype=x.dtype)
+    f1 = torch.matmul(x, proj1)
+    f1 = torch.clamp(f1, min=-10.0, max=10.0)
+    return torch.cat([torch.cos(f1), torch.sin(f1)], dim=-1) / math.sqrt(self.feature_dim)
+\end{lstlisting}
+
+The \texttt{clamp} prevents overflow in \texttt{cos}/\texttt{sin} for extreme inputs.
+
+\subsection{B.2 Landmark Selection}
+
+\begin{lstlisting}
+def select_landmarks(self, K_features, V, valid_mask=None, num_landmarks=None, return_indices=False):
+    B, H, N, feat_dim = K_features.shape
+    target_landmarks = num_landmarks or self.num_landmarks
+    L = min(target_landmarks, N)
+    
+    scores = self.landmark_scorer(K_features)[..., 0]  # (B, H, N)
+    
+    if valid_mask is not None:
+        pad = (~valid_mask).unsqueeze(1)
+        scores = scores.masked_fill(pad.bool(), -1e4)
+    
+    anchor_boost = torch.zeros_like(scores)
+    anchor_boost[:, :, 0] = 1e4
+    scores = scores + anchor_boost
+    
+    _, idx = scores.topk(L, dim=-1)
+    idx[:, :, 0] = 0  # Force [CLS]
+    
+    K_land = torch.gather(K_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim))
+    V_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
+    
+    if return_indices:
+        return K_land, V_land, idx
+    return K_land, V_land
+\end{lstlisting}
+
+\subsection{B.3 Forward Pass}
+
+\begin{lstlisting}
+def forward(self, hidden_states, attention_mask=None, ...):
+    B, N, D = hidden_states.shape
+    H = self.num_heads
+    
+    valid_mask = get_token_valid_mask(attention_mask, B, N, hidden_states.device)
+    
+    q = self.query(hidden_states).view(B, N, H, self.head_dim).transpose(1, 2)
+    k = self.key(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+    v = self.value(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+    
+    if position_embeddings is not None:
+        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    
+    if self.kv_repeat > 1:
+        k = repeat_kv(k, self.kv_repeat)
+        v = repeat_kv(v, self.kv_repeat)
+    
+    Q_features = self.kernel_feature_map(q)
+    K_features = self.kernel_feature_map(k)
+    
+    effective_landmarks = min(N, max(self.num_landmarks, N // 2))
+    K_land, V_land, land_idx = self.select_landmarks(
+        K_features, v, valid_mask, num_landmarks=effective_landmarks, return_indices=True
+    )
+    
+    W = self.W_corr.unsqueeze(0).expand(B, -1, -1, -1)
+    V_land_adj = torch.matmul(V_land, W)
+    
+    attn_weights = torch.matmul(Q_features.float(), K_land.transpose(-2, -1).float())
+    # ... (masking, softpick, etc.)
+\end{lstlisting}
+
+\subsection{B.4 Causal Mask for Landmarks}
+
+\begin{lstlisting}
+if self.is_decoder:
+    q_pos = torch.arange(N).view(1, 1, N, 1)
+    k_land_pos = land_idx.unsqueeze(2)
+    causal_land_mask = (k_land_pos <= q_pos)
+    attn_weights = attn_weights.masked_fill(~causal_land_mask, -1e4)
+\end{lstlisting}
+
+Note: \texttt{land\_idx} contains \textbf{original positions} of landmarks.
+
+\subsection{B.5 Common Pitfalls}
+
+\subsubsection{B.5.1 Forgetting to Clamp Features}
+
+Without \texttt{clamp(f1, -10, 10)}, extreme inputs can cause \texttt{cos}/\texttt{sin} to 
+overflow in FP16.
+
+\subsubsection{B.5.2 Wrong Landmark Index in Mask}
+
+Using compressed indices (0..L\_land-1) instead of original positions 
+breaks causality.
+
+\subsubsection{B.5.3 Missing [CLS] Boost}
+
+Without \texttt{anchor\_boost}, \texttt{[CLS]} may be dropped, hurting classification.
+
+\subsubsection{B.5.4 W\_corr Memory}
+
+$W_\text{corr}$ is $H \times d_h \times d_h$. For $H = 12, d_h = 64$, 
+this is 49K params per layer $\times$ 12 layers = ~590K for RoBERTa.
+

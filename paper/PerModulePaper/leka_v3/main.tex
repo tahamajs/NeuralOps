@@ -64,10 +64,36 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the leka\_v3 module within modern transformer architectures.
+Transformer self-attention has quadratic cost $\mathcal{O}(L^2)$ in sequence 
+length $L$, which becomes prohibitive for long-context tasks. We introduce 
+\textbf{LEKAv3}, a linear-time attention mechanism that approximates softmax 
+attention via \textbf{value-scored landmarks}. LEKAv3 combines two complementary 
+branches: (i) a \textbf{global landmark branch} that computes kernel-feature 
+attention over a small set of $L_\text{land} \ll L$ tokens selected by a 
+learnable scorer, and (ii) a \textbf{local sliding-window branch} that computes 
+exact attention within a window of size $W$. The two branches are fused 
+by a per-head learnable gate initialized to favor landmarks.
+
+The landmark scorer is a small MLP operating on **multi-scale random Fourier 
+features** of keys, giving $\mathcal{O}(L \cdot d_\text{feat})$ selection 
+cost. The kernel feature map uses cos/sin projections at two scales, 
+providing a bounded approximation of the softmax kernel.
+
+On SST-2, LEKAv3 achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
+{{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
+{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
+{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA recovery steps. 
+The landmark count scales as $L_\text{land} = \min(L, \max(L_0, \lceil L/2 \rceil))$ 
+where $L_0$ is the base landmark budget. Complexity is 
+$\mathcal{O}(L L_\text{land} + L W)$ -- linear in $L$ when $L_\text{land}, W \sim \mathcal{O}(1)$.
+
+\textbf{Keywords:} linear attention, kernel methods, landmark selection, random 
+Fourier features, efficient transformers
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} leka\_v3, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} linear attention, kernel methods, landmark selection, random
 \end{abstract}
 
 \vspace{1em}

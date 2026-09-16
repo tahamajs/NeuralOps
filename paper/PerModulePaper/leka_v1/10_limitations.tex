@@ -1,3 +1,67 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for leka_v1.
+\subsection{Parameter Cost}
+
+LEKAv1 adds ~{{PARAM\_INCREASE}}\% parameters per layer.
+
+\subsection{Softmax vs Gaussian}
+
+RFF approximates the Gaussian kernel, not softmax. Tasks requiring exact 
+softmax may see accuracy loss.
+
+\subsection{Cumsum Memory}
+
+At L > 512, the cumsum materializes a large tensor.
+
+\subsection{Fatal Error Handling}
+
+\texttt{copy\_weights} raises \texttt{RuntimeError} on extractor failure. This can kill 
+the module.
+
+\subsection{Cross-Attention}
+
+Not supported.
+
+\subsection{Task Coverage}
+
+Only SST-2.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+Only RTX 4070.
+
+\subsection{No Multi-Seed}
+
+Single seed.
+
+\subsection{No Theoretical Bound on Downstream Accuracy}
+
+We bound kernel approximation error, not task accuracy.
+
+\subsection{Preservation Gate Saturation}
+
+If $\alpha$ saturates, the model degenerates.
+
+\subsection{Code Quality}
+
+Research-grade.
+
+\subsection{Ethical Considerations}
+
+See Appendix E.
+

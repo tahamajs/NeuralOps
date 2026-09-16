@@ -1,3 +1,76 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for linformer_attention.
+\subsection{Low-Rank Attention}
+
+\textbf{Linformer} (Wang et al., 2020) is the origin of the approach we 
+reimplement. It projects $K, V$ to dimension $k$ using learned matrices.
+
+\textbf{Nystr mformer} (Xiong et al., 2021) uses Nystr m landmarks instead of 
+linear projections. \textbf{Performer} (Choromanski et al., 2021) uses random 
+Fourier features. Both are alternatives to Linformer's learned projection.
+
+\textbf{Funnel Transformer} (Dai et al., 2020) downsamples intermediate 
+representations. This is orthogonal to Linformer.
+
+\subsection{Sequence Compression}
+
+\textbf{Longformer} (Beltagy et al., 2020) uses sparse local windows plus global 
+tokens. \textbf{BigBird} (Zaheer et al., 2020) adds random attention. 
+\textbf{Reformer} (Kitaev et al., 2020) uses LSH bucketing.
+
+\textbf{Compressive Transformer} (Rae et al., 2020) compresses past activations 
+into a compressed memory. This is complementary to Linformer's intra-layer 
+projection.
+
+\subsection{Kernel and Feature-Based Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020) uses $\phi(x) = \text{elu}(x)+1$ 
+as a feature map. \textbf{Random Feature Attention} (Peng et al., 2021) uses 
+Gaussian RFF. These achieve $\mathcal{O}(L)$ via associativity, different 
+from Linformer's projection.
+
+\subsection{Hybrid Methods}
+
+\textbf{NHA} (our own implementation) combines local sliding window with global 
+linear attention via gating. \textbf{LEKAv3} uses learned landmarks plus local 
+window. Linformer belongs to the "global low-rank" category.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Learned?} & \textbf{Causal-safe?} & \textbf{Multi-arch?} \\
+\midrule
+Standard & $\mathcal{O}(L^2)$ & -- & Yes & Yes \\
+Linformer (orig.) & $\mathcal{O}(L k)$ & Yes & Partial & Encoder only \\
+Performer & $\mathcal{O}(L)$ & RFF (fixed) & Partial & Encoder \\
+Longformer & $\mathcal{O}(L W)$ & No & Yes & Encoder \\
+\textbf{Ours} & $\mathcal{O}(L k)$ & Yes & \textbf{Yes (fallback)} & \textbf{4 models} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key distinction.} Our implementation is the first to support GPT-2 
+Conv1D, RoBERTa nested, and Qwen GQA/RoPE with a causal-safe fallback, 
+while preserving the original Linformer complexity.
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Method} & \textbf{Encoder} & \textbf{Decoder} & \textbf{GQA} & \textbf{RoPE} & \textbf{Conv1D} \\
+\midrule
+Linformer (orig.) &  &  &  &  &  \\
+\textbf{Ours} &  & (fallback) &  &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+

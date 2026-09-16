@@ -1,3 +1,99 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for leka_v1.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Linear Scaling Works}
+
+LEKAv1 is faster than standard attention at $L > {{BREAKEVEN}}$.
+
+\subsubsection{Takeaway 2: RFF Approximates Gaussian, Not Softmax}
+
+Our kernel target is the Gaussian RBF, not the softmax kernel. The two 
+differ in practice.
+
+\subsubsection{Takeaway 3: Preservation Gate is Essential}
+
+The gate provides a residual safety net, improving accuracy by 
+{{GATE\_GAIN\_D}}\%.
+
+\subsection{When to Use LEKAv1}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Long-context inference} ($L \geq {{BREAKEVEN}}$).
+\item \textbf{Streaming} (causal cumsum supports it).
+\item \textbf{Combined with other efficiency methods.}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Short sequences} ($L \leq 256$).
+\item \textbf{Tasks requiring exact softmax.}
+\item \textbf{Very large L (> 2048)} due to cumsum memory.
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Target L $\ge$ 1024? --- Yes --- LEKAv1
+  | No
+   
+Latency-critical? --- Yes --- Standard attention
+  | No
+   
+Consider other methods
+\end{lstlisting}
+
+\subsection{Cost-Benefit Analysis}
+
+For DistilBERT:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{LEKAv1} & \textbf{Change} \\
+\midrule
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+Total params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
+Inference @ L=128 & 1.90 s & {{D\_T128}} s & {{S128}}$\times$ \\
+Inference @ L=2048 & 180 s & {{D\_T2048}} s & {{S2048}}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Composition with Other Methods}
+
+LEKAv1 composes with:
+
+\begin{itemize}
+\item \textbf{GQA:} reduces KV head count.
+\item \textbf{RoPE:} applies position encoding.
+\item \textbf{LoRA:} recovery capacity.
+\item \textbf{Weight compression} (SOA Fused): factorized projections.
+
+\end{itemize}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Linear-time inference.
+\item Composable with other methods.
+\item Fast long-context.
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Modest parameter increase.
+\item Cumsum memory for very large L.
+
+\end{itemize}
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Blocked cumsum:} How to reduce memory?
+\item \textbf{Adaptive F:} Should F vary per layer?
+\item \textbf{Combined with Performer:} PORF + cos/sin?
+
+\end{enumerate}

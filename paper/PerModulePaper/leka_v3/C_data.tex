@@ -1,3 +1,146 @@
-\section{C Data}
+\section{Appendix C. Full Experimental Data}
 
-Draft content for leka_v3.
+\subsection{C.1 DistilBERT}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 66,955,010 \\
+Params after & {{D\_PARAMS}} \\
+Change & +{{D\_PARAM\_PCT}}\% \\
+Accuracy & {{D\_ACC}}\% \\
+F1 & {{D\_F1}} \\
+L\_land & {{D\_LLAND}} \\
+W & {{D\_W}} \\
+Peak VRAM & {{D\_VRAM}} MB \\
+Inference time & {{D\_TIME}} s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & {{R\_PARAMS}} \\
+Accuracy & {{R\_ACC}}\% \\
+L\_land & {{R\_LLAND}} \\
+W & {{R\_W}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & {{G\_PARAMS}} \\
+Accuracy & {{G\_ACC}}\% \\
+L\_land & {{G\_LLAND}} \\
+W & {{G\_W}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 L\_0 Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{L\_0} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & {{D\_L8}} & {{R\_L8}} & {{G\_L8}} \\
+16 & {{D\_L16}} & {{R\_L16}} & {{G\_L16}} \\
+32 & {{D\_L32}} & {{R\_L32}} & {{G\_L32}} \\
+64 & {{D\_L64}} & {{R\_L64}} & {{G\_L64}} \\
+128 & {{D\_L128}} & {{R\_L128}} & {{G\_L128}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 W Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{W} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & {{D\_W8}} & {{R\_W8}} & {{G\_W8}} \\
+16 & {{D\_W16}} & {{R\_W16}} & {{G\_W16}} \\
+32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} \\
+64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.6 Feature Dim Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{d\_feat} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & {{D\_F32}} & {{R\_F32}} & {{G\_F32}} \\
+64 & {{D\_F64}} & {{R\_F64}} & {{G\_F64}} \\
+128 & {{D\_F128}} & {{R\_F128}} & {{G\_F128}} \\
+256 & {{D\_F256}} & {{R\_F256}} & {{G\_F256}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.7 Component Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Full & {{D\_FULL}} & {{R\_FULL}} & {{G\_FULL}} \\
+scorer & {{D\_NO\_SCORER}} & {{R\_NO\_SCORER}} & {{G\_NO\_SCORER}} \\
+local & {{D\_NO\_LOCAL}} & {{R\_NO\_LOCAL}} & {{G\_NO\_LOCAL}} \\
+W\_corr & {{D\_NO\_WCORR}} & {{R\_NO\_WCORR}} & {{G\_NO\_WCORR}} \\
+multi-scale & {{D\_NO\_MULTI}} & {{R\_NO\_MULTI}} & {{G\_NO\_MULTI}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.8 Training Loss}
+
+\subsubsection{DistilBERT}
+\begin{lstlisting}
+Step  Loss
+1     {{D_S1}}
+...
+50    {{D_S50}}
+\end{lstlisting}
+
+\subsection{C.9 Reproduction Commands}
+
+\begin{lstlisting}
+python run_all_4_leka_v3.py --num_landmarks 64 --local_window_size 16
+\end{lstlisting}
+

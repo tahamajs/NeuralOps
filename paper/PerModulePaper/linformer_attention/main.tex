@@ -64,10 +64,36 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the linformer\_attention module within modern transformer architectures.
+Standard transformer attention is quadratic in sequence length $L$, making 
+long-context inference expensive. Linformer (Wang et al., 2020) reduces 
+this to linear by projecting keys and values to a fixed dimension $k$ via 
+two learned matrices $E, F \in \mathbb{R}^{k \times L}$. We present a 
+\textbf{production-hardened implementation} of Linformer that (i) initializes 
+$E$ and $F$ with a diagonal identity block plus small Gaussian noise to 
+accelerate convergence, (ii) adaptively selects the appropriate slice of 
+$E$ and $F$ based on $L$ vs $k$ vs the pre-allocated maximum sequence 
+length, and (iii) falls back to exact dense causal attention when the 
+projection would break causality.
+
+On SST-2, our Linformer implementation achieves \textbf{{{D\_ACC}}\%} on DistilBERT 
+(baseline {{BASE\_D}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
+{{BASE\_R}}\%, $\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline 
+{{BASE\_G}}\%, $\Delta$ = {{G\_DELTA}}), using {{RECOVERY\_STEPS}} LoRA recovery 
+steps. Complexity is $\mathcal{O}(L \cdot k \cdot d_h)$ -- linear in $L$ for 
+fixed $k$.
+
+The implementation increases parameter count by approximately 
+\textbf{{{PARAM\_INC}}\%} per layer due to the $E, F$ matrices, LoRA adapters, and 
+output scale. We are explicit that this is an \textbf{inference-compute} 
+optimization, not a parameter reduction.
+
+\textbf{Keywords:} linformer, low-rank attention, linear complexity, 
+efficient transformers, sequence projection
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} linformer\_attention, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} linformer, low-rank attention, linear complexity,
 \end{abstract}
 
 \vspace{1em}

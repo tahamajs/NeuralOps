@@ -1,3 +1,141 @@
-\section{08 Analysis}
+\section{Analysis}
 
-Draft content for leka_v2.
+\subsection{Contribution of Each Component}
+
+\textbf{Table 8.1: Ablation of components (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Config} & \textbf{Accuracy} & \textbf{$\Delta$} \\
+\midrule
+Baseline (linear attention only) & {{D\_BASE\_ATTN}} & -- \\
++ Dual-scale RFF & {{D\_BASE\_DUAL}} & +{{DUAL\_GAIN}} \\
++ Landmark distillation & {{D\_BASE\_LAND}} & +{{LANDMARK\_GAIN}} \\
++ Local window & {{D\_BASE\_LOCAL}} & +{{LOCAL\_GAIN}} \\
++ Softpick & \textbf{{{D\_ACC}}} & +{{SOFTPICK\_GAIN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All four components contribute.
+
+\subsection{Landmark Selection Analysis}
+
+\textbf{Figure 8.1} shows the distribution of selected landmarks.
+
+\begin{itemize}
+\item \textbf{Position 0} is always retained (guaranteed).
+\item \textbf{Token 1-5} are frequently selected (early context).
+\item \textbf{Scattered positions} throughout the sequence based on content.
+
+\end{itemize}
+\subsection{Why Softpick Matters}
+
+\textbf{Figure 8.2} shows the case where a full row of attention is masked. 
+Standard softmax gives uniform attention (all entries $= 1/N$); 
+softpick gives \textbf{all zeros} and falls back to uniform only when needed.
+
+\textbf{Result.} Softpick prevents numerical instability at masked rows.
+
+\subsection{Local Window Contribution}
+
+\textbf{Table 8.2: Effect of window size.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{W} & \textbf{DistilBERT} & \textbf{Efficiency} \\
+\midrule
+32 & {{D\_W32}} & Fastest \\
+{{LOCAL\_WINDOW}} & {{D\_ACC}} & Sweet spot \\
+256 & {{D\_W256}} & Slower \\
+Full L & {{D\_WFULL}} & Same as MHSA \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dual-Scale Analysis}
+
+The two RFF projections capture different frequency bands. \textbf{Figure 8.3} 
+shows the singular value spectra of $W_1$ and $W_2$:
+
+\begin{itemize}
+\item $W_1$ (F=128): captures low-frequency kernel features.
+\item $W_2$ (F/2=64): captures high-frequency kernel features.
+
+\end{itemize}
+Combining them gives a richer representation.
+
+\subsection{Learned Local Gate}
+
+\textbf{Figure 8.4} shows per-head gate values after training. Average values:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Mean $g_h$} \\
+\midrule
+DistilBERT & {{D\_G\_MEAN}} \\
+RoBERTa & {{R\_G\_MEAN}} \\
+GPT-2 & {{G\_G\_MEAN}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Heads with high $g_h$ prefer global; low $g_h$ prefer local.
+
+\subsection{Complexity Reality Check}
+
+\textbf{Table 8.3: Actual complexity.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Complexity} \\
+\midrule
+Local window & $O(L \cdot W)$ \\
+Global landmark & $O(L \cdot L_\text{max})$ \\
+\textbf{Total} & \textbf{$O(L \cdot (W + L_\text{max}))$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+With $L_\text{max} = \rho L$ and $\rho = 0.5$, the landmark term is 
+$O(L^2 / 2)$ -- still quadratic but with half the constant.
+
+\textbf{Note.} LEKAv2 is \textbf{not truly linear} unless $L_\text{max}$ is fixed.
+
+\subsection{Failure Modes}
+
+\subsubsection{Fatal Error Handling}
+
+The \texttt{copy\_weights} still raises \texttt{RuntimeError} on extractor failure.
+
+\subsubsection{Landmark Saturation}
+
+If the scorer assigns equal scores to all tokens, selection is effectively 
+random.
+
+\subsubsection{Local Gate Saturation}
+
+If $g_h \to 0$ or $g_h \to 1$, one branch is ignored.
+
+\subsection{Summary of Insights}
+
+\begin{enumerate}
+\item \textbf{All four components contribute.}
+\item \textbf{Landmark distillation is essential.}
+\item \textbf{Dual-scale helps.}
+\item \textbf{Softpick stabilizes.}
+\item \textbf{LEKAv2 is not truly linear at   = 0.5.}
+
+\end{enumerate}

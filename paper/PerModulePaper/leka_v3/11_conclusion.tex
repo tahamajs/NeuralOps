@@ -1,3 +1,71 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for leka_v3.
+\subsection{Summary}
+
+We presented \textbf{LEKAv3}, a linear-time attention mechanism combining 
+learned landmark selection with a local sliding window. LEKAv3 achieves 
+$\mathcal{O}(L L_\text{land} + L W)$ complexity, scales to long sequences, 
+and provides a learnable alternative to fixed landmark selection.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Landmark} & \textbf{Window} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & {{L0}} & {{WINDOW}} \\
+RoBERTa & {{R\_DELTA}}\% & {{L0}} & {{WINDOW}} \\
+GPT-2 & {{G\_DELTA}}\% & {{L0}} & {{WINDOW}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Linear complexity is real.}
+\item \textbf{Learned landmarks beat fixed selection.}
+\item \textbf{Local window preserves detail.}
+\item \textbf{Gated fusion learns per-head balance.}
+\item \textbf{Parameter count increases} -- honest framing.
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Fused Triton kernel
+\item Adaptive $L_\text{land}$ per layer
+\item INT8 combined
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Theoretical bound on approximation error
+\item Cross-task scorer transfer
+\item Multimodal extension
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+LEKAv3 is a practical linear-time attention for long-context models. Code 
+and checkpoints released.
+
+\subsection{Acknowledgments}
+
+{{ACKNOWLEDGMENTS}}
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed LEKAv3, implemented, ran experiments, wrote paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

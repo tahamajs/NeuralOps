@@ -64,10 +64,55 @@
 
 % --- Abstract & Keywords Block ---
 \begin{abstract}
-This paper presents a formal derivation, hardware optimization, and empirical evaluation for the leka\_v1 module within modern transformer architectures.
+Standard transformer attention scales quadratically with sequence length, 
+making long-context inference prohibitively expensive. \textbf{Linear attention} 
+reduces this to $\mathcal{O}(L)$ by replacing softmax with a kernel 
+feature map $\phi$ such that $\exp(q^\top k) \approx \phi(q)^\top \phi(k)$. 
+The \textbf{Performer} (Choromanski et al., 2021) uses positive orthogonal 
+random features (PORF); the \textbf{Linear Transformer} (Katharopoulos et al., 
+2020) uses $\phi(x) = \text{elu}(x) + 1$.
+
+We introduce \textbf{LEKAv1}, a production-hardened linear-time attention module 
+that approximates the \textbf{Gaussian RBF kernel} $\exp(-\|q - k\|^2 / 2)$ 
+using Random Fourier Features (RFF):
+
+\[
+\phi(x) = \frac{1}{\sqrt{F}} \left[ \cos(x W) \,\|\, \sin(x W) \right], 
+\quad W \in \mathbb{R}^{d_h \times F}
+\]
+
+where $W$ is \textbf{QR-orthogonalized} for stability. The feature dimension 
+$F = {{FEATURE_DIM}}$ yields $\phi(x) \in \mathbb{R}^{2F}$. We apply a 
+\textbf{head-wise LayerNorm} before the projection, then compute linear attention 
+via a causal cumulative sum (decoders) or a global KV sum (encoders). A 
+\textbf{preservation gate} blends the attention output with the residual 
+input, controlled by a scalar $\alpha = \sigma(w)$:
+
+\[
+\text{out} = \alpha \odot A + (1 - \alpha) \odot x
+\]
+
+with $w_0 = 2$ (initial $\alpha \approx 0.88$).
+
+On SST-2, LEKAv1 achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
+{{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and 
+\textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%). Inference scales linearly 
+in sequence length: at $L = {{LONG_L}}$, LEKAv1 is \textbf{{{SPEEDUP\_LONG}}$\times$} 
+faster than standard attention.
+
+\textbf{We are explicit that LEKAv1 does not reduce parameter count.} It adds 
+approximately {{PARAM\_INCREASE}}\% parameters due to LoRA, the projection 
+matrix, and the preservation gate. Its benefit is **$\mathcal{O}(L)$ 
+inference\textbf{ and }kernel-based attention** that composes with GQA and 
+RoPE.
+
+\textbf{Keywords:} linear attention, random Fourier features, kernel methods, 
+long-context efficiency, Gaussian RBF
+
+
 
 \vspace{0.5em}
-\noindent\textbf{Keywords:} leka\_v1, efficient attention, transformer compression, deep learning
+\noindent\textbf{Keywords:} linear attention, random Fourier features, kernel methods,
 \end{abstract}
 
 \vspace{1em}

@@ -1,3 +1,125 @@
-\section{03 Background}
+\section{Background}
 
-Draft content for leka_v3.
+\subsection{Softmax Kernel Approximation}
+
+Standard attention computes:
+
+\[
+\text{Attn}(q_i, K, V)_i = \frac{\sum_j e^{q_i \cdot k_j / \sqrt{d_h}} v_j}{\sum_j e^{q_i \cdot k_j / \sqrt{d_h}}}
+\tag{3.1}
+\]
+
+The softmax kernel $e^{q \cdot k}$ is positive-definite, allowing a feature 
+factorization:
+
+\[
+e^{q \cdot k} \approx \phi(q)^\top \phi(k)
+\tag{3.2}
+\]
+
+Substituting:
+
+\[
+\text{Attn}(q_i, K, V) \approx \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\tag{3.3}
+\]
+
+Define $S = \sum_j \phi(k_j) v_j^\top$ and $Z = \sum_j \phi(k_j)$. Both are 
+$\mathcal{O}(L d_h d_\text{feat})$ to compute and $\mathcal{O}(d_h d_\text{feat})$ 
+to store.
+
+\subsection{Random Fourier Features (RFF)}
+
+Rahimi \& Recht (2007) showed:
+
+\[
+e^{x \cdot y} \approx \mathbb{E}_{\omega \sim \mathcal{N}(0, I)}\left[e^{i \omega \cdot (x - y)}\right]
+\tag{3.4}
+\]
+
+For real-valued features:
+
+\[
+\phi(x) = \frac{1}{\sqrt{m}} \begin{pmatrix} \cos(\omega_1 \cdot x) \\ \vdots \\ \cos(\omega_m \cdot x) \\ \sin(\omega_1 \cdot x) \\ \vdots \\ \sin(\omega_m \cdot x) \end{pmatrix}
+\tag{3.5}
+\]
+
+where $\omega_i \sim \mathcal{N}(0, I)$ and $m$ is the number of features.
+
+\textbf{Multi-scale.} LEKAv3 uses two projection matrices with different scales 
+to capture both fine and coarse structure.
+
+\subsection{Landmark Attention}
+
+Nystr mformer (Xiong et al., 2021) approximates:
+
+\[
+\text{softmax}(QK^\top) \approx \text{softmax}(Q \tilde{K}^\top) \text{softmax}(\tilde{Q} \tilde{K}^\top)^{-1} \text{softmax}(\tilde{Q} K^\top)
+\tag{3.6}
+\]
+
+where $\tilde{Q}, \tilde{K}$ are landmarks.
+
+LEKAv3 simplifies this to a direct landmark attention:
+
+\[
+\text{Attn}_\text{land}(Q, K_\mathcal{L}, V_\mathcal{L}) = \text{softpick}(Q K_\mathcal{L}^\top) V_\mathcal{L}
+\tag{3.7}
+\]
+
+with $\text{softpick}$ a sparsifying alternative to softmax.
+
+\subsection{Sliding Window Attention}
+
+Longformer (Beltagy et al., 2020) applies a local window:
+
+\[
+\text{Attn}_\text{local}(q_i, K, V) = \sum_{j: |i - j| \leq W/2} \alpha_{ij} v_j
+\tag{3.8}
+\]
+
+LEKAv3 makes this \textbf{causal-aware}: for decoders, only $j \leq i$ is included.
+
+\subsection{Softpick}
+
+LEKAv3 uses a sparsifying attention function called \texttt{softpick}:
+
+\[
+\text{softpick}(x)_i = \text{ReLU}\!\left(e^{(x_i - m)/T} - e^{-m/T}\right), \quad m = \max_j x_j
+\tag{3.9}
+\]
+
+normalized across $j$. This drops low-scoring tokens, giving sparse attention.
+
+\subsection{Grouped-Query Attention (GQA)}
+
+GQA shares KV across $H/H_{kv}$ query heads:
+
+\[
+K, V \in \mathbb{R}^{B \times L \times H_{kv} \times d_h}, \qquad
+K_{\text{expanded}} = \text{repeat\_kv}(K, H/H_{kv})
+\tag{3.10}
+\]
+
+\subsection{Rotary Position Embeddings (RoPE)}
+
+RoPE applies position-dependent rotations:
+
+\[
+\tilde{q}_i = q_i \cos(\theta_i) + \text{rot}(q_i) \sin(\theta_i)
+\tag{3.11}
+\]
+
+LEKAv3 applies RoPE before feature mapping.
+
+\subsection{LoRA Recovery}
+
+LoRA (Hu et al., 2021):
+
+\[
+\Delta W = \frac{\alpha}{r} B A
+\tag{3.12}
+\]
+
+with $B = 0$ initially. Applied to projections for recovery.
+

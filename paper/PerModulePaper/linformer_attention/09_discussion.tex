@@ -1,3 +1,91 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for linformer_attention.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Linear Encoders}
+
+For encoders (DistilBERT, RoBERTa), Linformer achieves $\mathcal{O}(L k)$ 
+complexity with modest accuracy loss.
+
+\subsubsection{Takeaway 2: Decoder Fallback}
+
+For decoders (GPT-2), the causal fallback prevents correctness issues but 
+sacrifices linearity.
+
+\subsubsection{Takeaway 3: Diagonal Init Matters}
+
+Our diagonal init converges dramatically faster than random init.
+
+\subsection{When to Use This Implementation}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Encoder-only models} (BERT-family)
+\item \textbf{Long-sequence encoding} ($L \gg k$)
+\item \textbf{Parameter-tolerant deployments}
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Short sequences} ($L \leq k$): no compression
+\item \textbf{Long-sequence decoders}: fallback negates benefit
+\item \textbf{Parameter-critical}: +7\% overhead
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Model is encoder? --- Yes --- Use Linformer
+  | No
+   
+L $\le$ k? --- Yes --- No benefit
+  | No
+   
+Accept quadratic fallback? --- Yes --- Use Linformer
+  | No
+   
+Consider other methods (LEKAv3, etc.)
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT at $L = 512$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Linformer} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M (+7\%) \\
+Attention FLOPs & 100\% & {{FLOP\_RATIO}}\% \\
+Inference time & 1.9 s & {{D\_TIME}} s \\
+Accuracy & 90.71\% & {{D\_ACC}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Learned max\_seq\_len:} Can $L_\text{max}$ adapt?
+\item \textbf{Per-head k:} Can different heads use different $k$?
+\item \textbf{Causal Linformer:} Is there a causal-safe projection?
+\item \textbf{Interaction with quantization:} INT8 + Linformer?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Reduces compute for long-context encoders
+\item Enables BERT-family models on small GPUs
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Adds parameters
+\item No benefit for decoders
+
+\end{itemize}

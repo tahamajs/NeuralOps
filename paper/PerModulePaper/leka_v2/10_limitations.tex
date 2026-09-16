@@ -1,3 +1,66 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for leka_v2.
+\subsection{Not Truly Linear at Default}
+
+The landmark attention is $O(L \cdot L_\text{max})$, where $L_\text{max} = \rho L$. 
+At $\rho = 0.5$, this is still $O(L^2/2)$.
+
+\subsection{Parameter Increase}
+
+LEKAv2 adds ~{{PARAM\_INCREASE}}\% parameters per layer.
+
+\subsection{Fatal Error Handling}
+
+\texttt{copy\_weights} raises \texttt{RuntimeError} on extractor failure.
+
+\subsection{Cross-Attention}
+
+Not supported.
+
+\subsection{Task Coverage}
+
+Only SST-2.
+
+\subsection{Model Coverage}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Size} & \textbf{Tested} \\
+\midrule
+$\le$124M & Yes \\
+1B+ & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Hardware}
+
+Only RTX 4070.
+
+\subsection{No Multi-Seed}
+
+Single seed.
+
+\subsection{Landmark Scorer Complexity}
+
+The scorer is a small MLP; its accuracy depends on training data.
+
+\subsection{Local Gate Saturation}
+
+If $g_h$ saturates, one branch is ignored.
+
+\subsection{Correction Matrix Scaling}
+
+$W_\text{corr}$ is $O(H d_h^2)$ -- significant for large $d_h$.
+
+\subsection{Code Quality}
+
+Research-grade.
+
+\subsection{Ethical Considerations}
+
+See Appendix E.
+

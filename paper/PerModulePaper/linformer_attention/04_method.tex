@@ -1,3 +1,335 @@
-\section{04 Method}
+\section{Method}
 
-Draft content for linformer_attention.
+\subsection{Overview}
+
+Our Linformer implementation has four phases:
+
+\begin{enumerate}
+\item \textbf{Projection} ( 4.2): standard $Q, K, V$ projections.
+\item \textbf{RoPE} ( 4.2): optional rotary embeddings.
+\item \textbf{GQA expansion} ( 4.3): expand KV heads.
+\item \textbf{Adaptive Linformer projection} ( 4.4): project $K, V$ to dimension $k$.
+\item \textbf{Attention} ( 4.5): standard scaled-dot-product on projected tensors.
+\item \textbf{Causal handling} ( 4.6): fallback to dense if needed.
+
+\end{enumerate}
+\subsection{Projections and RoPE}
+
+Standard projections via LoRALinear:
+
+\begin{lstlisting}
+q = self.q_proj(hidden_states)
+k = self.k_proj(hidden_states)
+v = self.v_proj(hidden_states)
+\end{lstlisting}
+
+Reshape to multi-head:
+
+\begin{lstlisting}
+q = q.view(B, N, H, d_h).transpose(1, 2)
+k = k.view(B, N, H_kv, d_h).transpose(1, 2)
+v = v.view(B, N, H_kv, d_h).transpose(1, 2)
+\end{lstlisting}
+
+Apply RoPE if position embeddings available.
+
+\subsection{GQA Expansion}
+
+\begin{lstlisting}
+if self.kv_repeat > 1:
+    k = repeat_kv(k, self.kv_repeat)
+    v = repeat_kv(v, self.kv_repeat)
+\end{lstlisting}
+
+After this, $K, V \in \mathbb{R}^{B \times H \times L \times d_h}$.
+
+\subsection{Adaptive Linformer Projection}
+
+\subsubsection{Three Cases}
+
+Given sequence length $L$, projection dim $k$, and pre-allocated $L_\text{max}$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Case} & \textbf{Condition} & \textbf{Action} \\
+\midrule
+\textbf{Short} & $L \leq k$ & Use $E[:L, :L]$, no compression \\
+\textbf{Medium} & $L \leq L_\text{max}$ & Use $E[:k, :L]$, standard Linformer \\
+\textbf{Long} & $L > L_\text{max}$ & Interpolate $E$ to length $L$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Short Case ($L \leq k$)}
+
+For short sequences, no compression is applied:
+
+\begin{lstlisting}
+E_act = self.E[:L, :L]
+K_proj = E_act @ k  # (B, H, L, d_h)
+\end{lstlisting}
+
+This preserves exact attention for short sequences, ensuring no accuracy 
+loss when compression isn't needed.
+
+\subsubsection{Medium Case ($L \leq L_\text{max}$)}
+
+Standard Linformer:
+
+\begin{lstlisting}
+k_eff = min(self.k_proj_dim, L)
+E_act = self.E[:k_eff, :L]
+K_proj = E_act @ k  # (B, H, k_eff, d_h)
+\end{lstlisting}
+
+$K$ and $V$ are projected from $L$ to $k_\text{eff}$ positions.
+
+\subsubsection{Long Case ($L > L_\text{max}$)}
+
+For sequences longer than the pre-allocated max:
+
+\begin{lstlisting}
+E_act = F.interpolate(
+    self.E[:k_eff].unsqueeze(0),
+    size=L,
+    mode="linear",
+    align_corners=False,
+).squeeze(0)
+\end{lstlisting}
+
+Linear interpolation extends $E$ to length $L$. This is a graceful 
+degradation -- not part of the original Linformer paper, but necessary for 
+robustness.
+
+\subsection{Attention on Projected Tensors}
+
+\subsubsection{Scores}
+
+\[
+\text{scores} = \frac{Q \tilde{K}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times L \times k_\text{eff}}
+\tag{4.1}
+\]
+
+Computed in FP32 for stability.
+
+\subsubsection{Softmax}
+
+Standard softmax over $k_\text{eff}$ dimension.
+
+\subsubsection{Context}
+
+\[
+\text{context} = \text{attn} \cdot \tilde{V} \in \mathbb{R}^{B \times H \times L \times d_h}
+\tag{4.2}
+\]
+
+\subsubsection{Output Projection}
+
+\begin{lstlisting}
+context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+out = self.out_proj(context * self.output_scale)
+\end{lstlisting}
+
+Where \texttt{output\_scale} is a learnable scalar initialized to 1.
+
+\subsection{Causal Handling for Decoders}
+
+\textbf{The problem.} For a decoder, projecting $K$ via $E$ mixes future and past 
+information:
+
+\[
+\tilde{K}_j = \sum_{i=1}^L E_{j, i} K_i
+\tag{4.3}
+\]
+
+The resulting $\tilde{K}_j$ depends on \textbf{all} positions, not just $j$. A 
+causal mask over $\tilde{K}_j$ is meaningless.
+
+\textbf{The solution.} Fall back to exact dense attention:
+
+\begin{lstlisting}
+if self.is_decoder and L > self.k_proj_dim:
+    # Cannot compress without breaking causality
+    causal_scores = q @ k.transpose(-2, -1) / sqrt(d_h)
+    causal_mask = tril(ones(L, L))
+    scores = causal_scores.masked_fill(~causal_mask, -inf)
+    V_proj = v  # Use unprojected V
+\end{lstlisting}
+
+This preserves causality at the cost of $\mathcal{O}(L^2)$ for decoders 
+with $L > k$.
+
+For short sequences ($L \leq k$), the projection is identity-like, so 
+causality is approximately preserved. We use the projected path in this 
+case.
+
+\subsection{Full Algorithm}
+
+\textbf{Algorithm 1:} Linformer forward pass
+\begin{lstlisting}
+Input:  X $\in$ R^{B$\times$L$\times$d}, k, L_max
+Output: Y $\in$ R^{B$\times$L$\times$d}
+
+ 1: Q $\leftarrow$ X W_Q; K $\leftarrow$ X W_K; V $\leftarrow$ X W_V
+ 2: if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
+ 3: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
+ 4: if L $\le$ k:
+ 5:     E_act $\leftarrow$ E[:L, :L]; F_act $\leftarrow$ F[:L, :L]
+ 6:     V_proj $\leftarrow$ F_act @ V
+ 7: elif L $\le$ L_max:
+ 8:     k_eff $\leftarrow$ min(k, L)
+ 9:     E_act $\leftarrow$ E[:k_eff, :L]; F_act $\leftarrow$ F[:k_eff, :L]
+10:     V_proj $\leftarrow$ F_act @ V
+11: else:
+12:     E_act $\leftarrow$ interpolate(E, size=L); F_act $\leftarrow$ interpolate(F, size=L)
+13:     V_proj $\leftarrow$ F_act @ V
+14: K_proj $\leftarrow$ E_act @ K
+15: scores $\leftarrow$ Q @ K_proj^T / $\sqrt{}$d_h
+16: if is_decoder and L > k:
+17:     # Fallback: dense causal attention
+18:     scores $\leftarrow$ Q @ K^T / $\sqrt{}$d_h
+19:     V_proj $\leftarrow$ V
+20:     scores $\leftarrow$ mask_causal(scores)
+21: scores $\leftarrow$ mask_padding(scores)
+22: attn $\leftarrow$ softmax(scores)
+23: out $\leftarrow$ attn @ V_proj
+24: out $\leftarrow$ out_proj(out * output_scale)
+25: return out
+\end{lstlisting}
+
+\subsection{Complexity Analysis}
+
+\subsubsection{Encoder Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Operation} & \textbf{Complexity} \\
+\midrule
+$Q, K, V$ projections & $\mathcal{O}(L d^2)$ \\
+$E K$ & $\mathcal{O}(k L d_h)$ \\
+$Q \tilde{K}^\top$ & $\mathcal{O}(L k d_h)$ \\
+Softmax & $\mathcal{O}(L k)$ \\
+$\text{attn} \cdot \tilde{V}$ & $\mathcal{O}(L k d_h)$ \\
+Output projection & $\mathcal{O}(L d^2)$ \\
+\textbf{Total} & $\mathcal{O}(L k d_h + L d^2)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For fixed $k$ and $d$: \textbf{linear in $L$}.
+
+\subsubsection{Decoder Complexity}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Case} & \textbf{Complexity} \\
+\midrule
+$L \leq k$ & $\mathcal{O}(L k d_h)$ \\
+$L > k$ & $\mathcal{O}(L^2 d_h)$ (fallback) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Trade-off.} Encoders benefit from linearity; long-sequence decoders 
+fall back to quadratic.
+
+\subsubsection{Memory}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Tensor} & \textbf{Size} \\
+\midrule
+$E, F$ & $2 k L_\text{max}$ \\
+Attention scores & $\mathcal{O}(L k)$ \\
+Context & $\mathcal{O}(L d_h)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Much smaller than baseline $\mathcal{O}(L^2)$ for the scores matrix.
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Component} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+$W_Q, W_K, W_V, W_O$ & $4 d^2$ (frozen) & $4 d^2$ (frozen) & 0 \\
+LoRA adapters & 0 & $4 r_L (d + d)$ & +small \\
+$E, F$ & 0 & $2 k L_\text{max}$ & +medium \\
+\texttt{output\_scale} & 0 & 1 & ~0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $d = 768$, $k = 64$, $L_\text{max} = 512$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Baseline per layer & 2,359,296 \\
+LoRA (rank 16) & 98,304 \\
+E, F & $2 \cdot 64 \cdot 512 = 65,536$ \\
+output\_scale & 1 \\
+\textbf{Total added} & ~163,841 \\
+\textbf{Change} & \textbf{+6.9\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We state this \textbf{explicitly} in the abstract.
+
+\subsection{Theoretical Notes}
+
+\subsubsection{Low-Rank Approximation Bound}
+
+If the attention matrix $P$ has effective rank $r \ll L$, then:
+
+\[
+\|P - \tilde{P}\|_F \leq \sqrt{\sum_{i=r+1}^L \sigma_i^2}
+\tag{4.4}
+\]
+
+where $\sigma_i$ are singular values of $P$. For $k \geq r$:
+
+\[
+\|P - \tilde{P}\|_F \approx 0
+\tag{4.5}
+\]
+
+\subsubsection{Causal Preservation}
+
+\textbf{Claim.} For decoders with $L > k$, the fallback preserves causality.
+
+\textbf{Proof.} The fallback uses standard dense attention with a triangular mask, 
+which is causally correct by construction. $\square$
+
+\subsubsection{Identity Initialization}
+
+\textbf{Claim.} With $E = I$, the projection $\tilde{K} = K$ and Linformer 
+reduces to standard attention.
+
+\textbf{Proof.} $E K = I K = K$. $\square$
+
+This means our initialization starts at exactly the standard attention and 
+deviates only as $E$ is trained.
+

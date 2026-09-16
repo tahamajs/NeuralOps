@@ -1,3 +1,94 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for leka_v1.
+\subsection{Linear Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020) first proposed 
+replacing softmax with a kernel feature map. \textbf{Performer} (Choromanski 
+et al., 2021) uses positive orthogonal random features (PORF). 
+\textbf{cosFormer} (Qin et al., 2022) uses ReLU with a cosine reweighting. 
+\textbf{Nystr mformer} (Xiong et al., 2021) uses Nystr m approximation.
+
+LEKAv1 uses classical RFF for the Gaussian kernel with QR-orthogonalized 
+projections.
+
+\subsection{Random Fourier Features}
+
+\textbf{Rahimi \& Recht (2007)} introduced RFF for kernel approximation:
+
+\[
+\kappa(x, y) \approx \phi(x)^\top \phi(y), \quad
+\phi(x) = \sqrt{\frac{2}{F}} \cos(x \omega + b), \quad \omega \sim p(\omega)
+\tag{2.1}
+\]
+
+where $p(\omega)$ is the spectral distribution of the kernel. For the 
+Gaussian kernel $\exp(-\|x - y\|^2 / 2)$:
+
+\[
+p(\omega) = \mathcal{N}(0, I)
+\tag{2.2}
+\]
+
+Our $\phi(x) = [\cos(xW), \sin(xW)]/\sqrt{F}$ is a variant with zero 
+phase ($b = 0$) and separate sin/cos components.
+
+\subsection{Kernel Methods in Attention}
+
+\textbf{Kernelized attention} (Choromanski et al., 2021) uses $e^{x \cdot y}$ 
+directly. \textbf{SOFTmax kernel} is not a valid PSD kernel in general, but 
+its symmetric part is.
+
+\subsection{Efficient Attention Landscape}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Feature map} & \textbf{Kernel} \\
+\midrule
+MHSA & $O(L^2)$ & -- & softmax \\
+Linear Transformer & $O(L)$ & elu(x)+1 & unknown \\
+Performer & $O(L)$ & PORF & $\exp(x \cdot y)$ \\
+cosFormer & $O(L)$ & ReLU+cos & unknown \\
+\textbf{LEKAv1} & $O(L)$ & \textbf{cos/sin RFF} & \textbf{Gaussian} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Axis} & \textbf{Prior work} & \textbf{LEKAv1} \\
+\midrule
+Kernel target & softmax & Gaussian \\
+Projection & random & \textbf{QR-orthogonalized} \\
+Pre-projection & None & \textbf{LayerNorm} \\
+Residual gate & None & \textbf{Preservation gate} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Time} & \textbf{Space} & \textbf{Kernel} & \textbf{RFF} \\
+\midrule
+MHSA & $O(L^2)$ & $O(L^2)$ & softmax & -- \\
+Linear Transformer & $O(L)$ & $O(L)$ & elu+1 & No \\
+Performer & $O(L)$ & $O(L)$ & exp & Yes (PORF) \\
+\textbf{LEKAv1} & $O(L \cdot F)$ & $O(L \cdot F)$ & \textbf{Gaussian} & \textbf{Yes (cos/sin)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

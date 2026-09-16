@@ -1,11 +1,190 @@
-\section{05 Architecture}
+\section{Architecture Integration}
 
-Draft content for linformer_attention.
+\subsection{Model Support}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Attention} & \textbf{Nested?} & \textbf{RoPE?} & \textbf{GQA?} & \textbf{Conv1D?} \\
+\midrule
+DistilBERT & \texttt{MultiHeadSelfAttention} & No & No & No & No \\
+RoBERTa & \texttt{BertSelfAttention} & Yes & No & No & No \\
+GPT-2 & \texttt{GPT2Attention} & No & No & No & Yes \\
+Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Transfer}
+
+Linformer copies base weights via \texttt{copy\_weights}, handling four patterns:
+
+\subsubsection{GPT-2 Conv1D}
+
+\begin{lstlisting}
+c_w = src.c_attn.weight.t()
+q_w, k_w, v_w = c_w.chunk(3, dim=0)
+\end{lstlisting}
+
+\subsubsection{RoBERTa Nested}
+
+\begin{lstlisting}
+q_w = src.self.query.weight
+k_w = src.self.key.weight
+v_w = src.self.value.weight
+o_w = src.output.dense.weight
+\end{lstlisting}
+
+\subsubsection{Qwen (GQA)}
+
+\begin{lstlisting}
+q_w = src.q_proj.weight  # (H d_h, d)
+k_w = src.k_proj.weight  # (H_kv d_h, d)
+v_w = src.v_proj.weight
+o_w = src.o_proj.weight
+\end{lstlisting}
+
+\subsubsection{DistilBERT}
+
+\begin{lstlisting}
+q_w = src.q_lin.weight
+k_w = src.k_lin.weight
+v_w = src.v_lin.weight
+o_w = src.out_lin.weight
+\end{lstlisting}
+
+\subsection{The E, F Matrices}
+
+\begin{lstlisting}
+self.E = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
+self.F = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
+
+with torch.no_grad():
+    nn.init.normal_(self.E, std=0.02)
+    nn.init.normal_(self.F, std=0.02)
+    min_dim = min(self.k_proj_dim, self.max_seq_len)
+    self.E.data[:min_dim, :min_dim].fill_diagonal_(1.0)
+    self.F.data[:min_dim, :min_dim].fill_diagonal_(1.0)
+\end{lstlisting}
+
+\textbf{Why diagonal init?} Without it, $E K \approx 0$ and the model starts 
+broken. With diagonal init, the initial projection $\approx$ identity.
+
+\subsection{Nested Encoder Bypass}
+
+For RoBERTa, we set \texttt{is\_nested\_encoder = True}. Our forward returns raw 
+context, and the outer \texttt{BertSelfOutput.dense} applies the output projection:
+
+\begin{lstlisting}
+if self.is_nested_encoder:
+    out = context * self.output_scale
+else:
+    out = self.out_proj(context * self.output_scale)
+\end{lstlisting}
+
+\subsection{RoPE Handling}
+
+Captured from source attention:
+
+\begin{lstlisting}
+if hasattr(src, "rotary_emb"):
+    self.rotary_emb = src.rotary_emb
+\end{lstlisting}
+
+Applied before projection:
+
+\begin{lstlisting}
+if pos_emb is not None:
+    q, k = apply_rotary_pos_emb(q, k, cos, sin)
+\end{lstlisting}
+
+\textbf{Order matters:} RoPE $\to$ Linformer projection. Reverse order would corrupt 
+position information.
+
+\subsection{Injection Algorithm}
+
+\textbf{Algorithm 2:} Inject Linformer into a model
+\begin{lstlisting}
+Input:  model M, k, L_max
+Output: M with attention replaced
+
+1: for   in transformer_layers(M) do
+2:     src $\leftarrow$ get_attention( )
+3:     new $\leftarrow$ LinformerAttention(cfg, k, L_max, old_attn=src)
+4:     replace( , new)
+5: end for
+6: return M
+\end{lstlisting}
+
+\subsection{Failure Modes and Fallbacks}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing Q/K/V & \texttt{missing} non-empty & Raise RuntimeError \\
+Near-zero norm & Frobenius check & Raise RuntimeError \\
+$L > L_\text{max}$ & Shape mismatch & Interpolate $E, F$ \\
+Decoder $L > k$ & \texttt{is\_decoder and L > k} & Fallback to dense \\
+NaN in scores & \texttt{torch.isnan} & \texttt{nan\_to\_num} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Registry}
+
+\begin{lstlisting}
+@ATTENTION_REGISTRY.register("linformer")
+@ATTENTION_REGISTRY.register("linformer_attention")
+class LinformerAttention(BaseAttention):
+    ...
+\end{lstlisting}
+
+\subsection{Interaction with LoRA Recovery}
+
+Base weights are frozen; LoRA adapters train:
+
+\begin{lstlisting}
+self.q_proj = LoRALinear(..., freeze_base=True)
+self.k_proj = LoRALinear(..., freeze_base=True)
+self.v_proj = LoRALinear(..., freeze_base=True)
+self.out_proj = LoRALinear(..., freeze_base=True)
+\end{lstlisting}
+
+Additionally trainable:
+\begin{itemize}
+\item \texttt{E}, \texttt{F}: the projection matrices
+\item \texttt{output\_scale}: a scalar
+
+\end{itemize}
+For $d = 768$, $k = 64$, $L_\text{max} = 512$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Trainable} & \textbf{Params} \\
+\midrule
+LoRA (4 $\times$ rank-16) & 98,304 \\
+E, F & 65,536 \\
+output\_scale & 1 \\
+\textbf{Total} & \textbf{~163,841 per layer} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
-\caption{Architectural overview of linformer_attention.}
-\label{fig:arch_linformer_attention}
+\includegraphics[width=\linewidth]{figures/architecture.png}
+\caption{High-level architectural diagram of linformer\_attention.}
+\label{fig:arch_linformer-attention}
 \end{figure}
+

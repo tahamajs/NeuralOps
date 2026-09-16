@@ -1,3 +1,106 @@
-\section{12 Reproducibility}
+\section{Reproducibility}
 
-Draft content for leka_v3.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & {{TORCH\_VERSION}} \\
+transformers & {{HF\_VERSION}} \\
+datasets & {{DATASETS\_VERSION}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Running LEKAv3}
+
+\begin{lstlisting}
+python run_all_4_leka_v3.py \
+    --models distilbert,roberta,gpt2 \
+    --num_landmarks {{L0}} \
+    --local_window_size {{WINDOW}} \
+    --feature_dim {{FEATURE_DIM}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Individual Model}
+
+\begin{lstlisting}
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --modules full,leka_v3 \
+    --num_landmarks {{L0}} \
+    --local_window_size {{WINDOW}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+\begin{lstlisting}
+python run_all_4_leka_v3.py
+\end{lstlisting}
+
+\subsubsection{Table 7.4 ($L_0$ Ablation)}
+\begin{lstlisting}
+for l0 in 8 16 32 64 128; do
+    python run_all_4_leka_v3.py --num_landmarks $l0 --output_suffix l$l0
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.5 ($W$ Ablation)}
+\begin{lstlisting}
+for w in 8 16 32 64; do
+    python run_all_4_leka_v3.py --local_window_size $w --output_suffix w$w
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Acc} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% $\pm$ 1\% \\
+RoBERTa & {{R\_ACC}}\% $\pm$ 1\% \\
+GPT-2 & {{G\_ACC}}\% $\pm$ 1\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2 via \texttt{datasets}
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-leka\_v3}
+\item \textbf{Metrics:} \texttt{results/unified\_leka\_v3/*/summary.csv}
+
+\end{itemize}

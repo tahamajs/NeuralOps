@@ -1,3 +1,106 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Draft content for leka_v3.
+\subsection{Key Takeaways}
+
+\subsubsection{Takeaway 1: Linear Complexity is Real}
+
+LEKAv3 achieves $\mathcal{O}(L L_\text{land} + L W)$ complexity. For 
+$L_\text{land}, W \sim \mathcal{O}(1)$, this is linear in $L$.
+
+\subsubsection{Takeaway 2: Learned Landmarks Win}
+
+The landmark scorer improves accuracy by \textbf{{{LEARNED\_GAIN}}\%} over random 
+selection. Content-aware selection matters.
+
+\subsubsection{Takeaway 3: Honest Parameter Increase}
+
+LEKAv3 increases parameter count by ~7.5\% per layer. This is a cost, not a 
+benefit. We trade parameters for compute.
+
+\subsection{When to Use LEKAv3}
+
+\subsubsection{Recommended}
+\begin{itemize}
+\item \textbf{Long-context inference} ($L > 512$)
+\item \textbf{Encoder models} (DistilBERT, RoBERTa)
+\item \textbf{Hybrid deployment} with quantized base
+
+\end{itemize}
+\subsubsection{Not Recommended}
+\begin{itemize}
+\item \textbf{Very short sequences} ($L < 64$): overhead dominates
+\item \textbf{Parameter-sensitive deployments}: +7.5\%
+\item \textbf{Real-time low-latency}: landmark scoring adds cost
+
+\end{itemize}
+\subsection{Decision Flowchart}
+
+\begin{lstlisting}
+Need to reduce quadratic attention cost? --- Yes --- Use LEKAv3
+  | No
+   
+Need to reduce parameter count? --- Yes --- Use A3/AASVD
+  | No
+   
+Keep standard attention
+\end{lstlisting}
+
+\subsection{Cost-Benefit}
+
+For DistilBERT at $L = 512$:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{LEKAv3} & \textbf{Change} \\
+\midrule
+Params & 66.95M & {{D\_PARAMS}}M & +7.5\% \\
+Attention FLOPs & 1.0 & {{FLOP\_RATIO}} & -{{FLOP\_PCT}}\% \\
+Inference time & 1.9 s & {{D\_TIME}} s & {{TIME\_RATIO}}$\times$ \\
+Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Prior Linear Attention}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{Approach} & \textbf{Learned selector} \\
+\midrule
+Performer & RFF & No \\
+Linformer & Low-rank & No \\
+Nystr mformer & Landmark & No \\
+\textbf{LEKAv3} & \textbf{Landmark + local} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Open Questions}
+
+\begin{enumerate}
+\item \textbf{Optimal $L_\text{land}$:} Can it be adaptive per layer?
+\item \textbf{Cross-task transfer:} Does the scorer transfer?
+\item \textbf{Interaction with quantization:} LEKAv3 + INT8?
+\item \textbf{Fused kernel:} Can we write a Triton kernel?
+
+\end{enumerate}
+\subsection{Broader Impact}
+
+\subsubsection{Positive}
+\begin{itemize}
+\item Enables long-context inference
+\item Reduces compute for edge deployment
+
+\end{itemize}
+\subsubsection{Negative}
+\begin{itemize}
+\item Parameter increase
+\item Training overhead
+
+\end{itemize}

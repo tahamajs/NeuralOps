@@ -1,3 +1,72 @@
-\section{11 Conclusion}
+\section{Conclusion}
 
-Draft content for leka_v2.
+\subsection{Summary}
+
+We presented \textbf{LEKAv2}, a linear-time kernel attention with landmark 
+distillation, dual-scale RFF, softpick, and local-global fusion. The 
+module achieves \textbf{{{D\_ACC}}\%} on DistilBERT, \textbf{{{R\_ACC}}\%} on RoBERTa, 
+and \textbf{{{G\_ACC}}\%} on GPT-2, with modest parameter cost.
+
+\subsection{Results Recap}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Params $\Delta$} & \textbf{Landmark ratio} \\
+\midrule
+DistilBERT & {{D\_DELTA}}\% & +{{D\_PARAM\_PCT}}\% & {{D\_LR}} \\
+RoBERTa & {{R\_DELTA}}\% & +{{R\_PARAM\_PCT}}\% & {{R\_LR}} \\
+GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_LR}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Takeaways}
+
+\begin{enumerate}
+\item \textbf{Learned landmark distillation} helps.
+\item \textbf{Dual-scale RFF} helps.
+\item \textbf{Softpick} stabilizes masked attention.
+\item \textbf{Local-global fusion} improves quality.
+\item \textbf{Not truly linear at   = 0.5.}
+
+\end{enumerate}
+\subsection{Future Work}
+
+\subsubsection{Short-Term}
+\begin{itemize}
+\item Truly linear version with fixed $L_\text{max}$.
+\item Adaptive   learning.
+\item INT8 quantization.
+
+\end{itemize}
+\subsubsection{Long-Term}
+\begin{itemize}
+\item Cross-attention support.
+\item Scaling to 1B+.
+\item Landmark transfer across tasks.
+
+\end{itemize}
+\subsection{Closing Remarks}
+
+LEKAv2 is a step toward richer linear attention. We release all code and 
+checkpoints.
+
+\subsection{Acknowledgments}
+
+We thank {{ACKNOWLEDGMENTS}}.
+
+\subsection{Author Contributions}
+
+\begin{itemize}
+\item \textbf{{{AUTHOR\_1}}} designed the method, implemented, ran experiments,
+  wrote the paper.
+\item \textbf{{{AUTHOR\_2}}} provided feedback, edited the manuscript.
+
+\end{itemize}
+\subsection{Conflict of Interest}
+
+None.
+

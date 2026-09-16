@@ -1,3 +1,112 @@
-\section{D Negative Results}
+\section{Appendix D. Negative Results}
 
-Draft content for leka_v3.
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Random Landmarks}
+
+\textbf{Goal.} Use random selection instead of learned scorer.
+
+\textbf{Result.} Accuracy dropped to {{RANDOM\_L\_ACC}}\% (vs {{D\_ACC}}\%).
+
+\textbf{Conclusion.} Learned selection matters.
+
+\subsubsection{D.1.2 No Local Branch}
+
+\textbf{Goal.} Use only landmarks.
+
+\textbf{Result.} Accuracy dropped by {{LOCAL\_DROP}}\%.
+
+\textbf{Conclusion.} Local context is essential.
+
+\subsubsection{D.1.3 No W\_corr}
+
+\textbf{Goal.} Skip per-head correlation.
+
+\textbf{Result.} Accuracy dropped by {{WCORR\_DROP}}\%.
+
+\textbf{Conclusion.} Per-head mixing helps.
+
+\subsubsection{D.1.4 Single-Scale Features}
+
+\textbf{Goal.} Use only one projection scale.
+
+\textbf{Result.} Accuracy dropped by {{MULTI\_DROP}}\%.
+
+\textbf{Conclusion.} Multi-scale helps.
+
+\subsubsection{D.1.5 No [CLS] Boost}
+
+\textbf{Goal.} Don't force [CLS] into landmarks.
+
+\textbf{Result.} Accuracy dropped by {{CLS\_DROP}}\%.
+
+\textbf{Conclusion.} [CLS] preservation is essential.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 Sinkhorn-Normalized Landmarks}
+
+We tested Sinkhorn normalization on landmark attention. Result: slower, 
+no improvement.
+
+\subsubsection{D.2.2 Per-Query Landmarks}
+
+Selecting landmarks per query. Result: O(L L\_land) selection cost, no 
+accuracy gain.
+
+\subsubsection{D.2.3 Sliding Window Only}
+
+Pure local attention with W = 64. Result: worse than LEKAv3.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{Feature Dim}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{d\_feat} & \textbf{DistilBERT} \\
+\midrule
+16 & {{D\_F16}} \\
+32 & {{D\_F32}} \\
+64 & {{D\_F64}} \\
+128 & {{D\_F128}} \\
+256 & {{D\_F256}} \\
+512 & {{D\_F512}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sweet spot: 128.
+
+\subsubsection{Gate Init}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Init} & \textbf{DistilBERT} \\
+\midrule
+2.0 & {{D\_GN2}} \\
+0.0 & {{D\_G0}} \\
+2.0 & {{D\_G2}} \\
+4.0 & {{D\_G4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sweet spot: 2.0.
+
+\subsection{D.4 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Learned landmarks help.}
+\item \textbf{Local branch is essential.}
+\item \textbf{W\_corr contributes.}
+\item \textbf{Multi-scale features help.}
+\item \textbf{[CLS] boost is critical.}
+
+\end{enumerate}

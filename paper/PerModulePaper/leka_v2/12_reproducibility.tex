@@ -1,3 +1,78 @@
-\section{12 Reproducibility}
+\section{Reproducibility}
 
-Draft content for leka_v2.
+\subsection{Environment}
+
+\begin{lstlisting}
+git clone https://github.com/{{ORG}}/SVD_Project
+cd SVD_Project
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{Running}
+
+\begin{lstlisting}
+python run_all_4_leka_v2.py \
+    --models distilbert,roberta,gpt2 \
+    --feature_dim {{FEATURE_DIM}} \
+    --landmark_ratio {{LANDMARK_RATIO}} \
+    --recovery_steps {{RECOVERY_STEPS}}
+\end{lstlisting}
+
+\subsection{Reproducing Tables}
+
+\subsubsection{Table 7.1 (Main)}
+\begin{lstlisting}
+python run_all_4_leka_v2.py
+\end{lstlisting}
+
+\subsubsection{Table 7.4 (  Ablation)}
+\begin{lstlisting}
+for rho in 0.25 0.5 0.75 1.0; do
+    python run_all_4_leka_v2.py --landmark_ratio $rho --output_suffix rho$rho
+done
+\end{lstlisting}
+
+\subsubsection{Table 7.5 (Feature dim)}
+\begin{lstlisting}
+for f in 64 128 256 512; do
+    python run_all_4_leka_v2.py --feature_dim $f --output_suffix f$f
+done
+\end{lstlisting}
+
+\subsection{Seeds}
+
+\begin{lstlisting}
+import random, numpy as np, torch
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+\end{lstlisting}
+
+\subsection{Expected Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Acc} & \textbf{Landmark ratio} \\
+\midrule
+DistilBERT & {{D\_ACC}}\% & {{D\_LR}} \\
+RoBERTa & {{R\_ACC}}\% & {{R\_LR}} \\
+GPT-2 & {{G\_ACC}}\% & {{G\_LR}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Availability}
+
+\begin{itemize}
+\item \textbf{Dataset:} SST-2.
+\item \textbf{Checkpoints:} \texttt{{{HF\_ORG}}/svd-linear-attention-*-leka\_v2}.
+\item \textbf{Metrics:} \texttt{results/unified\_leka\_v2/*/summary.csv}.
+
+\end{itemize}

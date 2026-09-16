@@ -1,3 +1,85 @@
-\section{02 Related}
+\section{Related Work}
 
-Draft content for leka_v2.
+\subsection{Linear Attention}
+
+\textbf{Linear Transformer} (Katharopoulos et al., 2020) first replaced softmax 
+with a kernel feature map. \textbf{Performer} (Choromanski et al., 2021) uses 
+positive orthogonal random features. \textbf{cosFormer} (Qin et al., 2022) uses 
+ReLU with cosine reweighting. \textbf{Nystr mformer} (Xiong et al., 2021) uses 
+Nystr m approximation with landmarks.
+
+\subsection{Landmark Methods}
+
+\textbf{Nystr mformer} uses Nystr m landmarks selected via a downsampling rule. 
+\textbf{Set Transformer} (Lee et al., 2019) uses inducing points. \textbf{Perceiver} 
+(Jaegle et al., 2021) uses a learned latent array.
+
+\textbf{Our distinction.} We select landmarks \textbf{per-example} via a learned 
+scorer that operates on the RFF features. The selection is content-dependent 
+and trained end-to-end.
+
+\subsection{Local-Global Hybrid}
+
+\textbf{Longformer} (Beltagy et al., 2020) combines local sliding-window 
+attention with global tokens. \textbf{BigBird} (Zaheer et al., 2020) adds 
+random attention. \textbf{Hymba} (Dong et al., 2024) and \textbf{Jamba} (Lieber 
+et al., 2024) fuse attention and SSM.
+
+\textbf{Our distinction.} We fuse \textbf{local sliding window} with **landmark 
+linear attention**, both derived from the same Q/K/V projections.
+
+\subsection{Softmax Variants}
+
+\textbf{Softpick} (Gu \& Dao, 2024) uses ReLU-damped softmax for stable 
+masked attention. \textbf{Sparsemax} (Martins \& Astudillo, 2016) projects 
+onto the simplex. \textbf{Entmax} (Peters et al., 2019) uses $\alpha$-entmax.
+
+\textbf{Our use.} We use softpick to handle the case where all rows of the 
+attention matrix are masked (which causes standard softmax to give 
+uniform attention).
+
+\subsection{Random Fourier Features}
+
+\textbf{Rahimi \& Recht (2007)} introduced RFF for kernel approximation. 
+\textbf{Yu et al. (2016)} proposed orthogonal random features with lower 
+variance. We extend RFF with \textbf{dual-scale} features.
+
+\subsection{Position of Our Work}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Linear} & \textbf{Landmark} & \textbf{Local} & \textbf{Softmax} \\
+\midrule
+Linear Transformer & Yes & No & No & -- \\
+Performer & Yes & No & No & RFF \\
+Nystr mformer & Yes & Fixed & No & -- \\
+Longformer & No & No & Yes & Softmax \\
+\textbf{LEKAv2} & \textbf{Yes} & \textbf{Learned} & \textbf{Yes} & \textbf{Softpick} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\subsection{Comparison Table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Landmark} & \textbf{Local} & \textbf{Kernel} \\
+\midrule
+MHSA & $O(L^2)$ & -- & -- & softmax \\
+Linear Transformer & $O(L F)$ & No & No & elu+1 \\
+Performer & $O(L F)$ & No & No & RFF \\
+Nystr mformer & $O(L L_m)$ & Fixed & No & Nystr m \\
+Longformer & $O(L W)$ & No & Yes & softmax \\
+\textbf{LEKAv2} & $O(L F + L W)$ & \textbf{Learned} & \textbf{Yes} & \textbf{Dual RFF + Softpick} \\
+\bottomrule
+\end{tabular}
+\end{table}
+

@@ -1,3 +1,61 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Draft content for linformer_attention.
+\subsection{Decoder Fallback}
+
+For decoders with $L > k$, we fall back to dense attention. This **negates 
+the linear complexity benefit** for the case where it's most needed.
+
+\subsection{Parameter Increase}
+
+Linformer adds ~7\% parameters per layer. This is a real cost.
+
+\subsection{Sequence Length Extrapolation}
+
+For $L > L_\text{max}$, we interpolate $E, F$. This is a heuristic not 
+validated on very long sequences.
+
+\subsection{Task Coverage}
+
+Only SST-2 evaluated. Generation, multi-class, and NER tasks untested.
+
+\subsection{Model Coverage}
+
+Tested up to 124M params. Behavior on larger models unknown.
+
+\subsection{Single-Seed Results}
+
+SE ~1.7\%. Differences below 3.4\% may be noise.
+
+\subsection{No Comparison with Original Linformer}
+
+We do not reproduce Wang et al. (2020) exactly. Our diagonal init, adaptive 
+slicing, and causal fallback differ.
+
+\subsection{E, F Memory}
+
+$E, F \in \mathbb{R}^{k \times L_\text{max}}$ cost $2 k L_\text{max}$ 
+parameters per layer. For large $L_\text{max}$, this grows.
+
+\subsection{Causal Analysis}
+
+Our causal fallback is a \textbf{correctness} measure, not a \textbf{performance} 
+measure. It sacrifices efficiency.
+
+\subsection{The output\_scale Parameter}
+
+\texttt{output\_scale} is a scalar initialized to 1. It's trainable but rarely 
+moves significantly.
+
+\subsection{Code Quality}
+
+Research-grade:
+\begin{itemize}
+\item Broad exception handling
+\item No fused kernel
+\item Some numerical stability concerns
+
+\end{itemize}
+\subsection{Ethical Considerations}
+
+Dual-use. See Appendix E.
+

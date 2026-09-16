@@ -1,3 +1,109 @@
-\section{D Negative Results}
+\section{Appendix D. Negative Results}
 
-Draft content for linformer_attention.
+\subsection{D.1 Attempts That Failed}
+
+\subsubsection{D.1.1 Gaussian E, F Init}
+
+\textbf{Goal.} Use standard Gaussian init.
+
+\textbf{Result.} Loss stuck at high value for first ~100 steps. Accuracy at 
+step 50: {{GAUSS\_ACC}}\% vs diagonal: {{DIAG\_ACC}}\%.
+
+\textbf{Conclusion.} Diagonal init is essential.
+
+\subsubsection{D.1.2 No Causal Fallback}
+
+\textbf{Goal.} Ignore causality for GPT-2.
+
+\textbf{Result.} Accuracy {{NO\_CAUSAL\_ACC}}\% -- severe drop due to future leakage.
+
+\textbf{Conclusion.} Fallback is required.
+
+\subsubsection{D.1.3 E = F}
+
+\textbf{Goal.} Share E and F.
+
+\textbf{Result.} Accuracy dropped by {{SHARED\_DROP}}\%.
+
+\textbf{Conclusion.} Separate E, F matter.
+
+\subsubsection{D.1.4 Very Small k}
+
+\textbf{Goal.} k = 8.
+
+\textbf{Result.} Accuracy {{K8\_ACC}}\%.
+
+\textbf{Conclusion.} k should be $\ge$ 32.
+
+\subsubsection{D.1.5 Fixed E, F (No Training)}
+
+\textbf{Goal.} Freeze E, F to identity.
+
+\textbf{Result.} Linformer reduces to standard attention.
+
+\textbf{Conclusion.} E, F must be trainable.
+
+\subsection{D.2 Abandoned Variants}
+
+\subsubsection{D.2.1 SVD-Init E, F}
+
+SVD initialization of E, F. Result: marginal improvement, not worth the 
+complexity.
+
+\subsubsection{D.2.2 Per-Head E, F}
+
+Different E, F per head. Result: 12$\times$ params, <0.5\% improvement.
+
+\subsubsection{D.2.3 Learned L\_max}
+
+Learned interpolation. Result: no benefit.
+
+\subsection{D.3 Failed Hyperparameters}
+
+\subsubsection{k}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{k} & \textbf{DistilBERT} \\
+\midrule
+8 & {{D\_K8}} \\
+16 & {{D\_K16}} \\
+32 & {{D\_K32}} \\
+64 & {{D\_K64}} \\
+128 & {{D\_K128}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sweet spot: k = 64.
+
+\subsubsection{Learning Rate}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{LR} & \textbf{DistilBERT} \\
+\midrule
+1e-5 & {{D\_LR1e5}} \\
+5e-5 & {{D\_LR5e5}} \\
+2e-4 & {{D\_LR2e4}} \\
+5e-4 & {{D\_LR5e4}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.4 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Diagonal init is critical.}
+\item \textbf{Causal fallback is essential.}
+\item \textbf{E, F separate is better.}
+\item \textbf{k $\ge$ 32.}
+\item \textbf{E, F must train.}
+
+\end{enumerate}
