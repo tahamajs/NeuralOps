@@ -52,7 +52,7 @@ def clean_large_weights(out_dir):
 def main():
     parser = argparse.ArgumentParser(description="Multi-class MNLI benchmark sweep for all 83 modules")
     parser.add_argument("--models", default="distilbert", help="Comma-separated models: distilbert, roberta, gpt2")
-    parser.add_argument("--batch_size", type=int, default=16)
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--recovery_steps", type=int, default=15)
     parser.add_argument("--modules", nargs="*", default=None, help="Subset of modules to run")
     args = parser.parse_args()
