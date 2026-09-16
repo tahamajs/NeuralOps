@@ -613,10 +613,8 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
         total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         if "qwen" in str(name).lower():
             target_micro = 8
-        elif total_vram_gb >= 7.0:
-            target_micro = min(curr_batch_size, 32)
         else:
-            target_micro = min(curr_batch_size, 16)
+            target_micro = curr_batch_size
         micro_bs = min(curr_batch_size, target_micro)
     else:
         micro_bs = curr_batch_size
