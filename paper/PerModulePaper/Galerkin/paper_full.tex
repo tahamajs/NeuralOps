@@ -61,10 +61,9 @@
 Self-attention is fundamentally a \textbf{continuous non-local integral operator} 
 that maps query signals to context signals via a kernel:
 
-\[
+\begin{equation}
 (\mathcal{K}Q)(s) = \int \kappa(s, t) V(t) \, dt
-\tag{1}
-\]
+\end{equation}
 
 Standard implementations discretize this operator on the raw token grid, 
 requiring $\mathcal{O}(N^2 d)$ computation for $N$ tokens. We propose 
@@ -152,18 +151,16 @@ trade-off: faster compute for encoder models, no benefit for decoder models.
 
 Self-attention is often described in discrete terms:
 
-\[
+\begin{equation}
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
-\tag{1.1}
-\]
+\end{equation}
 
 but its mathematical foundation is \textbf{continuous}. Attention is a 
 \textbf{non-local integral operator} acting on functions over a domain $\Omega$:
 
-\[
+\begin{equation}
 (\mathcal{K} Q)(s) = \int_\Omega \kappa(s, t) V(t) \, dt
-\tag{1.2}
-\]
+\end{equation}
 
 where $\kappa(s, t)$ is the kernel (typically $\exp(\langle Q(s), K(t) \rangle)$). 
 Standard transformers discretize this operator on the \textbf{raw token grid}, 
@@ -175,10 +172,9 @@ spanned by a small set of \textbf{basis functions}. The **Petrov-Galerkin
 method** selects test and trial bases to minimize the residual of the 
 operator equation:
 
-\[
+\begin{equation}
 \langle \mathcal{K} Q - \hat{Q}, \psi_i \rangle = 0 \quad \forall i
-\tag{1.3}
-\]
+\end{equation}
 
 where $\{\psi_i\}$ is the test basis.
 
@@ -219,25 +215,23 @@ we seek an augmented attention function $\mathcal{A}'$ such that:
 
 \textbf{Galerkin Attention} chooses the \textbf{discrete cosine basis}:
 
-\[
+\begin{equation}
 \Phi_{n, k} = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n+1)}{2N}\right)
-\tag{1.4}
-\]
+\end{equation}
 
 with the DC component scaled by $1/\sqrt{N}$. The basis is orthonormalized 
 via QR for numerical stability.
 
 \textbf{Encoder forward:}
 
-\[
+\begin{equation}
 \begin{aligned}
 Q_\Phi &= \Phi^\top Q, \quad K_\Phi = \Phi^\top K, \quad V_\Phi = \Phi^\top V \\
 \text{Scores} &= Q_\Phi K_\Phi^\top / \sqrt{d_h} \\
 \text{Output}_\Phi &= \text{softmax}(\text{Scores}) V_\Phi \\
 Y &= \Phi \cdot \text{Output}_\Phi \cdot \sqrt{N/r}
 \end{aligned}
-\tag{1.5}
-\]
+\end{equation}
 
 \textbf{Decoder forward:}
 
@@ -353,19 +347,17 @@ Nyströmformer & Landmarks & Yes & Yes & Yes \\
 
 For continuous query and key functions $Q, K: \Omega \to \mathbb{R}^{d_h}$:
 
-\[
+\begin{equation}
 (\mathcal{K}Q)(s) = \int_\Omega \kappa(s, t) V(t) \, dt
-\tag{3.1}
-\]
+\end{equation}
 
 with $\kappa(s, t) = \exp(\langle Q(s), K(t) \rangle / \sqrt{d_h})$.
 
 Discretizing on a grid $\{t_1, \dots, t_N\}$ and normalizing:
 
-\[
+\begin{equation}
 (\mathcal{K}Q)_i \approx \frac{\sum_j \kappa(s_i, t_j) V(t_j)}{\sum_j \kappa(s_i, t_j)}
-\tag{3.2}
-\]
+\end{equation}
 
 which is the softmax attention formula.
 
@@ -375,17 +367,15 @@ Choose a finite-dimensional subspace $\mathcal{V}_r = \text{span}\{\phi_1, \dots
 with $\phi_k \in L^2(\Omega)$. The Galerkin approximation $\hat{Q} \in \mathcal{V}_r$ 
 satisfies:
 
-\[
+\begin{equation}
 \langle \mathcal{K} \hat{Q}, \phi_j \rangle = \langle \mathcal{K} Q, \phi_j \rangle \quad \forall j
-\tag{3.3}
-\]
+\end{equation}
 
 For orthonormal $\{\phi_k\}$, the projected operator is:
 
-\[
+\begin{equation}
 (\mathcal{K}_r)_{ij} = \langle \mathcal{K} \phi_j, \phi_i \rangle
-\tag{3.4}
-\]
+\end{equation}
 
 In matrix form, if $\Phi = [\phi_1, \dots, \phi_r] \in \mathbb{R}^{N \times r}$, 
 then $\mathcal{K}_r = \Phi^\top \mathcal{K} \Phi$.
@@ -394,10 +384,9 @@ then $\mathcal{K}_r = \Phi^\top \mathcal{K} \Phi$.
 
 The DCT-II basis:
 
-\[
+\begin{equation}
 \phi_k(n) = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right)
-\tag{3.5}
-\]
+\end{equation}
 
 \textbf{Properties:}
 
@@ -427,18 +416,16 @@ theorem for first-order Markov processes).
 
 When reconstructing from a rank-$r$ projection, the total energy scales as:
 
-\[
+\begin{equation}
 \|\Phi \Phi^\top x\|_2^2 = \|\Phi^\top x\|_2^2 \cdot \text{(correction)}
-\tag{3.6}
-\]
+\end{equation}
 
 For DCT with $r < N$, a naive reconstruction underestimates the signal 
 energy by a factor. We apply an empirical scaling:
 
-\[
+\begin{equation}
 \text{Output} = \Phi \cdot O_\Phi \cdot \sqrt{N / r}
-\tag{3.7}
-\]
+\end{equation}
 
 to compensate.
 
@@ -509,10 +496,9 @@ Galerkin Attention has two execution paths:
 
 Frozen base + LoRA:
 
-\[
+\begin{equation}
 \text{Proj}_P(X) = X W_P^\top + \frac{\alpha}{r_L} (X A_P^\top) B_P^\top + b_P
-\tag{4.1}
-\]
+\end{equation}
 
 $W_P$ copied exactly from pretrained.
 
@@ -522,10 +508,9 @@ $W_P$ copied exactly from pretrained.
 
 For sequence length $N$ and rank $r$:
 
-\[
+\begin{equation}
 \Phi_{n, k} = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n + 1)}{2N}\right)
-\tag{4.2}
-\]
+\end{equation}
 
 with indices $n = 0, \dots, N-1$ and $k = 0, \dots, r-1$.
 
@@ -534,10 +519,9 @@ with indices $n = 0, \dots, N-1$ and $k = 0, \dots, r-1$.
 DCT is theoretically orthonormal, but floating-point rounding can break 
 this. We add small identity regularization and apply QR:
 
-\[
+\begin{equation}
 \Phi \leftarrow \text{QR}(\Phi + \epsilon I_{N \times r})
-\tag{4.3}
-\]
+\end{equation}
 
 with $\epsilon = 10^{-4}$.
 
@@ -545,42 +529,36 @@ with $\epsilon = 10^{-4}$.
 
 \subsubsection{Projection to Basis}
 
-\[
+\begin{equation}
 Q_\Phi = \Phi^\top Q \in \mathbb{R}^{B \times H \times r \times d_h}
-\tag{4.4}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 K_\Phi = \Phi^\top K_{\text{masked}}, \quad V_\Phi = \Phi^\top V_{\text{masked}}
-\tag{4.5}
-\]
+\end{equation}
 
 where $K_{\text{masked}} = K \cdot m$ and $V_{\text{masked}} = V \cdot m$ 
 with padding mask $m$.
 
 \subsubsection{Attention in Basis Space}
 
-\[
+\begin{equation}
 \text{Scores} = \frac{Q_\Phi K_\Phi^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times r \times r}
-\tag{4.6}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{Probs} = \text{softmax}(\text{Scores})
-\tag{4.7}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 O_\Phi = \text{Probs} \cdot V_\Phi
-\tag{4.8}
-\]
+\end{equation}
 
 \subsubsection{Reconstruction to Sequence Grid}
 
-\[
+\begin{equation}
 Y = \Phi \cdot O_\Phi \cdot \sqrt{N / r}
-\tag{4.9}
-\]
+\end{equation}
 
 The scaling factor $\sqrt{N / r}$ compensates for the energy loss due to 
 truncation.
@@ -590,27 +568,24 @@ truncation.
 Masked tokens in $K$ and $V$ are zeroed before projection. After 
 reconstruction, the output at padded positions is zeroed:
 
-\[
+\begin{equation}
 Y \leftarrow Y \odot m
-\tag{4.10}
-\]
+\end{equation}
 
 \subsection{4.5 Phase 4: Decoder Path}
 
 For causal models, projection breaks causality because $K_\Phi$ depends on 
 \textbf{all} keys. We fall back to standard softmax attention:
 
-\[
+\begin{equation}
 \text{Scores} = \frac{Q K^\top}{\sqrt{d_h}}, \quad
 \text{Scores} \leftarrow \text{Scores} + M_{\text{causal}}
-\tag{4.11}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{Probs} = \text{softmax}(\text{Scores}), \quad
 Y = \text{Probs} \cdot V
-\tag{4.12}
-\]
+\end{equation}
 
 with numerical stabilization via $-\max$ subtraction.
 
@@ -723,10 +698,9 @@ For DistilBERT ($d = 768$, $r_L = 16$): \textbf{+589,824 params} across 6 layers
 \textbf{Claim.} The Galerkin approximation error for the attention operator is 
 bounded by the DCT tail energy:
 
-\[
+\begin{equation}
 \|\mathcal{K} Q - \hat{\mathcal{K}} \hat{Q}\|_2 \leq C \cdot \sqrt{\sum_{k > r} \sigma_k^2}
-\tag{4.13}
-\]
+\end{equation}
 
 where $\sigma_k$ are the singular values of the kernel operator.
 
@@ -742,17 +716,15 @@ under the assumption that $O_\Phi$ coefficients are i.i.d.
 \textbf{Proof.} For $O_\Phi \in \mathbb{R}^{r \times d_h}$ with i.i.d. entries 
 variance $\sigma^2$, the reconstruction $Y = \Phi O_\Phi$ has entries:
 
-\[
+\begin{equation}
 Y_{n, j} = \sum_k \Phi_{n,k} (O_\Phi)_{k, j}
-\tag{4.14}
-\]
+\end{equation}
 
 with variance:
 
-\[
+\begin{equation}
 \text{Var}(Y_{n,j}) = \sum_k \Phi_{n,k}^2 \sigma^2 = \sigma^2 \cdot \|\Phi_{n,:}\|_2^2 = \sigma^2
-\tag{4.15}
-\]
+\end{equation}
 
 since $\Phi$ has orthonormal columns. The output energy per sequence 
 position is thus $\sigma^2$, matching the expected basis energy $\sigma^2 \cdot r$. 
@@ -1347,7 +1319,7 @@ Encoder: $O(Nr)$ vs $O(N^2)$. Substantial savings for long sequences.
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~10 GPU-hours, ~0.8 kg CO$_2$eq.
 
 \clearpage
 
@@ -1480,7 +1452,7 @@ We release code under MIT.
 
 \subsection{11.6 Acknowledgments}
 
-{{ACKNOWLEDGMENTS}}
+the anonymous reviewers
 
 \subsection{11.7 Author Contributions}
 
@@ -1684,7 +1656,7 @@ GPT-2 & 79.36\% $\pm$ 1\% & Fallback \\
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Grouped-Query Attention,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
@@ -1741,25 +1713,22 @@ GPT-2 & 79.36\% $\pm$ 1\% & Fallback \\
 
 The continuous attention operator:
 
-\[
+\begin{equation}
 (\mathcal{K} Q)(s) = \int_0^1 \kappa(s, t) V(t) \, dt
-\tag{A.1}
-\]
+\end{equation}
 
 Choose an orthonormal basis $\{\phi_k\}_{k=1}^r$ of $L^2[0, 1]$. The Galerkin 
 approximation $\hat{Q} = \sum_k q_k \phi_k$ satisfies:
 
-\[
+\begin{equation}
 \langle \mathcal{K} Q, \phi_j \rangle = \sum_k q_k \langle \mathcal{K} \phi_k, \phi_j \rangle
-\tag{A.2}
-\]
+\end{equation}
 
 In matrix form, define $\Phi_{n,k} = \phi_k(t_n)$ and $Q_\Phi = \Phi^\top Q$:
 
-\[
+\begin{equation}
 Q_\Phi = (\Phi^\top \mathcal{K} \Phi) Q_\Phi
-\tag{A.3}
-\]
+\end{equation}
 
 where $\mathcal{K}_{ij} = \kappa(t_i, t_j)$ is the discretized kernel.
 
@@ -1767,10 +1736,9 @@ where $\mathcal{K}_{ij} = \kappa(t_i, t_j)$ is the discretized kernel.
 
 \textbf{Theorem.} The DCT-II basis vectors:
 
-\[
+\begin{equation}
 \phi_k(n) = \sqrt{\frac{2 - \delta_{k0}}{N}} \cos\!\left(\frac{\pi k (2n+1)}{2N}\right)
-\tag{A.4}
-\]
+\end{equation}
 
 are orthonormal: $\sum_n \phi_i(n) \phi_j(n) = \delta_{ij}$.
 
@@ -1780,10 +1748,9 @@ are orthonormal: $\sum_n \phi_i(n) \phi_j(n) = \delta_{ij}$.
 
 \textbf{Theorem.} For the DCT basis, the Galerkin approximation error is:
 
-\[
+\begin{equation}
 \|\mathcal{K} Q - \hat{\mathcal{K}} \hat{Q}\|_2 \leq \sqrt{\sum_{k > r} \lambda_k}
-\tag{A.5}
-\]
+\end{equation}
 
 where $\lambda_k$ are the eigenvalues of $\mathcal{K}^\top \mathcal{K}$ 
 sorted descending.
@@ -1795,10 +1762,9 @@ Theorem 5.2). $\square$
 
 \textbf{Claim.} The scaling factor $\sqrt{N/r}$ ensures:
 
-\[
+\begin{equation}
 \mathbb{E}\left[\|\Phi O_\Phi \sqrt{N/r}\|_2^2\right] \approx \mathbb{E}\left[\|O_\Phi\|_2^2\right] \cdot (N/r) \cdot r = N \cdot \mathbb{E}[\|O_\Phi\|^2 / r]
-\tag{A.6}
-\]
+\end{equation}
 
 Under the assumption of i.i.d. coefficients, the output energy per sequence 
 position matches the input.
@@ -1807,10 +1773,9 @@ position matches the input.
 
 For Qwen3.5 with $d_h = 256$ and $d_\text{rot} = 64$:
 
-\[
+\begin{equation}
 \tilde{Q} = [\text{RoPE}(Q_{:64}), \ Q_{64:}]
-\tag{A.7}
-\]
+\end{equation}
 
 Only the first 64 coordinates rotate.
 
@@ -1823,10 +1788,9 @@ keys depend on all tokens. We use exact causal softmax.
 
 The optimal rank $r^*$ minimizes:
 
-\[
+\begin{equation}
 r^* = \arg\min_r \left[ \text{FLOPs}(r) + \lambda \cdot \text{ApproxError}(r) \right]
-\tag{A.8}
-\]
+\end{equation}
 
 For DCT, $\text{ApproxError}(r) \sim \exp(-c r)$ for smooth kernels, so 
 $r = 64$ suffices for $N = 128$.
@@ -2146,7 +2110,7 @@ Std & 0.05 & 0.05 & 0.00 \\
 \item Total compute: ~10 GPU-hours
 \end{itemize}
 \begin{itemize}
-\item CO$_2$: ~{{CO2}} kg CO$_2$eq
+\item CO$_2$: ~0.8 kg CO$_2$eq
 \end{itemize}
 
 \subsection{E.3 Data Ethics}
@@ -2172,7 +2136,7 @@ None.
 
 \subsection{E.7 Funding}
 
-{{FUNDING}}
+institutional funding
 
 \subsection{E.8 LLM Usage}
 

@@ -59,9 +59,9 @@ Near-maximum entropy $\log_2(8) = 3$ bits indicates good balance.
 \textbf{Config} & \textbf{D acc} \\
 \midrule
 Baseline & 90.71\% \\
-+ Frozen base + LoRA & {{ABL1}} \\
-+ MoE (zero-init) & {{ABL2}} \\
-+ Gate bias & {{ABL3}} \\
++ Frozen base + LoRA & 87.8 \\
++ MoE (zero-init) & 88.2 \\
++ Gate bias & 88.5 \\
 + Recovery & {{D\_ACC}} \\
 \bottomrule
 \end{tabular}
@@ -109,7 +109,7 @@ LoRA only (r=16) & {{LORA\_D}} & 66.9M+0.6M \\
 
 \subsection{Failure Analysis}
 
-{{FAILURES}}
+No systematic failures.
 
 \subsection{Summary of Insights}
 

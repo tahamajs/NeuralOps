@@ -36,7 +36,7 @@ we seek a \textbf{per-head} window size $z_h \in [0, S_\text{max}]$ such that:
 \item \textbf{Learned:} $z_h$ is trained end-to-end alongside the model.
 \item \textbf{Differentiable:} gradients flow through $z_h$.
 \item \textbf{Adaptive:} some heads converge to small $z_h$, others to large.
-\item \textbf{Quality-preserving:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+\item \textbf{Quality-preserving:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
 \end{enumerate}
 \subsection{Our Approach: Adaptive Span Attention}
@@ -47,18 +47,16 @@ spans via:
 \begin{enumerate}
 \item \textbf{Continuous soft ramp.} Given span $z_h$ and ramp size $R$, the masking
   function is:
-  $$
-  g\_{z\_h}(d) = \text{clamp}\!\left(\frac{R + z\_h - d}{R}, 0, 1\right)
-  \tag{1.1}
-  $$
+  \begin{equation}
+g\_{z\_h}(d) = \text{clamp}\!\left(\frac{R + z\_h - d}{R}, 0, 1\right)
+\end{equation}
   where $d$ is the query-key distance. This is \textbf{piecewise linear} and
   \textbf{differentiable} in $z_h$.
 
 \item \textbf{Learnable span.} Each head maintains a scalar logit $\ell_h \in \mathbb{R}$:
-  $$
-  z\_h = \sigma(\ell\_h) \cdot S\_\text{max}
-  \tag{1.2}
-  $$
+  \begin{equation}
+z\_h = \sigma(\ell\_h) \cdot S\_\text{max}
+\end{equation}
 
 \item \textbf{L1 span penalty.} A regularization term $\lambda \sum_h z_h$ encourages
   the model to \textbf{shrink} spans that are not needed. At initialization,
@@ -84,7 +82,7 @@ spans via:
 \item \textbf{A systematic evaluation.} Benchmarked on DistilBERT, RoBERTa, and GPT-2
   on SST-2 with ablations over max span, ramp size, and L1 penalty.
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
-  under {{LICENSE}}.
+  under MIT.
 
 \end{itemize}
 \subsection{Paper Organization}

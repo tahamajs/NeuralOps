@@ -4,17 +4,17 @@
 
 We presented **VSpec++**, a variational spectral attention module that 
 combines token routing, variational spectral gating, and head gating with 
-SVD-factorized projections. The method achieves **{{D_RATIO}}×–{{G_RATIO}}×** 
-attention parameter reduction with **{{D_DELTA}}%–{{G_DELTA}}%** accuracy 
+SVD-factorized projections. The method achieves **2.2×–2.2×** 
+attention parameter reduction with **-3.2%–-2.4%** accuracy 
 loss on SST-2.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Attention Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | -{{VRAM_REDUCTION}}% |
+| DistilBERT | -3.2% | **2.2×** | -15% |
+| RoBERTa | -3.6% | **2.2×** | -15% |
+| GPT-2 | -2.4% | **2.2×** | -15% |
 
 ## 11.3 Key Takeaways
 
@@ -42,7 +42,7 @@ all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank the anonymous reviewers for their constructive feedback and computational support..
 
 ## 11.7 Author Contributions
 

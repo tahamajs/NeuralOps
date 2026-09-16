@@ -1,11 +1,9 @@
 {
   "_comment": "Fill with real values from your Squeezing Heads runs.",
-
   "MODULE_NAME": "SH",
   "FULL_NAME": "Squeezing Heads",
   "SUBTITLE": "Head-Aware Knowledge Distillation via LoRA-Wrapped Attention",
   "CATEGORY": "head distillation",
-
   "AUTHOR_1_NAME": "Your Name",
   "AUTHOR_1_EMAIL": "you@university.edu",
   "AUTHOR_2_NAME": "Advisor Name",
@@ -20,7 +18,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "LORA_RANK": "16",
   "LORA_ALPHA": "32",
   "HEAD_DIM_REDUCTION": "1.0",
@@ -30,12 +27,10 @@
   "LR": "2e-4",
   "WD": "1e-2",
   "SEED": "42",
-
   "ACC_TOLERANCE": "5",
   "PARAM_REDUCTION": "2",
-  "LORA_GAIN": "3.5",
+  "LORA_GAIN": "0.5",
   "SH_GAIN": "2.0",
-
   "D_ACC": "90.25",
   "D_DELTA": "-0.46",
   "D_F1": "0.9055",
@@ -43,7 +38,6 @@
   "D_LORA_R": "113",
   "D_VRAM": "200",
   "D_TIME": "2.3",
-
   "R_ACC": "76.8",
   "R_DELTA": "-1.8",
   "R_F1": "0.768",
@@ -51,7 +45,6 @@
   "R_LORA_R": "105",
   "R_VRAM": "720",
   "R_TIME": "4.5",
-
   "G_ACC": "77.5",
   "G_DELTA": "-1.9",
   "G_F1": "0.775",
@@ -59,7 +52,6 @@
   "G_LORA_R": "105",
   "G_VRAM": "800",
   "G_TIME": "4.6",
-
   "D_S10": "90.25",
   "D_S15": "89.5",
   "D_S20": "88.0",
@@ -74,11 +66,9 @@
   "G_S25": "72.0",
   "D_S30": "78.0",
   "D_S40": "65.0",
-
   "RATIO15": "1.5",
   "RATIO20": "2.0",
   "RATIO25": "2.5",
-
   "D_LR4": "88.5",
   "D_LR8": "89.5",
   "D_LR16": "90.25",
@@ -93,7 +83,6 @@
   "G_LR32": "77.6",
   "D_LR1": "82.0",
   "D_LR2": "85.0",
-
   "D_S10_STEP": "85.0",
   "D_S25_STEP": "88.0",
   "D_S50_STEP": "90.25",
@@ -107,10 +96,8 @@
   "G_S50_STEP": "77.5",
   "G_S100_STEP": "77.7",
   "D_S5": "78.0",
-
   "MEAN_POOL": "76.5",
   "FIRST_POOL": "74.0",
-
   "GQA_D": "88.5",
   "GQA_R": "75.5",
   "GQA_G": "77.0",
@@ -120,32 +107,26 @@
   "LORA_D": "89.5",
   "LORA_R": "75.0",
   "LORA_G": "76.0",
-
   "FULLFT_D": "90.5",
   "FULLFT_R": "77.2",
   "FULLFT_G": "78.0",
-  "LORA_GAIN": "0.5",
   "LORA_GAIN_R": "0.3",
   "LORA_GAIN_G": "0.4",
-
   "SATURATION_RANK": "16",
   "LR1_DROP": "8",
   "Q_OPT_RANK": "16",
   "K_OPT_RANK": "8",
   "V_OPT_RANK": "8",
   "O_OPT_RANK": "16",
-
   "INFO15": "90",
   "INFO20": "85",
   "INFO25": "75",
-
   "PRUNE50_D": "78.0",
   "PRUNE50_R": "68.0",
   "PRUNE50_G": "70.0",
   "PRUNE_DROP": "5",
   "RANDOM_DROP": "2.5",
   "NOLORA_DROP": "6.5",
-
   "D_L0_DROP": "0.8",
   "D_L1_DROP": "0.5",
   "D_L2_DROP": "0.4",
@@ -154,7 +135,6 @@
   "D_L5_DROP": "0.2",
   "R_L0_DROP": "2.5",
   "R_L1_DROP": "1.8",
-
   "Q_VERIFIED": "not tested",
   "FAIL_LAYER_1": "layer.0",
   "FAIL_MODEL_1": "GPT-2",
@@ -164,27 +144,19 @@
   "FAIL_DROP_2": "2.0",
   "FAIL_CAUSE": "Head-dim reduction too aggressive for early layers",
   "UNRESOLVED_FAILURES": "Long-context, inference-time LoRA folding",
-
   "RUNTIME": "15",
   "COMPUTE_HOURS": "10",
   "CO2_KG": "0.7",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
-
   "SEED42": "90.25",
   "SEED123": "90.10",
   "SEED456": "90.35",
   "MEAN": "90.23",
   "STD": "0.13",
-
   "D_S20_D": "-2.25",
   "D_DISK": "134",
   "D_DISK_RATIO": "1.0",
-
   "_note": "Add keys as needed"
 }
-```
-
----

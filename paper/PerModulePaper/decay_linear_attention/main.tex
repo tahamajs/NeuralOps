@@ -81,10 +81,10 @@ We introduce \textbf{DecayLinearAttention}, which addresses both via:
   \lambda\_{h,t} = \sigma\!\left(W\_g x\_t + b\_g + \ell\_h\right)
   $$
   
-  where $\ell_h \in [{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$ is a per-head
+  where $\ell_h \in [-0.5, 0.0]$ is a per-head
   learned bias. Different heads learn different context horizons.
 \item \textbf{Chunked scan with O(1) state.} We partition the sequence into chunks
-  of size $C = {{CHUNK_SIZE}}$ and carry a compact state
+  of size $C = 32$ and carry a compact state
   $S \in \mathbb{R}^{d \times d}$ between chunks. The intermediate state is
   \textbf{$\mathcal{O}(1)$ in sequence length}, in contrast to the
   $\mathcal{O}(L)$ intermediates used by cumsum-based causal linear

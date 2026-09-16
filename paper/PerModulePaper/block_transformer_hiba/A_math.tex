@@ -9,7 +9,9 @@ Let $L$ be the sequence length, $d_h$ be the head dimension, and $W$ be the bloc
 \subsubsection{A.1.1 Intra-Block Complexity}
 For a single block $b$, the query $Q_b \in \mathbb{R}^{W \times d_h}$ attends to $K_b \in \mathbb{R}^{W \times d_h}$. The matrix multiplication $Q_b K_b^\top$ requires $\mathcal{O}(W^2 d_h)$ operations.
 Since there are $N$ blocks, the total intra-block time complexity is:
-\[ \mathcal{O}(N \cdot W^2 d_h) = \mathcal{O}\left(\frac{L}{W} W^2 d_h\right) = \mathcal{O}(L \cdot W \cdot d_h) \tag{A.1} \]
+\begin{equation}
+\mathcal{O}(N \cdot W^2 d_h) = \mathcal{O}\left(\frac{L}{W} W^2 d_h\right) = \mathcal{O}(L \cdot W \cdot d_h)
+\end{equation}
 
 \subsubsection{A.1.2 Inter-Block Sparse Complexity}
 For block $b$, $Q_b$ evaluates scores against neighboring keys. Let the total number of valid neighbor keys considered be $K_{nb} \propto L$. The raw score computation is $\mathcal{O}(W \cdot K_{nb} \cdot d_h)$. 
@@ -23,7 +25,9 @@ For $\frac{R-1}{R}$ of the layers, the complexity is $\mathcal{O}(L \cdot W)$.
 For $\frac{1}{R}$ of the layers, HIBA executes exact dense attention, which is $\mathcal{O}(L^2)$.
 
 Thus, the average per-layer complexity becomes:
-\[ \text{Cost}_{\text{avg}} = \frac{R-1}{R} \mathcal{O}(L \cdot W) + \frac{1}{R} \mathcal{O}(L^2) \tag{A.2} \]
+\begin{equation}
+\text{Cost}_{\text{avg}} = \frac{R-1}{R} \mathcal{O}(L \cdot W) + \frac{1}{R} \mathcal{O}(L^2)
+\end{equation}
 By tuning $R$, HIBA provides a mathematically bounded trade-off between strict $\mathcal{O}(L \cdot W)$ linear scaling and $\mathcal{O}(L^2)$ quadratic capacity.
 
 \subsection{A.2 Causality Preservation in HIBA}

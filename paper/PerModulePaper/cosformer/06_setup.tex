@@ -49,7 +49,7 @@ Sequence length truncated to 128.
 \texttt{max\_seq\_len} & 512 \\
 \texttt{eps} & $10^{-6}$ \\
 \texttt{chunk\_size} & 32 \\
-\texttt{rank} (basis) & {{RANK}} \\
+\texttt{rank} (basis) & 64 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -64,7 +64,7 @@ Sequence length truncated to 128.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
+Learning rate & 2e-4 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 LoRA rank & {{LORA\_RANK}} \\
 LoRA alpha & {{LORA\_ALPHA}} \\
@@ -122,14 +122,14 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_cosformer.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --recovery_steps 50 \
+    --lora_rank 16 \
+    --batch_size 8
 \end{lstlisting}
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}). No multi-seed runs.
+Single seed (42). No multi-seed runs.
 
 \subsection{Baselines}
 

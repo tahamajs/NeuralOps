@@ -1,11 +1,9 @@
 {
   "_comment": "Fill with real values from your HALO-ReGLA runs.",
-
   "MODULE_NAME": "HALO-ReGLA",
   "FULL_NAME": "HALO-ReGLA",
   "SUBTITLE": "Hybrid Dense-Linear Attention with Rectified Gated Linear Attention",
   "CATEGORY": "hybrid attention",
-
   "AUTHOR_1_NAME": "Your Name",
   "AUTHOR_1_EMAIL": "you@university.edu",
   "AUTHOR_2_NAME": "Advisor Name",
@@ -20,7 +18,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "HYBRID_RATIO": "4",
   "GATE_BIAS": "1.8",
   "LORA_RANK": "16",
@@ -30,13 +27,11 @@
   "LR": "2e-4",
   "WD": "1e-2",
   "SEED": "42",
-
   "ACC_TOLERANCE": "5",
   "MEM_REDUCTION": "2",
   "MAX_SPEEDUP": "3",
   "LEARNED_DELTA": "2.5",
   "FIXED_DROP": "3.5",
-
   "D_ACC": "89.5",
   "D_DELTA": "-1.2",
   "D_F1": "0.895",
@@ -53,7 +48,6 @@
   "D_L3_GATE": "0.70",
   "D_L4_GATE": "0.65",
   "D_L5_GATE": "0.60",
-
   "R_ACC": "76.5",
   "R_DELTA": "-2.1",
   "R_F1": "0.765",
@@ -64,7 +58,6 @@
   "R_VRAM": "760",
   "R_TIME": "5.2",
   "R_VRAM_DELTA": "-8",
-
   "G_ACC": "77.5",
   "G_DELTA": "-1.9",
   "G_F1": "0.775",
@@ -75,10 +68,8 @@
   "G_VRAM": "820",
   "G_TIME": "5.5",
   "G_VRAM_DELTA": "-5",
-
   "D_TIME_RATIO": "1.5",
   "G_TIME_RATIO": "1.3",
-
   "D_B0": "85.0",
   "D_B05": "87.0",
   "D_B1": "88.5",
@@ -95,7 +86,6 @@
   "G_B1": "76.5",
   "G_B18": "77.5",
   "G_B3": "77.0",
-
   "D_ELU": "89.5",
   "D_RELU": "87.0",
   "D_SOFTPLUS": "89.0",
@@ -108,7 +98,6 @@
   "G_RELU": "75.5",
   "G_SOFTPLUS": "77.0",
   "G_IDENT": "67.0",
-
   "D_LR4": "86.0",
   "D_LR8": "88.0",
   "D_LR16": "89.5",
@@ -121,7 +110,6 @@
   "G_LR8": "75.5",
   "G_LR16": "77.5",
   "G_LR32": "77.7",
-
   "D_S10": "86.0",
   "D_S25": "88.0",
   "D_S50": "89.5",
@@ -134,7 +122,6 @@
   "G_S25": "75.5",
   "G_S50": "77.5",
   "G_S100": "77.7",
-
   "GQA_D": "88.5",
   "GQA_R": "75.5",
   "GQA_G": "77.0",
@@ -144,18 +131,15 @@
   "ASA_D": "88.5",
   "ASA_R": "76.0",
   "ASA_G": "76.5",
-
   "D_FIX50": "86.0",
   "D_FIX80": "88.5",
   "R_FIX50": "72.5",
   "R_FIX80": "75.0",
   "G_FIX50": "73.5",
   "G_FIX80": "76.0",
-
   "IDENT_ACC": "78",
   "RELU_ACC": "87",
   "SOFT_ACC": "89",
-
   "B_128": "4.2",
   "H_128": "5.5",
   "S_128": "0.76",
@@ -165,8 +149,7 @@
   "B_2048": "8.5",
   "H_2048": "7.5",
   "S_2048": "1.13",
-
-  "CAUSAL_VERIFIED": "✅ Verified on all three models",
+  "CAUSAL_VERIFIED": "\u2705 Verified on all three models",
   "FAIL_LAYER_1": "layer.0",
   "FAIL_MODEL_1": "GPT-2",
   "FAIL_DROP_1": "1.5",
@@ -175,24 +158,17 @@
   "FAIL_DROP_2": "1.8",
   "FAIL_CAUSE": "Some heads need pure dense attention; gate should be > 0.9",
   "UNRESOLVED_FAILURES": "Long-context cumsum memory",
-
   "RUNTIME": "20",
   "COMPUTE_HOURS": "15",
   "CO2_KG": "1.0",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
-
   "Q_VERIFIED": "not tested",
   "SEED42": "89.5",
   "SEED123": "89.3",
   "SEED456": "89.7",
   "MEAN": "89.5",
   "STD": "0.2",
-
   "_note": "Add keys as needed"
 }
-```
-
----

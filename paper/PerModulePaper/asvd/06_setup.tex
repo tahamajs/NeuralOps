@@ -46,7 +46,7 @@ Majority baseline: 50.92\%.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{rank} & {{RANK}} \\
+\texttt{rank} & 64 \\
 \texttt{dynamic\_rank} & {{DYNAMIC\_RANK}} \\
 \texttt{energy\_threshold} $\varepsilon$ & {{ENERGY\_THRESHOLD}} \\
 \texttt{error\_threshold} $\tau$ & {{ERROR\_THRESHOLD}} \\
@@ -66,8 +66,8 @@ Majority baseline: 50.92\%.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 2e-4 \\
+Weight decay & 1e-2 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -121,10 +121,10 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_asvd.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --error_threshold {{ERROR_THRESHOLD}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 64 \
+    --energy_threshold 0.95 \
+    --error_threshold 0.20 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

@@ -5,10 +5,9 @@
 Adaptive SVD Attention replaces each of the four attention projections 
 $\{W_Q, W_K, W_V, W_O\}$ with:
 
-\[
+\begin{equation}
 W \approx U_r V_r + B A
-\tag{4.1}
-\]
+\end{equation}
 
 where:
 
@@ -58,24 +57,21 @@ For each projection $W$:
 
 \textbf{Step 2:} Compute cumulative energy:
 
-\[
+\begin{equation}
 E(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{d} \sigma_j^2}
-\tag{4.2}
-\]
+\end{equation}
 
 \textbf{Step 3:} Find minimal rank:
 
-\[
+\begin{equation}
 r^* = \min\{r : E(r) \geq \tau\}
-\tag{4.3}
-\]
+\end{equation}
 
 \textbf{Step 4:} Clamp to $[\min\_rank, \max\_rank]$:
 
-\[
+\begin{equation}
 r^* \leftarrow \max(\min(r^*, \text{max\_rank}), \text{min\_rank})
-\tag{4.4}
-\]
+\end{equation}
 
 We use $\tau = 0.92$, $\min\_rank = 16$, $\max\_rank = d$.
 
@@ -84,10 +80,9 @@ We use $\tau = 0.92$, $\min\_rank = 16$, $\max\_rank = d$.
 Energy thresholding is \textbf{principled} -- it directly bounds the relative 
 Frobenius error:
 
-\[
+\begin{equation}
 \frac{\|W - W_{r^*}\|_F}{\|W\|_F} \leq \sqrt{1 - \tau}
-\tag{4.5}
-\]
+\end{equation}
 
 For $\tau = 0.92$: error $\le$ 28.3\% of the Frobenius norm. This is a **hard 
 guarantee**, unlike a fixed rank which gives no such bound.
@@ -108,15 +103,13 @@ Adaptive rank allocates capacity where it's needed.
 
 Given the selected rank $r^*$, we compute:
 
-\[
+\begin{equation}
 U_r = U_{:, :r^*} \Sigma_{:r^*, :r^*}^{1/2}
-\tag{4.6}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 V_r = \Sigma_{:r^*, :r^*}^{1/2} V_{:r^*, :}^\top
-\tag{4.7}
-\]
+\end{equation}
 
 Then $W \approx U_r V_r$.
 
@@ -127,10 +120,9 @@ which keeps FP16 underflow risk low for both.
 
 We freeze $U_r, V_r$ and add a trainable residual:
 
-\[
+\begin{equation}
 \Delta W = B A, \quad A \in \mathbb{R}^{r_a \times d}, \quad B \in \mathbb{R}^{d \times r_a}
-\tag{4.8}
-\]
+\end{equation}
 
 with:
 
@@ -142,10 +134,9 @@ with:
 \end{itemize}
 The full forward pass:
 
-\[
+\begin{equation}
 y = U_r V_r x + B A x + b
-\tag{4.9}
-\]
+\end{equation}
 
 \textbf{Parameter count:}
 
@@ -167,10 +158,9 @@ $B$ & $d \cdot r_a$ \\
 
 vs baseline $d^2$. Ratio:
 
-\[
+\begin{equation}
 \frac{d^2}{2 d (r^* + r_a)} = \frac{d}{2(r^* + r_a)}
-\tag{4.10}
-\]
+\end{equation}
 
 \subsection{All Four Projections}
 

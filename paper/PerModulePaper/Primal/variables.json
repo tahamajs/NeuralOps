@@ -1,11 +1,9 @@
 {
   "_comment": "Fill with real values from your Primal Attention runs.",
-
   "MODULE_NAME": "Primal",
   "FULL_NAME": "Primal Attention",
-  "SUBTITLE": "Nyström-Style Low-Rank Attention with Asymmetric Landmarks",
+  "SUBTITLE": "Nystr\u00f6m-Style Low-Rank Attention with Asymmetric Landmarks",
   "CATEGORY": "low-rank attention",
-
   "AUTHOR_1_NAME": "Your Name",
   "AUTHOR_1_EMAIL": "you@university.edu",
   "AUTHOR_2_NAME": "Advisor Name",
@@ -20,7 +18,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "RANK": "64",
   "PINV_ITERS": "4",
   "LORA_RANK": "16",
@@ -30,11 +27,9 @@
   "LR": "2e-4",
   "WD": "1e-2",
   "SEED": "42",
-
   "MEM_REDUCTION": "4",
   "D_TIME_RATIO": "1.3",
   "ASYM_GAIN": "0.5",
-
   "D_ACC": "86.5",
   "D_DELTA": "-4.2",
   "D_F1": "0.865",
@@ -42,21 +37,18 @@
   "D_ATTN_MEM_BYTES": "12288",
   "D_TIME": "2.5",
   "D_VRAM": "160",
-
   "R_ACC": "74.0",
   "R_DELTA": "-4.6",
   "R_F1": "0.740",
   "R_ATTN_MEM": "12 KB",
   "R_TIME": "5.3",
   "R_VRAM": "640",
-
   "G_ACC": "75.0",
   "G_DELTA": "-4.4",
   "G_F1": "0.750",
   "G_ATTN_MEM": "12 KB",
   "G_TIME": "5.5",
   "G_VRAM": "700",
-
   "D_ERR16": "0.35",
   "D_ERR32": "0.20",
   "D_ERR64": "0.10",
@@ -69,7 +61,6 @@
   "G_ERR32": "0.21",
   "G_ERR64": "0.11",
   "G_ERR128": "0.055",
-
   "D_M16": "78.0",
   "D_M32": "83.5",
   "D_M64": "86.5",
@@ -85,7 +76,6 @@
   "G_M64": "75.0",
   "G_M128": "76.5",
   "G_M256": "77.0",
-
   "D_K0": "80.0",
   "D_K2": "84.0",
   "D_K4": "86.5",
@@ -101,7 +91,6 @@
   "G_K4": "75.0",
   "G_K6": "75.2",
   "G_K8": "75.3",
-
   "D_LR4": "83.0",
   "D_LR8": "85.0",
   "D_LR16": "86.5",
@@ -114,7 +103,6 @@
   "G_LR8": "73.0",
   "G_LR16": "75.0",
   "G_LR32": "75.3",
-
   "D_S10": "82.0",
   "D_S25": "85.0",
   "D_S50": "86.5",
@@ -127,7 +115,6 @@
   "G_S25": "73.0",
   "G_S50": "75.0",
   "G_S100": "75.3",
-
   "B_128": "4.2",
   "P_128": "5.5",
   "S_128": "0.76",
@@ -142,11 +129,9 @@
   "S_8192": "4.38",
   "B_TIME_2048": "8.5",
   "P_TIME_2048": "6.5",
-
   "GQA_D": "88.5",
   "GQA_R": "75.5",
   "GQA_G": "77.0",
-
   "CAUSAL_DROP": "3.5",
   "NYST_ACC": "86.0",
   "SVD_ACC": "86.5",
@@ -156,7 +141,6 @@
   "D_M4": "55",
   "D_M8": "70",
   "D_K16": "86.8",
-
   "D_L0_COND": "5.2",
   "D_L0_ERR": "0.08",
   "D_L1_COND": "6.1",
@@ -169,26 +153,18 @@
   "D_L4_ERR": "0.15",
   "D_L5_COND": "12.0",
   "D_L5_ERR": "0.18",
-
   "RUNTIME": "18",
   "COMPUTE_HOURS": "12",
   "CO2_KG": "0.85",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
-
   "Q_VERIFIED": "not tested",
   "SEED42": "86.5",
   "SEED123": "86.3",
   "SEED456": "86.7",
   "MEAN": "86.5",
   "STD": "0.2",
-
   "UNRESOLVED_FAILURES": "Causality approximation, long L scalability",
-
   "_note": "Add keys as needed"
 }
-```
-
----

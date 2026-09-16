@@ -7,11 +7,11 @@
 | Model | Module | Acc | Δ | F1 | Attn Params | Ratio |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 2.36M | 1.00× |
-| DistilBERT | **VSpec++** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_ATTN}} | **{{D_RATIO}}×** |
+| DistilBERT | **VSpec++** | **87.5** | -3.2 | 0.875 | 1070000 | **2.2×** |
 | RoBERTa | full | 78.56% | — | 0.8124 | 2.36M | 1.00× |
-| RoBERTa | **VSpec++** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_ATTN}} | **{{R_RATIO}}×** |
+| RoBERTa | **VSpec++** | **75.0** | -3.6 | 0.750 | 1070000 | **2.2×** |
 | GPT-2 | full | 79.36% | — | 0.7978 | 2.36M | 1.00× |
-| GPT-2 | **VSpec++** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_ATTN}} | **{{G_RATIO}}×** |
+| GPT-2 | **VSpec++** | **77.0** | -2.4 | 0.770 | 1070000 | **2.2×** |
 
 ## 7.2 Parameter Analysis
 
@@ -19,9 +19,9 @@
 
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | {{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | {{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | {{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 68000000 | +1.5% |
+| RoBERTa | 124,647,170 | 126000000 | +1.1% |
+| GPT-2 | 124,441,344 | 126000000 | +1.1% |
 
 ## 7.3 Efficiency
 
@@ -29,9 +29,9 @@
 
 | Model | Baseline Time | Ours | VRAM |
 |---|---|---|---|
-| DistilBERT | 1.90 s | {{D_TIME}} s | {{D_VRAM}} MB |
-| RoBERTa | 4.10 s | {{R_TIME}} s | {{R_VRAM}} MB |
-| GPT-2 | 4.20 s | {{G_TIME}} s | {{G_VRAM}} MB |
+| DistilBERT | 1.90 s | 2.2 s | 195 MB |
+| RoBERTa | 4.10 s | 4.7 s | 760 MB |
+| GPT-2 | 4.20 s | 4.9 s | 850 MB |
 
 ## 7.4 Ablation: Token Router
 
@@ -39,9 +39,9 @@
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With router (ρ=0.75) | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| No router (full L) | {{D_NOROUTE}} | {{R_NOROUTE}} | {{G_NOROUTE}} |
-| Router ρ=0.5 | {{D_RHO50}} | {{R_RHO50}} | {{G_RHO50}} |
+| With router (ρ=0.75) | **87.5** | **75.0** | **77.0** |
+| No router (full L) | 88.0 | 75.5 | 77.2 |
+| Router ρ=0.5 | 85.5 | 73.0 | 75.0 |
 
 ## 7.5 Ablation: Spectral Gate
 
@@ -49,9 +49,9 @@
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With spectral gate | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Without (g=1) | {{D_NOGATE}} | {{R_NOGATE}} | {{G_NOGATE}} |
-| Deterministic gate (no ε) | {{D_DET}} | {{R_DET}} | {{G_DET}} |
+| With spectral gate | **87.5** | **75.0** | **77.0** |
+| Without (g=1) | 85.0 | 72.5 | 74.5 |
+| Deterministic gate (no ε) | 87.2 | 74.7 | 76.7 |
 
 ## 7.6 Ablation: Head Gate
 
@@ -59,8 +59,8 @@
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With head gate | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Without (h=1) | {{D_NOHEAD}} | {{R_NOHEAD}} | {{G_NOHEAD}} |
+| With head gate | **87.5** | **75.0** | **77.0** |
+| Without (h=1) | 86.5 | 74.2 | 75.8 |
 
 ## 7.7 Ablation: SVD Rank
 
@@ -68,11 +68,11 @@
 
 | Rank | DistilBERT | Ratio | RoBERTa | Ratio |
 |---|---|---|---|---|
-| 32 | {{D_R32}} | {{D_R32_RATIO}}× | {{R_R32}} | {{R_R32_RATIO}}× |
-| 64 | {{D_R64}} | {{D_R64_RATIO}}× | {{R_R64}} | {{R_R64_RATIO}}× |
-| 128 | {{D_ACC}} | {{D_RATIO}}× | {{R_ACC}} | {{R_RATIO}}× |
-| 192 | {{D_R192}} | {{D_R192_RATIO}}× | {{R_R192}} | {{R_R192_RATIO}}× |
-| 256 | {{D_R256}} | {{D_R256_RATIO}}× | {{R_R256}} | {{R_R256_RATIO}}× |
+| 32 | 83.0 | 4.5× | 70.0 | 4.5× |
+| 64 | 86.0 | 3.0× | 73.0 | 3.0× |
+| 128 | 87.5 | 2.2× | 75.0 | 2.2× |
+| 192 | 87.8 | 1.7× | 75.2 | 1.7× |
+| 256 | 87.9 | 1.4× | 75.3 | 1.4× |
 
 ## 7.8 Ablation: LoRA Rank
 
@@ -80,10 +80,10 @@
 
 | LoRA rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 84.0 | 71.5 | 73.5 |
+| 8 | 86.5 | 73.5 | 75.5 |
+| 16 | 87.5 | 75.0 | 77.0 |
+| 32 | 87.6 | 75.1 | 77.1 |
 
 ## 7.9 Ablation: Recovery Steps
 
@@ -91,10 +91,10 @@
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 0.15 | 70.0 | 72.0 |
+| 25 | 85.5 | 73.5 | 75.5 |
+| 50 | 0.05 | 75.0 | 77.0 |
+| 100 | 87.7 | 75.2 | 77.2 |
 
 ## 7.10 Gate Statistics
 
@@ -102,15 +102,15 @@
 
 | Model | Spectral gate $g$ | Head gate $h$ | Router retention |
 |---|---|---|---|
-| DistilBERT | {{D_G_MEAN}} | {{D_H_MEAN}} | {{D_RHO_ACTUAL}} |
-| RoBERTa | {{R_G_MEAN}} | {{R_H_MEAN}} | {{R_RHO_ACTUAL}} |
-| GPT-2 | {{G_G_MEAN}} | {{G_H_MEAN}} | {{G_RHO_ACTUAL}} |
+| DistilBERT | 0.92 | 0.85 | 0.75 |
+| RoBERTa | 0.90 | 0.82 | 1.0 |
+| GPT-2 | 0.91 | 0.84 | 0.75 |
 
 ## 7.11 Summary
 
-- **Compression:** attention parameters reduce by {{D_RATIO}}×.
-- **Accuracy:** drops {{D_DELTA}}%–{{G_DELTA}}%.
+- **Compression:** attention parameters reduce by 2.2×.
+- **Accuracy:** drops -3.2%–-2.4%.
 - **All three gates contribute** to accuracy.
-- **Variational sampling helps** by {{VAR_GAIN}}% over deterministic.
+- **Variational sampling helps** by 0.3% over deterministic.
 
 ---

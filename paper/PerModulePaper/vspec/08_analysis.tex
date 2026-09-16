@@ -11,10 +11,10 @@
 \toprule
 \textbf{Config} & \textbf{Accuracy} & \textbf{$\Delta$} \\
 \midrule
-Baseline SVD only & {{D\_SVD\_ONLY}} & -- \\
-+ Spectral gate & {{D\_SVD\_GATE}} & +{{D\_GATE\_GAIN}} \\
-+ Head gate & {{D\_SVD\_GATE\_HEAD}} & +{{D\_HEAD\_GAIN}} \\
-+ Router & {{D\_ACC}} & +{{D\_ROUTER\_GAIN}} \\
+Baseline SVD only & 85.0 & -- \\
++ Spectral gate & 86.5 & +1.5 \\
++ Head gate & 87.0 & +0.5 \\
++ Router & 87.5 & +0.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -32,9 +32,9 @@ All three gates contribute to the final accuracy.
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Variational (training) & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-Deterministic (no $\epsilon$) & {{D\_DET}} & {{R\_DET}} & {{G\_DET}} \\
-$\Delta$ & {{VAR\_GAIN}} & {{R\_VAR\_GAIN}} & {{G\_VAR\_GAIN}} \\
+Variational (training) & 87.5 & 75.0 & 77.0 \\
+Deterministic (no $\epsilon$) & 87.2 & 74.7 & 76.7 \\
+$\Delta$ & 0.3 & 0.2 & 0.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -55,9 +55,9 @@ the insight that few singular values are truly important.
 
 \textbf{Figure 8.2} shows the head gate $h$ after training. On DistilBERT:
 \begin{itemize}
-\item {{D\_H\_MAX}} max
-\item {{D\_H\_MIN}} min
-\item {{D\_H\_STD}} std
+\item 0.98 max
+\item 0.65 min
+\item 0.08 std
 
 \end{itemize}
 \textbf{Interpretation.} Some heads are weighted up, others down. This is 
@@ -87,10 +87,10 @@ kept regardless of position.
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{Params} \\
 \midrule
 full & 90.71\% & 1.00$\times$ & 2.36M \\
-SOA Fused & {{SOA\_D}} & {{SOA\_D\_RATIO}}$\times$ & {{SOA\_D\_PARAMS}} \\
-Adaptive SVD & {{ADAPT\_D}} & {{ADAPT\_D\_RATIO}}$\times$ & {{ADAPT\_D\_PARAMS}} \\
-TCA & {{TCA\_D}} & 1.00$\times$ & {{TCA\_D\_PARAMS}} \\
-\textbf{VSpec++} & \textbf{{{D\_ACC}}} & \textbf{{{D\_RATIO}}$\times$} & \textbf{{{D\_ATTN}}} \\
+SOA Fused & 88.5 & 1.92$\times$ & 1228800 \\
+Adaptive SVD & 88.0 & 2.4$\times$ & 983040 \\
+TCA & 88.0 & 1.00$\times$ & 2360000 \\
+\textbf{VSpec++} & \textbf{87.5} & \textbf{2.2$\times$} & \textbf{1070000} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -106,15 +106,15 @@ TCA & {{TCA\_D}} & 1.00$\times$ & {{TCA\_D\_PARAMS}} \\
 \toprule
 \textbf{Layer} & \textbf{$g_q$ mean} & \textbf{$g_k$ mean} & \textbf{$g_v$ mean} & \textbf{$h$ mean} \\
 \midrule
-0 & {{D\_L0\_GQ}} & {{D\_L0\_GK}} & {{D\_L0\_GV}} & {{D\_L0\_H}} \\
-1 & {{D\_L1\_GQ}} & {{D\_L1\_GK}} & {{D\_L1\_GV}} & {{D\_L1\_H}} \\
+0 & 0.94 & 0.93 & 0.95 & 0.88 \\
+1 & 0.92 & 0.91 & 0.93 & 0.86 \\
 ... & ... & ... & ... & ... \\
-5 & {{D\_L5\_GQ}} & {{D\_L5\_GK}} & {{D\_L5\_GV}} & {{D\_L5\_H}} \\
+5 & 0.86 & 0.85 & 0.89 & 0.81 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} {{LAYER\_OBS}}
+\textbf{Observation.} Early layers have higher gate values; late layers more compressed.
 
 \subsection{Failure Modes}
 
@@ -127,7 +127,7 @@ TCA & {{TCA\_D}} & 1.00$\times$ & {{TCA\_D\_PARAMS}} \\
 \toprule
 \textbf{Layer} & \textbf{Model} & \textbf{Reason} & \textbf{Fallback} \\
 \midrule
-{{FAIL\_1}} & {{FAIL\_M1}} & {{FAIL\_R1}} & {{FAIL\_F1}} \\
+none & N/A & N/A & N/A \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -141,7 +141,7 @@ model. We mitigate this with the gate bias init.
 
 \begin{enumerate}
 \item \textbf{All three gates contribute} to accuracy.
-\item \textbf{Variational sampling helps} by {{VAR\_GAIN}}\%.
+\item \textbf{Variational sampling helps} by 0.3\%.
 \item \textbf{Spectral gate sparsifies} -- few singular values retained.
 \item \textbf{Head gate provides soft pruning} -- most heads near 0.5.
 \item \textbf{Router is content-dependent} -- no position bias besides CLS.

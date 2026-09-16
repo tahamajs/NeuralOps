@@ -22,7 +22,7 @@
 
 **Goal.** Pure SVD.
 
-**Result.** Accuracy dropped by {{NOGATE_DROP}}%.
+**Result.** Accuracy dropped by 2.5%.
 
 **Conclusion.** Gate is essential.
 
@@ -62,29 +62,29 @@ Single gate across layers. Result: worse.
 
 | Bias | DistilBERT |
 |---|---|
-| [3, -3] | {{D_ACC}} |
-| [0, 0] | {{D_BIAS00}} |
-| [5, -5] | {{D_BIAS55}} |
-| [1, -1] | {{D_BIAS11}} |
+| [3, -3] | 87.5 |
+| [0, 0] | 84.0 |
+| [5, -5] | 86.0 |
+| [1, -1] | 85.5 |
 
 ### LoRA Rank
 
 | Rank | DistilBERT |
 |---|---|
-| 4 | {{D_LR4}} |
-| 8 | {{D_LR8}} |
-| 16 | {{D_ACC}} |
-| 32 | {{D_LR32}} |
+| 4 | 84.0 |
+| 8 | 86.5 |
+| 16 | 87.5 |
+| 32 | 87.6 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 87.5 |
+| 123 | 87.3 |
+| 456 | 87.7 |
+| **Mean** | **87.5** |
+| **Std** | **0.2** |
 
 ## D.5 Lessons Learned
 

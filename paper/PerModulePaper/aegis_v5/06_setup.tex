@@ -75,8 +75,8 @@ For actual compression, set \texttt{max\_rank = 128} or lower.
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
 \texttt{recovery\_steps} & {{RECOVERY\_STEPS}} \\
 \texttt{batch\_size} & {{BATCH\_SIZE}} \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 2e-4 \\
+Weight decay & 1e-2 \\
 Optimizer & AdamW \\
 Precision & FP16 \\
 \bottomrule
@@ -138,7 +138,7 @@ python run_all_4_aegis_v5.py \
     --models distilbert,roberta,gpt2 \
     --svd_energy 0.95 \
     --max_rank 128 \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -161,7 +161,7 @@ python run_all_4_aegis_v5.py \
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 \begin{lstlisting}
 
 ---

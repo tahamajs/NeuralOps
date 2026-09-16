@@ -4,17 +4,15 @@
 
 For $W \in \mathbb{R}^{m \times n}$:
 
-\[
+\begin{equation}
 W = U \Sigma V^\top
-\tag{3.1}
-\]
+\end{equation}
 
 The rank-$r$ truncation:
 
-\[
+\begin{equation}
 W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
-\tag{3.2}
-\]
+\end{equation}
 
 has Frobenius error $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 
@@ -23,16 +21,14 @@ has Frobenius error $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 Two common factorizations:
 
 \textbf{Asymmetric:}
-\[
+\begin{equation}
 U_r = U_{:, :r}, \quad V_r = \Sigma_{:r, :r} V_{:r, :}^\top
-\tag{3.3}
-\]
+\end{equation}
 
 \textbf{Symmetric:}
-\[
+\begin{equation}
 U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
-\tag{3.4}
-\]
+\end{equation}
 
 We use the symmetric split for numerical balance: both factors have similar 
 magnitudes, reducing FP16 underflow risk.
@@ -42,24 +38,21 @@ magnitudes, reducing FP16 underflow risk.
 Given singular values $\sigma_1 \geq \sigma_2 \geq \dots$, the cumulative 
 energy fraction at rank $r$ is:
 
-\[
+\begin{equation}
 E(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(m, n)} \sigma_j^2}
-\tag{3.5}
-\]
+\end{equation}
 
 The \textbf{energy threshold} $\tau \in (0, 1]$ defines the target:
 
-\[
+\begin{equation}
 r^* = \min\{r : E(r) \geq \tau\}
-\tag{3.6}
-\]
+\end{equation}
 
 This directly bounds the relative Frobenius error:
 
-\[
+\begin{equation}
 \frac{\|W - W_{r^*}\|_F}{\|W\|_F} = \sqrt{1 - E(r^*)} \leq \sqrt{1 - \tau}
-\tag{3.7}
-\]
+\end{equation}
 
 For $\tau = 0.92$: relative error $\leq \sqrt{0.08} \approx 0.283$.
 
@@ -67,29 +60,25 @@ For $\tau = 0.92$: relative error $\leq \sqrt{0.08} \approx 0.283$.
 
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
-\[
+\begin{equation}
 Q = X W_Q, \quad K = X W_K, \quad V = X W_V
-\tag{3.8}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
-\tag{3.9}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
-\tag{3.10}
-\]
+\end{equation}
 
 \subsection{T5 Relative Attention Bias}
 
 T5 (Raffel et al., 2020) adds a learned bias to attention scores:
 
-\[
+\begin{equation}
 \text{scores}_{ij} \leftarrow \text{scores}_{ij} + b_{\text{bucket}(i, j)}
-\tag{3.11}
-\]
+\end{equation}
 
 where $\text{bucket}(i, j)$ maps the relative position to a discrete bin.
 
@@ -100,10 +89,9 @@ replace Q/K/V/O projections, not the bias.
 
 Encoder-decoder attention uses \textbf{different} K, V inputs:
 
-\[
+\begin{equation}
 K = H_\text{enc} W_K, \quad V = H_\text{enc} W_V
-\tag{3.12}
-\]
+\end{equation}
 
 where $H_\text{enc}$ is the encoder's output. Our factorized K, V projections 
 apply to any input, so cross-attention works unchanged.
@@ -112,10 +100,9 @@ apply to any input, so cross-attention works unchanged.
 
 We add a trainable low-rank residual:
 
-\[
+\begin{equation}
 \Delta W = B A
-\tag{3.13}
-\]
+\end{equation}
 
 with $A \in \mathbb{R}^{r_a \times d}$, $B \in \mathbb{R}^{d \times r_a}$, and 
 $B = 0$ at initialization.

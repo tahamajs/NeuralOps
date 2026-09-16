@@ -1,12 +1,8 @@
-ابتدا این متغیرها را برای HIBA تنظیم می‌کنیم.
-
-```json
 {
   "MODULE_NAME": "HIBA",
   "FULL_NAME": "Hierarchical Intra-Block and Inter-Block Attention",
   "SUBTITLE": "Efficient Block-Sparse Attention with Periodic Dense Rectification",
   "CATEGORY": "block-sparse hybrid attention",
-
   "AUTHOR_1_NAME": "Taha Majlesi",
   "AUTHOR_1_EMAIL": "taha.majlesi@ut.ac.ir",
   "AUTHOR_2_NAME": "Co-Author",
@@ -20,7 +16,6 @@
   "ORG": "HooshaAI",
   "HF_ORG": "HooshaAI",
   "LICENSE": "MIT",
-
   "ACC_D": "90.35",
   "BASE_D": "90.71",
   "DELTA_D": "-0.36",
@@ -30,13 +25,11 @@
   "ACC_G": "79.10",
   "BASE_G": "79.36",
   "DELTA_G": "-0.26",
-
   "PARAM_CHANGE_PCT": "+0.89",
   "PARAM_CHANGE_NOTE": "due to residual LoRA adapters",
   "VRAM_CHANGE_PCT": "-35",
   "LATENCY_CHANGE": "1.2",
   "LATENCY_REASON_SHORT": "Python loop overhead in inter-block sparse indexing",
-  
   "RECOVERY_STEPS": "50",
   "LORA_RANK": "16",
   "LORA_ALPHA": "32.0",
@@ -45,7 +38,3 @@
   "WD": "1e-2",
   "SEED": "42"
 }
-
-```
-
----

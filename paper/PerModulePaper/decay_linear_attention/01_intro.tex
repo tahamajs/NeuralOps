@@ -6,10 +6,9 @@ Linear attention (Katharopoulos et al., 2020) computes attention in
 $\mathcal{O}(L)$ time by replacing softmax with a positive kernel feature 
 map $\phi$:
 
-\[
+\begin{equation}
 O_t = \frac{\phi(q_t)^\top \sum_{j \leq t} \phi(k_j) v_j^\top}{\phi(q_t)^\top \sum_{j \leq t} \phi(k_j)}
-\tag{1.1}
-\]
+\end{equation}
 
 The state $S_t = \sum_{j \leq t} \phi(k_j) v_j^\top \in \mathbb{R}^{F \times d_h}$ 
 is updated incrementally, giving constant memory per step.
@@ -33,10 +32,9 @@ is updated incrementally, giving constant memory per step.
 \item \textbf{Data-dependent decay.} We learn a per-head, per-token decay
   $\lambda_{h,t} \in (0, 1)$ and update the state with exponential decay:
   
-  $$
-  S\_t = \lambda\_{h,t} S\_{t-1} + \phi(k\_t) v\_t\^{}\top
-  \tag{1.2}
-  $$
+  \begin{equation}
+S\_t = \lambda\_{h,t} S\_{t-1} + \phi(k\_t) v\_t\^{}\top
+\end{equation}
   
 \item \textbf{Chunked scan with $\mathcal{O}(1)$ state.} We carry only
   $S \in \mathbb{R}^{d_h \times d_h}$ between chunks, processing each
@@ -63,11 +61,10 @@ Three components:
 
 \subsubsection{Data-Dependent Exponential Decay}
 
-\[
+\begin{equation}
 \lambda_{h,t} = \sigma\!\left(W_g x_t + b_g + \ell_h\right), \quad
-\ell_h \in [{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]
-\tag{1.3}
-\]
+\ell_h \in [-0.5, 0.0]
+\end{equation}
 
 The per-head bias $\ell_h$ is initialized to linearly spaced values, so 
 different heads start with different context horizons.
@@ -85,10 +82,9 @@ Total memory: $\mathcal{O}(C^2 + d_h^2)$ per chunk, \textbf{independent of $L$}.
 
 \subsubsection{ELU+1 Feature Map}
 
-\[
+\begin{equation}
 \phi(x) = \text{elu}(x) + 1
-\tag{1.4}
-\]
+\end{equation}
 
 This is positive (needed for stable linear attention) and cheap to compute.
 

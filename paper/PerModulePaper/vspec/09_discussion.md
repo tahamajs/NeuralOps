@@ -10,11 +10,11 @@ than any single gate.
 ### 9.1.2 Takeaway 2: Variational Training Regularizes
 
 The stochastic sampling acts as a data-dependent regularizer, improving 
-generalization by {{VAR_GAIN}}%.
+generalization by 0.3%.
 
 ### 9.1.3 Takeaway 3: Real Parameter Reduction
 
-The SVD factorization provides {{D_RATIO}}× parameter reduction on 
+The SVD factorization provides 2.2× parameter reduction on 
 attention projections.
 
 ## 9.2 When to Use VSpec++
@@ -51,11 +51,11 @@ For DistilBERT:
 
 | Metric | Baseline | VSpec++ | Change |
 |---|---|---|---|
-| Attention params | 2.36M | {{D_ATTN}} | **{{D_RATIO}}×** |
-| Total params | 66.95M | {{D_PARAMS}} | {{D_PARAM_PCT}}% |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Inference time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Peak VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_PCT}}% |
+| Attention params | 2.36M | 1070000 | **2.2×** |
+| Total params | 66.95M | 68000000 | +1.5% |
+| Accuracy | 90.71% | 87.5% | -3.2% |
+| Inference time | 1.90 s | 2.2 s | 1.16× |
+| Peak VRAM | 183 MB | 195 MB | +6.6% |
 
 ## 9.5 Composition with Other Methods
 

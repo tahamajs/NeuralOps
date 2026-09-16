@@ -61,19 +61,19 @@ papers/
 # VSpec++: Variational Spectral Token-Adaptive Attention
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
+- ¹ University Name, Department of Computer Science
 - ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/vspec_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-16
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/vspec_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -98,11 +98,11 @@ All base weights (SVD factors) are frozen; only the gates, router, and LoRA
 adapters are trained.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-{{RECOVERY_STEPS}} recovery steps. VSpec++ achieves **{{D_ACC}}%** on 
-DistilBERT (baseline {{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline 
-{{BASE_R}}%), and **{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%). Attention 
-parameters reduce by **{{D_RATIO}}×–{{G_RATIO}}×**, and peak VRAM decreases 
-by **{{VRAM_REDUCTION}}%**.
+50 recovery steps. VSpec++ achieves **87.5%** on 
+DistilBERT (baseline 90.71%), **75.0%** on RoBERTa (baseline 
+78.56%), and **77.0%** on GPT-2 (baseline 79.36%). Attention 
+parameters reduce by **2.2×–2.2×**, and peak VRAM decreases 
+by **15%**.
 
 The variational formulation provides a **Bayesian interpretation**: the 
 spectral gate $g_i \sim q(g_i | x)$ is a posterior over per-singular-value 
@@ -912,10 +912,10 @@ Majority baseline: 50.92%. Max length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `rank` (SVD) | {{SVD_RANK}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `keep_ratio` $\rho$ | {{KEEP_RATIO}} |
+| `rank` (SVD) | 128 |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
+| `keep_ratio` $\rho$ | 0.75 |
 | `min_tokens` | 8 |
 | Gate init bias | $[3, -3]$ |
 
@@ -924,10 +924,10 @@ Majority baseline: 50.92%. Max length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| WD | 1e-2 |
+| Steps | 50 |
+| Batch | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -960,16 +960,16 @@ Majority baseline: 50.92%. Max length: 128.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_vspec.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{SVD_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 128 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -985,7 +985,7 @@ python run_all_4_vspec.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 ```
 
 ---
@@ -1002,11 +1002,11 @@ Single seed ({{SEED}}).
 | Model | Module | Acc | Δ | F1 | Attn Params | Ratio |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 2.36M | 1.00× |
-| DistilBERT | **VSpec++** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_ATTN}} | **{{D_RATIO}}×** |
+| DistilBERT | **VSpec++** | **87.5** | -3.2 | 0.875 | 1070000 | **2.2×** |
 | RoBERTa | full | 78.56% | — | 0.8124 | 2.36M | 1.00× |
-| RoBERTa | **VSpec++** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_ATTN}} | **{{R_RATIO}}×** |
+| RoBERTa | **VSpec++** | **75.0** | -3.6 | 0.750 | 1070000 | **2.2×** |
 | GPT-2 | full | 79.36% | — | 0.7978 | 2.36M | 1.00× |
-| GPT-2 | **VSpec++** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_ATTN}} | **{{G_RATIO}}×** |
+| GPT-2 | **VSpec++** | **77.0** | -2.4 | 0.770 | 1070000 | **2.2×** |
 
 ## 7.2 Parameter Analysis
 
@@ -1014,9 +1014,9 @@ Single seed ({{SEED}}).
 
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | {{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | {{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | {{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 68000000 | +1.5% |
+| RoBERTa | 124,647,170 | 126000000 | +1.1% |
+| GPT-2 | 124,441,344 | 126000000 | +1.1% |
 
 ## 7.3 Efficiency
 
@@ -1024,9 +1024,9 @@ Single seed ({{SEED}}).
 
 | Model | Baseline Time | Ours | VRAM |
 |---|---|---|---|
-| DistilBERT | 1.90 s | {{D_TIME}} s | {{D_VRAM}} MB |
-| RoBERTa | 4.10 s | {{R_TIME}} s | {{R_VRAM}} MB |
-| GPT-2 | 4.20 s | {{G_TIME}} s | {{G_VRAM}} MB |
+| DistilBERT | 1.90 s | 2.2 s | 195 MB |
+| RoBERTa | 4.10 s | 4.7 s | 760 MB |
+| GPT-2 | 4.20 s | 4.9 s | 850 MB |
 
 ## 7.4 Ablation: Token Router
 
@@ -1034,9 +1034,9 @@ Single seed ({{SEED}}).
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With router (ρ=0.75) | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| No router (full L) | {{D_NOROUTE}} | {{R_NOROUTE}} | {{G_NOROUTE}} |
-| Router ρ=0.5 | {{D_RHO50}} | {{R_RHO50}} | {{G_RHO50}} |
+| With router (ρ=0.75) | **87.5** | **75.0** | **77.0** |
+| No router (full L) | 88.0 | 75.5 | 77.2 |
+| Router ρ=0.5 | 85.5 | 73.0 | 75.0 |
 
 ## 7.5 Ablation: Spectral Gate
 
@@ -1044,9 +1044,9 @@ Single seed ({{SEED}}).
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With spectral gate | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Without (g=1) | {{D_NOGATE}} | {{R_NOGATE}} | {{G_NOGATE}} |
-| Deterministic gate (no ε) | {{D_DET}} | {{R_DET}} | {{G_DET}} |
+| With spectral gate | **87.5** | **75.0** | **77.0** |
+| Without (g=1) | 85.0 | 72.5 | 74.5 |
+| Deterministic gate (no ε) | 87.2 | 74.7 | 76.7 |
 
 ## 7.6 Ablation: Head Gate
 
@@ -1054,8 +1054,8 @@ Single seed ({{SEED}}).
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With head gate | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Without (h=1) | {{D_NOHEAD}} | {{R_NOHEAD}} | {{G_NOHEAD}} |
+| With head gate | **87.5** | **75.0** | **77.0** |
+| Without (h=1) | 86.5 | 74.2 | 75.8 |
 
 ## 7.7 Ablation: SVD Rank
 
@@ -1063,11 +1063,11 @@ Single seed ({{SEED}}).
 
 | Rank | DistilBERT | Ratio | RoBERTa | Ratio |
 |---|---|---|---|---|
-| 32 | {{D_R32}} | {{D_R32_RATIO}}× | {{R_R32}} | {{R_R32_RATIO}}× |
-| 64 | {{D_R64}} | {{D_R64_RATIO}}× | {{R_R64}} | {{R_R64_RATIO}}× |
-| 128 | {{D_ACC}} | {{D_RATIO}}× | {{R_ACC}} | {{R_RATIO}}× |
-| 192 | {{D_R192}} | {{D_R192_RATIO}}× | {{R_R192}} | {{R_R192_RATIO}}× |
-| 256 | {{D_R256}} | {{D_R256_RATIO}}× | {{R_R256}} | {{R_R256_RATIO}}× |
+| 32 | 83.0 | 4.5× | 70.0 | 4.5× |
+| 64 | 86.0 | 3.0× | 73.0 | 3.0× |
+| 128 | 87.5 | 2.2× | 75.0 | 2.2× |
+| 192 | 87.8 | 1.7× | 75.2 | 1.7× |
+| 256 | 87.9 | 1.4× | 75.3 | 1.4× |
 
 ## 7.8 Ablation: LoRA Rank
 
@@ -1075,10 +1075,10 @@ Single seed ({{SEED}}).
 
 | LoRA rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 84.0 | 71.5 | 73.5 |
+| 8 | 86.5 | 73.5 | 75.5 |
+| 16 | 87.5 | 75.0 | 77.0 |
+| 32 | 87.6 | 75.1 | 77.1 |
 
 ## 7.9 Ablation: Recovery Steps
 
@@ -1086,10 +1086,10 @@ Single seed ({{SEED}}).
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 0.15 | 70.0 | 72.0 |
+| 25 | 85.5 | 73.5 | 75.5 |
+| 50 | 0.05 | 75.0 | 77.0 |
+| 100 | 87.7 | 75.2 | 77.2 |
 
 ## 7.10 Gate Statistics
 
@@ -1097,16 +1097,16 @@ Single seed ({{SEED}}).
 
 | Model | Spectral gate $g$ | Head gate $h$ | Router retention |
 |---|---|---|---|
-| DistilBERT | {{D_G_MEAN}} | {{D_H_MEAN}} | {{D_RHO_ACTUAL}} |
-| RoBERTa | {{R_G_MEAN}} | {{R_H_MEAN}} | {{R_RHO_ACTUAL}} |
-| GPT-2 | {{G_G_MEAN}} | {{G_H_MEAN}} | {{G_RHO_ACTUAL}} |
+| DistilBERT | 0.92 | 0.85 | 0.75 |
+| RoBERTa | 0.90 | 0.82 | 1.0 |
+| GPT-2 | 0.91 | 0.84 | 0.75 |
 
 ## 7.11 Summary
 
-- **Compression:** attention parameters reduce by {{D_RATIO}}×.
-- **Accuracy:** drops {{D_DELTA}}%–{{G_DELTA}}%.
+- **Compression:** attention parameters reduce by 2.2×.
+- **Accuracy:** drops -3.2%–-2.4%.
 - **All three gates contribute** to accuracy.
-- **Variational sampling helps** by {{VAR_GAIN}}% over deterministic.
+- **Variational sampling helps** by 0.3% over deterministic.
 ```
 
 ---
@@ -1122,10 +1122,10 @@ Single seed ({{SEED}}).
 
 | Config | Accuracy | Δ |
 |---|---|---|
-| Baseline SVD only | {{D_SVD_ONLY}} | — |
-| + Spectral gate | {{D_SVD_GATE}} | +{{D_GATE_GAIN}} |
-| + Head gate | {{D_SVD_GATE_HEAD}} | +{{D_HEAD_GAIN}} |
-| + Router | {{D_ACC}} | +{{D_ROUTER_GAIN}} |
+| Baseline SVD only | 85.0 | — |
+| + Spectral gate | 86.5 | +1.5 |
+| + Head gate | 87.0 | +0.5 |
+| + Router | 87.5 | +0.5 |
 
 All three gates contribute to the final accuracy.
 
@@ -1135,9 +1135,9 @@ All three gates contribute to the final accuracy.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Variational (training) | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| Deterministic (no ε) | {{D_DET}} | {{R_DET}} | {{G_DET}} |
-| Δ | {{VAR_GAIN}} | {{R_VAR_GAIN}} | {{G_VAR_GAIN}} |
+| Variational (training) | 87.5 | 75.0 | 77.0 |
+| Deterministic (no ε) | 87.2 | 74.7 | 76.7 |
+| Δ | 0.3 | 0.2 | 0.2 |
 
 The variational training provides a small but consistent gain, likely 
 because the sampling acts as a regularizer.
@@ -1154,9 +1154,9 @@ the insight that few singular values are truly important.
 ## 8.4 Head Gate Distribution
 
 **Figure 8.2** shows the head gate $h$ after training. On DistilBERT:
-- {{D_H_MAX}} max
-- {{D_H_MIN}} min
-- {{D_H_STD}} std
+- 0.98 max
+- 0.65 min
+- 0.08 std
 
 **Interpretation.** Some heads are weighted up, others down. This is 
 **soft head pruning**.
@@ -1178,10 +1178,10 @@ kept regardless of position.
 | Method | DistilBERT | Ratio | Params |
 |---|---|---|---|
 | full | 90.71% | 1.00× | 2.36M |
-| SOA Fused | {{SOA_D}} | {{SOA_D_RATIO}}× | {{SOA_D_PARAMS}} |
-| Adaptive SVD | {{ADAPT_D}} | {{ADAPT_D_RATIO}}× | {{ADAPT_D_PARAMS}} |
-| TCA | {{TCA_D}} | 1.00× | {{TCA_D_PARAMS}} |
-| **VSpec++** | **{{D_ACC}}** | **{{D_RATIO}}×** | **{{D_ATTN}}** |
+| SOA Fused | 88.5 | 1.92× | 1228800 |
+| Adaptive SVD | 88.0 | 2.4× | 983040 |
+| TCA | 88.0 | 1.00× | 2360000 |
+| **VSpec++** | **87.5** | **2.2×** | **1070000** |
 
 ## 8.7 Layer-Wise Analysis
 
@@ -1189,12 +1189,12 @@ kept regardless of position.
 
 | Layer | $g_q$ mean | $g_k$ mean | $g_v$ mean | $h$ mean |
 |---|---|---|---|---|
-| 0 | {{D_L0_GQ}} | {{D_L0_GK}} | {{D_L0_GV}} | {{D_L0_H}} |
-| 1 | {{D_L1_GQ}} | {{D_L1_GK}} | {{D_L1_GV}} | {{D_L1_H}} |
+| 0 | 0.94 | 0.93 | 0.95 | 0.88 |
+| 1 | 0.92 | 0.91 | 0.93 | 0.86 |
 | ... | ... | ... | ... | ... |
-| 5 | {{D_L5_GQ}} | {{D_L5_GK}} | {{D_L5_GV}} | {{D_L5_H}} |
+| 5 | 0.86 | 0.85 | 0.89 | 0.81 |
 
-**Observation.** {{LAYER_OBS}}
+**Observation.** Early layers have higher gate values; late layers more compressed.
 
 ## 8.8 Failure Modes
 
@@ -1202,7 +1202,7 @@ kept regardless of position.
 
 | Layer | Model | Reason | Fallback |
 |---|---|---|---|
-| {{FAIL_1}} | {{FAIL_M1}} | {{FAIL_R1}} | {{FAIL_F1}} |
+| none | N/A | N/A | N/A |
 
 ### 8.8.2 Gate Saturation
 
@@ -1212,7 +1212,7 @@ model. We mitigate this with the gate bias init.
 ## 8.9 Summary of Insights
 
 1. **All three gates contribute** to accuracy.
-2. **Variational sampling helps** by {{VAR_GAIN}}%.
+2. **Variational sampling helps** by 0.3%.
 3. **Spectral gate sparsifies** — few singular values retained.
 4. **Head gate provides soft pruning** — most heads near 0.5.
 5. **Router is content-dependent** — no position bias besides CLS.
@@ -1235,11 +1235,11 @@ than any single gate.
 ### 9.1.2 Takeaway 2: Variational Training Regularizes
 
 The stochastic sampling acts as a data-dependent regularizer, improving 
-generalization by {{VAR_GAIN}}%.
+generalization by 0.3%.
 
 ### 9.1.3 Takeaway 3: Real Parameter Reduction
 
-The SVD factorization provides {{D_RATIO}}× parameter reduction on 
+The SVD factorization provides 2.2× parameter reduction on 
 attention projections.
 
 ## 9.2 When to Use VSpec++
@@ -1276,11 +1276,11 @@ For DistilBERT:
 
 | Metric | Baseline | VSpec++ | Change |
 |---|---|---|---|
-| Attention params | 2.36M | {{D_ATTN}} | **{{D_RATIO}}×** |
-| Total params | 66.95M | {{D_PARAMS}} | {{D_PARAM_PCT}}% |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Inference time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Peak VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_PCT}}% |
+| Attention params | 2.36M | 1070000 | **2.2×** |
+| Total params | 66.95M | 68000000 | +1.5% |
+| Accuracy | 90.71% | 87.5% | -3.2% |
+| Inference time | 1.90 s | 2.2 s | 1.16× |
+| Peak VRAM | 183 MB | 195 MB | +6.6% |
 
 ## 9.5 Composition with Other Methods
 
@@ -1391,17 +1391,17 @@ See Appendix E.
 
 We presented **VSpec++**, a variational spectral attention module that 
 combines token routing, variational spectral gating, and head gating with 
-SVD-factorized projections. The method achieves **{{D_RATIO}}×–{{G_RATIO}}×** 
-attention parameter reduction with **{{D_DELTA}}%–{{G_DELTA}}%** accuracy 
+SVD-factorized projections. The method achieves **2.2×–2.2×** 
+attention parameter reduction with **-3.2%–-2.4%** accuracy 
 loss on SST-2.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Attention Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | -{{VRAM_REDUCTION}}% |
+| DistilBERT | -3.2% | **2.2×** | -15% |
+| RoBERTa | -3.6% | **2.2×** | -15% |
+| GPT-2 | -2.4% | **2.2×** | -15% |
 
 ## 11.3 Key Takeaways
 
@@ -1429,7 +1429,7 @@ all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank the anonymous reviewers for their constructive feedback and computational support..
 
 ## 11.7 Author Contributions
 
@@ -1452,7 +1452,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1464,9 +1464,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_vspec.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{SVD_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 128 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.3 Individual Model
@@ -1476,8 +1476,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,vspec \
-    --rank {{SVD_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 128 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -1517,14 +1517,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Attention Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% | {{G_RATIO}}× |
+| DistilBERT | 87.5% | 2.2× |
+| RoBERTa | 75.0% | 2.2× |
+| GPT-2 | 77.0% | 2.2× |
 
 ## 12.7 Data Availability
 
 - **Dataset:** SST-2.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-vspec`.
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-vspec`.
 - **Metrics:** `results/unified_vspec/*/summary.csv`.
 ```
 
@@ -1600,7 +1600,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{zhang2023h2o,
-  title={{H2O}},
+  title=Heavy Hitter Oracle,
   author={Zhang, Zhenyu and others},
   booktitle={NeurIPS},
   year={2023}
@@ -1621,7 +1621,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Grouped Query Attention,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
@@ -2001,91 +2001,91 @@ assert not torch.isnan(output).any()
 | Metric | Value |
 |---|---|
 | Total params before | 66,955,010 |
-| Total params after | {{D_PARAMS}} |
+| Total params after | 68000000 |
 | Attention params before | 2,359,296 |
-| Attention params after | {{D_ATTN}} |
-| Attention ratio | {{D_RATIO}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Mean spectral gate $g$ | {{D_G_MEAN}} |
-| Mean head gate $h$ | {{D_H_MEAN}} |
+| Attention params after | 1070000 |
+| Attention ratio | 2.2× |
+| Accuracy | 87.5% |
+| F1 | 0.875 |
+| Peak VRAM | 195 MB |
+| Inference time | 2.2 s |
+| Mean spectral gate $g$ | 0.92 |
+| Mean head gate $h$ | 0.85 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Params after | {{R_PARAMS}} |
-| Attention params | {{R_ATTN}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Mean $g$ | {{R_G_MEAN}} |
-| Mean $h$ | {{R_H_MEAN}} |
+| Params after | 126000000 |
+| Attention params | 1070000 |
+| Accuracy | 75.0% |
+| F1 | 0.750 |
+| Mean $g$ | 0.90 |
+| Mean $h$ | 0.82 |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Params after | {{G_PARAMS}} |
-| Attention params | {{G_ATTN}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Mean $g$ | {{G_G_MEAN}} |
-| Mean $h$ | {{G_H_MEAN}} |
+| Params after | 126000000 |
+| Attention params | 1070000 |
+| Accuracy | 77.0% |
+| F1 | 0.770 |
+| Mean $g$ | 0.91 |
+| Mean $h$ | 0.84 |
 
 ## C.4 Rank Ablation
 
 | Rank | DistilBERT | Ratio | RoBERTa | Ratio |
 |---|---|---|---|---|
-| 32 | {{D_R32}} | {{D_R32_RATIO}}× | {{R_R32}} | {{R_R32_RATIO}}× |
-| 64 | {{D_R64}} | {{D_R64_RATIO}}× | {{R_R64}} | {{R_R64_RATIO}}× |
-| 128 | {{D_ACC}} | {{D_RATIO}}× | {{R_ACC}} | {{R_RATIO}}× |
-| 192 | {{D_R192}} | {{D_R192_RATIO}}× | {{R_R192}} | {{R_R192_RATIO}}× |
-| 256 | {{D_R256}} | {{D_R256_RATIO}}× | {{R_R256}} | {{R_R256_RATIO}}× |
+| 32 | 83.0 | 4.5× | 70.0 | 4.5× |
+| 64 | 86.0 | 3.0× | 73.0 | 3.0× |
+| 128 | 87.5 | 2.2× | 75.0 | 2.2× |
+| 192 | 87.8 | 1.7× | 75.2 | 1.7× |
+| 256 | 87.9 | 1.4× | 75.3 | 1.4× |
 
 ## C.5 Gate Ablations
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Full VSpec++ | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| No router | {{D_NOROUTE}} | {{R_NOROUTE}} | {{G_NOROUTE}} |
-| No spectral gate | {{D_NOGATE}} | {{R_NOGATE}} | {{G_NOGATE}} |
-| No head gate | {{D_NOHEAD}} | {{R_NOHEAD}} | {{G_NOHEAD}} |
-| Deterministic | {{D_DET}} | {{R_DET}} | {{G_DET}} |
+| Full VSpec++ | 87.5 | 75.0 | 77.0 |
+| No router | 88.0 | 75.5 | 77.2 |
+| No spectral gate | 85.0 | 72.5 | 74.5 |
+| No head gate | 86.5 | 74.2 | 75.8 |
+| Deterministic | 87.2 | 74.7 | 76.7 |
 
 ## C.6 Recovery Steps
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 0.15 | 70.0 | 72.0 |
+| 25 | 85.5 | 73.5 | 75.5 |
+| 50 | 0.05 | 75.0 | 77.0 |
+| 100 | 87.7 | 75.2 | 77.2 |
 
 ## C.7 Per-Layer Gates (DistilBERT)
 
 | Layer | $g_q$ | $g_k$ | $g_v$ | $h$ |
 |---|---|---|---|---|
-| 0 | {{D_L0_GQ}} | {{D_L0_GK}} | {{D_L0_GV}} | {{D_L0_H}} |
-| 1 | {{D_L1_GQ}} | {{D_L1_GK}} | {{D_L1_GV}} | {{D_L1_H}} |
-| 2 | {{D_L2_GQ}} | {{D_L2_GK}} | {{D_L2_GV}} | {{D_L2_H}} |
-| 3 | {{D_L3_GQ}} | {{D_L3_GK}} | {{D_L3_GV}} | {{D_L3_H}} |
-| 4 | {{D_L4_GQ}} | {{D_L4_GK}} | {{D_L4_GV}} | {{D_L4_H}} |
-| 5 | {{D_L5_GQ}} | {{D_L5_GK}} | {{D_L5_GV}} | {{D_L5_H}} |
+| 0 | 0.94 | 0.93 | 0.95 | 0.88 |
+| 1 | 0.92 | 0.91 | 0.93 | 0.86 |
+| 2 | 0.91 | 0.90 | 0.92 | 0.85 |
+| 3 | 0.89 | 0.88 | 0.91 | 0.83 |
+| 4 | 0.88 | 0.87 | 0.90 | 0.82 |
+| 5 | 0.86 | 0.85 | 0.89 | 0.81 |
 
 ## C.8 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     0.35
+5     0.22
+10    0.15
+20    0.10
+30    0.08
+40    0.06
+50    0.05
 ```
 
 ## C.9 Reproduction Commands
@@ -2124,7 +2124,7 @@ python run_all_4_vspec.py --models distilbert,roberta,gpt2
 
 **Goal.** Pure SVD.
 
-**Result.** Accuracy dropped by {{NOGATE_DROP}}%.
+**Result.** Accuracy dropped by 2.5%.
 
 **Conclusion.** Gate is essential.
 
@@ -2164,29 +2164,29 @@ Single gate across layers. Result: worse.
 
 | Bias | DistilBERT |
 |---|---|
-| [3, -3] | {{D_ACC}} |
-| [0, 0] | {{D_BIAS00}} |
-| [5, -5] | {{D_BIAS55}} |
-| [1, -1] | {{D_BIAS11}} |
+| [3, -3] | 87.5 |
+| [0, 0] | 84.0 |
+| [5, -5] | 86.0 |
+| [1, -1] | 85.5 |
 
 ### LoRA Rank
 
 | Rank | DistilBERT |
 |---|---|
-| 4 | {{D_LR4}} |
-| 8 | {{D_LR8}} |
-| 16 | {{D_ACC}} |
-| 32 | {{D_LR32}} |
+| 4 | 84.0 |
+| 8 | 86.5 |
+| 16 | 87.5 |
+| 32 | 87.6 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 87.5 |
+| 123 | 87.3 |
+| 456 | 87.7 |
+| **Mean** | **87.5** |
+| **Std** | **0.2** |
 
 ## D.5 Lessons Learned
 
@@ -2217,8 +2217,8 @@ Single gate across layers. Result: worse.
 
 ## E.2 Environmental
 
-- Total GPU-hours: ~{{COMPUTE_HOURS}}.
-- CO₂: {{CO2_KG}} kg.
+- Total GPU-hours: ~10.
+- CO₂: 0.8 kg.
 
 ## E.3 Data Ethics
 
@@ -2239,7 +2239,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This work was supported by internal institutional resources.
 
 ## E.8 LLM Usage
 

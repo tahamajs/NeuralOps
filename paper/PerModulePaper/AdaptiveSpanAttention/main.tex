@@ -85,7 +85,7 @@ on the total span encourages the model to shrink windows when they are not
 needed, achieving automatic context pruning.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At initialization 
-span $S_\text{max} = {{MAX_SPAN}}$, learned spans converge to 
+span $S_\text{max} = 128$, learned spans converge to 
 \textbf{{{D\_SPAN}}} on DistilBERT ({{D\_SPAN\_REDUCTION}}\% reduction from max), 
 \textbf{{{R\_SPAN}}} on RoBERTa, and \textbf{{{G\_SPAN}}} on GPT-2. Accuracy drops by 
 only \textbf{{{D\_DELTA}}\%}, \textbf{{{R\_DELTA}}\%}, and \textbf{{{G\_DELTA}}\%} respectively. 

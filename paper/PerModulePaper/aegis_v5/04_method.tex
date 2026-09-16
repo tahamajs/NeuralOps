@@ -47,21 +47,18 @@ Given a weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 
 \begin{enumerate}
 \item Compute the SVD:
-  $$
-  W = U \Sigma V\^{}\top
-  \tag{4.1}
-  $$
+  \begin{equation}
+W = U \Sigma V\^{}\top
+\end{equation}
 \item Select energy-based rank:
-  $$
-  r\^{}* = \min \left\{ r : \frac{\sum\_{i \leq r} \sigma\_i\^{}2}{\sum\_i \sigma\_i\^{}2} \geq \eta \right\}
-  \tag{4.2}
-  $$
+  \begin{equation}
+r\^{}* = \min \left\{ r : \frac{\sum\_{i \leq r} \sigma\_i\^{}2}{\sum\_i \sigma\_i\^{}2} \geq \eta \right\}
+\end{equation}
 \item Factor into $W \approx U_r V_r$ where:
-  $$
-  U\_r = U\_{:, :r} \Sigma\_{:r, :r}\^{}{1/2}, \quad
+  \begin{equation}
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}\^{}{1/2}, \quad
   V\_r = \Sigma\_{:r, :r}\^{}{1/2} V\_{:r, :}\^{}\top
-  \tag{4.3}
-  $$
+\end{equation}
 
 \end{enumerate}
 \subsubsection{Parameter Reduction}
@@ -101,10 +98,9 @@ For meaningful compression, we need $r < d/2$.
 
 We freeze $(U_r, V_r)$ and add LoRA adapters:
 
-\[
+\begin{equation}
 y = U_r V_r x + \frac{\alpha}{r_L} B A x
-\tag{4.4}
-\]
+\end{equation}
 
 Only $A, B$ are trained.
 
@@ -118,11 +114,10 @@ correctness.
 
 We split $H$ heads:
 
-\[
+\begin{equation}
 H_\text{local} = \lceil 2H/3 \rceil, \quad
 H_\text{global} = H - H_\text{local}
-\tag{4.5}
-\]
+\end{equation}
 
 For $H = 12$:
 \begin{itemize}
@@ -134,10 +129,9 @@ For $H = 12$:
 
 Heads $0 \ldots H_\text{local} - 1$ use sliding window attention:
 
-\[
+\begin{equation}
 \text{Out}_\text{local}[i] = \text{softpick}\!\left(\frac{q_i K_\text{local}^\top}{\sqrt{d_h}}\right) \cdot V_\text{local}
-\tag{4.6}
-\]
+\end{equation}
 
 with a window mask $|i - j| \leq W/2$.
 
@@ -145,10 +139,9 @@ with a window mask $|i - j| \leq W/2$.
 
 Heads $H_\text{local} \ldots H - 1$ use kernel linear attention:
 
-\[
+\begin{equation}
 \text{Out}_\text{global}[i] = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
-\tag{4.7}
-\]
+\end{equation}
 
 with RFF feature map $\phi(x) = \exp(W_\text{rff} x) / \sqrt{F}$.
 
@@ -156,10 +149,9 @@ with RFF feature map $\phi(x) = \exp(W_\text{rff} x) / \sqrt{F}$.
 
 The outputs are concatenated:
 
-\[
+\begin{equation}
 \text{Out} = \text{Concat}(\text{Out}_\text{local}, \text{Out}_\text{global}) \in \mathbb{R}^{B \times H \times L \times d_h}
-\tag{4.8}
-\]
+\end{equation}
 
 \subsection{Adaptive Gating}
 
@@ -167,10 +159,9 @@ The outputs are concatenated:
 
 Each head has a learnable scalar $g_h$:
 
-\[
+\begin{equation}
 \text{Out}_\text{fused}[i] = \sigma(g_h + 2.0) \cdot \text{Out}_\text{local}[i] + (1 - \sigma(g_h + 2.0)) \cdot \text{Out}_\text{global}[i]
-\tag{4.9}
-\]
+\end{equation}
 
 where $g_h$ is initialized to 0 (so $\sigma(2.0) \approx 0.88$).
 
@@ -192,10 +183,9 @@ For decoder models, the local+global split \textbf{does not preserve causality}:
 whole sequence, making the split redundant. We fall back to standard dense 
 causal attention:
 
-\[
+\begin{equation}
 \text{if } \text{is\_decoder} : \text{standard causal softmax}
-\tag{4.10}
-\]
+\end{equation}
 
 This preserves correctness at the cost of quadratic complexity for decoders.
 
@@ -296,10 +286,9 @@ For $d = 768$, $r = 128$:
 
 If $W = U\Sigma V^\top$, then:
 
-\[
+\begin{equation}
 \|W - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
-\tag{4.11}
-\]
+\end{equation}
 
 The energy-based rank ensures this is below $\sqrt{1 - \eta} \|W\|_F$.
 
@@ -307,10 +296,9 @@ The energy-based rank ensures this is below $\sqrt{1 - \eta} \|W\|_F$.
 
 Standard RFF bound (Rahimi \& Recht, 2007):
 
-\[
+\begin{equation}
 \sup_{x, y} |\phi(x)^\top \phi(y) - e^{x \cdot y}| \leq \epsilon
-\tag{4.12}
-\]
+\end{equation}
 
 with $F = \mathcal{O}(d_h \log(1/\epsilon^2))$.
 

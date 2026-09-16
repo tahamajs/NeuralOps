@@ -1,10 +1,8 @@
 {
   "_comment": "Fill with real values from compressed_mha runs.",
-
   "MODULE_NAME": "Compressed MHA",
   "FULL_NAME": "Compressed Multi-Head Attention",
   "SUBTITLE": "Joint Truncated SVD for Multi-Architecture Attention Compression",
-
   "AUTHOR_1_NAME": "Your Name",
   "AUTHOR_1_EMAIL": "you@university.edu",
   "AUTHOR_2_NAME": "Advisor Name",
@@ -19,7 +17,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "RANK_QKV": "64",
   "RANK_OUT": "64",
   "LORA_RANK": "16",
@@ -29,7 +26,6 @@
   "LR": "2e-4",
   "WD": "1e-2",
   "SEED": "42",
-
   "D_ACC": "89.5",
   "D_DELTA": "-1.2",
   "D_F1": "0.895",
@@ -48,7 +44,6 @@
   "D_VRAM_PCT": "-18",
   "D_VRAM_DEC": "18",
   "D_NOTE": "Joint QKV + LoRA",
-
   "R_ACC": "76.5",
   "R_DELTA": "-2.1",
   "R_F1": "0.765",
@@ -63,7 +58,6 @@
   "R_TPS": "25000",
   "R_PARAM_PCT": "-23.8",
   "R_NOTE": "Joint QKV + LoRA",
-
   "G_ACC": "78.0",
   "G_DELTA": "-1.4",
   "G_F1": "0.780",
@@ -78,11 +72,9 @@
   "G_TPS": "24500",
   "G_PARAM_PCT": "-23.6",
   "G_NOTE": "Joint QKV + LoRA",
-
   "BASE_D": "90.71",
   "BASE_R": "78.56",
   "BASE_G": "79.36",
-
   "D_R32": "82.0",
   "D_R64": "89.5",
   "D_R128": "90.0",
@@ -98,13 +90,11 @@
   "G_R128": "78.8",
   "G_R256": "79.0",
   "G_R384": "79.2",
-
   "D_RATIO32": "4.5",
   "D_RATIO64": "1.38",
   "D_RATIO128": "1.10",
   "D_RATIO256": "1.03",
   "D_RATIO384": "1.00",
-
   "D_WQ_A": "98304",
   "D_WQ_R": "6.0",
   "D_WK_A": "98304",
@@ -115,7 +105,6 @@
   "D_WO_R": "6.0",
   "D_LAYER_TOTAL": "467072",
   "D_LAYER_R": "5.05",
-
   "D_INDEP": "89.0",
   "R_INDEP": "76.0",
   "G_INDEP": "77.5",
@@ -124,7 +113,6 @@
   "D_JOINT": "89.5",
   "R_JOINT": "76.5",
   "G_JOINT": "78.0",
-
   "D_NOLORA": "85.0",
   "R_NOLORA": "72.0",
   "G_NOLORA": "74.0",
@@ -138,13 +126,8 @@
   "R_LORA64": "76.9",
   "G_LORA64": "78.3",
   "NOLORA_DROP": "4.5",
-
   "D_LORA4": "87.5",
   "D_LORA8": "88.5",
-  "D_LORA16": "89.5",
-  "D_LORA32": "89.8",
-  "D_LORA64": "89.9",
-
   "D_S10": "85.0",
   "D_S25": "88.0",
   "D_S50": "89.5",
@@ -157,17 +140,11 @@
   "G_S25": "76.0",
   "G_S50": "78.0",
   "G_S100": "78.3",
-
   "D_R8": "65.0",
   "D_R16": "75.0",
-  "D_R32": "82.0",
-  "D_R64": "89.5",
-  "D_R128": "90.0",
   "R8_ACC": "65.0",
-
   "D_WRONG": "50.92",
   "R_WRONG": "50.92",
-
   "D_L0_QKV_R": "384",
   "D_L0_O_R": "384",
   "D_L0_QKV_E": "0.15",
@@ -192,7 +169,6 @@
   "D_L5_O_R": "384",
   "D_L5_QKV_E": "0.14",
   "D_L5_O_E": "0.13",
-
   "D_REC_Q": "0.14",
   "D_REC_K": "0.15",
   "D_REC_V": "0.14",
@@ -205,17 +181,14 @@
   "G_REC_K": "0.16",
   "G_REC_V": "0.15",
   "G_REC_O": "0.14",
-
   "JOINT_ENERGY": "94",
   "INDEP_ENERGY": "92",
   "JOINT_GAIN": "4.5",
-
   "MAX_ERROR": "0.20",
   "FAIL_LAYER": "None",
   "FAIL_MODEL": "None",
   "FAIL_ERR": "N/A",
   "FAIL_ACTION": "N/A",
-
   "A3_D": "88.5",
   "A3_D_R": "5.0",
   "A3_R": "75.5",
@@ -224,20 +197,14 @@
   "AASVD_D_R": "4.8",
   "AASVD_R": "75.0",
   "AASVD_R_R": "4.3",
-
   "LIN_ACC": "87.5",
   "A3_ACC": "88.5",
   "AASVD_ACC": "88.0",
-
   "COMPUTE_HOURS": "10",
   "CO2_KG": "0.7",
   "RUNTIME": "12",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
   "DATASETS_VERSION": "2.20.0"
 }
-```
-
----

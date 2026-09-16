@@ -10,7 +10,7 @@
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Landmarks $m$ & {{RANK}} \\
+Landmarks $m$ & 64 \\
 Pinv iters $K$ & {{PINV\_ITERS}} \\
 Accuracy & {{D\_ACC}}\% \\
 F1 & {{D\_F1}} \\
@@ -132,27 +132,27 @@ Peak VRAM & {{G\_VRAM}} MB \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     73.5
+5     79.6
+10    82.0
 ...
-50    {{D_S50}}
+50    86.5
 \end{lstlisting}
 
 \subsubsection{RoBERTa}
 \begin{lstlisting}
 Step  Loss
-1     {{R_S1}}
+1     62.9
 ...
-50    {{R_S50}}
+50    74.0
 \end{lstlisting}
 
 \subsubsection{GPT-2}
 \begin{lstlisting}
 Step  Loss
-1     {{G_S1}}
+1     63.8
 ...
-50    {{G_S50}}
+50    75.0
 \end{lstlisting}
 
 \subsection{C.9 Raw JSON}
@@ -161,12 +161,12 @@ Step  Loss
 {
   "primal": {
     "distilbert": {
-      "num_landmarks": {{RANK}},
-      "pinv_iters": {{PINV_ITERS}},
-      "accuracy_pct": {{D_ACC}},
-      "attention_mem_bytes": {{D_ATTN_MEM_BYTES}},
-      "peak_vram_mb": {{D_VRAM}},
-      "inference_time_s": {{D_TIME}}
+      "num_landmarks": 64,
+      "pinv_iters": 4,
+      "accuracy_pct": 86.5,
+      "attention_mem_bytes": 12288,
+      "peak_vram_mb": 160,
+      "inference_time_s": 2.5
     },
     "roberta": {...},
     "gpt2": {...}

@@ -81,7 +81,7 @@ after computing the top-$k$-th score $\tau_h$, we apply a soft mask
 $\sigma((s_i - \tau_h) / T)$ that concentrates mass on the retained entries.
 
 We evaluate ASA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At default 
-sparsity {{SPARSITY}} on decoders and {{SPARSITY\_ENC}} on encoders, ASA 
+sparsity 0.5 on decoders and {{SPARSITY\_ENC}} on encoders, ASA 
 achieves \textbf{{{D\_ACC}}\%}, \textbf{{{R\_ACC}}\%}, and \textbf{{{G\_ACC}}\%} accuracy, within 
 \textbf{{{D\_DELTA}}\%}, \textbf{{{R\_DELTA}}\%}, and \textbf{{{G\_DELTA}}\%} of the respective 
 dense baselines. Attention FLOPs are reduced by up to \textbf{{{FLOP\_REDUCTION}}$\times$}. 

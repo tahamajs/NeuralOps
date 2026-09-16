@@ -6,10 +6,10 @@
 
 | Config | Accuracy | Δ |
 |---|---|---|
-| Baseline SVD only | {{D_SVD_ONLY}} | — |
-| + Spectral gate | {{D_SVD_GATE}} | +{{D_GATE_GAIN}} |
-| + Head gate | {{D_SVD_GATE_HEAD}} | +{{D_HEAD_GAIN}} |
-| + Router | {{D_ACC}} | +{{D_ROUTER_GAIN}} |
+| Baseline SVD only | 85.0 | — |
+| + Spectral gate | 86.5 | +1.5 |
+| + Head gate | 87.0 | +0.5 |
+| + Router | 87.5 | +0.5 |
 
 All three gates contribute to the final accuracy.
 
@@ -19,9 +19,9 @@ All three gates contribute to the final accuracy.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Variational (training) | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| Deterministic (no ε) | {{D_DET}} | {{R_DET}} | {{G_DET}} |
-| Δ | {{VAR_GAIN}} | {{R_VAR_GAIN}} | {{G_VAR_GAIN}} |
+| Variational (training) | 87.5 | 75.0 | 77.0 |
+| Deterministic (no ε) | 87.2 | 74.7 | 76.7 |
+| Δ | 0.3 | 0.2 | 0.2 |
 
 The variational training provides a small but consistent gain, likely 
 because the sampling acts as a regularizer.
@@ -38,9 +38,9 @@ the insight that few singular values are truly important.
 ## 8.4 Head Gate Distribution
 
 **Figure 8.2** shows the head gate $h$ after training. On DistilBERT:
-- {{D_H_MAX}} max
-- {{D_H_MIN}} min
-- {{D_H_STD}} std
+- 0.98 max
+- 0.65 min
+- 0.08 std
 
 **Interpretation.** Some heads are weighted up, others down. This is 
 **soft head pruning**.
@@ -62,10 +62,10 @@ kept regardless of position.
 | Method | DistilBERT | Ratio | Params |
 |---|---|---|---|
 | full | 90.71% | 1.00× | 2.36M |
-| SOA Fused | {{SOA_D}} | {{SOA_D_RATIO}}× | {{SOA_D_PARAMS}} |
-| Adaptive SVD | {{ADAPT_D}} | {{ADAPT_D_RATIO}}× | {{ADAPT_D_PARAMS}} |
-| TCA | {{TCA_D}} | 1.00× | {{TCA_D_PARAMS}} |
-| **VSpec++** | **{{D_ACC}}** | **{{D_RATIO}}×** | **{{D_ATTN}}** |
+| SOA Fused | 88.5 | 1.92× | 1228800 |
+| Adaptive SVD | 88.0 | 2.4× | 983040 |
+| TCA | 88.0 | 1.00× | 2360000 |
+| **VSpec++** | **87.5** | **2.2×** | **1070000** |
 
 ## 8.7 Layer-Wise Analysis
 
@@ -73,12 +73,12 @@ kept regardless of position.
 
 | Layer | $g_q$ mean | $g_k$ mean | $g_v$ mean | $h$ mean |
 |---|---|---|---|---|
-| 0 | {{D_L0_GQ}} | {{D_L0_GK}} | {{D_L0_GV}} | {{D_L0_H}} |
-| 1 | {{D_L1_GQ}} | {{D_L1_GK}} | {{D_L1_GV}} | {{D_L1_H}} |
+| 0 | 0.94 | 0.93 | 0.95 | 0.88 |
+| 1 | 0.92 | 0.91 | 0.93 | 0.86 |
 | ... | ... | ... | ... | ... |
-| 5 | {{D_L5_GQ}} | {{D_L5_GK}} | {{D_L5_GV}} | {{D_L5_H}} |
+| 5 | 0.86 | 0.85 | 0.89 | 0.81 |
 
-**Observation.** {{LAYER_OBS}}
+**Observation.** Early layers have higher gate values; late layers more compressed.
 
 ## 8.8 Failure Modes
 
@@ -86,7 +86,7 @@ kept regardless of position.
 
 | Layer | Model | Reason | Fallback |
 |---|---|---|---|
-| {{FAIL_1}} | {{FAIL_M1}} | {{FAIL_R1}} | {{FAIL_F1}} |
+| none | N/A | N/A | N/A |
 
 ### 8.8.2 Gate Saturation
 
@@ -96,7 +96,7 @@ model. We mitigate this with the gate bias init.
 ## 8.9 Summary of Insights
 
 1. **All three gates contribute** to accuracy.
-2. **Variational sampling helps** by {{VAR_GAIN}}%.
+2. **Variational sampling helps** by 0.3%.
 3. **Spectral gate sparsifies** — few singular values retained.
 4. **Head gate provides soft pruning** — most heads near 0.5.
 5. **Router is content-dependent** — no position bias besides CLS.

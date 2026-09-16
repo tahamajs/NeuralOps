@@ -4,38 +4,33 @@
 
 \textbf{Claim.} If $r^* = \min\{r : E(r) \geq \tau\}$ where
 
-\[
+\begin{equation}
 E(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(m,n)} \sigma_j^2}
-\tag{A.1}
-\]
+\end{equation}
 
 then the relative Frobenius error satisfies:
 
-\[
+\begin{equation}
 \frac{\|W - W_{r^*}\|_F}{\|W\|_F} \leq \sqrt{1 - \tau}
-\tag{A.2}
-\]
+\end{equation}
 
 \textbf{Proof.} By Eckart-Young:
 
-\[
+\begin{equation}
 \|W - W_{r^*}\|_F^2 = \sum_{i > r^*} \sigma_i^2
-\tag{A.3}
-\]
+\end{equation}
 
 And:
 
-\[
+\begin{equation}
 \|W\|_F^2 = \sum_{i=1}^{\min(m,n)} \sigma_i^2
-\tag{A.4}
-\]
+\end{equation}
 
 So:
 
-\[
+\begin{equation}
 \frac{\|W - W_{r^*}\|_F^2}{\|W\|_F^2} = 1 - E(r^*) \leq 1 - \tau
-\tag{A.5}
-\]
+\end{equation}
 
 Taking square roots gives (A.2). $\square$
 
@@ -43,10 +38,9 @@ Taking square roots gives (A.2). $\square$
 
 \textbf{Claim.} For any $\Sigma_r \succ 0$, the following are equal:
 
-\[
+\begin{equation}
 U_r \Sigma_r V_r^\top = (U_r \Sigma_r^{1/2})(\Sigma_r^{1/2} V_r^\top)
-\tag{A.6}
-\]
+\end{equation}
 
 \textbf{Proof.} Trivial by associativity. $\square$
 
@@ -58,46 +52,40 @@ underflow risk.
 
 For a projection $W \in \mathbb{R}^{d \times d}$:
 
-\[
+\begin{equation}
 \text{Baseline} = d^2
-\tag{A.7}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{Factorized} = 2 d r^* + 2 d r_a
-\tag{A.8}
-\]
+\end{equation}
 
 Ratio:
 
-\[
+\begin{equation}
 \frac{\text{Baseline}}{\text{Factorized}} = \frac{d^2}{2 d (r^* + r_a)} = \frac{d}{2(r^* + r_a)}
-\tag{A.9}
-\]
+\end{equation}
 
 For $d = 768$, $r^* = 128$, $r_a = 16$:
 
-\[
+\begin{equation}
 \frac{768}{2 \cdot 144} = 2.67
-\tag{A.10}
-\]
+\end{equation}
 
 \subsection{A.4 Residual Adapter Recovery}
 
 The effective weight is:
 
-\[
+\begin{equation}
 W_\text{eff} = U_r V_r + B A
-\tag{A.11}
-\]
+\end{equation}
 
 We want $W_\text{eff} \approx W$. The SVD part captures $W_{r^*}$; the 
 adapter captures the residual $W - W_{r^*}$:
 
-\[
+\begin{equation}
 W - W_\text{eff} = (W - W_{r^*}) - B A
-\tag{A.12}
-\]
+\end{equation}
 
 The adapter rank $r_a$ should be large enough to represent this residual.
 
@@ -105,17 +93,15 @@ The adapter rank $r_a$ should be large enough to represent this residual.
 
 For GQA with $H_{kv} < H$:
 
-\[
+\begin{equation}
 \text{K projection output} = H_{kv} \cdot d_h
-\tag{A.13}
-\]
+\end{equation}
 
 Factorized K:
 
-\[
+\begin{equation}
 \text{K params} = 2 d r^* + 2 r_a (H_{kv} d_h)
-\tag{A.14}
-\]
+\end{equation}
 
 Since $H_{kv} d_h < d$, this gives additional savings.
 
@@ -123,10 +109,9 @@ Since $H_{kv} d_h < d$, this gives additional savings.
 
 T5 adds a relative position bias to attention scores:
 
-\[
+\begin{equation}
 \text{scores}_{ij} \leftarrow \text{scores}_{ij} + b_{\text{bucket}(i, j)}
-\tag{A.15}
-\]
+\end{equation}
 
 The bias is parameterized by an embedding of shape $(num\_buckets, num\_heads)$ 
 and is \textbf{not modified} by our factorization.
@@ -135,10 +120,9 @@ and is \textbf{not modified} by our factorization.
 
 For causal attention, we mask scores at positions $j > i$:
 
-\[
+\begin{equation}
 \text{mask}_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j > i \end{cases}
-\tag{A.16}
-\]
+\end{equation}
 
 The factorization does not affect causality because it only modifies the 
 projection weights.

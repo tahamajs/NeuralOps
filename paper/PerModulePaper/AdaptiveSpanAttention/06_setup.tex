@@ -51,7 +51,7 @@ Majority baseline: 50.92\%. Sequence length: 128.
 Max span $S_\text{max}$ & {{MAX\_SPAN}} \\
 Ramp size $R$ & {{RAMP\_SIZE}} \\
 Initial logit & 4.0 \\
-L1 span penalty $\lambda$ & {{LAMBDA}} \\
+L1 span penalty $\lambda$ & 0.01 \\
 LoRA rank & {{LORA\_RANK}} \\
 LoRA alpha & {{LORA\_ALPHA}} \\
 \bottomrule
@@ -68,8 +68,8 @@ LoRA alpha & {{LORA\_ALPHA}} \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-Weight decay & {{WD}} \\
+LR & 2e-4 \\
+Weight decay & 1e-2 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -135,9 +135,9 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_adaptive_span.py \
     --models distilbert,roberta,gpt2 \
-    --max_span {{MAX_SPAN}} \
-    --ramp_size {{RAMP_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --max_span 128 \
+    --ramp_size 32 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Ablations}

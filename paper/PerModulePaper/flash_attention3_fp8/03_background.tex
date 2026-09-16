@@ -103,7 +103,22 @@ detect this and fall back.
 
 \subsection{Notation Summary}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$B$ & Batch size \\
+$L$ & Sequence length \\
+$d$ & Head dimension \\
+$H$ & Query head count \\
+$H_{kv}$ & KV head count \\
+$r$ & LoRA rank \\
+$S$ & SRAM block size \\
+$f_{p8}$ & FP8 format (e4m3 or e5m2) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

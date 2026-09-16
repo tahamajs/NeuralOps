@@ -65,8 +65,8 @@ Majority baseline: 50.92\%. Max sequence length: 128.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-Weight decay & {{WD}} \\
+LR & 2e-4 \\
+Weight decay & 1e-2 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -134,10 +134,10 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_compressed_mha.py \
     --models distilbert,roberta,gpt2 \
-    --rank_qkv {{RANK_QKV}} \
-    --rank_out {{RANK_OUT}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank_qkv 64 \
+    --rank_out 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -159,7 +159,7 @@ python run_all_4_compressed_mha.py \
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 \begin{lstlisting}
 
 ---

@@ -62,8 +62,8 @@ Majority baseline: 50.92\%. Max length: 128.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-WD & {{WD}} \\
+LR & 2e-4 \\
+WD & 1e-2 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -129,8 +129,8 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_decay_linear.py \
     --models distilbert,roberta,gpt2 \
-    --chunk_size {{CHUNK_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --chunk_size 32 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -154,5 +154,5 @@ Performer & Pure linear \\
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}).
+Single seed (42).
 

@@ -18,8 +18,8 @@ stream for potential long-context benefit.
 \textbf{Figure 8.2} shows the gate distribution after training:
 
 \begin{itemize}
-\item Initial: $g \approx {{GATE_INIT}}$ (dense-dominant).
-\item Final mean: $g \approx {{D_GATE_MEAN}}$.
+\item Initial: $g \approx 0.993$ (dense-dominant).
+\item Final mean: $g \approx 0.92$.
 
 \end{itemize}
 The gate drifts slightly \textbf{toward} dense at layer 0 and mid-layers. This 
@@ -72,10 +72,9 @@ ELU+1.
 
 For causal linear attention, we compute:
 
-\[
+\begin{equation}
 S_t = \text{cumsum}(\phi(\hat{K}_j)^\top V_j)
-\tag{8.1}
-\]
+\end{equation}
 
 \textbf{Intermediate tensor size:} $B \times H \times L \times 2F \times d_h$.
 

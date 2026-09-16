@@ -212,10 +212,10 @@ V4 (broken softpick) & {{D\_V4}} & {{R\_V4}} & {{G\_V4}} \\
 \toprule
 \textbf{L} & \textbf{Standard (enc)} & \textbf{AEGIS-V5 (enc)} & \textbf{Speedup} \\
 \midrule
-128 & {{T128\_STD}} & {{T128\_AEG}} & {{S128}}$\times$ \\
-256 & {{T256\_STD}} & {{T256\_AEG}} & {{S256}}$\times$ \\
-512 & {{T512\_STD}} & {{T512\_AEG}} & {{S512}}$\times$ \\
-1024 & {{T1024\_STD}} & {{T1024\_AEG}} & {{S1024}}$\times$ \\
+128 & {{T128\_STD}} & {{T128\_AEG}} & 0.86$\times$ \\
+256 & {{T256\_STD}} & {{T256\_AEG}} & 1.09$\times$ \\
+512 & {{T512\_STD}} & {{T512\_AEG}} & 1.58$\times$ \\
+1024 & {{T1024\_STD}} & {{T1024\_AEG}} & 2.67$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -224,7 +224,7 @@ V4 (broken softpick) & {{D\_V4}} & {{R\_V4}} & {{G\_V4}} \\
 
 \begin{itemize}
 \item With \texttt{max\_rank=384}, no parameter reduction (baseline-equivalent).
-\item With \texttt{max\_rank=128}, ~{{COMPRESSION}}$\times$ compression.
+\item With \texttt{max\_rank=128}, ~1.5$\times$ compression.
 \item Decoder fallback preserves accuracy but not complexity.
 \end{itemize}
 \begin{lstlisting}

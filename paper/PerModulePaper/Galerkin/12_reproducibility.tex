@@ -4,7 +4,7 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate
@@ -16,9 +16,9 @@ pip install -r requirements.txt
 \begin{lstlisting}
 python run_all_4_galerkin.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
@@ -28,7 +28,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-galerkin",
+        repo_id=f"Hooshaai/svd-linear-attention-{model}-galerkin",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -110,8 +110,5 @@ print(f"Orthonormality error: {err}")  # Should be < 1e-5
 \begin{itemize}
 \item Windows: \texttt{cp1256} codec issues; set \texttt{PYTHONIOENCODING=utf-8}.
 \item FP16 basis QR occasionally produces NaN; use FP32 if issues arise.
-\end{itemize}
-\begin{lstlisting}
 
----
-\end{lstlisting}
+\end{itemize}

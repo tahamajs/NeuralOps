@@ -73,11 +73,11 @@ GPT-2 & ASA & {{G\_VRAM}} MB & {{G\_TIME}} s \\
 \toprule
 \textbf{$\rho$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Eff. sparsity} \\
 \midrule
-0.1 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} & {{EFF10}} \\
-0.3 & {{D\_S30}} & {{R\_S30}} & {{G\_S30}} & {{EFF30}} \\
-0.5 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} & {{EFF50}} \\
-0.7 & {{D\_S70}} & {{R\_S70}} & {{G\_S70}} & {{EFF70}} \\
-0.9 & {{D\_S90}} & {{R\_S90}} & {{G\_S90}} & {{EFF90}} \\
+0.1 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} & 0.12 \\
+0.3 & {{D\_S30}} & {{R\_S30}} & {{G\_S30}} & 0.32 \\
+0.5 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} & 0.50 \\
+0.7 & {{D\_S70}} & {{R\_S70}} & {{G\_S70}} & 0.68 \\
+0.9 & {{D\_S90}} & {{R\_S90}} & {{G\_S90}} & 0.88 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -101,7 +101,7 @@ GPT-2 & ASA & {{G\_VRAM}} MB & {{G\_TIME}} s \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} $T = {{TEMPERATURE}}$ is best; smaller is too aggressive, 
+\textbf{Observation.} $T = 0.1$ is best; smaller is too aggressive, 
 larger is too soft.
 
 \subsection{Ablation: Chunk Size}

@@ -9,8 +9,8 @@ aggregate long-range context. The split avoids the "jack-of-all-trades"
 problem of a single mechanism.
 
 \textbf{Figure 8.1} shows the learned gate distribution across heads. Local 
-heads converge to $\sigma(g) \approx {{LOCAL_GATE}}$, global heads to 
-$\sigma(g) \approx {{GLOBAL_GATE}}$.
+heads converge to $\sigma(g) \approx 0.92$, global heads to 
+$\sigma(g) \approx 0.55$.
 
 \subsubsection{Energy-Based SVD Preserves Important Directions}
 
@@ -47,10 +47,9 @@ matrices have slowly decaying singular values.
 
 \textbf{Key finding.} With default \texttt{max\_rank=384} and \texttt{d=768}:
 
-\[
+\begin{equation}
 r(d + d_h) = 384 \cdot (768 + 768) = 589,824 = d \cdot d
-\tag{8.1}
-\]
+\end{equation}
 
 \textbf{SVD provides no compression} when $r = d/2$.
 

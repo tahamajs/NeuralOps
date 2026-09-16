@@ -80,7 +80,7 @@ that converges in a few steps and is differentiable.
 Primal Attention selects landmarks via \textbf{segment pooling} over contiguous chunks 
 of the sequence, providing a uniform but content-agnostic summary of the 
 attention input. We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 
-with landmark count $m = {{RANK}}$. Primal Attention achieves 
+with landmark count $m = 64$. Primal Attention achieves 
 \textbf{{{D\_ACC}}\%}, \textbf{{{R\_ACC}}\%}, and \textbf{{{G\_ACC}}\%} accuracy respectively, 
 at the cost of \textbf{{{D\_TIME\_RATIO}}$\times$} inference latency. The attention matrix 
 memory is reduced by \textbf{{{MEM\_REDUCTION}}$\times$}. We provide a production-hardened 

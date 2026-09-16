@@ -167,11 +167,11 @@ Fixed & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     1.2
+5     0.7
+10    0.5
 ...
-50    {{D_S50}}
+50    0.35
 \end{lstlisting}
 
 \subsection{C.11 Raw JSON}
@@ -180,11 +180,11 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "avg_rank": {{D_AVG_RANK}},
-    "avg_reconstruction_error": {{D_AVG_ERR}}
+    "params_after": 12165730,
+    "ratio": 5.5,
+    "accuracy_pct": 88.5,
+    "avg_rank": 58,
+    "avg_reconstruction_error": 0.12
   },
   "roberta": {...},
   "gpt2": {...}

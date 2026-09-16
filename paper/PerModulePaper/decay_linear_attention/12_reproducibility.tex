@@ -3,7 +3,7 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -31,8 +31,8 @@ datasets & {{DATASETS\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_decay_linear.py \
     --models distilbert,roberta,gpt2 \
-    --chunk_size {{CHUNK_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --chunk_size 32 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Individual Model}
@@ -42,8 +42,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,decay_linear \
-    --chunk_size {{CHUNK_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --chunk_size 32 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}

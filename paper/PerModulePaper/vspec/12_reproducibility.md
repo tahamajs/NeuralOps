@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -15,9 +15,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_vspec.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{SVD_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 128 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.3 Individual Model
@@ -27,8 +27,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,vspec \
-    --rank {{SVD_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 128 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -68,14 +68,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Attention Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% | {{G_RATIO}}× |
+| DistilBERT | 87.5% | 2.2× |
+| RoBERTa | 75.0% | 2.2× |
+| GPT-2 | 77.0% | 2.2× |
 
 ## 12.7 Data Availability
 
 - **Dataset:** SST-2.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-vspec`.
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-vspec`.
 - **Metrics:** `results/unified_vspec/*/summary.csv`.
 
 ---

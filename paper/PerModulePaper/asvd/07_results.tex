@@ -171,7 +171,7 @@ GPT-2 & ASVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 \textbf{Mode} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
 Dynamic ($\varepsilon$={{ENERGY\_THRESHOLD}}) & {{D\_DYN}} & {{R\_DYN}} & {{G\_DYN}} \\
-Fixed (r={{RANK}}) & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
+Fixed (r=64) & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -206,10 +206,10 @@ Fixed (r={{RANK}}) & {{D\_FIXED}} & {{R\_FIXED}} & {{G\_FIXED}} \\
 \toprule
 \textbf{$\tau$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Success rate} \\
 \midrule
-0.05 & {{D\_T05}} & {{R\_T05}} & {{G\_T05}} & {{S05}}\% \\
-0.10 & {{D\_T10}} & {{R\_T10}} & {{G\_T10}} & {{S10}}\% \\
-0.20 & {{D\_T20}} & {{R\_T20}} & {{G\_T20}} & {{S20}}\% \\
-0.30 & {{D\_T30}} & {{R\_T30}} & {{G\_T30}} & {{S30}}\% \\
+0.05 & {{D\_T05}} & {{R\_T05}} & {{G\_T05}} & 40\% \\
+0.10 & {{D\_T10}} & {{R\_T10}} & {{G\_T10}} & 75\% \\
+0.20 & {{D\_T20}} & {{R\_T20}} & {{G\_T20}} & 100\% \\
+0.30 & {{D\_T30}} & {{R\_T30}} & {{G\_T30}} & 100\% \\
 \bottomrule
 \end{tabular}
 \end{table}

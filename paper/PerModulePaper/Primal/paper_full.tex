@@ -149,10 +149,9 @@ cleanly with existing pretrained models.
 The softmax attention mechanism (Vaswani et al., 2017) scales quadratically 
 with sequence length $L$:
 
-\[
+\begin{equation}
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
-\tag{1.1}
-\]
+\end{equation}
 
 producing an $L \times L$ attention matrix that requires $\mathcal{O}(L^2)$ 
 memory and time. For a sequence of 4096 tokens at 12 heads, the attention 
@@ -163,10 +162,9 @@ footprint.
 onto $m \ll L$ landmarks. The Nyström method (Williams \& Seeger, 2001) does 
 this by:
 
-\[
+\begin{equation}
 K \approx \tilde{K} = C W^{-1} C^\top
-\tag{1.2}
-\]
+\end{equation}
 
 where $C \in \mathbb{R}^{L \times m}$ is the query-landmark kernel and 
 $W \in \mathbb{R}^{m \times m}$ is the landmark-landmark kernel. The 
@@ -183,10 +181,9 @@ Given query $Q \in \mathbb{R}^{L \times d}$, key $K \in \mathbb{R}^{L \times d}$
 and value $V \in \mathbb{R}^{L \times d}$, we seek a low-rank approximation 
 of the attention output:
 
-\[
+\begin{equation}
 \text{Attn}(Q, K, V) \approx \text{Attn}_\text{low-rank}(Q, K, V)
-\tag{1.3}
-\]
+\end{equation}
 
 such that:
 
@@ -201,10 +198,9 @@ such that:
 We propose \textbf{Primal Attention}, which decomposes the attention matrix 
 asymmetrically:
 
-\[
+\begin{equation}
 A \approx F_1 F_2^{-1} F_3
-\tag{1.4}
-\]
+\end{equation}
 
 where:
 
@@ -222,10 +218,9 @@ This is the \textbf{primal representation} of the asymmetric kernel (in contrast
 to the dual representation which uses $L \times L$ kernels). The pseudoinverse 
 $F_2^{-1}$ is computed via \textbf{Schulz iteration}:
 
-\[
+\begin{equation}
 X_{t+1} = X_t (2I - F_2 X_t)
-\tag{1.5}
-\]
+\end{equation}
 
 which converges quadratically to $F_2^{-1}$ in a few steps and is differentiable.
 
@@ -383,15 +378,13 @@ approximation.
 
 For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
-\[
+\begin{equation}
 A = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) \in \mathbb{R}^{L \times L}
-\tag{3.1}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{Attn}(Q, K, V) = A V \in \mathbb{R}^{L \times d_h}
-\tag{3.2}
-\]
+\end{equation}
 
 \textbf{Complexity.} $A$ requires $\mathcal{O}(L^2)$ memory; the two matmuls 
 require $\mathcal{O}(L^2 d_h)$ time.
@@ -401,10 +394,9 @@ require $\mathcal{O}(L^2 d_h)$ time.
 For a symmetric PSD kernel matrix $K \in \mathbb{R}^{L \times L}$, the Nyström 
 method selects $m$ landmark rows/columns and approximates:
 
-\[
+\begin{equation}
 K \approx C W^{-1} C^\top
-\tag{3.3}
-\]
+\end{equation}
 
 where:
 
@@ -420,10 +412,9 @@ The approximation is exact when $K$ has rank $\le m$.
 \textbf{Application to attention.} With $K_\text{attn} = \text{softmax}(QK^\top / \sqrt{d_h})$, 
 the Nyströmform is:
 
-\[
+\begin{equation}
 A \approx \tilde{A} = \begin{pmatrix} A_{Q, L_m} \\ A_{L_m, L_m} \\ A_{L_m, Q} \end{pmatrix}
-\tag{3.4}
-\]
+\end{equation}
 
 where $L_m$ indexes $m$ landmarks.
 
@@ -458,10 +449,9 @@ the primal form with asymmetric factors.
 For a matrix $A \in \mathbb{R}^{m \times n}$, the Moore--Penrose pseudoinverse 
 $A^+ \in \mathbb{R}^{n \times m}$ satisfies:
 
-\[
+\begin{equation}
 A A^+ A = A, \qquad A^+ A A^+ = A^+, \qquad (A A^+)^\top = A A^+, \qquad (A^+ A)^\top = A^+ A
-\tag{3.5}
-\]
+\end{equation}
 
 \textbf{Computation.} For $A = U \Sigma V^\top$, $A^+ = V \Sigma^+ U^\top$ where 
 $\Sigma^+_{ii} = 1/\sigma_i$ if $\sigma_i > \epsilon$, else $0$.
@@ -470,19 +460,17 @@ $\Sigma^+_{ii} = 1/\sigma_i$ if $\sigma_i > \epsilon$, else $0$.
 
 Schulz (1933) proposed the iteration:
 
-\[
+\begin{equation}
 X_{t+1} = X_t (2I - A X_t)
-\tag{3.6}
-\]
+\end{equation}
 
 which converges to $A^{-1}$ \textbf{quadratically} if $\|I - A X_0\| < 1$.
 
 \textbf{Convergence.} Let $E_t = I - A X_t$. Then:
 
-\[
+\begin{equation}
 E_{t+1} = (I - A X_{t+1}) = (I - A X_t (2I - A X_t)) = E_t^2
-\tag{3.7}
-\]
+\end{equation}
 
 so $\|E_t\| \le \|E_0\|^{2^t}$, giving quadratic convergence.
 
@@ -493,10 +481,9 @@ so $\|E_t\| \le \|E_0\|^{2^t}$, giving quadratic convergence.
 
 LoRA (Hu et al., 2021) adds trainable low-rank adapters:
 
-\[
+\begin{equation}
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r_L} B A
-\tag{3.8}
-\]
+\end{equation}
 
 We use LoRA to recover quality after attention replacement.
 
@@ -513,10 +500,9 @@ We use LoRA to recover quality after attention replacement.
 Primal Attention approximates the $L \times L$ attention matrix via a 
 low-rank factorization through $m$ landmarks:
 
-\[
+\begin{equation}
 A \approx F_1 F_2^{-1} F_3
-\tag{4.1}
-\]
+\end{equation}
 
 where $F_1 \in \mathbb{R}^{L \times m}$, $F_2 \in \mathbb{R}^{m \times m}$, 
 $F_3 \in \mathbb{R}^{m \times L}$.
@@ -558,18 +544,16 @@ $F_3 \in \mathbb{R}^{m \times L}$.
 Given sequence length $L$ and target landmark count $m$, we divide the 
 sequence into $m$ equal segments of size $s = L / m$ and average each:
 
-\[
+\begin{equation}
 Q_\text{land}[i] = \frac{1}{s} \sum_{j = i s}^{(i+1) s - 1} Q[j], \qquad i = 0, \ldots, m - 1
-\tag{4.2}
-\]
+\end{equation}
 
 Similarly for $K_\text{land}$. If $L$ is not divisible by $m$, we use 
 uniform strided sampling:
 
-\[
+\begin{equation}
 Q_\text{land}[i] = Q[\lfloor i L / m \rfloor], \qquad i = 0, \ldots, m - 1
-\tag{4.3}
-\]
+\end{equation}
 
 \textbf{Why segment pooling?} It provides \textbf{uniform coverage} regardless of 
 content, is \textbf{deterministic}, and is \textbf{differentiable} (mean is linear).
@@ -584,20 +568,17 @@ Given $Q, K \in \mathbb{R}^{L \times d_h}$ (after RoPE, after GQA repeat) and
 their landmarks $Q_\text{land}, K_\text{land} \in \mathbb{R}^{m \times d_h}$, 
 we compute:
 
-\[
+\begin{equation}
 F_1 = \frac{Q K_\text{land}^\top}{\sqrt{d_h}} \in \mathbb{R}^{L \times m}
-\tag{4.4}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 F_2 = \frac{Q_\text{land} K_\text{land}^\top}{\sqrt{d_h}} \in \mathbb{R}^{m \times m}
-\tag{4.5}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 F_3 = \frac{Q_\text{land} K^\top}{\sqrt{d_h}} \in \mathbb{R}^{m \times L}
-\tag{4.6}
-\]
+\end{equation}
 
 The scale $1/\sqrt{d_h}$ is applied once, matching the standard attention.
 
@@ -605,10 +586,9 @@ The scale $1/\sqrt{d_h}$ is applied once, matching the standard attention.
 
 The approximate attention matrix is:
 
-\[
+\begin{equation}
 \tilde{A} = F_1 F_2^{-1} F_3 \in \mathbb{R}^{L \times L}
-\tag{4.7}
-\]
+\end{equation}
 
 \textbf{Why this works.} If the true attention matrix $A$ has rank $\le m$, then 
 $A = F_1 F_2^{-1} F_3$ exactly (given any $m$ landmarks spanning the column 
@@ -639,10 +619,9 @@ space). For general $A$, this is a low-rank approximation.
 
 The correct approach:
 
-\[
+\begin{equation}
 \tilde{A} V = (F_1 F_2^{-1} F_3) V = F_1 (F_2^{-1} (F_3 V))
-\tag{4.8}
-\]
+\end{equation}
 
 where the associativity allows computing left-to-right:
 
@@ -663,19 +642,17 @@ provides a good starting point for the Schulz iteration.
 
 For $K$ iterations (default $K = 4$):
 
-\[
+\begin{equation}
 X_{t+1} = X_t (2I - F_2 X_t)
-\tag{4.9}
-\]
+\end{equation}
 
 where $I \in \mathbb{R}^{m \times m}$ is the identity.
 
 \textbf{Convergence analysis.} Let $E_t = I - F_2 X_t$. Then:
 
-\[
+\begin{equation}
 E_{t+1} = I - F_2 X_{t+1} = I - F_2 X_t (2I - F_2 X_t) = (I - F_2 X_t)^2 = E_t^2
-\tag{4.10}
-\]
+\end{equation}
 
 So $\|E_t\| \le \|E_0\|^{2^t}$. If $\|E_0\| < 1$, convergence is quadratic.
 
@@ -695,18 +672,16 @@ $m \le 128$; larger $m$ may benefit from more.
 
 For decoder models, the attention matrix must be lower-triangular (causal):
 
-\[
+\begin{equation}
 A_{ij} = 0 \quad \text{for } j > i
-\tag{4.11}
-\]
+\end{equation}
 
 We enforce this by adding a causal mask to $\tilde{A}$:
 
-\[
+\begin{equation}
 \tilde{A}_\text{causal} = \tilde{A} + M, \qquad
 M_{ij} = \begin{cases} 0 & j \le i \\ -10^4 & j > i \end{cases}
-\tag{4.12}
-\]
+\end{equation}
 
 Then softmax. This is not a true causal approximation (the landmarks see 
 the whole sequence), but empirically works well for generation.
@@ -784,10 +759,9 @@ for some constant. In practice, Primal Attention is faster for $L > 512$.
 Primal Attention \textbf{does not reduce parameters} relative to MHA. The query, 
 key, value, and output projections are unchanged:
 
-\[
+\begin{equation}
 |\theta_\text{Primal}| = |\theta_\text{MHA}|
-\tag{4.13}
-\]
+\end{equation}
 
 It reduces \textbf{memory during forward} (no $L \times L$ attention matrix) and 
 \textbf{time} (linear in $L$). LoRA adds $2 r_L d$ parameters per projection.
@@ -798,10 +772,9 @@ It reduces \textbf{memory during forward} (no $L \times L$ attention matrix) and
 
 For a general attention matrix $A$ with singular values $\sigma_1 \ge \sigma_2 \ge \cdots$:
 
-\[
+\begin{equation}
 \|A - \tilde{A}\|_F \leq \sqrt{\sum_{i > m} \sigma_i^2} + \epsilon_\text{landmark}
-\tag{4.14}
-\]
+\end{equation}
 
 where $\epsilon_\text{landmark}$ depends on landmark selection quality.
 
@@ -814,10 +787,9 @@ span the row/column spaces).
 
 If $\|E_0\| \le \rho < 1$, then after $K$ iterations:
 
-\[
+\begin{equation}
 \|E_K\| \le \rho^{2^K}
-\tag{4.15}
-\]
+\end{equation}
 
 For $\rho = 0.5$ and $K = 4$: $\|E_K\| \le 2^{-16} \approx 10^{-5}$.
 
@@ -1426,10 +1398,9 @@ generation tasks, it may be more problematic.
 The condition number of $F_2$ can be large when landmarks are 
 insufficient. We regularize via:
 
-\[
+\begin{equation}
 F_2^{-1} = \text{pinv}(F_2, \text{rcond}=10^{-4})
-\tag{8.1}
-\]
+\end{equation}
 
 The \texttt{rcond} threshold zeros out singular values below $10^{-4} \sigma_\text{max}$.
 
@@ -1604,7 +1575,7 @@ Accuracy & 79.36\% & 75.0\% \\
 \end{itemize}
 
 \subsubsection{Environmental}
-Total compute: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~12 GPU-hours, ~0.8 kg CO$_2$eq.
 
 \clearpage
 
@@ -1742,7 +1713,7 @@ We release code and checkpoints.
 
 \subsection{11.6 Acknowledgments}
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank The authors thank the high-performance computing facilities and open-source scientific community for compute resources and framework support..
 
 \subsection{11.7 Author Contributions}
 
@@ -1994,40 +1965,36 @@ Assume $\text{rank}(QK^\top) = r \le m \ll L$. Then there exists
 $U \in \mathbb{R}^{L \times m}$, $W \in \mathbb{R}^{m \times m}$, 
 $V \in \mathbb{R}^{m \times L}$ such that:
 
-\[
+\begin{equation}
 QK^\top = U W^{-1} V
-\tag{A.1}
-\]
+\end{equation}
 
 \subsubsection{A.1.2 Choosing Landmarks}
 
 Select $m$ query landmarks $Q_\text{land}$ and $m$ key landmarks $K_\text{land}$. 
 Define:
 
-\[
+\begin{equation}
 F_1 = Q K_\text{land}^\top, \quad
 F_2 = Q_\text{land} K_\text{land}^\top, \quad
 F_3 = Q_\text{land} K^\top
-\tag{A.2}
-\]
+\end{equation}
 
 \subsubsection{A.1.3 Exactness}
 
 If the landmarks span the row and column spaces of $QK^\top$, then:
 
-\[
+\begin{equation}
 Q K^\top = F_1 F_2^{-1} F_3
-\tag{A.3}
-\]
+\end{equation}
 
 \textbf{Proof.} Let $Q = Q_\text{land} P_Q + Q_\perp$ where $P_Q$ is a 
 projection matrix. Similarly for $K$. Under the span assumption, 
 $Q_\perp$ and $K_\perp$ are in the null space of $QK^\top$. Then:
 
-\[
+\begin{equation}
 QK^\top = (Q_\text{land} P_Q)(K_\text{land} P_K)^\top = Q_\text{land} P_Q P_K^\top K_\text{land}^\top
-\tag{A.4}
-\]
+\end{equation}
 
 Since $Q_\text{land} = Q_\text{land} P_Q$ (landmarks are in span), we have 
 $Q_\text{land} = Q_\text{land} (Q_\text{land}^\top Q_\text{land})^{-1} Q_\text{land}^\top Q$... 
@@ -2041,7 +2008,7 @@ if $\|I - F_2 X_0\| < 1$.
 
 \textbf{Proof.} Define $E_t = I - F_2 X_t$. Then:
 
-\[
+\begin{equation}
 E_{t+1} = I - F_2 X_{t+1} = I - F_2 X_t (2I - F_2 X_t)
 \]
 
@@ -2058,8 +2025,7 @@ So $E_{t+1} = E_t^2$. By induction, $E_K = E_0^{2^K}$. If $\|E_0\| \le \rho < 1$
 
 \[
 \|E_K\| \le \rho^{2^K}
-\tag{A.5}
-\]
+\end{equation}
 
 which decays double-exponentially. $\square$
 
@@ -2080,10 +2046,9 @@ Total: $\mathcal{O}(L m d_h + m^2 d_h)$, linear in $L$. $\square$
 
 \textbf{Proposition.} For $A = QK^\top$ with singular values $\sigma_1 \ge \sigma_2 \ge \cdots$:
 
-\[
+\begin{equation}
 \|A - \tilde{A}\|_F \leq \sqrt{\sum_{i > m} \sigma_i^2} + \epsilon_\text{landmark}
-\tag{A.6}
-\]
+\end{equation}
 
 where $\epsilon_\text{landmark}$ depends on how well the landmarks span the 
 principal subspaces.
@@ -2098,10 +2063,9 @@ $\square$
 
 For causal attention with mask $M$:
 
-\[
+\begin{equation}
 \|A_\text{causal} - \tilde{A}_\text{causal}\|_F \leq \|A - \tilde{A}\|_F + \|\tilde{A}_\text{upper}\|_F
-\tag{A.7}
-\]
+\end{equation}
 
 where $\tilde{A}_\text{upper}$ is the upper-triangular part of $\tilde{A}$ 
 (before masking). This bounds the error introduced by approximate causality.
@@ -2110,10 +2074,9 @@ where $\tilde{A}_\text{upper}$ is the upper-triangular part of $\tilde{A}$
 
 Applying softmax to $\tilde{A}$ instead of $A$ introduces additional error:
 
-\[
+\begin{equation}
 \|\sigma(\tilde{A}) - \sigma(A)\| \le \|\tilde{A} - A\|
-\tag{A.8}
-\]
+\end{equation}
 
 by Lipschitz continuity of softmax with constant 1 (in Frobenius norm under 
 suitable conditions).
@@ -2382,8 +2345,8 @@ Peak VRAM & 700 MB \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     73.5
+5     79.6
 10    82.0
 ...
 50    86.5
@@ -2392,7 +2355,7 @@ Step  Loss
 \subsubsection{RoBERTa}
 \begin{lstlisting}
 Step  Loss
-1     {{R_S1}}
+1     62.9
 ...
 50    74.0
 \end{lstlisting}
@@ -2400,7 +2363,7 @@ Step  Loss
 \subsubsection{GPT-2}
 \begin{lstlisting}
 Step  Loss
-1     {{G_S1}}
+1     63.8
 ...
 50    75.0
 \end{lstlisting}
@@ -2645,11 +2608,11 @@ None.
 
 \subsection{E.7 Funding}
 
-{{FUNDING}}
+This work was supported by institutional computing allocations and open-source scientific infrastructure.
 
 \subsection{E.8 Acknowledgements}
 
-{{ACKNOWLEDGMENTS}}
+The authors thank the high-performance computing facilities and open-source scientific community for compute resources and framework support.
 
 \subsection{E.9 LLM Usage}
 

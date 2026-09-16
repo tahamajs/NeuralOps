@@ -1,10 +1,8 @@
 {
   "_comment": "Fill with real values from decay_linear_attention runs.",
-
   "MODULE_NAME": "DecayLinearAttention",
   "FULL_NAME": "Decay Linear Attention",
   "SUBTITLE": "O(1)-Memory Linear Attention with Data-Dependent Exponential Decay",
-
   "AUTHOR_1_NAME": "Your Name",
   "AUTHOR_1_EMAIL": "you@university.edu",
   "AUTHOR_2_NAME": "Advisor Name",
@@ -19,7 +17,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "CHUNK_SIZE": "32",
   "LOG_DECAY_MIN": "-0.5",
   "LOG_DECAY_MAX": "0.0",
@@ -34,14 +31,12 @@
   "LR": "2e-4",
   "WD": "1e-2",
   "SEED": "42",
-
   "BASE_D": "90.71",
   "BASE_R": "78.56",
   "BASE_G": "79.36",
   "BASE_VRAM_D": "183",
   "BASE_VRAM_R": "712",
   "BASE_VRAM_G": "793",
-
   "D_ACC": "86.5",
   "D_DELTA": "-4.2",
   "D_F1": "0.865",
@@ -55,7 +50,6 @@
   "D_RATIO_128": "1.2",
   "D_RATIO_512": "1.8",
   "D_RATIO_2048": "3.5",
-
   "R_ACC": "74.5",
   "R_DELTA": "-4.1",
   "R_F1": "0.745",
@@ -64,7 +58,6 @@
   "R_TRAINABLE": "1400000",
   "R_VRAM": "580",
   "R_RATIO_2048": "3.5",
-
   "G_ACC": "76.5",
   "G_DELTA": "-2.9",
   "G_F1": "0.765",
@@ -78,9 +71,7 @@
   "G_RATIO_128": "1.2",
   "G_RATIO_512": "1.8",
   "G_RATIO_2048": "3.5",
-
   "BREAKEVEN": "512",
-
   "D_C4": "83.0",
   "D_C8": "84.5",
   "D_C16": "85.8",
@@ -107,7 +98,6 @@
   "CMEM_C64": "32",
   "CMEM_C128": "64",
   "CMEM_C256": "128",
-
   "D_RANGE1": "84.0",
   "D_RANGE2": "85.5",
   "D_RANGE3": "86.5",
@@ -120,7 +110,6 @@
   "G_RANGE2": "75.5",
   "G_RANGE3": "76.5",
   "G_RANGE4": "74.5",
-
   "D_NO_DECAY": "82.0",
   "D_FIXED": "84.5",
   "R_NO_DECAY": "70.0",
@@ -129,7 +118,6 @@
   "G_FIXED": "74.5",
   "NO_DECAY_DROP": "4.5",
   "DECAY_GAIN": "2.0",
-
   "D_ELU": "86.5",
   "D_RELU": "85.5",
   "D_GELU": "86.0",
@@ -142,7 +130,6 @@
   "G_RELU": "75.5",
   "G_GELU": "76.0",
   "G_SPH": "76.2",
-
   "LAMBDA_H0": "0.40",
   "LAMBDA_H3": "0.43",
   "LAMBDA_H6": "0.46",
@@ -171,7 +158,6 @@
   "LAMBDA_G_H6": "0.46",
   "LAMBDA_G_H9": "0.48",
   "LAMBDA_G_H11": "0.50",
-
   "B128": "1.90",
   "B256": "3.50",
   "B512": "12.0",
@@ -190,7 +176,6 @@
   "S1024": "6.0",
   "S2048": "15.0",
   "S8192": "64.0",
-
   "D_S1": "0.35",
   "D_S5": "0.22",
   "D_S10": "0.15",
@@ -198,35 +183,25 @@
   "D_S30": "0.08",
   "D_S40": "0.06",
   "D_S50": "0.05",
-
   "T5_BASE": "88.5",
   "T5_DL": "85.0",
-
   "LT_D": "60.0",
   "GLA_D": "85.0",
   "CS_D": "88.0",
-
   "D_C4_ACC": "83.0",
-
   "D_LR1e4": "83.5",
   "D_LR2e4": "86.5",
   "D_LR5e4": "82.0",
-
   "SEED42": "86.5",
   "SEED123": "86.3",
   "SEED456": "86.7",
   "MEAN": "86.5",
   "STD": "0.2",
-
   "COMPUTE_HOURS": "12",
   "CO2_KG": "0.9",
   "RUNTIME": "25",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
   "DATASETS_VERSION": "2.20.0"
 }
-```
-
----

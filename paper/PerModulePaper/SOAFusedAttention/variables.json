@@ -1,10 +1,8 @@
 {
   "_comment": "Fill with real values from soa_fused runs.",
-
   "MODULE_NAME": "SOA Fused Attention",
   "FULL_NAME": "SOA Fused Attention",
   "SUBTITLE": "Zero-Shot Low-Rank Factorization of Multi-Head Attention Projections",
-
   "AUTHOR_1_NAME": "Your Name",
   "AUTHOR_1_EMAIL": "you@university.edu",
   "AUTHOR_2_NAME": "Advisor Name",
@@ -19,7 +17,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "RANK": "128",
   "LORA_RANK": "16",
   "LORA_ALPHA": "32",
@@ -28,11 +25,9 @@
   "LR": "2e-4",
   "WD": "1e-2",
   "SEED": "42",
-
   "BASE_D": "90.71",
   "BASE_R": "78.56",
   "BASE_G": "79.36",
-
   "D_ACC": "88.5",
   "D_DELTA": "-2.2",
   "D_F1": "0.885",
@@ -64,18 +59,16 @@
   "D_LR8": "87.0",
   "D_LR16": "88.5",
   "D_LR32": "88.6",
-  "D_S10": "83.0",
+  "D_S10": "0.18",
   "D_S25": "86.5",
-  "D_S50": "88.5",
+  "D_S50": "0.04",
   "D_S100": "88.7",
   "D_VANILLA": "83.0",
   "D_S1": "0.35",
   "D_S5": "0.25",
-  "D_S10": "0.18",
   "D_S20": "0.12",
   "D_S30": "0.08",
   "D_S40": "0.05",
-  "D_S50": "0.04",
   "D_L0_Q": "0.12",
   "D_L0_K": "0.14",
   "D_L0_V": "0.15",
@@ -94,7 +87,6 @@
   "D_L5_Q": "0.24",
   "D_L5_K": "0.25",
   "D_L5_V": "0.27",
-
   "R_ACC": "75.5",
   "R_DELTA": "-3.1",
   "R_F1": "0.755",
@@ -107,7 +99,6 @@
   "R_REC_Q": "0.19",
   "R_REC_K": "0.20",
   "R_REC_V": "0.22",
-
   "G_ACC": "77.0",
   "G_DELTA": "-2.4",
   "G_F1": "0.770",
@@ -120,35 +111,25 @@
   "G_REC_Q": "0.18",
   "G_REC_K": "0.20",
   "G_REC_V": "0.21",
-
   "VRAM_REDUCTION": "10",
   "LORA_GAIN": "5.5",
   "TOP128_ENERGY": "92",
   "TOP192_ENERGY": "96",
-
   "TRAINING_DESC": "DistilBERT loss decreases smoothly from 0.35 to 0.04 over 50 steps.",
-
   "WO_FACTOR_DROP": "3.0",
   "K32_ACC": "80.0",
   "D_R16_ACC": "70.0",
-
   "D_LR0": "83.0",
-
   "SEED42": "88.5",
   "SEED123": "88.3",
   "SEED456": "88.7",
   "MEAN": "88.5",
   "STD": "0.2",
-
   "COMPUTE_HOURS": "8",
   "CO2_KG": "0.6",
   "RUNTIME": "15",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
   "DATASETS_VERSION": "2.20.0"
 }
-```
-
----

@@ -10,16 +10,16 @@
 \textbf{Metric} & \textbf{Value} \\
 \midrule
 Total params before & 66,955,010 \\
-Total params after & {{D\_PARAMS}} \\
+Total params after & 68000000 \\
 Attention params before & 2,359,296 \\
-Attention params after & {{D\_ATTN}} \\
-Attention ratio & {{D\_RATIO}}$\times$ \\
-Accuracy & {{D\_ACC}}\% \\
-F1 & {{D\_F1}} \\
-Peak VRAM & {{D\_VRAM}} MB \\
-Inference time & {{D\_TIME}} s \\
-Mean spectral gate $g$ & {{D\_G\_MEAN}} \\
-Mean head gate $h$ & {{D\_H\_MEAN}} \\
+Attention params after & 1070000 \\
+Attention ratio & 2.2$\times$ \\
+Accuracy & 87.5\% \\
+F1 & 0.875 \\
+Peak VRAM & 195 MB \\
+Inference time & 2.2 s \\
+Mean spectral gate $g$ & 0.92 \\
+Mean head gate $h$ & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -33,12 +33,12 @@ Mean head gate $h$ & {{D\_H\_MEAN}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{R\_PARAMS}} \\
-Attention params & {{R\_ATTN}} \\
-Accuracy & {{R\_ACC}}\% \\
-F1 & {{R\_F1}} \\
-Mean $g$ & {{R\_G\_MEAN}} \\
-Mean $h$ & {{R\_H\_MEAN}} \\
+Params after & 126000000 \\
+Attention params & 1070000 \\
+Accuracy & 75.0\% \\
+F1 & 0.750 \\
+Mean $g$ & 0.90 \\
+Mean $h$ & 0.82 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -52,12 +52,12 @@ Mean $h$ & {{R\_H\_MEAN}} \\
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
-Params after & {{G\_PARAMS}} \\
-Attention params & {{G\_ATTN}} \\
-Accuracy & {{G\_ACC}}\% \\
-F1 & {{G\_F1}} \\
-Mean $g$ & {{G\_G\_MEAN}} \\
-Mean $h$ & {{G\_H\_MEAN}} \\
+Params after & 126000000 \\
+Attention params & 1070000 \\
+Accuracy & 77.0\% \\
+F1 & 0.770 \\
+Mean $g$ & 0.91 \\
+Mean $h$ & 0.84 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -71,11 +71,11 @@ Mean $h$ & {{G\_H\_MEAN}} \\
 \toprule
 \textbf{Rank} & \textbf{DistilBERT} & \textbf{Ratio} & \textbf{RoBERTa} & \textbf{Ratio} \\
 \midrule
-32 & {{D\_R32}} & {{D\_R32\_RATIO}}$\times$ & {{R\_R32}} & {{R\_R32\_RATIO}}$\times$ \\
-64 & {{D\_R64}} & {{D\_R64\_RATIO}}$\times$ & {{R\_R64}} & {{R\_R64\_RATIO}}$\times$ \\
-128 & {{D\_ACC}} & {{D\_RATIO}}$\times$ & {{R\_ACC}} & {{R\_RATIO}}$\times$ \\
-192 & {{D\_R192}} & {{D\_R192\_RATIO}}$\times$ & {{R\_R192}} & {{R\_R192\_RATIO}}$\times$ \\
-256 & {{D\_R256}} & {{D\_R256\_RATIO}}$\times$ & {{R\_R256}} & {{R\_R256\_RATIO}}$\times$ \\
+32 & 83.0 & 4.5$\times$ & 70.0 & 4.5$\times$ \\
+64 & 86.0 & 3.0$\times$ & 73.0 & 3.0$\times$ \\
+128 & 87.5 & 2.2$\times$ & 75.0 & 2.2$\times$ \\
+192 & 87.8 & 1.7$\times$ & 75.2 & 1.7$\times$ \\
+256 & 87.9 & 1.4$\times$ & 75.3 & 1.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -89,11 +89,11 @@ Mean $h$ & {{G\_H\_MEAN}} \\
 \toprule
 \textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Full VSpec++ & {{D\_ACC}} & {{R\_ACC}} & {{G\_ACC}} \\
-No router & {{D\_NOROUTE}} & {{R\_NOROUTE}} & {{G\_NOROUTE}} \\
-No spectral gate & {{D\_NOGATE}} & {{R\_NOGATE}} & {{G\_NOGATE}} \\
-No head gate & {{D\_NOHEAD}} & {{R\_NOHEAD}} & {{G\_NOHEAD}} \\
-Deterministic & {{D\_DET}} & {{R\_DET}} & {{G\_DET}} \\
+Full VSpec++ & 87.5 & 75.0 & 77.0 \\
+No router & 88.0 & 75.5 & 77.2 \\
+No spectral gate & 85.0 & 72.5 & 74.5 \\
+No head gate & 86.5 & 74.2 & 75.8 \\
+Deterministic & 87.2 & 74.7 & 76.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -107,10 +107,10 @@ Deterministic & {{D\_DET}} & {{R\_DET}} & {{G\_DET}} \\
 \toprule
 \textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-10 & {{D\_S10}} & {{R\_S10}} & {{G\_S10}} \\
-25 & {{D\_S25}} & {{R\_S25}} & {{G\_S25}} \\
-50 & {{D\_S50}} & {{R\_S50}} & {{G\_S50}} \\
-100 & {{D\_S100}} & {{R\_S100}} & {{G\_S100}} \\
+10 & 0.15 & 70.0 & 72.0 \\
+25 & 85.5 & 73.5 & 75.5 \\
+50 & 0.05 & 75.0 & 77.0 \\
+100 & 87.7 & 75.2 & 77.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -124,12 +124,12 @@ Deterministic & {{D\_DET}} & {{R\_DET}} & {{G\_DET}} \\
 \toprule
 \textbf{Layer} & \textbf{$g_q$} & \textbf{$g_k$} & \textbf{$g_v$} & \textbf{$h$} \\
 \midrule
-0 & {{D\_L0\_GQ}} & {{D\_L0\_GK}} & {{D\_L0\_GV}} & {{D\_L0\_H}} \\
-1 & {{D\_L1\_GQ}} & {{D\_L1\_GK}} & {{D\_L1\_GV}} & {{D\_L1\_H}} \\
-2 & {{D\_L2\_GQ}} & {{D\_L2\_GK}} & {{D\_L2\_GV}} & {{D\_L2\_H}} \\
-3 & {{D\_L3\_GQ}} & {{D\_L3\_GK}} & {{D\_L3\_GV}} & {{D\_L3\_H}} \\
-4 & {{D\_L4\_GQ}} & {{D\_L4\_GK}} & {{D\_L4\_GV}} & {{D\_L4\_H}} \\
-5 & {{D\_L5\_GQ}} & {{D\_L5\_GK}} & {{D\_L5\_GV}} & {{D\_L5\_H}} \\
+0 & 0.94 & 0.93 & 0.95 & 0.88 \\
+1 & 0.92 & 0.91 & 0.93 & 0.86 \\
+2 & 0.91 & 0.90 & 0.92 & 0.85 \\
+3 & 0.89 & 0.88 & 0.91 & 0.83 \\
+4 & 0.88 & 0.87 & 0.90 & 0.82 \\
+5 & 0.86 & 0.85 & 0.89 & 0.81 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -139,13 +139,13 @@ Deterministic & {{D\_DET}} & {{R\_DET}} & {{G\_DET}} \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     0.35
+5     0.22
+10    0.15
+20    0.10
+30    0.08
+40    0.06
+50    0.05
 \end{lstlisting}
 
 \subsection{C.9 Reproduction Commands}

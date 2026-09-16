@@ -5,19 +5,17 @@
 
 For a pretrained weight $W_0 \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 
-\[
+\begin{equation}
 W = W_0 + \frac{\alpha}{r_L} B A
-\tag{A.1}
-\]
+\end{equation}
 
 where $B \in \mathbb{R}^{d_\text{out} \times r_L}$, $A \in \mathbb{R}^{r_L \times d_\text{in}}$, and $B = 0$ at initialization.
 
 \textbf{Forward:}
 
-\[
+\begin{equation}
 y = W x = W_0 x + \frac{\alpha}{r_L} B A x
-\tag{A.2}
-\]
+\end{equation}
 
 \textbf{Parameter count:} $r_L (d_\text{in} + d_\text{out})$.
 
@@ -35,7 +33,7 @@ matching the baseline. $\square$
 information in the last $d_h - d_h'$ dimensions.
 
 \textbf{Proof sketch.} The output of a head is:
-\[
+\begin{equation}
 o = \text{softmax}(\ldots) V
 \]
 where $V$ has dimension $d_h$. Truncating to $d_h'$ reduces the output to 
@@ -56,8 +54,7 @@ Given $H_\text{source}$ source KV heads with $H_\text{source} > H_\text{target}$
 
 \[
 W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
-\tag{A.3}
-\]
+\end{equation}
 
 where $r = H_\text{source} / H_\text{target}$.
 
@@ -89,10 +86,9 @@ $W_O$ & $d_h H \cdot d$ & $d_h' H \cdot d$ \\
 
 Attention scores computed in FP32:
 
-\[
+\begin{equation}
 S = \frac{Q_\text{FP32} K_\text{FP32}^\top}{\sqrt{d_h}}
-\tag{A.4}
-\]
+\end{equation}
 
 Softmax in FP32, then cast back to model dtype.
 \begin{lstlisting}

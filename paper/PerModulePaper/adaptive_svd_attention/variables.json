@@ -1,10 +1,8 @@
 {
   "_comment": "Fill with real values from adaptive_svd runs.",
-
   "MODULE_NAME": "Adaptive SVD Attention",
   "FULL_NAME": "Adaptive SVD Attention",
   "SUBTITLE": "Energy-Thresholded Low-Rank Factorization with Residual Adapters",
-
   "AUTHOR_1_NAME": "Your Name",
   "AUTHOR_1_EMAIL": "you@university.edu",
   "AUTHOR_2_NAME": "Advisor Name",
@@ -19,7 +17,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "SVD_RANK": "384",
   "RESIDUAL_RANK": "16",
   "ENERGY_THRESHOLD": "0.92",
@@ -28,11 +25,9 @@
   "LR": "2e-4",
   "WD": "1e-2",
   "SEED": "42",
-
   "BASE_D": "90.71",
   "BASE_R": "78.56",
   "BASE_G": "79.36",
-
   "D_ACC": "88.0",
   "D_DELTA": "-2.7",
   "D_F1": "0.880",
@@ -43,7 +38,6 @@
   "D_TIME": "2.1",
   "D_VRAM": "170",
   "AVG_RANK": "160",
-
   "R_ACC": "75.5",
   "R_DELTA": "-3.1",
   "R_F1": "0.755",
@@ -54,7 +48,6 @@
   "R_TIME": "4.5",
   "R_VRAM": "650",
   "R_AVG_RANK": "160",
-
   "G_ACC": "77.0",
   "G_DELTA": "-2.4",
   "G_F1": "0.770",
@@ -65,7 +58,6 @@
   "G_TIME": "4.5",
   "G_VRAM": "720",
   "G_AVG_RANK": "160",
-
   "D_Q_MEAN": "128",
   "D_K_MEAN": "128",
   "D_V_MEAN": "192",
@@ -90,9 +82,6 @@
   "R_V_MAX": "224",
   "R_O_MIN": "128",
   "R_O_MAX": "224",
-  "R_AVG_RANK": "160",
-  "G_AVG_RANK": "160",
-
   "D_L0_Q_R": "128",
   "D_L0_K_R": "128",
   "D_L0_V_R": "192",
@@ -117,12 +106,10 @@
   "D_L5_K_R": "128",
   "D_L5_V_R": "192",
   "D_L5_O_R": "192",
-
   "D_Q_ENERGY128": "94",
   "D_K_ENERGY128": "94",
   "D_V_ENERGY128": "91",
   "D_O_ENERGY128": "89",
-
   "D_T80": "82.0",
   "D_T85": "86.0",
   "D_T92": "88.0",
@@ -142,7 +129,6 @@
   "G_T92": "77.0",
   "G_T95": "78.0",
   "G_T99": "79.0",
-
   "AVG_RANK_80": "80",
   "AVG_RANK_85": "112",
   "AVG_RANK_95": "224",
@@ -151,7 +137,6 @@
   "RATIO_85": "2.9",
   "RATIO_95": "1.6",
   "RATIO_99": "1.0",
-
   "D_RA0": "82.0",
   "D_RA8": "86.5",
   "D_RA16": "88.0",
@@ -164,23 +149,19 @@
   "G_RA8": "75.5",
   "G_RA16": "77.0",
   "G_RA32": "77.2",
-
   "D_FIX128": "86.5",
   "D_FIX192": "88.2",
   "D_FIX128_R": "2.4",
   "D_FIX192_R": "1.8",
   "FIX_ADAPT_DELTA": "5",
-
   "D_QKV_ONLY": "88.2",
   "D_QKV_ONLY_R": "1.9",
-
   "SVD_ONLY": "84.0",
   "SVD_D": "-6.7",
   "ADAPTER_GAIN": "4.0",
-
-  "D_S10": "83.0",
+  "D_S10": "0.15",
   "D_S25": "86.5",
-  "D_S50": "88.0",
+  "D_S50": "0.04",
   "D_S100": "88.3",
   "R_S10": "70.0",
   "R_S25": "74.0",
@@ -190,15 +171,11 @@
   "G_S25": "75.5",
   "G_S50": "77.0",
   "G_S100": "77.2",
-
   "D_S1": "0.35",
   "D_S5": "0.22",
-  "D_S10": "0.15",
   "D_S20": "0.10",
   "D_S30": "0.07",
   "D_S40": "0.05",
-  "D_S50": "0.04",
-
   "SOA_D": "88.5",
   "A3_D": "87.5",
   "D_MIN8": "82.0",
@@ -207,22 +184,16 @@
   "D_RA4": "84.0",
   "T80_ACC": "70.0",
   "NO_ADAPTER_DROP": "4.0",
-
   "SEED42": "88.0",
   "SEED123": "87.8",
   "SEED456": "88.2",
   "MEAN": "88.0",
   "STD": "0.2",
-
   "COMPUTE_HOURS": "10",
   "CO2_KG": "0.8",
   "RUNTIME": "18",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
   "DATASETS_VERSION": "2.20.0"
 }
-```
-
----

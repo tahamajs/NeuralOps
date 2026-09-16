@@ -36,7 +36,7 @@ a modified module $\mathcal{A}'$ such that:
 \item \textbf{Distillable:} Trainable adapters can recover lost capacity.
 \item \textbf{Drop-in:} Pretrained weights are copied exactly; no architecture change.
 \item \textbf{Portable:} Works across flat, nested, and causal architectures.
-\item \textbf{Quality:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+\item \textbf{Quality:} $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
 \end{enumerate}
 \subsection{Our Approach: Squeezing Heads}
@@ -44,10 +44,9 @@ a modified module $\mathcal{A}'$ such that:
 \textbf{Squeezing Heads} replaces each attention projection with a 
 \textbf{LoRA-wrapped linear layer}:
 
-\[
+\begin{equation}
 W_\text{eff} = W_\text{frozen} + \frac{\alpha}{r} B A
-\tag{1.1}
-\]
+\end{equation}
 
 where:
 \begin{itemize}
@@ -99,7 +98,7 @@ Full fine-tune & Yes & Yes & (expensive) \\
   on SST-2 with ablations over LoRA rank, head-dim reduction, and GQA
   pooling.
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts
-  released under {{LICENSE}}.
+  released under MIT.
 
 \end{itemize}
 \subsection{Paper Organization}

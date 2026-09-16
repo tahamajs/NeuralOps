@@ -51,8 +51,8 @@ Expert multiplier & 2 \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-Weight decay & {{WD}} \\
+LR & 2e-4 \\
+Weight decay & 1e-2 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -83,9 +83,9 @@ RTX 4070 Laptop, 8 GB VRAM, CUDA {{CUDA\_VERSION}}, PyTorch {{TORCH\_VERSION}}.
 \begin{lstlisting}
 python run_all_4_bam_umoe.py \
     --models distilbert,roberta,gpt2 \
-    --num_experts {{NUM_EXPERTS}} \
-    --top_k {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --num_experts 8 \
+    --top_k 2 \
+    --recovery_steps 50
 \end{lstlisting}
 \begin{lstlisting}
 

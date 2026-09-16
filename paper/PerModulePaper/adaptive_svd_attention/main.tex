@@ -70,7 +70,7 @@ introduce \textbf{Adaptive SVD Attention}, which chooses rank **dynamically
 per projection** based on cumulative singular-value energy:
 
 \[
-r^* = \min\left\{ r : \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{d} \sigma_j^2} \geq \tau \right\}, \quad \tau = {{ENERGY_THRESHOLD}}
+r^* = \min\left\{ r : \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{d} \sigma_j^2} \geq \tau \right\}, \quad \tau = 0.92
 \]
 
 This adapts to the intrinsic rank of each projection, allocating more 

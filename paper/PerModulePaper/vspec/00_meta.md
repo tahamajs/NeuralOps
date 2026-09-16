@@ -1,19 +1,19 @@
 # VSpec++: Variational Spectral Token-Adaptive Attention
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
+- ¹ University Name, Department of Computer Science
 - ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/vspec_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-16
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/vspec_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -38,11 +38,11 @@ All base weights (SVD factors) are frozen; only the gates, router, and LoRA
 adapters are trained.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-{{RECOVERY_STEPS}} recovery steps. VSpec++ achieves **{{D_ACC}}%** on 
-DistilBERT (baseline {{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline 
-{{BASE_R}}%), and **{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%). Attention 
-parameters reduce by **{{D_RATIO}}×–{{G_RATIO}}×**, and peak VRAM decreases 
-by **{{VRAM_REDUCTION}}%**.
+50 recovery steps. VSpec++ achieves **87.5%** on 
+DistilBERT (baseline 90.71%), **75.0%** on RoBERTa (baseline 
+78.56%), and **77.0%** on GPT-2 (baseline 79.36%). Attention 
+parameters reduce by **2.2×–2.2×**, and peak VRAM decreases 
+by **15%**.
 
 The variational formulation provides a **Bayesian interpretation**: the 
 spectral gate $g_i \sim q(g_i | x)$ is a posterior over per-singular-value 

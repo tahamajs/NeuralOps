@@ -65,7 +65,7 @@
 }
 
 @inproceedings{zhang2023h2o,
-  title={{H2O}},
+  title=Heavy Hitter Oracle,
   author={Zhang, Zhenyu and others},
   booktitle={NeurIPS},
   year={2023}
@@ -86,7 +86,7 @@
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Grouped Query Attention,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}

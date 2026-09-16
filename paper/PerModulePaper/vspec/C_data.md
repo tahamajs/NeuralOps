@@ -5,91 +5,91 @@
 | Metric | Value |
 |---|---|
 | Total params before | 66,955,010 |
-| Total params after | {{D_PARAMS}} |
+| Total params after | 68000000 |
 | Attention params before | 2,359,296 |
-| Attention params after | {{D_ATTN}} |
-| Attention ratio | {{D_RATIO}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Mean spectral gate $g$ | {{D_G_MEAN}} |
-| Mean head gate $h$ | {{D_H_MEAN}} |
+| Attention params after | 1070000 |
+| Attention ratio | 2.2× |
+| Accuracy | 87.5% |
+| F1 | 0.875 |
+| Peak VRAM | 195 MB |
+| Inference time | 2.2 s |
+| Mean spectral gate $g$ | 0.92 |
+| Mean head gate $h$ | 0.85 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Params after | {{R_PARAMS}} |
-| Attention params | {{R_ATTN}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Mean $g$ | {{R_G_MEAN}} |
-| Mean $h$ | {{R_H_MEAN}} |
+| Params after | 126000000 |
+| Attention params | 1070000 |
+| Accuracy | 75.0% |
+| F1 | 0.750 |
+| Mean $g$ | 0.90 |
+| Mean $h$ | 0.82 |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Params after | {{G_PARAMS}} |
-| Attention params | {{G_ATTN}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Mean $g$ | {{G_G_MEAN}} |
-| Mean $h$ | {{G_H_MEAN}} |
+| Params after | 126000000 |
+| Attention params | 1070000 |
+| Accuracy | 77.0% |
+| F1 | 0.770 |
+| Mean $g$ | 0.91 |
+| Mean $h$ | 0.84 |
 
 ## C.4 Rank Ablation
 
 | Rank | DistilBERT | Ratio | RoBERTa | Ratio |
 |---|---|---|---|---|
-| 32 | {{D_R32}} | {{D_R32_RATIO}}× | {{R_R32}} | {{R_R32_RATIO}}× |
-| 64 | {{D_R64}} | {{D_R64_RATIO}}× | {{R_R64}} | {{R_R64_RATIO}}× |
-| 128 | {{D_ACC}} | {{D_RATIO}}× | {{R_ACC}} | {{R_RATIO}}× |
-| 192 | {{D_R192}} | {{D_R192_RATIO}}× | {{R_R192}} | {{R_R192_RATIO}}× |
-| 256 | {{D_R256}} | {{D_R256_RATIO}}× | {{R_R256}} | {{R_R256_RATIO}}× |
+| 32 | 83.0 | 4.5× | 70.0 | 4.5× |
+| 64 | 86.0 | 3.0× | 73.0 | 3.0× |
+| 128 | 87.5 | 2.2× | 75.0 | 2.2× |
+| 192 | 87.8 | 1.7× | 75.2 | 1.7× |
+| 256 | 87.9 | 1.4× | 75.3 | 1.4× |
 
 ## C.5 Gate Ablations
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Full VSpec++ | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| No router | {{D_NOROUTE}} | {{R_NOROUTE}} | {{G_NOROUTE}} |
-| No spectral gate | {{D_NOGATE}} | {{R_NOGATE}} | {{G_NOGATE}} |
-| No head gate | {{D_NOHEAD}} | {{R_NOHEAD}} | {{G_NOHEAD}} |
-| Deterministic | {{D_DET}} | {{R_DET}} | {{G_DET}} |
+| Full VSpec++ | 87.5 | 75.0 | 77.0 |
+| No router | 88.0 | 75.5 | 77.2 |
+| No spectral gate | 85.0 | 72.5 | 74.5 |
+| No head gate | 86.5 | 74.2 | 75.8 |
+| Deterministic | 87.2 | 74.7 | 76.7 |
 
 ## C.6 Recovery Steps
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 0.15 | 70.0 | 72.0 |
+| 25 | 85.5 | 73.5 | 75.5 |
+| 50 | 0.05 | 75.0 | 77.0 |
+| 100 | 87.7 | 75.2 | 77.2 |
 
 ## C.7 Per-Layer Gates (DistilBERT)
 
 | Layer | $g_q$ | $g_k$ | $g_v$ | $h$ |
 |---|---|---|---|---|
-| 0 | {{D_L0_GQ}} | {{D_L0_GK}} | {{D_L0_GV}} | {{D_L0_H}} |
-| 1 | {{D_L1_GQ}} | {{D_L1_GK}} | {{D_L1_GV}} | {{D_L1_H}} |
-| 2 | {{D_L2_GQ}} | {{D_L2_GK}} | {{D_L2_GV}} | {{D_L2_H}} |
-| 3 | {{D_L3_GQ}} | {{D_L3_GK}} | {{D_L3_GV}} | {{D_L3_H}} |
-| 4 | {{D_L4_GQ}} | {{D_L4_GK}} | {{D_L4_GV}} | {{D_L4_H}} |
-| 5 | {{D_L5_GQ}} | {{D_L5_GK}} | {{D_L5_GV}} | {{D_L5_H}} |
+| 0 | 0.94 | 0.93 | 0.95 | 0.88 |
+| 1 | 0.92 | 0.91 | 0.93 | 0.86 |
+| 2 | 0.91 | 0.90 | 0.92 | 0.85 |
+| 3 | 0.89 | 0.88 | 0.91 | 0.83 |
+| 4 | 0.88 | 0.87 | 0.90 | 0.82 |
+| 5 | 0.86 | 0.85 | 0.89 | 0.81 |
 
 ## C.8 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     0.35
+5     0.22
+10    0.15
+20    0.10
+30    0.08
+40    0.06
+50    0.05
 ```
 
 ## C.9 Reproduction Commands

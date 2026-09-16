@@ -70,12 +70,12 @@ are consistently sparse.
 
 \textbf{Figure 8.2} shows the effective sparsity vs temperature. At $T = 0.01$, 
 the mask is nearly hard; at $T = 1$, the mask is very soft. The optimal 
-$T = {{TEMPERATURE}}$ balances differentiability and effectiveness.
+$T = 0.1$ balances differentiability and effectiveness.
 
 \subsection{Attention Mass Retention}
 
 \textbf{Figure 8.3} shows the fraction of attention mass retained vs sparsity 
-level. At 50\% sparsity, \textbf{{{MASS50}}\%} of mass is retained -- consistent 
+level. At 50\% sparsity, \textbf{97\%} of mass is retained -- consistent 
 with the "top 50\% of keys capture 90\% of mass" observation.
 
 \subsection{Comparison with Static Sparsity}
@@ -160,7 +160,7 @@ Scores are cast to FP32 for softmax; the log-mask is FP32.
 \item \textbf{Layer depth correlates with sparsity}: early = dense, late = sparse.
 \item \textbf{$T = 0.1$} is the optimal temperature.
 \item \textbf{Chunking reduces memory} by {{MEM\_REDUCTION}}$\times$.
-\item \textbf{Attention mass is highly concentrated}: top 10\% captures {{MASS10}}\%.
+\item \textbf{Attention mass is highly concentrated}: top 10\% captures 85\%.
 \end{enumerate}
 \begin{lstlisting}
 

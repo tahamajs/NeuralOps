@@ -49,8 +49,8 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \textbf{Parameter} & \textbf{Value} \\
 \midrule
 Default sparsity (encoders) & {{SPARSITY\_ENC}} \\
-Default sparsity (decoders) & {{SPARSITY}} \\
-Temperature $T$ & {{TEMPERATURE}} \\
+Default sparsity (decoders) & 0.5 \\
+Temperature $T$ & 0.1 \\
 Chunk size $C$ & {{CHUNK\_SIZE}} \\
 LoRA rank & {{LORA\_RANK}} \\
 LoRA alpha & {{LORA\_ALPHA}} \\
@@ -68,8 +68,8 @@ LoRA alpha & {{LORA\_ALPHA}} \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-Weight decay & {{WD}} \\
+LR & 2e-4 \\
+Weight decay & 1e-2 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -136,9 +136,9 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_adaptive_sparse.py \
     --models distilbert,roberta,gpt2 \
-    --sparsity_ratio {{SPARSITY}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --sparsity_ratio 0.5 \
+    --recovery_steps 50 \
+    --lora_rank 16
 \end{lstlisting}
 
 \subsection{Ablations}

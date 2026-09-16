@@ -6,10 +6,9 @@
 The softmax attention mechanism (Vaswani et al., 2017) scales quadratically 
 with sequence length $L$:
 
-\[
+\begin{equation}
 \text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
-\tag{1.1}
-\]
+\end{equation}
 
 producing an $L \times L$ attention matrix that requires $\mathcal{O}(L^2)$ 
 memory and time. For a sequence of 4096 tokens at 12 heads, the attention 
@@ -20,10 +19,9 @@ footprint.
 onto $m \ll L$ landmarks. The Nystr m method (Williams \& Seeger, 2001) does 
 this by:
 
-\[
+\begin{equation}
 K \approx \tilde{K} = C W^{-1} C^\top
-\tag{1.2}
-\]
+\end{equation}
 
 where $C \in \mathbb{R}^{L \times m}$ is the query-landmark kernel and 
 $W \in \mathbb{R}^{m \times m}$ is the landmark-landmark kernel. The 
@@ -40,10 +38,9 @@ Given query $Q \in \mathbb{R}^{L \times d}$, key $K \in \mathbb{R}^{L \times d}$
 and value $V \in \mathbb{R}^{L \times d}$, we seek a low-rank approximation 
 of the attention output:
 
-\[
+\begin{equation}
 \text{Attn}(Q, K, V) \approx \text{Attn}_\text{low-rank}(Q, K, V)
-\tag{1.3}
-\]
+\end{equation}
 
 such that:
 
@@ -60,10 +57,9 @@ such that:
 We propose \textbf{Primal Attention}, which decomposes the attention matrix 
 asymmetrically:
 
-\[
+\begin{equation}
 A \approx F_1 F_2^{-1} F_3
-\tag{1.4}
-\]
+\end{equation}
 
 where:
 
@@ -77,10 +73,9 @@ This is the \textbf{primal representation} of the asymmetric kernel (in contrast
 to the dual representation which uses $L \times L$ kernels). The pseudoinverse 
 $F_2^{-1}$ is computed via \textbf{Schulz iteration}:
 
-\[
+\begin{equation}
 X_{t+1} = X_t (2I - F_2 X_t)
-\tag{1.5}
-\]
+\end{equation}
 
 which converges quadratically to $F_2^{-1}$ in a few steps and is differentiable.
 
@@ -100,7 +95,7 @@ regardless of content.
 \item \textbf{A systematic evaluation.} Benchmarked on DistilBERT, RoBERTa, and GPT-2
   on SST-2 with ablations over landmark count and pseudoinverse iterations.
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
-  under {{LICENSE}}.
+  under MIT.
 
 \end{itemize}
 \subsection{Paper Organization}

@@ -7,8 +7,8 @@
 model. The distribution is \textbf{bimodal}:
 
 \begin{itemize}
-\item \textbf{Local heads:} $\sim 40\%$ converge to $z_h < {{LOCAL_THRESH}}$
-\item \textbf{Global heads:} $\sim 30\%$ converge to $z_h > {{GLOBAL_THRESH}}$
+\item \textbf{Local heads:} $\sim 40\%$ converge to $z_h < 32$
+\item \textbf{Global heads:} $\sim 30\%$ converge to $z_h > 96$
 \item \textbf{Middle heads:} $\sim 30\%$ fall in between
 
 \end{itemize}
@@ -72,10 +72,9 @@ The optimal $R$ balances differentiability with pruning.
 
 \textbf{Figure 8.5} shows correlation between learned span and attention entropy:
 
-\[
+\begin{equation}
 H(P_i) = -\sum_j P_{ij} \log P_{ij}
-\tag{8.1}
-\]
+\end{equation}
 
 \textbf{Observation.} Heads with \textbf{large spans} have \textbf{high entropy} (spread 
 attention); heads with \textbf{small spans} have \textbf{low entropy} (concentrated 
@@ -167,8 +166,8 @@ context computation.
 \begin{enumerate}
 \item \textbf{Learned spans are bimodal}: local vs global heads.
 \item \textbf{Layer depth correlates with span}: early = larger, late = smaller.
-\item \textbf{$R = {{RAMP_SIZE}}$} is optimal.
-\item \textbf{$\lambda = {{LAMBDA}}$} balances compression and accuracy.
+\item \textbf{$R = 32$} is optimal.
+\item \textbf{$\lambda = 0.01$} balances compression and accuracy.
 \item \textbf{Attention entropy} correlates with learned span.
 \item \textbf{No speedup without hard truncation.}
 \end{enumerate}

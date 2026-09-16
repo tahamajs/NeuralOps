@@ -1,10 +1,8 @@
 {
   "_comment": "Fill with real values from chela_slay runs.",
-
   "MODULE_NAME": "CHELA-SLAY",
   "FULL_NAME": "CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel",
   "SUBTITLE": "Hybrid Dense + Linear Attention with Adaptive Gating",
-
   "AUTHOR_1_NAME": "Your Name",
   "AUTHOR_1_EMAIL": "you@university.edu",
   "AUTHOR_2_NAME": "Advisor Name",
@@ -19,7 +17,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "FEATURE_DIM": "128",
   "FEATURE_DIM_2": "256",
   "LORA_RANK": "16",
@@ -32,11 +29,9 @@
   "LR": "2e-4",
   "WD": "1e-2",
   "SEED": "42",
-
   "BASE_D": "90.71",
   "BASE_R": "78.56",
   "BASE_G": "79.36",
-
   "D_ACC": "89.5",
   "D_DELTA": "-1.2",
   "D_F1": "0.895",
@@ -46,7 +41,6 @@
   "D_VRAM": "890",
   "D_TIME": "4.2",
   "D_TIME_RATIO": "2.2",
-
   "R_ACC": "77.0",
   "R_DELTA": "-1.6",
   "R_F1": "0.770",
@@ -56,7 +50,6 @@
   "R_VRAM": "1800",
   "R_TIME": "9.0",
   "R_TIME_RATIO": "2.2",
-
   "G_ACC": "78.5",
   "G_DELTA": "-0.9",
   "G_F1": "0.785",
@@ -66,11 +59,9 @@
   "G_VRAM": "1950",
   "G_TIME": "9.5",
   "G_TIME_RATIO": "2.3",
-
   "D_VRAM_RATIO": "4.9",
   "R_VRAM_RATIO": "2.5",
   "G_VRAM_RATIO": "2.5",
-
   "CMEM_128": "8192",
   "CMEM_256": "16384",
   "CMEM_512": "32768",
@@ -81,7 +72,6 @@
   "CMEM_F128": "8192",
   "CMEM_F256": "16384",
   "CUMSUM_MEM": "8192",
-
   "D_F16": "85.0",
   "D_F32": "87.5",
   "D_F64": "88.5",
@@ -97,7 +87,6 @@
   "G_F64": "77.5",
   "G_F128": "78.5",
   "G_F256": "78.7",
-
   "D_GB0": "82.0",
   "D_GB2": "87.0",
   "D_GB5": "89.5",
@@ -110,7 +99,6 @@
   "G_GB2": "77.0",
   "G_GB5": "78.5",
   "G_GB10": "78.0",
-
   "D_DENSE_ONLY": "90.71",
   "D_LINEAR_ONLY": "60.0",
   "D_NO_SPH": "86.0",
@@ -129,10 +117,8 @@
   "G_ELU": "75.0",
   "G_COS": "77.0",
   "G_SIN": "76.5",
-
   "D_DENSE_ONLY_K": "90.71",
   "D_LINEAR_ONLY_K": "60.0",
-
   "D_GATE_MEAN": "0.92",
   "D_GATE_STD": "0.05",
   "D_GATE_MIN": "0.75",
@@ -145,7 +131,6 @@
   "G_GATE_STD": "0.05",
   "G_GATE_MIN": "0.72",
   "G_GATE_MAX": "0.99",
-
   "D_T128": "4.2",
   "D_T256": "7.5",
   "D_T512": "25.0",
@@ -154,7 +139,6 @@
   "G_T256": "15.0",
   "G_T512": "45.0",
   "G_T1024": "150.0",
-
   "B128": "4.20",
   "B256": "12.0",
   "B512": "45.0",
@@ -170,10 +154,8 @@
   "S512": "1.0",
   "S1024": "1.2",
   "S2048": "1.33",
-
   "BREAKEVEN": "1024",
   "SLOWDOWN": "2.2",
-
   "SPH_GAIN": "2.5",
   "R_SPH_GAIN": "3.0",
   "G_SPH_GAIN": "3.0",
@@ -187,18 +169,15 @@
   "D_NOSPH": "86.0",
   "R_NOSPH": "74.0",
   "G_NOSPH": "75.5",
-
   "D_LT": "60.0",
   "R_LT": "55.0",
   "G_LT": "58.0",
   "D_PERF": "62.0",
   "R_PERF": "57.0",
   "G_PERF": "60.0",
-
   "D_BS4": "89.5",
   "D_BS8": "OOM",
   "R_BS4": "77.0",
-
   "D_S1": "0.35",
   "D_S5": "0.20",
   "D_S10": "0.15",
@@ -206,22 +185,16 @@
   "D_S30": "0.07",
   "D_S40": "0.05",
   "D_S50": "0.04",
-
   "SEED42": "89.5",
   "SEED123": "89.3",
   "SEED456": "89.7",
   "MEAN": "89.5",
   "STD": "0.2",
-
   "COMPUTE_HOURS": "15",
   "CO2_KG": "1.2",
   "RUNTIME": "30",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
   "DATASETS_VERSION": "2.20.0"
 }
-```
-
----

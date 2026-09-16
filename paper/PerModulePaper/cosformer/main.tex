@@ -76,7 +76,7 @@ RoBERTa/BERT, GPT-2, and Qwen/LLaMA -- with exact weight transfer, GQA,
 RoPE, and two distinct computational paths: \textbf{associative accumulation} 
 for bidirectional encoders and \textbf{chunked prefix-sum} for causal decoders. 
 Base weights are transferred exactly from the pretrained attention; LoRA 
-adapters at rank $r = {{LORA_RANK}}$ provide recovery capacity.
+adapters at rank $r = 16$ provide recovery capacity.
 
 We benchmark on SST-2 across three models. Cosformer achieves 
 \textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{D\_BASE}}\%, $\Delta$ = {{D\_DELTA}}), 

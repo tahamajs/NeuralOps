@@ -5,7 +5,7 @@
 We presented \textbf{CHELA-SLAY}, a hybrid attention that blends a **dense softmax 
 stream\textbf{ with a }spherically normalized Yat-Kernel linear stream** via a 
 learnable per-head gate. The gate is initialized to favor the dense path 
-($\sigma({{GATE_INIT_BIAS}}) \approx {{GATE_INIT}}$), preserving pretrained 
+($\sigma(5.0) \approx 0.993$), preserving pretrained 
 behavior at step 0.
 
 \subsection{Results Recap}
@@ -31,7 +31,7 @@ GPT-2 & {{G\_DELTA}}\% & +{{G\_PARAM\_PCT}}\% & {{G\_TIME\_RATIO}}$\times$ & {{G
 \item \textbf{Spherical normalization stabilizes} -- {{SPH\_GAIN}}\% improvement.
 \item \textbf{Yat-Kernel outperforms ELU+1.}
 \item \textbf{Cumsum memory is the main limitation.}
-\item \textbf{Speedup only at long L} ($L \geq {{BREAKEVEN}}$).
+\item \textbf{Speedup only at long L} ($L \geq 1024$).
 
 \end{enumerate}
 \subsection{Future Work}
@@ -58,7 +58,7 @@ code and checkpoints.
 
 \subsection{Acknowledgments}
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank The authors thank the high-performance computing facilities and open-source scientific community for compute resources and framework support..
 
 \subsection{Author Contributions}
 

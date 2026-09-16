@@ -59,13 +59,12 @@ and cosine/sine reweighting.
 
 We support two feature maps:
 
-\[
+\begin{equation}
 \phi(x) = \begin{cases}
 \text{elu}(x) + 1 & \text{(default)} \\
 \text{softplus}(x) & \text{(alternative)}
 \end{cases}
-\tag{4.1}
-\]
+\end{equation}
 
 Both are non-negative, deterministic, and cheap.
 
@@ -79,25 +78,22 @@ accuracy. ELU + 1 is deterministic and works well in practice.
 
 For sequence length $N$ and max position $M = \max(\text{max\_seq\_len}, N)$:
 
-\[
+\begin{equation}
 \theta_i = \frac{\pi i}{2 M}, \quad i = 0, 1, \dots, N-1
-\tag{4.2}
-\]
+\end{equation}
 
 The cosine and sine factors are:
 
-\[
+\begin{equation}
 c_i = \cos(\theta_i), \quad s_i = \sin(\theta_i)
-\tag{4.3}
-\]
+\end{equation}
 
 Applied to $Q, K$:
 
-\[
+\begin{equation}
 \tilde{Q} = Q \odot c, \quad \tilde{Q}' = Q \odot s, \quad
 \tilde{K} = K \odot c, \quad \tilde{K}' = K \odot s
-\tag{4.4}
-\]
+\end{equation}
 
 Broadcasting: $c, s \in \mathbb{R}^{1 \times 1 \times N \times 1}$, 
 $Q, K \in \mathbb{R}^{B \times H \times N \times d}$.
@@ -106,28 +102,25 @@ $Q, K \in \mathbb{R}^{B \times H \times N \times d}$.
 
 For bidirectional attention:
 
-\[
+\begin{equation}
 \begin{aligned}
 KV_c &= \tilde{K}^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
 KV_s &= \tilde{K}'^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
 Z_c &= \sum_j \tilde{K}_j \in \mathbb{R}^{B \times H \times 1 \times d} \\
 Z_s &= \sum_j \tilde{K}'_j \in \mathbb{R}^{B \times H \times 1 \times d}
 \end{aligned}
-\tag{4.5}
-\]
+\end{equation}
 
 The output:
 
-\[
+\begin{equation}
 \text{num} = \tilde{Q} KV_c + \tilde{Q}' KV_s, \quad
 \text{den} = \tilde{Q} Z_c^\top + \tilde{Q}' Z_s^\top + \epsilon
-\tag{4.6}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{context} = \frac{\text{num}}{\text{den}}
-\tag{4.7}
-\]
+\end{equation}
 
 \textbf{Complexity.} Each matmul is $\mathcal{O}(L d^2)$ or $\mathcal{O}(d^2 L)$. 
 Total: $\mathcal{O}(L d^2)$ time, $\mathcal{O}(d^2)$ memory for the state.
@@ -150,32 +143,28 @@ For causal attention:
 \end{itemize}
 \textbf{Intra-chunk:}
 
-\[
+\begin{equation}
 \text{num}_\text{intra} = \text{masked}(\tilde{Q}_c \tilde{K}_c^\top) V_c
-\tag{4.8}
-\]
+\end{equation}
 
 \textbf{Inter-chunk:}
 
-\[
+\begin{equation}
 \text{num}_\text{inter} = \tilde{Q}_c S_c + \tilde{Q}_c' S_s
-\tag{4.9}
-\]
+\end{equation}
 
 \textbf{State update:}
 
-\[
+\begin{equation}
 S_c \mathrel{+}= \tilde{K}_c^\top V_c, \quad
 Z_c \mathrel{+}= \tilde{K}_c^\top \mathbf{1}
-\tag{4.10}
-\]
+\end{equation}
 
 The output for chunk $c$:
 
-\[
+\begin{equation}
 \text{context}_c = \frac{\text{num}_\text{intra} + \text{num}_\text{inter}}{\text{den}_\text{intra} + \text{den}_\text{inter} + \epsilon}
-\tag{4.11}
-\]
+\end{equation}
 
 \textbf{Complexity.} Outer Python loop over \texttt{num\_chunks} iterations (4 for $L = 128$). 
 Each iteration does a small matmul. Total wall-clock: dominated by 4 kernel 
@@ -308,10 +297,9 @@ Output: Y $\in$ R^{B$\times$L$\times$d}
 ELU + 1 is \textbf{not} a good approximation of $\exp(q^\top k)$. The 
 approximation error is bounded by:
 
-\[
+\begin{equation}
 \left|\phi(q)^\top \phi(k) - e^{q^\top k}\right| \leq \epsilon_\text{ELU}
-\tag{4.12}
-\]
+\end{equation}
 
 where $\epsilon_\text{ELU}$ grows with $\|q\|$ and $\|k\|$.
 
@@ -323,10 +311,9 @@ approximately.
 
 The Cosformer reweighting gives:
 
-\[
+\begin{equation}
 \tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = \phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)
-\tag{4.13}
-\]
+\end{equation}
 
 The cosine term decays from 1 at $|i - j| = 0$ to 0 at $|i - j| = L$ 
 (approximately). This restores locality.
@@ -335,10 +322,9 @@ The cosine term decays from 1 at $|i - j| = 0$ to 0 at $|i - j| = L$
 
 The causal path preserves causality:
 
-\[
+\begin{equation}
 \frac{\partial Y_i}{\partial X_j} = 0 \text{ for } j > i
-\tag{4.14}
-\]
+\end{equation}
 
 because intra-chunk scores are masked and inter-chunk uses only 
 previously-processed state.

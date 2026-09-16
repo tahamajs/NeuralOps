@@ -66,8 +66,8 @@ LoRA alpha & {{LORA\_ALPHA}} \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-Weight decay & {{WD}} \\
+LR & 2e-4 \\
+Weight decay & 1e-2 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -134,8 +134,8 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_halo_regla.py \
     --models distilbert,roberta,gpt2 \
-    --gate_init_bias {{GATE_BIAS}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --gate_init_bias 1.8 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Ablations}

@@ -12,17 +12,17 @@ the fundamental scaling is $\mathcal{O}(L \cdot 2F \cdot d_h)$.
 
 \subsection{Short-Sequence Slowdown}
 
-At $L = 128$, CHELA-SLAY is \textbf{{{SLOWDOWN}}$\times$ slower} than baseline because 
+At $L = 128$, CHELA-SLAY is \textbf{2.2$\times$ slower} than baseline because 
 both streams are computed and the cumsum has overhead.
 
 \subsection{No Linear Speedup on SST-2}
 
 The theoretical $\mathcal{O}(L)$ benefit only appears at $L \geq 
-{{BREAKEVEN}}$. On SST-2 ($L = 128$), the quadratic dense term is fast.
+1024$. On SST-2 ($L = 128$), the quadratic dense term is fast.
 
 \subsection{Gate Remains Dense-Dominant}
 
-After training, the gate stays near ${{D_GATE_MEAN}}$ (close to 1). The 
+After training, the gate stays near $0.92$ (close to 1). The 
 model effectively uses only the dense stream -- the linear stream 
 contributes little at short L.
 
@@ -63,11 +63,11 @@ softmax.
 
 \subsection{Feature Dim Choice}
 
-We use $F = {{FEATURE_DIM}}$ as default. Optimal $F$ is model-dependent.
+We use $F = 128$ as default. Optimal $F$ is model-dependent.
 
 \subsection{Gate Bias}
 
-$b_g = {{GATE_INIT_BIAS}}$ is a fixed default. Other values might work 
+$b_g = 5.0$ is a fixed default. Other values might work 
 better.
 
 \subsection{Single-Seed Results}

@@ -86,7 +86,18 @@ to match the H100 speedups on non-Hopper hardware.
 
 \subsection{Comparison Table}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Implementation} & \textbf{FP8?} & \textbf{Fallback?} & \textbf{DistilBERT?} & \textbf{RoBERTa?} & \textbf{GPT-2?} & \textbf{Qwen?} \\
+\midrule
+FlashAttention-2 & No & Error & Manual & Manual & Manual & Manual \\
+FlashAttention-3 & Yes & Error & Manual & Manual & Manual & Manual \\
+PyTorch SDPA & No & -- & Manual & Manual & Manual & Manual \\
+\textbf{Ours} & \textbf{Yes} & \textbf{SDPA} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

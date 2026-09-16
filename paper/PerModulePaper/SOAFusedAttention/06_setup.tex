@@ -46,7 +46,7 @@ Majority baseline: 50.92\%. Max length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{k\_rank} & {{RANK}} \\
+\texttt{k\_rank} & 128 \\
 \texttt{lora\_rank} & {{LORA\_RANK}} \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
 \texttt{dropout} & 0.1 \\
@@ -64,8 +64,8 @@ Majority baseline: 50.92\%. Max length: 128.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-WD & {{WD}} \\
+LR & 2e-4 \\
+WD & 1e-2 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -132,9 +132,9 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_soa_fused.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 128 \
+    --recovery_steps 50 \
+    --lora_rank 16
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -157,5 +157,5 @@ Vanilla SVD & Unweighted SVD (same as ours, but without LoRA) \\
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}).
+Single seed (42).
 

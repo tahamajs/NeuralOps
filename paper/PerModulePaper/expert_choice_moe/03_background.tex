@@ -104,7 +104,22 @@ K_\text{expanded} = \text{repeat\_kv}(K, H / H_{kv})
 
 \subsection{Notation}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$B, L$ & Batch, seq length \\
+$d$ & Hidden dim \\
+$E$ & Number of experts \\
+$T = B \cdot L$ & Total tokens \\
+$k$ & Tokens per expert \\
+$b_g$ & Gate bias \\
+$\gamma$ & Gate value \\
+$r$ & Router logits \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

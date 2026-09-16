@@ -76,7 +76,7 @@ low-rank attention compression. ASVD factorizes the four attention projections
 ($W_Q, W_K, W_V, W_O$) into explicit $U \Sigma V^\top$ factors with rank 
 selected via \textbf{cumulative energy thresholding}, retries on error, and 
 \textbf{strict Frobenius-norm validation} that aborts injection if the reconstruction 
-error exceeds $\tau = {{ERROR_THRESHOLD}}$.
+error exceeds $\tau = 0.20$.
 
 ASVD replaces each \texttt{nn.Linear} with a structural \texttt{ASVDLinear} module computing:
 
@@ -87,7 +87,7 @@ y = ((x V^\top) \odot \Sigma) U^\top + (x A^\top) B^\top \cdot s + b
 achieving genuine parameter reduction from $d_\text{in} d_\text{out}$ to 
 $r(d_\text{in} + d_\text{out}) + r(d_\text{in} + d_\text{out})_\text{LoRA}$. 
 On DistilBERT, RoBERTa-base, and GPT-2 with dynamic rank (energy threshold 
-$= {{ENERGY_THRESHOLD}}$), ASVD achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+$= 0.95$), ASVD achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
 parameter reduction at accuracy drops of \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} on 
 SST-2 after {{RECOVERY\_STEPS}} LoRA recovery steps. Peak VRAM decreases 
 by \textbf{{{VRAM\_REDUCTION}}\%}.

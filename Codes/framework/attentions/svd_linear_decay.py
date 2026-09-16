@@ -4,6 +4,7 @@ Maps to `framework.attentions.svd_linear_attention.SVDLinearAttention`.
 """
 
 from typing import Any, Optional
+import torch
 import torch.nn as nn
 
 from framework.core.registry import ATTENTION_REGISTRY

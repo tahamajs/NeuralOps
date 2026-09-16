@@ -93,34 +93,34 @@ Status & {{G\_STATUS}} \\
 
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     56.0
+5     60.7
+10    58.0
 ...
-50    {{D_S50}}
+50    65.94
 \end{lstlisting}
 
 \subsubsection{RoBERTa (unstable)}
 
 \begin{lstlisting}
 Step  Loss
-1     {{R_S1}}
-5     {{R_S5}}
-10    {{R_S10}}
-15    {{R_S15}}
-20    {{R_S20}}
+1     41.6
+5     45.1
+10    45.0
+15    47.5
+20    48.0
 ...
-50    {{R_S50}}
+50    48.97
 \end{lstlisting}
 
 \subsubsection{GPT-2 (stable)}
 
 \begin{lstlisting}
 Step  Loss
-1     {{G_S1}}
-5     {{G_S5}}
+1     67.5
+5     73.0
 ...
-50    {{G_S50}}
+50    79.36
 \end{lstlisting}
 
 \subsection{C.6 Raw JSON}
@@ -128,18 +128,18 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "accuracy": {{D_ACC}},
+    "accuracy": 65.94,
     "path": "galerkin",
-    "params_after": {{D_PARAMS}},
-    "peak_vram_mb": {{D_VRAM}}
+    "params_after": 67544834,
+    "peak_vram_mb": 322
   },
   "roberta": {
-    "accuracy": {{R_ACC}},
+    "accuracy": 48.97,
     "path": "galerkin",
-    "status": "{{R_STATUS}}"
+    "status": "PASS_LOW"
   },
   "gpt2": {
-    "accuracy": {{G_ACC}},
+    "accuracy": 79.36,
     "path": "decoder_fallback",
     "note": "no-op"
   }
@@ -162,7 +162,4 @@ for steps in 10 25 50 100; do
     python run_all_4_galerkin.py --recovery_steps $steps --output_suffix s$steps
 done
 \end{lstlisting}
-\begin{lstlisting}
 
----
-\end{lstlisting}

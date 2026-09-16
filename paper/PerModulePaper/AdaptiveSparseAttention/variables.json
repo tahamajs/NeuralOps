@@ -1,11 +1,9 @@
 {
   "_comment": "Fill with real values from your Adaptive Sparse runs.",
-
   "MODULE_NAME": "ASA",
   "FULL_NAME": "Adaptive Sparse Attention",
   "SUBTITLE": "Learned Per-Head Sparsity for Efficient Transformer Inference",
   "CATEGORY": "sparse attention",
-
   "AUTHOR_1_NAME": "Your Name",
   "AUTHOR_1_EMAIL": "you@university.edu",
   "AUTHOR_2_NAME": "Advisor Name",
@@ -20,7 +18,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "SPARSITY": "0.5",
   "SPARSITY_ENC": "0.1",
   "TEMPERATURE": "0.1",
@@ -32,11 +29,9 @@
   "LR": "2e-4",
   "WD": "1e-2",
   "SEED": "42",
-
   "ACC_TOLERANCE": "5",
   "FLOP_REDUCTION": "2",
   "MEM_REDUCTION": "8",
-
   "D_ACC": "88.5",
   "D_DELTA": "-2.2",
   "D_F1": "0.885",
@@ -47,7 +42,6 @@
   "D_RHO_MAX": "0.85",
   "D_RHO_MEAN": "0.42",
   "D_RHO_STD": "0.28",
-
   "R_ACC": "76.0",
   "R_DELTA": "-2.6",
   "R_F1": "0.760",
@@ -58,7 +52,6 @@
   "R_RHO_MAX": "0.88",
   "R_RHO_MEAN": "0.45",
   "R_RHO_STD": "0.30",
-
   "G_ACC": "76.5",
   "G_DELTA": "-2.9",
   "G_F1": "0.765",
@@ -69,12 +62,10 @@
   "G_RHO_MAX": "0.90",
   "G_RHO_MEAN": "0.48",
   "G_RHO_STD": "0.30",
-
   "TOP10_MASS": "85",
   "TOP50_MASS": "97",
   "MASS10": "85",
   "MASS50": "97",
-
   "D_S10": "89.5",
   "D_S30": "89.0",
   "D_S50": "88.5",
@@ -90,13 +81,11 @@
   "G_S50": "76.5",
   "G_S70": "74.0",
   "G_S90": "68.5",
-
   "EFF10": "0.12",
   "EFF30": "0.32",
   "EFF50": "0.50",
   "EFF70": "0.68",
   "EFF90": "0.88",
-
   "D_T01": "85.0",
   "D_T1": "88.5",
   "D_T5": "88.0",
@@ -118,7 +107,6 @@
   "D_C32_T": "2.1",
   "D_C64": "88.5",
   "D_C64_T": "2.1",
-
   "D_LR4": "85.0",
   "D_LR8": "87.0",
   "D_LR16": "88.5",
@@ -131,7 +119,6 @@
   "G_LR8": "74.5",
   "G_LR16": "76.5",
   "G_LR32": "76.7",
-
   "D_S10_R": "85.0",
   "D_S25": "87.5",
   "D_S50_R": "88.5",
@@ -144,7 +131,6 @@
   "G_S25": "75.0",
   "G_S50_R": "76.5",
   "G_S100": "76.8",
-
   "D_C32_VRAM": "115",
   "D_C64_VRAM": "120",
   "D_C128_VRAM": "135",
@@ -153,7 +139,6 @@
   "R_C64_VRAM": "500",
   "R_C128_VRAM": "540",
   "R_C256_VRAM": "640",
-
   "D_MASS10": "85",
   "D_MASS50": "97",
   "D_MASS90": "99",
@@ -163,7 +148,6 @@
   "G_MASS10": "86",
   "G_MASS50": "97",
   "G_MASS90": "99",
-
   "STATIC_D": "82.0",
   "STATIC_R": "70.0",
   "STATIC_G": "71.0",
@@ -176,21 +160,17 @@
   "PRIMAL_G": "75.0",
   "PRIMAL_FLOP": "2",
   "ASA_GQA_D": "86.0",
-
   "G_L0_RHO": "0.25",
   "G_L3_RHO": "0.40",
   "G_L6_RHO": "0.50",
   "G_L9_RHO": "0.60",
   "G_L11_RHO": "0.65",
-
   "RUNTIME": "15",
   "COMPUTE_HOURS": "10",
   "CO2_KG": "0.7",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
-
   "T5_VERIFIED": "not tested",
   "Q_VERIFIED": "not tested",
   "FAIL_LAYER_1": "layer.0.attn",
@@ -201,15 +181,10 @@
   "FAIL_DROP_2": "2.0",
   "FAIL_CAUSE": "Head redundancy insufficient",
   "UNRESOLVED_FAILURES": "Causality, long-context evaluation",
-
   "SEED42": "88.5",
   "SEED123": "88.3",
   "SEED456": "88.7",
   "MEAN": "88.5",
   "STD": "0.2",
-
   "_note": "Add keys as needed"
 }
-```
-
----

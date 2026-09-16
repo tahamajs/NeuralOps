@@ -13,7 +13,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "RANK": "64",
   "LORA_RANK": "16",
   "LORA_ALPHA": "32",
@@ -21,11 +20,9 @@
   "BATCH_SIZE": "8",
   "LR": "2e-4",
   "SEED": "42",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
-
   "_comment_distilbert": "Fill from your run",
   "D_ACC": "87.5",
   "D_BASE": "90.71",
@@ -48,7 +45,7 @@
   "D_S1": "0.68",
   "D_S5": "0.55",
   "D_S10": "0.48",
-  "D_S50": "0.42",
+  "D_S50": "87.5",
   "D_ELU": "87.5",
   "D_SOFTPLUS": "87.3",
   "D_RELU": "85.0",
@@ -58,9 +55,7 @@
   "D_R32": "87.8",
   "D_S10_ACC": "82.0",
   "D_S25": "85.5",
-  "D_S50": "87.5",
   "D_S100": "87.8",
-
   "_comment_roberta": "Fill from your run",
   "R_ACC": "68.0",
   "R_DELTA": "-10.56",
@@ -92,7 +87,6 @@
   "R_S25": "65.5",
   "R_S50": "68.0",
   "R_S100": "69.5",
-
   "_comment_gpt2": "Fill from your run",
   "G_ACC": "76.5",
   "G_DELTA": "-2.86",
@@ -131,13 +125,11 @@
   "G_S25": "74.5",
   "G_S50": "76.5",
   "G_S100": "76.8",
-
   "_comment_common": "Common",
   "PARAM_PCT": "5.73",
   "VERDICT": "works on flat encoder; problematic on RoBERTa; slow on decoder",
   "ACT_OBS": "ELU+1 is best; softplus close; ReLU has dead-neuron issues",
   "A3_ACC": "88.5",
-
   "_comment_attention": "Attention analysis",
   "BASELINE_LOCAL_MASS": "65.0",
   "COSFORMER_LOCAL_MASS": "55.0",
@@ -150,16 +142,10 @@
   "D_VRAM_DELTA": "31.1",
   "R_VRAM_DELTA": "1.1",
   "G_VRAM_DELTA": "7.2",
-
   "COMPUTE_HOURS": "4",
   "CO2_KG": "0.4",
   "RUNTIME": "15",
-
   "ACKNOWLEDGMENTS": "the anonymous reviewers",
   "FUNDING": "institutional funding",
-
   "_note": "Add your own keys as needed"
 }
-```
-
----

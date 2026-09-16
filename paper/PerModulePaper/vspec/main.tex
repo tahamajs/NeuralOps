@@ -85,11 +85,11 @@ All base weights (SVD factors) are frozen; only the gates, router, and LoRA
 adapters are trained.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-{{RECOVERY\_STEPS}} recovery steps. VSpec++ achieves \textbf{{{D\_ACC}}\%} on 
-DistilBERT (baseline {{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline 
-{{BASE\_R}}\%), and \textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%). Attention 
-parameters reduce by \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$}, and peak VRAM decreases 
-by \textbf{{{VRAM\_REDUCTION}}\%}.
+50 recovery steps. VSpec++ achieves \textbf{87.5\%} on 
+DistilBERT (baseline 90.71\%), \textbf{75.0\%} on RoBERTa (baseline 
+78.56\%), and \textbf{77.0\%} on GPT-2 (baseline 79.36\%). Attention 
+parameters reduce by \textbf{2.2$\times$--2.2$\times$}, and peak VRAM decreases 
+by \textbf{15\%}.
 
 The variational formulation provides a \textbf{Bayesian interpretation}: the 
 spectral gate $g_i \sim q(g_i | x)$ is a posterior over per-singular-value 

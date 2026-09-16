@@ -1,6 +1,5 @@
 {
   "_comment": "Fill with real values from your galerkin runs.",
-
   "AUTHOR_1_NAME": "Your Name",
   "AUTHOR_1_EMAIL": "you@university.edu",
   "AUTHOR_2_NAME": "Advisor Name",
@@ -15,7 +14,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "RANK": "64",
   "LORA_RANK": "16",
   "LORA_ALPHA": "32",
@@ -23,11 +21,9 @@
   "BATCH_SIZE": "8",
   "LR": "2e-4",
   "SEED": "42",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
-
   "_comment_distilbert": "From earlier logs",
   "D_ACC": "65.94",
   "D_DELTA": "-24.77",
@@ -45,7 +41,6 @@
   "D_STATUS": "PASS",
   "D_START_LOSS": "1.20",
   "D_END_LOSS": "0.73",
-
   "_comment_roberta": "From earlier logs",
   "R_ACC": "48.97",
   "R_DELTA": "-29.59",
@@ -65,7 +60,6 @@
   "R_MAX_LOSS": "1.20",
   "R_START_LOSS": "8.83",
   "R_END_LOSS": "4.33",
-
   "_comment_gpt2": "From earlier logs",
   "G_ACC": "79.36",
   "G_DELTA": "0.00",
@@ -82,67 +76,69 @@
   "G_STATUS": "PASS",
   "G_START_LOSS": "0.69",
   "G_END_LOSS": "0.46",
-
   "PARAM_PCT": "0.88",
-
   "_comment_rank_ablation": "Fill from rank sweep",
-  "D_R8": "45.0", "D_R8_D": "-45.7", "D_R8_E": "0.60",
-  "D_R16": "52.0", "D_R16_D": "-38.7", "D_R16_E": "0.72",
-  "D_R32": "60.0", "D_R32_D": "-30.7", "D_R32_E": "0.82",
-  "D_R64": "65.94", "D_R64_D": "-24.77", "D_R64_E": "0.88",
-  "D_R128": "68.0", "D_R128_D": "-22.7", "D_R128_E": "0.92",
-
+  "D_R8": "45.0",
+  "D_R8_D": "-45.7",
+  "D_R8_E": "0.60",
+  "D_R16": "52.0",
+  "D_R16_D": "-38.7",
+  "D_R16_E": "0.72",
+  "D_R32": "60.0",
+  "D_R32_D": "-30.7",
+  "D_R32_E": "0.82",
+  "D_R64": "65.94",
+  "D_R64_D": "-24.77",
+  "D_R64_E": "0.88",
+  "D_R128": "68.0",
+  "D_R128_D": "-22.7",
+  "D_R128_E": "0.92",
   "_comment_recovery_ablation": "Fill from recovery sweep",
-  "D_S10": "58.0", "R_S10": "45.0", "G_S10": "79.10",
-  "D_S25": "62.0", "R_S25": "47.0", "G_S25": "79.30",
-  "D_S50": "65.94", "R_S50": "48.97", "G_S50": "79.36",
-  "D_S100": "66.5", "R_S100": "49.2", "G_S100": "79.38",
-
+  "D_S10": "58.0",
+  "R_S10": "45.0",
+  "G_S10": "79.10",
+  "D_S25": "62.0",
+  "R_S25": "47.0",
+  "G_S25": "79.30",
+  "D_S50": "65.94",
+  "R_S50": "48.97",
+  "G_S50": "79.36",
+  "D_S100": "66.5",
+  "R_S100": "49.2",
+  "G_S100": "79.38",
   "_comment_layer_analysis": "Fill from layer replacement tests",
   "D_FIRST2": "82.0",
   "D_MID2": "78.0",
   "D_LAST2": "85.0",
   "LAYER_OBS": "early layers more affected; later layers retain more accuracy",
-
   "_comment_energy": "Fill from energy preservation analysis",
   "D_E_R64": "0.88",
   "D_E_R128": "0.92",
   "H1_VERDICT": "partially confirmed; even r=128 fails",
-
   "BASE_ENTROPY": "5.2",
   "DCT_LOW_FREQ": "0.35",
   "H2_RESULT": "attention is high-entropy and sharp; DCT is low-pass",
   "H2_VERDICT": "**Confirmed** as the primary failure mode",
-
   "D_WITH_CORR": "65.94",
   "D_WITHOUT_CORR": "62.0",
   "H3_RESULT": "removing correction makes results worse",
   "H3_VERDICT": "Rejected",
-
   "_comment_spectral": "Fill from SVD analysis",
   "BASE_EFF_RANK": "85.0",
   "GAL_EFF_RANK": "32.0",
   "BASE_TOP1": "0.15",
   "GAL_TOP1": "0.05",
-  "BASE_ENTROPY": "5.2",
   "GAL_ENTROPY": "4.1",
   "SV_OBS": "DCT reduces effective rank dramatically",
-
   "COMPUTE_HOURS": "4",
   "CO2_KG": "0.3",
   "RUNTIME": "12",
-
   "ACKNOWLEDGMENTS": "the anonymous reviewers",
   "FUNDING": "institutional funding",
-
   "LR_1e5": "55.0",
   "LR_5e5": "62.0",
   "LR_1e4": "65.0",
   "LR_2e4": "65.94",
   "LR_5e4": "45.0",
-
   "_note": "Add your own keys as needed"
 }
-```
-
----

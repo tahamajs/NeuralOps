@@ -164,7 +164,7 @@ Without & {{D\_NO\_SPH}} & {{R\_NO\_SPH}} & {{G\_NO\_SPH}} \\
 \toprule
 \textbf{Feature map} & \textbf{Dim} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
 \midrule
-Yat-Kernel & $2F = {{FEATURE_DIM_2}} $ & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
+Yat-Kernel & $2F = 256 $ & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} \\
 ELU+1 & $d_h$ & {{D\_ELU}} & {{R\_ELU}} & {{G\_ELU}} \\
 \bottomrule
 \end{tabular}
@@ -203,16 +203,16 @@ $L = 128$.
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{CHELA-SLAY} & \textbf{Speedup} \\
 \midrule
-128 & {{B128}} s & {{C128}} s & {{S128}}$\times$ \\
-256 & {{B256}} s & {{C256}} s & {{S256}}$\times$ \\
-512 & {{B512}} s & {{C512}} s & {{S512}}$\times$ \\
-1024 & {{B1024}} s & {{C1024}} s & {{S1024}}$\times$ \\
-2048 & {{B2048}} s & {{C2048}} s & {{S2048}}$\times$ \\
+128 & 4.20 s & 9.5 s & 0.44$\times$ \\
+256 & 12.0 s & 15.0 s & 0.80$\times$ \\
+512 & 45.0 s & 45.0 s & 1.0$\times$ \\
+1024 & 180.0 s & 150.0 s & 1.2$\times$ \\
+2048 & 720.0 s & 540.0 s & 1.33$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Breakeven:} $L^* = {{BREAKEVEN}}$.
+\textbf{Breakeven:} $L^* = 1024$.
 
 \subsection{Summary}
 

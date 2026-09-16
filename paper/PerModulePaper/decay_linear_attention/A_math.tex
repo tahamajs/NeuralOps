@@ -4,17 +4,15 @@
 
 The decay recurrence:
 
-\[
+\begin{equation}
 S_t = \lambda_t S_{t-1} + \phi(k_t) v_t^\top
-\tag{A.1}
-\]
+\end{equation}
 
 With $S_0 = 0$:
 
-\[
+\begin{equation}
 S_t = \sum_{j=1}^{t} \left( \prod_{i=j+1}^{t} \lambda_i \right) \phi(k_j) v_j^\top
-\tag{A.2}
-\]
+\end{equation}
 
 \textbf{Decay coefficient:} $D_{t, j} = \exp(\sum_{i=j+1}^t \log \lambda_i)$.
 
@@ -45,33 +43,31 @@ $\square$
 
 \subsection{A.3 ELU+1 Positivity}
 
-\[
+\begin{equation}
 \phi(x) = \text{elu}(x) + 1 > 0 \quad \forall x \in \mathbb{R}
-\tag{A.3}
-\]
+\end{equation}
 
 \textbf{Proof.} $\text{elu}(x) \in (-1, \infty)$, so $\phi(x) \in (0, \infty)$. 
 $\square$
 
 \subsection{A.4 Data-Dependent Decay}
 
-\[
+\begin{equation}
 \lambda_{h,t} = \sigma(W_g x_t + b_g + \ell_h)
-\tag{A.4}
-\]
+\end{equation}
 
-Initialization: $W_g = 0, b_g = 0$, $\ell_h \in [{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$.
+Initialization: $W_g = 0, b_g = 0$, $\ell_h \in [-0.5, 0.0]$.
 
 \textbf{Head diversity.} $\lambda_{h} = \sigma(\ell_h)$ ranges:
 \begin{itemize}
-\item $\lambda_0 = \sigma({{LOG_DECAY_MIN}}) \approx {{LAMBDA_MIN}}$
-\item $\lambda_{H-1} = \sigma({{LOG_DECAY_MAX}}) \approx {{LAMBDA_MAX}}$
+\item $\lambda_0 = \sigma(-0.5) \approx 0.38$
+\item $\lambda_{H-1} = \sigma(0.0) \approx 0.50$
 
 \end{itemize}
 Effective horizons:
 \begin{itemize}
-\item Head 0: $1/(1-\lambda_0) \approx {{HORIZON_MIN}}$
-\item Head $H-1$: $1/(1-\lambda_{H-1}) \approx {{HORIZON_MAX}}$
+\item Head 0: $1/(1-\lambda_0) \approx 1.6$
+\item Head $H-1$: $1/(1-\lambda_{H-1}) \approx 2.0$
 
 \end{itemize}
 \subsection{A.5 Complexity}
@@ -100,10 +96,9 @@ For $C = 32$ and $d_h = 64$: state memory $= 16$ KB per layer.
 
 \subsection{A.6 Bidirectional Combination}
 
-\[
+\begin{equation}
 O = \frac{1}{2} (O^\text{fwd} + O^\text{bwd})
-\tag{A.5}
-\]
+\end{equation}
 
 \textbf{Why 0.5?} Maintains output magnitude. Sum would double, average avoids it.
 
@@ -111,17 +106,15 @@ O = \frac{1}{2} (O^\text{fwd} + O^\text{bwd})
 
 For encoder-decoder attention, K, V come from encoder states:
 
-\[
+\begin{equation}
 K = H_\text{enc} W_K, \quad V = H_\text{enc} W_V
-\tag{A.6}
-\]
+\end{equation}
 
 Q from decoder:
 
-\[
+\begin{equation}
 Q = H_\text{dec} W_Q
-\tag{A.7}
-\]
+\end{equation}
 
 Same chunked scan applies.
 

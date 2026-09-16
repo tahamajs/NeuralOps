@@ -1,11 +1,9 @@
 {
   "_comment": "Fill with real values from your Adaptive Span runs.",
-
   "MODULE_NAME": "ASA-Span",
   "FULL_NAME": "Adaptive Span Attention",
   "SUBTITLE": "Learned Per-Head Attention Windows via Differentiable Soft Ramps",
   "CATEGORY": "learned window attention",
-
   "AUTHOR_1_NAME": "Your Name",
   "AUTHOR_1_EMAIL": "you@university.edu",
   "AUTHOR_2_NAME": "Advisor Name",
@@ -20,7 +18,6 @@
   "ORG": "your-org",
   "HF_ORG": "Hooshaai",
   "LICENSE": "MIT",
-
   "MAX_SPAN": "128",
   "RAMP_SIZE": "32",
   "LAMBDA": "0.01",
@@ -31,10 +28,8 @@
   "LR": "2e-4",
   "WD": "1e-2",
   "SEED": "42",
-
   "ACC_TOLERANCE": "5",
   "MEM_REDUCTION": "2",
-
   "D_ACC": "89.5",
   "D_DELTA": "-1.2",
   "D_F1": "0.895",
@@ -55,7 +50,6 @@
   "D_L3_SPAN": "60",
   "D_L4_SPAN": "52",
   "D_L5_SPAN": "48",
-
   "R_ACC": "76.5",
   "R_DELTA": "-2.1",
   "R_F1": "0.765",
@@ -70,7 +64,6 @@
   "R_LOCAL_COUNT": "5",
   "R_MID_COUNT": "4",
   "R_GLOBAL_COUNT": "3",
-
   "G_ACC": "77.5",
   "G_DELTA": "-1.9",
   "G_F1": "0.775",
@@ -88,10 +81,8 @@
   "G_L0_SPAN": "105",
   "G_L6_SPAN": "75",
   "G_L11_SPAN": "55",
-
   "LOCAL_THRESH": "32",
   "GLOBAL_THRESH": "96",
-
   "D_MAX32": "85.0",
   "D_MAX64": "88.0",
   "D_MAX128": "89.5",
@@ -104,12 +95,10 @@
   "G_MAX64": "75.0",
   "G_MAX128": "77.5",
   "G_MAX256": "77.6",
-
   "D_LEARN32": "24",
   "D_LEARN64": "45",
   "D_LEARN128": "68",
   "D_LEARN256": "72",
-
   "D_R1": "87.0",
   "D_R8": "88.5",
   "D_R16": "89.0",
@@ -126,14 +115,12 @@
   "G_R32": "77.5",
   "G_R64": "76.5",
   "D_R05": "82.0",
-
   "D_L0": "90.5",
   "D_L001": "90.0",
   "D_L01": "89.5",
   "D_L1": "86.0",
   "D_L5": "78.0",
   "D_L10": "65.0",
-
   "D_SPAN0": "126",
   "D_SPAN001": "105",
   "D_SPAN01": "68",
@@ -141,7 +128,6 @@
   "D_RED001": "17",
   "D_RED01": "47",
   "D_RED1": "75",
-
   "D_LR4": "86.0",
   "D_LR8": "88.0",
   "D_LR16": "89.5",
@@ -154,7 +140,6 @@
   "G_LR8": "75.5",
   "G_LR16": "77.5",
   "G_LR32": "77.7",
-
   "D_S10": "86.0",
   "D_S25": "88.0",
   "D_S50": "89.5",
@@ -167,7 +152,6 @@
   "G_S25": "75.5",
   "G_S50": "77.5",
   "G_S100": "77.7",
-
   "GQA_D": "88.5",
   "GQA_R": "75.5",
   "GQA_G": "77.0",
@@ -178,35 +162,26 @@
   "ASA_D": "88.5",
   "ASA_R": "76.0",
   "ASA_G": "76.5",
-
   "FIXED_D": "85.0",
   "FIXED_R": "73.0",
   "FIXED_G": "74.0",
   "FIXED_DELTA": "4.5",
-
   "D_L3_H0": "28",
   "D_L3_H1": "118",
   "D_L3_H11": "34",
-
   "D_STEP0": "126",
   "D_STEP5": "112",
   "D_STEP10": "98",
   "D_STEP15": "88",
   "D_STEP20": "80",
   "D_STEP50": "68",
-
-  "D_L0_SPAN": "95",
   "R_L0_SPAN": "98",
-  "G_L0_SPAN": "105",
-
   "RUNTIME": "18",
   "COMPUTE_HOURS": "12",
   "CO2_KG": "0.85",
-
   "CUDA_VERSION": "12.1",
   "TORCH_VERSION": "2.4.0",
   "HF_VERSION": "4.44.0",
-
   "T5_VERIFIED": "not tested",
   "Q_VERIFIED": "not tested",
   "FAIL_LAYER_1": "layer.0.attn",
@@ -217,15 +192,10 @@
   "FAIL_DROP_2": "1.8",
   "FAIL_CAUSE": "Some heads need larger span than initialized",
   "UNRESOLVED_FAILURES": "Long-context evaluation, hard truncation speedup",
-
   "SEED42": "89.5",
   "SEED123": "89.3",
   "SEED456": "89.7",
   "MEAN": "89.5",
   "STD": "0.2",
-
   "_note": "Add keys as needed"
 }
-```
-
----

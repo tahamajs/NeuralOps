@@ -95,10 +95,9 @@ w_o = src.o_proj.weight
 
 We concatenate along the output dimension:
 
-\[
+\begin{equation}
 W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix}
-\tag{4.1}
-\]
+\end{equation}
 
 Shape: $[H d_h + 2 H_{kv} d_h, d]$.
 
@@ -106,49 +105,42 @@ Shape: $[H d_h + 2 H_{kv} d_h, d]$.
 
 Compute the full SVD:
 
-\[
+\begin{equation}
 W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
-\tag{4.2}
-\]
+\end{equation}
 
 Truncate to rank $r_{qkv}$:
 
-\[
+\begin{equation}
 r_{qkv} = \min(\text{rank\_qkv}, H d_h + 2 H_{kv} d_h, d)
-\tag{4.3}
-\]
+\end{equation}
 
 Store the factors:
 
-\[
+\begin{equation}
 U_{QKV, r} \in \mathbb{R}^{(H d_h + 2 H_{kv} d_h) \times r_{qkv}}
-\tag{4.4}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 S_{QKV, r} \in \mathbb{R}^{r_{qkv}}, \quad
 V_{QKV, r} \in \mathbb{R}^{r_{qkv} \times d}
-\tag{4.5}
-\]
+\end{equation}
 
 \subsubsection{Forward Pass}
 
 Given input $X$:
 
-\[
+\begin{equation}
 \text{Proj}_1 = X V_{QKV, r}^\top \in \mathbb{R}^{B \times N \times r_{qkv}}
-\tag{4.6}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{Proj}_2 = \text{Proj}_1 \cdot \text{diag}(S_{QKV, r}) \in \mathbb{R}^{B \times N \times r_{qkv}}
-\tag{4.7}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{QKV} = \text{Proj}_2 U_{QKV, r}^\top \in \mathbb{R}^{B \times N \times (H d_h + 2 H_{kv} d_h)}
-\tag{4.8}
-\]
+\end{equation}
 
 Then split into Q, K, V.
 
@@ -170,49 +162,42 @@ $U_{QKV, r}$ & $r_{qkv} \cdot (H d_h + 2 H_{kv} d_h)$ \\
 \end{table}
 
 For $H = H_{kv}$:
-\[
+\begin{equation}
 \text{Total}_{QKV} = r_{qkv} (2d + 2 d_h) = 2 r_{qkv} (d + d_h)
-\tag{4.9}
-\]
+\end{equation}
 
 \subsection{Separate O SVD}
 
 The output projection $W_O \in \mathbb{R}^{d \times H d_h}$ gets its own SVD:
 
-\[
+\begin{equation}
 W_O = U_O \Sigma_O V_O^\top
-\tag{4.10}
-\]
+\end{equation}
 
 Truncate to rank $r_{out}$:
 
-\[
+\begin{equation}
 r_{out} = \min(\text{rank\_out}, d, H d_h)
-\tag{4.11}
-\]
+\end{equation}
 
 Forward:
 
-\[
+\begin{equation}
 \text{Out}_1 = \text{Context} V_{O, r}^\top \in \mathbb{R}^{B \times N \times r_{out}}
-\tag{4.12}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{Out}_2 = \text{Out}_1 \cdot \text{diag}(S_{O, r}) \in \mathbb{R}^{B \times N \times r_{out}}
-\tag{4.13}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{Out} = \text{Out}_2 U_{O, r}^\top + b_O \in \mathbb{R}^{B \times N \times d}
-\tag{4.14}
-\]
+\end{equation}
 
 \textbf{Parameter count:}
-\[
+\begin{equation}
 \text{Total}_O = r_{out} (d + H d_h) + r_{out}
-\tag{4.15}
-\]
+\end{equation}
 
 \subsection{LoRA Recovery}
 
@@ -220,24 +205,21 @@ Both branches have LoRA adapters:
 
 \subsubsection{QKV LoRA}
 
-\[
+\begin{equation}
 \text{QKV}_\text{LoRA} = \frac{\alpha}{r_L} B_{QKV} A_{QKV} \cdot X
-\tag{4.16}
-\]
+\end{equation}
 
 Added to the SVD output:
 
-\[
+\begin{equation}
 \text{QKV}_\text{final} = \text{QKV}_\text{SVD} + \text{QKV}_\text{LoRA}
-\tag{4.17}
-\]
+\end{equation}
 
 \subsubsection{Output LoRA}
 
-\[
+\begin{equation}
 \text{Out}_\text{LoRA} = \frac{\alpha}{r_L} B_O A_O \cdot \text{Context}
-\tag{4.18}
-\]
+\end{equation}
 
 Added after SVD output.
 
@@ -409,10 +391,9 @@ joint SVD recovers $V$ as the dominant right singular vectors. $\square$
 
 For the joint SVD:
 
-\[
+\begin{equation}
 \|W_{QKV} - U_{QKV, r} \Sigma_r V_{QKV, r}^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
-\tag{4.19}
-\]
+\end{equation}
 
 \subsubsection{Causality}
 

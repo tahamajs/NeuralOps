@@ -51,24 +51,21 @@ For each of Q, K, V:
 
 \textbf{Step 2:} Compute truncated SVD:
 
-\[
+\begin{equation}
 W \approx U_k \Sigma_k V_k^\top
-\tag{4.1}
-\]
+\end{equation}
 
 where $k$ is the target rank.
 
 \textbf{Step 3:} Split symmetrically:
 
-\[
+\begin{equation}
 \text{down.weight} = V_k^\top \in \mathbb{R}^{k \times d_\text{in}}
-\tag{4.2}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{up.weight} = U_k \Sigma_k \in \mathbb{R}^{d_\text{out} \times k}
-\tag{4.3}
-\]
+\end{equation}
 
 Note: we do NOT use $\Sigma^{1/2}$ on both sides; instead, we absorb $\Sigma_k$ 
 entirely into the up-projection. This is equivalent mathematically but 
@@ -82,10 +79,9 @@ slightly different numerically (all $\Sigma$ in one factor).
 
 The rank $k$ trades off compression and accuracy:
 
-\[
+\begin{equation}
 \text{Compression} = \frac{d^2}{2 k d} = \frac{d}{2k}
-\tag{4.4}
-\]
+\end{equation}
 
 \begin{table}[H]
 \centering
@@ -109,10 +105,9 @@ We default to $k = 128$ (3$\times$ reduction on Q/K/V, or 1.5$\times$ on the ful
 
 $W_O$ is \textbf{not factorized}. Instead, we wrap it in a \texttt{LoRALinear}:
 
-\[
+\begin{equation}
 \text{out} = W_O \cdot \text{context} + b_O + \text{LoRA}(\text{context})
-\tag{4.5}
-\]
+\end{equation}
 
 \textbf{Why not factorize $W_O$?}
 

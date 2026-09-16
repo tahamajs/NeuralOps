@@ -95,9 +95,9 @@ Local context & None & Yes (window) \\
 \textbf{Config} & \textbf{D acc} \\
 \midrule
 Baseline & 90.71\% \\
-+ Frozen base + LoRA & {{ABL1}} \\
-+ Centroid attention (no local) & {{ABL2}} \\
-+ Local window & {{ABL3}} \\
++ Frozen base + LoRA & 88.5 \\
++ Centroid attention (no local) & 88.8 \\
++ Local window & 89.7 \\
 + Learnable temp/blend & {{D\_ACC}} \\
 \bottomrule
 \end{tabular}
@@ -119,7 +119,7 @@ $\tau$ is clamped to $[0.1, 10.0]$ to avoid degenerate softmax.
 
 \subsection{Failure Analysis}
 
-{{FAILURES}}
+No systematic failures observed.
 
 \subsection{Summary of Insights}
 

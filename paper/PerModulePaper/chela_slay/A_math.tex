@@ -4,36 +4,32 @@
 
 The Yat-Kernel feature map is:
 
-\[
+\begin{equation}
 \phi(x) = \frac{1}{F^{1/4}} [\cos(x \Omega) \,\|\, \sin(x \Omega)]
-\tag{A.1}
-\]
+\end{equation}
 
 where $\Omega \in \mathbb{R}^{d_h \times F}$ is a random projection.
 
 \textbf{Inner product:}
 
-\[
+\begin{equation}
 \phi(x)^\top \phi(y) = \frac{1}{\sqrt{F}} [\cos(x\Omega)^\top \cos(y\Omega) 
 + \sin(x\Omega)^\top \sin(y\Omega)]
-\tag{A.2}
-\]
+\end{equation}
 
 Using $\cos(a)\cos(b) + \sin(a)\sin(b) = \cos(a - b)$:
 
-\[
+\begin{equation}
 \phi(x)^\top \phi(y) = \frac{1}{\sqrt{F}} \sum_{i=1}^{F} \cos(\omega_i^\top (x - y))
-\tag{A.3}
-\]
+\end{equation}
 
 This is a scaled cosine-similarity kernel.
 
 \subsection{A.2 Spherical Normalization}
 
-\[
+\begin{equation}
 \hat{x} = \frac{x}{\|x\|_2 + \epsilon}
-\tag{A.4}
-\]
+\end{equation}
 
 \textbf{Property.} $\|\hat{x}\|_2 = 1$ for all $x$.
 
@@ -43,10 +39,9 @@ This is a scaled cosine-similarity kernel.
 
 \subsection{A.3 Linear Attention}
 
-\[
+\begin{equation}
 O_i^\text{linear} = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
-\tag{A.5}
-\]
+\end{equation}
 
 \textbf{Complexity.} Computing $KV = \sum_j \phi(k_j) v_j^\top$ is 
 $\mathcal{O}(L \cdot 2F \cdot d_h)$. Evaluating (A.5) is $\mathcal{O}(L \cdot 2F \cdot d_h)$. Total: $\mathcal{O}(L \cdot 2F \cdot d_h)$.
@@ -55,18 +50,16 @@ $\mathcal{O}(L \cdot 2F \cdot d_h)$. Evaluating (A.5) is $\mathcal{O}(L \cdot 2F
 
 For decoders, we require:
 
-\[
+\begin{equation}
 O_t^\text{linear} = \frac{\phi(q_t)^\top \sum_{j \leq t} \phi(k_j) v_j^\top}{\phi(q_t)^\top \sum_{j \leq t} \phi(k_j)}
-\tag{A.6}
-\]
+\end{equation}
 
 Define:
 
-\[
+\begin{equation}
 S_t = \sum_{j \leq t} \phi(k_j) v_j^\top, \quad
 Z_t = \sum_{j \leq t} \phi(k_j)
-\tag{A.7}
-\]
+\end{equation}
 
 Both are cumulative sums, computed via \texttt{torch.cumsum}.
 
@@ -75,24 +68,21 @@ $\mathcal{O}(L \cdot 2F \cdot d_h)$ memory.
 
 \subsection{A.5 Gate Fusion}
 
-\[
+\begin{equation}
 g = \sigma(W_g X + b_g)
-\tag{A.8}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
-\tag{A.9}
-\]
+\end{equation}
 
-\textbf{Step-0 preservation.} With $W_g = 0$ and $b_g = {{GATE_INIT_BIAS}}$:
+\textbf{Step-0 preservation.} With $W_g = 0$ and $b_g = 5.0$:
 
-\[
-g = \sigma({{GATE_INIT_BIAS}}) \approx {{GATE_INIT}}
-\tag{A.10}
-\]
+\begin{equation}
+g = \sigma(5.0) \approx 0.993
+\end{equation}
 
-So $O \approx {{GATE_INIT}} \cdot O^\text{dense} + {{LINEAR_INIT}} \cdot O^\text{linear}$, 
+So $O \approx 0.993 \cdot O^\text{dense} + 0.007 \cdot O^\text{linear}$, 
 dominated by dense.
 
 \subsection{A.6 Complexity Summary}
@@ -128,10 +118,9 @@ When does the linear stream pay off?
 
 Breakeven when $T_d = T_l$:
 
-\[
+\begin{equation}
 L^* = \frac{c_2 \cdot 2F}{c_1}
-\tag{A.11}
-\]
+\end{equation}
 
 For typical constants, $L^* \approx 2F \cdot \kappa$ where $\kappa$ is a 
 hardware-dependent constant.

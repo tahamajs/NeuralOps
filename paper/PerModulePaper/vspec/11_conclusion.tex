@@ -4,8 +4,8 @@
 
 We presented \textbf{VSpec++}, a variational spectral attention module that 
 combines token routing, variational spectral gating, and head gating with 
-SVD-factorized projections. The method achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
-attention parameter reduction with \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} accuracy 
+SVD-factorized projections. The method achieves \textbf{2.2$\times$--2.2$\times$} 
+attention parameter reduction with \textbf{-3.2\%---2.4\%} accuracy 
 loss on SST-2.
 
 \subsection{Results Recap}
@@ -17,9 +17,9 @@ loss on SST-2.
 \toprule
 \textbf{Model} & \textbf{Acc $\Delta$} & \textbf{Attention Ratio} & \textbf{VRAM $\Delta$} \\
 \midrule
-DistilBERT & {{D\_DELTA}}\% & \textbf{{{D\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
-RoBERTa & {{R\_DELTA}}\% & \textbf{{{R\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
-GPT-2 & {{G\_DELTA}}\% & \textbf{{{G\_RATIO}}$\times$} & -{{VRAM\_REDUCTION}}\% \\
+DistilBERT & -3.2\% & \textbf{2.2$\times$} & -15\% \\
+RoBERTa & -3.6\% & \textbf{2.2$\times$} & -15\% \\
+GPT-2 & -2.4\% & \textbf{2.2$\times$} & -15\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -56,7 +56,7 @@ all code and checkpoints.
 
 \subsection{Acknowledgments}
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank the anonymous reviewers for their constructive feedback and computational support..
 
 \subsection{Author Contributions}
 

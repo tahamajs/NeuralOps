@@ -96,10 +96,9 @@ generation tasks, it may be more problematic.
 The condition number of $F_2$ can be large when landmarks are 
 insufficient. We regularize via:
 
-\[
+\begin{equation}
 F_2^{-1} = \text{pinv}(F_2, \text{rcond}=10^{-4})
-\tag{8.1}
-\]
+\end{equation}
 
 The \texttt{rcond} threshold zeros out singular values below $10^{-4} \sigma_\text{max}$.
 

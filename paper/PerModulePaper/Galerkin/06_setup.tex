@@ -45,7 +45,7 @@ Sequence length truncated to 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Note} \\
 \midrule
-\texttt{rank} (basis dim $r$) & {{RANK}} & Default 64 \\
+\texttt{rank} (basis dim $r$) & 64 & Default 64 \\
 \texttt{basis\_type} & \texttt{ortho\_dct} & DCT-II \\
 \texttt{layer\_id} & 0..N\_l & For logging \\
 \texttt{dropout} & 0.1 &  \\
@@ -63,7 +63,7 @@ Sequence length truncated to 128.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
+Learning rate & 2e-4 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 LoRA rank & {{LORA\_RANK}} \\
 LoRA alpha & {{LORA\_ALPHA}} \\
@@ -121,16 +121,16 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_galerkin.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
 \end{lstlisting}
 
-Expected runtime: ~{{RUNTIME}} minutes.
+Expected runtime: ~12 minutes.
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}). No multi-seed runs.
+Single seed (42). No multi-seed runs.
 
 \subsection{Baselines}
 
@@ -138,8 +138,5 @@ Single seed ({{SEED}}). No multi-seed runs.
 \item \texttt{full} -- unmodified model
 \item \texttt{galerkin} -- our method
 \item Prior modules: \texttt{nha}, \texttt{nasc}, \texttt{a3}, etc.
-\end{itemize}
-\begin{lstlisting}
 
----
-\end{lstlisting}
+\end{itemize}

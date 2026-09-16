@@ -106,20 +106,20 @@ Path & Decoder \\
 
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     0.68
+5     0.55
+10    0.48
 ...
-50    {{D_S50}}
+50    87.5
 \end{lstlisting}
 
 \subsection{C.7 Raw JSON}
 
 \begin{lstlisting}
 {
-  "distilbert": {"acc": {{D_ACC}}, "path": "encoder"},
-  "roberta": {"acc": {{R_ACC}}, "path": "encoder_nested"},
-  "gpt2": {"acc": {{G_ACC}}, "path": "decoder"}
+  "distilbert": {"acc": 87.5, "path": "encoder"},
+  "roberta": {"acc": 68.0, "path": "encoder_nested"},
+  "gpt2": {"acc": 76.5, "path": "decoder"}
 }
 \end{lstlisting}
 

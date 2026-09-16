@@ -6,22 +6,19 @@ DecayLinearAttention replaces standard attention with a **chunked,
 data-dependent linear recurrence**. For each head, we learn a per-token decay 
 $\lambda_{h,t}$ and propagate a running state:
 
-\[
+\begin{equation}
 S_t = \lambda_{h,t} S_{t-1} + \phi(k_t) v_t^\top
-\tag{4.1}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 z_t = \lambda_{h,t} z_{t-1} + \phi(k_t)
-\tag{4.2}
-\]
+\end{equation}
 
 The output:
 
-\[
+\begin{equation}
 O_t = \frac{\phi(q_t)^\top S_t}{\phi(q_t)^\top z_t + \epsilon}
-\tag{4.3}
-\]
+\end{equation}
 
 \textbf{Figure 4.1} shows the pipeline.
 
@@ -56,15 +53,13 @@ O_t = \frac{\phi(q_t)^\top S_t}{\phi(q_t)^\top z_t + \epsilon}
 
 For each head $h$ and token $t$:
 
-\[
+\begin{equation}
 \tilde{\lambda}_{h,t} = W_g x_t + b_g
-\tag{4.4}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \lambda_{h,t} = \sigma\!\left(\tilde{\lambda}_{h,t} + \ell_h\right)
-\tag{4.5}
-\]
+\end{equation}
 
 where $\ell_h$ is a \textbf{learned scalar} per head.
 
@@ -73,7 +68,7 @@ where $\ell_h$ is a \textbf{learned scalar} per head.
 \item $W_g = 0$ (no input dependence initially).
 \item $b_g = 0$.
 \item $\ell_h$ is initialized to linearly spaced values in
-  $[{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$:
+  $[-0.5, 0.0]$:
 
 \end{itemize}
 \begin{lstlisting}
@@ -82,8 +77,8 @@ where $\ell_h$ is a \textbf{learned scalar} per head.
 
 \textbf{Result.} At step 0, different heads start with different horizons:
 \begin{itemize}
-\item Head 0: $\lambda \approx \sigma({{LOG_DECAY_MIN}}) \approx {{LAMBDA_MIN}}$
-\item Head $H-1$: $\lambda \approx \sigma({{LOG_DECAY_MAX}}) \approx {{LAMBDA_MAX}}$
+\item Head 0: $\lambda \approx \sigma(-0.5) \approx 0.38$
+\item Head $H-1$: $\lambda \approx \sigma(0.0) \approx 0.50$
 
 \end{itemize}
 This head diversity is analogous to multi-scale temporal receptive fields in 
@@ -91,10 +86,9 @@ convolutional networks.
 
 \subsection{ELU+1 Feature Map}
 
-\[
+\begin{equation}
 \phi(x) = \text{elu}(x) + 1
-\tag{4.6}
-\]
+\end{equation}
 
 Applied element-wise to Q, K.
 
@@ -113,10 +107,9 @@ For a chunk of size $C$ starting at position $s$:
 
 Within the chunk, we compute:
 
-\[
+\begin{equation}
 \Lambda_i = \sum_{p=s}^{s+i} \log \lambda_{h,p}, \quad i \in [0, C)
-\tag{4.7}
-\]
+\end{equation}
 
 via \texttt{torch.cumsum}.
 
@@ -124,73 +117,63 @@ via \texttt{torch.cumsum}.
 
 For positions $i, j$ in the chunk with $j \leq i$:
 
-\[
+\begin{equation}
 D_{i, j}^\text{intra} = \exp(\Lambda_i - \Lambda_j)
-\tag{4.8}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 A_{i, j}^\text{intra} = \phi(q_i)^\top \phi(k_j) \cdot D_{i, j}^\text{intra}
-\tag{4.9}
-\]
+\end{equation}
 
 with $A_{i, j}^\text{intra} = 0$ for $j > i$ (causality).
 
 Output (numerator):
 
-\[
+\begin{equation}
 \text{num}_i^\text{intra} = \sum_{j \leq i} A_{i, j}^\text{intra} \cdot v_j
-\tag{4.10}
-\]
+\end{equation}
 
 Normalizer (denominator):
 
-\[
+\begin{equation}
 \text{denom}_i^\text{intra} = \sum_{j \leq i} A_{i, j}^\text{intra}
-\tag{4.11}
-\]
+\end{equation}
 
 \subsubsection{Inter-Chunk Contribution}
 
 Let $S_\text{prev}$, $z_\text{prev}$ be the state before the chunk. Define:
 
-\[
+\begin{equation}
 D_i^\text{inter} = \exp(\Lambda_i)
-\tag{4.12}
-\]
+\end{equation}
 
 Then:
 
-\[
+\begin{equation}
 \text{num}_i^\text{inter} = \phi(q_i)^\top S_\text{prev} \cdot D_i^\text{inter}
-\tag{4.13}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 \text{denom}_i^\text{inter} = \phi(q_i)^\top z_\text{prev} \cdot D_i^\text{inter}
-\tag{4.14}
-\]
+\end{equation}
 
 \subsubsection{Output}
 
-\[
+\begin{equation}
 O_i = \frac{\text{num}_i^\text{intra} + \text{num}_i^\text{inter}}{\text{denom}_i^\text{intra} + \text{denom}_i^\text{inter} + \epsilon}
-\tag{4.15}
-\]
+\end{equation}
 
 \subsubsection{State Update}
 
 After the chunk, the state is updated for the next chunk:
 
-\[
+\begin{equation}
 S_\text{new} = \exp(\Lambda_C) S_\text{prev} + \sum_{i=0}^{C-1} \exp(\Lambda_C - \Lambda_i) \phi(k_i) v_i^\top
-\tag{4.16}
-\]
+\end{equation}
 
-\[
+\begin{equation}
 z_\text{new} = \exp(\Lambda_C) z_\text{prev} + \sum_{i=0}^{C-1} \exp(\Lambda_C - \Lambda_i) \phi(k_i)
-\tag{4.17}
-\]
+\end{equation}
 
 where $\Lambda_C$ is the cumulative log-decay at the end of the chunk.
 
@@ -198,7 +181,7 @@ where $\Lambda_C$ is the cumulative log-decay at the end of the chunk.
 
 For encoders, we run the chunked scan twice:
 
-\[
+\begin{equation}
 O^\text{fwd} = \text{Scan}(Q, K, V, \lambda) \quad \text{(left to right)}
 \]
 
@@ -213,8 +196,7 @@ Final output:
 
 \[
 O = \frac{1}{2} (O^\text{fwd} + O^\text{bwd})
-\tag{4.18}
-\]
+\end{equation}
 
 \subsection{Algorithm}
 
