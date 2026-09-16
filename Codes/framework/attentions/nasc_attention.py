@@ -805,7 +805,7 @@ def inject_nasc(
         return new_attn
     except Exception as e:
         logger.error("inject_nasc failed: %s", e)
-        raise e
+        return None
 
 
 # Aliases

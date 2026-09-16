@@ -119,7 +119,25 @@ concludes.
 
 \subsection{Notation}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$d_h$ & Head dimension \\
+$H$ & Number of query heads \\
+$H_{kv}$ & Number of KV heads \\
+$B$ & Batch size \\
+$\sigma$ & Softmax function \\
+$\text{cast}_{e4m3fn}$ & FP8 E4M3 cast \\
+SDPA & Scaled Dot-Product Attention \\
+TMA & Tensor Memory Accelerator \\
+HBM & High-Bandwidth Memory \\
+SRAM & Shared memory on chip \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

@@ -63,7 +63,19 @@ LoRA recovery.
 
 \subsection{Comparison Table}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{Complexity} & \textbf{Stable?} & \textbf{Pretrained} \\
+\midrule
+Softmax & $\mathcal{O}(N^2 d_h)$ &  & -- \\
+Performer & $\mathcal{O}(N F d_h)$ & Varies &  \\
+Poly-NL & $\mathcal{O}(N F d_h)$ &  &  \\
+\textbf{PADRe (unser kernelized)} & $\mathcal{O}(N^2 d_h)$ &  & \textbf{ } \\
+PADRe (kernelized, future) & $\mathcal{O}(N F d_h)$ &  &  \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

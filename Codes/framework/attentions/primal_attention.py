@@ -297,8 +297,7 @@ class PrimalAttention(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
@@ -518,7 +517,7 @@ def inject_primal(
                     break
         return model if replaced > 0 else None
     except Exception:
-        raise RuntimeError("copy_weights failed")
+        return None
 
 
 inject_primal_attention = inject_primal

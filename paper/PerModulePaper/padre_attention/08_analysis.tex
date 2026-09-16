@@ -26,14 +26,14 @@ positions with $s < -d$ get zero weight. This creates natural sparsity.
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{lllllll}
+\begin{tabular}{lll}
 \toprule
-\textbf{Order} & \textbf{Max error ($} & \textbf{s} & \textbf{\leq 1$)} & \textbf{Max error ($} & \textbf{s} & \textbf{\leq 2$)} \\
+\textbf{Order} & \textbf{Max error ($|s| \leq 1$)} & \textbf{Max error ($|s| \leq 2$)} \\
 \midrule
-1 & 0.20 & 0.80 &  &  &  &  \\
-2 & 0.08 & 0.40 &  &  &  &  \\
-4 & 0.01 & 0.10 &  &  &  &  \\
-8 & 0.001 & 0.01 &  &  &  &  \\
+1 & 0.20 & 0.80 \\
+2 & 0.08 & 0.40 \\
+4 & 0.01 & 0.10 \\
+8 & 0.001 & 0.01 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -88,8 +88,5 @@ FP16 underflow & Use FP32 for scores \\
 \item \textbf{ReLU sparsity is a free benefit} (15\% zero weights).
 \item \textbf{Injection check prevents bad layers.}
 \item \textbf{Runtime is unchanged} without kernelization.
-\end{enumerate}
-\begin{lstlisting}
 
----
-\end{lstlisting}
+\end{enumerate}

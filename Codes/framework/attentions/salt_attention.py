@@ -149,12 +149,17 @@ class SALTLinear(nn.Module):
         return W_svd + W_lora
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        r"""Compute adapted linear projection."""
-        adapted_S = self.S * self.gamma
-        W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt
-        W_lora = self.A @ self.B
-        W = (W_svd + W_lora).to(dtype=x.dtype)
-        return F.linear(x, W, self.bias.to(dtype=x.dtype) if self.bias is not None else None)
+        r"""Compute adapted linear projection efficiently in low-rank factorized form."""
+        adapted_S = (self.S * self.gamma).to(dtype=x.dtype)
+        # SVD branch: (x @ Vt.T) * adapted_S @ U.T
+        x_vt = F.linear(x, self.Vt.to(dtype=x.dtype))
+        x_svd = F.linear(x_vt * adapted_S, self.U.to(dtype=x.dtype))
+        # LoRA branch: (x @ B.T) @ A.T
+        x_lora = F.linear(F.linear(x, self.B.to(dtype=x.dtype)), self.A.to(dtype=x.dtype))
+        out = x_svd + x_lora
+        if self.bias is not None:
+            out = out + self.bias.to(dtype=x.dtype)
+        return out
 
     def freeze_base_weights(self) -> None:
         """Buffers U, S, Vt are non-trainable by construction. Gamma and A, B remain trainable."""
@@ -263,8 +268,7 @@ class SALTAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                print(f'copy_weights failed: {e}')
-                raise RuntimeError(f"copy_weights failed: {e}")
+                logger.debug("UniversalAdapter fallback failed: %s", e)
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -545,4 +549,4 @@ def inject_salt_attention(
         return new_attn
     except Exception as e:
         logger.error("inject_salt_attention failed at layer %d: %s", layer_idx, e)
-        raise RuntimeError(f"Injection failed")
+        return None

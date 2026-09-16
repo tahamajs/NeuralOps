@@ -86,7 +86,20 @@ python run_all_4_padre.py \
 
 \subsection{Baselines}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Baseline} & \textbf{Description} \\
+\midrule
+\texttt{full} & Standard softmax attention \\
+\texttt{padre} & Our method \\
+\texttt{padre\_order1} & Linear polynomial \\
+\texttt{padre\_order2} & Quadratic polynomial \\
+\texttt{padre\_order4} & Quartic polynomial \\
+\texttt{padre\_no\_center} & Without max-centering \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}
