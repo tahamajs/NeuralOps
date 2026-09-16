@@ -614,9 +614,9 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
         if "qwen" in str(name).lower():
             target_micro = 8
         elif total_vram_gb >= 7.0:
-            target_micro = min(curr_batch_size, 512)
-        else:
             target_micro = min(curr_batch_size, 32)
+        else:
+            target_micro = min(curr_batch_size, 16)
         micro_bs = min(curr_batch_size, target_micro)
     else:
         micro_bs = curr_batch_size
@@ -628,6 +628,7 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
         if time.monotonic() - t_start > timeout:
             LOG.warning("Training step %d/%d exceeded timeout %.0fs; aborting", step, steps, timeout)
             raise TimeoutError(f"Module training exceeded {timeout}s stall timeout")
+        step_start_time = time.time()
         try:
             if batches is not None and len(batches) > 0:
                 bx, by = batches[step % len(batches)]
@@ -663,8 +664,10 @@ def finetune_lora(model, tokenizer, train, name, steps, seq_len, batch_size, dev
             except (RuntimeError, ValueError):
                 opt.step()
             scheduler.step()
+            
+            step_time = time.time() - step_start_time
             if (step + 1) % 5 == 0 or step == steps - 1 or step == 0:
-                LOG.info("LoRA fine-tune step %d/%d loss=%.4f (bs=%d, micro_bs=%d)", step + 1, steps, step_loss, total_n, micro_bs)
+                LOG.info("LoRA fine-tune step %d/%d loss=%.4f (bs=%d, micro_bs=%d) took %.2fs", step + 1, steps, step_loss, total_n, micro_bs, step_time)
             step += 1
         except torch.cuda.OutOfMemoryError:
             opt.zero_grad(set_to_none=True)
@@ -1169,6 +1172,10 @@ def main():
         torch.cuda.manual_seed_all(args.seed)
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+        try:
+            torch.cuda.set_per_process_memory_fraction(0.85)
+        except:
+            pass
         
         try:
             free_bytes, total_bytes = torch.cuda.mem_get_info()
