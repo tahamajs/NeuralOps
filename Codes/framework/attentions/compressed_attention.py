@@ -438,7 +438,8 @@ class CompressedAttentionLayer(BaseAttention):
             probs = probs * head_mask
 
         attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-        attn_out = attn_out * self.output_scale
+        if not getattr(self, 'is_nested_encoder', False):
+            attn_out = attn_out * self.output_scale
 
         if self.is_nested_encoder:
             out = attn_out

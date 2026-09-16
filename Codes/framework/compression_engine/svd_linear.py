@@ -165,7 +165,7 @@ class SVDLinearCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        rank: int = 64,
+        rank: int = 192,
         max_error: float = 0.20,
         fallback_to_original: bool = True,
         protect_critical: bool = True,
@@ -219,6 +219,8 @@ class SVDLinearCompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
+        if any(k in name_l for k in ["out_lin", "out_proj", "o_proj", "c_proj", "output.dense", "self.output"]):
+            return False
         if self.protect_critical and any(k in name_l for k in ["classifier", "score", "lm_head", "pooler", "embed", "logits_processor"]):
             return False
 
@@ -349,7 +351,7 @@ class SVDLinearCompressor(BaseCompressor):
 def svd_linear_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """SVD Linear compressor factory."""
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    rank = kwargs.pop("rank", _cfg_get(comp_config, "svd_rank", _cfg_get(comp_config, "rank", 64)))
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "svd_rank", _cfg_get(comp_config, "rank", 192)))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.50))
     fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0)))

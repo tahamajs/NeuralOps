@@ -113,8 +113,9 @@ class SDRMCompressor(BaseCompressor):
         name_l = name.lower()
         # 1. Protection for critical / classification / head / pooler / embedding layers
         if any(k in name_l for k in [
-            'classifier', 'score', 'lm_head', 'pooler', 'embed', 'embedding',
-            'cls_head', 'head', 'logits_processor'
+            'classifier', 'score', 'lm_head', 'pooler', 'embedding',
+            'cls_head', 'head', 'logits_processor',
+            'out_lin', 'out_proj', 'o_proj', 'c_proj', 'output.dense',
         ]):
             self.protected_layers.append(name)
             return False

@@ -155,19 +155,17 @@ def main():
         "gpt2": 16,
     }
 
-    
-RECOVERY_OVERRIDES = {
-    "a3": {"recovery_steps": 100},
-    "aasvd": {"recovery_steps": 100},
-    "asvd": {"recovery_steps": 100},
-    "mla": {"recovery_steps": 100},
-    "svd_linear": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
-    "svd_linear_attention": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
-    "svd_llm_v2": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
-    "svd_mamba": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
-}
+    RECOVERY_OVERRIDES = {
+        "svd_linear": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+        "svd_llm_v2": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+        "svd_mamba": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+        "a3": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+        "aasvd": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+        "asvd": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+        "mla": {"recovery_steps": 100, "lora_rank": 32, "lora_alpha": 64},
+    }
 
-def get_batch_size(m_name: str) -> int:
+    def get_batch_size(m_name: str) -> int:
         return BATCH_SIZE_BY_MODEL.get(m_name.lower(), 32)
 
     sweep_script = REPO_DIR / "Codes" / "framework" / "run_quality_sweep.py"

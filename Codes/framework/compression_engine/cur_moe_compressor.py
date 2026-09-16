@@ -266,7 +266,12 @@ class CURMoECompressor(BaseCompressor):
             "c_attn",
         })
         if len(self.compressed_layers) == 0:
+            visited = set()
             for name, module in list(self.model.named_modules()):
+                target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+                if id(target_mod) in visited:
+                    continue
+                visited.add(id(target_mod))
                 name_lower = name.lower()
                 if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
                     continue

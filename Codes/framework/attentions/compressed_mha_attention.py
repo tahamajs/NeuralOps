@@ -378,6 +378,8 @@ class CompressedDistilBertAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        if attention_mask is not None and attention_mask.dtype == torch.bool and attention_mask.shape[-1] == self.num_heads:
+            head_mask, attention_mask = attention_mask, None
         if hidden_states.dim() == 2:
             hidden_states = hidden_states.unsqueeze(0)
         B, N, _ = hidden_states.shape
