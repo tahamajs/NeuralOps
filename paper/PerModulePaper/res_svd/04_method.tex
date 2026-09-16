@@ -13,13 +13,13 @@ Res-SVD Attention replaces each projection with a two-level decomposition.
                       
     +--------------------------------------+
     |  Step 1: SVD of W                    |
-    |  W = U   V^T                         |
+    |  W = U $\Sigma$ V^T                         |
     +----------------+---------------------+
                      |
                       
     +--------------------------------------+
     |  Step 2: Base = top r_b              |
-    |  W_base = U_b  _b V_b^T              |
+    |  W_base = U_b $\Sigma$_b V_b^T              |
     +----------------+---------------------+
                      |
                       
@@ -31,13 +31,13 @@ Res-SVD Attention replaces each projection with a two-level decomposition.
                       
     +--------------------------------------+
     |  Step 4: SVD of R                    |
-    |  R = U_r  _r V_r^T                   |
+    |  R = U_r $\Sigma$_r V_r^T                   |
     +----------------+---------------------+
                      |
                       
     +--------------------------------------+
     |  Step 5: Init LoRA from residual     |
-    |  B = U_r  _r^{1/2}, A =  _r^{1/2} V_r^T |
+    |  B = U_r $\Sigma$_r^{1/2}, A = $\Sigma$_r^{1/2} V_r^T |
     +----------------+---------------------+
                      |
                       
@@ -162,17 +162,17 @@ Baseline & 589,824 \\
 Input:  Weight W $\in$ R^{m$\times$n}, ranks r_b, r_r, scaling $\alpha$
 Output: Base factors (U_b, V_b), Residual factors (B, A), bias b
 
-1:  U,  , V^T $\leftarrow$ SVD(W)
+1:  U, $\Sigma$, V^T $\leftarrow$ SVD(W)
 2:  # Base
-3:  U_b $\leftarrow$ U[:, :r_b];   _b $\leftarrow$  [:r_b];  V_b^T $\leftarrow$ V^T[:r_b, :]
-4:  W_base $\leftarrow$ U_b @ diag( _b) @ V_b^T
+3:  U_b $\leftarrow$ U[:, :r_b];  $\Sigma$_b $\leftarrow$ $\Sigma$[:r_b];  V_b^T $\leftarrow$ V^T[:r_b, :]
+4:  W_base $\leftarrow$ U_b @ diag($\Sigma$_b) @ V_b^T
 5:  # Residual
 6:  R $\leftarrow$ W - W_base
-7:  U_r,  _r, V_r^T $\leftarrow$ SVD(R)
+7:  U_r, $\Sigma$_r, V_r^T $\leftarrow$ SVD(R)
 8:  # LoRA init
-9:   _r_sqrt $\leftarrow$ sqrt( _r[:r_r])
-10: B $\leftarrow$ U_r[:, :r_r] *  _r_sqrt[None, :]
-11: A $\leftarrow$  _r_sqrt[:, None] * V_r^T[:r_r, :]
+9:  $\Sigma$_r_sqrt $\leftarrow$ sqrt($\Sigma$_r[:r_r])
+10: B $\leftarrow$ U_r[:, :r_r] * $\Sigma$_r_sqrt[None, :]
+11: A $\leftarrow$ $\Sigma$_r_sqrt[:, None] * V_r^T[:r_r, :]
 12: return (U_b, V_b, B, A, b)
 \end{lstlisting}
 

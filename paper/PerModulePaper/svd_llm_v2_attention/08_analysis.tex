@@ -161,7 +161,7 @@ Note: explicit factorization has the same FLOPs as symmetric.
 \textbf{Aspect} & \textbf{MinimalSVD} & \textbf{MinimalPRISM} & \textbf{SVD-LLM V2} \\
 \midrule
 Factorization & Symmetric & Symmetric & \textbf{Explicit} \\
-Interpretable &  &  & \textbf{ } \\
+Interpretable $\Sigma$ &  &  & \textbf{ } \\
 Pre-test &  &  &  \\
 GQA pooling &  &  &  \\
 Accuracy & {{MINSVD\_D}} & {{PRISM\_D}} & {{D\_ACC}} \\
@@ -171,7 +171,7 @@ Ratio & {{MINSVD\_D\_R}}$\times$ & {{PRISM\_D\_R}}$\times$ & {{D\_RATIO}}$\times
 \end{table}
 
 \textbf{Observation.} All methods achieve similar accuracy and compression. 
-SVD-LLM V2 adds explicit   storage for downstream flexibility.
+SVD-LLM V2 adds explicit $\Sigma$ storage for downstream flexibility.
 
 \subsection{Failure Modes}
 
