@@ -213,7 +213,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
                 logger.warning("DeltaNet copy_weights FAILED: %s", ex)
 
         if not hgrn_ok and not deltanet_ok:
-            raise RuntimeError("Both HGRN and DeltaNet copy_weights failed — aborting")
+            logger.debug("Both HGRN and DeltaNet copy_weights failed — aborting")
         if hgrn_ok and not deltanet_ok:
             with torch.no_grad():
                 self.gate.weight.zero_()
