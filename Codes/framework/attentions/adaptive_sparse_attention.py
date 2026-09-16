@@ -473,7 +473,7 @@ class AdaptiveSparseAttention(BaseAttention):
                 in_d = min(target_mod.weight.size(1), w.size(1))
                 norm = float(torch.norm(w[:out_d, :in_d].float()).item())
                 if norm < 1e-4:
-                    logger.warning(f"AdaptiveSparseAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm:.6f})")
+                    raise RuntimeError(f"AdaptiveSparseAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm:.6f})")
 
         if extracted["o"][0] is not None:
             w_o = extracted["o"][0]
@@ -481,7 +481,7 @@ class AdaptiveSparseAttention(BaseAttention):
             in_d = min(self.out_proj.weight.size(1), w_o.size(1))
             norm_o = float(torch.norm(w_o[:out_d, :in_d].float()).item())
             if norm_o < 1e-4:
-                logger.warning(f"AdaptiveSparseAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o:.6f})")
+                raise RuntimeError(f"AdaptiveSparseAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o:.6f})")
 
         # Copy into projection modules
         with torch.no_grad():
