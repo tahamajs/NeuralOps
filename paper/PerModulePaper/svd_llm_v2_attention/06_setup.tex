@@ -48,8 +48,8 @@ Majority baseline: \textbf{50.92\%}. Sequence length: 128 tokens.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-$r_\text{max}$ & {{RANK}} & Rank cap \\
-$\eta$ (energy) & {{ENERGY}} & Spectral energy threshold \\
+$r_\text{max}$ & 32 & Rank cap \\
+$\eta$ (energy) & 45.2 & Spectral energy threshold \\
 \texttt{dropout} & 0.1 & Standard \\
 \texttt{lora\_rank} & {{LORA\_RANK}} & Recovery adapter \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} & Scaling \\
@@ -68,8 +68,8 @@ $\eta$ (energy) & {{ENERGY}} & Spectral energy threshold \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -146,17 +146,17 @@ Transformers & {{HF\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_svd_llm_v2.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --energy {{ENERGY}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 32 \
+    --energy 45.2 \
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~PyTorch 2.0 minutes.
 
 \subsection{Seeds}
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 
 \subsection{Baselines}
 

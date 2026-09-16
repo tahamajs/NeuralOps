@@ -12,8 +12,8 @@ Attention K and V weights have \textbf{highly concentrated spectra}. \textbf{Fig
 shows singular value decay of $W_\text{fused} = [W^K; W^V]$ for 
 representative DistilBERT layers.
 
-The top ${{TOP32_ENERGY}}\%$ of energy is captured by the top 32 singular 
-values. This explains why latent dimension $c = {{RANK}}$ is sufficient.
+The top $92\%\%$ of energy is captured by the top 32 singular 
+values. This explains why latent dimension $c = 32$ is sufficient.
 
 \subsubsection{Shared Latent is Sufficient}
 
@@ -190,7 +190,7 @@ MLA init, no LoRA & {{NO\_LORA}} & {{NO\_LORA\_D}} \\
 \midrule
 DeepSeek-V2 & 512 & 512 & 1.0$\times$ \\
 DeepSeek-V3 & 1536 & -- & -- \\
-\textbf{Our reproduction} & -- & {{RANK}} & -- \\
+\textbf{Our reproduction} & -- & 32 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -227,7 +227,7 @@ Shape mismatch & {{SHAPE\_ERR}} & GQA dimension \\
 \midrule
 Target & Parameter compression & Parameter compression & \textbf{KV compression} \\
 K/V sharing & No & No & \textbf{Yes} \\
-Latent dimension & N/A & N/A & \textbf{{{RANK}}} \\
+Latent dimension & N/A & N/A & \textbf{32} \\
 Acc (DistilBERT) & {{MINSVD\_D}} & {{SVDLLM\_D}} & \textbf{{{D\_ACC}}} \\
 KV reduction & 1.0$\times$ & 1.0$\times$ & \textbf{{{D\_KV\_RATIO}}$\times$} \\
 \bottomrule

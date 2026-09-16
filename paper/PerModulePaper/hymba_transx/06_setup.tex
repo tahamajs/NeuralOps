@@ -46,7 +46,7 @@ Majority baseline: 50.92\%. Max seq: 128.
 \midrule
 \texttt{lora\_rank} & {{LORA\_RANK}} \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
-\texttt{rank} & {{RANK}} \\
+\texttt{rank} & 32 \\
 $\lambda$ (differential damping) & 0.2 \\
 $\alpha$ init & $\sigma(-1) \approx 0.27$ \\
 RoPE base & $10^4$ \\
@@ -64,8 +64,8 @@ RoPE base & $10^4$ \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-WD & {{WD}} \\
+LR & 1e-4 \\
+WD & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -132,8 +132,8 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_hymba_transx.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -156,7 +156,7 @@ python run_all_4_hymba_transx.py \
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}).
+Single seed (42).
 \begin{lstlisting}
 
 ---

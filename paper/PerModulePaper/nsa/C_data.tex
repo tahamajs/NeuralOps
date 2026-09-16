@@ -65,10 +65,10 @@ Preserved mass & {{G\_MASS}}\% \\
 \toprule
 \textbf{$w$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
 \midrule
-8 & {{D\_W8}} & {{R\_W8}} & {{G\_W8}} & {{DENS8}}\% \\
-16 & {{D\_W16}} & {{R\_W16}} & {{G\_W16}} & {{DENS16}}\% \\
-32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} & {{DENS32}}\% \\
-64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} & {{DENS64}}\% \\
+8 & {{D\_W8}} & {{R\_W8}} & {{G\_W8}} & 0.12\% \\
+16 & {{D\_W16}} & {{R\_W16}} & {{G\_W16}} & 0.24\% \\
+32 & {{D\_W32}} & {{R\_W32}} & {{G\_W32}} & 0.45\% \\
+64 & {{D\_W64}} & {{R\_W64}} & {{G\_W64}} & 0.82\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -82,10 +82,10 @@ Preserved mass & {{G\_MASS}}\% \\
 \toprule
 \textbf{$k$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
 \midrule
-4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} & {{DENSK4}}\% \\
-8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} & {{DENSK8}}\% \\
-16 & {{D\_K16}} & {{R\_K16}} & {{G\_K16}} & {{DENSK16}}\% \\
-32 & {{D\_K32}} & {{R\_K32}} & {{G\_K32}} & {{DENSK32}}\% \\
+4 & {{D\_K4}} & {{R\_K4}} & {{G\_K4}} & 0.10\% \\
+8 & {{D\_K8}} & {{R\_K8}} & {{G\_K8}} & 0.20\% \\
+16 & {{D\_K16}} & {{R\_K16}} & {{G\_K16}} & 0.38\% \\
+32 & {{D\_K32}} & {{R\_K32}} & {{G\_K32}} & 0.75\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -149,11 +149,11 @@ Preserved mass & {{G\_MASS}}\% \\
 {
   "nsa": {
     "distilbert": {
-      "window_size": {{WINDOW_SIZE}},
-      "top_k": {{TOP_K}},
-      "accuracy_pct": {{D_ACC}},
-      "density_pct": {{D_DENSITY}},
-      "peak_vram_mb": {{D_VRAM}}
+      "window_size": 128,
+      "top_k": 2,
+      "accuracy_pct": 86.4,
+      "density_pct": 50\%,
+      "peak_vram_mb": 380 MB
     },
     "roberta": {...},
     "gpt2": {...}

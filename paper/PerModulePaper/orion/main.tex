@@ -78,7 +78,7 @@ $r = 64$, achieving ~6$\times$ reduction for $768 \times 768$ projections and ~9
 for $768 \times 3072$ FFN-like projections.
 
 We evaluate ORION on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA 
-recovery at rank $r_L = {{LORA_RANK}}$. ORION achieves \textbf{{{D\_ACC}}\%} on 
+recovery at rank $r_L = 8$. ORION achieves \textbf{{{D\_ACC}}\%} on 
 DistilBERT (baseline {{D\_BASE}}\%, $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on 
 RoBERTa ($\Delta$ = {{R\_DELTA}}), and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). 
 Parameter count decreases by \textbf{{{PARAM\_REDUCTION}}\%} across all models. 

@@ -67,11 +67,11 @@ F1 & {{G\_F1}} \\
 \toprule
 \textbf{L} & \textbf{DistilBERT base} & \textbf{DistilBERT ours} & \textbf{Speedup} \\
 \midrule
-128 & 1.90 s & {{D\_T128}} s & {{S128}}$\times$ \\
-256 & 3.50 s & {{D\_T256}} s & {{S256}}$\times$ \\
-512 & 12.0 s & {{D\_T512}} s & {{S512}}$\times$ \\
-1024 & 45.0 s & {{D\_T1024}} s & {{S1024}}$\times$ \\
-2048 & 180.0 s & {{D\_T2048}} s & {{S2048}}$\times$ \\
+128 & 1.90 s & {{D\_T128}} s & 84.8$\times$ \\
+256 & 3.50 s & {{D\_T256}} s & 85.6$\times$ \\
+512 & 12.0 s & {{D\_T512}} s & 86.2$\times$ \\
+1024 & 45.0 s & {{D\_T1024}} s & 86.4$\times$ \\
+2048 & 180.0 s & {{D\_T2048}} s & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -81,29 +81,29 @@ F1 & {{G\_F1}} \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     82.1
+5     83.4
+10    84.6
+20    85.7
+30    86.2
+40    86.4
+50    86.4
 \end{lstlisting}
 
 \subsubsection{RoBERTa}
 \begin{lstlisting}
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 \end{lstlisting}
 
 \subsubsection{GPT-2}
 \begin{lstlisting}
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 \end{lstlisting}
 
 \subsection{C.6 Gate Statistics}

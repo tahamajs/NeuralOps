@@ -68,8 +68,8 @@ Short seq threshold & 128 & Dense fallback \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -135,12 +135,12 @@ Transformers & {{HF\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_nystrom.py \
     --models distilbert,roberta,gpt2 \
-    --num_landmarks {{NUM_LANDMARKS}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --num_landmarks 32 \
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~PyTorch 2.0 minutes.
 
 \subsection{Long Sequence Evaluation}
 
@@ -157,7 +157,7 @@ python run_all_4_nystrom.py \
 
 \subsection{Seeds}
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 
 \subsection{Baselines}
 

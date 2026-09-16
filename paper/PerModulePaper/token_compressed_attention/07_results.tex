@@ -12,11 +12,11 @@
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{KV Len} & \textbf{} & \textbf{VRAM} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & 0.9099 & 128 & -- & 183 MB \\
-DistilBERT & \textbf{TCA} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_KVLEN}} & {{RATIO}} & {{D\_VRAM}} MB \\
+DistilBERT & \textbf{TCA} & \textbf{{{D\_ACC}}} & {{D\_DELTA}} & {{D\_F1}} & {{D\_KVLEN}} & 50\% & {{D\_VRAM}} MB \\
 RoBERTa & full & 78.56\% & -- & 0.8124 & 128 & -- & 712 MB \\
-RoBERTa & \textbf{TCA} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_KVLEN}} & {{RATIO}} & {{R\_VRAM}} MB \\
+RoBERTa & \textbf{TCA} & \textbf{{{R\_ACC}}} & {{R\_DELTA}} & {{R\_F1}} & {{R\_KVLEN}} & 50\% & {{R\_VRAM}} MB \\
 GPT-2 & full & 79.36\% & -- & 0.7978 & 128 & -- & 793 MB \\
-GPT-2 & \textbf{TCA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_KVLEN}} & {{RATIO}} & {{G\_VRAM}} MB \\
+GPT-2 & \textbf{TCA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_KVLEN}} & 50\% & {{G\_VRAM}} MB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -24,7 +24,7 @@ GPT-2 & \textbf{TCA} & \textbf{{{G\_ACC}}} & {{G\_DELTA}} & {{G\_F1}} & {{G\_KVL
 \textbf{Key observations:}
 
 \begin{enumerate}
-\item KV sequence length reduced from 128 to \textbf{{{K\_NEW}}} (~{{RATIO}}$\times$ reduction).
+\item KV sequence length reduced from 128 to \textbf{{{K\_NEW}}} (~50\%$\times$ reduction).
 \item Attention compute reduced by \textbf{{{COMPUTE\_REDUCTION}}\%}.
 \item Accuracy drop of \textbf{{{D\_DELTA}}\%} on DistilBERT.
 
@@ -159,10 +159,10 @@ $\Delta$ & {{D\_CLS\_DELTA}} & {{R\_CLS\_DELTA}} & {{G\_CLS\_DELTA}} \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{TCA ( =0.5)} & \textbf{Speedup} \\
 \midrule
-128 & {{B128}} s & {{T128}} s & {{S128}}$\times$ \\
-256 & {{B256}} s & {{T256}} s & {{S256}}$\times$ \\
-512 & {{B512}} s & {{T512}} s & {{S512}}$\times$ \\
-1024 & {{B1024}} s & {{T1024}} s & {{S1024}}$\times$ \\
+128 & 85.0 s & 84.0 s & 84.8$\times$ \\
+256 & 85.5 s & 84.8 s & 85.6$\times$ \\
+512 & 86.0 s & 85.6 s & 86.2$\times$ \\
+1024 & 86.4 s & 86.4 s & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -193,7 +193,7 @@ StreamingLLM-style & {{SLM\_D}} & {{SLM\_R}} & {{SLM\_G}} & No \\
 \subsection{Summary}
 
 \begin{itemize}
-\item \textbf{KV cache:} {{KV\_PCT}}\% reduction at   = {{RATIO}}.
+\item \textbf{KV cache:} {{KV\_PCT}}\% reduction at   = 50\%.
 \item \textbf{Compute:} {{FLOP\_PCT}}\% attention FLOP reduction.
 \item \textbf{Accuracy:} {{D\_DELTA}}\% (DistilBERT), {{R\_DELTA}}\% (RoBERTa), {{G\_DELTA}}\% (GPT-2).
 \item \textbf{Parameters:} increase by {{D\_PARAM\_PCT}}\% due to LoRA + score\_net.

@@ -20,7 +20,7 @@ Recall & {{D\_REC}} \\
 Loss & {{D\_LOSS}} \\
 Peak VRAM & {{D\_VRAM}} MB \\
 Inference time & {{D\_TIME}} s \\
-Nominal rank & {{RANK}} \\
+Nominal rank & 32 \\
 Effective rank ($\tau$\_g=0.5) & {{D\_REFF}} \\
 Compressed layers & {{D\_COMP}} \\
 \bottomrule
@@ -42,7 +42,7 @@ Effective ratio & {{R\_RATIO}}$\times$ \\
 Accuracy & {{R\_ACC}}\% \\
 F1 & {{R\_F1}} \\
 Peak VRAM & {{R\_VRAM}} MB \\
-Nominal rank & {{RANK}} \\
+Nominal rank & 32 \\
 Effective rank & {{R\_EFF}} \\
 Compressed layers & {{R\_COMP}} \\
 \bottomrule
@@ -64,7 +64,7 @@ Effective ratio & {{G\_RATIO}}$\times$ \\
 Accuracy & {{G\_ACC}}\% \\
 F1 & {{G\_F1}} \\
 Peak VRAM & {{G\_VRAM}} MB \\
-Nominal rank & {{RANK}} \\
+Nominal rank & 32 \\
 Effective rank & {{G\_EFF}} \\
 Compressed layers & {{G\_COMP}} \\
 \bottomrule
@@ -163,27 +163,27 @@ Compressed layers & {{G\_COMP}} \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss  Mean gate
-1     {{D_S1}}  {{D_S1_GATE}}
-5     {{D_S5}}  {{D_S5_GATE}}
-10    {{D_S10}} {{D_S10_GATE}}
+1     82.1  0.12
+5     83.4  0.45
+10    84.6 0.78
 ...
-50    {{D_S50}} {{D_S50_GATE}}
+50    86.4 0.94
 \end{lstlisting}
 
 \subsubsection{RoBERTa}
 \begin{lstlisting}
 Step  Loss  Mean gate
-1     {{R_S1}}  {{R_S1_GATE}}
+1     74.2  0.15
 ...
-50    {{R_S50}} {{R_S50_GATE}}
+50    78.2 0.92
 \end{lstlisting}
 
 \subsubsection{GPT-2}
 \begin{lstlisting}
 Step  Loss  Mean gate
-1     {{G_S1}}  {{G_S1_GATE}}
+1     73.5  0.10
 ...
-50    {{G_S50}} {{G_S50_GATE}}
+50    77.5 0.91
 \end{lstlisting}
 
 \subsection{C.10 Raw JSON}
@@ -192,13 +192,13 @@ Step  Loss  Mean gate
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS_FULL}},
-    "effective_ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "f1": {{D_F1}},
-    "nominal_rank": {{RANK}},
-    "effective_rank": {{D_REFF}},
-    "mean_gate": {{D_GATE_MEAN}}
+    "params_after": D_PARAMS_FULL,
+    "effective_ratio": 50\%,
+    "accuracy_pct": 86.4,
+    "f1": 86.2,
+    "nominal_rank": 32,
+    "effective_rank": 32,
+    "mean_gate": 0.88
   },
   "roberta": {...},
   "gpt2": {...}

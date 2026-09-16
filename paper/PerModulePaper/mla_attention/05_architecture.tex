@@ -188,7 +188,7 @@ are not applicable.
 \textbf{Aspect} & \textbf{Original} & \textbf{Our reproduction} \\
 \midrule
 Target architecture & DeepSeek-V2 & Four families \\
-Latent dim & 512 (V2), 1536 (V3) & {{RANK}} \\
+Latent dim & 512 (V2), 1536 (V3) & 32 \\
 RoPE on K & Decomposed & After projection \\
 GQA & Native & Supported via pool \\
 Output scale & Not specified & Trainable scalar \\
@@ -199,7 +199,7 @@ Output scale & Not specified & Trainable scalar \\
 \textbf{Differences from original.}
 
 \begin{enumerate}
-\item \textbf{Latent dimension.} We use {{RANK}} instead of 512.
+\item \textbf{Latent dimension.} We use 32 instead of 512.
 \item \textbf{RoPE handling.} The original applies RoPE on a decoupled head
   dimension; we apply it uniformly after up-projection.
 \item \textbf{Multi-architecture support.} The original does not target DistilBERT,

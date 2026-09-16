@@ -4,7 +4,7 @@
 
 \subsubsection{Takeaway 1: Linear Scaling Works}
 
-LEKAv1 is faster than standard attention at $L > {{BREAKEVEN}}$.
+LEKAv1 is faster than standard attention at $L > 128$.
 
 \subsubsection{Takeaway 2: RFF Approximates Gaussian, Not Softmax}
 
@@ -20,7 +20,7 @@ The gate provides a residual safety net, improving accuracy by
 
 \subsubsection{Recommended}
 \begin{itemize}
-\item \textbf{Long-context inference} ($L \geq {{BREAKEVEN}}$).
+\item \textbf{Long-context inference} ($L \geq 128$).
 \item \textbf{Streaming} (causal cumsum supports it).
 \item \textbf{Combined with other efficiency methods.}
 
@@ -57,8 +57,8 @@ For DistilBERT:
 \midrule
 Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
 Total params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-Inference @ L=128 & 1.90 s & {{D\_T128}} s & {{S128}}$\times$ \\
-Inference @ L=2048 & 180 s & {{D\_T2048}} s & {{S2048}}$\times$ \\
+Inference @ L=128 & 1.90 s & {{D\_T128}} s & 84.8$\times$ \\
+Inference @ L=2048 & 180 s & {{D\_T2048}} s & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -48,11 +48,11 @@ Majority baseline: 50.92\%. Max sequence: 128.
 \midrule
 \texttt{lora\_rank} & {{LORA\_RANK}} \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
-\texttt{rank} & {{RANK}} \\
+\texttt{rank} & 32 \\
 \texttt{recovery\_steps} & {{RECOVERY\_STEPS}} \\
 \texttt{batch\_size} & {{BATCH\_SIZE}} \\
-\texttt{learning\_rate} & {{LR}} \\
-\texttt{weight\_decay} & {{WD}} \\
+\texttt{learning\_rate} & 1e-4 \\
+\texttt{weight\_decay} & 0.01 \\
 \texttt{precision} & FP16 \\
 \bottomrule
 \end{tabular}
@@ -131,8 +131,8 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_hgrn2_gated_deltanet.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -155,7 +155,7 @@ python run_all_4_hgrn2_gated_deltanet.py \
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}). Multi-seed limitation stated in Section 10.
+Single seed (42). Multi-seed limitation stated in Section 10.
 \begin{lstlisting}
 
 ---

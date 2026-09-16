@@ -47,8 +47,8 @@ Majority baseline: 50.92\%. Max sequence length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{num\_landmarks} (base $L_0$) & {{L0}} \\
-\texttt{local\_window\_size} & {{WINDOW}} \\
+\texttt{num\_landmarks} (base $L_0$) & 0.0 \\
+\texttt{local\_window\_size} & 128 \\
 \texttt{feature\_dim} ($d_\text{feat}$) & {{FEATURE\_DIM}} \\
 Gate init & 2.0 \\
 \bottomrule
@@ -68,8 +68,8 @@ Gate init & 2.0 \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
 \texttt{recovery\_steps} & {{RECOVERY\_STEPS}} \\
 \texttt{batch\_size} & {{BATCH\_SIZE}} \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Optimizer & AdamW \\
 Precision & FP16 \\
 \bottomrule
@@ -129,9 +129,9 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_leka_v3.py \
     --models distilbert,roberta,gpt2 \
-    --num_landmarks {{L0}} \
-    --local_window_size {{WINDOW}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --num_landmarks 0.0 \
+    --local_window_size 128 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -154,7 +154,7 @@ python run_all_4_leka_v3.py \
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 \begin{lstlisting}
 
 ---

@@ -67,8 +67,8 @@ Sequence length: 128. Majority baseline: 50.92\%.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -134,15 +134,15 @@ Transformers & {{HF\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_unified_rope.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~PyTorch 2.0 minutes.
 
 \subsection{Seeds}
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 
 \subsection{Baselines}
 

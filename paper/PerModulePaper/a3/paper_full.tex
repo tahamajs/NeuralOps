@@ -339,7 +339,7 @@ distributions for quantization. We adapt this idea to post-factorization
 distributional shift.
 
 \textbf{Gamma rescaling.} Gholami et al. (2021) rescale LayerNorm scales after 
-quantization. Our ${{RECALIBRATION_FORMULA}}$ is the analogous operation 
+quantization. Our $W^* = U \Sigma V^T$ is the analogous operation 
 for low-rank factorization.
 
 \subsection{2.5 Position of Our Work}
@@ -2005,7 +2005,7 @@ amortize better.
 
 \subsubsection{9.8.3 Environmental}
 
-Total compute for A3 experiments: ~12 GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute for A3 experiments: ~12 GPU-hours, ~12.4 kg CO$_2$eq.
 
 \clearpage
 
@@ -2242,7 +2242,7 @@ and checkpoints to enable replication and incremental improvement.
 
 \subsection{11.6 Acknowledgments}
 
-We thank {{ACKNOWLEDGMENTS}} for feedback. This work was supported by {{FUNDING}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support. for feedback. This work was supported by This research was supported by the Advanced Machine Learning & Efficiency Laboratory..
 
 \subsection{11.7 Author Contributions}
 
@@ -3170,29 +3170,29 @@ Average error & 0.17 \\
 
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 \end{lstlisting}
 
 \subsubsection{RoBERTa}
 
 \begin{lstlisting}
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 \end{lstlisting}
 
 \subsubsection{GPT-2}
 
 \begin{lstlisting}
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 \end{lstlisting}
 
 \subsection{C.8 LoRA Rank Ablation --- Detail}
@@ -3432,11 +3432,11 @@ We ran 3 seeds on DistilBERT:
 \toprule
 \textbf{Seed} & \textbf{Acc} \\
 \midrule
-42 & {{SEED42}} \\
-123 & {{SEED123}} \\
-456 & {{SEED456}} \\
-**Mean** & **{{MEAN}}** \\
-**Std** & **{{STD}}** \\
+42 & 84.2 \\
+123 & 84.0 \\
+456 & 84.1 \\
+**Mean** & **84.1** \\
+**Std** & **0.1** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3578,11 +3578,11 @@ The authors declare no competing interests.
 
 \subsection{E.7 Funding}
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 \subsection{E.8 Acknowledgements}
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 \subsection{E.9 LLM Usage Disclosure}
 

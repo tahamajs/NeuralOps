@@ -49,8 +49,8 @@ Dispatch threshold & 128 \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-Weight decay & {{WD}} \\
+LR & 1e-4 \\
+Weight decay & 0.01 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -71,9 +71,9 @@ RTX 4070 Laptop, CUDA {{CUDA\_VERSION}}, PyTorch {{TORCH\_VERSION}}.
 \begin{lstlisting}
 python run_all_4_fusion_attn.py \
     --models distilbert,roberta,gpt2 \
-    --block_size {{BLOCK_SIZE}} \
-    --top_k_blocks {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --block_size 64 \
+    --top_k_blocks 2 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

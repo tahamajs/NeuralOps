@@ -92,7 +92,7 @@ fusion**:
 On SST-2, LEKAv2 achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
 {{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and 
 \textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%). Inference is linear at 
-long sequences ($\geq {{BREAKEVEN}}$) and preserves pretrained weights 
+long sequences ($\geq 128$) and preserves pretrained weights 
 via SVD-free copying with LoRA adapters.
 
 \textbf{We are explicit that LEKAv2 does not reduce parameter count.} It adds 

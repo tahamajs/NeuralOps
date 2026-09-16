@@ -68,7 +68,7 @@ out\_lin (768$\times$768) & 589,824 & {{D\_L0\_O}} & {{D\_L0\_O\_R}}$\times$ \\
 
 \subsection{Effective Rank Distribution}
 
-\textbf{Table 7.3: Energy-adaptive rank per layer (DistilBERT,   = {{ENERGY}}).}
+\textbf{Table 7.3: Energy-adaptive rank per layer (DistilBERT,   = 45.2).}
 
 \begin{table}[H]
 \centering
@@ -110,8 +110,8 @@ O & {{D\_REC\_O}} & {{R\_REC\_O}} & {{G\_REC\_O}} \\
 \end{tabular}
 \end{table}
 
-By Proposition 4.10.2, with $\eta = {{ENERGY}}$ the theoretical bound is 
-$\sqrt{1 - {{ENERGY}}} = {{ERR_BOUND}}$.
+By Proposition 4.10.2, with $\eta = 45.2$ the theoretical bound is 
+$\sqrt{1 - 45.2} = 0.03$.
 
 \subsection{Efficiency Profile}
 
@@ -136,7 +136,7 @@ GPT-2 & MinimalSVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 
 \subsection{Ablation: Rank Cap $r_\text{max}$}
 
-\textbf{Table 7.6: Accuracy vs rank cap (  = {{ENERGY}}).}
+\textbf{Table 7.6: Accuracy vs rank cap (  = 45.2).}
 
 \begin{table}[H]
 \centering
@@ -156,7 +156,7 @@ GPT-2 & MinimalSVD & {{G\_TIME}} s & {{G\_TPS}} & {{G\_VRAM}} MB \\
 
 \subsection{Ablation: Energy $\eta$}
 
-\textbf{Table 7.7: Accuracy vs energy threshold ($r_\text{max} = {{RANK}}$).}
+\textbf{Table 7.7: Accuracy vs energy threshold ($r_\text{max} = 32$).}
 
 \begin{table}[H]
 \centering

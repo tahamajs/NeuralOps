@@ -36,7 +36,7 @@ GPT-2 & 12 & 768 & 12 & 124.4M & 64 \\
 \texttt{num\_kernel\_heads} & Auto: 2/3 of heads \\
 \texttt{num\_full\_heads} & Auto: 1/3 of heads \\
 \texttt{rff\_features} & {{RFF\_FEATURES}} (default 256) \\
-\texttt{softpick\_temperature} & {{TEMPERATURE}} (default 1.0) \\
+\texttt{softpick\_temperature} & 1.0 (default 1.0) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -51,7 +51,7 @@ GPT-2 & 12 & 768 & 12 & 124.4M & 64 \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
+Learning rate & 1e-4 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 LoRA rank & {{LORA\_RANK}} \\
 LoRA alpha & {{LORA\_ALPHA}} \\
@@ -109,15 +109,15 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_orion.py \
     --models distilbert,roberta,gpt2 \
-    --svd_energy {{SVD_ENERGY}} \
-    --svd_max_rank {{SVD_MAX_RANK}} \
-    --rff_features {{RFF_FEATURES}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --svd_energy 95\% \
+    --svd_max_rank 64 \
+    --rff_features 64 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 \subsection{Ablations}
 

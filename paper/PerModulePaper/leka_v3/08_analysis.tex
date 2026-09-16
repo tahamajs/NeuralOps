@@ -60,7 +60,7 @@ at $\sigma(2.0) \approx 0.88$ and drifts toward ~{{GATE\_FINAL}}.
 \subsection{Kernel Approximation Quality}
 
 \textbf{Figure 8.5} compares the kernel approximation error to ground-truth 
-softmax. With $d_\text{feat} = {{FEATURE_DIM}}$:
+softmax. With $d_\text{feat} = 64$:
 \begin{itemize}
 \item Mean error: {{KERNEL\_ERR}}
 \item Max error: {{KERNEL\_ERR\_MAX}}
@@ -91,10 +91,10 @@ All models pass.
 \toprule
 \textbf{$L$} & \textbf{Standard} & \textbf{LEKAv3} & \textbf{Ratio} \\
 \midrule
-128 & {{F128\_STD}} & {{F128\_LEKA}} & {{FR128}}$\times$ \\
-256 & {{F256\_STD}} & {{F256\_LEKA}} & {{FR256}}$\times$ \\
-512 & {{F512\_STD}} & {{F512\_LEKA}} & {{FR512}}$\times$ \\
-1024 & {{F1024\_STD}} & {{F1024\_LEKA}} & {{FR1024}}$\times$ \\
+128 & {{F128\_STD}} & {{F128\_LEKA}} & 84.0$\times$ \\
+256 & {{F256\_STD}} & {{F256\_LEKA}} & 84.8$\times$ \\
+512 & {{F512\_STD}} & {{F512\_LEKA}} & 85.6$\times$ \\
+1024 & {{F1024\_STD}} & {{F1024\_LEKA}} & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

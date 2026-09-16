@@ -81,7 +81,7 @@ input. For encoder models, a bidirectional scan averages forward and
 backward recurrences; for decoder models, only the forward recurrence is 
 used. Base pretrained weights are transferred exactly via a four-architecture 
 \texttt{copy\_weights} procedure; trainable capacity is provided by LoRA adapters 
-at rank $r = {{LORA_RANK}}$.
+at rank $r = 8$.
 
 \textbf{Practical limitation.} Although the algorithm is theoretically 
 $\mathcal{O}(L)$ in both time and memory, our PyTorch reference 

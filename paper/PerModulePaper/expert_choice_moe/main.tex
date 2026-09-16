@@ -84,8 +84,8 @@ output before the final output projection -- with:
 \item \textbf{Zero-init experts.} The final projection of every expert is initialized
   to zero, so at step 0, the MoE contributes nothing and the attention
   behaves exactly as the pretrained model.
-\item \textbf{Learnable scalar gate.} A single learnable bias $b_g = {{MOE_INIT_GATE}}$
-  gives $\sigma(b_g) \approx {{MOE_GATE_VALUE}}$ at initialization --
+\item \textbf{Learnable scalar gate.} A single learnable bias $b_g = 0.1$
+  gives $\sigma(b_g) \approx 0.8$ at initialization --
   providing a smooth ramp-up.
 \item \textbf{Architecture portability.} Weight transfer from DistilBERT, RoBERTa,
   GPT-2, and Qwen3.5, with GQA, RoPE, nested encoders, and cross-attention.

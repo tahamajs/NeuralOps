@@ -65,8 +65,8 @@ LoRA alpha & {{LORA\_ALPHA}} & -- \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -122,13 +122,13 @@ Transformers & {{HF\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_rala.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
 \subsection{Seeds}
 
-Single seed {{SEED}}.
+Single seed 42.
 
 \subsection{Baselines}
 

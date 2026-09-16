@@ -30,8 +30,8 @@ Max sequence length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{order} $d$ & {{ORDER}} \\
-\texttt{temperature} $T$ & {{TEMPERATURE}} \\
+\texttt{order} $d$ & 2 \\
+\texttt{temperature} $T$ & 1.0 \\
 \texttt{max\_error} (inject) & {{MAX\_ERROR}} \\
 \texttt{lora\_rank} & {{LORA\_RANK}} \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
@@ -49,8 +49,8 @@ Max sequence length: 128.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-WD & {{WD}} \\
+LR & 1e-4 \\
+WD & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -80,8 +80,8 @@ RTX 4070 Laptop, 8 GB.
 \begin{lstlisting}
 python run_all_4_padre.py \
     --models distilbert,roberta,gpt2 \
-    --order {{ORDER}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --order 2 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

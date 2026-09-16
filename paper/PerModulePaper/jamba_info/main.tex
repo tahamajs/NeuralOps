@@ -80,7 +80,7 @@ z_t = W_\text{up} \cdot \text{GELU}(W_\text{down} x_t),
 \quad W_\text{down} \in \mathbb{R}^{b \times d}, \quad b \ll d
 \]
 
-where $b = {{BOTTLENECK_DIM}}$. The bottleneck acts as an explicit 
+where $b = 64$. The bottleneck acts as an explicit 
 information constraint: the SSM processes only the essential concepts, 
 reducing noise and parameters. Concurrently, a \textbf{differential attention} 
 branch (two Q-K pairs with ReLU-damped subtraction) computes precise 

@@ -77,7 +77,7 @@ attention** where each query attends only to keys in its assigned cluster;
 and (iii) \textbf{token-0 anchoring} which preserves the first token as a universal 
 context key. Base weights are transferred from the pretrained attention via 
 a multi-architecture \texttt{copy\_weights} procedure, and trainable capacity is 
-provided by LoRA adapters at rank $r = {{LORA_RANK}}$.
+provided by LoRA adapters at rank $r = 8$.
 
 We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2. Accuracy is preserved 
 within \textbf{{{D\_DELTA}}\%} (DistilBERT), \textbf{{{R\_DELTA}}\%} (RoBERTa), and 

@@ -87,7 +87,7 @@ rotary embeddings (Qwen/LLaMA) -- via a single \texttt{copy\_weights} routine
 with Frobenius validation and automatic nested-encoder detection.
 
 On SST-2 with {{RECOVERY\_STEPS}} LoRA recovery steps and energy threshold 
-$\varepsilon = {{ENERGY}}$, MinimalAURORA achieves \textbf{{{D\_ACC}}\%} on 
+$\varepsilon = 45.2$, MinimalAURORA achieves \textbf{{{D\_ACC}}\%} on 
 DistilBERT ($\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), 
 and \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). Total parameter count 
 decreases by \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$}. Peak VRAM drops by \textbf{{{VRAM\_REDUCTION}}\%}.

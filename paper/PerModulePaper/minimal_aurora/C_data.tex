@@ -12,7 +12,7 @@
 Params before & 66,955,010 \\
 Params after & {{D\_PARAMS}} \\
 Ratio & {{D\_RATIO}}$\times$ \\
-Energy threshold & {{ENERGY}} \\
+Energy threshold & 45.2 \\
 Accuracy & {{D\_ACC}}\% \\
 F1 & {{D\_F1}} \\
 Peak VRAM & {{D\_VRAM}} MB \\
@@ -130,11 +130,11 @@ Final \texttt{output\_scale} & {{G\_OS}} \\
 
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 \end{lstlisting}
 
 \subsection{C.9 Raw JSON}
@@ -143,11 +143,11 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "energy": {{ENERGY}},
-    "final_output_scale": {{D_OS}}
+    "params_after": 66.4M,
+    "ratio": 50\%,
+    "accuracy_pct": 86.4,
+    "energy": 45.2,
+    "final_output_scale": Ubuntu 22.04
   },
   "roberta": {...},
   "gpt2": {...}

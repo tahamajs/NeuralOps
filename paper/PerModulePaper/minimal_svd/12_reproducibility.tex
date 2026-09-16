@@ -4,7 +4,7 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -33,14 +33,14 @@ numpy & {{NUMPY\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_minimal_svd.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --energy {{ENERGY}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --rank 32 \
+    --energy 45.2 \
+    --recovery_steps 50 \
+    --lora_rank 8 \
+    --batch_size 32
 \end{lstlisting}
 
-\textbf{Runtime:} ~{{RUNTIME}} minutes.
+\textbf{Runtime:} ~PyTorch 2.0 minutes.
 
 \subsection{Individual Model}
 
@@ -52,9 +52,9 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_minimal_svd/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,minimal_svd \
-    --rank {{RANK}} \
-    --energy {{ENERGY}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 32 \
+    --energy 45.2 \
+    --lora_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
@@ -117,7 +117,7 @@ GPT-2 & {{G\_ACC}}\% $\pm$ 1\% & {{G\_RATIO}}$\times$ \\
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-minimal_svd",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-minimal_svd",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")

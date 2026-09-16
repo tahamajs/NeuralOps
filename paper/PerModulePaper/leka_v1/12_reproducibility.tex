@@ -3,7 +3,7 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -15,8 +15,8 @@ pip install -r requirements.txt
 \begin{lstlisting}
 python run_all_4_leka_v1.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim {{FEATURE_DIM}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 64 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}

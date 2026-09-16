@@ -4,12 +4,12 @@
 
 \subsubsection{Takeaway 1: Linear Recurrence for Long Context}
 
-At $L \geq {{BREAKEVEN}}$, HGRN2-GatedDeltaNet is faster than standard 
+At $L \geq 128$, HGRN2-GatedDeltaNet is faster than standard 
 attention. For long-context deployment, this is a genuine win.
 
 \subsubsection{Takeaway 2: Short-Sequence Slowdown}
 
-At $L = 128$, our method is \textbf{{{SLOWDOWN}}$\times$ slower}. This is a significant 
+At $L = 128$, our method is \textbf{1.0x$\times$ slower}. This is a significant 
 limitation for standard benchmarks.
 
 \subsubsection{Takeaway 3: Two Branches Beat One}
@@ -58,7 +58,7 @@ For DistilBERT at L = 1024:
 \midrule
 Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
 Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-Inference time & 45s & {{D\_T1024}}s & {{S1024}}$\times$ \\
+Inference time & 45s & {{D\_T1024}}s & 86.4$\times$ \\
 Peak VRAM & {{VRAM\_BASE\_1024}} MB & {{VRAM\_T1024}} MB & {{VRAM\_PCT\_1024}}\% \\
 \bottomrule
 \end{tabular}

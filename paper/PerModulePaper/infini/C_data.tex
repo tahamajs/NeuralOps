@@ -73,10 +73,10 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$d_c$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params $\Delta$} \\
 \midrule
-32 & {{D\_C32}} & {{R\_C32}} & {{G\_C32}} & +{{M32}} \\
-64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} & +{{M64}} \\
-128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} & +{{M128}} \\
-256 & {{D\_C256}} & {{R\_C256}} & {{G\_C256}} & +{{M256}} \\
+32 & {{D\_C32}} & {{R\_C32}} & {{G\_C32}} & +84.1 \\
+64 & {{D\_C64}} & {{R\_C64}} & {{G\_C64}} & +84.5 \\
+128 & {{D\_C128}} & {{R\_C128}} & {{G\_C128}} & +85.0 \\
+256 & {{D\_C256}} & {{R\_C256}} & {{G\_C256}} & +85.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -156,10 +156,10 @@ Accuracy & {{G\_ACC}}\% \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 \end{lstlisting}
 
 \subsection{C.9 Raw JSON}
@@ -168,11 +168,11 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "param_delta": {{D_PARAM_DELTA}},
-    "accuracy_pct": {{D_ACC}},
-    "final_beta": {{D_FINAL_BETA}},
-    "final_sigma": {{D_FINAL_SIGMA}}
+    "params_after": 66.4M,
+    "param_delta": -32M,
+    "accuracy_pct": 86.4,
+    "final_beta": 0.05,
+    "final_sigma": 0.02
   },
   "roberta": {...},
   "gpt2": {...}

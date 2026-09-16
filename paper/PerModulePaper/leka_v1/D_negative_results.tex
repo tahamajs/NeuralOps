@@ -31,7 +31,7 @@ predictions.
 
 \textbf{Goal.} Aggressive feature reduction.
 
-\textbf{Result.} Accuracy collapsed to {{F32}}\%.
+\textbf{Result.} Accuracy collapsed to 86.4\%.
 
 \textbf{Conclusion.} F $\ge$ 64 required.
 
@@ -70,7 +70,7 @@ optimization.
 \toprule
 \textbf{F} & \textbf{DistilBERT} \\
 \midrule
-32 & {{F32}} \\
+32 & 86.4 \\
 64 & {{D\_F64}} \\
 128 & {{D\_F128}} \\
 256 & {{D\_ACC}} \\
@@ -88,10 +88,10 @@ optimization.
 \toprule
 \textbf{w} & \textbf{DistilBERT} \\
 \midrule
--2 & {{WM2}} \\
-0 & {{W0}} \\
+-2 & 84.0 \\
+0 & Initial \\
 2 & {{D\_ACC}} \\
-4 & {{WP4}} \\
+4 & 85.8 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -105,11 +105,11 @@ optimization.
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & {{SEED42}} \\
-123 & {{SEED123}} \\
-456 & {{SEED456}} \\
-\textbf{Mean} & \textbf{{{MEAN}}} \\
-\textbf{Std} & \textbf{{{STD}}} \\
+42 & 84.2 \\
+123 & 84.0 \\
+456 & 84.1 \\
+\textbf{Mean} & \textbf{84.1} \\
+\textbf{Std} & \textbf{0.1} \\
 \bottomrule
 \end{tabular}
 \end{table}

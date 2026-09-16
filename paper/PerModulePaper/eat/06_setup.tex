@@ -48,7 +48,7 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{rank} (unused for EAT) & {{RANK}} \\
+\texttt{rank} (unused for EAT) & 32 \\
 \texttt{lora\_rank} & {{LORA\_RANK}} \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
 \texttt{prune\_layer} & {{PRUNE\_ENABLED}} \\
@@ -69,8 +69,8 @@ used to compress EAT's projections. EAT uses LoRA, not low-rank factorization.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -127,11 +127,11 @@ Transformers & {{HF\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_eat.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
-Runtime: ~{{RUNTIME}} min.
+Runtime: ~PyTorch 2.0 min.
 
 \subsection{Baselines}
 

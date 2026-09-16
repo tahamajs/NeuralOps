@@ -86,8 +86,8 @@ For Hopper testing, we provide separate scripts.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-WD & {{WD}} \\
+LR & 1e-4 \\
+WD & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -135,7 +135,7 @@ FAIL & < 50.92\% \\
 \begin{lstlisting}
 python run_all_4_flash3.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -156,5 +156,5 @@ python run_all_4_flash3.py \
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}).
+Single seed (42).
 

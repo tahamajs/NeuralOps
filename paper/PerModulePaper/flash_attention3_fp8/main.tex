@@ -81,7 +81,7 @@ attention (GQA), rotary position embeddings (RoPE), causal masking, and
 nested encoder architectures. Base weights are transferred exactly from the 
 pretrained attention via a weight-copy procedure that handles fused Conv1D, 
 nested self-attention, and GQA-based projections; trainable capacity is 
-provided by LoRA adapters at rank $r = {{LORA_RANK}}$.
+provided by LoRA adapters at rank $r = 8$.
 
 We benchmark on SST-2 across DistilBERT, RoBERTa, and GPT-2. Because our 
 test hardware (RTX 4070 Laptop) does not expose FP8 tensor cores, the FP8 

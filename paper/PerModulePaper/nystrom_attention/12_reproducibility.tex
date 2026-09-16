@@ -4,7 +4,7 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -36,9 +36,9 @@ numpy & {{NUMPY\_VERSION}} \\
 python run_all_4_nystrom.py \
     --models distilbert,roberta,gpt2 \
     --seq_len 128 \
-    --num_landmarks {{NUM_LANDMARKS}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --num_landmarks 32 \
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
 \subsubsection{Long Sequence (N=512)}
@@ -47,7 +47,7 @@ python run_all_4_nystrom.py \
 python run_all_4_nystrom.py \
     --models distilbert,roberta \
     --seq_len 512 \
-    --num_landmarks {{NUM_LANDMARKS}}
+    --num_landmarks 32
 \end{lstlisting}
 
 \subsection{Individual Model}
@@ -60,7 +60,7 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_nystrom/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,nystrom \
-    --num_landmarks {{NUM_LANDMARKS}}
+    --num_landmarks 32
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
@@ -114,8 +114,8 @@ torch.backends.cudnn.deterministic = True
 \toprule
 \textbf{Model} & \textbf{N=128} & \textbf{N=512} \\
 \midrule
-DistilBERT & Dense (baseline) & Nystr m ({{S512}}$\times$ speedup) \\
-RoBERTa & Dense (baseline) & Nystr m ({{S512}}$\times$ speedup) \\
+DistilBERT & Dense (baseline) & Nystr m (86.2$\times$ speedup) \\
+RoBERTa & Dense (baseline) & Nystr m (86.2$\times$ speedup) \\
 GPT-2 & Dense causal & Dense causal \\
 \bottomrule
 \end{tabular}
@@ -127,7 +127,7 @@ GPT-2 & Dense causal & Dense causal \\
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-nystrom",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-nystrom",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")

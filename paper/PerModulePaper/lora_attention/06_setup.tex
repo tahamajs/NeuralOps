@@ -63,8 +63,8 @@ Dropout & 0.1 \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-Weight decay & {{WD}} \\
+LR & 1e-4 \\
+Weight decay & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -133,9 +133,9 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_lora_attention.py \
     --models distilbert,roberta,gpt2 \
-    --lora_rank {{LORA_RANK}} \
-    --lora_alpha {{LORA_ALPHA}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --lora_rank 8 \
+    --lora_alpha 16 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -158,7 +158,7 @@ python run_all_4_lora_attention.py \
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 \begin{lstlisting}
 
 ---

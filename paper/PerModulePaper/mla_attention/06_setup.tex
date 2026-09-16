@@ -48,7 +48,7 @@ Majority baseline: 50.92\%. Sequence length: 128 tokens.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
 \midrule
-Latent dimension $c$ & {{RANK}} & MLA rank \\
+Latent dimension $c$ & 32 & MLA rank \\
 \texttt{lora\_rank} & {{LORA\_RANK}} & Q, O adapters \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} & Scaling \\
 \texttt{output\_scale} init & 1.0 & Trainable \\
@@ -67,8 +67,8 @@ Latent dimension $c$ & {{RANK}} & MLA rank \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -137,16 +137,16 @@ Transformers & {{HF\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_mla.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 32 \
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~PyTorch 2.0 minutes.
 
 \subsection{Seeds}
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 
 \subsection{Baselines}
 

@@ -151,11 +151,11 @@ Accuracy & {{G\_ACC}}\% \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 \end{lstlisting}
 
 \subsection{C.10 Raw JSON}
@@ -164,10 +164,10 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "param_delta": {{D_PARAM_DELTA}},
-    "accuracy_pct": {{D_ACC}},
-    "final_gate": {{D_FINAL_GATE}}
+    "params_after": 66.4M,
+    "param_delta": -32M,
+    "accuracy_pct": 86.4,
+    "final_gate": 0.94
   },
   "roberta": {...},
   "gpt2": {...}

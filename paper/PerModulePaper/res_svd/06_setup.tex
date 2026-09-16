@@ -37,7 +37,7 @@ GPT-2 & 12 & 768 & 12 & 124.4M \\
 \midrule
 \texttt{base\_rank} $r_b$ & {{BASE\_RANK}} \\
 \texttt{residual\_rank} $r_r$ & {{RESIDUAL\_RANK}} \\
-\texttt{scaling} $\alpha$ & {{SCALING}} \\
+\texttt{scaling} $\alpha$ & 1.0 \\
 \texttt{factorize\_base} & True \\
 \texttt{freeze\_base} & True \\
 \bottomrule
@@ -54,8 +54,8 @@ GPT-2 & 12 & 768 & 12 & 124.4M \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 \bottomrule
@@ -95,9 +95,9 @@ RTX 4070 Laptop, 8 GB VRAM.
 \begin{lstlisting}
 python run_all_4_res_svd.py \
     --models distilbert,roberta,gpt2 \
-    --base_rank {{BASE_RANK}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --base_rank 32 \
+    --residual_rank 16 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

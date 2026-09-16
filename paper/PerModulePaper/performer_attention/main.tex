@@ -80,7 +80,7 @@ stabilization via max-subtraction and norm-subtraction, avoiding overflow
 in FP16.
 
 We evaluate Performer on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA 
-recovery at rank $r_L = {{LORA_RANK}}$ and $F = {{NUM_FEATURES}}$ features. 
+recovery at rank $r_L = 8$ and $F = 64$ features. 
 Performer achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline {{D\_BASE}}\%, 
 $\Delta$ = {{D\_DELTA}}), \textbf{{{R\_ACC}}\%} on RoBERTa ($\Delta$ = {{R\_DELTA}}), and 
 \textbf{{{G\_ACC}}\%} on GPT-2 ($\Delta$ = {{G\_DELTA}}). We document two important 

@@ -35,8 +35,8 @@ GPT-2 & 12 & 768 & 12 & 124.4M \\
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{energy} $\varepsilon$ & {{ENERGY}} \\
-\texttt{rank} (max cap) & {{RANK}} \\
+\texttt{energy} $\varepsilon$ & 45.2 \\
+\texttt{rank} (max cap) & 32 \\
 \texttt{lora\_rank} & {{LORA\_RANK}} \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
 \texttt{dropout} & 0.1 \\
@@ -54,8 +54,8 @@ GPT-2 & 12 & 768 & 12 & 124.4M \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 \bottomrule
@@ -96,9 +96,9 @@ RTX 4070 Laptop, 8 GB VRAM.
 \begin{lstlisting}
 python run_all_4_minimal_aurora.py \
     --models distilbert,roberta,gpt2 \
-    --energy {{ENERGY}} \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --energy 45.2 \
+    --rank 32 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

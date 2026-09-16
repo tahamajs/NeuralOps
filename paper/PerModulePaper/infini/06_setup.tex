@@ -50,7 +50,7 @@ Majority baseline: 50.92\%. Sequence length: 128.
 \texttt{local\_window} $W$ & {{LOCAL\_WINDOW}} \\
 \texttt{lora\_rank} & {{LORA\_RANK}} \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
-\texttt{rank} & {{RANK}} \\
+\texttt{rank} & 32 \\
 $\beta$ init & -5.0 \\
 \bottomrule
 \end{tabular}
@@ -66,8 +66,8 @@ $\beta$ init & -5.0 \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -121,12 +121,12 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_infini.py \
     --models distilbert,roberta,gpt2 \
-    --compress_dim {{COMPRESS_DIM}} \
-    --local_window {{LOCAL_WINDOW}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --compress_dim 64 \
+    --local_window 128 \
+    --recovery_steps 50
 \end{lstlisting}
 
-Runtime: ~{{RUNTIME}} min.
+Runtime: ~PyTorch 2.0 min.
 
 \subsection{Baselines}
 

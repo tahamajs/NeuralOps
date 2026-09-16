@@ -47,7 +47,7 @@ Majority baseline: 50.92\%. Max length: 128.
 \texttt{feature\_dim} F & {{FEATURE\_DIM}} \\
 \texttt{lora\_rank} & {{LORA\_RANK}} \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
-\texttt{rank} & {{RANK}} \\
+\texttt{rank} & 32 \\
 Preservation gate $w_0$ & 2.0 ($\sigma$ $\to$ 0.88) \\
 \bottomrule
 \end{tabular}
@@ -63,8 +63,8 @@ Preservation gate $w_0$ & 2.0 ($\sigma$ $\to$ 0.88) \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-WD & {{WD}} \\
+LR & 1e-4 \\
+WD & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -131,8 +131,8 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_leka_v1.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim {{FEATURE_DIM}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 64 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -155,5 +155,5 @@ python run_all_4_leka_v1.py \
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}).
+Single seed (42).
 

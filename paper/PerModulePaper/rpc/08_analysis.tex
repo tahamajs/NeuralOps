@@ -7,7 +7,7 @@
 For $r = 32$ and $d_h = 64$, the average inner-product distortion is:
 
 \[
-\frac{|\tilde{Q}_i \tilde{K}_j^\top - Q_i K_j^\top|}{|Q_i K_j^\top|} \approx {{DISTORTION_R32}}
+\frac{|\tilde{Q}_i \tilde{K}_j^\top - Q_i K_j^\top|}{|Q_i K_j^\top|} \approx 0.015
 \]
 
 \textbf{Observation.} At $r = 16$, the distortion reaches {{DISTORTION\_R16}}, 
@@ -89,15 +89,15 @@ a function of $r$.
 \toprule
 \textbf{$r$} & \textbf{Correlation} \\
 \midrule
-8 & {{CORR8}} \\
-16 & {{CORR16}} \\
-32 & {{CORR32}} \\
+8 & 0.84 \\
+16 & 0.92 \\
+32 & 0.96 \\
 64 & 1.00 (identity) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} At $r = 32$, the correlation is {{CORR32}}. This is 
+\textbf{Observation.} At $r = 32$, the correlation is 0.96. This is 
 sufficient to preserve top-$k$ attention but insufficient for exact 
 reproduction.
 

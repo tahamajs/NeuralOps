@@ -66,8 +66,8 @@ Softpick temperature T & 1.0 \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-WD & {{WD}} \\
+LR & 1e-4 \\
+WD & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -135,9 +135,9 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_leka_v2.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim {{FEATURE_DIM}} \
-    --landmark_ratio {{LANDMARK_RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 64 \
+    --landmark_ratio 0.25 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -161,7 +161,7 @@ python run_all_4_leka_v2.py \
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}).
+Single seed (42).
 \begin{lstlisting}
 
 ---

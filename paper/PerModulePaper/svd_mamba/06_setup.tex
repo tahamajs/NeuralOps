@@ -48,10 +48,10 @@ Majority baseline: 50.92\%.
 \midrule
 \texttt{d\_state} & {{D\_STATE}} \\
 \texttt{d\_conv} & {{D\_CONV}} \\
-\texttt{expand} & {{EXPAND}} \\
+\texttt{expand} & 2 \\
 \texttt{dt\_rank} & {{DT\_RANK}} \\
 \texttt{global\_rank} & {{GLOBAL\_RANK}} \\
-\texttt{rank} (SVD) & {{RANK}} \\
+\texttt{rank} (SVD) & 32 \\
 \texttt{lora\_rank} & {{LORA\_RANK}} \\
 Gate bias & -7.0 \\
 \bottomrule
@@ -68,8 +68,8 @@ Gate bias & -7.0 \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -123,10 +123,10 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_svd_mamba.py \
     --models distilbert,roberta,gpt2 \
-    --d_state {{D_STATE}} \
-    --d_conv {{D_CONV}} \
-    --global_rank {{GLOBAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --d_state Optimal \
+    --d_conv 15 steps \
+    --global_rank 32 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

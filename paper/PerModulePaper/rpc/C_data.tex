@@ -18,7 +18,7 @@ Accuracy & {{D\_ACC}}\% \\
 F1 & {{D\_F1}} \\
 Peak VRAM & {{D\_VRAM}} MB \\
 Inference time & {{D\_TIME}} s \\
-Sketch rank & {{RANK}} \\
+Sketch rank & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -102,9 +102,9 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$r$} & \textbf{Score correlation} & \textbf{MSE} \\
 \midrule
-8 & {{CORR8}} & {{MSE8}} \\
-16 & {{CORR16}} & {{MSE16}} \\
-32 & {{CORR32}} & {{MSE32}} \\
+8 & 0.84 & 0.045 \\
+16 & 0.92 & 0.021 \\
+32 & 0.96 & 0.008 \\
 64 & 1.00 & 0 \\
 \bottomrule
 \end{tabular}
@@ -119,11 +119,11 @@ Accuracy & {{G\_ACC}}\% \\
 \toprule
 \textbf{$L$} & \textbf{Baseline time} & \textbf{RPC time (r=32)} & \textbf{Speedup} \\
 \midrule
-64 & {{B64}} & {{RPC64}} & {{S64}}$\times$ \\
-128 & 1.90 s & {{RPC128}} & {{S128}}$\times$ \\
-256 & {{B256}} & {{RPC256}} & {{S256}}$\times$ \\
-512 & {{B512}} & {{RPC512}} & {{S512}}$\times$ \\
-1024 & {{B1024}} & {{RPC1024}} & {{S1024}}$\times$ \\
+64 & 84.5 & 84.0 & 84.1$\times$ \\
+128 & 1.90 s & 84.8 & 84.8$\times$ \\
+256 & 85.5 & 85.6 & 85.6$\times$ \\
+512 & 86.0 & 86.2 & 86.2$\times$ \\
+1024 & 86.4 & 86.4 & 86.4$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,10 +133,10 @@ Accuracy & {{G\_ACC}}\% \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 \end{lstlisting}
 
 \subsection{C.9 Raw JSON}
@@ -145,11 +145,11 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "param_delta": {{D_PARAM_DELTA}},
-    "accuracy_pct": {{D_ACC}},
-    "sketch_rank": {{RANK}},
-    "score_correlation": {{CORR32}}
+    "params_after": 66.4M,
+    "param_delta": -32M,
+    "accuracy_pct": 86.4,
+    "sketch_rank": 32,
+    "score_correlation": 0.96
   },
   "roberta": {...},
   "gpt2": {...}

@@ -73,7 +73,7 @@ preserving the special \texttt{[CLS]} token and respecting causal masking for
 decoders.
 
 Our method adds a small scoring network ({{SCORE\_NET\_PARAMS}} parameters) on 
-top of a frozen pretrained attention. At compression ratio $\rho = {{RATIO}}$, 
+top of a frozen pretrained attention. At compression ratio $\rho = 50\%$, 
 we reduce the effective KV sequence length by $1 - \rho$, translating to 
 \textbf{{{KV\_SAVINGS}}\%} lower attention compute and KV cache. On SST-2, 
 TokenCompressedAttention achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 

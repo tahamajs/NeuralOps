@@ -66,8 +66,8 @@ LoRA alpha & {{LORA\_ALPHA}} \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-Weight decay & {{WD}} \\
+LR & 1e-4 \\
+Weight decay & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -134,8 +134,8 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_ptp.py \
     --models distilbert,roberta,gpt2 \
-    --keep_ratio {{KEEP_RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --keep_ratio 0.5 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Ablations}

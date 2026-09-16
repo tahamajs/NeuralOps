@@ -72,12 +72,12 @@ $W \approx U V$ via truncated SVD, with $U \in \mathbb{R}^{d_\text{out} \times r
 and $V \in \mathbb{R}^{r \times d_\text{in}}$. This reduces parameter count 
 from $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$, achieving 
 a \textbf{{{D\_RATIO}}$\times$} reduction per projection on DistilBERT at rank 
-$r = {{RANK}}$.
+$r = 32$.
 
 Our central contribution is \textbf{spectral energy-adaptive rank selection}. Instead 
 of fixing $r$ uniformly, MinimalPRISM computes the cumulative spectral energy 
 $E(r) = \sum_{i \le r} \sigma_i^2 / \sum_i \sigma_i^2$ of each weight matrix 
-and selects the smallest rank such that $E(r) \ge \eta$, with $\eta = {{ENERGY}}$ 
+and selects the smallest rank such that $E(r) \ge \eta$, with $\eta = 45.2$ 
 by default. This automatically adapts per-layer rank based on spectral decay, 
 concentrating compression where the spectrum is already concentrated.
 
@@ -91,8 +91,8 @@ and Qwen3.5 (GQA + RoPE) -- with:
 (v) LoRA adapters initialized to zero for recovery fine-tuning,
 (vi) safe abort with pre-test on the first layer.
 
-On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = {{RANK}}$ and 
-energy $\eta = {{ENERGY}}$, MinimalPRISM achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = 32$ and 
+energy $\eta = 45.2$, MinimalPRISM achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
 parameter reduction with accuracy drops of only \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} 
 after {{RECOVERY\_STEPS}} LoRA recovery steps. Peak inference VRAM decreases 
 by \textbf{{{VRAM\_REDUCTION}}\%}.

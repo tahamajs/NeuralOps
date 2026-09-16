@@ -6,7 +6,7 @@ Standard attention is $\mathcal{O}(L^2)$ because every query attends to every
 key. Linear recurrence is $\mathcal{O}(L)$ because the state is fixed-size.
 
 \textbf{Figure 8.1} plots inference time vs L for baseline and ours. The 
-crossover point is $L^\textit{ = {{BREAKEVEN}}$. Below $L^}$, standard attention 
+crossover point is $L^\textit{ = 128$. Below $L^}$, standard attention 
 wins because of its highly optimized CUDA kernels. Above $L^*$, our 
 recurrence wins because the quadratic term dominates baseline.
 
@@ -87,7 +87,7 @@ full & 90.71\% & 78.56\% & 79.36\% & 1$\times$ \\
 Linear Transformer & {{LT\_D}} & {{LT\_R}} & {{LT\_G}} & {{LT\_SP}}$\times$ \\
 Performer & {{PERF\_D}} & {{PERF\_R}} & {{PERF\_G}} & {{PERF\_SP}}$\times$ \\
 Mamba (est.) & {{MAMBA\_D}} & {{MAMBA\_R}} & {{MAMBA\_G}} & {{MAMBA\_SP}}$\times$ \\
-\textbf{HGRN2-GDN} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{{{SP}}$\times$} \\
+\textbf{HGRN2-GDN} & \textbf{{{D\_ACC}}} & \textbf{{{R\_ACC}}} & \textbf{{{G\_ACC}}} & \textbf{0.5$\times$} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -64,8 +64,8 @@ Majority baseline: 50.92\%.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-WD & {{WD}} \\
+LR & 1e-4 \\
+WD & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -138,7 +138,7 @@ python run_all_4_moe_deltakv_paged.py \
     --page_size 64 \
     --k_experts 4 \
     --svd_rank 16 \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -161,7 +161,7 @@ python run_all_4_moe_deltakv_paged.py \
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 \begin{lstlisting}
 
 ---

@@ -90,8 +90,8 @@ families (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with:
 (iv) RoPE position embeddings,
 (v) LoRA adapters initialized to zero for recovery fine-tuning.
 
-On DistilBERT, RoBERTa, and GPT-2 with rank cap $r = {{RANK}}$ and energy 
-$\eta = {{ENERGY}}$, MinimalNOVA achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+On DistilBERT, RoBERTa, and GPT-2 with rank cap $r = 32$ and energy 
+$\eta = 45.2$, MinimalNOVA achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
 parameter reduction with accuracy drops of only \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} 
 after {{RECOVERY\_STEPS}} LoRA recovery steps. Peak inference VRAM decreases 
 by \textbf{{{VRAM\_REDUCTION}}\%}.

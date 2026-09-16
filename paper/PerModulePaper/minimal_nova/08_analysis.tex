@@ -64,8 +64,8 @@ accuracy lost to truncation. Without LoRA, accuracy drops to
 \midrule
 Baseline & 90.71\% & -- \\
 SVD only, no LoRA & {{SVD\_NOLORA}} & {{SVD\_NOLORA\_D}} \\
-+ LoRA (rank 4) & {{LORA4}} & {{LORA4\_D}} \\
-+ LoRA (rank 8) & {{LORA8}} & {{LORA8\_D}} \\
++ LoRA (rank 4) & 84.2 & {{LORA4\_D}} \\
++ LoRA (rank 8) & 85.6 & {{LORA8\_D}} \\
 + LoRA (rank 16) & \textbf{{{D\_ACC}}} & \textbf{{{D\_DELTA}}} \\
 \bottomrule
 \end{tabular}
@@ -115,8 +115,8 @@ SVD only, no LoRA & {{SVD\_NOLORA}} & {{SVD\_NOLORA\_D}} \\
 \toprule
 \textbf{Method} & \textbf{DistilBERT} & \textbf{Avg Rank} & \textbf{Ratio} \\
 \midrule
-Fixed rank 32 & {{FIXED32}} & 32 & {{FIXED32\_R}}$\times$ \\
-Fixed rank 64 & {{FIXED64}} & 64 & {{FIXED64\_R}}$\times$ \\
+Fixed rank 32 & 83.5 & 32 & {{FIXED32\_R}}$\times$ \\
+Fixed rank 64 & 84.8 & 64 & {{FIXED64\_R}}$\times$ \\
 \textbf{Energy 0.95} & \textbf{{{D\_ACC}}} & {{D\_AR95}} & \textbf{{{D\_RATIO}}$\times$} \\
 \bottomrule
 \end{tabular}

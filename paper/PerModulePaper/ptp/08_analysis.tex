@@ -37,7 +37,7 @@ scores; function words (determiners, prepositions) have lower.
 We compute the Pearson correlation between learned scores and TF-IDF:
 
 \[
-\rho_\text{Pearson} = \text{corr}(s, \text{TF-IDF}) = {{TFIDF_CORR}}
+\rho_\text{Pearson} = \text{corr}(s, \text{TF-IDF}) = 0.91
 \tag{8.1}
 \]
 
@@ -111,9 +111,9 @@ assert x.grad[0, i+1:].abs().max() < 1e-6
 \toprule
 \textbf{Depth} & \textbf{DistilBERT} & \textbf{Params/layer} \\
 \midrule
-Linear (1 layer) & {{DEPTH1}} & ~768 \\
+Linear (1 layer) & 84.5 & ~768 \\
 MLP-64 (2 layers) & \textbf{{{D\_ACC}}} & ~50K \\
-MLP-64-64 (3 layers) & {{DEPTH3}} & ~55K \\
+MLP-64-64 (3 layers) & 86.4 & ~55K \\
 \bottomrule
 \end{tabular}
 \end{table}

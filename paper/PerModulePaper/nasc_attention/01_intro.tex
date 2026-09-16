@@ -23,10 +23,10 @@ how much each contributes.
 \textbf{NASC} uses three branches with complementary inductive biases:
 
 \begin{enumerate}
-\item \textbf{Local window:} sliding window of size $W = {{WINDOW_SIZE}}$, with
+\item \textbf{Local window:} sliding window of size $W = 128$, with
   strict causal masking.
 \item \textbf{Sparse block:} partitions the sequence into blocks of size
-  $B_s = {{BLOCK_SIZE}}$ and selects the top-$k$ blocks by mean
+  $B_s = 64$ and selects the top-$k$ blocks by mean
   query-key alignment.
 \item \textbf{Global spectral RFF:} random Fourier features (RFF) with cos/sin
   concatenation, computed via state accumulation for $\mathcal{O}(L)$

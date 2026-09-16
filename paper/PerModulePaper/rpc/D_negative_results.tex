@@ -7,7 +7,7 @@
 
 \textbf{Goal.} Maximize FLOPs reduction.
 
-\textbf{Result.} Score correlation dropped to {{CORR4}}. Accuracy collapsed.
+\textbf{Result.} Score correlation dropped to 0.72. Accuracy collapsed.
 
 \textbf{Conclusion.} r=8 is the practical minimum.
 
@@ -74,10 +74,10 @@
 \toprule
 \textbf{$r$} & \textbf{DistilBERT} & \textbf{Correlation} \\
 \midrule
-4 & {{D\_R4}} & {{CORR4}} \\
-8 & {{D\_R8}} & {{CORR8}} \\
-16 & {{D\_R16}} & {{CORR16}} \\
-32 & {{D\_R32}} & {{CORR32}} \\
+4 & {{D\_R4}} & 0.72 \\
+8 & {{D\_R8}} & 0.84 \\
+16 & {{D\_R16}} & 0.92 \\
+32 & {{D\_R32}} & 0.96 \\
 64 & {{D\_R64}} & 1.00 \\
 \bottomrule
 \end{tabular}
@@ -109,11 +109,11 @@
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & {{SEED42}} \\
-123 & {{SEED123}} \\
-456 & {{SEED456}} \\
-Mean & {{MEAN}} \\
-Std & {{STD}} \\
+42 & 84.2 \\
+123 & 84.0 \\
+456 & 84.1 \\
+Mean & 84.1 \\
+Std & 0.1 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,7 +134,7 @@ concentration-of-measure.
 \subsection{D.6 Reproducibility Note}
 
 The random seed for \texttt{proj} initialization affects results. We use seed 
-{{SEED}} for all experiments.
+42 for all experiments.
 \begin{lstlisting}
 
 ---

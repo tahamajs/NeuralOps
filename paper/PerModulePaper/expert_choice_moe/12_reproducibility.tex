@@ -3,7 +3,7 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -31,9 +31,9 @@ datasets & {{DATASETS\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_expert_choice_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts {{N_EXPERTS}} \
-    --capacity_factor {{CAPACITY_FACTOR}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --n_experts 8 \
+    --capacity_factor 1.25 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Individual Model}
@@ -43,8 +43,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,expert_choice_moe \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}

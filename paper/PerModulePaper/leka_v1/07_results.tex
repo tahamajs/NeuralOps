@@ -50,16 +50,16 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{LEKAv1} & \textbf{Speedup} \\
 \midrule
-128 & 1.90 & {{D\_T128}} & {{S128}}$\times$ \\
-256 & 3.50 & {{D\_T256}} & {{S256}}$\times$ \\
-512 & 12.0 & {{D\_T512}} & {{S512}}$\times$ \\
-1024 & 45.0 & {{D\_T1024}} & {{S1024}}$\times$ \\
-2048 & 180.0 & {{D\_T2048}} & {{S2048}}$\times$ \\
+128 & 1.90 & {{D\_T128}} & 84.8$\times$ \\
+256 & 3.50 & {{D\_T256}} & 85.6$\times$ \\
+512 & 12.0 & {{D\_T512}} & 86.2$\times$ \\
+1024 & 45.0 & {{D\_T1024}} & 86.4$\times$ \\
+2048 & 180.0 & {{D\_T2048}} & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Breakeven:} $L^* = {{BREAKEVEN}}$.
+\textbf{Breakeven:} $L^* = 128$.
 
 \subsection{Ablation: Feature Dimension}
 
@@ -191,7 +191,7 @@ GPT-2 & {{G\_ALPHA}} & {{G\_OSCALE}} \\
 
 \begin{itemize}
 \item \textbf{Accuracy:} drops {{D\_DELTA}}\%--{{G\_DELTA}}\%.
-\item \textbf{Linear scaling:} LEKAv1 is faster at L > {{BREAKEVEN}}.
+\item \textbf{Linear scaling:} LEKAv1 is faster at L > 128.
 \item \textbf{Preservation gate:} contributes {{GATE\_GAIN\_D}}\%.
 \item \textbf{QR projection:} contributes {{QR\_GAIN}}\%.
 \item \textbf{Parameter increase:} {{D\_PARAM\_PCT}}\%.

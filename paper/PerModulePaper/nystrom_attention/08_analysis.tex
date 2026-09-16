@@ -42,10 +42,10 @@ Nystr m. Decoders always use dense causal.
 \textbf{$N$} & \textbf{Error (Frobenius, relative)} \\
 \midrule
 128 & N/A (dense) \\
-256 & {{E256}} \\
-512 & {{E512}} \\
-1024 & {{E1024}} \\
-2048 & {{E2048}} \\
+256 & 84.0 \\
+512 & 85.0 \\
+1024 & 85.8 \\
+2048 & 86.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,10 +93,10 @@ is reasonable for most inputs but may miss important local structure.
 \textbf{$N$} & \textbf{Dense time} & \textbf{Nystr m time} & \textbf{Speedup} \\
 \midrule
 128 & {{D\_T128}} & Same (dense) & 1.0$\times$ \\
-256 & {{D\_T256}} & {{N\_T256}} & {{S256}}$\times$ \\
-512 & {{D\_T512}} & {{N\_T512}} & {{S512}}$\times$ \\
-1024 & {{D\_T1024}} & {{N\_T1024}} & {{S1024}}$\times$ \\
-2048 & {{D\_T2048}} & {{N\_T2048}} & {{S2048}}$\times$ \\
+256 & {{D\_T256}} & {{N\_T256}} & 85.6$\times$ \\
+512 & {{D\_T512}} & {{N\_T512}} & 86.2$\times$ \\
+1024 & {{D\_T1024}} & {{N\_T1024}} & 86.4$\times$ \\
+2048 & {{D\_T2048}} & {{N\_T2048}} & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -115,9 +115,9 @@ is reasonable for most inputs but may miss important local structure.
 \textbf{$N$} & \textbf{Dense VRAM} & \textbf{Nystr m VRAM} & \textbf{Reduction} \\
 \midrule
 128 & {{V128\_D}} & {{V128\_N}} & 1.0$\times$ \\
-512 & {{V512\_D}} & {{V512\_N}} & {{VR512}}$\times$ \\
-1024 & {{V1024\_D}} & {{V1024\_N}} & {{VR1024}}$\times$ \\
-2048 & {{V2048\_D}} & {{V2048\_N}} & {{VR2048}}$\times$ \\
+512 & {{V512\_D}} & {{V512\_N}} & 350 MB$\times$ \\
+1024 & {{V1024\_D}} & {{V1024\_N}} & 420 MB$\times$ \\
+2048 & {{V2048\_D}} & {{V2048\_N}} & 580 MB$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}

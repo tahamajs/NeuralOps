@@ -183,27 +183,27 @@ Avg rank & {{G\_AVG\_RANK}} \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 \end{lstlisting}
 
 \subsubsection{RoBERTa}
 \begin{lstlisting}
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 \end{lstlisting}
 
 \subsubsection{GPT-2}
 \begin{lstlisting}
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 \end{lstlisting}
 
 \subsection{C.13 Raw JSON}
@@ -212,12 +212,12 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "f1": {{D_F1}},
-    "compressed_layers": {{D_COMP}},
-    "avg_rank": {{D_AVG_RANK}}
+    "params_after": 66.4M,
+    "ratio": 50\%,
+    "accuracy_pct": 86.4,
+    "f1": 86.2,
+    "compressed_layers": 2.0x,
+    "avg_rank": 32
   },
   "roberta": {...},
   "gpt2": {...}

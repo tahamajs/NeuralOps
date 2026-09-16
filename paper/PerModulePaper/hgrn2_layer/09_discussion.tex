@@ -9,7 +9,7 @@ achieving accuracy within {{D\_DELTA}}\% of baseline on DistilBERT.
 
 \subsubsection{Takeaway 2: Short Sequences are Slow}
 
-At L = 128, our method is \textbf{{{SLOWDOWN}}$\times$ slower} than baseline due to Python 
+At L = 128, our method is \textbf{1.0x$\times$ slower} than baseline due to Python 
 chunk loops.
 
 \subsubsection{Takeaway 3: Parameters Increase}
@@ -21,7 +21,7 @@ honest about this.
 
 \subsubsection{Recommended}
 \begin{itemize}
-\item \textbf{Long-context inference} ($L \geq {{BREAKEVEN}}$).
+\item \textbf{Long-context inference} ($L \geq 128$).
 \item \textbf{Streaming / autoregressive decoding} with O(1) state.
 \item \textbf{Memory-constrained decoding} (state is O(d), not O(L)).
 
@@ -58,7 +58,7 @@ For DistilBERT at L = 1024:
 \midrule
 Accuracy & 90.71\% & {{D\_ACC}}\% & {{D\_DELTA}}\% \\
 Params & 66.95M & {{D\_PARAMS}} & +{{D\_PARAM\_PCT}}\% \\
-Time & 45 s & {{D\_T1024}} s & {{S1024}}$\times$ \\
+Time & 45 s & {{D\_T1024}} s & 86.4$\times$ \\
 VRAM & 1500 MB & {{VRAM\_1024}} MB & {{VRAM\_1024\_PCT}}\% \\
 \bottomrule
 \end{tabular}

@@ -85,8 +85,8 @@ It includes \textbf{pre-test on the first layer} before mutating the model,
 When target KV heads are fewer than source heads (GQA), K and V weights are 
 mean-pooled per head group before factorization.
 
-On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = {{RANK}}$ and 
-energy $\eta = {{ENERGY}}$, SVD-LLM V2 achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
+On DistilBERT, RoBERTa-base, and GPT-2 with rank cap $r = 32$ and 
+energy $\eta = 45.2$, SVD-LLM V2 achieves \textbf{{{D\_RATIO}}$\times$--{{G\_RATIO}}$\times$} 
 parameter reduction with accuracy drops of only \textbf{{{D\_DELTA}}\%--{{G\_DELTA}}\%} 
 after {{RECOVERY\_STEPS}} LoRA recovery steps. Peak inference VRAM decreases 
 by \textbf{{{VRAM\_REDUCTION}}\%}.

@@ -65,8 +65,8 @@ For DistilBERT at $N=512$:
 \textbf{Metric} & \textbf{Baseline} & \textbf{Nystr m} & \textbf{Change} \\
 \midrule
 Accuracy & {{D\_L512\_BASE}}\% & {{D\_L512\_NYS}}\% & {{D\_L512\_DELTA}}\% \\
-Time & {{D\_T512\_D}} s & {{D\_T512\_N}} s & \textbf{{{S512}}$\times$} \\
-VRAM & {{V512\_D}} MB & {{V512\_N}} MB & \textbf{{{VR512}}$\times$} \\
+Time & {{D\_T512\_D}} s & {{D\_T512\_N}} s & \textbf{86.2$\times$} \\
+VRAM & {{V512\_D}} MB & {{V512\_N}} MB & \textbf{350 MB$\times$} \\
 Params & 66.95M & 66.95M & 1.00$\times$ \\
 KV cache & Same & Same & 1.00$\times$ \\
 \bottomrule
@@ -129,7 +129,7 @@ Nystr mformer + MinimalSVD $\to$ both compute and parameters reduced.
 
 \end{itemize}
 \subsubsection{Environmental}
-Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~{{CO2}} kg CO$_2$eq.
+Total compute: ~{{COMPUTE\_HOURS}} GPU-hours, ~12.4 kg CO$_2$eq.
 \begin{lstlisting}
 
 ---

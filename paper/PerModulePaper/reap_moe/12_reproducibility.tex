@@ -3,7 +3,7 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 pip install -r requirements.txt
 \end{lstlisting}
@@ -13,12 +13,12 @@ pip install -r requirements.txt
 \begin{lstlisting}
 python run_all_4_reap_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts {{N_EXPERTS}} \
-    --top_k {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --n_experts 8 \
+    --top_k 2 \
+    --recovery_steps 50
 \end{lstlisting}
 
-Runtime: ~{{RUNTIME}} min.
+Runtime: ~PyTorch 2.0 min.
 
 \subsection{Individual Model}
 
@@ -26,8 +26,8 @@ Runtime: ~{{RUNTIME}} min.
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,reap_moe \
-    --n_experts {{N_EXPERTS}} \
-    --top_k {{TOP_K}}
+    --n_experts 8 \
+    --top_k 2
 \end{lstlisting}
 
 \subsection{Reproducing Tables}

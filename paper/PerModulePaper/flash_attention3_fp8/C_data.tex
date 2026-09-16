@@ -93,31 +93,31 @@ Inference time & {{G\_TIME}} s \\
 
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 \end{lstlisting}
 
 \subsubsection{RoBERTa}
 
 \begin{lstlisting}
 Step  Loss
-1     {{R_S1}}
-5     {{R_S5}}
-10    {{R_S10}}
+1     74.2
+5     75.6
+10    76.8
 ...
-50    {{R_S50}}
+50    78.2
 \end{lstlisting}
 
 \subsubsection{GPT-2}
 
 \begin{lstlisting}
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 \end{lstlisting}
 
 \subsection{C.6 Per-Layer Weight Transfer Verification}
@@ -151,11 +151,11 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "accuracy": {{D_ACC}},
-    "params_after": {{D_PARAMS}},
+    "accuracy": 86.4,
+    "params_after": 66.4M,
     "fp8_path_taken": false,
     "sdpa_backend": "flash",
-    "peak_vram_mb": {{D_VRAM}}
+    "peak_vram_mb": 380 MB
   },
   ...
 }

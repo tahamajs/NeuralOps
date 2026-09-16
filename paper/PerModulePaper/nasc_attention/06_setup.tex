@@ -64,7 +64,7 @@ Sequence length truncated to 128.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
+Learning rate & 1e-4 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 LoRA rank & {{LORA\_RANK}} \\
 LoRA alpha & {{LORA\_ALPHA}} \\
@@ -122,16 +122,16 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_nasc.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --block_size {{BLOCK_SIZE}} \
-    --top_k {{TOP_K}} \
-    --rff_features {{RFF_FEATURES}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 128 \
+    --block_size 64 \
+    --top_k 2 \
+    --rff_features 64 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 \subsection{Ablations}
 

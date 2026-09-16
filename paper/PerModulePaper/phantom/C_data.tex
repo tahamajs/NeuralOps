@@ -176,18 +176,18 @@ No CUR & {{D\_NOCUR}} & {{D\_NOCUR\_D}} \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 \end{lstlisting}
 
 \subsubsection{RoBERTa}
 \begin{lstlisting}
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 \end{lstlisting}
 
 \subsection{C.11 Raw JSON}
@@ -196,13 +196,13 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "f1": {{D_F1}},
-    "compressed_layers": {{D_COMP}},
-    "avg_bucket_size": {{D_BUCKET}},
-    "compression_time_s": {{D_TOTAL}}
+    "params_after": 66.4M,
+    "ratio": 50\%,
+    "accuracy_pct": 86.4,
+    "f1": 86.2,
+    "compressed_layers": 2.0x,
+    "avg_bucket_size": 64,
+    "compression_time_s": 66.4M
   },
   "roberta": {...},
   "gpt2": {...}

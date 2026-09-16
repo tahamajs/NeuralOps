@@ -4,7 +4,7 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -16,10 +16,10 @@ pip install -r requirements.txt
 \begin{lstlisting}
 python run_all_4_nha.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --rff_features {{RFF_FEATURES}} \
-    --gate_init_bias {{GATE_BIAS}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 128 \
+    --rff_features 64 \
+    --gate_init_bias 0.0 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}

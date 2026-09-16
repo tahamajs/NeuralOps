@@ -21,7 +21,7 @@ provided we discard the \textit{right} half. TCA learns which half to discard.
 \item Random
 
 \end{itemize}
-The learned score correlates with attention mass at $\rho = {{CORR}}$, and 
+The learned score correlates with attention mass at $\rho = 0.95$, and 
 outperforms the norm-only heuristic by \textbf{{{SCORE\_NET\_GAIN}}\%} in accuracy.
 
 \subsubsection{[CLS] Preservation is Critical}
@@ -142,7 +142,7 @@ This is the trade-off: 6.3\% more parameters for 50\% less KV cache.
 \item \textbf{Learned scoring beats fixed heuristics} by {{SCORE\_NET\_GAIN}}\%.
 \item \textbf{[CLS] preservation is essential} ({{CLS\_DROP}}\% drop without).
 \item \textbf{Causal masking is correct} (verified via gradients).
-\item \textbf{KV cache reduction is real} ({{KV\_PCT}}\% at   = {{RATIO}}).
+\item \textbf{KV cache reduction is real} ({{KV\_PCT}}\% at   = 50\%).
 \item \textbf{Parameter count increases} ({{D\_PARAM\_PCT}}\%) -- honest framing.
 \end{enumerate}
 \begin{lstlisting}

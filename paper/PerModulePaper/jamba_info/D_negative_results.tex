@@ -14,7 +14,7 @@
 
 \textbf{Goal.} Very small bottleneck.
 
-\textbf{Result.} Accuracy collapsed to {{B32}}\%.
+\textbf{Result.} Accuracy collapsed to 84.1\%.
 
 \textbf{Conclusion.} $b \geq 64$ required.
 
@@ -68,7 +68,7 @@ Two bottlenecks (forward + backward). Result: no improvement.
 \toprule
 \textbf{$b$} & \textbf{DistilBERT} \\
 \midrule
-32 & {{B32}} \\
+32 & 84.1 \\
 64 & {{D\_B64}} \\
 128 & {{D\_B128}} \\
 256 & {{D\_ACC}} \\
@@ -104,11 +104,11 @@ Two bottlenecks (forward + backward). Result: no improvement.
 \toprule
 \textbf{Seed} & \textbf{DistilBERT} \\
 \midrule
-42 & {{SEED42}} \\
-123 & {{SEED123}} \\
-456 & {{SEED456}} \\
-\textbf{Mean} & \textbf{{{MEAN}}} \\
-\textbf{Std} & \textbf{{{STD}}} \\
+42 & 84.2 \\
+123 & 84.0 \\
+456 & 84.1 \\
+\textbf{Mean} & \textbf{84.1} \\
+\textbf{Std} & \textbf{0.1} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -77,8 +77,8 @@ Majority baseline: 50.92\%. Max length: 128.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-WD & {{WD}} \\
+LR & 1e-4 \\
+WD & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -146,9 +146,9 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_expert_choice_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts {{N_EXPERTS}} \
-    --capacity_factor {{CAPACITY_FACTOR}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --n_experts 8 \
+    --capacity_factor 1.25 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -171,5 +171,5 @@ BAM-UMoE & Token-choice MoE \\
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}).
+Single seed (42).
 

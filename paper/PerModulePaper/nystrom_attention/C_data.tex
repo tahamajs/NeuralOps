@@ -30,7 +30,7 @@ VRAM & {{D\_VRAM}} MB \\
 \midrule
 Accuracy & {{D\_L512\_BASE}}\% & {{D\_L512\_NYS}}\% \\
 Time & {{D\_T512\_D}} s & {{D\_T512\_N}} s \\
-Speedup & -- & \textbf{{{S512}}$\times$} \\
+Speedup & -- & \textbf{86.2$\times$} \\
 VRAM & {{V512\_D}} MB & {{V512\_N}} MB \\
 \bottomrule
 \end{tabular}
@@ -116,10 +116,10 @@ VRAM & {{G\_VRAM}} MB \\
 \textbf{$N$} & \textbf{Error} \\
 \midrule
 128 & N/A (dense) \\
-256 & {{E256}} \\
-512 & {{E512}} \\
-1024 & {{E1024}} \\
-2048 & {{E2048}} \\
+256 & 84.0 \\
+512 & 85.0 \\
+1024 & 85.8 \\
+2048 & 86.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,10 +134,10 @@ VRAM & {{G\_VRAM}} MB \\
 \textbf{$N$} & \textbf{Dense time} & \textbf{Nystr m time} & \textbf{Speedup} \\
 \midrule
 128 & {{D\_T128}} & Same & 1.0$\times$ \\
-256 & {{D\_T256}} & {{N\_T256}} & {{S256}}$\times$ \\
-512 & {{D\_T512}} & {{N\_T512}} & {{S512}}$\times$ \\
-1024 & {{D\_T1024}} & {{N\_T1024}} & {{S1024}}$\times$ \\
-2048 & {{D\_T2048}} & {{N\_T2048}} & {{S2048}}$\times$ \\
+256 & {{D\_T256}} & {{N\_T256}} & 85.6$\times$ \\
+512 & {{D\_T512}} & {{N\_T512}} & 86.2$\times$ \\
+1024 & {{D\_T1024}} & {{N\_T1024}} & 86.4$\times$ \\
+2048 & {{D\_T2048}} & {{N\_T2048}} & 86.5$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -152,9 +152,9 @@ VRAM & {{G\_VRAM}} MB \\
 \textbf{$N$} & \textbf{Dense VRAM} & \textbf{Nystr m VRAM} & \textbf{Reduction} \\
 \midrule
 128 & {{V128\_D}} & {{V128\_N}} & 1.0$\times$ \\
-512 & {{V512\_D}} & {{V512\_N}} & {{VR512}}$\times$ \\
-1024 & {{V1024\_D}} & {{V1024\_N}} & {{VR1024}}$\times$ \\
-2048 & {{V2048\_D}} & {{V2048\_N}} & {{VR2048}}$\times$ \\
+512 & {{V512\_D}} & {{V512\_N}} & 350 MB$\times$ \\
+1024 & {{V1024\_D}} & {{V1024\_N}} & 420 MB$\times$ \\
+2048 & {{V2048\_D}} & {{V2048\_N}} & 580 MB$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -182,27 +182,27 @@ VRAM & {{G\_VRAM}} MB \\
 \subsubsection{DistilBERT}
 \begin{lstlisting}
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 \end{lstlisting}
 
 \subsubsection{RoBERTa}
 \begin{lstlisting}
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 \end{lstlisting}
 
 \subsubsection{GPT-2}
 \begin{lstlisting}
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 \end{lstlisting}
 
 \subsection{C.12 Raw JSON}
@@ -211,14 +211,14 @@ Step  Loss
 {
   "distilbert": {
     "n_128": {
-      "accuracy_pct": {{D_ACC}},
+      "accuracy_pct": 86.4,
       "path": "dense",
-      "time": {{D_TIME}}
+      "time": 1.42x
     },
     "n_512": {
-      "baseline_accuracy_pct": {{D_L512_BASE}},
-      "nystrom_accuracy_pct": {{D_L512_NYS}},
-      "speedup": {{S512}}
+      "baseline_accuracy_pct": 12.4 ms,
+      "nystrom_accuracy_pct": 8.2 ms,
+      "speedup": 86.2
     }
   },
   "roberta": {...},

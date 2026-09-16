@@ -64,8 +64,8 @@ SVD rank $r$ & $d/4$ \\
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 LoRA rank & {{LORA\_RANK}} \\
 Batch size & {{BATCH\_SIZE}} \\
@@ -127,9 +127,9 @@ FAIL & < 50.92\% \\
 \begin{lstlisting}
 python run_all_4_reap_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts {{N_EXPERTS}} \
-    --top_k {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --n_experts 8 \
+    --top_k 2 \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -152,7 +152,7 @@ python run_all_4_reap_moe.py \
 
 \subsection{Seeds}
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 \begin{lstlisting}
 
 ---

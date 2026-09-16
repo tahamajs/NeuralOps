@@ -81,8 +81,8 @@ y = (x (V \odot \sigma(\alpha))^\top) U^\top + b
 \tag{1}
 \]
 
-Gates are initialized at $\alpha_i = {{INIT_GATE}}$ so that 
-$\sigma(\alpha_i) \approx {{INIT_SIGMA}}$ at step 0. A **gate-compensation 
+Gates are initialized at $\alpha_i = 0.5$ so that 
+$\sigma(\alpha_i) \approx 1.0$ at step 0. A **gate-compensation 
 scale** $1/\sigma(\alpha_i)$ is pre-applied to $V$ so that the initial 
 forward pass exactly reproduces the truncated SVD -- the gating is a 
 \textbf{differentiable refinement}, not a perturbation.

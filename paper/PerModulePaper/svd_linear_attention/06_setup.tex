@@ -46,8 +46,8 @@ Majority baseline: 50.92\%.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{mode} & {{MODE}} (exact or linear) \\
-\texttt{rank} (SVD) & {{RANK}} \\
+\texttt{mode} & standard (exact or linear) \\
+\texttt{rank} (SVD) & 32 \\
 \texttt{lora\_rank} & {{LORA\_RANK}} \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
 \texttt{use\_decay\_gating} & {{USE\_DECAY}} \\
@@ -68,8 +68,8 @@ Majority baseline: 50.92\%.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-Learning rate & {{LR}} \\
-Weight decay & {{WD}} \\
+Learning rate & 1e-4 \\
+Weight decay & 0.01 \\
 Recovery steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -124,9 +124,9 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_svd_linear_attention.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --mode {{MODE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 32 \
+    --mode standard \
+    --recovery_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

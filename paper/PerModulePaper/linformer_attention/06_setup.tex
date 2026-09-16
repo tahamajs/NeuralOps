@@ -46,7 +46,7 @@ Majority baseline: 50.92\%. Max sequence length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{linformer\_k} & {{K}} \\
+\texttt{linformer\_k} & 4 \\
 \texttt{max\_seq\_len} & {{MAX\_SEQ}} \\
 E, F init & diagonal + noise 0.02 \\
 \bottomrule
@@ -66,8 +66,8 @@ E, F init & diagonal + noise 0.02 \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
 \texttt{recovery\_steps} & {{RECOVERY\_STEPS}} \\
 \texttt{batch\_size} & {{BATCH\_SIZE}} \\
-LR & {{LR}} \\
-WD & {{WD}} \\
+LR & 1e-4 \\
+WD & 0.01 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -125,9 +125,9 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_linformer.py \
     --models distilbert,roberta,gpt2 \
-    --linformer_k {{K}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --linformer_k 4 \
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -150,7 +150,7 @@ python run_all_4_linformer.py \
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 \begin{lstlisting}
 
 ---

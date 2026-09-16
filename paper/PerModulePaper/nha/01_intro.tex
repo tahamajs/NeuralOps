@@ -36,7 +36,7 @@ module $\mathcal{A}'$ such that:
   simultaneously.
 \item \textbf{Learned fusion:} A per-token gate mixes the two streams.
 \item \textbf{Stability:} The gate is initialized to favor the pretrained behavior.
-\item \textbf{Quality:} $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+\item \textbf{Quality:} $\Delta\text{Acc} \leq 0.02\%$ on SST-2.
 \item \textbf{Pretrained compatibility:} No base retraining; only LoRA + gate
   parameters are trainable.
 
@@ -86,7 +86,7 @@ toward local, $\sigma(3) \approx 0.95$).
 \item \textbf{A systematic evaluation.} Benchmarked on DistilBERT, RoBERTa, and GPT-2
   on SST-2 with ablations over window size, RFF feature count, and gate bias.
 \item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts released
-  under {{LICENSE}}.
+  under Apache 2.0.
 
 \end{itemize}
 \subsection{Paper Organization}

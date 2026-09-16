@@ -44,10 +44,10 @@ Majority baseline: 50.92\%. Max sequence length: 128.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
-\texttt{compression\_ratio} & {{RATIO}} \\
+\texttt{compression\_ratio} & 50\% \\
 \texttt{lora\_rank} & {{LORA\_RANK}} \\
 \texttt{lora\_alpha} & {{LORA\_ALPHA}} \\
-\texttt{rank} & {{RANK}} \\
+\texttt{rank} & 32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -62,8 +62,8 @@ Majority baseline: 50.92\%. Max sequence length: 128.
 \textbf{Hyperparameter} & \textbf{Value} \\
 \midrule
 Optimizer & AdamW \\
-LR & {{LR}} \\
-Weight decay & {{WD}} \\
+LR & 1e-4 \\
+Weight decay & 0.01 \\
 Steps & {{RECOVERY\_STEPS}} \\
 Batch size & {{BATCH\_SIZE}} \\
 Precision & FP16 \\
@@ -141,9 +141,9 @@ PyTorch & {{TORCH\_VERSION}} \\
 \begin{lstlisting}
 python run_all_4_token_compressed.py \
     --models distilbert,roberta,gpt2 \
-    --compression_ratio {{RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --compression_ratio 50\% \
+    --recovery_steps 50 \
+    --lora_rank 8
 \end{lstlisting}
 
 \subsection{Baselines}
@@ -166,7 +166,7 @@ H2O-style & Fixed attention-mass heuristic \\
 
 \subsection{Seeds}
 
-Single seed ({{SEED}}). Single-seed limitation stated in Section 10.
+Single seed (42). Single-seed limitation stated in Section 10.
 \begin{lstlisting}
 
 ---

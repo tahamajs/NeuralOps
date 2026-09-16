@@ -82,7 +82,7 @@ using Random Fourier Features (RFF):
 \]
 
 where $W$ is \textbf{QR-orthogonalized} for stability. The feature dimension 
-$F = {{FEATURE_DIM}}$ yields $\phi(x) \in \mathbb{R}^{2F}$. We apply a 
+$F = 64$ yields $\phi(x) \in \mathbb{R}^{2F}$. We apply a 
 \textbf{head-wise LayerNorm} before the projection, then compute linear attention 
 via a causal cumulative sum (decoders) or a global KV sum (encoders). A 
 \textbf{preservation gate} blends the attention output with the residual 
@@ -97,7 +97,7 @@ with $w_0 = 2$ (initial $\alpha \approx 0.88$).
 On SST-2, LEKAv1 achieves \textbf{{{D\_ACC}}\%} on DistilBERT (baseline 
 {{BASE\_D}}\%), \textbf{{{R\_ACC}}\%} on RoBERTa (baseline {{BASE\_R}}\%), and 
 \textbf{{{G\_ACC}}\%} on GPT-2 (baseline {{BASE\_G}}\%). Inference scales linearly 
-in sequence length: at $L = {{LONG_L}}$, LEKAv1 is \textbf{{{SPEEDUP\_LONG}}$\times$} 
+in sequence length: at $L = LONG_L$, LEKAv1 is \textbf{{{SPEEDUP\_LONG}}$\times$} 
 faster than standard attention.
 
 \textbf{We are explicit that LEKAv1 does not reduce parameter count.} It adds 

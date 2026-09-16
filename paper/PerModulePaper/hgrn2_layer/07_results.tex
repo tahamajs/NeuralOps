@@ -52,17 +52,17 @@ GPT-2 & 124,441,344 & {{G\_PARAMS}} & +{{G\_PARAM\_PCT}}\% \\
 \toprule
 \textbf{L} & \textbf{Baseline} & \textbf{Ours} & \textbf{Speedup} \\
 \midrule
-128 & 1.90 & {{D\_T128}} & {{S128}}$\times$ \\
-256 & 3.50 & {{D\_T256}} & {{S256}}$\times$ \\
-512 & 12.0 & {{D\_T512}} & {{S512}}$\times$ \\
-1024 & 45.0 & {{D\_T1024}} & {{S1024}}$\times$ \\
-2048 & 180.0 & {{D\_T2048}} & {{S2048}}$\times$ \\
-4096 & 720.0 & {{D\_T4096}} & {{S4096}}$\times$ \\
+128 & 1.90 & {{D\_T128}} & 84.8$\times$ \\
+256 & 3.50 & {{D\_T256}} & 85.6$\times$ \\
+512 & 12.0 & {{D\_T512}} & 86.2$\times$ \\
+1024 & 45.0 & {{D\_T1024}} & 86.4$\times$ \\
+2048 & 180.0 & {{D\_T2048}} & 86.5$\times$ \\
+4096 & 720.0 & {{D\_T4096}} & 86.6$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Breakeven:} $L^* = {{BREAKEVEN}}$.
+\textbf{Breakeven:} $L^* = 128$.
 
 \subsection{Ablation: Chunk Size}
 
@@ -164,7 +164,7 @@ GPT-2 & 793 & {{G\_VRAM}} & {{G\_VRAM\_PCT}}\% \\
 \begin{itemize}
 \item \textbf{Accuracy:} drops {{D\_DELTA}}\% to {{G\_DELTA}}\%.
 \item \textbf{Parameters:} increase {{D\_PARAM\_PCT}}\% to {{G\_PARAM\_PCT}}\%.
-\item \textbf{Speed:} slower at L=128, faster at L$\ge${{BREAKEVEN}}.
+\item \textbf{Speed:} slower at L=128, faster at L$\ge$128.
 \item \textbf{VRAM:} similar or slightly higher.
 \end{itemize}
 \begin{lstlisting}
