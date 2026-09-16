@@ -9,6 +9,7 @@ Fixes:
 - Pretrained weight initialization via copy_weights.
 """
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple
 import torch
@@ -16,6 +17,8 @@ from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def ste_quantize_4bit(x: torch.Tensor) -> torch.Tensor:
@@ -363,13 +366,15 @@ class MoEDeltaKVPagedAttention(nn.Module):
             for proj_key, target in [("q", self.query), ("k", self.key), ("v", self.value)]:
                 w, b = extracted[proj_key]
                 w = _orient(w, self.hidden_size)
-                if w.shape[0] < self.all_head_size and self.all_head_size % w.shape[0] == 0:
-                    rep = self.all_head_size // w.shape[0]
+                out_dim = target.weight.shape[0]
+                if w.shape[0] < out_dim and out_dim % w.shape[0] == 0:
+                    rep = out_dim // w.shape[0]
                     w = w.repeat(rep, 1)
-                    if b is not None: b = b.repeat(rep)
-                target.weight.data.copy_(w[:self.all_head_size, :min(self.hidden_size, w.shape[1])])
+                    if b is not None:
+                        b = b.repeat(rep)
+                target.weight.data.copy_(w[:out_dim, :min(self.hidden_size, w.shape[1])])
                 if b is not None and target.bias is not None:
-                    target.bias.data.copy_(b[:self.all_head_size])
+                    target.bias.data.copy_(b[:out_dim])
 
             w_o, b_o = extracted["o"]
             if w_o is not None:
@@ -406,16 +411,21 @@ class MoEDeltaKVPagedAttention(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
+        H_kv = self.num_kv_heads
 
         q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
-        k = self.key(hidden_states).view(B, N, H, d).transpose(1, 2)
-        v = self.value(hidden_states).view(B, N, H, d).transpose(1, 2)
+        k = self.key(hidden_states).view(B, N, H_kv, d).transpose(1, 2)
+        v = self.value(hidden_states).view(B, N, H_kv, d).transpose(1, 2)
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
         if position_embeddings is not None and encoder_hidden_states is None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
+
+        if H_kv != H:
+            k = repeat_kv(k, H // H_kv)
+            v = repeat_kv(v, H // H_kv)
 
         # Delta-KV compression with STE
         k_hat, v_hat = simulate_paged_delta_kv(k, v, self.svd_rank)

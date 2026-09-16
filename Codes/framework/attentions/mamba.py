@@ -8,6 +8,7 @@ multi-architecture weight extraction, causal masking, RoPE support, and nested e
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -19,6 +20,8 @@ from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -324,12 +327,12 @@ class Mamba(BaseAttention):
                 if w_val is not None:
                     norm_val = float(torch.norm(w_val[:min(D, w_val.size(0)), :min(D, w_val.size(1))]).item())
                     if norm_val < 1e-4:
-                        logger.warning(f"Mamba weight verification failed for '{k_name}': norm too small ({norm_val:.2e})")
+                        raise RuntimeError(f"Mamba weight verification failed for '{k_name}': norm too small ({norm_val:.2e})")
 
             if w_o is not None:
                 norm_o = float(torch.norm(w_o[:min(D, w_o.size(0)), :min(D, w_o.size(1))]).item())
                 if norm_o < 1e-4:
-                    logger.warning(f"Mamba weight verification failed for 'o': norm too small ({norm_o:.2e})")
+                    raise RuntimeError(f"Mamba weight verification failed for 'o': norm too small ({norm_o:.2e})")
 
             # in_proj branch 1 (first D): SSM input representations from v (fallback to q)
             w_main = w_v if w_v is not None else w_q
