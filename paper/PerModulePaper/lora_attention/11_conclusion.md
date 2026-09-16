@@ -52,6 +52,5 @@ attention-specific fine-tuning. Code and checkpoints released.
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---

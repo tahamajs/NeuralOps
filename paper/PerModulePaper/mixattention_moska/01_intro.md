@@ -90,6 +90,5 @@ discusses. Section 10 lists limitations. Section 11 concludes.
 | $\text{imp}_i$ | Importance score of token $i$ | §1.3 |
 | $\mathcal{S}$ | Selected subset | §1.2 |
 </parameter>
-```
 
 ---

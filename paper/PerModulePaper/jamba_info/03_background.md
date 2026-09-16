@@ -88,6 +88,5 @@ We initialize $\alpha = \sigma(-2) \approx 0.12$, biasing toward $A$
 | $b$ | Bottleneck dim |
 | $\bar{A}, \bar{B}, \bar{C}$ | SSM parameters |
 | $\alpha$ | Fusion gate |
-```
 
 ---

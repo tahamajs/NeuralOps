@@ -94,6 +94,5 @@ If you must deploy routing:
 4. **Exclude padding** from k-means.
 
 Without these, routing is not competitive with SDPA or FlashAttention.
-```
 
 ---

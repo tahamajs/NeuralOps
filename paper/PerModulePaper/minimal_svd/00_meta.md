@@ -102,6 +102,5 @@ GPT-2), MinimalSVD removes 60–70% of the attention parameters with only
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
-```
 
 ---

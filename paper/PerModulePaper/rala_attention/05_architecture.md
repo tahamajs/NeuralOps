@@ -151,6 +151,5 @@ respects this mask: padded positions do not contribute to $S$ or $z$.
 RALA runs in the base model's dtype (FP16 typically). The prefix sums are 
 computed in FP16, which may lose precision for long sequences. Consider 
 FP32 for $L > 512$.
-```
 
 ---

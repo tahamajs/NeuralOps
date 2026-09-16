@@ -51,6 +51,5 @@ Drafted with LLM assistance. Content reviewed by authors.
 We emphasize in the abstract and introduction that the Delta-KV and 4-bit 
 quantization are **simulations**, not real compression. Users should not 
 expect memory savings from this module alone.
-```
 
 ---

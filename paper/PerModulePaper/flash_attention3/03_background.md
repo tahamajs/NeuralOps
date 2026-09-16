@@ -116,6 +116,5 @@ $$
 | $\ell_i$ | Running sum |
 | $B, H, L, d_h$ | Batch, Heads, Length, Head dim |
 | $H_{kv}$ | KV head count |
-```
 
 ---

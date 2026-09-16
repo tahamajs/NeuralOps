@@ -87,6 +87,5 @@ Sweet spot: 2.0.
 3. **`max_rank < d/2` for real compression.**
 4. **Decoder fallback matters.**
 5. **Split-head helps.**
-```
 
 ---

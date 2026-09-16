@@ -142,6 +142,5 @@ Section 10 lists limitations. Section 11 concludes.
 | $W$ | Random projection |
 | $Q, K, V$ | Attention projections |
 | $\alpha$ | Preservation gate |
-```
 
 ---

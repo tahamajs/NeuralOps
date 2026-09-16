@@ -105,6 +105,5 @@ Add local window as third branch. Marginal improvement.
 3. **ELU+1 is the best kernel.**
 4. **Cumsum needs FP32.**
 5. **No speedup without hard routing.**
-```
 
 ---

@@ -285,6 +285,5 @@ degenerate attention outputs. Token 0 provides a stable reference.
 
 Forcing $j = i$ in the attention pattern prevents a query from being 
 disconnected from its own representation.
-```
 
 ---

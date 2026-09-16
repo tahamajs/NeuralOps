@@ -78,6 +78,5 @@ torch.cuda.manual_seed_all(seed)
 - FP32 needed for topk stability
 - No sparse kernels for actual speedup
 - Very long sequences may OOM in topk
-```
 
 ---

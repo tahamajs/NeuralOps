@@ -206,6 +206,5 @@ $\leq r_L$, LoRA can fully recover it.
 
 **Proof sketch.** LoRA adds a rank-$r_L$ update. If the missing subspace 
 has dimension $\leq r_L$, the update can reconstruct it. $\square$
-```
 
 ---

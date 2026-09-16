@@ -110,6 +110,5 @@ Q = H_\text{dec} W_Q
 $$
 
 Same chunked scan applies.
-```
 
 ---

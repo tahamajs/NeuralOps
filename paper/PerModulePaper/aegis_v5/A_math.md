@@ -112,6 +112,5 @@ causal mask.
 $\text{mask}_{ij} = \mathbb{1}[j \leq i]$. Softmax assigns zero weight to 
 $-\infty$ entries. Thus, output at position $i$ depends only on inputs 
 $j \leq i$. $\square$
-```
 
 ---

@@ -103,6 +103,5 @@
 - **Accuracy:** {{D_DELTA}}%–{{G_DELTA}}% drop.
 - **VRAM:** {{VRAM_REDUCTION}}% reduction.
 - **No calibration data required.**
-```
 
 ---

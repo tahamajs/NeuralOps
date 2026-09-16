@@ -75,6 +75,5 @@ But also:
 
 - Enable surveillance at scale
 - Concentrate AI capabilities
-```
 
 ---

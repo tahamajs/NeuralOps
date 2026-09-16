@@ -122,6 +122,5 @@ $$
 $$
 
 with $B = 0$ initially. Applied to projections for recovery.
-```
 
 ---

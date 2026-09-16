@@ -376,6 +376,5 @@ $$
 
 **Proof.** We apply a triangular mask before softmax, standard for causal 
 attention. $\square$
-```
 
 ---

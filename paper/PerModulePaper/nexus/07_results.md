@@ -116,6 +116,5 @@ actually active in our SST-2 experiments.
 - NEXUS provides sub-quadratic attention for encoders.
 - No benefit on causal decoders.
 - Several components (stripe, RFF) are inactive under our setup.
-```
 
 ---

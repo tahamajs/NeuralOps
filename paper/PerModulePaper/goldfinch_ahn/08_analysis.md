@@ -138,6 +138,5 @@ Beltagy et al., 2020).
 3. **Sliding-window attention is a good local approximation.**
 4. **Gate mean-pooling loses per-head information.**
 5. **Extra parameters (+5-6%) are not justified by gains.**
-```
 
 ---

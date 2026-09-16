@@ -139,6 +139,5 @@ layers have lower gates (linear).
 - **No parameter reduction** (only gate added).
 - **No speedup without hard routing.**
 - **All models pass quality gate.**
-```
 
 ---

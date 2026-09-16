@@ -169,6 +169,5 @@ for name, mod in model.named_modules():
     if hasattr(mod, 'alpha'):
         print(f"{name}: alpha = {mod.alpha.item():.4f}")
 ```
-```
 
 ---

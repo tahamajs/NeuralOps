@@ -77,6 +77,5 @@ PHANTOM enables:
 But also:
 - Potential for cheaper harmful deployment
 - Complexity may widen gap between research and production
-```
 
 ---

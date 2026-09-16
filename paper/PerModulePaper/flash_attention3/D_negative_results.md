@@ -99,6 +99,5 @@ We could use FlashAttention-2 on Ampere. Result: modest speedup over SDPA
 3. **Cross-attention is not causal.**
 4. **SDPA is a fine fallback.**
 5. **No parameter reduction.**
-```
 
 ---

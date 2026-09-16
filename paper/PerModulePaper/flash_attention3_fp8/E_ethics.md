@@ -50,6 +50,5 @@ that supports it. This may:
 - Reduce the value of software-only optimizations.
 
 We do not claim to solve these issues; we simply document the trade-offs.
-```
 
 ---

@@ -95,6 +95,5 @@ PHANTOM is unique in combining:
 
 Prior work addresses each of these individually, but no prior method combines 
 all three.
-```
 
 ---

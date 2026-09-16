@@ -116,6 +116,5 @@ longer sequences.
 3. **Adaptive pooling works best.**
 4. **3 pinv iterations suffice.**
 5. **Dense fallback is essential.**
-```
 
 ---

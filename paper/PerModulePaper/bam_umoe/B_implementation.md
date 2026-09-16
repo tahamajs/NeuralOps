@@ -105,6 +105,5 @@ GPT-2 Conv1D stores `(in, out)`. Must transpose.
 ### B.3.5 Nested Encoder Bypass
 
 For RoBERTa, do NOT apply `out_lin` — the outer layer does it.
-```
 
 ---

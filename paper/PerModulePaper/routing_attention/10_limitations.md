@@ -80,6 +80,5 @@ This is **not**:
 - A compression method
 - An efficiency study
 - A state-of-the-art result
-```
 
 ---

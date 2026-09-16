@@ -128,6 +128,5 @@
 - Accuracy preserved within **{{D_DELTA}}%**
 - Zero inference overhead after merging
 - Effective recovery mechanism for compression
-```
 
 ---

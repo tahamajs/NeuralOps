@@ -92,6 +92,5 @@ Single seed ({{SEED}}). No multi-seed runs.
 - `full` — unmodified model
 - `cosformer` — our method
 - Prior modules: `nha`, `nasc`, `a3`, `gated_delta_net`
-```
 
 ---

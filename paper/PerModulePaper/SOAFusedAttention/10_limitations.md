@@ -69,6 +69,5 @@ Research-grade:
 ## 10.12 Ethical Considerations
 
 Parameter compression is dual-use. See Appendix E.
-```
 
 ---

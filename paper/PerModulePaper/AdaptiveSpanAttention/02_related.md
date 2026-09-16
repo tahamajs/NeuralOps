@@ -82,6 +82,5 @@ generalizes Sukhbaatar et al. (2019) to the current transformer ecosystem.
 | Mistral | Fixed 4096 | No | No | — | Yes |
 | Adaptive Span (2019) | Learned | Yes | Yes | Yes | No (LSTM-era) |
 | **ASA-Span (ours)** | **Learned** | **Yes** | **Yes** | **Yes** | **Yes** |
-```
 
 ---

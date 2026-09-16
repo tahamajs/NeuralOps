@@ -127,6 +127,5 @@ $$
 
 RoPE rotates the first half of the head dimension with $\omega_0, \dots$ and 
 the second half with the same frequencies (concatenated).
-```
 
 ---

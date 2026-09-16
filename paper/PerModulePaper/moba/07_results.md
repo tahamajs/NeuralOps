@@ -110,6 +110,5 @@ roughly constant.
 - Preservation gate essential.
 - Learned decay outperforms fixed.
 - Complexity is $\mathcal{O}(L^2 d)$, **not** O(L).
-```
 
 ---

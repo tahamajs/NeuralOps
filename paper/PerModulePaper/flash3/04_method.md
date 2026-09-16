@@ -236,6 +236,5 @@ through softmax. Empirically, we observe a small accuracy drop (see Section 8).
 | `lora_rank` | 16 | Adapter capacity |
 | `is_decoder` | auto | Causal masking |
 | `is_nested_encoder` | auto | Output projection bypass |
-```
 
 ---

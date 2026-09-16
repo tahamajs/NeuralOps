@@ -76,6 +76,5 @@ Research-grade:
 ## 10.14 Ethical Considerations
 
 MoE scaling is dual-use. See Appendix E.
-```
 
 ---

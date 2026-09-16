@@ -228,6 +228,5 @@ For $d = 768$, $d_h = 64$, $r_L = 16$, $F = 128$:
 
 For encoder, the block mask ensures each query block attends to its own 
 diagonal + top-$k$ key blocks.
-```
 
 ---

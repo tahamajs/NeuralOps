@@ -76,6 +76,5 @@ projection compression, and (iii) apply LoRA on the frozen factors.
 | LEKAv3 | $\mathcal{O}(L \cdot L_\text{land})$ | No | No | ✓ |
 | Linformer | $\mathcal{O}(L \cdot k)$ | No | No | ✓ |
 | **AEGIS-V5** | $\mathcal{O}(L \cdot W + L \cdot F)$ | **Yes** | **Yes** | ✓ |
-```
 
 ---

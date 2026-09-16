@@ -78,6 +78,5 @@ architectures.
 | Performer | $O(L)$ | None | No | Rare |
 | Nyströmformer | $O(L)$ | Learned | Partial | Rare |
 | **Cosformer** | **$O(L)$** | **Cosine/sine** | **Yes** | **Yes (ours)** |
-```
 
 ---

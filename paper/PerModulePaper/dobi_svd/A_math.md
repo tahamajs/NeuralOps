@@ -117,6 +117,5 @@ $$
 $$
 
 We expect $\text{err}_t \geq \text{err}_0$ due to gate drift.
-```
 
 ---

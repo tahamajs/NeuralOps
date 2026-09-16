@@ -108,6 +108,5 @@ After training, apply Algorithm 2 to physically remove pruned components.
 
 ### Environmental
 Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
-```
 
 ---

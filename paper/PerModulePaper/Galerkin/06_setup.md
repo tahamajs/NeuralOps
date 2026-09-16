@@ -93,6 +93,5 @@ Single seed ({{SEED}}). No multi-seed runs.
 - `full` — unmodified model
 - `galerkin` — our method
 - Prior modules: `nha`, `nasc`, `a3`, etc.
-```
 
 ---

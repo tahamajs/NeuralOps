@@ -295,6 +295,5 @@ the boosted $\ell_{i, 0} > 10^3$ exceeds all others. $\square$
 **Proof.** Router logits mask $j > i$ to $-\infty$; page-level causal mask 
 enforces block-causality. Within a page, no mask is needed because a page 
 contains consecutive tokens. $\square$
-```
 
 ---

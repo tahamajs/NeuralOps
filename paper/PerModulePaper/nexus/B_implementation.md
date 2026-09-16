@@ -72,6 +72,5 @@ Causal path always uses dense. No sparsity for GPT-2.
 ### B.4.5 CLS Block Preservation
 
 Block 0 always retained via `inter_mask[:, :, :, 0] = True`.
-```
 
 ---

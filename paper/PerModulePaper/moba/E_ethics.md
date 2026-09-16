@@ -51,6 +51,5 @@ Drafted with LLM assistance. Content reviewed by authors.
 We acknowledge that calling this module "Mamba" may be misleading. It is 
 **Mamba-inspired**, not Mamba. Users should be aware of the quadratic 
 complexity.
-```
 
 ---

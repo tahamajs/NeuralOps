@@ -191,6 +191,5 @@ class SVDLinearAttention(BaseAttention):
 
 **Verification.** Gradient of output at position $i$ w.r.t. input at 
 position $j > i$ is zero for the causal mode.
-```
 
 ---

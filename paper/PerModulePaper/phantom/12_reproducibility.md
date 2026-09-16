@@ -118,6 +118,5 @@ torch.backends.cudnn.deterministic = True
 - Windows: set `PYTHONIOENCODING=utf-8`
 - CUDA ≥ 11.8 for FP16
 - Batch size 4 required for 12-layer models on 8 GB GPU
-```
 
 ---

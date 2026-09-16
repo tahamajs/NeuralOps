@@ -80,6 +80,5 @@ For DistilBERT at $L = 128$:
 ### Negative
 - Parameter count is unpredictable (depends on `max_rank`)
 - Conservative decoder fallback limits benefit
-```
 
 ---

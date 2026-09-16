@@ -314,6 +314,5 @@ O_i^\text{global} = f(\phi(Q_j), \phi(K_j), V_j : j \leq i)
 $$
 
 No future information leaks.
-```
 
 ---

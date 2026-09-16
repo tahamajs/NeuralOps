@@ -88,6 +88,5 @@ attention and document the portability challenges.
 **Key distinction.** UnifiedRoPE does not introduce a new position encoding. 
 It provides a **single portable implementation** of RoPE attention that 
 works across four families. The contribution is engineering, not science.
-```
 
 ---

@@ -87,6 +87,5 @@ nested attention structure requires more recovery.
 3. **LoRA recovery adds {{LORA_GAIN}}%.**
 4. **Rank 128 is a sweet spot** — 3× reduction, minimal loss.
 5. **No calibration is a major practical advantage.**
-```
 
 ---

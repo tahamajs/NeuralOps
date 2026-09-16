@@ -89,6 +89,5 @@ speedup. We hope it will be used for beneficial applications such as:
 
 But we acknowledge the dual-use potential and encourage responsible 
 deployment.
-```
 
 ---

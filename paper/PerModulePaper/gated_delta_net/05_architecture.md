@@ -201,6 +201,5 @@ Replace Python loops with a **fused Triton or CUDA kernel**:
 
 Expected speedup: **50-100×**, bringing Gated DeltaNet to parity with 
 baseline attention.
-```
 
 ---

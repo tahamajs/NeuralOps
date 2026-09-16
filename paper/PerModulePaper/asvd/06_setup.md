@@ -90,6 +90,5 @@ python run_all_4_asvd.py \
 | `full` | Uncompressed model |
 | `asvd` | Our method |
 | Companion | `a3`, `aasvd`, `sdrm` |
-```
 
 ---

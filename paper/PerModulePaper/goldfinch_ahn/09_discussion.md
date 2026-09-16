@@ -105,6 +105,5 @@ For DistilBERT:
 
 **Deploy when accuracy preservation matters more than parameter count or 
 latency.**
-```
 
 ---

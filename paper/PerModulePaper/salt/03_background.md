@@ -96,6 +96,5 @@ or a forward pass that avoids materializing W.
 | $A, B$ | Low-rank residual |
 | $d_\text{in}, d_\text{out}$ | Input/output dims |
 </parameter>
-```
 
 ---

@@ -155,6 +155,5 @@ exactly the high-frequency structure that makes attention useful.
 3. **Decoder fallback is a no-op** — the module is ineffective for GPT-2.
 4. **Rank increase does not help** — failure is not truncation.
 5. **Galerkin Attention is not recommended** for any tested use case.
-```
 
 ---

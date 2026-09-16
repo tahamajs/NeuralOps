@@ -87,6 +87,5 @@ Sweet spot: 8.
 3. **RFF is inactive by default.**
 4. **Clamping prevents NaN.**
 5. **Block-0 preservation matters.**
-```
 
 ---

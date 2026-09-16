@@ -128,6 +128,5 @@ This is **safer** than silent fallback but **less flexible** than A3/AASVD.
 3. **RPC helps only at long sequences (L > 512).**
 4. **Theoretical speedup ≠ actual speedup.**
 5. **`raise` prevents silent failure.**
-```
 
 ---

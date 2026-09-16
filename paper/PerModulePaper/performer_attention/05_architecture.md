@@ -146,6 +146,5 @@ Standard pipeline:
 3. Freeze base weights, keep LoRA trainable.
 4. Run {{RECOVERY_STEPS}} recovery steps.
 5. Evaluate.
-```
 
 ---

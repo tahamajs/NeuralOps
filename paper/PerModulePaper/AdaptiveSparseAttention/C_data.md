@@ -126,6 +126,5 @@ for rho in 0.1 0.3 0.5 0.7 0.9; do
     python run_all_4_adaptive_sparse.py --sparsity_ratio $rho
 done
 ```
-```
 
 ---

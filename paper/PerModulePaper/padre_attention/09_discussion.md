@@ -82,6 +82,5 @@ For DistilBERT at $L = 128$:
 ### Negative
 - No actual speedup
 - Kernelization deferred
-```
 
 ---

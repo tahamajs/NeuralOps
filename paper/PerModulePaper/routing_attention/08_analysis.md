@@ -158,6 +158,5 @@ suggests that:
 4. **Token-0 anchor is essential.**
 5. **Padding distorts clustering.**
 6. **Mask-K independence limits expressiveness.**
-```
 
 ---

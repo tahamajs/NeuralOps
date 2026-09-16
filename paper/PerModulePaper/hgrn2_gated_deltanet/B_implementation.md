@@ -164,6 +164,5 @@ random output projection.
 
 Without the guard, repeated calls to `inject_hgrn2_gated_deltanet` wrap the 
 module multiple times.
-```
 
 ---

@@ -105,6 +105,5 @@ benefit.
 3. **Remove dead `output_scale`.**
 4. **Consider SALT + INT8 combination.**
 5. **Add unit tests.**
-```
 
 ---

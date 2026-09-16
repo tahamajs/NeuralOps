@@ -51,6 +51,5 @@ LEKAv2 could:
 But also:
 - Not truly linear limits scalability.
 - Concentrate AI capabilities.
-```
 
 ---

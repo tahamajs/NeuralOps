@@ -136,6 +136,5 @@ for name, mod in model.named_modules():
         density = ...
         print(f'{name}: density={density}')
 ```
-```
 
 ---

@@ -145,6 +145,5 @@ Step  Loss  Mean gate
   "gpt2": {...}
 }
 ```
-```
 
 ---

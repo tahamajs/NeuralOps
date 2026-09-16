@@ -52,6 +52,5 @@ are active in our experiments.
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---

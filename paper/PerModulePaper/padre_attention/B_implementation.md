@@ -77,6 +77,5 @@ Mask for max BEFORE polynomial; zero mask AFTER polynomial.
 
 The `'q_rot' in locals()` check is fragile. Should compute `q_rot, q_pass` 
 unconditionally.
-```
 
 ---

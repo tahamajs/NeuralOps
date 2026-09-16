@@ -85,6 +85,5 @@ Near-maximum entropy $\log_2(8) = 3$ bits indicates good balance.
 2. **Load balancing is stable** — entropy near max.
 3. **MoE adds capacity** — but at high parameter cost.
 4. **Not a compression method.**
-```
 
 ---

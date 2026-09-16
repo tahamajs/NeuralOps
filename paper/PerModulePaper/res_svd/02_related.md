@@ -72,6 +72,5 @@ approximation as SVD of rank $r_b + r_r$.
 | A3 | One SVD + Fisher | Rank $r$ | LoRA zero |
 | SVD-Linear | SVD + linear attn | Rank $r$ | LoRA zero |
 | **Res-SVD** | **Two-level SVD** | **Rank $r_b$** | **Spectral init** |
-```
 
 ---

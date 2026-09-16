@@ -76,6 +76,5 @@ avoids gate collapse.
 | BigBird | 3 | Fixed | Random | No | Yes |
 | Performer | 1 | N/A | No | Yes | Yes |
 | **NASC** | **3** | **Batch-softmax** | **Block** | **Yes** | **Yes** |
-```
 
 ---

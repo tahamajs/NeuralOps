@@ -100,6 +100,5 @@ python run_all_4_nsa.py \
 | Top-$k$ $k$ | $\{4, 8, 16, 32\}$ |
 | LoRA rank | $\{4, 8, 16, 32\}$ |
 | Recovery steps | $\{10, 25, 50, 100\}$ |
-```
 
 ---

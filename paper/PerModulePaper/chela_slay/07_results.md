@@ -133,6 +133,5 @@ $L = 128$.
 - **Speed:** slower at L=128 (both streams computed).
 - **Memory:** cumsum dominates peak VRAM.
 - **Gate:** learned near-dense (mean {{D_GATE_MEAN}}).
-```
 
 ---

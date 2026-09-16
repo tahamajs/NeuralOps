@@ -73,6 +73,5 @@ This wastes parameters.
 2. **Causal fallback is essential** for decoders.
 3. **$k = 64$ is a good default.**
 4. **Encoders benefit; decoders don't** (due to fallback).
-```
 
 ---

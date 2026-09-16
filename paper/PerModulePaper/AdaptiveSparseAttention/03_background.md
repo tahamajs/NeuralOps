@@ -145,6 +145,5 @@ injection.
 | $\tau_h$ | Threshold |
 | $T$ | Temperature |
 | $C$ | Chunk size |
-```
 
 ---

@@ -111,6 +111,5 @@ for b in 0 0.5 1.0 1.8 3.0; do
     python run_all_4_halo_regla.py --gate_init_bias $b
 done
 ```
-```
 
 ---

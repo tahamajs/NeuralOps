@@ -97,6 +97,5 @@ Runtime: ~{{RUNTIME}} min.
 | `eat` | Our method |
 | `eat_no_prune` | EAT without pruning |
 | Prior modules | `nha`, `a3`, `aasvd` |
-```
 
 ---

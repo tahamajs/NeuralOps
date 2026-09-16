@@ -124,6 +124,5 @@ for model in ["distilbert", "roberta", "gpt2"]:
 - Windows: use `PYTHONIOENCODING=utf-8`
 - CUDA ≥ 11.8 recommended
 - Explicit storage may be FP16-sensitive; use symmetric if needed
-```
 
 ---

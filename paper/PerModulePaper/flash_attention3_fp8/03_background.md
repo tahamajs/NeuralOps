@@ -103,6 +103,5 @@ detect this and fall back.
 | $r$ | LoRA rank |
 | $S$ | SRAM block size |
 | $f_{p8}$ | FP8 format (e4m3 or e5m2) |
-```
 
 ---

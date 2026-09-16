@@ -51,6 +51,5 @@ MoE methods could:
 But also:
 - Increase inference costs.
 - Widen the gap between large and small labs.
-```
 
 ---

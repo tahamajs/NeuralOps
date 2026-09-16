@@ -69,6 +69,5 @@ MoE architecture trends suggest:
 - Expert specialization as a research direction
 
 REAP-MoE contributes to this direction.
-```
 
 ---

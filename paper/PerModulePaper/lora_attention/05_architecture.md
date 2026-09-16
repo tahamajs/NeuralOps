@@ -163,6 +163,5 @@ def merge_lora(model):
 ```
 
 After merging, `model` has no LoRA parameters, only the merged weights.
-```
 
 ---

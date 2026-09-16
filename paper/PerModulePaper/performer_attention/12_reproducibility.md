@@ -113,6 +113,5 @@ assert x.grad[0, 51:].abs().max() < 1e-6
 - Code: `framework/attentions/performer.py`
 - Metrics: `results/unified_performer/*/summary.csv`
 - Logs: `benchmark_logs/performer_*.log`
-```
 
 ---

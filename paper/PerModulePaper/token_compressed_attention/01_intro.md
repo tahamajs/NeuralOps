@@ -95,6 +95,5 @@ trade-offs. Section 10 lists limitations. Section 11 concludes.
 | $d_h$ | Head dimension |
 | $s_i$ | Importance score for token $i$ |
 | $\mathcal{S}$ | Set of selected token indices |
-```
 
 ---

@@ -94,6 +94,5 @@ Standard (Hu et al., 2021).
 | $F$ | RFF features |
 | $\Omega$ | RFF projection |
 | $r_L$ | LoRA rank |
-```
 
 ---

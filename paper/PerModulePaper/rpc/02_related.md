@@ -79,6 +79,5 @@ precision for compute.
 | **Projection** | Fixed or learned | **Fixed random** |
 | **Memory** | Same as baseline | Same as baseline |
 | **Multi-architecture** | Usually one family | Four families |
-```
 
 ---

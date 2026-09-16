@@ -85,6 +85,5 @@ python run_all_4_rpc.py \
 | `full` | Uncompressed model |
 | `rpc` | Our method |
 | Companion | `nha`, `asvd`, `aasvd`, `oha` |
-```
 
 ---

@@ -65,6 +65,5 @@ $$
 | $U_b, V_b$ | Base SVD factors |
 | $B, A$ | Residual LoRA factors |
 | $\alpha$ | Residual scaling |
-```
 
 ---

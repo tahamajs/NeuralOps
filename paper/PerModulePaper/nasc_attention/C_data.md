@@ -103,6 +103,5 @@ for w in 16 32 64 128; do
     python run_all_4_nasc.py --window_size $w --output_suffix w$w
 done
 ```
-```
 
 ---

@@ -125,6 +125,5 @@ class ProgressiveTokenPruning(BaseAttention): ...
 | Empty mask | Empty valid_mask | Use all tokens |
 | NaN scores | `torch.isnan` | Fallback to uniform |
 | Wrong nested flag | Shape mismatch | Fallback |
-```
 
 ---

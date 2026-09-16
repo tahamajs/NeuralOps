@@ -130,6 +130,5 @@ if attention_mask is None and mask is not None:
 ```
 
 Silent fallback. Not harmful but non-obvious.
-```
 
 ---

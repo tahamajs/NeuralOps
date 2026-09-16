@@ -90,6 +90,5 @@ Output: M with attention replaced
 class NEXUSAttention(BaseAttention):
     ...
 ```
-```
 
 ---

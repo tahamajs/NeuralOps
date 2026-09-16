@@ -103,6 +103,5 @@ If all keys in a row are masked, `p.sum() = 0` → output is zero.
 1. **Fixed bugs** — production-ready.
 2. **Fused kernel** — faster factorized projections.
 3. **Learned head split** — adaptive bifurcation.
-```
 
 ---

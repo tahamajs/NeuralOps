@@ -153,6 +153,5 @@ class ORIONAttention(BaseAttention):
 ## B.10 Injection
 
 Standard traversal with double-injection guard.
-```
 
 ---

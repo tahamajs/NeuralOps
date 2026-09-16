@@ -71,6 +71,5 @@ This is **not**:
 - A production-ready attention
 - A state-of-the-art result
 - A scaling study
-```
 
 ---

@@ -113,6 +113,5 @@ For $N_l$ layers, each with four projections:
 | SVD (per proj) | $\mathcal{O}(d^3)$ | $\mathcal{O}(d^2)$ |
 | Truncation | $\mathcal{O}(N_l r d^2)$ | $\mathcal{O}(d^2)$ |
 | Total | $\mathcal{O}(N_l d^3)$ | $\mathcal{O}(d^2)$ |
-```
 
 ---

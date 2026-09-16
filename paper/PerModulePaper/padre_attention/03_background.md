@@ -135,6 +135,5 @@ $$
 | $d$ | Polynomial order |
 | $r_L$ | LoRA rank |
 | $\phi$ | Feature map |
-```
 
 ---

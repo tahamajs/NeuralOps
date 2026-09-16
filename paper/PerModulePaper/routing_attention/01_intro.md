@@ -108,6 +108,5 @@ does not achieve speedups. Section 9 discusses practical guidance. Section
 | $r$ | LoRA rank | §4.6 |
 | $\mathcal{C}_k$ | Set of tokens in cluster $k$ | §4.3 |
 </parameter>
-```
 
 ---

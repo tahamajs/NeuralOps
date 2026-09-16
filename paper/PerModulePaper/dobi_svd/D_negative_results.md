@@ -115,6 +115,5 @@ empirically, no benefit from making it learnable.
 3. **At least 30 recovery steps needed.**
 4. **τ_g = 0.5 is the sweet spot.**
 5. **Learning rate 2e-4 works best.**
-```
 
 ---

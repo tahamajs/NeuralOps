@@ -75,6 +75,5 @@ in $[0.3, 0.7]$, meaning $k_h$ varies between 2 and 8.
 3. **Softpick is fine for mixed logits**, risky for all-negative.
 4. **Speedup grows with $N$.**
 5. **Seer gate learns content-dependent budgets.**
-```
 
 ---

@@ -60,6 +60,5 @@ than fixed at initialization.
 | Longformer | ✓ | ✓ | fixed | $\mathcal{O}(L W)$ |
 | NHA | ✓ | ✓ | fixed | $\mathcal{O}(L^2)$ |
 | **LEKAv3** | ✓ | ✓ | **learned** | $\mathcal{O}(L L_\text{land} + L W)$ |
-```
 
 ---

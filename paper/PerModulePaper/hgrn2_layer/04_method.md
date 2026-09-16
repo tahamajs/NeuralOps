@@ -264,6 +264,5 @@ Frozen:
 - Gates: $\sim 2.4M$
 - LoRA: $\sim 98K$
 - Total: $\sim 2.5M$ per layer
-```
 
 ---

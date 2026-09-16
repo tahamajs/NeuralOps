@@ -73,6 +73,5 @@ loop. Expected speedup: 3-5× at L = 128.
 2. **Fused kernels:** How much can they help?
 3. **Chunk size scheduling:** Should it vary per layer?
 4. **Combining with attention:** Hybrid HGRN-attention?
-```
 
 ---

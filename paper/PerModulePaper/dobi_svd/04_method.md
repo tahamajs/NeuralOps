@@ -330,6 +330,5 @@ Dobi-SVD:
 4. Trains gates jointly with LoRA recovery.
 5. Optionally prunes gates post-hoc.
 6. Achieves **real parameter reduction** with **learnable rank**.
-```
 
 ---

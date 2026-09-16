@@ -111,6 +111,5 @@ appear similar in accuracy.
   speedup at {{LONG_ACC_DROP}}% accuracy cost.
 - **Portability:** Nyströmformer ports to all four architectures.
 - **No parameter or KV-cache reduction** — compute only.
-```
 
 ---

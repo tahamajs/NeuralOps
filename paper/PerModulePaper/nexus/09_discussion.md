@@ -80,6 +80,5 @@ For DistilBERT at $L = 512$:
 ### Negative
 - Two components inactive in practice
 - No causal benefit
-```
 
 ---

@@ -126,6 +126,5 @@
 | Parameter increase | +{{PARAM_CHANGE}}% |
 | Inference ratio (L=128) | {{INFERENCE_RATIO}}× |
 | Long-context benefit (L=2048) | {{LONG_CTX_SPEEDUP}}× |
-```
 
 ---

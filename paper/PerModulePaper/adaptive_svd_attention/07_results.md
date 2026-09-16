@@ -100,6 +100,5 @@ because it concentrates capacity where needed.
 - **Average rank:** {{AVG_RANK}} at τ = {{ENERGY_THRESHOLD}}.
 - **Zero-shot** — no calibration required.
 - **Supports T5, cross-attention, GQA, RoPE.**
-```
 
 ---

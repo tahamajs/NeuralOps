@@ -105,6 +105,5 @@ print(f"Orthonormality error: {err}")  # Should be < 1e-5
 
 - Windows: `cp1256` codec issues; set `PYTHONIOENCODING=utf-8`.
 - FP16 basis QR occasionally produces NaN; use FP32 if issues arise.
-```
 
 ---

@@ -239,6 +239,5 @@ Output: Y ∈ R^{B×L×d}
 17: if is_nested_encoder: return O
 18: else: return out_proj(O)
 ```
-```
 
 ---

@@ -23,6 +23,5 @@ We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on the SST-2 sentiment task w
 
 **Keywords:** efficient attention, block-sparse attention, LoRA, KV-cache, transformer compression
 
-```
 
 ---

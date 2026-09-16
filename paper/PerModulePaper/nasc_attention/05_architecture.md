@@ -134,6 +134,5 @@ if not hasattr(self, '_logged_once'):
 ```
 
 This is a fix from previous log spam.
-```
 
 ---

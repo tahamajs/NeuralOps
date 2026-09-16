@@ -110,6 +110,5 @@ def softpick(x, dim, temperature):
 3. **Softpick fix prevents collapse.**
 4. **Decoder fallback is essential** for causality.
 5. **For real compression, use `max_rank < d/2`.**
-```
 
 ---

@@ -96,6 +96,5 @@ This is **not**:
 - A compression method
 - An FP8 benchmark
 - A scaling study
-```
 
 ---

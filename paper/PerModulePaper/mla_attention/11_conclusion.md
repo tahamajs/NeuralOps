@@ -63,6 +63,5 @@ We thank {{ACKNOWLEDGMENTS}}. This work reproduces DeepSeek-AI (2024).
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---

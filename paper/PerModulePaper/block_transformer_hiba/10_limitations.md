@@ -16,6 +16,5 @@ Our empirical validation is currently limited to the SST-2 sentiment classificat
 ## 10.4 Heuristic Rectification Interval
 The `rectification_interval` parameter (e.g., executing dense attention every 4 layers) is currently static. While effective, this is a heuristic approach. Different datasets and model architectures may require dynamic or learnable rectification intervals to optimally balance memory efficiency with contextual density.
 
-```
 
 ---

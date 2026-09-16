@@ -128,6 +128,5 @@ class HALOReGLAAttention(BaseAttention): ...
 | CUDA OOM in cumsum | RuntimeError | Reduce batch |
 | NaN in cumsum | `torch.isnan` | Cast FP32 |
 | RoPE shape mismatch | Exception | Skip RoPE |
-```
 
 ---

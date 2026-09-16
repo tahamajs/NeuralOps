@@ -125,6 +125,5 @@ direct consequence of expert-choice routing.
 - **Parameters:** +{{D_PARAM_PCT}}%.
 - **Expert utilization:** perfectly balanced (std ≈ 0).
 - **Gate:** ramps from {{MOE_GATE_VALUE}} to {{GAMMA_FINAL}}.
-```
 
 ---

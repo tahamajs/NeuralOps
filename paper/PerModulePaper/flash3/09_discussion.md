@@ -83,6 +83,5 @@ For DistilBERT on RTX 4070 (SDPA path):
 
 ### Environmental
 Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
-```
 
 ---

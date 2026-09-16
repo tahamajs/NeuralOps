@@ -131,6 +131,5 @@ Applied to $Q, K$ after projection.
 **Critical.** For nested encoders, our attention module must **not** apply 
 its own output projection. For flat encoders, it **must**. Getting this 
 wrong causes double projection and collapse.
-```
 
 ---

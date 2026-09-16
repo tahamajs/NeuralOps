@@ -199,6 +199,5 @@ $$
 $$
 
 Even if attention is perfect, LayerNorm mismatch contributes error.
-```
 
 ---

@@ -74,6 +74,5 @@ potential gains.
 | ReZero | N/A | N/A | N/A | Yes |
 | LayerScale | N/A | N/A | N/A | Yes |
 | **GoldFinch-AHN** | **Window** | **Linear** | **Input** | **Yes** |
-```
 
 ---

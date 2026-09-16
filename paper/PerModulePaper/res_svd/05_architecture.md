@@ -160,6 +160,5 @@ class ResSVDAttention(BaseAttention):
 if encoder_hidden_states is not None:
     raise NotImplementedError(...)
 ```
-```
 
 ---

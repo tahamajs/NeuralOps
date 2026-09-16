@@ -77,6 +77,5 @@ torch.cuda.manual_seed_all(seed)
 - FP32 needed for cumsum stability
 - Long sequences may OOM due to cumsum memory
 - RoPE may fail on some models
-```
 
 ---

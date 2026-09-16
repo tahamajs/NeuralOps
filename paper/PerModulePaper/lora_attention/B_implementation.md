@@ -111,6 +111,5 @@ If $B \neq 0$ at start, the model differs from baseline.
 
 FP16 merge introduces ~1e-3 error. For high-precision applications, merge 
 in FP32.
-```
 
 ---

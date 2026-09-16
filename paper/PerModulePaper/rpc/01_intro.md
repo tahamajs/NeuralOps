@@ -105,6 +105,5 @@ limitations. Section 11 concludes.
 | $\tilde{Q}, \tilde{K}$ | Sketched query, key |
 | $r_L$ | LoRA rank |
 | $W_Q, W_K, W_V, W_O$ | Projection matrices |
-```
 
 ---

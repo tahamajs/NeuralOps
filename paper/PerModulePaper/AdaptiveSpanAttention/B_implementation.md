@@ -126,6 +126,5 @@ Use `logit = 4.0`.
 
 Without fast path, ramp is allocated even for short sequences. Add the 
 `if not ((span + ramp) >= N_k).all()` check.
-```
 
 ---

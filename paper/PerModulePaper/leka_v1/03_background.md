@@ -121,6 +121,5 @@ Initialized to $\alpha_0 = 0.88$ (via $w_0 = 2$), which favors attention.
 | $\omega_i$ | Random frequency |
 | $W$ | Projection matrix |
 | $\alpha$ | Preservation gate |
-```
 
 ---

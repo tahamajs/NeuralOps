@@ -98,6 +98,5 @@ python run_all_4_hgrn2_gated_deltanet.py \
 ## 6.10 Seeds
 
 Single seed ({{SEED}}). Multi-seed limitation stated in Section 10.
-```
 
 ---

@@ -97,6 +97,5 @@ inspection and rank reduction without re-factorization.
 | AASVD | Full covariance | Folded | Fixed with cap |
 | **ASVD** | Activation energy | **Explicit** | **Energy-based** |
 | SDRM | None | Folded | Budget-proportional |
-```
 
 ---

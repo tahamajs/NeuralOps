@@ -188,6 +188,5 @@ for name, mod in model.named_modules():
 ```
 
 Expected output: `PHANTOMAttention`.
-```
 
 ---

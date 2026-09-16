@@ -74,6 +74,5 @@ torch.cuda.manual_seed_all(seed)
 - Windows: `PYTHONIOENCODING=utf-8`
 - CUDA ≥ 11.8 for FP16
 - `inject_fusion_attn` raises on copy failure (recommend changing to return None)
-```
 
 ---

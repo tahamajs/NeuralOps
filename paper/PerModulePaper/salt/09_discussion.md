@@ -95,6 +95,5 @@ Consider SALT + quantization
 2. **Implement fused forward before latency-sensitive use.**
 3. **Combine with quantization for 24× combined compression.**
 4. **Keep rank r ≥ 16** for stability.
-```
 
 ---

@@ -148,6 +148,5 @@ The main VRAM increase is from additional tensors, not the state.
 3. **Decoder path has overhead** — chunked scan is 5× slower.
 4. **RoBERTa is problematic** — nested + reweighting causes instability.
 5. **Parameter count increases** — LoRA adds ~1-4%.
-```
 
 ---

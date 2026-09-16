@@ -149,6 +149,5 @@ fine-tuning.
 | $\tau_s$ | Softpick temperature |
 | $B$ | Bucket size |
 | $L$ | Sequence length |
-```
 
 ---

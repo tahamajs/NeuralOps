@@ -78,6 +78,5 @@ fundamental.
 | RetNet | Yes | No | Yes | Yes |
 | Mamba | Yes | No | Yes | Yes |
 | **GatedDeltaNetBlock** | **Yes** | **Attention only** | **Yes** | **LoRA recovery** |
-```
 
 ---

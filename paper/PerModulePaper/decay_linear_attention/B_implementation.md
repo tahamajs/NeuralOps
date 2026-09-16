@@ -145,6 +145,5 @@ k = F.elu(k) + 1.0
 ```
 
 Applied **before** the chunked scan.
-```
 
 ---

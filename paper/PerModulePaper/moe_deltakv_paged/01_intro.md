@@ -149,6 +149,5 @@ limitations. Section 11 concludes.
 | $r$ | SVD rank for delta compression |
 | $W_\text{rg}$ | Router weight |
 | $\bar{q}, \bar{k}$ | Page-mean query/key |
-```
 
 ---

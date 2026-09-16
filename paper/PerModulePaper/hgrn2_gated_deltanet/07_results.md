@@ -120,6 +120,5 @@ method is faster.
 - **Parameters:** +{{D_PARAM_PCT}}% (increase).
 - **Speed:** Faster than baseline at $L \geq {{BREAKEVEN}}$; slower at $L = 128$.
 - **VRAM:** Similar or slightly higher.
-```
 
 ---

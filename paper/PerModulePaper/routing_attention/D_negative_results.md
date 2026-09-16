@@ -98,6 +98,5 @@ Running `inject_routing` twice corrupts the model.
 3. **Use Q+K.**
 4. **Keep token-0 anchor.**
 5. **Fix RuntimeError.**
-```
 
 ---

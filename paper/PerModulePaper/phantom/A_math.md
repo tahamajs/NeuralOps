@@ -111,6 +111,5 @@ $$
 $$
 
 So multi-round averaging reduces variance linearly with $R$.
-```
 
 ---

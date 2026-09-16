@@ -97,6 +97,5 @@ techniques combine, not as a single "beat the state-of-the-art" system.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
-```
 
 ---

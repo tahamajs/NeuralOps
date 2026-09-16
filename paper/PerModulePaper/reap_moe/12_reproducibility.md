@@ -79,6 +79,5 @@ torch.cuda.manual_seed_all(seed)
 
 - Batch size 4 required for 12-layer models
 - `PYTHONIOENCODING=utf-8` on Windows
-```
 
 ---

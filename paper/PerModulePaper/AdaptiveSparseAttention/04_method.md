@@ -244,6 +244,5 @@ $$
 
 independent of the query length. This enables processing arbitrarily long 
 sequences.
-```
 
 ---

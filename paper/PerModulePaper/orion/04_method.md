@@ -278,6 +278,5 @@ always produces nonzero weights.
 
 **Potential issue:** If all $x_i < 0$, all weights are zero → output is 
 zero. This happens on masked rows.
-```
 
 ---

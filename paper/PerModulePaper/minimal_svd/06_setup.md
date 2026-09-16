@@ -116,6 +116,5 @@ All experiments use seed {{SEED}}. Single-seed due to compute budget.
 2. **`minimal_svd`:** Our method.
 3. **Ablations:** `minimal_svd_fixed_rank`, `minimal_svd_no_lora`.
 4. **Companion methods:** `minimal_nova`, `minimal_prism`, `a3`, `aasvd`.
-```
 
 ---

@@ -102,6 +102,5 @@ Single seed ({{SEED}}).
 - `full` — unmodified model
 - `nasc` — our method
 - Prior modules: `cosformer`, `fasa`, `a3`
-```
 
 ---

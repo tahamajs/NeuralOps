@@ -281,6 +281,5 @@ sliding-window attention.
 
 **Proof.** As $\beta \to -\infty$, $\sigma(\beta) \to 0$, so 
 $\text{output} \to \text{LocalAttn}$. $\square$
-```
 
 ---

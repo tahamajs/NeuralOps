@@ -143,6 +143,5 @@ FP16, initialization is done in FP32 and cast.
 | $r_\text{eff}$ | Effective rank |
 | $\tau_g$ | Gate pruning threshold |
 | $d, H, H_{kv}, d_h$ | Model dims |
-```
 
 ---

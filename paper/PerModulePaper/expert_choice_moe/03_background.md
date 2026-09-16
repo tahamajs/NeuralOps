@@ -112,6 +112,5 @@ $$
 | $b_g$ | Gate bias |
 | $\gamma$ | Gate value |
 | $r$ | Router logits |
-```
 
 ---

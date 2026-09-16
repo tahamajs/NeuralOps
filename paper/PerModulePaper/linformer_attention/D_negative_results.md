@@ -88,6 +88,5 @@ Sweet spot: k = 64.
 3. **E, F separate is better.**
 4. **k ≥ 32.**
 5. **E, F must train.**
-```
 
 ---

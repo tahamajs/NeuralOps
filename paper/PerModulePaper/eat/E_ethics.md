@@ -84,6 +84,5 @@ But also:
 - Concentrate AI capabilities
 
 We encourage the community to weigh these trade-offs.
-```
 
 ---

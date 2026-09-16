@@ -100,6 +100,5 @@ $$
 \frac{\partial \text{Attn}_\text{causal}'_i}{\partial x_j} = 0 \text{ for } j > i
 \tag{A.8}
 $$
-```
 
 ---

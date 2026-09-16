@@ -344,6 +344,5 @@ Summing gives the full recurrence. $\square$
 **Proof.** The SSM is causal by construction (recurrence). The convolution 
 is causal (no padding on the right). The attention mask is causal. Therefore 
 the output at position $i$ depends only on inputs $1..i$. $\square$
-```
 
 ---

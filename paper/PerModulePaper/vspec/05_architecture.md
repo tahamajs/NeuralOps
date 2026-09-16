@@ -113,6 +113,5 @@ Not supported. Raises `NotImplementedError`.
 class VSpecAttention(BaseAttention):
     ...
 ```
-```
 
 ---

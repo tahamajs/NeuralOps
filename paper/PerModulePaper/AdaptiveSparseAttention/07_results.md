@@ -135,6 +135,5 @@ larger is too soft.
 - **VRAM:** reduced by {{MEM_REDUCTION}}× via chunking.
 - **No parameter reduction** — sparsity is compute-only.
 - **All models pass quality gate.**
-```
 
 ---

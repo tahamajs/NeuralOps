@@ -75,6 +75,5 @@ attention** with guaranteed load balancing.
 | Mixtral | Token | Aux loss | ❌ | N/A |
 | BAM-UMoE | Token | Aux loss | ✅ | Skip |
 | **ExpertChoiceMoE** | **Expert** | **Guaranteed** | ✅ | ✅ |
-```
 
 ---

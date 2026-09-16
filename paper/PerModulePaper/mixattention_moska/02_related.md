@@ -65,6 +65,5 @@ in Section 8 quantifies this.
 | SnapKV | Prefix attention | Yes | No | Yes |
 | Scissorhands | Past attention | Yes | No | Yes |
 | **FASA** | **Var(K)** | **No** | **Yes (1)** | **No** |
-```
 
 ---

@@ -239,6 +239,5 @@ weights, breaking the invariant. FAVOR+ uses only positive features.
 
 The chunked scan preserves strict causality: intra-chunk uses causal mask, 
 inter-chunk uses only previously-processed state.
-```
 
 ---

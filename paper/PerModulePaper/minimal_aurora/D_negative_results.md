@@ -97,6 +97,5 @@
 3. **`pres_gate` has no effect (dead code).**
 4. **`output_scale` can be removed safely.**
 5. **Zero-init LoRA works as well as spectral-init.**
-```
 
 ---

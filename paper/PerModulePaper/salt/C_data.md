@@ -133,6 +133,5 @@ Step  Loss
 ```bash
 python run_all_4_salt.py --models distilbert,roberta,gpt2 --rank {{RANK}}
 ```
-```
 
 ---

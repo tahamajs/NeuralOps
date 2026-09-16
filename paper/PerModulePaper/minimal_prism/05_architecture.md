@@ -193,6 +193,5 @@ MinimalPRISM integrates cleanly with the framework's LoRA recovery:
 
 The framework's `get_recovery_params` finds `lora_A`, `lora_B` parameters 
 automatically via the naming convention.
-```
 
 ---

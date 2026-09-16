@@ -144,6 +144,5 @@ output projection. Verified via forward-pass equivalence.
 4. **`pres_gate` is unused.** Recommend removal.
 5. **`output_scale` drifts** but not to collapse.
 6. **Silent injection failure** requires caller attention.
-```
 
 ---

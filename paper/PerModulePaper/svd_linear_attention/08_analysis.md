@@ -135,6 +135,5 @@ $x > -1$. This ensures the denominator is positive.
 3. **Complexity scales linearly**, unlike softmax attention.
 4. **Streaming via `step_recurrent`** enables $\mathcal{O}(1)$ inference.
 5. **Decay gating adds no meaningful cost** but improves accuracy.
-```
 
 ---

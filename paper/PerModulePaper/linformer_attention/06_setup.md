@@ -91,6 +91,5 @@ python run_all_4_linformer.py \
 ## 6.9 Seeds
 
 Single seed ({{SEED}}). Limitation stated in Section 10.
-```
 
 ---

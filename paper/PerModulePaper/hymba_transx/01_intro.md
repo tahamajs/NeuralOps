@@ -120,6 +120,5 @@ discusses guidance. Section 10 lists limitations. Section 11 concludes.
 | $A_i$ | Attention pattern for branch $i$ |
 | $\lambda$ | Differential damping ($= 0.2$) |
 | $\alpha$ | Fusion gate |
-```
 
 ---

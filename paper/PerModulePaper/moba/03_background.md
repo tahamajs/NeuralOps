@@ -168,6 +168,5 @@ hidden dimension.
 ## 3.11 Rotary Position Embeddings (RoPE)
 
 RoPE is applied to the input before the SSM projection.
-```
 
 ---

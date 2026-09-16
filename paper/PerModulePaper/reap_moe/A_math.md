@@ -88,6 +88,5 @@ $$
 
 Note that $\sum_i \rho_i = k$, so $\rho_i \in [0, k]$ and the average is 
 $k / E$.
-```
 
 ---

@@ -108,6 +108,5 @@ Without `anchor_boost`, `[CLS]` may be dropped, hurting classification.
 
 $W_\text{corr}$ is $H \times d_h \times d_h$. For $H = 12, d_h = 64$, 
 this is 49K params per layer × 12 layers = ~590K for RoBERTa.
-```
 
 ---

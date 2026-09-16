@@ -117,6 +117,5 @@ $$
 $$
 
 This avoids FP16 overflow when one factor dominates.
-```
 
 ---

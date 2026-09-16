@@ -93,6 +93,5 @@ two of these three.
 | PiSSA | 100% | ~1% | SVD(W) | 100% |
 | SVD Comp | ~10% | 0% | SVD(W) | ~10% (fused) |
 | **SALT** | **~10%** | **~9%** | **SVD(W)** | **~10% (fused)** |
-```
 
 ---

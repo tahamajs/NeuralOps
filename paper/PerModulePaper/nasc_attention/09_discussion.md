@@ -102,6 +102,5 @@ For GPT-2 on L=128:
 ## 9.8 Deployment Recommendations
 
 **Deploy only for decoders with L ≤ 512 and non-critical latency.**
-```
 
 ---

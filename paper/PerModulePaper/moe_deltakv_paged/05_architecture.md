@@ -165,6 +165,5 @@ Per-layer trainable:
 - $W_\text{rg}$: $d_h^2$
 
 For $d = 768$, $d_h = 64$, $r_L = 16$: ~102K per layer.
-```
 
 ---

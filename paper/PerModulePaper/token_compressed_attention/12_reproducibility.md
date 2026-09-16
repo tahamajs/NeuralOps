@@ -83,6 +83,5 @@ torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2 via `datasets`
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-token_compressed`
 - **Metrics:** `results/unified_token_compressed/*/summary.csv`
-```
 
 ---

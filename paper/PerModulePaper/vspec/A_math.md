@@ -128,6 +128,5 @@ $$
 
 The gate is **near-identity** at initialization, preserving the SVD 
 representation.
-```
 
 ---

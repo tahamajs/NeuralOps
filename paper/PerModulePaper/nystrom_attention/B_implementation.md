@@ -217,6 +217,5 @@ defeating the purpose.
 | Causal | ✅ | ✅ | **❌** |
 | Short seq | ✅ | ✅ | **Fallback** |
 | Code lines | ~450 | ~600 | ~450 |
-```
 
 ---

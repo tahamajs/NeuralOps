@@ -204,6 +204,5 @@ the decay is super-polynomial.
 **Empirical caveat.** Trained transformer attention kernels are **not** 
 smooth. They are sharply peaked (attention sinks, heavy hitters) and highly 
 content-dependent. This is why our method fails in practice (Section 8).
-```
 
 ---

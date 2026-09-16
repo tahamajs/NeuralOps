@@ -82,6 +82,5 @@ use. Section 10 lists limitations. Section 11 concludes.
 | $\mathcal{L}_\text{aux}$ | Auxiliary load-balancing loss |
 | $\sigma$ | Noise standard deviation |
 | $U, \Sigma, V$ | SVD factors |
-```
 
 ---

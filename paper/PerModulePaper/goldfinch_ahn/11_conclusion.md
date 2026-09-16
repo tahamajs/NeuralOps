@@ -73,6 +73,5 @@ We thank {{ACKNOWLEDGMENTS}} for feedback.
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---

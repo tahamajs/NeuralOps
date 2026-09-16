@@ -103,6 +103,5 @@ python run_all_4_token_compressed.py \
 ## 6.10 Seeds
 
 Single seed ({{SEED}}). Single-seed limitation stated in Section 10.
-```
 
 ---

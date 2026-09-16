@@ -103,6 +103,5 @@ concludes.
 | $\mathcal{S}_i$ | Selected keys at query $i$ |
 | $s_{ij}$ | Score of query $i$ against key $j$ |
 | $\rho$ | Attention density |
-```
 
 ---

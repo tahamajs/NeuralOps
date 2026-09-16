@@ -67,6 +67,5 @@ The window size is a hyperparameter. Optimal value depends on task.
 - Not a long-context method
 - Not a new recurrent mechanism
 - Not a speedup method
-```
 
 ---

@@ -93,6 +93,5 @@ For $L \gg d_h$, the speedup is $d_h / r$. $\square$
 **Claim.** Achlioptas (2003) sparse projections also satisfy JL.
 
 **Proof.** See Achlioptas (2003). The bound is similar with constants. $\square$
-```
 
 ---

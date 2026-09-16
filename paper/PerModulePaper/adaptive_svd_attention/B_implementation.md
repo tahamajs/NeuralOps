@@ -143,6 +143,5 @@ If bias is not copied, the initial module has zero bias — degraded output.
 
 For RoBERTa, `is_nested_encoder=True` but we STILL apply `out_proj`. This 
 differs from SOA Fused.
-```
 
 ---

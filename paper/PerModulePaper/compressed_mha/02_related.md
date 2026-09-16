@@ -68,6 +68,5 @@ smaller compressed matrices than independent SVD.
 | **Compressed MHA** | Q, K, V, O | $4d^2 \to 2r(d+d_h)$ | **Yes** | **Yes** |
 | MQA | K, V | $2d^2 \to 2 d d_{kv}$ | No | Yes |
 | MLA | K, V | Sequence-level | No | Specific |
-```
 
 ---

@@ -142,6 +142,5 @@ pip install flash-attn==2.x
 - `use_fp8=False` for safety.
 - `lora_rank=16` (standard).
 - Test on Hopper before deployment.
-```
 
 ---

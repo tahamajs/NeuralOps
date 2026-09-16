@@ -228,6 +228,5 @@ preserved exactly. This is a **correctness guarantee**, not a heuristic.
 The decoder path uses the **same standard full attention** as the baseline. 
 The only difference is that FASA adds LoRA adapters to the projections. 
 Hence GPT-2's accuracy is essentially unchanged.
-```
 
 ---

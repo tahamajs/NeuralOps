@@ -89,6 +89,5 @@ the SSM decay, not a full SSM.
 3. **Complexity is quadratic**, not linear.
 4. **Weight reuse is possible** — pretrained transfer works.
 5. **Bidirectional mode helps encoders.**
-```
 
 ---

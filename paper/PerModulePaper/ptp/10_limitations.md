@@ -63,6 +63,5 @@ Research-grade implementation.
 ## 10.11 Ethical Considerations
 
 Dual-use. See Appendix E.
-```
 
 ---

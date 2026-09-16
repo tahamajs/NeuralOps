@@ -93,6 +93,5 @@ We tested multiple independent state vectors. Result: marginal benefit, 3× cost
 3. **Bidirectional for encoders.**
 4. **FP32 scan required.**
 5. **Chunk size 32 is a good default.**
-```
 
 ---

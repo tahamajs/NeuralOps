@@ -109,6 +109,5 @@ We tested factorizing bias as well. Result: negligible parameter savings.
 3. **Fixed rank is competitive but less flexible.**
 4. **Cross-attention is complex; not needed for main results.**
 5. **No calibration required — this is a feature, not a bug.**
-```
 
 ---

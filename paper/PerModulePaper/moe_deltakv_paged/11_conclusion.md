@@ -52,6 +52,5 @@ and differentiable quantization can be combined. Code released.
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---

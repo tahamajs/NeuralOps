@@ -87,6 +87,5 @@ for E in 2 4 8 16; do
     python run_all_4_reap_moe.py --n_experts $E --output_suffix E$E
 done
 ```
-```
 
 ---

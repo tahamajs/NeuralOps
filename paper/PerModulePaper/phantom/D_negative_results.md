@@ -125,6 +125,5 @@ We tried mixing LSH attention with dense attention. Result: no gain, 2× slower.
 2. **Use CUR with rank 16** for aggressive compression.
 3. **Always use softpick** with τ_s=1.0.
 4. **Enable fallback** in production.
-```
 
 ---

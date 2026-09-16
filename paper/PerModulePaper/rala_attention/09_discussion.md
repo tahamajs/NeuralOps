@@ -98,6 +98,5 @@ If you must deploy RALA:
 4. **Benchmark on target hardware.**
 
 Without these, RALA is not competitive with SDPA or FlashAttention.
-```
 
 ---

@@ -122,6 +122,5 @@ transformation. $\square$
 
 For $m \ll N$: Nyström memory is $\mathcal{O}(N m)$ instead of 
 $\mathcal{O}(N^2)$.
-```
 
 ---

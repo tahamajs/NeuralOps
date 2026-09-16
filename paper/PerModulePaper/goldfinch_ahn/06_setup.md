@@ -96,6 +96,5 @@ Single seed ({{SEED}}).
 - `full` — unmodified model
 - `goldfinch_ahn` — our method
 - Prior modules: `cosformer`, `nha`, `a3`
-```
 
 ---

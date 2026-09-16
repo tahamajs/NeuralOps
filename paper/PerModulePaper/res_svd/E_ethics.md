@@ -63,6 +63,5 @@ Parts drafted with LLM assistance.
 
 Res-SVD is a practical compression method with PEFT structure. We 
 encourage responsible deployment.
-```
 
 ---

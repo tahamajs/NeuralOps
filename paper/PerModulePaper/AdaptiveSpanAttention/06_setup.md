@@ -100,6 +100,5 @@ python run_all_4_adaptive_span.py \
 | Ramp size $R$ | $\{1, 8, 16, 32, 64\}$ |
 | L1 penalty $\lambda$ | $\{0, 0.001, 0.01, 0.1\}$ |
 | LoRA rank | $\{4, 8, 16, 32\}$ |
-```
 
 ---

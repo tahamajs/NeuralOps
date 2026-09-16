@@ -51,6 +51,5 @@ compression. We release all code and checkpoints.
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---

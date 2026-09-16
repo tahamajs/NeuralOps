@@ -57,6 +57,5 @@ while preserving the original Linformer complexity.
 |---|---|---|---|---|---|
 | Linformer (orig.) | ✓ | ✗ | ✗ | ✗ | ✗ |
 | **Ours** | ✓ | ✓ (fallback) | ✓ | ✓ | ✓ |
-```
 
 ---

@@ -116,6 +116,5 @@ All experiments use seed {{SEED}}. Single-seed due to compute budget.
 2. **`minimal_prism`:** Our method.
 3. **Ablations:** `minimal_prism_fixed_rank`, `minimal_prism_no_lora`.
 4. **Companion methods:** `a3`, `aasvd`, `sdrm`, `minimal_nova`, `svd_linear`.
-```
 
 ---

@@ -140,6 +140,5 @@ Low variance confirms relative position property.
 - **Accuracy:** {{D_DELTA}}%–{{G_DELTA}}% drop.
 - **RoPE correctness verified.**
 - **All four architectures supported.**
-```
 
 ---

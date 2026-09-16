@@ -107,6 +107,5 @@ For DistilBERT on RTX 4070:
 - For flat encoders: likely fine.
 - For nested encoders: tune first.
 - For decoders: expect 3-5× slowdown.
-```
 
 ---

@@ -265,6 +265,5 @@ $$
 With zero-init on the final layer, the MoE block at initialization is 
 identity (in residual path). This ensures gradient flow through attention 
 at step 0 without interference from random MoE outputs.
-```
 
 ---

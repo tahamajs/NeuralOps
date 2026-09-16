@@ -93,6 +93,5 @@ Research-grade implementation. Known issues:
 - Silent failure paths
 - Broad exception handling
 - No unit tests for edge cases
-```
 
 ---

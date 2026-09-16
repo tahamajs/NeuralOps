@@ -55,6 +55,5 @@ uses full SVD factorization of experts, not LoRA.
 **Key distinction.** REAP-MoE combines standard noisy top-$k$ routing with 
 SVD-factorized experts, uniquely addressing both parameter bloat and load 
 imbalance.
-```
 
 ---

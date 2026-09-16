@@ -92,6 +92,5 @@ total work.
 
 For $L = 128$: sequential is 128 steps; parallel is 7 steps. **~18× more 
 efficient.**
-```
 
 ---

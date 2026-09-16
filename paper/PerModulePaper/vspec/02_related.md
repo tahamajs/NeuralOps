@@ -63,6 +63,5 @@ in a single attention block.
 | SOA Fused | $2d^2 + 2rd$ | Full | — | — |
 | TCA | $4d^2$ | Top-$k$ | — | — |
 | **VSpec++** | $2rd + \text{gates}$ | **Top-$k$** | **Yes** | **Yes** |
-```
 
 ---

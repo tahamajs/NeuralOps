@@ -74,6 +74,5 @@ ClusterFormer is unique in combining:
 | Local context | Yes | No | No | Yes |
 | Differentiable | Yes | Yes | Approx. | Yes |
 | Learnable hyperparams | 0 | 0 | 2 | **3** (τ, α, K) |
-```
 
 ---

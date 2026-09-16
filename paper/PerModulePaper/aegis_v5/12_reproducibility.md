@@ -74,6 +74,5 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2 via `datasets`
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-aegis_v5`
 - **Metrics:** `results/unified_aegis_v5/*/summary.csv`
-```
 
 ---

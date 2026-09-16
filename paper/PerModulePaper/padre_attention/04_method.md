@@ -302,6 +302,5 @@ Error decreases as $d$ grows.
 **Proof.** The causal mask sets `invalid_mask[i, j] = True` for $j > i$. 
 These positions are zeroed after the polynomial step, so they don't 
 contribute to the context. $\square$
-```
 
 ---

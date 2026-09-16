@@ -57,6 +57,5 @@ All code and checkpoints released.
 ## E.11 Long-Term Considerations
 Learnable rank selection could enable more efficient deployment, but also 
 enable more aggressive compression that may hide systematic biases.
-```
 
 ---

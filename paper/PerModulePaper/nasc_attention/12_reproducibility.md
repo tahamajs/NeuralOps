@@ -126,6 +126,5 @@ print(f"Memory (FP32): {KV_cumsum_size * 4 / 1e6:.1f} MB")
 - Code: `framework/attentions/nasc.py`
 - Metrics: `results/unified_nasc/*/summary.csv`
 - Logs: `benchmark_logs/nasc_*.log`
-```
 
 ---

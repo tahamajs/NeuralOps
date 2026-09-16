@@ -60,6 +60,5 @@ Sub-quadratic **only when** $k B_s \ll N$.
 ## 10.13 Ethical Considerations
 
 Dual-use. See Appendix E.
-```
 
 ---

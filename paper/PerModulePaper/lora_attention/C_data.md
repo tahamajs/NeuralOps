@@ -74,6 +74,5 @@ Step  Loss
 ```bash
 python run_all_4_lora_attention.py --lora_rank 16 --lora_alpha 32
 ```
-```
 
 ---

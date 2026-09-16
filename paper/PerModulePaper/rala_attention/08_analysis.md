@@ -151,6 +151,5 @@ We state these as future work.
 4. **Frozen $U, V$ limits expressiveness.** Unfreezing them is a cheap 
    improvement.
 5. **Parameter count increases** — RALA is not a compressor.
-```
 
 ---

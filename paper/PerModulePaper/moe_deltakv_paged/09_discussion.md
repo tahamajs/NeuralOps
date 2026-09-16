@@ -81,6 +81,5 @@ For DistilBERT at L = 512:
 ### Negative
 - Memory savings are simulated
 - 6D gather is memory-heavy
-```
 
 ---

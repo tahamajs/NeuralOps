@@ -109,6 +109,5 @@ pure linear attention.
 3. **Yat-Kernel outperforms ELU+1** — best feature map tested.
 4. **Gate remains dense-dominant** for L = 128.
 5. **Cumsum memory is the main limitation.**
-```
 
 ---

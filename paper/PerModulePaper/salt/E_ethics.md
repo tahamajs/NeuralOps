@@ -72,6 +72,5 @@ SECTIONS = [
     "A_math.md", "B_implementation.md", "C_data.md",
     "D_negative_results.md", "E_ethics.md",
 ]
-```
 
 ---

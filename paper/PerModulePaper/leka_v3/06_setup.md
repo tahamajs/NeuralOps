@@ -95,6 +95,5 @@ python run_all_4_leka_v3.py \
 ## 6.9 Seeds
 
 Single seed ({{SEED}}). Limitation stated in Section 10.
-```
 
 ---

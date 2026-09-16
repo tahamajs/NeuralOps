@@ -237,6 +237,5 @@ def inject_gated_delta_net(layer, model_config, comp_config, old_attn=None, **kw
     replace_attention(layer, new_block)
     return new_block
 ```
-```
 
 ---

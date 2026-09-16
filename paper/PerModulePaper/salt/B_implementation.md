@@ -128,6 +128,5 @@ for name, mod in model.named_modules():
     if isinstance(mod, SALTLinear):
         print(f"{name}: rank={mod.rank}, gamma_norm={mod.gamma.norm().item():.4f}")
 ```
-```
 
 ---

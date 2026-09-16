@@ -107,6 +107,5 @@ W_{k,\text{pooled}}[i, :] = \frac{1}{\text{rep}} \sum_{j=1}^{\text{rep}} W_{k}[i
 $$
 
 This is a mean-pooling over groups of size $\text{rep} = H / H_{kv}$.
-```
 
 ---

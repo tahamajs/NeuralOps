@@ -89,6 +89,5 @@ For $d = 768, r = 64$: $6\times$.
 
 For FFN: $768 \times 3072 \to 64 \times (768 + 3072) = 245,760$. 
 Ratio: $9.6\times$.
-```
 
 ---

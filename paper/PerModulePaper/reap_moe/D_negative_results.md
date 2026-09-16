@@ -86,6 +86,5 @@
 3. **Enable noise with σ = 0.05.**
 4. **Zero-init final expert layer.**
 5. **Enable SVD experts** for parameter control.
-```
 
 ---

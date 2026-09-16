@@ -94,6 +94,5 @@ At L=128, gather + topk overhead exceeds FLOP savings:
 2. **Layer-wise keep ratios**: PyramidKV-style allocation.
 3. **Fused kernel**: Eliminate gather overhead.
 4. **Causal prefix scan**: Enable decoder pruning.
-```
 
 ---

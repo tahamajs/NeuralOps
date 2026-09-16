@@ -124,6 +124,5 @@ for all tokens. The model starts close to the local stream.
 | $\phi$ | Feature map |
 | $S, Z$ | Cumulative RFF state |
 | $g_i$ | Gate at position $i$ |
-```
 
 ---

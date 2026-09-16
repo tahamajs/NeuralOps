@@ -226,6 +226,5 @@ Frozen:
 recovery step is mainly for the LoRA adapters (which are zero at init). In 
 practice, the recovery loss starts close to baseline loss because the 
 attention output is identical to baseline.
-```
 
 ---

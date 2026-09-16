@@ -101,6 +101,5 @@
 - **Bottleneck helps** by {{BN_GAIN}}%.
 - **Differential helps** by {{DIFF_GAIN}}%.
 - **Parameters:** increase {{D_PARAM_PCT}}%.
-```
 
 ---

@@ -122,6 +122,5 @@ increase is from LoRA adapters and the score network.
 - **Compute:** {{FLOP_PCT}}% attention FLOP reduction.
 - **Accuracy:** {{D_DELTA}}% (DistilBERT), {{R_DELTA}}% (RoBERTa), {{G_DELTA}}% (GPT-2).
 - **Parameters:** increase by {{D_PARAM_PCT}}% due to LoRA + score_net.
-```
 
 ---

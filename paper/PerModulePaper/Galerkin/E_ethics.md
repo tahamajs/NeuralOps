@@ -51,6 +51,5 @@ We advocate for:
 
 We hope this work contributes to a culture of transparency in 
 efficient-attention research.
-```
 
 ---

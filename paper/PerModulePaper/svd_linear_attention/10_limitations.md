@@ -74,6 +74,5 @@ Research-grade implementation. Known issues:
 - `raise` in `copy_weights`
 - No unit tests for numerical edge cases
 - Padding handling has multiple branches
-```
 
 ---

@@ -115,6 +115,5 @@ Sorting `top_indices` preserves order for gather and downstream layers.
 
 Without sorting, gather produces an unsorted sequence, which breaks 
 downstream layers that assume ordering.
-```
 
 ---

@@ -405,6 +405,5 @@ $$
 $$
 
 For typical attention distributions with peaked scores, this is 5-15%.
-```
 
 ---

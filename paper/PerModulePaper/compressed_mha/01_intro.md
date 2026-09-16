@@ -125,6 +125,5 @@ limitations. Section 11 concludes.
 | $W_Q, W_K, W_V, W_O$ | Projection matrices |
 | $U, \Sigma, V$ | SVD factors |
 | $\text{is\_nested}$ | Nested encoder flag |
-```
 
 ---

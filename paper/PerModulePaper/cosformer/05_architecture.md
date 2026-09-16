@@ -195,6 +195,5 @@ The standard pipeline applies:
 - **RoPE:** Yes
 - **GQA:** Yes
 - **Complication:** RoPE extraction from HuggingFace API is fragile.
-```
 
 ---

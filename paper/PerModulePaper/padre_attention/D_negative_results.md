@@ -82,6 +82,5 @@ Removed dropout. Slight overfitting.
 3. **Order 2 is minimum.**
 4. **Order 4 is optimal.**
 5. **Temperature near 1.**
-```
 
 ---

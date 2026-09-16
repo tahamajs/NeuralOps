@@ -80,6 +80,5 @@ Parts drafted with LLM assistance.
 RPC is a small step toward efficient attention. Its main value is 
 mathematical (JL-based) rather than practical. We encourage future work 
 that combines RPC's principled approach with AASVD-style compression.
-```
 
 ---

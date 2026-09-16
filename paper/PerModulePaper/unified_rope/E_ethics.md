@@ -57,6 +57,5 @@ All code and checkpoints released.
 ## E.11 Long-Term Considerations
 Unified attention modules could simplify research, but also concentrate 
 implementation choices.
-```
 
 ---

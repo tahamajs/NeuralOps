@@ -62,6 +62,5 @@ torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2.
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-jamba_info`.
 - **Metrics:** `results/unified_jamba_info/*/summary.csv`.
-```
 
 ---

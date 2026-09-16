@@ -186,6 +186,5 @@ For $d = 768$, $H = 12$, $F = 128$:
 | RFF proj | $4 \cdot 64 \cdot 128 = 32,768$ |
 | blend_logits | 12 |
 | **Total** | **~131K per layer** |
-```
 
 ---

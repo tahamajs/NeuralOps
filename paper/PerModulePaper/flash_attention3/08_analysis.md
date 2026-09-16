@@ -93,6 +93,5 @@ Since both paths are exact, no accuracy difference.
 3. **Fallback preserves semantics.**
 4. **No parameter reduction.**
 5. **Cross-attention supported.**
-```
 
 ---

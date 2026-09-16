@@ -128,6 +128,5 @@ GPT-2's Conv1D stores (in, out). Transpose before chunking.
 ### B.5.5 RFF Numeric Overflow
 
 RFF features can overflow FP16. Compute in FP32 and clamp.
-```
 
 ---

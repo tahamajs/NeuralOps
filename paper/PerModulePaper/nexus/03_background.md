@@ -121,6 +121,5 @@ sparsity (tokens with negative logits get zero weight).
 | $S_w$ | Stripe width |
 | $F$ | RFF features |
 | $T$ | Temperature |
-```
 
 ---

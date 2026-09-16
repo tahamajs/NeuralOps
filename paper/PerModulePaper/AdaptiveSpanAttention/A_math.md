@@ -122,6 +122,5 @@ $$
 
 The soft ramp approaches this as $R \to 0$. For finite $R$, the soft ramp 
 provides **smoother gradients** and **avoids boundary artifacts**.
-```
 
 ---

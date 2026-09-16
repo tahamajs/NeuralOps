@@ -91,6 +91,5 @@ torch.manual_seed(seed)
 - Code: `framework/attentions/gated_deltanet_block.py`
 - Metrics: `results/unified_gated_deltanet_block/*/summary.csv`
 - Logs: `benchmark_logs/gated_deltanet_block_*.log`
-```
 
 ---

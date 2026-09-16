@@ -79,6 +79,5 @@ All experts must be loaded, so VRAM scales with $E$.
 
 ### Environmental
 Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
-```
 
 ---

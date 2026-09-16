@@ -85,6 +85,5 @@ except Exception as e:
 3. **Fused Triton kernel** for RFF.
 4. **Fix `inject_nasc`** to return None.
 5. **Per-token gating** as a future extension.
-```
 
 ---

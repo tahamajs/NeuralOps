@@ -76,6 +76,5 @@ trained jointly with LoRA.
 | EAT | Token pruning | +LoRA | Yes |
 | A3 | Low-rank factorization | **−50%** | Yes |
 | **Infini-Attention** | **Learned memory** | **+memory+LoRA** | **Yes** |
-```
 
 ---

@@ -137,6 +137,5 @@ duplicate the window, wasting budget.
 The `torch.zeros_like(scores, dtype=torch.bool)` allocates 
 $\mathcal{O}(B H L^2)$ booleans. For very long $L$, use `sparse` tensors 
 or a custom kernel.
-```
 
 ---

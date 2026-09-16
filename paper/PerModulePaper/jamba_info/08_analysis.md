@@ -87,6 +87,5 @@ because the model relies too much on SSM initially.
 3. **Differential attention reduces noise** by {{ENTROPY_REDUCTION}}%.
 4. **α init = σ(-2)** is best.
 5. **SSM does not need full $d$ dimensions.**
-```
 
 ---

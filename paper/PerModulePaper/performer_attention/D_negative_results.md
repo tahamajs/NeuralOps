@@ -60,6 +60,5 @@ New parameter not in baseline. `strict=True` loading fails.
 2. **Remove `output_scale`.**
 3. **Add a warning for cross-attention bypass.**
 4. **Use $F \geq 64$.**
-```
 
 ---

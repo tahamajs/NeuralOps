@@ -116,6 +116,5 @@
 - **DistilBERT:** {{D_ACC}}% (Δ = {{D_DELTA}})
 - **RoBERTa:** {{R_ACC}}% (Δ = {{R_DELTA}})
 - **GPT-2:** {{G_ACC}}% (Δ = {{G_DELTA}})
-```
 
 ---

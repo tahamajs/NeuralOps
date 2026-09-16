@@ -82,6 +82,5 @@ level. Minor.
 - Not a compression method
 - Not a speedup method
 - Not a per-token adaptive gate method
-```
 
 ---

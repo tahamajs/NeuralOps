@@ -97,6 +97,5 @@ Single seed ({{SEED}}).
 - `full` — unmodified model
 - `fasa` — our method
 - Prior modules: `cosformer`, `nha`, `a3`
-```
 
 ---

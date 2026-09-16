@@ -68,6 +68,5 @@ python run_all_4_padre.py \
 | `padre_order2` | Quadratic polynomial |
 | `padre_order4` | Quartic polynomial |
 | `padre_no_center` | Without max-centering |
-```
 
 ---

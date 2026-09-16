@@ -58,6 +58,5 @@ For DistilBERT ($d = 768$, $H = 12$, $d_h = 64$, $d_c = 32$, $r = 16$):
 - $12$
 - $4 \cdot 16 \cdot 1536 = 98,304$
 - Total per layer: $156,684$ ✓
-```
 
 ---

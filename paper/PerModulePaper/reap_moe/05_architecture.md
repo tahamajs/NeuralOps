@@ -173,6 +173,5 @@ still runs. This means:
 
 For a cleaner integration, the FFN should be removed. We leave this as 
 future work and report results as-is.
-```
 
 ---

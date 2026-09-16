@@ -113,6 +113,5 @@ for w in 8 16 32 64; do
     python run_all_4_nsa.py --window_size $w
 done
 ```
-```
 
 ---

@@ -115,6 +115,5 @@ Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
 2. **Test on a small model first** before scaling.
 3. **Measure attention sharpness** before designing projection.
 4. **Consider that attention is fundamentally data-dependent.**
-```
 
 ---

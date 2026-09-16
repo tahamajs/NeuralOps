@@ -45,6 +45,5 @@ None.
 ## E.8 LLM Usage
 
 Drafted with LLM assistance. Content reviewed by authors.
-```
 
 ---

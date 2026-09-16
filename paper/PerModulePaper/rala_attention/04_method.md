@@ -253,6 +253,5 @@ self.alpha = nn.Parameter(torch.tensor(0.0))
 
 $U, V$ use small-variance random init; $\alpha = 0$ disables the 
 augmentation at start.
-```
 
 ---

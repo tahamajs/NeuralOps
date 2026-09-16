@@ -65,6 +65,5 @@
 2. **Gate learning** — do gates learn meaningful patterns?
 3. **Optimal threshold** for various tasks?
 4. **Fused kernel** for block attention?
-```
 
 ---

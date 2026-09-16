@@ -97,6 +97,5 @@ issue. Section 9 provides guidance. Section 10 lists limitations. Section
 | $r_L$ | LoRA rank |
 | $\alpha$ | LoRA scaling |
 | $d_\text{in}, d_\text{out}$ | Input/output dimensions |
-```
 
 ---

@@ -107,6 +107,5 @@ $B = 0$ at initialization.
 | $M$ | Memory matrix |
 | $\beta$ | Gate scalar |
 | $r$ | LoRA rank |
-```
 
 ---

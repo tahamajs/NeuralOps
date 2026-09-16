@@ -64,6 +64,5 @@ approach factorizes the projections themselves, which composes with GQA.
 | Vanilla SVD | 3× | No | LoRA | {{VANILLA_SVD_D}} |
 | A3 | 3× | Yes | LoRA | {{A3_D}} |
 | **SOA Fused** | **3×** | **No** | **LoRA** | **{{D_ACC}}** |
-```
 
 ---

@@ -217,6 +217,5 @@ frozen.
 - **Total:** ~689K per layer
 
 For 12 layers: ~8.3M trainable.
-```
 
 ---

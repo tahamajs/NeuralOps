@@ -98,6 +98,5 @@ Initialize to 1.0; monitor during training.
 ### B.6.4 Silent Injection
 
 `inject_minimal_aurora` returns `None` on failure.
-```
 
 ---

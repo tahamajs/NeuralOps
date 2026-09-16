@@ -164,6 +164,5 @@ if kwargs.get("encoder_hidden_states", None) is not None:
 ```
 
 This is a limitation for encoder-decoder models.
-```
 
 ---

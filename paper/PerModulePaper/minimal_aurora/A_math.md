@@ -66,6 +66,5 @@ original.
 its contribution is $I \cdot \text{context} = \text{context}$. The outer 
 `attention.output.dense` applies $W_O$. Combined: $W_O \cdot \text{context}$. 
 Same as baseline. $\square$
-```
 
 ---

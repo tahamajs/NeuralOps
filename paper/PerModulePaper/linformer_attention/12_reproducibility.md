@@ -66,6 +66,5 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2 via `datasets`
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-linformer`
 - **Metrics:** `results/unified_linformer/*/summary.csv`
-```
 
 ---

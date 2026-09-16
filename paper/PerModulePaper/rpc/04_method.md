@@ -236,6 +236,5 @@ full derivation in Appendix A.2. $\square$
 
 **Proof.** The causal mask is applied after sketching. Since sketching is 
 position-independent, it does not affect the causal structure. $\square$
-```
 
 ---

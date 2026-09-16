@@ -115,6 +115,5 @@ dropped by {{NOMASK_DROP}}%.
 3. **Gated fusion beats concatenation.**
 4. **Softmax-attention beats mean-pool.**
 5. **`d_c = 32` is a good default.**
-```
 
 ---

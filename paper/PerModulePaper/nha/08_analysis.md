@@ -118,6 +118,5 @@ we check $\partial O_i / \partial X_j = 0$ for $j > i$.
 4. **Both streams necessary** — neither alone suffices.
 5. **Orthogonal RFF** stabilizes training.
 6. **Causality preserved** via chunked scan.
-```
 
 ---

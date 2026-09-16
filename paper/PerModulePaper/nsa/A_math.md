@@ -87,6 +87,5 @@ $\rho < 0.4$.
 
 **NSA does not reduce asymptotic complexity.** The benefit is mask density, 
 realized via sparse kernels in future work.
-```
 
 ---

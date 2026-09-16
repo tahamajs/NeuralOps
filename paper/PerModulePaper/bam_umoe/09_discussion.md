@@ -67,6 +67,5 @@ A3, AASVD, Adaptive SVD, or other compression methods on parameter count.
 
 ### Environmental
 Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
-```
 
 ---

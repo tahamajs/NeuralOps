@@ -74,6 +74,5 @@ torch.cuda.manual_seed_all(seed)
 - Windows: `PYTHONIOENCODING=utf-8`
 - CUDA ≥ 11.8 for FP16
 - K-means cdist may be slow for very long sequences
-```
 
 ---

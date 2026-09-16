@@ -125,6 +125,5 @@ compression.
 
 The `output_scale` parameter is initialized to 1.0 but unused. Removing 
 it would simplify the module.
-```
 
 ---

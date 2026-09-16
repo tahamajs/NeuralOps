@@ -242,6 +242,5 @@ We copy base weights from the pretrained attention:
 
 Four architectures supported: DistilBERT, RoBERTa (nested), GPT-2 (Conv1D), 
 Qwen (GQA + RoPE).
-```
 
 ---

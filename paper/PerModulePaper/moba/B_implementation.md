@@ -89,6 +89,5 @@ Check `self.query` **before** class-name heuristics.
 ### B.3.5 Decay Clamping
 
 `decay.clamp(min=1e-4, max=1-1e-4)` prevents $\log(0)$.
-```
 
 ---

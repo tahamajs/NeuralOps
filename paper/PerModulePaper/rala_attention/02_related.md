@@ -85,6 +85,5 @@ attention. This is closest to Delta Net (Yang et al., 2024) but uses a
 | Delta Net | $\mathcal{O}(L)$ | — | Rank-1 data-dep | — |
 | GLA | $\mathcal{O}(L)$ | — | Data-dep decay | — |
 | **RALA** | **$\mathcal{O}(L)$** | **softplus** | **Rank-$r$ per head** | **Scalar $\alpha$** |
-```
 
 ---

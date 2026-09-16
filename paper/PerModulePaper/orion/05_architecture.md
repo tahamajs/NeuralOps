@@ -138,6 +138,5 @@ The `FactorisedLinear` supports LoRA adapters. The recovery pipeline:
 1. Factorize base weights.
 2. Add LoRA adapters.
 3. Freeze base, train LoRA.
-```
 
 ---

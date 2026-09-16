@@ -135,6 +135,5 @@ query head count.
 
 Apply causal mask to `attn` (the approximate matrix), not to `F1, F2, F3`. 
 This is essential for the linear complexity.
-```
 
 ---

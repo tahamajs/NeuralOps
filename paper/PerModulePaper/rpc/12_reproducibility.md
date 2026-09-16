@@ -94,6 +94,5 @@ torch.backends.cudnn.deterministic = True
 - Cross-attention not supported
 - `raise` may abort injection on unusual sources
 - Random projection seed affects results
-```
 
 ---

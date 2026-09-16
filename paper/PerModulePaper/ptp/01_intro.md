@@ -119,6 +119,5 @@ concludes.
 | $\mathcal{T}$ | Set of retained token indices |
 | $x_i$ | Hidden state of token $i$ |
 | $\text{MLP}$ | Score network |
-```
 
 ---

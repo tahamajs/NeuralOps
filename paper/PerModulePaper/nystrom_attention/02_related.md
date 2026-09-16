@@ -99,6 +99,5 @@ it, port it to non-BERT architectures, and document the engineering effort.
 
 **All methods are complementary.** Nyströmformer reduces compute; the others 
 reduce memory. They can be combined.
-```
 
 ---

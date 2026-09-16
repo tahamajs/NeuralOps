@@ -132,6 +132,5 @@
 - **DistilBERT:** {{D_ACC}}% (Δ = {{D_DELTA}}), **{{D_RED}}×** reduction
 - **RoBERTa:** {{R_ACC}}% (Δ = {{R_DELTA}}), **{{R_RED}}×** reduction
 - **GPT-2:** {{G_ACC}}% (Δ = {{G_DELTA}}), **{{G_RED}}×** reduction
-```
 
 ---

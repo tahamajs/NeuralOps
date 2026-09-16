@@ -116,6 +116,5 @@
 3. **Additive fusion works.**
 4. **Single memory suffices.**
 5. **Window mask is required.**
-```
 
 ---

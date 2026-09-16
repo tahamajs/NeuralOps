@@ -122,6 +122,5 @@ assert model.is_decoder == True
 - Code: `framework/attentions/fasa.py`
 - Metrics: `results/unified_fasa/*/summary.csv`
 - Logs: `benchmark_logs/fasa_*.log`
-```
 
 ---

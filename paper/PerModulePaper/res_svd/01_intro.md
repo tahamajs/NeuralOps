@@ -111,6 +111,5 @@ Section 10 lists limitations. Section 11 concludes.
 | $\alpha$ | Residual scaling |
 | $R$ | Residual matrix $W - U_b V_b^\top$ |
 | $d_\text{in}, d_\text{out}$ | Input/output dimensions |
-```
 
 ---

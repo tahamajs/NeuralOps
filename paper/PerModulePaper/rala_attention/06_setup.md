@@ -91,6 +91,5 @@ Single seed {{SEED}}.
 - `full` — unmodified model
 - `rala` — our method
 - Prior modules: `nha`, `nasc`, `a3`, `flash3_fp8`
-```
 
 ---

@@ -115,6 +115,5 @@ where each $E_i$ is an SVD-factorized two-layer MLP.
 | $\mathcal{L}_\text{aux}$ | Auxiliary loss |
 | $r$ | SVD rank |
 | $\sigma$ | Noise std |
-```
 
 ---

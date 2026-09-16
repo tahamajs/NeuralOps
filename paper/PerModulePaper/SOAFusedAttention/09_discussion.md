@@ -82,6 +82,5 @@ accuracy recovery strategy.
 2. **Interaction with LoRA placement:** Should LoRA be on down or up?
 3. **Rank selection by singular value:** Can we auto-select $k$ per layer?
 4. **Composition with KV compression:** How do they interact?
-```
 
 ---

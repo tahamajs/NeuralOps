@@ -66,6 +66,5 @@ Cosformer adds 1-4% parameters. Not a compression method.
 2. **Tune hyperparameters for RoBERTa.**
 3. **Consider fused kernels for decoders.**
 4. **Test long sequences** to see the linear advantage.
-```
 
 ---

@@ -71,6 +71,5 @@ for long sequences**.
 FUSIONATTN **increases** parameter count via LoRA and the gate MLP. It 
 should not be confused with compression methods like A3, AASVD, or 
 Adaptive SVD.
-```
 
 ---

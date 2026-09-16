@@ -106,6 +106,5 @@ For DistilBERT on L=128:
 
 **Deploy only for long-sequence bidirectional encoders with a conservative 
 keep ratio (≥ 0.75).**
-```
 
 ---

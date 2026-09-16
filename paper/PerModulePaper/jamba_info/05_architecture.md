@@ -101,6 +101,5 @@ class JambaInfoBlock(BaseAttention):
 def inject_jamba_info(...):
     ...
 ```
-```
 
 ---

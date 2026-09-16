@@ -98,6 +98,5 @@ with $B = 0$ initially. For TCA, we additionally train the score_net (an MLP).
 | $s_i$ | Score for token $i$ |
 | $\mathcal{S}$ | Selected indices |
 | $\theta_i$ | RoPE angle |
-```
 
 ---

@@ -90,6 +90,5 @@ Single seed {{SEED}}.
 - `full` — unmodified model
 - `routing` — our method
 - Prior modules: `nha`, `nasc`, `rala`, `a3`
-```
 
 ---

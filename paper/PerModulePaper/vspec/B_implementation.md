@@ -175,6 +175,5 @@ assert self.Pq.V.shape == (self.hidden_size, self.rank)
 assert output.shape == (B, N, D)
 assert not torch.isnan(output).any()
 ```
-```
 
 ---

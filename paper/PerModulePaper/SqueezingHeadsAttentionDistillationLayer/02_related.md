@@ -71,6 +71,5 @@ target — the objective is on the wrapped attention, not on logits.
 | TinyBERT | Whole layers | ❌ | ❌ | ❌ |
 | LoRA | — | ✅ | ❌ | ✅ |
 | **Squeezing Heads** | **Dims** | **✅** | **✅** | **✅** |
-```
 
 ---

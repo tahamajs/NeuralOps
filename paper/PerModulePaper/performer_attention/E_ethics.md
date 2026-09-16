@@ -42,6 +42,5 @@ None.
 
 Reproducibility requires accurate documentation. We disclose the 
 code-docstring discrepancies to help downstream users.
-```
 
 ---

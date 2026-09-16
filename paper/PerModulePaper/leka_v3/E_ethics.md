@@ -53,6 +53,5 @@ Drafted with LLM assistance. Content reviewed by authors.
 3. Document hyperparameters
 4. Report negative results
 5. Respond to replications
-```
 
 ---

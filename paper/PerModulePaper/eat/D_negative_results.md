@@ -119,6 +119,5 @@
 3. **LoRA recovery is essential.**
 4. **Pruning ratio < 0.7 for accuracy.**
 5. **Freeze base weights is best.**
-```
 
 ---

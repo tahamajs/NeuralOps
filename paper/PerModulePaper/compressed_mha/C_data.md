@@ -73,6 +73,5 @@ Step  Loss
 ```bash
 python run_all_4_compressed_mha.py --rank_qkv 64 --rank_out 64
 ```
-```
 
 ---

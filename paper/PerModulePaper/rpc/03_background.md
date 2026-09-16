@@ -91,6 +91,5 @@ uses $\sqrt{r}$ — a subtle choice.
 | $\tilde{Q}, \tilde{K}$ | Sketched Q, K |
 | $\epsilon$ | JL distortion |
 | $r_L$ | LoRA rank |
-```
 
 ---

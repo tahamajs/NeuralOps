@@ -74,6 +74,5 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2 via `datasets`
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-moe_deltakv_paged`
 - **Metrics:** `results/unified_moe_deltakv_paged/*/summary.csv`
-```
 
 ---

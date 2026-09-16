@@ -108,6 +108,5 @@ If $k_h = 0$, the threshold indexing fails. We clamp $k_h \ge 1$.
 ### B.6.5 Numerically Unstable Log
 
 `log(sigmoid(x))` is stable; `log(sigmoid(x) + 1e-8)` adds a small offset.
-```
 
 ---

@@ -188,6 +188,5 @@ ORION and A3 both use SVD factorization, but:
    mismatch on save/reload.
 4. **Softpick without fallback** can produce zero output on masked rows.
 5. **Head bifurcation** is a novel idea with empirical support.
-```
 
 ---

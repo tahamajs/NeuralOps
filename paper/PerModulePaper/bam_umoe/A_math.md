@@ -106,6 +106,5 @@ For 8 experts: **18.9M per layer**.
 **Proof.** The MoE branch operates row-wise on $X$ (no cross-token mixing). 
 Attention scores use standard causal masking. The output is a weighted sum 
 over valid (causal) positions. $\square$
-```
 
 ---

@@ -103,6 +103,5 @@ lists limitations. Section 11 concludes.
 | $z_t$ | Output gate input |
 | $\sigma$ | Sigmoid function |
 | $\odot$ | Element-wise product |
-```
 
 ---

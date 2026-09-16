@@ -133,6 +133,5 @@ timing.
 
 For DistilBERT: $S = 8 \times 12 \times 64^2 = 393K$ floats = **1.5 MB per 
 layer**. With checkpointing, state is re-created in backward.
-```
 
 ---

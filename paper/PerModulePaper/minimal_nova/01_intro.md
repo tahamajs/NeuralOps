@@ -154,6 +154,5 @@ Section 11 concludes.
 | $d_h$ | Per-head dimension | §3.1 |
 | $\alpha$ | LoRA scaling | §3.4 |
 | $A, B$ | LoRA factors | §3.4 |
-```
 
 ---

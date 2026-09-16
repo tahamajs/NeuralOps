@@ -71,6 +71,5 @@ Research-grade implementation:
 ## 10.13 Ethical Considerations
 
 KV compression is dual-use. See Appendix E.
-```
 
 ---

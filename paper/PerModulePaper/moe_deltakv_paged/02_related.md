@@ -67,6 +67,5 @@ four techniques in a single attention layer.
 | MoBA | $\mathcal{O}(L \cdot k \cdot P)$ | $\mathcal{O}(L)$ | ✓ | ✓ |
 | Delta-KV | $\mathcal{O}(L^2)$ | $\mathcal{O}(L \cdot r)$ | ✗ | Partial |
 | **Ours** | $\mathcal{O}(N_p \cdot k_\text{exp} \cdot P^2)$ | $\mathcal{O}(L)$ | **✓** | **✓** |
-```
 
 ---

@@ -76,6 +76,5 @@ Encoder path:
 - Total: sub-quadratic.
 
 Causal path: $\mathcal{O}(N^2 d_h)$ (dense).
-```
 
 ---

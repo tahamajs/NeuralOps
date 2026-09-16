@@ -131,6 +131,5 @@ limitations. Section 11 concludes.
 | $\gamma_i$ | Decay factor for dimension $i$ |
 | $g$ | Preservation gate parameter |
 | $r_L$ | LoRA rank |
-```
 
 ---

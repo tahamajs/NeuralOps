@@ -118,6 +118,5 @@ class NativeSparseAttention(BaseAttention): ...
 | Wrong `is_nested_encoder` | Top-k shape mismatch | Fallback |
 | OOM in topk | RuntimeError | Reduce k |
 | NaN in scores | `torch.isnan` | Cast FP32 |
-```
 
 ---

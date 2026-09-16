@@ -106,6 +106,5 @@ systematically with layer depth, revealing what each layer cares about.
 - [C. Full Experimental Data](C_data.md)
 - [D. Negative Results](D_negative_results.md)
 - [E. Ethical Considerations](E_ethics.md)
-```
 
 ---

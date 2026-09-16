@@ -151,6 +151,5 @@ attention output.
 in our module would result in $W_O \cdot (\text{Attn} \cdot W_O) \neq W_O \cdot \text{Attn}$, 
 a double projection. Skipping our $W_O$ gives the correct 
 $\text{Attn} \cdot W_O$ at the outer level. $\square$
-```
 
 ---

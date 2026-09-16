@@ -75,6 +75,5 @@ python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
 | `nexus_no_stripe` | Without stripe |
 | `nexus_no_softpick` | Standard softmax |
 | `nexus_dense` | Force dense path |
-```
 
 ---

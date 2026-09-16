@@ -74,6 +74,5 @@ No prior method combines all three.
 | GLA | Fixed | ~0.3 MB | {{GLA_D}} | ❌ |
 | CHELA-SLAY | None | ~65 MB | {{CS_D}} | ❌ |
 | **DecayLinear** | **Data-dep** | **~1.5 MB** | **{{D_ACC}}** | **✅** |
-```
 
 ---

@@ -114,6 +114,5 @@
 - **Preservation gate:** contributes {{GATE_GAIN_D}}%.
 - **QR projection:** contributes {{QR_GAIN}}%.
 - **Parameter increase:** {{D_PARAM_PCT}}%.
-```
 
 ---

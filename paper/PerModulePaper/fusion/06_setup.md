@@ -60,6 +60,5 @@ python run_all_4_fusion_attn.py \
 | `fusion_attn` | Our method |
 | `fusion_attn_no_gate` | No gate, uniform block selection |
 | `fusion_attn_always_long` | Force long path |
-```
 
 ---

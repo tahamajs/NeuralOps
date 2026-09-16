@@ -132,6 +132,5 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 | $r_L$ | LoRA rank |
 | $g_h$ | Per-head gate logit |
 | $\sigma$ | Sigmoid |
-```
 
 ---

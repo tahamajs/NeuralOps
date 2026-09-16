@@ -126,6 +126,5 @@ reconstruction at each forward pass.
 - **Inference memory: unchanged** ✗
 - **Inference latency: {{D_TIME_R}}× (slightly slower)** ✗
 - Verdict: **{{VERDICT}}**
-```
 
 ---

@@ -111,6 +111,5 @@ practical guidance. Section 10 lists limitations. Section 11 concludes.
 | $U_h, V_h$ | Augmentation factors per head | §1.3 |
 | $\alpha$ | Learned augmentation gate | §1.3 |
 | $M_h$ | Augmentation matrix $U_h V_h^\top$ | §1.3 |
-```
 
 ---

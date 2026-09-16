@@ -282,6 +282,5 @@ For $d = 768$ and $r = 16$:
 | GPT-2 | 12 | +1,179,648 |
 
 This matches the empirical observations in §7.
-```
 
 ---

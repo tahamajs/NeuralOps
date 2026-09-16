@@ -94,6 +94,5 @@ Section 10 lists limitations. Section 11 concludes.
 | $g$ | Gate vector | §1.2 |
 | $\text{softpick}$ | ReLU-based attention | §3.4 |
 </parameter>
-```
 
 ---

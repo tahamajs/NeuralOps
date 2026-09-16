@@ -90,6 +90,5 @@ Accuracy identical. Wrapper adds LoRA flexibility.
 3. **FA3 kernel** requires Hopper.
 4. **FP8** gives ~0.1% accuracy drop in simulation.
 5. **Parameter count increases** by LoRA.
-```
 
 ---

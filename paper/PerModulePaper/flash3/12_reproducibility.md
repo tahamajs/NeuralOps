@@ -78,6 +78,5 @@ torch.cuda.manual_seed_all(seed)
 - No FA3 on non-Hopper GPUs
 - FP8 not tested on Hopper
 - Some paths auto-fallback silently (see logs)
-```
 
 ---

@@ -83,6 +83,5 @@ This would reduce memory to $\mathcal{O}(C \cdot 2F \cdot d_h)$.
 2. **Learned Ω:** Could training $\Omega$ improve the linear stream?
 3. **Different gate shapes:** Would a per-token per-dimension gate help?
 4. **Scale to L > 4096:** Does the linear stream become dominant?
-```
 
 ---

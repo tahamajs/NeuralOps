@@ -52,6 +52,5 @@
 3. Temperature clamp prevents collapse.
 4. 3 iterations sufficient.
 5. Causal decoders need exact attention (not clustering).
-```
 
 ---

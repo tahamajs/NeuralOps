@@ -109,6 +109,5 @@ Section 11 concludes.
 | $A, B$ | Low-rank residual | §1.3 |
 | $\alpha$ | LoRA scaling | §3.4 |
 </parameter>
-```
 
 ---

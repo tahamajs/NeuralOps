@@ -98,6 +98,5 @@ We tested different ranks per layer. Result: marginal benefit, needs tuning.
 3. **Asymmetric split is better.**
 4. **$k \geq 64$ required.**
 5. **Frobenius check is essential.**
-```
 
 ---

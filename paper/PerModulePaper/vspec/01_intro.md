@@ -132,6 +132,5 @@ Section 10 lists limitations. Section 11 concludes.
 | $g$ | Spectral gate |
 | $h$ | Head gate |
 | $s$ | Token saliency |
-```
 
 ---

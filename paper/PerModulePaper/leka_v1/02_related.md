@@ -67,6 +67,5 @@ its symmetric part is.
 | Linear Transformer | $O(L)$ | $O(L)$ | elu+1 | No |
 | Performer | $O(L)$ | $O(L)$ | exp | Yes (PORF) |
 | **LEKAv1** | $O(L \cdot F)$ | $O(L \cdot F)$ | **Gaussian** | **Yes (cos/sin)** |
-```
 
 ---

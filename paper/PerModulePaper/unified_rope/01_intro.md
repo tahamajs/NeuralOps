@@ -127,6 +127,5 @@ Section 10 lists limitations. Section 11 concludes.
 | $\mathrm{rot}(\cdot)$ | Half-rotation operator |
 | $\Delta$ | Relative position $i - j$ |
 | $L$ | Sequence length |
-```
 
 ---

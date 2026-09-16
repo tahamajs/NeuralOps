@@ -56,6 +56,5 @@ reviewed by authors.
 ## E.9 Conflicts of Interest
 
 None.
-```
 
 ---

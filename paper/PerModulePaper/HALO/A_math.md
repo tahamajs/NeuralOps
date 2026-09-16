@@ -89,6 +89,5 @@ $$
 
 **Proof.** $O - O^\text{dense} = (1 - g)(O^\text{lin} - O^\text{dense})$. 
 Taking norms gives (A.6). $\square$
-```
 
 ---

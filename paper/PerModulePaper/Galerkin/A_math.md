@@ -106,6 +106,5 @@ A \sim \mathcal{N}(0, \sigma^2), \quad B = 0
 $$
 
 So $\Delta W = BA = 0$ at step 0, preserving base behavior exactly.
-```
 
 ---

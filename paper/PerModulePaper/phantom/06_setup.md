@@ -121,6 +121,5 @@ Runtime: ~{{RUNTIME}} min.
 ## 6.10 Seeds
 
 All experiments use seed {{SEED}}. No multi-seed due to compute budget.
-```
 
 ---

@@ -116,6 +116,5 @@ guidance. Section 10 lists limitations. Section 11 concludes.
 | $W_Q, W_K, W_V, W_O$ | Attention projections |
 | $\mathcal{A}$ | Standard attention |
 | $\mathcal{A}'$ | Squeezing Heads attention |
-```
 
 ---

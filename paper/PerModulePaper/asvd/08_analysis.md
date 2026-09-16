@@ -160,6 +160,5 @@ In our experiments:
 3. **Energy-based rank adapts per layer.**
 4. **ε = 0.95 is a good default.**
 5. **`raise` prevents silent failure but requires careful source handling.**
-```
 
 ---

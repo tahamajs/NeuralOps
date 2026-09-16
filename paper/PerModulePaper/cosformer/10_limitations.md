@@ -78,6 +78,5 @@ untested.
 - Not a compression method
 - Not a long-context benchmark
 - Not a scaling study
-```
 
 ---

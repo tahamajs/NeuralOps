@@ -62,6 +62,5 @@ For $N = 128$, chunk=64: 2 iterations. Acceptable.
 - Not a new algorithm (Performer is published).
 - Not the fastest method.
 - Not a compression method.
-```
 
 ---

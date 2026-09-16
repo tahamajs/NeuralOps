@@ -66,6 +66,5 @@ requires careful handling of the feature map and the prefix scan.
 | RFA | RFF | Partial | Rare | Yes |
 | Nyströmformer | Landmark | Yes | Rare | Yes |
 | Cosformer | cos/sin | Yes | Yes | Yes |
-```
 
 ---

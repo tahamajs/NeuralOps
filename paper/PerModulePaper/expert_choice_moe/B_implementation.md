@@ -155,6 +155,5 @@ For 8 experts and $d = 768$: 18.9M params per layer. For 16 experts:
 - `moe_init_gate=-4.0`
 - `lora_rank=16`
 - `batch_size=4` (to avoid OOM on RoBERTa/GPT-2)
-```
 
 ---

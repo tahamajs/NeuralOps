@@ -85,6 +85,5 @@ Smaller windows are faster but lose accuracy:
 2. Per-head gating instead of mean-pooling.
 3. Fused Triton kernel for the sliding window.
 4. Careful initialization study.
-```
 
 ---

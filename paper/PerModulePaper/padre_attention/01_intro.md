@@ -114,6 +114,5 @@ limitations. Section 11 concludes.
 | $m_i$ | Max score over valid positions |
 | $d$ | Polynomial order |
 | $\phi$ | Polynomial feature map |
-```
 
 ---

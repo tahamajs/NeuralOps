@@ -99,6 +99,5 @@ Passes on GPT-2.
 4. **Aux loss prevents collapse** — uniform page selection.
 5. **4-bit quantization is tolerated** — small error at $r = 16$.
 6. **KV memory is unchanged** — simulation only.
-```
 
 ---

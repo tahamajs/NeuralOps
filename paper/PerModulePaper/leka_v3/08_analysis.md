@@ -92,6 +92,5 @@ All models pass.
 3. **Multi-scale features help** by {{MULTI_GAIN}}%.
 4. **Gate init 2.0 is near-optimal.**
 5. **Complexity is linear** in $L$.
-```
 
 ---

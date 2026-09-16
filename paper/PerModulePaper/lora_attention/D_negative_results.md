@@ -84,6 +84,5 @@ Asymmetric LR (LoRA+ style). Small improvement, not worth complexity.
 3. **Zero-init B is essential.**
 4. **Rank 16 is a good default.**
 5. **LR 2e-4 works well.**
-```
 
 ---

@@ -71,6 +71,5 @@ techniques, though one of them (the `copy_weights` raise) is a bug.
 | Cosformer | No | No | No | +5.7% |
 | A3 | Yes | No | No | **-60%** |
 | **ORION** | **Yes** | **Yes** | **Yes** | **-{{PARAM_REDUCTION}}%** |
-```
 
 ---

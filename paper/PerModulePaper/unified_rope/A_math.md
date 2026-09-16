@@ -65,6 +65,5 @@ output projection; the inner attention returns raw context.
 
 **Proof.** The `LoRALinear` projections have the same parameter shapes as 
 the original `nn.Linear` projections. $\square$
-```
 
 ---

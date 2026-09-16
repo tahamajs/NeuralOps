@@ -100,6 +100,5 @@ recovers:
 3. **Merge preserves accuracy** to numerical precision.
 4. **LoRA is effective for compression recovery** — recovers 90%+ of drop.
 5. **Rank 16 is a good default** for $d = 768$.
-```
 
 ---

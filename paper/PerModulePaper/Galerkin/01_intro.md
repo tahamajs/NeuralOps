@@ -116,6 +116,5 @@ limitations. Section 11 concludes.
 | $k(x, y)$ | Kernel function | §1.1 |
 | $Q_\Phi, K_\Phi, V_\Phi$ | Basis-projected Q/K/V | §1.3 |
 </parameter>
-```
 
 ---

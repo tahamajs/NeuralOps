@@ -97,6 +97,5 @@ $$
 
 If token 0 is a "sink" (Xiao et al., 2024), $\text{attn}_{i,0}$ is 
 consistently large, providing a stable baseline for the softmax denominator.
-```
 
 ---

@@ -116,6 +116,5 @@ GPT-2's Conv1D stores (in, out). Transpose before chunking.
 ### B.4.5 Missing output_scale
 
 `output_scale` compensates for projection scaling. Initialize to 1.0.
-```
 
 ---

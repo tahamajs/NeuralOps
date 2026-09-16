@@ -104,6 +104,5 @@ concludes.
 | $H$ | Number of heads | §3.1 |
 | $r$ | LoRA rank | §4.4 |
 </parameter>
-```
 
 ---

@@ -118,6 +118,5 @@ K = 16
 cluster_ids = attn._kmeans_assign(joint_feat, K, n_iters=3)
 print(f"Cluster sizes: {[int((cluster_ids[0,0]==k).sum()) for k in range(K)]}")
 ```
-```
 
 ---

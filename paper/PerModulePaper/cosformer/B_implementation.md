@@ -143,6 +143,5 @@ class CosformerAttention(BaseAttention):
 ## B.9 Injection Factory
 
 Standard pattern. See `05_architecture.md`.
-```
 
 ---

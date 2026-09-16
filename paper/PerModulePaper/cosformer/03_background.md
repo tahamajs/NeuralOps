@@ -112,6 +112,5 @@ Cosformer's reweighting; both can coexist.
 | $r$ | LoRA rank |
 | $C$ | Chunk size |
 </parameter>
-```
 
 ---

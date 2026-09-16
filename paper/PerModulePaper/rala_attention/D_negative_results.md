@@ -81,6 +81,5 @@ Requires more tuning.
 2. **Unfreeze $U, V$** for at least some layers.
 3. **Try per-head gates** if tuning compute allows.
 4. **Benchmark against Delta Net, GLA, Mamba** for context.
-```
 
 ---

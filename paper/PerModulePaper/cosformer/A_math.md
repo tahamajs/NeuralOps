@@ -121,6 +121,5 @@ $$
 **Proof sketch.** Within a chunk, the causal mask zeros future contributions. 
 Across chunks, the state $(S, Z)$ only accumulates from processed chunks. 
 So $Y_i$ depends only on $X_{\leq i}$. $\square$
-```
 
 ---

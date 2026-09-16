@@ -216,6 +216,5 @@ assert X.grad[0, i+1:].abs().max() < 1e-6
 ```
 
 {{CAUSALITY_RESULT}}
-```
 
 ---

@@ -111,6 +111,5 @@ limitations. Section 11 concludes.
 | $r$ | LoRA rank | §3.5 |
 | $\text{chunk\_size}$ | Inner loop size | §4.4 |
 </parameter>
-```
 
 ---

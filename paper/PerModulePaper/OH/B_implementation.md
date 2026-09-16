@@ -173,6 +173,5 @@ Padding tokens must be masked in the compression softmax (`mask_inv`).
 ### B.6.4 GPT-2 Conv1D Transpose
 
 GPT-2's Conv1D stores weights as `(in, out)`. Must transpose.
-```
 
 ---

@@ -85,6 +85,5 @@ For DistilBERT at L = 128:
 ### Negative
 - Quadratic complexity limits long-context use
 - Name "Mamba" may be misleading
-```
 
 ---

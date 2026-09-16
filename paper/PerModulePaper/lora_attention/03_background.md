@@ -140,6 +140,5 @@ $$
 $$
 
 Applied to $Q, K$ after projection.
-```
 
 ---

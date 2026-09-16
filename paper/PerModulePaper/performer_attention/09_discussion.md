@@ -104,6 +104,5 @@ For DistilBERT on L=128:
 
 **Fix the injection raise bug before deploying.** With the fix, Performer 
 is a solid linear attention baseline.
-```
 
 ---

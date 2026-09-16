@@ -104,6 +104,5 @@ torch.cuda.manual_seed_all(seed)
 - Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-rala`
 - Metrics: `results/unified_rala/*/summary.csv`
 - Logs: `benchmark_logs/rala_*.log`
-```
 
 ---

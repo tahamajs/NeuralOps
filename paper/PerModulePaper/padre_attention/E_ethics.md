@@ -52,6 +52,5 @@ We explicitly document:
 - **No kernelization** in current implementation
 - **Runtime is unchanged** from softmax
 - **Polynomial breaks for |s| > 5**
-```
 
 ---

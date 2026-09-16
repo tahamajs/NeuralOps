@@ -139,6 +139,5 @@ class FactorizedLoRAUp(nn.Module):
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
         return out
 ```
-```
 
 ---

@@ -95,6 +95,5 @@ python run_all_4_chela_slay.py \
 ## 6.10 Seeds
 
 Single seed ({{SEED}}).
-```
 
 ---

@@ -83,6 +83,5 @@ increase SVD compression.
 3. **Zero-init final layer** is critical for stability.
 4. **$E = 8$, $k = 2$ is a sweet spot.**
 5. **Parameter growth is real** — report it honestly.
-```
 
 ---

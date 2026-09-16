@@ -80,6 +80,5 @@ K_\text{expanded}[b, h, l, d] = K[b, h // r, l, d], \quad r = H / H_{kv}
 $$
 
 This duplicates KV heads $r$ times to match Q head count.
-```
 
 ---

@@ -173,6 +173,5 @@ via `hasattr(module, "nf")` and transposes weights before SVD.
 | $r_\text{max}$ | Rank cap |
 | $d, d_h, H, H_{kv}$ | Model dims |
 | $r_L, \alpha$ | LoRA rank, scaling |
-```
 
 ---

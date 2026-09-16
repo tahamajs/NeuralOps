@@ -99,6 +99,5 @@ adaptive rank**, which requires only the weight matrix, not activations.
 | AASVD | No | Required | Buggy | No |
 | SDRM | Budget-based | No | Buggy | No |
 | **MinimalPRISM** | **Energy** | **No** | **Correct** | **Yes** |
-```
 
 ---

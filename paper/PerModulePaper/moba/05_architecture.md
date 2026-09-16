@@ -167,6 +167,5 @@ Trainable parameter count per layer (d = 768, r_L = 16):
 | A_log | 768 |
 | pres_gate | 1 |
 | **Total** | **~62K** |
-```
 
 ---

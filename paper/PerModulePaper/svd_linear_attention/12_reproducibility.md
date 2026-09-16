@@ -100,6 +100,5 @@ for token in sequence:
 - Cross-attention not supported
 - Chunk size fixed at 64
 - Decay init is approximate
-```
 
 ---

@@ -121,6 +121,5 @@ intra-chunk work is $C^2$ per chunk, total $L \cdot C$. So:
 - **Smaller $C$:** less memory, more sequential steps.
 
 For L = 512, C = 32: 16 sequential chunks. This is a good balance.
-```
 
 ---

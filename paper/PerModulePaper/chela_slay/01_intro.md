@@ -136,6 +136,5 @@ concludes.
 | $b_g$ | Gate bias |
 | $\hat{Q}, \hat{K}$ | Spherically normalized Q, K |
 | $\epsilon$ | Numerical stability constant |
-```
 
 ---

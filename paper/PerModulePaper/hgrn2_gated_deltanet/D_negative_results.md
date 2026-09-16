@@ -98,6 +98,5 @@ Older HGRN-1 variant. Result: worse by {{HGRN1_DROP}}%.
 3. **Python loop is the bottleneck.**
 4. **Cross-attention needs implementation.**
 5. **Fused kernel would unlock speed.**
-```
 
 ---

@@ -132,6 +132,5 @@ assert gate.shape == (2, 8, 1)
 - Code: `framework/attentions/goldfinch_ahn.py`
 - Metrics: `results/unified_goldfinch_ahn/*/summary.csv`
 - Logs: `benchmark_logs/goldfinch_ahn_*.log`
-```
 
 ---

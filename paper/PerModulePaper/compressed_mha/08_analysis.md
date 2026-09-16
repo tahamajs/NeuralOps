@@ -123,6 +123,5 @@ None — the fix correctly classifies all tested models.
 3. **LoRA recovery** closes most of the accuracy gap.
 4. **Rank 64** is a good default for practical deployment.
 5. **Safe failure handling** (warnings, not raises) prevents cascade failures.
-```
 
 ---

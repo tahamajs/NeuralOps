@@ -143,6 +143,5 @@ Apply `repeat_kv` before local and global streams.
 ### B.5.6 Nested Encoder Output
 
 For RoBERTa, `is_nested_encoder=True` → skip own `out_proj`.
-```
 
 ---

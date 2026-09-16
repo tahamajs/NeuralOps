@@ -152,6 +152,5 @@ shift toward global.
 - **Gate distribution:** shifted from initial $\sigma(3) \approx 0.95$.
 - **No parameter reduction** (only gate added).
 - **All models pass quality gate.**
-```
 
 ---

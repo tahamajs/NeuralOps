@@ -144,6 +144,5 @@ Same issue.
 3. **Accuracy holds** because pretrained weights provide a good starting point.
 4. **γ and AB provide complementary corrections.**
 5. **Raising exceptions in copy_weights is a bug.**
-```
 
 ---

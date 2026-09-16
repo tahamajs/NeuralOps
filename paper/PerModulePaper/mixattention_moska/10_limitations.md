@@ -76,6 +76,5 @@ improve accuracy.
 - Not a compression method
 - Not a causal-decoder method
 - Not a speedup method for short sequences
-```
 
 ---

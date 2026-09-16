@@ -91,6 +91,5 @@ Sweet spot: 2.0.
 3. **W_corr contributes.**
 4. **Multi-scale features help.**
 5. **[CLS] boost is critical.**
-```
 
 ---

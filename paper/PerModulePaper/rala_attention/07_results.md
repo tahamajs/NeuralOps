@@ -112,6 +112,5 @@ because of LoRA adapters and the augmentation matrices.
 - Parameter increase: +{{D_PARAM_PCT}}%.
 - Inference time: {{D_TIME_R}}× (due to sequential prefix scan).
 - Verdict: **{{VERDICT}}**
-```
 
 ---

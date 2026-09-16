@@ -105,6 +105,5 @@ $B = 0$ at init.
 | $r_L$ | LoRA rank |
 | $\mathcal{K}$ | Integral operator |
 | $k(x, y)$ | Kernel function |
-```
 
 ---

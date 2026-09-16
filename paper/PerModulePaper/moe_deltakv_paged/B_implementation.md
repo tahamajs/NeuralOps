@@ -82,6 +82,5 @@ When $N$ is not divisible by $P$, pad with zeros. Mask padding keys.
 ### B.4.5 CLS Boost Must Exceed All Others
 
 Use $10^4$, not $10^2$. Small boosts may not guarantee top-k.
-```
 
 ---

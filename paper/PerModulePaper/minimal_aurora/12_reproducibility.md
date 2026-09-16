@@ -76,6 +76,5 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 - `pres_gate` unused (documented)
 - `output_scale` drift
 - Silent injection failure
-```
 
 ---

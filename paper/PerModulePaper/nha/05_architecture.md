@@ -118,6 +118,5 @@ class NativeHybridAttention(BaseAttention): ...
 | NaN in RFF | `torch.isnan` | Cast FP32 |
 | CUDA OOM in scan | RuntimeError | Reduce chunk |
 | RoPE mismatch | Exception | Fallback |
-```
 
 ---

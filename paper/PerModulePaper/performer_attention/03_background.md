@@ -105,6 +105,5 @@ Standard (Hu et al., 2021).
 | $\omega$ | RFF projection |
 | $\phi$ | Feature map |
 | $r_L$ | LoRA rank |
-```
 
 ---

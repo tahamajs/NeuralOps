@@ -125,6 +125,5 @@
 - **Parameter change:** {{D_PARAM_CHANGE}} (increase due to MoE)
 - **Expert balance:** {{D_MAXMIN}}× max/min utilization
 - **VRAM:** {{D_VRAM}} MB
-```
 
 ---

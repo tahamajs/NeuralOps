@@ -81,6 +81,5 @@ $$
 | $\tau$ | Temperature |
 | $\alpha$ | Blend |
 | $W$ | Window radius |
-```
 
 ---

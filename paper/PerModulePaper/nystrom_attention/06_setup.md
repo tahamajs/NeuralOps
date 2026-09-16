@@ -116,6 +116,5 @@ All experiments use seed {{SEED}}.
 1. **`full`:** Uncompressed model.
 2. **`nystrom`:** Our method (dense fallback at $N=128$).
 3. **Companion methods:** `minimal_svd`, `svd_llm_v2`, `mla`, `dobi`.
-```
 
 ---

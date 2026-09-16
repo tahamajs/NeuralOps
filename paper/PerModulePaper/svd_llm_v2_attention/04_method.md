@@ -259,6 +259,5 @@ SVD-LLM V2:
 3. Uses LoRA for recovery.
 4. Handles four attention architectures with pre-test and GQA pooling.
 5. Achieves **real parameter reduction** of $d^2 / (r(d_\text{in} + d_\text{out} + 1))$.
-```
 
 ---

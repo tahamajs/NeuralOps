@@ -175,6 +175,5 @@ Conv1D via `hasattr(module, "nf")` and transposes weights before SVD.
 | $d, d_h, H, H_{kv}$ | Model dims |
 | $r_L, \alpha$ | LoRA rank, scaling |
 | $B, L$ | Batch size, sequence length |
-```
 
 ---

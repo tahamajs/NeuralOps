@@ -62,6 +62,5 @@ Research-grade:
 ## 10.13 Ethical Considerations
 
 Dual-use. See Appendix E.
-```
 
 ---

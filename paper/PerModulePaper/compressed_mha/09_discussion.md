@@ -95,6 +95,5 @@ better in cache.
 ### Negative
 - Requires fine-tuning for recovery
 - Adds complexity vs simpler pruning
-```
 
 ---

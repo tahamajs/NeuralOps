@@ -101,6 +101,5 @@ with $B = 0$ at init.
 | $c_i$ | Cluster assignment of token $i$ |
 | $\mu_k$ | Centroid of cluster $k$ |
 | $\mathcal{S}_i$ | Set of keys attended by query $i$ |
-```
 
 ---

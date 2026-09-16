@@ -126,6 +126,5 @@ return out * self.output_scale
 3. **The `inject_performer` raise bug** breaks the docstring contract.
 4. **`output_scale` is unnecessary** and should be removed.
 5. **The feature map's $\epsilon$** slightly deviates from theory.
-```
 
 ---

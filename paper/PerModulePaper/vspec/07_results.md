@@ -112,6 +112,5 @@
 - **Accuracy:** drops {{D_DELTA}}%–{{G_DELTA}}%.
 - **All three gates contribute** to accuracy.
 - **Variational sampling helps** by {{VAR_GAIN}}% over deterministic.
-```
 
 ---

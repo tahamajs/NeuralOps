@@ -164,6 +164,5 @@
 - Accuracy drop: **{{D_DELTA}}%–{{G_DELTA}}%**
 - VRAM reduction: **{{VRAM_REDUCTION}}%**
 - All models pass quality gate
-```
 
 ---

@@ -112,6 +112,5 @@ Each adapter is only ~{{ADAPTER_SIZE}} MB.
 ### Negative
 - Adds a training step (can't just download and use)
 - Requires some ML expertise
-```
 
 ---

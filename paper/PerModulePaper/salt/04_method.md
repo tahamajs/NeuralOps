@@ -239,6 +239,5 @@ truncated SVD initialization.
 
 Using a single rank parameter simplifies the API. In principle, SVD rank and 
 residual rank could differ.
-```
 
 ---

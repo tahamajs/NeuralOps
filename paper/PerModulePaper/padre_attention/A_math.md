@@ -84,6 +84,5 @@ $$
 $$
 
 Complexity: $\mathcal{O}(N F d_h)$.
-```
 
 ---

@@ -117,6 +117,5 @@ assert any('rff_proj' in k for k in sd), "rff_proj NOT in state_dict!"  # This w
 - Code: `framework/attentions/orion.py`
 - Metrics: `results/unified_orion/*/summary.csv`
 - Logs: `benchmark_logs/orion_*.log`
-```
 
 ---

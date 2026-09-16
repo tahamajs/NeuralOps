@@ -61,6 +61,5 @@ No human subjects.
 ```python
 # build.py and apply_vars.py: identical structure
 # Change SECTIONS list to same as other modules
-```
 
 ---

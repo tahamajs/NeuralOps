@@ -139,6 +139,5 @@ SVD-LLM V2 adds explicit Σ storage for downstream flexibility.
 4. **Per-projection rank** matters — Q and O typically need more rank than K and V.
 5. **GQA mean pooling** is the natural choice.
 6. **Pre-test and injection-time detection** prevent catastrophic failures.
-```
 
 ---

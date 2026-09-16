@@ -116,6 +116,5 @@ Without checking weight norms, silently failing copies go unnoticed.
 ### B.3.5 LoRA Not Frozen Correctly
 
 Ensure `weight.requires_grad = False` but `lora_A/B.requires_grad = True`.
-```
 
 ---

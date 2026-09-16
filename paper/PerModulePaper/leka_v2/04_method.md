@@ -273,6 +273,5 @@ Trainable:
 Frozen:
 - Q/K/V/O base weights.
 - Random projection buffers (not parameters).
-```
 
 ---

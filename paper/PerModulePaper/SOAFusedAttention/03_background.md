@@ -116,6 +116,5 @@ Used to validate each factorized projection before injection.
 | $r_L$ | LoRA rank |
 | $\alpha$ | LoRA scaling |
 | $\tau$ | Error threshold |
-```
 
 ---

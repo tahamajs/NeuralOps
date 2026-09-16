@@ -79,6 +79,5 @@ families.
 | Prefix Tuning | KV cache | Small | +KV |
 | LoRA (standard) | FFN | Small | 0 (mergeable) |
 | **LoRA Attention** | **Attn projections** | **Small** | **0 (mergeable)** |
-```
 
 ---

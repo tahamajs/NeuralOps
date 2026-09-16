@@ -95,6 +95,5 @@ Single seed ({{SEED}}).
 - `full` — unmodified model
 - `orion` — our method
 - Prior modules: `a3`, `cosformer`, `nasc`
-```
 
 ---

@@ -350,6 +350,5 @@ $\square$
 **Proof.** The causal mask sets $w_{ij} = 0$ for $j > i$ (upper triangular 
 to $-\infty$ in log-space). After softmax, $w_{ij} = 0$ for $j > i$. So 
 output at $i$ depends only on inputs $j \leq i$. $\square$
-```
 
 ---

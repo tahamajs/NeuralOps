@@ -100,6 +100,5 @@ bidirectional.
 3. **Input modulation prevents drift** ({{MODULATION_DROP}}% without).
 4. **Bidirectional helps encoders** by {{BIDI_GAIN}}%.
 5. **Python chunk loop limits short-sequence speed.**
-```
 
 ---

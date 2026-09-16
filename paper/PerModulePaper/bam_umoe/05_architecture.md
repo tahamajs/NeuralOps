@@ -91,6 +91,5 @@ class BAMUMoEBlock(BaseAttention):
 | MoE router | FP32 |
 | MoE expert | Model dtype |
 | Output | Model dtype |
-```
 
 ---

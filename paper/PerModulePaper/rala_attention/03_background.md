@@ -119,6 +119,5 @@ from the pretrained attention and LoRA adapters initialized to zero.
 | $M_h$ | Augmentation matrix |
 | $\phi$ | Kernel feature map |
 | $S_i, z_i$ | Prefix sums |
-```
 
 ---

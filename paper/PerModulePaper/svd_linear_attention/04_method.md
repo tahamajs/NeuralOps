@@ -309,6 +309,5 @@ by construction. $\square$
 **Proof.** Both compute the same recurrence $S_t = \lambda_t S_{t-1} + \phi(K_t) V_t^\top$. 
 The batch version uses a parallel scan; the streaming version is sequential. 
 The results are mathematically identical. $\square$
-```
 
 ---

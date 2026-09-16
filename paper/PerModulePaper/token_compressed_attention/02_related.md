@@ -73,6 +73,5 @@ recovery.
 | StreamingLLM | Sink + window | $P$ | $2 H_{kv} (s + w) d_h$ | No |
 | KIVI (2-bit) | Quantization | $P$ | $\frac{1}{4} \cdot 2 H_{kv} L d_h$ | No |
 | **TCA** | **Learnable selection** | $P + \epsilon$ | $2 H_{kv} k d_h$ | **Yes** |
-```
 
 ---

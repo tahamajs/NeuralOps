@@ -218,6 +218,5 @@ reconstruction error $\|W - W_b - R_r\|_F = \sqrt{\sum_{i > r_b+r_r} \sigma_i^2}
 ### 4.7.4 Causality
 
 **Proof.** Position-wise projections + causal attention mask. $\square$
-```
 
 ---

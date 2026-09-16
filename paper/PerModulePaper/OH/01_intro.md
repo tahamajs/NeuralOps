@@ -123,6 +123,5 @@ concludes.
 | $W_k^\text{comp}, W_v^\text{comp}$ | Compression projections |
 | $W_g$ | Gate projection |
 | $r$ | LoRA rank |
-```
 
 ---

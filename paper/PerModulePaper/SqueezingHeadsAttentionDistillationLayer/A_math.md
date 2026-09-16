@@ -92,6 +92,5 @@ S = \frac{Q_\text{FP32} K_\text{FP32}^\top}{\sqrt{d_h}}
 $$
 
 Softmax in FP32, then cast back to model dtype.
-```
 
 ---

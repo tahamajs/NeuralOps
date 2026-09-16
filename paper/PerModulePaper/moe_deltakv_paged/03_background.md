@@ -179,6 +179,5 @@ Applied to $Q, K$ after projection, before delta compression.
 | $r$ | Delta SVD rank |
 | $d_h$ | Head dim |
 | $W_\text{rg}$ | Router weight |
-```
 
 ---

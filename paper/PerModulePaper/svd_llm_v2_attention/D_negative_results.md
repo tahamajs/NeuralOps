@@ -99,6 +99,5 @@ Negligible savings.
 3. **LoRA recovery is essential.**
 4. **GQA mean pooling works.**
 5. **Pre-test prevents catastrophic failures.**
-```
 
 ---

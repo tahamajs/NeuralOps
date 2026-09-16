@@ -252,6 +252,5 @@ which are pretrained), the output has a mix of pretrained + random.
 
 **LoRA recovery** must align the gate + long-memory + output scale to 
 produce useful output.
-```
 
 ---

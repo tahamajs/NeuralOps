@@ -73,6 +73,5 @@ contribute.
 - Not a compression method
 - Not a speedup method
 - Not a working attention replacement for encoders
-```
 
 ---

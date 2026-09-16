@@ -91,6 +91,5 @@
 - Order 2 is a good default.
 - Max-centering is essential.
 - Kernelization not yet implemented; runtime unchanged.
-```
 
 ---

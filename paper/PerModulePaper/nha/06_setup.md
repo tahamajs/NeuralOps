@@ -100,6 +100,5 @@ python run_all_4_nha.py \
 | RFF features $m$ | $\{32, 64, 128, 256\}$ |
 | Gate bias | $\{0, 1.0, 1.8, 3.0, 5.0\}$ |
 | LoRA rank | $\{4, 8, 16, 32\}$ |
-```
 
 ---

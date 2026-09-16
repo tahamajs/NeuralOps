@@ -86,6 +86,5 @@ RoPE** (Qwen3.5 with rotary_dim < head_dim) by rotating the first
 | $\mathcal{L}_\text{aux}$ | Load balancing loss |
 | $b_g$ | Gate bias |
 | $\alpha$ | MoE scale |
-```
 
 ---

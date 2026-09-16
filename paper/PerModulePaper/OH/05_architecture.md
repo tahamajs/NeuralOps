@@ -133,6 +133,5 @@ class OptimizedHybridAttention(BaseAttention):
 
 OHA does **not** support cross-attention. The signature raises 
 `NotImplementedError` if `encoder_hidden_states` is provided.
-```
 
 ---

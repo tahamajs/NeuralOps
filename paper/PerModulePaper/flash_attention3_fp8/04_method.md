@@ -275,6 +275,5 @@ Output: Y ∈ R^{B×L×d}
 18:     out ← out_proj(out)
 19: return out
 ```
-```
 
 ---

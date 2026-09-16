@@ -117,6 +117,5 @@ Section 11 concludes.
 | $\omega$ | Random feature matrix | §1.2 |
 | $r_L$ | LoRA rank | §1.3 |
 | $C$ | Chunk size | §1.3 |
-```
 
 ---

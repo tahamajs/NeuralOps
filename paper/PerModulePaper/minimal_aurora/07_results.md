@@ -118,6 +118,5 @@
 | DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
 | RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
 | GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
-```
 
 ---

@@ -81,6 +81,5 @@ But also:
 - Concentrate AI capabilities
 
 We encourage community discussion.
-```
 
 ---

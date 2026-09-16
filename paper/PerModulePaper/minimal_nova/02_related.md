@@ -100,6 +100,5 @@ calibration data is unavailable.
 | AASVD | Required | Yes | No |
 | SDRM | None | Yes | Budget-based |
 | **MinimalNOVA** | **None** | **4 families** | **Spectral energy** |
-```
 
 ---

@@ -91,6 +91,5 @@
 3. **Scaling α = 1.0 is a good default.**
 4. **Adaptive rank doesn't converge.**
 5. **Small total rank = large accuracy drop.**
-```
 
 ---

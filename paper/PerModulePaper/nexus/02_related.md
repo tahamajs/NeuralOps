@@ -49,6 +49,5 @@ of standard softmax.
 
 **Key distinction.** NEXUS is the first to combine all six in a single 
 module with modular enable/disable flags.
-```
 
 ---

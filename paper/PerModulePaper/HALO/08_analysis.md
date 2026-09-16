@@ -136,6 +136,5 @@ better than NHA's local window.
 4. **ELU+1 is optimal kernel.**
 5. **No speedup without hard routing.**
 6. **Causality preserved via prefix sums.**
-```
 
 ---

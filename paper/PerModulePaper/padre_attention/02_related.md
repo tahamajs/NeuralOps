@@ -62,6 +62,5 @@ LoRA recovery.
 | Poly-NL | $\mathcal{O}(N F d_h)$ | ✓ | ✗ |
 | **PADRe (unser kernelized)** | $\mathcal{O}(N^2 d_h)$ | ✓ | **✓** |
 | PADRe (kernelized, future) | $\mathcal{O}(N F d_h)$ | ✓ | ✓ |
-```
 
 ---

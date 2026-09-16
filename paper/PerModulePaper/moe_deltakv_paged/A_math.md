@@ -130,6 +130,5 @@ For $k_\text{exp} \ll N_p$: **sub-quadratic**.
 
 **Proof.** Router logits with $j > i$ (page-wise) are set to $-\infty$. 
 Page-level causal mask enforces that page $j$ is only attended by page $i' \geq j$. Within a page, tokens are consecutive, so no additional mask needed. $\square$
-```
 
 ---

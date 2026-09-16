@@ -78,6 +78,5 @@ Step  Loss
 ```bash
 python run_all_4_moe_deltakv_paged.py --page_size 64 --k_experts 4
 ```
-```
 
 ---

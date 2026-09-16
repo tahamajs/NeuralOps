@@ -84,6 +84,5 @@
 3. **Chunk size 32 is optimal.**
 4. **State memory is truly O(1).**
 5. **Long sequences see real speedup.**
-```
 
 ---

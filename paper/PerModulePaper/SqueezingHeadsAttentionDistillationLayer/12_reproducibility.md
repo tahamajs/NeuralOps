@@ -78,6 +78,5 @@ torch.cuda.manual_seed_all(seed)
 - FP32 attention scores for stability
 - LoRA folding required for speedup
 - Very small head-dim loses information irrecoverably
-```
 
 ---

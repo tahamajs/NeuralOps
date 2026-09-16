@@ -93,6 +93,5 @@ Single gate across layers. Result: worse.
 3. **Spectral gate is essential.**
 4. **Small KL penalty.**
 5. **Gate bias [3, -3] is best.**
-```
 
 ---

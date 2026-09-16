@@ -81,6 +81,5 @@ Research-grade implementation. Known issues:
 - `raise` in `copy_weights` may be too aggressive for unusual sources
 - No unit tests for edge cases
 - `output_scale` parameter added but not used
-```
 
 ---

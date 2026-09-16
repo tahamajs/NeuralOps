@@ -57,6 +57,5 @@ quadratic complexity despite the SSM naming.**
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---

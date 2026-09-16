@@ -95,6 +95,5 @@ initialization.
 | $C_K, C_V$ | Compressed summary keys, values |
 | $\gamma$ | Gate |
 | $r$ | LoRA rank |
-```
 
 ---

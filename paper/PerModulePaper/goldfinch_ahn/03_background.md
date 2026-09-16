@@ -95,6 +95,5 @@ with $B = 0$ at initialization.
 | $\alpha$ | Preservation coefficient |
 | $r$ | LoRA rank |
 </parameter>
-```
 
 ---

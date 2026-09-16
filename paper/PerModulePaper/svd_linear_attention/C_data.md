@@ -117,6 +117,5 @@ done
 python run_all_4_svd_linear_attention.py --use_decay_gating false --output_suffix nodecay
 python run_all_4_svd_linear_attention.py --use_decay_gating true  --output_suffix decay
 ```
-```
 
 ---

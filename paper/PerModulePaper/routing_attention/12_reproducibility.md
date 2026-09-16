@@ -87,6 +87,5 @@ torch.cuda.manual_seed_all(seed)
 - Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-routing`
 - Metrics: `results/unified_routing/*/summary.csv`
 - Logs: `benchmark_logs/routing_*.log`
-```
 
 ---

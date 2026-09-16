@@ -322,6 +322,5 @@ $$
 
 because intra-chunk scores are masked and inter-chunk uses only 
 previously-processed state.
-```
 
 ---

@@ -108,6 +108,5 @@ assert self.proj.shape == (H, d_h, F)
 assert context.shape == (B, H, N, d_h)
 assert not torch.isnan(context).any()
 ```
-```
 
 ---

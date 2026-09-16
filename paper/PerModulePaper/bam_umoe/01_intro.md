@@ -108,6 +108,5 @@ Section 11 concludes.
 | $\mathcal{L}_\text{aux}$ | Auxiliary load-balancing loss |
 | $H, H_{kv}$ | Query, KV head counts |
 | $d_h$ | Per-head dimension |
-```
 
 ---

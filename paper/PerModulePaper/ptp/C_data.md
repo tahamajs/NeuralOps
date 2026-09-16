@@ -118,6 +118,5 @@ for rho in 0.5 0.7 0.8 0.9 0.95; do
     python run_all_4_ptp.py --keep_ratio $rho
 done
 ```
-```
 
 ---

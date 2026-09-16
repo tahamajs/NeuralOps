@@ -131,6 +131,5 @@ for gb in -10 -7 -5 0; do
     python run_all_4_svd_mamba.py --gate_bias $gb --output_suffix gb$gb
 done
 ```
-```
 
 ---

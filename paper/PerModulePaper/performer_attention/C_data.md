@@ -71,6 +71,5 @@ for F in 32 64 128 256; do
     python run_all_4_performer.py --num_features $F --output_suffix f$F
 done
 ```
-```
 
 ---

@@ -107,6 +107,5 @@ Learn $m$ per head. No improvement.
 3. **Bias 3.0 at init is essential.**
 4. **Chunked scan is necessary.**
 5. **ELU > ReLU for stability.**
-```
 
 ---

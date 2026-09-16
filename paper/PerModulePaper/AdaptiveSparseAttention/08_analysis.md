@@ -124,6 +124,5 @@ Scores are cast to FP32 for softmax; the log-mask is FP32.
 3. **$T = 0.1$** is the optimal temperature.
 4. **Chunking reduces memory** by {{MEM_REDUCTION}}×.
 5. **Attention mass is highly concentrated**: top 10% captures {{MASS10}}%.
-```
 
 ---

@@ -104,6 +104,5 @@ for reproducibility.
 | $F$ | RFF features | §1.2 |
 | $\Omega$ | RFF projection | §1.2 |
 | $r_L$ | LoRA rank | §1.2 |
-```
 
 ---

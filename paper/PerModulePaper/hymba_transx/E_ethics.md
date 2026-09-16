@@ -52,6 +52,5 @@ Hybrid architectures could:
 But also:
 - Increase compute costs.
 - Concentrate AI capabilities.
-```
 
 ---

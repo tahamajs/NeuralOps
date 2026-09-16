@@ -121,6 +121,5 @@ $$
 $$
 
 Only inputs $j \leq i$ contribute. $\square$
-```
 
 ---

@@ -81,6 +81,5 @@ Used for recovery after injection.
 | $\text{Var}(k)$ | Variance of key vector |
 | $r_L$ | LoRA rank |
 </parameter>
-```
 
 ---

@@ -376,6 +376,5 @@ MinimalPRISM:
 3. Uses LoRA for recovery.
 4. Handles four attention architectures with safety protocols.
 5. Achieves **real parameter reduction** of $d^2 / (r(d_\text{in} + d_\text{out}))$.
-```
 
 ---

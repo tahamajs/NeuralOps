@@ -173,6 +173,5 @@ The differences are in injection safety, not in the core algorithm.
 - **Accuracy drop:** {{D_DELTA}}%–{{G_DELTA}}%
 - **VRAM reduction:** {{VRAM_REDUCTION}}%
 - **All three models pass quality gate.**
-```
 
 ---

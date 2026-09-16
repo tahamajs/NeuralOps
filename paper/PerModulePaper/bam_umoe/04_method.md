@@ -258,6 +258,5 @@ For $d = 768$, $E = 8$: **8 × 768² × 8 ≈ 37.7M params per layer**.
 66.9M model. Parameter count **increases by ~4.4×**.
 
 **BAM-UMoE is not a compression method.**
-```
 
 ---

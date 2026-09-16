@@ -141,6 +141,5 @@ $$
 Both give the same $UV$, but asymmetric has:
 - Slightly better numerical behavior in FP16.
 - All scaling concentrated in one factor.
-```
 
 ---

@@ -135,6 +135,5 @@ reduction. The parameter change is dominated by LoRA + RFF.
 - With `max_rank=384`, no parameter reduction (baseline-equivalent).
 - With `max_rank=128`, ~{{COMPRESSION}}× compression.
 - Decoder fallback preserves accuracy but not complexity.
-```
 
 ---

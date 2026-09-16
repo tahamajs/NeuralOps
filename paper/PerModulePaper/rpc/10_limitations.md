@@ -72,6 +72,5 @@ downstream task error.
 Research-grade implementation. Known issues:
 - `raise` in `copy_weights` may be too aggressive
 - No unit tests for edge cases
-```
 
 ---

@@ -89,6 +89,5 @@ Standard low-rank adaptation (Hu et al., 2021).
 | $F$ | RFF features |
 | $m$ | Row maximum (softpick) |
 </parameter>
-```
 
 ---

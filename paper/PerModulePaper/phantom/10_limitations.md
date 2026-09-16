@@ -80,6 +80,5 @@ Research-grade:
 ## 10.13 Ethical Considerations
 
 Compression is dual-use. See Appendix E.
-```
 
 ---

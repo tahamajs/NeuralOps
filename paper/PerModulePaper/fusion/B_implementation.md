@@ -129,6 +129,5 @@ This should be changed to:
 except Exception:
     return None
 ```
-```
 
 ---

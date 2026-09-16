@@ -65,6 +65,5 @@ $d_h=64$: 786 KB per state.
 ## 10.12 Ethical Considerations
 
 Dual-use. See Appendix E.
-```
 
 ---

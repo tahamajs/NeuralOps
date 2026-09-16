@@ -110,6 +110,5 @@ practical guidance. Section 10 lists limitations. Section 11 concludes.
 | $S, Z$ | Cumulative RFF state |
 | $\phi(\cdot)$ | Feature map |
 | $\sigma$ | Sigmoid |
-```
 
 ---

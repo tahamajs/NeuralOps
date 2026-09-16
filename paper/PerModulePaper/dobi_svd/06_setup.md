@@ -109,6 +109,5 @@ All experiments use seed {{SEED}}.
 2. **`dobi`:** Our method with learning gates.
 3. **`dobi_pruned`:** Dobi with post-hoc gate pruning at τ_g=0.5.
 4. **Companion methods:** `minimal_svd`, `svd_llm_v2`, `mla`.
-```
 
 ---

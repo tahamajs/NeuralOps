@@ -123,6 +123,5 @@ Section 10 lists limitations. Section 11 concludes.
 | $T$ | Softpick temperature |
 | $H$ | Number of heads |
 | $d_h$ | Head dimension |
-```
 
 ---

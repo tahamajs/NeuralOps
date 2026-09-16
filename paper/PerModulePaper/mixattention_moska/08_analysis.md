@@ -133,6 +133,5 @@ attention scores are needed to prune accurately.
 3. **Keep ratio of 0.5 is too aggressive.** 0.75 preserves more.
 4. **Decoder path is a no-op.** GPT-2 unchanged.
 5. **Speedup is diluted** by gather + topk overhead at short sequences.
-```
 
 ---

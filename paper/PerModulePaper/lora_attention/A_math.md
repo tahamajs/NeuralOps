@@ -113,6 +113,5 @@ $$
 
 Our module returns raw attention; the outer layer applies `dense`. This 
 matches the original flow. $\square$
-```
 
 ---

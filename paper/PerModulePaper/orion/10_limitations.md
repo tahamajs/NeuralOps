@@ -83,6 +83,5 @@ FFN projections, this is a memory spike.
 - Not a perfectly robust module (two bugs)
 - Not the fastest method (slower than baseline)
 - Not validated beyond SST-2
-```
 
 ---

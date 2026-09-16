@@ -104,6 +104,5 @@ for s in 1.0 1.5 2.0 2.5; do
     python run_all_4_squeezing_heads.py --head_dim_reduction $s
 done
 ```
-```
 
 ---

@@ -148,6 +148,5 @@ class MixAttentionMoSKA(BaseAttention):
 
 Standard whole-model and single-layer injection with nested-encoder 
 detection.
-```
 
 ---

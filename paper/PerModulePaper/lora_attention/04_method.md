@@ -273,6 +273,5 @@ correct attention output.
 
 **Proof.** The nested outer layer applies $W_O$. Our module returning raw 
 context matches the original architecture's flow. $\square$
-```
 
 ---

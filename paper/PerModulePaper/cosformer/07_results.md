@@ -123,6 +123,5 @@
 
 Cosformer is a **reasonable linear attention baseline** that preserves 
 most of the baseline accuracy at modest overhead.
-```
 
 ---

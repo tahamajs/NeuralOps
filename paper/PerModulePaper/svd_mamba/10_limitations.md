@@ -77,6 +77,5 @@ Research-grade implementation. Known issues:
 - Python loop over chunks
 - `raise` in `copy_weights` but `return None` in `inject`
 - No unit tests
-```
 
 ---

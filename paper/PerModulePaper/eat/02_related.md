@@ -77,6 +77,5 @@ Any parameter reduction reported for EAT would be a misattribution.
 | A3 | Low-rank compression | **−50%** | No | Yes |
 | AASVD | Low-rank compression | **−50%** | No | Yes |
 | **EAT** | Attention + pruning | **+LoRA** | **Yes** | **Yes** |
-```
 
 ---

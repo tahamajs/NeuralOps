@@ -232,6 +232,5 @@ if isinstance(src_attn, MinimalPRISMAttention) or \
    "MinimalPRISM" in src_attn.__class__.__name__:
     return None
 ```
-```
 
 ---

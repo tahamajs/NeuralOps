@@ -140,6 +140,5 @@ next layer. This makes the block **conservative**.
 class GoldFinchAHNBlock(BaseAttention):
     ...
 ```
-```
 
 ---

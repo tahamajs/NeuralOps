@@ -86,6 +86,5 @@ torch.cuda.manual_seed_all(seed)
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-soa_fused`.
 - **Metrics:** `results/unified_soa_fused/*/summary.csv`.
 - **No calibration data required.**
-```
 
 ---

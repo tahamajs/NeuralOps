@@ -52,7 +52,7 @@ matching.
 \textbf{Axis} & \textbf{PoWER-BERT} & \textbf{TR-BERT} & \textbf{LTP} & \textbf{PTP} \\
 \midrule
 Learnable &  & (RL) &  & (supervised) \\
-[CLS] preserved &  &  &  &  \\
+ [CLS] preserved &  &  &  &  \\
 Drop-in &  &  &  &  \\
 Multi-architecture &  &  &  &  \\
 Causal-aware &  &  &  &  \\
@@ -62,7 +62,18 @@ Causal-aware &  &  &  &  \\
 
 \subsection{Comparison Table}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{Selector} & \textbf{Loss} & \textbf{Causal} & \textbf{Pretrained} \\
+\midrule
+PoWER-BERT & Attention & CE &  &  \\
+TR-BERT & RL policy & RL &  &  \\
+LTP & Threshold & CE &  &  \\
+\textbf{PTP} & \textbf{MLP} & \textbf{CE} & \textbf{ } & \textbf{ } \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

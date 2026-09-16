@@ -360,6 +360,5 @@ W \to W' = U_{:, :r'} \Sigma_{:r'} V_{:r', :}^\top
 $$
 
 This is immediate; no additional SVD is required. $\square$
-```
 
 ---

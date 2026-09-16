@@ -134,7 +134,19 @@ class ProgressiveTokenPruning(BaseAttention): ...
 
 \subsection{Failure Modes}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
+\midrule
+Missing weights & \texttt{copy\_weights} raises & Injection aborts \\
+\texttt{k > L} & Clamped to L & Skip pruning \\
+Empty mask & Empty valid\_mask & Use all tokens \\
+NaN scores & \texttt{torch.isnan} & Fallback to uniform \\
+Wrong nested flag & Shape mismatch & Fallback \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

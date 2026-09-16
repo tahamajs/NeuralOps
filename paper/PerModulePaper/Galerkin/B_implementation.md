@@ -144,6 +144,5 @@ def inject_galerkin(layer, model_config, comp_config, old_attn=None, **kwargs):
         logger.error(f"Galerkin injection failed: {e}")
         return None
 ```
-```
 
 ---

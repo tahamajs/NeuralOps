@@ -191,6 +191,5 @@ def measure_rff_memory(B, H, L, F, d):
     return B * H * L * 2 * F * d * 4 / 1e6  # MB
 print(measure_rff_memory(8, 12, 128, 64, 64))  # ~50 MB
 ```
-```
 
 ---

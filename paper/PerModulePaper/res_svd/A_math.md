@@ -75,6 +75,5 @@ at initialization. They differ in:
 ## A.5 Causality
 
 **Proof.** Position-wise projections + causal mask. $\square$
-```
 
 ---

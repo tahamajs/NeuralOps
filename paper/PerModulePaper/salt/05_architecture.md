@@ -162,6 +162,5 @@ class SALTAttention(BaseAttention):
 ```
 
 It integrates with the LoRA recovery pipeline.
-```
 
 ---

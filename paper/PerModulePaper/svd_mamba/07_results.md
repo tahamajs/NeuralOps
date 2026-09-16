@@ -142,6 +142,5 @@
 | Parameter increase | +{{PARAM_CHANGE}}% |
 | Inference ratio | {{INFERENCE_RATIO}}× |
 | Gate at end of training | {{GATE_FINAL}} |
-```
 
 ---

@@ -44,6 +44,5 @@ None.
 Bugs in production code can cause silent failures. We document ORION's 
 two bugs (`copy_weights` raise, `rff_proj` persistence) to prevent 
 downstream issues.
-```
 
 ---

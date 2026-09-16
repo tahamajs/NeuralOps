@@ -110,7 +110,23 @@ concludes.
 
 \subsection{Notation}
 
-\begin{lstlisting}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$L$ & Sequence length \\
+$H$ & Number of heads \\
+$d$ & Hidden dimension \\
+$\rho$ & Keep ratio \\
+$k$ & Number of retained tokens ($= \lceil \rho L \rceil$) \\
+$s_i$ & Score of token $i$ \\
+$\mathcal{T}$ & Set of retained token indices \\
+$x_i$ & Hidden state of token $i$ \\
+$\text{MLP}$ & Score network \\
+\bottomrule
+\end{tabular}
+\end{table}
 
----
-\end{lstlisting}

@@ -298,6 +298,5 @@ $\text{output} \approx 0.88 \cdot \text{local} + 0.12 \cdot \text{global}$. $\sq
 `torch.tril` on the $d_c$ slots. Compressed summaries are computed with 
 softmax over positions $1..i$. Therefore, output at position $i$ depends 
 only on inputs $1..i$. $\square$
-```
 
 ---

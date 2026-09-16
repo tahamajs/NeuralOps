@@ -175,6 +175,5 @@ FP16 sensitivity.
 - **VRAM reduction:** {{VRAM_REDUCTION}}%
 - **Explicit Σ storage:** interpretable and composable
 - **All three models pass quality gate.**
-```
 
 ---

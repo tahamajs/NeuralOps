@@ -90,6 +90,5 @@ limitations. Section 11 concludes.
 | $\alpha$ | LoRA scaling constant |
 | $W_Q, W_K, W_V, W_O$ | Attention projections |
 | $A, B$ | LoRA adapter matrices |
-```
 
 ---

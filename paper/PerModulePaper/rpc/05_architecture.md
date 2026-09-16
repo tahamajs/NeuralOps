@@ -137,6 +137,5 @@ position $j > i$ is zero.
 
 RPC's forward accepts `encoder_hidden_states` as an argument but does not 
 use it. Cross-attention is effectively unsupported.
-```
 
 ---

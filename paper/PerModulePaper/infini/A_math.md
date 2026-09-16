@@ -59,6 +59,5 @@ local branch's scale.
 
 **Proof.** $\|\text{output}\|_2 = \|\text{local} + \sigma(\beta) \text{mem}\|_2 \leq \|\text{local}\|_2 + \sigma(\beta)\|\text{mem}\|_2$. 
 For $\sigma(\beta) \to 0$, this is $\|\text{local}\|_2$. $\square$
-```
 
 ---

@@ -17,6 +17,5 @@ To understand `rectification_interval = 4`, we ablated the parameter:
 
 HIBA compresses **Activation VRAM** (from $\mathcal{O}(L^2)$ to $\mathcal{O}(L \cdot W)$), enabling much larger batch sizes or sequence lengths. However, it **does not reduce parameter count**. In fact, due to the residual `lora_A` and `lora_B` tensors, the parameter count strictly increases by ~0.89%. 
 
-```
 
 ---

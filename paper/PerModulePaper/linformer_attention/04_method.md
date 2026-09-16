@@ -282,6 +282,5 @@ reduces to standard attention.
 
 This means our initialization starts at exactly the standard attention and 
 deviates only as $E$ is trained.
-```
 
 ---

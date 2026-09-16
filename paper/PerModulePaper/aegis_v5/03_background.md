@@ -171,6 +171,5 @@ $$
 $$
 
 which is always numerically stable.
-```
 
 ---

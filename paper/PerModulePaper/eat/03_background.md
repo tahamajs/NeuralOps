@@ -98,6 +98,5 @@ EAT transfers weights from the pretrained attention block. Four cases:
 | $r$ | LoRA rank |
 | $k$ | Pruned sequence length |
 | $s_i$ | Token importance score |
-```
 
 ---

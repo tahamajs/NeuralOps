@@ -140,6 +140,5 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ## 12.11 Original Paper
 
 Nyströmformer is from Xiong et al. (2021), arXiv:2102.03902.
-```
 
 ---

@@ -139,6 +139,5 @@ python run_all_4_routing.py --models distilbert,roberta,gpt2
 | 0 | {{D_C0_AVG}} | {{D_C0_MAX}} | {{D_C0_MIN}} |
 | 1 | {{D_C1_AVG}} | {{D_C1_MAX}} | {{D_C1_MIN}} |
 | ... | ... | ... | ... |
-```
 
 ---

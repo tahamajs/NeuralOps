@@ -85,6 +85,5 @@ Init 2.0 is near-optimal.
 3. **Bidirectional for encoders.**
 4. **True O(L) is non-trivial.**
 5. **A_log log-init is good.**
-```
 
 ---

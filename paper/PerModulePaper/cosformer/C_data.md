@@ -96,6 +96,5 @@ for cs in 16 32 64 128; do
     python run_all_4_cosformer.py --chunk_size $cs --output_suffix cs$cs
 done
 ```
-```
 
 ---

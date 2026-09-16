@@ -61,6 +61,5 @@ We thank {{ACKNOWLEDGMENTS}}. This work reproduces Xiong et al. (2021).
 ## 11.8 Conflict of Interest
 
 None.
-```
 
 ---

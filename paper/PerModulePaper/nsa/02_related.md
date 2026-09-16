@@ -72,6 +72,5 @@ forward pass**, not just at cache time.
 | Reformer | — | LSH | Hash | No |
 | H2O | — | Heavy hitters | Score | Yes |
 | **NSA** | **Window** | **Top-k** | **Score** | **Yes** |
-```
 
 ---

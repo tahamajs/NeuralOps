@@ -161,6 +161,5 @@
 | VRAM reduction | {{VRAM_REDUCTION}}% |
 | Failures | {{N_FAILURES}} |
 | Avg compression time | {{COMPRESS_TIME}} s |
-```
 
 ---

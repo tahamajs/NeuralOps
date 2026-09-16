@@ -85,6 +85,5 @@ torch.cuda.manual_seed_all(seed)
 - Slow training due to ramp allocation
 - Fast path optimization needed for short sequences
 - No hard truncation for actual speedup
-```
 
 ---

@@ -91,6 +91,5 @@ Sweet spot: 16.
 3. **LoRA recovery matters.**
 4. **Rank 64 is a good default.**
 5. **Detection order fix restores DistilBERT.**
-```
 
 ---

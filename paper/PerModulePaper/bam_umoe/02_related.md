@@ -61,6 +61,5 @@ control the MoE contribution's ramp-up.
 
 BAM-UMoE is unique in explicitly targeting the **value pathway** with MoE 
 and providing a **three-part step-0 preservation** mechanism.
-```
 
 ---

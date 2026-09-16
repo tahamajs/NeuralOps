@@ -100,6 +100,5 @@ with $B = 0$ at initialization.
 | $\beta_t$ | Update gate |
 | $\gamma$ | Fusion gate |
 | $W_u, W_\alpha, W_g$ | Learned projections |
-```
 
 ---

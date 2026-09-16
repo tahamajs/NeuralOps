@@ -195,6 +195,5 @@ For $d = 768$, $d_h = 64$, $r_L = 16$:
 
 For DistilBERT (6 layers): ~442,368 trainable.
 For RoBERTa (12 layers): ~884,736 trainable.
-```
 
 ---

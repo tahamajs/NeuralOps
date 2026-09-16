@@ -99,6 +99,5 @@ Learned $T$ in softpick. Result: converged to 1.0.
 2. Consider setting $L_\text{max}$ to a constant (e.g., 64) for truly 
    linear attention.
 3. Validate the correction matrix initialization.
-```
 
 ---

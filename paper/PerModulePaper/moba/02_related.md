@@ -64,6 +64,5 @@ formulation, trading complexity for compatibility with pretrained transformers.
 | RWKV | Fixed | Partial | No | ✓ |
 | RetNet | Fixed | ✓ | No | ✓ |
 | **Ours** | Learned per-dim | ✓ | **✓** | ✓ |
-```
 
 ---

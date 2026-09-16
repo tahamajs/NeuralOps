@@ -84,6 +84,5 @@ for r in 0.25 0.5 0.75 1.0; do
     python run_all_4_fasa.py --fasa_keep_ratio $r --output_suffix k$r
 done
 ```
-```
 
 ---

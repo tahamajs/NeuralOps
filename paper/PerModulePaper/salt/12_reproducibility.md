@@ -96,6 +96,5 @@ print(f"Total parameters: {total}")
 - Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-salt`
 - Metrics: `results/unified_salt/*/summary.csv`
 - Logs: `benchmark_logs/salt_*.log`
-```
 
 ---

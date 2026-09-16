@@ -78,6 +78,5 @@ $$
 
 using linear interpolation. This is a heuristic — the interpolation does 
 not preserve the identity-init property.
-```
 
 ---

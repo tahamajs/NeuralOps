@@ -57,6 +57,5 @@ All code and checkpoints released.
 ## E.11 Long-Term Considerations
 Nyströmformer could enable AI on longer contexts, but also increase usage 
 as cost drops.
-```
 
 ---

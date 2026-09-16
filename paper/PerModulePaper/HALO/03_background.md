@@ -144,6 +144,5 @@ projections.
 | $\sigma$ | Sigmoid |
 | $\alpha$ | LoRA scaling |
 | $r$ | LoRA rank |
-```
 
 ---

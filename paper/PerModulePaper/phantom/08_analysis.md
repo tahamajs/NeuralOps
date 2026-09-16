@@ -150,6 +150,5 @@ attention at small $L$.
 3. **Softpick adds sparsity** without hurting accuracy.
 4. **Component interactions** matter (CUR + LSH > sum of parts).
 5. **Batch size 4** required for 12-layer models.
-```
 
 ---

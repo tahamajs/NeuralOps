@@ -98,6 +98,5 @@ TCA + INT8 → **~8× total reduction** in KV footprint.
 ### Negative
 - Small parameter increase
 - Adds a training step (score_net)
-```
 
 ---

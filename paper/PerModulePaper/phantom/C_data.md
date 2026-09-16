@@ -152,6 +152,5 @@ for r in 8 16 32 64; do
     python run_all_4_phantom.py --cur_rank $r --output_suffix r$r
 done
 ```
-```
 
 ---

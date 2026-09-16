@@ -160,6 +160,5 @@ Even if the underlying attention is fine, the block wrapper introduces:
 4. **The wrapper adds no value over attention-level replacement.** It adds 
    parameters and complexity without benefit.
 5. **GatedDeltaNet remains the bottleneck.** Its Python loops dominate.
-```
 
 ---

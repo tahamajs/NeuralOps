@@ -109,6 +109,5 @@ Very small chunks add overhead.
 3. **Per-head logits suffice;** per-layer not needed.
 4. **Chunk size remains a hyperparameter.**
 5. **Learned budgets are interpretable and bimodal.**
-```
 
 ---

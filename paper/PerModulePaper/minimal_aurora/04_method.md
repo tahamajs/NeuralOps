@@ -223,6 +223,5 @@ With $E(r) \geq \varepsilon$, the bound follows. $\square$
 and `output.dense` (output projection). MinimalAURORA detects this via 
 `is_nested_encoder = True` and returns the raw context, letting the outer 
 layer apply the projection. $\square$
-```
 
 ---

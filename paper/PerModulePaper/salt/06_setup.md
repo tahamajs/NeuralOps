@@ -102,6 +102,5 @@ Single seed {{SEED}}.
 - `full` — unmodified model
 - `salt` — our method
 - Prior modules: `nha`, `a3`, `rala`, `routing`
-```
 
 ---

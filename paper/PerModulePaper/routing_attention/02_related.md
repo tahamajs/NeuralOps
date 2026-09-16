@@ -98,6 +98,5 @@ speedups that the formulation permits with proper kernels.
 | Routing Transformer | k-means | Query | No | Sometimes |
 | Cluster-Former | k-means | Query | No | Yes (for QA) |
 | **Ours** | **k-means** | **Q+K** | **No** | **No (naive)** |
-```
 
 ---

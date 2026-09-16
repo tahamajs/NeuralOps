@@ -82,6 +82,5 @@
 - **Parameters:** +{{PARAM_CHANGE}}%.
 - **Sparsity:** not exercised at L=128.
 - **Long path:** untested.
-```
 
 ---

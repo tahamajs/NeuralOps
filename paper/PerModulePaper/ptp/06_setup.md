@@ -98,6 +98,5 @@ python run_all_4_ptp.py \
 | Score network hidden | $\{32, 64, 128\}$ |
 | [CLS] preservation | $\{\text{on}, \text{off}\}$ |
 | LoRA rank | $\{4, 8, 16, 32\}$ |
-```
 
 ---

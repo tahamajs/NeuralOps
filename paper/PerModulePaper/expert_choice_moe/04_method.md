@@ -285,6 +285,5 @@ balanced. We do, however, track a **usage entropy** for monitoring.
 usage = torch.bincount(selected_indices, minlength=E).float()
 entropy = -(usage / usage.sum() * torch.log(usage / usage.sum() + 1e-9)).sum()
 ```
-```
 
 ---

@@ -87,6 +87,5 @@ Rank 16 is sweet spot.
 3. **$k \geq 2$ needed.**
 4. **$P = 64$ is good.**
 5. **SVD rank 16 is good.**
-```
 
 ---

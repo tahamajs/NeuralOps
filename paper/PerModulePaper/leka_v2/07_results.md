@@ -136,6 +136,5 @@
 - **Dual-scale:** contributes {{DUAL_GAIN}}%.
 - **Softpick:** contributes {{SOFTPICK_GAIN}}%.
 - **Parameters:** increase {{D_PARAM_PCT}}%.
-```
 
 ---

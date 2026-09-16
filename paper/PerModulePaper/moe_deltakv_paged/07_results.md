@@ -119,6 +119,5 @@
 - Router successfully selects diverse pages (page-0 rate ≈ 100%).
 - Speedup grows with sequence length.
 - **Caveat:** KV cache memory unchanged at inference.
-```
 
 ---

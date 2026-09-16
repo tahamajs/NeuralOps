@@ -97,6 +97,5 @@ python run_all_4_vspec.py \
 ## 6.10 Seeds
 
 Single seed ({{SEED}}).
-```
 
 ---

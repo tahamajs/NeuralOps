@@ -117,6 +117,5 @@ Section 11 concludes.
 | $\lambda_t$ | Decay at position $t$ |
 | $S_t, Z_t$ | Associative memory state |
 | $C$ | Chunk size (64) |
-```
 
 ---

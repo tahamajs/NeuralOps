@@ -98,6 +98,5 @@ Step  Loss
 ```bash
 python run_all_4_hymba_transx.py --models distilbert,roberta,gpt2
 ```
-```
 
 ---

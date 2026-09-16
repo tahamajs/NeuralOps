@@ -101,6 +101,5 @@ the caller to handle model traversal.
 | Injection-time nested detection | ❌ | ❌ | ✅ |
 | Double-injection guard | ❌ | ❌ | ✅ |
 | Code lines | ~280 | ~500 | ~550 |
-```
 
 ---

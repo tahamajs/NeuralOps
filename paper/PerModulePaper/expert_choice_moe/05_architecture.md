@@ -120,6 +120,5 @@ MoE injection is complex.
 class ExpertChoiceMoEAttention(BaseAttention):
     ...
 ```
-```
 
 ---

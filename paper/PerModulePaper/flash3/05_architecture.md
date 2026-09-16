@@ -130,6 +130,5 @@ if out is None:
 | Attention (FA3) | Model dtype or FP8 |
 | Attention (SDPA) | Model dtype |
 | Output | Model dtype |
-```
 
 ---

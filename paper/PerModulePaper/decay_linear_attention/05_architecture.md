@@ -131,6 +131,5 @@ def value(self): return self.v_proj
 def q_lin(self): return self.q_proj
 ...
 ```
-```
 
 ---

@@ -118,6 +118,5 @@ Prevents NaN when a query has no valid keys.
 ### 5.10.3 ReLU Clamp
 
 `torch.clamp(1.0 + s/order, min=0.0)` prevents NaN from negative base.
-```
 
 ---

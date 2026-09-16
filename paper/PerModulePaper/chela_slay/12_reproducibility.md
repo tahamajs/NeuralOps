@@ -84,6 +84,5 @@ torch.cuda.manual_seed_all(seed)
 - **Dataset:** SST-2 via `datasets`.
 - **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-chela_slay`.
 - **Metrics:** `results/unified_chela_slay/*/summary.csv`.
-```
 
 ---

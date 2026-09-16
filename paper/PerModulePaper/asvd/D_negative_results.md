@@ -108,6 +108,5 @@
 3. **τ=0.20 is a good default.**
 4. **LoRA recovery is essential.**
 5. **LN recalibration not worth it.**
-```
 
 ---

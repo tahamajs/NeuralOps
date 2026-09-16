@@ -248,6 +248,5 @@ Frozen:
 - Base Q/K/V/O weights (transferred from pretrained attention).
 
 **Trainable count:** ~{{TRAINABLE}} per layer.
-```
 
 ---

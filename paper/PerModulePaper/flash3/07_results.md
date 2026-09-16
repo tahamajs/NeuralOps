@@ -77,6 +77,5 @@
 - **Parameters:** +{{PARAM_CHANGE}}%.
 - **Runtime on RTX 4070:** SDPA fallback (no FA3).
 - **Runtime on H100:** estimated 2-4× faster (not tested).
-```
 
 ---

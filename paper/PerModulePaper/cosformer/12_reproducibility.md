@@ -109,6 +109,5 @@ assert x.grad[0, 51:].abs().max() < 1e-6
 - Code: `framework/attentions/cosformer.py`
 - Metrics: `results/unified_cosformer/*/summary.csv`
 - Logs: `benchmark_logs/cosformer_*.log`
-```
 
 ---

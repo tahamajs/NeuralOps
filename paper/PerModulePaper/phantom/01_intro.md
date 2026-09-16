@@ -139,6 +139,5 @@ concludes.
 | $B$ | Average bucket size |
 | $\tau$ | Frobenius error threshold |
 | $\tau_s$ | Softpick temperature |
-```
 
 ---

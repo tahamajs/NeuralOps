@@ -97,6 +97,5 @@ $$
 $$
 
 For $F = 64$: error $\sim 0.125 \cdot \|V\|_\infty \cdot e^{\|\omega\|}$.
-```
 
 ---

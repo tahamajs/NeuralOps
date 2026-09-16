@@ -115,6 +115,5 @@ recomputes $K$ full attention matrices.
 - Parameters: +{{D_PARAM_PCT}}%.
 - Inference time: {{D_TIME_R}}× **slower**.
 - Verdict: **{{VERDICT}}**
-```
 
 ---

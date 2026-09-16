@@ -126,6 +126,5 @@ The fix restores full accuracy.
 - Parameter reduction: **{{D_RATIO}}×–{{G_RATIO}}×**
 - Accuracy drop: **{{D_DELTA}}%–{{G_DELTA}}%**
 - Nested detection fix restores DistilBERT accuracy.
-```
 
 ---

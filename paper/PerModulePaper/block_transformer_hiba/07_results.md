@@ -26,6 +26,5 @@
 
 While theoretical FLOPs and peak VRAM scale sub-quadratically, wall-clock latency increases slightly (1.2×) due to unoptimized Python loops looping over sequence chunks inside `_inter_block_sparse`.
 
-```
 
 ---

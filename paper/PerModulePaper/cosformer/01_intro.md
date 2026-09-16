@@ -107,6 +107,5 @@ concludes.
 | $r$ | LoRA rank | §4.4 |
 | $C$ | Chunk size | §4.4 |
 </parameter>
-```
 
 ---

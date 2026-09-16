@@ -281,6 +281,5 @@ with $F = \mathcal{O}(d_h \log(1/\epsilon^2))$.
 
 **Proof.** Local window covers $|i - j| \leq W/2$; kernel attention covers 
 all $j$. Both are bidirectional by design. $\square$
-```
 
 ---

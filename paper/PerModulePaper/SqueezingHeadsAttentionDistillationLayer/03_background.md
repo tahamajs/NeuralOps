@@ -102,6 +102,5 @@ components of the head.
 | $\alpha$ | LoRA scaling |
 | $s$ | Head-dim reduction factor |
 | $W_Q, W_K, W_V, W_O$ | Attention projections |
-```
 
 ---

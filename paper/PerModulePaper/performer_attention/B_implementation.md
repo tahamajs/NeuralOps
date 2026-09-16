@@ -154,6 +154,5 @@ assert x.grad[0, 51:].abs().max() < 1e-6
 class PerformerAttention(BaseAttention):
     ...
 ```
-```
 
 ---

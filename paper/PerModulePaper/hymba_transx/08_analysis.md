@@ -94,6 +94,5 @@ observe this on {{SATURATING_MODEL}}.
 3. **Learned α is informative** — different models prefer different branches.
 4. **Parameter cost is real** (~{{PARAM_INCREASE}}%).
 5. **Training is slower** than baseline.
-```
 
 ---

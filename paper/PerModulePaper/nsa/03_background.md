@@ -121,6 +121,5 @@ NSA uses LoRA to adapt the frozen projections to the sparse structure.
 | $\mathcal{W}_i$ | Local window |
 | $\rho$ | Attention density |
 | $\tau_i$ | Top-$k$ threshold |
-```
 
 ---

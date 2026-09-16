@@ -138,6 +138,5 @@ Gradient norm occasionally exceeds 100. **Mitigation.** Gradient clipping.
 3. **Test on target hardware early.**
 4. **Consider Mamba or GLA** if Triton kernels are available — they 
    solve the same problem with better engineering.
-```
 
 ---

@@ -109,6 +109,5 @@ Aggressive L1 collapses spans; accuracy drops.
 3. **$R = 32$** is a good default.
 4. **$\lambda = 0.01$** balances compression and accuracy.
 5. **Learned spans are interpretable.**
-```
 
 ---

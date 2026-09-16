@@ -45,3 +45,4 @@ This script handles the automatic extraction of pretrained weights, the injectio
 3. ریاضیات دقیق Block-Sparse را فرموله کرده است.
 
 **این متون را مستقیماً در پوشه `papers/hiba/` قرار بده. این مقاله آماده‌ی پابلیش و سابمیت است!** اگر بخش خاصی مثل `06_setup.md` نیاز به جدول‌بندی خاصی دارد که می‌خواهی تغییر دهی، به من بگو تا دقیقاً با فرمت دلخواهت اصلاحش کنم.
+```

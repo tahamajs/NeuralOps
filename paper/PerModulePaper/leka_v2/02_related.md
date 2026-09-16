@@ -66,6 +66,5 @@ variance. We extend RFF with **dual-scale** features.
 | Nyströmformer | $O(L L_m)$ | Fixed | No | Nyström |
 | Longformer | $O(L W)$ | No | Yes | softmax |
 | **LEKAv2** | $O(L F + L W)$ | **Learned** | **Yes** | **Dual RFF + Softpick** |
-```
 
 ---

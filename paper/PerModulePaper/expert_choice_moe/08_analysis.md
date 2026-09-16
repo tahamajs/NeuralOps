@@ -122,6 +122,5 @@ This is **8× the entire attention block** ($4 d^2 = 2.36$M).
 | 7 | {{LOAD_E7}} | {{FRAC_E7}}% |
 
 **All loads equal by construction.**
-```
 
 ---

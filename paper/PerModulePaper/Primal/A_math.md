@@ -141,6 +141,5 @@ $$
 
 by Lipschitz continuity of softmax with constant 1 (in Frobenius norm under 
 suitable conditions).
-```
 
 ---

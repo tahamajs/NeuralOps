@@ -156,6 +156,5 @@ are designed for different goals:
 4. **Pruning helps at inference** but only with careful ratio selection.
 5. **RoBERTa is the hardest** — nested encoder requires correct 
    `is_nested_encoder` setting.
-```
 
 ---

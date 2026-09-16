@@ -130,6 +130,5 @@
 - **DistilBERT:** {{D_ACC}}% (Δ = {{D_DELTA}}) — {{D_VERDICT}}
 - **RoBERTa:** {{R_ACC}}% (Δ = {{R_DELTA}}) — {{R_VERDICT}}
 - **GPT-2:** {{G_ACC}}% (Δ = {{G_DELTA}}) — **no-op** (decoder path skips pruning)
-```
 
 ---

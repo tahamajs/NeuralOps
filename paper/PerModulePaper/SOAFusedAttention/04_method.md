@@ -219,6 +219,5 @@ Our `copy_weights` handles four architectures. For each:
 
 **Failure handling:** If any projection cannot be extracted, we raise 
 `RuntimeError` to prevent injecting a random-init module.
-```
 
 ---

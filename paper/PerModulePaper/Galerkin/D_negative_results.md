@@ -119,6 +119,5 @@ See D.3.1.
 - Long-context attention
 - Parameter reduction
 - Any task requiring accuracy preservation
-```
 
 ---

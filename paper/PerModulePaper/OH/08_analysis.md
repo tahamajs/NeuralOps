@@ -163,6 +163,5 @@ experiments:
 3. **Compression rank 32 is a sweet spot.**
 4. **Sequence compression provides global context.**
 5. **`raise` on copy failure is safer than silent fallback.**
-```
 
 ---

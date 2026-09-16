@@ -64,6 +64,5 @@ Step  Loss
 ```bash
 python run_all_4_aegis_v5.py --svd_energy 0.95 --max_rank 128
 ```
-```
 
 ---

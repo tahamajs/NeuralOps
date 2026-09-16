@@ -78,6 +78,5 @@ torch.cuda.manual_seed_all(seed)
 - FP32 required for stable pseudoinverse
 - Long sequences may OOM on 8 GB GPU
 - Causal approximation not strict
-```
 
 ---

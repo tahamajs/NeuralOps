@@ -125,6 +125,5 @@ If nested but you apply `out_proj`, you get double projection.
 
 If LoRA isn't initialized to zero, the initial output differs from the 
 pretrained model.
-```
 
 ---

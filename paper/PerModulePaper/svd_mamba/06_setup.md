@@ -92,6 +92,5 @@ python run_all_4_svd_mamba.py \
 | `full` | Uncompressed model |
 | `svd_mamba` | Our method |
 | Companion | `nha`, `eat`, `infini`, `oha`, `asvd` |
-```
 
 ---

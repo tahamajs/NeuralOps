@@ -115,6 +115,5 @@ concentration-of-measure.
 
 The random seed for `proj` initialization affects results. We use seed 
 {{SEED}} for all experiments.
-```
 
 ---

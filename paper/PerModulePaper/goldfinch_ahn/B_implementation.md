@@ -152,6 +152,5 @@ class GoldFinchAHNBlock(BaseAttention):
 ## B.8 Injection
 
 Standard pattern with whole-model and single-layer traversal.
-```
 
 ---

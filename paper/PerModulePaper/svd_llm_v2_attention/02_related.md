@@ -93,6 +93,5 @@ the cost of slight numerical sensitivity in FP16.
 | Whole-model | No | Yes | Yes | Yes |
 | GQA pooling | General | General | General | **Per-head** |
 | Bias parameter | Fused | Fused | Fused | **Separate** |
-```
 
 ---

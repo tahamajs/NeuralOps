@@ -122,6 +122,5 @@ For GPT-2 on $L = 128$:
 4. **Sparse block loop adds overhead.** Vectorization would help.
 5. **Causal RFF cumsum is memory-heavy.** OOM risk at long sequences.
 6. **`inject_nasc` raises on failure.** This is a robustness regression.
-```
 
 ---

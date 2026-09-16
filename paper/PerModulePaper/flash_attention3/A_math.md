@@ -87,6 +87,5 @@ On Hopper, FA3 speedup comes from:
 | FP8 (optional) | 2× |
 
 Combined: ~$2 \times 1.5 \times 1.3 = 3.9×$ (FP16) or ~$8×$ (FP8).
-```
 
 ---

@@ -120,6 +120,5 @@ complementary:
 3. **Memory dominates params for small models.**
 4. **LoRA dominates for larger.**
 5. **Not a compressor.** Parameter count increases.
-```
 
 ---

@@ -121,6 +121,5 @@ provides guidance. Section 10 lists limitations. Section 11 concludes.
 | $r_L$ | LoRA rank |
 | $\gamma$ | Gate scalar |
 | $\bar{A}, \bar{B}, C$ | Discretized SSM matrices |
-```
 
 ---

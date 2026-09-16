@@ -85,6 +85,5 @@ But also:
 - Add deployment burden
 
 We encourage future work to carefully evaluate the trade-offs.
-```
 
 ---

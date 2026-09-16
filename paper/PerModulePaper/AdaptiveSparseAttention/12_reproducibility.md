@@ -78,6 +78,5 @@ torch.cuda.manual_seed_all(seed)
 - FP32 needed for softmax stability
 - Chunk boundary effects at small $C$
 - RoPE fallback may fail on some models
-```
 
 ---

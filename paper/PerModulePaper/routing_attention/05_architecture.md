@@ -153,6 +153,5 @@ Consider using the first valid token instead.
 ### 5.11.3 Nested Encoder Double-Projection
 
 If `is_nested_encoder` is wrong, the output projection is applied twice.
-```
 
 ---

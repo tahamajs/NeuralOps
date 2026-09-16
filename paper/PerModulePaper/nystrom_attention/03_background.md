@@ -159,6 +159,5 @@ $$
 | $\text{pinv}(\cdot)$ | Moore-Penrose pseudoinverse |
 | $\alpha$ | Pinv preconditioning scalar |
 | $d_h, H, H_{kv}$ | Model dims |
-```
 
 ---

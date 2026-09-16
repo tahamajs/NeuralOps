@@ -63,6 +63,5 @@ with high error (e.g., early layers with peaked attention) are skipped.
 3. **ReLU sparsity is a free benefit** (15% zero weights).
 4. **Injection check prevents bad layers.**
 5. **Runtime is unchanged** without kernelization.
-```
 
 ---

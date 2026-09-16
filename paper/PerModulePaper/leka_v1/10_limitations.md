@@ -56,6 +56,5 @@ Research-grade.
 ## 10.13 Ethical Considerations
 
 See Appendix E.
-```
 
 ---

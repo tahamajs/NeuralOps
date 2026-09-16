@@ -82,6 +82,5 @@ VSpec++ composes with:
 2. **Cross-layer gate sharing:** Would shared gates help?
 3. **Optimal ρ:** Can it be learned?
 4. **KL penalty:** What is the optimal coefficient?
-```
 
 ---

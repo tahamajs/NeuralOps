@@ -189,6 +189,5 @@ Fixed at 64. Larger chunks give more parallelism but reduce decay effect.
 
 For RoBERTa, `is_nested_encoder = True` means the output projection is 
 skipped (applied externally).
-```
 
 ---
