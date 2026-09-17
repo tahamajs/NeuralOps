@@ -63,6 +63,13 @@ FIELDS = [
     "timestamp",
 ]
 
+DEPRECATED_MODULES = {
+    "gated_delta_net": "bad_alloc during backprop on 6-layer encoders; chunked scan demands >15GB RAM",
+    "gated_deltanet_block": "same as gated_delta_net",
+    "hgrn2_gated_deltanet": "same as gated_delta_net",
+}
+
+
 
 def compute_t_test_p_value(accs1: list[float], accs2: list[float]) -> float:
     """Compute two-sample independent t-test p-value."""
@@ -1552,6 +1559,24 @@ def main():
     module_rank = args.rank if args.rank is not None else max(16, getattr(adapter, "head_dim", 16))
 
     for n, name in enumerate(names, 1):
+        if name in DEPRECATED_MODULES:
+            dep_reason = DEPRECATED_MODULES[name]
+            LOG.warning(">>> Skipping DEPRECATED module [%d/%d]: %s (%s)", n, len(names), name, dep_reason)
+            summary_dict[name] = {
+                "module_name": name,
+                "status": "DEPRECATED",
+                "accuracy_pct": 0.0,
+                "elapsed_s": 0.0,
+                "error": dep_reason,
+                "path": "deprecated",
+                "timestamp": datetime.now().isoformat(),
+            }
+            with path.open("w", newline="", encoding="utf8") as f:
+                w = csv.DictWriter(f, fieldnames=FIELDS)
+                w.writeheader()
+                for m_name in summary_dict:
+                    w.writerow(summary_dict[m_name])
+            continue
         if name in existing:
             LOG.info(">>> Skipping already PASSED module [%d/%d]: %s (%s, %.2f%%)",
                      n, len(names), name, summary_dict[name].get("status"), float(summary_dict[name].get("accuracy_pct", 0.0)))
