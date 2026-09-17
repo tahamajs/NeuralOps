@@ -86,7 +86,6 @@ class COMPOTLinear(nn.Module):
         x_a = F.linear(x_flat, self.A)
         out = F.linear(x_a, self.B, self.bias)
 
-        out = out 
         return out.view(*orig_shape[:-1], self.out_features)
 
     def get_weight(self) -> torch.Tensor:
