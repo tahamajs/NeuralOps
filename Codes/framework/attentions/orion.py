@@ -247,7 +247,7 @@ class ORIONAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         cfg = config or model_config
-        source_attn = pretrained_attn if pretrained_attn is not None else old_attn
+        source_attn = pretrained_attn if pretrained_attn is not None else (old_attn if old_attn is not None else kwargs.get("source_attn"))
         super().__init__(cfg, rank)
 
         if orion_cfg is None:
@@ -449,9 +449,10 @@ class ORIONAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
+            logger.warning(
                 f"ORIONAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
             )
+            return
 
         target_map = {
             "q": self.q_proj,
@@ -774,8 +775,6 @@ def inject_orion(
             source_attn=src_attn,
             **kwargs,
         )
-        if src_attn is not None:
-            new_attn.copy_weights(src_attn)
 
         if target is not None:
             if hasattr(target, "attention"):

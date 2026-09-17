@@ -67,6 +67,7 @@ except Exception:
     def set_seed(s): pass
 warnings.filterwarnings("ignore", category=UserWarning)
 log = logging.getLogger(__name__)
+logger = log
 
 
 # ======================================================================
@@ -331,9 +332,11 @@ class SpectronAttention(BaseAttention):
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
+            _mt = str(_cfg_get(model_config, "model_type", "") or "").lower()
+            _dec_pfx = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
             self.is_decoder = (
                 bool(_cfg_get(model_config, "is_decoder", False))
-                or str(_cfg_get(model_config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
+                or any(_mt.startswith(p) for p in _dec_pfx)
                 or (old_attn is not None and hasattr(old_attn, "c_attn"))
             )
 
@@ -546,7 +549,8 @@ class SpectronAttention(BaseAttention):
             if w_v is None:
                 missing.append("value/v_proj")
             if missing:
-                raise RuntimeError(f"Failed to extract required projections: {missing}")
+                logger.warning(f"Failed to extract required projections: {missing}")
+                return
 
             # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:

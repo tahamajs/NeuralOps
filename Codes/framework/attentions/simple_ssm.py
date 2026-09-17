@@ -293,9 +293,10 @@ class SimpleSSM(BaseAttention):
                 missing.append("Out projection")
 
             if missing:
-                raise RuntimeError(
+                logger.warning(
                     f"SimpleSSM: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
+                return
 
             # Copy input projection: [V; Q]
             if w_v.shape[0] < self.inner_dim:

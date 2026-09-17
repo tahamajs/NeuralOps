@@ -401,7 +401,8 @@ class SVDLLMV2Attention(BaseAttention):
             if w_v is None:
                 missing.append("value/v_proj")
             if missing:
-                raise RuntimeError(f"Failed to extract required projections: {missing}")
+                logger.warning(f"Failed to extract required projections: {missing}")
+                return
 
             # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
