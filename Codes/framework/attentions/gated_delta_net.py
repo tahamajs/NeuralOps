@@ -359,7 +359,8 @@ class GatedDeltaNet(BaseAttention):
         # Decoder & nested encoder detection
         model_type = getattr(config, "model_type", "").lower() if config is not None else ""
         is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False)))
-        if any(model_type.startswith(pfx) for pfx in ("gpt", "qwen", "llama", "mistral", "bloom", "opt", "falcon", "codegen")):
+        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm", "codegen")
+        if any(model_type.startswith(pfx) for pfx in decoder_prefixes):
             is_dec = True
         elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
