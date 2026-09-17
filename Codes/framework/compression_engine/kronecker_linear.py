@@ -128,6 +128,25 @@ class KroneckerLinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
+        self._cached_weight = None
+
+    def _invalidate_cache(self) -> None:
+        self._cached_weight = None
+
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        if self._cached_weight is None:
+            self._cached_weight = self.get_weight()
+        return self._cached_weight
+
+    def get_weight(self) -> torch.Tensor:
+        """Materialize full reconstructed weight matrix."""
+        if self.can_decompose:
+            return torch.kron(self.A, self.B)
+        else:
+            return torch.matmul(self.U, self.V)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Fast forward pass using efficient tensor contractions with optional LoRA adapter.
@@ -161,18 +180,6 @@ class KroneckerLinear(nn.Module):
             ).to(out.dtype)
 
         return out
-
-    @property
-    def weight(self) -> torch.Tensor:
-        """Reconstructed effective weight matrix for compatibility."""
-        return self.get_weight()
-
-    def get_weight(self) -> torch.Tensor:
-        """Materialize full reconstructed weight matrix."""
-        if self.can_decompose:
-            return torch.kron(self.A, self.B)
-        else:
-            return torch.matmul(self.U, self.V)
 
     def _fit_svd(
         self,
