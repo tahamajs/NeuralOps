@@ -254,27 +254,32 @@ class LSCCompressor(BaseCompressor):
         self.layer_errors = {}
         layer_details: Dict[str, Any] = {}
         seen_weights: Set[int] = set()
+        seen_param_ids: Set[int] = set()
 
         total_orig_params = sum(p.numel() for p in self.model.parameters())
         total_comp_params = 0
 
+        def _add_params(mod: nn.Module):
+            nonlocal total_comp_params
+            for p in mod.parameters(recurse=False):
+                if id(p) not in seen_param_ids:
+                    seen_param_ids.add(id(p))
+                    total_comp_params += p.numel()
+
         for name, module in list(self.model.named_modules()):
             if not self._is_target_module(name, module):
-                for p in module.parameters(recurse=False):
-                    total_comp_params += p.numel()
+                _add_params(module)
                 continue
 
             target_layer = getattr(module, "base_layer", module)
             if not hasattr(target_layer, "weight") or target_layer.weight is None:
-                for p in module.parameters(recurse=False):
-                    total_comp_params += p.numel()
+                _add_params(module)
                 continue
 
             w_id = id(target_layer.weight)
             if w_id in seen_weights:
                 self.skipped_layers.append(name)
-                for p in module.parameters(recurse=False):
-                    total_comp_params += p.numel()
+                _add_params(module)
                 continue
             seen_weights.add(w_id)
 
@@ -330,7 +335,7 @@ class LSCCompressor(BaseCompressor):
                         self.fallback_layers.append(name)
                         for p in module.parameters(recurse=False):
                             p.requires_grad = False
-                            total_comp_params += p.numel()
+                        _add_params(module)
                         continue
 
                 new_w = W_comp.t() if is_conv1d else W_comp
@@ -342,8 +347,7 @@ class LSCCompressor(BaseCompressor):
                 )
                 replace_module(self.model, name, new_layer)
                 self.compressed_layers.append(name)
-                for p in new_layer.parameters(recurse=False):
-                    total_comp_params += p.numel()
+                _add_params(new_layer)
                 layer_details[name] = {
                     "k_coeffs": k,
                     "rel_error": rel_err,
@@ -355,7 +359,7 @@ class LSCCompressor(BaseCompressor):
                 self.layer_errors[name] = 1.0
                 for p in module.parameters(recurse=False):
                     p.requires_grad = False
-                    total_comp_params += p.numel()
+                _add_params(module)
 
         # Post-compression forward sanity check
         forward_check_success = True
