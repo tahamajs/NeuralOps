@@ -100,5 +100,39 @@
     "avg_reconstruction_error": "",
     "elapsed_s": 124.47,
     "error": ""
+  },
+  {
+    "module": "svd",
+    "model": "distilbert",
+    "requested_rank": 384,
+    "actual_rank": "384",
+    "status": "PASS",
+    "accuracy_pct": 90.83,
+    "f1_score": 0.9103,
+    "num_compressed_layers": "6",
+    "num_fallback_layers": "0",
+    "total_params_before": "66955010",
+    "total_params_after": "67544834",
+    "param_ratio": 1.0088,
+    "avg_reconstruction_error": "",
+    "elapsed_s": 125.17,
+    "error": ""
+  },
+  {
+    "module": "svd",
+    "model": "roberta",
+    "requested_rank": 8,
+    "actual_rank": "8",
+    "status": "PASS_LOW",
+    "accuracy_pct": 50.34,
+    "f1_score": 0.5151,
+    "num_compressed_layers": "12",
+    "num_fallback_layers": "0",
+    "total_params_before": "124647170",
+    "total_params_after": "132913922",
+    "param_ratio": 1.0663,
+    "avg_reconstruction_error": "",
+    "elapsed_s": 169.38,
+    "error": "note: evaluated accuracy (50.34%) below chance threshold (56.00%)"
   }
 ]
