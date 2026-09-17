@@ -333,6 +333,7 @@ class SOAFusedAttention(BaseAttention):
 
         dropout_p = getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout)) if cfg else dropout
         self.dropout = nn.Dropout(dropout_p)
+        self.scale = 1.0 / math.sqrt(self.head_dim)
 
         if source_attn is not None:
             self.copy_weights(source_attn)
