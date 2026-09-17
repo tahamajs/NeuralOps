@@ -126,7 +126,7 @@ class MoDeGPTLoRALinear(nn.Module):
             out = out + self.scaling * F.linear(
                 F.linear(x.float(), self.lora_A), self.lora_B
             ).to(out.dtype)
-        return out * self.output_scale
+        return out
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:

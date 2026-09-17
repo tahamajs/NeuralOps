@@ -178,7 +178,9 @@ class RoutingAttention(BaseAttention):
 
         model_type = str(_cfg_get(config, "model_type", "")).lower()
         is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+        _mt = (model_type or '').lower()
+        _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
+        if any(_mt.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         if kwargs.get("is_causal", False):
             is_dec = True

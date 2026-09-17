@@ -191,7 +191,7 @@ class SVDLinear(nn.Module):
             out = out + lora_delta.to(out.dtype)
         if self.bias is not None:
             out = out + self.bias
-        return out * self.output_scale
+        return out
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         with torch.no_grad():

@@ -324,7 +324,7 @@ class DynamicSVDLinear(nn.Module):
         """
         intermediate = F.linear(x, self.V)
         out = F.linear(intermediate, self.U, self.bias)
-        return out * self.output_scale
+        return out
 
     @classmethod
     def from_linear(

@@ -96,7 +96,7 @@ class ReplacementBlock(nn.Module):
             if isinstance(hidden_states, tuple) and len(hidden_states) > 1:
                 return (out,) + hidden_states[1:]
             return (out,)
-        return out * self.output_scale
+        return out
 
 
 @COMPRESSOR_REGISTRY.register('replaceme')
