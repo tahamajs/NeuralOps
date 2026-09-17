@@ -618,13 +618,64 @@ class AdaptiveSVDAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("adaptive_svd_inject")
 def inject_adaptive_svd(
     layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[AdaptiveSVDAttention]:
+) -> Optional[Union[AdaptiveSVDAttention, nn.Module]]:
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # Whole model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_adaptive_svd(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # Single layer injection
+    if old_attn is None and target is not None:
+        for attr in ("attention", "self_attn", "self", "attn"):
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if cand is not None:
+                    if hasattr(cand, "self"):
+                        old_attn = cand.self
+                    else:
+                        old_attn = cand
+                    break
     if old_attn is None and layer is not None:
         for attr in ("attention", "self_attn", "self", "attn"):
             if hasattr(layer, attr):
@@ -636,12 +687,12 @@ def inject_adaptive_svd(
                         old_attn = cand
                     break
 
-    if model_config is None and layer is not None:
-        model_config = getattr(layer, "config", None)
+    if model_config is None and target is not None:
+        model_config = getattr(target, "config", None)
     if model_config is None and old_attn is not None:
         model_config = getattr(old_attn, "config", None)
     if model_config is None:
-        hidden_size = getattr(layer, "hidden_size", getattr(old_attn, "hidden_size", None))
+        hidden_size = getattr(target, "hidden_size", getattr(old_attn, "hidden_size", None))
         if not hidden_size and old_attn is not None:
             for attr in ("query", "q_proj", "q_lin", "c_attn"):
                 mod = getattr(old_attn, attr, None)
@@ -653,15 +704,15 @@ def inject_adaptive_svd(
         hidden_size = int(hidden_size or 768)
 
         num_heads = (
-            getattr(layer, "num_attention_heads", None)
-            or getattr(layer, "num_heads", None)
+            getattr(target, "num_attention_heads", None)
+            or getattr(target, "num_heads", None)
             or getattr(old_attn, "num_attention_heads", None)
             or getattr(old_attn, "num_heads", None)
             or getattr(old_attn, "n_heads", None)
             or 12
         )
         num_heads = int(num_heads or 12)
-        head_dim = getattr(layer, "head_dim", getattr(old_attn, "head_dim", hidden_size // max(1, num_heads)))
+        head_dim = getattr(target, "head_dim", getattr(old_attn, "head_dim", hidden_size // max(1, num_heads)))
         model_config = type(
             "Config",
             (),
@@ -704,27 +755,27 @@ def inject_adaptive_svd(
         except Exception:
             return None
 
-        if layer is not None:
-            if hasattr(layer, "attention"):
-                if hasattr(layer.attention, "self"):
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
                     test_module.is_nested_encoder = True
-                    layer.attention.self = test_module
+                    target.attention.self = test_module
                 else:
                     test_module.is_nested_encoder = False
-                    layer.attention = test_module
-            elif hasattr(layer, "self_attn"):
+                    target.attention = test_module
+            elif hasattr(target, "self_attn"):
                 test_module.is_nested_encoder = False
                 test_module.is_decoder = True
                 test_module.is_causal = True
-                layer.self_attn = test_module
-            elif hasattr(layer, "attn"):
+                target.self_attn = test_module
+            elif hasattr(target, "attn"):
                 test_module.is_nested_encoder = False
                 test_module.is_decoder = True
                 test_module.is_causal = True
-                layer.attn = test_module
-            elif hasattr(layer, "self"):
+                target.attn = test_module
+            elif hasattr(target, "self"):
                 test_module.is_nested_encoder = True
-                layer.self = test_module
+                target.self = test_module
 
         return test_module
     except Exception:
