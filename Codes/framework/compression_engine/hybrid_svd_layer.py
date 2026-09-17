@@ -41,9 +41,6 @@ class SVDSingleHead(nn.Module):
 
     def __init__(self, hidden_size: int, svd_rank: int = 20) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.hidden_size = hidden_size
         self.svd_rank = svd_rank
         self.register_buffer("pos_encoding", None, persistent=False)
@@ -73,7 +70,7 @@ class SVDSingleHead(nn.Module):
             weighted_U = U[:, :k] * S[:k].view(1, -1)
             output_flat = torch.matmul(weighted_U, Vh[:k, :])
             output = output_flat.reshape(batch_size, seq_len, self.hidden_size).to(dtype=hidden_states.dtype)
-            return output * self.output_scale
+            return output
         except Exception:
             return x
 
@@ -94,9 +91,6 @@ class DirectSVDEncoderLayer(nn.Module):
         lora_alpha: float = 1.0,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.config = config
         self.hidden_size = (
             hidden_size
@@ -151,7 +145,7 @@ class DirectSVDEncoderLayer(nn.Module):
 
         if output_attentions:
             return (output, None)
-        return output * self.output_scale
+        return output
 
 
 @COMPRESSOR_REGISTRY.register("hybrid_svd")
@@ -177,9 +171,6 @@ class HybridSVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="hybrid_svd", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = cfg or kwargs.get("comp_config", None)
         self.cfg = cfg
 
