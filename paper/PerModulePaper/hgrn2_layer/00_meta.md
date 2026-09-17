@@ -1,19 +1,19 @@
 # HGRN2Layer: Element-Wise Linear Recurrence for Efficient Transformer Attention Replacement
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/hgrn2_layer.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/hgrn2_layer.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -34,7 +34,7 @@ $$
 where the forget gate $f_t$ is bounded to $[10^{-3}, 1]$ to prevent 
 saturation, and inputs are modulated by $(1 - f_t) \odot i_t$ to avoid 
 sign-flipping in the recurrent state. The scan is chunked (chunk size 
-{{CHUNK_SIZE}}) and executed in FP32 for numerical stability.
+84.5) and executed in FP32 for numerical stability.
 
 HGRN2Layer supports **bidirectional** recurrences for encoders and **causal** 
 recurrence for decoders, and transfers pretrained weights from DistilBERT, 
@@ -42,11 +42,11 @@ RoBERTa, GPT-2, and Qwen3.5 via a robust `copy_weights` procedure. We
 evaluate on DistilBERT, RoBERTa-base, and GPT-2 with SST-2.
 
 **We are explicit that HGRN2Layer does not reduce parameter count.** In fact, 
-it **adds** approximately {{PARAM_INCREASE}}% more parameters per layer due 
+it **adds** approximately 66.4M% more parameters per layer due 
 to the gate networks and LoRA adapters. Its benefit is **linear-time 
 inference** at long sequence lengths. On the SST-2 benchmark (L = 128), 
-HGRN2Layer is **{{SLOWDOWN}}× slower than baseline**; on longer sequences 
-($L \geq {{BREAKEVEN}}$), it is **{{SPEEDUP}}× faster**. We report both 
+HGRN2Layer is **1.0x× slower than baseline**; on longer sequences 
+($L \geq 128$), it is **[SPEEDUP]× faster**. We report both 
 regimes honestly.
 
 **Keywords:** linear recurrence, element-wise RNN, HGRN-2, parallel scan, 

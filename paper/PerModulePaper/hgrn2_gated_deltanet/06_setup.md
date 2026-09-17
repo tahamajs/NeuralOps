@@ -25,13 +25,13 @@ Majority baseline: 50.92%. Max sequence: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `rank` | {{RANK}} |
-| `recovery_steps` | {{RECOVERY_STEPS}} |
-| `batch_size` | {{BATCH_SIZE}} |
-| `learning_rate` | {{LR}} |
-| `weight_decay` | {{WD}} |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `rank` | 32 |
+| `recovery_steps` | 50 |
+| `batch_size` | 32 |
+| `learning_rate` | 1e-4 |
+| `weight_decay` | 0.01 |
 | `precision` | FP16 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -73,16 +73,16 @@ Frozen:
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_hgrn2_gated_deltanet.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 6.9 Baselines
@@ -97,6 +97,6 @@ python run_all_4_hgrn2_gated_deltanet.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}). Multi-seed limitation stated in Section 10.
+Single seed (42). Multi-seed limitation stated in Section 10.
 
 ---

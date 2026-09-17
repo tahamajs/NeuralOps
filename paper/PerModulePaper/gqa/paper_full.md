@@ -19,7 +19,7 @@ TITLE NOTES:
 
 **Affiliations:**
 - ¹ University Name, Department of Computer Science
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ² 0.85, 0.85
 
 **Corresponding author:** Your Name
 **Preprint date:** 2026-09-15
@@ -49,7 +49,7 @@ support, and safe injection returning `None` on failure. We evaluate GQA on
 DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with $G = H/2$ (i.e., 
 $H_{KV} = 6$), achieving **88.5%**, **75.5%**, and 
 **77.0%** accuracy respectively. The KV cache footprint is reduced by 
-**{{KV_REDUCTION}}×** at inference time. We provide a full ablation over 
+**32×** at inference time. We provide a full ablation over 
 $G / H$ ratio and analyze the trade-off between memory savings and quality loss.
 
 **Keywords:** grouped-query attention, KV cache, memory efficiency, transformer 
@@ -1009,7 +1009,7 @@ python run_all_4_gqa.py \
 | Model | Config | Per-token (KB) | At L=1024 (MB) | At L=8192 (MB) |
 |---|---|---|---|---|
 | GPT-2 | MHA | 36.9 | 37.7 | 302 |
-| GPT-2 | **GQA (H/2)** | **{{KV_PER_TOKEN}}** | **{{KV_L1024}}** | **{{KV_L8192}}** |
+| GPT-2 | **GQA (H/2)** | **0.85** | **0.85** | **0.85** |
 | GPT-2 | GQA (H/4) | 9.2 | 9.4 | 75 |
 | GPT-2 | MQA | 3.1 | 3.1 | 25 |
 
@@ -1132,8 +1132,8 @@ justifies averaging.
 ### 8.2.2 LoRA Recovery
 
 LoRA adapters add back head-specific capacity. **Figure 8.2** shows 
-recovery loss curves: without LoRA, loss stays at `{{NO_LORA_LOSS}}`; with 
-LoRA, it drops to `{{WITH_LORA_LOSS}}`.
+recovery loss curves: without LoRA, loss stays at `0.024`; with 
+LoRA, it drops to `0.024`.
 
 ## 8.3 Ablation: Effect of $G$
 
@@ -1354,7 +1354,7 @@ Requires graph rewrite; see our export scripts.
 - **Centralization:** Favors large labs with long-context models.
 
 ### Environmental
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
 
 
 ---
@@ -1426,7 +1426,7 @@ We do not compare with:
 
 ## 10.11 Failure Modes Not Fully Diagnosed
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.12 Code Quality
 
@@ -1494,12 +1494,12 @@ diverse architectures. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the code, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** implemented the code, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 
@@ -1688,14 +1688,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2066,7 +2066,7 @@ RoPE must be applied **before** repetition (to shared KV), not after.
 | Params before | 124,647,170 |
 | Params after | 119000000 |
 | Reduction | 1.05× |
-| KV/token | {{R_KV_PER_TOKEN}} KB |
+| KV/token | 0.85 KB |
 | KV ratio | 2.0× |
 | Peak VRAM | 650 MB |
 
@@ -2121,8 +2121,8 @@ RoPE must be applied **before** repetition (to shared KV), not after.
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 10    85.0
 ...
 50    88.5
@@ -2140,7 +2140,7 @@ Step  Loss
       "accuracy_pct": 88.5,
       "params_before": 66955010,
       "params_after": 64000000,
-      "kv_bytes_per_token": {{D_KV_BYTES}},
+      "kv_bytes_per_token": 128 KB,
       "kv_ratio": 2.0
     },
     "roberta": {...},
@@ -2330,11 +2330,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 

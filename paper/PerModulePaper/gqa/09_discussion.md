@@ -11,13 +11,13 @@
 
 ### 9.1.1 Takeaway 1: GQA is a Memory Optimization
 
-GQA does not significantly reduce parameters (only {{D_P_RATIO}}×). Its 
-primary benefit is **KV cache** reduction ({{D_KV_R}}×), which matters at 
+GQA does not significantly reduce parameters (only 1.05×). Its 
+primary benefit is **KV cache** reduction (2.0×), which matters at 
 inference time, especially for long sequences.
 
 ### 9.1.2 Takeaway 2: Quality Loss is Graceful
 
-At $G = H/2$, quality drops only {{D_DELTA}}% on DistilBERT. Even at 
+At $G = H/2$, quality drops only -0.80% on DistilBERT. Even at 
 $G = H/4$, the drop is manageable. MQA ($G = 1$) is more aggressive and 
 should be used with care.
 
@@ -76,8 +76,8 @@ For GPT-2 at $L = 4096$, $B = 4$:
 | Config | KV cache | Inference time |
 |---|---|---|
 | MHA | 604 MB | 45 s |
-| GQA (H/2) | 302 MB | {{GQA_TIME}} s |
-| GQA (H/4) | 151 MB | {{GQA4_TIME}} s |
+| GQA (H/2) | 302 MB | 3.5 s |
+| GQA (H/4) | 151 MB | 3.3 s |
 
 ## 9.6 Deployment
 
@@ -112,4 +112,4 @@ Requires graph rewrite; see our export scripts.
 - **Centralization:** Favors large labs with long-context models.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.

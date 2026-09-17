@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `hgrn2_gated_deltanet/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module hgrn2_gated_deltanet`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

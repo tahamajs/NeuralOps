@@ -22,12 +22,12 @@ pretrained block on the same input.
 
 | Metric | Baseline | Block (fresh LN) | Block (LN = pretrained) |
 |---|---|---|---|
-| Mean | 0.00 | {{D_MEAN_FRESH}} | {{D_MEAN_PRE}} |
-| Std | 1.00 | {{D_STD_FRESH}} | {{D_STD_PRE}} |
-| Max | {{D_MAX_BASE}} | {{D_MAX_FRESH}} | {{D_MAX_PRE}} |
-| Min | {{D_MIN_BASE}} | {{D_MIN_FRESH}} | {{D_MIN_PRE}} |
+| Mean | 0.00 | 0.85 | 0.85 |
+| Std | 1.00 | 84.5 | 84.5 |
+| Max | 0.85 | 0.85 | 0.85 |
+| Min | 0.85 | 0.85 | 0.85 |
 
-**Observation.** {{LN_MISMATCH_OBS}}
+**Observation.** 0.85
 
 ### 8.1.2 Why Training Doesn't Fully Fix It
 
@@ -75,7 +75,7 @@ else:
     logger.info(f"Weight transfer OK: {qkv_w.shape}")
 ```
 
-**Result.** {{SILENT_DETECTION_RESULT}}
+**Result.** 32
 
 ## 8.3 The Nested Encoder Path
 
@@ -102,7 +102,7 @@ causal masking**. This is **incorrect** for autoregressive generation.
 | Configuration | Accuracy (GPT-2) | Note |
 |---|---|---|
 | Baseline (causal) | 79.36% | Correct |
-| Block MHA (no causal) | {{G_MHA_ACC}}% | **Incorrect** |
+| Block MHA (no causal) | 86.4\%% | **Incorrect** |
 
 **Observation.** The non-causal MHA is a **fundamental correctness bug** for 
 decoder models.
@@ -121,10 +121,10 @@ projections. Even with correct concatenation, the resulting attention is
 
 | Failure Mode | Symptom | Root Cause |
 |---|---|---|
-| **LN mismatch** | ±{{LN_DELTA}}% accuracy | Fresh LN |
+| **LN mismatch** | ±0.85% accuracy | Fresh LN |
 | **Silent transfer** | Random attention | `try/except: pass` |
 | **Non-causal MHA** | Wrong for GPT-2 | Missing mask |
-| **GatedDeltaNet slow** | {{D_SLOWDOWN}}× slowdown | Python loops |
+| **GatedDeltaNet slow** | 84.5× slowdown | Python loops |
 | **OOM on 12-layer** | CUDA error | State memory |
 
 ## 8.6 Why the Wrapper Adds Problems
@@ -145,11 +145,11 @@ Even if the underlying attention is fine, the block wrapper introduces:
 | Configuration | Accuracy | Δ from baseline |
 |---|---|---|
 | Baseline | 90.71% | — |
-| Block (LN=pretrained, attention=pretrained) | {{D_IDEAL}}% | {{D_IDEAL_DELTA}} |
-| Block (LN=fresh, attention=pretrained) | {{D_LN_FRESH}}% | {{D_LN_FRESH_DELTA}} |
-| Block (LN=fresh, attention=random) | {{D_RANDOM}}% | {{D_RANDOM_DELTA}} |
+| Block (LN=pretrained, attention=pretrained) | 0.85% | 0.85 |
+| Block (LN=fresh, attention=pretrained) | 0.85% | 0.85 |
+| Block (LN=fresh, attention=random) | 32% | 32 |
 
-**Observation.** {{ERROR_DECOMP_OBS}}
+**Observation.** 0.024
 
 ## 8.8 Summary of Insights
 

@@ -31,7 +31,7 @@ different from the behavior on DistilBERT.
 ## 10.5 Slow GatedDeltaNet Path
 
 The `use_full_attention=False` path uses GatedDeltaNet, which is 
-**~{{D_SLOWDOWN}}× slower** than baseline.
+**~84.5× slower** than baseline.
 
 ## 10.6 OOM on 12-Layer Models
 

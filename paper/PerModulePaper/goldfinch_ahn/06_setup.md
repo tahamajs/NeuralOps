@@ -30,8 +30,8 @@ Sequence length truncated to 128.
 
 | Parameter | Value |
 |---|---|
-| `window_size` | {{WINDOW_SIZE}} (default 64) |
-| `gate_init_bias` | {{GATE_BIAS}} (default 1.8) |
+| `window_size` | 128 (default 64) |
+| `gate_init_bias` | 0.0 (default 1.8) |
 | `output_gate` init | 2.0 |
 
 ## 6.4 Training Protocol
@@ -39,11 +39,11 @@ Sequence length truncated to 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Recovery steps | 50 |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -67,22 +67,22 @@ Sequence length truncated to 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_goldfinch_ahn.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --window_size {{WINDOW_SIZE}}
+    --recovery_steps 50 \
+    --lora_rank 8 \
+    --window_size 128
 ```
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ## 6.10 Ablations
 

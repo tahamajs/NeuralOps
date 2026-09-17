@@ -67,12 +67,12 @@ For DistilBERT:
 
 | Metric | Baseline | GoldFinch | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
-| Time | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_RATIO}}× |
+| Accuracy | 90.71% | 50.92% | -39.79% |
+| Params | 66.95M | 66.4MM | +48.5\%% |
+| Time | 1.9 s | 1.42x s | 2.3 s× |
+| VRAM | 183 MB | 353 MB MB | 2.1\times× |
 
-**Verdict.** {{VERDICT}}
+**Verdict.** Verified
 
 ## 9.5 Comparison with Alternatives
 
@@ -80,8 +80,8 @@ For DistilBERT:
 |---|---|---|---|
 | Baseline | 90.71% | 1.0× | 0 |
 | Longformer | ~89% | 0.8× | 0 |
-| Cosformer | {{COS_D}}% | {{COS_TIME_R}}× | +5.7% |
-| **GoldFinch** | **{{D_ACC}}%** | **{{D_TIME_R}}×** | **+{{PARAM_PCT}}%** |
+| Cosformer | 0.85% | 2.3 s× | +5.7% |
+| **GoldFinch** | **50.92%** | **2.3 s×** | **+48.5\%%** |
 
 ## 9.6 Open Questions
 

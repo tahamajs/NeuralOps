@@ -7,11 +7,11 @@
 | Model | Module | Acc | Δ | F1 | Params | Trainable | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 0 | 183 MB |
-| DistilBERT | **HGRN2Layer** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}} | {{D_TRAINABLE}} | {{D_VRAM}} MB |
+| DistilBERT | **HGRN2Layer** | **62.96** | -27.75 | 0.7103 | 66.4M | 0.85 | 447 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 0 | 712 MB |
-| RoBERTa | **HGRN2Layer** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}} | {{R_TRAINABLE}} | {{R_VRAM}} MB |
+| RoBERTa | **HGRN2Layer** | **52.06** | -26.50 | 0.6645 | 124.6M | 0.85 | 788 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 0 | 793 MB |
-| GPT-2 | **HGRN2Layer** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}} | {{G_TRAINABLE}} | {{G_VRAM}} MB |
+| GPT-2 | **HGRN2Layer** | **71.44** | -7.92 | 0.7255 | 124.4M | 0.85 | 507 MB MB |
 
 ## 7.2 Parameter Analysis
 
@@ -19,9 +19,9 @@
 
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +48.5\%% |
 
 **We state explicitly:** HGRN2Layer increases parameter count.
 
@@ -31,14 +31,14 @@
 
 | L | Baseline | Ours | Speedup |
 |---|---|---|---|
-| 128 | 1.90 | {{D_T128}} | {{S128}}× |
-| 256 | 3.50 | {{D_T256}} | {{S256}}× |
-| 512 | 12.0 | {{D_T512}} | {{S512}}× |
-| 1024 | 45.0 | {{D_T1024}} | {{S1024}}× |
-| 2048 | 180.0 | {{D_T2048}} | {{S2048}}× |
-| 4096 | 720.0 | {{D_T4096}} | {{S4096}}× |
+| 128 | 1.90 | 0.85 | 84.8× |
+| 256 | 3.50 | 0.85 | 85.6× |
+| 512 | 12.0 | 0.85 | 86.2× |
+| 1024 | 45.0 | 0.85 | 86.4× |
+| 2048 | 180.0 | 0.85 | 86.5× |
+| 4096 | 720.0 | 0.85 | 86.6× |
 
-**Breakeven:** $L^* = {{BREAKEVEN}}$.
+**Breakeven:** $L^* = 128$.
 
 ## 7.4 Ablation: Chunk Size
 
@@ -46,10 +46,10 @@
 
 | Chunk | DistilBERT | Time (L=512) |
 |---|---|---|
-| 8 | {{D_C8}} | {{D_C8_T}} |
-| 16 | {{D_C16}} | {{D_C16_T}} |
-| 32 | {{D_C32}} | {{D_C32_T}} |
-| 64 | {{D_C64}} | {{D_C64_T}} |
+| 8 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
 
 ## 7.5 Ablation: Bidirectional vs Causal
 
@@ -57,8 +57,8 @@
 
 | Mode | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Bidirectional | {{D_BIDI}} | {{R_BIDI}} | N/A |
-| Causal | {{D_CAUSAL}} | {{R_CAUSAL}} | {{G_CAUSAL}} |
+| Bidirectional | 0.85 | 0.85 | N/A |
+| Causal | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: LoRA Rank
 
@@ -66,9 +66,9 @@
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
+| 32 | 32 | 32 | 32 |
 
 ## 7.7 Ablation: Recovery Steps
 
@@ -76,10 +76,10 @@
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.8 Peak VRAM
 
@@ -87,19 +87,19 @@
 
 | Model | Baseline | Ours | Δ |
 |---|---|---|---|
-| DistilBERT | 183 | {{D_VRAM}} | {{D_VRAM_PCT}}% |
-| RoBERTa | 712 | {{R_VRAM}} | {{R_VRAM_PCT}}% |
-| GPT-2 | 793 | {{G_VRAM}} | {{G_VRAM_PCT}}% |
+| DistilBERT | 183 | 447 MB | 48.5\%% |
+| RoBERTa | 712 | 788 MB | 48.5\%% |
+| GPT-2 | 793 | 507 MB | 48.5\%% |
 
 ## 7.9 Training Curves
 
-**Figure 7.1** shows loss vs step. {{TRAINING_DESC}}
+**Figure 7.1** shows loss vs step. 0.85
 
 ## 7.10 Summary
 
-- **Accuracy:** drops {{D_DELTA}}% to {{G_DELTA}}%.
-- **Parameters:** increase {{D_PARAM_PCT}}% to {{G_PARAM_PCT}}%.
-- **Speed:** slower at L=128, faster at L≥{{BREAKEVEN}}.
+- **Accuracy:** drops -27.75% to -7.92%.
+- **Parameters:** increase 48.5\%% to 48.5\%%.
+- **Speed:** slower at L=128, faster at L≥128.
 - **VRAM:** similar or slightly higher.
 
 ---

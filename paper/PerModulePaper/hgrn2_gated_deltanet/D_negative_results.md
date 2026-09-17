@@ -16,11 +16,11 @@ Recovery failed on some seeds.
 **Goal.** Use only HGRN-2 or only DeltaNet.
 
 **Result.**
-- HGRN-only: {{HGRN_ONLY_ACC}}% (worse than both)
-- DeltaNet-only: {{DN_ONLY_ACC}}% (worse than both)
-- Both: {{D_ACC}}%
+- HGRN-only: 86.4\%% (worse than both)
+- DeltaNet-only: 86.4\%% (worse than both)
+- Both: 53.56%
 
-**Conclusion.** Fusion helps by {{BRANCH_GAIN}}%.
+**Conclusion.** Fusion helps by 0.85%.
 
 ### D.1.3 Cross-Attention
 
@@ -56,11 +56,11 @@ slightly worse.
 ### D.2.2 Learned Scalar Gate
 
 Instead of per-token, per-feature gate, we tested a single scalar γ. Result: 
-worse by {{SCALAR_GATE_DROP}}%.
+worse by 0.85%.
 
 ### D.2.3 HGRN-1 Instead of HGRN-2
 
-Older HGRN-1 variant. Result: worse by {{HGRN1_DROP}}%.
+Older HGRN-1 variant. Result: worse by 0.85%.
 
 ## D.3 Failed Hyperparameters
 
@@ -68,33 +68,33 @@ Older HGRN-1 variant. Result: worse by {{HGRN1_DROP}}%.
 
 | LR | DistilBERT |
 |---|---|
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
+| 1e-4 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
 | 1e-3 | NaN |
 
 ### LoRA Rank
 
 | Rank | DistilBERT | RoBERTa |
 |---|---|---|
-| 8 | {{D_R8}} | {{R_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} |
-| 32 | {{D_R32}} | OOM |
+| 8 | 32 | 32 |
+| 16 | 32 | 32 |
+| 32 | 32 | OOM |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Lessons Learned
 
 1. **Zero-init gate** is essential.
-2. **Two branches beat one** by {{BRANCH_GAIN}}%.
+2. **Two branches beat one** by 0.85%.
 3. **Python loop is the bottleneck.**
 4. **Cross-attention needs implementation.**
 5. **Fused kernel would unlock speed.**

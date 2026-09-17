@@ -35,7 +35,7 @@ long-memory linear projection, which contributes nothing.
 
 ## 10.6 Slower than Baseline
 
-~{{D_TIME_R}}× slowdown from extra kernel launches.
+~2.3 s× slowdown from extra kernel launches.
 
 ## 10.7 Task Coverage
 

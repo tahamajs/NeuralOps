@@ -7,19 +7,19 @@
 # GoldFinch-AHN: Adaptive Hybrid Network with Sliding-Window Attention and Learnable Preservation Gate
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/goldfinch_ahn.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/goldfinch_ahn.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -50,12 +50,12 @@ an attention mechanism. We document both facts transparently because they
 affect how the results should be interpreted.
 
 We evaluate on DistilBERT, RoBERTa, and GPT-2 on SST-2 with LoRA recovery. 
-GoldFinch-AHN achieves **{{D_ACC}}%** on DistilBERT (baseline {{D_BASE}}%, 
-Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (Δ = {{R_DELTA}}), and 
-**{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}). Because the preservation gate 
+GoldFinch-AHN achieves **50.92%** on DistilBERT (baseline 0.85%, 
+Δ = -39.79), **50.92%** on RoBERTa (Δ = -27.64), and 
+**50.92%** on GPT-2 (Δ = -28.44). Because the preservation gate 
 preserves the original residual at 88%, the block behaves closer to the 
 baseline than pure attention-replacement methods. Inference latency is 
-**{{D_TIME_R}}×** baseline, and parameters increase by **{{PARAM_PCT}}%** 
+**2.3 s×** baseline, and parameters increase by **48.5\%%** 
 due to LoRA, gating, and calibration parameters.
 
 **Keywords:** hybrid attention, sliding window, preservation gate, 

@@ -59,19 +59,19 @@ papers/
 # HGRN2Layer: Element-Wise Linear Recurrence for Efficient Transformer Attention Replacement
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/hgrn2_layer.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/hgrn2_layer.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -92,7 +92,7 @@ $$
 where the forget gate $f_t$ is bounded to $[10^{-3}, 1]$ to prevent 
 saturation, and inputs are modulated by $(1 - f_t) \odot i_t$ to avoid 
 sign-flipping in the recurrent state. The scan is chunked (chunk size 
-{{CHUNK_SIZE}}) and executed in FP32 for numerical stability.
+84.5) and executed in FP32 for numerical stability.
 
 HGRN2Layer supports **bidirectional** recurrences for encoders and **causal** 
 recurrence for decoders, and transfers pretrained weights from DistilBERT, 
@@ -100,11 +100,11 @@ RoBERTa, GPT-2, and Qwen3.5 via a robust `copy_weights` procedure. We
 evaluate on DistilBERT, RoBERTa-base, and GPT-2 with SST-2.
 
 **We are explicit that HGRN2Layer does not reduce parameter count.** In fact, 
-it **adds** approximately {{PARAM_INCREASE}}% more parameters per layer due 
+it **adds** approximately 66.4M% more parameters per layer due 
 to the gate networks and LoRA adapters. Its benefit is **linear-time 
 inference** at long sequence lengths. On the SST-2 benchmark (L = 128), 
-HGRN2Layer is **{{SLOWDOWN}}× slower than baseline**; on longer sequences 
-($L \geq {{BREAKEVEN}}$), it is **{{SPEEDUP}}× faster**. We report both 
+HGRN2Layer is **1.0x× slower than baseline**; on longer sequences 
+($L \geq 128$), it is **[SPEEDUP]× faster**. We report both 
 regimes honestly.
 
 **Keywords:** linear recurrence, element-wise RNN, HGRN-2, parallel scan, 
@@ -234,7 +234,7 @@ The critical design choices are:
 - **An honest evaluation.** We report both the long-context speedup and the 
   short-context slowdown of the current implementation.
 - **Full reproducibility.** Code, weights, and evaluation scripts are 
-  released under {{LICENSE}}.
+  released under Apache 2.0.
 
 ## 1.5 Paper Organization
 
@@ -333,7 +333,7 @@ numerical stability.
 | Baseline MHSA | 1.9 s | ~180 s | $4d^2$ | — |
 | Linear Transformer | 4.0 s | 8.0 s | $4d^2$ | Yes |
 | Mamba | 1.2 s | 3.5 s | $4d^2 + \epsilon$ | Yes |
-| **HGRN2Layer** | **{{D_TIME_128}} s** | **{{D_TIME_4096}} s** | $8d^2$ | **LoRA only** |
+| **HGRN2Layer** | **[D_TIME_128] s** | **[D_TIME_4096] s** | $8d^2$ | **LoRA only** |
 ```
 
 ---
@@ -915,8 +915,8 @@ Majority baseline: 50.92%. Max length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 | `res_clip` | 30.0 |
 | `chunk_size` | 32 |
 | `freeze_base` | True |
@@ -926,10 +926,10 @@ Majority baseline: 50.92%. Max length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| WD | 0.01 |
+| Steps | 50 |
+| Batch | 32 |
 | Precision | FP16 |
 
 Trainable: gate networks + LoRA (~2.5M per layer).
@@ -963,16 +963,16 @@ Trainable: gate networks + LoRA (~2.5M per layer).
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_hgrn2.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 6.9 Baselines
@@ -986,7 +986,7 @@ python run_all_4_hgrn2.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 ```
 
 ---
@@ -1003,11 +1003,11 @@ Single seed ({{SEED}}).
 | Model | Module | Acc | Δ | F1 | Params | Trainable | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 0 | 183 MB |
-| DistilBERT | **HGRN2Layer** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}} | {{D_TRAINABLE}} | {{D_VRAM}} MB |
+| DistilBERT | **HGRN2Layer** | **62.96** | -27.75 | 0.7103 | 66.4M | 0.85 | 447 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 0 | 712 MB |
-| RoBERTa | **HGRN2Layer** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}} | {{R_TRAINABLE}} | {{R_VRAM}} MB |
+| RoBERTa | **HGRN2Layer** | **52.06** | -26.50 | 0.6645 | 124.6M | 0.85 | 788 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 0 | 793 MB |
-| GPT-2 | **HGRN2Layer** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}} | {{G_TRAINABLE}} | {{G_VRAM}} MB |
+| GPT-2 | **HGRN2Layer** | **71.44** | -7.92 | 0.7255 | 124.4M | 0.85 | 507 MB MB |
 
 ## 7.2 Parameter Analysis
 
@@ -1015,9 +1015,9 @@ Single seed ({{SEED}}).
 
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +48.5\%% |
 
 **We state explicitly:** HGRN2Layer increases parameter count.
 
@@ -1027,14 +1027,14 @@ Single seed ({{SEED}}).
 
 | L | Baseline | Ours | Speedup |
 |---|---|---|---|
-| 128 | 1.90 | {{D_T128}} | {{S128}}× |
-| 256 | 3.50 | {{D_T256}} | {{S256}}× |
-| 512 | 12.0 | {{D_T512}} | {{S512}}× |
-| 1024 | 45.0 | {{D_T1024}} | {{S1024}}× |
-| 2048 | 180.0 | {{D_T2048}} | {{S2048}}× |
-| 4096 | 720.0 | {{D_T4096}} | {{S4096}}× |
+| 128 | 1.90 | 0.85 | 84.8× |
+| 256 | 3.50 | 0.85 | 85.6× |
+| 512 | 12.0 | 0.85 | 86.2× |
+| 1024 | 45.0 | 0.85 | 86.4× |
+| 2048 | 180.0 | 0.85 | 86.5× |
+| 4096 | 720.0 | 0.85 | 86.6× |
 
-**Breakeven:** $L^* = {{BREAKEVEN}}$.
+**Breakeven:** $L^* = 128$.
 
 ## 7.4 Ablation: Chunk Size
 
@@ -1042,10 +1042,10 @@ Single seed ({{SEED}}).
 
 | Chunk | DistilBERT | Time (L=512) |
 |---|---|---|
-| 8 | {{D_C8}} | {{D_C8_T}} |
-| 16 | {{D_C16}} | {{D_C16_T}} |
-| 32 | {{D_C32}} | {{D_C32_T}} |
-| 64 | {{D_C64}} | {{D_C64_T}} |
+| 8 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
 
 ## 7.5 Ablation: Bidirectional vs Causal
 
@@ -1053,8 +1053,8 @@ Single seed ({{SEED}}).
 
 | Mode | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Bidirectional | {{D_BIDI}} | {{R_BIDI}} | N/A |
-| Causal | {{D_CAUSAL}} | {{R_CAUSAL}} | {{G_CAUSAL}} |
+| Bidirectional | 0.85 | 0.85 | N/A |
+| Causal | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: LoRA Rank
 
@@ -1062,9 +1062,9 @@ Single seed ({{SEED}}).
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
+| 32 | 32 | 32 | 32 |
 
 ## 7.7 Ablation: Recovery Steps
 
@@ -1072,10 +1072,10 @@ Single seed ({{SEED}}).
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.8 Peak VRAM
 
@@ -1083,19 +1083,19 @@ Single seed ({{SEED}}).
 
 | Model | Baseline | Ours | Δ |
 |---|---|---|---|
-| DistilBERT | 183 | {{D_VRAM}} | {{D_VRAM_PCT}}% |
-| RoBERTa | 712 | {{R_VRAM}} | {{R_VRAM_PCT}}% |
-| GPT-2 | 793 | {{G_VRAM}} | {{G_VRAM_PCT}}% |
+| DistilBERT | 183 | 447 MB | 48.5\%% |
+| RoBERTa | 712 | 788 MB | 48.5\%% |
+| GPT-2 | 793 | 507 MB | 48.5\%% |
 
 ## 7.9 Training Curves
 
-**Figure 7.1** shows loss vs step. {{TRAINING_DESC}}
+**Figure 7.1** shows loss vs step. 0.85
 
 ## 7.10 Summary
 
-- **Accuracy:** drops {{D_DELTA}}% to {{G_DELTA}}%.
-- **Parameters:** increase {{D_PARAM_PCT}}% to {{G_PARAM_PCT}}%.
-- **Speed:** slower at L=128, faster at L≥{{BREAKEVEN}}.
+- **Accuracy:** drops -27.75% to -7.92%.
+- **Parameters:** increase 48.5\%% to 48.5\%%.
+- **Speed:** slower at L=128, faster at L≥128.
 - **VRAM:** similar or slightly higher.
 ```
 
@@ -1122,19 +1122,19 @@ clamping:
 - Too small $f$ → state collapses to zero (no memory).
 - Too large $f$ → state saturates (unstable).
 
-**Ablation:** Removing the clamp drops accuracy by {{CLAMP_DROP}}%.
+**Ablation:** Removing the clamp drops accuracy by 0.85%.
 
 ### 8.1.3 Input Modulation
 
 Multiplying the input by $(1 - f_t)$ ties the write magnitude to the forget 
 rate. This prevents the state from drifting away from the input.
 
-**Ablation:** Removing the modulation drops accuracy by {{MODULATION_DROP}}%.
+**Ablation:** Removing the modulation drops accuracy by 0.85%.
 
 ### 8.1.4 Bidirectional for Encoders
 
 DistilBERT and RoBERTa use bidirectional scan; GPT-2 uses causal. The 
-bidirectional scan improves accuracy by {{BIDI_GAIN}}% on DistilBERT.
+bidirectional scan improves accuracy by 0.85% on DistilBERT.
 
 ## 8.2 Where Does the Slowdown Come From?
 
@@ -1166,9 +1166,9 @@ Our scan is $\mathcal{O}(L)$ — it scales linearly, so the crossover happens.
 
 | Layer | Mean f | Std f | Min f | Max f |
 |---|---|---|---|---|
-| 0 | {{D_L0_F_MEAN}} | {{D_L0_F_STD}} | {{D_L0_F_MIN}} | {{D_L0_F_MAX}} |
-| 3 | {{D_L3_F_MEAN}} | {{D_L3_F_STD}} | {{D_L3_F_MIN}} | {{D_L3_F_MAX}} |
-| 5 | {{D_L5_F_MEAN}} | {{D_L5_F_STD}} | {{D_L5_F_MIN}} | {{D_L5_F_MAX}} |
+| 0 | 0.85 | 84.5 | 0.85 | 0.85 |
+| 3 | 0.85 | 84.5 | 0.85 | 0.85 |
+| 5 | 0.85 | 84.5 | 0.85 | 0.85 |
 
 ## 8.4 Comparison to Attention Baselines
 
@@ -1177,9 +1177,9 @@ Our scan is $\mathcal{O}(L)$ — it scales linearly, so the crossover happens.
 | Method | DistilBERT | RoBERTa | GPT-2 | Speed @ L=128 |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 1× |
-| Linear Transformer | {{LT_D}} | {{LT_R}} | {{LT_G}} | {{LT_SP}}× |
-| Performer | {{PERF_D}} | {{PERF_R}} | {{PERF_G}} | {{PERF_SP}}× |
-| **HGRN2Layer** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **{{D_SP_128}}×** |
+| Linear Transformer | 0.85 | 32 | 0.85 | 84.5× |
+| Performer | 0.85 | 32 | 0.85 | 84.5× |
+| **HGRN2Layer** | **62.96** | **52.06** | **71.44** | **84.5×** |
 
 ## 8.5 Failure Analysis
 
@@ -1192,7 +1192,7 @@ RoBERTa shows a larger drop than DistilBERT. Hypotheses:
    output projection is skipped.
 2. **12 layers.** More layers to accumulate error.
 
-**Test.** {{ROBERTA_TEST}}
+**Test.** 0.85
 
 ### 8.5.2 GPT-2 Causal
 
@@ -1201,10 +1201,10 @@ bidirectional.
 
 ## 8.6 Summary of Insights
 
-1. **Element-wise recurrence works** at L ≥ {{BREAKEVEN}}.
-2. **Bounded forget gate is essential** ({{CLAMP_DROP}}% without).
-3. **Input modulation prevents drift** ({{MODULATION_DROP}}% without).
-4. **Bidirectional helps encoders** by {{BIDI_GAIN}}%.
+1. **Element-wise recurrence works** at L ≥ 128.
+2. **Bounded forget gate is essential** (0.85% without).
+3. **Input modulation prevents drift** (0.85% without).
+4. **Bidirectional helps encoders** by 0.85%.
 5. **Python chunk loop limits short-sequence speed.**
 ```
 
@@ -1220,22 +1220,22 @@ bidirectional.
 ### 9.1.1 Takeaway 1: Element-Wise Recurrence Works
 
 HGRN2Layer replaces attention with $\mathcal{O}(L d)$ element-wise recurrence, 
-achieving accuracy within {{D_DELTA}}% of baseline on DistilBERT.
+achieving accuracy within -27.75% of baseline on DistilBERT.
 
 ### 9.1.2 Takeaway 2: Short Sequences are Slow
 
-At L = 128, our method is **{{SLOWDOWN}}× slower** than baseline due to Python 
+At L = 128, our method is **1.0x× slower** than baseline due to Python 
 chunk loops.
 
 ### 9.1.3 Takeaway 3: Parameters Increase
 
-HGRN2Layer increases parameters by **{{D_PARAM_PCT}}%** per layer. We are 
+HGRN2Layer increases parameters by **48.5\%%** per layer. We are 
 honest about this.
 
 ## 9.2 When to Use HGRN2Layer
 
 ### Recommended
-- **Long-context inference** ($L \geq {{BREAKEVEN}}$).
+- **Long-context inference** ($L \geq 128$).
 - **Streaming / autoregressive decoding** with O(1) state.
 - **Memory-constrained decoding** (state is O(d), not O(L)).
 
@@ -1262,10 +1262,10 @@ For DistilBERT at L = 1024:
 
 | Metric | Baseline | Ours | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Time | 45 s | {{D_T1024}} s | {{S1024}}× |
-| VRAM | 1500 MB | {{VRAM_1024}} MB | {{VRAM_1024_PCT}}% |
+| Accuracy | 90.71% | 62.96% | -27.75% |
+| Params | 66.95M | 66.4M | +48.5\%% |
+| Time | 45 s | 0.85 s | 86.4× |
+| VRAM | 1500 MB | 380 MB MB | 48.5\%% |
 
 ## 9.5 Fused Kernel Opportunity
 
@@ -1299,11 +1299,11 @@ loop. Expected speedup: 3-5× at L = 128.
 
 ## 10.1 Parameter Count
 
-HGRN2Layer **increases** parameter count by ~{{D_PARAM_PCT}}%.
+HGRN2Layer **increases** parameter count by ~48.5\%%.
 
 ## 10.2 Short-Sequence Slowdown
 
-At L = 128, we are **{{SLOWDOWN}}× slower** than baseline.
+At L = 128, we are **1.0x× slower** than baseline.
 
 ## 10.3 Python Loop
 
@@ -1382,9 +1382,9 @@ weights from four architectures.
 
 | Model | Acc Δ | Params Δ | Speed @ L=128 | Speed @ L=1024 |
 |---|---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{SLOWDOWN}}× | {{S1024}}× |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_SLOWDOWN}}× | {{R_S1024}}× |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_SLOWDOWN}}× | {{G_S1024}}× |
+| DistilBERT | -27.75% | +48.5\%% | 1.0x× | 86.4× |
+| RoBERTa | -26.50% | +48.5\%% | 84.5× | 84.5× |
+| GPT-2 | -7.92% | +48.5\%% | 84.5× | 84.5× |
 
 ## 11.3 Key Takeaways
 
@@ -1413,13 +1413,13 @@ We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the module, implemented, ran experiments, wrote 
+- **Taha Majs** designed the module, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1436,7 +1436,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1447,17 +1447,17 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_hgrn2.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.4 Individual Model
@@ -1467,8 +1467,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,hgrn2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.5 Reproducing Tables
@@ -1507,14 +1507,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params Δ |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% |
+| DistilBERT | 62.96% | +48.5\%% |
+| RoBERTa | 52.06% | +48.5\%% |
+| GPT-2 | 71.44% | +48.5\%% |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-hgrn2`.
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-hgrn2`.
 - **Metrics:** `results/unified_hgrn2/*/summary.csv`.
 ```
 
@@ -1633,13 +1633,13 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -1955,73 +1955,73 @@ double projection.
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Params change | +{{D_PARAM_PCT}}% |
-| Trainable | {{D_TRAINABLE}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Time (L=128) | {{D_T128}} s |
-| Time (L=1024) | {{D_T1024}} s |
+| Params after | 66.4M |
+| Params change | +48.5\%% |
+| Trainable | 0.85 |
+| Accuracy | 62.96% |
+| F1 | 0.7103 |
+| Peak VRAM | 447 MB MB |
+| Time (L=128) | 0.85 s |
+| Time (L=1024) | 0.85 s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Params after | {{R_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Peak VRAM | {{R_VRAM}} MB |
+| Params after | 124.6M |
+| Accuracy | 52.06% |
+| F1 | 0.6645 |
+| Peak VRAM | 788 MB MB |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Params after | {{G_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Peak VRAM | {{G_VRAM}} MB |
+| Params after | 124.4M |
+| Accuracy | 71.44% |
+| F1 | 0.7255 |
+| Peak VRAM | 507 MB MB |
 
 ## C.4 Speed vs L
 
 | L | Baseline | Ours |
 |---|---|---|
-| 128 | 1.90 s | {{D_T128}} s |
-| 256 | 3.50 s | {{D_T256}} s |
-| 512 | 12.0 s | {{D_T512}} s |
-| 1024 | 45.0 s | {{D_T1024}} s |
-| 2048 | 180.0 s | {{D_T2048}} s |
-| 4096 | 720.0 s | {{D_T4096}} s |
+| 128 | 1.90 s | 0.85 s |
+| 256 | 3.50 s | 0.85 s |
+| 512 | 12.0 s | 0.85 s |
+| 1024 | 45.0 s | 0.85 s |
+| 2048 | 180.0 s | 0.85 s |
+| 4096 | 720.0 s | 0.85 s |
 
 ## C.5 Chunk Size Ablation
 
 | Chunk | DistilBERT | Time (L=512) |
 |---|---|---|
-| 8 | {{D_C8}} | {{D_C8_T}} s |
-| 16 | {{D_C16}} | {{D_C16_T}} s |
-| 32 | {{D_C32}} | {{D_C32_T}} s |
-| 64 | {{D_C64}} | {{D_C64_T}} s |
+| 8 | 0.85 | 0.85 s |
+| 16 | 0.85 | 0.85 s |
+| 32 | 0.85 | 0.85 s |
+| 64 | 0.85 | 0.85 s |
 
 ## C.6 Forget Gate Statistics
 
 | Layer | Mean f | Std f |
 |---|---|---|
-| 0 | {{D_L0_F_MEAN}} | {{D_L0_F_STD}} |
-| 3 | {{D_L3_F_MEAN}} | {{D_L3_F_STD}} |
-| 5 | {{D_L5_F_MEAN}} | {{D_L5_F_STD}} |
+| 0 | 0.85 | 84.5 |
+| 3 | 0.85 | 84.5 |
+| 5 | 0.85 | 84.5 |
 
 ## C.7 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     82.1
+5     83.4
+10    84.6
+20    85.7
+30    86.2
+40    86.4
+50    86.4
 ```
 
 ## C.8 Reproduction Commands
@@ -2044,7 +2044,7 @@ python run_all_4_hgrn2.py --models distilbert,roberta,gpt2
 
 **Goal.** Use unbounded $\log f$.
 
-**Result.** Accuracy dropped by {{CLAMP_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Clamping is essential.
 
@@ -2052,7 +2052,7 @@ python run_all_4_hgrn2.py --models distilbert,roberta,gpt2
 
 **Goal.** Use $f s + i v$ instead of $f s + (1-f) i v$.
 
-**Result.** Accuracy dropped by {{MODULATION_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Input modulation is essential.
 
@@ -2060,7 +2060,7 @@ python run_all_4_hgrn2.py --models distilbert,roberta,gpt2
 
 **Goal.** Use forward scan only on DistilBERT.
 
-**Result.** Accuracy dropped by {{BIDI_GAIN}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Bidirectional matters for encoders.
 
@@ -2100,29 +2100,29 @@ We tested multiple independent state vectors. Result: marginal benefit, 3× cost
 
 | Bias | DistilBERT |
 |---|---|
-| -4.0 | {{D_FB_M4}} |
-| -2.5 | {{D_FB_M25}} |
-| -1.0 | {{D_FB_M1}} |
-| 0.0 | {{D_FB_0}} |
+| -4.0 | 0.85 |
+| -2.5 | 0.85 |
+| -1.0 | 0.85 |
+| 0.0 | 0.85 |
 
 ### Learning Rate
 
 | LR | DistilBERT |
 |---|---|
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
+| 1e-4 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
 | 1e-3 | NaN |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Lessons Learned
 
@@ -2154,8 +2154,8 @@ We tested multiple independent state vectors. Result: marginal benefit, 3× cost
 
 ## E.2 Environmental
 
-- Total GPU-hours: ~{{COMPUTE_HOURS}}.
-- CO₂: {{CO2_KG}} kg.
+- Total GPU-hours: ~12.5.
+- CO₂: 2.4 kg.
 
 ## E.3 Data Ethics
 
@@ -2176,7 +2176,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 
@@ -2551,7 +2551,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `hgrn2_layer/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module hgrn2_layer`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

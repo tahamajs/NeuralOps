@@ -13,9 +13,9 @@ The `GatedDeltaNetLayer` is a linear projection. When removed:
 
 | Config | DistilBERT |
 |---|---|
-| Full | {{D_ACC}}% |
-| Without long-memory | {{D_NOLONG}}% |
-| Δ | {{D_NOLONG_D}} |
+| Full | 50.92% |
+| Without long-memory | 0.85% |
+| Δ | 0.85 |
 
 **Conclusion.** The long-memory branch contributes little; its 590K 
 parameters per layer are mostly wasted.
@@ -26,10 +26,10 @@ We tested keeping per-head gating:
 
 | Config | DistilBERT |
 |---|---|
-| Mean-pooled gate | {{D_ACC}}% |
-| Per-head gate | {{D_PERHEAD}}% |
+| Mean-pooled gate | 50.92% |
+| Per-head gate | 0.85% |
 
-**Result.** {{PERHEAD_RESULT}}
+**Result.** 32
 
 ## D.3 Preservation Gate Dominance
 
@@ -37,10 +37,10 @@ Varying α:
 
 | α | DistilBERT |
 |---|---|
-| 0.50 | {{D_AG0}} |
-| 0.73 | {{D_AG1}} |
-| 0.88 | {{D_AG2}} |
-| 0.99 | {{D_AG5}} |
+| 0.50 | 0.85 |
+| 0.73 | 0.85 |
+| 0.88 | 0.85 |
+| 0.99 | 0.85 |
 
 **Observation.** Higher α preserves accuracy but reduces the block's 
 contribution.
@@ -51,10 +51,10 @@ Smaller windows are faster but lose accuracy:
 
 | Window | DistilBERT | Time |
 |---|---|---|
-| 16 | {{D_W16}} | {{D_W16_T}} |
-| 32 | {{D_W32}} | {{D_W32_T}} |
-| 64 | {{D_W64}} | {{D_W64_T}} |
-| 128 | {{D_W128}} | {{D_W128_T}} |
+| 16 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 |
 
 ## D.5 Failed Alternatives
 

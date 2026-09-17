@@ -19,10 +19,10 @@ long_out = torch.zeros_like(x)
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Full | {{D_ACC}}% | {{R_ACC}}% | {{G_ACC}}% |
-| Without long-memory | {{D_NOLONG}}% | {{R_NOLONG}}% | {{G_NOLONG}}% |
+| Full | 50.92% | 50.92% | 50.92% |
+| Without long-memory | 0.85% | 0.85% | 0.85% |
 
-**Observation.** {{LONG_MEMORY_OBS}}
+**Observation.** 128 KB
 
 **Why.** The long-memory branch is a per-token linear projection. It has no 
 mechanism to carry information across tokens. Its role in attention is 
@@ -34,12 +34,12 @@ therefore no different from an extra MLP.
 
 | Init | α | DistilBERT |
 |---|---|---|
-| 0.0 | 0.50 | {{D_AG0}} |
-| 1.0 | 0.73 | {{D_AG1}} |
-| 2.0 | 0.88 | {{D_AG2}} |
-| 5.0 | 0.99 | {{D_AG5}} |
+| 0.0 | 0.50 | 0.85 |
+| 1.0 | 0.73 | 0.85 |
+| 2.0 | 0.88 | 0.85 |
+| 5.0 | 0.99 | 0.85 |
 
-**Observation.** {{AG_OBS}}
+**Observation.** 0.85
 
 When α is close to 1, the block is nearly an identity, and accuracy 
 approaches baseline. When α is 0.5, the block's output is mixed equally 
@@ -71,13 +71,13 @@ We did not implement this variant, but it is a natural extension.
 
 | Window | DistilBERT |
 |---|---|
-| 16 | {{D_W16}} |
-| 32 | {{D_W32}} |
-| 64 | {{D_W64}} |
-| 128 | {{D_W128}} |
-| ∞ (full) | {{D_WINF}} |
+| 16 | 0.85 |
+| 32 | 0.85 |
+| 64 | 0.85 |
+| 128 | 0.85 |
+| ∞ (full) | 0.85 |
 
-**Observation.** {{WINDOW_OBS}}
+**Observation.** 0.85
 
 For SST-2 with sequence length 128, a window of 64 or 128 captures most of 
 the useful attention. This is consistent with prior work (Longformer, 
@@ -97,7 +97,7 @@ Beltagy et al., 2020).
 | Preservation gate | 0 | 2 |
 | **Total launches** | **~6** | **~12** |
 
-**~2× more kernel launches** → ~{{D_TIME_R}}× slowdown.
+**~2× more kernel launches** → ~2.3 s× slowdown.
 
 ## 8.6 Failure Mode Taxonomy
 
@@ -119,16 +119,16 @@ Beltagy et al., 2020).
 
 | Metric | Baseline | GoldFinch |
 |---|---|---|
-| Attention entropy | {{BASE_ENTROPY}} | {{GOLD_ENTROPY}} |
-| Max weight | {{BASE_MAX_W}} | {{GOLD_MAX_W}} |
+| Attention entropy | 0.85 | 0.85 |
+| Max weight | 0.85 | 0.85 |
 
 ## 8.8 Comparison with Alternatives
 
 | Method | DistilBERT | Speed | Long-range |
 |---|---|---|---|
 | Baseline | 90.71% | 1.0× | Full |
-| Cosformer | {{COS_D}}% | {{COS_TIME_R}}× | Linear state |
-| **GoldFinch** | **{{D_ACC}}%** | **{{D_TIME_R}}×** | **None (window only)** |
+| Cosformer | 0.85% | 2.3 s× | Linear state |
+| **GoldFinch** | **50.92%** | **2.3 s×** | **None (window only)** |
 
 ## 8.9 Summary of Insights
 

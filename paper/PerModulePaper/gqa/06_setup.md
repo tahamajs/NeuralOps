@@ -33,20 +33,20 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Parameter | Value |
 |---|---|
-| Target $H_{KV}$ | {{KV_HEADS}} |
-| Reduction factor | $H / G = {{REDUCTION}}$ |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
+| Target $H_{KV}$ | 6 |
+| Reduction factor | $H / G = 2$ |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -80,17 +80,17 @@ total_kv = N_layers * L * B * kv_bytes_per_token_per_layer
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_gqa.py \
     --models distilbert,roberta,gpt2 \
-    --num_kv_heads {{KV_HEADS}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --num_kv_heads 6 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 6.9 Ablations

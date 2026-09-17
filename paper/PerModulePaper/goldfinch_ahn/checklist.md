@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `goldfinch_ahn/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module goldfinch_ahn`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## CRITICAL — Honest Reporting
 - [ ] Section 1.3 discloses that long-memory branch is a linear projection

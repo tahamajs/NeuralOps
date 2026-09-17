@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,17 +14,17 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_hgrn2_gated_deltanet.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 **Warning:** RoBERTa may OOM on 8 GB GPUs. Use `--batch_size 4` if needed.
@@ -36,8 +36,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,hgrn2_gated_deltanet \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.5 Reproducing Tables
@@ -73,14 +73,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params Δ | Speed @ L=128 |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% | {{SLOWDOWN}}× |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% | {{R_SLOWDOWN}}× |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% | {{G_SLOWDOWN}}× |
+| DistilBERT | 53.56% | +48.5\%% | 1.0x× |
+| RoBERTa | 52.98% | +48.5\%% | 84.5× |
+| GPT-2 | 51.03% | +48.5\%% | 84.5× |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-hgrn2_gated_deltanet`
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-hgrn2_gated_deltanet`
 - **Metrics:** `results/unified_hgrn2_gated_deltanet/*/summary.csv`
 
 ---

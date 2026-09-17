@@ -64,6 +64,6 @@ numerical stability.
 | Baseline MHSA | 1.9 s | ~180 s | $4d^2$ | — |
 | Linear Transformer | 4.0 s | 8.0 s | $4d^2$ | Yes |
 | Mamba | 1.2 s | 3.5 s | $4d^2 + \epsilon$ | Yes |
-| **HGRN2Layer** | **{{D_TIME_128}} s** | **{{D_TIME_4096}} s** | $8d^2$ | **LoRA only** |
+| **HGRN2Layer** | **[D_TIME_128] s** | **[D_TIME_4096] s** | $8d^2$ | **LoRA only** |
 
 ---

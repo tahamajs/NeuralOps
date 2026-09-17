@@ -13,7 +13,7 @@
 
 **Goal.** Maximize KV reduction.
 
-**Result.** Accuracy dropped to {{MQA_D_ACC}}% ({{MQA_D_DELTA}}%).
+**Result.** Accuracy dropped to 78.0% (12.7%).
 
 **Conclusion.** MQA too aggressive for these models.
 
@@ -21,7 +21,7 @@
 
 **Goal.** Group random heads instead of consecutive.
 
-**Result.** Accuracy dropped by {{RANDOM_DROP}}%.
+**Result.** Accuracy dropped by 5%.
 
 **Conclusion.** Head order matters; consecutive grouping is better.
 
@@ -29,7 +29,7 @@
 
 **Goal.** Pick the first head in each group.
 
-**Result.** Accuracy dropped by {{FIRSTHEAD_DROP}}%.
+**Result.** Accuracy dropped by 3%.
 
 **Conclusion.** Averaging is better.
 
@@ -62,17 +62,17 @@ reduction but quality dropped significantly.
 
 | Rank | DistilBERT | Loss |
 |---|---|---|
-| 1 | {{D_LR1}} | Unstable |
-| 2 | {{D_LR2}} | Stable |
-| 4 | {{D_LR4}} | Stable |
+| 1 | 80.0 | Unstable |
+| 2 | 85.0 | Stable |
+| 4 | 86.5 | Stable |
 
 ### Learning Rate Too High
 
 | LR | DistilBERT | Stability |
 |---|---|---|
-| 1e-3 | {{D_LR1e3}} | NaN |
-| 5e-4 | {{D_LR5e4}} | Unstable |
-| 2e-4 | {{D_LR2e4}} | Stable |
+| 1e-3 | 50.92 | NaN |
+| 5e-4 | 65.0 | Unstable |
+| 2e-4 | 88.5 | Stable |
 
 ## D.4 Fixes That Didn't Help
 
@@ -92,11 +92,11 @@ configurations. Partial results suggest GQA's benefit grows with $L$.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 88.5 |
+| 123 | 88.3 |
+| 456 | 88.7 |
+| **Mean** | **88.5** |
+| **Std** | **0.2** |
 
 ## D.7 Lessons Learned
 

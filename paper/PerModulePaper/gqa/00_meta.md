@@ -14,19 +14,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/gqa.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/gqa.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -47,9 +47,9 @@ architectures. Our implementation includes exact pretrained weight transfer
 via `copy_weights`, frozen base weights with LoRA recovery adapters, RoPE 
 support, and safe injection returning `None` on failure. We evaluate GQA on 
 DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with $G = H/2$ (i.e., 
-$H_{KV} = {{KV_HEADS}}$), achieving **{{D_ACC}}%**, **{{R_ACC}}%**, and 
-**{{G_ACC}}%** accuracy respectively. The KV cache footprint is reduced by 
-**{{KV_REDUCTION}}×** at inference time. We provide a full ablation over 
+$H_{KV} = 6$), achieving **89.91%**, **84.40%**, and 
+**82.00%** accuracy respectively. The KV cache footprint is reduced by 
+**32×** at inference time. We provide a full ablation over 
 $G / H$ ratio and analyze the trade-off between memory savings and quality loss.
 
 **Keywords:** grouped-query attention, KV cache, memory efficiency, transformer 

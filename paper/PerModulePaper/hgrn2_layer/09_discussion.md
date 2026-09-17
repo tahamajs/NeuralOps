@@ -5,22 +5,22 @@
 ### 9.1.1 Takeaway 1: Element-Wise Recurrence Works
 
 HGRN2Layer replaces attention with $\mathcal{O}(L d)$ element-wise recurrence, 
-achieving accuracy within {{D_DELTA}}% of baseline on DistilBERT.
+achieving accuracy within -27.75% of baseline on DistilBERT.
 
 ### 9.1.2 Takeaway 2: Short Sequences are Slow
 
-At L = 128, our method is **{{SLOWDOWN}}× slower** than baseline due to Python 
+At L = 128, our method is **1.0x× slower** than baseline due to Python 
 chunk loops.
 
 ### 9.1.3 Takeaway 3: Parameters Increase
 
-HGRN2Layer increases parameters by **{{D_PARAM_PCT}}%** per layer. We are 
+HGRN2Layer increases parameters by **48.5\%%** per layer. We are 
 honest about this.
 
 ## 9.2 When to Use HGRN2Layer
 
 ### Recommended
-- **Long-context inference** ($L \geq {{BREAKEVEN}}$).
+- **Long-context inference** ($L \geq 128$).
 - **Streaming / autoregressive decoding** with O(1) state.
 - **Memory-constrained decoding** (state is O(d), not O(L)).
 
@@ -47,10 +47,10 @@ For DistilBERT at L = 1024:
 
 | Metric | Baseline | Ours | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Time | 45 s | {{D_T1024}} s | {{S1024}}× |
-| VRAM | 1500 MB | {{VRAM_1024}} MB | {{VRAM_1024_PCT}}% |
+| Accuracy | 90.71% | 62.96% | -27.75% |
+| Params | 66.95M | 66.4M | +48.5\%% |
+| Time | 45 s | 0.85 s | 86.4× |
+| VRAM | 1500 MB | 380 MB MB | 48.5\%% |
 
 ## 9.5 Fused Kernel Opportunity
 

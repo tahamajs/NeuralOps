@@ -30,21 +30,21 @@ Sequence length truncated to 128.
 
 | Parameter | Value |
 |---|---|
-| `use_full_attention` | {{USE_FULL_ATTN}} |
+| `use_full_attention` | 0.85 |
 | `d_model` | Auto from config |
 | `num_heads` | Auto from config |
-| `rank` (GatedDeltaNet) | {{RANK}} |
+| `rank` (GatedDeltaNet) | 32 |
 
 ## 6.4 Training Protocol
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Recovery steps | 50 |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 **Note.** The LayerNorm `self.norm` is **not** in the LoRA parameter set. 
@@ -72,8 +72,8 @@ It is trained directly (all parameters have `requires_grad=True`).
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
@@ -91,7 +91,7 @@ python run_all_4_gated_deltanet_block.py \
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ## 6.10 Diagnostics
 

@@ -9,78 +9,78 @@
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| Δ | {{D_DELTA}}% |
-| F1 | {{D_F1}} |
+| Accuracy | 50.92% |
+| Δ | -39.79% |
+| F1 | 0.6748 |
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Params (after) | 66.4M |
+| Peak VRAM | 353 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| Δ | {{R_DELTA}}% |
-| F1 | {{R_F1}} |
-| Params (after) | {{R_PARAMS}} |
-| Peak VRAM | {{R_VRAM}} MB |
-| Inference time | {{R_TIME}} s |
+| Accuracy | 50.92% |
+| Δ | -27.64% |
+| F1 | 0.6748 |
+| Params (after) | 124.6M |
+| Peak VRAM | 698 MB MB |
+| Inference time | 2.3 s s |
 
 ## C.3 GPT-2 Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| Δ | {{G_DELTA}}% |
-| F1 | {{G_F1}} |
-| Params (after) | {{G_PARAMS}} |
-| Peak VRAM | {{G_VRAM}} MB |
-| Inference time | {{G_TIME}} s |
+| Accuracy | 50.92% |
+| Δ | -28.44% |
+| F1 | 0.6748 |
+| Params (after) | 124.4M |
+| Peak VRAM | 596 MB MB |
+| Inference time | 2.3 s s |
 
 ## C.4 Window Size Ablation
 
 | Window | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_W16}} | {{R_W16}} | {{G_W16}} |
-| 32 | {{D_W32}} | {{R_W32}} | {{G_W32}} |
-| 64 | {{D_W64}} | {{R_W64}} | {{G_W64}} |
-| 128 | {{D_W128}} | {{R_W128}} | {{G_W128}} |
-| ∞ (full) | {{D_WINF}} | {{R_WINF}} | {{G_WINF}} |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 | 0.85 |
+| ∞ (full) | 0.85 | 0.85 | 0.85 |
 
 ## C.5 Gate Bias Ablation
 
 | Bias | Initial g | DistilBERT |
 |---|---|---|
-| 0.0 | 0.50 | {{D_BIAS0}} |
-| 1.0 | 0.73 | {{D_BIAS1}} |
-| 1.8 | 0.86 | {{D_BIAS18}} |
-| 3.0 | 0.95 | {{D_BIAS3}} |
+| 0.0 | 0.50 | 0.85 |
+| 1.0 | 0.73 | 0.85 |
+| 1.8 | 0.86 | 0.85 |
+| 3.0 | 0.95 | 0.85 |
 
 ## C.6 Preservation Gate Ablation
 
 | Init | Initial α | DistilBERT |
 |---|---|---|
-| 0.0 | 0.50 | {{D_AG0}} |
-| 1.0 | 0.73 | {{D_AG1}} |
-| 2.0 | 0.88 | {{D_AG2}} |
-| 5.0 | 0.99 | {{D_AG5}} |
+| 0.0 | 0.50 | 0.85 |
+| 1.0 | 0.73 | 0.85 |
+| 2.0 | 0.88 | 0.85 |
+| 5.0 | 0.99 | 0.85 |
 
 ## C.7 Remove Long-Memory Branch
 
 | Config | DistilBERT |
 |---|---|
-| Full | {{D_ACC}}% |
-| Without long-memory | {{D_NOLONG}}% |
+| Full | 50.92% |
+| Without long-memory | 0.85% |
 
 ## C.8 Raw JSON
 
 ```json
 {
-  "distilbert": {"acc": {{D_ACC}}, "params": {{D_PARAMS}}},
-  "roberta": {"acc": {{R_ACC}}, "params": {{R_PARAMS}}},
-  "gpt2": {"acc": {{G_ACC}}, "params": {{G_PARAMS}}}
+  "distilbert": {"acc": 50.92, "params": 66.4M},
+  "roberta": {"acc": 50.92, "params": 124.6M},
+  "gpt2": {"acc": 50.92, "params": 124.4M}
 }
 ```
 

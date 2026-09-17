@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # Windows
@@ -27,7 +27,7 @@ python run_all_4_gqa.py \
     --lora_rank 16
 ```
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~15 minutes.
 
 ## 12.3 Reproducing Tables
 
@@ -68,14 +68,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | KV ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | 2.0× |
-| RoBERTa | {{R_ACC}}% ± 1% | 2.0× |
-| GPT-2 | {{G_ACC}}% ± 1% | 2.0× |
+| DistilBERT | 89.91% ± 1% | 2.0× |
+| RoBERTa | 84.40% ± 1% | 2.0× |
+| GPT-2 | 82.00% ± 1% | 2.0× |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-gqa`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-gqa`
 - **Metrics:** `results/unified_gqa/*/summary.csv`
 
 ## 12.7 Known Issues

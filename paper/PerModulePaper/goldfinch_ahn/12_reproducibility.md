@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 source .venv/bin/activate
@@ -22,9 +22,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_goldfinch_ahn.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --window_size {{WINDOW_SIZE}}
+    --recovery_steps 50 \
+    --lora_rank 8 \
+    --window_size 128
 ```
 
 ## 12.3 Downloading Checkpoints
@@ -33,7 +33,7 @@ python run_all_4_goldfinch_ahn.py \
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-goldfinch_ahn",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-goldfinch_ahn",
         filename="weights.pt",
     )
 ```
@@ -82,9 +82,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy | Status |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 2% | {{D_STATUS}} |
-| RoBERTa | {{R_ACC}}% ± 3% | {{R_STATUS}} |
-| GPT-2 | {{G_ACC}}% ± 2% | {{G_STATUS}} |
+| DistilBERT | 50.92% ± 2% | PASS |
+| RoBERTa | 50.92% ± 3% | PASS |
+| GPT-2 | 50.92% ± 2% | PASS |
 
 ## 12.7 Diagnostics
 

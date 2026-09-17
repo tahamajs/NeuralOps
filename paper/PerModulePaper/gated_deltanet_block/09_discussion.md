@@ -80,10 +80,10 @@ For DistilBERT with Path A (MHA):
 
 | Metric | Baseline | Block MHA |
 |---|---|---|
-| Accuracy | 90.71% | {{D_MHA_ACC}}% |
-| Δ | — | {{D_MHA_DELTA}} |
-| Params | 66.9M | +{{D_MHA_PARAM}} |
-| Time | 0.4 s | {{D_MHA_TIME}} s |
+| Accuracy | 90.71% | 86.5% |
+| Δ | — | 0.85 |
+| Params | 66.9M | +66.4M |
+| Time | 0.4 s | 2.3 s s |
 
 **Verdict.** Not worth the additional complexity.
 

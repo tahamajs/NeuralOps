@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `gqa/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module gqa`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

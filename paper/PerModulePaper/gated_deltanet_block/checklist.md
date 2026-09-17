@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `gated_deltanet_block/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module gated_deltanet_block`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## CRITICAL — Honest Reporting
 - [ ] Abstract states LayerNorm is fresh (not pretrained)

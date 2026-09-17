@@ -49,7 +49,7 @@ We provide no formal bound on expressiveness loss or task accuracy loss.
 
 ## 10.8 Single Seed
 
-All results from seed {{SEED}}. Differences below 3.4% may be noise.
+All results from seed 42. Differences below 3.4% may be noise.
 
 ## 10.9 Weight Averaging Choice
 
@@ -65,7 +65,7 @@ We do not compare with:
 
 ## 10.11 Failure Modes Not Fully Diagnosed
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.12 Code Quality
 

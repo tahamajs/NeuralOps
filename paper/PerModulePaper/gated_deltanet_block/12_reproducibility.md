@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 source .venv/bin/activate
@@ -25,7 +25,7 @@ pip install -r requirements.txt
 python run_all_4_gated_deltanet_block.py \
     --models distilbert \
     --use_full_attention true \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ### Path B (GatedDeltaNet)
@@ -34,7 +34,7 @@ python run_all_4_gated_deltanet_block.py \
 python run_all_4_gated_deltanet_block.py \
     --models distilbert \
     --use_full_attention false \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.3 Verification Steps
@@ -76,8 +76,8 @@ torch.manual_seed(seed)
 
 | Config | DistilBERT | Status |
 |---|---|---|
-| Path A (MHA) | {{D_MHA_ACC}}% | {{D_MHA_STATUS}} |
-| Path B (DeltaNet) | {{D_ACC}}% | {{D_STATUS}} |
+| Path A (MHA) | 86.5% | 84.5 |
+| Path B (DeltaNet) | 50.92% | PASS |
 
 ## 12.6 Known Issues
 

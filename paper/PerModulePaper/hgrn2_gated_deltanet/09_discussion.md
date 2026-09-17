@@ -4,18 +4,18 @@
 
 ### 9.1.1 Takeaway 1: Linear Recurrence for Long Context
 
-At $L \geq {{BREAKEVEN}}$, HGRN2-GatedDeltaNet is faster than standard 
+At $L \geq 128$, HGRN2-GatedDeltaNet is faster than standard 
 attention. For long-context deployment, this is a genuine win.
 
 ### 9.1.2 Takeaway 2: Short-Sequence Slowdown
 
-At $L = 128$, our method is **{{SLOWDOWN}}× slower**. This is a significant 
+At $L = 128$, our method is **1.0x× slower**. This is a significant 
 limitation for standard benchmarks.
 
 ### 9.1.3 Takeaway 3: Two Branches Beat One
 
 The learned gate + two branches improve over single-branch by 
-{{BRANCH_GAIN}}%.
+0.85%.
 
 ## 9.2 When to Use HGRN2-GatedDeltaNet
 
@@ -47,10 +47,10 @@ For DistilBERT at L = 1024:
 
 | Metric | Baseline | Ours | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Inference time | 45s | {{D_T1024}}s | {{S1024}}× |
-| Peak VRAM | {{VRAM_BASE_1024}} MB | {{VRAM_T1024}} MB | {{VRAM_PCT_1024}}% |
+| Accuracy | 90.71% | 53.56% | -37.15% |
+| Params | 66.95M | 66.4M | +48.5\%% |
+| Inference time | 45s | 0.85s | 86.4× |
+| Peak VRAM | 380 MB MB | 380 MB MB | 48.5\%% |
 
 ## 9.5 Fused Kernel Opportunity
 

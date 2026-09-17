@@ -2,11 +2,11 @@
 
 ## 10.1 Parameter Count
 
-HGRN2Layer **increases** parameter count by ~{{D_PARAM_PCT}}%.
+HGRN2Layer **increases** parameter count by ~48.5\%%.
 
 ## 10.2 Short-Sequence Slowdown
 
-At L = 128, we are **{{SLOWDOWN}}× slower** than baseline.
+At L = 128, we are **1.0x× slower** than baseline.
 
 ## 10.3 Python Loop
 

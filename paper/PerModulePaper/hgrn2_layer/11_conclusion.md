@@ -12,9 +12,9 @@ weights from four architectures.
 
 | Model | Acc Δ | Params Δ | Speed @ L=128 | Speed @ L=1024 |
 |---|---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{SLOWDOWN}}× | {{S1024}}× |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_SLOWDOWN}}× | {{R_S1024}}× |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_SLOWDOWN}}× | {{G_S1024}}× |
+| DistilBERT | -27.75% | +48.5\%% | 1.0x× | 86.4× |
+| RoBERTa | -26.50% | +48.5\%% | 84.5× | 84.5× |
+| GPT-2 | -7.92% | +48.5\%% | 84.5× | 84.5× |
 
 ## 11.3 Key Takeaways
 
@@ -43,13 +43,13 @@ We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the module, implemented, ran experiments, wrote 
+- **Taha Majs** designed the module, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

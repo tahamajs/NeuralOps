@@ -30,7 +30,7 @@ research, but the **block structure itself** is often left untouched.
 We ask: what happens if we replace the entire block, including its 
 normalization and residual structure, rather than just the attention?
 
-{{MOTIVATION_PARAGRAPH_2}}
+0.85
 
 <!-- 
 EXAMPLE continuation:

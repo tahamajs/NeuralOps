@@ -94,13 +94,13 @@
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }

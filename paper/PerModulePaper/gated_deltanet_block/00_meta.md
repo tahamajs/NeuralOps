@@ -7,19 +7,19 @@
 # Gated DeltaNet Block: A Block-Level Wrapper for Hybrid Attention-Replacement
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/gated_deltanet_block.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/gated_deltanet_block.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -53,10 +53,10 @@ silently succeeds even when transfer fails, leaving attention weights
 at random initialization.
 
 We evaluate on DistilBERT, RoBERTa, and GPT-2. On DistilBERT with 
-`use_full_attention=False`, the block achieves **{{D_ACC}}%** (Δ = 
-{{D_DELTA}}%) but at **{{D_STEP_TIME}} s/step** — the underlying GatedDeltaNet 
+`use_full_attention=False`, the block achieves **50.92%** (Δ = 
+-39.79%) but at **14.2 ms s/step** — the underlying GatedDeltaNet 
 recurrence dominates runtime. With `use_full_attention=True`, accuracy is 
-**{{D_MHA_ACC}}%** (Δ = {{D_MHA_DELTA}}%). RoBERTa and GPT-2 fail due to 
+**86.5%** (Δ = 0.85%). RoBERTa and GPT-2 fail due to 
 memory constraints. We document these negative results and identify the 
 specific code paths that must be fixed for the block to be viable.
 

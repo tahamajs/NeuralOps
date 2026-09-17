@@ -77,7 +77,7 @@ The critical design choices are:
 - **An honest evaluation.** We report both the long-context speedup and the 
   short-context slowdown of the current implementation.
 - **Full reproducibility.** Code, weights, and evaluation scripts are 
-  released under {{LICENSE}}.
+  released under Apache 2.0.
 
 ## 1.5 Paper Organization
 

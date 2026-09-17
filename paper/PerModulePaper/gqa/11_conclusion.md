@@ -18,9 +18,9 @@ quality loss.
 
 | Model | Acc Δ | KV ratio | Params Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_KV_R}}×** | {{D_P_RATIO}}× |
-| RoBERTa | {{R_DELTA}}% | **{{R_KV_R}}×** | {{R_P_RATIO}}× |
-| GPT-2 | {{G_DELTA}}% | **{{G_KV_R}}×** | {{G_P_RATIO}}× |
+| DistilBERT | -0.80% | **2.0×** | 1.05× |
+| RoBERTa | +5.84% | **2.0×** | 1.05× |
+| GPT-2 | +2.64% | **2.0×** | 1.05× |
 
 ## 11.3 Key Takeaways
 
@@ -51,12 +51,12 @@ diverse architectures. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the code, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** implemented the code, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

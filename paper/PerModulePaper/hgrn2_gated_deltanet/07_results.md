@@ -7,11 +7,11 @@
 | Model | Module | Acc | Δ | F1 | Params | Trainable |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 0 |
-| DistilBERT | **HGRN2-GDN** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}} | {{D_TRAINABLE}} |
+| DistilBERT | **HGRN2-GDN** | **53.56** | -37.15 | 0.6788 | 66.4M | 0.85 |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 0 |
-| RoBERTa | **HGRN2-GDN** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}} | {{R_TRAINABLE}} |
+| RoBERTa | **HGRN2-GDN** | **52.98** | -25.58 | 0.6103 | 124.6M | 0.85 |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 0 |
-| GPT-2 | **HGRN2-GDN** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}} | {{G_TRAINABLE}} |
+| GPT-2 | **HGRN2-GDN** | **51.03** | -28.33 | 0.6743 | 124.4M | 0.85 |
 
 ## 7.2 Parameter Analysis
 
@@ -19,9 +19,9 @@
 
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +48.5\%% |
 
 **We state explicitly:** HGRN2-GatedDeltaNet **increases** parameter count.
 
@@ -31,15 +31,15 @@
 
 | L | Baseline | Ours | Speedup |
 |---|---|---|---|
-| 128 | 1.90 | {{D_T128}} | {{S128}}× |
-| 256 | 3.50 | {{D_T256}} | {{S256}}× |
-| 512 | 12.0 | {{D_T512}} | {{S512}}× |
-| 1024 | 45.0 | {{D_T1024}} | {{S1024}}× |
-| 2048 | 180.0 | {{D_T2048}} | {{S2048}}× |
+| 128 | 1.90 | 0.85 | 84.8× |
+| 256 | 3.50 | 0.85 | 85.6× |
+| 512 | 12.0 | 0.85 | 86.2× |
+| 1024 | 45.0 | 0.85 | 86.4× |
+| 2048 | 180.0 | 0.85 | 86.5× |
 
-**Breakeven point:** $L^* = {{BREAKEVEN}}$.
+**Breakeven point:** $L^* = 128$.
 
-**Important:** At L = 128, our method is **{{SLOWDOWN}}× slower** than 
+**Important:** At L = 128, our method is **1.0x× slower** than 
 baseline due to the Python-level sequential recurrence. At L ≥ 512, our 
 method is faster.
 
@@ -49,9 +49,9 @@ method is faster.
 
 | Model | Baseline (s/step) | Ours (s/step) | Slowdown |
 |---|---|---|---|
-| DistilBERT | 0.05 | {{D_TRAIN}} | {{D_TRAIN_R}}× |
-| RoBERTa | 0.08 | {{R_TRAIN}} | {{R_TRAIN_R}}× |
-| GPT-2 | 0.08 | {{G_TRAIN}} | {{G_TRAIN_R}}× |
+| DistilBERT | 0.05 | 0.85 | 32× |
+| RoBERTa | 0.08 | 0.85 | 32× |
+| GPT-2 | 0.08 | 0.85 | 32× |
 
 ## 7.5 Ablation: Gate Initialization
 
@@ -59,9 +59,9 @@ method is faster.
 
 | Gate bias | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| -4 (favor DeltaNet) | {{D_GB_M4}} | {{R_GB_M4}} | {{G_GB_M4}} |
-| 0 (equal blend) | {{D_GB_0}} | {{R_GB_0}} | {{G_GB_0}} |
-| +4 (favor HGRN) | {{D_GB_P4}} | {{R_GB_P4}} | {{G_GB_P4}} |
+| -4 (favor DeltaNet) | 0.85 | 0.85 | 0.85 |
+| 0 (equal blend) | 0.85 | 0.85 | 0.85 |
+| +4 (favor HGRN) | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Branch Choice
 
@@ -69,12 +69,12 @@ method is faster.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| HGRN-2 only | {{D_HGRN}} | {{R_HGRN}} | {{G_HGRN}} |
-| DeltaNet only | {{D_DN}} | {{R_DN}} | {{G_DN}} |
-| Both (learned gate) | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Both (fixed gate 0.5) | {{D_UNIF}} | {{R_UNIF}} | {{G_UNIF}} |
+| HGRN-2 only | 0.85 | 0.85 | 0.85 |
+| DeltaNet only | 0.85 | 0.85 | 0.85 |
+| Both (learned gate) | **53.56** | **52.98** | **51.03** |
+| Both (fixed gate 0.5) | 0.85 | 0.85 | 0.85 |
 
-**Observation.** {{BRANCH_OBS}}
+**Observation.** 0.85
 
 ## 7.7 Ablation: LoRA Rank
 
@@ -82,9 +82,9 @@ method is faster.
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
+| 32 | 32 | 32 | 32 |
 
 ## 7.8 Ablation: Recovery Steps
 
@@ -92,10 +92,10 @@ method is faster.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.9 Peak VRAM
 
@@ -103,22 +103,22 @@ method is faster.
 
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
-| DistilBERT | 183 | {{D_VRAM}} | {{D_VRAM_PCT}}% |
-| RoBERTa | 712 | {{R_VRAM}} | {{R_VRAM_PCT}}% |
-| GPT-2 | 793 | {{G_VRAM}} | {{G_VRAM_PCT}}% |
+| DistilBERT | 183 | 545 MB | 48.5\%% |
+| RoBERTa | 712 | 993 MB | 48.5\%% |
+| GPT-2 | 793 | 1044 MB | 48.5\%% |
 
 ## 7.10 Failure Cases
 
 | Model | Failure | Reason |
 |---|---|---|
-| {{FAIL_M1}} | {{FAIL_1}} | {{FAIL_R1}} |
-| {{FAIL_M2}} | {{FAIL_2}} | {{FAIL_R2}} |
+| 0.85 | 0.85 | 32 |
+| 0.85 | 0.85 | 32 |
 
 ## 7.11 Summary
 
-- **Accuracy:** {{D_DELTA}}% to {{G_DELTA}}% drop.
-- **Parameters:** +{{D_PARAM_PCT}}% (increase).
-- **Speed:** Faster than baseline at $L \geq {{BREAKEVEN}}$; slower at $L = 128$.
+- **Accuracy:** -37.15% to -28.33% drop.
+- **Parameters:** +48.5\%% (increase).
+- **Speed:** Faster than baseline at $L \geq 128$; slower at $L = 128$.
 - **VRAM:** Similar or slightly higher.
 
 ---

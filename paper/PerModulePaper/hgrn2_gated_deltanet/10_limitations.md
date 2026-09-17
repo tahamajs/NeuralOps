@@ -2,12 +2,12 @@
 
 ## 10.1 Parameter Count
 
-HGRN2-GatedDeltaNet **increases** parameter count by ~{{D_PARAM_PCT}}% per 
+HGRN2-GatedDeltaNet **increases** parameter count by ~48.5\%% per 
 layer. This is a substantial limitation.
 
 ## 10.2 Short-Sequence Slowdown
 
-At L = 128 (SST-2 standard), our method is **{{SLOWDOWN}}× slower** than 
+At L = 128 (SST-2 standard), our method is **1.0x× slower** than 
 baseline. This limits applicability to standard benchmarks.
 
 ## 10.3 Python Loop

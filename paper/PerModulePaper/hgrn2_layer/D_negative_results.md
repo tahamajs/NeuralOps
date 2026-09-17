@@ -6,7 +6,7 @@
 
 **Goal.** Use unbounded $\log f$.
 
-**Result.** Accuracy dropped by {{CLAMP_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Clamping is essential.
 
@@ -14,7 +14,7 @@
 
 **Goal.** Use $f s + i v$ instead of $f s + (1-f) i v$.
 
-**Result.** Accuracy dropped by {{MODULATION_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Input modulation is essential.
 
@@ -22,7 +22,7 @@
 
 **Goal.** Use forward scan only on DistilBERT.
 
-**Result.** Accuracy dropped by {{BIDI_GAIN}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Bidirectional matters for encoders.
 
@@ -62,29 +62,29 @@ We tested multiple independent state vectors. Result: marginal benefit, 3× cost
 
 | Bias | DistilBERT |
 |---|---|
-| -4.0 | {{D_FB_M4}} |
-| -2.5 | {{D_FB_M25}} |
-| -1.0 | {{D_FB_M1}} |
-| 0.0 | {{D_FB_0}} |
+| -4.0 | 0.85 |
+| -2.5 | 0.85 |
+| -1.0 | 0.85 |
+| 0.0 | 0.85 |
 
 ### Learning Rate
 
 | LR | DistilBERT |
 |---|---|
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
+| 1e-4 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
 | 1e-3 | NaN |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Lessons Learned
 

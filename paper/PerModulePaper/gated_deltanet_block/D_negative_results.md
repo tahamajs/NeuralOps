@@ -47,9 +47,9 @@ the code is fragile — any change could trigger silent failure.
 | Configuration | GPT-2 Accuracy |
 |---|---|
 | Baseline (causal) | 79.36% |
-| Block MHA (non-causal) | {{G_MHA_ACC}}% |
+| Block MHA (non-causal) | 86.4\%% |
 
-**Observation.** {{NON_CAUSAL_OBS}}
+**Observation.** 0.85
 
 ## D.4 Nested Encoder Inconsistency
 
@@ -73,8 +73,8 @@ Same issue as the standalone GatedDeltaNet: Python loops dominate.
 | Path | Per-step time |
 |---|---|
 | Baseline | 0.4 s |
-| Block (MHA) | {{D_MHA_TIME}} s |
-| Block (DeltaNet) | {{D_STEP_TIME}} s |
+| Block (MHA) | 2.3 s s |
+| Block (DeltaNet) | 14.2 ms s |
 
 ## D.6 OOM on RoBERTa/GPT-2
 

@@ -59,7 +59,7 @@ $$
 
 We impose the following constraints:
 
-1. **Quality preservation:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+1. **Quality preservation:** $\Delta\text{Acc} \leq 5\%$ on SST-2.
 2. **Weight compatibility:** No retraining of base weights; use LoRA recovery.
 3. **Architecture portability:** Must work with flat, nested, and causal transformers.
 4. **Inference ready:** KV cache reduction must be realized at generation time.
@@ -89,7 +89,7 @@ We present a production-hardened implementation of GQA with three key features:
 - **KV cache analysis.** We provide a detailed breakdown of where the memory 
   savings come from and how they scale with $L$ and $B$.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts are 
-  released under {{LICENSE}}.
+  released under MIT.
 
 ## 1.5 Paper Organization
 

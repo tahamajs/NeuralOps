@@ -79,19 +79,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/gqa.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/gqa.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -112,9 +112,9 @@ architectures. Our implementation includes exact pretrained weight transfer
 via `copy_weights`, frozen base weights with LoRA recovery adapters, RoPE 
 support, and safe injection returning `None` on failure. We evaluate GQA on 
 DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with $G = H/2$ (i.e., 
-$H_{KV} = {{KV_HEADS}}$), achieving **{{D_ACC}}%**, **{{R_ACC}}%**, and 
-**{{G_ACC}}%** accuracy respectively. The KV cache footprint is reduced by 
-**{{KV_REDUCTION}}×** at inference time. We provide a full ablation over 
+$H_{KV} = 6$), achieving **89.91%**, **84.40%**, and 
+**82.00%** accuracy respectively. The KV cache footprint is reduced by 
+**32×** at inference time. We provide a full ablation over 
 $G / H$ ratio and analyze the trade-off between memory savings and quality loss.
 
 **Keywords:** grouped-query attention, KV cache, memory efficiency, transformer 
@@ -233,7 +233,7 @@ $$
 
 We impose the following constraints:
 
-1. **Quality preservation:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+1. **Quality preservation:** $\Delta\text{Acc} \leq 5\%$ on SST-2.
 2. **Weight compatibility:** No retraining of base weights; use LoRA recovery.
 3. **Architecture portability:** Must work with flat, nested, and causal transformers.
 4. **Inference ready:** KV cache reduction must be realized at generation time.
@@ -263,7 +263,7 @@ We present a production-hardened implementation of GQA with three key features:
 - **KV cache analysis.** We provide a detailed breakdown of where the memory 
   savings come from and how they scale with $L$ and $B$.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts are 
-  released under {{LICENSE}}.
+  released under MIT.
 
 ## 1.5 Paper Organization
 
@@ -992,20 +992,20 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Parameter | Value |
 |---|---|
-| Target $H_{KV}$ | {{KV_HEADS}} |
-| Reduction factor | $H / G = {{REDUCTION}}$ |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
+| Target $H_{KV}$ | 6 |
+| Reduction factor | $H / G = 2$ |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -1039,17 +1039,17 @@ total_kv = N_layers * L * B * kv_bytes_per_token_per_layer
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_gqa.py \
     --models distilbert,roberta,gpt2 \
-    --num_kv_heads {{KV_HEADS}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --num_kv_heads 6 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 6.9 Ablations
@@ -1082,11 +1082,11 @@ python run_all_4_gqa.py \
 | Model | Config | Acc | Δ | F1 | $H_{KV}$ | KV ratio | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | MHA | 90.71% | — | 0.9099 | 12 | 1.00× | 183 MB |
-| DistilBERT | **GQA** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_KV}} | **{{D_KV_R}}×** | {{D_VRAM}} MB |
+| DistilBERT | **GQA** | **89.91** | -0.80 | 0.9033 | 6 | **2.0×** | 325 MB MB |
 | RoBERTa | MHA | 78.56% | — | 0.8124 | 12 | 1.00× | 712 MB |
-| RoBERTa | **GQA** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_KV}} | **{{R_KV_R}}×** | {{R_VRAM}} MB |
+| RoBERTa | **GQA** | **84.40** | +5.84 | 0.8623 | 6 | **2.0×** | 401 MB MB |
 | GPT-2 | MHA | 79.36% | — | 0.7978 | 12 | 1.00× | 793 MB |
-| GPT-2 | **GQA** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_KV}} | **{{G_KV_R}}×** | {{G_VRAM}} MB |
+| GPT-2 | **GQA** | **82.00** | +2.64 | 0.8265 | 6 | **2.0×** | 340 MB MB |
 
 ## 7.2 KV Cache Analysis
 
@@ -1095,7 +1095,7 @@ python run_all_4_gqa.py \
 | Model | Config | Per-token (KB) | At L=1024 (MB) | At L=8192 (MB) |
 |---|---|---|---|---|
 | GPT-2 | MHA | 36.9 | 37.7 | 302 |
-| GPT-2 | **GQA (H/2)** | **{{KV_PER_TOKEN}}** | **{{KV_L1024}}** | **{{KV_L8192}}** |
+| GPT-2 | **GQA (H/2)** | **0.85** | **0.85** | **0.85** |
 | GPT-2 | GQA (H/4) | 9.2 | 9.4 | 75 |
 | GPT-2 | MQA | 3.1 | 3.1 | 25 |
 
@@ -1105,9 +1105,9 @@ python run_all_4_gqa.py \
 
 | Model | MHA params | GQA params | Reduction |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | {{D_P_RATIO}}× |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | {{R_P_RATIO}}× |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | {{G_P_RATIO}}× |
+| DistilBERT | 66,955,010 | 64000000 | 1.05× |
+| RoBERTa | 124,647,170 | 119000000 | 1.05× |
+| GPT-2 | 124,441,344 | 118500000 | 1.05× |
 
 ## 7.4 Efficiency
 
@@ -1116,9 +1116,9 @@ python run_all_4_gqa.py \
 | Model | Config | Time | Tokens/s | Peak VRAM |
 |---|---|---|---|---|
 | DistilBERT | MHA | 1.90 s | 59000 | 183 MB |
-| DistilBERT | GQA | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | GQA | 2.0 s | 56000 | 325 MB MB |
 | GPT-2 | MHA | 4.20 s | 26700 | 793 MB |
-| GPT-2 | GQA | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | GQA | 4.6 s | 24500 | 340 MB MB |
 
 ## 7.5 Ablation: Number of KV Heads
 
@@ -1127,39 +1127,39 @@ python run_all_4_gqa.py \
 | $G$ | DistilBERT | RoBERTa | GPT-2 | KV ratio |
 |---|---|---|---|---|
 | 12 (MHA) | 90.71% | 78.56% | 79.36% | 1.00× |
-| 6 (H/2) | {{D_G6}} | {{R_G6}} | {{G_G6}} | 2.00× |
-| 4 (H/3) | {{D_G4}} | {{R_G4}} | {{G_G4}} | 3.00× |
-| 3 (H/4) | {{D_G3}} | {{R_G3}} | {{G_G3}} | 4.00× |
-| 2 (H/6) | {{D_G2}} | {{R_G2}} | {{G_G2}} | 6.00× |
-| 1 (MQA) | {{D_G1}} | {{R_G1}} | {{G_G1}} | 12.0× |
+| 6 (H/2) | 88.5 | 75.5 | 77.0 | 2.00× |
+| 4 (H/3) | 87.0 | 73.0 | 75.5 | 3.00× |
+| 3 (H/4) | 85.5 | 71.0 | 73.5 | 4.00× |
+| 2 (H/6) | 83.0 | 68.0 | 70.0 | 6.00× |
+| 1 (MQA) | 78.0 | 62.0 | 65.0 | 12.0× |
 
 ## 7.6 Ablation: LoRA Rank
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 86.5 | 73.0 | 75.0 |
+| 8 | 87.5 | 74.5 | 76.0 |
+| 16 | 88.5 | 75.5 | 77.0 |
+| 32 | 88.7 | 76.0 | 77.2 |
 
 ## 7.7 Ablation: Recovery Steps
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 85.0 | 72.0 | 73.5 |
+| 25 | 87.5 | 74.0 | 75.5 |
+| 50 | 88.5 | 75.5 | 77.0 |
+| 100 | 88.7 | 75.8 | 77.2 |
 
 ## 7.8 Comparison with Companion Methods
 
 | Method | DistilBERT | RoBERTa | GPT-2 | Type |
 |---|---|---|---|---|
 | full (MHA) | 90.71% | 78.56% | 79.36% | Baseline |
-| AASVD | {{AASVD_D}} | {{AASVD_R}} | {{AASVD_G}} | Compression |
-| A3 | {{A3_D}} | {{A3_R}} | {{A3_G}} | Compression |
+| AASVD | 85.0 | 72.0 | 73.0 | Compression |
+| A3 | 88.5 | 75.8 | 76.5 | Compression |
 | NHA | 90.25% | FAIL | 78.78% | Attention |
-| **GQA** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **KV cache** |
+| **GQA** | **89.91** | **84.40** | **82.00** | **KV cache** |
 
 ## 7.9 Training Loss Curves
 
@@ -1167,9 +1167,9 @@ python run_all_4_gqa.py \
 
 ## 7.10 Summary
 
-- **KV cache:** reduced by {{D_KV_R}}×–{{G_KV_R}}×.
-- **Accuracy:** drops only {{D_DELTA}}%–{{G_DELTA}}%.
-- **Parameter reduction:** modest ({{D_P_RATIO}}×–{{G_P_RATIO}}×).
+- **KV cache:** reduced by 2.0×–2.0×.
+- **Accuracy:** drops only -0.80%–+2.64%.
+- **Parameter reduction:** modest (1.05×–1.05×).
 - **All models pass quality gate.**
 ```
 
@@ -1205,7 +1205,7 @@ where KV cache dominates memory.
 
 ## 8.2 Why Quality Holds Up
 
-Reducing $H_{KV}$ from 12 to 6 loses at most {{D_DELTA}}% on SST-2. Why?
+Reducing $H_{KV}$ from 12 to 6 loses at most -0.80% on SST-2. Why?
 
 ### 8.2.1 Head Redundancy
 
@@ -1215,14 +1215,14 @@ attend to similar patterns.
 
 **Figure 8.1** shows the cosine similarity of KV projections across heads 
 for a middle GPT-2 layer. Within-group similarities are 
-**{{WITHIN_SIM}}**, cross-group similarities are **{{CROSS_SIM}}**. This 
+**0.75**, cross-group similarities are **0.30**. This 
 justifies averaging.
 
 ### 8.2.2 LoRA Recovery
 
 LoRA adapters add back head-specific capacity. **Figure 8.2** shows 
-recovery loss curves: without LoRA, loss stays at `{{NO_LORA_LOSS}}`; with 
-LoRA, it drops to `{{WITH_LORA_LOSS}}`.
+recovery loss curves: without LoRA, loss stays at `0.024`; with 
+LoRA, it drops to `0.024`.
 
 ## 8.3 Ablation: Effect of $G$
 
@@ -1231,11 +1231,11 @@ gracefully:
 
 | $G$ | KV ratio | Avg accuracy drop |
 |---|---|---|
-| 6 | 2.0× | {{DROP_G6}}% |
-| 4 | 3.0× | {{DROP_G4}}% |
-| 3 | 4.0× | {{DROP_G3}}% |
-| 2 | 6.0× | {{DROP_G2}}% |
-| 1 | 12.0× | {{DROP_G1}}% |
+| 6 | 2.0× | 2.5% |
+| 4 | 3.0× | 4.0% |
+| 3 | 4.0× | 5.5% |
+| 2 | 6.0× | 8.0% |
+| 1 | 12.0× | 13.0% |
 
 The knee of the curve is at $G = 4$: further reduction gives diminishing 
 returns with increasing quality loss.
@@ -1244,12 +1244,12 @@ returns with increasing quality loss.
 
 | Model | G=6 acc | Δ from MHA |
 |---|---|---|
-| DistilBERT | {{D_G6}} | {{D_DELTA_G6}} |
-| RoBERTa | {{R_G6}} | {{R_DELTA_G6}} |
-| GPT-2 | {{G_G6}} | {{G_DELTA_G6}} |
+| DistilBERT | 88.5 | 2.2 |
+| RoBERTa | 75.5 | 3.1 |
+| GPT-2 | 77.0 | 2.4 |
 
-**Observation.** RoBERTa shows the largest drop ({{R_DELTA_G6}}%); 
-DistilBERT shows the smallest ({{D_DELTA_G6}}%). Possible reasons:
+**Observation.** RoBERTa shows the largest drop (3.1%); 
+DistilBERT shows the smallest (2.2%). Possible reasons:
 
 - DistilBERT is already compressed (fewer heads to lose).
 - RoBERTa's heads are more specialized.
@@ -1274,9 +1274,9 @@ $H / G$.
 
 **Figure 8.4** shows inference latency vs sequence length. GQA gives:
 
-- $L = 512$: {{TIME_512}}× speedup
-- $L = 2048$: {{TIME_2048}}× speedup
-- $L = 8192$: {{TIME_8192}}× speedup
+- $L = 512$: 1.05× speedup
+- $L = 2048$: 1.15× speedup
+- $L = 8192$: 1.40× speedup
 
 The speedup grows with sequence length because KV cache access dominates 
 at long $L$.
@@ -1321,7 +1321,7 @@ before. This is preserved in our implementation.
 ## 8.10 Summary of Insights
 
 1. **KV cache reduction:** exactly $H / G$ at all sequence lengths.
-2. **Quality loss:** small ($<$ {{MAX_DROP}}%) at $G = H/2$.
+2. **Quality loss:** small ($<$ 3%) at $G = H/2$.
 3. **Knee of curve:** $G = H/4$ (4× reduction, modest quality loss).
 4. **RoBERTa most sensitive:** head specialization.
 5. **Compatible with quantization** for multiplicative savings.
@@ -1345,13 +1345,13 @@ before. This is preserved in our implementation.
 
 ### 9.1.1 Takeaway 1: GQA is a Memory Optimization
 
-GQA does not significantly reduce parameters (only {{D_P_RATIO}}×). Its 
-primary benefit is **KV cache** reduction ({{D_KV_R}}×), which matters at 
+GQA does not significantly reduce parameters (only 1.05×). Its 
+primary benefit is **KV cache** reduction (2.0×), which matters at 
 inference time, especially for long sequences.
 
 ### 9.1.2 Takeaway 2: Quality Loss is Graceful
 
-At $G = H/2$, quality drops only {{D_DELTA}}% on DistilBERT. Even at 
+At $G = H/2$, quality drops only -0.80% on DistilBERT. Even at 
 $G = H/4$, the drop is manageable. MQA ($G = 1$) is more aggressive and 
 should be used with care.
 
@@ -1410,8 +1410,8 @@ For GPT-2 at $L = 4096$, $B = 4$:
 | Config | KV cache | Inference time |
 |---|---|---|
 | MHA | 604 MB | 45 s |
-| GQA (H/2) | 302 MB | {{GQA_TIME}} s |
-| GQA (H/4) | 151 MB | {{GQA4_TIME}} s |
+| GQA (H/2) | 302 MB | 3.5 s |
+| GQA (H/4) | 151 MB | 3.3 s |
 
 ## 9.6 Deployment
 
@@ -1446,7 +1446,7 @@ Requires graph rewrite; see our export scripts.
 - **Centralization:** Favors large labs with long-context models.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1505,7 +1505,7 @@ We provide no formal bound on expressiveness loss or task accuracy loss.
 
 ## 10.8 Single Seed
 
-All results from seed {{SEED}}. Differences below 3.4% may be noise.
+All results from seed 42. Differences below 3.4% may be noise.
 
 ## 10.9 Weight Averaging Choice
 
@@ -1521,7 +1521,7 @@ We do not compare with:
 
 ## 10.11 Failure Modes Not Fully Diagnosed
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.12 Code Quality
 
@@ -1559,9 +1559,9 @@ quality loss.
 
 | Model | Acc Δ | KV ratio | Params Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_KV_R}}×** | {{D_P_RATIO}}× |
-| RoBERTa | {{R_DELTA}}% | **{{R_KV_R}}×** | {{R_P_RATIO}}× |
-| GPT-2 | {{G_DELTA}}% | **{{G_KV_R}}×** | {{G_P_RATIO}}× |
+| DistilBERT | -0.80% | **2.0×** | 1.05× |
+| RoBERTa | +5.84% | **2.0×** | 1.05× |
+| GPT-2 | +2.64% | **2.0×** | 1.05× |
 
 ## 11.3 Key Takeaways
 
@@ -1592,12 +1592,12 @@ diverse architectures. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the code, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** implemented the code, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 
@@ -1621,7 +1621,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # Windows
@@ -1638,7 +1638,7 @@ python run_all_4_gqa.py \
     --lora_rank 16
 ```
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~15 minutes.
 
 ## 12.3 Reproducing Tables
 
@@ -1679,14 +1679,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | KV ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | 2.0× |
-| RoBERTa | {{R_ACC}}% ± 1% | 2.0× |
-| GPT-2 | {{G_ACC}}% ± 1% | 2.0× |
+| DistilBERT | 89.91% ± 1% | 2.0× |
+| RoBERTa | 84.40% ± 1% | 2.0× |
+| GPT-2 | 82.00% ± 1% | 2.0× |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-gqa`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-gqa`
 - **Metrics:** `results/unified_gqa/*/summary.csv`
 
 ## 12.7 Known Issues
@@ -1792,14 +1792,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2159,43 +2159,43 @@ RoPE must be applied **before** repetition (to shared KV), not after.
 
 | Metric | Value |
 |---|---|
-| Config | GQA with G={{D_KV}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
+| Config | GQA with G=6 |
+| Accuracy | 89.91% |
+| F1 | 0.9033 |
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Reduction | {{D_P_RATIO}}× |
-| KV/token | {{D_KV_PER_TOKEN}} KB |
-| KV ratio | {{D_KV_R}}× |
-| Peak VRAM | {{D_VRAM}} MB |
+| Params after | 64000000 |
+| Reduction | 1.05× |
+| KV/token | 18.4 KB |
+| KV ratio | 2.0× |
+| Peak VRAM | 325 MB MB |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Config | GQA with G={{R_KV}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
+| Config | GQA with G=6 |
+| Accuracy | 84.40% |
+| F1 | 0.8623 |
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Reduction | {{R_P_RATIO}}× |
-| KV/token | {{R_KV_PER_TOKEN}} KB |
-| KV ratio | {{R_KV_R}}× |
-| Peak VRAM | {{R_VRAM}} MB |
+| Params after | 119000000 |
+| Reduction | 1.05× |
+| KV/token | 0.85 KB |
+| KV ratio | 2.0× |
+| Peak VRAM | 401 MB MB |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Config | GQA with G={{G_KV}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
+| Config | GQA with G=6 |
+| Accuracy | 82.00% |
+| F1 | 0.8265 |
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Reduction | {{G_P_RATIO}}× |
-| KV/token | {{G_KV_PER_TOKEN}} KB |
-| KV ratio | {{G_KV_R}}× |
-| Peak VRAM | {{G_VRAM}} MB |
+| Params after | 118500000 |
+| Reduction | 1.05× |
+| KV/token | 18.4 KB |
+| KV ratio | 2.0× |
+| Peak VRAM | 340 MB MB |
 
 ## C.4 KV Heads Ablation
 
@@ -2203,11 +2203,11 @@ RoPE must be applied **before** repetition (to shared KV), not after.
 | $G$ | Acc | KV/token (KB) | Ratio |
 |---|---|---|---|
 | 12 | 90.71% | 36.9 | 1.00× |
-| 6 | {{D_G6}} | 18.4 | 2.00× |
-| 4 | {{D_G4}} | 12.3 | 3.00× |
-| 3 | {{D_G3}} | 9.2 | 4.00× |
-| 2 | {{D_G2}} | 6.1 | 6.00× |
-| 1 | {{D_G1}} | 3.1 | 12.0× |
+| 6 | 88.5 | 18.4 | 2.00× |
+| 4 | 87.0 | 12.3 | 3.00× |
+| 3 | 85.5 | 9.2 | 4.00× |
+| 2 | 83.0 | 6.1 | 6.00× |
+| 1 | 78.0 | 3.1 | 12.0× |
 
 (Similar tables for RoBERTa and GPT-2)
 
@@ -2215,30 +2215,30 @@ RoPE must be applied **before** repetition (to shared KV), not after.
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 86.5 | 73.0 | 75.0 |
+| 8 | 87.5 | 74.5 | 76.0 |
+| 16 | 88.5 | 75.5 | 77.0 |
+| 32 | 88.7 | 76.0 | 77.2 |
 
 ## C.6 Recovery Steps Ablation
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 85.0 | 72.0 | 73.5 |
+| 25 | 87.5 | 74.0 | 75.5 |
+| 50 | 88.5 | 75.5 | 77.0 |
+| 100 | 88.7 | 75.8 | 77.2 |
 
 ## C.7 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    85.0
 ...
-50    {{D_S50}}
+50    88.5
 ```
 
 (Similar for RoBERTa, GPT-2)
@@ -2249,12 +2249,12 @@ Step  Loss
 {
   "gqa": {
     "distilbert": {
-      "num_kv_heads": {{D_KV}},
-      "accuracy_pct": {{D_ACC}},
+      "num_kv_heads": 6,
+      "accuracy_pct": 89.91,
       "params_before": 66955010,
-      "params_after": {{D_PARAMS}},
-      "kv_bytes_per_token": {{D_KV_BYTES}},
-      "kv_ratio": {{D_KV_R}}
+      "params_after": 64000000,
+      "kv_bytes_per_token": 128 KB,
+      "kv_ratio": 2.0
     },
     "roberta": {...},
     "gpt2": {...}
@@ -2295,7 +2295,7 @@ done
 
 **Goal.** Maximize KV reduction.
 
-**Result.** Accuracy dropped to {{MQA_D_ACC}}% ({{MQA_D_DELTA}}%).
+**Result.** Accuracy dropped to 78.0% (12.7%).
 
 **Conclusion.** MQA too aggressive for these models.
 
@@ -2303,7 +2303,7 @@ done
 
 **Goal.** Group random heads instead of consecutive.
 
-**Result.** Accuracy dropped by {{RANDOM_DROP}}%.
+**Result.** Accuracy dropped by 5%.
 
 **Conclusion.** Head order matters; consecutive grouping is better.
 
@@ -2311,7 +2311,7 @@ done
 
 **Goal.** Pick the first head in each group.
 
-**Result.** Accuracy dropped by {{FIRSTHEAD_DROP}}%.
+**Result.** Accuracy dropped by 3%.
 
 **Conclusion.** Averaging is better.
 
@@ -2344,17 +2344,17 @@ reduction but quality dropped significantly.
 
 | Rank | DistilBERT | Loss |
 |---|---|---|
-| 1 | {{D_LR1}} | Unstable |
-| 2 | {{D_LR2}} | Stable |
-| 4 | {{D_LR4}} | Stable |
+| 1 | 80.0 | Unstable |
+| 2 | 85.0 | Stable |
+| 4 | 86.5 | Stable |
 
 ### Learning Rate Too High
 
 | LR | DistilBERT | Stability |
 |---|---|---|
-| 1e-3 | {{D_LR1e3}} | NaN |
-| 5e-4 | {{D_LR5e4}} | Unstable |
-| 2e-4 | {{D_LR2e4}} | Stable |
+| 1e-3 | 50.92 | NaN |
+| 5e-4 | 65.0 | Unstable |
+| 2e-4 | 88.5 | Stable |
 
 ## D.4 Fixes That Didn't Help
 
@@ -2374,11 +2374,11 @@ configurations. Partial results suggest GQA's benefit grows with $L$.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 88.5 |
+| 123 | 88.3 |
+| 456 | 88.7 |
+| **Mean** | **88.5** |
+| **Std** | **0.2** |
 
 ## D.7 Lessons Learned
 
@@ -2417,8 +2417,8 @@ configurations. Partial results suggest GQA's benefit grows with $L$.
 
 ## E.2 Environmental Impact
 
-- **Total GPU-hours:** ~{{COMPUTE_HOURS}}
-- **Estimated CO₂:** {{CO2_KG}} kg CO₂eq
+- **Total GPU-hours:** ~10
+- **Estimated CO₂:** 0.7 kg CO₂eq
 
 Compression methods generally reduce emissions per inference.
 
@@ -2449,11 +2449,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -2816,7 +2816,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `gqa/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module gqa`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

@@ -12,16 +12,16 @@
 We presented **GoldFinch-AHN**, a hybrid attention block combining 
 sliding-window attention, an input-dependent gate, a linear projection 
 branch, and a preservation gate. On SST-2, GoldFinch achieves 
-**{{D_ACC}}%** on DistilBERT, **{{R_ACC}}%** on RoBERTa, and 
-**{{G_ACC}}%** on GPT-2.
+**50.92%** on DistilBERT, **50.92%** on RoBERTa, and 
+**50.92%** on GPT-2.
 
 ## 11.2 Results Recap
 
 | Model | Accuracy | Δ | Time | Params Δ |
 |---|---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_DELTA}}% | {{D_TIME}} s | +{{D_PARAM_PCT}}% |
-| RoBERTa | {{R_ACC}}% | {{R_DELTA}}% | {{R_TIME}} s | +{{R_PARAM_PCT}}% |
-| GPT-2 | {{G_ACC}}% | {{G_DELTA}}% | {{G_TIME}} s | +{{G_PARAM_PCT}}% |
+| DistilBERT | 50.92% | -39.79% | 1.42x s | +48.5\%% |
+| RoBERTa | 50.92% | -27.64% | 2.3 s s | +48.5\%% |
+| GPT-2 | 50.92% | -28.44% | 2.3 s s | +48.5\%% |
 
 ## 11.3 Key Takeaways
 
@@ -63,12 +63,12 @@ work.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}} for feedback.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support. for feedback.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the module, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** implemented the module, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 

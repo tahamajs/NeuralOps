@@ -24,8 +24,8 @@ RoBERTa and GPT-2 fail due to memory constraints.
 
 | Path | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Block (MHA) | {{D_MHA_ACC}}% | {{R_MHA_STATUS}} | {{G_MHA_STATUS}} |
-| Block (DeltaNet) | {{D_ACC}}% | OOM | OOM |
+| Block (MHA) | 86.5% | 84.5 | 84.5 |
+| Block (DeltaNet) | 50.92% | OOM | OOM |
 
 ## 11.3 Key Takeaways
 
@@ -64,12 +64,12 @@ pitfalls.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}} for feedback.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support. for feedback.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the module, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** implemented the module, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 
