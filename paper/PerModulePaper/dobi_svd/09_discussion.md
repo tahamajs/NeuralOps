@@ -22,7 +22,7 @@ loss at initialization.
 ### 9.1.3 Takeaway 3: Post-Hoc Pruning Works
 
 After training, gates below τ_g = 0.5 identify removable components. This 
-yields **{{PRUNE_GAIN}}%** additional rank reduction without retraining.
+yields **0.85%** additional rank reduction without retraining.
 
 ## 9.2 When to Use Dobi-SVD
 
@@ -61,11 +61,11 @@ For DistilBERT on RTX 4070:
 
 | Metric | Baseline | Dobi | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RATIO}}×** |
-| Effective rank | — | {{D_REFF}} | — |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_RATIO}}× |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
+| Accuracy | 90.71% | 90.48% | -0.23% |
+| Params | 66.95M | 66.4MM | **50\%×** |
+| Effective rank | — | 32 | — |
+| VRAM | 183 MB | 311 MB MB | 2.1\times× |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
 
 ## 9.5 Comparison with Published Methods
 
@@ -107,6 +107,6 @@ After training, apply Algorithm 2 to physically remove pruned components.
 - Concentration risk
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

@@ -11,9 +11,9 @@ GQA, RoPE, and cross-attention.
 
 | Model | Acc Δ | State mem | Time ratio at L=2048 |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **16 KB** | {{D_RATIO_2048}}× |
-| RoBERTa | {{R_DELTA}}% | **16 KB** | {{R_RATIO_2048}}× |
-| GPT-2 | {{G_DELTA}}% | **16 KB** | {{G_RATIO_2048}}× |
+| DistilBERT | -39.79% | **16 KB** | 3.5× |
+| RoBERTa | -27.64% | **16 KB** | 3.5× |
+| GPT-2 | -16.17% | **16 KB** | 3.5× |
 
 ## 11.3 Key Takeaways
 
@@ -42,13 +42,13 @@ softmax attention for long sequences. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the module, implemented, ran experiments, wrote 
+- **Taha Majs** designed the module, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

@@ -29,7 +29,7 @@ Only tested on RTX 4070 Laptop (8 GB).
 ## 10.4 Gates Do Not Always Prune
 
 Some gates may not drift far enough from initialization to be prunable. In 
-our experiments, **{{NON_PRUNE_PCT}}%** of gates remained above τ_g = 0.7.
+our experiments, **48.5\%%** of gates remained above τ_g = 0.7.
 
 ## 10.5 Recovery Steps Matter
 
@@ -39,7 +39,7 @@ steps, gates remain near initialization and no pruning is possible.
 ## 10.6 Post-Hoc Pruning is Not Exact
 
 Pruning gates below τ_g removes their contribution entirely. This is a 
-hard approximation. In some cases, we observed **{{PRUNE_DROP}}%** accuracy 
+hard approximation. In some cases, we observed **0.85%** accuracy 
 drop after pruning.
 
 ## 10.7 No Formal Rank Convergence Guarantee

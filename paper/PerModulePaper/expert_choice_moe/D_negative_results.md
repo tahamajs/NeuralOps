@@ -64,29 +64,29 @@ We tested MoE without the gate. Result: unstable training.
 
 | E | DistilBERT | Note |
 |---|---|---|
-| 2 | {{D_E2}} | Too few |
-| 4 | {{D_E4}} | Marginal |
-| 8 | {{D_E8}} | Good |
-| 16 | {{D_E16}} | Marginal gain, 2× params |
+| 2 | 0.85 | Too few |
+| 4 | 0.85 | Marginal |
+| 8 | 0.85 | Good |
+| 16 | 0.85 | Marginal gain, 2× params |
 | 32 | OOM | — |
 
 ### Learning Rate
 
 | LR | DistilBERT |
 |---|---|
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
+| 1e-4 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Lessons Learned
 

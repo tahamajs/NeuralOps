@@ -9,12 +9,12 @@
 
 ## 10.1 Not a Compressor
 
-EAT **increases** parameter count by ~{{PARAM_CHANGE}}% due to LoRA. It 
+EAT **increases** parameter count by ~66.4M% due to LoRA. It 
 does not reduce storage, memory, or model size on disk.
 
 ## 10.2 Inference Overhead
 
-EAT is ~{{INFERENCE_RATIO}}× slower than baseline when LoRA is enabled. 
+EAT is ~2.1\times× slower than baseline when LoRA is enabled. 
 The overhead comes from:
 
 - Additional LoRA matmuls per projection
@@ -84,7 +84,7 @@ We do not directly compare with:
 
 ## 10.12 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.13 Code Quality
 

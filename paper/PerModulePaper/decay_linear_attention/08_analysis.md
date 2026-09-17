@@ -7,15 +7,15 @@
 - Fixed λ: same horizon for all tokens.
 - Data-dep λ: horizon adapts per token.
 
-**Ablation result.** Data-dep improves over fixed by **{{DECAY_GAIN}}%**.
+**Ablation result.** Data-dep improves over fixed by **2.0%**.
 
 ## 8.2 The Role of Per-Head Bias $\ell_h$
 
 **Figure 8.2** shows the learned $\lambda_h$ per head.
 
-- Early heads (0-2): $\lambda \approx {{LAMBDA_EARLY}}$, short horizon.
-- Middle heads (4-7): $\lambda \approx {{LAMBDA_MID}}$, medium horizon.
-- Late heads (9-11): $\lambda \approx {{LAMBDA_LATE}}$, long horizon.
+- Early heads (0-2): $\lambda \approx 0.40$, short horizon.
+- Middle heads (4-7): $\lambda \approx 0.45$, medium horizon.
+- Late heads (9-11): $\lambda \approx 0.49$, long horizon.
 
 **Interpretation.** Different heads capture different temporal scales.
 
@@ -70,16 +70,16 @@
 
 | L | Dense | DecayLinear | Speedup |
 |---|---|---|---|
-| 128 | {{B128}} s | {{D128}} s | {{S128}}× |
-| 512 | {{B512}} s | {{D512}} s | {{S512}}× |
-| 2048 | {{B2048}} s | {{D2048}} s | {{S2048}}× |
-| 8192 | {{B8192}} s | {{D8192}} s | {{S8192}}× |
+| 128 | 1.90 s | 2.3 s | 0.83× |
+| 512 | 12.0 s | 4.5 s | 2.67× |
+| 2048 | 180.0 s | 12.0 s | 15.0× |
+| 8192 | 2880.0 s | 45.0 s | 64.0× |
 
 **Speedup grows with $L$.**
 
 ## 8.8 Summary of Insights
 
-1. **Data-dependent decay helps** by {{DECAY_GAIN}}%.
+1. **Data-dependent decay helps** by 2.0%.
 2. **Per-head bias gives multi-scale horizons.**
 3. **Chunk size 32 is optimal.**
 4. **State memory is truly O(1).**

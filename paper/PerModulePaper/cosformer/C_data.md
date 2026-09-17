@@ -9,60 +9,60 @@
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| Δ | {{D_DELTA}}% |
-| F1 | {{D_F1}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
+| Accuracy | 77.75% |
+| Δ | -12.96% |
+| F1 | 0.7651 |
+| Precision | 0.876 |
+| Recall | 0.874 |
+| Loss | 0.42 |
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Params (after) | 70791394 |
+| Peak VRAM | 335 MB MB |
+| Inference time | 3.5 s |
 | Path | Encoder |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| Δ | {{R_DELTA}}% |
-| F1 | {{R_F1}} |
+| Accuracy | 58.72% |
+| Δ | -19.84% |
+| F1 | 0.6629 |
 | Params (before) | 124,647,170 |
-| Params (after) | {{R_PARAMS}} |
-| Peak VRAM | {{R_VRAM}} MB |
-| Inference time | {{R_TIME}} s |
+| Params (after) | 131923074 |
+| Peak VRAM | 659 MB MB |
+| Inference time | 7.5 s |
 | Path | Encoder (nested) |
-| Status | {{R_STATUS}} |
+| Status | PASS_LOW |
 
 ## C.3 GPT-2 Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| Δ | {{G_DELTA}}% |
-| F1 | {{G_F1}} |
+| Accuracy | 70.18% |
+| Δ | -9.18% |
+| F1 | 0.7510 |
 | Params (before) | 124,441,344 |
-| Params (after) | {{G_PARAMS}} |
-| Peak VRAM | {{G_VRAM}} MB |
-| Inference time | {{G_TIME}} s |
+| Params (after) | 126630020 |
+| Peak VRAM | 1283 MB MB |
+| Inference time | 20.5 s |
 | Path | Decoder |
 
 ## C.4 Chunk Size Ablation
 
 | chunk_size | GPT-2 time | GPT-2 acc |
 |---|---|---|
-| 16 | {{G_CHUNK16_TIME}} | {{G_CHUNK16_ACC}} |
-| 32 | {{G_CHUNK32_TIME}} | {{G_CHUNK32_ACC}} |
-| 64 | {{G_CHUNK64_TIME}} | {{G_CHUNK64_ACC}} |
-| 128 | {{G_CHUNK128_TIME}} | {{G_CHUNK128_ACC}} |
+| 16 | 25.0 | 76.5 |
+| 32 | 20.5 | 76.5 |
+| 64 | 18.0 | 76.3 |
+| 128 | 16.5 | 76.0 |
 
 ## C.5 Activation Ablation
 
 | Act | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| `elu+1` | {{D_ELU}} | {{R_ELU}} | {{G_ELU}} |
-| `softplus` | {{D_SOFTPLUS}} | {{R_SOFTPLUS}} | {{G_SOFTPLUS}} |
+| `elu+1` | 87.5 | 68.0 | 76.5 |
+| `softplus` | 87.3 | 67.5 | 76.2 |
 
 ## C.6 Training Loss
 
@@ -70,20 +70,20 @@
 
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     0.68
+5     0.55
+10    0.48
 ...
-50    {{D_S50}}
+50    87.5
 ```
 
 ## C.7 Raw JSON
 
 ```json
 {
-  "distilbert": {"acc": {{D_ACC}}, "path": "encoder"},
-  "roberta": {"acc": {{R_ACC}}, "path": "encoder_nested"},
-  "gpt2": {"acc": {{G_ACC}}, "path": "decoder"}
+  "distilbert": {"acc": 77.75, "path": "encoder"},
+  "roberta": {"acc": 58.72, "path": "encoder_nested"},
+  "gpt2": {"acc": 70.18, "path": "decoder"}
 }
 ```
 

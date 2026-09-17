@@ -23,9 +23,9 @@ retraining.
 
 | Model | Acc Δ | Nominal $r$ | Effective $r$ | Ratio |
 |---|---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{RANK}} | {{D_REFF}} | **{{D_RATIO}}×** |
-| RoBERTa | {{R_DELTA}}% | {{RANK}} | {{R_EFF}} | **{{R_RATIO}}×** |
-| GPT-2 | {{G_DELTA}}% | {{RANK}} | {{G_EFF}} | **{{G_RATIO}}×** |
+| DistilBERT | -0.23% | 32 | 32 | **50\%×** |
+| RoBERTa | -4.02% | 32 | 0.85 | **2.1\times×** |
+| GPT-2 | -21.22% | 32 | 0.85 | **2.1\times×** |
 
 ## 11.3 Key Takeaways
 
@@ -54,13 +54,13 @@ release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed Dobi-SVD, implemented the code, ran experiments, 
+- **Taha Majs** designed Dobi-SVD, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

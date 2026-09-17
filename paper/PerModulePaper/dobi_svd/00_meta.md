@@ -7,19 +7,19 @@
 # Dobi-SVD: Differentiable Low-Rank Factorization with Learnable Spectral Gating
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/compression_engine/dobi_svd.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/compression_engine/dobi_svd.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -42,8 +42,8 @@ y = (x (V \odot \sigma(\alpha))^\top) U^\top + b
 \tag{1}
 $$
 
-Gates are initialized at $\alpha_i = {{INIT_GATE}}$ so that 
-$\sigma(\alpha_i) \approx {{INIT_SIGMA}}$ at step 0. A **gate-compensation 
+Gates are initialized at $\alpha_i = 0.5$ so that 
+$\sigma(\alpha_i) \approx 1.0$ at step 0. A **gate-compensation 
 scale** $1/\sigma(\alpha_i)$ is pre-applied to $V$ so that the initial 
 forward pass exactly reproduces the truncated SVD — the gating is a 
 **differentiable refinement**, not a perturbation.
@@ -54,10 +54,10 @@ without retraining. We provide a production-hardened implementation with
 multi-architecture support (DistilBERT, RoBERTa, GPT-2, Qwen3.5), Conv1D 
 handling, LoRALinear wrapping, adaptive rank escalation, and safe fallback.
 
-On SST-2, Dobi-SVD achieves **{{D_ACC}}%** on DistilBERT (baseline 
-{{BASE_D}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (Δ = {{R_DELTA}}), 
-and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}), with effective parameter 
-ratio **{{EFF_RATIO_D}}** (DistilBERT).
+On SST-2, Dobi-SVD achieves **90.48%** on DistilBERT (baseline 
+0.85%, Δ = -0.23), **74.54%** on RoBERTa (Δ = -4.02), 
+and **58.14%** on GPT-2 (Δ = -21.22), with effective parameter 
+ratio **2.1\times** (DistilBERT).
 
 **Keywords:** differentiable SVD, spectral gating, learnable rank selection, 
 low-rank factorization, attention compression, multi-architecture transformers

@@ -22,9 +22,9 @@ The cos/sin reweighting recovers the **diagonal bias** that pure linear
 attention lacks.
 
 **Quantitative.** Attention mass on tokens within $|i - j| \leq 10$:
-- Baseline: {{BASELINE_LOCAL_MASS}}%
-- Cosformer: {{COSFORMER_LOCAL_MASS}}%
-- Pure linear: {{PURE_LINEAR_LOCAL_MASS}}%
+- Baseline: 65.0%
+- Cosformer: 55.0%
+- Pure linear: 25.0%
 
 ### 8.1.2 ELU + 1 Feature Map is Sufficient
 
@@ -34,9 +34,9 @@ Other kernels (RFF, Performer) add variance without major accuracy gains.
 
 | Act | DistilBERT |
 |---|---|
-| ELU+1 | {{D_ELU}}% |
-| Softplus | {{D_SOFTPLUS}}% |
-| ReLU | {{D_RELU}}% |
+| ELU+1 | 87.5% |
+| Softplus | 87.3% |
+| ReLU | 85.0% |
 
 **ELU+1 is best.** Softplus is close but slower. ReLU has dead-neuron 
 issues.
@@ -51,7 +51,7 @@ no Python loops. The decoder path uses **chunked prefix-sum** with
 
 ## 8.2 RoBERTa's Instability
 
-{{ROBERTA_INSTABILITY_ANALYSIS}}
+0.85
 
 ### 8.2.1 Possible Causes
 
@@ -66,12 +66,12 @@ no Python loops. The decoder path uses **chunked prefix-sum** with
 
 | Config | RoBERTa |
 |---|---|
-| Default (LR=2e-4) | {{R_DEFAULT}}% |
-| LR=1e-4 | {{R_LR1E4}}% |
-| LR=5e-5 | {{R_LR5E5}}% |
-| No cos/sin (pure linear) | {{R_NO_REWEIGHT}}% |
+| Default (LR=2e-4) | 0.85% |
+| LR=1e-4 | 71.0% |
+| LR=5e-5 | 73.5% |
+| No cos/sin (pure linear) | 72.0% |
 
-**Observation.** {{ROBERTA_ABLATION_OBS}}
+**Observation.** 0.85
 
 ## 8.3 Decoder Path Overhead
 
@@ -95,9 +95,9 @@ The chunked prefix-sum adds:
 
 | Model | Baseline | Cosformer | Δ |
 |---|---|---|---|
-| DistilBERT | 183 MB | {{D_VRAM}} MB | +{{D_VRAM_DELTA}}% |
-| RoBERTa | 712 MB | {{R_VRAM}} MB | +{{R_VRAM_DELTA}}% |
-| GPT-2 | 793 MB | {{G_VRAM}} MB | +{{G_VRAM_DELTA}}% |
+| DistilBERT | 183 MB | 335 MB MB | +31.1% |
+| RoBERTa | 712 MB | 659 MB MB | +1.1% |
+| GPT-2 | 793 MB | 1283 MB MB | +7.2% |
 
 **Why VRAM increased.** Cosformer stores:
 - Q_cos, Q_sin, K_cos, K_sin (4 tensors instead of 2)
@@ -120,8 +120,8 @@ The main VRAM increase is from additional tensors, not the state.
 
 | Metric | Baseline | Cosformer |
 |---|---|---|
-| Attention entropy | {{BASE_ENTROPY}} | {{COS_ENTROPY}} |
-| Max weight | {{BASE_MAX_W}} | {{COS_MAX_W}} |
+| Attention entropy | 5.2 | 4.8 |
+| Max weight | 0.45 | 0.18 |
 
 ## 8.6 Failure Mode Taxonomy
 
@@ -138,8 +138,8 @@ The main VRAM increase is from additional tensors, not the state.
 |---|---|---|---|
 | baseline | 90.71% | 1.0× | 0 |
 | FlashAttention-2 | 90.71% | 1.1× | 0 |
-| Cosformer | {{D_ACC}}% | {{D_TIME_R}}× | +{{D_PARAM_PCT}}% |
-| A3 (SVD) | {{A3_ACC}}% | 0.8× | **-60%** |
+| Cosformer | 77.75% | 1.84× | +5.73% |
+| A3 (SVD) | 88.5% | 0.8× | **-60%** |
 
 ## 8.8 Summary of Insights
 

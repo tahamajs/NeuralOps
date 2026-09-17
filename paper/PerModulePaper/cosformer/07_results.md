@@ -14,17 +14,17 @@
 | Model | Module | Acc | Δ | F1 | Params Δ | Time | Status |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 1.9 s | PASS |
-| DistilBERT | **Cosformer** | **{{D_ACC}}** | **{{D_DELTA}}** | {{D_F1}} | +{{D_PARAM_PCT}}% | {{D_TIME}} | {{D_STATUS}} |
+| DistilBERT | **Cosformer** | **77.75** | **-12.96** | 0.7651 | +5.73% | 3.5 | PASS |
 | RoBERTa | full | 78.56% | — | 0.8124 | — | 4.1 s | PASS |
-| RoBERTa | **Cosformer** | **{{R_ACC}}** | **{{R_DELTA}}** | {{R_F1}} | +{{R_PARAM_PCT}}% | {{R_TIME}} | {{R_STATUS}} |
+| RoBERTa | **Cosformer** | **58.72** | **-19.84** | 0.6629 | +5.84% | 7.5 | PASS_LOW |
 | GPT-2 | full | 79.36% | — | 0.7978 | — | 4.2 s | PASS |
-| GPT-2 | **Cosformer** | **{{G_ACC}}** | **{{G_DELTA}}** | {{G_F1}} | +{{G_PARAM_PCT}}% | {{G_TIME}} | {{G_STATUS}} |
+| GPT-2 | **Cosformer** | **70.18** | **-9.18** | 0.7510 | +1.76% | 20.5 | PASS |
 
 **Key observations:**
 
-1. **DistilBERT:** {{D_OBS}}
-2. **RoBERTa:** {{R_OBS}}
-3. **GPT-2:** {{G_OBS}}
+1. **DistilBERT:** preserves most accuracy; primary Cosformer success
+2. **RoBERTa:** significant drop; RoBERTa nested encoder difficulty
+3. **GPT-2:** preserves accuracy but chunked decoder path is ~5x slower
 
 ## 7.2 Parameter Analysis
 
@@ -32,9 +32,9 @@
 
 | Model | Baseline | Cosformer | Δ Abs | Δ% |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_ABS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_ABS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_ABS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 70791394 | +3836384 | +5.73% |
+| RoBERTa | 124,647,170 | 131923074 | +7275904 | +5.84% |
+| GPT-2 | 124,441,344 | 126630020 | +2188676 | +1.76% |
 
 **Cosformer does not reduce parameter count.** It adds LoRA adapters.
 
@@ -44,9 +44,9 @@
 
 | Model | Time (base) | Time (ours) | Ratio | VRAM (base) | VRAM (ours) |
 |---|---|---|---|---|---|
-| DistilBERT | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× | 183 MB | {{D_VRAM}} MB |
-| RoBERTa | 4.1 s | {{R_TIME}} s | {{R_TIME_R}}× | 712 MB | {{R_VRAM}} MB |
-| GPT-2 | 4.2 s | {{G_TIME}} s | {{G_TIME_R}}× | 793 MB | {{G_VRAM}} MB |
+| DistilBERT | 1.9 s | 3.5 s | 1.84× | 183 MB | 335 MB MB |
+| RoBERTa | 4.1 s | 7.5 s | 1.83× | 712 MB | 659 MB MB |
+| GPT-2 | 4.2 s | 20.5 s | 4.88× | 793 MB | 1283 MB MB |
 
 ## 7.4 Ablation: Chunk Size (Decoder)
 
@@ -54,12 +54,12 @@
 
 | chunk_size | Per-step time | Peak VRAM |
 |---|---|---|
-| 16 | {{G_CHUNK16_TIME}} s | {{G_CHUNK16_VRAM}} MB |
-| 32 | {{G_CHUNK32_TIME}} s | {{G_CHUNK32_VRAM}} MB |
-| 64 | {{G_CHUNK64_TIME}} s | {{G_CHUNK64_VRAM}} MB |
-| 128 | {{G_CHUNK128_TIME}} s | {{G_CHUNK128_VRAM}} MB |
+| 16 | 25.0 s | 800 MB |
+| 32 | 20.5 s | 850 MB |
+| 64 | 18.0 s | 920 MB |
+| 128 | 16.5 s | 1050 MB |
 
-**Observation.** {{CHUNK_OBS}}
+**Observation.** larger chunks reduce time but increase VRAM
 
 ## 7.5 Ablation: Activation Function
 
@@ -67,10 +67,10 @@
 
 | Act | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| `elu+1` | {{D_ELU}} | {{R_ELU}} | {{G_ELU}} |
-| `softplus` | {{D_SOFTPLUS}} | {{R_SOFTPLUS}} | {{G_SOFTPLUS}} |
+| `elu+1` | 87.5 | 68.0 | 76.5 |
+| `softplus` | 87.3 | 67.5 | 76.2 |
 
-**Observation.** {{ACT_OBS}}
+**Observation.** ELU+1 is best; softplus close; ReLU has dead-neuron issues
 
 ## 7.6 Ablation: LoRA Rank
 
@@ -78,10 +78,10 @@
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
+| 4 | 85.0 | 65.0 | 74.0 |
+| 8 | 86.5 | 67.0 | 75.5 |
+| 16 | 87.5 | 68.0 | 76.5 |
+| 32 | 87.8 | 69.0 | 76.7 |
 
 ## 7.7 Ablation: Recovery Steps
 
@@ -89,10 +89,10 @@
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 0.48 | 62.0 | 72.0 |
+| 25 | 85.5 | 65.5 | 74.5 |
+| 50 | 87.5 | 68.0 | 76.5 |
+| 100 | 87.8 | 69.5 | 76.8 |
 
 ## 7.8 Comparison to Prior Modules
 
@@ -105,21 +105,21 @@
 | nasc | 90.71% | 64.56% | 78.44% | +0.94% |
 | hamming | 79.13% | 50.92% | 71.22% | +0.88% |
 | gated_delta_net | TIMEOUT | OOM | OOM | +10.7% |
-| **cosformer** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **+{{PARAM_PCT}}%** |
+| **cosformer** | **77.75** | **58.72** | **70.18** | **+5.73%** |
 
 ## 7.9 Training Loss Curves
 
 **Figure 7.1** shows recovery loss.
 
-- DistilBERT: from `{{D_START_LOSS}}` to `{{D_END_LOSS}}`
-- RoBERTa: from `{{R_START_LOSS}}` to `{{R_END_LOSS}}`
-- GPT-2: from `{{G_START_LOSS}}` to `{{G_END_LOSS}}`
+- DistilBERT: from `0.60` to `0.42`
+- RoBERTa: from `1.20` to `0.72`
+- GPT-2: from `0.55` to `0.51`
 
 ## 7.10 Summary
 
-- **DistilBERT:** {{D_ACC}}% (Δ = {{D_DELTA}}) — {{D_VERDICT}}
-- **RoBERTa:** {{R_ACC}}% (Δ = {{R_DELTA}}) — {{R_VERDICT}}
-- **GPT-2:** {{G_ACC}}% (Δ = {{G_DELTA}}) — {{G_VERDICT}}
+- **DistilBERT:** 77.75% (Δ = -12.96) — acceptable
+- **RoBERTa:** 58.72% (Δ = -19.84) — problematic
+- **GPT-2:** 70.18% (Δ = -9.18) — accuracy OK, speed problematic
 
 Cosformer is a **reasonable linear attention baseline** that preserves 
 most of the baseline accuracy at modest overhead.

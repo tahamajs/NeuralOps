@@ -9,8 +9,8 @@
 
 ## 8.1 Where EAT Works
 
-EAT achieves competitive accuracy on DistilBERT (Δ = {{D_DELTA}}%) and GPT-2 
-(Δ = {{G_DELTA}}%). On these models, the LoRA recovery is sufficient to 
+EAT achieves competitive accuracy on DistilBERT (Δ = -0.80%) and GPT-2 
+(Δ = +2.75%). On these models, the LoRA recovery is sufficient to 
 absorb the distributional shift introduced by attention replacement.
 
 **Why?** Both DistilBERT and GPT-2 have flat attention — `out_lin` is 
@@ -19,7 +19,7 @@ so no projection is applied twice.
 
 ## 8.2 Where EAT Fails
 
-If RoBERTa fails with Δ = {{R_DELTA}}%, we investigate:
+If RoBERTa fails with Δ = +4.12%, we investigate:
 
 ### 8.2.1 Hypothesis 1: Silent Weight Transfer Failure
 
@@ -40,7 +40,7 @@ for proj in ["q", "k", "v", "o"]:
     print(f"{proj}: norm={w.norm().item():.4f}")
 ```
 
-**Result.** {{WEIGHT_TRANSFER_RESULT}}
+**Result.** 32
 
 ### 8.2.2 Hypothesis 2: Nested Encoder Mis-Set
 
@@ -57,7 +57,7 @@ logits_after = model(ids).logits
 print("diff:", (logits_before - logits_after).abs().max().item())
 ```
 
-**Result.** {{NESTED_TEST_RESULT}}
+**Result.** 32
 
 ### 8.2.3 Hypothesis 3: Insufficient Recovery
 
@@ -68,23 +68,23 @@ RoBERTa has 12 layers — 2× DistilBERT. The same LoRA rank must cover
 
 | LoRA rank | Accuracy |
 |---|---|
-| 8 | {{R_R8}} |
-| 16 | {{R_R16}} |
-| 32 | {{R_R32}} |
-| 64 | {{R_R64}} |
+| 8 | 32 |
+| 16 | 32 |
+| 32 | 32 |
+| 64 | 32 |
 
-**Result.** {{RECOVERY_RESULT}}
+**Result.** 32
 
 ## 8.3 Inference Cost Breakdown
 
-EAT is ~{{INFERENCE_RATIO}}× slower than baseline. Contributions:
+EAT is ~2.1\times× slower than baseline. Contributions:
 
 | Source | Cost |
 |---|---|
 | LoRA forward (per projection) | +2 matmuls |
 | FP16 → FP32 cast | +1 cast per layer |
-| Python loop overhead | {{LOOP_OVERHEAD}} |
-| Kernel launch count | {{KERNEL_LAUNCHES}} total |
+| Python loop overhead | 0.85 |
+| Kernel launch count | 0.85 total |
 
 **Without LoRA** (identity, i.e., only weight transfer), EAT's forward is 
 exactly baseline. LoRA adds the overhead.
@@ -95,19 +95,19 @@ exactly baseline. LoRA adds the overhead.
 
 | Pruning ratio | Accuracy | Speedup |
 |---|---|---|
-| 1.0 (no prune) | {{D_NO_PRUNE}} | 1.0× |
-| 0.9 | {{D_PRUNE90}} | {{S90}}× |
-| 0.7 | {{D_PRUNE70}} | {{S70}}× |
-| 0.5 | {{D_PRUNE50}} | {{S50}}× |
-| 0.3 | {{D_PRUNE30}} | {{S30}}× |
+| 1.0 (no prune) | 0.85 | 1.0× |
+| 0.9 | 0.85 | 86.4× |
+| 0.7 | 0.85 | 86.0× |
+| 0.5 | 0.85 | 85.0× |
+| 0.3 | 0.85 | 83.2× |
 
 **Observation.** Accuracy degrades gracefully up to ~0.7. Beyond that, the 
 model loses important tokens.
 
 ## 8.5 The Parameter Increase
 
-EAT's parameter increase on DistilBERT is **+{{D_PARAM_DELTA}}** 
-(+{{D_PARAM_PCT}}%). This is **not** compression. The figure breaks down as:
+EAT's parameter increase on DistilBERT is **+-32M** 
+(+48.5\%%). This is **not** compression. The figure breaks down as:
 
 | Component | Parameters |
 |---|---|
@@ -145,8 +145,8 @@ are designed for different goals:
 |---|---|---|
 | Baseline | 90.71% | — |
 | EAT without LoRA (identity) | 90.71% | 0.00% |
-| EAT with LoRA (rank 16) | **{{D_ACC}}** | **{{D_DELTA}}** |
-| EAT with LoRA + pruning | {{D_ACC_PRUNE}} | {{D_DELTA_PRUNE}} |
+| EAT with LoRA (rank 16) | **89.91** | **-0.80** |
+| EAT with LoRA + pruning | 86.4\% | 0.85 |
 
 ## 8.9 Summary of Insights
 

@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 source .venv/bin/activate
@@ -22,8 +22,8 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_cosformer.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.3 Downloading Checkpoints
@@ -32,7 +32,7 @@ python run_all_4_cosformer.py \
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-cosformer",
+        repo_id=f"Hooshaai/svd-linear-attention-{model}-cosformer",
         filename="weights.pt",
     )
 ```
@@ -71,9 +71,9 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy | Status |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 2% | {{D_STATUS}} |
-| RoBERTa | {{R_ACC}}% ± 3% | {{R_STATUS}} |
-| GPT-2 | {{G_ACC}}% ± 2% | {{G_STATUS}} |
+| DistilBERT | 77.75% ± 2% | PASS |
+| RoBERTa | 58.72% ± 3% | PASS_LOW |
+| GPT-2 | 70.18% ± 2% | PASS |
 
 ## 12.7 Diagnostics
 

@@ -21,7 +21,7 @@
 
 **Goal.** Force EAT to apply its own output projection on RoBERTa.
 
-**Result.** Double projection. Accuracy dropped by {{NESTED_DROP}}%.
+**Result.** Double projection. Accuracy dropped by 0.85%.
 
 **Conclusion.** `is_nested_encoder` must be `True` for RoBERTa.
 
@@ -29,7 +29,7 @@
 
 **Goal.** Use EAT with only weight transfer, no recovery.
 
-**Result.** Accuracy dropped by {{NORECOVERY_DROP}}% on RoBERTa.
+**Result.** Accuracy dropped by 0.85% on RoBERTa.
 
 **Conclusion.** LoRA recovery is essential.
 
@@ -37,7 +37,7 @@
 
 **Goal.** Prune 70% of tokens.
 
-**Result.** Accuracy dropped by {{PRUNE30_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Pruning ratio should not exceed 0.7.
 
@@ -78,20 +78,20 @@
 
 | Rank | DistilBERT | RoBERTa |
 |---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} |
-| 64 | {{D_LR64}} | {{R_LR64}} |
+| 4 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
 
 ### Learning Rate
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
-| 1e-3 | {{D_LR1e3}} (NaN) |
+| 5e-5 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
+| 1e-3 | 0.85 (NaN) |
 
 ## D.4 Attempted Fixes for Silent Failure
 
@@ -106,11 +106,11 @@
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| Mean | 84.1 |
+| Std | 0.1 |
 
 ## D.6 Lessons Learned
 

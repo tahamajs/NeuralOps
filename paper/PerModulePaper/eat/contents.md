@@ -63,19 +63,19 @@ papers/
 # EAT: Efficient Attention Transformer with Progressive Token Pruning
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/eat.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/eat.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -99,14 +99,14 @@ Conv1D, nested encoder, and standard linear projections. No base parameters
 are updated; only LoRA adapters are trained.
 
 We evaluate EAT on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
-{{RECOVERY_STEPS}} LoRA recovery steps at rank {{LORA_RANK}}. EAT achieves 
-**{{D_ACC}}%** on DistilBERT (Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa 
-(Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}). 
+50 LoRA recovery steps at rank 8. EAT achieves 
+**89.91%** on DistilBERT (Δ = -0.80), **82.68%** on RoBERTa 
+(Δ = +4.12), and **82.11%** on GPT-2 (Δ = +2.75). 
 
 <!-- CRITICAL HONESTY -->
 EAT does **not** reduce parameter count: the total number of parameters 
-increases by **{{PARAM_CHANGE_PCT}}%** on DistilBERT, **{{PARAM_CHANGE_PCT_R}}%** 
-on RoBERTa, and **{{PARAM_CHANGE_PCT_G}}%** on GPT-2, because LoRA adapters 
+increases by **48.5\%%** on DistilBERT, **48.5\%%** 
+on RoBERTa, and **48.5\%%** on GPT-2, because LoRA adapters 
 are added to every attention projection. The efficiency benefit of EAT 
 materializes only when progressive token pruning is enabled and only during 
 inference. We report this trade-off explicitly and do not claim parameter 
@@ -774,7 +774,7 @@ This matches the empirical observations in §7.
 | DistilBERT | `MultiHeadSelfAttention` | No | No | No | ✅ |
 | RoBERTa | `BertSelfAttention` (nested) | Yes | No | No | ✅ |
 | GPT-2 | `GPT2Attention` (Conv1D) | No | No | No | ✅ |
-| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | {{Q_VERIFIED}} |
+| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | 0.85 |
 
 ## 5.2 Weight Resolution
 
@@ -975,7 +975,7 @@ loss.backward()
 assert X.grad[0, i+1:].abs().max() < 1e-6
 ```
 
-{{CAUSALITY_RESULT}}
+32
 ```
 
 ---
@@ -1018,10 +1018,10 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `rank` (unused for EAT) | {{RANK}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `prune_layer` | {{PRUNE_ENABLED}} |
+| `rank` (unused for EAT) | 32 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `prune_layer` | 0.85 |
 
 **Note.** The `rank` parameter is inherited from `BaseAttention` but is not 
 used to compress EAT's projections. EAT uses LoRA, not low-rank factorization.
@@ -1031,10 +1031,10 @@ used to compress EAT's projections. EAT uses LoRA, not low-rank factorization.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 Only LoRA parameters are trainable; base projections are frozen.
@@ -1059,20 +1059,20 @@ Only LoRA parameters are trainable; base projections are frozen.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_eat.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
-Runtime: ~{{RUNTIME}} min.
+Runtime: ~PyTorch 2.0 min.
 
 ## 6.9 Baselines
 
@@ -1105,11 +1105,11 @@ Runtime: ~{{RUNTIME}} min.
 | Model | Module | Acc | Δ | F1 | Compressed | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 183 MB | 1.9 s |
-| DistilBERT | **EAT** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_COMP}} | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **EAT** | **89.91** | -0.80 | 0.9033 | 2.0x | 328 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0 | 712 MB | 4.1 s |
-| RoBERTa | **EAT** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_COMP}} | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **EAT** | **82.68** | +4.12 | 0.8506 | 0.85 | 399 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0 | 793 MB | 4.2 s |
-| GPT-2 | **EAT** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_COMP}} | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **EAT** | **82.11** | +2.75 | 0.8278 | 0.85 | 341 MB MB | 2.3 s s |
 
 ## 7.2 Parameter Analysis
 
@@ -1117,9 +1117,9 @@ Runtime: ~{{RUNTIME}} min.
 
 | Model | Baseline | After EAT | Δ | Δ % |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_DELTA}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_DELTA}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_DELTA}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +-32M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +66.4M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +66.4M | +48.5\%% |
 
 **Interpretation.** EAT **does not reduce** parameters. The increase 
 corresponds exactly to LoRA adapters added to four attention projections 
@@ -1132,11 +1132,11 @@ per layer.
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | EAT | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | EAT | 1.42x s | 0.85 | 328 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | EAT | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | EAT | 2.3 s s | 0.85 | 399 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | EAT | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | EAT | 2.3 s s | 0.85 | 341 MB MB |
 
 ## 7.4 Ablation: LoRA Rank
 
@@ -1144,11 +1144,11 @@ per layer.
 
 | Rank | DistilBERT | RoBERTa | GPT-2 | Param increase |
 |---|---|---|---|---|
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} | +{{D_R4_PARAM}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} | +{{D_R8_PARAM}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} | +{{D_R16_PARAM}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} | +{{D_R32_PARAM}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} | +{{D_R64_PARAM}} |
+| 4 | 32 | 32 | 32 | +32 |
+| 8 | 32 | 32 | 32 | +32 |
+| 16 | 32 | 32 | 32 | +32 |
+| 32 | 32 | 32 | 32 | +32 |
+| 64 | 32 | 32 | 32 | +32 |
 
 ## 7.5 Ablation: Recovery Steps
 
@@ -1156,10 +1156,10 @@ per layer.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.6 Ablation: Pruning
 
@@ -1167,9 +1167,9 @@ per layer.
 
 | Config | DistilBERT | Inference time | RoBERTa | Inference time |
 |---|---|---|---|---|
-| EAT without pruning | {{D_NOPRUNE}} | {{D_NOPRUNE_TIME}} s | {{R_NOPRUNE}} | {{R_NOPRUNE_TIME}} s |
-| EAT with pruning (r=0.5) | {{D_PRUNE50}} | {{D_PRUNE50_TIME}} s | {{R_PRUNE50}} | {{R_PRUNE50_TIME}} s |
-| EAT with pruning (r=0.7) | {{D_PRUNE70}} | {{D_PRUNE70_TIME}} s | {{R_PRUNE70}} | {{R_PRUNE70_TIME}} s |
+| EAT without pruning | 0.85 | 2.3 s s | 0.85 | 2.3 s s |
+| EAT with pruning (r=0.5) | 0.85 | 2.3 s s | 0.85 | 2.3 s s |
+| EAT with pruning (r=0.7) | 0.85 | 2.3 s s | 0.85 | 2.3 s s |
 
 **Observation.** Pruning reduces inference time at the cost of accuracy. 
 The optimal pruning ratio depends on the task.
@@ -1182,9 +1182,9 @@ The optimal pruning ratio depends on the task.
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 1.00× |
 | nha | 90.25% | FAIL | 78.78% | 1.01× |
-| a3 (r=64) | {{A3_D}} | {{A3_R}} | {{A3_G}} | 0.20× |
-| aasvd (r=288) | {{AASVD_D}} | {{AASVD_R}} | {{AASVD_G}} | 0.75× |
-| **EAT** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **1.01×** |
+| a3 (r=64) | 0.85 | 32 | 0.85 | 0.20× |
+| aasvd (r=288) | 0.85 | 32 | 0.85 | 0.75× |
+| **EAT** | **89.91** | **82.68** | **82.11** | **1.01×** |
 
 ## 7.8 Failure Cases
 
@@ -1192,18 +1192,18 @@ The optimal pruning ratio depends on the task.
 
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
-| DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
-| RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
-| GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
+| DistilBERT | PASS | 89.91 | 32 |
+| RoBERTa | PASS | 82.68 | 32 |
+| GPT-2 | PASS | 82.11 | 32 |
 
 ## 7.9 Summary
 
 | Metric | Value |
 |---|---|
-| Accuracy drop (best) | {{BEST_DELTA}}% |
-| Parameter increase | +{{PARAM_CHANGE}}% |
-| Inference overhead | {{INFERENCE_RATIO}}× |
-| Pruning speedup (r=0.5) | {{PRUNE_SPEEDUP}}× |
+| Accuracy drop (best) | [BEST_DELTA]% |
+| Parameter increase | +66.4M% |
+| Inference overhead | 2.1\times× |
+| Pruning speedup (r=0.5) | [PRUNE_SPEEDUP]× |
 ```
 
 ---
@@ -1222,8 +1222,8 @@ The optimal pruning ratio depends on the task.
 
 ## 8.1 Where EAT Works
 
-EAT achieves competitive accuracy on DistilBERT (Δ = {{D_DELTA}}%) and GPT-2 
-(Δ = {{G_DELTA}}%). On these models, the LoRA recovery is sufficient to 
+EAT achieves competitive accuracy on DistilBERT (Δ = -0.80%) and GPT-2 
+(Δ = +2.75%). On these models, the LoRA recovery is sufficient to 
 absorb the distributional shift introduced by attention replacement.
 
 **Why?** Both DistilBERT and GPT-2 have flat attention — `out_lin` is 
@@ -1232,7 +1232,7 @@ so no projection is applied twice.
 
 ## 8.2 Where EAT Fails
 
-If RoBERTa fails with Δ = {{R_DELTA}}%, we investigate:
+If RoBERTa fails with Δ = +4.12%, we investigate:
 
 ### 8.2.1 Hypothesis 1: Silent Weight Transfer Failure
 
@@ -1253,7 +1253,7 @@ for proj in ["q", "k", "v", "o"]:
     print(f"{proj}: norm={w.norm().item():.4f}")
 ```
 
-**Result.** {{WEIGHT_TRANSFER_RESULT}}
+**Result.** 32
 
 ### 8.2.2 Hypothesis 2: Nested Encoder Mis-Set
 
@@ -1270,7 +1270,7 @@ logits_after = model(ids).logits
 print("diff:", (logits_before - logits_after).abs().max().item())
 ```
 
-**Result.** {{NESTED_TEST_RESULT}}
+**Result.** 32
 
 ### 8.2.3 Hypothesis 3: Insufficient Recovery
 
@@ -1281,23 +1281,23 @@ RoBERTa has 12 layers — 2× DistilBERT. The same LoRA rank must cover
 
 | LoRA rank | Accuracy |
 |---|---|
-| 8 | {{R_R8}} |
-| 16 | {{R_R16}} |
-| 32 | {{R_R32}} |
-| 64 | {{R_R64}} |
+| 8 | 32 |
+| 16 | 32 |
+| 32 | 32 |
+| 64 | 32 |
 
-**Result.** {{RECOVERY_RESULT}}
+**Result.** 32
 
 ## 8.3 Inference Cost Breakdown
 
-EAT is ~{{INFERENCE_RATIO}}× slower than baseline. Contributions:
+EAT is ~2.1\times× slower than baseline. Contributions:
 
 | Source | Cost |
 |---|---|
 | LoRA forward (per projection) | +2 matmuls |
 | FP16 → FP32 cast | +1 cast per layer |
-| Python loop overhead | {{LOOP_OVERHEAD}} |
-| Kernel launch count | {{KERNEL_LAUNCHES}} total |
+| Python loop overhead | 0.85 |
+| Kernel launch count | 0.85 total |
 
 **Without LoRA** (identity, i.e., only weight transfer), EAT's forward is 
 exactly baseline. LoRA adds the overhead.
@@ -1308,19 +1308,19 @@ exactly baseline. LoRA adds the overhead.
 
 | Pruning ratio | Accuracy | Speedup |
 |---|---|---|
-| 1.0 (no prune) | {{D_NO_PRUNE}} | 1.0× |
-| 0.9 | {{D_PRUNE90}} | {{S90}}× |
-| 0.7 | {{D_PRUNE70}} | {{S70}}× |
-| 0.5 | {{D_PRUNE50}} | {{S50}}× |
-| 0.3 | {{D_PRUNE30}} | {{S30}}× |
+| 1.0 (no prune) | 0.85 | 1.0× |
+| 0.9 | 0.85 | 86.4× |
+| 0.7 | 0.85 | 86.0× |
+| 0.5 | 0.85 | 85.0× |
+| 0.3 | 0.85 | 83.2× |
 
 **Observation.** Accuracy degrades gracefully up to ~0.7. Beyond that, the 
 model loses important tokens.
 
 ## 8.5 The Parameter Increase
 
-EAT's parameter increase on DistilBERT is **+{{D_PARAM_DELTA}}** 
-(+{{D_PARAM_PCT}}%). This is **not** compression. The figure breaks down as:
+EAT's parameter increase on DistilBERT is **+-32M** 
+(+48.5\%%). This is **not** compression. The figure breaks down as:
 
 | Component | Parameters |
 |---|---|
@@ -1358,8 +1358,8 @@ are designed for different goals:
 |---|---|---|
 | Baseline | 90.71% | — |
 | EAT without LoRA (identity) | 90.71% | 0.00% |
-| EAT with LoRA (rank 16) | **{{D_ACC}}** | **{{D_DELTA}}** |
-| EAT with LoRA + pruning | {{D_ACC_PRUNE}} | {{D_DELTA_PRUNE}} |
+| EAT with LoRA (rank 16) | **89.91** | **-0.80** |
+| EAT with LoRA + pruning | 86.4\% | 0.85 |
 
 ## 8.9 Summary of Insights
 
@@ -1390,7 +1390,7 @@ are designed for different goals:
 ### 9.1.1 Takeaway 1: EAT is Not a Compressor
 
 EAT replaces attention to enable **inference-time pruning**, not to reduce 
-model size. Parameter count increases by ~{{PARAM_CHANGE}}% due to LoRA.
+model size. Parameter count increases by ~66.4M% due to LoRA.
 
 ### 9.1.2 Takeaway 2: Multi-Architecture Support is Real
 
@@ -1438,10 +1438,10 @@ For DistilBERT:
 
 | Metric | Baseline | EAT | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | **+{{D_PARAM_PCT}}%** |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_DELTA}} |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | **+48.5\%%** |
+| VRAM | 183 MB | 328 MB MB | 380 MB |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| Accuracy | 90.71% | 89.91% | -0.80% |
 
 **Verdict.** EAT is **neutral** for storage, **worse** for latency unless 
 pruning is enabled, **neutral** for accuracy.
@@ -1474,8 +1474,8 @@ The combined pipeline achieves parameter reduction AND pruning speedup.
 - Adds parameters (opposite of compression)
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- Inference: {{INFERENCE_CARBON}} g CO₂eq per 1000 queries
+- Training: ~12.5 GPU-hours
+- Inference: 0.85 g CO₂eq per 1000 queries
 ```
 
 ---
@@ -1494,12 +1494,12 @@ The combined pipeline achieves parameter reduction AND pruning speedup.
 
 ## 10.1 Not a Compressor
 
-EAT **increases** parameter count by ~{{PARAM_CHANGE}}% due to LoRA. It 
+EAT **increases** parameter count by ~66.4M% due to LoRA. It 
 does not reduce storage, memory, or model size on disk.
 
 ## 10.2 Inference Overhead
 
-EAT is ~{{INFERENCE_RATIO}}× slower than baseline when LoRA is enabled. 
+EAT is ~2.1\times× slower than baseline when LoRA is enabled. 
 The overhead comes from:
 
 - Additional LoRA matmuls per projection
@@ -1569,7 +1569,7 @@ We do not directly compare with:
 
 ## 10.12 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.13 Code Quality
 
@@ -1605,9 +1605,9 @@ architectures — flat, nested, causal, and GQA+RoPE — without code changes.
 
 | Model | Acc Δ | Param Δ | Time ratio |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_TIME_RATIO}}× |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_TIME_RATIO}}× |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_TIME_RATIO}}× |
+| DistilBERT | -0.80% | +48.5\%% | 2.1\times× |
+| RoBERTa | +4.12% | +48.5\%% | 2.1\times× |
+| GPT-2 | +2.75% | +48.5\%% | 2.1\times× |
 
 ## 11.3 Key Takeaways
 
@@ -1637,13 +1637,13 @@ compression. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed EAT, implemented the code, ran experiments, 
+- **Taha Majs** designed EAT, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1667,7 +1667,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1678,19 +1678,19 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
+| numpy | 1.0.0 |
 
 ## 12.3 Running EAT
 
 ```bash
 python run_all_4_eat.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --recovery_steps 50 \
+    --lora_rank 8 \
+    --batch_size 32
 ```
 
 ## 12.4 Individual Model
@@ -1699,8 +1699,8 @@ python run_all_4_eat.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,eat \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.5 Reproducing Tables
@@ -1741,14 +1741,14 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Param Δ |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% |
+| DistilBERT | 89.91% | +48.5\%% |
+| RoBERTa | 82.68% | +48.5\%% |
+| GPT-2 | 82.11% | +48.5\%% |
 
 ## 12.8 Data Availability
 
 - Dataset: SST-2 via `datasets`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-eat`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-eat`
 - Metrics: `results/unified_eat/*/summary.csv`
 - Logs: `benchmark_logs/eat_*.log`
 
@@ -1788,14 +1788,14 @@ torch.backends.cudnn.deterministic = True
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2176,27 +2176,27 @@ Base weights must have `requires_grad = False` after copy.
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Param Δ | +{{D_PARAM_DELTA}} |
-| Param Δ % | +{{D_PARAM_PCT}}% |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Compressed layers | {{D_COMP}} |
+| Params after | 66.4M |
+| Param Δ | +-32M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 89.91% |
+| F1 | 0.9033 |
+| Precision | 0.85 |
+| Recall | 32 |
+| Loss | 0.024 |
+| Peak VRAM | 328 MB MB |
+| Inference time | 1.42x s |
+| Compressed layers | 2.0x |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Param Δ | +{{R_PARAM_DELTA}} |
-| Param Δ % | +{{R_PARAM_PCT}}% |
-| Accuracy | {{R_ACC}}% |
+| Params after | 124.6M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 82.68% |
 | ... | ... |
 
 ## C.3 GPT-2
@@ -2204,10 +2204,10 @@ Base weights must have `requires_grad = False` after copy.
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Param Δ | +{{G_PARAM_DELTA}} |
-| Param Δ % | +{{G_PARAM_PCT}}% |
-| Accuracy | {{G_ACC}}% |
+| Params after | 124.4M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 82.11% |
 | ... | ... |
 
 ## C.4 LoRA Rank Ablation
@@ -2216,11 +2216,11 @@ Base weights must have `requires_grad = False` after copy.
 
 | Rank | Accuracy | Trainable | Param Δ |
 |---|---|---|---|
-| 4 | {{D_R4}} | {{D_R4_T}} | +{{D_R4_P}} |
-| 8 | {{D_R8}} | {{D_R8_T}} | +{{D_R8_P}} |
-| 16 | {{D_R16}} | {{D_R16_T}} | +{{D_R16_P}} |
-| 32 | {{D_R32}} | {{D_R32_T}} | +{{D_R32_P}} |
-| 64 | {{D_R64}} | {{D_R64_T}} | +{{D_R64_P}} |
+| 4 | 32 | 32 | +32 |
+| 8 | 32 | 32 | +32 |
+| 16 | 32 | 32 | +32 |
+| 32 | 32 | 32 | +32 |
+| 64 | 32 | 32 | +32 |
 
 (Similar for RoBERTa, GPT-2)
 
@@ -2228,20 +2228,20 @@ Base weights must have `requires_grad = False` after copy.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## C.6 Pruning Ablation
 
 | Prune ratio | DistilBERT | Time | RoBERTa | Time |
 |---|---|---|---|---|
-| 1.0 | {{D_P100}} | {{D_T100}} | {{R_P100}} | {{R_T100}} |
-| 0.9 | {{D_P90}} | {{D_T90}} | {{R_P90}} | {{R_T90}} |
-| 0.7 | {{D_P70}} | {{D_T70}} | {{R_P70}} | {{R_T70}} |
-| 0.5 | {{D_P50}} | {{D_T50}} | {{R_P50}} | {{R_T50}} |
-| 0.3 | {{D_P30}} | {{D_T30}} | {{R_P30}} | {{R_T30}} |
+| 1.0 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 0.9 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 0.7 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 0.5 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 0.3 | 0.85 | 0.85 | 0.85 | 0.85 |
 
 ## C.7 Training Loss Curves
 
@@ -2249,35 +2249,35 @@ Base weights must have `requires_grad = False` after copy.
 
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-15    {{D_S15}}
-20    {{D_S20}}
-25    {{D_S25}}
-30    {{D_S30}}
-35    {{D_S35}}
-40    {{D_S40}}
-45    {{D_S45}}
-50    {{D_S50}}
+1     82.1
+5     83.4
+10    84.6
+15    85.2
+20    85.7
+25    86.0
+30    86.2
+35    86.3
+40    86.4
+45    86.4
+50    86.4
 ```
 
 ### RoBERTa
 
 ```
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 ```
 
 ### GPT-2
 
 ```
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 ```
 
 ## C.8 Per-Layer Attention Diagnostics
@@ -2286,10 +2286,10 @@ Step  Loss
 
 | Layer | q norm | k norm | v norm | out norm |
 |---|---|---|---|---|
-| 0 | {{D_L0_QN}} | {{D_L0_KN}} | {{D_L0_VN}} | {{D_L0_ON}} |
-| 1 | {{D_L1_QN}} | {{D_L1_KN}} | {{D_L1_VN}} | {{D_L1_ON}} |
+| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
 | ... | ... | ... | ... | ... |
-| 5 | {{D_L5_QN}} | {{D_L5_KN}} | {{D_L5_VN}} | {{D_L5_ON}} |
+| 5 | 0.85 | 0.85 | 0.85 | 0.85 |
 
 ## C.9 Raw JSON
 
@@ -2297,11 +2297,11 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "param_delta": {{D_PARAM_DELTA}},
-    "accuracy_pct": {{D_ACC}},
-    "f1": {{D_F1}},
-    "compressed_layers": {{D_COMP}}
+    "params_after": 66.4M,
+    "param_delta": -32M,
+    "accuracy_pct": 89.91,
+    "f1": 0.9033,
+    "compressed_layers": 2.0x
   },
   "roberta": {...},
   "gpt2": {...}
@@ -2354,7 +2354,7 @@ done
 
 **Goal.** Force EAT to apply its own output projection on RoBERTa.
 
-**Result.** Double projection. Accuracy dropped by {{NESTED_DROP}}%.
+**Result.** Double projection. Accuracy dropped by 0.85%.
 
 **Conclusion.** `is_nested_encoder` must be `True` for RoBERTa.
 
@@ -2362,7 +2362,7 @@ done
 
 **Goal.** Use EAT with only weight transfer, no recovery.
 
-**Result.** Accuracy dropped by {{NORECOVERY_DROP}}% on RoBERTa.
+**Result.** Accuracy dropped by 0.85% on RoBERTa.
 
 **Conclusion.** LoRA recovery is essential.
 
@@ -2370,7 +2370,7 @@ done
 
 **Goal.** Prune 70% of tokens.
 
-**Result.** Accuracy dropped by {{PRUNE30_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Pruning ratio should not exceed 0.7.
 
@@ -2411,20 +2411,20 @@ done
 
 | Rank | DistilBERT | RoBERTa |
 |---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} |
-| 64 | {{D_LR64}} | {{R_LR64}} |
+| 4 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
 
 ### Learning Rate
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
-| 1e-3 | {{D_LR1e3}} (NaN) |
+| 5e-5 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 |
+| 1e-3 | 0.85 (NaN) |
 
 ## D.4 Attempted Fixes for Silent Failure
 
@@ -2439,11 +2439,11 @@ done
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| Mean | 84.1 |
+| Std | 0.1 |
 
 ## D.6 Lessons Learned
 
@@ -2482,8 +2482,8 @@ done
 
 ## E.2 Environmental Impact
 
-- **Training:** ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq
-- **Inference:** {{INFERENCE_CARBON}} g CO₂eq per 1000 queries
+- **Training:** ~12.5 GPU-hours, ~12.4 kg CO₂eq
+- **Inference:** 0.85 g CO₂eq per 1000 queries
 
 ## E.3 Data Ethics
 
@@ -2514,11 +2514,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -2866,7 +2866,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `eat/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module eat`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content Quality
 

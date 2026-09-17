@@ -59,7 +59,7 @@ $$
 \tag{1.3}
 $$
 
-where $\gamma = \sigma(b_g)$ and $b_g = {{MOE_INIT_GATE}}$ initially.
+where $\gamma = \sigma(b_g)$ and $b_g = 0.1$ initially.
 
 **Three key design choices:**
 
@@ -75,7 +75,7 @@ $$
 ### 1.3.2 Negative Gate Bias
 
 $$
-\gamma = \sigma({{MOE_INIT_GATE}}) \approx {{MOE_GATE_VALUE}}
+\gamma = \sigma(0.1) \approx 0.8
 \tag{1.5}
 $$
 

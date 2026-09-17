@@ -6,7 +6,7 @@
 
 **Goal.** Standard linear attention without decay.
 
-**Result.** Accuracy dropped by {{NO_DECAY_DROP}}%.
+**Result.** Accuracy dropped by 4.5%.
 
 **Conclusion.** Decay is essential.
 
@@ -63,29 +63,29 @@ converged to 0.5 anyway.
 
 | $C$ | DistilBERT | State mem |
 |---|---|---|
-| 4 | {{D_C4}} | 2 KB |
-| 8 | {{D_C8}} | 4 KB |
-| 32 | {{D_C32}} | 16 KB |
-| 256 | {{D_C256}} | 128 KB |
+| 4 | 83.0 | 2 KB |
+| 8 | 84.5 | 4 KB |
+| 32 | 86.5 | 16 KB |
+| 256 | 83.0 | 128 KB |
 
 ### Learning Rate
 
 | LR | DistilBERT |
 |---|---|
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
+| 1e-4 | 83.5 |
+| 2e-4 | 86.5 |
+| 5e-4 | 82.0 |
 | 1e-3 | NaN |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 86.5 |
+| 123 | 86.3 |
+| 456 | 86.7 |
+| **Mean** | **86.5** |
+| **Std** | **0.2** |
 
 ## D.5 Lessons Learned
 

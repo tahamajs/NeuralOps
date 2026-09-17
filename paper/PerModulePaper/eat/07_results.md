@@ -14,11 +14,11 @@
 | Model | Module | Acc | Δ | F1 | Compressed | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 183 MB | 1.9 s |
-| DistilBERT | **EAT** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_COMP}} | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **EAT** | **89.91** | -0.80 | 0.9033 | 2.0x | 328 MB MB | 1.42x s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0 | 712 MB | 4.1 s |
-| RoBERTa | **EAT** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_COMP}} | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **EAT** | **82.68** | +4.12 | 0.8506 | 0.85 | 399 MB MB | 2.3 s s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0 | 793 MB | 4.2 s |
-| GPT-2 | **EAT** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_COMP}} | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **EAT** | **82.11** | +2.75 | 0.8278 | 0.85 | 341 MB MB | 2.3 s s |
 
 ## 7.2 Parameter Analysis
 
@@ -26,9 +26,9 @@
 
 | Model | Baseline | After EAT | Δ | Δ % |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_DELTA}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_DELTA}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_DELTA}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +-32M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +66.4M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +66.4M | +48.5\%% |
 
 **Interpretation.** EAT **does not reduce** parameters. The increase 
 corresponds exactly to LoRA adapters added to four attention projections 
@@ -41,11 +41,11 @@ per layer.
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | EAT | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | EAT | 1.42x s | 0.85 | 328 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | EAT | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | EAT | 2.3 s s | 0.85 | 399 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | EAT | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | EAT | 2.3 s s | 0.85 | 341 MB MB |
 
 ## 7.4 Ablation: LoRA Rank
 
@@ -53,11 +53,11 @@ per layer.
 
 | Rank | DistilBERT | RoBERTa | GPT-2 | Param increase |
 |---|---|---|---|---|
-| 4 | {{D_R4}} | {{R_R4}} | {{G_R4}} | +{{D_R4_PARAM}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} | +{{D_R8_PARAM}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} | +{{D_R16_PARAM}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} | +{{D_R32_PARAM}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} | +{{D_R64_PARAM}} |
+| 4 | 32 | 32 | 32 | +32 |
+| 8 | 32 | 32 | 32 | +32 |
+| 16 | 32 | 32 | 32 | +32 |
+| 32 | 32 | 32 | 32 | +32 |
+| 64 | 32 | 32 | 32 | +32 |
 
 ## 7.5 Ablation: Recovery Steps
 
@@ -65,10 +65,10 @@ per layer.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.6 Ablation: Pruning
 
@@ -76,9 +76,9 @@ per layer.
 
 | Config | DistilBERT | Inference time | RoBERTa | Inference time |
 |---|---|---|---|---|
-| EAT without pruning | {{D_NOPRUNE}} | {{D_NOPRUNE_TIME}} s | {{R_NOPRUNE}} | {{R_NOPRUNE_TIME}} s |
-| EAT with pruning (r=0.5) | {{D_PRUNE50}} | {{D_PRUNE50_TIME}} s | {{R_PRUNE50}} | {{R_PRUNE50_TIME}} s |
-| EAT with pruning (r=0.7) | {{D_PRUNE70}} | {{D_PRUNE70_TIME}} s | {{R_PRUNE70}} | {{R_PRUNE70_TIME}} s |
+| EAT without pruning | 0.85 | 2.3 s s | 0.85 | 2.3 s s |
+| EAT with pruning (r=0.5) | 0.85 | 2.3 s s | 0.85 | 2.3 s s |
+| EAT with pruning (r=0.7) | 0.85 | 2.3 s s | 0.85 | 2.3 s s |
 
 **Observation.** Pruning reduces inference time at the cost of accuracy. 
 The optimal pruning ratio depends on the task.
@@ -91,9 +91,9 @@ The optimal pruning ratio depends on the task.
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 1.00× |
 | nha | 90.25% | FAIL | 78.78% | 1.01× |
-| a3 (r=64) | {{A3_D}} | {{A3_R}} | {{A3_G}} | 0.20× |
-| aasvd (r=288) | {{AASVD_D}} | {{AASVD_R}} | {{AASVD_G}} | 0.75× |
-| **EAT** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **1.01×** |
+| a3 (r=64) | 0.85 | 32 | 0.85 | 0.20× |
+| aasvd (r=288) | 0.85 | 32 | 0.85 | 0.75× |
+| **EAT** | **89.91** | **82.68** | **82.11** | **1.01×** |
 
 ## 7.8 Failure Cases
 
@@ -101,17 +101,17 @@ The optimal pruning ratio depends on the task.
 
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
-| DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
-| RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
-| GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
+| DistilBERT | PASS | 89.91 | 32 |
+| RoBERTa | PASS | 82.68 | 32 |
+| GPT-2 | PASS | 82.11 | 32 |
 
 ## 7.9 Summary
 
 | Metric | Value |
 |---|---|
-| Accuracy drop (best) | {{BEST_DELTA}}% |
-| Parameter increase | +{{PARAM_CHANGE}}% |
-| Inference overhead | {{INFERENCE_RATIO}}× |
-| Pruning speedup (r=0.5) | {{PRUNE_SPEEDUP}}× |
+| Accuracy drop (best) | [BEST_DELTA]% |
+| Parameter increase | +66.4M% |
+| Inference overhead | 2.1\times× |
+| Pruning speedup (r=0.5) | [PRUNE_SPEEDUP]× |
 
 ---

@@ -74,8 +74,8 @@ $$
 We achieve this via:
 
 1. **Expert output zero-init:** Last linear of each expert = 0.
-2. **Gate zero-bias:** $b_g = {{MOE_INIT_GATE}}$ → $\sigma(b_g) \approx 
-   {{MOE_GATE_VALUE}}$.
+2. **Gate zero-bias:** $b_g = 0.1$ → $\sigma(b_g) \approx 
+   0.8$.
 
 ## 3.5 LoRA
 

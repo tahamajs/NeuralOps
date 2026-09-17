@@ -1,19 +1,19 @@
 # ExpertChoiceMoEAttention: Expert-Choice Routing Inside Multi-Head Attention
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/expert_choice_moe.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/expert_choice_moe.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -38,18 +38,18 @@ output before the final output projection — with:
 1. **Zero-init experts.** The final projection of every expert is initialized 
    to zero, so at step 0, the MoE contributes nothing and the attention 
    behaves exactly as the pretrained model.
-2. **Learnable scalar gate.** A single learnable bias $b_g = {{MOE_INIT_GATE}}$ 
-   gives $\sigma(b_g) \approx {{MOE_GATE_VALUE}}$ at initialization — 
+2. **Learnable scalar gate.** A single learnable bias $b_g = 0.1$ 
+   gives $\sigma(b_g) \approx 0.8$ at initialization — 
    providing a smooth ramp-up.
 3. **Architecture portability.** Weight transfer from DistilBERT, RoBERTa, 
    GPT-2, and Qwen3.5, with GQA, RoPE, nested encoders, and cross-attention.
 
-On SST-2, ExpertChoiceMoEAttention achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), 
-and **{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%).
+On SST-2, ExpertChoiceMoEAttention achieves **90.14%** on DistilBERT 
+(baseline 0.85%), **84.29%** on RoBERTa (baseline 32%), 
+and **80.50%** on GPT-2 (baseline 0.85%).
 
 **We are explicit that this module increases parameter count** by roughly 
-**{{D_PARAM_PCT}}%** per layer due to the $E$-expert MoE block and LoRA 
+**48.5\%%** per layer due to the $E$-expert MoE block and LoRA 
 adapters. Its benefit is architectural: **guaranteed load balancing** and 
 **dynamic capacity allocation**, which we show improve training stability 
 relative to token-choice MoE.

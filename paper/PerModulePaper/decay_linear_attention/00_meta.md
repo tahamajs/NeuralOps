@@ -1,19 +1,19 @@
 # DecayLinearAttention: O(1)-Memory Linear Attention with Data-Dependent Exponential Decay
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/decay_linear_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-16
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/decay_linear_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -35,10 +35,10 @@ We introduce **DecayLinearAttention**, which addresses both via:
    \lambda_{h,t} = \sigma\!\left(W_g x_t + b_g + \ell_h\right)
    $$
    
-   where $\ell_h \in [{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$ is a per-head 
+   where $\ell_h \in [-0.5, 0.0]$ is a per-head 
    learned bias. Different heads learn different context horizons.
 2. **Chunked scan with O(1) state.** We partition the sequence into chunks 
-   of size $C = {{CHUNK_SIZE}}$ and carry a compact state 
+   of size $C = 32$ and carry a compact state 
    $S \in \mathbb{R}^{d \times d}$ between chunks. The intermediate state is 
    **$\mathcal{O}(1)$ in sequence length**, in contrast to the 
    $\mathcal{O}(L)$ intermediates used by cumsum-based causal linear 
@@ -50,10 +50,10 @@ We support **bidirectional** attention for encoders (forward and backward
 scans averaged) and **causal** for decoders, along with GQA, RoPE, and 
 **cross-attention**.
 
-On SST-2, DecayLinearAttention achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), 
-and **{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%). Peak inference VRAM is 
-**{{D_VRAM}} MB** on DistilBERT (baseline {{BASE_VRAM_D}} MB), and the state 
+On SST-2, DecayLinearAttention achieves **50.92%** on DistilBERT 
+(baseline 90.71%), **50.92%** on RoBERTa (baseline 78.56%), 
+and **63.19%** on GPT-2 (baseline 79.36%). Peak inference VRAM is 
+**347 MB MB** on DistilBERT (baseline 183 MB), and the state 
 memory is **constant** in $L$.
 
 **Keywords:** linear attention, data-dependent decay, chunked scan, O(1) 

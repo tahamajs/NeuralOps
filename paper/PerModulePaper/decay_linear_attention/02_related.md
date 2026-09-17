@@ -70,9 +70,9 @@ No prior method combines all three.
 | Method | Decay | Memory (L=1024) | SST-2 | Cross-attn |
 |---|---|---|---|---|
 | Baseline MHSA | None | ~3 MB | 90.71% | ✅ |
-| Linear Transformer | None | ~0.3 MB | {{LT_D}} | ❌ |
-| GLA | Fixed | ~0.3 MB | {{GLA_D}} | ❌ |
-| CHELA-SLAY | None | ~65 MB | {{CS_D}} | ❌ |
-| **DecayLinear** | **Data-dep** | **~1.5 MB** | **{{D_ACC}}** | **✅** |
+| Linear Transformer | None | ~0.3 MB | 60.0 | ❌ |
+| GLA | Fixed | ~0.3 MB | 85.0 | ❌ |
+| CHELA-SLAY | None | ~65 MB | 88.0 | ❌ |
+| **DecayLinear** | **Data-dep** | **~1.5 MB** | **50.92** | **✅** |
 
 ---

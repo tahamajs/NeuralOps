@@ -11,7 +11,7 @@ cumsum-based methods.
 ### 9.1.2 Takeaway 2: Data-Dependent Decay Works
 
 The learned per-token decay $\lambda_{h,t}$ improves accuracy by 
-{{DECAY_GAIN}}% over fixed decay.
+2.0% over fixed decay.
 
 ### 9.1.3 Takeaway 3: Cross-Attention Support
 
@@ -21,7 +21,7 @@ models.
 ## 9.2 When to Use DecayLinearAttention
 
 ### Recommended
-- **Long-context inference** ($L \geq {{BREAKEVEN}}$).
+- **Long-context inference** ($L \geq 512$).
 - **Memory-constrained environments.**
 - **Encoder-decoder models** (cross-attention).
 - **Streaming decoding.**
@@ -48,9 +48,9 @@ For DistilBERT at L = 2048:
 
 | Metric | Baseline | DecayLinear | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Time | 180 s | {{D_T2048}} s | {{D_RATIO_2048}}× |
+| Accuracy | 90.71% | 50.92% | -39.79% |
+| Params | 66.95M | 67000000 | +0.8% |
+| Time | 180 s | 12.0 s | 3.5× |
 | State mem | 12 MB | **16 KB** | **750×** |
 
 ## 9.5 Broader Impact

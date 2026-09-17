@@ -72,15 +72,15 @@ where $\ell_h$ is a **learned scalar** per head.
 - $W_g = 0$ (no input dependence initially).
 - $b_g = 0$.
 - $\ell_h$ is initialized to linearly spaced values in 
-  $[{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$:
+  $[-0.5, 0.0]$:
 
   ```python
   self.log_decay = nn.Parameter(torch.linspace(-0.5, 0.0, num_heads))
   ```
 
 **Result.** At step 0, different heads start with different horizons:
-- Head 0: $\lambda \approx \sigma({{LOG_DECAY_MIN}}) \approx {{LAMBDA_MIN}}$
-- Head $H-1$: $\lambda \approx \sigma({{LOG_DECAY_MAX}}) \approx {{LAMBDA_MAX}}$
+- Head 0: $\lambda \approx \sigma(-0.5) \approx 0.38$
+- Head $H-1$: $\lambda \approx \sigma(0.0) \approx 0.50$
 
 This head diversity is analogous to multi-scale temporal receptive fields in 
 convolutional networks.

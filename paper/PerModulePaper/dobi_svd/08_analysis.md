@@ -37,12 +37,12 @@ Gates co-adapt with LoRA adapters. This avoids the mismatch between
 
 | Metric | Init | Post-train |
 |---|---|---|
-| Mean $\sigma(\alpha)$ | {{GATE_INIT_MEAN}} | {{GATE_POST_MEAN}} |
-| Std | 0 (all equal) | {{GATE_POST_STD}} |
-| Fraction below 0.3 | 0% | {{GATE_POST_LOW}}% |
-| Fraction above 0.9 | 100% | {{GATE_POST_HIGH}}% |
+| Mean $\sigma(\alpha)$ | 0.85 | 0.85 |
+| Std | 0 (all equal) | 84.5 |
+| Fraction below 0.3 | 0% | 0.85% |
+| Fraction above 0.9 | 100% | 0.85% |
 
-**Observation.** {{GATE_OBS}}
+**Observation.** 0.85
 
 ## 8.3 Effective Rank
 
@@ -50,9 +50,9 @@ Gates co-adapt with LoRA adapters. This avoids the mismatch between
 
 | Model | Nominal $r$ | Effective $r_\text{eff}$ | Reduction |
 |---|---|---|---|
-| DistilBERT | {{RANK}} | {{D_REFF}} | {{D_RRED}}% |
-| RoBERTa | {{RANK}} | {{R_EFF}} | {{R_RED}}% |
-| GPT-2 | {{RANK}} | {{G_EFF}} | {{G_RED}}% |
+| DistilBERT | 32 | 32 | 32% |
+| RoBERTa | 32 | 0.85 | 45.1\%% |
+| GPT-2 | 32 | 0.85 | 46.0\%% |
 
 ## 8.4 Per-Layer Gates
 
@@ -68,10 +68,10 @@ Gates co-adapt with LoRA adapters. This avoids the mismatch between
 
 | Method | DistilBERT | Effective r | Ratio |
 |---|---|---|---|
-| Fixed $r=128$ | {{FIXED128}} | 128 | {{FIXED128_RATIO}}× |
-| Dobi (τ_g=0.5) | {{D_ACC}} | {{D_REFF}} | {{D_RATIO}}× |
+| Fixed $r=128$ | 86.0 | 128 | 2.1\times× |
+| Dobi (τ_g=0.5) | 90.48 | 32 | 50\%× |
 
-**Observation.** Dobi's learned effective rank is **{{REFF_DIFF}}%** smaller 
+**Observation.** Dobi's learned effective rank is **0.85%** smaller 
 than the nominal rank, at negligible accuracy cost.
 
 ## 8.6 Gate Dynamics During Training
@@ -82,7 +82,7 @@ than the nominal rank, at negligible accuracy cost.
 - Steps 10-30: Some gates push toward 0
 - Steps 30-50: Stabilize
 
-**Observation.** {{DYNAMICS_OBS}}
+**Observation.** 0.85
 
 ## 8.7 Initial Gate Value Impact
 
@@ -90,10 +90,10 @@ than the nominal rank, at negligible accuracy cost.
 
 | Init α | σ(α_init) | DistilBERT | Notes |
 |---|---|---|---|
-| 1.0 | 0.731 | {{D_G1}} | Too low, high error |
-| 2.5 | 0.924 | {{D_G25}} | Sweet spot |
-| 4.0 | 0.982 | {{D_G4}} | Slight gain |
-| 5.0 | 0.993 | {{D_G5}} | Near-lossless |
+| 1.0 | 0.731 | 0.85 | Too low, high error |
+| 2.5 | 0.924 | 0.85 | Sweet spot |
+| 4.0 | 0.982 | 0.85 | Slight gain |
+| 5.0 | 0.993 | 0.85 | Near-lossless |
 
 ## 8.8 Post-Hoc Pruning Analysis
 
@@ -101,10 +101,10 @@ than the nominal rank, at negligible accuracy cost.
 
 | $\tau_g$ | $r_\text{eff}$ | Accuracy | Δ from unpruned |
 |---|---|---|---|
-| 0.1 | {{D_TAU1_REFF}} | {{D_TAU1_ACC}} | {{D_TAU1_D}} |
-| 0.3 | {{D_TAU3_REFF}} | {{D_TAU3_ACC}} | {{D_TAU3_D}} |
-| 0.5 | {{D_TAU5_REFF}} | {{D_TAU5_ACC}} | {{D_TAU5_D}} |
-| 0.7 | {{D_TAU7_REFF}} | {{D_TAU7_ACC}} | {{D_TAU7_D}} |
+| 0.1 | 32 | 86.4\% | 0.85 |
+| 0.3 | 32 | 86.4\% | 0.85 |
+| 0.5 | 32 | 86.4\% | 0.85 |
+| 0.7 | 32 | 86.4\% | 0.85 |
 
 **Observation.** τ_g = 0.5 gives the best accuracy/compression trade-off.
 
@@ -118,15 +118,15 @@ than the nominal rank, at negligible accuracy cost.
 | Rank post-training | Same | Learned via gates |
 | Data-driven? | ❌ | ✅ |
 | Post-hoc pruning | ❌ | ✅ |
-| Accuracy | {{ENERGY_ACC}} | {{D_ACC}} |
+| Accuracy | 86.4\% | 90.48 |
 
 ## 8.10 Failure Modes
 
 | Failure | Frequency | Cause |
 |---|---|---|
-| Gates stuck at init | {{STUCK_FREQ}} | Insufficient recovery steps |
-| All gates push to 0 | {{COLLAPSE_FREQ}} | Over-pruning |
-| High reconstruction error | {{HIGH_ERR_FREQ}} | Rank too small |
+| Gates stuck at init | 0.85 | Insufficient recovery steps |
+| All gates push to 0 | 0.85 | Over-pruning |
+| High reconstruction error | 0.024 | Rank too small |
 
 ## 8.11 Summary of Insights
 

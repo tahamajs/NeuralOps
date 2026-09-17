@@ -97,8 +97,8 @@ The practical pruning threshold $\tau_g$ should be within the sensitive range.
 ## A.8 Numerical Stability
 
 The gate compensation factor $1/\sigma(\alpha_0)$ can be large if 
-$\alpha_0$ is small. Dobi-SVD uses $\alpha_0 = {{INIT_GATE}}$ giving 
-$1/\sigma \approx {{INV_SIGMA}}$, well-conditioned.
+$\alpha_0$ is small. Dobi-SVD uses $\alpha_0 = 0.5$ giving 
+$1/\sigma \approx 1.0$, well-conditioned.
 
 ## A.9 Reconstruction Error
 

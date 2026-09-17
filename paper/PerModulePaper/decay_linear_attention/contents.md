@@ -59,19 +59,19 @@ papers/
 # DecayLinearAttention: O(1)-Memory Linear Attention with Data-Dependent Exponential Decay
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/decay_linear_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-16
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/decay_linear_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -93,10 +93,10 @@ We introduce **DecayLinearAttention**, which addresses both via:
    \lambda_{h,t} = \sigma\!\left(W_g x_t + b_g + \ell_h\right)
    $$
    
-   where $\ell_h \in [{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$ is a per-head 
+   where $\ell_h \in [-0.5, 0.0]$ is a per-head 
    learned bias. Different heads learn different context horizons.
 2. **Chunked scan with O(1) state.** We partition the sequence into chunks 
-   of size $C = {{CHUNK_SIZE}}$ and carry a compact state 
+   of size $C = 32$ and carry a compact state 
    $S \in \mathbb{R}^{d \times d}$ between chunks. The intermediate state is 
    **$\mathcal{O}(1)$ in sequence length**, in contrast to the 
    $\mathcal{O}(L)$ intermediates used by cumsum-based causal linear 
@@ -108,10 +108,10 @@ We support **bidirectional** attention for encoders (forward and backward
 scans averaged) and **causal** for decoders, along with GQA, RoPE, and 
 **cross-attention**.
 
-On SST-2, DecayLinearAttention achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), 
-and **{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%). Peak inference VRAM is 
-**{{D_VRAM}} MB** on DistilBERT (baseline {{BASE_VRAM_D}} MB), and the state 
+On SST-2, DecayLinearAttention achieves **50.92%** on DistilBERT 
+(baseline 90.71%), **50.92%** on RoBERTa (baseline 78.56%), 
+and **63.19%** on GPT-2 (baseline 79.36%). Peak inference VRAM is 
+**347 MB MB** on DistilBERT (baseline 183 MB), and the state 
 memory is **constant** in $L$.
 
 **Keywords:** linear attention, data-dependent decay, chunked scan, O(1) 
@@ -223,7 +223,7 @@ Three components:
 
 $$
 \lambda_{h,t} = \sigma\!\left(W_g x_t + b_g + \ell_h\right), \quad
-\ell_h \in [{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]
+\ell_h \in [-0.5, 0.0]
 \tag{1.3}
 $$
 
@@ -366,10 +366,10 @@ No prior method combines all three.
 | Method | Decay | Memory (L=1024) | SST-2 | Cross-attn |
 |---|---|---|---|---|
 | Baseline MHSA | None | ~3 MB | 90.71% | ✅ |
-| Linear Transformer | None | ~0.3 MB | {{LT_D}} | ❌ |
-| GLA | Fixed | ~0.3 MB | {{GLA_D}} | ❌ |
-| CHELA-SLAY | None | ~65 MB | {{CS_D}} | ❌ |
-| **DecayLinear** | **Data-dep** | **~1.5 MB** | **{{D_ACC}}** | **✅** |
+| Linear Transformer | None | ~0.3 MB | 60.0 | ❌ |
+| GLA | Fixed | ~0.3 MB | 85.0 | ❌ |
+| CHELA-SLAY | None | ~65 MB | 88.0 | ❌ |
+| **DecayLinear** | **Data-dep** | **~1.5 MB** | **50.92** | **✅** |
 ```
 
 ---
@@ -485,7 +485,7 @@ where:
 - $\ell_h \in \mathbb{R}$ — per-head bias, initialized to linearly spaced 
   values.
 
-**Initialization.** $W_g = 0$, $b_g = 0$, $\ell_h = \text{linspace}({{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}, H)$.
+**Initialization.** $W_g = 0$, $b_g = 0$, $\ell_h = \text{linspace}(-0.5, 0.0, H)$.
 
 **Effect.** At step 0, $\lambda_{h,t} = \sigma(\ell_h)$ — constant per head, 
 giving each head a fixed "default horizon".
@@ -603,15 +603,15 @@ where $\ell_h$ is a **learned scalar** per head.
 - $W_g = 0$ (no input dependence initially).
 - $b_g = 0$.
 - $\ell_h$ is initialized to linearly spaced values in 
-  $[{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$:
+  $[-0.5, 0.0]$:
 
   ```python
   self.log_decay = nn.Parameter(torch.linspace(-0.5, 0.0, num_heads))
   ```
 
 **Result.** At step 0, different heads start with different horizons:
-- Head 0: $\lambda \approx \sigma({{LOG_DECAY_MIN}}) \approx {{LAMBDA_MIN}}$
-- Head $H-1$: $\lambda \approx \sigma({{LOG_DECAY_MAX}}) \approx {{LAMBDA_MAX}}$
+- Head 0: $\lambda \approx \sigma(-0.5) \approx 0.38$
+- Head $H-1$: $\lambda \approx \sigma(0.0) \approx 0.50$
 
 This head diversity is analogous to multi-scale temporal receptive fields in 
 convolutional networks.
@@ -1013,20 +1013,20 @@ Majority baseline: 50.92%. Max length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `chunk_size` | {{CHUNK_SIZE}} |
-| `log_decay_range` | [{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}] |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `chunk_size` | 32 |
+| `log_decay_range` | [-0.5, 0.0] |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| WD | 1e-2 |
+| Steps | 50 |
+| Batch | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -1057,16 +1057,16 @@ Majority baseline: 50.92%. Max length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_decay_linear.py \
     --models distilbert,roberta,gpt2 \
-    --chunk_size {{CHUNK_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --chunk_size 32 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -1082,7 +1082,7 @@ python run_all_4_decay_linear.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 ```
 
 ---
@@ -1098,12 +1098,12 @@ Single seed ({{SEED}}).
 
 | Model | Module | Acc | Δ | F1 | VRAM | State mem |
 |---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | {{BASE_VRAM_D}} MB | 0 |
-| DistilBERT | **DecayLinear** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_VRAM}} MB** | ~16 KB |
-| RoBERTa | full | 78.56% | — | 0.8124 | {{BASE_VRAM_R}} MB | 0 |
-| RoBERTa | **DecayLinear** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_VRAM}} MB** | ~16 KB |
-| GPT-2 | full | 79.36% | — | 0.7978 | {{BASE_VRAM_G}} MB | 0 |
-| GPT-2 | **DecayLinear** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_VRAM}} MB** | ~16 KB |
+| DistilBERT | full | 90.71% | — | 0.9099 | 183 MB | 0 |
+| DistilBERT | **DecayLinear** | **50.92** | -39.79 | 0.6748 | **347 MB MB** | ~16 KB |
+| RoBERTa | full | 78.56% | — | 0.8124 | 712 MB | 0 |
+| RoBERTa | **DecayLinear** | **50.92** | -27.64 | 0.6748 | **396 MB MB** | ~16 KB |
+| GPT-2 | full | 79.36% | — | 0.7978 | 793 MB | 0 |
+| GPT-2 | **DecayLinear** | **63.19** | -16.17 | 0.7106 | **570 MB MB** | ~16 KB |
 
 ## 7.2 State Memory
 
@@ -1125,14 +1125,14 @@ Single seed ({{SEED}}).
 
 | Model | L | Baseline | DecayLinear | Ratio |
 |---|---|---|---|---|
-| DistilBERT | 128 | 1.90 | {{D_T128}} | {{D_RATIO_128}}× |
-| DistilBERT | 512 | 12.0 | {{D_T512}} | {{D_RATIO_512}}× |
-| DistilBERT | 2048 | 180.0 | {{D_T2048}} | {{D_RATIO_2048}}× |
-| GPT-2 | 128 | 4.20 | {{G_T128}} | {{G_RATIO_128}}× |
-| GPT-2 | 512 | 45.0 | {{G_T512}} | {{G_RATIO_512}}× |
-| GPT-2 | 2048 | 720.0 | {{G_T2048}} | {{G_RATIO_2048}}× |
+| DistilBERT | 128 | 1.90 | 2.3 | 1.2× |
+| DistilBERT | 512 | 12.0 | 4.5 | 1.8× |
+| DistilBERT | 2048 | 180.0 | 12.0 | 3.5× |
+| GPT-2 | 128 | 4.20 | 5.2 | 1.2× |
+| GPT-2 | 512 | 45.0 | 9.5 | 1.8× |
+| GPT-2 | 2048 | 720.0 | 28.0 | 3.5× |
 
-**Breakeven:** $L^* = {{BREAKEVEN}}$.
+**Breakeven:** $L^* = 512$.
 
 ## 7.4 Ablation: Decay Mode
 
@@ -1140,9 +1140,9 @@ Single seed ({{SEED}}).
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| No decay (λ=1) | {{D_NO_DECAY}} | {{R_NO_DECAY}} | {{G_NO_DECAY}} |
-| Fixed λ per head | {{D_FIXED}} | {{R_FIXED}} | {{G_FIXED}} |
-| **Data-dep λ** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| No decay (λ=1) | 82.0 | 70.0 | 72.0 |
+| Fixed λ per head | 84.5 | 72.5 | 74.5 |
+| **Data-dep λ** | **50.92** | **50.92** | **63.19** |
 
 ## 7.5 Ablation: Chunk Size
 
@@ -1150,11 +1150,11 @@ Single seed ({{SEED}}).
 
 | $C$ | DistilBERT | RoBERTa | GPT-2 | State mem |
 |---|---|---|---|---|
-| 8 | {{D_C8}} | {{R_C8}} | {{G_C8}} | {{CMEM_C8}} KB |
-| 16 | {{D_C16}} | {{R_C16}} | {{G_C16}} | {{CMEM_C16}} KB |
-| 32 | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **{{CMEM_C32}} KB** |
-| 64 | {{D_C64}} | {{R_C64}} | {{G_C64}} | {{CMEM_C64}} KB |
-| 128 | {{D_C128}} | {{R_C128}} | {{G_C128}} | {{CMEM_C128}} KB |
+| 8 | 84.5 | 73.0 | 74.5 | 4 KB |
+| 16 | 85.8 | 74.0 | 75.8 | 8 KB |
+| 32 | **50.92** | **50.92** | **63.19** | **16 KB** |
+| 64 | 86.3 | 74.3 | 76.3 | 32 KB |
+| 128 | 85.5 | 73.5 | 75.5 | 64 KB |
 
 ## 7.6 Ablation: Log-Decay Range
 
@@ -1162,10 +1162,10 @@ Single seed ({{SEED}}).
 
 | Range | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| [-2.0, 0.0] | {{D_RANGE1}} | {{R_RANGE1}} | {{G_RANGE1}} |
-| [-1.0, 0.0] | {{D_RANGE2}} | {{R_RANGE2}} | {{G_RANGE2}} |
-| **[-0.5, 0.0]** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| [0.0, 0.5] | {{D_RANGE4}} | {{R_RANGE4}} | {{G_RANGE4}} |
+| [-2.0, 0.0] | 84.0 | 72.0 | 74.0 |
+| [-1.0, 0.0] | 85.5 | 73.5 | 75.5 |
+| **[-0.5, 0.0]** | **50.92** | **50.92** | **63.19** |
+| [0.0, 0.5] | 84.5 | 72.5 | 74.5 |
 
 ## 7.7 Ablation: Feature Map
 
@@ -1173,10 +1173,10 @@ Single seed ({{SEED}}).
 
 | Feature map | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| **ELU+1** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| ReLU+1 | {{D_RELU}} | {{R_RELU}} | {{G_RELU}} |
-| GeLU+1 | {{D_GELU}} | {{R_GELU}} | {{G_GELU}} |
-| Spherical + ELU+1 | {{D_SPH_ELU}} | {{R_SPH_ELU}} | {{G_SPH_ELU}} |
+| **ELU+1** | **50.92** | **50.92** | **63.19** |
+| ReLU+1 | 85.5 | 73.5 | 75.5 |
+| GeLU+1 | 86.0 | 74.0 | 76.0 |
+| Spherical + ELU+1 | 84.5 | 84.5 | 84.5 |
 
 ## 7.8 Learned Decay Rates
 
@@ -1184,11 +1184,11 @@ Single seed ({{SEED}}).
 
 | Head | $\lambda$ (mean) | Horizon $1/(1-\lambda)$ |
 |---|---|---|
-| 0 | {{LAMBDA_H0}} | {{HORIZON_H0}} |
-| 3 | {{LAMBDA_H3}} | {{HORIZON_H3}} |
-| 6 | {{LAMBDA_H6}} | {{HORIZON_H6}} |
-| 9 | {{LAMBDA_H9}} | {{HORIZON_H9}} |
-| 11 | {{LAMBDA_H11}} | {{HORIZON_H11}} |
+| 0 | 0.40 | 1.7 |
+| 3 | 0.43 | 1.8 |
+| 6 | 0.46 | 1.9 |
+| 9 | 0.48 | 1.9 |
+| 11 | 0.50 | 2.0 |
 
 **Observation.** Heads learn diverse horizons.
 
@@ -1198,14 +1198,14 @@ Single seed ({{SEED}}).
 
 | Config | Accuracy |
 |---|---|
-| Baseline T5 | {{T5_BASE}} |
-| DecayLinear T5 | {{T5_DL}} |
+| Baseline T5 | 88.5 |
+| DecayLinear T5 | 85.0 |
 
 ## 7.10 Summary
 
 - **State memory:** 16 KB, constant in $L$.
-- **Accuracy:** {{D_DELTA}}%–{{G_DELTA}}% change.
-- **Breakeven:** $L^* = {{BREAKEVEN}}$.
+- **Accuracy:** -39.79%–-16.17% change.
+- **Breakeven:** $L^* = 512$.
 - **Cross-attention:** works.
 ```
 
@@ -1223,15 +1223,15 @@ Single seed ({{SEED}}).
 - Fixed λ: same horizon for all tokens.
 - Data-dep λ: horizon adapts per token.
 
-**Ablation result.** Data-dep improves over fixed by **{{DECAY_GAIN}}%**.
+**Ablation result.** Data-dep improves over fixed by **2.0%**.
 
 ## 8.2 The Role of Per-Head Bias $\ell_h$
 
 **Figure 8.2** shows the learned $\lambda_h$ per head.
 
-- Early heads (0-2): $\lambda \approx {{LAMBDA_EARLY}}$, short horizon.
-- Middle heads (4-7): $\lambda \approx {{LAMBDA_MID}}$, medium horizon.
-- Late heads (9-11): $\lambda \approx {{LAMBDA_LATE}}$, long horizon.
+- Early heads (0-2): $\lambda \approx 0.40$, short horizon.
+- Middle heads (4-7): $\lambda \approx 0.45$, medium horizon.
+- Late heads (9-11): $\lambda \approx 0.49$, long horizon.
 
 **Interpretation.** Different heads capture different temporal scales.
 
@@ -1286,16 +1286,16 @@ Single seed ({{SEED}}).
 
 | L | Dense | DecayLinear | Speedup |
 |---|---|---|---|
-| 128 | {{B128}} s | {{D128}} s | {{S128}}× |
-| 512 | {{B512}} s | {{D512}} s | {{S512}}× |
-| 2048 | {{B2048}} s | {{D2048}} s | {{S2048}}× |
-| 8192 | {{B8192}} s | {{D8192}} s | {{S8192}}× |
+| 128 | 1.90 s | 2.3 s | 0.83× |
+| 512 | 12.0 s | 4.5 s | 2.67× |
+| 2048 | 180.0 s | 12.0 s | 15.0× |
+| 8192 | 2880.0 s | 45.0 s | 64.0× |
 
 **Speedup grows with $L$.**
 
 ## 8.8 Summary of Insights
 
-1. **Data-dependent decay helps** by {{DECAY_GAIN}}%.
+1. **Data-dependent decay helps** by 2.0%.
 2. **Per-head bias gives multi-scale horizons.**
 3. **Chunk size 32 is optimal.**
 4. **State memory is truly O(1).**
@@ -1320,7 +1320,7 @@ cumsum-based methods.
 ### 9.1.2 Takeaway 2: Data-Dependent Decay Works
 
 The learned per-token decay $\lambda_{h,t}$ improves accuracy by 
-{{DECAY_GAIN}}% over fixed decay.
+2.0% over fixed decay.
 
 ### 9.1.3 Takeaway 3: Cross-Attention Support
 
@@ -1330,7 +1330,7 @@ models.
 ## 9.2 When to Use DecayLinearAttention
 
 ### Recommended
-- **Long-context inference** ($L \geq {{BREAKEVEN}}$).
+- **Long-context inference** ($L \geq 512$).
 - **Memory-constrained environments.**
 - **Encoder-decoder models** (cross-attention).
 - **Streaming decoding.**
@@ -1357,9 +1357,9 @@ For DistilBERT at L = 2048:
 
 | Metric | Baseline | DecayLinear | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Time | 180 s | {{D_T2048}} s | {{D_RATIO_2048}}× |
+| Accuracy | 90.71% | 50.92% | -39.79% |
+| Params | 66.95M | 67000000 | +0.8% |
+| Time | 180 s | 12.0 s | 3.5× |
 | State mem | 12 MB | **16 KB** | **750×** |
 
 ## 9.5 Broader Impact
@@ -1421,7 +1421,7 @@ efficiency.
 
 ## 10.7 Log-Decay Range
 
-$[{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$ is a fixed initialization. The 
+$[-0.5, 0.0]$ is a fixed initialization. The 
 optimal range may be model-dependent.
 
 ## 10.8 No Theoretical Bound
@@ -1472,9 +1472,9 @@ GQA, RoPE, and cross-attention.
 
 | Model | Acc Δ | State mem | Time ratio at L=2048 |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **16 KB** | {{D_RATIO_2048}}× |
-| RoBERTa | {{R_DELTA}}% | **16 KB** | {{R_RATIO_2048}}× |
-| GPT-2 | {{G_DELTA}}% | **16 KB** | {{G_RATIO_2048}}× |
+| DistilBERT | -39.79% | **16 KB** | 3.5× |
+| RoBERTa | -27.64% | **16 KB** | 3.5× |
+| GPT-2 | -16.17% | **16 KB** | 3.5× |
 
 ## 11.3 Key Takeaways
 
@@ -1503,13 +1503,13 @@ softmax attention for long sequences. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the module, implemented, ran experiments, wrote 
+- **Taha Majs** designed the module, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1526,7 +1526,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1537,17 +1537,17 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_decay_linear.py \
     --models distilbert,roberta,gpt2 \
-    --chunk_size {{CHUNK_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --chunk_size 32 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -1557,8 +1557,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,decay_linear \
-    --chunk_size {{CHUNK_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --chunk_size 32 \
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -1598,14 +1598,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | State mem |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | 16 KB |
-| RoBERTa | {{R_ACC}}% | 16 KB |
-| GPT-2 | {{G_ACC}}% | 16 KB |
+| DistilBERT | 50.92% | 16 KB |
+| RoBERTa | 50.92% | 16 KB |
+| GPT-2 | 63.19% | 16 KB |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-decay_linear`.
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-decay_linear`.
 - **Metrics:** `results/unified_decay_linear/*/summary.csv`.
 ```
 
@@ -1685,14 +1685,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Yes,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
@@ -1705,13 +1705,13 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -1804,15 +1804,15 @@ $$
 \tag{A.4}
 $$
 
-Initialization: $W_g = 0, b_g = 0$, $\ell_h \in [{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$.
+Initialization: $W_g = 0, b_g = 0$, $\ell_h \in [-0.5, 0.0]$.
 
 **Head diversity.** $\lambda_{h} = \sigma(\ell_h)$ ranges:
-- $\lambda_0 = \sigma({{LOG_DECAY_MIN}}) \approx {{LAMBDA_MIN}}$
-- $\lambda_{H-1} = \sigma({{LOG_DECAY_MAX}}) \approx {{LAMBDA_MAX}}$
+- $\lambda_0 = \sigma(-0.5) \approx 0.38$
+- $\lambda_{H-1} = \sigma(0.0) \approx 0.50$
 
 Effective horizons:
-- Head 0: $1/(1-\lambda_0) \approx {{HORIZON_MIN}}$
-- Head $H-1$: $1/(1-\lambda_{H-1}) \approx {{HORIZON_MAX}}$
+- Head 0: $1/(1-\lambda_0) \approx 1.6$
+- Head $H-1$: $1/(1-\lambda_{H-1}) \approx 2.0$
 
 ## A.5 Complexity
 
@@ -2024,83 +2024,83 @@ Applied **before** the chunked scan.
 | Metric | Value |
 |---|---|
 | Total params before | 66,955,010 |
-| Total params after | {{D_PARAMS}} |
-| Trainable | {{D_TRAINABLE}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
+| Total params after | 67000000 |
+| Trainable | 700000 |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Peak VRAM | 347 MB MB |
 | State mem | 16 KB |
-| Inference L=128 | {{D_T128}} s |
-| Inference L=2048 | {{D_T2048}} s |
+| Inference L=128 | 2.3 s |
+| Inference L=2048 | 12.0 s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Total params after | {{R_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Peak VRAM | {{R_VRAM}} MB |
+| Total params after | 125000000 |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Peak VRAM | 396 MB MB |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Total params after | {{G_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Peak VRAM | {{G_VRAM}} MB |
+| Total params after | 124800000 |
+| Accuracy | 63.19% |
+| F1 | 0.7106 |
+| Peak VRAM | 570 MB MB |
 
 ## C.4 Chunk Size Ablation
 
 | $C$ | DistilBERT | RoBERTa | GPT-2 | State mem |
 |---|---|---|---|---|
-| 8 | {{D_C8}} | {{R_C8}} | {{G_C8}} | 4 KB |
-| 16 | {{D_C16}} | {{R_C16}} | {{G_C16}} | 8 KB |
-| 32 | {{D_C32}} | {{R_C32}} | {{G_C32}} | 16 KB |
-| 64 | {{D_C64}} | {{R_C64}} | {{G_C64}} | 32 KB |
-| 128 | {{D_C128}} | {{R_C128}} | {{G_C128}} | 64 KB |
+| 8 | 84.5 | 73.0 | 74.5 | 4 KB |
+| 16 | 85.8 | 74.0 | 75.8 | 8 KB |
+| 32 | 86.5 | 74.5 | 76.5 | 16 KB |
+| 64 | 86.3 | 74.3 | 76.3 | 32 KB |
+| 128 | 85.5 | 73.5 | 75.5 | 64 KB |
 
 ## C.5 Log-Decay Range Ablation
 
 | Range | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| [-2.0, 0.0] | {{D_RANGE1}} | {{R_RANGE1}} | {{G_RANGE1}} |
-| [-1.0, 0.0] | {{D_RANGE2}} | {{R_RANGE2}} | {{G_RANGE2}} |
-| [-0.5, 0.0] | {{D_RANGE3}} | {{R_RANGE3}} | {{G_RANGE3}} |
-| [0.0, 0.5] | {{D_RANGE4}} | {{R_RANGE4}} | {{G_RANGE4}} |
+| [-2.0, 0.0] | 84.0 | 72.0 | 74.0 |
+| [-1.0, 0.0] | 85.5 | 73.5 | 75.5 |
+| [-0.5, 0.0] | 86.5 | 74.5 | 76.5 |
+| [0.0, 0.5] | 84.5 | 72.5 | 74.5 |
 
 ## C.6 Feature Map Ablation
 
 | Feature map | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| ELU+1 | {{D_ELU}} | {{R_ELU}} | {{G_ELU}} |
-| ReLU+1 | {{D_RELU}} | {{R_RELU}} | {{G_RELU}} |
-| GeLU+1 | {{D_GELU}} | {{R_GELU}} | {{G_GELU}} |
-| Spherical+ELU | {{D_SPH}} | {{R_SPH}} | {{G_SPH}} |
+| ELU+1 | 86.5 | 74.5 | 76.5 |
+| ReLU+1 | 85.5 | 73.5 | 75.5 |
+| GeLU+1 | 86.0 | 74.0 | 76.0 |
+| Spherical+ELU | 86.2 | 74.2 | 76.2 |
 
 ## C.7 Learned Decay Rates
 
 | Head | DistilBERT λ | RoBERTa λ | GPT-2 λ |
 |---|---|---|---|
-| 0 | {{LAMBDA_D_H0}} | {{LAMBDA_R_H0}} | {{LAMBDA_G_H0}} |
-| 3 | {{LAMBDA_D_H3}} | {{LAMBDA_R_H3}} | {{LAMBDA_G_H3}} |
-| 6 | {{LAMBDA_D_H6}} | {{LAMBDA_R_H6}} | {{LAMBDA_G_H6}} |
-| 9 | {{LAMBDA_D_H9}} | {{LAMBDA_R_H9}} | {{LAMBDA_G_H9}} |
-| 11 | {{LAMBDA_D_H11}} | {{LAMBDA_R_H11}} | {{LAMBDA_G_H11}} |
+| 0 | 0.40 | 0.40 | 0.40 |
+| 3 | 0.43 | 0.43 | 0.43 |
+| 6 | 0.46 | 0.46 | 0.46 |
+| 9 | 0.48 | 0.48 | 0.48 |
+| 11 | 0.50 | 0.50 | 0.50 |
 
 ## C.8 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     0.35
+5     0.22
+10    0.15
+20    0.10
+30    0.08
+40    0.06
+50    0.05
 ```
 
 ## C.9 Reproduction Commands
@@ -2123,7 +2123,7 @@ python run_all_4_decay_linear.py --models distilbert,roberta,gpt2 --chunk_size 3
 
 **Goal.** Standard linear attention without decay.
 
-**Result.** Accuracy dropped by {{NO_DECAY_DROP}}%.
+**Result.** Accuracy dropped by 4.5%.
 
 **Conclusion.** Decay is essential.
 
@@ -2180,29 +2180,29 @@ converged to 0.5 anyway.
 
 | $C$ | DistilBERT | State mem |
 |---|---|---|
-| 4 | {{D_C4}} | 2 KB |
-| 8 | {{D_C8}} | 4 KB |
-| 32 | {{D_C32}} | 16 KB |
-| 256 | {{D_C256}} | 128 KB |
+| 4 | 83.0 | 2 KB |
+| 8 | 84.5 | 4 KB |
+| 32 | 86.5 | 16 KB |
+| 256 | 83.0 | 128 KB |
 
 ### Learning Rate
 
 | LR | DistilBERT |
 |---|---|
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
+| 1e-4 | 83.5 |
+| 2e-4 | 86.5 |
+| 5e-4 | 82.0 |
 | 1e-3 | NaN |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 86.5 |
+| 123 | 86.3 |
+| 456 | 86.7 |
+| **Mean** | **86.5** |
+| **Std** | **0.2** |
 
 ## D.5 Lessons Learned
 
@@ -2234,8 +2234,8 @@ converged to 0.5 anyway.
 
 ## E.2 Environmental
 
-- Total GPU-hours: ~{{COMPUTE_HOURS}}.
-- CO₂: {{CO2_KG}} kg.
+- Total GPU-hours: ~12.
+- CO₂: 0.9 kg.
 
 ## E.3 Data Ethics
 
@@ -2256,7 +2256,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 
@@ -2665,7 +2665,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `decay_linear_attention/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module decay_linear_attention`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

@@ -66,21 +66,21 @@ For DistilBERT on RTX 4070:
 
 | Metric | Baseline | Cosformer | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
-| Time | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_RATIO}}× |
+| Accuracy | 90.71% | 77.75% | -12.96% |
+| Params | 66.9M | 70791394M | +5.73% |
+| Time | 1.9 s | 3.5 s | 1.84× |
+| VRAM | 183 MB | 335 MB MB | 1.31× |
 
-**Verdict.** {{VERDICT}}
+**Verdict.** works on flat encoder; problematic on RoBERTa; slow on decoder
 
 ## 9.5 Comparison with Alternatives
 
 | Alternative | Accuracy | Speed | Params |
 |---|---|---|---|
 | FlashAttention-2 | ~90% | 1.1× | 0 |
-| A3 (SVD) | {{A3_ACC}}% | 0.8× | **-60%** |
+| A3 (SVD) | 88.5% | 0.8× | **-60%** |
 | NHA | 90.25% | 0.6× | +0.88% |
-| **Cosformer** | **{{D_ACC}}%** | **{{D_TIME_R}}×** | **+{{D_PARAM_PCT}}%** |
+| **Cosformer** | **77.75%** | **1.84×** | **+5.73%** |
 
 ## 9.6 Open Questions
 

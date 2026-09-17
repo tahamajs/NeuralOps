@@ -23,27 +23,27 @@ Majority baseline: 50.92%. Max length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `n_experts` | {{N_EXPERTS}} |
-| `capacity_factor` | {{CAPACITY_FACTOR}} |
+| `n_experts` | 8 |
+| `capacity_factor` | 1.25 |
 | `noise_std` | 0.05 |
-| `moe_init_gate` | {{MOE_INIT_GATE}} |
+| `moe_init_gate` | 0.1 |
 
 ## 6.4 LoRA Hyperparameters
 
 | Hyperparameter | Value |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 
 ## 6.5 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| WD | 0.01 |
+| Steps | 50 |
+| Batch | 32 |
 | Precision | FP16 |
 
 ## 6.6 Evaluation Metrics
@@ -76,17 +76,17 @@ Majority baseline: 50.92%. Max length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.9 Reproduction
 
 ```bash
 python run_all_4_expert_choice_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts {{N_EXPERTS}} \
-    --capacity_factor {{CAPACITY_FACTOR}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --n_experts 8 \
+    --capacity_factor 1.25 \
+    --recovery_steps 50
 ```
 
 ## 6.10 Baselines
@@ -101,6 +101,6 @@ python run_all_4_expert_choice_moe.py \
 
 ## 6.11 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ---

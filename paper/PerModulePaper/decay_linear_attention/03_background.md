@@ -106,7 +106,7 @@ where:
 - $\ell_h \in \mathbb{R}$ — per-head bias, initialized to linearly spaced 
   values.
 
-**Initialization.** $W_g = 0$, $b_g = 0$, $\ell_h = \text{linspace}({{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}, H)$.
+**Initialization.** $W_g = 0$, $b_g = 0$, $\ell_h = \text{linspace}(-0.5, 0.0, H)$.
 
 **Effect.** At step 0, $\lambda_{h,t} = \sigma(\ell_h)$ — constant per head, 
 giving each head a fixed "default horizon".

@@ -47,10 +47,10 @@ For DistilBERT:
 
 | Metric | Baseline | EC-MoE | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Total params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Trainable | 0 | {{D_TRAINABLE}} | +∞ |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_PCT}}% |
+| Accuracy | 90.71% | 90.14% | -0.57% |
+| Total params | 66.95M | 66.4M | +48.5\%% |
+| Trainable | 0 | 0.85 | +∞ |
+| VRAM | 183 MB | 764 MB MB | 48.5\%% |
 
 ## 9.5 Comparison to FFN-MoE
 

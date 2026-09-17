@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `eat/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module eat`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content Quality
 

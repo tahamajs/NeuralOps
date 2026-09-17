@@ -72,8 +72,8 @@ contribution of the $i$-th singular direction.
 
 **Three design choices:**
 
-1. **Gate initialization at $\alpha_i = {{INIT_GATE}}$.** This gives 
-   $\sigma(\alpha_i) \approx {{INIT_SIGMA}}$, so the model starts near 
+1. **Gate initialization at $\alpha_i = 0.5$.** This gives 
+   $\sigma(\alpha_i) \approx 1.0$, so the model starts near 
    the truncated SVD.
 
 2. **Gate-compensation pre-scaling of $V$.** We set:
@@ -101,7 +101,7 @@ contribution of the $i$-th singular direction.
 - **Multi-architecture hardening.** Supports flat, nested, causal Conv1D, 
   and GQA models with LoRA wrapping preservation.
 - **Full reproducibility.** Code, weights, and scripts released under 
-  {{LICENSE}}.
+  Apache 2.0.
 
 ## 1.5 Paper Organization
 

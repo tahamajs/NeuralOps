@@ -145,14 +145,14 @@ for expert in self.experts:
 ### 4.3.2 Negative Gate Bias
 
 $$
-\gamma = \sigma({{MOE_INIT_GATE}}) \approx {{MOE_GATE_VALUE}}
+\gamma = \sigma(0.1) \approx 0.8
 \tag{4.13}
 $$
 
 ### 4.3.3 Effective Output at Step 0
 
 $$
-\text{enriched} = \text{attn\_out} + {{MOE_GATE_VALUE}} \cdot 0 = \text{attn\_out}
+\text{enriched} = \text{attn\_out} + 0.8 \cdot 0 = \text{attn\_out}
 \tag{4.14}
 $$
 

@@ -34,18 +34,18 @@ Sequence length truncated to 128.
 | `max_seq_len` | 512 |
 | `eps` | $10^{-6}$ |
 | `chunk_size` | 32 |
-| `rank` (basis) | {{RANK}} |
+| `rank` (basis) | 64 |
 
 ## 6.4 Training Protocol
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 2e-4 |
+| Recovery steps | 50 |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -70,22 +70,22 @@ Sequence length truncated to 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_cosformer.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --recovery_steps 50 \
+    --lora_rank 16 \
+    --batch_size 8
 ```
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}). No multi-seed runs.
+Single seed (42). No multi-seed runs.
 
 ## 6.10 Baselines
 

@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `decay_linear_attention/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module decay_linear_attention`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

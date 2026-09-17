@@ -13,9 +13,9 @@ equivalent to the base at step 0.
 
 | Model | Acc Δ | Params Δ | Expert balance |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | Perfect |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | Perfect |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | Perfect |
+| DistilBERT | -0.57% | +48.5\%% | Perfect |
+| RoBERTa | +5.73% | +48.5\%% | Perfect |
+| GPT-2 | +1.14% | +48.5\%% | Perfect |
 
 ## 11.3 Key Takeaways
 
@@ -45,13 +45,13 @@ checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the module, implemented, ran experiments, wrote 
+- **Taha Majs** designed the module, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

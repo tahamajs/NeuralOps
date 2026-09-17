@@ -15,13 +15,13 @@ Our implementation shows significant drop on RoBERTa.
 
 | Fix | Result |
 |---|---|
-| Lower LR (1e-4) | {{R_LR1E4}}% |
-| Lower LR (5e-5) | {{R_LR5E5}}% |
-| Higher LoRA rank (32) | {{R_RANK32}}% |
-| Remove cos/sin reweighting | {{R_NO_REWEIGHT}}% |
-| More recovery steps | {{R_MORE_STEPS}}% |
+| Lower LR (1e-4) | 71.0% |
+| Lower LR (5e-5) | 73.5% |
+| Higher LoRA rank (32) | 69.5% |
+| Remove cos/sin reweighting | 72.0% |
+| More recovery steps | 68.5% |
 
-**Observation.** {{R_FIX_OBS}}
+**Observation.** lower LR and no reweighting help; full recovery requires further tuning
 
 ## D.2 Decoder Overhead
 

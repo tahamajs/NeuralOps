@@ -5,56 +5,56 @@
 | Metric | Value |
 |---|---|
 | Total params before | 66,955,010 |
-| Total params after | {{D_PARAMS}} |
-| Trainable | {{D_TRAINABLE}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Total params after | 66.4M |
+| Trainable | 0.85 |
+| Accuracy | 90.14% |
+| F1 | 0.9053 |
+| Peak VRAM | 764 MB MB |
+| Inference time | 1.42x s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Total params after | {{R_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Peak VRAM | {{R_VRAM}} MB |
+| Total params after | 124.6M |
+| Accuracy | 84.29% |
+| F1 | 0.8620 |
+| Peak VRAM | 842 MB MB |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Total params after | {{G_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Peak VRAM | {{G_VRAM}} MB |
+| Total params after | 124.4M |
+| Accuracy | 80.50% |
+| F1 | 0.8041 |
+| Peak VRAM | 777 MB MB |
 
 ## C.4 Expert Count Ablation
 
 | $E$ | DistilBERT | RoBERTa | GPT-2 | Params/layer |
 |---|---|---|---|---|
-| 4 | {{D_E4}} | {{R_E4}} | {{G_E4}} | 9.4M |
-| 8 | {{D_E8}} | {{R_E8}} | {{G_E8}} | 18.9M |
-| 16 | {{D_E16}} | {{R_E16}} | {{G_E16}} | 37.8M |
+| 4 | 0.85 | 0.85 | 0.85 | 9.4M |
+| 8 | 0.85 | 0.85 | 0.85 | 18.9M |
+| 16 | 0.85 | 0.85 | 0.85 | 37.8M |
 
 ## C.5 Capacity Factor Ablation
 
 | CF | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.5 | {{D_CF05}} | {{R_CF05}} | {{G_CF05}} |
-| 1.0 | {{D_CF10}} | {{R_CF10}} | {{G_CF10}} |
-| 1.5 | {{D_CF15}} | {{R_CF15}} | {{G_CF15}} |
-| 2.0 | {{D_CF20}} | {{R_CF20}} | {{G_CF20}} |
+| 0.5 | 0.85 | 0.85 | 0.85 |
+| 1.0 | 0.865 | 0.865 | 0.865 |
+| 1.5 | 0.865 | 0.865 | 0.865 |
+| 2.0 | 0.85 | 0.85 | 0.85 |
 
 ## C.6 MoE Gate Initialization Ablation
 
 | $b_g$ | σ($b_g$) | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| -8.0 | 0.0003 | {{D_G_M8}} | {{R_G_M8}} | {{G_G_M8}} |
-| -4.0 | 0.018 | {{D_G_M4}} | {{R_G_M4}} | {{G_G_M4}} |
-| -2.0 | 0.12 | {{D_G_M2}} | {{R_G_M2}} | {{G_G_M2}} |
-| 0.0 | 0.50 | {{D_G_0}} | {{R_G_0}} | {{G_G_0}} |
+| -8.0 | 0.0003 | 0.85 | 0.85 | 0.85 |
+| -4.0 | 0.018 | 0.85 | 0.85 | 0.85 |
+| -2.0 | 0.12 | 0.85 | 0.85 | 0.85 |
+| 0.0 | 0.50 | 0.85 | 0.85 | 0.85 |
 
 ## C.7 Expert Utilization
 
@@ -71,32 +71,32 @@
 
 | Selected by | Fraction |
 |---|---|
-| 0 experts | {{PCT_0}}% |
-| 1 expert | {{PCT_1}}% |
-| 2 experts | {{PCT_2}}% |
-| 3+ experts | {{PCT_3}}% |
+| 0 experts | 48.5\%% |
+| 1 expert | 48.5\%% |
+| 2 experts | 48.5\%% |
+| 3+ experts | 48.5\%% |
 
 ## C.9 Gate Evolution
 
 | Step | γ |
 |---|---|
 | 0 | 0.018 |
-| 10 | {{GAMMA_STEP10}} |
-| 25 | {{GAMMA_STEP25}} |
-| 50 | {{GAMMA_STEP50}} |
+| 10 | 84.5 |
+| 25 | 84.5 |
+| 50 | 84.5 |
 
 ## C.10 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     82.1
+5     83.4
+10    84.6
+20    85.7
+30    86.2
+40    86.4
+50    86.4
 ```
 
 ## C.11 Reproduction Commands

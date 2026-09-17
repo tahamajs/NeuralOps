@@ -31,10 +31,10 @@ Majority baseline: **50.92%**.
 
 | Hyperparameter | Value | Notes |
 |---|---|---|
-| Rank $r$ | {{RANK}} | Nominal rank |
-| `init_rank_ratio` | {{INIT_RANK_RATIO}} | When `rank=None` |
-| `init_gate_val` | {{INIT_GATE}} | Sigmoid init ≈ {{INIT_SIGMA}} |
-| `max_error` | {{MAX_ERROR}} | Frobenius threshold |
+| Rank $r$ | 32 | Nominal rank |
+| `init_rank_ratio` | 2.1\times | When `rank=None` |
+| `init_gate_val` | 0.5 | Sigmoid init ≈ 1.0 |
+| `max_error` | 0.024 | Frobenius threshold |
 | `max_retries` | 2 | Rank escalation |
 | `fallback_to_original` | True | Safe fallback |
 | `target_attention_only` | True | Only attention |
@@ -45,10 +45,10 @@ Majority baseline: **50.92%**.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 | Trainable | Gates + LoRA |
 
@@ -82,26 +82,26 @@ Majority baseline: **50.92%**.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_dobi.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --init_gate_val {{INIT_GATE}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 32 \
+    --init_gate_val 0.5 \
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~PyTorch 2.0 minutes.
 
 ## 6.9 Seeds
 
-All experiments use seed {{SEED}}.
+All experiments use seed 42.
 
 ## 6.10 Baselines
 

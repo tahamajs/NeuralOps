@@ -14,7 +14,7 @@
 | DistilBERT | `MultiHeadSelfAttention` | No | No | No | ✅ |
 | RoBERTa | `BertSelfAttention` (nested) | Yes | No | No | ✅ |
 | GPT-2 | `GPT2Attention` (Conv1D) | No | No | No | ✅ |
-| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | {{Q_VERIFIED}} |
+| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | 0.85 |
 
 ## 5.2 Weight Resolution
 
@@ -215,6 +215,6 @@ loss.backward()
 assert X.grad[0, i+1:].abs().max() < 1e-6
 ```
 
-{{CAUSALITY_RESULT}}
+32
 
 ---

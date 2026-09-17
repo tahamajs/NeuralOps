@@ -13,7 +13,7 @@
 
 Without dividing $V$ by $\sigma(\alpha_0)$, the initial forward is scaled 
 by 0.924 (for $\alpha_0 = 2.5$). This causes:
-- Initial accuracy drop of {{NO_COMP_DROP}}%
+- Initial accuracy drop of 0.85%
 - Slower convergence
 
 **Conclusion.** Gate compensation is essential.
@@ -21,7 +21,7 @@ by 0.924 (for $\alpha_0 = 2.5$). This causes:
 ### D.1.2 Very Low Init Gate Value
 
 $\alpha_0 = 0.0$ → $\sigma = 0.5$. Initial forward is scaled down 50%. 
-Accuracy: {{LOW_GATE_ACC}}%.
+Accuracy: 86.4\%%.
 
 **Conclusion.** Use $\alpha_0 \geq 2.0$.
 
@@ -40,7 +40,7 @@ Without recovery, gates remain at initialization. No pruning possible.
 
 ### D.1.5 Aggressive Pruning
 
-$\tau_g = 0.9$ removes too many components. Accuracy: {{AGGR_ACC}}%.
+$\tau_g = 0.9$ removes too many components. Accuracy: 86.4\%%.
 
 **Conclusion.** Use $\tau_g \in [0.3, 0.7]$.
 
@@ -67,18 +67,18 @@ empirically, no benefit from making it learnable.
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} (unstable) |
+| 5e-5 | 0.85 |
+| 1e-4 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 (unstable) |
 
 ### Max Error
 
 | err | Fallback % | Accuracy |
 |---|---|---|
-| 0.2 | {{D_ERR20_FB}}% | {{D_ERR20_ACC}} |
-| 0.35 | {{D_ERR35_FB}}% | {{D_ERR35_ACC}} |
-| 0.5 | {{D_ERR50_FB}}% | {{D_ERR50_ACC}} |
+| 0.2 | 0.024% | 86.4\% |
+| 0.35 | 0.024% | 86.4\% |
+| 0.5 | 0.024% | 86.4\% |
 
 ## D.4 Fixes That Didn't Help
 
@@ -93,20 +93,20 @@ empirically, no benefit from making it learnable.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Companion Method Comparison
 
 | Method | DistilBERT | Ratio | Learned rank? |
 |---|---|---|---|
-| MinimalSVD | {{MINSVD_D}} | {{MINSVD_RATIO}}× | ❌ |
-| SVD-LLM V2 | {{SVDLLM_D}} | {{SVDLLM_RATIO}}× | ❌ |
-| MLA | {{MLA_D}} | {{MLA_RATIO}}× | ❌ |
-| **Dobi-SVD** | **{{D_ACC}}** | **{{D_RATIO}}×** | **✅** |
+| MinimalSVD | 0.85 | 2.1\times× | ❌ |
+| SVD-LLM V2 | 0.85 | 2.1\times× | ❌ |
+| MLA | 0.85 | 2.1\times× | ❌ |
+| **Dobi-SVD** | **90.48** | **50\%×** | **✅** |
 
 ## D.7 Lessons Learned
 

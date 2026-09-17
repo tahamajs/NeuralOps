@@ -3,7 +3,7 @@
 ## 10.1 Parameter Count
 
 ExpertChoiceMoEAttention **increases** parameter count by approximately 
-**{{D_PARAM_PCT}}%** per layer. This is the primary limitation and we are 
+**48.5\%%** per layer. This is the primary limitation and we are 
 explicit about it.
 
 ## 10.2 Python Loop Over Experts
@@ -46,7 +46,7 @@ compare with auxiliary-loss-based methods in detail.
 
 ## 10.8 Capacity Factor Choice
 
-$CF = {{CAPACITY_FACTOR}}$ is a fixed default. Optimal CF is 
+$CF = 1.25$ is a fixed default. Optimal CF is 
 model-dependent.
 
 ## 10.9 Cross-Attention Not Fully Tested

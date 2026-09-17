@@ -59,7 +59,7 @@ Three components:
 
 $$
 \lambda_{h,t} = \sigma\!\left(W_g x_t + b_g + \ell_h\right), \quad
-\ell_h \in [{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]
+\ell_h \in [-0.5, 0.0]
 \tag{1.3}
 $$
 

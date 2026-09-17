@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,18 +14,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_expert_choice_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts {{N_EXPERTS}} \
-    --capacity_factor {{CAPACITY_FACTOR}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --n_experts 8 \
+    --capacity_factor 1.25 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -35,8 +35,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,expert_choice_moe \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.5 Reproducing Tables
@@ -75,14 +75,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params Δ | Expert balance |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% | Perfect |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% | Perfect |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% | Perfect |
+| DistilBERT | 90.14% | +48.5\%% | Perfect |
+| RoBERTa | 84.29% | +48.5\%% | Perfect |
+| GPT-2 | 80.50% | +48.5\%% | Perfect |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-expert_choice_moe`.
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-expert_choice_moe`.
 - **Metrics:** `results/unified_expert_choice_moe/*/summary.csv`.
 
 ---

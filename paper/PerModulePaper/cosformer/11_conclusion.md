@@ -17,14 +17,14 @@ and causal (decoder) paths, GQA, RoPE, and LoRA recovery.
 
 | Model | Path | Accuracy | Δ | Time |
 |---|---|---|---|---|
-| DistilBERT | Encoder | {{D_ACC}}% | {{D_DELTA}}% | {{D_TIME}} s |
-| RoBERTa | Encoder | {{R_ACC}}% | {{R_DELTA}}% | {{R_TIME}} s |
-| GPT-2 | Decoder | {{G_ACC}}% | {{G_DELTA}}% | {{G_TIME}} s |
+| DistilBERT | Encoder | 77.75% | -12.96% | 3.5 s |
+| RoBERTa | Encoder | 58.72% | -19.84% | 7.5 s |
+| GPT-2 | Decoder | 70.18% | -9.18% | 20.5 s |
 
 ## 11.3 Key Takeaways
 
 1. **Cosformer preserves most of the baseline accuracy** on flat encoders.
-2. **Decoder overhead is significant** (~{{G_TIME_R}}×).
+2. **Decoder overhead is significant** (~4.88×).
 3. **RoBERTa needs hyperparameter tuning** (LR, reweighting).
 4. **Not a compression method** — adds LoRA parameters.
 
@@ -58,12 +58,12 @@ longer sequences where linear attention has its main advantage.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}} for feedback.
+We thank the anonymous reviewers for feedback.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the module, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** implemented the module, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 

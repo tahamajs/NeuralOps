@@ -18,9 +18,9 @@ architectures — flat, nested, causal, and GQA+RoPE — without code changes.
 
 | Model | Acc Δ | Param Δ | Time ratio |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_TIME_RATIO}}× |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_TIME_RATIO}}× |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_TIME_RATIO}}× |
+| DistilBERT | -0.80% | +48.5\%% | 2.1\times× |
+| RoBERTa | +4.12% | +48.5\%% | 2.1\times× |
+| GPT-2 | +2.75% | +48.5\%% | 2.1\times× |
 
 ## 11.3 Key Takeaways
 
@@ -50,13 +50,13 @@ compression. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed EAT, implemented the code, ran experiments, 
+- **Taha Majs** designed EAT, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

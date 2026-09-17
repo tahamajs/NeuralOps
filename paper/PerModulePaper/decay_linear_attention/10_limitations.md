@@ -33,7 +33,7 @@ efficiency.
 
 ## 10.7 Log-Decay Range
 
-$[{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$ is a fixed initialization. The 
+$[-0.5, 0.0]$ is a fixed initialization. The 
 optimal range may be model-dependent.
 
 ## 10.8 No Theoretical Bound

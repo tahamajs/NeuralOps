@@ -162,7 +162,7 @@ The standard pipeline applies:
 1. Load pretrained model.
 2. Inject Cosformer via `inject_cosformer`.
 3. Freeze base weights, keep LoRA trainable.
-4. Run {{RECOVERY_STEPS}} recovery steps.
+4. Run 50 recovery steps.
 5. Evaluate.
 
 ## 5.9 Architecture-Specific Notes

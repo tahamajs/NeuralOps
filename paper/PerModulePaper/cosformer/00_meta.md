@@ -7,19 +7,19 @@
 # Cosformer: Linear Attention with Cosine-Based Positional Reweighting for Pretrained Transformers
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/cosformer.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1 (initial draft)
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/cosformer.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -44,13 +44,13 @@ RoBERTa/BERT, GPT-2, and Qwen/LLaMA — with exact weight transfer, GQA,
 RoPE, and two distinct computational paths: **associative accumulation** 
 for bidirectional encoders and **chunked prefix-sum** for causal decoders. 
 Base weights are transferred exactly from the pretrained attention; LoRA 
-adapters at rank $r = {{LORA_RANK}}$ provide recovery capacity.
+adapters at rank $r = 16$ provide recovery capacity.
 
 We benchmark on SST-2 across three models. Cosformer achieves 
-**{{D_ACC}}%** on DistilBERT (baseline {{D_BASE}}%, Δ = {{D_DELTA}}), 
-**{{R_ACC}}%** on RoBERTa (Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 
-(Δ = {{G_DELTA}}). Inference time is **{{D_TIME_R}}×** baseline on 
-DistilBERT and **{{G_TIME_R}}×** on GPT-2. Unlike recent mechanisms that 
+**77.75%** on DistilBERT (baseline 90.71%, Δ = -12.96), 
+**58.72%** on RoBERTa (Δ = -19.84), and **70.18%** on GPT-2 
+(Δ = -9.18). Inference time is **1.84×** baseline on 
+DistilBERT and **4.88×** on GPT-2. Unlike recent mechanisms that 
 collapse on encoders, Cosformer preserves most of the baseline accuracy 
 at a modest latency cost. We document the construction of the cosine/sine 
 reweighting, the chunked causal scan, and the exact failure modes we 

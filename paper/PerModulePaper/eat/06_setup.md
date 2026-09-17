@@ -33,10 +33,10 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `rank` (unused for EAT) | {{RANK}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `prune_layer` | {{PRUNE_ENABLED}} |
+| `rank` (unused for EAT) | 32 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `prune_layer` | 0.85 |
 
 **Note.** The `rank` parameter is inherited from `BaseAttention` but is not 
 used to compress EAT's projections. EAT uses LoRA, not low-rank factorization.
@@ -46,10 +46,10 @@ used to compress EAT's projections. EAT uses LoRA, not low-rank factorization.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 Only LoRA parameters are trainable; base projections are frozen.
@@ -74,20 +74,20 @@ Only LoRA parameters are trainable; base projections are frozen.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_eat.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
-Runtime: ~{{RUNTIME}} min.
+Runtime: ~PyTorch 2.0 min.
 
 ## 6.9 Baselines
 

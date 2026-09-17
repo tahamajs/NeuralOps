@@ -58,15 +58,15 @@ $$
 \tag{A.4}
 $$
 
-Initialization: $W_g = 0, b_g = 0$, $\ell_h \in [{{LOG_DECAY_MIN}}, {{LOG_DECAY_MAX}}]$.
+Initialization: $W_g = 0, b_g = 0$, $\ell_h \in [-0.5, 0.0]$.
 
 **Head diversity.** $\lambda_{h} = \sigma(\ell_h)$ ranges:
-- $\lambda_0 = \sigma({{LOG_DECAY_MIN}}) \approx {{LAMBDA_MIN}}$
-- $\lambda_{H-1} = \sigma({{LOG_DECAY_MAX}}) \approx {{LAMBDA_MAX}}$
+- $\lambda_0 = \sigma(-0.5) \approx 0.38$
+- $\lambda_{H-1} = \sigma(0.0) \approx 0.50$
 
 Effective horizons:
-- Head 0: $1/(1-\lambda_0) \approx {{HORIZON_MIN}}$
-- Head $H-1$: $1/(1-\lambda_{H-1}) \approx {{HORIZON_MAX}}$
+- Head 0: $1/(1-\lambda_0) \approx 1.6$
+- Head $H-1$: $1/(1-\lambda_{H-1}) \approx 2.0$
 
 ## A.5 Complexity
 

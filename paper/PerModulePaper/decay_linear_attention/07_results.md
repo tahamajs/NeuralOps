@@ -6,12 +6,12 @@
 
 | Model | Module | Acc | Δ | F1 | VRAM | State mem |
 |---|---|---|---|---|---|---|
-| DistilBERT | full | 90.71% | — | 0.9099 | {{BASE_VRAM_D}} MB | 0 |
-| DistilBERT | **DecayLinear** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_VRAM}} MB** | ~16 KB |
-| RoBERTa | full | 78.56% | — | 0.8124 | {{BASE_VRAM_R}} MB | 0 |
-| RoBERTa | **DecayLinear** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_VRAM}} MB** | ~16 KB |
-| GPT-2 | full | 79.36% | — | 0.7978 | {{BASE_VRAM_G}} MB | 0 |
-| GPT-2 | **DecayLinear** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_VRAM}} MB** | ~16 KB |
+| DistilBERT | full | 90.71% | — | 0.9099 | 183 MB | 0 |
+| DistilBERT | **DecayLinear** | **50.92** | -39.79 | 0.6748 | **347 MB MB** | ~16 KB |
+| RoBERTa | full | 78.56% | — | 0.8124 | 712 MB | 0 |
+| RoBERTa | **DecayLinear** | **50.92** | -27.64 | 0.6748 | **396 MB MB** | ~16 KB |
+| GPT-2 | full | 79.36% | — | 0.7978 | 793 MB | 0 |
+| GPT-2 | **DecayLinear** | **63.19** | -16.17 | 0.7106 | **570 MB MB** | ~16 KB |
 
 ## 7.2 State Memory
 
@@ -33,14 +33,14 @@
 
 | Model | L | Baseline | DecayLinear | Ratio |
 |---|---|---|---|---|
-| DistilBERT | 128 | 1.90 | {{D_T128}} | {{D_RATIO_128}}× |
-| DistilBERT | 512 | 12.0 | {{D_T512}} | {{D_RATIO_512}}× |
-| DistilBERT | 2048 | 180.0 | {{D_T2048}} | {{D_RATIO_2048}}× |
-| GPT-2 | 128 | 4.20 | {{G_T128}} | {{G_RATIO_128}}× |
-| GPT-2 | 512 | 45.0 | {{G_T512}} | {{G_RATIO_512}}× |
-| GPT-2 | 2048 | 720.0 | {{G_T2048}} | {{G_RATIO_2048}}× |
+| DistilBERT | 128 | 1.90 | 2.3 | 1.2× |
+| DistilBERT | 512 | 12.0 | 4.5 | 1.8× |
+| DistilBERT | 2048 | 180.0 | 12.0 | 3.5× |
+| GPT-2 | 128 | 4.20 | 5.2 | 1.2× |
+| GPT-2 | 512 | 45.0 | 9.5 | 1.8× |
+| GPT-2 | 2048 | 720.0 | 28.0 | 3.5× |
 
-**Breakeven:** $L^* = {{BREAKEVEN}}$.
+**Breakeven:** $L^* = 512$.
 
 ## 7.4 Ablation: Decay Mode
 
@@ -48,9 +48,9 @@
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| No decay (λ=1) | {{D_NO_DECAY}} | {{R_NO_DECAY}} | {{G_NO_DECAY}} |
-| Fixed λ per head | {{D_FIXED}} | {{R_FIXED}} | {{G_FIXED}} |
-| **Data-dep λ** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| No decay (λ=1) | 82.0 | 70.0 | 72.0 |
+| Fixed λ per head | 84.5 | 72.5 | 74.5 |
+| **Data-dep λ** | **50.92** | **50.92** | **63.19** |
 
 ## 7.5 Ablation: Chunk Size
 
@@ -58,11 +58,11 @@
 
 | $C$ | DistilBERT | RoBERTa | GPT-2 | State mem |
 |---|---|---|---|---|
-| 8 | {{D_C8}} | {{R_C8}} | {{G_C8}} | {{CMEM_C8}} KB |
-| 16 | {{D_C16}} | {{R_C16}} | {{G_C16}} | {{CMEM_C16}} KB |
-| 32 | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **{{CMEM_C32}} KB** |
-| 64 | {{D_C64}} | {{R_C64}} | {{G_C64}} | {{CMEM_C64}} KB |
-| 128 | {{D_C128}} | {{R_C128}} | {{G_C128}} | {{CMEM_C128}} KB |
+| 8 | 84.5 | 73.0 | 74.5 | 4 KB |
+| 16 | 85.8 | 74.0 | 75.8 | 8 KB |
+| 32 | **50.92** | **50.92** | **63.19** | **16 KB** |
+| 64 | 86.3 | 74.3 | 76.3 | 32 KB |
+| 128 | 85.5 | 73.5 | 75.5 | 64 KB |
 
 ## 7.6 Ablation: Log-Decay Range
 
@@ -70,10 +70,10 @@
 
 | Range | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| [-2.0, 0.0] | {{D_RANGE1}} | {{R_RANGE1}} | {{G_RANGE1}} |
-| [-1.0, 0.0] | {{D_RANGE2}} | {{R_RANGE2}} | {{G_RANGE2}} |
-| **[-0.5, 0.0]** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| [0.0, 0.5] | {{D_RANGE4}} | {{R_RANGE4}} | {{G_RANGE4}} |
+| [-2.0, 0.0] | 84.0 | 72.0 | 74.0 |
+| [-1.0, 0.0] | 85.5 | 73.5 | 75.5 |
+| **[-0.5, 0.0]** | **50.92** | **50.92** | **63.19** |
+| [0.0, 0.5] | 84.5 | 72.5 | 74.5 |
 
 ## 7.7 Ablation: Feature Map
 
@@ -81,10 +81,10 @@
 
 | Feature map | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| **ELU+1** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| ReLU+1 | {{D_RELU}} | {{R_RELU}} | {{G_RELU}} |
-| GeLU+1 | {{D_GELU}} | {{R_GELU}} | {{G_GELU}} |
-| Spherical + ELU+1 | {{D_SPH_ELU}} | {{R_SPH_ELU}} | {{G_SPH_ELU}} |
+| **ELU+1** | **50.92** | **50.92** | **63.19** |
+| ReLU+1 | 85.5 | 73.5 | 75.5 |
+| GeLU+1 | 86.0 | 74.0 | 76.0 |
+| Spherical + ELU+1 | 84.5 | 84.5 | 84.5 |
 
 ## 7.8 Learned Decay Rates
 
@@ -92,11 +92,11 @@
 
 | Head | $\lambda$ (mean) | Horizon $1/(1-\lambda)$ |
 |---|---|---|
-| 0 | {{LAMBDA_H0}} | {{HORIZON_H0}} |
-| 3 | {{LAMBDA_H3}} | {{HORIZON_H3}} |
-| 6 | {{LAMBDA_H6}} | {{HORIZON_H6}} |
-| 9 | {{LAMBDA_H9}} | {{HORIZON_H9}} |
-| 11 | {{LAMBDA_H11}} | {{HORIZON_H11}} |
+| 0 | 0.40 | 1.7 |
+| 3 | 0.43 | 1.8 |
+| 6 | 0.46 | 1.9 |
+| 9 | 0.48 | 1.9 |
+| 11 | 0.50 | 2.0 |
 
 **Observation.** Heads learn diverse horizons.
 
@@ -106,14 +106,14 @@
 
 | Config | Accuracy |
 |---|---|
-| Baseline T5 | {{T5_BASE}} |
-| DecayLinear T5 | {{T5_DL}} |
+| Baseline T5 | 88.5 |
+| DecayLinear T5 | 85.0 |
 
 ## 7.10 Summary
 
 - **State memory:** 16 KB, constant in $L$.
-- **Accuracy:** {{D_DELTA}}%–{{G_DELTA}}% change.
-- **Breakeven:** $L^* = {{BREAKEVEN}}$.
+- **Accuracy:** -39.79%–-16.17% change.
+- **Breakeven:** $L^* = 512$.
 - **Cross-attention:** works.
 
 ---

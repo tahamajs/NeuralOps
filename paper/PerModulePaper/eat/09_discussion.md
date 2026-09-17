@@ -12,7 +12,7 @@
 ### 9.1.1 Takeaway 1: EAT is Not a Compressor
 
 EAT replaces attention to enable **inference-time pruning**, not to reduce 
-model size. Parameter count increases by ~{{PARAM_CHANGE}}% due to LoRA.
+model size. Parameter count increases by ~66.4M% due to LoRA.
 
 ### 9.1.2 Takeaway 2: Multi-Architecture Support is Real
 
@@ -60,10 +60,10 @@ For DistilBERT:
 
 | Metric | Baseline | EAT | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | **+{{D_PARAM_PCT}}%** |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_DELTA}} |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | **+48.5\%%** |
+| VRAM | 183 MB | 328 MB MB | 380 MB |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| Accuracy | 90.71% | 89.91% | -0.80% |
 
 **Verdict.** EAT is **neutral** for storage, **worse** for latency unless 
 pruning is enabled, **neutral** for accuracy.
@@ -96,7 +96,7 @@ The combined pipeline achieves parameter reduction AND pruning speedup.
 - Adds parameters (opposite of compression)
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- Inference: {{INFERENCE_CARBON}} g CO₂eq per 1000 queries
+- Training: ~12.5 GPU-hours
+- Inference: 0.85 g CO₂eq per 1000 queries
 
 ---

@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `dobi/`
 - [ ] Filled `variables.json` with real values
 - [ ] Ran `python apply_vars.py --module dobi`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

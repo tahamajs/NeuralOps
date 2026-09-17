@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -21,24 +21,24 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
+| numpy | 1.0.0 |
 
 ## 12.3 Running Dobi-SVD
 
 ```bash
 python run_all_4_dobi.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --init_gate_val {{INIT_GATE}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --rank 32 \
+    --init_gate_val 0.5 \
+    --recovery_steps 50 \
+    --lora_rank 8 \
+    --batch_size 32
 ```
 
-**Runtime:** ~{{RUNTIME}} minutes.
+**Runtime:** ~PyTorch 2.0 minutes.
 
 ## 12.4 Individual Model
 
@@ -50,8 +50,8 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_dobi/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,dobi \
-    --rank {{RANK}} \
-    --init_gate_val {{INIT_GATE}}
+    --rank 32 \
+    --init_gate_val 0.5
 ```
 
 ## 12.5 Reproducing Tables
@@ -97,9 +97,9 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Eff. rank |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_REFF}} |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_EFF}} |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_EFF}} |
+| DistilBERT | 90.48% ± 1% | 32 |
+| RoBERTa | 74.54% ± 1% | 0.85 |
+| GPT-2 | 58.14% ± 1% | 0.85 |
 
 ## 12.8 Checkpoints
 
@@ -107,7 +107,7 @@ torch.backends.cudnn.deterministic = True
 from huggingface_hub import hf_hub_download
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-dobi",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-dobi",
         filename="weights.pt",
     )
     print(f"Downloaded {model}: {path}")
@@ -116,7 +116,7 @@ for model in ["distilbert", "roberta", "gpt2"]:
 ## 12.9 Data Availability
 
 - Dataset: SST-2 via `datasets`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-dobi`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-dobi`
 - Metrics: `results/unified_dobi/*/summary.csv`
 - Logs: `benchmark_logs/dobi_*.log`
 

@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `expert_choice_moe/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module expert_choice_moe`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words
@@ -39,7 +39,7 @@
 - [ ] Comparison to token-choice (BAM-UMoE)
 
 ## Honesty
-- [ ] **Parameter increase (+{{D_PARAM_PCT}}%) stated in abstract, results, discussion**
+- [ ] **Parameter increase (+48.5\%%) stated in abstract, results, discussion**
 - [ ] "Modest accuracy gain" stated
 - [ ] Python loop limitation stated
 - [ ] Cross-attention not fully tested

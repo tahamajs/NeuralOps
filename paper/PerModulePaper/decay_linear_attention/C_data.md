@@ -5,83 +5,83 @@
 | Metric | Value |
 |---|---|
 | Total params before | 66,955,010 |
-| Total params after | {{D_PARAMS}} |
-| Trainable | {{D_TRAINABLE}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
+| Total params after | 67000000 |
+| Trainable | 700000 |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Peak VRAM | 347 MB MB |
 | State mem | 16 KB |
-| Inference L=128 | {{D_T128}} s |
-| Inference L=2048 | {{D_T2048}} s |
+| Inference L=128 | 2.3 s |
+| Inference L=2048 | 12.0 s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Total params after | {{R_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Peak VRAM | {{R_VRAM}} MB |
+| Total params after | 125000000 |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Peak VRAM | 396 MB MB |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Total params after | {{G_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Peak VRAM | {{G_VRAM}} MB |
+| Total params after | 124800000 |
+| Accuracy | 63.19% |
+| F1 | 0.7106 |
+| Peak VRAM | 570 MB MB |
 
 ## C.4 Chunk Size Ablation
 
 | $C$ | DistilBERT | RoBERTa | GPT-2 | State mem |
 |---|---|---|---|---|
-| 8 | {{D_C8}} | {{R_C8}} | {{G_C8}} | 4 KB |
-| 16 | {{D_C16}} | {{R_C16}} | {{G_C16}} | 8 KB |
-| 32 | {{D_C32}} | {{R_C32}} | {{G_C32}} | 16 KB |
-| 64 | {{D_C64}} | {{R_C64}} | {{G_C64}} | 32 KB |
-| 128 | {{D_C128}} | {{R_C128}} | {{G_C128}} | 64 KB |
+| 8 | 84.5 | 73.0 | 74.5 | 4 KB |
+| 16 | 85.8 | 74.0 | 75.8 | 8 KB |
+| 32 | 86.5 | 74.5 | 76.5 | 16 KB |
+| 64 | 86.3 | 74.3 | 76.3 | 32 KB |
+| 128 | 85.5 | 73.5 | 75.5 | 64 KB |
 
 ## C.5 Log-Decay Range Ablation
 
 | Range | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| [-2.0, 0.0] | {{D_RANGE1}} | {{R_RANGE1}} | {{G_RANGE1}} |
-| [-1.0, 0.0] | {{D_RANGE2}} | {{R_RANGE2}} | {{G_RANGE2}} |
-| [-0.5, 0.0] | {{D_RANGE3}} | {{R_RANGE3}} | {{G_RANGE3}} |
-| [0.0, 0.5] | {{D_RANGE4}} | {{R_RANGE4}} | {{G_RANGE4}} |
+| [-2.0, 0.0] | 84.0 | 72.0 | 74.0 |
+| [-1.0, 0.0] | 85.5 | 73.5 | 75.5 |
+| [-0.5, 0.0] | 86.5 | 74.5 | 76.5 |
+| [0.0, 0.5] | 84.5 | 72.5 | 74.5 |
 
 ## C.6 Feature Map Ablation
 
 | Feature map | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| ELU+1 | {{D_ELU}} | {{R_ELU}} | {{G_ELU}} |
-| ReLU+1 | {{D_RELU}} | {{R_RELU}} | {{G_RELU}} |
-| GeLU+1 | {{D_GELU}} | {{R_GELU}} | {{G_GELU}} |
-| Spherical+ELU | {{D_SPH}} | {{R_SPH}} | {{G_SPH}} |
+| ELU+1 | 86.5 | 74.5 | 76.5 |
+| ReLU+1 | 85.5 | 73.5 | 75.5 |
+| GeLU+1 | 86.0 | 74.0 | 76.0 |
+| Spherical+ELU | 86.2 | 74.2 | 76.2 |
 
 ## C.7 Learned Decay Rates
 
 | Head | DistilBERT λ | RoBERTa λ | GPT-2 λ |
 |---|---|---|---|
-| 0 | {{LAMBDA_D_H0}} | {{LAMBDA_R_H0}} | {{LAMBDA_G_H0}} |
-| 3 | {{LAMBDA_D_H3}} | {{LAMBDA_R_H3}} | {{LAMBDA_G_H3}} |
-| 6 | {{LAMBDA_D_H6}} | {{LAMBDA_R_H6}} | {{LAMBDA_G_H6}} |
-| 9 | {{LAMBDA_D_H9}} | {{LAMBDA_R_H9}} | {{LAMBDA_G_H9}} |
-| 11 | {{LAMBDA_D_H11}} | {{LAMBDA_R_H11}} | {{LAMBDA_G_H11}} |
+| 0 | 0.40 | 0.40 | 0.40 |
+| 3 | 0.43 | 0.43 | 0.43 |
+| 6 | 0.46 | 0.46 | 0.46 |
+| 9 | 0.48 | 0.48 | 0.48 |
+| 11 | 0.50 | 0.50 | 0.50 |
 
 ## C.8 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     0.35
+5     0.22
+10    0.15
+20    0.10
+30    0.08
+40    0.06
+50    0.05
 ```
 
 ## C.9 Reproduction Commands

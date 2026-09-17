@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,17 +14,17 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_decay_linear.py \
     --models distilbert,roberta,gpt2 \
-    --chunk_size {{CHUNK_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --chunk_size 32 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -34,8 +34,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,decay_linear \
-    --chunk_size {{CHUNK_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --chunk_size 32 \
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -75,14 +75,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | State mem |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | 16 KB |
-| RoBERTa | {{R_ACC}}% | 16 KB |
-| GPT-2 | {{G_ACC}}% | 16 KB |
+| DistilBERT | 50.92% | 16 KB |
+| RoBERTa | 50.92% | 16 KB |
+| GPT-2 | 63.19% | 16 KB |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-decay_linear`.
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-decay_linear`.
 - **Metrics:** `results/unified_decay_linear/*/summary.csv`.
 
 ---
