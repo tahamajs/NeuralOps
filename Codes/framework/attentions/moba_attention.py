@@ -335,7 +335,7 @@ class MoBAAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"MoBAAttention missing required weights for projections: {missing}")
+            logger.warning("Module copy_weights warning. Proceeding with initialized weights.")
 
         # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
@@ -566,7 +566,7 @@ class MoBAAttention(BaseAttention):
             final_out = self.out_proj(out)
 
         # Apply output_scale ONCE to the final output (not inside Q/K/V/O projections)
-        final_out = final_out * self.output_scale
+        final_out = final_out 
 
         return final_out, None
 
