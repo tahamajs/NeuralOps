@@ -184,7 +184,8 @@ class LiLLaMACompressor(BaseCompressor):
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
         """Executes LiLLaMA cross-covariance SVD distillation."""
         activations_map = self._collect_io_activations()
-        distilled_layers_count = 0
+        self.compressed_layers: List[str] = []
+        self.fallback_layers: List[str] = []
         self.layer_errors = {}
         layer_details = {}
 
@@ -193,8 +194,7 @@ class LiLLaMACompressor(BaseCompressor):
 
         for name, module in self.model.named_modules():
             if not self._is_target_module(name, module):
-                # Record 0.0 error for skipped layers as required
-                self.layer_errors[name] = 0.0
+                # Do NOT add to layer_errors; only track compressed layers
                 for p in module.parameters(recurse=False):
                     total_comp_params += p.numel()
                 continue
@@ -260,6 +260,7 @@ class LiLLaMACompressor(BaseCompressor):
                     ". Keeping original layer." if self.fallback_to_original else ". Proceeding with distilled weights.",
                 )
                 if self.fallback_to_original:
+                    self.fallback_layers.append(name)
                     for p in module.parameters(recurse=False):
                         p.requires_grad = False
                         total_comp_params += p.numel()
@@ -279,7 +280,7 @@ class LiLLaMACompressor(BaseCompressor):
                     elif isinstance(p, nn.Parameter):
                         p.requires_grad = True
 
-            distilled_layers_count += 1
+            self.compressed_layers.append(name)
             for p in module.parameters(recurse=False):
                 total_comp_params += p.numel()
 
@@ -292,10 +293,17 @@ class LiLLaMACompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        avg_err = float(torch.tensor(list(self.layer_errors.values())).mean().item()) if self.layer_errors else 0.0
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.layer_errors if k in self.compressed_layers)
+            / max(1, len([k for k in self.layer_errors if k in self.compressed_layers]))
+            if self.compressed_layers
+            else 0.0
+        )
         eff_ratio = total_comp_params / max(1, total_orig_params)
         stats.update({
-            "distilled_layers": distilled_layers_count,
+            "distilled_layers": len(self.compressed_layers),
+            "compressed_layers": self.compressed_layers,
+            "fallback_layers": self.fallback_layers,
             "rank": self.rank,
             "max_error": self.max_error,
             "fallback_to_original": self.fallback_to_original,
