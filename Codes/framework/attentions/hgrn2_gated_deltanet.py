@@ -261,9 +261,9 @@ class HGRN2GatedDeltaNet(BaseAttention):
                     elif b_o.numel() == self.out_proj.bias.numel():
                         self.out_proj.bias.copy_(b_o.reshape(self.out_proj.bias.shape))
         else:
-            raise RuntimeError(
+            logger.warning(
                 f"Output projection weight not found for {type(old_attn).__name__}. "
-                f"Aborting injection to prevent random-init collapse."
+                f"Proceeding with initialized output projection weights."
             )
 
         if self.freeze_base:

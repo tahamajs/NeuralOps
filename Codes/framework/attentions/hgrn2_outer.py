@@ -71,8 +71,6 @@ class LoRALinear(nn.Module):
         freeze_base: bool = True,
     ):
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.lora_rank = lora_rank
@@ -110,7 +108,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("hgrn2_outer", supports_causal=True, supports_gqa=True)
@@ -183,12 +181,14 @@ class HGRN2OuterBlock(BaseAttention):
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
 
         # Decoder / Causal flag
+        _mt = str(getattr(config, "model_type", "") or "").lower()
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
         if is_decoder is not None:
             self.is_decoder: bool = is_decoder
         elif config is not None:
-            self.is_decoder = bool(getattr(config, "is_decoder", False))
+            self.is_decoder = bool(getattr(config, "is_decoder", False) or any(_mt.startswith(p) for p in _decoder_prefixes))
         else:
-            self.is_decoder = False
+            self.is_decoder = bool(kwargs.get("is_causal", False) or kwargs.get("is_decoder", False))
 
         self.is_nested_encoder: bool = False
 
@@ -218,7 +218,6 @@ class HGRN2OuterBlock(BaseAttention):
         )
         self.W_f = nn.Linear(self.dim, self.num_heads, bias=True)
         self.state_norm = nn.LayerNorm(self.head_dim)
-        self.output_scale = nn.Parameter(torch.ones(1))
         self.out_proj = LoRALinear(
             self.q_head_size,
             self.dim,
@@ -570,8 +569,6 @@ class HGRN2OuterBlock(BaseAttention):
             y = y * head_mask
 
         y = y.transpose(1, 2).contiguous().view(B, L, H * d)
-        y = y * self.output_scale
-
         if self.is_nested_encoder:
             out = y
         else:
