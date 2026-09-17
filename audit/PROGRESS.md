@@ -3,7 +3,7 @@
 | Batch | Status | Files | Commit | Time | Notes |
 |---|---|---|---|---|---|
 | 1. family_aegis_spectron | ✅ | 11 | `b5a643c6b` | 15min | All 11 pass AST; output_scale eliminated; prefix is_decoder standardized |
-| 2. family_moe | ⏳ | 9 | — | — | Pending approval |
+| 2. family_moe | ✅ | 9 | `de3e7580f` | 5min | All 9 pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
 | 3. family_mamba | ⏳ | 7 | — | — | Pending |
 | 4. family_hgrn | ⏳ | 3 | — | — | Pending |
 | 5. family_deltanet | ⏳ | 2 | — | — | Pending |
