@@ -518,15 +518,12 @@ def inject_lora_attention(
             layer.self = new_attn
 
         elif hasattr(layer, 'attn'):
-
             layer.attn = new_attn
 
-        else:
-
-            if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
-            else:
-                layer.attention = new_attn
+        if old_attn is not None:
+            new_attn.train(old_attn.training)
+        elif layer is not None and hasattr(layer, 'training'):
+            new_attn.train(layer.training)
         return new_attn
     except Exception:
         return None
