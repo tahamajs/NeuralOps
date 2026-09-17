@@ -43,3 +43,14 @@ Loading weights: 100%|##########| 104/104 [00:00<00:00, 2204.94it/s]
 2026-09-17 05:11:59,943 [INFO] QwenQualitySweep: Step 1/10 took 1.32s (loss=0.3322, bs=8, micro=8)
 2026-09-17 05:12:02,740 [INFO] QwenQualitySweep: Step 5/10 took 0.75s (loss=0.3471, bs=8, micro=8)
 2026-09-17 05:12:06,476 [INFO] QwenQualitySweep: Step 10/10 took 0.74s (loss=0.2075, bs=8, micro=8)
+2026-09-17 05:12:36,651 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_aegis_hybrid\distilbert\distilbert_sst2_aegis_hybrid_full_metrics.json
+2026-09-17 05:12:36,784 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_aegis_hybrid\distilbert\checkpoints\aegis_hybrid\weights.pt (module_params=0, lora_params=52)
+2026-09-17 05:12:38,533 [INFO] QwenQualitySweep: [2/2] aegis_hybrid -> PASS 84.98% (F1: 0.8634, Peak VRAM: 319.22 MB)
+2026-09-17 05:12:38,533 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_aegis_hybrid\distilbert\checkpoints\aegis_hybrid. Automated export will be handled post-sweep by orchestrator.
+2026-09-17 05:12:39,307 [INFO] QwenQualitySweep: ================================================================================
+2026-09-17 05:12:39,307 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-17 05:12:39,341 [INFO] QwenQualitySweep: 
+                       Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                         full   PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  388.6 MB              10.50             12.04
+aegis_hybrid (efficient-attn)   PASS   84.98%       -5.73% 0.8634                  0            1.12x  319.2 MB              29.35             33.66
+2026-09-17 05:12:39,347 [INFO] QwenQualitySweep: ================================================================================
