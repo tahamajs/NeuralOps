@@ -249,7 +249,6 @@ class A3Compressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="a3", **kwargs)
-        pass
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             rank = _cfg_get(cfg, "a3_rank", _cfg_get(cfg, "rank", rank))

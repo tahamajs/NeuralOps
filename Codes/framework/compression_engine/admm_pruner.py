@@ -162,7 +162,6 @@ class ADMMPruner(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="admm_pruner", **kwargs)
-        pass
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
 
         self.sparsity = max(
