@@ -793,7 +793,15 @@ AegisAttention = AegisAttention
 
 AegisAttention = AegisAttention
 
-def inject_aegis_into_distilbert(layer, model_config, aegis_cfg=None, old_attn=None, **kwargs):
-    return inject_aegis_v5(layer, model_config=model_config, comp_config=aegis_cfg, old_attn=old_attn, **kwargs)
+def inject_aegis_into_distilbert(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    aegis_cfg: Any = None,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
+):
+    target = layer if layer is not None else model
+    return inject_aegis_v5(layer=target, model=model, model_config=model_config, comp_config=aegis_cfg, old_attn=old_attn, **kwargs)
 
 AegisAttentionV5 = AegisAttention
