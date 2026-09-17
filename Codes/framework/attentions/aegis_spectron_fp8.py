@@ -167,8 +167,6 @@ class FactorizedLinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         if isinstance(in_features_or_lin1, nn.Linear) and isinstance(out_features_or_lin2, nn.Linear):
             self.lin1 = in_features_or_lin1
             self.lin2 = out_features_or_lin2
@@ -356,7 +354,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         # Reliable decoder detection
         model_type = getattr(config, "model_type", "") if config else ""
         is_dec = getattr(config, "is_decoder", False)
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+        if any(str(model_type).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
             is_dec = True
         elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
