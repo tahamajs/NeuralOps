@@ -1,34 +1,36 @@
 import sys
 import os
-import torch
-from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 
-os.environ.setdefault("OMP_NUM_THREADS", "1")
-os.environ.setdefault("MKL_NUM_THREADS", "1")
-os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
-os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
-os.environ.setdefault("HF_HUB_OFFLINE", "1")
+# Set ALL offline and threading variables BEFORE importing torch/transformers/huggingface
+os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_DATASETS_OFFLINE"] = "1"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "0"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["HF_HOME"] = r"D:\SVD_Project\.hf_cache"
 os.environ["TRANSFORMERS_CACHE"] = r"D:\SVD_Project\.hf_cache"
 os.environ["HF_DATASETS_CACHE"] = r"D:\SVD_Project\.hf_cache"
+
+import torch
+from transformers import AutoConfig, AutoModelForSequenceClassification
 
 sys.path.insert(0, "Codes")
 
 def diagnose(module_name):
     print(f"Starting diagnosis for {module_name}...", flush=True)
     model_path = r"models\gpt2" if os.path.exists(r"models\gpt2") else "models/gpt2"
-    if not os.path.exists(model_path):
-        model_path = "gpt2"
 
-    cfg = AutoConfig.from_pretrained(model_path, local_files_only=os.path.exists(model_path))
+    cfg = AutoConfig.from_pretrained(model_path, local_files_only=True)
     if getattr(cfg, "pad_token_id", None) is None:
         cfg.pad_token_id = getattr(cfg, "eos_token_id", 0) or 0
 
     model = AutoModelForSequenceClassification.from_pretrained(
-        model_path, config=cfg, local_files_only=os.path.exists(model_path)
+        model_path, config=cfg, local_files_only=True
     )
     if getattr(model.config, "pad_token_id", None) is None:
         model.config.pad_token_id = model.config.eos_token_id or 0
