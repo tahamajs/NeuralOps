@@ -102,9 +102,6 @@ class RotationalSliceGPTINT4Linear(nn.Module):
         bias: Optional[torch.Tensor] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         Q_P_r = torch.matmul(Q, P_r)  # [D_in, r]
         self.register_buffer("Q_P_r", Q_P_r)
         self.register_buffer("W_quant", W_quant)
@@ -159,9 +156,6 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         kwargs.pop("lambda_reg", None)
         target_model = model if model is not None else nn.Identity()
         super().__init__(target_model, name="rotational_slicegpt_int4", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
 
         r_ratio = _cfg_get(cfg, "rotational_slicegpt_r_ratio", _cfg_get(cfg, "r_ratio", r_ratio))

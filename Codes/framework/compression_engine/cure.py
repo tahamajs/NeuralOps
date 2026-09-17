@@ -48,9 +48,6 @@ class CURMoECompressor(BaseCompressor):
 
     def __init__(self, model, rank=32, target_attention_only=False, **kwargs):
         super().__init__(model, name="cur_moe", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.rank = rank
         self.target_attention_only = target_attention_only
 

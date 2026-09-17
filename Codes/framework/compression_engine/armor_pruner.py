@@ -99,9 +99,6 @@ class ARMORLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
@@ -185,7 +182,7 @@ class ARMORLinear(nn.Module):
         out = out_sparse + out_lr
         if self.bias is not None:
             out = out + self.bias
-        out = out * self.output_scale
+        out = out 
         return out.view(*orig_shape[:-1], self.out_features)
 
 
@@ -228,9 +225,6 @@ class ARMORPruner(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="armor_pruner", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         conf = cfg or kwargs.get("comp_config", None)
 
         self.block_size = int(_cfg_get(conf, "armor_block_size", _cfg_get(conf, "block_size", block_size)))

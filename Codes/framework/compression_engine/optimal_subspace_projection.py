@@ -50,9 +50,6 @@ class OptimalSubspaceLoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
@@ -202,9 +199,6 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="optimal_subspace_projection", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             rank_ratio = _cfg_get(cfg, "optimal_subspace_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio))

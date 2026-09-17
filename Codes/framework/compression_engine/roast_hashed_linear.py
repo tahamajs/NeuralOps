@@ -51,9 +51,6 @@ class ROASTLinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.tile_size = max(1, int(tile_size))
@@ -209,9 +206,6 @@ class ROASTCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name='roast', **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         cfg_obj = cfg or kwargs.get('comp_config', None)
 
         self.n_buckets = max(1, int(n_buckets if n_buckets is not None else _cfg_get(cfg_obj, 'n_buckets', 1024)))
