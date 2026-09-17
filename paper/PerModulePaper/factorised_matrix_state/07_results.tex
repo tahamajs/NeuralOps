@@ -1,11 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{factorised_matrix_state}.
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/chart_state_transition_heatmap.png}
-\caption{Empirical benchmark performance and resource utilization for factorised_matrix_state.}
-\label{fig:results_factorised_matrix_state}
-\end{figure}
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_factorised\_matrix\_state/roberta/summary.csv} & factorised\_matrix\_state & PASS\_NO\_COMPRESSION & 52.87\% & 672.35 MB \\
+\texttt{results/unified\_factorised\_matrix\_state/distilbert/summary.csv} & factorised\_matrix\_state & PASS\_NO\_COMPRESSION & 76.49\% & 339.99 MB \\
+\texttt{results/unified\_factorised\_matrix\_state/gpt2/summary.csv} & factorised\_matrix\_state & PASS\_NO\_COMPRESSION & 57.8\% & 574.03 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 6681.92 ms & 3811.3 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 6655.93 ms & 3811.3 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 6668.92 ms & 3821.2 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 6678.48 ms & 3821.2 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 6675.09 ms & 3894.7 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

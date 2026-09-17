@@ -1,3 +1,11 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{flap}.
+\subsection{Algorithmic Formulation}
+The \texttt{flap} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{FLAP: Fluctuation-Based Adaptive Structured Pruning.
+Registered in COMPRESSOR\_REGISTRY as 'flap' and 'flap\_compressor'. Production hardened
+for multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with
+reconstruction validation, Conv1D support, and safe fallback.}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

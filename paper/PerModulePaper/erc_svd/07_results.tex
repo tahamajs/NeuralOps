@@ -1,3 +1,10 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{erc_svd}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+benchmark\_summary\_v2 & bert-sst2 & PASS & 32.97 ms & 797.7 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 34.31 ms & 797.7 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 34.23 ms & 807.5 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 34.61 ms & 807.5 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 52.1 ms & 1141.1 MB \\
+benchmark\_summary\_v2 & t5-mrpc & PASS & 51.0 ms & 1141.2 MB \\
+all\_121\_gpu\_matrix & erc\_svd & PASS & 30.96x (0.788s) & 106.1 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
