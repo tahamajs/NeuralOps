@@ -361,6 +361,12 @@ class NLISoftmaxAttention(BaseAttention):
         attn_probs = self.dropout(attn_probs)
 
         if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask.unsqueeze(-1)
             attn_probs = attn_probs * head_mask
 
         context = torch.matmul(attn_probs, v)
