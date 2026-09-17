@@ -15,4 +15,4 @@
 | 11. family_attn_general_3 | ✅ | 20 | `560402ec8` | 4min | All 20 pass AST; output_scale & RuntimeError & prefix is_decoder fixed |
 | 12. family_attn_general_4 | ✅ | 20 | `b6ce35e71` | 4min | All 20 pass AST; output_scale & RuntimeError & prefix is_decoder fixed |
 | 13. family_attn_general_5 | ✅ | 23 | `28162beb1` | 4min | All 23 pass AST; output_scale & RuntimeError & prefix is_decoder fixed |
-| 14. compression_engine | ⏳ | 80 | — | — | Pending |
+| 14. compression_engine | ✅ | 80 | `53e65cde8` | 5min | All 80 pass AST; output_scale eliminated across entire suite |
