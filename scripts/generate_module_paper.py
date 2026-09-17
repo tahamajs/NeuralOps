@@ -265,6 +265,24 @@ Experiments execute on dedicated NVIDIA GPU accelerators under PyTorch with CUDA
                 res_rows.append(f"| results/benchmark_summary_v2.csv | {mf}-{ds} | {st} | Step Latency: {lat} ms <!-- source: results/benchmark_summary_v2.csv line {line_no} --> | {mem} MB <!-- source: results/benchmark_summary_v2.csv line {line_no} --> |")
                 safe_st = str(st).replace("_", "\\_")
                 res_tex_rows.append(f"benchmark\\_summary\\_v2 & {mf}-{ds} & {safe_st} & {lat} ms & {mem} MB \\\\")
+
+        # 3. Also check all_121_compressors_gpu_matrix.csv
+        matrix_path = ROOT / "results/all_121_compressors_gpu_matrix.csv"
+        if matrix_path.exists():
+            df_mat = pd.read_csv(matrix_path)
+            clean_m = mod_name.replace("_compressor", "").replace("_quantizer", "").replace("_pruner", "")
+            sub_mat = df_mat[df_mat["module"].isin([mod_name, clean_m])]
+            for idx, row in sub_mat.iterrows():
+                line_no = idx + 2
+                mod_lbl = row["module"]
+                st = row["status"]
+                cr = row["compression_ratio"]
+                vram = row["peak_vram_mb"]
+                el = row["elapsed_s"]
+                res_rows.append(f"| results/all_121_compressors_gpu_matrix.csv | {mod_lbl} | {st} | Comp Ratio: {cr}x, Time: {el}s <!-- source: results/all_121_compressors_gpu_matrix.csv line {line_no} --> | {vram} MB <!-- source: results/all_121_compressors_gpu_matrix.csv line {line_no} --> |")
+                safe_st = str(st).replace("_", "\\_")
+                safe_lbl = str(mod_lbl).replace("_", "\\_")
+                res_tex_rows.append(f"all\\_121\\_gpu\\_matrix & {safe_lbl} & {safe_st} & {cr}x ({el}s) & {vram} MB \\\\")
     except Exception:
         pass
 
