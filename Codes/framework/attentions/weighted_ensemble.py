@@ -474,8 +474,9 @@ class WeightedEnsembleAttention(BaseAttention):
 
         # Decoder and nested encoder flags
         is_dec = bool(getattr(cfg_source, "is_decoder", False) or kwargs.get("is_decoder", False))
-        model_type = getattr(cfg_source, "model_type", "") if cfg_source else ""
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
+        _mt = getattr(cfg_source, "model_type", "").lower() if cfg_source else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        if any(_mt.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         self.is_decoder: bool = is_dec
         self.is_nested_encoder: bool = False
@@ -783,6 +784,11 @@ class WeightedEnsembleAttention(BaseAttention):
                         target.weight.copy_(w)
                     elif target.weight.shape == w.t().shape:
                         target.weight.copy_(w.t())
+                    else:
+                        w_or = w if w.shape[1] == target.weight.shape[1] else w.t()
+                        out_d, in_d = target.weight.shape
+                        s_out, s_in = w_or.shape
+                        target.weight.data[:min(out_d, s_out), :min(in_d, s_in)].copy_(w_or[:min(out_d, s_out), :min(in_d, s_in)])
                     if b is not None and target.bias is not None:
                         target.bias.copy_(b if torch.is_tensor(b) else b.data)
 
@@ -796,6 +802,11 @@ class WeightedEnsembleAttention(BaseAttention):
                         self.out_proj.weight.copy_(w_o)
                     elif self.out_proj.weight.shape == w_o.t().shape:
                         self.out_proj.weight.copy_(w_o.t())
+                    else:
+                        w_or = w_o if w_o.shape[1] == self.out_proj.weight.shape[1] else w_o.t()
+                        out_d, in_d = self.out_proj.weight.shape
+                        s_out, s_in = w_or.shape
+                        self.out_proj.weight.data[:min(out_d, s_out), :min(in_d, s_in)].copy_(w_or[:min(out_d, s_out), :min(in_d, s_in)])
                     if b_o is not None and self.out_proj.bias is not None:
                         self.out_proj.bias.copy_(b_o if torch.is_tensor(b_o) else b_o.data)
 
