@@ -147,7 +147,10 @@ class HuffmanCoder:
 
         # Handle high quantize_bits properly: skip quantization / identity mapping
         if quantize_bits is None or quantize_bits >= 16:
-            raw_bytes = tensor.detach().cpu().numpy().tobytes()
+            if tensor.dtype == torch.bfloat16:
+                raw_bytes = tensor.detach().cpu().view(torch.int16).numpy().tobytes()
+            else:
+                raw_bytes = tensor.detach().cpu().numpy().tobytes()
             metadata = {
                 "scale": 1.0,
                 "min_val": 0.0,
@@ -218,10 +221,17 @@ class HuffmanCoder:
             return torch.empty(metadata.get("orig_shape", [0]), device=device)
 
         if metadata.get("is_raw", False):
-            dtype_str = metadata.get("orig_dtype", "torch.float32").replace("torch.", "")
-            np_dtype = getattr(np, dtype_str if hasattr(np, dtype_str) else "float32")
-            arr = np.frombuffer(packed_bytes, dtype=np_dtype)
-            return torch.from_numpy(arr.copy()).reshape(metadata.get("orig_shape")).to(device=device)
+            orig_dtype_str = metadata.get("orig_dtype", "torch.float32")
+            target_dtype = getattr(torch, orig_dtype_str.replace("torch.", ""), torch.float32)
+            if target_dtype == torch.bfloat16:
+                arr = np.frombuffer(packed_bytes, dtype=np.int16)
+                tensor_out = torch.from_numpy(arr.copy()).view(torch.bfloat16).reshape(metadata.get("orig_shape"))
+            else:
+                dtype_str = orig_dtype_str.replace("torch.", "")
+                np_dtype = getattr(np, dtype_str if hasattr(np, dtype_str) else "float32")
+                arr = np.frombuffer(packed_bytes, dtype=np_dtype)
+                tensor_out = torch.from_numpy(arr.copy()).reshape(metadata.get("orig_shape")).to(dtype=target_dtype)
+            return tensor_out.to(device=device)
 
         scale = metadata.get("scale", 1.0)
         min_val = metadata.get("min_val", 0.0)
