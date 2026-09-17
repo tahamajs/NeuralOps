@@ -182,7 +182,6 @@ class ARMORLinear(nn.Module):
         out = out_sparse + out_lr
         if self.bias is not None:
             out = out + self.bias
-        out = out 
         return out.view(*orig_shape[:-1], self.out_features)
 
 
