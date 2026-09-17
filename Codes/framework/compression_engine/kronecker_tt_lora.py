@@ -78,9 +78,6 @@ class KroneckerTTLoRALayer(nn.Module):
         entropy_threshold: float = 0.75,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.base_layer = base_layer
         self.base_layer.weight.requires_grad = False
 

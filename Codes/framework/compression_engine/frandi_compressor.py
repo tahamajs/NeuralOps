@@ -54,9 +54,6 @@ class FRanDILinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
@@ -102,7 +99,7 @@ class FRanDILinear(nn.Module):
                 F.linear(x_flat.float(), self.lora_A), self.lora_B
             ).to(out.dtype)
 
-        out = out * self.output_scale
+        out = out 
         return out.view(*orig_shape[:-1], self.out_features)
 
     def get_weight(self) -> torch.Tensor:

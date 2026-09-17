@@ -143,9 +143,6 @@ class KMeansLinear(nn.Module):
         lora_alpha: float = 1.0,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         target_mod = getattr(linear, "base_layer", linear)
         cls_name = target_mod.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")

@@ -42,7 +42,6 @@ class AdaptiveTransformerCompressor(AdaptiveRanksCompressor):
             target_modules=target_modules,
             **kwargs,
         )
-        self.output_scale = nn.Parameter(torch.ones(1))
 
 
 adaptive_svd_factory = adaptive_ranks_factory

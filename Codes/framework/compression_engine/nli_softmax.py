@@ -55,9 +55,6 @@ class NLISoftmax(nn.Module):
 
     def __init__(self, dim: int = -1) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.dim = dim
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -194,7 +191,6 @@ class NLISoftmaxAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.is_nested_encoder = bool(is_nested_encoder)
         self.dropout = nn.Dropout(_cfg_get(cfg, "attention_probs_dropout_prob", 0.1))
-        self.output_scale = nn.Parameter(torch.ones(1))
 
         lora_r = int(kwargs.get("lora_rank", _cfg_get(cfg, "lora_rank", 16)))
         lora_a = float(kwargs.get("lora_alpha", _cfg_get(cfg, "lora_alpha", 32.0)))
@@ -377,7 +373,7 @@ class NLISoftmaxAttention(BaseAttention):
         else:
             out = self.out_proj(context)
 
-        return (out * self.output_scale, attn_probs if output_attentions else None)
+        return (out , attn_probs if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("nli_softmax_inject")
@@ -459,9 +455,6 @@ class NLISoftmaxCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="nli_softmax", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         conf = cfg or kwargs.get("comp_config", None)
         if conf is not None:
             max_error = _cfg_get(conf, "nli_max_error", _cfg_get(conf, "max_error", max_error))
