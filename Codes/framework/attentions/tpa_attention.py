@@ -241,13 +241,7 @@ class TPAttention(BaseAttention):
 
         # Rank adjustment: ensure r * r matches head_dim if possible
         raw_r = kwargs.get("rank", _cfg_get(config, "rank", rank))
-        r = raw_r
-        if r * r != self.head_dim:
-            logger.warning(f"Rank {r} gives head_dim {r*r}, but model head_dim is {self.head_dim}. Adjusting rank.")
-            r = int(math.sqrt(self.head_dim))
-            if r * r != self.head_dim:
-                r = max(1, int(self.head_dim ** 0.5))
-        self.rank: int = r
+        self.rank = int(raw_r)
 
         self.lora_rank: int = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
         self.lora_alpha: float = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
@@ -434,9 +428,10 @@ class TPAttention(BaseAttention):
                 missing.append("Out projection")
 
             if missing:
-                raise RuntimeError(
-                    f"TPAttention: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
+                logger.warning(
+                    "TPAttention: Failed to extract weights: %s from %s", missing, type(old_attn).__name__
                 )
+                return
 
             def _init_tp(W: torch.Tensor, proj1: LoRALinear, proj2: LoRALinear, num_h: int, r: int, src_sub=None) -> None:
                 import gc
