@@ -23,7 +23,7 @@ from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
-from .tt_linear import TTLinearLayer
+from framework.compression_engine.tt_linear import TTLinearLayer
 
 logger = logging.getLogger(__name__)
 
