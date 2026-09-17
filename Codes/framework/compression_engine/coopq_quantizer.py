@@ -15,6 +15,7 @@ Mathematical Formulation:
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
+import math
 import logging
 import torch
 import torch.nn as nn
@@ -143,6 +144,8 @@ class CoopQLinear(nn.Module):
         bits: int = 4,
         symmetric: bool = False,
         per_channel: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -151,12 +154,24 @@ class CoopQLinear(nn.Module):
         self.bits = max(4, int(bits))
         self.symmetric = symmetric
         self.per_channel = per_channel
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
         self.weight = nn.Parameter(torch.empty(out_features, in_features))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features))
         else:
             self.register_parameter("bias", None)
+
+        if self.lora_r > 0:
+            self.lora_A = nn.Parameter(torch.empty(self.lora_r, in_features))
+            self.lora_B = nn.Parameter(torch.zeros(out_features, self.lora_r))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+        else:
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
 
         nn.init.kaiming_uniform_(self.weight, a=5**0.5)
         if self.bias is not None:
@@ -169,6 +184,8 @@ class CoopQLinear(nn.Module):
         bits: int = 4,
         symmetric: bool = False,
         per_channel: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
     ) -> CoopQLinear:
         cls_name = linear.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
@@ -190,6 +207,8 @@ class CoopQLinear(nn.Module):
             bits=bits,
             symmetric=symmetric,
             per_channel=per_channel,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
         )
         layer.weight.data.copy_(w_data)
         if getattr(linear, "bias", None) is not None and linear.bias is not None:
@@ -213,11 +232,15 @@ class CoopQLinear(nn.Module):
                 per_channel=False,
                 use_ste=self.training,
             )
-        return F.linear(
+        out = F.linear(
             x,
             w_q.to(dtype=x.dtype, device=x.device),
             b_q.to(dtype=x.dtype, device=x.device) if b_q is not None else None,
         )
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
+            out = out + (self.scaling * lora_out).to(out.dtype)
+        return out
 
 
 class CoopQQuantizer(BaseCompressor):
@@ -435,11 +458,22 @@ class CoopQQuantizer(BaseCompressor):
             total_params_linear += num_params
 
             if self.use_ste:
+                src_lora_r = 0
+                src_lora_alpha = 1.0
+                if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
+                   module.lora_A is not None and module.lora_B is not None:
+                    src_lA = getattr(module.lora_A, 'weight', module.lora_A)
+                    if hasattr(src_lA, 'shape') and len(src_lA.shape) == 2:
+                        src_lora_r = src_lA.shape[0]
+                    src_lora_alpha = getattr(module, 'lora_alpha', float(src_lora_r))
+
                 coopq_layer = CoopQLinear.from_linear(
                     target_mod,
                     bits=layer_bits,
                     symmetric=self.symmetric,
                     per_channel=self.per_channel,
+                    lora_r=src_lora_r,
+                    lora_alpha=src_lora_alpha,
                 )
                 new_layer = coopq_layer
                 compressed_layer = new_layer
