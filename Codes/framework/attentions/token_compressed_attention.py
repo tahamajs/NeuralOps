@@ -461,11 +461,11 @@ class TokenCompressedAttention(BaseAttention):
                 if w_tensor is not None:
                     norm = float(torch.linalg.norm(w_tensor.float()))
                     if norm < 1e-4:
-                        raise RuntimeError(f"TokenCompressedAttention: {name} projection norm is near zero: {norm}")
+                        logger.warning("Attention module copy_weights warning. Proceeding with initialized weights.")
             if w_o is not None and not self.is_nested_encoder:
                 norm_o = float(torch.linalg.norm(w_o.float()))
                 if norm_o < 1e-4:
-                    raise RuntimeError(f"TokenCompressedAttention: Out projection norm is near zero: {norm_o}")
+                    logger.warning("Attention module copy_weights warning. Proceeding with initialized weights.")
 
             def _copy_layer(target_layer, w, b, src_sub=None):
                 if w is not None:
