@@ -165,16 +165,22 @@ class ROASTLinear(nn.Module):
         tiles_out = (out_f + ts - 1) // ts
         tiles_in = (in_f + ts - 1) // ts
 
-        # Gather per-tile means
+        # Vectorized computation of per-tile means and scatter into weight_table
         with torch.no_grad():
-            for i in range(tiles_out):
-                for j in range(tiles_in):
-                    tile = W[
-                        i * ts : min((i + 1) * ts, out_f),
-                        j * ts : min((j + 1) * ts, in_f),
-                    ]
-                    bucket_idx = roast.tile_hash_idx[i, j].item()
-                    roast.weight_table.data[bucket_idx] = tile.mean()
+            pad_out = tiles_out * ts - out_f
+            pad_in = tiles_in * ts - in_f
+            if pad_out > 0 or pad_in > 0:
+                W_padded = F.pad(W, (0, pad_in, 0, pad_out), mode='constant', value=0.0)
+                mask = F.pad(torch.ones_like(W), (0, pad_in, 0, pad_out), mode='constant', value=0.0)
+                W_blocks = W_padded.view(tiles_out, ts, tiles_in, ts).permute(0, 2, 1, 3).contiguous().view(tiles_out, tiles_in, -1)
+                mask_blocks = mask.view(tiles_out, ts, tiles_in, ts).permute(0, 2, 1, 3).contiguous().view(tiles_out, tiles_in, -1)
+                tile_means = W_blocks.sum(dim=-1) / mask_blocks.sum(dim=-1).clamp(min=1.0)
+            else:
+                tile_means = W.view(tiles_out, ts, tiles_in, ts).permute(0, 2, 1, 3).contiguous().view(tiles_out, tiles_in, -1).mean(dim=-1)
+
+            flat_idx = roast.tile_hash_idx.view(-1).to(device=roast.weight_table.device)
+            flat_means = tile_means.view(-1).to(device=roast.weight_table.device, dtype=roast.weight_table.dtype)
+            roast.weight_table.data.scatter_(0, flat_idx, flat_means)
 
         return roast
 
