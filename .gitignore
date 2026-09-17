@@ -266,30 +266,25 @@ env/
 .conda/
 
 # ═══════════════════════════════════════════════
-# Test & Benchmark Outputs
+# Test & Benchmark Outputs (Allow Results & Paper Artifacts)
 # ═══════════════════════════════════════════════
-results/
+!results/
+!results/**
+# Keep heavy checkpoints/weights outside git
+results/**/*.pt
+results/**/*.bin
+results/**/*.safetensors
 benchmark_logs/
 logs/
-*.log
 
 # ═══════════════════════════════════════════════
-# Paper artifacts (generated, not source)
+# Paper artifacts (Track generated tables, figures, metrics, cards)
 # ═══════════════════════════════════════════════
-papers/modules/*/figures/
-papers/modules/*/tables/
-papers/modules/*/metrics/
-papers/modules/*/examples/
-papers/modules/*/logs/
-papers/modules/*/model_cards/
-papers/modules/*/runs/
-papers/modules/*/paper.md
-papers/_rank_ablation/modules.txt
-papers/_rank_ablation/*.log
-papers/_rank_ablation/progress.log
-
-!papers/modules/.gitkeep
-!papers/_rank_ablation/.gitkeep
+!papers/
+!papers/**
+papers/modules/*/runs/**/*.pt
+papers/modules/*/runs/**/*.bin
+papers/modules/*/runs/**/*.safetensors
 
 # ═══════════════════════════════════════════════
 # Model checkpoints
