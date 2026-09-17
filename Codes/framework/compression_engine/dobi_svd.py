@@ -158,7 +158,7 @@ class DobiSVDCompressor(BaseCompressor):
         init_rank_ratio: float = 0.5,
         rank: Optional[int] = None,
         init_gate_val: float = 2.5,
-        max_error: float = 0.60,
+        max_error: float = 0.35,
         fallback_to_original: bool = True,
         target_attention_only: bool = True,
         max_retries: int = 2,
@@ -512,7 +512,7 @@ def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         init_rank_ratio = kwargs.pop("init_rank_ratio", _cfg_get(comp_config, "dobi_init_rank_ratio", _cfg_get(comp_config, "init_rank_ratio", 0.5)))
         rank = kwargs.pop("rank", _cfg_get(comp_config, "dobi_rank", _cfg_get(comp_config, "rank", None)))
         init_gate_val = kwargs.pop("init_gate_val", _cfg_get(comp_config, "init_gate_val", 2.5))
-        max_error = kwargs.pop("max_error", _cfg_get(comp_config, "dobi_max_error", _cfg_get(comp_config, "max_error", 0.60)))
+        max_error = kwargs.pop("max_error", _cfg_get(comp_config, "dobi_max_error", _cfg_get(comp_config, "max_error", 0.35)))
         fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "dobi_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)))
         target_attention_only = kwargs.pop(
             "target_attention_only",
