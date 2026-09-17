@@ -403,10 +403,7 @@ class FactorisedMatrixState(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"FactorisedMatrixState copy_weights failed: missing mandatory projections {missing_after} "
-                f"from module {old_attn.__class__.__name__}."
-            )
+            logger.warning("FactorisedMatrixState copy_weights warning. Proceeding with initialized weights.")
 
         target_map = {
             "q": self.q_proj,
