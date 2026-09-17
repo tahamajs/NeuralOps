@@ -1,15 +1,15 @@
 [
   {
-    "Model": "gpt2",
+    "Model": "distilbert",
     "Exit Code": 0,
-    "Baseline Acc": "79.36%",
-    "TPAttention Acc": "49.08%",
-    "Delta Acc": "-30.28%",
-    "F1": "0.0000",
-    "Status": "PASS_LOW",
+    "Baseline Acc": "90.71%",
+    "TPAttention Acc": "75.00%",
+    "Delta Acc": "-15.71%",
+    "F1": "0.6997",
+    "Status": "PASS_NO_COMPRESSION",
     "Compressed Layers": "0",
-    "Comp Rate": "1.08x",
-    "Peak VRAM": "500.8 MB",
-    "Time (s)": "114.3"
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "605.7 MB",
+    "Time (s)": "275.7"
   }
 ]
