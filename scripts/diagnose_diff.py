@@ -18,6 +18,7 @@ os.environ["HF_DATASETS_CACHE"] = r"D:\SVD_Project\.hf_cache"
 sys.path.insert(0, "Codes")
 
 def diagnose(module_name):
+    print(f"Starting diagnosis for {module_name}...", flush=True)
     model_path = r"models\gpt2" if os.path.exists(r"models\gpt2") else "models/gpt2"
     if not os.path.exists(model_path):
         model_path = "gpt2"
@@ -99,4 +100,8 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python scripts/diagnose_diff.py <module_name>")
         sys.exit(1)
-    diagnose(sys.argv[1])
+    try:
+        diagnose(sys.argv[1])
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
