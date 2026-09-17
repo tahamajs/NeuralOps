@@ -1,44 +1,11 @@
 # Failure Signature — compressed_mha
 
-## Purpose
+## Known Empirical Failures
 
-Document the specific failure pattern of this module. Every agent working with
-this module must know it.
+### Failure 1: Universal 50.92% collapse across all backbones
 
-## Known failures
+**Symptom:** Observed in benchmark results.
+**Root cause:** Aggressive low-rank truncation (rank 64 on 768-dim QKV space) without activation weighting strips critical high-rank attention channels. 100 recovery steps are insufficient to restore representations.
+**Fix:** Increase default rank to 192 or use activation-aware preconditioning before SVD factorization.
 
-### Failure 1: <name>
 
-**Symptom:** <what happens>
-
-**Root cause:** <why>
-
-**Fix:** <how>
-
-**Files affected:** <list>
-
-### Failure 2: <name>
-
-...
-
-## Diagnostic commands
-
-```bash
-# Check if the module is even running correctly
-grep -E "compressed_mha|FAIL|ERROR|NaN|OOM" results/*/compressed_mha*/summary.csv
-
-# Check for the specific signature
-grep "<specific_string>" benchmark_logs/compressed_mha*.log
-```
-
-## Recovery procedure
-
-1. Read the log in `benchmark_logs/compressed_mha_<backbone>.log`
-2. Check `metrics/sanity_check.json` for this run
-3. Check `metrics/copy_weights_audit.json`
-4. If any of the above failed, apply the fix and re-run
-5. Do NOT proceed to recovery if sanity check failed
-
-## Output
-
-`papers/modules/compressed_mha/logs/failure_analysis.md`

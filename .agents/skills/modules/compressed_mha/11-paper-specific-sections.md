@@ -1,43 +1,17 @@
-# Paper-Specific Sections — compressed_mha
+# Paper Specific Sections — compressed_mha
 
-## Purpose
+## Methodology Description
 
-Customize the paper sections for this module's specific story.
+Compressed MHA: Joint Truncated SVD Multi-Head Attention
+Source implementation: `Codes/framework/attentions/compressed_mha_attention.py`.
 
-## Section 1 — Introduction hook
+Mathematical formulation:
+$$
+W_{qkv} = \begin{bmatrix} W_q \\ W_k \\ W_v \end{bmatrix} \approx U_r \Sigma_r V_r^\top, \quad W_o \approx U_{ro} \Sigma_{ro} V_{ro}^\top
+$$
 
-For compressed_mha, the motivation is:
-<one paragraph>
+## Results Narrative
 
-## Section 3 — Method emphasis
-
-The key novel aspect of compressed_mha is:
-<one paragraph>
-
-## Section 4 — Results highlight
-
-The headline result is:
-<one paragraph>
-
-## Section 8 — Analysis focus
-
-The paper should analyze:
-- Why does compressed_mha work where it does?
-- Why does it fail where it does?
-- What are the exact failure signatures?
-
-## Section 10 — Limitations
-
-Specific limitations for compressed_mha:
-- <limitation 1>
-- <limitation 2>
-- <limitation 3>
-
-## Section 11 — Conclusion
-
-Key takeaway:
-<one paragraph>
-
-## Output
-
-`papers/modules/compressed_mha/paper_sections.json`
+- DistilBERT: 50.92% accuracy (PASS_LOW), -19.16% parameter change.
+- RoBERTa: 49.89% accuracy (PASS_LOW), -14.90% parameter change.
+- GPT-2: 50.92% accuracy (PASS_LOW), -20.62% parameter change.
