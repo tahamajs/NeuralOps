@@ -283,7 +283,6 @@ class CoMeCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="come", **kwargs)
-        pass
         conf = kwargs.get("comp_config", kwargs.get("cfg", None))
 
         target_layers = _cfg_get(conf, "come_target_layers", _cfg_get(conf, "target_layers", target_layers))
