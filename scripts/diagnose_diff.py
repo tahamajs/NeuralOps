@@ -3,9 +3,17 @@ import os
 import torch
 from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_DATASETS_OFFLINE"] = "1"
+os.environ["HF_HOME"] = r"D:\SVD_Project\.hf_cache"
+os.environ["TRANSFORMERS_CACHE"] = r"D:\SVD_Project\.hf_cache"
+os.environ["HF_DATASETS_CACHE"] = r"D:\SVD_Project\.hf_cache"
 
 sys.path.insert(0, "Codes")
 
