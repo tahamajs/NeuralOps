@@ -1,3 +1,17 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{galerkin_attention}.
+\subsection{Algorithmic Formulation}
+The \texttt{galerkin_attention} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Galerkin Attention: Petrov-Galerkin Projection Attention for Transformer Architectures.
+
+Formulates transformer self-attention as a continuous non-local integral operator
+discretized via Petrov-Galerkin projection onto an orthonormal basis (e.g., discrete cosine basis).
+Supports fallback to standard causal attention for decoder models.
+
+Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures:
+- Robust pretrained weight extraction (GPT-2 fused c\_attn, RoBERTa nested, Qwen GQA, DistilBERT)
+- Strict Frobenius norm verification (>= 1e-4) for all projections
+- }\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

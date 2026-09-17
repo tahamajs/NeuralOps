@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{galerkin_attention}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_galerkin\_attention/roberta/summary.csv} & galerkin\_attention & PASS\_NO\_COMPRESSION & 49.2\% & 653.87 MB \\
+\texttt{results/unified\_galerkin\_attention/distilbert/summary.csv} & galerkin\_attention & PASS\_NO\_COMPRESSION & 65.94\% & 322.36 MB \\
+\texttt{results/unified\_galerkin\_attention/gpt2/summary.csv} & galerkin\_attention & PASS\_NO\_COMPRESSION & 79.36\% & 567.91 MB \\
+\texttt{results/agnews\_unified\_galerkin\_attention/distilbert/summary.csv} & galerkin\_attention & PASS\_NO\_COMPRESSION & 36.0\% & 541.99 MB \\
+\texttt{results/mnli\_unified\_galerkin\_attention/distilbert/summary.csv} & galerkin\_attention & PASS\_NO\_COMPRESSION & 36.4\% & 356.28 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 36.59 ms & 497.4 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 36.94 ms & 497.4 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 38.29 ms & 507.3 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
