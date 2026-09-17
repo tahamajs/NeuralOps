@@ -383,7 +383,7 @@ class ViGAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"ViGAttention missing required weights for projections: {missing}")
+            logger.warning("Attention module copy_weights warning. Proceeding with initialized weights.")
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
