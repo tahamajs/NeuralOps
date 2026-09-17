@@ -1,3 +1,9 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{kda_attention}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+benchmark\_summary\_v2 & bert-sst2 & PASS & 7159.77 ms & 3809.2 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 7139.46 ms & 3809.2 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 7085.94 ms & 3819.1 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 7219.64 ms & 3819.1 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 7049.47 ms & 3892.6 MB \\
+benchmark\_summary\_v2 & t5-mrpc & PASS & 7173.63 ms & 3892.6 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{kronecker_tt_lora}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_kronecker\_tt\_lora/roberta/summary.csv} & kronecker\_tt\_lora & FAIL & 0.0\% & 712.34 MB \\
+\texttt{results/unified\_kronecker\_tt\_lora/distilbert/summary.csv} & kronecker\_tt\_lora & PASS & 90.48\% & 211.47 MB \\
+\texttt{results/unified\_kronecker\_tt\_lora/gpt2/summary.csv} & kronecker\_tt\_lora & PASS & 76.95\% & 803.66 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 83.84 ms & 761.5 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 87.18 ms & 761.5 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 96.61 ms & 771.4 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 101.79 ms & 771.4 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 99.66 ms & 1394.0 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

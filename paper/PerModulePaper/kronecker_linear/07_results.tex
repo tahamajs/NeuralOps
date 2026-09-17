@@ -1,3 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{kronecker_linear}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_kronecker\_linear/roberta/summary.csv} & kronecker\_linear & PASS & 78.56\% & 520.18 MB \\
+\texttt{results/unified\_kronecker\_linear/distilbert/summary.csv} & kronecker\_linear & PASS & 90.71\% & 183.07 MB \\
+\texttt{results/unified\_kronecker\_linear/qwen3\_5/summary.csv} & kronecker\_linear & FAIL & 0.0\% & 1796.78 MB \\
+\texttt{results/unified\_kronecker\_linear/gpt2/summary.csv} & kronecker\_linear & PASS & 79.36\% & 628.41 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

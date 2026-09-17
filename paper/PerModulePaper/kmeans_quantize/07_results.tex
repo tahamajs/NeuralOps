@@ -1,3 +1,10 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{kmeans_quantize}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+benchmark\_summary\_v2 & bert-sst2 & FAIL & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & bert-mrpc & FAIL & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & FAIL & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & FAIL & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & t5-sst2 & FAIL & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & t5-mrpc & FAIL & 0.0 ms & 0.0 MB \\
+all\_121\_gpu\_matrix & kmeans\_quantize & PASS & 826.11x (0.232s) & 235.7 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
