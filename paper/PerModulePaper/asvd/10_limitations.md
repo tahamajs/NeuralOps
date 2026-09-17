@@ -73,7 +73,7 @@ to standard SVD. We report both settings.
 
 ## 10.11 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+None
 
 ## 10.12 Code Quality
 

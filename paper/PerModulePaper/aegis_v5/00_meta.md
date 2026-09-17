@@ -1,19 +1,19 @@
 # AEGIS-V5: Adaptive Enhanced Global-Local Integrated Sparse Attention with SVD-Factorized Projections
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/aegis_v5.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v5
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/aegis_v5.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -36,10 +36,10 @@ per-head gate. For decoder-only models, we fall back to standard causal
 softmax attention to preserve causality — a conservative but correctness-
 preserving choice.
 
-On SST-2, AEGIS-V5 achieves **{{D_ACC}}%** on DistilBERT (baseline 
-{{BASE_D}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (baseline 
-{{BASE_R}}%, Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (baseline 
-{{BASE_G}}%, Δ = {{G_DELTA}}), using {{RECOVERY_STEPS}} LoRA recovery 
+On SST-2, AEGIS-V5 achieves **83.72%** on DistilBERT (baseline 
+90.71%, Δ = -6.99), **86.47%** on RoBERTa (baseline 
+78.56%, Δ = +7.91), and **69.50%** on GPT-2 (baseline 
+79.36%, Δ = -9.86), using 50 LoRA recovery 
 steps. Complexity is $\mathcal{O}(N \cdot W + N \cdot F)$ for encoders 
 where $W$ is window size and $F$ is RFF feature count. We provide a 
 production-hardened implementation supporting DistilBERT, RoBERTa, GPT-2, 

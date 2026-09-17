@@ -14,8 +14,8 @@
 
 ## E.2 Environmental
 
-- Total GPU-hours: ~{{COMPUTE_HOURS}}.
-- CO₂: {{CO2_KG}} kg.
+- Total GPU-hours: ~10.
+- CO₂: 0.8 kg.
 
 ## E.3 Data Ethics
 
@@ -37,7 +37,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 

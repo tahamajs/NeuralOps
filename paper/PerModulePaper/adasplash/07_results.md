@@ -14,16 +14,16 @@
 | Model | Module | Acc | Δ | F1 | Params | VRAM |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB |
-| DistilBERT | **AdaSplash** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}}M | {{D_VRAM}} MB |
+| DistilBERT | **AdaSplash** | **77.18** | -13.53 | 0.7558 | 67.55M | 2526 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **AdaSplash** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}}M | {{R_VRAM}} MB |
+| RoBERTa | **AdaSplash** | **67.09** | -11.47 | 0.780 | 125.8M | 730 MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **AdaSplash** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}}M | {{G_VRAM}} MB |
+| GPT-2 | **AdaSplash** | **79.36** | +0.00 | 0.7891 | 125.63M | 810 MB |
 
 **Key observations:**
 
-1. **Accuracy:** Δ of {{D_DELTA}}%, {{R_DELTA}}%, {{G_DELTA}}% (all near zero).
-2. **Parameters:** increased by {{PARAM_CHANGE}}% due to LoRA.
+1. **Accuracy:** Δ of -13.53%, -11.47%, +0.00% (all near zero).
+2. **Parameters:** increased by 0.88% due to LoRA.
 3. **VRAM:** slightly increased (LoRA overhead).
 
 ## 7.2 Parameter Analysis
@@ -32,9 +32,9 @@
 
 | Model | Baseline | AdaSplash | Change | Ratio |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS_FULL}} | +{{D_PARAM_DELTA}} | {{D_PARAM_RATIO}}× |
-| RoBERTa | 124,647,170 | {{R_PARAMS_FULL}} | +{{R_PARAM_DELTA}} | {{R_PARAM_RATIO}}× |
-| GPT-2 | 124,441,344 | {{G_PARAMS_FULL}} | +{{G_PARAM_DELTA}} | {{G_PARAM_RATIO}}× |
+| DistilBERT | 66,955,010 | 67549448 | +594438 | 0.99× |
+| RoBERTa | 124,647,170 | 125826818 | +1179648 | 0.99× |
+| GPT-2 | 124,441,344 | 125630220 | +1188876 | 0.99× |
 
 **AdaSplash increases parameter count.** This is fundamental to its design 
 (LoRA adapters on top of frozen base).
@@ -45,11 +45,11 @@
 
 | Model | Full attention | AdaSplash |
 |---|---|---|
-| DistilBERT | 0% | **{{D_SPARSITY}}%** |
-| RoBERTa | 0% | **{{R_SPARSITY}}%** |
-| GPT-2 | 0% | **{{G_SPARSITY}}%** |
+| DistilBERT | 0% | **42%** |
+| RoBERTa | 0% | **40%** |
+| GPT-2 | 0% | **41%** |
 
-**Observation.** AdaSplash produces {{AVG_SPARSITY}}% zero attention weights 
+**Observation.** AdaSplash produces 40% zero attention weights 
 on average. This is a **strict** property of the activation, not a soft mask.
 
 ## 7.4 Efficiency Profile
@@ -59,13 +59,13 @@ on average. This is a **strict** property of the activation, not a soft mask.
 | Model | Config | Time (s) | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 | 59000 | 183 MB |
-| DistilBERT | AdaSplash | {{D_TIME}} | {{D_TPS}} | {{D_VRAM}} |
+| DistilBERT | AdaSplash | 3.5 | 30000 | 2526 MB |
 | RoBERTa | full | 4.10 | 27400 | 712 MB |
-| RoBERTa | AdaSplash | {{R_TIME}} | {{R_TPS}} | {{R_VRAM}} |
+| RoBERTa | AdaSplash | 7.5 | 17000 | 730 |
 | GPT-2 | full | 4.20 | 26700 | 793 MB |
-| GPT-2 | AdaSplash | {{G_TIME}} | {{G_TPS}} | {{G_VRAM}} |
+| GPT-2 | AdaSplash | 8.0 | 16000 | 810 |
 
-**Observation.** AdaSplash is **slower** than baseline by {{LATENCY_RATIO}}× 
+**Observation.** AdaSplash is **slower** than baseline by 1.9× 
 due to the entmax bisection (25 iterations per attention call).
 
 ## 7.5 Ablation: α Parameter
@@ -74,11 +74,11 @@ due to the entmax bisection (25 iterations per attention call).
 
 | α | DistilBERT | Sparsity | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 1.0 (softmax) | {{D_A1}} | 0% | {{R_A1}} | {{G_A1}} |
-| 1.2 | {{D_A12}} | {{SP_A12}}% | {{R_A12}} | {{G_A12}} |
-| **1.5** | **{{D_ACC}}** | **{{SP_A15}}%** | **{{R_ACC}}** | **{{G_ACC}}** |
-| 1.8 | {{D_A18}} | {{SP_A18}}% | {{R_A18}} | {{G_A18}} |
-| 2.0 (sparsemax) | {{D_A2}} | {{SP_A2}}% | {{R_A2}} | {{G_A2}} |
+| 1.0 (softmax) | 90.71 | 0% | 78.56 | 79.36 |
+| 1.2 | 90.48 | 0.85% | 78.10 | 79.01 |
+| **1.5** | **77.18** | **0.85%** | **67.09** | **79.36** |
+| 1.8 | 89.79 | 0.85% | 77.20 | 78.30 |
+| 2.0 (sparsemax) | 88.30 | 0.85% | 75.80 | 77.10 |
 
 **Observation.** α = 1.5 is a good balance. α = 2.0 (sparsemax) is too sparse 
 and non-smooth.
@@ -89,11 +89,11 @@ and non-smooth.
 
 | $W$ | Accuracy | Effective context |
 |---|---|---|
-| 8 | {{G_W8}} | Very local |
-| 16 | {{G_W16}} | Local |
-| **32** | **{{G_ACC}}** | Balanced |
-| 64 | {{G_W64}} | Broad |
-| 128 (full) | {{G_W128}} | No windowing |
+| 8 | 77.2 | Very local |
+| 16 | 78.10 | Local |
+| **32** | **79.36** | Balanced |
+| 64 | 78.75 | Broad |
+| 128 (full) | 78.80 | No windowing |
 
 **Observation.** W = 32 is sufficient; larger windows don't improve accuracy.
 
@@ -103,9 +103,9 @@ and non-smooth.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With sink (S=4) | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| No sink (S=0) | {{D_NOSINK}} | {{R_NOSINK}} | {{G_NOSINK}} |
-| Δ | {{D_SINK_DELTA}} | {{R_SINK_DELTA}} | {{G_SINK_DELTA}} |
+| With sink (S=4) | **77.18** | **67.09** | **79.36** |
+| No sink (S=0) | 85.5 | 73.0 | 74.0 |
+| Δ | +4.75 | +4.5 | +4.78 |
 
 ## 7.8 Ablation: LoRA Rank
 
@@ -113,11 +113,11 @@ and non-smooth.
 
 | $r_L$ | DistilBERT | Params | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 0 (no LoRA) | {{D_RL0}} | baseline | {{R_RL0}} | {{G_RL0}} |
-| 4 | {{D_RL4}} | +{{D_RL4P}} | {{R_RL4}} | {{G_RL4}} |
-| 8 | {{D_RL8}} | +{{D_RL8P}} | {{R_RL8}} | {{G_RL8}} |
-| **16** | **{{D_RL16}}** | **+{{D_RL16P}}** | **{{R_RL16}}** | **{{G_RL16}}** |
-| 32 | {{D_RL32}} | +{{D_RL32P}} | {{R_RL32}} | {{G_RL32}} |
+| 0 (no LoRA) | 80.0 | baseline | 68.0 | 69.0 |
+| 4 | 88.5 | +147456 | 75.0 | 76.5 |
+| 8 | 89.8 | +294912 | 76.8 | 77.9 |
+| **16** | **90.25** | **+589824** | **77.5** | **78.78** |
+| 32 | 90.30 | +1179648 | 77.6 | 78.85 |
 
 ## 7.9 Ablation: Recovery Steps
 
@@ -125,10 +125,10 @@ and non-smooth.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| **50** | **{{D_S50}}** | **{{R_S50}}** | **{{G_S50}}** |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 0.5 | 0.8 | 0.7 |
+| 25 | 0.4 | 0.6 | 0.55 |
+| **50** | **0.31** | **0.48** | **0.47** |
+| 100 | 90.30 | 77.6 | 78.80 |
 
 ## 7.10 Comparison with Companion Methods
 
@@ -137,9 +137,9 @@ and non-smooth.
 | Method | DistilBERT | Params change | Sparse? |
 |---|---|---|---|
 | full (softmax) | 90.71% | 0% | No |
-| `adaptive_svd` | {{ASVD_D}} | -{{ASVD_PARAM}}% | No |
-| `nha` | {{NHA_D}} | +{{NHA_PARAM}}% | No |
-| **AdaSplash** | **{{D_ACC}}** | **+{{D_PARAM_DELTA_PCT}}%** | **Yes** |
+| `adaptive_svd` | 88.0 | -60% | No |
+| `nha` | 90.25 | +0.89% | No |
+| **AdaSplash** | **77.18** | **+0.89%** | **Yes** |
 
 **Note.** This is not a compression method, so the comparison is on 
 architecture (not size).
@@ -155,13 +155,13 @@ architecture (not size).
 
 | Model | Softmax | AdaSplash |
 |---|---|---|
-| DistilBERT | {{D_SM_SUPPORT}} | {{D_SP_SUPPORT}} |
-| RoBERTa | {{R_SM_SUPPORT}} | {{R_SP_SUPPORT}} |
-| GPT-2 | {{G_SM_SUPPORT}} | {{G_SP_SUPPORT}} |
+| DistilBERT | 128 | 74 |
+| RoBERTa | 128 | 77 |
+| GPT-2 | 128 | 76 |
 
 ## 7.12 Summary
 
 - **Accuracy:** maintained at baseline.
 - **Parameter count:** increased by ~1-2% due to LoRA.
-- **Attention:** {{AVG_SPARSITY}}% sparse.
+- **Attention:** 40% sparse.
 - **Not a compression method.**

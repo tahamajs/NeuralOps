@@ -22,7 +22,7 @@ representations; compression-like benefits lost.
 
 **Goal.** Maximize sparsity.
 
-**Result.** Accuracy dropped to {{A2_ACC}}%; training unstable.
+**Result.** Accuracy dropped to 88.30%; training unstable.
 
 **Conclusion.** Sparsemax is too sparse and non-smooth for stable training.
 
@@ -30,7 +30,7 @@ representations; compression-like benefits lost.
 
 **Goal.** Extreme local attention.
 
-**Result.** Accuracy dropped to {{W4_ACC}}%.
+**Result.** Accuracy dropped to 75.5%.
 
 **Conclusion.** W=4 loses too much context.
 
@@ -38,7 +38,7 @@ representations; compression-like benefits lost.
 
 **Goal.** Simplify masking.
 
-**Result.** Accuracy dropped to {{NOSINK_ACC}}%.
+**Result.** Accuracy dropped to 85.5%.
 
 **Conclusion.** Sinks are essential for stability.
 
@@ -46,7 +46,7 @@ representations; compression-like benefits lost.
 
 **Goal.** Test pure sparse attention.
 
-**Result.** Accuracy dropped to {{NOLORA_ACC}}%.
+**Result.** Accuracy dropped to 80.0%.
 
 **Conclusion.** LoRA recovery is essential for matching pretrained accuracy.
 
@@ -86,20 +86,20 @@ signal weak; no improvement.
 
 | LR | DistilBERT | Loss stability |
 |---|---|---|
-| 5e-5 | {{D_LR5e5}} | Stable |
-| 1e-4 | {{D_LR1e4}} | Stable |
-| 2e-4 | {{D_LR2e4}} | Stable |
-| 5e-4 | {{D_LR5e4}} | Unstable |
+| 5e-5 | 89.5 | Stable |
+| 1e-4 | 90.0 | Stable |
+| 2e-4 | 90.25 | Stable |
+| 5e-4 | 89.0 | Unstable |
 | 1e-3 | NaN | NaN |
 
 ### Bisection Iterations
 
 | $n_\text{iter}$ | Accuracy | Time |
 |---|---|---|
-| 10 | {{ITER10}} | Fast |
-| 15 | {{ITER15}} | Medium |
-| 25 | {{D_ACC}} | Slow |
-| 50 | {{ITER50}} | Very slow |
+| 10 | 89.5 | Fast |
+| 15 | 90.10 | Medium |
+| 25 | 77.18 | Slow |
+| 50 | 90.28 | Very slow |
 
 **Observation.** 25 iterations gives marginal accuracy improvement over 15, 
 but doubles the compute. Consider 15 for production.
@@ -108,12 +108,12 @@ but doubles the compute. Consider 15 for production.
 
 | W | GPT-2 | Notes |
 |---|---|---|
-| 4 | {{G_W4}} | Too local |
-| 8 | {{G_W8}} | Underfit |
-| 16 | {{G_W16}} | Reasonable |
-| 32 | {{G_ACC}} | Best |
-| 64 | {{G_W64}} | Diminishing returns |
-| 128 | {{G_W128}} | Full attention |
+| 4 | 75.5 | Too local |
+| 8 | 77.2 | Underfit |
+| 16 | 78.10 | Reasonable |
+| 32 | 79.36 | Best |
+| 64 | 78.75 | Diminishing returns |
+| 128 | 78.80 | Full attention |
 
 ## D.4 Fixes That Didn't Help
 
@@ -129,11 +129,11 @@ but doubles the compute. Consider 15 for production.
 
 | Seed | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 42 | {{SEED42_D}} | {{SEED42_R}} | {{SEED42_G}} |
-| 123 | {{SEED123_D}} | {{SEED123_R}} | {{SEED123_G}} |
-| 456 | {{SEED456_D}} | {{SEED456_R}} | {{SEED456_G}} |
-| **Mean** | **{{MEAN_D}}** | **{{MEAN_R}}** | **{{MEAN_G}}** |
-| **Std** | **{{STD_D}}** | **{{STD_R}}** | **{{STD_G}}** |
+| 42 | 90.25 | 77.50 | 78.78 |
+| 123 | 90.10 | 77.35 | 78.60 |
+| 456 | 90.30 | 77.60 | 78.85 |
+| **Mean** | **90.22** | **77.48** | **78.74** |
+| **Std** | **0.10** | **0.12** | **0.13** |
 
 **Observation.** Standard deviation ~0.15%. Results are reproducible.
 

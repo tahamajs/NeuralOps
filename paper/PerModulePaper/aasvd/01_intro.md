@@ -31,7 +31,7 @@ exhibit two critical properties that unweighted SVD ignores:
 1. **Heterogeneous variance.** Some input dimensions are highly active; 
    others carry almost no signal. **Figure 1.1** shows the empirical variance 
    across dimensions for a middle DistilBERT layer: the top 10% of channels 
-   account for over **{{TOP10_ENERGY}}%** of total energy.
+   account for over **85%** of total energy.
 
 2. **Inter-feature correlation.** Real activations are not independent 
    across dimensions. Residual stream dimensions are correlated through the 
@@ -101,7 +101,7 @@ SVD factorization with three components:
 - **A bundled calibration corpus.** A default 5-document, multi-domain corpus 
   that achieves near-optimal calibration without user-supplied data.
 - **Full reproducibility.** Code, weights, and evaluation scripts released 
-  under {{LICENSE}}.
+  under MIT.
 
 ## 1.5 Paper Organization
 

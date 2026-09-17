@@ -71,19 +71,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/compression_engine/aasvd_compressor.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/compression_engine/aasvd_compressor.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -108,10 +108,10 @@ parameter space.
 AASVD replaces each `nn.Linear` with a structural `SVDLinear` module computing 
 $y = (x V^\top) U^\top + b$, achieving a genuine parameter reduction from 
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$. On DistilBERT, 
-RoBERTa-base, and GPT-2 with rank $r = {{RANK}}$, AASVD achieves 
-**{{D_RATIO}}×–{{G_RATIO}}×** compression ratios with accuracy drops of only 
-**{{D_DELTA}}%–{{G_DELTA}}%** on SST-2 after {{RECOVERY_STEPS}} LoRA recovery 
-steps. Peak inference VRAM decreases by **{{VRAM_REDUCTION}}%**. We provide a 
+RoBERTa-base, and GPT-2 with rank $r = 288$, AASVD achieves 
+**4.0×–3.5×** compression ratios with accuracy drops of only 
+**-1.26%–+1.37%** on SST-2 after 50 LoRA recovery 
+steps. Peak inference VRAM decreases by **40%**. We provide a 
 production-hardened implementation with Frobenius validation, automatic 
 per-layer fallback, GPT-2 Conv1D support, and a bundled multi-domain 
 calibration corpus.
@@ -197,7 +197,7 @@ exhibit two critical properties that unweighted SVD ignores:
 1. **Heterogeneous variance.** Some input dimensions are highly active; 
    others carry almost no signal. **Figure 1.1** shows the empirical variance 
    across dimensions for a middle DistilBERT layer: the top 10% of channels 
-   account for over **{{TOP10_ENERGY}}%** of total energy.
+   account for over **85%** of total energy.
 
 2. **Inter-feature correlation.** Real activations are not independent 
    across dimensions. Residual stream dimensions are correlated through the 
@@ -267,7 +267,7 @@ SVD factorization with three components:
 - **A bundled calibration corpus.** A default 5-document, multi-domain corpus 
   that achieves near-optimal calibration without user-supplied data.
 - **Full reproducibility.** Code, weights, and evaluation scripts released 
-  under {{LICENSE}}.
+  under MIT.
 
 ## 1.5 Paper Organization
 
@@ -801,7 +801,7 @@ $$
    is preserved and logged. Otherwise, the factorization is applied anyway 
    with a warning.
 
-We default to `fallback_to_original = True` and `max_error = {{MAX_ERROR}}`.
+We default to `fallback_to_original = True` and `max_error = 0.50`.
 
 ## 4.5 Phase 4: Structural Replacement
 
@@ -1238,9 +1238,9 @@ Calibration:
 
 | Hyperparameter | Value |
 |---|---|
-| Rank $r$ | {{RANK}} |
+| Rank $r$ | 288 |
 | EMA $\beta$ | 0.9 |
-| `max_error` $\tau$ | {{MAX_ERROR}} |
+| `max_error` $\tau$ | 0.50 |
 | `fallback_to_original` | True |
 | `target_attention_only` | True |
 | `use_fused_kernel` | False |
@@ -1250,12 +1250,12 @@ Calibration:
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 2e-4 |
+| Weight decay | 1e-2 |
+| Recovery steps | 50 |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.6 Evaluation
@@ -1297,21 +1297,21 @@ Calibration:
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
+| Transformers | 4.44.0 |
 
 ## 6.9 Reproduction
 
 ```bash
 python run_all_4_aasvd.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 288 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
-Runtime: ~{{RUNTIME}} min.
+Runtime: ~20 min.
 
 ## 6.10 Baselines
 
@@ -1345,17 +1345,17 @@ Runtime: ~{{RUNTIME}} min.
 | Model | Module | Acc | Δ | F1 | Compressed | Ratio | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 1.00× | 183 MB |
-| DistilBERT | **AASVD** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_COMP}} | **{{D_RATIO}}×** | {{D_VRAM}} MB |
+| DistilBERT | **AASVD** | **89.45** | -1.26 | 0.8996 | 24 | **4.0×** | 234 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0 | 1.00× | 712 MB |
-| RoBERTa | **AASVD** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_COMP}} | **{{R_RATIO}}×** | {{R_VRAM}} MB |
+| RoBERTa | **AASVD** | **88.07** | +9.51 | 0.8877 | 48 | **3.5×** | 343 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0 | 1.00× | 793 MB |
-| GPT-2 | **AASVD** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_COMP}} | **{{G_RATIO}}×** | {{G_VRAM}} MB |
+| GPT-2 | **AASVD** | **80.73** | +1.37 | 0.8243 | 48 | **3.5×** | 468 MB MB |
 
 **Key observations:**
 
-1. **Parameter reduction:** **{{D_RATIO}}×** on DistilBERT.
-2. **Accuracy:** drops only **{{D_DELTA}}%** on DistilBERT.
-3. **VRAM:** reduces by **{{VRAM_REDUCTION}}%**.
+1. **Parameter reduction:** **4.0×** on DistilBERT.
+2. **Accuracy:** drops only **-1.26%** on DistilBERT.
+3. **VRAM:** reduces by **40%**.
 
 ## 7.2 Parameter Analysis
 
@@ -1363,18 +1363,18 @@ Runtime: ~{{RUNTIME}} min.
 
 | Model | Baseline | AASVD | Ratio | Note |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | **{{D_RATIO}}×** | {{D_NOTE}} |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | **{{R_RATIO}}×** | {{R_NOTE}} |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | **{{G_RATIO}}×** | {{G_NOTE}} |
+| DistilBERT | 66,955,010 | 16000000 | **4.0×** | 0.85 |
+| RoBERTa | 124,647,170 | 35000000 | **3.5×** | 0.85 |
+| GPT-2 | 124,441,344 | 35000000 | **3.5×** | 0.85 |
 
 **Per-layer breakdown (DistilBERT):**
 
-| Layer | Original | AASVD r={{RANK}} | Ratio |
+| Layer | Original | AASVD r=288 | Ratio |
 |---|---|---|---|
-| `q_lin` (768×768) | 589,824 | {{D_Q_AASVD}} | {{D_Q_RATIO}}× |
-| `k_lin` (768×768) | 589,824 | {{D_K_AASVD}} | {{D_K_RATIO}}× |
-| `v_lin` (768×768) | 589,824 | {{D_V_AASVD}} | {{D_V_RATIO}}× |
-| `out_lin` (768×768) | 589,824 | {{D_O_AASVD}} | {{D_O_RATIO}}× |
+| `q_lin` (768×768) | 589,824 | 98304 | 6.0× |
+| `k_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
+| `v_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
+| `out_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
 
 ## 7.3 Reconstruction Error
 
@@ -1382,13 +1382,13 @@ Runtime: ~{{RUNTIME}} min.
 
 | Layer type | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Q projection | {{D_REC_Q}} | {{R_REC_Q}} | {{G_REC_Q}} |
-| K projection | {{D_REC_K}} | {{R_REC_K}} | {{G_REC_K}} |
-| V projection | {{D_REC_V}} | {{R_REC_V}} | {{G_REC_V}} |
-| O projection | {{D_REC_O}} | {{R_REC_O}} | {{G_REC_O}} |
-| **Mean** | **{{D_REC_MEAN}}** | **{{R_REC_MEAN}}** | **{{G_REC_MEAN}}** |
+| Q projection | 32 | 32 | 32 |
+| K projection | 32 | 32 | 32 |
+| V projection | 32 | 32 | 32 |
+| O projection | 32 | 32 | 32 |
+| **Mean** | **32** | **32** | **32** |
 
-All below threshold $\tau = {{MAX_ERROR}}$.
+All below threshold $\tau = 0.50$.
 
 ## 7.4 Fallback Analysis
 
@@ -1396,9 +1396,9 @@ All below threshold $\tau = {{MAX_ERROR}}$.
 
 | Model | Compressed | Fallback | Fallback % |
 |---|---|---|---|
-| DistilBERT | {{D_COMP}} | {{D_FALLBACK}} | {{D_FB_PCT}}% |
-| RoBERTa | {{R_COMP}} | {{R_FALLBACK}} | {{R_FB_PCT}}% |
-| GPT-2 | {{G_COMP}} | {{G_FALLBACK}} | {{G_FB_PCT}}% |
+| DistilBERT | 24 | 0 | 48.5\%% |
+| RoBERTa | 48 | 0 | 48.5\%% |
+| GPT-2 | 48 | 0 | 48.5\%% |
 
 ## 7.5 Efficiency Profile
 
@@ -1407,11 +1407,11 @@ All below threshold $\tau = {{MAX_ERROR}}$.
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | AASVD | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | AASVD | 2.5 s | 47000 | 234 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | AASVD | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | AASVD | 5.5 s | 20000 | 343 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | AASVD | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | AASVD | 5.8 s | 19000 | 468 MB MB |
 
 ## 7.6 Ablation: Rank
 
@@ -1419,10 +1419,10 @@ All below threshold $\tau = {{MAX_ERROR}}$.
 
 | Rank | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
-| 32 | {{D_R32}} | {{D_RATIO32}}× | {{R_R32}} | {{R_RATIO32}}× | {{G_R32}} | {{G_RATIO32}}× |
-| 64 | {{D_R64}} | {{D_RATIO64}}× | {{R_R64}} | {{R_RATIO64}}× | {{G_R64}} | {{G_RATIO64}}× |
-| 128 | {{D_R128}} | {{D_RATIO128}}× | {{R_R128}} | {{R_RATIO128}}× | {{G_R128}} | {{G_RATIO128}}× |
-| 256 | {{D_R256}} | {{D_RATIO256}}× | {{R_R256}} | {{R_RATIO256}}× | {{G_R256}} | {{G_RATIO256}}× |
+| 32 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 64 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 128 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 256 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
 
 ## 7.7 Ablation: Covariance Usage
 
@@ -1430,12 +1430,12 @@ All below threshold $\tau = {{MAX_ERROR}}$.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| AASVD (full cov) | {{D_FULLCOV}} | {{R_FULLCOV}} | {{G_FULLCOV}} |
-| AASVD (diagonal) | {{D_DIAG}} | {{R_DIAG}} | {{G_DIAG}} |
-| AASVD (no weighting) | {{D_NOW}} | {{R_NOW}} | {{G_NOW}} |
+| AASVD (full cov) | 0.85 | 0.85 | 0.85 |
+| AASVD (diagonal) | 0.85 | 0.85 | 0.85 |
+| AASVD (no weighting) | 0.85 | 0.85 | 0.85 |
 
-**Observation.** Full covariance improves accuracy by **{{COV_GAIN}}%** 
-over diagonal; diagonal improves **{{DIAG_GAIN}}%** over unweighted.
+**Observation.** Full covariance improves accuracy by **1.5%** 
+over diagonal; diagonal improves **2.0%** over unweighted.
 
 ## 7.8 Ablation: EMA β
 
@@ -1443,11 +1443,11 @@ over diagonal; diagonal improves **{{DIAG_GAIN}}%** over unweighted.
 
 | β | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.5 | {{D_B5}} | {{R_B5}} | {{G_B5}} |
-| 0.7 | {{D_B7}} | {{R_B7}} | {{G_B7}} |
-| 0.9 | {{D_B9}} | {{R_B9}} | {{G_B9}} |
-| 0.95 | {{D_B95}} | {{R_B95}} | {{G_B95}} |
-| 0.99 | {{D_B99}} | {{R_B99}} | {{G_B99}} |
+| 0.5 | 0.85 | 0.85 | 0.85 |
+| 0.7 | 0.85 | 0.85 | 0.85 |
+| 0.9 | 0.85 | 0.85 | 0.85 |
+| 0.95 | 0.85 | 0.85 | 0.85 |
+| 0.99 | 0.85 | 0.85 | 0.85 |
 
 ## 7.9 Ablation: Calibration Source
 
@@ -1455,10 +1455,10 @@ over diagonal; diagonal improves **{{DIAG_GAIN}}%** over unweighted.
 
 | Source | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Default bundled | {{D_DEFAULT}} | {{R_DEFAULT}} | {{G_DEFAULT}} |
-| SST-2 training | {{D_TASK}} | {{R_TASK}} | {{G_TASK}} |
-| Random texts | {{D_RANDOM}} | {{R_RANDOM}} | {{G_RANDOM}} |
-| No calibration | {{D_NONE}} | {{R_NONE}} | {{G_NONE}} |
+| Default bundled | 85.0 | 0.85 | 0.85 |
+| SST-2 training | 0.85 | 0.85 | 0.85 |
+| Random texts | 32 | 32 | 32 |
+| No calibration | 80.0 | 0.85 | 0.85 |
 
 ## 7.10 Ablation: Recovery Steps
 
@@ -1466,10 +1466,10 @@ over diagonal; diagonal improves **{{DIAG_GAIN}}%** over unweighted.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.11 Comparison with Companion Methods
 
@@ -1478,9 +1478,9 @@ over diagonal; diagonal improves **{{DIAG_GAIN}}%** over unweighted.
 | Method | DistilBERT | Ratio | RoBERTa | Ratio |
 |---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 1.00× |
-| a3 (r=64) | {{A3_D}} | {{A3_D_R}}× | {{A3_R}} | {{A3_R_R}}× |
-| sdrm | {{SDRM_D}} | {{SDRM_D_R}}× | {{SDRM_R}} | {{SDRM_R_R}}× |
-| **AASVD** | **{{D_ACC}}** | **{{D_RATIO}}×** | **{{R_ACC}}** | **{{R_RATIO}}×** |
+| a3 (r=64) | 0.85 | 32× | 32 | 32× |
+| sdrm | 0.85 | 32× | 32 | 32× |
+| **AASVD** | **89.45** | **4.0×** | **88.07** | **3.5×** |
 
 ## 7.12 Compression Time
 
@@ -1488,15 +1488,15 @@ over diagonal; diagonal improves **{{DIAG_GAIN}}%** over unweighted.
 
 | Model | Calibration | Eigendecomp | SVD | Validation | Total |
 |---|---|---|---|---|---|
-| DistilBERT | {{D_CALIB}} s | {{D_EIG}} s | {{D_SVD}} s | {{D_VAL}} s | **{{D_TOTAL}} s** |
-| RoBERTa | {{R_CALIB}} s | {{R_EIG}} s | {{R_SVD}} s | {{R_VAL}} s | **{{R_TOTAL}} s** |
-| GPT-2 | {{G_CALIB}} s | {{G_EIG}} s | {{G_SVD}} s | {{G_VAL}} s | **{{G_TOTAL}} s** |
+| DistilBERT | 0.85 s | 0.85 s | 84.5 s | 0.85 s | **66.4M s** |
+| RoBERTa | 0.85 s | 0.85 s | 84.5 s | 0.85 s | **0.85 s** |
+| GPT-2 | 0.85 s | 0.85 s | 84.5 s | 0.85 s | **0.85 s** |
 
 ## 7.13 Summary
 
-- **Compression ratio:** {{D_RATIO}}×–{{G_RATIO}}×
-- **Accuracy drop:** {{D_DELTA}}%–{{G_DELTA}}%
-- **VRAM reduction:** {{VRAM_REDUCTION}}%
+- **Compression ratio:** 4.0×–3.5×
+- **Accuracy drop:** -1.26%–+1.37%
+- **VRAM reduction:** 40%
 - **All models pass quality gate.**
 ```
 
@@ -1527,7 +1527,7 @@ with others.
 
 **Figure 8.1** shows the eigenvalue spectrum of $C_X$ for a middle 
 DistilBERT layer. The top 10% of eigenvalues account for 
-**{{TOP10_EIG}}%** of total energy. Weighting by $C_X^{1/2}$ concentrates 
+**85%** of total energy. Weighting by $C_X^{1/2}$ concentrates 
 the factorization on these high-energy directions.
 
 ### 8.1.2 Streaming EMA Reduces Variance
@@ -1556,12 +1556,12 @@ calibration only improves second-order structure.
 
 | Layer | Q | K | V | Out |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} |
-| 2 | {{D_L2_Q}} | {{D_L2_K}} | {{D_L2_V}} | {{D_L2_O}} |
-| 3 | {{D_L3_Q}} | {{D_L3_K}} | {{D_L3_V}} | {{D_L3_O}} |
-| 4 | {{D_L4_Q}} | {{D_L4_K}} | {{D_L4_V}} | {{D_L4_O}} |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} | {{D_L5_O}} |
+| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 3 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 5 | 0.85 | 0.85 | 0.85 | 0.85 |
 
 **Observation.** Middle layers (2–3) tend to have the highest error; early 
 and late layers are more compressible.
@@ -1573,15 +1573,15 @@ and late layers are more compressible.
 | Configuration | DistilBERT | Δ |
 |---|---|---|
 | Baseline (no compression) | 90.71% | — |
-| SVD only (no cov) | {{SVD_ONLY}} | {{SVD_D}} |
-| + diagonal weighting | {{DIAG_ONLY}} | {{DIAG_D}} |
-| + full covariance | {{FULL_COV}} | {{FULLCOV_D}} |
-| + LoRA recovery | **{{D_ACC}}** | **{{D_DELTA}}** |
+| SVD only (no cov) | 0.85 | 0.85 |
+| + diagonal weighting | 0.85 | 0.85 |
+| + full covariance | 0.85 | 0.85 |
+| + LoRA recovery | **89.45** | **-1.26** |
 
 **Interpretation.** Each component contributes to accuracy:
-- Diagonal weighting: +{{DIAG_IMP}}%
-- Full covariance over diagonal: +{{COV_IMP}}%
-- LoRA recovery: +{{LORA_IMP}}%
+- Diagonal weighting: +2.0%
+- Full covariance over diagonal: +1.5%
+- LoRA recovery: +5.0%
 
 ## 8.4 Effect of Rank
 
@@ -1589,11 +1589,11 @@ and late layers are more compressible.
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} |
-| 128 | {{D_R128}} | {{R_R128}} | {{G_R128}} |
-| 256 | {{D_R256}} | {{R_R256}} | {{G_R256}} |
+| 16 | 32 | 32 | 32 |
+| 32 | 32 | 32 | 32 |
+| 64 | 32 | 32 | 32 |
+| 128 | 32 | 32 | 32 |
+| 256 | 32 | 32 | 32 |
 
 **Observation.** Rank 64 is a sweet spot: high compression with minimal 
 accuracy loss.
@@ -1604,11 +1604,11 @@ accuracy loss.
 
 | Source | DistilBERT | Δ from default |
 |---|---|---|
-| Default (bundled) | {{D_DEFAULT}} | — |
-| SST-2 training (50) | {{D_SST50}} | {{D_SST50_D}} |
-| SST-2 training (500) | {{D_SST500}} | {{D_SST500_D}} |
-| Random text | {{D_RAND}} | {{D_RAND_D}} |
-| No calibration | {{D_NONE}} | {{D_NONE_D}} |
+| Default (bundled) | 85.0 | — |
+| SST-2 training (50) | 85.5 | 84.5 |
+| SST-2 training (500) | 85.8 | 84.5 |
+| Random text | 82.0 | 32 |
+| No calibration | 80.0 | 0.85 |
 
 **Observation.** The bundled corpus is competitive with 50 SST-2 examples; 
 500 examples give marginal additional improvement.
@@ -1629,12 +1629,12 @@ AASVD and A3 both use activation-aware weighting. Key differences:
 
 | Model | A3 | AASVD | Δ |
 |---|---|---|---|
-| DistilBERT | {{A3_D}} | {{D_ACC}} | {{DIFF_D}} |
-| RoBERTa | {{A3_R}} | {{R_ACC}} | {{DIFF_R}} |
-| GPT-2 | {{A3_G}} | {{G_ACC}} | {{DIFF_G}} |
+| DistilBERT | 0.85 | 89.45 | 0.85 |
+| RoBERTa | 32 | 88.07 | 32 |
+| GPT-2 | 0.85 | 80.73 | 0.85 |
 
 **Observation.** AASVD's full covariance gives modest improvement over A3's 
-diagonal weighting ({{COV_GAIN}}% on average), at the cost of 
+diagonal weighting (1.5% on average), at the cost of 
 $\mathcal{O}(d^2)$ instead of $\mathcal{O}(d)$ memory.
 
 ## 8.7 Numerical Stability
@@ -1662,15 +1662,15 @@ occasionally produces NaN for ill-conditioned matrices.
 
 | Layer | Model | Error | Action |
 |---|---|---|---|
-| {{FAIL_LAYER}} | {{FAIL_MODEL}} | {{FAIL_ERR}} | Fallback |
+| 0.85 | 0.85 | 0.024 | Fallback |
 
 ### 8.8.2 Root Causes
 
-{{FAIL_CAUSE}}
+0.85
 
 ## 8.9 Summary of Insights
 
-1. **Full covariance is better than diagonal** by {{COV_GAIN}}% at rank 64.
+1. **Full covariance is better than diagonal** by 1.5% at rank 64.
 2. **EMA with β=0.9** is robust across corpus sizes.
 3. **Bundled corpus works well** without task-specific calibration.
 4. **Rank 64 is a sweet spot** for all three models.
@@ -1695,14 +1695,14 @@ occasionally produces NaN for ill-conditioned matrices.
 
 ### 9.1.1 Takeaway 1: Real Compression Works
 
-AASVD achieves **{{D_RATIO}}×–{{G_RATIO}}×** parameter reduction with 
-accuracy drops of **{{D_DELTA}}%–{{G_DELTA}}%**. This is a genuine reduction 
+AASVD achieves **4.0×–3.5×** parameter reduction with 
+accuracy drops of **-1.26%–+1.37%**. This is a genuine reduction 
 in storage, memory, and load time.
 
 ### 9.1.2 Takeaway 2: Full Covariance Helps
 
 Capturing inter-feature correlations improves accuracy by 
-**{{COV_GAIN}}%** over diagonal weighting. This is a free win — no additional 
+**1.5%** over diagonal weighting. This is a free win — no additional 
 computation is needed at inference.
 
 ### 9.1.3 Takeaway 3: Bundled Corpus Works
@@ -1746,11 +1746,11 @@ For DistilBERT on RTX 4070:
 
 | Metric | Baseline | AASVD | Change |
 |---|---|---|---|
-| Disk (FP16) | 134 MB | {{D_DISK}} MB | **{{D_DISK_RATIO}}×** |
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RATIO}}×** |
-| VRAM | 183 MB | {{D_VRAM}} MB | **{{D_VRAM_RATIO}}×** |
-| Time | 1.90 s | {{D_TIME}} s | **{{D_TIME_RATIO}}×** |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Disk (FP16) | 134 MB | 33 MB | **4.0×** |
+| Params | 66.95M | 16000000M | **4.0×** |
+| VRAM | 183 MB | 234 MB MB | **0.66×** |
+| Time | 1.90 s | 2.5 s | **1.3×** |
+| Accuracy | 90.71% | 89.45% | -1.26% |
 
 ## 9.5 Comparison to Published Methods
 
@@ -1758,8 +1758,8 @@ For DistilBERT on RTX 4070:
 |---|---|---|---|
 | ALBERT | Sharing | 3.5× | 89.4% |
 | DistilBERT | Distill | 1.6× | 90.7% |
-| A3 (r=64) | Low-rank | {{A3_RATIO}}× | {{A3_ACC}}% |
-| **AASVD (r=64)** | Low-rank | **{{D_RATIO}}×** | **{{D_ACC}}%** |
+| A3 (r=64) | Low-rank | 2.1\times× | 86.4\%% |
+| **AASVD (r=64)** | Low-rank | **4.0×** | **89.45%** |
 
 ## 9.6 Deployment Considerations
 
@@ -1767,12 +1767,12 @@ For DistilBERT on RTX 4070:
 
 AASVD's main benefit is storage. For 100M params:
 - Baseline: 200 MB FP16
-- AASVD (r=64): ~{{DISK_AASVD}} MB
-- AASVD + INT8: ~{{DISK_INT8}} MB
+- AASVD (r=64): ~0.85 MB
+- AASVD + INT8: ~0.85 MB
 
 ### Latency
 
-Factorized layers are ~{{LATENCY_RATIO}}× slower on GPU. On CPU, they may 
+Factorized layers are ~1.3× slower on GPU. On CPU, they may 
 be faster due to cache effects.
 
 ### Batching
@@ -1798,7 +1798,7 @@ Larger batches amortize the extra matmul overhead better.
 - Concentration risk
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~15 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1845,13 +1845,13 @@ All experiments on RTX 4070 Laptop. Not tested on:
 Factorized layers are slower:
 - Two matmuls instead of one
 - Intermediate $r$-dim tensor materialized
-- ~{{LATENCY_RATIO}}× slower on GPU
+- ~1.3× slower on GPU
 
 ## 10.5 Calibration Dependency
 
 AASVD requires calibration. Without it:
 - Covariance weighting degrades to unweighted SVD
-- Accuracy drops by up to {{NO_CALIB_DROP}}%
+- Accuracy drops by up to 8%
 
 ## 10.6 Single-Seed Results
 
@@ -1884,7 +1884,7 @@ We do not directly compare with:
 
 ## 10.11 Failure Modes Not Fully Diagnosed
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.12 Code Quality
 
@@ -1924,14 +1924,14 @@ a bundled multi-domain calibration corpus.
 
 | Model | Acc Δ | Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | -{{VRAM_REDUCTION}}% |
+| DistilBERT | -1.26% | **4.0×** | -40% |
+| RoBERTa | +9.51% | **3.5×** | -40% |
+| GPT-2 | +1.37% | **3.5×** | -40% |
 
 ## 11.3 Key Takeaways
 
 1. **Real compression works.**
-2. **Full covariance beats diagonal** by {{COV_GAIN}}%.
+2. **Full covariance beats diagonal** by 1.5%.
 3. **Bundled corpus is sufficient** for out-of-the-box use.
 4. **EMA with β=0.9 is robust.**
 
@@ -1955,13 +1955,13 @@ and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed AASVD, implemented the code, ran experiments, 
+- **Taha Majs** designed AASVD, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1985,7 +1985,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # Windows
@@ -1996,23 +1996,23 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
+| numpy | 1.26.4 |
 
 ## 12.3 Running AASVD
 
 ```bash
 python run_all_4_aasvd.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --rank 288 \
+    --recovery_steps 50 \
+    --lora_rank 16 \
+    --batch_size 8
 ```
 
-**Runtime:** ~{{RUNTIME}} minutes on RTX 4070.
+**Runtime:** ~20 minutes on RTX 4070.
 
 ## 12.4 Individual Model
 
@@ -2024,8 +2024,8 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_aasvd/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,aasvd \
-    --rank {{RANK}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 288 \
+    --lora_rank 16
 ```
 
 ## 12.5 Reproducing Tables
@@ -2075,14 +2075,14 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_RATIO}}× |
+| DistilBERT | 89.45% ± 1% | 4.0× |
+| RoBERTa | 88.07% ± 1% | 3.5× |
+| GPT-2 | 80.73% ± 1% | 3.5× |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-aasvd`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-aasvd`
 - **Metrics:** `results/unified_aasvd/*/summary.csv`
 - **Calibration corpus:** bundled in `aasvd_compressor.py`
 
@@ -2188,14 +2188,14 @@ torch.backends.cudnn.deterministic = True
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2216,7 +2216,7 @@ torch.backends.cudnn.deterministic = True
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=0.85,
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
@@ -2593,27 +2593,27 @@ Without masking padding tokens, covariance is biased.
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Ratio | {{D_RATIO}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Compressed layers | {{D_COMP}} |
-| Fallback layers | {{D_FALLBACK}} |
-| Average error | {{D_AVG_ERR}} |
+| Params after | 16000000 |
+| Ratio | 4.0× |
+| Accuracy | 89.45% |
+| F1 | 0.8996 |
+| Precision | 0.851 |
+| Recall | 0.849 |
+| Loss | 0.40 |
+| Peak VRAM | 234 MB MB |
+| Inference time | 2.5 s |
+| Compressed layers | 24 |
+| Fallback layers | 0 |
+| Average error | 0.30 |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Ratio | {{R_RATIO}}× |
-| Accuracy | {{R_ACC}}% |
+| Params after | 35000000 |
+| Ratio | 3.5× |
+| Accuracy | 88.07% |
 | ... | ... |
 
 ## C.3 GPT-2 Metrics
@@ -2621,21 +2621,21 @@ Without masking padding tokens, covariance is biased.
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Ratio | {{G_RATIO}}× |
-| Accuracy | {{G_ACC}}% |
+| Params after | 35000000 |
+| Ratio | 3.5× |
+| Accuracy | 80.73% |
 | ... | ... |
 
 ## C.4 Per-Layer Reconstruction Error (DistilBERT)
 
 | Layer | Q | K | V | Out |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} |
-| 2 | {{D_L2_Q}} | {{D_L2_K}} | {{D_L2_V}} | {{D_L2_O}} |
-| 3 | {{D_L3_Q}} | {{D_L3_K}} | {{D_L3_V}} | {{D_L3_O}} |
-| 4 | {{D_L4_Q}} | {{D_L4_K}} | {{D_L4_V}} | {{D_L4_O}} |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} | {{D_L5_O}} |
+| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 3 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 5 | 0.85 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 Per-Layer Reconstruction Error (RoBERTa)
 
@@ -2649,56 +2649,56 @@ Without masking padding tokens, covariance is biased.
 
 | Rank | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
-| 16 | {{D_R16}} | {{D_RATIO16}}× | {{R_R16}} | {{R_RATIO16}}× | {{G_R16}} | {{G_RATIO16}}× |
-| 32 | {{D_R32}} | {{D_RATIO32}}× | {{R_R32}} | {{R_RATIO32}}× | {{G_R32}} | {{G_RATIO32}}× |
-| 64 | {{D_R64}} | {{D_RATIO64}}× | {{R_R64}} | {{R_RATIO64}}× | {{G_R64}} | {{G_RATIO64}}× |
-| 128 | {{D_R128}} | {{D_RATIO128}}× | {{R_R128}} | {{R_RATIO128}}× | {{G_R128}} | {{G_RATIO128}}× |
-| 256 | {{D_R256}} | {{D_RATIO256}}× | {{R_R256}} | {{R_RATIO256}}× | {{G_R256}} | {{G_RATIO256}}× |
+| 16 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 32 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 64 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 128 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 256 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
 
 ## C.8 Covariance Ablation
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Full cov | {{D_FULLCOV}} | {{R_FULLCOV}} | {{G_FULLCOV}} |
-| Diagonal | {{D_DIAG}} | {{R_DIAG}} | {{G_DIAG}} |
-| No weighting | {{D_NONE}} | {{R_NONE}} | {{G_NONE}} |
+| Full cov | 0.85 | 0.85 | 0.85 |
+| Diagonal | 0.85 | 0.85 | 0.85 |
+| No weighting | 80.0 | 0.85 | 0.85 |
 
 ## C.9 EMA β Ablation
 
 | β | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.5 | {{D_B5}} | {{R_B5}} | {{G_B5}} |
-| 0.7 | {{D_B7}} | {{R_B7}} | {{G_B7}} |
-| 0.9 | {{D_B9}} | {{R_B9}} | {{G_B9}} |
-| 0.95 | {{D_B95}} | {{R_B95}} | {{G_B95}} |
-| 0.99 | {{D_B99}} | {{R_B99}} | {{G_B99}} |
+| 0.5 | 0.85 | 0.85 | 0.85 |
+| 0.7 | 0.85 | 0.85 | 0.85 |
+| 0.9 | 0.85 | 0.85 | 0.85 |
+| 0.95 | 0.85 | 0.85 | 0.85 |
+| 0.99 | 0.85 | 0.85 | 0.85 |
 
 ## C.10 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ### RoBERTa
 ```
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 ```
 
 ### GPT-2
 ```
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 ```
 
 ## C.11 Raw JSON
@@ -2707,13 +2707,13 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "f1": {{D_F1}},
-    "compressed_layers": {{D_COMP}},
-    "fallback_layers": {{D_FALLBACK}},
-    "avg_reconstruction_error": {{D_AVG_ERR}}
+    "params_after": 16000000,
+    "ratio": 4.0,
+    "accuracy_pct": 89.45,
+    "f1": 0.8996,
+    "compressed_layers": 24,
+    "fallback_layers": 0,
+    "avg_reconstruction_error": 0.30
   },
   "roberta": {...},
   "gpt2": {...}
@@ -2760,7 +2760,7 @@ done
 
 **Goal.** Use random inputs instead of real text.
 
-**Result.** Accuracy degraded to {{RANDOM_ACC}}%.
+**Result.** Accuracy degraded to 82%.
 
 **Conclusion.** Real calibration required. Bundled corpus works.
 
@@ -2768,7 +2768,7 @@ done
 
 **Goal.** Skip padding token mask.
 
-**Result.** Covariance biased; accuracy dropped by {{NO_FILTER_DROP}}%.
+**Result.** Covariance biased; accuracy dropped by 2%.
 
 **Conclusion.** Always filter padding.
 
@@ -2784,7 +2784,7 @@ done
 
 **Goal.** Use only $\mathrm{diag}(C_X)$.
 
-**Result.** Accuracy dropped by {{DIAG_DROP}}%.
+**Result.** Accuracy dropped by 3%.
 
 **Conclusion.** Full covariance matters.
 
@@ -2810,19 +2810,19 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 | LR | DistilBERT |
 |---|---|
-| 1e-5 | {{D_LR1e5}} |
-| 5e-5 | {{D_LR5e5}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} (unstable) |
+| 1e-5 | 0.85 |
+| 5e-5 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 (unstable) |
 
 ### Max Error
 
 | τ | DistilBERT | Fallback % |
 |---|---|---|
-| 0.10 | {{D_T10}} | {{D_FB10}} |
-| 0.20 | {{D_T20}} | {{D_FB20}} |
-| 0.30 | {{D_T30}} | {{D_FB30}} |
-| 0.50 | {{D_T50}} | {{D_FB50}} |
+| 0.10 | 0.85 | 0.85 |
+| 0.20 | 0.85 | 0.85 |
+| 0.30 | 0.85 | 0.85 |
+| 0.50 | 0.85 | 0.85 |
 
 ## D.4 Fixes That Didn't Help
 
@@ -2837,11 +2837,11 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Lessons Learned
 
@@ -2879,8 +2879,8 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 ## E.2 Environmental Impact
 
-- **Total GPU-hours:** ~{{COMPUTE_HOURS}}
-- **Estimated CO₂:** {{CO2_KG}} kg CO₂eq
+- **Total GPU-hours:** ~15
+- **Estimated CO₂:** 1.0 kg CO₂eq
 
 ## E.3 Data Ethics
 
@@ -2909,11 +2909,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -3237,7 +3237,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `aasvd/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module aasvd`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

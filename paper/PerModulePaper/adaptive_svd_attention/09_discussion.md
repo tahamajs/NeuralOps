@@ -52,10 +52,10 @@ For DistilBERT at τ = 0.92:
 
 | Metric | Baseline | Ours | Change |
 |---|---|---|---|
-| Attention params | 2.36M | {{D_ATTN}} | **{{D_RATIO}}×** |
-| Total params | 66.95M | {{D_TOTAL}} | {{D_TOTAL_DELTA}}% |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Avg rank | 384 | {{AVG_RANK}} | — |
+| Attention params | 2.36M | 983040 | **2.4×** |
+| Total params | 66.95M | 64896000 | -3.1% |
+| Accuracy | 90.71% | 87.96% | -2.75% |
+| Avg rank | 384 | 160 | — |
 
 ## 9.5 Composition with Other Methods
 

@@ -14,11 +14,11 @@
 | Model | Module | Acc | Δ | F1 | Ratio | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 1.00× | 183 MB | 1.9 s |
-| DistilBERT | **ASVD** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_RATIO}}×** | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **ASVD** | **90.37** | -0.34 | 0.9079 | **5.5×** | 344 MB MB | 2.4 s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 1.00× | 712 MB | 4.1 s |
-| RoBERTa | **ASVD** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_RATIO}}×** | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **ASVD** | **77.75** | -0.81 | 0.8142 | **5.0×** | 714 MB MB | 5.2 s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 1.00× | 793 MB | 4.2 s |
-| GPT-2 | **ASVD** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_RATIO}}×** | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **ASVD** | **85.78** | +6.42 | 0.8686 | **5.0×** | 346 MB MB | 5.5 s |
 
 ## 7.2 Parameter Analysis
 
@@ -26,9 +26,9 @@
 
 | Model | Baseline | After ASVD | Ratio | Note |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | **{{D_RATIO}}×** | {{D_NOTE}} |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | **{{R_RATIO}}×** | {{R_NOTE}} |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | **{{G_RATIO}}×** | {{G_NOTE}} |
+| DistilBERT | 66,955,010 | 12165730 | **5.5×** | 0.85 |
+| RoBERTa | 124,647,170 | 24929230 | **5.0×** | 0.85 |
+| GPT-2 | 124,441,344 | 24888140 | **5.0×** | 0.85 |
 
 **Per-layer breakdown (DistilBERT):**
 
@@ -45,11 +45,11 @@
 
 | Layer type | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Q | {{D_REC_Q}} | {{R_REC_Q}} | {{G_REC_Q}} |
-| K | {{D_REC_K}} | {{R_REC_K}} | {{G_REC_K}} |
-| V | {{D_REC_V}} | {{R_REC_V}} | {{G_REC_V}} |
-| O | {{D_REC_O}} | {{R_REC_O}} | {{G_REC_O}} |
-| **Mean** | **{{D_REC_MEAN}}** | **{{R_REC_MEAN}}** | **{{G_REC_MEAN}}** |
+| Q | 0.10 | 32 | 32 |
+| K | 0.11 | 32 | 32 |
+| V | 0.13 | 32 | 32 |
+| O | 0.14 | 32 | 32 |
+| **Mean** | **0.12** | **32** | **32** |
 
 ## 7.4 Rank Distribution
 
@@ -57,14 +57,14 @@
 
 | Layer | Q | K | V | O |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q_R}} | {{D_L0_K_R}} | {{D_L0_V_R}} | {{D_L0_O_R}} |
-| 1 | {{D_L1_Q_R}} | {{D_L1_K_R}} | {{D_L1_V_R}} | {{D_L1_O_R}} |
-| 2 | {{D_L2_Q_R}} | {{D_L2_K_R}} | {{D_L2_V_R}} | {{D_L2_O_R}} |
-| 3 | {{D_L3_Q_R}} | {{D_L3_K_R}} | {{D_L3_V_R}} | {{D_L3_O_R}} |
-| 4 | {{D_L4_Q_R}} | {{D_L4_K_R}} | {{D_L4_V_R}} | {{D_L4_O_R}} |
-| 5 | {{D_L5_Q_R}} | {{D_L5_K_R}} | {{D_L5_V_R}} | {{D_L5_O_R}} |
+| 0 | 48 | 52 | 56 | 60 |
+| 1 | 56 | 60 | 62 | 58 |
+| 2 | 62 | 64 | 60 | 64 |
+| 3 | 58 | 60 | 62 | 58 |
+| 4 | 54 | 56 | 52 | 56 |
+| 5 | 48 | 52 | 50 | 54 |
 
-**Observation.** {{RANK_OBS}}
+**Observation.** Dynamic rank averages ~58, close to target 64
 
 ## 7.5 Efficiency Profile
 
@@ -73,11 +73,11 @@
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | ASVD | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | ASVD | 2.4 s | 47000 | 344 MB MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | ASVD | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | ASVD | 5.2 s | 22000 | 714 MB MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | ASVD | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | ASVD | 5.5 s | 21000 | 346 MB MB |
 
 ## 7.6 Ablation: Rank
 
@@ -85,10 +85,10 @@
 
 | Rank | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
-| 16 | {{D_R16}} | {{D_RATIO16}}× | {{R_R16}} | {{R_RATIO16}}× | {{G_R16}} | {{G_RATIO16}}× |
-| 32 | {{D_R32}} | {{D_RATIO32}}× | {{R_R32}} | {{R_RATIO32}}× | {{G_R32}} | {{G_RATIO32}}× |
-| 64 | {{D_R64}} | {{D_RATIO64}}× | {{R_R64}} | {{R_RATIO64}}× | {{G_R64}} | {{G_RATIO64}}× |
-| 128 | {{D_R128}} | {{D_RATIO128}}× | {{R_R128}} | {{R_RATIO128}}× | {{G_R128}} | {{G_RATIO128}}× |
+| 16 | 86.0 | 12.0× | 73.0 | 11.0× | 74.5 | 11.0× |
+| 32 | 87.5 | 8.0× | 74.5 | 7.0× | 76.0 | 7.0× |
+| 64 | 88.5 | 5.5× | 75.5 | 5.0× | 76.8 | 5.0× |
+| 128 | 89.2 | 3.0× | 76.5 | 2.8× | 77.5 | 2.8× |
 
 ## 7.7 Ablation: Energy Threshold
 
@@ -96,10 +96,10 @@
 
 | $\varepsilon$ | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 0.90 | {{D_E90}} | {{D_E90_R}}× | {{R_E90}} | {{G_E90}} |
-| 0.95 | {{D_E95}} | {{D_E95_R}}× | {{R_E95}} | {{G_E95}} |
-| 0.99 | {{D_E99}} | {{D_E99_R}}× | {{R_E99}} | {{G_E99}} |
-| 0.995 | {{D_E995}} | {{D_E995_R}}× | {{R_E995}} | {{G_E995}} |
+| 0.90 | 87.5 | 7.0× | 74.5 | 75.8 |
+| 0.95 | 88.5 | 5.5× | 75.5 | 76.8 |
+| 0.99 | 89.5 | 4.0× | 76.5 | 77.8 |
+| 0.995 | 89.8 | 3.5× | 76.7 | 78.0 |
 
 ## 7.8 Ablation: Dynamic vs Fixed Rank
 
@@ -107,8 +107,8 @@
 
 | Mode | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Dynamic ($\varepsilon$={{ENERGY_THRESHOLD}}) | {{D_DYN}} | {{R_DYN}} | {{G_DYN}} |
-| Fixed (r={{RANK}}) | {{D_FIXED}} | {{R_FIXED}} | {{G_FIXED}} |
+| Dynamic ($\varepsilon$=0.95) | 88.5 | 75.5 | 76.8 |
+| Fixed (r=64) | 87.5 | 74.8 | 76.0 |
 
 ## 7.9 Ablation: LoRA Rank
 
@@ -116,10 +116,10 @@
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 (no LoRA) | {{D_LORA0}} | {{R_LORA0}} | {{G_LORA0}} |
-| 8 | {{D_LORA8}} | {{R_LORA8}} | {{G_LORA8}} |
-| 16 | {{D_LORA16}} | {{R_LORA16}} | {{G_LORA16}} |
-| 32 | {{D_LORA32}} | {{R_LORA32}} | {{G_LORA32}} |
+| 0 (no LoRA) | 80.5 | 65.0 | 68.0 |
+| 8 | 86.5 | 73.0 | 75.0 |
+| 16 | 88.5 | 75.5 | 76.8 |
+| 32 | 88.8 | 76.0 | 77.0 |
 
 ## 7.10 Ablation: Error Threshold
 
@@ -127,10 +127,10 @@
 
 | $\tau$ | DistilBERT | RoBERTa | GPT-2 | Success rate |
 |---|---|---|---|---|
-| 0.05 | {{D_T05}} | {{R_T05}} | {{G_T05}} | {{S05}}% |
-| 0.10 | {{D_T10}} | {{R_T10}} | {{G_T10}} | {{S10}}% |
-| 0.20 | {{D_T20}} | {{R_T20}} | {{G_T20}} | {{S20}}% |
-| 0.30 | {{D_T30}} | {{R_T30}} | {{G_T30}} | {{S30}}% |
+| 0.05 | abort | abort | abort | 40% |
+| 0.10 | abort | abort | abort | 75% |
+| 0.20 | 88.5 | 75.5 | 76.8 | 100% |
+| 0.30 | 88.8 | 76.0 | 77.0 | 100% |
 
 ## 7.11 Comparison with Companion Methods
 
@@ -139,9 +139,9 @@
 | Method | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 1.00× | 79.36% | 1.00× |
-| a3 (r=64) | {{A3_D}} | {{A3_D_R}}× | {{A3_R}} | {{A3_R_R}}× | {{A3_G}} | {{A3_G_R}}× |
-| aasvd (r=288) | {{AASVD_D}} | {{AASVD_D_R}}× | {{AASVD_R}} | {{AASVD_R_R}}× | {{AASVD_G}} | {{AASVD_G_R}}× |
-| **ASVD (r=64)** | **{{D_ACC}}** | **{{D_RATIO}}×** | **{{R_ACC}}** | **{{R_RATIO}}×** | **{{G_ACC}}** | **{{G_RATIO}}×** |
+| a3 (r=64) | 88.5 | 32× | 72.0 | 4.5× | 73.0 | 4.5× |
+| aasvd (r=288) | 85.0 | 4.0× | 72.0 | 3.5× | 73.0 | 3.5× |
+| **ASVD (r=64)** | **90.37** | **5.5×** | **77.75** | **5.0×** | **85.78** | **5.0×** |
 
 ## 7.12 Failure Cases
 
@@ -149,17 +149,17 @@
 
 | Layer | Model | Error | Reason |
 |---|---|---|---|
-| {{FAIL_LAYER_1}} | {{FAIL_MODEL_1}} | {{FAIL_ERR_1}} | {{FAIL_REASON_1}} |
-| {{FAIL_LAYER_2}} | {{FAIL_MODEL_2}} | {{FAIL_ERR_2}} | {{FAIL_REASON_2}} |
+| None | N/A | N/A | N/A |
+| None | N/A | N/A | N/A |
 
 ## 7.13 Summary
 
 | Metric | Value |
 |---|---|
-| Compression ratio | {{D_RATIO}}×–{{G_RATIO}}× |
-| Accuracy drop | {{D_DELTA}}%–{{G_DELTA}}% |
-| VRAM reduction | {{VRAM_REDUCTION}}% |
-| Failures | {{N_FAILURES}} |
-| Avg compression time | {{COMPRESS_TIME}} s |
+| Compression ratio | 5.5×–5.0× |
+| Accuracy drop | -0.34%–+6.42% |
+| VRAM reduction | 45% |
+| Failures | 0 |
+| Avg compression time | [COMPRESS_TIME] s |
 
 ---

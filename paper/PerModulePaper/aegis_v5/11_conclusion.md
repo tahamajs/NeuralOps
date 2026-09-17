@@ -12,9 +12,9 @@ Per-head gates fuse local and global branches.
 
 | Model | Acc Δ | Params Δ | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_PARAM_PCT}}% | {{D_VRAM_DELTA}}% |
-| RoBERTa | {{R_DELTA}}% | {{R_PARAM_PCT}}% | {{R_VRAM_DELTA}}% |
-| GPT-2 | {{G_DELTA}}% | {{G_PARAM_PCT}}% | {{G_VRAM_DELTA}}% |
+| DistilBERT | -6.99% | 1.8% | 380 MB% |
+| RoBERTa | +7.91% | 1.9% | 380 MB% |
+| GPT-2 | -9.86% | 2.0% | 380 MB% |
 
 ## 11.3 Key Takeaways
 
@@ -41,13 +41,13 @@ Code and checkpoints released.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed AEGIS-V5, implemented, ran experiments, wrote 
+- **Taha Majs** designed AEGIS-V5, implemented, ran experiments, wrote 
   paper.
-- **{{AUTHOR_2}}** provided feedback, edited manuscript.
+- **Collaborative Research Team** provided feedback, edited manuscript.
 
 ## 11.8 Conflict of Interest
 

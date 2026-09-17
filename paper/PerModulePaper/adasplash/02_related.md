@@ -91,6 +91,6 @@ specific combination on small pretrained models with LoRA recovery.
 Unlike low-rank compression methods (A3, AASVD, Adaptive SVD), AdaSplash:
 - Does **not** reduce parameter count.
 - Does **not** compress weights.
-- **Increases** parameter count by ~{{PARAM_CHANGE}}% via LoRA.
+- **Increases** parameter count by ~0.88% via LoRA.
 
 Its value is in **sparsity** and **interpretability**, not size.

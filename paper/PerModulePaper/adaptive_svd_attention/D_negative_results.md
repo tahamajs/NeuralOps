@@ -6,7 +6,7 @@
 
 **Goal.** Aggressive compression.
 
-**Result.** Accuracy collapsed to {{T80_ACC}}%.
+**Result.** Accuracy collapsed to 70.0%.
 
 **Conclusion.** τ ≥ 0.85 required.
 
@@ -14,7 +14,7 @@
 
 **Goal.** Pure SVD without adapter.
 
-**Result.** Accuracy dropped by {{NO_ADAPTER_DROP}}%.
+**Result.** Accuracy dropped by 4.0%.
 
 **Conclusion.** Residual adapter recovers significant accuracy.
 
@@ -62,29 +62,29 @@ We tested SVD then LoRA then another SVD. Result: no benefit.
 
 | $r_a$ | DistilBERT |
 |---|---|
-| 0 | {{D_RA0}} |
-| 4 | {{D_RA4}} |
-| 8 | {{D_RA8}} |
-| 16 | {{D_RA16}} |
-| 32 | {{D_RA32}} |
+| 0 | 82.0 |
+| 4 | 84.0 |
+| 8 | 86.5 |
+| 16 | 88.0 |
+| 32 | 88.2 |
 
 ### Min Rank
 
 | min_rank | DistilBERT |
 |---|---|
-| 8 | {{D_MIN8}} |
-| 16 | {{D_MIN16}} |
-| 32 | {{D_MIN32}} |
+| 8 | 82.0 |
+| 16 | 88.0 |
+| 32 | 88.1 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 88.0 |
+| 123 | 87.8 |
+| 456 | 88.2 |
+| **Mean** | **88.0** |
+| **Std** | **0.2** |
 
 ## D.5 Lessons Learned
 

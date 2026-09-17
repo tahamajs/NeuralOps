@@ -42,12 +42,12 @@ For actual compression, set `max_rank = 128` or lower.
 
 | Hyperparameter | Value |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `recovery_steps` | {{RECOVERY_STEPS}} |
-| `batch_size` | {{BATCH_SIZE}} |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
+| `recovery_steps` | 50 |
+| `batch_size` | 8 |
+| Learning rate | 2e-4 |
+| Weight decay | 1e-2 |
 | Optimizer | AdamW |
 | Precision | FP16 |
 
@@ -76,8 +76,8 @@ For actual compression, set `max_rank = 128` or lower.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
@@ -86,7 +86,7 @@ python run_all_4_aegis_v5.py \
     --models distilbert,roberta,gpt2 \
     --svd_energy 0.95 \
     --max_rank 128 \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -101,6 +101,6 @@ python run_all_4_aegis_v5.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 
 ---

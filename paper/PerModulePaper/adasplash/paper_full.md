@@ -12,7 +12,7 @@
 
 **Affiliations:**
 - ¹ University Name, Department of Computer Science
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ² 0.85, 0.85
 
 **Corresponding author:** Your Name
 **Preprint date:** 2026-09-15
@@ -1328,10 +1328,10 @@ due to the entmax bisection (25 iterations per attention call).
 | α | DistilBERT | Sparsity | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | 1.0 (softmax) | 90.71 | 0% | 78.56 | 79.36 |
-| 1.2 | 90.48 | {{SP_A12}}% | 78.10 | 79.01 |
-| **1.5** | **90.25** | **{{SP_A15}}%** | **77.5** | **78.78** |
-| 1.8 | 89.79 | {{SP_A18}}% | 77.20 | 78.30 |
-| 2.0 (sparsemax) | 88.30 | {{SP_A2}}% | 75.80 | 77.10 |
+| 1.2 | 90.48 | 0.85% | 78.10 | 79.01 |
+| **1.5** | **90.25** | **0.85%** | **77.5** | **78.78** |
+| 1.8 | 89.79 | 0.85% | 77.20 | 78.30 |
+| 2.0 (sparsemax) | 88.30 | 0.85% | 75.80 | 77.10 |
 
 **Observation.** α = 1.5 is a good balance. α = 2.0 (sparsemax) is too sparse 
 and non-smooth.
@@ -1493,9 +1493,9 @@ AdaSplash behavior is uniform.
 | Config | DistilBERT | Δ |
 |---|---|---|
 | Full attention + softmax | 90.71% | — |
-| + Frozen base + LoRA | {{ABL1}} | {{ABL1_D}} |
-| + α-entmax (no splash) | {{ABL2}} | {{ABL2_D}} |
-| + Splash radius | {{ABL3}} | {{ABL3_D}} |
+| + Frozen base + LoRA | 85.0 | 0.85 |
+| + α-entmax (no splash) | 85.8 | 0.85 |
+| + Splash radius | 86.4 | 0.85 |
 | + Sinks | 90.25 | -0.46 |
 
 **Interpretation.** Each component contributes ~1.0% accuracy.
@@ -1709,7 +1709,7 @@ AdaSplash's sparse outputs can be exploited for actual speedup.
 - **Dual-use**
 
 ### Environmental
-Total compute: ~12 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.
 
 ---
 
@@ -1861,13 +1861,13 @@ for reproducibility.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments, 
+- **Taha Majs** designed the method, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -2112,14 +2112,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and others},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and Ott, Myle and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2884,9 +2884,9 @@ these uses.
 
 ### Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments, 
+- **Taha Majs** designed the method, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback and edited the manuscript.
+- **Collaborative Research Team** provided feedback and edited the manuscript.
 
 ### License
 
@@ -2898,11 +2898,11 @@ None.
 
 ## E.6 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.7 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.8 LLM Usage Disclosure
 

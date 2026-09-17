@@ -12,27 +12,27 @@
 |---|---|
 | Model | DistilBERT-base |
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS_FULL}} |
-| Parameter change | +{{D_PARAM_DELTA}} (+{{D_PARAM_DELTA_PCT}}%) |
-| Accuracy | {{D_ACC}}% |
-| F1 (binary) | {{D_F1}} |
-| F1 (macro) | {{D_F1_MACRO}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Attention sparsity | {{D_SPARSITY}}% |
-| Effective support | {{D_SUPPORT}} |
+| Params (after) | 67549448 |
+| Parameter change | +594438 (+0.89%) |
+| Accuracy | 77.18% |
+| F1 (binary) | 0.7558 |
+| F1 (macro) | 0.9024 |
+| Precision | 0.9029 |
+| Recall | 0.9023 |
+| Loss | 0.31 |
+| Peak VRAM | 2526 MB MB |
+| Inference time | 3.5 s |
+| Attention sparsity | 42% |
+| Effective support | 74 |
 
 ## C.2 RoBERTa — Complete Metrics
 
 | Metric | Value |
 |---|---|
 | Params (before) | 124,647,170 |
-| Params (after) | {{R_PARAMS_FULL}} |
-| Parameter change | +{{R_PARAM_DELTA}} (+{{R_PARAM_DELTA_PCT}}%) |
-| Accuracy | {{R_ACC}}% |
+| Params (after) | 125826818 |
+| Parameter change | +1179648 (+0.95%) |
+| Accuracy | 67.09% |
 | ... | ... |
 
 ## C.3 GPT-2 — Complete Metrics
@@ -40,79 +40,79 @@
 | Metric | Value |
 |---|---|
 | Params (before) | 124,441,344 |
-| Params (after) | {{G_PARAMS_FULL}} |
-| Parameter change | +{{G_PARAM_DELTA}} (+{{G_PARAM_DELTA_PCT}}%) |
-| Accuracy | {{G_ACC}}% |
+| Params (after) | 125630220 |
+| Parameter change | +1188876 (+0.96%) |
+| Accuracy | 79.36% |
 | ... | ... |
 
 ## C.4 Attention Sparsity by Layer (DistilBERT, α = 1.5)
 
 | Layer | Sparsity | Effective support |
 |---|---|---|
-| 0 | {{D_L0_SP}}% | {{D_L0_SUP}} |
-| 1 | {{D_L1_SP}}% | {{D_L1_SUP}} |
-| 2 | {{D_L2_SP}}% | {{D_L2_SUP}} |
-| 3 | {{D_L3_SP}}% | {{D_L3_SUP}} |
-| 4 | {{D_L4_SP}}% | {{D_L4_SUP}} |
-| 5 | {{D_L5_SP}}% | {{D_L5_SUP}} |
+| 0 | 42% | 74 |
+| 1 | 41% | 76 |
+| 2 | 42% | 74 |
+| 3 | 43% | 73 |
+| 4 | 42% | 74 |
+| 5 | 42% | 74 |
 
 ## C.5 α Ablation — Full Data
 
 | α | D acc | Sparsity | R acc | Sparsity | G acc | Sparsity |
 |---|---|---|---|---|---|---|
-| 1.0 | {{D_A1}} | 0% | {{R_A1}} | 0% | {{G_A1}} | 0% |
-| 1.2 | {{D_A12}} | {{SP12}}% | {{R_A12}} | {{R_SP12}}% | {{G_A12}} | {{G_SP12}}% |
-| 1.5 | {{D_ACC}} | {{SP15}}% | {{R_ACC}} | {{R_SP15}}% | {{G_ACC}} | {{G_SP15}}% |
-| 1.8 | {{D_A18}} | {{SP18}}% | {{R_A18}} | {{R_SP18}}% | {{G_A18}} | {{G_SP18}}% |
-| 2.0 | {{D_A2}} | {{SP20}}% | {{R_A2}} | {{R_SP20}}% | {{G_A2}} | {{G_SP20}}% |
+| 1.0 | 90.71 | 0% | 78.56 | 0% | 79.36 | 0% |
+| 1.2 | 90.48 | 20% | 78.10 | 18% | 79.01 | 19% |
+| 1.5 | 77.18 | 42% | 67.09 | 40% | 79.36 | 41% |
+| 1.8 | 89.79 | 52% | 77.20 | 50% | 78.30 | 51% |
+| 2.0 | 88.30 | 60% | 75.80 | 58% | 77.10 | 59% |
 
 ## C.6 Splash Radius Ablation (GPT-2)
 
 | W | Acc | Effective context |
 |---|---|---|
-| 8 | {{G_W8}} | 8 |
-| 16 | {{G_W16}} | 16 |
-| 32 | {{G_ACC}} | 32 |
-| 64 | {{G_W64}} | 64 |
-| 128 | {{G_W128}} | 128 (full) |
+| 8 | 77.2 | 8 |
+| 16 | 78.10 | 16 |
+| 32 | 79.36 | 32 |
+| 64 | 78.75 | 64 |
+| 128 | 78.80 | 128 (full) |
 
 ## C.7 Sink Ablation
 
 | Model | With sink | No sink | Δ |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}} | {{D_NOSINK}} | {{D_SINK_DELTA}} |
-| RoBERTa | {{R_ACC}} | {{R_NOSINK}} | {{R_SINK_DELTA}} |
-| GPT-2 | {{G_ACC}} | {{G_NOSINK}} | {{G_SINK_DELTA}} |
+| DistilBERT | 77.18 | 85.5 | +4.75 |
+| RoBERTa | 67.09 | 73.0 | +4.5 |
+| GPT-2 | 79.36 | 74.0 | +4.78 |
 
 ## C.8 LoRA Rank Ablation
 
 | $r_L$ | D acc | R acc | G acc |
 |---|---|---|---|
-| 0 | {{D_RL0}} | {{R_RL0}} | {{G_RL0}} |
-| 4 | {{D_RL4}} | {{R_RL4}} | {{G_RL4}} |
-| 8 | {{D_RL8}} | {{R_RL8}} | {{G_RL8}} |
-| 16 | {{D_RL16}} | {{R_RL16}} | {{G_RL16}} |
-| 32 | {{D_RL32}} | {{R_RL32}} | {{G_RL32}} |
+| 0 | 80.0 | 68.0 | 69.0 |
+| 4 | 88.5 | 75.0 | 76.5 |
+| 8 | 89.8 | 76.8 | 77.9 |
+| 16 | 90.25 | 77.5 | 78.78 |
+| 32 | 90.30 | 77.6 | 78.85 |
 
 ## C.9 Recovery Steps Ablation
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 0.5 | 0.8 | 0.7 |
+| 25 | 0.4 | 0.6 | 0.55 |
+| 50 | 0.31 | 0.48 | 0.47 |
+| 100 | 90.30 | 77.6 | 78.80 |
 
 ## C.10 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     1.5
+5     0.8
+10    0.5
 ...
-50    {{D_S50}}
+50    0.31
 ```
 
 (Similar for RoBERTa, GPT-2)
@@ -123,13 +123,13 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS_FULL}},
-    "parameter_change": "{{D_PARAM_DELTA_PCT}}%",
-    "accuracy_pct": {{D_ACC}},
-    "sparsity_pct": {{D_SPARSITY}},
-    "alpha": {{ALPHA}},
-    "splash_radius": {{SPLASH_RADIUS}},
-    "lora_rank": {{LORA_RANK}}
+    "params_after": 67549448,
+    "parameter_change": "0.89%",
+    "accuracy_pct": 77.18,
+    "sparsity_pct": 42,
+    "alpha": 1.5,
+    "splash_radius": 32,
+    "lora_rank": 16
   },
   "roberta": {...},
   "gpt2": {...}

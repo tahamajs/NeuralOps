@@ -1,19 +1,19 @@
 # Adaptive SVD Attention: Energy-Thresholded Low-Rank Factorization with Residual Adapters
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/adaptive_svd_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-16
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/adaptive_svd_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -25,7 +25,7 @@ introduce **Adaptive SVD Attention**, which chooses rank **dynamically
 per projection** based on cumulative singular-value energy:
 
 $$
-r^* = \min\left\{ r : \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{d} \sigma_j^2} \geq \tau \right\}, \quad \tau = {{ENERGY_THRESHOLD}}
+r^* = \min\left\{ r : \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{d} \sigma_j^2} \geq \tau \right\}, \quad \tau = 0.92
 $$
 
 This adapts to the intrinsic rank of each projection, allocating more 
@@ -46,12 +46,12 @@ Unlike prior attention-factorization methods that preserve the output
 projection, we factorize **all four projections** $W_Q, W_K, W_V, W_O$, 
 achieving parameter reduction across the full attention block.
 
-On SST-2, Adaptive SVD Attention achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), 
-and **{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%). Attention-block parameter 
-reduction is **{{D_RATIO}}×–{{G_RATIO}}×**. The method is **zero-shot** — no 
+On SST-2, Adaptive SVD Attention achieves **87.96%** on DistilBERT 
+(baseline 90.71%), **77.64%** on RoBERTa (baseline 78.56%), 
+and **76.38%** on GPT-2 (baseline 79.36%). Attention-block parameter 
+reduction is **2.4×–2.4×**. The method is **zero-shot** — no 
 calibration data is needed — and supports GQA, RoPE, T5 relative attention 
-bias, and cross-attention. The average selected rank is **{{AVG_RANK}}** 
+bias, and cross-attention. The average selected rank is **160** 
 across layers.
 
 **Keywords:** adaptive rank selection, singular value decomposition, energy 

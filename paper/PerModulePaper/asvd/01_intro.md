@@ -46,7 +46,7 @@ we seek a compressed model $\mathcal{M}'$ such that:
 
 1. **Parameter reduction:** each layer's projection parameter count is 
    reduced by factor $R > 1$.
-2. **Accuracy preservation:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on 
+2. **Accuracy preservation:** $\Delta\text{Acc} \leq 3\%$ on 
    the target task.
 3. **Strict validation:** every compressed layer satisfies the Frobenius 
    reconstruction bound $\|W - U \Sigma V^\top\|_F / \|W\|_F \leq \tau$.
@@ -68,7 +68,7 @@ ASVD differs from prior low-rank methods in three ways:
 2. **Energy-based dynamic rank.** Rather than using a fixed rank, ASVD 
    selects the minimal $r$ such that cumulative energy 
    $\sum_{i=1}^r \sigma_i^2 / \sum_i \sigma_i^2 \geq \varepsilon$ where 
-   $\varepsilon = {{ENERGY_THRESHOLD}}$. This adapts to each layer's 
+   $\varepsilon = 0.95$. This adapts to each layer's 
    intrinsic rank.
 
 3. **Pre-flight extraction validation.** Before replacing any attention 
@@ -90,7 +90,7 @@ ASVD differs from prior low-rank methods in three ways:
 - **A systematic evaluation.** Benchmarks on three models with ablations 
   over rank, energy threshold, error threshold, and dynamic vs fixed rank.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts 
-  released under {{LICENSE}}.
+  released under MIT.
 
 ## 1.5 Paper Organization
 

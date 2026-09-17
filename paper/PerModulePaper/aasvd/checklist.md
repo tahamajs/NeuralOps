@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `aasvd/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module aasvd`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

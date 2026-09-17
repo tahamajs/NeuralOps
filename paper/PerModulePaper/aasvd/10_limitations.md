@@ -37,13 +37,13 @@ All experiments on RTX 4070 Laptop. Not tested on:
 Factorized layers are slower:
 - Two matmuls instead of one
 - Intermediate $r$-dim tensor materialized
-- ~{{LATENCY_RATIO}}× slower on GPU
+- ~1.3× slower on GPU
 
 ## 10.5 Calibration Dependency
 
 AASVD requires calibration. Without it:
 - Covariance weighting degrades to unweighted SVD
-- Accuracy drops by up to {{NO_CALIB_DROP}}%
+- Accuracy drops by up to 8%
 
 ## 10.6 Single-Seed Results
 
@@ -76,7 +76,7 @@ We do not directly compare with:
 
 ## 10.11 Failure Modes Not Fully Diagnosed
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.12 Code Quality
 

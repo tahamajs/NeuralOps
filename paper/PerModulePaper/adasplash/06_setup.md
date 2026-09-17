@@ -33,21 +33,21 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Hyperparameter | Value | Notes |
 |---|---|---|
-| $\alpha$ (entmax) | {{ALPHA}} | Sparsity parameter |
-| $W$ (splash radius) | {{SPLASH_RADIUS}} | Window size |
+| $\alpha$ (entmax) | 1.5 | Sparsity parameter |
+| $W$ (splash radius) | 32 | Window size |
 | $S$ (sink count) | 4 | Fixed |
 | $n_\text{iter}$ (bisection) | 25 | Fixed |
-| $r_L$ (LoRA rank) | {{LORA_RANK}} | Adapter rank |
+| $r_L$ (LoRA rank) | 16 | Adapter rank |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 2e-4 |
+| Weight decay | 1e-2 |
+| Recovery steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 | Trainable params | LoRA only |
 
@@ -87,26 +87,26 @@ layers = 8$N_l$ tensors.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
+| Transformers | 4.44.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_adasplash.py \
     --models distilbert,roberta,gpt2 \
-    --alpha {{ALPHA}} \
-    --splash_radius {{SPLASH_RADIUS}} \
-    --lora_rank {{LORA_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --alpha 1.5 \
+    --splash_radius 32 \
+    --lora_rank 16 \
+    --recovery_steps 50
 ```
 
-Runtime: ~{{RUNTIME}} minutes.
+Runtime: ~20 minutes.
 
 ## 6.9 Seeds
 
-All experiments with seed {{SEED}}.
+All experiments with seed 42.
 
 ## 6.10 Baselines
 

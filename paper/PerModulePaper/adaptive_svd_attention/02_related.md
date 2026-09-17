@@ -68,8 +68,8 @@ all projections are factorized.
 | Method | Rank | Energy τ | Reduction | Retrain? | SST-2 acc |
 |---|---|---|---|---|---|
 | Baseline | — | — | 1× | — | 90.71% |
-| SOA Fused (k=128) | Fixed | — | 2× | LoRA | {{SOA_D}} |
-| A3 | Fixed | — | 3× | LoRA | {{A3_D}} |
-| **Adaptive SVD** | **Dynamic** | **0.92** | **{{D_RATIO}}×** | **LoRA** | **{{D_ACC}}** |
+| SOA Fused (k=128) | Fixed | — | 2× | LoRA | 88.5 |
+| A3 | Fixed | — | 3× | LoRA | 87.5 |
+| **Adaptive SVD** | **Dynamic** | **0.92** | **2.4×** | **LoRA** | **87.96** |
 
 ---

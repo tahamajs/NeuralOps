@@ -21,7 +21,7 @@
 
 **Goal.** Maximize compression.
 
-**Result.** Accuracy dropped by {{R8_DROP}}%. Non-recoverable.
+**Result.** Accuracy dropped by 8.0%. Non-recoverable.
 
 **Conclusion.** r=16 is the practical minimum.
 
@@ -37,7 +37,7 @@
 
 **Goal.** See if compression alone is sufficient.
 
-**Result.** Accuracy dropped by {{NOLORA_DROP}}%.
+**Result.** Accuracy dropped by 8.0%.
 
 **Conclusion.** LoRA recovery is essential.
 
@@ -75,31 +75,31 @@
 
 | r | DistilBERT | Ratio |
 |---|---|---|
-| 4 | {{D_R4}} | 24× |
-| 8 | {{D_R8}} | 12× |
-| 16 | {{D_R16}} | 8× |
-| 32 | {{D_R32}} | 5× |
-| 64 | {{D_R64}} | 3.5× |
+| 4 | 72.0 | 24× |
+| 8 | 80.5 | 12× |
+| 16 | 86.0 | 8× |
+| 32 | 87.5 | 5× |
+| 64 | 88.5 | 3.5× |
 
 ### Energy Threshold
 
 | $\varepsilon$ | DistilBERT |
 |---|---|
-| 0.85 | {{D_E85}} |
-| 0.90 | {{D_E90}} |
-| 0.95 | {{D_E95}} |
-| 0.99 | {{D_E99}} |
-| 0.999 | {{D_E999}} |
+| 0.85 | 82.0 |
+| 0.90 | 87.5 |
+| 0.95 | 88.5 |
+| 0.99 | 89.5 |
+| 0.999 | 89.9 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 88.5 |
+| 123 | 88.4 |
+| 456 | 88.6 |
+| Mean | 88.5 |
+| Std | 0.10 |
 
 ## D.5 Lessons Learned
 

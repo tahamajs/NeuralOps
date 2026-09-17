@@ -157,7 +157,7 @@ ASVD supports both:
 - **Dynamic** (`dynamic_rank=True`): $r = \max(r_\text{min}, r_\text{energy})$
 - **Fixed** (`dynamic_rank=False`): $r = \min(r_\text{target}, \min(m, n))$
 
-Default is dynamic with $\varepsilon = {{ENERGY_THRESHOLD}}$ and 
+Default is dynamic with $\varepsilon = 0.95$ and 
 $r_\text{min} = 16$.
 
 ### 4.4.4 Error-Based Rank Expansion
@@ -284,8 +284,8 @@ Output: compressed model M'
 | Validation | $\mathcal{O}(m n r)$ | $\mathcal{O}(m n)$ |
 | **Total** | $\mathcal{O}(N_\ell d^3)$ | $\mathcal{O}(d^2)$ |
 
-For DistilBERT: ~{{D_COMPRESS_TIME}} seconds.
-For RoBERTa: ~{{R_COMPRESS_TIME}} seconds.
+For DistilBERT: ~6 seconds.
+For RoBERTa: ~20 seconds.
 
 ## 4.8 Parameter Analysis
 

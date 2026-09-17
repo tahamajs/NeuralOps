@@ -19,13 +19,13 @@ threshold before replacing.
 
 | Model | Acc Δ | Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | -{{VRAM_REDUCTION}}% |
+| DistilBERT | -0.34% | **5.5×** | -45% |
+| RoBERTa | -0.81% | **5.0×** | -45% |
+| GPT-2 | +6.42% | **5.0×** | -45% |
 
 ## 11.3 Key Takeaways
 
-1. **Real compression.** Parameters reduce by {{D_RATIO}}×.
+1. **Real compression.** Parameters reduce by 5.5×.
 2. **Explicit Σ enables inspection.**
 3. **Energy-based rank adapts per layer.**
 4. **Strict validation prevents silent failure.**
@@ -49,12 +49,12 @@ validation and multi-architecture support.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented ASVD, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Taha Majs** implemented ASVD, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

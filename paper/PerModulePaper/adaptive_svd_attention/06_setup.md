@@ -25,9 +25,9 @@ Majority baseline: 50.92%. Max length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `svd_rank` (max) | {{SVD_RANK}} |
-| `residual_rank` | {{RESIDUAL_RANK}} |
-| `energy_threshold` τ | {{ENERGY_THRESHOLD}} |
+| `svd_rank` (max) | 384 |
+| `residual_rank` | 16 |
+| `energy_threshold` τ | 0.92 |
 | `min_rank` | 16 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -35,10 +35,10 @@ Majority baseline: 50.92%. Max length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| WD | 1e-2 |
+| Steps | 50 |
+| Batch | 8 |
 | Precision | FP16 |
 
 **Trainable parameters:** only residual adapters $A, B$.
@@ -72,17 +72,17 @@ Majority baseline: 50.92%. Max length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_adaptive_svd.py \
     --models distilbert,roberta,gpt2 \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --energy_threshold 0.92 \
+    --residual_rank 16 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -97,6 +97,6 @@ python run_all_4_adaptive_svd.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ---

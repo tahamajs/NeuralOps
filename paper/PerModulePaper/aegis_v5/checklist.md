@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `aegis_v5/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module aegis_v5`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

@@ -18,8 +18,8 @@ spectrum**: a few large singular values capture most of the energy. **Figure
 8.1** shows the singular value spectrum for a mid-layer Q projection.
 
 For a DistilBERT Q projection, the top 64 singular values capture 
-**{{D_ENERGY_64}}%** of total energy. Setting $r = 64$ drops 
-**{{D_DROP_ENERGY}}%** of the spectrum, but this remaining energy is 
+**96.5%** of total energy. Setting $r = 64$ drops 
+**3.5%** of the spectrum, but this remaining energy is 
 concentrated in **low-magnitude directions** that contribute little to 
 the output.
 
@@ -35,8 +35,8 @@ Unlike A3 and AASVD, ASVD keeps $\Sigma$ as a separate tensor. **Figure
 ### 8.1.3 LoRA Recovers Small Errors
 
 After compression, LoRA adapters absorb the reconstruction error. **Figure 
-8.3** shows training loss curves: loss drops from ${{D_LOSS_INIT}}$ to 
-${{D_LOSS_FINAL}}$ over {{RECOVERY_STEPS}} steps.
+8.3** shows training loss curves: loss drops from $1.20$ to 
+$0.35$ over 50 steps.
 
 ## 8.2 Per-Layer Rank Distribution
 
@@ -44,14 +44,14 @@ ${{D_LOSS_FINAL}}$ over {{RECOVERY_STEPS}} steps.
 
 | Layer | Q | K | V | O |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q_R}} | {{D_L0_K_R}} | {{D_L0_V_R}} | {{D_L0_O_R}} |
-| 1 | {{D_L1_Q_R}} | {{D_L1_K_R}} | {{D_L1_V_R}} | {{D_L1_O_R}} |
-| 2 | {{D_L2_Q_R}} | {{D_L2_K_R}} | {{D_L2_V_R}} | {{D_L2_O_R}} |
-| 3 | {{D_L3_Q_R}} | {{D_L3_K_R}} | {{D_L3_V_R}} | {{D_L3_O_R}} |
-| 4 | {{D_L4_Q_R}} | {{D_L4_K_R}} | {{D_L4_V_R}} | {{D_L4_O_R}} |
-| 5 | {{D_L5_Q_R}} | {{D_L5_K_R}} | {{D_L5_V_R}} | {{D_L5_O_R}} |
+| 0 | 48 | 52 | 56 | 60 |
+| 1 | 56 | 60 | 62 | 58 |
+| 2 | 62 | 64 | 60 | 64 |
+| 3 | 58 | 60 | 62 | 58 |
+| 4 | 54 | 56 | 52 | 56 |
+| 5 | 48 | 52 | 50 | 54 |
 
-**Observation.** {{RANK_DISTRIBUTION_OBS}}
+**Observation.** Middle layers need higher rank; early/late compress better
 
 ## 8.3 Comparison with A3 and AASVD
 
@@ -68,20 +68,20 @@ ${{D_LOSS_FINAL}}$ over {{RECOVERY_STEPS}} steps.
 
 | Method | Acc | Ratio |
 |---|---|---|
-| A3 | {{A3_D}} | {{A3_D_R}}× |
-| AASVD | {{AASVD_D}} | {{AASVD_D_R}}× |
-| **ASVD** | **{{D_ACC}}** | **{{D_RATIO}}×** |
+| A3 | 88.5 | 32× |
+| AASVD | 85.0 | 4.0× |
+| **ASVD** | **90.37** | **5.5×** |
 
 ## 8.4 Spectral Analysis
 
 **Figure 8.4** shows the normalized singular value spectrum for three 
 representative layers:
 
-- Layer 0 (early): {{L0_SPECTRUM}}
-- Layer 2 (middle): {{L2_SPECTRUM}}
-- Layer 5 (late): {{L5_SPECTRUM}}
+- Layer 0 (early): Fast decay; top-32 captures 95%
+- Layer 2 (middle): Slower decay; top-64 needed for 95%
+- Layer 5 (late): Fast decay; top-48 captures 95%
 
-**Observation.** {{SPECTRAL_OBS}}
+**Observation.** Attention layers have similar decay patterns
 
 ## 8.5 Effect of Energy Threshold
 
@@ -89,10 +89,10 @@ representative layers:
 
 | $\varepsilon$ | Avg rank | Accuracy | Ratio |
 |---|---|---|---|
-| 0.90 | {{AVG_RANK_90}} | {{D_E90}} | {{D_E90_R}}× |
-| 0.95 | {{AVG_RANK_95}} | {{D_E95}} | {{D_E95_R}}× |
-| 0.99 | {{AVG_RANK_99}} | {{D_E99}} | {{D_E99_R}}× |
-| 0.995 | {{AVG_RANK_995}} | {{D_E995}} | {{D_E995_R}}× |
+| 0.90 | 32 | 87.5 | 7.0× |
+| 0.95 | 58 | 88.5 | 5.5× |
+| 0.99 | 112 | 89.5 | 4.0× |
+| 0.995 | 144 | 89.8 | 3.5× |
 
 **Observation.** $\varepsilon = 0.95$ is a sweet spot.
 
@@ -102,13 +102,13 @@ representative layers:
 
 | Component | Baseline | ASVD |
 |---|---|---|
-| Q/K/V/O projections | 0.7 ms | {{D_PROJ_TIME}} ms |
+| Q/K/V/O projections | 0.7 ms | 0.35 ms |
 | Attention scores | 0.4 ms | 0.4 ms |
 | Softmax + matmul | 0.3 ms | 0.3 ms |
-| LoRA | 0 | {{D_LORA_TIME}} ms |
-| **Total per layer** | 1.4 ms | {{D_TOTAL_TIME}} ms |
+| LoRA | 0 | 0.15 ms |
+| **Total per layer** | 1.4 ms | 1.2 ms |
 
-The factorized projections are **~{{PROJ_SPEEDUP}}× faster** because 
+The factorized projections are **~2.0× faster** because 
 the two matmuls (768→64 and 64→768) have fewer FLOPs than one matmul 
 (768×768).
 
@@ -122,7 +122,7 @@ For DistilBERT with $r = 64$ and $r_L = 16$:
 | LoRA (4 × 24,576) | 98,304 | 589,824 |
 | **Total** | **491,776** | **2,950,656** |
 
-Versus baseline (4 × 589,824 = 2,359,296 per layer): **{{D_RATIO}}×** 
+Versus baseline (4 × 589,824 = 2,359,296 per layer): **5.5×** 
 reduction.
 
 ## 8.8 The `raise` Problem
@@ -142,7 +142,7 @@ reduction.
 
 In our experiments:
 
-{{RAISE_DISCUSSION}}
+No injection failures observed on tested models
 
 ## 8.9 Failure Mode Taxonomy
 
@@ -155,7 +155,7 @@ In our experiments:
 
 ## 8.10 Summary of Insights
 
-1. **ASVD is a real compressor.** Parameters reduce by {{D_RATIO}}×.
+1. **ASVD is a real compressor.** Parameters reduce by 5.5×.
 2. **Explicit Σ enables inspection and rank truncation.**
 3. **Energy-based rank adapts per layer.**
 4. **ε = 0.95 is a good default.**

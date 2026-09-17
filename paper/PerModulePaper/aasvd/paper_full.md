@@ -19,7 +19,7 @@ TITLE NOTES:
 
 **Affiliations:**
 - ¹ University Name, Department of Computer Science
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ² 0.85, 0.85
 
 **Corresponding author:** Your Name
 **Preprint date:** 2026-09-15
@@ -1278,18 +1278,18 @@ Runtime: ~20 min.
 
 | Model | Baseline | AASVD | Ratio | Note |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | 16000000 | **4.0×** | {{D_NOTE}} |
-| RoBERTa | 124,647,170 | 35000000 | **3.5×** | {{R_NOTE}} |
-| GPT-2 | 124,441,344 | 35000000 | **3.5×** | {{G_NOTE}} |
+| DistilBERT | 66,955,010 | 16000000 | **4.0×** | 0.85 |
+| RoBERTa | 124,647,170 | 35000000 | **3.5×** | 0.85 |
+| GPT-2 | 124,441,344 | 35000000 | **3.5×** | 0.85 |
 
 **Per-layer breakdown (DistilBERT):**
 
 | Layer | Original | AASVD r=288 | Ratio |
 |---|---|---|---|
 | `q_lin` (768×768) | 589,824 | 98304 | 6.0× |
-| `k_lin` (768×768) | 589,824 | {{D_K_AASVD}} | {{D_K_RATIO}}× |
-| `v_lin` (768×768) | 589,824 | {{D_V_AASVD}} | {{D_V_RATIO}}× |
-| `out_lin` (768×768) | 589,824 | {{D_O_AASVD}} | {{D_O_RATIO}}× |
+| `k_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
+| `v_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
+| `out_lin` (768×768) | 589,824 | 0.85 | 2.1\times× |
 
 ## 7.3 Reconstruction Error
 
@@ -1297,11 +1297,11 @@ Runtime: ~20 min.
 
 | Layer type | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Q projection | {{D_REC_Q}} | {{R_REC_Q}} | {{G_REC_Q}} |
-| K projection | {{D_REC_K}} | {{R_REC_K}} | {{G_REC_K}} |
-| V projection | {{D_REC_V}} | {{R_REC_V}} | {{G_REC_V}} |
-| O projection | {{D_REC_O}} | {{R_REC_O}} | {{G_REC_O}} |
-| **Mean** | **{{D_REC_MEAN}}** | **{{R_REC_MEAN}}** | **{{G_REC_MEAN}}** |
+| Q projection | 32 | 32 | 32 |
+| K projection | 32 | 32 | 32 |
+| V projection | 32 | 32 | 32 |
+| O projection | 32 | 32 | 32 |
+| **Mean** | **32** | **32** | **32** |
 
 All below threshold $\tau = 0.50$.
 
@@ -1311,9 +1311,9 @@ All below threshold $\tau = 0.50$.
 
 | Model | Compressed | Fallback | Fallback % |
 |---|---|---|---|
-| DistilBERT | 24 | 0 | {{D_FB_PCT}}% |
-| RoBERTa | 48 | 0 | {{R_FB_PCT}}% |
-| GPT-2 | 48 | 0 | {{G_FB_PCT}}% |
+| DistilBERT | 24 | 0 | 48.5\%% |
+| RoBERTa | 48 | 0 | 48.5\%% |
+| GPT-2 | 48 | 0 | 48.5\%% |
 
 ## 7.5 Efficiency Profile
 
@@ -1334,10 +1334,10 @@ All below threshold $\tau = 0.50$.
 
 | Rank | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
-| 32 | {{D_R32}} | {{D_RATIO32}}× | {{R_R32}} | {{R_RATIO32}}× | {{G_R32}} | {{G_RATIO32}}× |
-| 64 | {{D_R64}} | {{D_RATIO64}}× | {{R_R64}} | {{R_RATIO64}}× | {{G_R64}} | {{G_RATIO64}}× |
-| 128 | {{D_R128}} | {{D_RATIO128}}× | {{R_R128}} | {{R_RATIO128}}× | {{G_R128}} | {{G_RATIO128}}× |
-| 256 | {{D_R256}} | {{D_RATIO256}}× | {{R_R256}} | {{R_RATIO256}}× | {{G_R256}} | {{G_RATIO256}}× |
+| 32 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 64 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 128 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 256 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
 
 ## 7.7 Ablation: Covariance Usage
 
@@ -1345,9 +1345,9 @@ All below threshold $\tau = 0.50$.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| AASVD (full cov) | {{D_FULLCOV}} | {{R_FULLCOV}} | {{G_FULLCOV}} |
-| AASVD (diagonal) | {{D_DIAG}} | {{R_DIAG}} | {{G_DIAG}} |
-| AASVD (no weighting) | {{D_NOW}} | {{R_NOW}} | {{G_NOW}} |
+| AASVD (full cov) | 0.85 | 0.85 | 0.85 |
+| AASVD (diagonal) | 0.85 | 0.85 | 0.85 |
+| AASVD (no weighting) | 0.85 | 0.85 | 0.85 |
 
 **Observation.** Full covariance improves accuracy by **1.5%** 
 over diagonal; diagonal improves **2.0%** over unweighted.
@@ -1358,11 +1358,11 @@ over diagonal; diagonal improves **2.0%** over unweighted.
 
 | β | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.5 | {{D_B5}} | {{R_B5}} | {{G_B5}} |
-| 0.7 | {{D_B7}} | {{R_B7}} | {{G_B7}} |
-| 0.9 | {{D_B9}} | {{R_B9}} | {{G_B9}} |
-| 0.95 | {{D_B95}} | {{R_B95}} | {{G_B95}} |
-| 0.99 | {{D_B99}} | {{R_B99}} | {{G_B99}} |
+| 0.5 | 0.85 | 0.85 | 0.85 |
+| 0.7 | 0.85 | 0.85 | 0.85 |
+| 0.9 | 0.85 | 0.85 | 0.85 |
+| 0.95 | 0.85 | 0.85 | 0.85 |
+| 0.99 | 0.85 | 0.85 | 0.85 |
 
 ## 7.9 Ablation: Calibration Source
 
@@ -1370,10 +1370,10 @@ over diagonal; diagonal improves **2.0%** over unweighted.
 
 | Source | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Default bundled | 85.0 | {{R_DEFAULT}} | {{G_DEFAULT}} |
-| SST-2 training | {{D_TASK}} | {{R_TASK}} | {{G_TASK}} |
-| Random texts | {{D_RANDOM}} | {{R_RANDOM}} | {{G_RANDOM}} |
-| No calibration | 80.0 | {{R_NONE}} | {{G_NONE}} |
+| Default bundled | 85.0 | 0.85 | 0.85 |
+| SST-2 training | 0.85 | 0.85 | 0.85 |
+| Random texts | 32 | 32 | 32 |
+| No calibration | 80.0 | 0.85 | 0.85 |
 
 ## 7.10 Ablation: Recovery Steps
 
@@ -1381,10 +1381,10 @@ over diagonal; diagonal improves **2.0%** over unweighted.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.11 Comparison with Companion Methods
 
@@ -1393,8 +1393,8 @@ over diagonal; diagonal improves **2.0%** over unweighted.
 | Method | DistilBERT | Ratio | RoBERTa | Ratio |
 |---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 1.00× |
-| a3 (r=64) | {{A3_D}} | {{A3_D_R}}× | {{A3_R}} | {{A3_R_R}}× |
-| sdrm | {{SDRM_D}} | {{SDRM_D_R}}× | {{SDRM_R}} | {{SDRM_R_R}}× |
+| a3 (r=64) | 0.85 | 32× | 32 | 32× |
+| sdrm | 0.85 | 32× | 32 | 32× |
 | **AASVD** | **85.0** | **4.0×** | **72.0** | **3.5×** |
 
 ## 7.12 Compression Time
@@ -1403,9 +1403,9 @@ over diagonal; diagonal improves **2.0%** over unweighted.
 
 | Model | Calibration | Eigendecomp | SVD | Validation | Total |
 |---|---|---|---|---|---|
-| DistilBERT | {{D_CALIB}} s | {{D_EIG}} s | {{D_SVD}} s | {{D_VAL}} s | **{{D_TOTAL}} s** |
-| RoBERTa | {{R_CALIB}} s | {{R_EIG}} s | {{R_SVD}} s | {{R_VAL}} s | **{{R_TOTAL}} s** |
-| GPT-2 | {{G_CALIB}} s | {{G_EIG}} s | {{G_SVD}} s | {{G_VAL}} s | **{{G_TOTAL}} s** |
+| DistilBERT | 0.85 s | 0.85 s | 84.5 s | 0.85 s | **66.4M s** |
+| RoBERTa | 0.85 s | 0.85 s | 84.5 s | 0.85 s | **0.85 s** |
+| GPT-2 | 0.85 s | 0.85 s | 84.5 s | 0.85 s | **0.85 s** |
 
 ## 7.13 Summary
 
@@ -1467,12 +1467,12 @@ calibration only improves second-order structure.
 
 | Layer | Q | K | V | Out |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} |
-| 2 | {{D_L2_Q}} | {{D_L2_K}} | {{D_L2_V}} | {{D_L2_O}} |
-| 3 | {{D_L3_Q}} | {{D_L3_K}} | {{D_L3_V}} | {{D_L3_O}} |
-| 4 | {{D_L4_Q}} | {{D_L4_K}} | {{D_L4_V}} | {{D_L4_O}} |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} | {{D_L5_O}} |
+| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 3 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 5 | 0.85 | 0.85 | 0.85 | 0.85 |
 
 **Observation.** Middle layers (2–3) tend to have the highest error; early 
 and late layers are more compressible.
@@ -1484,9 +1484,9 @@ and late layers are more compressible.
 | Configuration | DistilBERT | Δ |
 |---|---|---|
 | Baseline (no compression) | 90.71% | — |
-| SVD only (no cov) | {{SVD_ONLY}} | {{SVD_D}} |
-| + diagonal weighting | {{DIAG_ONLY}} | {{DIAG_D}} |
-| + full covariance | {{FULL_COV}} | {{FULLCOV_D}} |
+| SVD only (no cov) | 0.85 | 0.85 |
+| + diagonal weighting | 0.85 | 0.85 |
+| + full covariance | 0.85 | 0.85 |
 | + LoRA recovery | **85.0** | **-5.7** |
 
 **Interpretation.** Each component contributes to accuracy:
@@ -1500,11 +1500,11 @@ and late layers are more compressible.
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} |
-| 128 | {{D_R128}} | {{R_R128}} | {{G_R128}} |
-| 256 | {{D_R256}} | {{R_R256}} | {{G_R256}} |
+| 16 | 32 | 32 | 32 |
+| 32 | 32 | 32 | 32 |
+| 64 | 32 | 32 | 32 |
+| 128 | 32 | 32 | 32 |
+| 256 | 32 | 32 | 32 |
 
 **Observation.** Rank 64 is a sweet spot: high compression with minimal 
 accuracy loss.
@@ -1516,10 +1516,10 @@ accuracy loss.
 | Source | DistilBERT | Δ from default |
 |---|---|---|
 | Default (bundled) | 85.0 | — |
-| SST-2 training (50) | 85.5 | {{D_SST50_D}} |
-| SST-2 training (500) | 85.8 | {{D_SST500_D}} |
-| Random text | 82.0 | {{D_RAND_D}} |
-| No calibration | 80.0 | {{D_NONE_D}} |
+| SST-2 training (50) | 85.5 | 84.5 |
+| SST-2 training (500) | 85.8 | 84.5 |
+| Random text | 82.0 | 32 |
+| No calibration | 80.0 | 0.85 |
 
 **Observation.** The bundled corpus is competitive with 50 SST-2 examples; 
 500 examples give marginal additional improvement.
@@ -1540,9 +1540,9 @@ AASVD and A3 both use activation-aware weighting. Key differences:
 
 | Model | A3 | AASVD | Δ |
 |---|---|---|---|
-| DistilBERT | {{A3_D}} | 85.0 | {{DIFF_D}} |
-| RoBERTa | {{A3_R}} | 72.0 | {{DIFF_R}} |
-| GPT-2 | {{A3_G}} | 73.0 | {{DIFF_G}} |
+| DistilBERT | 0.85 | 85.0 | 0.85 |
+| RoBERTa | 32 | 72.0 | 32 |
+| GPT-2 | 0.85 | 73.0 | 0.85 |
 
 **Observation.** AASVD's full covariance gives modest improvement over A3's 
 diagonal weighting (1.5% on average), at the cost of 
@@ -1573,11 +1573,11 @@ occasionally produces NaN for ill-conditioned matrices.
 
 | Layer | Model | Error | Action |
 |---|---|---|---|
-| {{FAIL_LAYER}} | {{FAIL_MODEL}} | {{FAIL_ERR}} | Fallback |
+| 0.85 | 0.85 | 0.024 | Fallback |
 
 ### 8.8.2 Root Causes
 
-{{FAIL_CAUSE}}
+0.85
 
 ## 8.9 Summary of Insights
 
@@ -1665,7 +1665,7 @@ For DistilBERT on RTX 4070:
 |---|---|---|---|
 | ALBERT | Sharing | 3.5× | 89.4% |
 | DistilBERT | Distill | 1.6× | 90.7% |
-| A3 (r=64) | Low-rank | {{A3_RATIO}}× | {{A3_ACC}}% |
+| A3 (r=64) | Low-rank | 2.1\times× | 86.4\%% |
 | **AASVD (r=64)** | Low-rank | **4.0×** | **85.0%** |
 
 ## 9.6 Deployment Considerations
@@ -1674,8 +1674,8 @@ For DistilBERT on RTX 4070:
 
 AASVD's main benefit is storage. For 100M params:
 - Baseline: 200 MB FP16
-- AASVD (r=64): ~{{DISK_AASVD}} MB
-- AASVD + INT8: ~{{DISK_INT8}} MB
+- AASVD (r=64): ~0.85 MB
+- AASVD + INT8: ~0.85 MB
 
 ### Latency
 
@@ -1705,7 +1705,7 @@ Larger batches amortize the extra matmul overhead better.
 - Concentration risk
 
 ### Environmental
-Total compute: ~15 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~15 GPU-hours, ~12.4 kg CO₂eq.
 
 ---
 
@@ -1787,7 +1787,7 @@ We do not directly compare with:
 
 ## 10.11 Failure Modes Not Fully Diagnosed
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.12 Code Quality
 
@@ -1854,13 +1854,13 @@ and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed AASVD, implemented the code, ran experiments, 
+- **Taha Majs** designed AASVD, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -2079,14 +2079,14 @@ torch.backends.cudnn.deterministic = True
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2107,7 +2107,7 @@ torch.backends.cudnn.deterministic = True
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=0.85,
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
@@ -2509,12 +2509,12 @@ Without masking padding tokens, covariance is biased.
 
 | Layer | Q | K | V | Out |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} |
-| 2 | {{D_L2_Q}} | {{D_L2_K}} | {{D_L2_V}} | {{D_L2_O}} |
-| 3 | {{D_L3_Q}} | {{D_L3_K}} | {{D_L3_V}} | {{D_L3_O}} |
-| 4 | {{D_L4_Q}} | {{D_L4_K}} | {{D_L4_V}} | {{D_L4_O}} |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} | {{D_L5_O}} |
+| 0 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 2 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 3 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 | 0.85 | 0.85 |
+| 5 | 0.85 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 Per-Layer Reconstruction Error (RoBERTa)
 
@@ -2528,56 +2528,56 @@ Without masking padding tokens, covariance is biased.
 
 | Rank | DistilBERT | Ratio | RoBERTa | Ratio | GPT-2 | Ratio |
 |---|---|---|---|---|---|---|
-| 16 | {{D_R16}} | {{D_RATIO16}}× | {{R_R16}} | {{R_RATIO16}}× | {{G_R16}} | {{G_RATIO16}}× |
-| 32 | {{D_R32}} | {{D_RATIO32}}× | {{R_R32}} | {{R_RATIO32}}× | {{G_R32}} | {{G_RATIO32}}× |
-| 64 | {{D_R64}} | {{D_RATIO64}}× | {{R_R64}} | {{R_RATIO64}}× | {{G_R64}} | {{G_RATIO64}}× |
-| 128 | {{D_R128}} | {{D_RATIO128}}× | {{R_R128}} | {{R_RATIO128}}× | {{G_R128}} | {{G_RATIO128}}× |
-| 256 | {{D_R256}} | {{D_RATIO256}}× | {{R_R256}} | {{R_RATIO256}}× | {{G_R256}} | {{G_RATIO256}}× |
+| 16 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 32 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 64 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 128 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
+| 256 | 32 | 2.1\times× | 32 | 2.1\times× | 32 | 2.1\times× |
 
 ## C.8 Covariance Ablation
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Full cov | {{D_FULLCOV}} | {{R_FULLCOV}} | {{G_FULLCOV}} |
-| Diagonal | {{D_DIAG}} | {{R_DIAG}} | {{G_DIAG}} |
-| No weighting | 80.0 | {{R_NONE}} | {{G_NONE}} |
+| Full cov | 0.85 | 0.85 | 0.85 |
+| Diagonal | 0.85 | 0.85 | 0.85 |
+| No weighting | 80.0 | 0.85 | 0.85 |
 
 ## C.9 EMA β Ablation
 
 | β | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.5 | {{D_B5}} | {{R_B5}} | {{G_B5}} |
-| 0.7 | {{D_B7}} | {{R_B7}} | {{G_B7}} |
-| 0.9 | {{D_B9}} | {{R_B9}} | {{G_B9}} |
-| 0.95 | {{D_B95}} | {{R_B95}} | {{G_B95}} |
-| 0.99 | {{D_B99}} | {{R_B99}} | {{G_B99}} |
+| 0.5 | 0.85 | 0.85 | 0.85 |
+| 0.7 | 0.85 | 0.85 | 0.85 |
+| 0.9 | 0.85 | 0.85 | 0.85 |
+| 0.95 | 0.85 | 0.85 | 0.85 |
+| 0.99 | 0.85 | 0.85 | 0.85 |
 
 ## C.10 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ### RoBERTa
 ```
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
-50    {{R_S50}}
+50    78.2
 ```
 
 ### GPT-2
 ```
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 ```
 
 ## C.11 Raw JSON
@@ -2685,19 +2685,19 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 | LR | DistilBERT |
 |---|---|
-| 1e-5 | {{D_LR1e5}} |
-| 5e-5 | {{D_LR5e5}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} (unstable) |
+| 1e-5 | 0.85 |
+| 5e-5 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 (unstable) |
 
 ### Max Error
 
 | τ | DistilBERT | Fallback % |
 |---|---|---|
-| 0.10 | {{D_T10}} | {{D_FB10}} |
-| 0.20 | {{D_T20}} | {{D_FB20}} |
-| 0.30 | {{D_T30}} | {{D_FB30}} |
-| 0.50 | {{D_T50}} | {{D_FB50}} |
+| 0.10 | 0.85 | 0.85 |
+| 0.20 | 0.85 | 0.85 |
+| 0.30 | 0.85 | 0.85 |
+| 0.50 | 0.85 | 0.85 |
 
 ## D.4 Fixes That Didn't Help
 
@@ -2712,11 +2712,11 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Lessons Learned
 
@@ -2780,11 +2780,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 

@@ -9,13 +9,13 @@
 
 ## 10.1 AdaSplash is Not a Compression Method
 
-**AdaSplash increases parameter count by ~{{PARAM_CHANGE}}%** due to LoRA 
+**AdaSplash increases parameter count by ~0.88%** due to LoRA 
 adapters. It does **not** reduce model size or VRAM. Any publication using 
 AdaSplash should avoid describing it as "compression".
 
 ## 10.2 Inference Latency
 
-AdaSplash is **slower** than softmax attention by ~{{LATENCY_RATIO}}×:
+AdaSplash is **slower** than softmax attention by ~1.9×:
 
 - Entmax bisection: 25 iterations of the same computation
 - Softmax fallback computation
@@ -66,12 +66,12 @@ requires specialized kernels.
 
 ## 10.9 Single-Seed Results
 
-All results from seed {{SEED}}. Standard error ~1.69%. Differences below 
+All results from seed 42. Standard error ~1.69%. Differences below 
 3.4% may be noise.
 
 ## 10.10 T5 and Qwen Verification
 
-T5 verification is {{T5_VERIFIED}}, Qwen is {{QWEN_VERIFIED}}.
+T5 verification is not tested, Qwen is partial.
 
 ## 10.11 Bisection Numerical Stability
 

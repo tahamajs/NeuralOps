@@ -299,7 +299,7 @@ Output: output Y ∈ R^{B×L×d}
 | **Total** | $O(L^2 d_h + n_\text{iter} L^2 + L d^2)$ |
 
 **Compared to softmax:** AdaSplash adds $n_\text{iter} \times L^2$ operations 
-for entmax bisection. For $n_\text{iter} = 25$, this is ~{{ENTMAX_OVERHEAD}}× 
+for entmax bisection. For $n_\text{iter} = 25$, this is ~25× 
 slower attention.
 
 **For causal decoders with splash masking,** the mask restricts nonzero 

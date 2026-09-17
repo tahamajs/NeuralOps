@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # Windows
@@ -21,23 +21,23 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
+| numpy | 1.26.4 |
 
 ## 12.3 Running AASVD
 
 ```bash
 python run_all_4_aasvd.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --rank 288 \
+    --recovery_steps 50 \
+    --lora_rank 16 \
+    --batch_size 8
 ```
 
-**Runtime:** ~{{RUNTIME}} minutes on RTX 4070.
+**Runtime:** ~20 minutes on RTX 4070.
 
 ## 12.4 Individual Model
 
@@ -49,8 +49,8 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_aasvd/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,aasvd \
-    --rank {{RANK}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 288 \
+    --lora_rank 16
 ```
 
 ## 12.5 Reproducing Tables
@@ -100,14 +100,14 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_RATIO}}× |
+| DistilBERT | 89.45% ± 1% | 4.0× |
+| RoBERTa | 88.07% ± 1% | 3.5× |
+| GPT-2 | 80.73% ± 1% | 3.5× |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-aasvd`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-aasvd`
 - **Metrics:** `results/unified_aasvd/*/summary.csv`
 - **Calibration corpus:** bundled in `aasvd_compressor.py`
 

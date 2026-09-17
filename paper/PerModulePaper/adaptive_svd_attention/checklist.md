@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `adaptive_svd/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module adaptive_svd`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

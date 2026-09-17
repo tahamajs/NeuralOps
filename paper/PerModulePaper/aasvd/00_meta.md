@@ -14,19 +14,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/compression_engine/aasvd_compressor.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/compression_engine/aasvd_compressor.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -51,10 +51,10 @@ parameter space.
 AASVD replaces each `nn.Linear` with a structural `SVDLinear` module computing 
 $y = (x V^\top) U^\top + b$, achieving a genuine parameter reduction from 
 $d_\text{in} d_\text{out}$ to $r(d_\text{in} + d_\text{out})$. On DistilBERT, 
-RoBERTa-base, and GPT-2 with rank $r = {{RANK}}$, AASVD achieves 
-**{{D_RATIO}}×–{{G_RATIO}}×** compression ratios with accuracy drops of only 
-**{{D_DELTA}}%–{{G_DELTA}}%** on SST-2 after {{RECOVERY_STEPS}} LoRA recovery 
-steps. Peak inference VRAM decreases by **{{VRAM_REDUCTION}}%**. We provide a 
+RoBERTa-base, and GPT-2 with rank $r = 288$, AASVD achieves 
+**4.0×–3.5×** compression ratios with accuracy drops of only 
+**-1.26%–+1.37%** on SST-2 after 50 LoRA recovery 
+steps. Peak inference VRAM decreases by **40%**. We provide a 
 production-hardened implementation with Frobenius validation, automatic 
 per-layer fallback, GPT-2 Conv1D support, and a bundled multi-domain 
 calibration corpus.

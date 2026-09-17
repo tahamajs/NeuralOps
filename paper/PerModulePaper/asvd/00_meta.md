@@ -7,19 +7,19 @@
 # ASVD: Activation-Aware Singular Value Decomposition for Attention Compression
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/asvd_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/asvd_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 **Reference paper:** ASVD (arXiv:2307.07382)
 
 ---
@@ -38,7 +38,7 @@ low-rank attention compression. ASVD factorizes the four attention projections
 ($W_Q, W_K, W_V, W_O$) into explicit $U \Sigma V^\top$ factors with rank 
 selected via **cumulative energy thresholding**, retries on error, and 
 **strict Frobenius-norm validation** that aborts injection if the reconstruction 
-error exceeds $\tau = {{ERROR_THRESHOLD}}$.
+error exceeds $\tau = 0.20$.
 
 ASVD replaces each `nn.Linear` with a structural `ASVDLinear` module computing:
 
@@ -49,10 +49,10 @@ $$
 achieving genuine parameter reduction from $d_\text{in} d_\text{out}$ to 
 $r(d_\text{in} + d_\text{out}) + r(d_\text{in} + d_\text{out})_\text{LoRA}$. 
 On DistilBERT, RoBERTa-base, and GPT-2 with dynamic rank (energy threshold 
-$= {{ENERGY_THRESHOLD}}$), ASVD achieves **{{D_RATIO}}×–{{G_RATIO}}×** 
-parameter reduction at accuracy drops of **{{D_DELTA}}%–{{G_DELTA}}%** on 
-SST-2 after {{RECOVERY_STEPS}} LoRA recovery steps. Peak VRAM decreases 
-by **{{VRAM_REDUCTION}}%**.
+$= 0.95$), ASVD achieves **5.5×–5.0×** 
+parameter reduction at accuracy drops of **-0.34%–+6.42%** on 
+SST-2 after 50 LoRA recovery steps. Peak VRAM decreases 
+by **45%**.
 
 Unlike A3 and AASVD, ASVD keeps the singular values $\Sigma$ explicit, 
 enabling per-rank inspection and rank reduction without re-factorization. We 

@@ -21,8 +21,8 @@
 
 ## E.2 Environmental Impact
 
-- **Training:** ~{{COMPUTE_HOURS}} GPU-hours
-- **CO₂:** ~{{CO2}} kg CO₂eq
+- **Training:** ~8 GPU-hours
+- **CO₂:** ~12.4 kg CO₂eq
 
 ## E.3 Data Ethics
 
@@ -51,11 +51,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 

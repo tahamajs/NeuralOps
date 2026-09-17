@@ -5,17 +5,17 @@
 We presented **Adaptive SVD Attention**, a zero-shot attention compressor 
 with **energy-thresholded rank selection** per projection. The method 
 factorizes all four projections (Q/K/V/O) using symmetric $\sqrt{\Sigma}$ 
-splits and residual adapters, achieving **{{D_RATIO}}×–{{G_RATIO}}×** 
-attention parameter reduction with only **{{D_DELTA}}%–{{G_DELTA}}%** 
+splits and residual adapters, achieving **2.4×–2.4×** 
+attention parameter reduction with only **-2.75%–-2.98%** 
 accuracy drop.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Attention Ratio | Avg Rank |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | {{AVG_RANK}} |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | {{R_AVG_RANK}} |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | {{G_AVG_RANK}} |
+| DistilBERT | -2.75% | **2.4×** | 160 |
+| RoBERTa | -0.92% | **2.4×** | 160 |
+| GPT-2 | -2.98% | **2.4×** | 160 |
 
 ## 11.3 Key Takeaways
 
@@ -44,13 +44,13 @@ compressor. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented, ran experiments, wrote 
+- **Taha Majs** designed the method, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

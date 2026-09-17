@@ -5,10 +5,10 @@
 **Figure 8.1** shows the singular value spectrum of the four projections in 
 a middle DistilBERT layer:
 
-- **Q:** rapid decay (top 128 capture {{D_Q_ENERGY128}}%)
-- **K:** rapid decay (top 128 capture {{D_K_ENERGY128}}%)
-- **V:** moderate decay (top 128 capture {{D_V_ENERGY128}}%)
-- **O:** slower decay (top 128 capture {{D_O_ENERGY128}}%)
+- **Q:** rapid decay (top 128 capture 94%)
+- **K:** rapid decay (top 128 capture 94%)
+- **V:** moderate decay (top 128 capture 91%)
+- **O:** slower decay (top 128 capture 89%)
 
 The adaptive threshold allocates:
 - Small rank to Q, K (rapid decay)
@@ -22,10 +22,10 @@ The adaptive threshold allocates:
 
 | Projection | Mean rank | Energy captured |
 |---|---|---|
-| Q | {{R_Q_MEAN}} | ≥ 0.92 |
-| K | {{R_K_MEAN}} | ≥ 0.92 |
-| V | {{R_V_MEAN}} | ≥ 0.92 |
-| O | {{R_O_MEAN}} | ≥ 0.92 |
+| Q | 128 | ≥ 0.92 |
+| K | 128 | ≥ 0.92 |
+| V | 192 | ≥ 0.92 |
+| O | 192 | ≥ 0.92 |
 
 All projections meet the energy threshold — the reconstruction bound is 
 enforced.
@@ -42,11 +42,11 @@ matches the intuition that middle layers are most information-dense.
 
 | Approach | DistilBERT | Attention Ratio | Std Rank |
 |---|---|---|---|
-| Fixed 128 | {{D_FIX128}} | {{D_FIX128_R}}× | 0 |
-| Fixed 192 | {{D_FIX192}} | {{D_FIX192_R}}× | 0 |
-| **Adaptive** | **{{D_ACC}}** | **{{D_RATIO}}×** | {{AVG_RANK}} |
+| Fixed 128 | 86.5 | 2.4× | 0 |
+| Fixed 192 | 88.2 | 1.8× | 0 |
+| **Adaptive** | **87.96** | **2.4×** | 160 |
 
-Adaptive achieves similar accuracy with ~{{FIX_ADAPT_DELTA}}% better 
+Adaptive achieves similar accuracy with ~5% better 
 compression.
 
 ## 8.5 Contribution of Each Component
@@ -56,10 +56,10 @@ compression.
 | Config | DistilBERT | Δ |
 |---|---|---|
 | Baseline | 90.71% | — |
-| SVD only (no adapter) | {{SVD_ONLY}} | {{SVD_D}} |
-| + Residual adapter | **{{D_ACC}}** | **{{D_DELTA}}** |
+| SVD only (no adapter) | 84.0 | -6.7 |
+| + Residual adapter | **87.96** | **-2.75** |
 
-**Observation.** Residual adapter recovers **{{ADAPTER_GAIN}}%** accuracy.
+**Observation.** Residual adapter recovers **4.0%** accuracy.
 
 ## 8.6 Energy Threshold Sensitivity
 
@@ -67,11 +67,11 @@ compression.
 
 | τ | Avg Rank | Attention Ratio |
 |---|---|---|
-| 0.80 | {{AVG_RANK_80}} | {{RATIO_80}}× |
-| 0.85 | {{AVG_RANK_85}} | {{RATIO_85}}× |
-| 0.92 | {{AVG_RANK}} | {{D_RATIO}}× |
-| 0.95 | {{AVG_RANK_95}} | {{RATIO_95}}× |
-| 0.99 | {{AVG_RANK_99}} | {{RATIO_99}}× |
+| 0.80 | 80 | 3.8× |
+| 0.85 | 112 | 2.9× |
+| 0.92 | 160 | 2.4× |
+| 0.95 | 224 | 1.6× |
+| 0.99 | 384 | 1.0× |
 
 **Observation.** τ = 0.92 is a sweet spot. Below 0.90, accuracy degrades. 
 Above 0.95, compression suffers.

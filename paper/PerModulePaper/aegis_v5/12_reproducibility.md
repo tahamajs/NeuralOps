@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -15,10 +15,10 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_aegis_v5.py \
     --models distilbert,roberta,gpt2 \
-    --svd_energy {{ENERGY}} \
-    --max_rank {{MAX_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --svd_energy 0.95 \
+    --max_rank 384 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.3 Individual Model
@@ -27,8 +27,8 @@ python run_all_4_aegis_v5.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,aegis_v5 \
-    --svd_energy {{ENERGY}} \
-    --max_rank {{MAX_RANK}}
+    --svd_energy 0.95 \
+    --max_rank 384
 ```
 
 ## 12.4 Reproducing Tables
@@ -65,14 +65,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 83.72% ± 1% |
+| RoBERTa | 86.47% ± 1% |
+| GPT-2 | 69.50% ± 1% |
 
 ## 12.7 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-aegis_v5`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-aegis_v5`
 - **Metrics:** `results/unified_aegis_v5/*/summary.csv`
 
 ---

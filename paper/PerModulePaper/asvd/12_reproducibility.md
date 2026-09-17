@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -21,19 +21,19 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running ASVD
 
 ```bash
 python run_all_4_asvd.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --error_threshold {{ERROR_THRESHOLD}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 64 \
+    --energy_threshold 0.95 \
+    --error_threshold 0.20 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -42,7 +42,7 @@ python run_all_4_asvd.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,asvd \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -80,14 +80,14 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% | {{G_RATIO}}× |
+| DistilBERT | 90.37% | 5.5× |
+| RoBERTa | 77.75% | 5.0× |
+| GPT-2 | 85.78% | 5.0× |
 
 ## 12.8 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-asvd`
+- Checkpoints: `Hooshaai/svd-linear-attention-*-asvd`
 - Metrics: `results/unified_asvd/*/summary.csv`
 
 ## 12.9 Known Issues

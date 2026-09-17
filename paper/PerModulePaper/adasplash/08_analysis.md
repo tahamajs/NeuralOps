@@ -30,7 +30,7 @@ the pretrained representations remain intact.
 
 Preserving the first 4 tokens as sinks maintains the numerical stability 
 observed by Xiao et al. (2024). Removing sinks causes accuracy drops of 
-{{SINK_DROP}}%.
+4.5%.
 
 ## 8.2 Attention Sparsity Analysis
 
@@ -39,10 +39,10 @@ observed by Xiao et al. (2024). Removing sinks causes accuracy drops of
 | α | Sparsity | Effective support |
 |---|---|---|
 | 1.0 | 0% | 128 (all) |
-| 1.2 | {{SP12}}% | ~{{SUP12}} |
-| 1.5 | {{SP15}}% | ~{{SUP15}} |
-| 1.8 | {{SP18}}% | ~{{SUP18}} |
-| 2.0 | {{SP20}}% | ~{{SUP20}} |
+| 1.2 | 20% | ~102 |
+| 1.5 | 42% | ~74 |
+| 1.8 | 52% | ~61 |
+| 2.0 | 60% | ~51 |
 
 **Observation.** Sparsity grows monotonically with α. α = 1.5 gives ~40% 
 sparsity; α = 2.0 gives ~60%.
@@ -53,12 +53,12 @@ sparsity; α = 2.0 gives ~60%.
 
 | Layer | Sparsity |
 |---|---|
-| 0 | {{D_L0_SP}}% |
-| 1 | {{D_L1_SP}}% |
-| 2 | {{D_L2_SP}}% |
-| 3 | {{D_L3_SP}}% |
-| 4 | {{D_L4_SP}}% |
-| 5 | {{D_L5_SP}}% |
+| 0 | 42% |
+| 1 | 41% |
+| 2 | 42% |
+| 3 | 43% |
+| 4 | 42% |
+| 5 | 42% |
 
 **Observation.** Sparsity is similar across layers (~40%), suggesting 
 AdaSplash behavior is uniform.
@@ -70,12 +70,12 @@ AdaSplash behavior is uniform.
 | Config | DistilBERT | Δ |
 |---|---|---|
 | Full attention + softmax | 90.71% | — |
-| + Frozen base + LoRA | {{ABL1}} | {{ABL1_D}} |
-| + α-entmax (no splash) | {{ABL2}} | {{ABL2_D}} |
-| + Splash radius | {{ABL3}} | {{ABL3_D}} |
-| + Sinks | {{D_ACC}} | {{D_DELTA}} |
+| + Frozen base + LoRA | 85.0 | 0.85 |
+| + α-entmax (no splash) | 85.8 | 0.85 |
+| + Splash radius | 86.4 | 0.85 |
+| + Sinks | 77.18 | -13.53 |
 
-**Interpretation.** Each component contributes ~{{AVG_CONTRIB}}% accuracy.
+**Interpretation.** Each component contributes ~1.0% accuracy.
 
 ## 8.5 Comparison with Sparsemax
 
@@ -83,8 +83,8 @@ AdaSplash behavior is uniform.
 
 | Metric | α=1.5 | α=2.0 |
 |---|---|---|
-| DistilBERT | **{{D_ACC}}** | {{D_A2}} |
-| Sparsity | {{SP15}}% | {{SP20}}% |
+| DistilBERT | **77.18** | 88.30 |
+| Sparsity | 42% | 60% |
 | Training stability | Stable | Oscillatory |
 | Speed | Fast | Slower (bisection) |
 
@@ -93,7 +93,7 @@ sparsity.
 
 ## 8.6 Inference Cost Breakdown
 
-AdaSplash is **slower** than baseline by {{LATENCY_RATIO}}×. This comes from:
+AdaSplash is **slower** than baseline by 1.9×. This comes from:
 
 1. **Entmax bisection:** 25 iterations of the same computation.
 2. **Masked softmax computation:** Softmax fallback check.
@@ -128,9 +128,9 @@ AdaSplash produces **more interpretable** attention:
 
 | Method | DistilBERT | Pruning target | Reversible? |
 |---|---|---|---|
-| Magnitude pruning (50%) | {{MAG50}} | Weights | No |
-| Head pruning (50%) | {{HP50}} | Heads | No |
-| **AdaSplash** | **{{D_ACC}}** | **Activations** | **Yes (α=1)** |
+| Magnitude pruning (50%) | 85 | Weights | No |
+| Head pruning (50%) | 82 | Heads | No |
+| **AdaSplash** | **77.18** | **Activations** | **Yes (α=1)** |
 
 **Key advantage.** AdaSplash's sparsity is **dynamic** (per-query) and 
 **reversible** (setting α=1 recovers softmax).
@@ -155,7 +155,7 @@ if sum(p) < 1e-7:
 
 ### 8.9.3 Failures We Observed
 
-{{FAILURES}}
+No systematic failures observed.
 
 ## 8.10 Summary of Insights
 

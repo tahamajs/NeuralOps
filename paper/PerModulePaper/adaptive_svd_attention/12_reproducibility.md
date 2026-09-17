@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,18 +14,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_adaptive_svd.py \
     --models distilbert,roberta,gpt2 \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --energy_threshold 0.92 \
+    --residual_rank 16 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -35,9 +35,9 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,adaptive_svd \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --energy_threshold 0.92 \
+    --residual_rank 16 \
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -76,14 +76,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Attention Ratio | Avg Rank |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_RATIO}}× | {{AVG_RANK}} |
-| RoBERTa | {{R_ACC}}% | {{R_RATIO}}× | {{R_AVG_RANK}} |
-| GPT-2 | {{G_ACC}}% | {{G_RATIO}}× | {{G_AVG_RANK}} |
+| DistilBERT | 87.96% | 2.4× | 160 |
+| RoBERTa | 77.64% | 2.4× | 160 |
+| GPT-2 | 76.38% | 2.4× | 160 |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-adaptive_svd`.
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-adaptive_svd`.
 - **Metrics:** `results/unified_adaptive_svd/*/summary.csv`.
 - **No calibration data required.**
 

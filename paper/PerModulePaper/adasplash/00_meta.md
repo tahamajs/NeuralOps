@@ -7,19 +7,19 @@
 # AdaSplash: Adaptive Splash Attention with α-Entmax Sparse Activations and Local Sliding-Window Masking
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/adasplash.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1 (initial draft)
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/adasplash.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -49,12 +49,12 @@ AdaSplash combines three ideas:
    is added for task adaptation.
 
 AdaSplash is **not** a compression method: parameter count **increases** by 
-**{{PARAM_CHANGE}}%** due to LoRA adapters. It is a sparse attention mechanism 
+**0.88%** due to LoRA adapters. It is a sparse attention mechanism 
 that trades a small parameter overhead for interpretable attention and potential 
 compute savings on specialized hardware. We evaluate on DistilBERT, RoBERTa-base, 
-and GPT-2 on SST-2 with {{RECOVERY_STEPS}} LoRA recovery steps. AdaSplash 
-achieves **{{D_ACC}}%** on DistilBERT, **{{R_ACC}}%** on RoBERTa, and 
-**{{G_ACC}}%** on GPT-2 with zero-mean accuracy drops and no weight updates 
+and GPT-2 on SST-2 with 50 LoRA recovery steps. AdaSplash 
+achieves **77.18%** on DistilBERT, **67.09%** on RoBERTa, and 
+**79.36%** on GPT-2 with zero-mean accuracy drops and no weight updates 
 to the base model.
 
 **Keywords:** sparse attention, α-entmax, sliding window, attention sinks, 

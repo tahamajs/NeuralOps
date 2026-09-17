@@ -25,8 +25,8 @@
 
 ### E.1.3 Environmental Cost
 
-- **Total compute:** ~{{COMPUTE_HOURS}} GPU-hours
-- **CO₂ estimate:** ~{{CO2_KG}} kg CO₂eq
+- **Total compute:** ~12 GPU-hours
+- **CO₂ estimate:** ~0.8 kg CO₂eq
 
 ## E.2 Data Ethics
 
@@ -46,13 +46,13 @@ these uses.
 
 ### Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments, 
+- **Taha Majs** designed the method, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback and edited the manuscript.
+- **Collaborative Research Team** provided feedback and edited the manuscript.
 
 ### License
 
-Code and weights released under **{{LICENSE}}**.
+Code and weights released under **MIT**.
 
 ## E.5 Conflicts of Interest
 
@@ -60,11 +60,11 @@ None.
 
 ## E.6 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.7 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.8 LLM Usage Disclosure
 

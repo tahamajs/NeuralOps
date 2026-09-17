@@ -133,7 +133,7 @@ attention sparsity and interpretability.
   parameter count due to LoRA, and report when the method is worth using. 
   Sections 8–9.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts released 
-  under {{LICENSE}}.
+  under MIT.
 
 ## 1.7 Paper Organization
 

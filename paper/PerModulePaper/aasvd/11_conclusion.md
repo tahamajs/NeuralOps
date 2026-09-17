@@ -19,14 +19,14 @@ a bundled multi-domain calibration corpus.
 
 | Model | Acc Δ | Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | -{{VRAM_REDUCTION}}% |
+| DistilBERT | -1.26% | **4.0×** | -40% |
+| RoBERTa | +9.51% | **3.5×** | -40% |
+| GPT-2 | +1.37% | **3.5×** | -40% |
 
 ## 11.3 Key Takeaways
 
 1. **Real compression works.**
-2. **Full covariance beats diagonal** by {{COV_GAIN}}%.
+2. **Full covariance beats diagonal** by 1.5%.
 3. **Bundled corpus is sufficient** for out-of-the-box use.
 4. **EMA with β=0.9 is robust.**
 
@@ -50,13 +50,13 @@ and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed AASVD, implemented the code, ran experiments, 
+- **Taha Majs** designed AASVD, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

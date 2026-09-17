@@ -223,7 +223,7 @@ $$
    is preserved and logged. Otherwise, the factorization is applied anyway 
    with a warning.
 
-We default to `fallback_to_original = True` and `max_error = {{MAX_ERROR}}`.
+We default to `fallback_to_original = True` and `max_error = 0.50`.
 
 ## 4.5 Phase 4: Structural Replacement
 

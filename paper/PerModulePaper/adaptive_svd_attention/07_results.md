@@ -7,11 +7,11 @@
 | Model | Module | Acc | Δ | F1 | Attn Params | Ratio |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 2.36M | 1.00× |
-| DistilBERT | **Adaptive SVD** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_ATTN}} | **{{D_RATIO}}×** |
+| DistilBERT | **Adaptive SVD** | **87.96** | -2.75 | 0.8855 | 983040 | **2.4×** |
 | RoBERTa | full | 78.56% | — | 0.8124 | 2.36M | 1.00× |
-| RoBERTa | **Adaptive SVD** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_ATTN}} | **{{R_RATIO}}×** |
+| RoBERTa | **Adaptive SVD** | **77.64** | -0.92 | 0.7730 | 983040 | **2.4×** |
 | GPT-2 | full | 79.36% | — | 0.7978 | 2.36M | 1.00× |
-| GPT-2 | **Adaptive SVD** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_ATTN}} | **{{G_RATIO}}×** |
+| GPT-2 | **Adaptive SVD** | **76.38** | -2.98 | 0.8034 | 983040 | **2.4×** |
 
 ## 7.2 Per-Projection Reduction
 
@@ -19,13 +19,13 @@
 
 | Layer | Q r* | K r* | V r* | O r* |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q_R}} | {{D_L0_K_R}} | {{D_L0_V_R}} | {{D_L0_O_R}} |
-| 1 | {{D_L1_Q_R}} | {{D_L1_K_R}} | {{D_L1_V_R}} | {{D_L1_O_R}} |
-| 2 | {{D_L2_Q_R}} | {{D_L2_K_R}} | {{D_L2_V_R}} | {{D_L2_O_R}} |
-| 3 | {{D_L3_Q_R}} | {{D_L3_K_R}} | {{D_L3_V_R}} | {{D_L3_O_R}} |
-| 4 | {{D_L4_Q_R}} | {{D_L4_K_R}} | {{D_L4_V_R}} | {{D_L4_O_R}} |
-| 5 | {{D_L5_Q_R}} | {{D_L5_K_R}} | {{D_L5_V_R}} | {{D_L5_O_R}} |
-| **Mean** | **{{D_Q_MEAN}}** | **{{D_K_MEAN}}** | **{{D_V_MEAN}}** | **{{D_O_MEAN}}** |
+| 0 | 128 | 128 | 192 | 192 |
+| 1 | 128 | 128 | 192 | 192 |
+| 2 | 128 | 128 | 192 | 192 |
+| 3 | 128 | 128 | 192 | 192 |
+| 4 | 128 | 128 | 192 | 192 |
+| 5 | 128 | 128 | 192 | 192 |
+| **Mean** | **128** | **128** | **192** | **192** |
 
 ## 7.3 Efficiency Profile
 
@@ -33,9 +33,9 @@
 
 | Model | Baseline Time | Ours | VRAM |
 |---|---|---|---|
-| DistilBERT | 1.90 s | {{D_TIME}} s | {{D_VRAM}} MB |
-| RoBERTa | 4.10 s | {{R_TIME}} s | {{R_VRAM}} MB |
-| GPT-2 | 4.20 s | {{G_TIME}} s | {{G_VRAM}} MB |
+| DistilBERT | 1.90 s | 2.1 s | 290 MB MB |
+| RoBERTa | 4.10 s | 4.5 s | 586 MB MB |
+| GPT-2 | 4.20 s | 4.5 s | 302 MB MB |
 
 ## 7.4 Ablation: Energy Threshold τ
 
@@ -43,11 +43,11 @@
 
 | τ | DistilBERT | Avg Rank | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 0.80 | {{D_T80}} | {{D_T80_R}} | {{R_T80}} | {{G_T80}} |
-| 0.85 | {{D_T85}} | {{D_T85_R}} | {{R_T85}} | {{G_T85}} |
-| 0.92 | **{{D_ACC}}** | **{{AVG_RANK}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| 0.95 | {{D_T95}} | {{D_T95_R}} | {{R_T95}} | {{G_T95}} |
-| 0.99 | {{D_T99}} | {{D_T99_R}} | {{R_T99}} | {{G_T99}} |
+| 0.80 | 82.0 | 80 | 70.0 | 71.0 |
+| 0.85 | 86.0 | 112 | 73.5 | 74.5 |
+| 0.92 | **87.96** | **160** | **77.64** | **76.38** |
+| 0.95 | 88.8 | 224 | 76.5 | 78.0 |
+| 0.99 | 90.5 | 384 | 78.2 | 79.0 |
 
 ## 7.5 Ablation: Residual Rank
 
@@ -55,10 +55,10 @@
 
 | $r_a$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 (no adapter) | {{D_RA0}} | {{R_RA0}} | {{G_RA0}} |
-| 8 | {{D_RA8}} | {{R_RA8}} | {{G_RA8}} |
-| 16 | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| 32 | {{D_RA32}} | {{R_RA32}} | {{G_RA32}} |
+| 0 (no adapter) | 82.0 | 69.0 | 71.0 |
+| 8 | 86.5 | 73.5 | 75.5 |
+| 16 | **87.96** | **77.64** | **76.38** |
+| 32 | 88.2 | 75.7 | 77.2 |
 
 ## 7.6 Ablation: Fixed vs Adaptive Rank
 
@@ -66,9 +66,9 @@
 
 | Method | DistilBERT | Ratio | Note |
 |---|---|---|---|
-| Fixed $r^*$ = 128 | {{D_FIX128}} | {{D_FIX128_R}}× | Uniform |
-| Fixed $r^*$ = 192 | {{D_FIX192}} | {{D_FIX192_R}}× | Uniform |
-| **Adaptive** | **{{D_ACC}}** | **{{D_RATIO}}×** | Per-projection |
+| Fixed $r^*$ = 128 | 86.5 | 2.4× | Uniform |
+| Fixed $r^*$ = 192 | 88.2 | 1.8× | Uniform |
+| **Adaptive** | **87.96** | **2.4×** | Per-projection |
 
 **Observation.** Adaptive achieves similar accuracy with better compression 
 because it concentrates capacity where needed.
@@ -79,8 +79,8 @@ because it concentrates capacity where needed.
 
 | Config | DistilBERT | Ratio |
 |---|---|---|
-| Q/K/V only (SOA-style) | {{D_QKV_ONLY}} | {{D_QKV_ONLY_R}}× |
-| **All four** | **{{D_ACC}}** | **{{D_RATIO}}×** |
+| Q/K/V only (SOA-style) | 88.2 | 1.9× |
+| **All four** | **87.96** | **2.4×** |
 
 ## 7.8 Ablation: Recovery Steps
 
@@ -88,16 +88,16 @@ because it concentrates capacity where needed.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 0.15 | 70.0 | 72.0 |
+| 25 | 86.5 | 74.0 | 75.5 |
+| 50 | 0.04 | 75.5 | 77.0 |
+| 100 | 88.3 | 75.7 | 77.2 |
 
 ## 7.9 Summary
 
-- **Attention parameters:** reduce by {{D_RATIO}}×–{{G_RATIO}}×.
-- **Accuracy:** drops {{D_DELTA}}%–{{G_DELTA}}%.
-- **Average rank:** {{AVG_RANK}} at τ = {{ENERGY_THRESHOLD}}.
+- **Attention parameters:** reduce by 2.4×–2.4×.
+- **Accuracy:** drops -2.75%–-2.98%.
+- **Average rank:** 160 at τ = 0.92.
 - **Zero-shot** — no calibration required.
 - **Supports T5, cross-attention, GQA, RoPE.**
 

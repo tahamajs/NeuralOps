@@ -11,8 +11,8 @@
 
 ### 9.1.1 Takeaway 1: Real Compression
 
-ASVD reduces parameter count by {{D_RATIO}}×–{{G_RATIO}}× with modest 
-accuracy drops ({{D_DELTA}}%–{{G_DELTA}}%).
+ASVD reduces parameter count by 5.5×–5.0× with modest 
+accuracy drops (-0.34%–+6.42%).
 
 ### 9.1.2 Takeaway 2: Explicit Σ is Valuable
 
@@ -58,16 +58,16 @@ For DistilBERT:
 
 | Metric | Baseline | ASVD | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RATIO}}×** |
-| Disk | 134 MB | {{D_DISK}} MB | **{{D_DISK_RATIO}}×** |
-| Inference VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_RATIO}}× |
-| Inference time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 12165730M | **5.5×** |
+| Disk | 134 MB | 24 MB | **5.5×** |
+| Inference VRAM | 183 MB | 344 MB MB | 0.66× |
+| Inference time | 1.90 s | 2.4 s | 1.26× |
+| Accuracy | 90.71% | 90.37% | -0.34% |
 
 ## 9.5 Comparison with Published ASVD Paper
 
 The published ASVD paper (arXiv:2307.07382) reports compression ratios of 
-1.5-2× on LLaMA-7B. Our implementation achieves {{D_RATIO}}× on DistilBERT 
+1.5-2× on LLaMA-7B. Our implementation achieves 5.5× on DistilBERT 
 by using:
 
 - Lower ranks ($r = 64$ vs $r \approx 128$)
@@ -101,7 +101,7 @@ by using:
 - Concentration risk
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg
+- Training: ~8 GPU-hours
+- CO₂: ~12.4 kg
 
 ---

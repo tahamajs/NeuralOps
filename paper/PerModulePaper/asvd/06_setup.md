@@ -31,22 +31,22 @@ Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `rank` | {{RANK}} |
-| `dynamic_rank` | {{DYNAMIC_RANK}} |
-| `energy_threshold` $\varepsilon$ | {{ENERGY_THRESHOLD}} |
-| `error_threshold` $\tau$ | {{ERROR_THRESHOLD}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `rank` | 64 |
+| `dynamic_rank` | true |
+| `energy_threshold` $\varepsilon$ | 0.95 |
+| `error_threshold` $\tau$ | 0.20 |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 2e-4 |
+| Weight decay | 1e-2 |
+| Recovery steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -69,18 +69,18 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_asvd.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --error_threshold {{ERROR_THRESHOLD}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 64 \
+    --energy_threshold 0.95 \
+    --error_threshold 0.20 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines

@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `adasplash/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module adasplash`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content Quality
 

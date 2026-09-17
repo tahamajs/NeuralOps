@@ -52,9 +52,9 @@ For DistilBERT at $L = 128$:
 
 | Metric | Baseline | AEGIS-V5 (r=384) | AEGIS-V5 (r=128) |
 |---|---|---|---|
-| Params | 66.95M | {{D_P_384}}M | {{D_P_128}}M |
-| Accuracy | 90.71% | {{D_ACC_384}}% | {{D_ACC_128}}% |
-| Inference time | 1.9 s | {{D_T_384}} s | {{D_T_128}} s |
+| Params | 66.95M | 0.85M | 0.85M |
+| Accuracy | 90.71% | 86.4\%% | 86.4\%% |
+| Inference time | 1.9 s | 0.85 s | 0.85 s |
 
 ## 9.5 Comparison to Prior AEGIS Versions
 

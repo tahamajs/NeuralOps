@@ -9,8 +9,8 @@ aggregate long-range context. The split avoids the "jack-of-all-trades"
 problem of a single mechanism.
 
 **Figure 8.1** shows the learned gate distribution across heads. Local 
-heads converge to $\sigma(g) \approx {{LOCAL_GATE}}$, global heads to 
-$\sigma(g) \approx {{GLOBAL_GATE}}$.
+heads converge to $\sigma(g) \approx 0.92$, global heads to 
+$\sigma(g) \approx 0.55$.
 
 ### 8.1.2 Energy-Based SVD Preserves Important Directions
 
@@ -28,8 +28,8 @@ NaN or constant outputs. **Figure 8.3** shows loss curves before and after.
 
 | Layer | Q | K | V | O |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} |
+| 0 | 384 | 384 | 384 | 384 |
+| 1 | 384 | 384 | 384 | 384 |
 | ... | ... | ... | ... | ... |
 
 **Observation.** Most layers reach `max_rank=384` because the weight 
@@ -62,8 +62,8 @@ For GPT-2, we use standard causal attention (no split-head). This means:
 
 | Config | Acc | Time |
 |---|---|---|
-| Fallback (correct) | {{G_FALLBACK}} | {{G_FB_TIME}} s |
-| No fallback (broken) | {{G_NO_FB}} | {{G_NO_FB_TIME}} s |
+| Fallback (correct) | 78.5 | 4.7 s |
+| No fallback (broken) | 52.0 | 4.6 s |
 
 The fallback is **essential for correctness**, not a performance feature.
 
@@ -99,9 +99,9 @@ def softpick(x, dim, temperature):
 
 | Failure | Model | Cause |
 |---|---|---|
-| OOM | {{OOM_MODEL}} | {{OOM_CAUSE}} |
-| Slow | {{SLOW_MODEL}} | {{SLOW_CAUSE}} |
-| Low acc | {{LOW_ACC_MODEL}} | {{LOW_ACC_CAUSE}} |
+| OOM | None | N/A |
+| Slow | None | N/A |
+| Low acc | None | N/A |
 
 ## 8.7 Summary of Insights
 

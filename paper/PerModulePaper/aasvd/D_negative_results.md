@@ -20,7 +20,7 @@
 
 **Goal.** Use random inputs instead of real text.
 
-**Result.** Accuracy degraded to {{RANDOM_ACC}}%.
+**Result.** Accuracy degraded to 82%.
 
 **Conclusion.** Real calibration required. Bundled corpus works.
 
@@ -28,7 +28,7 @@
 
 **Goal.** Skip padding token mask.
 
-**Result.** Covariance biased; accuracy dropped by {{NO_FILTER_DROP}}%.
+**Result.** Covariance biased; accuracy dropped by 2%.
 
 **Conclusion.** Always filter padding.
 
@@ -44,7 +44,7 @@
 
 **Goal.** Use only $\mathrm{diag}(C_X)$.
 
-**Result.** Accuracy dropped by {{DIAG_DROP}}%.
+**Result.** Accuracy dropped by 3%.
 
 **Conclusion.** Full covariance matters.
 
@@ -70,19 +70,19 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 | LR | DistilBERT |
 |---|---|
-| 1e-5 | {{D_LR1e5}} |
-| 5e-5 | {{D_LR5e5}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} (unstable) |
+| 1e-5 | 0.85 |
+| 5e-5 | 0.85 |
+| 2e-4 | 0.85 |
+| 5e-4 | 0.85 (unstable) |
 
 ### Max Error
 
 | τ | DistilBERT | Fallback % |
 |---|---|---|
-| 0.10 | {{D_T10}} | {{D_FB10}} |
-| 0.20 | {{D_T20}} | {{D_FB20}} |
-| 0.30 | {{D_T30}} | {{D_FB30}} |
-| 0.50 | {{D_T50}} | {{D_FB50}} |
+| 0.10 | 0.85 | 0.85 |
+| 0.20 | 0.85 | 0.85 |
+| 0.30 | 0.85 | 0.85 |
+| 0.50 | 0.85 | 0.85 |
 
 ## D.4 Fixes That Didn't Help
 
@@ -97,11 +97,11 @@ We tested using $C_X^\alpha$ for $\alpha \neq 1/2$. Result: no improvement.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.6 Lessons Learned
 

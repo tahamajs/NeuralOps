@@ -25,7 +25,7 @@ is too sparse for stable training.
 ### 9.1.3 Takeaway 3: Attention Sinks Matter
 
 Preserving the first 4 tokens is critical. Without them, accuracy drops by 
-{{SINK_DROP}}%.
+4.5%.
 
 ## 9.2 When to Use AdaSplash
 
@@ -64,11 +64,11 @@ For DistilBERT on SST-2:
 
 | Metric | Baseline | AdaSplash | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS_FULL}}M | +{{D_PARAM_DELTA}} |
-| VRAM | 183 MB | {{D_VRAM}} MB | +{{D_VRAM_DELTA}} |
-| Inference time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Attention sparsity | 0% | {{D_SPARSITY}}% | +40% |
+| Accuracy | 90.71% | 77.18% | -13.53% |
+| Params | 66.95M | 67549448M | +594438 |
+| VRAM | 183 MB | 2526 MB MB | +12 |
+| Inference time | 1.90 s | 3.5 s | 1.84× |
+| Attention sparsity | 0% | 42% | +40% |
 
 **Verdict.** AdaSplash trades size and latency for sparsity and interpretability.
 
@@ -88,7 +88,7 @@ For DistilBERT on SST-2:
 AdaSplash increases storage slightly due to LoRA.
 
 ### Latency
-~{{LATENCY_RATIO}}× slower. Acceptable for research; not for production.
+~1.9× slower. Acceptable for research; not for production.
 
 ### Interpretability
 Sparse attention maps can be visualized directly.
@@ -117,4 +117,4 @@ AdaSplash's sparse outputs can be exploited for actual speedup.
 - **Dual-use**
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.

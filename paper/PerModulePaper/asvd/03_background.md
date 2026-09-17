@@ -87,7 +87,7 @@ $$
 $$
 
 Threshold $\tau$: typically 0.10 (tight) to 0.50 (permissive). ASVD 
-defaults to $\tau = {{ERROR_THRESHOLD}}$.
+defaults to $\tau = 0.20$.
 
 ## 3.5 LoRA Recovery
 

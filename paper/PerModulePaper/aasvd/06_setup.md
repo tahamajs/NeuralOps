@@ -44,9 +44,9 @@ Calibration:
 
 | Hyperparameter | Value |
 |---|---|
-| Rank $r$ | {{RANK}} |
+| Rank $r$ | 288 |
 | EMA $\beta$ | 0.9 |
-| `max_error` $\tau$ | {{MAX_ERROR}} |
+| `max_error` $\tau$ | 0.50 |
 | `fallback_to_original` | True |
 | `target_attention_only` | True |
 | `use_fused_kernel` | False |
@@ -56,12 +56,12 @@ Calibration:
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 2e-4 |
+| Weight decay | 1e-2 |
+| Recovery steps | 50 |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.6 Evaluation
@@ -103,21 +103,21 @@ Calibration:
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
+| Transformers | 4.44.0 |
 
 ## 6.9 Reproduction
 
 ```bash
 python run_all_4_aasvd.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 288 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
-Runtime: ~{{RUNTIME}} min.
+Runtime: ~20 min.
 
 ## 6.10 Baselines
 

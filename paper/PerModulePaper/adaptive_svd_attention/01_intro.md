@@ -105,7 +105,7 @@ error introduced by factorizing $W_O$.
   GPT-2, Qwen3.5, and T5 with robust weight extraction.
 - **A comprehensive evaluation.** We benchmark on three models on SST-2 with 
   ablations over energy threshold, residual rank, and rank policy.
-- **Full reproducibility.** Code, weights, and scripts released under {{LICENSE}}.
+- **Full reproducibility.** Code, weights, and scripts released under MIT.
 
 ## 1.5 Paper Organization
 

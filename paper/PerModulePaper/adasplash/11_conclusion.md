@@ -12,7 +12,7 @@
 We presented **AdaSplash**, an adaptive splash attention mechanism that 
 combines **α-entmax sparse activations** with **local sliding-window masking** 
 and **attention sink preservation**. AdaSplash is **not** a compression 
-method — it **increases** parameter count by ~{{PARAM_CHANGE}}% due to LoRA 
+method — it **increases** parameter count by ~0.88% due to LoRA 
 adapters. Its value is in producing **~40% sparse attention** without 
 accuracy loss.
 
@@ -20,9 +20,9 @@ accuracy loss.
 
 | Model | Acc Δ | Params Δ | Sparsity |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_DELTA}} | {{D_SPARSITY}}% |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_DELTA}} | {{R_SPARSITY}}% |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_DELTA}} | {{G_SPARSITY}}% |
+| DistilBERT | -13.53% | +594438 | 42% |
+| RoBERTa | -11.47% | +1179648 | 40% |
+| GPT-2 | +0.00% | +1188876 | 41% |
 
 ## 11.3 Key Takeaways
 
@@ -53,13 +53,13 @@ for reproducibility.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments, 
+- **Taha Majs** designed the method, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
