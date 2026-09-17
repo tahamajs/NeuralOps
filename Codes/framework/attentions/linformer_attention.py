@@ -533,9 +533,9 @@ class LinformerAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
-            out = context * self.output_scale
+            out = context 
         else:
-            out = self.out_proj(context * self.output_scale)
+            out = self.out_proj(context )
 
         return out, (attn if output_attentions else None)
 
