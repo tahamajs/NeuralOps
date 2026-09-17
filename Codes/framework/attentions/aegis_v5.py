@@ -692,14 +692,58 @@ class AegisAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("aegis_v5_fn")
 @ATTENTION_REGISTRY.register("aegis_v5_inject")
 def inject_aegis_v5(
-    layer: Any,
+    layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> AegisAttention:
+):
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get("model", kwargs.get("layer", None))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, "config", None)
+
+    # Whole-model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "h") and isinstance(target.h, (torch.nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_aegis_v5(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    layer = target
+
     r"""Injects AEGIS-V5 attention into a transformer layer."""
     if model_config is None:
         if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
