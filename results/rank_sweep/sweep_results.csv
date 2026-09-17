@@ -2,3 +2,6 @@ module,model,requested_rank,actual_rank,status,accuracy_pct,f1_score,num_compres
 svd,distilbert,8,8,PASS_LOW,49.31,0.0134,6,0,66955010,67544834,1.0088,,53.25,note: evaluated accuracy (49.31%) below chance threshold (56.00%)
 svd,distilbert,16,16,PASS_LOW,49.31,0.0134,6,0,66955010,67544834,1.0088,,71.65,note: evaluated accuracy (49.31%) below chance threshold (56.00%)
 svd,distilbert,32,32,PASS_LOW,49.31,0.0178,6,0,66955010,67544834,1.0088,,91.17,note: evaluated accuracy (49.31%) below chance threshold (56.00%)
+svd,distilbert,64,64,PASS_LOW,49.08,0.0089,6,0,66955010,67544834,1.0088,,96.72,note: evaluated accuracy (49.08%) below chance threshold (56.00%)
+svd,distilbert,128,128,PASS,90.83,0.9103,6,0,66955010,67544834,1.0088,,107.72,
+svd,distilbert,256,256,PASS,90.83,0.9103,6,0,66955010,67544834,1.0088,,124.47,
