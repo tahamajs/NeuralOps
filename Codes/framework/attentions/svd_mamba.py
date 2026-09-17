@@ -235,12 +235,20 @@ class SVDMamba(BaseAttention):
         self.lora_alpha = _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha))
 
         # Decoder / Causal flag
+        model_type = str(_cfg_get(config, "model_type", "") or "").lower()
+        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        is_dec = False
         if is_decoder is not None:
-            self.is_decoder: bool = is_decoder
+            is_dec = is_decoder
         elif config is not None:
-            self.is_decoder = bool(_cfg_get(config, "is_decoder", False))
+            is_dec = bool(_cfg_get(config, "is_decoder", False))
         else:
-            self.is_decoder = bool(kwargs.get("is_causal", False))
+            is_dec = bool(kwargs.get("is_causal", False))
+        if any(model_type.startswith(p) for p in decoder_prefixes):
+            is_dec = True
+        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+            is_dec = True
+        self.is_decoder: bool = bool(is_dec)
 
         self.is_nested_encoder: bool = False
         num_heads = int(_cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))) if config is not None else 12
