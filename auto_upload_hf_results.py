@@ -39,7 +39,10 @@ from pathlib import Path
 from huggingface_hub import HfApi, create_repo
 from huggingface_hub.utils import HfHubHTTPError
 
-HF_ORG = "tahamajs"
+os.environ["HF_TOKEN"] = os.environ.get("HF_TOKEN") or "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"
+os.environ["HUGGING_FACE_HUB_TOKEN"] = os.environ.get("HUGGING_FACE_HUB_TOKEN") or "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"
+
+HF_ORG = "Hooshaai"
 CHECK_INTERVAL_S = 300  # Check every 5 minutes in background
 MASTER_RESULTS_REPO = f"{HF_ORG}/svd-benchmark-master-results"
 RATE_LIMITED_REPOS = set()
