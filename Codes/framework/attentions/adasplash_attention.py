@@ -5,8 +5,11 @@ Combines localized sliding-window splash radius with sparse α-entmax adaptive t
 and global token routing, ensuring robust numerical convergence and exact pretrained weight transfer.
 """
 
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Union
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn
@@ -653,63 +656,103 @@ class AdaSplashAttention(BaseAttention):
 
 @ATTENTION_REGISTRY.register("adasplash_inject")
 @ATTENTION_REGISTRY.register("adasplash_attention_inject")
+@ATTENTION_REGISTRY.register("inject_adasplash")
 def inject_adasplash(
     layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[AdaSplashAttention]:
-    if model_config is None and layer is not None:
-        model_config = getattr(layer, "config", None)
-    if model_config is None and old_attn is not None:
-        model_config = getattr(old_attn, "config", None)
-    if model_config is None:
-        hidden_size = getattr(layer, "hidden_size", getattr(old_attn, "hidden_size", 64))
-        num_heads = getattr(
-            layer,
-            "num_attention_heads",
-            getattr(
-                layer,
-                "num_heads",
-                getattr(
-                    old_attn,
-                    "num_attention_heads",
-                    getattr(old_attn, "num_heads", 4),
-                ),
-            ),
-        )
-        head_dim = getattr(
-            layer,
-            "head_dim",
-            getattr(old_attn, "head_dim", hidden_size // max(1, num_heads)),
-        )
-        model_config = type(
-            "Config",
-            (),
-            {
-                "hidden_size": hidden_size,
-                "num_attention_heads": num_heads,
-                "num_heads": num_heads,
-                "head_dim": head_dim,
-                "num_key_value_heads": num_heads,
-                "rank": 16,
-                "lora_rank": 16,
-                "dropout": 0.1,
-            },
-        )()
+) -> Optional[Union[AdaSplashAttention, nn.Module]]:
+    target = layer if layer is not None else model
+    if target is None:
+        return None
 
-    if old_attn is None and layer is not None:
-        for attr in ("attention", "self_attn", "self", "attn"):
-            if hasattr(layer, attr):
-                cand = getattr(layer, attr)
+    cfg = model_config
+    if cfg is None and hasattr(target, "config"):
+        cfg = target.config
+
+    # 1. Whole-model traversal
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "h") and isinstance(target.h, (nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+        layer_list = target.encoder.layer
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_adasplash(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected > 0 else None
+
+    # 2. Single-layer injection
+    try:
+        src = old_attn
+        if src is None and target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
                 if cand is not None:
-                    old_attn = cand
+                    src = cand.self if hasattr(cand, "self") else cand
                     break
 
-    try:
+        if src is None and target is not None and hasattr(target, "forward"):
+            src = target
+
+        if src is None and cfg is None:
+            return None
+
+        # Double-injection guard
+        if isinstance(src, AdaSplashAttention):
+            return None
+        if "AdaSplash" in src.__class__.__name__:
+            return None
+        if hasattr(src, "inner") and isinstance(getattr(src, "inner"), AdaSplashAttention):
+            return None
+        if hasattr(src, "_wrapped_attention") and isinstance(getattr(src, "_wrapped_attention"), AdaSplashAttention):
+            return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is None:
+                    continue
+                if isinstance(cand, AdaSplashAttention):
+                    return None
+                if "AdaSplash" in cand.__class__.__name__:
+                    return None
+                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), AdaSplashAttention):
+                    return None
+
+        # Skip Qwen hybrid layers
+        if src is not None and ("DeltaNet" in src.__class__.__name__ or "LinearAttention" in src.__class__.__name__):
+            return None
+
+        if cfg is None and hasattr(src, "config"):
+            cfg = src.config
+
         alpha = getattr(comp_config, "alpha", kwargs.get("alpha", 1.5))
         splash_radius = getattr(comp_config, "splash_radius", kwargs.get("splash_radius", 32))
         lora_rank = getattr(
@@ -722,47 +765,49 @@ def inject_adasplash(
                     comp_config,
                     "rank",
                     getattr(
-                        model_config,
+                        cfg,
                         "lora_rank",
-                        getattr(model_config, "rank", kwargs.get("lora_rank", kwargs.get("rank", 16))),
-                    ),
+                        getattr(cfg, "rank", kwargs.get("lora_rank", kwargs.get("rank", 16))),
+                    ) if cfg is not None else kwargs.get("lora_rank", kwargs.get("rank", 16)),
                 ),
             ),
         )
-        try:
-            test_module = AdaSplashAttention(
-                config=model_config,
-                alpha=alpha,
-                splash_radius=splash_radius,
-                lora_rank=lora_rank,
-                pretrained_attn=old_attn,
-                **kwargs,
-            )
-        except Exception:
-            test_module = AdaSplashAttention(
-                config=model_config,
-                alpha=alpha,
-                splash_radius=splash_radius,
-                lora_rank=lora_rank,
-                pretrained_attn=None,
-                **kwargs,
-            )
 
-        if layer is not None:
-            if hasattr(layer, "attention"):
-                if hasattr(layer.attention, "self"):
-                    layer.attention.self = test_module
-                else:
-                    layer.attention = test_module
-            elif hasattr(layer, "self_attn"):
-                layer.self_attn = test_module
-            elif hasattr(layer, "self"):
-                layer.self = test_module
+        new_attn = AdaSplashAttention(
+            config=cfg,
+            alpha=alpha,
+            splash_radius=splash_radius,
+            lora_rank=lora_rank,
+            pretrained_attn=src,
+            **kwargs,
+        )
+
+        p = next(src.parameters(), None) if src is not None else None
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+
+        # Inject at correct position
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                new_attn.is_nested_encoder = True
+                target.attention.self = new_attn
             else:
-                if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-                    layer.attention.self = test_module
-                else:
-                    layer.attention = test_module
-        return test_module
-    except (RuntimeError, Exception):
+                new_attn.is_nested_encoder = False
+                target.attention = new_attn
+        elif hasattr(target, "self_attn"):
+            new_attn.is_nested_encoder = False
+            target.self_attn = new_attn
+        elif hasattr(target, "attn"):
+            new_attn.is_nested_encoder = False
+            target.attn = new_attn
+        elif hasattr(target, "self"):
+            new_attn.is_nested_encoder = True
+            target.self = new_attn
+        else:
+            new_attn.is_nested_encoder = False
+            target.attention = new_attn
+
+        return new_attn
+    except Exception as e:
+        logger.warning("inject_adasplash failed at layer %d: %s", layer_idx, e)
         return None
