@@ -552,6 +552,10 @@ def inject_lsh_attention(
             layer.attn = new_attn
         elif hasattr(layer, "self_attn"):
             layer.self_attn = new_attn
+        if old_attn is not None:
+            new_attn.train(old_attn.training)
+        elif layer is not None and hasattr(layer, 'training'):
+            new_attn.train(layer.training)
         return new_attn
     except Exception as e:
         logger.error(f"LSHAttention injection failed: {e}")
