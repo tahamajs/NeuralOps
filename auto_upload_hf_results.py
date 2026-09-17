@@ -40,8 +40,10 @@ from huggingface_hub import HfApi, create_repo
 from huggingface_hub.utils import HfHubHTTPError
 
 HF_ORG = "tahamajs"
-CHECK_INTERVAL_S = 180  # Check every 3 minutes
+CHECK_INTERVAL_S = 300  # Check every 5 minutes in background
 MASTER_RESULTS_REPO = f"{HF_ORG}/svd-benchmark-master-results"
+RATE_LIMITED_REPOS = set()
+COMPLETED_UPLOADS = set()
 
 def normalize_dataset_name(raw_dataset: str) -> str:
     raw = (raw_dataset or "").lower().replace("_", "-").strip()
@@ -302,6 +304,9 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, dataset_name,
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Skipping bad/low result: {repo_id} (status={status}, acc={acc_float:.2f}% < thresh={thresh_float:.2f}%)")
         return
 
+    if repo_id in COMPLETED_UPLOADS or repo_id in RATE_LIMITED_REPOS:
+        return
+
     # 1. Ensure repo exists on tahamajs safely
     repo_ready = False
     try:
@@ -316,6 +321,7 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, dataset_name,
                 status_code = getattr(e2.response, "status_code", None)
                 if status_code == 429:
                     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] HF rate limit reached (429). Skipping upload for {repo_id}.")
+                    RATE_LIMITED_REPOS.add(repo_id)
                     os.makedirs("logs", exist_ok=True)
                     with open("logs/hf_uploads_skipped.log", "a", encoding="utf-8") as lf:
                         lf.write(f"[{datetime.now().isoformat()}] RATE_LIMIT_429: {repo_id}\n")
