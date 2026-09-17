@@ -180,8 +180,9 @@ class RPCACompressor(BaseCompressor):
 
         max_r = min(out_f, in_f)
         param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
-        r = max(self.min_rank, min(rank, max_r - 1, param_cap))
-        if r >= max_r:
+        r = min(rank, max_r - 1, param_cap)
+        r = max(min(self.min_rank, max_r - 1), r)
+        if r <= 0 or r >= max_r:
             logger.debug('RPCA: rank %d >= max_r %d; skipping layer for no parameter reduction', r, max_r)
             return None
 
