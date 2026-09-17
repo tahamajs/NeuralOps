@@ -57,9 +57,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="mgie_budget", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         if cfg is not None:
             total_rank_budget = _cfg_get(

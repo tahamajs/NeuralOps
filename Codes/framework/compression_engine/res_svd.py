@@ -366,9 +366,6 @@ class ResSVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="res_svd", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
 
         base_rank = _cfg_get(cfg, "base_rank", _cfg_get(cfg, "rank", base_rank))
@@ -527,9 +524,6 @@ class SpectralResidualLoRA(ResSVDCompressor):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.name = "spectral_residual_lora"
 
 

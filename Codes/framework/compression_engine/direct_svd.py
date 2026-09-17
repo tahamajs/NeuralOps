@@ -78,9 +78,6 @@ class DirectSVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="direct_svd", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         cfg_obj = cfg if cfg is not None else kwargs.get("comp_config", None)
         self.cfg = cfg_obj
 
