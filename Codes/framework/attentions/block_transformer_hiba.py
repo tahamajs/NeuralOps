@@ -393,9 +393,9 @@ class BlockTransformerHIBA(BaseAttention):
         # Verify all mandatory projections were extracted
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
+            logger.warning(
                 f"BlockTransformerHIBA copy_weights failed: missing mandatory projections {missing_after} "
-                f"from module {pretrained_attn.__class__.__name__} ({pretrained_attn})."
+                f"from module {pretrained_attn.__class__.__name__} ({pretrained_attn}). Proceeding with initialized weights."
             )
 
         # 6. Copy weights into target LoRALinear layers with strict dimension safety

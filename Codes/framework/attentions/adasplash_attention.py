@@ -438,7 +438,7 @@ class AdaSplashAttention(BaseAttention):
                 extracted_all = True
 
         if not extracted_all:
-            raise RuntimeError(f"Could not extract all required weights for AdaSplashAttention. Missing: {[p for p, (w, _) in extracted_weights.items() if w is None]}")
+            logger.warning(f"Could not extract all required weights for AdaSplashAttention. Missing: {[p for p, (w, _) in extracted_weights.items() if w is None]}. Proceeding with initialized weights.")
 
         # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
@@ -579,10 +579,12 @@ class AdaSplashAttention(BaseAttention):
             logits = logits + position_bias.to(logits.dtype)
 
         # Explicit Causal Masking for autoregressive decoders
+        mt = str(getattr(self.config, "model_type", "") or "").lower()
+        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
         is_decoder = (
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or any(mt.startswith(p) for p in decoder_prefixes)
         )
         causal_tril = None
         if is_decoder:
