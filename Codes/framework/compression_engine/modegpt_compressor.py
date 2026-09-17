@@ -313,8 +313,11 @@ class MoDeGPTCompressor(BaseCompressor):
         for parent_name, parent_mod in list(self.model.named_modules()):
             pair_candidates = [
                 ("q_lin", "k_lin"),
+                ("q_lin", "v_lin"),
                 ("q_proj", "k_proj"),
+                ("q_proj", "v_proj"),
                 ("query", "key"),
+                ("W_q", "W_k"),
                 ("gate_proj", "up_proj"),
             ]
             for attr1, attr2 in pair_candidates:
