@@ -4,6 +4,9 @@ Hamming Attention Distillation (HAD) Module.
 Approximates dense inner products with differentiable continuous relaxations of Hamming distances
 over sign-binarized representations with calibrated temperature scaling, multi-architecture weight transfer,
 trainable LoRA residual adapters, GQA, RoPE, and causal decoding.
+
+NOTE: This module is LoRA-only. The rank argument is accepted but not used for 
+SVD compression. Use lora_rank to control adapter size.
 """
 
 from __future__ import annotations

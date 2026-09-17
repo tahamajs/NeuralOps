@@ -1,6 +1,9 @@
 """
 NASC: NEXUS-AEGIS Spectral Cascade Attention.
 Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.
+
+NOTE: This module is LoRA-only. The rank argument is accepted but not used for 
+SVD compression. Use lora_rank to control adapter size.
 """
 
 import logging
