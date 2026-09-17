@@ -1,43 +1,17 @@
-# Paper-Specific Sections — zerokv_neo
+# Paper Specific Sections — zerokv_neo
 
-## Purpose
+## Methodology Description
 
-Customize the paper sections for this module's specific story.
+ZeroKV-Neo: Outlier-Preserving KV Cache Pruning with Attention Sinks
+Source implementation: `Codes/framework/compression_engine/zerokv_neo_compressor.py`.
 
-## Section 1 — Introduction hook
+Mathematical formulation:
+$$
+S = \mathrm{mean}_h(A_{h, :, :}), \quad \mathcal{I}_{sink} = \{0, \dots, s-1\}, \quad \mathcal{I}_{top} = \operatorname{topk}(S, k), \quad \mathcal{K} = \mathcal{I}_{sink} \cup \mathcal{I}_{top}
+$$
 
-For zerokv_neo, the motivation is:
-<one paragraph>
+## Results Narrative
 
-## Section 3 — Method emphasis
-
-The key novel aspect of zerokv_neo is:
-<one paragraph>
-
-## Section 4 — Results highlight
-
-The headline result is:
-<one paragraph>
-
-## Section 8 — Analysis focus
-
-The paper should analyze:
-- Why does zerokv_neo work where it does?
-- Why does it fail where it does?
-- What are the exact failure signatures?
-
-## Section 10 — Limitations
-
-Specific limitations for zerokv_neo:
-- <limitation 1>
-- <limitation 2>
-- <limitation 3>
-
-## Section 11 — Conclusion
-
-Key takeaway:
-<one paragraph>
-
-## Output
-
-`papers/modules/zerokv_neo/paper_sections.json`
+- DistilBERT: 75.92% accuracy (PASS), 0.0% parameter change.
+- RoBERTa: 50.92% accuracy (PASS_LOW), 0.0% parameter change.
+- GPT-2: 51.15% accuracy (PASS_LOW), 0.0% parameter change.

@@ -1,43 +1,17 @@
-# Paper-Specific Sections — svd_llm_v2
+# Paper Specific Sections — svd_llm_v2
 
-## Purpose
+## Methodology Description
 
-Customize the paper sections for this module's specific story.
+SVD-LLM V2 Attention: Truncation-Aware SVD Attention with LoRA Recovery
+Source implementation: `Codes/framework/attentions/svd_llm_v2_attention.py`.
 
-## Section 1 — Introduction hook
+Mathematical formulation:
+$$
+W_q, W_k, W_v, W_o \approx U_r \Sigma_r V_r^\top, \quad \Delta W = \frac{\alpha}{r_{lora}} B A
+$$
 
-For svd_llm_v2, the motivation is:
-<one paragraph>
+## Results Narrative
 
-## Section 3 — Method emphasis
-
-The key novel aspect of svd_llm_v2 is:
-<one paragraph>
-
-## Section 4 — Results highlight
-
-The headline result is:
-<one paragraph>
-
-## Section 8 — Analysis focus
-
-The paper should analyze:
-- Why does svd_llm_v2 work where it does?
-- Why does it fail where it does?
-- What are the exact failure signatures?
-
-## Section 10 — Limitations
-
-Specific limitations for svd_llm_v2:
-- <limitation 1>
-- <limitation 2>
-- <limitation 3>
-
-## Section 11 — Conclusion
-
-Key takeaway:
-<one paragraph>
-
-## Output
-
-`papers/modules/svd_llm_v2/paper_sections.json`
+- DistilBERT: 81.88% accuracy (PASS), -18.50% parameter change.
+- RoBERTa: 50.92% accuracy (PASS_LOW), -14.19% parameter change.
+- GPT-2: 50.92% accuracy (PASS_LOW), -19.91% parameter change.

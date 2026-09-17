@@ -1,43 +1,17 @@
-# Paper-Specific Sections — a3
+# Paper Specific Sections — a3
 
-## Purpose
+## Methodology Description
 
-Customize the paper sections for this module's specific story.
+A3: Activation-Aware SVD Compression with Fisher Energy Weighting
+Source implementation: `Codes/framework/compression_engine/a3_compressor.py`.
 
-## Section 1 — Introduction hook
+Mathematical formulation:
+$$
+C_X = \frac{1}{N} \sum x_t x_t^\top, \quad F = \mathbb{E}[x^2], \quad W_{weighted} = W \operatorname{diag}(\sqrt{F+\epsilon}) = U\Sigma V^\top
+$$
 
-For a3, the motivation is:
-<one paragraph>
+## Results Narrative
 
-## Section 3 — Method emphasis
-
-The key novel aspect of a3 is:
-<one paragraph>
-
-## Section 4 — Results highlight
-
-The headline result is:
-<one paragraph>
-
-## Section 8 — Analysis focus
-
-The paper should analyze:
-- Why does a3 work where it does?
-- Why does it fail where it does?
-- What are the exact failure signatures?
-
-## Section 10 — Limitations
-
-Specific limitations for a3:
-- <limitation 1>
-- <limitation 2>
-- <limitation 3>
-
-## Section 11 — Conclusion
-
-Key takeaway:
-<one paragraph>
-
-## Output
-
-`papers/modules/a3/paper_sections.json`
+- DistilBERT: 90.14% accuracy (PASS_NO_COMPRESSION), +18.77% parameter change.
+- RoBERTa: 81.19% accuracy (PASS_NO_COMPRESSION), +21.04% parameter change.
+- GPT-2: 49.08% accuracy (PASS_NO_COMPRESSION), +18.98% parameter change.

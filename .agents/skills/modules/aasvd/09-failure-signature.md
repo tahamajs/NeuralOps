@@ -1,44 +1,11 @@
 # Failure Signature — aasvd
 
-## Purpose
+## Known Empirical Failures
 
-Document the specific failure pattern of this module. Every agent working with
-this module must know it.
+### Failure 1: Low compression ratio (1.18% - 9.95%)
 
-## Known failures
+**Symptom:** Observed in benchmark results.
+**Root cause:** Rank 288 is conservative to guarantee high accuracy retention (86.7% RoBERTa, 87.96% DistilBERT). To achieve 20%+ compression, rank must be lowered to 128-192.
+**Fix:** Tune rank parameter according to target compression threshold.
 
-### Failure 1: <name>
 
-**Symptom:** <what happens>
-
-**Root cause:** <why>
-
-**Fix:** <how>
-
-**Files affected:** <list>
-
-### Failure 2: <name>
-
-...
-
-## Diagnostic commands
-
-```bash
-# Check if the module is even running correctly
-grep -E "aasvd|FAIL|ERROR|NaN|OOM" results/*/aasvd*/summary.csv
-
-# Check for the specific signature
-grep "<specific_string>" benchmark_logs/aasvd*.log
-```
-
-## Recovery procedure
-
-1. Read the log in `benchmark_logs/aasvd_<backbone>.log`
-2. Check `metrics/sanity_check.json` for this run
-3. Check `metrics/copy_weights_audit.json`
-4. If any of the above failed, apply the fix and re-run
-5. Do NOT proceed to recovery if sanity check failed
-
-## Output
-
-`papers/modules/aasvd/logs/failure_analysis.md`

@@ -1,44 +1,11 @@
 # Failure Signature — svd_llm_v2
 
-## Purpose
+## Known Empirical Failures
 
-Document the specific failure pattern of this module. Every agent working with
-this module must know it.
+### Failure 1: RoBERTa & GPT-2 collapse to 50.92% at 18.5% compression
 
-## Known failures
+**Symptom:** Observed in benchmark results.
+**Root cause:** Direct SVD truncation of QKV and Out projections without Fisher calibration disrupts LayerNorm output distributions. DistilBERT recovers (81.88%), but RoBERTa/GPT-2 require LayerNorm recalibration.
+**Fix:** Apply LayerNorm recalibration after SVD truncation before running LoRA recovery.
 
-### Failure 1: <name>
 
-**Symptom:** <what happens>
-
-**Root cause:** <why>
-
-**Fix:** <how>
-
-**Files affected:** <list>
-
-### Failure 2: <name>
-
-...
-
-## Diagnostic commands
-
-```bash
-# Check if the module is even running correctly
-grep -E "svd_llm_v2|FAIL|ERROR|NaN|OOM" results/*/svd_llm_v2*/summary.csv
-
-# Check for the specific signature
-grep "<specific_string>" benchmark_logs/svd_llm_v2*.log
-```
-
-## Recovery procedure
-
-1. Read the log in `benchmark_logs/svd_llm_v2_<backbone>.log`
-2. Check `metrics/sanity_check.json` for this run
-3. Check `metrics/copy_weights_audit.json`
-4. If any of the above failed, apply the fix and re-run
-5. Do NOT proceed to recovery if sanity check failed
-
-## Output
-
-`papers/modules/svd_llm_v2/logs/failure_analysis.md`

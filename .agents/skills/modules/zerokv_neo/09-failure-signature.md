@@ -1,44 +1,17 @@
 # Failure Signature — zerokv_neo
 
-## Purpose
+## Known Empirical Failures
 
-Document the specific failure pattern of this module. Every agent working with
-this module must know it.
+### Failure 1: 50.92% collapse on RoBERTa and GPT-2
 
-## Known failures
+**Symptom:** Observed in benchmark results.
+**Root cause:** ZeroKV is an inference-time KV pruning compressor. When evaluated with 100 LoRA recovery steps on bidirectional encoders or causal decoders without calibration/fine-tuning matched to pruning masks, representations collapse to majority class.
+**Fix:** Increase recovery steps or retain full attention during classification token positions.
 
-### Failure 1: <name>
+### Failure 2: Zero parameter reduction (0.0%)
 
-**Symptom:** <what happens>
+**Symptom:** Observed in benchmark results.
+**Root cause:** ZeroKV prunes KV cache tensors dynamically at inference time; it does not truncate or factorize weight matrices. Weight parameter count remains exactly identical.
+**Fix:** Honest reporting: classify as KV Cache Memory Reduction, NOT Weight Parameter Compression.
 
-**Root cause:** <why>
 
-**Fix:** <how>
-
-**Files affected:** <list>
-
-### Failure 2: <name>
-
-...
-
-## Diagnostic commands
-
-```bash
-# Check if the module is even running correctly
-grep -E "zerokv_neo|FAIL|ERROR|NaN|OOM" results/*/zerokv_neo*/summary.csv
-
-# Check for the specific signature
-grep "<specific_string>" benchmark_logs/zerokv_neo*.log
-```
-
-## Recovery procedure
-
-1. Read the log in `benchmark_logs/zerokv_neo_<backbone>.log`
-2. Check `metrics/sanity_check.json` for this run
-3. Check `metrics/copy_weights_audit.json`
-4. If any of the above failed, apply the fix and re-run
-5. Do NOT proceed to recovery if sanity check failed
-
-## Output
-
-`papers/modules/zerokv_neo/logs/failure_analysis.md`

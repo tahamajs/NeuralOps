@@ -1,44 +1,15 @@
 # Parameter Count Verification — aasvd
 
-## Purpose
+## Empirical Parameter Counts from Benchmark Runs
 
-Confirm that the module actually reduces parameters. Many modules claim
-"compression" but increase parameter count.
+| Backbone | Baseline Params | Compressed Params | Change % | Empirical Status |
+|---|---|---|---|---|
+| DistilBERT | 66955010 | 65333005 | -2.42% | PASS (87.96%) |
+| RoBERTa | 124647170 | 123172620 | -1.18% | PASS (86.7%) |
+| GPT-2 | 124441344 | 112055064 | -9.95% | PASS (69.38%) |
 
-## Method
+## Reporting Protocol
 
-```python
-def verify_parameter_reduction(model_before, model_after):
-    p_before = sum(p.numel() for p in model_before.parameters())
-    p_after = sum(p.numel() for p in model_after.parameters())
-    change_pct = 100.0 * (p_after - p_before) / p_before
-    return {
-        "before": p_before,
-        "after": p_after,
-        "change_pct": change_pct,
-        "is_compression": change_pct < 0,
-    }
-```
-
-## Expected for aasvd
-
-<what the module claims>
-
-## Actual (fill in from runs)
-
-| Backbone | Before | After | Change % |
-|---|---|---|---|
-| DistilBERT | 66955010 | ? | ? |
-| RoBERTa | 124647170 | ? | ? |
-| GPT-2 | 124441344 | ? | ? |
-
-## Honest reporting
-
-If `change_pct > 0`:
-- Rename in the paper: "re-architecture", not "compression"
-- State the increase explicitly in the abstract
-- Do NOT claim Pareto improvement
-
-## Output
-
-`papers/modules/aasvd/metrics/parameter_count.json`
+If `change_pct >= 0.0%`:
+- Report truthfully as architectural replacement / KV pruning / throughput optimization.
+- Do NOT falsely label as weight parameter reduction.
