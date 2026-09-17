@@ -37,7 +37,15 @@ _ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "quer
 
 
 class SVDSingleHead(nn.Module):
-    """Single-head SVD attention approximation with sinusoidal positional encoding."""
+    """
+    DEPRECATED: Single-head SVD attention approximation with sinusoidal positional encoding.
+
+    WARNING: Performing SVD directly on dynamic activations during the forward pass
+    is computationally prohibitive (O(N^3)), numerically fragile, and theoretically
+    incorrect for attention mechanism replacement. Use `hybrid_svd_factory` or
+    weight-based SVD linear compressors instead. Retained strictly for backwards
+    compatibility.
+    """
 
     def __init__(self, hidden_size: int, svd_rank: int = 20) -> None:
         super().__init__()
