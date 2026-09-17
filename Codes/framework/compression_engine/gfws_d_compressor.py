@@ -418,10 +418,13 @@ class GFWSCompressor(BaseCompressor):
                 lora_alpha=self.lora_alpha,
             )
             if hasattr(module, 'base_layer'):
-                if hasattr(module, 'lora_A'):
-                    new_layer.lora_A = module.lora_A
-                if hasattr(module, 'lora_B'):
-                    new_layer.lora_B = module.lora_B
+                if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and new_layer.lora_A is not None and new_layer.lora_B is not None:
+                    with torch.no_grad():
+                        src_A = module.lora_A.weight.data if hasattr(module.lora_A, 'weight') else module.lora_A.data
+                        src_B = module.lora_B.weight.data if hasattr(module.lora_B, 'weight') else module.lora_B.data
+                        if src_A.shape == new_layer.lora_A.shape and src_B.shape == new_layer.lora_B.shape:
+                            new_layer.lora_A.copy_(src_A.to(new_layer.lora_A.device, dtype=new_layer.lora_A.dtype))
+                            new_layer.lora_B.copy_(src_B.to(new_layer.lora_B.device, dtype=new_layer.lora_B.dtype))
                 module.base_layer = new_layer
                 new_layer = module
             replace_module(self.model, name, new_layer)
