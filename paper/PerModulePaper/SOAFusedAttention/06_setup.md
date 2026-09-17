@@ -25,9 +25,9 @@ Majority baseline: 50.92%. Max length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `k_rank` | {{RANK}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `k_rank` | 128 |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
 | `dropout` | 0.1 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -35,10 +35,10 @@ Majority baseline: 50.92%. Max length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| WD | 1e-2 |
+| Steps | 50 |
+| Batch | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -70,17 +70,17 @@ Majority baseline: 50.92%. Max length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_soa_fused.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 128 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 6.9 Baselines
@@ -95,6 +95,6 @@ python run_all_4_soa_fused.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ---

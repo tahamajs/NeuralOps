@@ -4,7 +4,7 @@
 
 ### 9.1.1 Takeaway 1: Real Compression, Zero-Shot
 
-SOA Fused Attention **reduces** attention parameters by **{{D_RATIO}}×** 
+SOA Fused Attention **reduces** attention parameters by **1.92×** 
 without requiring any calibration data. This is a significant practical 
 advantage over A3 and AASVD.
 
@@ -48,10 +48,10 @@ For DistilBERT at $k = 128$:
 
 | Metric | Baseline | Ours | Change |
 |---|---|---|---|
-| Attention params | 2.36M | {{D_ATTN_PARAMS}} | **{{D_RATIO}}×** |
-| Total params | 66.95M | {{D_TOTAL_PARAMS}} | {{D_TOTAL_DELTA}}% |
-| Inference time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Attention params | 2.36M | 1228800 | **1.92×** |
+| Total params | 66.95M | 65536000 | -2.1% |
+| Inference time | 1.90 s | 2.1 s | 1.1× |
+| Accuracy | 90.71% | 81.31% | -9.40% |
 
 ## 9.5 Composition with Other Methods
 

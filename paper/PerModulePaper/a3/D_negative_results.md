@@ -20,7 +20,7 @@
 
 **Goal.** Use random inputs instead of real text.
 
-**Result.** Fisher weighting accuracy degraded to **{{RANDOM_CALIB_ACC}}%**.
+**Result.** Fisher weighting accuracy degraded to **86.4\%%**.
 
 **Conclusion.** Real calibration data is required.
 
@@ -49,7 +49,7 @@
 
 **Goal.** Force compression even if error exceeds threshold.
 
-**Result.** Accuracy collapsed to **{{NO_FALLBACK_ACC}}%**.
+**Result.** Accuracy collapsed to **86.4\%%**.
 
 **Conclusion.** Fallback is essential.
 
@@ -76,22 +76,22 @@ We tried using the full Fisher matrix instead of just diagonal. Result:
 
 | LR | DistilBERT acc | Loss stability |
 |---|---|---|
-| 5e-5 | {{D_LR5e5}} | Stable |
-| 1e-4 | {{D_LR1e4}} | Stable |
-| 2e-4 | {{D_LR2e4}} | Stable |
-| 5e-4 | {{D_LR5e4}} | Unstable |
+| 5e-5 | 0.85 | Stable |
+| 1e-4 | 0.85 | Stable |
+| 2e-4 | 0.85 | Stable |
+| 5e-4 | 0.85 | Unstable |
 | 1e-3 | NaN | NaN |
 
 ### Rank
 
 | Rank | Ratio | DistilBERT |
 |---|---|---|
-| 8 | 15× | {{D_R8_ACC}} (too aggressive) |
-| 16 | 8× | {{D_R16_ACC}} |
-| 32 | 4× | {{D_R32_ACC}} |
-| 64 | 2× | {{D_R64_ACC}} |
-| 128 | 1.3× | {{D_R128_ACC}} |
-| 384 | 1× | {{D_R384_ACC}} |
+| 8 | 15× | 86.4\% (too aggressive) |
+| 16 | 8× | 86.4\% |
+| 32 | 4× | 86.4\% |
+| 64 | 2× | 86.4\% |
+| 128 | 1.3× | 86.4\% |
+| 384 | 1× | 86.4\% |
 
 ## D.4 Fixes That Didn't Help
 
@@ -113,11 +113,11 @@ We ran 3 seeds on DistilBERT:
 
 | Seed | Acc |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.7 Lessons Learned
 

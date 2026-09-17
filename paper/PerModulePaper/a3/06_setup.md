@@ -42,17 +42,17 @@ source. This is legitimate because:
 - It uses unlabeled inputs (labels not required)
 - It is not a form of test set leakage
 
-We use **{{N_CALIB}} examples** (a subsample of the training set) for 
+We use **1000 examples** (a subsample of the training set) for 
 calibration to keep memory bounded.
 
 ## 6.4 Compression Hyperparameters
 
 | Hyperparameter | Value | Notes |
 |---|---|---|
-| Rank $r$ | {{RANK}} | Target rank |
+| Rank $r$ | 64 | Target rank |
 | `use_fisher` | True | Activation-aware weighting |
 | `recalibrate_ln` | True | LayerNorm recalibration |
-| `max_error` $\tau$ | {{MAX_ERROR}} | Frobenius threshold |
+| `max_error` $\tau$ | 0.20 | Frobenius threshold |
 | `max_retries` | 3 | Adaptive escalation steps |
 | `fallback_to_original` | True | Safe fallback |
 | `normalize_scale` | True | Clamp weights |
@@ -65,12 +65,12 @@ After A3 compression, we train LoRA adapters:
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 2e-4 |
+| Weight decay | 1e-2 |
+| Recovery steps | 50 |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.6 Evaluation Metrics
@@ -112,9 +112,9 @@ After A3 compression, we train LoRA adapters:
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
+| Transformers | 4.44.0 |
 | OS | Windows / Linux |
 
 ## 6.9 Reproduction
@@ -127,11 +127,11 @@ python run_all_4_a3.py \
     --lora_rank 16
 ```
 
-Expected runtime: ~{{RUNTIME}} minutes.
+Expected runtime: ~15 minutes.
 
 ## 6.10 Seeds
 
-All experiments use seed {{SEED}}. No multi-seed runs due to compute budget.
+All experiments use seed 42. No multi-seed runs due to compute budget.
 
 ## 6.11 Baselines
 

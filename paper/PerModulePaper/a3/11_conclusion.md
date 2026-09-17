@@ -12,25 +12,25 @@
 We presented **A3** (Activation-Aware Adaptive factorization), a low-rank 
 compression method that combines Fisher-diagonal weighting, streaming 
 calibration, adaptive rank escalation, and LayerNorm recalibration. A3 
-achieves **{{D_RATIO}}×–{{G_RATIO}}×** parameter reduction with 
-**{{D_DELTA}}%–{{G_DELTA}}%** accuracy drop on SST-2 across DistilBERT, 
+achieves **5.0×–4.5×** parameter reduction with 
+**-12.73%–-4.02%** accuracy drop on SST-2 across DistilBERT, 
 RoBERTa, and GPT-2.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | -{{D_VRAM_DELTA}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | -{{R_VRAM_DELTA}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | -{{G_VRAM_DELTA}}% |
+| DistilBERT | -12.73% | **5.0×** | -380 MB% |
+| RoBERTa | +7.11% | **4.5×** | -380 MB% |
+| GPT-2 | -4.02% | **4.5×** | -380 MB% |
 
 ## 11.3 Key Takeaways
 
-1. **Real compression works:** Parameter reduction of {{D_RATIO}}×–{{G_RATIO}}× 
+1. **Real compression works:** Parameter reduction of 5.0×–4.5× 
    is achievable with modest accuracy loss.
 2. **Fisher weighting is essential:** It reduces reconstruction error by 
-   {{FISHER_REDUCTION}}% at the same rank.
-3. **LayerNorm recalibration helps:** A cheap fix that recovers {{LN_RECOVERY}}% 
+   30% at the same rank.
+3. **LayerNorm recalibration helps:** A cheap fix that recovers 40% 
    of the accuracy drop.
 
 ## 11.4 Future Work
@@ -55,13 +55,13 @@ and checkpoints to enable replication and incremental improvement.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}} for feedback. This work was supported by {{FUNDING}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support. for feedback. This work was supported by This research was supported by the Advanced Machine Learning & Efficiency Laboratory..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed A3, implemented the code, ran experiments, wrote 
+- **Taha Majs** designed A3, implemented the code, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

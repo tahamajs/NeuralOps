@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -21,18 +21,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running OHA
 
 ```bash
 python run_all_4_oha.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --compression_rank {{COMPRESSION_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 64 \
+    --compression_rank 32 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -41,7 +41,7 @@ python run_all_4_oha.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,oha \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -87,14 +87,14 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Param Δ % |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% |
+| DistilBERT | 89.2% | +1.40% |
+| RoBERTa | 76.5% | +1.51% |
+| GPT-2 | 77.8% | +1.51% |
 
 ## 12.8 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-oha`
+- Checkpoints: `Hooshaai/svd-linear-attention-*-oha`
 - Metrics: `results/unified_oha/*/summary.csv`
 
 ## 12.9 Known Issues

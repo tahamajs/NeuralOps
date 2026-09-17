@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -22,9 +22,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_squeezing_heads.py \
     --models distilbert,roberta,gpt2 \
-    --lora_rank {{LORA_RANK}} \
-    --head_dim_reduction {{HEAD_DIM_REDUCTION}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --lora_rank 16 \
+    --head_dim_reduction 1.0 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
@@ -63,14 +63,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Trainable |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | ~{{D_LORA}} |
-| RoBERTa | {{R_ACC}}% ± 1% | ~{{R_LORA}} |
-| GPT-2 | {{G_ACC}}% ± 1% | ~{{G_LORA}} |
+| DistilBERT | 90.25% ± 1% | ~589824 |
+| RoBERTa | 76.8% ± 1% | ~1179648 |
+| GPT-2 | 77.5% ± 1% | ~1179648 |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-squeezing_heads`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-squeezing_heads`
 - **Metrics:** `results/unified_squeezing_heads/*/summary.csv`
 
 ## 12.7 Known Issues

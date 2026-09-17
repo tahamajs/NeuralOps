@@ -14,19 +14,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/squeezing_heads_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/squeezing_heads_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -49,14 +49,14 @@ wrapper** — the pretrained weights are copied verbatim; only LoRA parameters
 are trainable.
 
 We evaluate Squeezing Heads on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. 
-With LoRA rank {{LORA_RANK}}, Squeezing Heads achieves **{{D_ACC}}%**, 
-**{{R_ACC}}%**, and **{{G_ACC}}%** accuracy, within **{{D_DELTA}}%**, 
-**{{R_DELTA}}%**, and **{{G_DELTA}}%** of the respective baselines. When 
-combined with head-dimension reduction to **{{HEAD_DIM}}%** of the original, 
-parameters drop by **{{PARAM_REDUCTION}}×** with only **{{DIM_DELTA}}%** 
+With LoRA rank 16, Squeezing Heads achieves **90.25%**, 
+**76.8%**, and **77.5%** accuracy, within **-0.46%**, 
+**-1.8%**, and **-1.9%** of the respective baselines. When 
+combined with head-dimension reduction to **64%** of the original, 
+parameters drop by **2×** with only **0.85%** 
 accuracy loss. The LoRA adapters recover a substantial portion of the 
 information lost by dimension reduction, outperforming direct fine-tuning by 
-**{{LORA_GAIN}}%**.
+**0.5%**.
 
 **Keywords:** knowledge distillation, head compression, LoRA, attention, 
 efficient transformer

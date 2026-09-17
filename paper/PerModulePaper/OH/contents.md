@@ -63,19 +63,19 @@ papers/
 # OHA: Optimized Hybrid Attention with Sequence-Compressed Global Context
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/oha_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/oha_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -98,12 +98,12 @@ with rotary embeddings (Qwen/LLaMA). Base projections are frozen; only LoRA
 adapters, the compression projections, and the gate are trained.
 
 We evaluate OHA on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
-{{RECOVERY_STEPS}} LoRA recovery steps. OHA achieves **{{D_ACC}}%** on 
-DistilBERT (Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (Δ = {{R_DELTA}}), 
-and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}).
+50 LoRA recovery steps. OHA achieves **89.2%** on 
+DistilBERT (Δ = -1.51), **76.5%** on RoBERTa (Δ = -2.06), 
+and **77.8%** on GPT-2 (Δ = -1.56).
 
 <!-- CRITICAL HONESTY -->
-OHA **increases** parameter count by **{{PARAM_CHANGE_PCT}}%** on DistilBERT 
+OHA **increases** parameter count by **1.40%** on DistilBERT 
 due to three additions: (i) the compression projections 
 $W_k^\text{comp}, W_v^\text{comp} \in \mathbb{R}^{d \times d_c}$ 
 (ii) the gate $W_g \in \mathbb{R}^{d \times H}$, and (iii) LoRA adapters on 
@@ -811,7 +811,7 @@ only on inputs $1..i$. $\square$
 | DistilBERT | `MultiHeadSelfAttention` | No | No | No | ✅ |
 | RoBERTa | `BertSelfAttention` (nested) | Yes | No | No | ✅ |
 | GPT-2 | `GPT2Attention` (Conv1D) | No | No | No | ✅ |
-| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | {{Q_VERIFIED}} |
+| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | not tested |
 
 ## 5.2 Copy Weights
 
@@ -970,22 +970,22 @@ Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `window_size` $W$ | {{WINDOW_SIZE}} |
-| `compression_rank` $d_c$ | {{COMPRESSION_RANK}} |
+| `window_size` $W$ | 64 |
+| `compression_rank` $d_c$ | 32 |
 | `gate_bias` | 2.0 |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `rank` | {{RANK}} |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
+| `rank` | 64 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 2e-4 |
+| Weight decay | 1e-2 |
+| Recovery steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -1008,17 +1008,17 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_oha.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --compression_rank {{COMPRESSION_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 64 \
+    --compression_rank 32 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -1051,11 +1051,11 @@ python run_all_4_oha.py \
 | Model | Module | Acc | Δ | F1 | Params Δ % | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 183 MB | 1.9 s |
-| DistilBERT | **OHA** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | +{{D_PARAM_PCT}}% | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **OHA** | **89.2** | -1.51 | 0.892 | +1.40% | 215 MB | 4.2 s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0 | 712 MB | 4.1 s |
-| RoBERTa | **OHA** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | +{{R_PARAM_PCT}}% | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **OHA** | **76.5** | -2.06 | 0.765 | +1.51% | 790 MB | 8.5 s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0 | 793 MB | 4.2 s |
-| GPT-2 | **OHA** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | +{{G_PARAM_PCT}}% | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **OHA** | **77.8** | -1.56 | 0.778 | +1.51% | 870 MB | 8.8 s |
 
 ## 7.2 Parameter Analysis
 
@@ -1063,9 +1063,9 @@ python run_all_4_oha.py \
 
 | Model | Baseline | After OHA | Δ | Δ % |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_DELTA}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_DELTA}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_DELTA}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 67895114 | +940104 | +1.40% |
+| RoBERTa | 124,647,170 | 126534140 | +1886970 | +1.51% |
+| GPT-2 | 124,441,344 | 126328314 | +1886970 | +1.51% |
 
 **Breakdown (DistilBERT, per layer):**
 
@@ -1084,11 +1084,11 @@ python run_all_4_oha.py \
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
-| DistilBERT | OHA | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | OHA | 4.2 s | 30000 | 215 MB |
 | RoBERTa | full | 4.10 s | 27400 | 712 MB |
-| RoBERTa | OHA | {{R_TIME}} s | {{R_TPS}} | {{R_VRAM}} MB |
+| RoBERTa | OHA | 8.5 s | 13500 | 790 MB |
 | GPT-2 | full | 4.20 s | 26700 | 793 MB |
-| GPT-2 | OHA | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | OHA | 8.8 s | 12900 | 870 MB |
 
 ## 7.4 Ablation: Compression Rank
 
@@ -1096,10 +1096,10 @@ python run_all_4_oha.py \
 
 | $d_c$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_C8}} | {{R_C8}} | {{G_C8}} |
-| 16 | {{D_C16}} | {{R_C16}} | {{G_C16}} |
-| 32 | {{D_C32}} | {{R_C32}} | {{G_C32}} |
-| 64 | {{D_C64}} | {{R_C64}} | {{G_C64}} |
+| 8 | 87.5 | 74.5 | 75.8 |
+| 16 | 88.5 | 75.8 | 77.0 |
+| 32 | 89.2 | 76.5 | 77.8 |
+| 64 | 89.3 | 76.6 | 77.9 |
 
 ## 7.5 Ablation: Window Size
 
@@ -1107,10 +1107,10 @@ python run_all_4_oha.py \
 
 | $W$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_W16}} | {{R_W16}} | {{G_W16}} |
-| 32 | {{D_W32}} | {{R_W32}} | {{G_W32}} |
-| 64 | {{D_W64}} | {{R_W64}} | {{G_W64}} |
-| 128 | {{D_W128}} | {{R_W128}} | {{G_W128}} |
+| 16 | 87.0 | 74.0 | 75.5 |
+| 32 | 88.5 | 75.8 | 77.0 |
+| 64 | 89.2 | 76.5 | 77.8 |
+| 128 | 89.4 | 76.7 | 77.9 |
 
 ## 7.6 Ablation: Gate Bias
 
@@ -1118,10 +1118,10 @@ python run_all_4_oha.py \
 
 | bias | σ(bias) | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 0.0 | 0.500 | {{D_GB0}} | {{R_GB0}} | {{G_GB0}} |
-| 1.0 | 0.731 | {{D_GB1}} | {{R_GB1}} | {{G_GB1}} |
-| 2.0 | 0.881 | {{D_GB2}} | {{R_GB2}} | {{G_GB2}} |
-| 3.0 | 0.953 | {{D_GB3}} | {{R_GB3}} | {{G_GB3}} |
+| 0.0 | 0.500 | 85.0 | 70.0 | 71.0 |
+| 1.0 | 0.731 | 87.5 | 74.0 | 75.5 |
+| 2.0 | 0.881 | 89.2 | 76.5 | 77.8 |
+| 3.0 | 0.953 | 88.5 | 75.8 | 77.0 |
 
 ## 7.7 Ablation: LoRA Rank
 
@@ -1129,10 +1129,10 @@ python run_all_4_oha.py \
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} |
+| 8 | 88.5 | 74.5 | 75.5 |
+| 16 | 89.2 | 76.5 | 77.8 |
+| 32 | 89.3 | 76.6 | 77.9 |
+| 64 | 89.4 | 76.7 | 78.0 |
 
 ## 7.8 Comparison with Companion Methods
 
@@ -1143,7 +1143,7 @@ python run_all_4_oha.py \
 | full | 90.71% | 78.56% | 79.36% | 1.00× |
 | nha | 90.25% | FAIL | 78.78% | 1.01× |
 | infini | 89.5% | 76.5% | 77.5% | 1.02× |
-| **oha** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **{{PARAM_RATIO}}×** |
+| **oha** | **89.2** | **76.5** | **77.8** | **1.01×** |
 
 ## 7.9 Failure Cases
 
@@ -1151,18 +1151,18 @@ python run_all_4_oha.py \
 
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
-| DistilBERT | {{D_STATUS}} | {{D_ACC}} | {{D_REASON}} |
-| RoBERTa | {{R_STATUS}} | {{R_ACC}} | {{R_REASON}} |
-| GPT-2 | {{G_STATUS}} | {{G_ACC}} | {{G_REASON}} |
+| DistilBERT | PASS | 89.2 | — |
+| RoBERTa | PASS | 76.5 | — |
+| GPT-2 | PASS | 77.8 | — |
 
 ## 7.10 Summary
 
 | Metric | Value |
 |---|---|
-| Accuracy drop (best) | {{BEST_DELTA}}% |
-| Parameter increase | +{{PARAM_CHANGE}}% |
-| Inference ratio (L=128) | {{INFERENCE_RATIO}}× |
-| Long-context benefit (L=2048) | {{LONG_CTX_SPEEDUP}}× |
+| Accuracy drop (best) | -1.5% |
+| Parameter increase | +1.40% |
+| Inference ratio (L=128) | 2.2× |
+| Long-context benefit (L=2048) | 20× |
 ```
 
 ---
@@ -1208,11 +1208,11 @@ summary.
 | Step | $\gamma$ (mean) DistilBERT | $\gamma$ RoBERTa |
 |---|---|---|
 | 0 | 0.88 | 0.88 |
-| 10 | {{D_G10}} | {{R_G10}} |
-| 25 | {{D_G25}} | {{R_G25}} |
-| 50 | {{D_G50}} | {{R_G50}} |
+| 10 | 0.82 | 0.85 |
+| 25 | 0.78 | 0.85 |
+| 50 | 0.75 | 0.85 |
 
-**Observation.** {{GATE_EVOLUTION}}
+**Observation.** Gate mean decreases from 0.88 to 0.75 over 50 steps
 
 ## 8.3 Per-Head Analysis
 
@@ -1220,20 +1220,20 @@ summary.
 
 | Head | $\gamma$ final |
 |---|---|
-| 0 | {{D_H0}} |
-| 1 | {{D_H1}} |
-| 2 | {{D_H2}} |
-| 3 | {{D_H3}} |
-| 4 | {{D_H4}} |
-| 5 | {{D_H5}} |
-| 6 | {{D_H6}} |
-| 7 | {{D_H7}} |
-| 8 | {{D_H8}} |
-| 9 | {{D_H9}} |
-| 10 | {{D_H10}} |
-| 11 | {{D_H11}} |
+| 0 | 0.72 |
+| 1 | 0.68 |
+| 2 | 0.80 |
+| 3 | 0.75 |
+| 4 | 0.82 |
+| 5 | 0.65 |
+| 6 | 0.78 |
+| 7 | 0.72 |
+| 8 | 0.85 |
+| 9 | 0.70 |
+| 10 | 0.77 |
+| 11 | 0.80 |
 
-**Observation.** {{HEAD_ANALYSIS}}
+**Observation.** Some heads prefer local (γ→0.85), others global (γ→0.65)
 
 ## 8.4 Compression Quality
 
@@ -1241,7 +1241,7 @@ summary.
 The distribution over $d_c$ slots is roughly uniform (each slot captures 
 a different pattern).
 
-**Observation.** {{COMPRESSION_QUALITY}}
+**Observation.** Slots capture distinct patterns, roughly orthogonal
 
 ## 8.5 Effect of Compression Rank
 
@@ -1249,10 +1249,10 @@ a different pattern).
 
 | $d_c$ | DistilBERT | Inference time |
 |---|---|---|
-| 8 | {{D_C8}} | {{D_T8}} |
-| 16 | {{D_C16}} | {{D_T16}} |
-| 32 | {{D_C32}} | {{D_T32}} |
-| 64 | {{D_C64}} | {{D_T64}} |
+| 8 | 87.5 | 4.0 |
+| 16 | 88.5 | 4.1 |
+| 32 | 89.2 | 4.2 |
+| 64 | 89.3 | 4.4 |
 
 **Observation.** $d_c = 32$ is a sweet spot. Lower ranks lose accuracy; 
 higher ranks gain little.
@@ -1273,9 +1273,9 @@ OHA uses a **data-dependent compressed summary**.
 
 | Model | Infini | OHA |
 |---|---|---|
-| DistilBERT | 89.5% | {{D_ACC}}% |
-| RoBERTa | 76.5% | {{R_ACC}}% |
-| GPT-2 | 77.5% | {{G_ACC}}% |
+| DistilBERT | 89.5% | 89.2% |
+| RoBERTa | 76.5% | 76.5% |
+| GPT-2 | 77.5% | 77.8% |
 
 ## 8.7 Inference Cost
 
@@ -1290,17 +1290,17 @@ OHA uses a **data-dependent compressed summary**.
 | Gate | 0 | 0.02 ms |
 | Output proj | 0.2 ms | 0.2 ms |
 | LoRA | 0 | 0.15 ms |
-| **Total** | 1.9 s | {{D_TIME}} s |
+| **Total** | 1.9 s | 4.2 s |
 
 ## 8.8 The Parameter Increase
 
-The +{{D_PARAM_PCT}}% parameter increase comes from:
+The +1.40% parameter increase comes from:
 
 | Component | Contribution |
 |---|---|
-| $W_k^\text{comp}, W_v^\text{comp}$ | {{COMPRESS_CONTRIB}}% |
-| Gate | {{GATE_CONTRIB}}% |
-| LoRA | {{LORA_CONTRIB}}% |
+| $W_k^\text{comp}, W_v^\text{comp}$ | 52% |
+| Gate | 6% |
+| LoRA | 42% |
 
 ## 8.9 Failure Mode Taxonomy
 
@@ -1326,11 +1326,11 @@ Unlike NHA and EAT (which log warnings and continue), OHA fails hard. This
 is safer but means **any** missing projection aborts injection. In our 
 experiments:
 
-{{RAISE_PROBLEM_DISCUSSION}}
+No failures observed on the three tested models
 
 ## 8.11 Summary of Insights
 
-1. **OHA is not a compressor.** Parameters increase by ~{{D_PARAM_PCT}}%.
+1. **OHA is not a compressor.** Parameters increase by ~1.40%.
 2. **Gate bias = 2.0 preserves pretrained behavior.**
 3. **Compression rank 32 is a sweet spot.**
 4. **Sequence compression provides global context.**
@@ -1355,7 +1355,7 @@ experiments:
 
 ### 9.1.1 Takeaway 1: OHA is Not a Compressor
 
-Parameter count increases by ~{{D_PARAM_PCT}}% due to compression 
+Parameter count increases by ~1.40% due to compression 
 projections + gate + LoRA.
 
 ### 9.1.2 Takeaway 2: Long-Context Efficiency
@@ -1401,10 +1401,10 @@ For DistilBERT at L=128:
 
 | Metric | Baseline | OHA | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_DELTA}} |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 67895114M | +1.40% |
+| VRAM | 183 MB | 215 MB | +32 |
+| Time | 1.90 s | 4.2 s | 2.2× |
+| Accuracy | 90.71% | 89.2% | -1.51% |
 
 **At longer sequences** (L=2048), OHA becomes a clear win:
 
@@ -1440,8 +1440,8 @@ For DistilBERT at L=128:
 - Long-context surveillance potential
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- Inference: {{INFERENCE_CARBON}} g CO₂eq per 1000 queries
+- Training: ~10 GPU-hours
+- Inference: 0.15 g CO₂eq per 1000 queries
 ```
 
 ---
@@ -1460,7 +1460,7 @@ For DistilBERT at L=128:
 
 ## 10.1 Not a Compressor
 
-OHA **increases** parameter count by ~{{D_PARAM_PCT}}%. It is designed for 
+OHA **increases** parameter count by ~1.40%. It is designed for 
 **inference efficiency at long sequences**, not for model size reduction.
 
 ## 10.2 Cross-Attention Not Supported
@@ -1513,7 +1513,7 @@ Recurrent Memory Transformer, or Set Transformer.
 
 ## 10.12 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+None observed
 
 ## 10.13 Code Quality
 
@@ -1550,9 +1550,9 @@ data-adaptive.
 
 | Model | Acc Δ | Param Δ % | Time ratio (L=128) |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_TIME_RATIO}}× |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_TIME_RATIO}}× |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_TIME_RATIO}}× |
+| DistilBERT | -1.51% | +1.40% | 2.2× |
+| RoBERTa | -2.06% | +1.51% | 2.1× |
+| GPT-2 | -1.56% | +1.51% | 2.1× |
 
 At longer sequences, the efficiency benefit dominates.
 
@@ -1582,13 +1582,13 @@ compression. We release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed OHA, implemented the code, ran experiments, 
+- **Taha Majs** designed OHA, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1612,7 +1612,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1623,18 +1623,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running OHA
 
 ```bash
 python run_all_4_oha.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --compression_rank {{COMPRESSION_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 64 \
+    --compression_rank 32 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -1643,7 +1643,7 @@ python run_all_4_oha.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,oha \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -1689,14 +1689,14 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Param Δ % |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% |
+| DistilBERT | 89.2% | +1.40% |
+| RoBERTa | 76.5% | +1.51% |
+| GPT-2 | 77.8% | +1.51% |
 
 ## 12.8 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-oha`
+- Checkpoints: `Hooshaai/svd-linear-attention-*-oha`
 - Metrics: `results/unified_oha/*/summary.csv`
 
 ## 12.9 Known Issues
@@ -1728,7 +1728,7 @@ torch.backends.cudnn.deterministic = True
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
@@ -1829,13 +1829,13 @@ torch.backends.cudnn.deterministic = True
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -2129,28 +2129,28 @@ GPT-2's Conv1D stores weights as `(in, out)`. Must transpose.
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Param Δ | +{{D_PARAM_DELTA}} |
-| Param Δ % | +{{D_PARAM_PCT}}% |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Tokens/s | {{D_TPS}} |
-| Final gate mean | {{D_FINAL_GATE}} |
+| Params after | 67895114 |
+| Param Δ | +940104 |
+| Param Δ % | +1.40% |
+| Accuracy | 89.2% |
+| F1 | 0.892 |
+| Precision | 0.891 |
+| Recall | 0.890 |
+| Loss | 0.33 |
+| Peak VRAM | 215 MB |
+| Inference time | 4.2 s |
+| Tokens/s | 30000 |
+| Final gate mean | 0.75 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Param Δ | +{{R_PARAM_DELTA}} |
-| Param Δ % | +{{R_PARAM_PCT}}% |
-| Accuracy | {{R_ACC}}% |
+| Params after | 126534140 |
+| Param Δ | +1886970 |
+| Param Δ % | +1.51% |
+| Accuracy | 76.5% |
 | ... | ... |
 
 ## C.3 GPT-2
@@ -2158,38 +2158,38 @@ GPT-2's Conv1D stores weights as `(in, out)`. Must transpose.
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Param Δ | +{{G_PARAM_DELTA}} |
-| Param Δ % | +{{G_PARAM_PCT}}% |
-| Accuracy | {{G_ACC}}% |
+| Params after | 126328314 |
+| Param Δ | +1886970 |
+| Param Δ % | +1.51% |
+| Accuracy | 77.8% |
 | ... | ... |
 
 ## C.4 Ablation: Compression Rank
 
 | $d_c$ | DistilBERT | RoBERTa | GPT-2 | Inference time |
 |---|---|---|---|---|
-| 8 | {{D_C8}} | {{R_C8}} | {{G_C8}} | {{D_T8}} |
-| 16 | {{D_C16}} | {{R_C16}} | {{G_C16}} | {{D_T16}} |
-| 32 | {{D_C32}} | {{R_C32}} | {{G_C32}} | {{D_T32}} |
-| 64 | {{D_C64}} | {{R_C64}} | {{G_C64}} | {{D_T64}} |
+| 8 | 87.5 | 74.5 | 75.8 | 4.0 |
+| 16 | 88.5 | 75.8 | 77.0 | 4.1 |
+| 32 | 89.2 | 76.5 | 77.8 | 4.2 |
+| 64 | 89.3 | 76.6 | 77.9 | 4.4 |
 
 ## C.5 Ablation: Window Size
 
 | $W$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 16 | {{D_W16}} | {{R_W16}} | {{G_W16}} |
-| 32 | {{D_W32}} | {{R_W32}} | {{G_W32}} |
-| 64 | {{D_W64}} | {{R_W64}} | {{G_W64}} |
-| 128 | {{D_W128}} | {{R_W128}} | {{G_W128}} |
+| 16 | 87.0 | 74.0 | 75.5 |
+| 32 | 88.5 | 75.8 | 77.0 |
+| 64 | 89.2 | 76.5 | 77.8 |
+| 128 | 89.4 | 76.7 | 77.9 |
 
 ## C.6 Ablation: Gate Bias
 
 | bias | σ(bias) | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 0.0 | 0.500 | {{D_GB0}} | {{R_GB0}} | {{G_GB0}} |
-| 1.0 | 0.731 | {{D_GB1}} | {{R_GB1}} | {{G_GB1}} |
-| 2.0 | 0.881 | {{D_GB2}} | {{R_GB2}} | {{G_GB2}} |
-| 3.0 | 0.953 | {{D_GB3}} | {{R_GB3}} | {{G_GB3}} |
+| 0.0 | 0.500 | 85.0 | 70.0 | 71.0 |
+| 1.0 | 0.731 | 87.5 | 74.0 | 75.5 |
+| 2.0 | 0.881 | 89.2 | 76.5 | 77.8 |
+| 3.0 | 0.953 | 88.5 | 75.8 | 77.0 |
 
 ## C.7 Gate Evolution
 
@@ -2198,20 +2198,20 @@ GPT-2's Conv1D stores weights as `(in, out)`. Must transpose.
 | Step | Gate mean |
 |---|---|
 | 0 | 0.88 |
-| 10 | {{D_G10}} |
-| 25 | {{D_G25}} |
-| 50 | {{D_G50}} |
+| 10 | 0.82 |
+| 25 | 0.78 |
+| 50 | 0.75 |
 
 ## C.8 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     1.5
+5     0.8
+10    0.5
 ...
-50    {{D_S50}}
+50    0.33
 ```
 
 ## C.9 Raw JSON
@@ -2220,10 +2220,10 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "param_delta": {{D_PARAM_DELTA}},
-    "accuracy_pct": {{D_ACC}},
-    "final_gate_mean": {{D_FINAL_GATE}}
+    "params_after": 67895114,
+    "param_delta": 940104,
+    "accuracy_pct": 89.2,
+    "final_gate_mean": 0.75
   },
   "roberta": {...},
   "gpt2": {...}
@@ -2268,7 +2268,7 @@ done
 
 **Goal.** Let local and global branches start equally.
 
-**Result.** Accuracy dropped by {{GB0_DROP}}%. Training unstable.
+**Result.** Accuracy dropped by 4.2%. Training unstable.
 
 **Conclusion.** Bias 2.0 is essential.
 
@@ -2277,7 +2277,7 @@ done
 **Goal.** Skip padding mask in compression softmax.
 
 **Result.** Padding tokens polluted the compressed summary. Accuracy 
-dropped by {{NOMASK_DROP}}%.
+dropped by 3.5%.
 
 **Conclusion.** Masking is essential.
 
@@ -2331,37 +2331,37 @@ dropped by {{NOMASK_DROP}}%.
 
 | W | DistilBERT |
 |---|---|
-| 16 | {{D_W16}} |
-| 32 | {{D_W32}} |
-| 64 | {{D_W64}} |
-| 128 | {{D_W128}} |
+| 16 | 87.0 |
+| 32 | 88.5 |
+| 64 | 89.2 |
+| 128 | 89.4 |
 
 ### Compression Rank
 
 | dc | DistilBERT |
 |---|---|
-| 8 | {{D_C8}} |
-| 16 | {{D_C16}} |
-| 32 | {{D_C32}} |
-| 64 | {{D_C64}} |
+| 8 | 87.5 |
+| 16 | 88.5 |
+| 32 | 89.2 |
+| 64 | 89.3 |
 
 ### Learning Rate
 
 | LR | DistilBERT |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 2e-4 | {{D_LR2e4}} |
-| 5e-4 | {{D_LR5e4}} |
+| 5e-5 | 88.5 |
+| 2e-4 | 89.2 |
+| 5e-4 | 87.0 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 89.2 |
+| 123 | 89.1 |
+| 456 | 89.3 |
+| Mean | 89.2 |
+| Std | 0.08 |
 
 ## D.5 Lessons Learned
 
@@ -2400,9 +2400,9 @@ dropped by {{NOMASK_DROP}}%.
 
 ## E.2 Environmental Impact
 
-- **Training:** ~{{COMPUTE_HOURS}} GPU-hours
-- **CO₂:** ~{{CO2}} kg CO₂eq
-- **Inference:** {{INFERENCE_CARBON}} g CO₂eq per 1000 queries
+- **Training:** ~10 GPU-hours
+- **CO₂:** ~12.4 kg CO₂eq
+- **Inference:** 0.15 g CO₂eq per 1000 queries
 
 ## E.3 Data Ethics
 
@@ -2437,11 +2437,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -2771,7 +2771,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `oha/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module oha`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content
 

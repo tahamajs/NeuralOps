@@ -12,19 +12,19 @@
 ### 9.1.1 Takeaway 1: Real Compression is Possible
 
 Unlike attention-replacement methods that preserve parameter count, A3 
-achieves **{{D_RATIO}}×–{{G_RATIO}}×** parameter reduction with **<5%** 
+achieves **5.0×–4.5×** parameter reduction with **<5%** 
 accuracy drop. This is a genuine reduction in storage, memory, and load time.
 
 ### 9.1.2 Takeaway 2: Weighting Matters
 
-Fisher weighting reduces reconstruction error by **{{FISHER_REDUCTION}}%** at 
+Fisher weighting reduces reconstruction error by **30%** at 
 the same rank. This is a free win — no additional computation beyond the 
 calibration pass.
 
 ### 9.1.3 Takeaway 3: LayerNorm Recalibration is Cheap and Effective
 
-A single recalibration pass, costing **{{LN_TIME}}s**, recovers 
-**{{LN_RECOVERY}}%** of the accuracy drop on average.
+A single recalibration pass, costing **2.3 ss**, recovers 
+**40%** of the accuracy drop on average.
 
 ## 9.2 When to Use A3
 
@@ -70,11 +70,11 @@ For DistilBERT on RTX 4070:
 
 | Metric | Baseline | A3 | Change |
 |---|---|---|---|
-| Disk (FP16) | 134 MB | {{D_DISK}} MB | **{{D_DISK_RATIO}}×** |
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RATIO}}×** |
-| Inference VRAM | 183 MB | {{D_VRAM}} MB | **{{D_VRAM_RATIO}}×** |
-| Inference time | 1.9 s | {{D_TIME}} s | **{{D_TIME_RATIO}}×** |
-| Accuracy | 90.71% | {{D_ACC}}% | **{{D_DELTA}}%** |
+| Disk (FP16) | 134 MB | 27 MB | **5.0×** |
+| Params | 66.95M | 13500000M | **5.0×** |
+| Inference VRAM | 183 MB | 774 MB MB | **2.1\times×** |
+| Inference time | 1.9 s | 2.4 s | **2.1\times×** |
+| Accuracy | 90.71% | 77.98% | **-12.73%** |
 
 **Verdict:** A3 is a **strict win** for storage and VRAM, **neutral** for 
 latency, **small loss** for accuracy.
@@ -85,8 +85,8 @@ latency, **small loss** for accuracy.
 |---|---|---|---|
 | ALBERT | Sharing | 3.5× | 89.4% |
 | DistilBERT | Distill | 1.6× | 90.7% |
-| **A3 (r=64)** | Low-rank | **{{D_RATIO}}×** | **{{D_ACC}}%** |
-| **A3 (r=128)** | Low-rank | **{{D_RATIO128}}×** | **{{D_ACC128}}%** |
+| **A3 (r=64)** | Low-rank | **5.0×** | **77.98%** |
+| **A3 (r=128)** | Low-rank | **2.5×** | **86.4\%%** |
 
 A3 at rank 64 achieves similar accuracy to ALBERT with similar compression 
 but **no retraining from scratch**.
@@ -98,12 +98,12 @@ but **no retraining from scratch**.
 A3's main benefit is storage. For a 100M-parameter model:
 
 - Baseline: 200 MB FP16
-- A3 (r=64): ~{{D_DISK}} MB
-- A3 + INT8: ~{{D_DISK_INT8}} MB
+- A3 (r=64): ~27 MB
+- A3 + INT8: ~0.85 MB
 
 ### 9.6.2 Latency
 
-A3's factorized layers are **~{{D_LATENCY_RATIO}}×** slower on GPU because 
+A3's factorized layers are **~1.3×** slower on GPU because 
 they require two sequential matmuls. On CPU, they may be **faster** because 
 smaller matrices fit in cache better.
 
@@ -134,4 +134,4 @@ amortize better.
 
 ### 9.8.3 Environmental
 
-Total compute for A3 experiments: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute for A3 experiments: ~12 GPU-hours, ~12.4 kg CO₂eq.

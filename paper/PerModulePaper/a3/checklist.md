@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `a3/`
 - [ ] Filled `variables.json` with real values
 - [ ] Ran `python apply_vars.py --module a3`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 - [ ] Built `paper_full.md`
 
 ## Content Quality

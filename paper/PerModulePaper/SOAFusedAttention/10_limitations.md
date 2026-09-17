@@ -3,7 +3,7 @@
 ## 10.1 Only Attention Projections
 
 SOA Fused Attention compresses **only** Q, K, V. The FFN and $W_O$ are 
-untouched. Total model reduction is therefore modest (~{{D_TOTAL_DELTA}}% 
+untouched. Total model reduction is therefore modest (~-2.1% 
 on DistilBERT).
 
 ## 10.2 Attention Remains Quadratic

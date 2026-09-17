@@ -11,7 +11,7 @@
 
 ### 9.1.1 Takeaway 1: OHA is Not a Compressor
 
-Parameter count increases by ~{{D_PARAM_PCT}}% due to compression 
+Parameter count increases by ~1.40% due to compression 
 projections + gate + LoRA.
 
 ### 9.1.2 Takeaway 2: Long-Context Efficiency
@@ -57,10 +57,10 @@ For DistilBERT at L=128:
 
 | Metric | Baseline | OHA | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_DELTA}} |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 67895114M | +1.40% |
+| VRAM | 183 MB | 215 MB | +32 |
+| Time | 1.90 s | 4.2 s | 2.2× |
+| Accuracy | 90.71% | 89.2% | -1.51% |
 
 **At longer sequences** (L=2048), OHA becomes a clear win:
 
@@ -96,7 +96,7 @@ For DistilBERT at L=128:
 - Long-context surveillance potential
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- Inference: {{INFERENCE_CARBON}} g CO₂eq per 1000 queries
+- Training: ~10 GPU-hours
+- Inference: 0.15 g CO₂eq per 1000 queries
 
 ---

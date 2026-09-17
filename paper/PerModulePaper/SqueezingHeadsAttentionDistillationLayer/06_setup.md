@@ -33,20 +33,20 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Parameter | Value |
 |---|---|
-| LoRA rank $r_L$ | {{LORA_RANK}} |
-| LoRA alpha $\alpha$ | {{LORA_ALPHA}} |
-| Head-dim reduction $s$ | {{HEAD_DIM_REDUCTION}}× |
-| Target head_dim $d_h'$ | {{HEAD_DIM}} |
+| LoRA rank $r_L$ | 16 |
+| LoRA alpha $\alpha$ | 32 |
+| Head-dim reduction $s$ | 1.0× |
+| Target head_dim $d_h'$ | 64 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -78,17 +78,17 @@ Majority baseline: 50.92%. Sequence length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_squeezing_heads.py \
     --models distilbert,roberta,gpt2 \
-    --lora_rank {{LORA_RANK}} \
-    --head_dim_reduction {{HEAD_DIM_REDUCTION}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --lora_rank 16 \
+    --head_dim_reduction 1.0 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Ablations

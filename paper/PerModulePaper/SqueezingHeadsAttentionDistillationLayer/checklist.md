@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `squeezing_heads/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module squeezing_heads`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words
@@ -123,7 +123,7 @@ $$
 
 - **بدون LoRA:** head-dim reduction → افت شدید
 - **با LoRA:** افت کم
-- **Gain:** {{LORA_GAIN}}%
+- **Gain:** 0.5%
 
 ### ۶. Trade-off مهم
 

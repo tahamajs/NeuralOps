@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # or source .venv/bin/activate
@@ -21,11 +21,11 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
-| pandas | {{PANDAS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
+| numpy | 1.26.4 |
+| pandas | 2.2.2 |
 
 ## 12.3 Running A3
 
@@ -34,13 +34,13 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_a3.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}} \
-    --batch_size {{BATCH_SIZE}}
+    --rank 64 \
+    --recovery_steps 50 \
+    --lora_rank 16 \
+    --batch_size 8
 ```
 
-**Runtime:** ~{{RUNTIME}} minutes on RTX 4070.
+**Runtime:** ~15 minutes on RTX 4070.
 
 ### Individual Model
 
@@ -53,11 +53,11 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_a3/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,a3 \
-    --batch_size {{BATCH_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --learning_rate {{LR}} \
-    --lora_rank {{LORA_RANK}} \
-    --rank {{RANK}} \
+    --batch_size 8 \
+    --recovery_steps 50 \
+    --learning_rate 2e-4 \
+    --lora_rank 16 \
+    --rank 64 \
     --precision fp16
 ```
 
@@ -68,7 +68,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-a3",
+        repo_id=f"Hooshaai/svd-linear-attention-{model}-a3",
         filename="weights.pt",
     )
     print(f"Downloaded {model} to {path}")
@@ -125,16 +125,16 @@ torch.backends.cudnn.benchmark = False
 
 | Model | Accuracy | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_RATIO}}× |
+| DistilBERT | 77.98% ± 1% | 5.0× |
+| RoBERTa | 85.67% ± 1% | 4.5× |
+| GPT-2 | 75.34% ± 1% | 4.5× |
 
 Deviations >2% suggest environmental differences.
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets` library
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-a3`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-a3`
 - **Metrics:** `results/unified_a3/*/summary.csv`
 - **Logs:** `benchmark_logs/a3_*.log`
 

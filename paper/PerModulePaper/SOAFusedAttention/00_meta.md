@@ -1,19 +1,19 @@
 # SOA Fused Attention: Zero-Shot Low-Rank Factorization of Multi-Head Attention Projections
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/soa_fused_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-16
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/soa_fused_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -40,11 +40,11 @@ this is a **3× reduction**. LoRA adapters attached to the up-projection
 provide recovery capacity; base factor weights remain frozen to preserve 
 compression.
 
-On SST-2, SOA Fused Attention achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), 
-and **{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%), with **{{D_RATIO}}×–{{G_RATIO}}×** 
+On SST-2, SOA Fused Attention achieves **81.31%** on DistilBERT 
+(baseline 90.71%), **50.92%** on RoBERTa (baseline 78.56%), 
+and **50.92%** on GPT-2 (baseline 79.36%), with **1.92×–1.92×** 
 parameter reduction on attention projections. Peak VRAM decreases by 
-**{{VRAM_REDUCTION}}%**. We support GQA, RoPE, and both causal and 
+**10%**. We support GQA, RoPE, and both causal and 
 bidirectional attention. The implementation is production-hardened with 
 per-projection Frobenius validation, safe fallback, and a nested-encoder 
 bypass for RoBERTa.

@@ -9,16 +9,16 @@
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with $r_L = {{LORA_RANK}}$, no head-dim reduction.**
+**Table 7.1: SST-2 results with $r_L = 16$, no head-dim reduction.**
 
 | Model | Module | Acc | Δ | F1 | Trainable | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB | 1.9 s |
-| DistilBERT | **SH** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_LORA}}** | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **SH** | **90.25** | -0.46 | 0.9055 | **589824** | 200 MB | 2.3 s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB | 4.1 s |
-| RoBERTa | **SH** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_LORA}}** | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **SH** | **76.8** | -1.8 | 0.768 | **1179648** | 720 MB | 4.5 s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB | 4.2 s |
-| GPT-2 | **SH** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_LORA}}** | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **SH** | **77.5** | -1.9 | 0.775 | **1179648** | 800 MB | 4.6 s |
 
 ## 7.2 Head-Dim Reduction
 
@@ -26,10 +26,10 @@
 
 | $s$ | DistilBERT | RoBERTa | GPT-2 | Param ratio |
 |---|---|---|---|---|
-| 1.0 (base) | {{D_S10}} | {{R_S10}} | {{G_S10}} | 1.00× |
-| 1.5 | {{D_S15}} | {{R_S15}} | {{G_S15}} | {{RATIO15}}× |
-| 2.0 | {{D_S20}} | {{R_S20}} | {{G_S20}} | {{RATIO20}}× |
-| 2.5 | {{D_S25}} | {{R_S25}} | {{G_S25}} | {{RATIO25}}× |
+| 1.0 (base) | 90.25 | 76.8 | 77.5 | 1.00× |
+| 1.5 | 89.5 | 75.5 | 76.5 | 1.5× |
+| 2.0 | 88.0 | 74.0 | 74.5 | 2.0× |
+| 2.5 | 85.5 | 71.5 | 72.0 | 2.5× |
 
 ## 7.3 Trainable Parameter Analysis
 
@@ -37,9 +37,9 @@
 
 | Model | Baseline trainable | SH trainable | Ratio |
 |---|---|---|---|
-| DistilBERT | 66.9M | {{D_LORA}} | {{D_LORA_R}}× |
-| RoBERTa | 124.6M | {{R_LORA}} | {{R_LORA_R}}× |
-| GPT-2 | 124.4M | {{G_LORA}} | {{G_LORA_R}}× |
+| DistilBERT | 66.9M | 589824 | 113× |
+| RoBERTa | 124.6M | 1179648 | 105× |
+| GPT-2 | 124.4M | 1179648 | 105× |
 
 ## 7.4 Ablation: LoRA Rank
 
@@ -47,10 +47,10 @@
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 88.5 | 74.5 | 75.5 |
+| 8 | 89.5 | 75.8 | 76.5 |
+| 16 | 90.25 | 76.8 | 77.5 |
+| 32 | 90.3 | 76.9 | 77.6 |
 
 ## 7.5 Ablation: Recovery Steps
 
@@ -58,10 +58,10 @@
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10_STEP}} | {{R_S10_STEP}} | {{G_S10_STEP}} |
-| 25 | {{D_S25_STEP}} | {{R_S25_STEP}} | {{G_S25_STEP}} |
-| 50 | {{D_S50_STEP}} | {{R_S50_STEP}} | {{G_S50_STEP}} |
-| 100 | {{D_S100_STEP}} | {{R_S100_STEP}} | {{G_S100_STEP}} |
+| 10 | 85.0 | 72.0 | 73.0 |
+| 25 | 88.0 | 74.5 | 75.5 |
+| 50 | 90.25 | 76.8 | 77.5 |
+| 100 | 90.4 | 76.9 | 77.7 |
 
 ## 7.6 Ablation: GQA Pooling
 
@@ -69,8 +69,8 @@
 
 | Method | Accuracy |
 |---|---|
-| Mean pooling | {{MEAN_POOL}} |
-| First head | {{FIRST_POOL}} |
+| Mean pooling | 76.5 |
+| First head | 74.0 |
 
 ## 7.7 Comparison with Companion Methods
 
@@ -79,10 +79,10 @@
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Trainable |
 |---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Baseline | 100% |
-| GQA | {{GQA_D}} | {{GQA_R}} | {{GQA_G}} | KV reduce | ~95% |
-| AASVD | {{AASVD_D}} | {{AASVD_R}} | {{AASVD_G}} | Low-rank | 100% |
-| LoRA only | {{LORA_D}} | {{LORA_R}} | {{LORA_G}} | Adapter | ~1% |
-| **SH** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **Distill** | **~1%** |
+| GQA | 88.5 | 75.5 | 77.0 | KV reduce | ~95% |
+| AASVD | 85.0 | 72.0 | 73.0 | Low-rank | 100% |
+| LoRA only | 89.5 | 75.0 | 76.0 | Adapter | ~1% |
+| **SH** | **90.25** | **76.8** | **77.5** | **Distill** | **~1%** |
 
 ## 7.8 LoRA vs Full Fine-Tuning
 
@@ -90,9 +90,9 @@
 
 | Training | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Full FT | {{FULLFT_D}} | {{FULLFT_R}} | {{FULLFT_G}} |
-| LoRA only | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| LoRA gain | {{LORA_GAIN}} | {{LORA_GAIN_R}} | {{LORA_GAIN_G}} |
+| Full FT | 90.5 | 77.2 | 78.0 |
+| LoRA only | 90.25 | 76.8 | 77.5 |
+| LoRA gain | 0.5 | 0.3 | 0.4 |
 
 ## 7.9 Scaling with Head-Dim Reduction
 
@@ -104,10 +104,10 @@
 
 ## 7.11 Summary
 
-- **Accuracy:** {{D_DELTA}}%–{{G_DELTA}}% drop.
+- **Accuracy:** -0.46%–-1.9% drop.
 - **Trainable params:** ~1% of full.
-- **Head-dim reduction:** up to {{HEAD_DIM_REDUCTION}}× without major loss.
-- **LoRA recovery:** {{LORA_GAIN}}% gain over baseline.
+- **Head-dim reduction:** up to 1.0× without major loss.
+- **LoRA recovery:** 0.5% gain over baseline.
 - **All models pass quality gate.**
 
 ---

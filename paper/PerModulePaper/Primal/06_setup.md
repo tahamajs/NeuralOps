@@ -33,10 +33,10 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Parameter | Value |
 |---|---|
-| Landmark count $m$ | {{RANK}} |
-| Pseudoinverse iterations $K$ | {{PINV_ITERS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
+| Landmark count $m$ | 64 |
+| Pseudoinverse iterations $K$ | 4 |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
 | Dropout | 0.1 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -44,10 +44,10 @@ Majority baseline: 50.92%. Sequence length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -77,17 +77,17 @@ Majority baseline: 50.92%. Sequence length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_primal.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --pinv_iters {{PINV_ITERS}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 64 \
+    --pinv_iters 4 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Ablations

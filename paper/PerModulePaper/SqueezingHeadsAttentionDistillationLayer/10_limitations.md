@@ -39,7 +39,7 @@ Uniform LoRA rank may not be optimal.
 
 ## 10.7 Single Seed
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 ## 10.8 No Comparison with Some Baselines
 
@@ -50,7 +50,7 @@ We do not compare with:
 
 ## 10.9 Failure Modes
 
-{{UNRESOLVED_FAILURES}}
+Long-context, inference-time LoRA folding
 
 ## 10.10 Code Quality
 

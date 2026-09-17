@@ -14,19 +14,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/primal_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/primal_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -48,10 +48,10 @@ that converges in a few steps and is differentiable.
 Primal Attention selects landmarks via **segment pooling** over contiguous chunks 
 of the sequence, providing a uniform but content-agnostic summary of the 
 attention input. We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 
-with landmark count $m = {{RANK}}$. Primal Attention achieves 
-**{{D_ACC}}%**, **{{R_ACC}}%**, and **{{G_ACC}}%** accuracy respectively, 
-at the cost of **{{D_TIME_RATIO}}×** inference latency. The attention matrix 
-memory is reduced by **{{MEM_REDUCTION}}×**. We provide a production-hardened 
+with landmark count $m = 64$. Primal Attention achieves 
+**90.14%**, **68.00%**, and **63.07%** accuracy respectively, 
+at the cost of **1.3×** inference latency. The attention matrix 
+memory is reduced by **4×**. We provide a production-hardened 
 PyTorch implementation supporting flat, nested, and causal architectures with 
 GQA, RoPE, and safe injection.
 

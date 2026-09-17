@@ -17,9 +17,9 @@ and allows head-dim reduction with LoRA recovery.
 
 | Model | Acc Δ | Trainable | Head-dim reduction |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_LORA_R}}× | {{HEAD_DIM_REDUCTION}}× |
-| RoBERTa | {{R_DELTA}}% | {{R_LORA_R}}× | {{HEAD_DIM_REDUCTION}}× |
-| GPT-2 | {{G_DELTA}}% | {{G_LORA_R}}× | {{HEAD_DIM_REDUCTION}}× |
+| DistilBERT | -0.46% | 113× | 1.0× |
+| RoBERTa | -1.8% | 105× | 1.0× |
+| GPT-2 | -1.9% | 105× | 1.0× |
 
 ## 11.3 Key Takeaways
 
@@ -49,12 +49,12 @@ distillation. We release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed SH, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed SH, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

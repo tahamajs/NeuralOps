@@ -79,7 +79,7 @@ distributions for quantization. We adapt this idea to post-factorization
 distributional shift.
 
 **Gamma rescaling.** Gholami et al. (2021) rescale LayerNorm scales after 
-quantization. Our ${{RECALIBRATION_FORMULA}}$ is the analogous operation 
+quantization. Our $W^* = U \Sigma V^T$ is the analogous operation 
 for low-rank factorization.
 
 ## 2.5 Position of Our Work

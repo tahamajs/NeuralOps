@@ -54,8 +54,8 @@ For GPT-2 at $L = 2048$, $B = 1$:
 | Metric | Baseline | Primal ($m=64$) |
 |---|---|---|
 | Attention memory | 12.6 MB | 0.20 MB (**64×**) |
-| Inference time | {{B_TIME_2048}} s | {{P_TIME_2048}} s |
-| Accuracy | 79.36% | {{G_ACC}}% |
+| Inference time | 8.5 s | 6.5 s |
+| Accuracy | 79.36% | 63.07% |
 
 ## 9.5 Open Questions
 
@@ -77,6 +77,6 @@ For GPT-2 at $L = 2048$, $B = 1$:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

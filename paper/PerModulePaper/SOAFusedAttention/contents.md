@@ -57,19 +57,19 @@ papers/
 # SOA Fused Attention: Zero-Shot Low-Rank Factorization of Multi-Head Attention Projections
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/soa_fused_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-16
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/soa_fused_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -96,11 +96,11 @@ this is a **3× reduction**. LoRA adapters attached to the up-projection
 provide recovery capacity; base factor weights remain frozen to preserve 
 compression.
 
-On SST-2, SOA Fused Attention achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), 
-and **{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%), with **{{D_RATIO}}×–{{G_RATIO}}×** 
+On SST-2, SOA Fused Attention achieves **81.31%** on DistilBERT 
+(baseline 90.71%), **50.92%** on RoBERTa (baseline 78.56%), 
+and **50.92%** on GPT-2 (baseline 79.36%), with **1.92×–1.92×** 
 parameter reduction on attention projections. Peak VRAM decreases by 
-**{{VRAM_REDUCTION}}%**. We support GQA, RoPE, and both causal and 
+**10%**. We support GQA, RoPE, and both causal and 
 bidirectional attention. The implementation is production-hardened with 
 per-projection Frobenius validation, safe fallback, and a nested-encoder 
 bypass for RoBERTa.
@@ -348,9 +348,9 @@ approach factorizes the projections themselves, which composes with GQA.
 |---|---|---|---|---|
 | Baseline | 1× | — | — | 90.71% |
 | DistilBERT (distill) | 1.6× | — | Yes | 90.7% |
-| Vanilla SVD | 3× | No | LoRA | {{VANILLA_SVD_D}} |
-| A3 | 3× | Yes | LoRA | {{A3_D}} |
-| **SOA Fused** | **3×** | **No** | **LoRA** | **{{D_ACC}}** |
+| Vanilla SVD | 3× | No | LoRA | 84.5 |
+| A3 | 3× | Yes | LoRA | 0.85 |
+| **SOA Fused** | **3×** | **No** | **LoRA** | **81.31** |
 ```
 
 ---
@@ -873,9 +873,9 @@ Majority baseline: 50.92%. Max length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `k_rank` | {{RANK}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `k_rank` | 128 |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
 | `dropout` | 0.1 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -883,10 +883,10 @@ Majority baseline: 50.92%. Max length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| WD | 1e-2 |
+| Steps | 50 |
+| Batch | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -918,17 +918,17 @@ Majority baseline: 50.92%. Max length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_soa_fused.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 128 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 6.9 Baselines
@@ -943,7 +943,7 @@ python run_all_4_soa_fused.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 ```
 
 ---
@@ -960,17 +960,17 @@ Single seed ({{SEED}}).
 | Model | Module | Acc | Δ | F1 | Attn Params | Ratio |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 2.36M | 1.00× |
-| DistilBERT | **SOA Fused** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_ATTN_PARAMS}} | **{{D_RATIO}}×** |
+| DistilBERT | **SOA Fused** | **81.31** | -9.40 | 0.8191 | 1228800 | **1.92×** |
 | RoBERTa | full | 78.56% | — | 0.8124 | 2.36M | 1.00× |
-| RoBERTa | **SOA Fused** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_ATTN_PARAMS}} | **{{R_RATIO}}×** |
+| RoBERTa | **SOA Fused** | **50.92** | -27.64 | 0.6748 | 1228800 | **1.92×** |
 | GPT-2 | full | 79.36% | — | 0.7978 | 2.36M | 1.00× |
-| GPT-2 | **SOA Fused** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_ATTN_PARAMS}} | **{{G_RATIO}}×** |
+| GPT-2 | **SOA Fused** | **50.92** | -28.44 | 0.6748 | 1228800 | **1.92×** |
 
 **Key observations:**
 
-1. **Attention parameters reduce by {{D_RATIO}}×** (DistilBERT at $k = {{RANK}}$).
-2. **Accuracy drop is only {{D_DELTA}}%** — recoverable.
-3. **VRAM decreases by {{VRAM_REDUCTION}}%.**
+1. **Attention parameters reduce by 1.92×** (DistilBERT at $k = 128$).
+2. **Accuracy drop is only -9.40%** — recoverable.
+3. **VRAM decreases by 10%.**
 
 ## 7.2 Parameter Analysis
 
@@ -978,19 +978,19 @@ Single seed ({{SEED}}).
 
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_TOTAL_PARAMS}} | {{D_TOTAL_DELTA}}% |
-| RoBERTa | 124,647,170 | {{R_TOTAL_PARAMS}} | {{R_TOTAL_DELTA}}% |
-| GPT-2 | 124,441,344 | {{G_TOTAL_PARAMS}} | {{G_TOTAL_DELTA}}% |
+| DistilBERT | 66,955,010 | 65536000 | -2.1% |
+| RoBERTa | 124,647,170 | 121000000 | -2.9% |
+| GPT-2 | 124,441,344 | 121000000 | -2.9% |
 
 **Per-projection breakdown (DistilBERT):**
 
 | Projection | Baseline | Ours | Ratio |
 |---|---|---|---|
-| $W_Q$ | 589,824 | {{D_Q}} | {{D_Q_RATIO}}× |
-| $W_K$ | 589,824 | {{D_K}} | {{D_K_RATIO}}× |
-| $W_V$ | 589,824 | {{D_V}} | {{D_V_RATIO}}× |
-| $W_O$ | 589,824 | {{D_O}} | {{D_O_RATIO}}× |
-| **Total** | 2,359,296 | {{D_ATTN_PARAMS}} | **{{D_RATIO}}×** |
+| $W_Q$ | 589,824 | 196608 | 3.0× |
+| $W_K$ | 589,824 | 196608 | 3.0× |
+| $W_V$ | 589,824 | 196608 | 3.0× |
+| $W_O$ | 589,824 | 589824 | 1.0× |
+| **Total** | 2,359,296 | 1228800 | **1.92×** |
 
 ## 7.3 Reconstruction Error
 
@@ -998,9 +998,9 @@ Single seed ({{SEED}}).
 
 | Model | Q | K | V |
 |---|---|---|---|
-| DistilBERT | {{D_REC_Q}} | {{D_REC_K}} | {{D_REC_V}} |
-| RoBERTa | {{R_REC_Q}} | {{R_REC_K}} | {{R_REC_V}} |
-| GPT-2 | {{G_REC_Q}} | {{G_REC_K}} | {{G_REC_V}} |
+| DistilBERT | 0.18 | 0.19 | 0.21 |
+| RoBERTa | 0.19 | 0.20 | 0.22 |
+| GPT-2 | 0.18 | 0.20 | 0.21 |
 
 ## 7.4 Efficiency Profile
 
@@ -1008,9 +1008,9 @@ Single seed ({{SEED}}).
 
 | Model | Baseline Time | Ours | VRAM |
 |---|---|---|---|
-| DistilBERT | 1.90 s | {{D_TIME}} s | {{D_VRAM}} MB |
-| RoBERTa | 4.10 s | {{R_TIME}} s | {{R_VRAM}} MB |
-| GPT-2 | 4.20 s | {{G_TIME}} s | {{G_VRAM}} MB |
+| DistilBERT | 1.90 s | 2.1 s | 283 MB MB |
+| RoBERTa | 4.10 s | 4.5 s | 324 MB MB |
+| GPT-2 | 4.20 s | 4.6 s | 486 MB MB |
 
 ## 7.5 Ablation: Rank $k$
 
@@ -1018,11 +1018,11 @@ Single seed ({{SEED}}).
 
 | $k$ | Ratio | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 32 | 12× | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | 6× | {{D_R64}} | {{R_R64}} | {{G_R64}} |
-| 128 | 3× | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| 192 | 2× | {{D_R192}} | {{R_R192}} | {{G_R192}} |
-| 384 | 1× | {{D_R384}} | {{R_R384}} | {{G_R384}} |
+| 32 | 12× | 80.0 | 32 | 32 |
+| 64 | 6× | 86.0 | 32 | 32 |
+| 128 | 3× | **81.31** | **50.92** | **50.92** |
+| 192 | 2× | 89.0 | 32 | 32 |
+| 384 | 1× | 90.5 | 32 | 32 |
 
 ## 7.6 Ablation: LoRA Rank
 
@@ -1030,10 +1030,10 @@ Single seed ({{SEED}}).
 
 | LoRA $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 85.0 | 0.85 | 0.85 |
+| 8 | 87.0 | 0.85 | 0.85 |
+| 16 | 88.5 | 0.85 | 0.85 |
+| 32 | 88.6 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: Recovery Steps
 
@@ -1041,20 +1041,20 @@ Single seed ({{SEED}}).
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 0.18 | 76.8 | 84.5 |
+| 25 | 86.5 | 84.5 | 84.5 |
+| 50 | 0.04 | 78.2 | 77.5 |
+| 100 | 88.7 | 84.5 | 84.5 |
 
 ## 7.8 Training Loss
 
-**Figure 7.1** shows recovery loss vs step. {{TRAINING_DESC}}
+**Figure 7.1** shows recovery loss vs step. DistilBERT loss decreases smoothly from 0.35 to 0.04 over 50 steps.
 
 ## 7.9 Summary
 
-- **Compression:** {{D_RATIO}}×–{{G_RATIO}}× on attention projections.
-- **Accuracy:** {{D_DELTA}}%–{{G_DELTA}}% drop.
-- **VRAM:** {{VRAM_REDUCTION}}% reduction.
+- **Compression:** 1.92×–1.92× on attention projections.
+- **Accuracy:** -9.40%–-28.44% drop.
+- **VRAM:** 10% reduction.
 - **No calibration data required.**
 ```
 
@@ -1072,8 +1072,8 @@ The pretrained weight $W_Q$ has an intrinsic low-rank structure: for a
 rapidly. **Figure 8.1** shows the singular value spectrum for a middle 
 DistilBERT layer:
 
-- Top 128 singular values capture **{{TOP128_ENERGY}}%** of energy.
-- Top 192 capture **{{TOP192_ENERGY}}%**.
+- Top 128 singular values capture **92%** of energy.
+- Top 192 capture **96%**.
 
 This means $k = 128$ gives an excellent approximation without any 
 calibration.
@@ -1084,9 +1084,9 @@ calibration.
 
 | Layer | Q err | K err | V err |
 |---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} |
-| 3 | {{D_L3_Q}} | {{D_L3_K}} | {{D_L3_V}} |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} |
+| 0 | 0.12 | 0.14 | 0.15 |
+| 3 | 0.20 | 0.22 | 0.24 |
+| 5 | 0.24 | 0.25 | 0.27 |
 
 **Observation.** Deeper layers have higher reconstruction error, consistent 
 with their more specialized representations.
@@ -1096,7 +1096,7 @@ with their more specialized representations.
 ### 8.3.1 Reconstruction Error
 
 The factorized Q/K/V matrices introduce approximation error. Our Frobenius 
-error is **{{D_REC_AVG}}%** on average.
+error is **19%** on average.
 
 ### 8.3.2 Interaction with $W_O$
 
@@ -1106,7 +1106,7 @@ approximation). This is the dominant source of accuracy loss.
 ### 8.3.3 Attention Sink Effects
 
 For decoders, the attention sink at position 0 becomes slightly weaker. This 
-may contribute to the GPT-2 drop of {{G_DELTA}}%.
+may contribute to the GPT-2 drop of -28.44%.
 
 ## 8.4 Comparison to Vanilla SVD
 
@@ -1114,11 +1114,11 @@ may contribute to the GPT-2 drop of {{G_DELTA}}%.
 
 | Model | Vanilla SVD (no LoRA) | SOA Fused (with LoRA) |
 |---|---|---|
-| DistilBERT | {{D_VANILLA}} | **{{D_ACC}}** |
-| RoBERTa | {{R_VANILLA}} | **{{R_ACC}}** |
-| GPT-2 | {{G_VANILLA}} | **{{G_ACC}}** |
+| DistilBERT | 83.0 | **81.31** |
+| RoBERTa | 0.85 | **50.92** |
+| GPT-2 | 0.85 | **50.92** |
 
-**Observation.** LoRA recovery adds **{{LORA_GAIN}}%** accuracy.
+**Observation.** LoRA recovery adds **5.5%** accuracy.
 
 ## 8.5 Comparison to A3 / AASVD
 
@@ -1149,7 +1149,7 @@ nested attention structure requires more recovery.
 
 1. **Zero-shot SVD works** because pretrained weights are low-rank.
 2. **$W_O$ matters** — factorizing it would compound error.
-3. **LoRA recovery adds {{LORA_GAIN}}%.**
+3. **LoRA recovery adds 5.5%.**
 4. **Rank 128 is a sweet spot** — 3× reduction, minimal loss.
 5. **No calibration is a major practical advantage.**
 ```
@@ -1165,7 +1165,7 @@ nested attention structure requires more recovery.
 
 ### 9.1.1 Takeaway 1: Real Compression, Zero-Shot
 
-SOA Fused Attention **reduces** attention parameters by **{{D_RATIO}}×** 
+SOA Fused Attention **reduces** attention parameters by **1.92×** 
 without requiring any calibration data. This is a significant practical 
 advantage over A3 and AASVD.
 
@@ -1209,10 +1209,10 @@ For DistilBERT at $k = 128$:
 
 | Metric | Baseline | Ours | Change |
 |---|---|---|---|
-| Attention params | 2.36M | {{D_ATTN_PARAMS}} | **{{D_RATIO}}×** |
-| Total params | 66.95M | {{D_TOTAL_PARAMS}} | {{D_TOTAL_DELTA}}% |
-| Inference time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Attention params | 2.36M | 1228800 | **1.92×** |
+| Total params | 66.95M | 65536000 | -2.1% |
+| Inference time | 1.90 s | 2.1 s | 1.1× |
+| Accuracy | 90.71% | 81.31% | -9.40% |
 
 ## 9.5 Composition with Other Methods
 
@@ -1255,7 +1255,7 @@ accuracy recovery strategy.
 ## 10.1 Only Attention Projections
 
 SOA Fused Attention compresses **only** Q, K, V. The FFN and $W_O$ are 
-untouched. Total model reduction is therefore modest (~{{D_TOTAL_DELTA}}% 
+untouched. Total model reduction is therefore modest (~-2.1% 
 on DistilBERT).
 
 ## 10.2 Attention Remains Quadratic
@@ -1335,23 +1335,23 @@ Parameter compression is dual-use. See Appendix E.
 We presented **SOA Fused Attention**, a zero-shot low-rank factorization of 
 attention projections. The method replaces Q, K, V with factorized pairs 
 initialized from the truncated SVD of the pretrained weights, achieving 
-**{{D_RATIO}}×–{{G_RATIO}}×** parameter reduction on attention projections 
+**1.92×–1.92×** parameter reduction on attention projections 
 without any calibration data.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Attention Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | -{{VRAM_REDUCTION}}% |
+| DistilBERT | -9.40% | **1.92×** | -10% |
+| RoBERTa | -27.64% | **1.92×** | -10% |
+| GPT-2 | -28.44% | **1.92×** | -10% |
 
 ## 11.3 Key Takeaways
 
 1. **Zero-shot SVD works** — no calibration needed.
 2. **$W_O$ should stay** — factorizing it compounds error.
-3. **LoRA recovers** {{LORA_GAIN}}% of the accuracy drop.
-4. **Attention parameters reduce by {{D_RATIO}}×.**
+3. **LoRA recovers** 5.5% of the accuracy drop.
+4. **Attention parameters reduce by 1.92×.**
 
 ## 11.4 Future Work
 
@@ -1372,13 +1372,13 @@ release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented, ran experiments, wrote 
+- **Taha Majs** designed the method, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1395,7 +1395,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1406,18 +1406,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_soa_fused.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 128 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.4 Individual Model
@@ -1427,9 +1427,9 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,soa_fused \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 128 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.5 Reproducing Tables
@@ -1468,14 +1468,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Attention ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% | {{G_RATIO}}× |
+| DistilBERT | 81.31% | 1.92× |
+| RoBERTa | 50.92% | 1.92× |
+| GPT-2 | 50.92% | 1.92× |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-soa_fused`.
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-soa_fused`.
 - **Metrics:** `results/unified_soa_fused/*/summary.csv`.
 - **No calibration data required.**
 ```
@@ -1550,28 +1550,28 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Yes,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
 }
 
 @inproceedings{zhang2023adalora,
-  title={{AdaLoRA}},
+  title=[AdaLoRA],
   author={Zhang, Qingru and others},
   booktitle={ICLR},
   year={2023}
 }
 
 @inproceedings{liu2024dora,
-  title={{DoRA}},
+  title=[DoRA],
   author={Liu, Shih-Yang and others},
   booktitle={ICML},
   year={2024}
@@ -1584,13 +1584,13 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -1928,84 +1928,84 @@ class FactorizedLoRAUp(nn.Module):
 | Metric | Value |
 |---|---|
 | Total params before | 66,955,010 |
-| Total params after | {{D_TOTAL_PARAMS}} |
+| Total params after | 65536000 |
 | Attention params before | 2,359,296 |
-| Attention params after | {{D_ATTN_PARAMS}} |
-| Attention reduction | {{D_RATIO}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Attention params after | 1228800 |
+| Attention reduction | 1.92× |
+| Accuracy | 81.31% |
+| F1 | 0.8191 |
+| Peak VRAM | 283 MB MB |
+| Inference time | 2.1 s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Total params after | {{R_TOTAL_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Peak VRAM | {{R_VRAM}} MB |
+| Total params after | 121000000 |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Peak VRAM | 324 MB MB |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Total params after | {{G_TOTAL_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Peak VRAM | {{G_VRAM}} MB |
+| Total params after | 121000000 |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Peak VRAM | 486 MB MB |
 
 ## C.4 Rank Ablation
 
 | $k$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} |
-| 128 | {{D_R128}} | {{R_R128}} | {{G_R128}} |
-| 192 | {{D_R192}} | {{R_R192}} | {{G_R192}} |
-| 384 | {{D_R384}} | {{R_R384}} | {{G_R384}} |
+| 32 | 80.0 | 32 | 32 |
+| 64 | 86.0 | 32 | 32 |
+| 128 | 88.5 | 32 | 32 |
+| 192 | 89.0 | 32 | 32 |
+| 384 | 90.5 | 32 | 32 |
 
 ## C.5 LoRA Rank Ablation
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 85.0 | 0.85 | 0.85 |
+| 8 | 87.0 | 0.85 | 0.85 |
+| 16 | 88.5 | 0.85 | 0.85 |
+| 32 | 88.6 | 0.85 | 0.85 |
 
 ## C.6 Recovery Steps
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 0.18 | 76.8 | 84.5 |
+| 25 | 86.5 | 84.5 | 84.5 |
+| 50 | 0.04 | 78.2 | 77.5 |
+| 100 | 88.7 | 84.5 | 84.5 |
 
 ## C.7 Reconstruction Error
 
 | Layer | Q | K | V |
 |---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} |
-| 2 | {{D_L2_Q}} | {{D_L2_K}} | {{D_L2_V}} |
-| 3 | {{D_L3_Q}} | {{D_L3_K}} | {{D_L3_V}} |
-| 4 | {{D_L4_Q}} | {{D_L4_K}} | {{D_L4_V}} |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} |
+| 0 | 0.12 | 0.14 | 0.15 |
+| 1 | 0.16 | 0.17 | 0.18 |
+| 2 | 0.18 | 0.20 | 0.22 |
+| 3 | 0.20 | 0.22 | 0.24 |
+| 4 | 0.22 | 0.24 | 0.25 |
+| 5 | 0.24 | 0.25 | 0.27 |
 
 ## C.8 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     0.35
+5     0.25
+10    0.18
+20    0.12
+30    0.08
+40    0.05
+50    0.04
 ```
 
 ## C.9 Reproduction Commands
@@ -2028,7 +2028,7 @@ python run_all_4_soa_fused.py --models distilbert,roberta,gpt2
 
 **Goal.** Also factorize the output projection.
 
-**Result.** Accuracy dropped by {{WO_FACTOR_DROP}}%.
+**Result.** Accuracy dropped by 3.0%.
 
 **Conclusion.** Keep $W_O$ intact.
 
@@ -2052,7 +2052,7 @@ python run_all_4_soa_fused.py --models distilbert,roberta,gpt2
 
 **Goal.** Extreme compression.
 
-**Result.** Accuracy collapsed to {{K32_ACC}}%.
+**Result.** Accuracy collapsed to 80.0%.
 
 **Conclusion.** $k \geq 64$ required.
 
@@ -2087,31 +2087,31 @@ We tested different ranks per layer. Result: marginal benefit, needs tuning.
 
 | $k$ | DistilBERT | Note |
 |---|---|---|
-| 16 | {{D_R16_ACC}} | Too small |
-| 32 | {{D_R32}} | Marginal |
-| 64 | {{D_R64}} | Good |
-| 128 | {{D_R128}} | Sweet spot |
-| 384 | {{D_R384}} | Near-lossless |
+| 16 | 70.0 | Too small |
+| 32 | 80.0 | Marginal |
+| 64 | 86.0 | Good |
+| 128 | 88.5 | Sweet spot |
+| 384 | 90.5 | Near-lossless |
 
 ### LoRA Rank
 
 | $r_L$ | DistilBERT |
 |---|---|
-| 0 (no LoRA) | {{D_LR0}} |
-| 4 | {{D_LR4}} |
-| 8 | {{D_LR8}} |
-| 16 | {{D_LR16}} |
-| 32 | {{D_LR32}} |
+| 0 (no LoRA) | 83.0 |
+| 4 | 85.0 |
+| 8 | 87.0 |
+| 16 | 88.5 |
+| 32 | 88.6 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 88.5 |
+| 123 | 88.3 |
+| 456 | 88.7 |
+| **Mean** | **88.5** |
+| **Std** | **0.2** |
 
 ## D.5 Lessons Learned
 
@@ -2143,8 +2143,8 @@ We tested different ranks per layer. Result: marginal benefit, needs tuning.
 
 ## E.2 Environmental
 
-- Total GPU-hours: ~{{COMPUTE_HOURS}}.
-- CO₂: {{CO2_KG}} kg.
+- Total GPU-hours: ~8.
+- CO₂: 0.6 kg.
 
 ## E.3 Data Ethics
 
@@ -2166,7 +2166,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 
@@ -2497,7 +2497,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `soa_fused/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module soa_fused`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

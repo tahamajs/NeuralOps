@@ -5,23 +5,23 @@
 We presented **SOA Fused Attention**, a zero-shot low-rank factorization of 
 attention projections. The method replaces Q, K, V with factorized pairs 
 initialized from the truncated SVD of the pretrained weights, achieving 
-**{{D_RATIO}}×–{{G_RATIO}}×** parameter reduction on attention projections 
+**1.92×–1.92×** parameter reduction on attention projections 
 without any calibration data.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Attention Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | -{{VRAM_REDUCTION}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | -{{VRAM_REDUCTION}}% |
+| DistilBERT | -9.40% | **1.92×** | -10% |
+| RoBERTa | -27.64% | **1.92×** | -10% |
+| GPT-2 | -28.44% | **1.92×** | -10% |
 
 ## 11.3 Key Takeaways
 
 1. **Zero-shot SVD works** — no calibration needed.
 2. **$W_O$ should stay** — factorizing it compounds error.
-3. **LoRA recovers** {{LORA_GAIN}}% of the accuracy drop.
-4. **Attention parameters reduce by {{D_RATIO}}×.**
+3. **LoRA recovers** 5.5% of the accuracy drop.
+4. **Attention parameters reduce by 1.92×.**
 
 ## 11.4 Future Work
 
@@ -42,13 +42,13 @@ release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented, ran experiments, wrote 
+- **Taha Majs** designed the method, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

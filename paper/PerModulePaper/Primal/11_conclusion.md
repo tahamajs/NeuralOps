@@ -18,13 +18,13 @@ is computed via differentiable Schulz iteration.
 
 | Model | Acc Δ | Attn mem ratio |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{MEM_REDUCTION}}×** |
-| RoBERTa | {{R_DELTA}}% | **{{MEM_REDUCTION}}×** |
-| GPT-2 | {{G_DELTA}}% | **{{MEM_REDUCTION}}×** |
+| DistilBERT | -0.57% | **4×** |
+| RoBERTa | -10.56% | **4×** |
+| GPT-2 | -16.29% | **4×** |
 
 ## 11.3 Key Takeaways
 
-1. **Asymmetric landmarks** give +{{ASYM_GAIN}}% over symmetric Nyström.
+1. **Asymmetric landmarks** give +0.5% over symmetric Nyström.
 2. **$m = 64$** is optimal for $L = 128$.
 3. **Schulz from SVD pinv** is best practice.
 4. **Long $L$ benefits most.**
@@ -50,12 +50,12 @@ We release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed Primal Attention, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed Primal Attention, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

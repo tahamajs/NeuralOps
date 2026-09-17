@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,18 +14,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_soa_fused.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 128 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.4 Individual Model
@@ -35,9 +35,9 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,soa_fused \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 128 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.5 Reproducing Tables
@@ -76,14 +76,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Attention ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% | {{G_RATIO}}× |
+| DistilBERT | 81.31% | 1.92× |
+| RoBERTa | 50.92% | 1.92× |
+| GPT-2 | 50.92% | 1.92× |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-soa_fused`.
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-soa_fused`.
 - **Metrics:** `results/unified_soa_fused/*/summary.csv`.
 - **No calibration data required.**
 

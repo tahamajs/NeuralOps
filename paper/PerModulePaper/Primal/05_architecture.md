@@ -14,7 +14,7 @@
 | DistilBERT | `MultiHeadSelfAttention` | No | No | ✅ |
 | RoBERTa | `BertSelfAttention` | No | No | ✅ |
 | GPT-2 | `GPT2Attention` | No | No | ✅ |
-| Qwen3.5 | `Qwen3Attention` | Yes | Yes | {{Q_VERIFIED}} |
+| Qwen3.5 | `Qwen3Attention` | Yes | Yes | not tested |
 
 ## 5.2 Weight Transfer
 

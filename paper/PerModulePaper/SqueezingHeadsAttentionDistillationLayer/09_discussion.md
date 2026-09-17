@@ -16,7 +16,7 @@ by head-dim reduction.
 
 ### 9.1.2 Takeaway 2: Head-Dim Reduction Works
 
-Reducing head dimension by 2× gives ~{{PARAM_REDUCTION}}× parameter 
+Reducing head dimension by 2× gives ~2× parameter 
 reduction with acceptable loss.
 
 ### 9.1.3 Takeaway 3: Drop-In Wrapper
@@ -64,8 +64,8 @@ For DistilBERT at $L = 128$:
 | Config | Trainable | Acc | Δ |
 |---|---|---|---|
 | Full FT | 66.9M | 90.71% | — |
-| SH $r_L=16$ | {{D_LORA}} | {{D_ACC}}% | {{D_DELTA}}% |
-| SH + $s=2$ | {{D_LORA}} | {{D_S20}}% | {{D_S20_D}}% |
+| SH $r_L=16$ | 589824 | 90.25% | -0.46% |
+| SH + $s=2$ | 589824 | 88.0% | -2.25% |
 
 ## 9.6 Open Questions
 
@@ -86,6 +86,6 @@ For DistilBERT at $L = 128$:
 - **Rebound effect:** Cheaper fine-tuning may increase total compute.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

@@ -284,7 +284,7 @@ Output: compressed model M', statistics
 | Validation | $\mathcal{O}(\sum_\ell r d_\text{out} d_\text{in})$ | $\mathcal{O}(d_\text{out} d_\text{in})$ |
 | LN recalibration | $\mathcal{O}(N)$ | $\mathcal{O}(N_l d)$ |
 
-**Full compression time** on DistilBERT (66.9M params): ~{{COMPRESS_TIME}} 
+**Full compression time** on DistilBERT (66.9M params): ~45 
 seconds on RTX 4070.
 
 ## 4.8 Parameter Analysis

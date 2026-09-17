@@ -15,19 +15,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/compression_engine/a3_compressor.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1 (initial draft)
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/compression_engine/a3_compressor.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -54,12 +54,12 @@ energy estimate before factorization, (iii) adaptively increasing rank when
 reconstruction error exceeds a threshold, and (iv) recalibrating LayerNorm 
 affine parameters after factorization to absorb distributional shift.
 
-A3 achieves **{{PARAM_REDUCTION}}%** parameter reduction on DistilBERT, 
-**{{PARAM_REDUCTION_R}}%** on RoBERTa, and **{{PARAM_REDUCTION_G}}%** on GPT-2 
-at rank $r = {{RANK}}$. On SST-2, accuracy drops by only 
-**{{D_DELTA}}%**, **{{R_DELTA}}%**, and **{{G_DELTA}}%** respectively, 
-after {{RECOVERY_STEPS}} LoRA recovery steps. Peak VRAM decreases by 
-**{{VRAM_REDUCTION}}%**. We provide a fully reproducible implementation with 
+A3 achieves **5.0%** parameter reduction on DistilBERT, 
+**4.5%** on RoBERTa, and **4.5%** on GPT-2 
+at rank $r = 64$. On SST-2, accuracy drops by only 
+**-12.73%**, **+7.11%**, and **-4.02%** respectively, 
+after 50 LoRA recovery steps. Peak VRAM decreases by 
+**40%**. We provide a fully reproducible implementation with 
 strict Frobenius-norm validation, safe fallback to original layers, and 
 streaming O($d^2$) memory calibration.
 

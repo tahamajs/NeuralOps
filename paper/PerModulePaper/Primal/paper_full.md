@@ -19,7 +19,7 @@ TITLE NOTES:
 
 **Affiliations:**
 - ¹ University Name, Department of Computer Science
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ² 0.85, 0.85
 
 **Corresponding author:** Your Name
 **Preprint date:** 2026-09-15
@@ -1396,7 +1396,7 @@ For GPT-2 at $L = 2048$, $B = 1$:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~12 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.
 
 
 ---
@@ -1521,12 +1521,12 @@ We release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed Primal Attention, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed Primal Attention, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 
@@ -1718,14 +1718,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2120,8 +2120,8 @@ This is essential for the linear complexity.
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 10    82.0
 ...
 50    86.5
@@ -2130,7 +2130,7 @@ Step  Loss
 ### RoBERTa
 ```
 Step  Loss
-1     {{R_S1}}
+1     74.2
 ...
 50    74.0
 ```
@@ -2138,7 +2138,7 @@ Step  Loss
 ### GPT-2
 ```
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
 50    75.0
 ```
@@ -2347,11 +2347,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 

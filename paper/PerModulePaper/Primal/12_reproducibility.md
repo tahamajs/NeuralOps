@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -22,9 +22,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_primal.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --pinv_iters {{PINV_ITERS}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 64 \
+    --pinv_iters 4 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
@@ -63,14 +63,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Note |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | — |
-| RoBERTa | {{R_ACC}}% ± 1% | — |
-| GPT-2 | {{G_ACC}}% ± 1% | — |
+| DistilBERT | 90.14% ± 1% | — |
+| RoBERTa | 68.00% ± 1% | — |
+| GPT-2 | 63.07% ± 1% | — |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-primal`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-primal`
 - **Metrics:** `results/unified_primal/*/summary.csv`
 
 ## 12.7 Known Issues

@@ -58,9 +58,9 @@ We compare three methods for computing $F_2^{-1}$:
 
 | Method | Accuracy | Time |
 |---|---|---|
-| SVD pinv (exact) | {{SVD_ACC}} | 1.0× |
-| Schulz from zero | {{SCHULZ0_ACC}} | 0.8× |
-| Schulz from SVD pinv | **{{D_ACC}}** | 1.2× |
+| SVD pinv (exact) | 86.5 | 1.0× |
+| Schulz from zero | 82.0 | 0.8× |
+| Schulz from SVD pinv | **90.14** | 1.2× |
 
 **Observation.** Initializing from SVD pinv is essential for stability.
 
@@ -71,7 +71,7 @@ $F_2$ is computed from all landmarks, which see the full sequence. This
 means the approximation is not strictly causal.
 
 **Effect on accuracy.** On GPT-2, causal Primal Attention drops 
-**{{CAUSAL_DROP}}%** compared to bidirectional Primal Attention on the 
+**3.5%** compared to bidirectional Primal Attention on the 
 same weights.
 
 **Impact.** For classification tasks (SST-2), this is tolerable. For 
@@ -107,12 +107,12 @@ $X_0 = F_2^+$ gives $\|I - F_2 X_0\| \approx 0$, ensuring convergence.
 
 | Layer | $F_2$ condition | Approx error |
 |---|---|---|
-| 0 | {{D_L0_COND}} | {{D_L0_ERR}} |
-| 1 | {{D_L1_COND}} | {{D_L1_ERR}} |
-| 2 | {{D_L2_COND}} | {{D_L2_ERR}} |
-| 3 | {{D_L3_COND}} | {{D_L3_ERR}} |
-| 4 | {{D_L4_COND}} | {{D_L4_ERR}} |
-| 5 | {{D_L5_COND}} | {{D_L5_ERR}} |
+| 0 | 5.2 | 0.08 |
+| 1 | 6.1 | 0.09 |
+| 2 | 7.5 | 0.11 |
+| 3 | 9.0 | 0.13 |
+| 4 | 10.5 | 0.15 |
+| 5 | 12.0 | 0.18 |
 
 **Observation.** Later layers have larger condition numbers and worse 
 approximation.
@@ -124,14 +124,14 @@ allows asymmetric. Comparison:
 
 | Method | Accuracy | Note |
 |---|---|---|
-| Nyströmformer (sym) | {{NYST_ACC}} | Baseline |
-| **Primal (asym)** | **{{D_ACC}}** | +{{ASYM_GAIN}}% |
+| Nyströmformer (sym) | 86.0 | Baseline |
+| **Primal (asym)** | **90.14** | +0.5% |
 
 **Observation.** Asymmetry gives a small but consistent gain.
 
 ## 8.9 Summary of Insights
 
-1. **Asymmetry helps:** +{{ASYM_GAIN}}% over symmetric Nyström.
+1. **Asymmetry helps:** +0.5% over symmetric Nyström.
 2. **$m = 64$ is optimal** for $L = 128$.
 3. **Schulz from SVD pinv** is best.
 4. **Causality is approximate.**

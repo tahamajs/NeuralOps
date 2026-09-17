@@ -61,8 +61,8 @@ approach factorizes the projections themselves, which composes with GQA.
 |---|---|---|---|---|
 | Baseline | 1× | — | — | 90.71% |
 | DistilBERT (distill) | 1.6× | — | Yes | 90.7% |
-| Vanilla SVD | 3× | No | LoRA | {{VANILLA_SVD_D}} |
-| A3 | 3× | Yes | LoRA | {{A3_D}} |
-| **SOA Fused** | **3×** | **No** | **LoRA** | **{{D_ACC}}** |
+| Vanilla SVD | 3× | No | LoRA | 84.5 |
+| A3 | 3× | Yes | LoRA | 0.85 |
+| **SOA Fused** | **3×** | **No** | **LoRA** | **81.31** |
 
 ---

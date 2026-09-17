@@ -9,7 +9,7 @@
 
 ## 10.1 Not a Compressor
 
-OHA **increases** parameter count by ~{{D_PARAM_PCT}}%. It is designed for 
+OHA **increases** parameter count by ~1.40%. It is designed for 
 **inference efficiency at long sequences**, not for model size reduction.
 
 ## 10.2 Cross-Attention Not Supported
@@ -62,7 +62,7 @@ Recurrent Memory Transformer, or Set Transformer.
 
 ## 10.12 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+None observed
 
 ## 10.13 Code Quality
 

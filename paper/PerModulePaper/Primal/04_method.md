@@ -148,7 +148,7 @@ provides a good starting point for the Schulz iteration.
 
 ### 4.5.2 Iteration
 
-For $K$ iterations (default $K = {{PINV_ITERS}}$):
+For $K$ iterations (default $K = 4$):
 
 $$
 X_{t+1} = X_t (2I - F_2 X_t)
@@ -175,7 +175,7 @@ numerically.
 
 ### 4.5.4 Number of Iterations
 
-We use $K = {{PINV_ITERS}}$ iterations. Empirically, $K = 4$ suffices for 
+We use $K = 4$ iterations. Empirically, $K = 4$ suffices for 
 $m \le 128$; larger $m$ may benefit from more.
 
 ## 4.6 Causality

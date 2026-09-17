@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `primal/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module primal`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words
@@ -123,7 +123,7 @@ Primal **پارامتر کم نمی‌کند** — فقط attention memory را.
 | جنبه | Primal |
 |---|---|
 | Parameters | تغییر نمی‌کند |
-| Attention memory | **{{MEM_REDUCTION}}× کاهش** |
+| Attention memory | **4× کاهش** |
 | Inference time (L=128) | کمی کندتر |
 | Inference time (L>512) | **سریع‌تر** |
 

@@ -41,7 +41,7 @@ a modified module $\mathcal{A}'$ such that:
 2. **Distillable:** Trainable adapters can recover lost capacity.
 3. **Drop-in:** Pretrained weights are copied exactly; no architecture change.
 4. **Portable:** Works across flat, nested, and causal architectures.
-5. **Quality:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+5. **Quality:** $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
 ## 1.3 Our Approach: Squeezing Heads
 
@@ -90,7 +90,7 @@ where:
   on SST-2 with ablations over LoRA rank, head-dim reduction, and GQA 
   pooling.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts 
-  released under {{LICENSE}}.
+  released under MIT.
 
 ## 1.5 Paper Organization
 

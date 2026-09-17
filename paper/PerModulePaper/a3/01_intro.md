@@ -39,7 +39,7 @@ variance** across channels. Some input dimensions carry most of the signal;
 others are nearly constant. Reconstructing the near-constant dimensions as 
 faithfully as the high-variance ones wastes capacity.
 
-{{MOTIVATION_PARAGRAPH_3}}
+0.85
 
 <!-- 
 EXAMPLE continuation:
@@ -67,7 +67,7 @@ where $|\theta(\cdot)|$ denotes parameter count.
 We impose the following constraints:
 
 1. **Strict reconstruction bound.** For each compressed layer, 
-   $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = {{MAX_ERROR}}$.
+   $\|W - UV\|_F / \|W\|_F \leq \tau$ for threshold $\tau = 0.20$.
 2. **No retraining of base weights.** Only LoRA adapters may be trained.
 3. **Memory-bounded calibration.** Activation statistics must be collected in 
    $\mathcal{O}(d^2)$ memory, not $\mathcal{O}(Nd^2)$.
@@ -111,7 +111,7 @@ We make the following contributions:
   GPT-2 on SST-2 with ablations over rank, weighting strategy, and LayerNorm 
   recalibration.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts are 
-  released under {{LICENSE}}.
+  released under MIT.
 
 ## 1.5 Paper Organization
 

@@ -101,7 +101,7 @@ regardless of content.
 - **A systematic evaluation.** Benchmarked on DistilBERT, RoBERTa, and GPT-2 
   on SST-2 with ablations over landmark count and pseudoinverse iterations.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts released 
-  under {{LICENSE}}.
+  under MIT.
 
 ## 1.5 Paper Organization
 

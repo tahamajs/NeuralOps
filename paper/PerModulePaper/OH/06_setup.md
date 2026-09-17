@@ -31,22 +31,22 @@ Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `window_size` $W$ | {{WINDOW_SIZE}} |
-| `compression_rank` $d_c$ | {{COMPRESSION_RANK}} |
+| `window_size` $W$ | 64 |
+| `compression_rank` $d_c$ | 32 |
 | `gate_bias` | 2.0 |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `rank` | {{RANK}} |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
+| `rank` | 64 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 2e-4 |
+| Weight decay | 1e-2 |
+| Recovery steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -69,17 +69,17 @@ Majority baseline: 50.92%.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_oha.py \
     --models distilbert,roberta,gpt2 \
-    --window_size {{WINDOW_SIZE}} \
-    --compression_rank {{COMPRESSION_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --window_size 64 \
+    --compression_rank 32 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines

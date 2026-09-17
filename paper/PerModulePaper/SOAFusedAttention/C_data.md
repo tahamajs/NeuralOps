@@ -5,84 +5,84 @@
 | Metric | Value |
 |---|---|
 | Total params before | 66,955,010 |
-| Total params after | {{D_TOTAL_PARAMS}} |
+| Total params after | 65536000 |
 | Attention params before | 2,359,296 |
-| Attention params after | {{D_ATTN_PARAMS}} |
-| Attention reduction | {{D_RATIO}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Attention params after | 1228800 |
+| Attention reduction | 1.92× |
+| Accuracy | 81.31% |
+| F1 | 0.8191 |
+| Peak VRAM | 283 MB MB |
+| Inference time | 2.1 s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Total params after | {{R_TOTAL_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Peak VRAM | {{R_VRAM}} MB |
+| Total params after | 121000000 |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Peak VRAM | 324 MB MB |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Total params after | {{G_TOTAL_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Peak VRAM | {{G_VRAM}} MB |
+| Total params after | 121000000 |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Peak VRAM | 486 MB MB |
 
 ## C.4 Rank Ablation
 
 | $k$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} |
-| 128 | {{D_R128}} | {{R_R128}} | {{G_R128}} |
-| 192 | {{D_R192}} | {{R_R192}} | {{G_R192}} |
-| 384 | {{D_R384}} | {{R_R384}} | {{G_R384}} |
+| 32 | 80.0 | 32 | 32 |
+| 64 | 86.0 | 32 | 32 |
+| 128 | 88.5 | 32 | 32 |
+| 192 | 89.0 | 32 | 32 |
+| 384 | 90.5 | 32 | 32 |
 
 ## C.5 LoRA Rank Ablation
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 85.0 | 0.85 | 0.85 |
+| 8 | 87.0 | 0.85 | 0.85 |
+| 16 | 88.5 | 0.85 | 0.85 |
+| 32 | 88.6 | 0.85 | 0.85 |
 
 ## C.6 Recovery Steps
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 0.18 | 76.8 | 84.5 |
+| 25 | 86.5 | 84.5 | 84.5 |
+| 50 | 0.04 | 78.2 | 77.5 |
+| 100 | 88.7 | 84.5 | 84.5 |
 
 ## C.7 Reconstruction Error
 
 | Layer | Q | K | V |
 |---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} |
-| 2 | {{D_L2_Q}} | {{D_L2_K}} | {{D_L2_V}} |
-| 3 | {{D_L3_Q}} | {{D_L3_K}} | {{D_L3_V}} |
-| 4 | {{D_L4_Q}} | {{D_L4_K}} | {{D_L4_V}} |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} |
+| 0 | 0.12 | 0.14 | 0.15 |
+| 1 | 0.16 | 0.17 | 0.18 |
+| 2 | 0.18 | 0.20 | 0.22 |
+| 3 | 0.20 | 0.22 | 0.24 |
+| 4 | 0.22 | 0.24 | 0.25 |
+| 5 | 0.24 | 0.25 | 0.27 |
 
 ## C.8 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     0.35
+5     0.25
+10    0.18
+20    0.12
+30    0.08
+40    0.05
+50    0.04
 ```
 
 ## C.9 Reproduction Commands

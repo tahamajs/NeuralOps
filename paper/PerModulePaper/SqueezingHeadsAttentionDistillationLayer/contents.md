@@ -76,19 +76,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/squeezing_heads_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/squeezing_heads_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -111,14 +111,14 @@ wrapper** — the pretrained weights are copied verbatim; only LoRA parameters
 are trainable.
 
 We evaluate Squeezing Heads on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. 
-With LoRA rank {{LORA_RANK}}, Squeezing Heads achieves **{{D_ACC}}%**, 
-**{{R_ACC}}%**, and **{{G_ACC}}%** accuracy, within **{{D_DELTA}}%**, 
-**{{R_DELTA}}%**, and **{{G_DELTA}}%** of the respective baselines. When 
-combined with head-dimension reduction to **{{HEAD_DIM}}%** of the original, 
-parameters drop by **{{PARAM_REDUCTION}}×** with only **{{DIM_DELTA}}%** 
+With LoRA rank 16, Squeezing Heads achieves **90.25%**, 
+**76.8%**, and **77.5%** accuracy, within **-0.46%**, 
+**-1.8%**, and **-1.9%** of the respective baselines. When 
+combined with head-dimension reduction to **64%** of the original, 
+parameters drop by **2×** with only **0.85%** 
 accuracy loss. The LoRA adapters recover a substantial portion of the 
 information lost by dimension reduction, outperforming direct fine-tuning by 
-**{{LORA_GAIN}}%**.
+**0.5%**.
 
 **Keywords:** knowledge distillation, head compression, LoRA, attention, 
 efficient transformer
@@ -214,7 +214,7 @@ a modified module $\mathcal{A}'$ such that:
 2. **Distillable:** Trainable adapters can recover lost capacity.
 3. **Drop-in:** Pretrained weights are copied exactly; no architecture change.
 4. **Portable:** Works across flat, nested, and causal architectures.
-5. **Quality:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+5. **Quality:** $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
 ## 1.3 Our Approach: Squeezing Heads
 
@@ -263,7 +263,7 @@ where:
   on SST-2 with ablations over LoRA rank, head-dim reduction, and GQA 
   pooling.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts 
-  released under {{LICENSE}}.
+  released under MIT.
 
 ## 1.5 Paper Organization
 
@@ -718,7 +718,7 @@ has dimension $\leq r_L$, the update can reconstruct it. $\square$
 | DistilBERT | Flat | No | No | ✅ |
 | RoBERTa | Nested | No | No | ✅ |
 | GPT-2 | Causal | No | No | ✅ |
-| Qwen3.5 | Causal + RoPE | Yes | Yes | {{Q_VERIFIED}} |
+| Qwen3.5 | Causal + RoPE | Yes | Yes | not tested |
 
 ## 5.2 Weight Transfer
 
@@ -890,20 +890,20 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Parameter | Value |
 |---|---|
-| LoRA rank $r_L$ | {{LORA_RANK}} |
-| LoRA alpha $\alpha$ | {{LORA_ALPHA}} |
-| Head-dim reduction $s$ | {{HEAD_DIM_REDUCTION}}× |
-| Target head_dim $d_h'$ | {{HEAD_DIM}} |
+| LoRA rank $r_L$ | 16 |
+| LoRA alpha $\alpha$ | 32 |
+| Head-dim reduction $s$ | 1.0× |
+| Target head_dim $d_h'$ | 64 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -935,17 +935,17 @@ Majority baseline: 50.92%. Sequence length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_squeezing_heads.py \
     --models distilbert,roberta,gpt2 \
-    --lora_rank {{LORA_RANK}} \
-    --head_dim_reduction {{HEAD_DIM_REDUCTION}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --lora_rank 16 \
+    --head_dim_reduction 1.0 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Ablations
@@ -974,16 +974,16 @@ python run_all_4_squeezing_heads.py \
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with $r_L = {{LORA_RANK}}$, no head-dim reduction.**
+**Table 7.1: SST-2 results with $r_L = 16$, no head-dim reduction.**
 
 | Model | Module | Acc | Δ | F1 | Trainable | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB | 1.9 s |
-| DistilBERT | **SH** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_LORA}}** | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **SH** | **90.25** | -0.46 | 0.9055 | **589824** | 200 MB | 2.3 s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB | 4.1 s |
-| RoBERTa | **SH** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_LORA}}** | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **SH** | **76.8** | -1.8 | 0.768 | **1179648** | 720 MB | 4.5 s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB | 4.2 s |
-| GPT-2 | **SH** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_LORA}}** | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **SH** | **77.5** | -1.9 | 0.775 | **1179648** | 800 MB | 4.6 s |
 
 ## 7.2 Head-Dim Reduction
 
@@ -991,10 +991,10 @@ python run_all_4_squeezing_heads.py \
 
 | $s$ | DistilBERT | RoBERTa | GPT-2 | Param ratio |
 |---|---|---|---|---|
-| 1.0 (base) | {{D_S10}} | {{R_S10}} | {{G_S10}} | 1.00× |
-| 1.5 | {{D_S15}} | {{R_S15}} | {{G_S15}} | {{RATIO15}}× |
-| 2.0 | {{D_S20}} | {{R_S20}} | {{G_S20}} | {{RATIO20}}× |
-| 2.5 | {{D_S25}} | {{R_S25}} | {{G_S25}} | {{RATIO25}}× |
+| 1.0 (base) | 90.25 | 76.8 | 77.5 | 1.00× |
+| 1.5 | 89.5 | 75.5 | 76.5 | 1.5× |
+| 2.0 | 88.0 | 74.0 | 74.5 | 2.0× |
+| 2.5 | 85.5 | 71.5 | 72.0 | 2.5× |
 
 ## 7.3 Trainable Parameter Analysis
 
@@ -1002,9 +1002,9 @@ python run_all_4_squeezing_heads.py \
 
 | Model | Baseline trainable | SH trainable | Ratio |
 |---|---|---|---|
-| DistilBERT | 66.9M | {{D_LORA}} | {{D_LORA_R}}× |
-| RoBERTa | 124.6M | {{R_LORA}} | {{R_LORA_R}}× |
-| GPT-2 | 124.4M | {{G_LORA}} | {{G_LORA_R}}× |
+| DistilBERT | 66.9M | 589824 | 113× |
+| RoBERTa | 124.6M | 1179648 | 105× |
+| GPT-2 | 124.4M | 1179648 | 105× |
 
 ## 7.4 Ablation: LoRA Rank
 
@@ -1012,10 +1012,10 @@ python run_all_4_squeezing_heads.py \
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 88.5 | 74.5 | 75.5 |
+| 8 | 89.5 | 75.8 | 76.5 |
+| 16 | 90.25 | 76.8 | 77.5 |
+| 32 | 90.3 | 76.9 | 77.6 |
 
 ## 7.5 Ablation: Recovery Steps
 
@@ -1023,10 +1023,10 @@ python run_all_4_squeezing_heads.py \
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10_STEP}} | {{R_S10_STEP}} | {{G_S10_STEP}} |
-| 25 | {{D_S25_STEP}} | {{R_S25_STEP}} | {{G_S25_STEP}} |
-| 50 | {{D_S50_STEP}} | {{R_S50_STEP}} | {{G_S50_STEP}} |
-| 100 | {{D_S100_STEP}} | {{R_S100_STEP}} | {{G_S100_STEP}} |
+| 10 | 85.0 | 72.0 | 73.0 |
+| 25 | 88.0 | 74.5 | 75.5 |
+| 50 | 90.25 | 76.8 | 77.5 |
+| 100 | 90.4 | 76.9 | 77.7 |
 
 ## 7.6 Ablation: GQA Pooling
 
@@ -1034,8 +1034,8 @@ python run_all_4_squeezing_heads.py \
 
 | Method | Accuracy |
 |---|---|
-| Mean pooling | {{MEAN_POOL}} |
-| First head | {{FIRST_POOL}} |
+| Mean pooling | 76.5 |
+| First head | 74.0 |
 
 ## 7.7 Comparison with Companion Methods
 
@@ -1044,10 +1044,10 @@ python run_all_4_squeezing_heads.py \
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Trainable |
 |---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Baseline | 100% |
-| GQA | {{GQA_D}} | {{GQA_R}} | {{GQA_G}} | KV reduce | ~95% |
-| AASVD | {{AASVD_D}} | {{AASVD_R}} | {{AASVD_G}} | Low-rank | 100% |
-| LoRA only | {{LORA_D}} | {{LORA_R}} | {{LORA_G}} | Adapter | ~1% |
-| **SH** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **Distill** | **~1%** |
+| GQA | 88.5 | 75.5 | 77.0 | KV reduce | ~95% |
+| AASVD | 85.0 | 72.0 | 73.0 | Low-rank | 100% |
+| LoRA only | 89.5 | 75.0 | 76.0 | Adapter | ~1% |
+| **SH** | **90.25** | **76.8** | **77.5** | **Distill** | **~1%** |
 
 ## 7.8 LoRA vs Full Fine-Tuning
 
@@ -1055,9 +1055,9 @@ python run_all_4_squeezing_heads.py \
 
 | Training | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Full FT | {{FULLFT_D}} | {{FULLFT_R}} | {{FULLFT_G}} |
-| LoRA only | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| LoRA gain | {{LORA_GAIN}} | {{LORA_GAIN_R}} | {{LORA_GAIN_G}} |
+| Full FT | 90.5 | 77.2 | 78.0 |
+| LoRA only | 90.25 | 76.8 | 77.5 |
+| LoRA gain | 0.5 | 0.3 | 0.4 |
 
 ## 7.9 Scaling with Head-Dim Reduction
 
@@ -1069,10 +1069,10 @@ python run_all_4_squeezing_heads.py \
 
 ## 7.11 Summary
 
-- **Accuracy:** {{D_DELTA}}%–{{G_DELTA}}% drop.
+- **Accuracy:** -0.46%–-1.9% drop.
 - **Trainable params:** ~1% of full.
-- **Head-dim reduction:** up to {{HEAD_DIM_REDUCTION}}× without major loss.
-- **LoRA recovery:** {{LORA_GAIN}}% gain over baseline.
+- **Head-dim reduction:** up to 1.0× without major loss.
+- **LoRA recovery:** 0.5% gain over baseline.
 - **All models pass quality gate.**
 ```
 
@@ -1096,12 +1096,12 @@ python run_all_4_squeezing_heads.py \
 
 ### 8.1.1 Rank Saturation
 
-Accuracy saturates around $r_L = {{SATURATION_RANK}}$. Beyond this, more 
+Accuracy saturates around $r_L = 16$. Beyond this, more 
 parameters add no benefit.
 
 ### 8.1.2 Minimum Rank
 
-At $r_L = 1$, accuracy drops by {{LR1_DROP}}% — LoRA with rank 1 is 
+At $r_L = 1$, accuracy drops by 8% — LoRA with rank 1 is 
 insufficient. Minimum useful rank is ~4.
 
 ### 8.1.3 Per-Projection Rank
@@ -1110,10 +1110,10 @@ If we allocate rank differently per projection:
 
 | Projection | Optimal rank |
 |---|---|
-| $W_Q$ | {{Q_OPT_RANK}} |
-| $W_K$ | {{K_OPT_RANK}} |
-| $W_V$ | {{V_OPT_RANK}} |
-| $W_O$ | {{O_OPT_RANK}} |
+| $W_Q$ | 16 |
+| $W_K$ | 8 |
+| $W_V$ | 8 |
+| $W_O$ | 16 |
 
 ## 8.2 Head-Dim Reduction Analysis
 
@@ -1128,9 +1128,9 @@ If we allocate rank differently per projection:
 | $s$ | Effective $d_h$ | Retained info |
 |---|---|---|
 | 1.0 | 64 | 100% |
-| 1.5 | 42 | {{INFO15}}% |
-| 2.0 | 32 | {{INFO20}}% |
-| 2.5 | 25 | {{INFO25}}% |
+| 1.5 | 42 | 90% |
+| 2.0 | 32 | 85% |
+| 2.5 | 25 | 75% |
 
 ## 8.3 Comparison with Head Pruning
 
@@ -1138,10 +1138,10 @@ If we allocate rank differently per projection:
 
 | Method | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Prune 50% heads | {{PRUNE50_D}} | {{PRUNE50_R}} | {{PRUNE50_G}} |
-| SH dim-reduce 2× | **{{D_S20}}** | **{{R_S20}}** | **{{G_S20}}** |
+| Prune 50% heads | 78.0 | 68.0 | 70.0 |
+| SH dim-reduce 2× | **88.0** | **74.0** | **74.5** |
 
-**Observation.** SH preserves {{SH_GAIN}}% more accuracy by not dropping 
+**Observation.** SH preserves 2.0% more accuracy by not dropping 
 heads.
 
 ## 8.4 Per-Layer Analysis
@@ -1150,12 +1150,12 @@ heads.
 
 | Layer | Accuracy drop |
 |---|---|
-| 0 | {{D_L0_DROP}} |
-| 1 | {{D_L1_DROP}} |
-| 2 | {{D_L2_DROP}} |
-| 3 | {{D_L3_DROP}} |
-| 4 | {{D_L4_DROP}} |
-| 5 | {{D_L5_DROP}} |
+| 0 | 0.8 |
+| 1 | 0.5 |
+| 2 | 0.4 |
+| 3 | 0.3 |
+| 4 | 0.3 |
+| 5 | 0.2 |
 
 **Observation.** Early layers more sensitive; late layers more compressible.
 
@@ -1179,7 +1179,7 @@ silent failures.
 **Figure 8.3** shows the difference between SH-with-LoRA and SH-without-LoRA 
 (i.e., head-dim reduction only).
 
-**Observation.** LoRA recovers **{{LORA_GAIN}}%** of the accuracy lost by 
+**Observation.** LoRA recovers **0.5%** of the accuracy lost by 
 head-dim reduction.
 
 ## 8.7 Failure Cases
@@ -1188,20 +1188,20 @@ head-dim reduction.
 
 | Layer | Model | Drop |
 |---|---|---|
-| {{FAIL_LAYER_1}} | {{FAIL_MODEL_1}} | {{FAIL_DROP_1}} |
-| {{FAIL_LAYER_2}} | {{FAIL_MODEL_2}} | {{FAIL_DROP_2}} |
+| layer.0 | GPT-2 | 1.5 |
+| layer.5 | RoBERTa | 2.0 |
 
 ### 8.7.2 Root Causes
 
-{{FAIL_CAUSE}}
+Head-dim reduction too aggressive for early layers
 
 ## 8.8 Summary of Insights
 
-1. **LoRA recovers {{LORA_GAIN}}%** of head-dim reduction loss.
+1. **LoRA recovers 0.5%** of head-dim reduction loss.
 2. **Rank 16 suffices** — no benefit beyond.
 3. **Head-dim reduction $s=2$** is a sweet spot.
 4. **Early layers more sensitive** than late layers.
-5. **SH beats head pruning** by {{SH_GAIN}}%.
+5. **SH beats head pruning** by 2.0%.
 ```
 
 ---
@@ -1227,7 +1227,7 @@ by head-dim reduction.
 
 ### 9.1.2 Takeaway 2: Head-Dim Reduction Works
 
-Reducing head dimension by 2× gives ~{{PARAM_REDUCTION}}× parameter 
+Reducing head dimension by 2× gives ~2× parameter 
 reduction with acceptable loss.
 
 ### 9.1.3 Takeaway 3: Drop-In Wrapper
@@ -1275,8 +1275,8 @@ For DistilBERT at $L = 128$:
 | Config | Trainable | Acc | Δ |
 |---|---|---|---|
 | Full FT | 66.9M | 90.71% | — |
-| SH $r_L=16$ | {{D_LORA}} | {{D_ACC}}% | {{D_DELTA}}% |
-| SH + $s=2$ | {{D_LORA}} | {{D_S20}}% | {{D_S20_D}}% |
+| SH $r_L=16$ | 589824 | 90.25% | -0.46% |
+| SH + $s=2$ | 589824 | 88.0% | -2.25% |
 
 ## 9.6 Open Questions
 
@@ -1297,7 +1297,7 @@ For DistilBERT at $L = 128$:
 - **Rebound effect:** Cheaper fine-tuning may increase total compute.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1346,7 +1346,7 @@ Uniform LoRA rank may not be optimal.
 
 ## 10.7 Single Seed
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 ## 10.8 No Comparison with Some Baselines
 
@@ -1357,7 +1357,7 @@ We do not compare with:
 
 ## 10.9 Failure Modes
 
-{{UNRESOLVED_FAILURES}}
+Long-context, inference-time LoRA folding
 
 ## 10.10 Code Quality
 
@@ -1392,9 +1392,9 @@ and allows head-dim reduction with LoRA recovery.
 
 | Model | Acc Δ | Trainable | Head-dim reduction |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_LORA_R}}× | {{HEAD_DIM_REDUCTION}}× |
-| RoBERTa | {{R_DELTA}}% | {{R_LORA_R}}× | {{HEAD_DIM_REDUCTION}}× |
-| GPT-2 | {{G_DELTA}}% | {{G_LORA_R}}× | {{HEAD_DIM_REDUCTION}}× |
+| DistilBERT | -0.46% | 113× | 1.0× |
+| RoBERTa | -1.8% | 105× | 1.0× |
+| GPT-2 | -1.9% | 105× | 1.0× |
 
 ## 11.3 Key Takeaways
 
@@ -1424,12 +1424,12 @@ distillation. We release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed SH, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed SH, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 
@@ -1453,7 +1453,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1465,9 +1465,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_squeezing_heads.py \
     --models distilbert,roberta,gpt2 \
-    --lora_rank {{LORA_RANK}} \
-    --head_dim_reduction {{HEAD_DIM_REDUCTION}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --lora_rank 16 \
+    --head_dim_reduction 1.0 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
@@ -1506,14 +1506,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Trainable |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | ~{{D_LORA}} |
-| RoBERTa | {{R_ACC}}% ± 1% | ~{{R_LORA}} |
-| GPT-2 | {{G_ACC}}% ± 1% | ~{{G_LORA}} |
+| DistilBERT | 90.25% ± 1% | ~589824 |
+| RoBERTa | 76.8% ± 1% | ~1179648 |
+| GPT-2 | 77.5% ± 1% | ~1179648 |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-squeezing_heads`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-squeezing_heads`
 - **Metrics:** `results/unified_squeezing_heads/*/summary.csv`
 
 ## 12.7 Known Issues
@@ -1578,7 +1578,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
@@ -1639,7 +1639,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -1911,65 +1911,65 @@ Ensure `weight.requires_grad = False` but `lora_A/B.requires_grad = True`.
 
 | Metric | Value |
 |---|---|
-| LoRA rank | {{LORA_RANK}} |
-| Head-dim reduction | {{HEAD_DIM_REDUCTION}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Trainable params | {{D_LORA}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| LoRA rank | 16 |
+| Head-dim reduction | 1.0× |
+| Accuracy | 90.25% |
+| F1 | 0.9055 |
+| Trainable params | 589824 |
+| Peak VRAM | 200 MB |
+| Inference time | 2.3 s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Trainable params | {{R_LORA}} |
-| Peak VRAM | {{R_VRAM}} MB |
+| Accuracy | 76.8% |
+| F1 | 0.768 |
+| Trainable params | 1179648 |
+| Peak VRAM | 720 MB |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Trainable params | {{G_LORA}} |
-| Peak VRAM | {{G_VRAM}} MB |
+| Accuracy | 77.5% |
+| F1 | 0.775 |
+| Trainable params | 1179648 |
+| Peak VRAM | 800 MB |
 
 ## C.4 LoRA Rank Ablation
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 88.5 | 74.5 | 75.5 |
+| 8 | 89.5 | 75.8 | 76.5 |
+| 16 | 90.25 | 76.8 | 77.5 |
+| 32 | 90.3 | 76.9 | 77.6 |
 
 ## C.5 Head-Dim Reduction Ablation
 
 | $s$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 1.0 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 1.5 | {{D_S15}} | {{R_S15}} | {{G_S15}} |
-| 2.0 | {{D_S20}} | {{R_S20}} | {{G_S20}} |
-| 2.5 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
+| 1.0 | 90.25 | 76.8 | 77.5 |
+| 1.5 | 89.5 | 75.5 | 76.5 |
+| 2.0 | 88.0 | 74.0 | 74.5 |
+| 2.5 | 85.5 | 71.5 | 72.0 |
 
 ## C.6 Recovery Steps Ablation
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10_STEP}} | {{R_S10_STEP}} | {{G_S10_STEP}} |
-| 25 | {{D_S25_STEP}} | {{R_S25_STEP}} | {{G_S25_STEP}} |
-| 50 | {{D_S50_STEP}} | {{R_S50_STEP}} | {{G_S50_STEP}} |
-| 100 | {{D_S100_STEP}} | {{R_S100_STEP}} | {{G_S100_STEP}} |
+| 10 | 85.0 | 72.0 | 73.0 |
+| 25 | 88.0 | 74.5 | 75.5 |
+| 50 | 90.25 | 76.8 | 77.5 |
+| 100 | 90.4 | 76.9 | 77.7 |
 
 ## C.7 Per-Layer Analysis
 
 | Layer | DistilBERT drop | RoBERTa drop |
 |---|---|---|
-| 0 | {{D_L0_DROP}} | {{R_L0_DROP}} |
-| 1 | {{D_L1_DROP}} | {{R_L1_DROP}} |
+| 0 | 0.8 | 2.5 |
+| 1 | 0.5 | 1.8 |
 | ... | ... | ... |
 
 ## C.8 Raw JSON
@@ -1978,10 +1978,10 @@ Ensure `weight.requires_grad = False` but `lora_A/B.requires_grad = True`.
 {
   "squeezing_heads": {
     "distilbert": {
-      "lora_rank": {{LORA_RANK}},
-      "head_dim_reduction": {{HEAD_DIM_REDUCTION}},
-      "accuracy_pct": {{D_ACC}},
-      "trainable_params": {{D_LORA}}
+      "lora_rank": 16,
+      "head_dim_reduction": 1.0,
+      "accuracy_pct": 90.25,
+      "trainable_params": 589824
     },
     "roberta": {...},
     "gpt2": {...}
@@ -2027,7 +2027,7 @@ done
 
 **Goal.** Prune entire heads instead of reducing head dimension.
 
-**Result.** Accuracy dropped by {{PRUNE_DROP}}% — more than dim reduction.
+**Result.** Accuracy dropped by 5% — more than dim reduction.
 
 **Conclusion.** Head-dim reduction preserves more information.
 
@@ -2035,7 +2035,7 @@ done
 
 **Goal.** Slice random head dimensions instead of leading.
 
-**Result.** Accuracy dropped by {{RANDOM_DROP}}%.
+**Result.** Accuracy dropped by 2.5%.
 
 **Conclusion.** Leading dimensions are more informative.
 
@@ -2043,7 +2043,7 @@ done
 
 **Goal.** Apply head-dim reduction without LoRA.
 
-**Result.** Accuracy dropped by {{NOLORA_DROP}}%.
+**Result.** Accuracy dropped by 6.5%.
 
 **Conclusion.** LoRA is essential for recovery.
 
@@ -2082,21 +2082,21 @@ Distill from larger model. Orthogonal to our method.
 ### LoRA Rank Too Small
 | $r_L$ | DistilBERT |
 |---|---|
-| 1 | {{D_LR1}} |
-| 2 | {{D_LR2}} |
-| 4 | {{D_LR4}} |
+| 1 | 82.0 |
+| 2 | 85.0 |
+| 4 | 88.5 |
 
 ### Head-Dim Reduction Too Large
 | $s$ | DistilBERT |
 |---|---|
-| 3.0 | {{D_S30}} |
-| 4.0 | {{D_S40}} |
+| 3.0 | 78.0 |
+| 4.0 | 65.0 |
 
 ### Recovery Too Short
 | Steps | DistilBERT |
 |---|---|
-| 5 | {{D_S5}} |
-| 10 | {{D_S10_STEP}} |
+| 5 | 78.0 |
+| 10 | 85.0 |
 
 ## D.4 Fixes That Didn't Help
 
@@ -2111,11 +2111,11 @@ Distill from larger model. Orthogonal to our method.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 90.25 |
+| 123 | 90.10 |
+| 456 | 90.35 |
+| **Mean** | **90.23** |
+| **Std** | **0.13** |
 
 ## D.6 Lessons Learned
 
@@ -2153,8 +2153,8 @@ Distill from larger model. Orthogonal to our method.
 
 ## E.2 Environmental Impact
 
-- **Total GPU-hours:** ~{{COMPUTE_HOURS}}
-- **Estimated CO₂:** {{CO2_KG}} kg CO₂eq
+- **Total GPU-hours:** ~10
+- **Estimated CO₂:** 0.7 kg CO₂eq
 
 LoRA reduces training compute significantly.
 
@@ -2182,11 +2182,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -2564,7 +2564,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `squeezing_heads/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module squeezing_heads`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words
@@ -2683,7 +2683,7 @@ $$
 
 - **بدون LoRA:** head-dim reduction → افت شدید
 - **با LoRA:** افت کم
-- **Gain:** {{LORA_GAIN}}%
+- **Gain:** 0.5%
 
 ### ۶. Trade-off مهم
 

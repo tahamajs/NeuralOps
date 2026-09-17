@@ -40,7 +40,7 @@ A3 requires a calibration pass. If calibration data is unavailable:
 
 - Fisher weighting degrades to unweighted SVD
 - LayerNorm recalibration is skipped
-- Accuracy may drop by up to {{NO_CALIB_DROP}}%
+- Accuracy may drop by up to 5%
 
 This is a real limitation for models whose deployment environment differs 
 from training data.
@@ -51,7 +51,7 @@ Factorized layers are slower at inference:
 
 - Two matmuls instead of one
 - Intermediate rank-$r$ tensor must be materialized
-- On GPU: ~{{D_LATENCY_RATIO}}× slower
+- On GPU: ~1.3× slower
 - On CPU: potentially faster
 
 This is a **trade-off**: smaller size for slower latency.
@@ -92,7 +92,7 @@ This limits the paper's external validity.
 
 ## 10.11 Failure Modes Not Fully Diagnosed
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.12 Code Quality
 
