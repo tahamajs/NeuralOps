@@ -1,3 +1,6 @@
-\section{A Math}
-
-Formal architectural specifications for \texttt{cachenotes_compressor}.
+\section*{Appendix A. Mathematical Formulations}\addcontentsline{toc}{section}{Appendix A}
+For input activations $x \in \mathbb{R}^{B \times T \times d_{\text{in}}}$, \texttt{CacheNotesLoRALinear} computes:
+\[
+\tilde{y} = x \tilde{W}^\top + b
+\]
+where $\tilde{W}$ incorporates the structural sparsity mask, quantization boundaries, or low-rank bottleneck factors.

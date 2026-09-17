@@ -1,3 +1,9 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{bonsai_pruner}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+benchmark\_summary\_v2 & bert-sst2 & PASS & 25.6 ms & 571.8 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 24.87 ms & 571.8 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 26.8 ms & 581.7 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 27.31 ms & 581.7 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 52.51 ms & 1107.2 MB \\
+benchmark\_summary\_v2 & t5-mrpc & PASS & 52.37 ms & 1107.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

@@ -1,3 +1,17 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{cachenotes_compressor}.
+\subsection{Algorithmic Formulation}
+The \texttt{cachenotes_compressor} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{CacheNotes: Task-Aware Key-Value Cache Compression and Static Weight Compression
+with Learnable Continuous CPT (Compression-Planning-Token) Generator.
+
+Given a task description, CacheNotes generates Compression-Planning-Tokens (CPTs)
+that guide the compression of the corpus and KV cache into compact, reusable states.
+
+Scientific Enhancement:
+- Replaces static keyword heuristics with a continuous, differentiable CPTGenerator network.
+- Learnable task representation using tokenized embedding bag and multi-frequency coordinate positional projection.
+- Capable of evaluating task importance at ANY }\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

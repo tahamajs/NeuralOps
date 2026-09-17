@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{astro_quantizer}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_astro/roberta/summary.csv} & astro & PASS & 74.77\% & 520.18 MB \\
+\texttt{results/unified\_astro/distilbert/summary.csv} & astro & PASS & 90.71\% & 183.07 MB \\
+\texttt{results/unified\_astro/qwen3\_5/summary.csv} & astro & PASS & 87.5\% & 1878.83 MB \\
+\texttt{results/unified\_astro/gpt2/summary.csv} & astro & PASS & 77.87\% & 627.28 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 43.45 ms & 571.8 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 25.25 ms & 571.8 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 26.74 ms & 581.7 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 27.31 ms & 581.7 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

@@ -1,0 +1,734 @@
+{
+  "armor_pruner": {
+    "module_name": "armor_pruner",
+    "source_file": "Codes/framework/compression_engine/armor_pruner.py",
+    "source_lines_count": 698,
+    "architecture": {
+      "class_name": "ARMORLinear",
+      "base_class": "nn.Module",
+      "init_args": "self, in_features: int, out_features: int, rank: int, bias: bool = True, lora_alpha: float = 1.0, dtype: torch.dtype = torch.float32, device: Optional[torch.device] = None, ) -> None: super().__init__() self.in_features = in_features self.out_features = out_features self.nf = out_features # Conv1D compatibility self.rank = max(1, min(rank, in_features, out_features)) self.lora_alpha = float(lora_alpha) self.scaling = (self.lora_alpha / self.rank) if self.rank > 0 else 1.0 # Base sparse weight is frozen for parameter-efficient adaptation self.sparse_weight = nn.Parameter( torch.empty(out_features, in_features, dtype=dtype, device=device), requires_grad=False, ) self.register_buffer(\"sparse_mask\", torch.ones(out_features, in_features, dtype=dtype, device=device)) # Trainable low-rank factorized parameters self.lora_A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device)) self.lora_B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device)) if bias: self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device)) else: self.register_parameter(\"bias\", None) @classmethod def from_linear( cls, linear: Union[nn.Linear, Any], mask: torch.Tensor, lora_A: torch.Tensor, lora_B: torch.Tensor, lora_alpha: float = 1.0, ) -> ARMORLinear: cls_name = linear.__class__.__name__.lower() is_conv1d = \"conv1d\" in cls_name or hasattr(linear, \"nf\") raw_w = linear.weight.data if is_conv1d: in_f, out_f = raw_w.shape[0], raw_w.shape[1] w_data = raw_w.t() else: out_f, in_f = raw_w.shape[0], raw_w.shape[1] w_data = raw_w layer = cls( in_features=in_f, out_features=out_f, rank=lora_A.shape[0], bias=getattr(linear, \"bias\", None) is not None and linear.bias is not None, lora_alpha=lora_alpha, dtype=raw_w.dtype, device=raw_w.device, ) # Store sparse-masked weights in base sparse tensor mask_dev = mask.to(dtype=w_data.dtype, device=w_data.device) layer.sparse_weight.data.copy_(w_data * mask_dev) layer.sparse_mask.copy_(mask_dev) layer.lora_A.data.copy_(lora_A.to(dtype=raw_w.dtype, device=raw_w.device)) layer.lora_B.data.copy_(lora_B.to(dtype=raw_w.dtype, device=raw_w.device)) if getattr(linear, \"bias\", None) is not None and linear.bias is not None: layer.bias.data.copy_(linear.bias.data) return layer @property def weight(self) -> torch.Tensor: \"\"\"Effective weight for compatibility with standard PyTorch / HuggingFace layers.\"\"\" return self.sparse_weight * self.sparse_mask + self.scaling * torch.matmul(self.lora_B, self.lora_A) def forward(self, x: torch.Tensor) -> torch.Tensor: orig_shape = x.shape x_flat = x.reshape(-1, self.in_features) # 1. Sparse Core Forward w_eff = self.sparse_weight * self.sparse_mask out_sparse = F.linear(x_flat, w_eff) # 2. Low-Rank Residual Correction Forward with LoRA scaling x_lr = x_flat.to(dtype=self.lora_A.dtype) if self.lora_A.dtype != x_flat.dtype else x_flat out_lr = self.scaling * F.linear(F.linear(x_lr, self.lora_A), self.lora_B) if out_lr.dtype != out_sparse.dtype: out_lr = out_lr.to(dtype=out_sparse.dtype) out = out_sparse + out_lr if self.bias is not None: out = out + self.bias return out.view(*orig_shape[:-1], self.out_features) @COMPRESSOR_REGISTRY.register(\"armor_pruner\") @COMPRESSOR_REGISTRY.register(\"armor\") @COMPRESSOR_REGISTRY.register(\"armor_compressor\") class ARMORPruner(BaseCompressor",
+      "registry_names": [
+        "armor_compressor",
+        "armor_factory",
+        "armor_compressor_factory",
+        "armor_pruner",
+        "armor",
+        "armor_pruner_factory"
+      ]
+    },
+    "params": [
+      {
+        "name": "lora_A",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device)"
+      },
+      {
+        "name": "lora_B",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device)"
+      },
+      {
+        "name": "bias",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, dtype=dtype, device=device)"
+      }
+    ],
+    "metrics": {
+      "results/benchmark_summary_v2.csv": "track5_pruning,armor_pruner,compressor,bert,sst2,PASS,,18.74,29.35,48.09,0.0,1.0,4425350,4425350,0.991,843.6,0.0,0.6924,0.0,0.0,0.0,0.073,\"{'loss': [0.6924, 0.6924, 0.6924, 0.6924, 0.6924], 'grad_norm': [0.073, 0.073, 0.073, 0.073, 0.073], 'fwd_latency_ms': [18.2548, 17.9695, 19.1836, 18.7722, 19.5022], 'bwd_latency_ms': [28.2034, 27.7802, 29.3331, 31.7717, 29.6574]}\",2026-08-26 03:47:53\ntrack5_pruning,armor_pruner,compressor,bert,mrpc,PASS,,17.04,26.55,43.59,0.0,1.0,4425350,4425350,0.991,843.6,0.0,0.6807,0.0,0.0,0.0,0.9614,\"{'loss': [0.6807, 0.6807, 0.6807, 0.6807, 0.6807], 'grad_norm': [0.9614, 0.9614, 0.9614, 0.9614, 0.9614], 'fwd_latency_ms': [18.0163, 17.0321, 16.4518, 16.5188, 17.1979], 'bwd_latency_ms': [26.1885, 25.8748, 25.3208, 29.7809, 25.5965]}\",2026-08-26 03:47:54\ntrack5_pruning,armor_pruner,compressor,roberta,sst2,PASS,,17.06,26.75,43.81,0.0,1.0,6952454,6952454,0.994,853.5,0.0,0.6942,0.0,0.0,0.0,0.1776,\"{'loss': [0.6942, 0.6942, 0.6942, 0.6942, 0.6942], 'grad_norm': [0.1776, 0.1776, 0.1776, 0.1776, 0.1776], 'fwd_latency_ms': [16.8233, 17.0917, 17.5592, 16.9555, 16.8453], 'bwd_latency_ms': [25.8945, 25.7237, 25.9141, 26.3311, 29.8821]}\",2026-08-26 03:47:54\ntrack5_pruning,armor_pruner,compressor,roberta,mrpc,PASS,,20.33,31.0,51.33,0.0,1.0,6952454,6952454,0.994,853.5,0.0,0.7014,0.0,0.0,0.0,1.1345,\"{'loss': [0.7014, 0.7014, 0.7014, 0.7014, 0.7014], 'grad_norm': [1.1345, 1.1345, 1.1345, 1.1345, 1.1345], 'fwd_latency_ms': [19.9946, 19.9167, 20.3119, 20.8343, 20.5677], 'bwd_latency_ms': [31.1484, 29.8281, 30.8812, 30.6788, 32.4628]}\",2026-08-26 03:47:55\ntrack5_pruning,armor_pruner,compressor,t5,sst2,PASS,,24.3,40.32,64.62,0.0,1.0,4543232,4543232,0.992,1251.2,0.0,0.8068,0.0,0.0,0.0,3.4446,\"{'loss': [0.8068, 0.8068, 0.8068, 0.8068, 0.8068], 'grad_norm': [3.4446, 3.4446, 3.4446, 3.4446, 3.4446], 'fwd_latency_ms': [20.0591, 25.4566, 25.1576, 25.3799, 25.4325], 'bwd_latency_ms': [39.8846, 42.1154, 39.9276, 39.8057, 39.8644]}\",2026-08-26 03:47:56\ntrack5_pruning,armor_pruner,compressor,t5,mrpc,PASS,,24.38,40.01,64.39,0.0,1.0,4543232,4543232,0.992,1251.2,0.0,0.6016,0.0,0.0,0.0,0.6057,\"{'loss': [0.6016, 0.6016, 0.6016, 0.6016, 0.6016], 'grad_norm': [0.6057, 0.6057, 0.6057, 0.6057, 0.6057], 'fwd_latency_ms': [20.0489, 24.9983, 25.8383, 25.2637, 25.7667], 'bwd_latency_ms': [40.2477, 40.0713, 39.9104, 40.1177, 39.7033]}\",2026-08-26 03:47:57",
+      "results/all_121_compressors_gpu_matrix.csv": "armor_pruner,cuda,PASS,True,True,0.98,279.0,0.838,"
+    },
+    "notes": []
+  },
+  "ast_pruner": {
+    "module_name": "ast_pruner",
+    "source_file": "Codes/framework/compression_engine/ast_pruner.py",
+    "source_lines_count": 552,
+    "architecture": {
+      "class_name": "ASTPrunedLoRALinear",
+      "base_class": "nn.Module",
+      "init_args": "self, in_features: int, out_features: int, weight: torch.Tensor, bias: Optional[torch.Tensor] = None, lora_r: int = 0, lora_alpha: float = 1.0, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().__init__() self.in_features = in_features self.out_features = out_features self.nf = out_features # Conv1D compatibility self.lora_r = int(lora_r) self.lora_alpha = float(lora_alpha) self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0 target_device = device if device is not None else weight.device target_dtype = dtype if dtype is not None else weight.dtype self.weight = nn.Parameter( weight.to(device=target_device, dtype=target_dtype), requires_grad=False, ) if bias is not None: self.bias = nn.Parameter( bias.to(device=target_device, dtype=target_dtype), requires_grad=False, ) else: self.register_parameter(\"bias\", None) if self.lora_r > 0: self.lora_A = nn.Parameter( torch.empty((self.lora_r, in_features), dtype=torch.float32, device=target_device) ) self.lora_B = nn.Parameter( torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=target_device) ) nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5)) else: self.register_parameter(\"lora_A\", None) self.register_parameter(\"lora_B\", None) @classmethod def from_linear( cls, linear: nn.Module, weight: torch.Tensor, lora_r: int = 0, lora_alpha: float = 1.0, ) -> ASTPrunedLoRALinear: bias = linear.bias.detach() if hasattr(linear, \"bias\") and linear.bias is not None else None in_features = getattr(linear, \"in_features\", weight.shape[1]) out_features = getattr(linear, \"out_features\", weight.shape[0]) return cls( in_features=in_features, out_features=out_features, weight=weight, bias=bias, lora_r=lora_r, lora_alpha=lora_alpha, device=weight.device, dtype=weight.dtype, ) def forward(self, x: torch.Tensor) -> torch.Tensor: orig_shape = x.shape x_flat = x.reshape(-1, self.in_features) out = F.linear(x_flat, self.weight, self.bias) if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None: lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B) out = out + (self.scaling * lora_out).to(out.dtype) return out.reshape(*orig_shape[:-1], self.out_features) @COMPRESSOR_REGISTRY.register(\"ast_pruner\") @COMPRESSOR_REGISTRY.register(\"ast\") class ASTPruner(BaseCompressor",
+      "registry_names": [
+        "ast_factory",
+        "ast_pruner_factory",
+        "ast",
+        "ast_pruner"
+      ]
+    },
+    "params": [],
+    "metrics": {
+      "results/benchmark_summary_v2.csv": "track5_pruning,ast_pruner,compressor,bert,sst2,PASS,,10.97,15.09,26.06,0.0,1.0,4386178,4386178,1.0,571.8,0.0,0.6924,0.0,0.0,0.0,0.0699,\"{'loss': [0.6924, 0.6924, 0.6924, 0.6924, 0.6924], 'grad_norm': [0.0699, 0.0699, 0.0699, 0.0699, 0.0699], 'fwd_latency_ms': [10.4169, 11.6753, 11.2998, 10.5228, 10.9567], 'bwd_latency_ms': [15.0674, 14.5383, 15.0251, 15.3137, 15.5188]}\",2026-08-26 03:47:58\ntrack5_pruning,ast_pruner,compressor,bert,mrpc,PASS,,10.82,15.06,25.88,0.0,1.0,4386178,4386178,1.0,571.8,0.0,0.694,0.0,0.0,0.0,1.0909,\"{'loss': [0.694, 0.694, 0.694, 0.694, 0.694], 'grad_norm': [1.0909, 1.0909, 1.0909, 1.0909, 1.0909], 'fwd_latency_ms': [10.0639, 10.8859, 10.8611, 11.4245, 10.8886], 'bwd_latency_ms': [15.4126, 14.8757, 15.788, 14.0108, 15.231]}\",2026-08-26 03:47:59\ntrack5_pruning,ast_pruner,compressor,roberta,sst2,PASS,,11.83,16.4,28.23,0.0,1.0,6913282,6913282,1.0,581.7,0.0,0.6944,0.0,0.0,0.0,0.1888,\"{'loss': [0.6944, 0.6944, 0.6944, 0.6944, 0.6944], 'grad_norm': [0.1888, 0.1888, 0.1888, 0.1888, 0.1888], 'fwd_latency_ms': [11.5857, 10.9491, 11.9907, 13.2778, 11.3466], 'bwd_latency_ms': [15.8156, 16.3671, 16.6934, 17.7202, 15.3882]}\",2026-08-26 03:47:59\ntrack5_pruning,ast_pruner,compressor,roberta,mrpc,PASS,,11.3,15.53,26.83,0.0,1.0,6913282,6913282,1.0,581.7,0.0,0.6999,0.0,0.0,0.0,1.1916,\"{'loss': [0.6999, 0.6999, 0.6999, 0.6999, 0.6999], 'grad_norm': [1.1916, 1.1916, 1.1916, 1.1916, 1.1916], 'fwd_latency_ms': [11.4604, 11.1893, 11.6577, 10.9088, 11.2761], 'bwd_latency_ms': [16.5074, 14.4863, 16.158, 15.4795, 15.0406]}\",2026-08-26 03:48:00\ntrack5_pruning,ast_pruner,compressor,t5,sst2,PASS,,19.29,33.58,52.87,0.0,1.0,4506368,4506368,1.0,1107.2,0.0,0.7505,0.0,0.0,0.0,3.8451,\"{'loss': [0.7505, 0.7505, 0.7505, 0.7505, 0.7505], 'grad_norm': [3.8451, 3.8451, 3.8451, 3.8451, 3.8451], 'fwd_latency_ms': [15.9181, 21.148, 20.1369, 19.7195, 19.5269], 'bwd_latency_ms': [35.1077, 33.5106, 33.013, 33.0108, 33.2364]}\",2026-08-26 03:48:01\ntrack5_pruning,ast_pruner,compressor,t5,mrpc,PASS,,19.33,33.4,52.73,0.0,1.0,4506368,4506368,1.0,1107.2,0.0,0.6435,0.0,0.0,0.0,2.8161,\"{'loss': [0.6435, 0.6435, 0.6435, 0.6435, 0.6435], 'grad_norm': [2.8161, 2.8161, 2.8161, 2.8161, 2.8161], 'fwd_latency_ms': [15.9109, 20.5681, 20.4276, 19.5835, 20.1446], 'bwd_latency_ms': [33.1772, 32.6858, 33.0563, 35.0537, 33.0344]}\",2026-08-26 03:48:02",
+      "results/all_121_compressors_gpu_matrix.csv": "ast_pruner,cuda,PASS,True,True,1.0,202.4,0.194,"
+    },
+    "notes": []
+  },
+  "astro_quantizer": {
+    "module_name": "astro_quantizer",
+    "source_file": "Codes/framework/compression_engine/astro_quantizer.py",
+    "source_lines_count": 757,
+    "architecture": {
+      "class_name": "AstroLinear",
+      "base_class": "nn.Module",
+      "init_args": "self, in_features: int, out_features: int, bias: bool = True, bits: int = 8, symmetric: bool = True, per_channel: bool = False, per_channel_bits: Optional[torch.Tensor] = None,",
+      "registry_names": [
+        "astro_quantizer_factory",
+        "astro_factory",
+        "astro_quantizer",
+        "astro"
+      ]
+    },
+    "params": [
+      {
+        "name": "weight",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, in_features)"
+      },
+      {
+        "name": "bias",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features)"
+      }
+    ],
+    "metrics": {
+      "results/benchmark_summary_v2.csv": "track4_kernel_quant,astro_quantizer,compressor,bert,sst2,PASS,,16.53,26.92,43.45,0.0,1.0,4386178,4386178,1.0,571.8,0.0,0.6923,0.0,0.0,0.0,0.0614,\"{'loss': [0.6923, 0.6923, 0.6923, 0.6923, 0.6923], 'grad_norm': [0.0614, 0.0614, 0.0614, 0.0614, 0.0614], 'fwd_latency_ms': [24.535, 24.8745, 12.6149, 10.71, 9.9], 'bwd_latency_ms': [45.0168, 44.89, 15.038, 15.0412, 14.6218]}\",2026-08-26 03:46:36\ntrack4_kernel_quant,astro_quantizer,compressor,bert,mrpc,PASS,,10.17,15.08,25.25,0.0,1.0,4386178,4386178,1.0,571.8,0.0,0.6826,0.0,0.0,0.0,1.1389,\"{'loss': [0.6826, 0.6826, 0.6826, 0.6826, 0.6826], 'grad_norm': [1.1389, 1.1389, 1.1389, 1.1389, 1.1389], 'fwd_latency_ms': [10.0833, 10.0252, 10.1672, 10.545, 10.0477], 'bwd_latency_ms': [15.0912, 15.0834, 15.1472, 14.9719, 15.106]}\",2026-08-26 03:46:37\ntrack4_kernel_quant,astro_quantizer,compressor,roberta,sst2,PASS,,11.41,15.33,26.74,0.0,1.0,6913282,6913282,1.0,581.7,0.0,0.6942,0.0,0.0,0.0,0.2002,\"{'loss': [0.6942, 0.6942, 0.6942, 0.6942, 0.6942], 'grad_norm': [0.2002, 0.2002, 0.2002, 0.2002, 0.2002], 'fwd_latency_ms': [11.1993, 11.6051, 12.2302, 10.9364, 11.0976], 'bwd_latency_ms': [15.9052, 17.7322, 14.5946, 14.5711, 13.8374]}\",2026-08-26 03:46:38\ntrack4_kernel_quant,astro_quantizer,compressor,roberta,mrpc,PASS,,11.42,15.89,27.31,0.0,1.0,6913282,6913282,1.0,581.7,0.0,0.7005,0.0,0.0,0.0,1.3077,\"{'loss': [0.7005, 0.7005, 0.7005, 0.7005, 0.7005], 'grad_norm': [1.3077, 1.3077, 1.3077, 1.3077, 1.3077], 'fwd_latency_ms': [10.9619, 12.2468, 11.0688, 11.8459, 10.9964], 'bwd_latency_ms': [16.3857, 16.2647, 15.722, 15.2076, 15.8772]}\",2026-08-26 03:46:38\ntrack4_kernel_quant,astro_quantizer,compressor,t5,sst2,PASS,,19.28,33.76,53.04,0.0,1.0,4506368,4506368,1.0,1107.2,0.0,0.87,0.0,0.0,0.0,6.9037,\"{'loss': [0.87, 0.87, 0.87, 0.87, 0.87], 'grad_norm': [6.9037, 6.9037, 6.9037, 6.9037, 6.9037], 'fwd_latency_ms': [15.8904, 20.7244, 19.9699, 20.135, 19.6957], 'bwd_latency_ms': [35.5842, 33.6892, 33.2325, 33.0367, 33.2604]}\",2026-08-26 03:46:39\ntrack4_kernel_quant,astro_quantizer,compressor,t5,mrpc,PASS,,19.15,33.25,52.4,0.0,1.0,4506368,4506368,1.0,1107.2,0.0,0.6272,0.0,0.0,0.0,2.0441,\"{'loss': [0.6272, 0.6272, 0.6272, 0.6272, 0.6272], 'grad_norm': [2.0441, 2.0441, 2.0441, 2.0441, 2.0441], 'fwd_latency_ms': [15.9396, 19.8535, 20.717, 19.5497, 19.6934], 'bwd_latency_ms': [33.3825, 33.1169, 33.0148, 32.8652, 33.8827]}\",2026-08-26 03:46:39",
+      "results/all_121_compressors_gpu_matrix.csv": "astro_quantizer,cuda,PASS,True,True,1.0,127.0,0.186,"
+    },
+    "notes": []
+  },
+  "bonsai_pruner": {
+    "module_name": "bonsai_pruner",
+    "source_file": "Codes/framework/compression_engine/bonsai_pruner.py",
+    "source_lines_count": 618,
+    "architecture": {
+      "class_name": "BonsaiPrunedLoRALinear",
+      "base_class": "nn.Module",
+      "init_args": "self, in_features: int, out_features: int, bias: bool = True, lora_r: int = 0, lora_alpha: float = 1.0, freeze_base: bool = True, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None, ) -> None: super().__init__() self.in_features = in_features self.out_features = out_features self.lora_r = max(0, int(lora_r)) self.lora_alpha = float(lora_alpha) self.scaling = (self.lora_alpha / max(1, self.lora_r)) if self.lora_r > 0 else 1.0 self.weight = nn.Parameter(torch.empty(out_features, in_features, dtype=dtype, device=device)) self.register_buffer(\"mask\", torch.ones(out_features, in_features, dtype=torch.float32, device=device)) if bias: self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device)) else: self.register_parameter(\"bias\", None) if self.lora_r > 0: self.lora_A = nn.Parameter(torch.empty(self.lora_r, in_features, dtype=dtype, device=device)) self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_r, dtype=dtype, device=device)) nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5)) nn.init.zeros_(self.lora_B) else: self.register_parameter(\"lora_A\", None) self.register_parameter(\"lora_B\", None) if freeze_base: self.weight.requires_grad = False if self.bias is not None: self.bias.requires_grad = False @property def effective_weight(self) -> torch.Tensor: \"\"\"Effective reconstructed weight matrix for inspection.\"\"\" W_eff = self.weight * self.mask.to(dtype=self.weight.dtype) if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None: W_eff = W_eff + (torch.matmul(self.lora_B, self.lora_A) * self.scaling) return W_eff def forward(self, x: torch.Tensor) -> torch.Tensor: orig_shape = x.shape x_flat = x.reshape(-1, self.in_features) W_sparse = self.weight * self.mask.to(dtype=self.weight.dtype) out = F.linear(x_flat, W_sparse, self.bias) if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None: lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling out = out + lora_out return out.view(*orig_shape[:-1], self.out_features) @classmethod def from_linear( cls, linear: Union[nn.Linear, Any], pruned_weight: torch.Tensor, mask: torch.Tensor, lora_r: int = 0, lora_alpha: float = 1.0, freeze_base: bool = True, ) -> \"BonsaiPrunedLoRALinear\": out_features, in_features = pruned_weight.shape has_bias = getattr(linear, \"bias\", None) is not None and linear.bias is not None layer = cls( in_features=in_features, out_features=out_features, bias=has_bias, lora_r=lora_r, lora_alpha=lora_alpha, freeze_base=freeze_base, dtype=pruned_weight.dtype, device=pruned_weight.device, ) layer.weight.data.copy_(pruned_weight) layer.mask.copy_(mask.float()) if has_bias: layer.bias.data.copy_(linear.bias.data) return layer @COMPRESSOR_REGISTRY.register(\"bonsai\") @COMPRESSOR_REGISTRY.register(\"bonsai_pruner\") class BonsaiPruner(BaseCompressor",
+      "registry_names": [
+        "bonsai_factory",
+        "bonsai",
+        "bonsai_pruner_factory",
+        "bonsai_pruner"
+      ]
+    },
+    "params": [
+      {
+        "name": "weight",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, in_features, dtype=dtype, device=device)"
+      },
+      {
+        "name": "bias",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device)"
+      },
+      {
+        "name": "lora_A",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(self.lora_r, in_features, dtype=dtype, device=device)"
+      },
+      {
+        "name": "lora_B",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, self.lora_r, dtype=dtype, device=device)"
+      }
+    ],
+    "metrics": {
+      "results/benchmark_summary_v2.csv": "track5_pruning,bonsai_pruner,compressor,bert,sst2,PASS,,10.45,15.15,25.6,0.0,1.0,4386178,4386178,1.0,571.8,0.0,0.6921,0.0,0.0,0.0,0.0031,\"{'loss': [0.6921, 0.6921, 0.6921, 0.6921, 0.6921], 'grad_norm': [0.0031, 0.0031, 0.0031, 0.0031, 0.0031], 'fwd_latency_ms': [10.2235, 10.8088, 10.5641, 10.2322, 10.4366], 'bwd_latency_ms': [15.3404, 14.8874, 14.8242, 15.228, 15.4801]}\",2026-08-26 03:48:02\ntrack5_pruning,bonsai_pruner,compressor,bert,mrpc,PASS,,10.27,14.6,24.87,0.0,1.0,4386178,4386178,1.0,571.8,0.0,0.675,0.0,0.0,0.0,0.9967,\"{'loss': [0.675, 0.675, 0.675, 0.675, 0.675], 'grad_norm': [0.9967, 0.9967, 0.9967, 0.9967, 0.9967], 'fwd_latency_ms': [10.409, 9.0592, 10.5953, 10.6419, 10.6222], 'bwd_latency_ms': [14.4428, 15.0702, 14.9693, 13.3898, 15.1275]}\",2026-08-26 03:48:03\ntrack5_pruning,bonsai_pruner,compressor,roberta,sst2,PASS,,11.01,15.79,26.8,0.0,1.0,6913282,6913282,1.0,581.7,0.0,0.6939,0.0,0.0,0.0,0.1896,\"{'loss': [0.6939, 0.6939, 0.6939, 0.6939, 0.6939], 'grad_norm': [0.1896, 0.1896, 0.1896, 0.1896, 0.1896], 'fwd_latency_ms': [10.6815, 11.1465, 10.8777, 10.7701, 11.5785], 'bwd_latency_ms': [14.9932, 16.4563, 15.8387, 15.5668, 16.0917]}\",2026-08-26 03:48:04\ntrack5_pruning,bonsai_pruner,compressor,roberta,mrpc,PASS,,11.08,16.23,27.31,0.0,1.0,6913282,6913282,1.0,581.7,0.0,0.6991,0.0,0.0,0.0,1.2993,\"{'loss': [0.6991, 0.6991, 0.6991, 0.6991, 0.6991], 'grad_norm': [1.2993, 1.2993, 1.2993, 1.2993, 1.2993], 'fwd_latency_ms': [10.7128, 11.2475, 11.2705, 11.3252, 10.8211], 'bwd_latency_ms': [15.5015, 17.798, 16.053, 15.4164, 16.382]}\",2026-08-26 03:48:05\ntrack5_pruning,bonsai_pruner,compressor,t5,sst2,PASS,,19.08,33.43,52.51,0.0,1.0,4506368,4506368,1.0,1107.2,0.0,0.7016,0.0,0.0,0.0,0.77,\"{'loss': [0.7016, 0.7016, 0.7016, 0.7016, 0.7016], 'grad_norm': [0.77, 0.77, 0.77, 0.77, 0.77], 'fwd_latency_ms': [15.9969, 19.6826, 20.1342, 19.6183, 19.9792], 'bwd_latency_ms': [34.9948, 32.9387, 33.196, 33.118, 32.9242]}\",2026-08-26 03:48:06\ntrack5_pruning,bonsai_pruner,compressor,t5,mrpc,PASS,,19.37,33.0,52.37,0.0,1.0,4506368,4506368,1.0,1107.2,0.0,0.6788,0.0,0.0,0.0,3.8319,\"{'loss': [0.6788, 0.6788, 0.6788, 0.6788, 0.6788], 'grad_norm': [3.8319, 3.8319, 3.8319, 3.8319, 3.8319], 'fwd_latency_ms': [16.0154, 19.8939, 19.7699, 21.4982, 19.6734], 'bwd_latency_ms': [33.1637, 32.9498, 32.9733, 32.8382, 33.0639]}\",2026-08-26 03:48:07",
+      "results/all_121_compressors_gpu_matrix.csv": "bonsai_pruner,cuda,PASS,True,True,1.0,146.2,0.346,"
+    },
+    "notes": []
+  },
+  "cachenotes_compressor": {
+    "module_name": "cachenotes_compressor",
+    "source_file": "Codes/framework/compression_engine/cachenotes_compressor.py",
+    "source_lines_count": 900,
+    "architecture": {
+      "class_name": "CacheNotesLoRALinear",
+      "base_class": "nn.Module",
+      "init_args": "self, in_features: int, out_features: int, weight: torch.Tensor, bias: Optional[torch.Tensor] = None, lora_r: int = 0, lora_alpha: float = 1.0, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().__init__() self.in_features = in_features self.out_features = out_features self.nf = out_features # Conv1D compatibility self.lora_r = int(lora_r) self.lora_alpha = float(lora_alpha) self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0 target_device = device if device is not None else weight.device target_dtype = dtype if dtype is not None else weight.dtype self.weight = nn.Parameter( weight.to(device=target_device, dtype=target_dtype), requires_grad=False, ) if bias is not None: self.bias = nn.Parameter( bias.to(device=target_device, dtype=target_dtype), requires_grad=False, ) else: self.register_parameter(\"bias\", None) if self.lora_r > 0: self.lora_A = nn.Parameter( torch.empty((self.lora_r, in_features), dtype=target_dtype, device=target_device) ) self.lora_B = nn.Parameter( torch.zeros((out_features, self.lora_r), dtype=target_dtype, device=target_device) ) nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5)) else: self.register_parameter(\"lora_A\", None) self.register_parameter(\"lora_B\", None) @classmethod def from_linear( cls, linear: nn.Module, weight: torch.Tensor, lora_r: int = 0, lora_alpha: float = 1.0, ) -> CacheNotesLoRALinear: cls_name = linear.__class__.__name__.lower() is_conv1d = \"conv1d\" in cls_name or hasattr(linear, \"nf\") raw_w = linear.weight.data if is_conv1d: in_f = raw_w.shape[0] out_f = raw_w.shape[1] else: out_f = raw_w.shape[0] in_f = raw_w.shape[1] bias = linear.bias.detach().clone() if getattr(linear, \"bias\", None) is not None and linear.bias is not None else None return cls( in_features=in_f, out_features=out_f, weight=weight, bias=bias, lora_r=lora_r, lora_alpha=lora_alpha, device=weight.device, dtype=weight.dtype, ) def forward(self, x: torch.Tensor) -> torch.Tensor: orig_shape = x.shape x_flat = x.reshape(-1, self.in_features) out = F.linear(x_flat, self.weight.to(x_flat.dtype), self.bias.to(x_flat.dtype) if self.bias is not None else None) if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None: lora_out = F.linear(F.linear(x_flat.to(self.lora_A.dtype), self.lora_A), self.lora_B) out = out + (self.scaling * lora_out).to(out.dtype) return out.reshape(*orig_shape[:-1], self.out_features) class CompressionPlanningTokens: \"\"\" Static CPT heuristic importance generator. Serves as safe baseline fallback when learnable CPT generator is inactive. \"\"\" TASK_KEYWORD_MAP = { \"qa\": [\"question\", \"answer\", \"context\", \"passage\", \"who\", \"what\", \"where\", \"why\"], \"summarize\": [\"summary\", \"abstract\", \"key\", \"main\", \"brief\", \"conclusion\"], \"code\": [\"function\", \"class\", \"def\", \"return\", \"import\", \"self\", \"error\", \"test\"], \"reasoning\": [\"therefore\", \"because\", \"if\", \"then\", \"thus\", \"proof\", \"step\", \"hence\"], \"math\": [\"solve\", \"equation\", \"matrix\", \"integral\", \"theorem\", \"calculate\", \"equal\"], } @classmethod def generate_importance( cls, task_type: str, num_features: int, device: torch.device = torch.device(\"cpu\") ) -> torch.Tensor: \"\"\"Generate per-feature importance modulation vector based on static heuristics.\"\"\" task_lower = str(task_type).lower() importance = torch.zeros(num_features, device=device) # Baseline structure: prompt position bias pos_dim = max(1, num_features // 4) importance[:pos_dim] = 0.25 if any(kw in task_lower for kw in [\"qa\", \"question\"]",
+      "registry_names": [
+        "cachenotes_factory",
+        "cachenotes",
+        "cachenotes_compressor_factory",
+        "cachenotes_compressor"
+      ]
+    },
+    "params": [],
+    "metrics": {
+      "results/unified_cachenotes/roberta/roberta-base_full_full_metrics.json": {
+        "model": "roberta-base_full",
+        "performance": {
+          "accuracy_pct": 78.56,
+          "f1_score": 0.8124,
+          "f1_macro": 0.7811,
+          "precision": 0.8051,
+          "recall": 0.7832,
+          "val_loss": 0.4381,
+          "status": "PASS",
+          "elapsed_s": 6.84
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 124647170,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 712.34,
+          "tokens_per_sec": 24050.62
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 683.27,
+          "L_256_vram_mb": 685.84,
+          "L_512_vram_mb": 699.47,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T11:12:43.941552"
+      },
+      "results/unified_cachenotes/roberta/roberta-base_cachenotes_full_metrics.json": {
+        "model": "roberta-base_cachenotes",
+        "performance": {
+          "accuracy_pct": 68.12,
+          "f1_score": 0.7518,
+          "f1_macro": 0.6531,
+          "precision": 0.7527,
+          "recall": 0.6762,
+          "val_loss": 0.6366,
+          "status": "PASS",
+          "elapsed_s": 16.22
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 124647170,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 46,
+          "num_fallback_layers": 26,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": 0.2373566765687054,
+          "weighted_reconstruction_error": 0.3652,
+          "per_layer_reconstruction_errors": {
+            "roberta.encoder.layer.0.attention.self.query": 0.2446868353728077,
+            "roberta.encoder.layer.0.attention.self.key": 0.22339664737868326,
+            "roberta.encoder.layer.0.attention.self.value": 0.23641755738229803,
+            "roberta.encoder.layer.0.attention.output.dense": 0.2260844308684945,
+            "roberta.encoder.layer.0.intermediate.dense": 0.4206405796006891,
+            "roberta.encoder.layer.0.output.dense": 0.4517880643982968,
+            "roberta.encoder.layer.1.attention.self.query": 0.23915145704837482,
+            "roberta.encoder.layer.1.attention.self.key": 0.23270983192041841,
+            "roberta.encoder.layer.1.attention.self.value": 0.22191717161382946,
+            "roberta.encoder.layer.1.attention.output.dense": 0.21497025897536967,
+            "roberta.encoder.layer.1.intermediate.dense": 0.4059765910525888,
+            "roberta.encoder.layer.1.output.dense": 0.4160445201083958,
+            "roberta.encoder.layer.2.attention.self.query": 0.22452044478143338,
+            "roberta.encoder.layer.2.attention.self.key": 0.22629728342064667,
+            "roberta.encoder.layer.2.attention.self.value": 0.21978161950430247,
+            "roberta.encoder.layer.2.attention.output.dense": 0.2365946975565403,
+            "roberta.encoder.layer.2.intermediate.dense": 0.42466997464786654,
+            "roberta.encoder.layer.2.output.dense": 0.41082992973274685,
+            "roberta.encoder.layer.3.attention.self.query": 0.23701216472645312,
+            "roberta.encoder.layer.3.attention.self.key": 0.2479927881052922,
+            "roberta.encoder.layer.3.attention.self.value": 0.22172654491719448,
+            "roberta.encoder.layer.3.attention.output.dense": 0.22513550869102744,
+            "roberta.encoder.layer.3.intermediate.dense": 0.42265188748369353,
+            "roberta.encoder.layer.3.output.dense": 0.40986544103578204,
+            "roberta.encoder.layer.4.attention.self.query": 0.2284402223037177,
+            "roberta.encoder.layer.4.attention.self.key": 0.2335459834761952,
+            "roberta.encoder.layer.4.attention.self.value": 0.20818333196600092,
+            "roberta.encoder.layer.4.attention.output.dense": 0.2184614005805575,
+            "roberta.encoder.layer.4.intermediate.dense": 0.42321576522837845,
+            "roberta.encoder.layer.4.output.dense": 0.4088369190446436,
+            "roberta.encoder.layer.5.attention.self.query": 0.23494675772660942,
+            "roberta.encoder.layer.5.attention.self.key": 0.23852380447786728,
+            "roberta.encoder.layer.5.attention.self.value": 0.2169349902884129,
+            "roberta.encoder.layer.5.attention.output.dense": 0.20879740088996313,
+            "roberta.encoder.layer.5.intermediate.dense": 0.43092193524963923,
+            "roberta.encoder.layer.5.output.dense": 0.41109345731880537,
+            "roberta.encoder.layer.6.attention.self.query": 0.22138776916848774,
+            "roberta.encoder.layer.6.attention.self.key": 0.21270386733286137,
+            "roberta.encoder.layer.6.attention.self.value": 0.22898020166194577,
+            "roberta.encoder.layer.6.attention.output.dense": 0.2520109184308611,
+            "roberta.encoder.layer.6.intermediate.dense": 0.4319888668521544,
+            "roberta.encoder.layer.6.output.dense": 0.408035180974968,
+            "roberta.encoder.layer.7.attention.self.query": 0.22580712146302956,
+            "roberta.encoder.layer.7.attention.self.key": 0.21788485439510627,
+            "roberta.encoder.layer.7.attention.self.value": 0.23293302492827683,
+            "roberta.encoder.layer.7.attention.output.dense": 0.2621259588272839,
+            "roberta.encoder.layer.7.intermediate.dense": 0.44175996669635287,
+            "roberta.encoder.layer.7.output.dense": 0.4079015651128585,
+            "roberta.encoder.layer.8.attention.self.query": 0.2141582577138345,
+            "roberta.encoder.layer.8.attention.self.key": 0.2099519333062898,
+            "roberta.encoder.layer.8.attention.self.value": 0.30347114243898976,
+            "roberta.encoder.layer.8.attention.output.dense": 0.3437388717656974,
+            "roberta.encoder.layer.8.intermediate.dense": 0.4449647645659945,
+            "roberta.encoder.layer.8.output.dense": 0.41282987090568835,
+            "roberta.encoder.layer.9.attention.self.query": 0.20532819562757593,
+            "roberta.encoder.layer.9.attention.self.key": 0.20897658537993075,
+            "roberta.encoder.layer.9.attention.self.value": 0.318857647354262,
+            "roberta.encoder.layer.9.attention.output.dense": 0.35279197266311985,
+            "roberta.encoder.layer.9.intermediate.dense": 0.45235405272393275,
+            "roberta.encoder.layer.9.output.dense": 0.4470485389386912,
+            "roberta.encoder.layer.10.attention.self.query": 0.20957983040327233,
+            "roberta.encoder.layer.10.attention.self.key": 0.20821963624069934,
+            "roberta.encoder.layer.10.attention.self.value": 0.30532646423780385,
+            "roberta.encoder.layer.10.attention.output.dense": 0.36423326796700745,
+            "roberta.encoder.layer.10.intermediate.dense": 0.4423110630057545,
+            "roberta.encoder.layer.10.output.dense": 0.4571406357918242,
+            "roberta.encoder.layer.11.attention.self.query": 0.21431726394839637,
+            "roberta.encoder.layer.11.attention.self.key": 0.23081587995139613,
+            "roberta.encoder.layer.11.attention.self.value": 0.2890988959453481,
+            "roberta.encoder.layer.11.attention.output.dense": 0.3365036676666112,
+            "roberta.encoder.layer.11.intermediate.dense": 0.429082494651591,
+            "roberta.encoder.layer.11.output.dense": 0.4276805013424108
+          },
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 527.8,
+          "tokens_per_sec": 23971.27
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 512.74,
+          "L_256_vram_mb": 515.31,
+          "L_512_vram_mb": 520.44,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T11:13:00.267608"
+      },
+      "results/unified_cachenotes/distilbert/distilbert_sst2_full_full_metrics.json": {
+        "model": "distilbert_sst2_full",
+        "performance": {
+          "accuracy_pct": 90.71,
+          "f1_score": 0.9099,
+          "f1_macro": 0.907,
+          "precision": 0.9075,
+          "recall": 0.9068,
+          "val_loss": 0.3027,
+          "status": "PASS",
+          "elapsed_s": 3.43
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 66955010,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 389.51,
+          "tokens_per_sec": 44865.75
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 371.82,
+          "L_256_vram_mb": 373.89,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T11:11:50.204134"
+      },
+      "results/unified_cachenotes/distilbert/distilbert_sst2_cachenotes_full_metrics.json": {
+        "model": "distilbert_sst2_cachenotes",
+        "performance": {
+          "accuracy_pct": 90.6,
+          "f1_score": 0.9093,
+          "f1_macro": 0.9058,
+          "precision": 0.9067,
+          "recall": 0.9056,
+          "val_loss": 0.3082,
+          "status": "PASS",
+          "elapsed_s": 10.28
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 66955010,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 24,
+          "num_fallback_layers": 12,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": 0.2403318069239113,
+          "weighted_reconstruction_error": 0.3782,
+          "per_layer_reconstruction_errors": {
+            "distilbert.transformer.layer.0.attention.q_lin": 0.2231343213568264,
+            "distilbert.transformer.layer.0.attention.k_lin": 0.21882148992031622,
+            "distilbert.transformer.layer.0.attention.v_lin": 0.2407525086539563,
+            "distilbert.transformer.layer.0.attention.out_lin": 0.22742646700832045,
+            "distilbert.transformer.layer.0.ffn.lin1": 0.4679010729551024,
+            "distilbert.transformer.layer.0.ffn.lin2": 0.4477026110801754,
+            "distilbert.transformer.layer.1.attention.q_lin": 0.2088516299268869,
+            "distilbert.transformer.layer.1.attention.k_lin": 0.19160883325674682,
+            "distilbert.transformer.layer.1.attention.v_lin": 0.23652250361982713,
+            "distilbert.transformer.layer.1.attention.out_lin": 0.23255468487186265,
+            "distilbert.transformer.layer.1.ffn.lin1": 0.45108955924744426,
+            "distilbert.transformer.layer.1.ffn.lin2": 0.4328747089217701,
+            "distilbert.transformer.layer.2.attention.q_lin": 0.23375086443659526,
+            "distilbert.transformer.layer.2.attention.k_lin": 0.23732106722410487,
+            "distilbert.transformer.layer.2.attention.v_lin": 0.23873273797601838,
+            "distilbert.transformer.layer.2.attention.out_lin": 0.244181572858864,
+            "distilbert.transformer.layer.2.ffn.lin1": 0.449829845122469,
+            "distilbert.transformer.layer.2.ffn.lin2": 0.4133163884857696,
+            "distilbert.transformer.layer.3.attention.q_lin": 0.20113183969583756,
+            "distilbert.transformer.layer.3.attention.k_lin": 0.20407404038539048,
+            "distilbert.transformer.layer.3.attention.v_lin": 0.27170053559057267,
+            "distilbert.transformer.layer.3.attention.out_lin": 0.2682394929831559,
+            "distilbert.transformer.layer.3.ffn.lin1": 0.4471816704315106,
+            "distilbert.transformer.layer.3.ffn.lin2": 0.45102919533423574,
+            "distilbert.transformer.layer.4.attention.q_lin": 0.23442137192586054,
+            "distilbert.transformer.layer.4.attention.k_lin": 0.23365026375621964,
+            "distilbert.transformer.layer.4.attention.v_lin": 0.2786140915289107,
+            "distilbert.transformer.layer.4.attention.out_lin": 0.30115021589195834,
+            "distilbert.transformer.layer.4.ffn.lin1": 0.4275174241440493,
+            "distilbert.transformer.layer.4.ffn.lin2": 0.48767037521220385,
+            "distilbert.transformer.layer.5.attention.q_lin": 0.24126475073559675,
+            "distilbert.transformer.layer.5.attention.k_lin": 0.24939615409425772,
+            "distilbert.transformer.layer.5.attention.v_lin": 0.260730671394093,
+            "distilbert.transformer.layer.5.attention.out_lin": 0.2899312570816916,
+            "distilbert.transformer.layer.5.ffn.lin1": 0.44274711314657206,
+            "distilbert.transformer.layer.5.ffn.lin2": 0.4469964416016935
+          },
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 308.81,
+          "tokens_per_sec": 44353.14
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 293.75,
+          "L_256_vram_mb": 296.31,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T11:12:00.686278"
+      },
+      "results/unified_cachenotes/qwen3_5/Qwen3.5-0.8B_cachenotes_full_metrics.json": {
+        "model": "Qwen3.5-0.8B_cachenotes",
+        "performance": {
+          "accuracy_pct": 89.22,
+          "f1_score": 0.8956,
+          "f1_macro": 0.8921,
+          "precision": 0.8926,
+          "recall": 0.8919,
+          "val_loss": 0.3758,
+          "status": "PASS",
+          "elapsed_s": 363.01
+        },
+        "efficiency": {
+          "total_params_before": 763217728,
+          "total_params_after": 763217728,
+          "trainable_recovery_params": 7285760,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 48,
+          "num_injected_attention_layers": 0,
+          "lora_params": 10822656,
+          "avg_reconstruction_error": 0.0,
+          "weighted_reconstruction_error": 0.4578,
+          "per_layer_reconstruction_errors": {
+            "model.layers.0.mlp.up_proj": 0.5193704483562536,
+            "model.layers.0.mlp.down_proj": 0.5149543889029304,
+            "model.layers.1.mlp.up_proj": 0.5082121923314863,
+            "model.layers.1.mlp.down_proj": 0.484355402409557,
+            "model.layers.2.mlp.up_proj": 0.5166214699517658,
+            "model.layers.2.mlp.down_proj": 0.48531949003971536,
+            "model.layers.3.mlp.up_proj": 0.5039314033082237,
+            "model.layers.3.mlp.down_proj": 0.4670468448795961,
+            "model.layers.4.mlp.up_proj": 0.5022646032647627,
+            "model.layers.4.mlp.down_proj": 0.47775414367819047,
+            "model.layers.5.mlp.up_proj": 0.48961866942590565,
+            "model.layers.5.mlp.down_proj": 0.4581127072311076,
+            "model.layers.6.mlp.up_proj": 0.46349387707759765,
+            "model.layers.6.mlp.down_proj": 0.4255775468933474,
+            "model.layers.7.mlp.up_proj": 0.4741987307705651,
+            "model.layers.7.mlp.down_proj": 0.4376743719435305,
+            "model.layers.8.mlp.up_proj": 0.4603777553063194,
+            "model.layers.8.mlp.down_proj": 0.4284499041532003,
+            "model.layers.9.mlp.up_proj": 0.44589732421166867,
+            "model.layers.9.mlp.down_proj": 0.4137864162712911,
+            "model.layers.10.mlp.up_proj": 0.4525885063923961,
+            "model.layers.10.mlp.down_proj": 0.4146856744808888,
+            "model.layers.11.mlp.up_proj": 0.4493412083805679,
+            "model.layers.11.mlp.down_proj": 0.4111405907340779,
+            "model.layers.12.mlp.up_proj": 0.4495568787336079,
+            "model.layers.12.mlp.down_proj": 0.40905591129637675,
+            "model.layers.13.mlp.up_proj": 0.4515797335605528,
+            "model.layers.13.mlp.down_proj": 0.4017381752338599,
+            "model.layers.14.mlp.up_proj": 0.45423863538687326,
+            "model.layers.14.mlp.down_proj": 0.43870969164105406,
+            "model.layers.15.mlp.up_proj": 0.4678902412574192,
+            "model.layers.15.mlp.down_proj": 0.44581119203969016,
+            "model.layers.16.mlp.up_proj": 0.4584396762712407,
+            "model.layers.16.mlp.down_proj": 0.44004233466828796,
+            "model.layers.17.mlp.up_proj": 0.460795474944413,
+            "model.layers.17.mlp.down_proj": 0.42916594938737657,
+            "model.layers.18.mlp.up_proj": 0.46341356450566495,
+            "model.layers.18.mlp.down_proj": 0.42292314722826096,
+            "model.layers.19.mlp.up_proj": 0.4527471018656663,
+            "model.layers.19.mlp.down_proj": 0.46152644064963866,
+            "model.layers.20.mlp.up_proj": 0.4558814813297167,
+            "model.layers.20.mlp.down_proj": 0.4585944714619479,
+            "model.layers.21.mlp.up_proj": 0.4661762408024765,
+            "model.layers.21.mlp.down_proj": 0.4572834046316274,
+            "model.layers.22.mlp.up_proj": 0.4637777931201613,
+            "model.layers.22.mlp.down_proj": 0.45754825644070607,
+            "model.layers.23.mlp.up_proj": 0.4531901458494996,
+            "model.layers.23.mlp.down_proj": 0.4515291285372574
+          },
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 1858.27,
+          "tokens_per_sec": 1046.74
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 1594.95,
+          "L_256_vram_mb": 1616.36,
+          "L_512_vram_mb": 1644.35,
+          "L_1024_vram_mb": 1734.5
+        },
+        "timestamp": "2026-09-07T19:04:58.255130"
+      },
+      "results/unified_cachenotes/qwen3_5/Qwen3.5-0.8B_full_full_metrics.json": {
+        "model": "Qwen3.5-0.8B_full",
+        "performance": {
+          "accuracy_pct": 67.55,
+          "f1_score": 0.5501,
+          "f1_macro": 0.6481,
+          "precision": 0.7703,
+          "recall": 0.6808,
+          "val_loss": 0.6364,
+          "status": "PASS",
+          "elapsed_s": 114.63
+        },
+        "efficiency": {
+          "total_params_before": 763217728,
+          "total_params_after": 763217728,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 10822656,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 1809.78,
+          "tokens_per_sec": 1214.06
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 1544.98,
+          "L_256_vram_mb": 1567.48,
+          "L_512_vram_mb": 1604.06,
+          "L_1024_vram_mb": 1684.92
+        },
+        "timestamp": "2026-09-07T18:58:55.298841"
+      },
+      "results/unified_cachenotes/gpt2/gpt2_full_full_metrics.json": {
+        "model": "gpt2_full",
+        "performance": {
+          "accuracy_pct": 79.36,
+          "f1_score": 0.7978,
+          "f1_macro": 0.7935,
+          "precision": 0.7935,
+          "recall": 0.7935,
+          "val_loss": 0.4875,
+          "status": "PASS",
+          "elapsed_s": 6.96
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 124441344,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 793.19,
+          "tokens_per_sec": 23424.3
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 681.07,
+          "L_256_vram_mb": 691.32,
+          "L_512_vram_mb": 721.95,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T11:13:44.317779"
+      },
+      "results/unified_cachenotes/gpt2/gpt2_cachenotes_full_metrics.json": {
+        "model": "gpt2_cachenotes",
+        "performance": {
+          "accuracy_pct": 74.77,
+          "f1_score": 0.7751,
+          "f1_macro": 0.7439,
+          "precision": 0.7587,
+          "recall": 0.7457,
+          "val_loss": 0.5103,
+          "status": "PASS",
+          "elapsed_s": 14.64
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 124441344,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 14,
+          "num_fallback_layers": 34,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": 0.23793625981589436,
+          "weighted_reconstruction_error": 0.4146,
+          "per_layer_reconstruction_errors": {
+            "transformer.h.0.attn.c_attn": 0.33106423716960415,
+            "transformer.h.0.attn.c_proj": 0.05765748775191074,
+            "transformer.h.0.mlp.c_fc": 0.4434502606615661,
+            "transformer.h.0.mlp.c_proj": 0.4541207099712317,
+            "transformer.h.1.attn.c_attn": 0.32556500894236956,
+            "transformer.h.1.attn.c_proj": 0.1710956249606458,
+            "transformer.h.1.mlp.c_fc": 0.4586678845984321,
+            "transformer.h.1.mlp.c_proj": 0.4833009625333103,
+            "transformer.h.2.attn.c_attn": 0.36474293634911326,
+            "transformer.h.2.attn.c_proj": 0.21855278188844912,
+            "transformer.h.2.mlp.c_fc": 0.44796997704318375,
+            "transformer.h.2.mlp.c_proj": 0.4497874929806412,
+            "transformer.h.3.attn.c_attn": 0.4026829793293971,
+            "transformer.h.3.attn.c_proj": 0.23025002766197666,
+            "transformer.h.3.mlp.c_fc": 0.44663667847214966,
+            "transformer.h.3.mlp.c_proj": 0.43157501032839424,
+            "transformer.h.4.attn.c_attn": 0.38461995203355287,
+            "transformer.h.4.attn.c_proj": 0.21811682181431452,
+            "transformer.h.4.mlp.c_fc": 0.43685665829191894,
+            "transformer.h.4.mlp.c_proj": 0.4394483896741686,
+            "transformer.h.5.attn.c_attn": 0.35741930315532744,
+            "transformer.h.5.attn.c_proj": 0.24807093546295378,
+            "transformer.h.5.mlp.c_fc": 0.4363774397062593,
+            "transformer.h.5.mlp.c_proj": 0.44497277423615417,
+            "transformer.h.6.attn.c_attn": 0.38207736756942245,
+            "transformer.h.6.attn.c_proj": 0.21672553974684372,
+            "transformer.h.6.mlp.c_fc": 0.4386874564014895,
+            "transformer.h.6.mlp.c_proj": 0.4494245202129211,
+            "transformer.h.7.attn.c_attn": 0.39095716487659327,
+            "transformer.h.7.attn.c_proj": 0.23692786177030492,
+            "transformer.h.7.mlp.c_fc": 0.44205020417665924,
+            "transformer.h.7.mlp.c_proj": 0.45539053316321193,
+            "transformer.h.8.attn.c_attn": 0.4303889080978419,
+            "transformer.h.8.attn.c_proj": 0.22579538554726575,
+            "transformer.h.8.mlp.c_fc": 0.4498284088943939,
+            "transformer.h.8.mlp.c_proj": 0.4489193744453037,
+            "transformer.h.9.attn.c_attn": 0.45077668173498303,
+            "transformer.h.9.attn.c_proj": 0.2725866636094124,
+            "transformer.h.9.mlp.c_fc": 0.4465993195401612,
+            "transformer.h.9.mlp.c_proj": 0.4521104855700863,
+            "transformer.h.10.attn.c_attn": 0.42263277908594415,
+            "transformer.h.10.attn.c_proj": 0.32004741737308645,
+            "transformer.h.10.mlp.c_fc": 0.44451865229925835,
+            "transformer.h.10.mlp.c_proj": 0.46333817886086015,
+            "transformer.h.11.attn.c_attn": 0.4076999113753007,
+            "transformer.h.11.attn.c_proj": 0.25865184372338346,
+            "transformer.h.11.mlp.c_fc": 0.4380492770514423,
+            "transformer.h.11.mlp.c_proj": 0.4677682451356228
+          },
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 637.41,
+          "tokens_per_sec": 23604.65
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 519.66,
+          "L_256_vram_mb": 533.16,
+          "L_512_vram_mb": 560.54,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T11:13:59.057797"
+      },
+      "results/unified_cachenotes/roberta/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,78.56,0.8124,0.7811,0.8051,0.7832,0.4381,6.84,712.34,24050.62,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-15T11:12:44.715912\ncachenotes,PASS,68.12,0.7518,0.6531,0.7527,0.6762,0.6366,16.23,527.8,23971.27,124647170,124647170,0,1.0,0.0,0.0,46,26,0.2373566765687054,0.3652,0,0,,adapted_roberta,2026-09-15T11:13:01.205918\n",
+      "results/unified_cachenotes/distilbert/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,90.71,0.9099,0.907,0.9075,0.9068,0.3027,3.43,389.51,44865.75,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-15T11:11:50.490541\ncachenotes,PASS,90.6,0.9093,0.9058,0.9067,0.9056,0.3082,10.29,308.81,44353.14,66955010,66955010,0,1.0,0.0,0.0,24,12,0.2403318069239113,0.3782,0,0,,legacy_bert,2026-09-15T11:12:01.028961\n",
+      "results/unified_cachenotes/qwen3_5/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,67.55,0.5501,0.6481,0.7703,0.6808,0.6364,114.63,1809.78,1214.06,763217728,763217728,0,1.0,0.0,0.0,0,0,,,0,10822656,,adapted_qwen3_5,2026-09-07T18:58:58.173875\ncachenotes,PASS,89.22,0.8956,0.8921,0.8926,0.8919,0.3758,363.01,1858.27,1046.74,763217728,763217728,7285760,1.0,0.0,0.0,0,48,0.0,0.4578,0,10822656,,adapted_qwen3_5,2026-09-07T19:05:01.575187\n",
+      "results/unified_cachenotes/gpt2/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,79.36,0.7978,0.7935,0.7935,0.7935,0.4875,6.96,793.19,23424.3,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-15T11:13:45.106433\ncachenotes,PASS,74.77,0.7751,0.7439,0.7587,0.7457,0.5103,14.64,637.41,23604.65,124441344,124441344,0,1.0,0.0,0.0,14,34,0.23793625981589436,0.4146,0,0,,adapted_gpt,2026-09-15T11:13:59.881704\n",
+      "results/benchmark_summary_v2.csv": "track5_pruning,cachenotes_compressor,compressor,bert,sst2,PASS,,10.91,15.41,26.32,0.0,1.0,4386178,4386178,1.0,571.8,0.0,0.6929,0.0,0.0,0.0,0.1082,\"{'loss': [0.6929, 0.6929, 0.6929, 0.6929, 0.6929], 'grad_norm': [0.1082, 0.1082, 0.1082, 0.1082, 0.1082], 'fwd_latency_ms': [11.0356, 10.6501, 11.5765, 10.8413, 10.4561], 'bwd_latency_ms': [14.8383, 16.2028, 16.3619, 14.6736, 14.9974]}\",2026-08-26 03:48:20\ntrack5_pruning,cachenotes_compressor,compressor,bert,mrpc,PASS,,10.49,14.44,24.93,0.0,1.0,4386178,4386178,1.0,571.8,0.0,0.6907,0.0,0.0,0.0,1.0564,\"{'loss': [0.6907, 0.6907, 0.6907, 0.6907, 0.6907], 'grad_norm': [1.0564, 1.0564, 1.0564, 1.0564, 1.0564], 'fwd_latency_ms': [10.6044, 10.35, 10.7233, 10.8099, 9.97], 'bwd_latency_ms': [14.0487, 14.626, 14.7089, 14.3969, 14.416]}\",2026-08-26 03:48:21\ntrack5_pruning,cachenotes_compressor,compressor,roberta,sst2,PASS,,11.49,15.75,27.24,0.0,1.0,6913282,6913282,1.0,581.7,0.0,0.6921,0.0,0.0,0.0,0.0235,\"{'loss': [0.6921, 0.6921, 0.6921, 0.6921, 0.6921], 'grad_norm': [0.0235, 0.0235, 0.0235, 0.0235, 0.0235], 'fwd_latency_ms': [11.2906, 11.75, 11.6774, 11.7991, 10.9141], 'bwd_latency_ms': [15.7892, 16.4523, 15.337, 15.5378, 15.6233]}\",2026-08-26 03:48:21\ntrack5_pruning,cachenotes_compressor,compressor,roberta,mrpc,PASS,,11.06,15.6,26.66,0.0,1.0,6913282,6913282,1.0,581.7,0.0,0.6784,0.0,0.0,0.0,0.9592,\"{'loss': [0.6784, 0.6784, 0.6784, 0.6784, 0.6784], 'grad_norm': [0.9592, 0.9592, 0.9592, 0.9592, 0.9592], 'fwd_latency_ms': [10.88, 11.3061, 11.1993, 11.2917, 10.6479], 'bwd_latency_ms': [16.2767, 15.2652, 16.1245, 15.2526, 15.0635]}\",2026-08-26 03:48:22\ntrack5_pruning,cachenotes_compressor,compressor,t5,sst2,PASS,,19.02,33.34,52.36,0.0,1.0,4506368,4506368,1.0,1107.2,0.0,0.7844,0.0,0.0,0.0,5.0611,\"{'loss': [0.7844, 0.7844, 0.7844, 0.7844, 0.7844], 'grad_norm': [5.0611, 5.0611, 5.0611, 5.0611, 5.0611], 'fwd_latency_ms': [15.8904, 20.0849, 19.6726, 19.6992, 19.772], 'bwd_latency_ms': [34.8496, 33.1302, 32.7864, 32.9223, 33.0264]}\",2026-08-26 03:48:22\ntrack5_pruning,cachenotes_compressor,compressor,t5,mrpc,PASS,,19.05,32.94,51.99,0.0,1.0,4506368,4506368,1.0,1107.2,0.0,0.6026,0.0,0.0,0.0,0.8917,\"{'loss': [0.6026, 0.6026, 0.6026, 0.6026, 0.6026], 'grad_norm': [0.8917, 0.8917, 0.8917, 0.8917, 0.8917], 'fwd_latency_ms': [15.9805, 19.7341, 19.8591, 19.96, 19.7292], 'bwd_latency_ms': [33.0132, 32.8086, 32.9814, 32.9853, 32.9232]}\",2026-08-26 03:48:23",
+      "results/all_121_compressors_gpu_matrix.csv": "cachenotes_compressor,cuda,PASS,True,True,1.0,143.6,0.734,"
+    },
+    "notes": []
+  }
+}

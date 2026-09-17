@@ -1,3 +1,14 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{armor_pruner}.
+\subsection{Algorithmic Formulation}
+The \texttt{armor_pruner} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{ARMOR: Adaptive Resilient Matrix Orthogonal Rank Pruning (2:4 Sparse Core + Low-Rank Correction).
+Registered in COMPRESSOR\_REGISTRY as 'armor\_pruner', 'armor', and 'armor\_compressor'.
+
+Mathematical Formulation:
+1. Resilient First-Order Taylor Saliency (handling zero-grad, NaN/Inf, and absent activations):
+   $$S\_{ij} = \\\\begin{cases} |W\_{ij} \\\\odot g\_{ij}| & \\\\text{if } g \\\\text{ is valid and } \\\\|g\\\\| > 0 \\\\\\\\ |W\_{ij}| \\\\cdot \\\\mathbb{E}[|x\_j|] & \\\\text{if activations available} \\\\\\\\ |W\_{ij}| \\\\cdot (\\\\sigma(W) + 1) & \\\\text{fallback} \\\\end{cases}$$
+}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.
