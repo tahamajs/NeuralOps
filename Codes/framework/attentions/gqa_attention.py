@@ -223,7 +223,7 @@ class GroupedQueryAttention(BaseAttention):
         if num_kv_heads is None and src_attn is not None:
             num_kv_heads = getattr(src_attn, "num_key_value_heads", getattr(src_attn, "num_kv_heads", None))
         if num_kv_heads is None:
-            num_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", max(1, self.num_heads // 2)))
+            num_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", self.num_heads))
         self.num_kv_heads: int = int(min(self.num_heads, max(1, int(num_kv_heads))))
 
         self.head_dim: int = self.hidden_size // max(1, self.num_heads)
@@ -288,8 +288,6 @@ class GroupedQueryAttention(BaseAttention):
         if hasattr(src, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             weight, bias_data = _unpack_weight_bias(src.c_attn)
             if weight is not None:
-                if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                    weight = weight.t()
                 split_size = weight.shape[0] // 3
                 extracted["q"] = (weight[:split_size, :], bias_data[:split_size] if bias_data is not None else None)
                 extracted["k"] = (weight[split_size : 2 * split_size, :], bias_data[split_size : 2 * split_size] if bias_data is not None else None)
@@ -297,10 +295,7 @@ class GroupedQueryAttention(BaseAttention):
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o, b_o = _unpack_weight_bias(src.c_proj)
-            if w_o is not None:
-                if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                    w_o = w_o.t()
-                extracted["o"] = (w_o, b_o)
+            extracted["o"] = (w_o, b_o)
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
@@ -345,8 +340,14 @@ class GroupedQueryAttention(BaseAttention):
         if missing:
             logger.warning("GroupedQueryAttention: missing weights for projections: %s, using initialized weights", missing)
 
-        def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
-            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+        def _orient(w: torch.Tensor, target_shape: Tuple[int, int]) -> torch.Tensor:
+            if w.dim() != 2:
+                return w
+            if w.shape == target_shape:
+                return w
+            if w.shape == (target_shape[1], target_shape[0]):
+                return w.t()
+            if w.shape[1] != target_shape[1] and w.shape[0] == target_shape[1]:
                 return w.t()
             return w
 
@@ -355,9 +356,8 @@ class GroupedQueryAttention(BaseAttention):
             for proj_key, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
                 w, b = extracted[proj_key]
                 if w is not None:
-                    in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
-                    w_oriented = _orient(w, in_dim)
                     target_w = target.weight
+                    w_oriented = _orient(w, (target_w.shape[0], target_w.shape[1]))
                     out_d, in_d = target_w.shape
                     src_out, src_in = w_oriented.shape
                     target_w.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(w_oriented[:min(out_d, src_out), :min(in_d, src_in)])
