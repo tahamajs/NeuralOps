@@ -33,7 +33,7 @@ def sync_repo(repo_path: Path):
     rc, status_out, _ = run_cmd("git status --porcelain", cwd=str(repo_path))
     if status_out:
         print(f"[{ts}] Local changes detected, staging...")
-        run_cmd("git add -A papers/ results/ logs/ *.log *.csv *.json", cwd=str(repo_path))
+        run_cmd("git add -A papers/ results/ logs/ audit/ *.log *.csv *.json *.jsonl", cwd=str(repo_path))
         commit_msg = f"Auto-sync progress checkpoint [{ts}]"
         rc, _, _ = run_cmd(f'git commit -m "{commit_msg}"', cwd=str(repo_path))
 
