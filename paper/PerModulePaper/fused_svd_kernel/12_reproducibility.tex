@@ -1,3 +1,8 @@
-\section{12 Reproducibility}
-
-Formal architectural specifications for \texttt{fused_svd_kernel}.
+\section{Reproducibility Guide}
+Evaluation commands can be reproduced directly using the unified framework runner:
+\begin{lstlisting}[language=bash]
+python -u Codes/framework/run_compressor.py \
+    --model distilbert-base-uncased \
+    --compressor fused_svd_kernel \
+    --output_dir results/unified_fused_svd_kernel
+\end{lstlisting}

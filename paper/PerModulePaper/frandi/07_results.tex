@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{frandi}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_frandi/roberta/summary.csv} & frandi & PASS\_NO\_COMPRESSION & 78.56\% & 520.68 MB \\
+\texttt{results/unified\_frandi/distilbert/summary.csv} & frandi & PASS\_NO\_COMPRESSION & 90.71\% & 301.18 MB \\
+\texttt{results/unified\_frandi/gpt2/summary.csv} & frandi & PASS\_NO\_COMPRESSION & 79.36\% & 627.16 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 35.36 ms & 581.9 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 34.99 ms & 581.9 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 35.5 ms & 591.9 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 35.21 ms & 591.9 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 49.9 ms & 1082.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

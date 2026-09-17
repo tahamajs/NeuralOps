@@ -1,3 +1,18 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{fused_svd_kernel}.
+\subsection{Algorithmic Formulation}
+The \texttt{fused_svd_kernel} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Fused SVD-Linear Layer with SRAM-Resident RMSNorm & Dual-Projection.
+
+RESEARCH FIX: Eliminates GPU High-Bandwidth Memory (HBM) roundtrip latency by fusing:
+    1. Down-projection: Z = X @ V^T  (hidden\_dim -> rank)
+    2. In-SRAM RMSNorm: Z\_norm = Z * rsqrt(mean(Z^2) + eps) * weight
+    3. Up-projection:   Y = Z\_norm @ U^T + bias (rank -> out\_dim)
+
+The intermediate activation matrix Z \\in R^{B x L x r} is kept strictly inside
+GPU Shared Memory (SRAM) registers and never materialized to DRAM/HBM.
+Includes Triton JIT accelerated kernel with CUDA tensor-core blocking and
+PyTorch autograd func}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

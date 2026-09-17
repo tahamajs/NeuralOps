@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{fused_svd_kernel}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_fused\_svd\_kernel/roberta/summary.csv} & fused\_svd\_kernel & PASS\_LOW & 50.92\% & 558.41 MB \\
+\texttt{results/unified\_fused\_svd\_kernel/distilbert/summary.csv} & fused\_svd\_kernel & PASS & 79.93\% & 280.27 MB \\
+\texttt{results/unified\_fused\_svd\_kernel/gpt2/summary.csv} & fused\_svd\_kernel & PASS & 70.07\% & 464.46 MB \\
+benchmark\_summary\_v2 & bert-sst2 & FAIL & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & bert-mrpc & FAIL & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & FAIL & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & FAIL & 0.0 ms & 0.0 MB \\
+benchmark\_summary\_v2 & t5-sst2 & FAIL & 0.0 ms & 0.0 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

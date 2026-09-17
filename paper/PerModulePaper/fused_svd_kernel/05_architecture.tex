@@ -1,11 +1,10 @@
-\section{05 Architecture}
+\section{Architecture and Implementation}
 
-Formal architectural specifications for \texttt{fused_svd_kernel}.
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/arch_svd-mamba_4.jpeg}
-\caption{Architectural schematic of fused_svd_kernel.}
-\label{fig:arch_fused_svd_kernel}
-\end{figure}
+\subsection{Submodule Design}
+The core computation of \texttt{fused_svd_kernel} is encapsulated in the \texttt{FusedSVDLinear} class. The module provides standardized forward interfaces:
+\begin{itemize}
+\item \textbf{Base Parameter Buffers:} Manages structured weights and sparse masks in FP32/FP16.
+\item \textbf{Adapter Branches:} Integrates trainable low-rank correction paths.
+\item \textbf{Conv1D Compatibility:} Transposition handling for GPT-2 causal self-attention weights.
+\item \textbf{GQA Preservation:} Alignment guarantees across Grouped-Query Attention key/value projections.
+\end{itemize}

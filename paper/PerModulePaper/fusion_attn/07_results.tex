@@ -1,3 +1,9 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{fusion_attn}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_fusion\_attn/roberta/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 62.61\% & 661.02 MB \\
+\texttt{results/unified\_fusion\_attn/distilbert/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 90.6\% & 329.66 MB \\
+\texttt{results/unified\_fusion\_attn/gpt2/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 79.36\% & 569.74 MB \\
+\texttt{results/agnews\_unified\_fusion\_attn/distilbert/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 63.6\% & 571.06 MB \\
+\texttt{results/mnli\_unified\_fusion\_attn/roberta/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 37.3\% & 693.92 MB \\
+\texttt{results/mnli\_unified\_fusion\_attn/distilbert/summary.csv} & fusion\_attn & PASS\_NO\_COMPRESSION & 34.6\% & 361.59 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

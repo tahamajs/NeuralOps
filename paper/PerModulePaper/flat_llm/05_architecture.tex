@@ -1,11 +1,10 @@
-\section{05 Architecture}
+\section{Architecture and Implementation}
 
-Formal architectural specifications for \texttt{flat_llm}.
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/arch_svd_llm_v2_attention.jpeg}
-\caption{Architectural schematic of flat_llm.}
-\label{fig:arch_flat_llm}
-\end{figure}
+\subsection{Submodule Design}
+The core computation of \texttt{flat_llm} is encapsulated in the \texttt{FLATLLMCompressor} class. The module provides standardized forward interfaces:
+\begin{itemize}
+\item \textbf{Base Parameter Buffers:} Manages structured weights and sparse masks in FP32/FP16.
+\item \textbf{Adapter Branches:} Integrates trainable low-rank correction paths.
+\item \textbf{Conv1D Compatibility:} Transposition handling for GPT-2 causal self-attention weights.
+\item \textbf{GQA Preservation:} Alignment guarantees across Grouped-Query Attention key/value projections.
+\end{itemize}
