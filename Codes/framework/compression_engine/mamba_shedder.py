@@ -244,19 +244,21 @@ class MambaShedderCompressor(BaseCompressor):
 
         orig_len = len(target_container)
         keep_len = orig_len - self.shed_layers
-        # Evenly spaced indices
-        indices = torch.linspace(0, orig_len - 1, keep_len).round().long().tolist()
-        seen = set()
-        kept_indices = [x for x in indices if not (x in seen or seen.add(x))]
-
-        # If deduplication dropped elements, pad back
-        cur_idx = 0
-        while len(kept_indices) < keep_len and cur_idx < orig_len:
-            if cur_idx not in seen:
-                kept_indices.append(cur_idx)
-                seen.add(cur_idx)
-            cur_idx += 1
-        kept_indices = sorted(kept_indices)
+        if keep_len <= 1 or orig_len <= 2:
+            kept_indices = list(range(keep_len))
+        else:
+            # Remove layers from the middle, keep first and last
+            all_indices = list(range(orig_len))
+            # Always keep layer 0 and last layer
+            keep_set = {0, orig_len - 1}
+            # Sample remaining from middle candidates
+            middle_candidates = [i for i in range(1, orig_len - 1)]
+            n_middle_to_keep = keep_len - len(keep_set)
+            import random
+            rng = random.Random(42)
+            middle_kept = sorted(rng.sample(middle_candidates, min(n_middle_to_keep, len(middle_candidates))))
+            keep_set.update(middle_kept)
+            kept_indices = sorted(keep_set)[:keep_len]
 
         # Save original ModuleList in case validation fails
         old_container = getattr(container_parent, container_attr)
