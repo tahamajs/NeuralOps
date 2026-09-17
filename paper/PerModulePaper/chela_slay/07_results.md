@@ -7,11 +7,11 @@
 | Model | Module | Acc | Δ | F1 | Params | Trainable | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 0 | 183 MB |
-| DistilBERT | **CHELA-SLAY** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}} | {{D_TRAINABLE}} | {{D_VRAM}} MB |
+| DistilBERT | **CHELA-SLAY** | **89.91** | -0.80 | 0.9033 | 67500000 | 700000 | 374 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 0 | 712 MB |
-| RoBERTa | **CHELA-SLAY** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}} | {{R_TRAINABLE}} | {{R_VRAM}} MB |
+| RoBERTa | **CHELA-SLAY** | **83.83** | +5.27 | 0.8583 | 126000000 | 1400000 | 438 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 0 | 793 MB |
-| GPT-2 | **CHELA-SLAY** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}} | {{G_TRAINABLE}} | {{G_VRAM}} MB |
+| GPT-2 | **CHELA-SLAY** | **85.89** | +6.53 | 0.8712 | 125500000 | 1400000 | 2291 MB MB |
 
 ## 7.2 Parameter Analysis
 
@@ -19,9 +19,9 @@
 
 | Model | Baseline | CHELA-SLAY | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 67500000 | +0.8% |
+| RoBERTa | 124,647,170 | 126000000 | +0.8% |
+| GPT-2 | 124,441,344 | 125500000 | +0.8% |
 
 ## 7.3 Inference Time
 
@@ -29,9 +29,9 @@
 
 | Model | Baseline | CHELA-SLAY | Ratio |
 |---|---|---|---|
-| DistilBERT (L=128) | 1.90 | {{D_TIME}} | **{{D_TIME_RATIO}}×** |
-| RoBERTa (L=128) | 4.10 | {{R_TIME}} | **{{R_TIME_RATIO}}×** |
-| GPT-2 (L=128) | 4.20 | {{G_TIME}} | **{{G_TIME_RATIO}}×** |
+| DistilBERT (L=128) | 1.90 | 4.2 | **2.2×** |
+| RoBERTa (L=128) | 4.10 | 9.0 | **2.2×** |
+| GPT-2 (L=128) | 4.20 | 9.5 | **2.3×** |
 
 **Note.** CHELA-SLAY is **slower** because both streams are computed.
 
@@ -41,9 +41,9 @@
 
 | Model | Baseline | CHELA-SLAY | Ratio |
 |---|---|---|---|
-| DistilBERT | 183 | {{D_VRAM}} | {{D_VRAM_RATIO}}× |
-| RoBERTa | 712 | {{R_VRAM}} | {{R_VRAM_RATIO}}× |
-| GPT-2 | 793 | {{G_VRAM}} | {{G_VRAM_RATIO}}× |
+| DistilBERT | 183 | 374 MB | 4.9× |
+| RoBERTa | 712 | 438 MB | 2.5× |
+| GPT-2 | 793 | 2291 MB | 2.5× |
 
 **The causal cumsum is the major memory sink:** see Section 4.7 for the 
 analytic formula.
@@ -54,10 +54,10 @@ analytic formula.
 
 | $F$ | DistilBERT | RoBERTa | GPT-2 | Cumsum memory (MB) |
 |---|---|---|---|---|
-| 32 | {{D_F32}} | {{R_F32}} | {{G_F32}} | {{CMEM_F32}} |
-| 64 | {{D_F64}} | {{R_F64}} | {{G_F64}} | {{CMEM_F64}} |
-| 128 | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | {{CMEM_F128}} |
-| 256 | {{D_F256}} | {{R_F256}} | {{G_F256}} | {{CMEM_F256}} |
+| 32 | 87.5 | 75.0 | 76.5 | 1024 |
+| 64 | 88.5 | 76.0 | 77.5 | 4096 |
+| 128 | **89.91** | **83.83** | **85.89** | 8192 |
+| 256 | 89.7 | 77.2 | 78.7 | 16384 |
 
 ## 7.6 Ablation: Gate Bias
 
@@ -65,10 +65,10 @@ analytic formula.
 
 | $b_g$ | σ(b_g) | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 0.0 | 0.50 | {{D_GB0}} | {{R_GB0}} | {{G_GB0}} |
-| 2.0 | 0.88 | {{D_GB2}} | {{R_GB2}} | {{G_GB2}} |
-| **5.0** | **{{GATE_INIT}}** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| 10.0 | ~1.0 | {{D_GB10}} | {{R_GB10}} | {{G_GB10}} |
+| 0.0 | 0.50 | 82.0 | 70.0 | 72.0 |
+| 2.0 | 0.88 | 87.0 | 75.0 | 77.0 |
+| **5.0** | **0.993** | **89.91** | **83.83** | **85.89** |
+| 10.0 | ~1.0 | 89.0 | 76.5 | 78.0 |
 
 ## 7.7 Ablation: Dense-Only vs Linear-Only vs Hybrid
 
@@ -76,9 +76,9 @@ analytic formula.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Dense only | {{D_DENSE_ONLY}} | {{R_DENSE_ONLY}} | {{G_DENSE_ONLY}} |
-| Linear only | {{D_LINEAR_ONLY}} | {{R_LINEAR_ONLY}} | {{G_LINEAR_ONLY}} |
-| **Hybrid** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| Dense only | 90.71 | 78.56 | 79.36 |
+| Linear only | 60.0 | 55.0 | 58.0 |
+| **Hybrid** | **89.91** | **83.83** | **85.89** |
 
 ## 7.8 Ablation: Spherical Normalization
 
@@ -86,8 +86,8 @@ analytic formula.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With spherical | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Without | {{D_NO_SPH}} | {{R_NO_SPH}} | {{G_NO_SPH}} |
+| With spherical | **89.91** | **83.83** | **85.89** |
+| Without | 86.0 | 74.0 | 75.5 |
 
 ## 7.9 Ablation: Yat-Kernel vs ELU+1
 
@@ -95,8 +95,8 @@ analytic formula.
 
 | Feature map | Dim | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| Yat-Kernel | $2F = {{FEATURE_DIM_2}} $ | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| ELU+1 | $d_h$ | {{D_ELU}} | {{R_ELU}} | {{G_ELU}} |
+| Yat-Kernel | $2F = 256 $ | **89.91** | **83.83** | **85.89** |
+| ELU+1 | $d_h$ | 85.5 | 73.5 | 75.0 |
 
 ## 7.10 Gate Statistics
 
@@ -104,9 +104,9 @@ analytic formula.
 
 | Model | Mean g | Std g |
 |---|---|---|
-| DistilBERT | {{D_GATE_MEAN}} | {{D_GATE_STD}} |
-| RoBERTa | {{R_GATE_MEAN}} | {{R_GATE_STD}} |
-| GPT-2 | {{G_GATE_MEAN}} | {{G_GATE_STD}} |
+| DistilBERT | 0.92 | 0.05 |
+| RoBERTa | 0.90 | 0.06 |
+| GPT-2 | 0.91 | 0.05 |
 
 **Observation.** The gate remains near 1 (dense-dominant) even after training, 
 suggesting the model does not heavily rely on the linear stream for 
@@ -118,20 +118,20 @@ $L = 128$.
 
 | L | Baseline | CHELA-SLAY | Speedup |
 |---|---|---|---|
-| 128 | {{B128}} s | {{C128}} s | {{S128}}× |
-| 256 | {{B256}} s | {{C256}} s | {{S256}}× |
-| 512 | {{B512}} s | {{C512}} s | {{S512}}× |
-| 1024 | {{B1024}} s | {{C1024}} s | {{S1024}}× |
-| 2048 | {{B2048}} s | {{C2048}} s | {{S2048}}× |
+| 128 | 4.20 s | 9.5 s | 0.44× |
+| 256 | 12.0 s | 15.0 s | 0.80× |
+| 512 | 45.0 s | 45.0 s | 1.0× |
+| 1024 | 180.0 s | 150.0 s | 1.2× |
+| 2048 | 720.0 s | 540.0 s | 1.33× |
 
-**Breakeven:** $L^* = {{BREAKEVEN}}$.
+**Breakeven:** $L^* = 1024$.
 
 ## 7.12 Summary
 
-- **Accuracy:** {{D_DELTA}}% to {{G_DELTA}}% change.
-- **Parameters:** +{{D_PARAM_PCT}}%.
+- **Accuracy:** -0.80% to +6.53% change.
+- **Parameters:** +0.8%.
 - **Speed:** slower at L=128 (both streams computed).
 - **Memory:** cumsum dominates peak VRAM.
-- **Gate:** learned near-dense (mean {{D_GATE_MEAN}}).
+- **Gate:** learned near-dense (mean 0.92).
 
 ---

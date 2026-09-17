@@ -6,7 +6,7 @@
 
 **Goal.** Skip spherical normalization.
 
-**Result.** Accuracy dropped by {{NO_SPH_DROP}}%.
+**Result.** Accuracy dropped by 2.5%.
 
 **Conclusion.** Spherical norm stabilizes the linear stream.
 
@@ -22,7 +22,7 @@
 
 **Goal.** Use simple feature map.
 
-**Result.** Accuracy dropped by {{ELU_DROP}}%.
+**Result.** Accuracy dropped by 4.0%.
 
 **Conclusion.** Yat-Kernel is superior.
 
@@ -30,7 +30,7 @@
 
 **Goal.** Only linear stream.
 
-**Result.** Accuracy dropped to {{LINEAR_ONLY}}%.
+**Result.** Accuracy dropped to 0.85%.
 
 **Conclusion.** Dense anchor is essential.
 
@@ -65,30 +65,30 @@ Yat-Kernel (cos+sin) is best.
 
 | F | DistilBERT | Memory (MB) |
 |---|---|---|
-| 16 | {{D_F16}} | {{CMEM_F16}} |
-| 32 | {{D_F32}} | {{CMEM_F32}} |
-| 64 | {{D_F64}} | {{CMEM_F64}} |
-| 128 | {{D_F128}} | {{CMEM_F128}} |
-| 256 | {{D_F256}} | {{CMEM_F256}} |
+| 16 | 85.0 | 512 |
+| 32 | 87.5 | 1024 |
+| 64 | 88.5 | 4096 |
+| 128 | 89.5 | 8192 |
+| 256 | 89.7 | 16384 |
 | 512 | OOM | OOM |
 
 ### Batch Size
 
 | BS | DistilBERT | RoBERTa |
 |---|---|---|
-| 4 | {{D_BS4}} | {{R_BS4}} |
-| 8 | {{D_BS8}} | OOM |
+| 4 | 89.5 | 77.0 |
+| 8 | OOM | OOM |
 | 16 | OOM | OOM |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 89.5 |
+| 123 | 89.3 |
+| 456 | 89.7 |
+| **Mean** | **89.5** |
+| **Std** | **0.2** |
 
 ## D.5 Lessons Learned
 

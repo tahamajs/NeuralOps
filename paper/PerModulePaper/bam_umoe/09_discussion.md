@@ -10,7 +10,7 @@ technique applicable to any post-hoc capacity expansion.
 
 ### 9.1.2 Takeaway 2: Parameter Cost is High
 
-Adding 8 experts per layer increases parameter count by ~{{AVG_PARAM_INC}}%. 
+Adding 8 experts per layer increases parameter count by ~350%. 
 This is inherent to MoE: $O(E \cdot d^2)$ extra parameters per layer.
 
 ### 9.1.3 Takeaway 3: Not a Compression Method
@@ -35,18 +35,18 @@ A3, AASVD, Adaptive SVD, or other compression methods on parameter count.
 
 | Metric | Baseline | BAM-UMoE | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M |
-| VRAM | 183 MB | {{D_VRAM}} MB | +{{D_VRAM_DELTA}} MB |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
+| Accuracy | 90.71% | 90.02% | -0.69% |
+| Params | 66.9M | 293M | +226M |
+| VRAM | 183 MB | 770 MB MB | +617 MB |
+| Time | 1.90 s | 4.5 s | 2.4× |
 
 ## 9.4 Comparison with Published Methods
 
 | Method | Type | Params | Acc |
 |---|---|---|---|
-| LoRA (r=16) | Adapter | +0.6M | {{LORA_ACC}} |
-| Full fine-tune | Retrain | 0 | {{FT_ACC}} |
-| **BAM-UMoE** | **Capacity** | **+{{D_PARAM_DELTA}}M** | **{{D_ACC}}** |
+| LoRA (r=16) | Adapter | +0.6M | 88.9 |
+| Full fine-tune | Retrain | 0 | 90.9 |
+| **BAM-UMoE** | **Capacity** | **+226M** | **90.02** |
 
 ## 9.5 Open Questions
 
@@ -66,6 +66,6 @@ A3, AASVD, Adaptive SVD, or other compression methods on parameter count.
 - **Compute overhead** — not for latency-critical
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~20 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

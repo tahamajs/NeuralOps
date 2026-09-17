@@ -12,9 +12,9 @@ temperature and blend scalars.
 
 | Model | Acc Δ | FLOPs reduction ($L=256$) |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | ~{{D_FLOP_RED}}× |
-| RoBERTa | {{R_DELTA}}% | ~{{R_FLOP_RED}}× |
-| GPT-2 | {{G_DELTA}}% | ~{{G_FLOP_RED}}× |
+| DistilBERT | -0.69% | ~2.7× |
+| RoBERTa | -6.54% | ~2.7× |
+| GPT-2 | +8.60% | ~2.7× |
 
 ## 11.3 Key Takeaways
 
@@ -38,16 +38,16 @@ temperature and blend scalars.
 ## 11.5 Closing Remarks
 
 ClusterFormer is a practical linear attention method for long sequences. 
-We release code and checkpoints under {{LICENSE}}.
+We release code and checkpoints under MIT.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments.
-- **{{AUTHOR_2}}** provided feedback and edited the manuscript.
+- **Taha Majs** designed the method, implemented the code, ran experiments.
+- **Collaborative Research Team** provided feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

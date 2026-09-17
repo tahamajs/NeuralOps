@@ -1,19 +1,19 @@
 # Compressed MHA: Joint Truncated SVD for Multi-Architecture Attention Compression
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/compressed_mha.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/compressed_mha.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -28,12 +28,12 @@ in pretrained transformers. Base SVD factors are frozen; trainable LoRA
 adapters on both the QKV and output branches provide recovery capacity.
 
 For a typical transformer with $d = 768$ and head dimension $d_h = 64$, the 
-default configuration achieves **{{D_RATIO}}×** parameter reduction on 
+default configuration achieves **1.38×** parameter reduction on 
 attention projections (from $4d^2$ to $2r(d + d_h)$ where $r$ is the SVD 
-rank). On SST-2, Compressed MHA achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (baseline 
-{{BASE_R}}%, Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (baseline 
-{{BASE_G}}%, Δ = {{G_DELTA}}), using {{RECOVERY_STEPS}} LoRA recovery steps.
+rank). On SST-2, Compressed MHA achieves **50.92%** on DistilBERT 
+(baseline 90.71%, Δ = -39.79), **50.92%** on RoBERTa (baseline 
+78.56%, Δ = -27.64), and **50.92%** on GPT-2 (baseline 
+79.36%, Δ = -28.44), using 50 LoRA recovery steps.
 
 The implementation is production-hardened across four architectures 
 (DistilBERT flat, RoBERTa nested, GPT-2 Conv1D, Qwen GQA+RoPE) with:

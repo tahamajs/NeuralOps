@@ -7,7 +7,7 @@
 | DistilBERT | Flat | No | No | No | ✅ |
 | RoBERTa | Nested | Yes | No | No | ✅ |
 | GPT-2 | Causal | No | No | No | ✅ |
-| Qwen3.5 | GQA+RoPE | No | Yes | Yes | {{QWEN_VERIFIED}} |
+| Qwen3.5 | GQA+RoPE | No | Yes | Yes | partial |
 
 ## 5.2 Weight Extraction
 

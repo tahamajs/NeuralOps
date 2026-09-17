@@ -131,7 +131,7 @@ $$
 
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is 
 the mean router probability. This is added to the task loss with weight 
-$\lambda_\text{aux} = {{AUX_WEIGHT}}$ (default 0.01).
+$\lambda_\text{aux} = 0.01$ (default 0.01).
 
 ### 4.3.5 Value Integration
 

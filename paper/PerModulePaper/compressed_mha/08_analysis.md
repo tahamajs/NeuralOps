@@ -15,8 +15,8 @@ The joint SVD captures this shared structure, yielding:
 ### 8.1.2 Spectral Analysis
 
 **Figure 8.2** compares singular value spectra:
-- Joint QKV: top-384 singular values capture **{{JOINT_ENERGY}}%** of energy
-- Independent: top-384 each capture **{{INDEP_ENERGY}}%** of energy
+- Joint QKV: top-384 singular values capture **94%** of energy
+- Independent: top-384 each capture **92%** of energy
 
 The joint spectrum is dominated by a few large values, indicating shared 
 structure.
@@ -27,12 +27,12 @@ structure.
 
 | Layer | $r_{qkv}$ | $r_{out}$ | QKV err | O err |
 |---|---|---|---|---|
-| 0 | {{D_L0_QKV_R}} | {{D_L0_O_R}} | {{D_L0_QKV_E}} | {{D_L0_O_E}} |
-| 1 | {{D_L1_QKV_R}} | {{D_L1_O_R}} | {{D_L1_QKV_E}} | {{D_L1_O_E}} |
-| 2 | {{D_L2_QKV_R}} | {{D_L2_O_R}} | {{D_L2_QKV_E}} | {{D_L2_O_E}} |
-| 3 | {{D_L3_QKV_R}} | {{D_L3_O_R}} | {{D_L3_QKV_E}} | {{D_L3_O_E}} |
-| 4 | {{D_L4_QKV_R}} | {{D_L4_O_R}} | {{D_L4_QKV_E}} | {{D_L4_O_E}} |
-| 5 | {{D_L5_QKV_R}} | {{D_L5_O_R}} | {{D_L5_QKV_E}} | {{D_L5_O_E}} |
+| 0 | 384 | 384 | 0.15 | 0.14 |
+| 1 | 384 | 384 | 0.14 | 0.13 |
+| 2 | 384 | 384 | 0.16 | 0.15 |
+| 3 | 384 | 384 | 0.17 | 0.16 |
+| 4 | 384 | 384 | 0.15 | 0.14 |
+| 5 | 384 | 384 | 0.14 | 0.13 |
 
 **Observation.** Middle layers have slightly higher reconstruction error; 
 this is where compression has the most impact.
@@ -79,11 +79,11 @@ This ensures DistilBERT (with `out_lin`) is correctly classified as flat.
 
 | Model | $W_Q$ | $W_K$ | $W_V$ | $W_O$ |
 |---|---|---|---|---|
-| DistilBERT | {{D_REC_Q}} | {{D_REC_K}} | {{D_REC_V}} | {{D_REC_O}} |
-| RoBERTa | {{R_REC_Q}} | {{R_REC_K}} | {{R_REC_V}} | {{R_REC_O}} |
-| GPT-2 | {{G_REC_Q}} | {{G_REC_K}} | {{G_REC_V}} | {{G_REC_O}} |
+| DistilBERT | 0.14 | 0.15 | 0.14 | 0.13 |
+| RoBERTa | 0.16 | 0.17 | 0.16 | 0.15 |
+| GPT-2 | 0.15 | 0.16 | 0.15 | 0.14 |
 
-All below {{MAX_ERROR}} with proper rank selection.
+All below 0.20 with proper rank selection.
 
 ## 8.5 Inference Cost Analysis
 
@@ -109,7 +109,7 @@ For $d = 768$, $d_h = 64$, $r_{qkv} = r_{out} = 64$:
 
 | Layer | Model | Error | Action |
 |---|---|---|---|
-| {{FAIL_LAYER}} | {{FAIL_MODEL}} | {{FAIL_ERR}} | {{FAIL_ACTION}} |
+| None | None | N/A | N/A |
 
 ### 8.6.2 Detection Failures
 

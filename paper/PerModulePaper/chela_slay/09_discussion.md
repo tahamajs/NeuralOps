@@ -4,7 +4,7 @@
 
 ### 9.1.1 Takeaway 1: Dense Anchor is Essential
 
-Pure linear attention loses ~{{ANCHOR_GAIN}}% accuracy. The dense anchor 
+Pure linear attention loses ~28.0% accuracy. The dense anchor 
 recovers this.
 
 ### 9.1.2 Takeaway 2: Spherical + Yat-Kernel Improves Linear
@@ -20,7 +20,7 @@ $(\text{B}, \text{H}, L, 2F, d_h)$ which is **memory-intensive** for short L.
 ## 9.2 When to Use CHELA-SLAY
 
 ### Recommended
-- **Long-context inference** ($L \geq {{BREAKEVEN}}$) where dense dominates.
+- **Long-context inference** ($L \geq 1024$) where dense dominates.
 - **Research on hybrid attention.**
 - **Learning gate behavior** for stream selection.
 
@@ -47,10 +47,10 @@ For DistilBERT at L = 128:
 
 | Metric | Baseline | CHELA-SLAY | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_RATIO}}× |
+| Accuracy | 90.71% | 89.91% | -0.80% |
+| Params | 66.95M | 67500000 | +0.8% |
+| Time | 1.90 s | 4.2 s | 2.2× |
+| VRAM | 183 MB | 374 MB MB | 4.9× |
 
 ## 9.5 Improving the Cumsum
 

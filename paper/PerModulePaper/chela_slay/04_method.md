@@ -121,12 +121,12 @@ g = \sigma(W_g X + b_g) \in \mathbb{R}^{B \times L \times H}
 \tag{4.8}
 $$
 
-**Initialization.** $W_g = 0$, $b_g = {{GATE_INIT_BIAS}}$.
+**Initialization.** $W_g = 0$, $b_g = 5.0$.
 
 **Effect.** At step 0:
 
 $$
-g = \sigma({{GATE_INIT_BIAS}}) \approx {{GATE_INIT}}
+g = \sigma(5.0) \approx 0.993
 \tag{4.9}
 $$
 
@@ -222,11 +222,11 @@ For $d = 768$, $H = 12$, $F = 128$, $d_h = 64$, $r_L = 16$:
 
 ## 4.9 Step-0 Preservation
 
-**Claim.** At initialization ($W_g = 0$, $b_g = {{GATE_INIT_BIAS}}$, 
+**Claim.** At initialization ($W_g = 0$, $b_g = 5.0$, 
 $B_\text{LoRA} = 0$), CHELA-SLAY output equals the pretrained baseline.
 
 **Proof sketch.** With $W_g = 0$, $g = \sigma(b_g)$ is constant per token. 
-The gate weight is ${{GATE_INIT}}$, so $g \approx 1$. The dense output 
+The gate weight is $0.993$, so $g \approx 1$. The dense output 
 matches the pretrained attention (since base weights are copied and 
 LoRA = 0). The linear contribution is $(1 - g) \cdot O^\text{linear} 
 \approx 0.007 \cdot O^\text{linear}$. So the output is dominated by dense, 
@@ -238,7 +238,7 @@ We copy base weights from the pretrained attention:
 
 - **Q, K, V, O**: copied into `LoRALinear` modules.
 - **Ω (RFF)**: randomly initialized (no pretrained equivalent).
-- **Gate**: zero-weight, bias = {{GATE_INIT_BIAS}}.
+- **Gate**: zero-weight, bias = 5.0.
 
 Four architectures supported: DistilBERT, RoBERTa (nested), GPT-2 (Conv1D), 
 Qwen (GQA + RoPE).

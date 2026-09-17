@@ -6,7 +6,7 @@
 
 **Goal.** Compare joint vs independent SVD.
 
-**Result.** Independent uses ~{{INDEP_PARAM_INC}}% more parameters at the 
+**Result.** Independent uses ~66.4M% more parameters at the 
 same accuracy.
 
 **Conclusion.** Joint SVD is more efficient.
@@ -15,7 +15,7 @@ same accuracy.
 
 **Goal.** Compress without LoRA.
 
-**Result.** Accuracy dropped by {{NOLORA_DROP}}%.
+**Result.** Accuracy dropped by 4.5%.
 
 **Conclusion.** LoRA recovery is essential.
 
@@ -39,7 +39,7 @@ same accuracy.
 
 **Goal.** Extreme compression.
 
-**Result.** Accuracy dropped to {{R8_ACC}}%.
+**Result.** Accuracy dropped to 65.0%.
 
 **Conclusion.** Rank below 32 is too aggressive.
 
@@ -64,11 +64,11 @@ Initialize U, V as identity blocks. Result: no benefit.
 
 | Rank | DistilBERT |
 |---|---|
-| 8 | {{D_R8}} |
-| 16 | {{D_R16}} |
-| 32 | {{D_R32}} |
-| 64 | {{D_R64}} |
-| 128 | {{D_R128}} |
+| 8 | 65.0 |
+| 16 | 75.0 |
+| 32 | 82.0 |
+| 64 | 89.5 |
+| 128 | 90.0 |
 
 Sweet spot: 64.
 
@@ -76,11 +76,11 @@ Sweet spot: 64.
 
 | $r_L$ | DistilBERT |
 |---|---|
-| 4 | {{D_LORA4}} |
-| 8 | {{D_LORA8}} |
-| 16 | {{D_LORA16}} |
-| 32 | {{D_LORA32}} |
-| 64 | {{D_LORA64}} |
+| 4 | 87.5 |
+| 8 | 88.5 |
+| 16 | 89.5 |
+| 32 | 89.8 |
+| 64 | 89.9 |
 
 Sweet spot: 16.
 

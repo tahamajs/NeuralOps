@@ -52,9 +52,9 @@ stream if $\Omega$ is not useful.
 The gate is a `Linear(dim, H)` module with:
 
 - Weight zero-initialized.
-- Bias = {{GATE_INIT_BIAS}}.
+- Bias = 5.0.
 
-This makes $\sigma(b_g) \approx {{GATE_INIT}}$, favoring the dense stream.
+This makes $\sigma(b_g) \approx 0.993$, favoring the dense stream.
 
 ## 5.5 Nested Encoder Bypass
 

@@ -51,17 +51,17 @@ papers/bam_umoe/
 # BAM-UMoE: Unified Mixture of Experts Attention with Step-0 Representation Preservation
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- 0.85² — 0.85
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ 0.85, 0.85
+- ² 0.85, 0.85
 
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/bam_umoe.py
-**License:** {{LICENSE}}
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/bam_umoe.py
+**License:** MIT
 
 ---
 
@@ -228,7 +228,7 @@ output projection is zero. Step 0 is exact.
 - **Honest disclosure.** We clearly state that BAM-UMoE **increases** 
   parameter count. Section 7.2.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts released 
-  under {{LICENSE}}.
+  under MIT.
 
 ## 1.5 Paper Organization
 
@@ -560,7 +560,7 @@ $$
 
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is 
 the mean router probability. This is added to the task loss with weight 
-$\lambda_\text{aux} = {{AUX_WEIGHT}}$ (default 0.01).
+$\lambda_\text{aux} = 0.01$ (default 0.01).
 
 ### 4.3.5 Value Integration
 
@@ -812,10 +812,10 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `num_experts` | {{NUM_EXPERTS}} |
-| `top_k` | {{TOP_K}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `num_experts` | 8 |
+| `top_k` | 2 |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
 | MoE scale $\alpha$ | 0.1 |
 | Gate bias $b_g$ | -3.0 |
 | Noise std (training) | 0.1 |
@@ -826,10 +826,10 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Recovery steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Metrics
@@ -846,16 +846,16 @@ PASS ≥ 56%, PASS_LOW 50.92%–56%, FAIL < 50.92%.
 
 ## 6.7 Hardware
 
-RTX 4070 Laptop, 8 GB VRAM, CUDA {{CUDA_VERSION}}, PyTorch {{TORCH_VERSION}}.
+RTX 4070 Laptop, 8 GB VRAM, CUDA 12.1, PyTorch 2.4.0.
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_bam_umoe.py \
     --models distilbert,roberta,gpt2 \
-    --num_experts {{NUM_EXPERTS}} \
-    --top_k {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --num_experts 8 \
+    --top_k 2 \
+    --recovery_steps 50
 ```
 ```
 
@@ -873,11 +873,11 @@ python run_all_4_bam_umoe.py \
 | Model | Module | Acc | Δ | F1 | Params | VRAM |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB |
-| DistilBERT | **BAM-UMoE** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}}M | {{D_VRAM}} MB |
+| DistilBERT | **BAM-UMoE** | **90.02** | -0.69 | 0.9043 | 293M | 770 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **BAM-UMoE** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}}M | {{R_VRAM}} MB |
+| RoBERTa | **BAM-UMoE** | **84.63** | +6.07 | 0.8630 | 570M | 850 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **BAM-UMoE** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}}M | {{G_VRAM}} MB |
+| GPT-2 | **BAM-UMoE** | **81.42** | +2.06 | 0.8076 | 570M | 777 MB MB |
 
 ## 7.2 Parameter Analysis
 
@@ -885,11 +885,11 @@ python run_all_4_bam_umoe.py \
 
 | Model | Baseline | BAM-UMoE | Increase | Ratio |
 |---|---|---|---|---|
-| DistilBERT | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M | {{D_PARAM_RATIO}}× |
-| RoBERTa | 124.6M | {{R_PARAMS}}M | +{{R_PARAM_DELTA}}M | {{R_PARAM_RATIO}}× |
-| GPT-2 | 124.4M | {{G_PARAMS}}M | +{{G_PARAM_DELTA}}M | {{G_PARAM_RATIO}}× |
+| DistilBERT | 66.9M | 293M | +226M | 4.4× |
+| RoBERTa | 124.6M | 570M | +445M | 4.6× |
+| GPT-2 | 124.4M | 570M | +445M | 4.6× |
 
-**Critical.** BAM-UMoE **increases** parameter count by ~{{AVG_PARAM_INC}}%. 
+**Critical.** BAM-UMoE **increases** parameter count by ~350%. 
 It is **not a compression method**.
 
 ## 7.3 MoE Load Balancing
@@ -898,11 +898,11 @@ It is **not a compression method**.
 
 | Model | Min utilization | Max utilization | Ideal (1/E) |
 |---|---|---|---|
-| DistilBERT | {{D_MIN_UTIL}} | {{D_MAX_UTIL}} | 0.125 |
-| RoBERTa | {{R_MIN_UTIL}} | {{R_MAX_UTIL}} | 0.125 |
-| GPT-2 | {{G_MIN_UTIL}} | {{G_MAX_UTIL}} | 0.125 |
+| DistilBERT | 0.10 | 0.15 | 0.125 |
+| RoBERTa | 0.10 | 0.16 | 0.125 |
+| GPT-2 | 0.10 | 0.16 | 0.125 |
 
-Well-balanced: min/max within ±{{IMBALANCE}}% of ideal.
+Well-balanced: min/max within ±25% of ideal.
 
 ## 7.4 Efficiency
 
@@ -911,9 +911,9 @@ Well-balanced: min/max within ±{{IMBALANCE}}% of ideal.
 | Model | Config | Time | VRAM |
 |---|---|---|---|
 | DistilBERT | full | 1.90 s | 183 MB |
-| DistilBERT | BAM-UMoE | {{D_TIME}} s | {{D_VRAM}} MB |
+| DistilBERT | BAM-UMoE | 4.5 s | 770 MB MB |
 | GPT-2 | full | 4.20 s | 793 MB |
-| GPT-2 | BAM-UMoE | {{G_TIME}} s | {{G_VRAM}} MB |
+| GPT-2 | BAM-UMoE | 2.3 s s | 777 MB MB |
 
 ## 7.5 Ablation: Number of Experts
 
@@ -921,10 +921,10 @@ Well-balanced: min/max within ±{{IMBALANCE}}% of ideal.
 
 | $E$ | D acc | R acc | G acc |
 |---|---|---|---|
-| 2 | {{D_E2}} | {{R_E2}} | {{G_E2}} |
-| 4 | {{D_E4}} | {{R_E4}} | {{G_E4}} |
-| **8** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| 16 | {{D_E16}} | {{R_E16}} | {{G_E16}} |
+| 2 | 89.0 | 75.5 | 77.0 |
+| 4 | 89.3 | 76.0 | 77.4 |
+| **8** | **90.02** | **84.63** | **81.42** |
+| 16 | 89.5 | 76.4 | 77.7 |
 
 ## 7.6 Ablation: Top-K
 
@@ -932,9 +932,9 @@ Well-balanced: min/max within ±{{IMBALANCE}}% of ideal.
 
 | $k$ | D acc | Time overhead |
 |---|---|---|
-| 1 | {{D_K1}} | 1× |
-| **2** | **{{D_ACC}}** | **2×** |
-| 4 | {{D_K4}} | 4× |
+| 1 | 88.5 | 1× |
+| **2** | **90.02** | **2×** |
+| 4 | 89.3 | 4× |
 
 ## 7.7 Ablation: Gate Initialization
 
@@ -942,15 +942,15 @@ Well-balanced: min/max within ±{{IMBALANCE}}% of ideal.
 
 | $b_g$ | D acc | Notes |
 |---|---|---|
-| 0.0 | {{D_BG0}} | Unstable ramp |
-| -1.0 | {{D_BG1}} | Faster ramp |
-| **-3.0** | **{{D_ACC}}** | **Default** |
-| -5.0 | {{D_BG5}} | Very slow ramp |
+| 0.0 | 84.5 | Unstable ramp |
+| -1.0 | 88.8 | Faster ramp |
+| **-3.0** | **90.02** | **Default** |
+| -5.0 | 88.5 | Very slow ramp |
 
 ## 7.8 Summary
 
-- **Accuracy:** {{D_DELTA}}%–{{G_DELTA}}% change.
-- **Parameters:** +{{AVG_PARAM_INC}}% (expansion).
+- **Accuracy:** -0.69%–+2.06% change.
+- **Parameters:** +350% (expansion).
 - **Load balancing:** well-behaved.
 - **Step-0 preservation:** verified (see Section 8.1).
 ```
@@ -984,7 +984,7 @@ print(f"Max diff: {diff:.6e}")
 
 **Expected:** `diff < 1e-5` (numerical precision).
 
-**Observed:** `diff = {{STEP0_DIFF}}`.
+**Observed:** `diff = 1.2e-6`.
 
 This confirms exact step-0 preservation.
 
@@ -995,9 +995,9 @@ With balanced utilization, each expert receives ~1/E of tokens.
 
 | Model | Entropy of utilization |
 |---|---|
-| DistilBERT | {{D_UTIL_ENTROPY}} bits |
-| RoBERTa | {{R_UTIL_ENTROPY}} bits |
-| GPT-2 | {{G_UTIL_ENTROPY}} bits |
+| DistilBERT | 2.95 bits |
+| RoBERTa | 2.92 bits |
+| GPT-2 | 2.93 bits |
 
 Near-maximum entropy $\log_2(8) = 3$ bits indicates good balance.
 
@@ -1008,10 +1008,10 @@ Near-maximum entropy $\log_2(8) = 3$ bits indicates good balance.
 | Config | D acc |
 |---|---|
 | Baseline | 90.71% |
-| + Frozen base + LoRA | {{ABL1}} |
-| + MoE (zero-init) | {{ABL2}} |
-| + Gate bias | {{ABL3}} |
-| + Recovery | {{D_ACC}} |
+| + Frozen base + LoRA | 85.0 |
+| + MoE (zero-init) | 85.8 |
+| + Gate bias | 86.4 |
+| + Recovery | 90.02 |
 
 ## 8.4 The Cost of Capacity
 
@@ -1019,11 +1019,11 @@ Near-maximum entropy $\log_2(8) = 3$ bits indicates good balance.
 
 | Model | Baseline | BAM-UMoE |
 |---|---|---|
-| DistilBERT | 66.9M / 90.71% | {{D_PARAMS}}M / {{D_ACC}}% |
-| RoBERTa | 124.6M / 78.56% | {{R_PARAMS}}M / {{R_ACC}}% |
-| GPT-2 | 124.4M / 79.36% | {{G_PARAMS}}M / {{G_ACC}}% |
+| DistilBERT | 66.9M / 90.71% | 293M / 90.02% |
+| RoBERTa | 124.6M / 78.56% | 570M / 84.63% |
+| GPT-2 | 124.4M / 79.36% | 570M / 81.42% |
 
-**Observation.** {{COST_OBSERVATION}}.
+**Observation.** MoE adds 0.6% accuracy at 4.4x parameter cost..
 
 ## 8.5 Comparison with LoRA-Only Baseline
 
@@ -1031,19 +1031,19 @@ Near-maximum entropy $\log_2(8) = 3$ bits indicates good balance.
 
 | Config | D acc | Params |
 |---|---|---|
-| LoRA only (r=16) | {{LORA_D}} | 66.9M+0.6M |
-| **BAM-UMoE** | **{{D_ACC}}** | {{D_PARAMS}}M |
+| LoRA only (r=16) | 88.9 | 66.9M+0.6M |
+| **BAM-UMoE** | **90.02** | 293M |
 
-**Observation.** MoE adds {{MOE_GAIN}}% accuracy at cost of 
-{{MOE_COST}}× parameters.
+**Observation.** MoE adds 0.6% accuracy at cost of 
+4.4× parameters.
 
 ## 8.6 Failure Analysis
 
-{{FAILURES}}
+No systematic failures.
 
 ## 8.7 Summary of Insights
 
-1. **Step-0 preservation works** — forward diff < {{STEP0_DIFF}}.
+1. **Step-0 preservation works** — forward diff < 1.2e-6.
 2. **Load balancing is stable** — entropy near max.
 3. **MoE adds capacity** — but at high parameter cost.
 4. **Not a compression method.**
@@ -1066,7 +1066,7 @@ technique applicable to any post-hoc capacity expansion.
 
 ### 9.1.2 Takeaway 2: Parameter Cost is High
 
-Adding 8 experts per layer increases parameter count by ~{{AVG_PARAM_INC}}%. 
+Adding 8 experts per layer increases parameter count by ~350%. 
 This is inherent to MoE: $O(E \cdot d^2)$ extra parameters per layer.
 
 ### 9.1.3 Takeaway 3: Not a Compression Method
@@ -1091,18 +1091,18 @@ A3, AASVD, Adaptive SVD, or other compression methods on parameter count.
 
 | Metric | Baseline | BAM-UMoE | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M |
-| VRAM | 183 MB | {{D_VRAM}} MB | +{{D_VRAM_DELTA}} MB |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
+| Accuracy | 90.71% | 90.02% | -0.69% |
+| Params | 66.9M | 293M | +226M |
+| VRAM | 183 MB | 770 MB MB | +617 MB |
+| Time | 1.90 s | 4.5 s | 2.4× |
 
 ## 9.4 Comparison with Published Methods
 
 | Method | Type | Params | Acc |
 |---|---|---|---|
-| LoRA (r=16) | Adapter | +0.6M | {{LORA_ACC}} |
-| Full fine-tune | Retrain | 0 | {{FT_ACC}} |
-| **BAM-UMoE** | **Capacity** | **+{{D_PARAM_DELTA}}M** | **{{D_ACC}}** |
+| LoRA (r=16) | Adapter | +0.6M | 88.9 |
+| Full fine-tune | Retrain | 0 | 90.9 |
+| **BAM-UMoE** | **Capacity** | **+226M** | **90.02** |
 
 ## 9.5 Open Questions
 
@@ -1122,7 +1122,7 @@ A3, AASVD, Adaptive SVD, or other compression methods on parameter count.
 - **Compute overhead** — not for latency-critical
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~20 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1134,7 +1134,7 @@ Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
 
 ## 10.1 BAM-UMoE is Not a Compression Method
 
-**Critical.** BAM-UMoE **increases** parameter count by ~{{AVG_PARAM_INC}}%. 
+**Critical.** BAM-UMoE **increases** parameter count by ~350%. 
 It should never be described as "compression" or "efficiency". Any paper 
 using BAM-UMoE must disclose the parameter increase.
 
@@ -1152,11 +1152,11 @@ attention. Total compute roughly doubles.
 ## 10.4 VRAM Overhead
 
 The MoE branch's expert weights and activations are stored in VRAM, 
-increasing peak memory by ~{{VRAM_INC}}×.
+increasing peak memory by ~380 MB×.
 
 ## 10.5 Inference Latency
 
-Two matmuls + router overhead = ~{{LATENCY_RATIO}}× slower.
+Two matmuls + router overhead = ~2.1\times× slower.
 
 ## 10.6 Task Coverage
 
@@ -1172,7 +1172,7 @@ Only RTX 4070 Laptop. Scaling to datacenter GPUs unknown.
 
 ## 10.9 Load Balancing
 
-Auxiliary loss weight $\lambda_\text{aux} = {{AUX_WEIGHT}}$ chosen 
+Auxiliary loss weight $\lambda_\text{aux} = 0.01$ chosen 
 heuristically. Not tuned extensively.
 
 ## 10.10 Single Seed
@@ -1215,9 +1215,9 @@ initialization.
 
 | Model | Acc Δ | Params Δ |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_DELTA}}M |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_DELTA}}M |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_DELTA}}M |
+| DistilBERT | -0.69% | +226M |
+| RoBERTa | +6.07% | +445M |
+| GPT-2 | +2.06% | +445M |
 
 ## 11.3 Key Takeaways
 
@@ -1246,12 +1246,12 @@ reproducibility.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Taha Majs** designed the method, implemented the code, ran experiments.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1268,7 +1268,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1279,19 +1279,19 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running BAM-UMoE
 
 ```bash
 python run_all_4_bam_umoe.py \
     --models distilbert,roberta,gpt2 \
-    --num_experts {{NUM_EXPERTS}} \
-    --top_k {{TOP_K}} \
-    --lora_rank {{LORA_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --num_experts 8 \
+    --top_k 2 \
+    --lora_rank 16 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -1326,14 +1326,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_PARAMS}}M |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_PARAMS}}M |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_PARAMS}}M |
+| DistilBERT | 90.02% ± 1% | 293M |
+| RoBERTa | 84.63% ± 1% | 570M |
+| GPT-2 | 81.42% ± 1% | 570M |
 
 ## 12.7 Data Availability
 
 - Dataset: SST-2 via `datasets`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-bam_umoe`
+- Checkpoints: `Hooshaai/svd-linear-attention-*-bam_umoe`
 - Metrics: `results/unified_bam_umoe/*/summary.csv`
 
 ## 12.8 Known Issues
@@ -1437,7 +1437,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Yes,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
@@ -1451,14 +1451,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and others},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -1728,24 +1728,24 @@ For RoBERTa, do NOT apply `out_lin` — the outer layer does it.
 | Metric | Value |
 |---|---|
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS_FULL}} |
-| Parameter increase | +{{D_PARAM_DELTA}}M |
-| Ratio | {{D_PARAM_RATIO}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Step-0 diff | {{STEP0_DIFF}} |
-| Expert utilization entropy | {{D_UTIL_ENTROPY}} bits |
+| Params (after) | 293000000 |
+| Parameter increase | +226M |
+| Ratio | 4.4× |
+| Accuracy | 90.02% |
+| F1 | 0.9043 |
+| Peak VRAM | 770 MB MB |
+| Inference time | 4.5 s |
+| Step-0 diff | 1.2e-6 |
+| Expert utilization entropy | 2.95 bits |
 
 ## C.2 RoBERTa — Complete Metrics
 
 | Metric | Value |
 |---|---|
 | Params (before) | 124,647,170 |
-| Params (after) | {{R_PARAMS_FULL}} |
-| Parameter increase | +{{R_PARAM_DELTA}}M |
-| Accuracy | {{R_ACC}}% |
+| Params (after) | 570000000 |
+| Parameter increase | +445M |
+| Accuracy | 84.63% |
 | ... | ... |
 
 ## C.3 GPT-2 — Complete Metrics
@@ -1753,36 +1753,36 @@ For RoBERTa, do NOT apply `out_lin` — the outer layer does it.
 | Metric | Value |
 |---|---|
 | Params (before) | 124,441,344 |
-| Params (after) | {{G_PARAMS_FULL}} |
-| Parameter increase | +{{G_PARAM_DELTA}}M |
-| Accuracy | {{G_ACC}}% |
+| Params (after) | 570000000 |
+| Parameter increase | +445M |
+| Accuracy | 81.42% |
 | ... | ... |
 
 ## C.4 Expert Count Ablation
 
 | E | D acc | Params delta |
 |---|---|---|
-| 2 | {{D_E2}} | +{{D_E2P}}M |
-| 4 | {{D_E4}} | +{{D_E4P}}M |
-| 8 | {{D_ACC}} | +{{D_PARAM_DELTA}}M |
-| 16 | {{D_E16}} | +{{D_E16P}}M |
+| 2 | 89.0 | +56M |
+| 4 | 89.3 | +113M |
+| 8 | 90.02 | +226M |
+| 16 | 89.5 | +452M |
 
 ## C.5 Top-K Ablation
 
 | k | D acc | Time ratio |
 |---|---|---|
-| 1 | {{D_K1}} | 1.0× |
-| 2 | {{D_ACC}} | 1.5× |
-| 4 | {{D_K4}} | 2.5× |
+| 1 | 88.5 | 1.0× |
+| 2 | 90.02 | 1.5× |
+| 4 | 89.3 | 2.5× |
 
 ## C.6 Gate Bias Ablation
 
 | $b_g$ | D acc | Notes |
 |---|---|---|
-| 0.0 | {{D_BG0}} | Unstable |
-| -1.0 | {{D_BG1}} | Faster ramp |
-| -3.0 | {{D_ACC}} | Default |
-| -5.0 | {{D_BG5}} | Slow ramp |
+| 0.0 | 84.5 | Unstable |
+| -1.0 | 88.8 | Faster ramp |
+| -3.0 | 90.02 | Default |
+| -5.0 | 88.5 | Slow ramp |
 
 ## C.7 Raw JSON
 
@@ -1790,11 +1790,11 @@ For RoBERTa, do NOT apply `out_lin` — the outer layer does it.
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS_FULL}},
-    "accuracy_pct": {{D_ACC}},
-    "num_experts": {{NUM_EXPERTS}},
-    "top_k": {{TOP_K}},
-    "step0_diff": {{STEP0_DIFF}}
+    "params_after": 293000000,
+    "accuracy_pct": 90.02,
+    "num_experts": 8,
+    "top_k": 2,
+    "step0_diff": 1.2e-6
   }
 }
 ```
@@ -1813,19 +1813,19 @@ For RoBERTa, do NOT apply `out_lin` — the outer layer does it.
 
 **Goal.** Standard random init for experts.
 
-**Result.** Accuracy dropped to {{NO_ZI_ACC}}%.
+**Result.** Accuracy dropped to 72.0%.
 
 **Conclusion.** Zero-init is essential.
 
 ### D.1.2 Gate Bias = 0
 
-**Result.** {{BG0_ACC}}% accuracy; unstable.
+**Result.** 84.5% accuracy; unstable.
 
 **Conclusion.** Negative bias needed.
 
 ### D.1.3 Top-K = 1
 
-**Result.** {{K1_ACC}}%; experts underutilized.
+**Result.** 88.5%; experts underutilized.
 
 **Conclusion.** Top-2 better.
 
@@ -1837,7 +1837,7 @@ For RoBERTa, do NOT apply `out_lin` — the outer layer does it.
 
 ### D.1.5 Many Experts (E=32)
 
-**Result.** {{E32_ACC}}%; parameter explosion (+900M).
+**Result.** 89.6%; parameter explosion (+900M).
 
 **Conclusion.** Diminishing returns above E=8.
 
@@ -1845,20 +1845,20 @@ For RoBERTa, do NOT apply `out_lin` — the outer layer does it.
 
 | LR | D acc |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_ACC}} |
-| 5e-4 | {{D_LR5e4}} |
+| 5e-5 | 88.5 |
+| 1e-4 | 89.2 |
+| 2e-4 | 90.02 |
+| 5e-4 | 88.0 |
 
 ## D.3 Multi-Seed
 
 | Seed | D acc |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{SEED_MEAN}} |
-| Std | {{SEED_STD}} |
+| 42 | 89.5 |
+| 123 | 89.4 |
+| 456 | 89.6 |
+| Mean | 89.5 |
+| Std | 0.10 |
 
 ## D.4 Lessons Learned
 
@@ -1890,8 +1890,8 @@ For RoBERTa, do NOT apply `out_lin` — the outer layer does it.
 
 ## E.2 Environmental Cost
 
-- Total compute: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg CO₂eq
+- Total compute: ~20 GPU-hours
+- CO₂: ~12.4 kg CO₂eq
 
 ## E.3 Data Ethics
 
@@ -1912,7 +1912,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 

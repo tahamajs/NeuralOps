@@ -16,11 +16,11 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `num_clusters` | {{NUM_CLUSTERS}} |
-| `n_iters` | {{N_ITERS}} |
-| `window_size` | {{WINDOW_SIZE}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `num_clusters` | 16 |
+| `n_iters` | 3 |
+| `window_size` | 32 |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
 | Temperature init | 0.1 |
 | Blend init | 0.5 |
 
@@ -29,10 +29,10 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Recovery steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Metrics
@@ -49,16 +49,16 @@ PASS ≥ 56%, PASS_LOW 50.92%–56%, FAIL < 50.92%.
 
 ## 6.7 Hardware
 
-RTX 4070 Laptop, CUDA {{CUDA_VERSION}}, PyTorch {{TORCH_VERSION}}.
+RTX 4070 Laptop, CUDA 12.1, PyTorch 2.4.0.
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_cluster.py \
     --models distilbert,roberta,gpt2 \
-    --num_clusters {{NUM_CLUSTERS}} \
-    --window_size {{WINDOW_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --num_clusters 16 \
+    --window_size 32 \
+    --recovery_steps 50
 ```
 
 ---

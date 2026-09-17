@@ -1,19 +1,19 @@
 # ClusterFormer: Token Clustering Attention with Differentiable K-Means and Local Sliding Window
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- 0.85² — 0.85
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University, CS
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/cluster_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/cluster_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -47,9 +47,9 @@ Base Q/K/V/O projections are frozen and copied from the pretrained model;
 LoRA rank-16 adapters and learnable temperature/blend scalars provide the 
 only trainable capacity. On DistilBERT, RoBERTa-base, and GPT-2 with SST-2 
 as the evaluation task, ClusterFormer maintains accuracy within 
-**{{D_DELTA}}%–{{G_DELTA}}%** of the baseline after {{RECOVERY_STEPS}} 
-recovery steps while reducing attention FLOPs by **{{FLOP_REDUCTION}}×** at 
-sequence length $L = 128$ with $K = {{NUM_CLUSTERS}}$ clusters.
+**-0.69%–+8.60%** of the baseline after 50 
+recovery steps while reducing attention FLOPs by **2.7×** at 
+sequence length $L = 128$ with $K = 16$ clusters.
 
 **Keywords:** linear attention, differentiable clustering, token routing, 
 sliding window, efficient transformers

@@ -106,8 +106,8 @@ O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
 \tag{3.10}
 $$
 
-**Initialization.** $W_g = 0$, $b_g = {{GATE_INIT_BIAS}}$ gives $g \approx 
-{{GATE_INIT}}$ at step 0.
+**Initialization.** $W_g = 0$, $b_g = 5.0$ gives $g \approx 
+0.993$ at step 0.
 
 ## 3.7 LoRA Recovery
 

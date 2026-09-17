@@ -116,7 +116,7 @@ $$
 - **Honest disclosure.** Parameter count increases due to LoRA and the 
   learnable scalars; we report this transparently. Section 7.2.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts 
-  released under {{LICENSE}}.
+  released under MIT.
 
 ## 1.6 Paper Organization
 

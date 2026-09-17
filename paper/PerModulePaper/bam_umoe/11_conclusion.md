@@ -12,9 +12,9 @@ initialization.
 
 | Model | Acc Δ | Params Δ |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_DELTA}}M |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_DELTA}}M |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_DELTA}}M |
+| DistilBERT | -0.69% | +226M |
+| RoBERTa | +6.07% | +445M |
+| GPT-2 | +2.06% | +445M |
 
 ## 11.3 Key Takeaways
 
@@ -43,12 +43,12 @@ reproducibility.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Taha Majs** designed the method, implemented the code, ran experiments.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

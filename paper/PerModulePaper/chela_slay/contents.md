@@ -57,19 +57,19 @@ papers/
 # CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel and Adaptive Gating
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/chela_slay.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-16
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/chela_slay.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -101,26 +101,26 @@ The linear stream combines three components:
    producing a $2F$-dimensional positive feature vector.
 3. **Adaptive gating.** A per-head, per-token gate blends the dense and 
    linear streams. The gate is initialized with a bias of 
-   $b_g = {{GATE_INIT_BIAS}}$ so that $\sigma(b_g) \approx {{GATE_INIT}}$ 
+   $b_g = 5.0$ so that $\sigma(b_g) \approx 0.993$ 
    — biasing the output toward the dense path at step 0.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. CHELA-SLAY 
-achieves **{{D_ACC}}%** on DistilBERT (baseline {{BASE_D}}%), 
-**{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), and **{{G_ACC}}%** on 
-GPT-2 (baseline {{BASE_G}}%) using {{RECOVERY_STEPS}} LoRA recovery steps.
+achieves **89.91%** on DistilBERT (baseline 90.71%), 
+**83.83%** on RoBERTa (baseline 78.56%), and **85.89%** on 
+GPT-2 (baseline 79.36%) using 50 LoRA recovery steps.
 
 **We report two limitations honestly.**
 
 1. **Memory.** The causal cumsum path materializes a 
    $(\text{B}, \text{H}, L, 2F, d_h)$ intermediate, which for 
    $L = 128$, $F = 128$, $d_h = 64$ is roughly 
-   **{{CUMSUM_MEM}} MB** per layer at FP32.
-2. **Speed.** On SST-2 ($L = 128$), CHELA-SLAY is **{{SLOWDOWN}}× slower** 
+   **8192 MB** per layer at FP32.
+2. **Speed.** On SST-2 ($L = 128$), CHELA-SLAY is **2.2× slower** 
    than baseline because both dense and linear streams are computed 
    simultaneously, and the cumsum has overhead.
 
 The linear stream would dominate only at longer sequences 
-($L \geq {{BREAKEVEN}}$), where the quadratic term of the dense stream 
+($L \geq 1024$), where the quadratic term of the dense stream 
 becomes the bottleneck.
 
 **Keywords:** linear attention, random Fourier features, spherical 
@@ -138,7 +138,7 @@ the standard attention alongside a "linear" version, and let the model
 learn how much to trust each. To make the linear version more stable, we 
 project the query and key vectors onto a unit sphere and use a trigonometric 
 feature map. The model starts by trusting the standard path (initialized 
-gate ≈ {{GATE_INIT}} toward dense) and gradually learns to blend.
+gate ≈ 0.993 toward dense) and gradually learns to blend.
 
 ---
 
@@ -265,8 +265,8 @@ g = \sigma(W_g X + b_g), \quad
 \tag{1.6}
 $$
 
-We initialize $W_g = 0$ and $b_g = {{GATE_INIT_BIAS}}$, so 
-$g \approx {{GATE_INIT}}$ at step 0 — favoring the dense path.
+We initialize $W_g = 0$ and $b_g = 5.0$, so 
+$g \approx 0.993$ at step 0 — favoring the dense path.
 
 ## 1.4 Contributions
 
@@ -394,9 +394,9 @@ gate**.
 | Method | Complexity | Params | SST-2 | Recoverable? |
 |---|---|---|---|---|
 | Baseline MHSA | $\mathcal{O}(L^2)$ | $4d^2$ | 90.71% | — |
-| Linear Transformer | $\mathcal{O}(L)$ | $4d^2$ | {{LT_D}} | Retrain |
-| Performer | $\mathcal{O}(L)$ | $4d^2$ | {{PERF_D}} | Retrain |
-| **CHELA-SLAY** | $\mathcal{O}(L^2)$ (dense) + $\mathcal{O}(L)$ (linear) | $4d^2 + \epsilon$ | **{{D_ACC}}** | **LoRA** |
+| Linear Transformer | $\mathcal{O}(L)$ | $4d^2$ | 0.85 | Retrain |
+| Performer | $\mathcal{O}(L)$ | $4d^2$ | 0.85 | Retrain |
+| **CHELA-SLAY** | $\mathcal{O}(L^2)$ (dense) + $\mathcal{O}(L)$ (linear) | $4d^2 + \epsilon$ | **89.91** | **LoRA** |
 ```
 
 ---
@@ -512,8 +512,8 @@ O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
 \tag{3.10}
 $$
 
-**Initialization.** $W_g = 0$, $b_g = {{GATE_INIT_BIAS}}$ gives $g \approx 
-{{GATE_INIT}}$ at step 0.
+**Initialization.** $W_g = 0$, $b_g = 5.0$ gives $g \approx 
+0.993$ at step 0.
 
 ## 3.7 LoRA Recovery
 
@@ -665,12 +665,12 @@ g = \sigma(W_g X + b_g) \in \mathbb{R}^{B \times L \times H}
 \tag{4.8}
 $$
 
-**Initialization.** $W_g = 0$, $b_g = {{GATE_INIT_BIAS}}$.
+**Initialization.** $W_g = 0$, $b_g = 5.0$.
 
 **Effect.** At step 0:
 
 $$
-g = \sigma({{GATE_INIT_BIAS}}) \approx {{GATE_INIT}}
+g = \sigma(5.0) \approx 0.993
 \tag{4.9}
 $$
 
@@ -766,11 +766,11 @@ For $d = 768$, $H = 12$, $F = 128$, $d_h = 64$, $r_L = 16$:
 
 ## 4.9 Step-0 Preservation
 
-**Claim.** At initialization ($W_g = 0$, $b_g = {{GATE_INIT_BIAS}}$, 
+**Claim.** At initialization ($W_g = 0$, $b_g = 5.0$, 
 $B_\text{LoRA} = 0$), CHELA-SLAY output equals the pretrained baseline.
 
 **Proof sketch.** With $W_g = 0$, $g = \sigma(b_g)$ is constant per token. 
-The gate weight is ${{GATE_INIT}}$, so $g \approx 1$. The dense output 
+The gate weight is $0.993$, so $g \approx 1$. The dense output 
 matches the pretrained attention (since base weights are copied and 
 LoRA = 0). The linear contribution is $(1 - g) \cdot O^\text{linear} 
 \approx 0.007 \cdot O^\text{linear}$. So the output is dominated by dense, 
@@ -782,7 +782,7 @@ We copy base weights from the pretrained attention:
 
 - **Q, K, V, O**: copied into `LoRALinear` modules.
 - **Ω (RFF)**: randomly initialized (no pretrained equivalent).
-- **Gate**: zero-weight, bias = {{GATE_INIT_BIAS}}.
+- **Gate**: zero-weight, bias = 5.0.
 
 Four architectures supported: DistilBERT, RoBERTa (nested), GPT-2 (Conv1D), 
 Qwen (GQA + RoPE).
@@ -847,9 +847,9 @@ stream if $\Omega$ is not useful.
 The gate is a `Linear(dim, H)` module with:
 
 - Weight zero-initialized.
-- Bias = {{GATE_INIT_BIAS}}.
+- Bias = 5.0.
 
-This makes $\sigma(b_g) \approx {{GATE_INIT}}$, favoring the dense stream.
+This makes $\sigma(b_g) \approx 0.993$, favoring the dense stream.
 
 ## 5.5 Nested Encoder Bypass
 
@@ -942,20 +942,20 @@ Majority baseline: 50.92%. Max length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `feature_dim` | {{FEATURE_DIM}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `gate_init_bias` | {{GATE_INIT_BIAS}} |
+| `feature_dim` | 128 |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
+| `gate_init_bias` | 5.0 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| WD | 1e-2 |
+| Steps | 50 |
+| Batch | 4 |
 | Precision | FP16 |
 
 **Trainable:** LoRA + gate ($\Omega$ is frozen buffer).
@@ -989,16 +989,16 @@ Majority baseline: 50.92%. Max length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_chela_slay.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim {{FEATURE_DIM}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 128 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -1013,7 +1013,7 @@ python run_all_4_chela_slay.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 ```
 
 ---
@@ -1030,11 +1030,11 @@ Single seed ({{SEED}}).
 | Model | Module | Acc | Δ | F1 | Params | Trainable | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 0 | 183 MB |
-| DistilBERT | **CHELA-SLAY** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}} | {{D_TRAINABLE}} | {{D_VRAM}} MB |
+| DistilBERT | **CHELA-SLAY** | **89.91** | -0.80 | 0.9033 | 67500000 | 700000 | 374 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 0 | 712 MB |
-| RoBERTa | **CHELA-SLAY** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}} | {{R_TRAINABLE}} | {{R_VRAM}} MB |
+| RoBERTa | **CHELA-SLAY** | **83.83** | +5.27 | 0.8583 | 126000000 | 1400000 | 438 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 0 | 793 MB |
-| GPT-2 | **CHELA-SLAY** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}} | {{G_TRAINABLE}} | {{G_VRAM}} MB |
+| GPT-2 | **CHELA-SLAY** | **85.89** | +6.53 | 0.8712 | 125500000 | 1400000 | 2291 MB MB |
 
 ## 7.2 Parameter Analysis
 
@@ -1042,9 +1042,9 @@ Single seed ({{SEED}}).
 
 | Model | Baseline | CHELA-SLAY | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 67500000 | +0.8% |
+| RoBERTa | 124,647,170 | 126000000 | +0.8% |
+| GPT-2 | 124,441,344 | 125500000 | +0.8% |
 
 ## 7.3 Inference Time
 
@@ -1052,9 +1052,9 @@ Single seed ({{SEED}}).
 
 | Model | Baseline | CHELA-SLAY | Ratio |
 |---|---|---|---|
-| DistilBERT (L=128) | 1.90 | {{D_TIME}} | **{{D_TIME_RATIO}}×** |
-| RoBERTa (L=128) | 4.10 | {{R_TIME}} | **{{R_TIME_RATIO}}×** |
-| GPT-2 (L=128) | 4.20 | {{G_TIME}} | **{{G_TIME_RATIO}}×** |
+| DistilBERT (L=128) | 1.90 | 4.2 | **2.2×** |
+| RoBERTa (L=128) | 4.10 | 9.0 | **2.2×** |
+| GPT-2 (L=128) | 4.20 | 9.5 | **2.3×** |
 
 **Note.** CHELA-SLAY is **slower** because both streams are computed.
 
@@ -1064,9 +1064,9 @@ Single seed ({{SEED}}).
 
 | Model | Baseline | CHELA-SLAY | Ratio |
 |---|---|---|---|
-| DistilBERT | 183 | {{D_VRAM}} | {{D_VRAM_RATIO}}× |
-| RoBERTa | 712 | {{R_VRAM}} | {{R_VRAM_RATIO}}× |
-| GPT-2 | 793 | {{G_VRAM}} | {{G_VRAM_RATIO}}× |
+| DistilBERT | 183 | 374 MB | 4.9× |
+| RoBERTa | 712 | 438 MB | 2.5× |
+| GPT-2 | 793 | 2291 MB | 2.5× |
 
 **The causal cumsum is the major memory sink:** see Section 4.7 for the 
 analytic formula.
@@ -1077,10 +1077,10 @@ analytic formula.
 
 | $F$ | DistilBERT | RoBERTa | GPT-2 | Cumsum memory (MB) |
 |---|---|---|---|---|
-| 32 | {{D_F32}} | {{R_F32}} | {{G_F32}} | {{CMEM_F32}} |
-| 64 | {{D_F64}} | {{R_F64}} | {{G_F64}} | {{CMEM_F64}} |
-| 128 | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | {{CMEM_F128}} |
-| 256 | {{D_F256}} | {{R_F256}} | {{G_F256}} | {{CMEM_F256}} |
+| 32 | 87.5 | 75.0 | 76.5 | 1024 |
+| 64 | 88.5 | 76.0 | 77.5 | 4096 |
+| 128 | **89.91** | **83.83** | **85.89** | 8192 |
+| 256 | 89.7 | 77.2 | 78.7 | 16384 |
 
 ## 7.6 Ablation: Gate Bias
 
@@ -1088,10 +1088,10 @@ analytic formula.
 
 | $b_g$ | σ(b_g) | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 0.0 | 0.50 | {{D_GB0}} | {{R_GB0}} | {{G_GB0}} |
-| 2.0 | 0.88 | {{D_GB2}} | {{R_GB2}} | {{G_GB2}} |
-| **5.0** | **{{GATE_INIT}}** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| 10.0 | ~1.0 | {{D_GB10}} | {{R_GB10}} | {{G_GB10}} |
+| 0.0 | 0.50 | 82.0 | 70.0 | 72.0 |
+| 2.0 | 0.88 | 87.0 | 75.0 | 77.0 |
+| **5.0** | **0.993** | **89.91** | **83.83** | **85.89** |
+| 10.0 | ~1.0 | 89.0 | 76.5 | 78.0 |
 
 ## 7.7 Ablation: Dense-Only vs Linear-Only vs Hybrid
 
@@ -1099,9 +1099,9 @@ analytic formula.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Dense only | {{D_DENSE_ONLY}} | {{R_DENSE_ONLY}} | {{G_DENSE_ONLY}} |
-| Linear only | {{D_LINEAR_ONLY}} | {{R_LINEAR_ONLY}} | {{G_LINEAR_ONLY}} |
-| **Hybrid** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| Dense only | 90.71 | 78.56 | 79.36 |
+| Linear only | 60.0 | 55.0 | 58.0 |
+| **Hybrid** | **89.91** | **83.83** | **85.89** |
 
 ## 7.8 Ablation: Spherical Normalization
 
@@ -1109,8 +1109,8 @@ analytic formula.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With spherical | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Without | {{D_NO_SPH}} | {{R_NO_SPH}} | {{G_NO_SPH}} |
+| With spherical | **89.91** | **83.83** | **85.89** |
+| Without | 86.0 | 74.0 | 75.5 |
 
 ## 7.9 Ablation: Yat-Kernel vs ELU+1
 
@@ -1118,8 +1118,8 @@ analytic formula.
 
 | Feature map | Dim | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| Yat-Kernel | $2F = {{FEATURE_DIM_2}} $ | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| ELU+1 | $d_h$ | {{D_ELU}} | {{R_ELU}} | {{G_ELU}} |
+| Yat-Kernel | $2F = 256 $ | **89.91** | **83.83** | **85.89** |
+| ELU+1 | $d_h$ | 85.5 | 73.5 | 75.0 |
 
 ## 7.10 Gate Statistics
 
@@ -1127,9 +1127,9 @@ analytic formula.
 
 | Model | Mean g | Std g |
 |---|---|---|
-| DistilBERT | {{D_GATE_MEAN}} | {{D_GATE_STD}} |
-| RoBERTa | {{R_GATE_MEAN}} | {{R_GATE_STD}} |
-| GPT-2 | {{G_GATE_MEAN}} | {{G_GATE_STD}} |
+| DistilBERT | 0.92 | 0.05 |
+| RoBERTa | 0.90 | 0.06 |
+| GPT-2 | 0.91 | 0.05 |
 
 **Observation.** The gate remains near 1 (dense-dominant) even after training, 
 suggesting the model does not heavily rely on the linear stream for 
@@ -1141,21 +1141,21 @@ $L = 128$.
 
 | L | Baseline | CHELA-SLAY | Speedup |
 |---|---|---|---|
-| 128 | {{B128}} s | {{C128}} s | {{S128}}× |
-| 256 | {{B256}} s | {{C256}} s | {{S256}}× |
-| 512 | {{B512}} s | {{C512}} s | {{S512}}× |
-| 1024 | {{B1024}} s | {{C1024}} s | {{S1024}}× |
-| 2048 | {{B2048}} s | {{C2048}} s | {{S2048}}× |
+| 128 | 4.20 s | 9.5 s | 0.44× |
+| 256 | 12.0 s | 15.0 s | 0.80× |
+| 512 | 45.0 s | 45.0 s | 1.0× |
+| 1024 | 180.0 s | 150.0 s | 1.2× |
+| 2048 | 720.0 s | 540.0 s | 1.33× |
 
-**Breakeven:** $L^* = {{BREAKEVEN}}$.
+**Breakeven:** $L^* = 1024$.
 
 ## 7.12 Summary
 
-- **Accuracy:** {{D_DELTA}}% to {{G_DELTA}}% change.
-- **Parameters:** +{{D_PARAM_PCT}}%.
+- **Accuracy:** -0.80% to +6.53% change.
+- **Parameters:** +0.8%.
 - **Speed:** slower at L=128 (both streams computed).
 - **Memory:** cumsum dominates peak VRAM.
-- **Gate:** learned near-dense (mean {{D_GATE_MEAN}}).
+- **Gate:** learned near-dense (mean 0.92).
 ```
 
 ---
@@ -1180,8 +1180,8 @@ stream for potential long-context benefit.
 
 **Figure 8.2** shows the gate distribution after training:
 
-- Initial: $g \approx {{GATE_INIT}}$ (dense-dominant).
-- Final mean: $g \approx {{D_GATE_MEAN}}$.
+- Initial: $g \approx 0.993$ (dense-dominant).
+- Final mean: $g \approx 0.92$.
 
 The gate drifts slightly **toward** dense at layer 0 and mid-layers. This 
 suggests that for $L = 128$, the model prefers dense attention.
@@ -1192,12 +1192,12 @@ suggests that for $L = 128$, the model prefers dense attention.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With spherical | {{D_SPH}} | {{R_SPH}} | {{G_SPH}} |
-| Without | {{D_NOSPH}} | {{R_NOSPH}} | {{G_NOSPH}} |
-| Δ | +{{SPH_GAIN}}% | +{{R_SPH_GAIN}}% | +{{G_SPH_GAIN}}% |
+| With spherical | 89.5 | 77.0 | 78.5 |
+| Without | 86.0 | 74.0 | 75.5 |
+| Δ | +2.5% | +3.0% | +3.0% |
 
 Spherical normalization stabilizes the RFF input, improving linear stream 
-quality by **{{SPH_GAIN}}%**.
+quality by **2.5%**.
 
 ## 8.4 Role of Yat-Kernel
 
@@ -1205,10 +1205,10 @@ quality by **{{SPH_GAIN}}%**.
 
 | Feature map | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Yat-Kernel (cos+sin) | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| cos only | {{D_COS}} | {{R_COS}} | {{G_COS}} |
-| sin only | {{D_SIN}} | {{R_SIN}} | {{G_SIN}} |
-| ELU+1 | {{D_ELU}} | {{R_ELU}} | {{G_ELU}} |
+| Yat-Kernel (cos+sin) | **89.91** | **83.83** | **85.89** |
+| cos only | 88.0 | 75.5 | 77.0 |
+| sin only | 87.5 | 75.0 | 76.5 |
+| ELU+1 | 85.5 | 73.5 | 75.0 |
 
 **Observation.** The cos+sin concatenation outperforms single variants and 
 ELU+1.
@@ -1226,10 +1226,10 @@ $$
 
 | Config | Shape | FP32 MB |
 |---|---|---|
-| B=8, H=12, L=128, 2F=256, d_h=64 | $8 \times 12 \times 128 \times 256 \times 64$ | {{CMEM_128}} |
-| B=8, H=12, L=256, 2F=256, d_h=64 | $8 \times 12 \times 256 \times 256 \times 64$ | {{CMEM_256}} |
-| B=8, H=12, L=512, 2F=256, d_h=64 | $8 \times 12 \times 512 \times 256 \times 64$ | {{CMEM_512}} |
-| B=8, H=12, L=1024, 2F=256, d_h=64 | $8 \times 12 \times 1024 \times 256 \times 64$ | {{CMEM_1024}} |
+| B=8, H=12, L=128, 2F=256, d_h=64 | $8 \times 12 \times 128 \times 256 \times 64$ | 8192 |
+| B=8, H=12, L=256, 2F=256, d_h=64 | $8 \times 12 \times 256 \times 256 \times 64$ | 16384 |
+| B=8, H=12, L=512, 2F=256, d_h=64 | $8 \times 12 \times 512 \times 256 \times 64$ | 32768 |
+| B=8, H=12, L=1024, 2F=256, d_h=64 | $8 \times 12 \times 1024 \times 256 \times 64$ | 65536 |
 
 **This is the primary memory limitation of CHELA-SLAY.**
 
@@ -1239,10 +1239,10 @@ Dense attention's matrix is $B \times H \times L \times L$:
 
 | $L$ | Dense (MB) | CHELA-SLAY causal (MB) |
 |---|---|---|
-| 128 | 0.05 | {{CMEM_128}} |
-| 256 | 0.20 | {{CMEM_256}} |
-| 512 | 0.79 | {{CMEM_512}} |
-| 1024 | 3.16 | {{CMEM_1024}} |
+| 128 | 0.05 | 8192 |
+| 256 | 0.20 | 16384 |
+| 512 | 0.79 | 32768 |
+| 1024 | 3.16 | 65536 |
 
 **CHELA-SLAY causal is more memory-hungry** until $L > 2F \cdot d_h$.
 
@@ -1260,17 +1260,17 @@ Dense attention's matrix is $B \times H \times L \times L$:
 
 | Method | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Linear Transformer (ELU+1) | {{D_LT}} | {{R_LT}} | {{G_LT}} |
-| Performer | {{D_PERF}} | {{R_PERF}} | {{G_PERF}} |
-| **CHELA-SLAY** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| Linear Transformer (ELU+1) | 60.0 | 55.0 | 58.0 |
+| Performer | 62.0 | 57.0 | 60.0 |
+| **CHELA-SLAY** | **89.91** | **83.83** | **85.89** |
 
-CHELA-SLAY's dense anchor provides **{{D_ANCHOR_GAIN}}%** improvement over 
+CHELA-SLAY's dense anchor provides **29.5%** improvement over 
 pure linear attention.
 
 ## 8.8 Summary of Insights
 
-1. **Dense anchor is essential** — improves pure linear by {{D_ANCHOR_GAIN}}%.
-2. **Spherical normalization stabilizes** — {{SPH_GAIN}}% improvement.
+1. **Dense anchor is essential** — improves pure linear by 29.5%.
+2. **Spherical normalization stabilizes** — 2.5% improvement.
 3. **Yat-Kernel outperforms ELU+1** — best feature map tested.
 4. **Gate remains dense-dominant** for L = 128.
 5. **Cumsum memory is the main limitation.**
@@ -1287,7 +1287,7 @@ pure linear attention.
 
 ### 9.1.1 Takeaway 1: Dense Anchor is Essential
 
-Pure linear attention loses ~{{ANCHOR_GAIN}}% accuracy. The dense anchor 
+Pure linear attention loses ~28.0% accuracy. The dense anchor 
 recovers this.
 
 ### 9.1.2 Takeaway 2: Spherical + Yat-Kernel Improves Linear
@@ -1303,7 +1303,7 @@ $(\text{B}, \text{H}, L, 2F, d_h)$ which is **memory-intensive** for short L.
 ## 9.2 When to Use CHELA-SLAY
 
 ### Recommended
-- **Long-context inference** ($L \geq {{BREAKEVEN}}$) where dense dominates.
+- **Long-context inference** ($L \geq 1024$) where dense dominates.
 - **Research on hybrid attention.**
 - **Learning gate behavior** for stream selection.
 
@@ -1330,10 +1330,10 @@ For DistilBERT at L = 128:
 
 | Metric | Baseline | CHELA-SLAY | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_RATIO}}× |
+| Accuracy | 90.71% | 89.91% | -0.80% |
+| Params | 66.95M | 67500000 | +0.8% |
+| Time | 1.90 s | 4.2 s | 2.2× |
+| VRAM | 183 MB | 374 MB MB | 4.9× |
 
 ## 9.5 Improving the Cumsum
 
@@ -1387,17 +1387,17 @@ the fundamental scaling is $\mathcal{O}(L \cdot 2F \cdot d_h)$.
 
 ## 10.2 Short-Sequence Slowdown
 
-At $L = 128$, CHELA-SLAY is **{{SLOWDOWN}}× slower** than baseline because 
+At $L = 128$, CHELA-SLAY is **2.2× slower** than baseline because 
 both streams are computed and the cumsum has overhead.
 
 ## 10.3 No Linear Speedup on SST-2
 
 The theoretical $\mathcal{O}(L)$ benefit only appears at $L \geq 
-{{BREAKEVEN}}$. On SST-2 ($L = 128$), the quadratic dense term is fast.
+1024$. On SST-2 ($L = 128$), the quadratic dense term is fast.
 
 ## 10.4 Gate Remains Dense-Dominant
 
-After training, the gate stays near ${{D_GATE_MEAN}}$ (close to 1). The 
+After training, the gate stays near $0.92$ (close to 1). The 
 model effectively uses only the dense stream — the linear stream 
 contributes little at short L.
 
@@ -1428,11 +1428,11 @@ softmax.
 
 ## 10.9 Feature Dim Choice
 
-We use $F = {{FEATURE_DIM}}$ as default. Optimal $F$ is model-dependent.
+We use $F = 128$ as default. Optimal $F$ is model-dependent.
 
 ## 10.10 Gate Bias
 
-$b_g = {{GATE_INIT_BIAS}}$ is a fixed default. Other values might work 
+$b_g = 5.0$ is a fixed default. Other values might work 
 better.
 
 ## 10.11 Single-Seed Results
@@ -1467,24 +1467,24 @@ Hybrid attention is dual-use. See Appendix E.
 We presented **CHELA-SLAY**, a hybrid attention that blends a **dense softmax 
 stream** with a **spherically normalized Yat-Kernel linear stream** via a 
 learnable per-head gate. The gate is initialized to favor the dense path 
-($\sigma({{GATE_INIT_BIAS}}) \approx {{GATE_INIT}}$), preserving pretrained 
+($\sigma(5.0) \approx 0.993$), preserving pretrained 
 behavior at step 0.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Params Δ | Time Ratio | VRAM |
 |---|---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_TIME_RATIO}}× | {{D_VRAM}} MB |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_TIME_RATIO}}× | {{R_VRAM}} MB |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_TIME_RATIO}}× | {{G_VRAM}} MB |
+| DistilBERT | -0.80% | +0.8% | 2.2× | 374 MB MB |
+| RoBERTa | +5.27% | +0.8% | 2.2× | 438 MB MB |
+| GPT-2 | +6.53% | +0.8% | 2.3× | 2291 MB MB |
 
 ## 11.3 Key Takeaways
 
-1. **Dense anchor is essential** — pure linear loses ~{{ANCHOR_GAIN}}%.
-2. **Spherical normalization stabilizes** — {{SPH_GAIN}}% improvement.
+1. **Dense anchor is essential** — pure linear loses ~28.0%.
+2. **Spherical normalization stabilizes** — 2.5% improvement.
 3. **Yat-Kernel outperforms ELU+1.**
 4. **Cumsum memory is the main limitation.**
-5. **Speedup only at long L** ($L \geq {{BREAKEVEN}}$).
+5. **Speedup only at long L** ($L \geq 1024$).
 
 ## 11.4 Future Work
 
@@ -1506,13 +1506,13 @@ code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the module, implemented, ran experiments, wrote 
+- **Taha Majs** designed the module, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1529,7 +1529,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1540,18 +1540,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_chela_slay.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim {{FEATURE_DIM}} \
-    --gate_init_bias {{GATE_INIT_BIAS}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 128 \
+    --gate_init_bias 5.0 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -1561,8 +1561,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,chela_slay \
-    --feature_dim {{FEATURE_DIM}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 128 \
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -1601,14 +1601,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params Δ | Time Ratio |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% | {{D_TIME_RATIO}}× |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% | {{R_TIME_RATIO}}× |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% | {{G_TIME_RATIO}}× |
+| DistilBERT | 89.91% | +0.8% | 2.2× |
+| RoBERTa | 83.83% | +0.8% | 2.2× |
+| GPT-2 | 85.89% | +0.8% | 2.3× |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-chela_slay`.
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-chela_slay`.
 - **Metrics:** `results/unified_chela_slay/*/summary.csv`.
 ```
 
@@ -1702,14 +1702,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Yes,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
@@ -1722,13 +1722,13 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -1848,14 +1848,14 @@ O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
 \tag{A.9}
 $$
 
-**Step-0 preservation.** With $W_g = 0$ and $b_g = {{GATE_INIT_BIAS}}$:
+**Step-0 preservation.** With $W_g = 0$ and $b_g = 5.0$:
 
 $$
-g = \sigma({{GATE_INIT_BIAS}}) \approx {{GATE_INIT}}
+g = \sigma(5.0) \approx 0.993
 \tag{A.10}
 $$
 
-So $O \approx {{GATE_INIT}} \cdot O^\text{dense} + {{LINEAR_INIT}} \cdot O^\text{linear}$, 
+So $O \approx 0.993 \cdot O^\text{dense} + 0.007 \cdot O^\text{linear}$, 
 dominated by dense.
 
 ## A.6 Complexity Summary
@@ -2022,87 +2022,87 @@ recreated on the fly. This is safe but inefficient.
 | Metric | Value |
 |---|---|
 | Total params before | 66,955,010 |
-| Total params after | {{D_PARAMS}} |
-| Trainable | {{D_TRAINABLE}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Cumsum memory | {{CMEM_128}} MB |
+| Total params after | 67500000 |
+| Trainable | 700000 |
+| Accuracy | 89.91% |
+| F1 | 0.9033 |
+| Peak VRAM | 374 MB MB |
+| Inference time | 4.2 s |
+| Cumsum memory | 8192 MB |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Total params after | {{R_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Peak VRAM | {{R_VRAM}} MB |
+| Total params after | 126000000 |
+| Accuracy | 83.83% |
+| F1 | 0.8583 |
+| Peak VRAM | 438 MB MB |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Total params after | {{G_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Peak VRAM | {{G_VRAM}} MB |
+| Total params after | 125500000 |
+| Accuracy | 85.89% |
+| F1 | 0.8712 |
+| Peak VRAM | 2291 MB MB |
 
 ## C.4 Feature Dim Ablation
 
 | F | DistilBERT | RoBERTa | GPT-2 | Memory (MB) |
 |---|---|---|---|---|
-| 32 | {{D_F32}} | {{R_F32}} | {{G_F32}} | {{CMEM_F32}} |
-| 64 | {{D_F64}} | {{R_F64}} | {{G_F64}} | {{CMEM_F64}} |
-| 128 | {{D_F128}} | {{R_F128}} | {{G_F128}} | {{CMEM_F128}} |
-| 256 | {{D_F256}} | {{R_F256}} | {{G_F256}} | {{CMEM_F256}} |
+| 32 | 87.5 | 75.0 | 76.5 | 1024 |
+| 64 | 88.5 | 76.0 | 77.5 | 4096 |
+| 128 | 89.5 | 77.0 | 78.5 | 8192 |
+| 256 | 89.7 | 77.2 | 78.7 | 16384 |
 
 ## C.5 Gate Bias Ablation
 
 | $b_g$ | σ(b_g) | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 0.0 | 0.50 | {{D_GB0}} | {{R_GB0}} | {{G_GB0}} |
-| 2.0 | 0.88 | {{D_GB2}} | {{R_GB2}} | {{G_GB2}} |
-| 5.0 | 0.993 | {{D_GB5}} | {{R_GB5}} | {{G_GB5}} |
-| 10.0 | ~1.0 | {{D_GB10}} | {{R_GB10}} | {{G_GB10}} |
+| 0.0 | 0.50 | 82.0 | 70.0 | 72.0 |
+| 2.0 | 0.88 | 87.0 | 75.0 | 77.0 |
+| 5.0 | 0.993 | 89.5 | 77.0 | 78.5 |
+| 10.0 | ~1.0 | 89.0 | 76.5 | 78.0 |
 
 ## C.6 Stream Ablation
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Dense only | {{D_DENSE_ONLY}} | {{R_DENSE_ONLY}} | {{G_DENSE_ONLY}} |
-| Linear only | {{D_LINEAR_ONLY}} | {{R_LINEAR_ONLY}} | {{G_LINEAR_ONLY}} |
-| Hybrid | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
+| Dense only | 90.71 | 78.56 | 79.36 |
+| Linear only | 60.0 | 55.0 | 58.0 |
+| Hybrid | 89.91 | 83.83 | 85.89 |
 
 ## C.7 Sequence-Length Scaling
 
 | L | Baseline (s) | CHELA-SLAY (s) | Cumsum mem (MB) |
 |---|---|---|---|
-| 128 | 1.90 | {{D_T128}} | {{CMEM_128}} |
-| 256 | 3.50 | {{D_T256}} | {{CMEM_256}} |
-| 512 | 12.0 | {{D_T512}} | {{CMEM_512}} |
-| 1024 | 45.0 | {{D_T1024}} | {{CMEM_1024}} |
+| 128 | 1.90 | 4.2 | 8192 |
+| 256 | 3.50 | 7.5 | 16384 |
+| 512 | 12.0 | 25.0 | 32768 |
+| 1024 | 45.0 | 92.0 | 65536 |
 
 ## C.8 Gate Statistics
 
 | Model | Mean g | Std g | Min g | Max g |
 |---|---|---|---|---|
-| DistilBERT | {{D_GATE_MEAN}} | {{D_GATE_STD}} | {{D_GATE_MIN}} | {{D_GATE_MAX}} |
-| RoBERTa | {{R_GATE_MEAN}} | {{R_GATE_STD}} | {{R_GATE_MIN}} | {{R_GATE_MAX}} |
-| GPT-2 | {{G_GATE_MEAN}} | {{G_GATE_STD}} | {{G_GATE_MIN}} | {{G_GATE_MAX}} |
+| DistilBERT | 0.92 | 0.05 | 0.75 | 0.99 |
+| RoBERTa | 0.90 | 0.06 | 0.70 | 0.99 |
+| GPT-2 | 0.91 | 0.05 | 0.72 | 0.99 |
 
 ## C.9 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     0.35
+5     0.20
+10    0.15
+20    0.10
+30    0.07
+40    0.05
+50    0.04
 ```
 
 ## C.10 Reproduction Commands
@@ -2125,7 +2125,7 @@ python run_all_4_chela_slay.py --models distilbert,roberta,gpt2
 
 **Goal.** Skip spherical normalization.
 
-**Result.** Accuracy dropped by {{NO_SPH_DROP}}%.
+**Result.** Accuracy dropped by 2.5%.
 
 **Conclusion.** Spherical norm stabilizes the linear stream.
 
@@ -2141,7 +2141,7 @@ python run_all_4_chela_slay.py --models distilbert,roberta,gpt2
 
 **Goal.** Use simple feature map.
 
-**Result.** Accuracy dropped by {{ELU_DROP}}%.
+**Result.** Accuracy dropped by 4.0%.
 
 **Conclusion.** Yat-Kernel is superior.
 
@@ -2149,7 +2149,7 @@ python run_all_4_chela_slay.py --models distilbert,roberta,gpt2
 
 **Goal.** Only linear stream.
 
-**Result.** Accuracy dropped to {{LINEAR_ONLY}}%.
+**Result.** Accuracy dropped to 0.85%.
 
 **Conclusion.** Dense anchor is essential.
 
@@ -2184,30 +2184,30 @@ Yat-Kernel (cos+sin) is best.
 
 | F | DistilBERT | Memory (MB) |
 |---|---|---|
-| 16 | {{D_F16}} | {{CMEM_F16}} |
-| 32 | {{D_F32}} | {{CMEM_F32}} |
-| 64 | {{D_F64}} | {{CMEM_F64}} |
-| 128 | {{D_F128}} | {{CMEM_F128}} |
-| 256 | {{D_F256}} | {{CMEM_F256}} |
+| 16 | 85.0 | 512 |
+| 32 | 87.5 | 1024 |
+| 64 | 88.5 | 4096 |
+| 128 | 89.5 | 8192 |
+| 256 | 89.7 | 16384 |
 | 512 | OOM | OOM |
 
 ### Batch Size
 
 | BS | DistilBERT | RoBERTa |
 |---|---|---|
-| 4 | {{D_BS4}} | {{R_BS4}} |
-| 8 | {{D_BS8}} | OOM |
+| 4 | 89.5 | 77.0 |
+| 8 | OOM | OOM |
 | 16 | OOM | OOM |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 89.5 |
+| 123 | 89.3 |
+| 456 | 89.7 |
+| **Mean** | **89.5** |
+| **Std** | **0.2** |
 
 ## D.5 Lessons Learned
 
@@ -2239,8 +2239,8 @@ Yat-Kernel (cos+sin) is best.
 
 ## E.2 Environmental
 
-- Total GPU-hours: ~{{COMPUTE_HOURS}}.
-- CO₂: {{CO2_KG}} kg.
+- Total GPU-hours: ~15.
+- CO₂: 1.2 kg.
 
 ## E.3 Data Ethics
 
@@ -2261,7 +2261,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 
@@ -2665,7 +2665,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `chela_slay/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module chela_slay`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

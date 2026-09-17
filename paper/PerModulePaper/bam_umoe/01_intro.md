@@ -81,7 +81,7 @@ output projection is zero. Step 0 is exact.
 - **Honest disclosure.** We clearly state that BAM-UMoE **increases** 
   parameter count. Section 7.2.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts released 
-  under {{LICENSE}}.
+  under MIT.
 
 ## 1.5 Paper Organization
 

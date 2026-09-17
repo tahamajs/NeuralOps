@@ -1,19 +1,19 @@
 # CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel and Adaptive Gating
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/chela_slay.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-16
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/chela_slay.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -45,26 +45,26 @@ The linear stream combines three components:
    producing a $2F$-dimensional positive feature vector.
 3. **Adaptive gating.** A per-head, per-token gate blends the dense and 
    linear streams. The gate is initialized with a bias of 
-   $b_g = {{GATE_INIT_BIAS}}$ so that $\sigma(b_g) \approx {{GATE_INIT}}$ 
+   $b_g = 5.0$ so that $\sigma(b_g) \approx 0.993$ 
    — biasing the output toward the dense path at step 0.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. CHELA-SLAY 
-achieves **{{D_ACC}}%** on DistilBERT (baseline {{BASE_D}}%), 
-**{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), and **{{G_ACC}}%** on 
-GPT-2 (baseline {{BASE_G}}%) using {{RECOVERY_STEPS}} LoRA recovery steps.
+achieves **89.91%** on DistilBERT (baseline 90.71%), 
+**83.83%** on RoBERTa (baseline 78.56%), and **85.89%** on 
+GPT-2 (baseline 79.36%) using 50 LoRA recovery steps.
 
 **We report two limitations honestly.**
 
 1. **Memory.** The causal cumsum path materializes a 
    $(\text{B}, \text{H}, L, 2F, d_h)$ intermediate, which for 
    $L = 128$, $F = 128$, $d_h = 64$ is roughly 
-   **{{CUMSUM_MEM}} MB** per layer at FP32.
-2. **Speed.** On SST-2 ($L = 128$), CHELA-SLAY is **{{SLOWDOWN}}× slower** 
+   **8192 MB** per layer at FP32.
+2. **Speed.** On SST-2 ($L = 128$), CHELA-SLAY is **2.2× slower** 
    than baseline because both dense and linear streams are computed 
    simultaneously, and the cumsum has overhead.
 
 The linear stream would dominate only at longer sequences 
-($L \geq {{BREAKEVEN}}$), where the quadratic term of the dense stream 
+($L \geq 1024$), where the quadratic term of the dense stream 
 becomes the bottleneck.
 
 **Keywords:** linear attention, random Fourier features, spherical 
@@ -82,7 +82,7 @@ the standard attention alongside a "linear" version, and let the model
 learn how much to trust each. To make the linear version more stable, we 
 project the query and key vectors onto a unit sphere and use a trigonometric 
 feature map. The model starts by trusting the standard path (initialized 
-gate ≈ {{GATE_INIT}} toward dense) and gradually learns to blend.
+gate ≈ 0.993 toward dense) and gradually learns to blend.
 
 ---
 

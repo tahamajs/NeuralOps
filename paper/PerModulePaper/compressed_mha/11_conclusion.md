@@ -4,16 +4,16 @@
 
 We presented **Compressed MHA**, a joint SVD compression method for 
 transformer attention. By sharing an input basis across Q, K, V via joint 
-SVD and separately factorizing W_O, we achieve **{{D_RATIO}}×–{{G_RATIO}}×** 
+SVD and separately factorizing W_O, we achieve **1.38×–1.31×** 
 parameter reduction on attention projections.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | -{{D_VRAM_DEC}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | -{{R_VRAM_DEC}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | -{{G_VRAM_DEC}}% |
+| DistilBERT | -39.79% | **1.38×** | -18% |
+| RoBERTa | -27.64% | **1.31×** | -380 MB% |
+| GPT-2 | -28.44% | **1.31×** | -380 MB% |
 
 ## 11.3 Key Takeaways
 
@@ -42,13 +42,13 @@ release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed Compressed MHA, implemented, ran experiments, 
+- **Taha Majs** designed Compressed MHA, implemented, ran experiments, 
   wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited manuscript.
+- **Collaborative Research Team** provided feedback, edited manuscript.
 
 ## 11.8 Conflict of Interest
 

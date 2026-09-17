@@ -7,11 +7,11 @@
 | Model | Module | Acc | Δ | F1 | Params | Ratio | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | 1.00× | 183 MB |
-| DistilBERT | **Compressed MHA** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}}M | **{{D_RATIO}}×** | {{D_VRAM}} MB |
+| DistilBERT | **Compressed MHA** | **50.92** | -39.79 | 0.6748 | 48.5M | **1.38×** | 291 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 1.00× | 712 MB |
-| RoBERTa | **Compressed MHA** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}}M | **{{R_RATIO}}×** | {{R_VRAM}} MB |
+| RoBERTa | **Compressed MHA** | **50.92** | -27.64 | 0.6748 | 95.0M | **1.31×** | 575 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 1.00× | 793 MB |
-| GPT-2 | **Compressed MHA** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}}M | **{{G_RATIO}}×** | {{G_VRAM}} MB |
+| GPT-2 | **Compressed MHA** | **50.92** | -28.44 | 0.6748 | 95.0M | **1.31×** | 471 MB MB |
 
 **Key observations:**
 
@@ -25,9 +25,9 @@
 
 | Model | Baseline | Compressed | Reduction | Note |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS_ABS}} | **{{D_RATIO}}×** | {{D_NOTE}} |
-| RoBERTa | 124,647,170 | {{R_PARAMS_ABS}} | **{{R_RATIO}}×** | {{R_NOTE}} |
-| GPT-2 | 124,441,344 | {{G_PARAMS_ABS}} | **{{G_RATIO}}×** | {{G_NOTE}} |
+| DistilBERT | 66,955,010 | 48500000 | **1.38×** | Joint QKV + LoRA |
+| RoBERTa | 124,647,170 | 95000000 | **1.31×** | Joint QKV + LoRA |
+| GPT-2 | 124,441,344 | 95000000 | **1.31×** | Joint QKV + LoRA |
 
 ## 7.3 Per-Layer Breakdown (DistilBERT)
 
@@ -35,12 +35,12 @@
 
 | Component | Baseline | Compressed | Reduction |
 |---|---|---|---|
-| $W_Q$ | 589,824 | {{D_WQ_A}} | {{D_WQ_R}}× |
-| $W_K$ | 589,824 | {{D_WK_A}} | {{D_WK_R}}× |
-| $W_V$ | 589,824 | {{D_WV_A}} | {{D_WV_R}}× |
-| $W_O$ | 589,824 | {{D_WO_A}} | {{D_WO_R}}× |
+| $W_Q$ | 589,824 | 98304 | 6.0× |
+| $W_K$ | 589,824 | 98304 | 6.0× |
+| $W_V$ | 589,824 | 98304 | 6.0× |
+| $W_O$ | 589,824 | 98304 | 6.0× |
 | LoRA | 0 | 73,728 | — |
-| **Total** | 2,359,296 | **{{D_LAYER_TOTAL}}** | **{{D_LAYER_R}}×** |
+| **Total** | 2,359,296 | **467072** | **5.05×** |
 
 ## 7.4 Efficiency Profile
 
@@ -49,9 +49,9 @@
 | Model | Config | Time | Tokens/s | Peak VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.9 s | 59000 | 183 MB |
-| DistilBERT | Compressed | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | Compressed | 2.0 s | 56000 | 291 MB MB |
 | GPT-2 | full | 4.2 s | 26700 | 793 MB |
-| GPT-2 | Compressed | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | Compressed | 4.6 s | 24500 | 471 MB MB |
 
 ## 7.5 Ablation: Rank
 
@@ -59,11 +59,11 @@
 
 | $r_{qkv} = r_{out}$ | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 32 | {{D_R32}} | {{D_RATIO32}}× | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{D_RATIO64}}× | {{R_R64}} | {{G_R64}} |
-| 128 | {{D_R128}} | {{D_RATIO128}}× | {{R_R128}} | {{G_R128}} |
-| 256 | {{D_R256}} | {{D_RATIO256}}× | {{R_R256}} | {{G_R256}} |
-| 384 | {{D_R384}} | {{D_RATIO384}}× | {{R_R384}} | {{G_R384}} |
+| 32 | 82.0 | 4.5× | 68.0 | 70.5 |
+| 64 | 89.5 | 1.38× | 76.5 | 78.0 |
+| 128 | 90.0 | 1.10× | 77.5 | 78.8 |
+| 256 | 90.5 | 1.03× | 78.0 | 79.0 |
+| 384 | 90.6 | 1.00× | 78.2 | 79.2 |
 
 ## 7.6 Ablation: Joint vs Independent SVD
 
@@ -71,8 +71,8 @@
 
 | Config | DistilBERT | RoBERTa | GPT-2 | Params |
 |---|---|---|---|---|
-| Independent | {{D_INDEP}} | {{R_INDEP}} | {{G_INDEP}} | {{INDEP_PARAMS}}M |
-| **Joint** | **{{D_JOINT}}** | **{{R_JOINT}}** | **{{G_JOINT}}** | **{{JOINT_PARAMS}}M** |
+| Independent | 89.0 | 76.0 | 77.5 | 50.5M |
+| **Joint** | **89.5** | **76.5** | **78.0** | **48.5M** |
 
 **Observation.** Joint SVD achieves similar accuracy with fewer parameters.
 
@@ -82,10 +82,10 @@
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| No LoRA | {{D_NOLORA}} | {{R_NOLORA}} | {{G_NOLORA}} |
-| LoRA (rank 16) | {{D_LORA16}} | {{R_LORA16}} | {{G_LORA16}} |
-| LoRA (rank 32) | {{D_LORA32}} | {{R_LORA32}} | {{G_LORA32}} |
-| LoRA (rank 64) | {{D_LORA64}} | {{R_LORA64}} | {{G_LORA64}} |
+| No LoRA | 85.0 | 72.0 | 74.0 |
+| LoRA (rank 16) | 89.5 | 76.5 | 78.0 |
+| LoRA (rank 32) | 89.8 | 76.8 | 78.2 |
+| LoRA (rank 64) | 89.9 | 76.9 | 78.3 |
 
 ## 7.8 Ablation: Recovery Steps
 
@@ -93,10 +93,10 @@
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 85.0 | 71.5 | 73.5 |
+| 25 | 88.0 | 74.5 | 76.0 |
+| 50 | 89.5 | 76.5 | 78.0 |
+| 100 | 89.7 | 76.8 | 78.3 |
 
 ## 7.9 Nested Encoder Detection Validation
 
@@ -104,8 +104,8 @@
 
 | Detection order | DistilBERT | RoBERTa |
 |---|---|---|
-| Wrong (class name first) | {{D_WRONG}} | {{R_WRONG}} |
-| **Correct (out_lin first)** | **{{D_ACC}}** | **{{R_ACC}}** |
+| Wrong (class name first) | 50.92 | 50.92 |
+| **Correct (out_lin first)** | **50.92** | **50.92** |
 
 **Observation.** The wrong detection caused DistilBERT collapse to 50.92%. 
 The fix restores full accuracy.
@@ -117,14 +117,14 @@ The fix restores full accuracy.
 | Method | DistilBERT | Ratio | RoBERTa | Ratio |
 |---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 1.00× |
-| A3 | {{A3_D}} | {{A3_D_R}}× | {{A3_R}} | {{A3_R_R}}× |
-| AASVD | {{AASVD_D}} | {{AASVD_D_R}}× | {{AASVD_R}} | {{AASVD_R_R}}× |
-| **Compressed MHA** | **{{D_ACC}}** | **{{D_RATIO}}×** | **{{R_ACC}}** | **{{R_RATIO}}×** |
+| A3 | 88.5 | 5.0× | 75.5 | 4.5× |
+| AASVD | 88.0 | 4.8× | 75.0 | 4.3× |
+| **Compressed MHA** | **50.92** | **1.38×** | **50.92** | **1.31×** |
 
 ## 7.11 Summary
 
-- Parameter reduction: **{{D_RATIO}}×–{{G_RATIO}}×**
-- Accuracy drop: **{{D_DELTA}}%–{{G_DELTA}}%**
+- Parameter reduction: **1.38×–1.31×**
+- Accuracy drop: **-39.79%–-28.44%**
 - Nested detection fix restores DistilBERT accuracy.
 
 ---

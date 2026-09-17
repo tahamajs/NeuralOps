@@ -92,8 +92,8 @@ g = \sigma(W_g X + b_g), \quad
 \tag{1.6}
 $$
 
-We initialize $W_g = 0$ and $b_g = {{GATE_INIT_BIAS}}$, so 
-$g \approx {{GATE_INIT}}$ at step 0 — favoring the dense path.
+We initialize $W_g = 0$ and $b_g = 5.0$, so 
+$g \approx 0.993$ at step 0 — favoring the dense path.
 
 ## 1.4 Contributions
 

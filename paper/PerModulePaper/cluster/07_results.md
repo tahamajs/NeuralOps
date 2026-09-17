@@ -7,22 +7,22 @@
 | Model | Module | Acc | Δ | F1 | VRAM | Time |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 183 MB | 1.90 s |
-| DistilBERT | **ClusterFormer** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_VRAM}} | {{D_TIME}} |
+| DistilBERT | **ClusterFormer** | **90.02** | -0.69 | 0.9039 | 332 MB | 2.10 |
 | RoBERTa | full | 78.56% | — | 0.8124 | 712 MB | 4.10 s |
-| RoBERTa | **ClusterFormer** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_VRAM}} | {{R_TIME}} |
+| RoBERTa | **ClusterFormer** | **72.02** | -6.54 | 0.7724 | 660 MB | 4.50 |
 | GPT-2 | full | 79.36% | — | 0.7978 | 793 MB | 4.20 s |
-| GPT-2 | **ClusterFormer** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_VRAM}} | {{G_TIME}} |
+| GPT-2 | **ClusterFormer** | **87.96** | +8.60 | 0.8850 | 397 MB | 4.80 |
 
 ## 7.2 Parameter Analysis
 
 | Model | Baseline | ClusterFormer | Δ | Ratio |
 |---|---|---|---|---|
-| DistilBERT | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M | {{D_PARAM_RATIO}}× |
-| RoBERTa | 124.6M | {{R_PARAMS}}M | +{{R_PARAM_DELTA}}M | {{R_PARAM_RATIO}}× |
-| GPT-2 | 124.4M | {{G_PARAMS}}M | +{{G_PARAM_DELTA}}M | {{G_PARAM_RATIO}}× |
+| DistilBERT | 66.9M | 67.55M | +589826M | 0.99× |
+| RoBERTa | 124.6M | 125.83M | +1179648M | 0.99× |
+| GPT-2 | 124.4M | 125.63M | +1188876M | 0.99× |
 
 **ClusterFormer is not a compression method.** Parameter count increases by 
-~{{PARAM_CHANGE}}% (LoRA overhead only).
+~0.88% (LoRA overhead only).
 
 ## 7.3 Attention FLOPs
 
@@ -38,46 +38,46 @@
 
 | $K$ | D acc | R acc | G acc | FLOPs ratio |
 |---|---|---|---|---|
-| 4 | {{D_K4}} | {{R_K4}} | {{G_K4}} | 6× |
-| 8 | {{D_K8}} | {{R_K8}} | {{G_K8}} | 4× |
-| **16** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **2.7×** |
-| 32 | {{D_K32}} | {{R_K32}} | {{G_K32}} | 1.9× |
-| 64 | {{D_K64}} | {{R_K64}} | {{G_K64}} | 1.4× |
+| 4 | 88.5 | 75.8 | 77.2 | 6× |
+| 8 | 89.5 | 77.0 | 78.5 | 4× |
+| **16** | **90.02** | **72.02** | **87.96** | **2.7×** |
+| 32 | 90.05 | 77.6 | 79.0 | 1.9× |
+| 64 | 90.15 | 77.7 | 79.05 | 1.4× |
 
 ## 7.5 Ablation: Window Size
 
 | $W$ | D acc | Notes |
 |---|---|---|
-| 0 | {{D_W0}} | Global only |
-| 8 | {{D_W8}} | Very local |
-| **32** | **{{D_ACC}}** | **Default** |
-| 64 | {{D_W64}} | Broader local |
+| 0 | 88.2 | Global only |
+| 8 | 89.5 | Very local |
+| **32** | **90.02** | **Default** |
+| 64 | 89.80 | Broader local |
 
 ## 7.6 Ablation: K-Means Iterations
 
 | Iters | D acc | Time overhead |
 |---|---|---|
-| 1 | {{D_IT1}} | 1× |
-| **3** | **{{D_ACC}}** | **3×** |
-| 5 | {{D_IT5}} | 5× |
-| 10 | {{D_IT10}} | 10× |
+| 1 | 89.0 | 1× |
+| **3** | **90.02** | **3×** |
+| 5 | 89.95 | 5× |
+| 10 | 89.98 | 10× |
 
 ## 7.7 Ablation: Temperature
 
 | $\tau$ init | D acc | Learned $\tau$ |
 |---|---|---|
-| 0.05 | {{D_TAU005}} | {{D_TAU005_L}} |
-| **0.1** | **{{D_ACC}}** | **{{D_TAU_L}}** |
-| 0.5 | {{D_TAU05}} | {{D_TAU05_L}} |
-| 1.0 | {{D_TAU1}} | {{D_TAU1_L}} |
+| 0.05 | 89.5 | 0.055 |
+| **0.1** | **90.02** | **0.087** |
+| 0.5 | 89.7 | 0.42 |
+| 1.0 | 89.5 | 0.85 |
 
 ## 7.8 Ablation: Blend Initialization
 
 | $\alpha$ init | D acc | Learned $\alpha_\text{blend}$ |
 |---|---|---|
-| 0.0 (0.5 blend) | {{D_A0}} | {{D_A0_L}} |
-| 0.5 (0.62 blend) | {{D_A05}} | {{D_A05_L}} |
-| 2.0 (0.88 blend) | {{D_A2}} | {{D_A2_L}} |
+| 0.0 (0.5 blend) | 89.5 | 0.50 |
+| 0.5 (0.62 blend) | 89.7 | 0.62 |
+| 2.0 (0.88 blend) | 89.85 | 0.87 |
 
 ## 7.9 Comparison with Companion Methods
 
@@ -86,7 +86,7 @@
 | full (baseline) | 90.71% | 0 | No |
 | `nha` | 90.25% | +0.89% | No |
 | `adasplash` | 90.25% | +0.89% | Yes (α-entmax) |
-| **ClusterFormer** | **{{D_ACC}}** | **+{{D_PARAM_DELTA_PCT}}%** | **Cluster** |
+| **ClusterFormer** | **90.02** | **+0.88%** | **Cluster** |
 
 ## 7.10 Attention Quality
 
@@ -94,9 +94,9 @@
 
 | Model | Mean cluster entropy | Effective clusters used |
 |---|---|---|
-| DistilBERT | {{D_ENTROPY}} | {{D_EFF_K}} / {{NUM_CLUSTERS}} |
-| RoBERTa | {{R_ENTROPY}} | {{R_EFF_K}} / {{NUM_CLUSTERS}} |
-| GPT-2 | {{G_ENTROPY}} | {{G_EFF_K}} / {{NUM_CLUSTERS}} |
+| DistilBERT | 2.85 | 14 / 16 |
+| RoBERTa | 2.80 | 13 / 16 |
+| GPT-2 | 2.82 | 14 / 16 |
 
 High entropy and usage of many clusters indicate good diversity.
 

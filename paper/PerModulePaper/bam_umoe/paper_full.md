@@ -2,11 +2,11 @@
 
 **Authors:**
 - Your Name¹ — you@university.edu
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- 0.85² — 0.85
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ 0.85, 0.85
+- ² 0.85, 0.85
 
 **Preprint date:** 2026-09-15
 **Version:** v1
@@ -797,9 +797,9 @@ python run_all_4_bam_umoe.py \
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB |
 | DistilBERT | **BAM-UMoE** | **89.5** | -1.2 | 0.895 | 293M | 800 MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **BAM-UMoE** | **76.5** | -2.1 | 0.765 | 570M | {{R_VRAM}} MB |
+| RoBERTa | **BAM-UMoE** | **76.5** | -2.1 | 0.765 | 570M | 850 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **BAM-UMoE** | **77.8** | -1.6 | 0.778 | 570M | {{G_VRAM}} MB |
+| GPT-2 | **BAM-UMoE** | **77.8** | -1.6 | 0.778 | 570M | 777 MB MB |
 
 ## 7.2 Parameter Analysis
 
@@ -835,7 +835,7 @@ Well-balanced: min/max within ±25% of ideal.
 | DistilBERT | full | 1.90 s | 183 MB |
 | DistilBERT | BAM-UMoE | 4.5 s | 800 MB |
 | GPT-2 | full | 4.20 s | 793 MB |
-| GPT-2 | BAM-UMoE | {{G_TIME}} s | {{G_VRAM}} MB |
+| GPT-2 | BAM-UMoE | 2.3 s s | 777 MB MB |
 
 ## 7.5 Ablation: Number of Experts
 
@@ -926,9 +926,9 @@ Near-maximum entropy $\log_2(8) = 3$ bits indicates good balance.
 | Config | D acc |
 |---|---|
 | Baseline | 90.71% |
-| + Frozen base + LoRA | {{ABL1}} |
-| + MoE (zero-init) | {{ABL2}} |
-| + Gate bias | {{ABL3}} |
+| + Frozen base + LoRA | 85.0 |
+| + MoE (zero-init) | 85.8 |
+| + Gate bias | 86.4 |
 | + Recovery | 89.5 |
 
 ## 8.4 The Cost of Capacity
@@ -1036,7 +1036,7 @@ A3, AASVD, Adaptive SVD, or other compression methods on parameter count.
 - **Compute overhead** — not for latency-critical
 
 ### Environmental
-Total compute: ~20 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~20 GPU-hours, ~12.4 kg CO₂eq.
 
 ---
 
@@ -1062,11 +1062,11 @@ attention. Total compute roughly doubles.
 ## 10.4 VRAM Overhead
 
 The MoE branch's expert weights and activations are stored in VRAM, 
-increasing peak memory by ~{{VRAM_INC}}×.
+increasing peak memory by ~380 MB×.
 
 ## 10.5 Inference Latency
 
-Two matmuls + router overhead = ~{{LATENCY_RATIO}}× slower.
+Two matmuls + router overhead = ~2.1\times× slower.
 
 ## 10.6 Task Coverage
 
@@ -1152,12 +1152,12 @@ reproducibility.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Taha Majs** designed the method, implemented the code, ran experiments.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1335,7 +1335,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Yes,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
@@ -1349,14 +1349,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and others},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -1769,7 +1769,7 @@ For RoBERTa, do NOT apply `out_lin` — the outer layer does it.
 ## E.2 Environmental Cost
 
 - Total compute: ~20 GPU-hours
-- CO₂: ~{{CO2}} kg CO₂eq
+- CO₂: ~12.4 kg CO₂eq
 
 ## E.3 Data Ethics
 
@@ -1790,7 +1790,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 

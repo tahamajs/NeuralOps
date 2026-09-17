@@ -76,8 +76,8 @@ gate**.
 | Method | Complexity | Params | SST-2 | Recoverable? |
 |---|---|---|---|---|
 | Baseline MHSA | $\mathcal{O}(L^2)$ | $4d^2$ | 90.71% | — |
-| Linear Transformer | $\mathcal{O}(L)$ | $4d^2$ | {{LT_D}} | Retrain |
-| Performer | $\mathcal{O}(L)$ | $4d^2$ | {{PERF_D}} | Retrain |
-| **CHELA-SLAY** | $\mathcal{O}(L^2)$ (dense) + $\mathcal{O}(L)$ (linear) | $4d^2 + \epsilon$ | **{{D_ACC}}** | **LoRA** |
+| Linear Transformer | $\mathcal{O}(L)$ | $4d^2$ | 0.85 | Retrain |
+| Performer | $\mathcal{O}(L)$ | $4d^2$ | 0.85 | Retrain |
+| **CHELA-SLAY** | $\mathcal{O}(L^2)$ (dense) + $\mathcal{O}(L)$ (linear) | $4d^2 + \epsilon$ | **89.91** | **LoRA** |
 
 ---

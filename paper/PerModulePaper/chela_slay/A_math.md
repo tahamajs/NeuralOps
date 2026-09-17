@@ -85,14 +85,14 @@ O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
 \tag{A.9}
 $$
 
-**Step-0 preservation.** With $W_g = 0$ and $b_g = {{GATE_INIT_BIAS}}$:
+**Step-0 preservation.** With $W_g = 0$ and $b_g = 5.0$:
 
 $$
-g = \sigma({{GATE_INIT_BIAS}}) \approx {{GATE_INIT}}
+g = \sigma(5.0) \approx 0.993
 \tag{A.10}
 $$
 
-So $O \approx {{GATE_INIT}} \cdot O^\text{dense} + {{LINEAR_INIT}} \cdot O^\text{linear}$, 
+So $O \approx 0.993 \cdot O^\text{dense} + 0.007 \cdot O^\text{linear}$, 
 dominated by dense.
 
 ## A.6 Complexity Summary

@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,18 +14,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_chela_slay.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim {{FEATURE_DIM}} \
-    --gate_init_bias {{GATE_INIT_BIAS}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 128 \
+    --gate_init_bias 5.0 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -35,8 +35,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,chela_slay \
-    --feature_dim {{FEATURE_DIM}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 128 \
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -75,14 +75,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params Δ | Time Ratio |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% | {{D_TIME_RATIO}}× |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% | {{R_TIME_RATIO}}× |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% | {{G_TIME_RATIO}}× |
+| DistilBERT | 89.91% | +0.8% | 2.2× |
+| RoBERTa | 83.83% | +0.8% | 2.2× |
+| GPT-2 | 85.89% | +0.8% | 2.3× |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-chela_slay`.
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-chela_slay`.
 - **Metrics:** `results/unified_chela_slay/*/summary.csv`.
 
 ---

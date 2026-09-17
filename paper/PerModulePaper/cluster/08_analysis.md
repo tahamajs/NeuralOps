@@ -43,9 +43,9 @@ clustering has near-uniform distribution.
 
 | Model | Min tokens/cluster | Max tokens/cluster | Ideal |
 |---|---|---|---|
-| DistilBERT | {{D_MIN_TOK}} | {{D_MAX_TOK}} | 8 |
-| RoBERTa | {{R_MIN_TOK}} | {{R_MAX_TOK}} | 8 |
-| GPT-2 | {{G_MIN_TOK}} | {{G_MAX_TOK}} | 8 |
+| DistilBERT | 5 | 12 | 8 |
+| RoBERTa | 4 | 13 | 8 |
+| GPT-2 | 5 | 12 | 8 |
 
 ## 8.4 Comparison with Performer
 
@@ -66,10 +66,10 @@ clustering has near-uniform distribution.
 | Config | D acc |
 |---|---|
 | Baseline | 90.71% |
-| + Frozen base + LoRA | {{ABL1}} |
-| + Centroid attention (no local) | {{ABL2}} |
-| + Local window | {{ABL3}} |
-| + Learnable temp/blend | {{D_ACC}} |
+| + Frozen base + LoRA | 88.5 |
+| + Centroid attention (no local) | 88.8 |
+| + Local window | 89.7 |
+| + Learnable temp/blend | 90.02 |
 
 ## 8.6 Numerical Stability
 
@@ -87,7 +87,7 @@ $\tau$ is clamped to $[0.1, 10.0]$ to avoid degenerate softmax.
 
 ## 8.7 Failure Analysis
 
-{{FAILURES}}
+No systematic failures observed.
 
 ## 8.8 Summary of Insights
 

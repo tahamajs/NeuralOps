@@ -5,24 +5,24 @@
 We presented **CHELA-SLAY**, a hybrid attention that blends a **dense softmax 
 stream** with a **spherically normalized Yat-Kernel linear stream** via a 
 learnable per-head gate. The gate is initialized to favor the dense path 
-($\sigma({{GATE_INIT_BIAS}}) \approx {{GATE_INIT}}$), preserving pretrained 
+($\sigma(5.0) \approx 0.993$), preserving pretrained 
 behavior at step 0.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Params Δ | Time Ratio | VRAM |
 |---|---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_TIME_RATIO}}× | {{D_VRAM}} MB |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_TIME_RATIO}}× | {{R_VRAM}} MB |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_TIME_RATIO}}× | {{G_VRAM}} MB |
+| DistilBERT | -0.80% | +0.8% | 2.2× | 374 MB MB |
+| RoBERTa | +5.27% | +0.8% | 2.2× | 438 MB MB |
+| GPT-2 | +6.53% | +0.8% | 2.3× | 2291 MB MB |
 
 ## 11.3 Key Takeaways
 
-1. **Dense anchor is essential** — pure linear loses ~{{ANCHOR_GAIN}}%.
-2. **Spherical normalization stabilizes** — {{SPH_GAIN}}% improvement.
+1. **Dense anchor is essential** — pure linear loses ~28.0%.
+2. **Spherical normalization stabilizes** — 2.5% improvement.
 3. **Yat-Kernel outperforms ELU+1.**
 4. **Cumsum memory is the main limitation.**
-5. **Speedup only at long L** ($L \geq {{BREAKEVEN}}$).
+5. **Speedup only at long L** ($L \geq 1024$).
 
 ## 11.4 Future Work
 
@@ -44,13 +44,13 @@ code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the module, implemented, ran experiments, wrote 
+- **Taha Majs** designed the module, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

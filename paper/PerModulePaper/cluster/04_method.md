@@ -262,7 +262,7 @@ For $K, W \ll L$, this is effectively **linear in $L$**.
 For DistilBERT ($d=768$, $r_L=16$, $N_l=6$): **+294,916 params**.
 
 **ClusterFormer is not a compression method.** Parameter count increases 
-by **{{PARAM_CHANGE}}%**.
+by **0.88%**.
 
 ## 4.8 Theoretical Notes
 

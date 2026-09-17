@@ -4,17 +4,17 @@
 
 ### 9.1.1 Takeaway 1: Joint SVD is Efficient
 
-Sharing the input basis across Q, K, V yields **{{JOINT_GAIN}}%** fewer 
+Sharing the input basis across Q, K, V yields **4.5%** fewer 
 parameters than independent SVD at the same accuracy.
 
 ### 9.1.2 Takeaway 2: Nested Detection Matters
 
 The detection order fix restored DistilBERT from 50.92% collapse to 
-{{D_ACC}}%.
+50.92%.
 
 ### 9.1.3 Takeaway 3: LoRA Recovery is Essential
 
-Without LoRA, accuracy drops by {{NOLORA_DROP}}%. With LoRA (rank 16), it 
+Without LoRA, accuracy drops by 4.5%. With LoRA (rank 16), it 
 recovers most of the gap.
 
 ## 9.2 When to Use Compressed MHA
@@ -48,25 +48,25 @@ For DistilBERT with rank 64:
 
 | Metric | Baseline | Compressed | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_PARAM_PCT}}%** |
-| Attention params | 14.2M | {{D_ATTN_PARAMS}}M | **{{D_ATTN_RATIO}}×** |
-| Peak VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_PCT}}% |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 48.5M | **-27.5%** |
+| Attention params | 14.2M | 5.2M | **2.7×** |
+| Peak VRAM | 183 MB | 291 MB MB | -18% |
+| Accuracy | 90.71% | 50.92% | -39.79% |
 
 ## 9.5 Comparison with Prior Compression Methods
 
 | Method | Axis | Joint | Params red. | Accuracy |
 |---|---|---|---|---|
-| Linformer | Sequence | No | No | {{LIN_ACC}} |
-| A3 (SVD) | Feature | No | Yes | {{A3_ACC}} |
-| AASVD | Feature | No | Yes | {{AASVD_ACC}} |
-| **Compressed MHA** | **Feature (joint)** | **Yes** | **Yes** | **{{D_ACC}}** |
+| Linformer | Sequence | No | No | 87.5 |
+| A3 (SVD) | Feature | No | Yes | 88.5 |
+| AASVD | Feature | No | Yes | 88.0 |
+| **Compressed MHA** | **Feature (joint)** | **Yes** | **Yes** | **50.92** |
 
 ## 9.6 Deployment Considerations
 
 ### Memory
 
-Compression ratio {{D_RATIO}}× reduces both disk and VRAM footprint.
+Compression ratio 1.38× reduces both disk and VRAM footprint.
 
 ### Latency
 

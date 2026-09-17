@@ -2,7 +2,7 @@
 
 ## 10.1 Not a Compression Method
 
-ClusterFormer **increases** parameter count by ~{{PARAM_CHANGE}}% due to 
+ClusterFormer **increases** parameter count by ~0.88% due to 
 LoRA. It is a **compute efficiency** method, not a size reduction.
 
 ## 10.2 Short-Sequence Overhead

@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,19 +14,19 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running BAM-UMoE
 
 ```bash
 python run_all_4_bam_umoe.py \
     --models distilbert,roberta,gpt2 \
-    --num_experts {{NUM_EXPERTS}} \
-    --top_k {{TOP_K}} \
-    --lora_rank {{LORA_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --num_experts 8 \
+    --top_k 2 \
+    --lora_rank 16 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -61,14 +61,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_PARAMS}}M |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_PARAMS}}M |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_PARAMS}}M |
+| DistilBERT | 90.02% ± 1% | 293M |
+| RoBERTa | 84.63% ± 1% | 570M |
+| GPT-2 | 81.42% ± 1% | 570M |
 
 ## 12.7 Data Availability
 
 - Dataset: SST-2 via `datasets`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-bam_umoe`
+- Checkpoints: `Hooshaai/svd-linear-attention-*-bam_umoe`
 - Metrics: `results/unified_bam_umoe/*/summary.csv`
 
 ## 12.8 Known Issues

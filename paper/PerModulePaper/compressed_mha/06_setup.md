@@ -23,9 +23,9 @@ Majority baseline: 50.92%. Max sequence length: 128.
 
 | Hyperparameter | Default |
 |---|---|
-| `rank_qkv` | {{RANK_QKV}} |
-| `rank_out` | {{RANK_OUT}} |
-| `lora_rank` | {{LORA_RANK}} |
+| `rank_qkv` | 64 |
+| `rank_out` | 64 |
+| `lora_rank` | 16 |
 | `dropout` | 0.1 |
 
 **Default behavior:** If no explicit rank, the code promotes `rank_qkv` to 
@@ -36,10 +36,10 @@ Majority baseline: 50.92%. Max sequence length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -72,18 +72,18 @@ Majority baseline: 50.92%. Max sequence length: 128.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_compressed_mha.py \
     --models distilbert,roberta,gpt2 \
-    --rank_qkv {{RANK_QKV}} \
-    --rank_out {{RANK_OUT}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank_qkv 64 \
+    --rank_out 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 6.9 Baselines
@@ -97,6 +97,6 @@ python run_all_4_compressed_mha.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 
 ---

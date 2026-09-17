@@ -56,8 +56,8 @@ For DistilBERT at $L=256$:
 | Metric | Baseline | ClusterFormer | Change |
 |---|---|---|---|
 | Attention FLOPs | 6.7M | 2.4M | **2.8× reduction** |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M |
+| Accuracy | 90.71% | 90.02% | -0.69% |
+| Params | 66.9M | 67.55M | +589826M |
 | Wall time | 4.2 ms | 3.8 ms | 1.10× |
 
 ## 9.5 Comparison with Published Methods
@@ -105,6 +105,6 @@ not directly accessible.
 - Dual-use
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~15 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

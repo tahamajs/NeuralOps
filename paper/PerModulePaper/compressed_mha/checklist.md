@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `compressed_mha/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module compressed_mha`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

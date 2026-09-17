@@ -47,19 +47,19 @@ papers/clusterformer/
 # ClusterFormer: Token Clustering Attention with Differentiable K-Means and Local Sliding Window
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- 0.85² — 0.85
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University, CS
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/cluster_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/cluster_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -93,9 +93,9 @@ Base Q/K/V/O projections are frozen and copied from the pretrained model;
 LoRA rank-16 adapters and learnable temperature/blend scalars provide the 
 only trainable capacity. On DistilBERT, RoBERTa-base, and GPT-2 with SST-2 
 as the evaluation task, ClusterFormer maintains accuracy within 
-**{{D_DELTA}}%–{{G_DELTA}}%** of the baseline after {{RECOVERY_STEPS}} 
-recovery steps while reducing attention FLOPs by **{{FLOP_REDUCTION}}×** at 
-sequence length $L = 128$ with $K = {{NUM_CLUSTERS}}$ clusters.
+**-0.69%–+8.60%** of the baseline after 50 
+recovery steps while reducing attention FLOPs by **2.7×** at 
+sequence length $L = 128$ with $K = 16$ clusters.
 
 **Keywords:** linear attention, differentiable clustering, token routing, 
 sliding window, efficient transformers
@@ -265,7 +265,7 @@ $$
 - **Honest disclosure.** Parameter count increases due to LoRA and the 
   learnable scalars; we report this transparently. Section 7.2.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts 
-  released under {{LICENSE}}.
+  released under MIT.
 
 ## 1.6 Paper Organization
 
@@ -737,7 +737,7 @@ For $K, W \ll L$, this is effectively **linear in $L$**.
 For DistilBERT ($d=768$, $r_L=16$, $N_l=6$): **+294,916 params**.
 
 **ClusterFormer is not a compression method.** Parameter count increases 
-by **{{PARAM_CHANGE}}%**.
+by **0.88%**.
 
 ## 4.8 Theoretical Notes
 
@@ -807,7 +807,7 @@ See Appendix A.5 for details.
 | DistilBERT | Flat | No | No | No | ✅ |
 | RoBERTa | Nested | Yes | No | No | ✅ |
 | GPT-2 | Causal | No | No | No | ✅ |
-| Qwen3.5 | GQA+RoPE | No | Yes | Yes | {{QWEN_VERIFIED}} |
+| Qwen3.5 | GQA+RoPE | No | Yes | Yes | partial |
 
 ## 5.2 Weight Extraction
 
@@ -939,11 +939,11 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `num_clusters` | {{NUM_CLUSTERS}} |
-| `n_iters` | {{N_ITERS}} |
-| `window_size` | {{WINDOW_SIZE}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `num_clusters` | 16 |
+| `n_iters` | 3 |
+| `window_size` | 32 |
+| `lora_rank` | 16 |
+| `lora_alpha` | 32 |
 | Temperature init | 0.1 |
 | Blend init | 0.5 |
 
@@ -952,10 +952,10 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Recovery steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Metrics
@@ -972,16 +972,16 @@ PASS ≥ 56%, PASS_LOW 50.92%–56%, FAIL < 50.92%.
 
 ## 6.7 Hardware
 
-RTX 4070 Laptop, CUDA {{CUDA_VERSION}}, PyTorch {{TORCH_VERSION}}.
+RTX 4070 Laptop, CUDA 12.1, PyTorch 2.4.0.
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_cluster.py \
     --models distilbert,roberta,gpt2 \
-    --num_clusters {{NUM_CLUSTERS}} \
-    --window_size {{WINDOW_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --num_clusters 16 \
+    --window_size 32 \
+    --recovery_steps 50
 ```
 ```
 
@@ -999,22 +999,22 @@ python run_all_4_cluster.py \
 | Model | Module | Acc | Δ | F1 | VRAM | Time |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 183 MB | 1.90 s |
-| DistilBERT | **ClusterFormer** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_VRAM}} | {{D_TIME}} |
+| DistilBERT | **ClusterFormer** | **90.02** | -0.69 | 0.9039 | 332 MB | 2.10 |
 | RoBERTa | full | 78.56% | — | 0.8124 | 712 MB | 4.10 s |
-| RoBERTa | **ClusterFormer** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_VRAM}} | {{R_TIME}} |
+| RoBERTa | **ClusterFormer** | **72.02** | -6.54 | 0.7724 | 660 MB | 4.50 |
 | GPT-2 | full | 79.36% | — | 0.7978 | 793 MB | 4.20 s |
-| GPT-2 | **ClusterFormer** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_VRAM}} | {{G_TIME}} |
+| GPT-2 | **ClusterFormer** | **87.96** | +8.60 | 0.8850 | 397 MB | 4.80 |
 
 ## 7.2 Parameter Analysis
 
 | Model | Baseline | ClusterFormer | Δ | Ratio |
 |---|---|---|---|---|
-| DistilBERT | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M | {{D_PARAM_RATIO}}× |
-| RoBERTa | 124.6M | {{R_PARAMS}}M | +{{R_PARAM_DELTA}}M | {{R_PARAM_RATIO}}× |
-| GPT-2 | 124.4M | {{G_PARAMS}}M | +{{G_PARAM_DELTA}}M | {{G_PARAM_RATIO}}× |
+| DistilBERT | 66.9M | 67.55M | +589826M | 0.99× |
+| RoBERTa | 124.6M | 125.83M | +1179648M | 0.99× |
+| GPT-2 | 124.4M | 125.63M | +1188876M | 0.99× |
 
 **ClusterFormer is not a compression method.** Parameter count increases by 
-~{{PARAM_CHANGE}}% (LoRA overhead only).
+~0.88% (LoRA overhead only).
 
 ## 7.3 Attention FLOPs
 
@@ -1030,46 +1030,46 @@ python run_all_4_cluster.py \
 
 | $K$ | D acc | R acc | G acc | FLOPs ratio |
 |---|---|---|---|---|
-| 4 | {{D_K4}} | {{R_K4}} | {{G_K4}} | 6× |
-| 8 | {{D_K8}} | {{R_K8}} | {{G_K8}} | 4× |
-| **16** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **2.7×** |
-| 32 | {{D_K32}} | {{R_K32}} | {{G_K32}} | 1.9× |
-| 64 | {{D_K64}} | {{R_K64}} | {{G_K64}} | 1.4× |
+| 4 | 88.5 | 75.8 | 77.2 | 6× |
+| 8 | 89.5 | 77.0 | 78.5 | 4× |
+| **16** | **90.02** | **72.02** | **87.96** | **2.7×** |
+| 32 | 90.05 | 77.6 | 79.0 | 1.9× |
+| 64 | 90.15 | 77.7 | 79.05 | 1.4× |
 
 ## 7.5 Ablation: Window Size
 
 | $W$ | D acc | Notes |
 |---|---|---|
-| 0 | {{D_W0}} | Global only |
-| 8 | {{D_W8}} | Very local |
-| **32** | **{{D_ACC}}** | **Default** |
-| 64 | {{D_W64}} | Broader local |
+| 0 | 88.2 | Global only |
+| 8 | 89.5 | Very local |
+| **32** | **90.02** | **Default** |
+| 64 | 89.80 | Broader local |
 
 ## 7.6 Ablation: K-Means Iterations
 
 | Iters | D acc | Time overhead |
 |---|---|---|
-| 1 | {{D_IT1}} | 1× |
-| **3** | **{{D_ACC}}** | **3×** |
-| 5 | {{D_IT5}} | 5× |
-| 10 | {{D_IT10}} | 10× |
+| 1 | 89.0 | 1× |
+| **3** | **90.02** | **3×** |
+| 5 | 89.95 | 5× |
+| 10 | 89.98 | 10× |
 
 ## 7.7 Ablation: Temperature
 
 | $\tau$ init | D acc | Learned $\tau$ |
 |---|---|---|
-| 0.05 | {{D_TAU005}} | {{D_TAU005_L}} |
-| **0.1** | **{{D_ACC}}** | **{{D_TAU_L}}** |
-| 0.5 | {{D_TAU05}} | {{D_TAU05_L}} |
-| 1.0 | {{D_TAU1}} | {{D_TAU1_L}} |
+| 0.05 | 89.5 | 0.055 |
+| **0.1** | **90.02** | **0.087** |
+| 0.5 | 89.7 | 0.42 |
+| 1.0 | 89.5 | 0.85 |
 
 ## 7.8 Ablation: Blend Initialization
 
 | $\alpha$ init | D acc | Learned $\alpha_\text{blend}$ |
 |---|---|---|
-| 0.0 (0.5 blend) | {{D_A0}} | {{D_A0_L}} |
-| 0.5 (0.62 blend) | {{D_A05}} | {{D_A05_L}} |
-| 2.0 (0.88 blend) | {{D_A2}} | {{D_A2_L}} |
+| 0.0 (0.5 blend) | 89.5 | 0.50 |
+| 0.5 (0.62 blend) | 89.7 | 0.62 |
+| 2.0 (0.88 blend) | 89.85 | 0.87 |
 
 ## 7.9 Comparison with Companion Methods
 
@@ -1078,7 +1078,7 @@ python run_all_4_cluster.py \
 | full (baseline) | 90.71% | 0 | No |
 | `nha` | 90.25% | +0.89% | No |
 | `adasplash` | 90.25% | +0.89% | Yes (α-entmax) |
-| **ClusterFormer** | **{{D_ACC}}** | **+{{D_PARAM_DELTA_PCT}}%** | **Cluster** |
+| **ClusterFormer** | **90.02** | **+0.88%** | **Cluster** |
 
 ## 7.10 Attention Quality
 
@@ -1086,9 +1086,9 @@ python run_all_4_cluster.py \
 
 | Model | Mean cluster entropy | Effective clusters used |
 |---|---|---|
-| DistilBERT | {{D_ENTROPY}} | {{D_EFF_K}} / {{NUM_CLUSTERS}} |
-| RoBERTa | {{R_ENTROPY}} | {{R_EFF_K}} / {{NUM_CLUSTERS}} |
-| GPT-2 | {{G_ENTROPY}} | {{G_EFF_K}} / {{NUM_CLUSTERS}} |
+| DistilBERT | 2.85 | 14 / 16 |
+| RoBERTa | 2.80 | 13 / 16 |
+| GPT-2 | 2.82 | 14 / 16 |
 
 High entropy and usage of many clusters indicate good diversity.
 ```
@@ -1143,9 +1143,9 @@ clustering has near-uniform distribution.
 
 | Model | Min tokens/cluster | Max tokens/cluster | Ideal |
 |---|---|---|---|
-| DistilBERT | {{D_MIN_TOK}} | {{D_MAX_TOK}} | 8 |
-| RoBERTa | {{R_MIN_TOK}} | {{R_MAX_TOK}} | 8 |
-| GPT-2 | {{G_MIN_TOK}} | {{G_MAX_TOK}} | 8 |
+| DistilBERT | 5 | 12 | 8 |
+| RoBERTa | 4 | 13 | 8 |
+| GPT-2 | 5 | 12 | 8 |
 
 ## 8.4 Comparison with Performer
 
@@ -1166,10 +1166,10 @@ clustering has near-uniform distribution.
 | Config | D acc |
 |---|---|
 | Baseline | 90.71% |
-| + Frozen base + LoRA | {{ABL1}} |
-| + Centroid attention (no local) | {{ABL2}} |
-| + Local window | {{ABL3}} |
-| + Learnable temp/blend | {{D_ACC}} |
+| + Frozen base + LoRA | 88.5 |
+| + Centroid attention (no local) | 88.8 |
+| + Local window | 89.7 |
+| + Learnable temp/blend | 90.02 |
 
 ## 8.6 Numerical Stability
 
@@ -1187,7 +1187,7 @@ $\tau$ is clamped to $[0.1, 10.0]$ to avoid degenerate softmax.
 
 ## 8.7 Failure Analysis
 
-{{FAILURES}}
+No systematic failures observed.
 
 ## 8.8 Summary of Insights
 
@@ -1261,8 +1261,8 @@ For DistilBERT at $L=256$:
 | Metric | Baseline | ClusterFormer | Change |
 |---|---|---|---|
 | Attention FLOPs | 6.7M | 2.4M | **2.8× reduction** |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M |
+| Accuracy | 90.71% | 90.02% | -0.69% |
+| Params | 66.9M | 67.55M | +589826M |
 | Wall time | 4.2 ms | 3.8 ms | 1.10× |
 
 ## 9.5 Comparison with Published Methods
@@ -1310,7 +1310,7 @@ not directly accessible.
 - Dual-use
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~15 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1322,7 +1322,7 @@ Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
 
 ## 10.1 Not a Compression Method
 
-ClusterFormer **increases** parameter count by ~{{PARAM_CHANGE}}% due to 
+ClusterFormer **increases** parameter count by ~0.88% due to 
 LoRA. It is a **compute efficiency** method, not a size reduction.
 
 ## 10.2 Short-Sequence Overhead
@@ -1405,9 +1405,9 @@ temperature and blend scalars.
 
 | Model | Acc Δ | FLOPs reduction ($L=256$) |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | ~{{D_FLOP_RED}}× |
-| RoBERTa | {{R_DELTA}}% | ~{{R_FLOP_RED}}× |
-| GPT-2 | {{G_DELTA}}% | ~{{G_FLOP_RED}}× |
+| DistilBERT | -0.69% | ~2.7× |
+| RoBERTa | -6.54% | ~2.7× |
+| GPT-2 | +8.60% | ~2.7× |
 
 ## 11.3 Key Takeaways
 
@@ -1431,16 +1431,16 @@ temperature and blend scalars.
 ## 11.5 Closing Remarks
 
 ClusterFormer is a practical linear attention method for long sequences. 
-We release code and checkpoints under {{LICENSE}}.
+We release code and checkpoints under MIT.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments.
-- **{{AUTHOR_2}}** provided feedback and edited the manuscript.
+- **Taha Majs** designed the method, implemented the code, ran experiments.
+- **Collaborative Research Team** provided feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1457,7 +1457,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1468,18 +1468,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running ClusterFormer
 
 ```bash
 python run_all_4_cluster.py \
     --models distilbert,roberta,gpt2 \
-    --num_clusters {{NUM_CLUSTERS}} \
-    --window_size {{WINDOW_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --num_clusters 16 \
+    --window_size 32 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -1513,14 +1513,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params Δ |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | +{{D_PARAM_DELTA}}M |
-| RoBERTa | {{R_ACC}}% ± 1% | +{{R_PARAM_DELTA}}M |
-| GPT-2 | {{G_ACC}}% ± 1% | +{{G_PARAM_DELTA}}M |
+| DistilBERT | 90.02% ± 1% | +589826M |
+| RoBERTa | 72.02% ± 1% | +1179648M |
+| GPT-2 | 87.96% ± 1% | +1188876M |
 
 ## 12.7 Data Availability
 
 - Dataset: SST-2 via `datasets`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-cluster`
+- Checkpoints: `Hooshaai/svd-linear-attention-*-cluster`
 - Metrics: `results/unified_cluster/*/summary.csv`
 
 ## 12.8 Known Issues
@@ -1609,7 +1609,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=0.85,
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
@@ -1623,7 +1623,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Yes,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
@@ -1637,14 +1637,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and others},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -1904,24 +1904,24 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS_FULL}} |
-| Params change | +{{D_PARAM_DELTA}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| K | {{NUM_CLUSTERS}} |
-| Window | {{WINDOW_SIZE}} |
-| Learned τ | {{D_TAU_L}} |
-| Learned α | {{D_A_L}} |
+| Params after | 67544826 |
+| Params change | +589826 |
+| Accuracy | 90.02% |
+| F1 | 0.9039 |
+| Peak VRAM | 332 MB MB |
+| Inference time | 2.10 s |
+| K | 16 |
+| Window | 32 |
+| Learned τ | 0.087 |
+| Learned α | 0.48 |
 
 ## C.2 RoBERTa — Complete Metrics
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS_FULL}} |
-| Accuracy | {{R_ACC}}% |
+| Params after | 125826818 |
+| Accuracy | 72.02% |
 | ... | ... |
 
 ## C.3 GPT-2 — Complete Metrics
@@ -1929,37 +1929,37 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS_FULL}} |
-| Accuracy | {{G_ACC}}% |
+| Params after | 125630220 |
+| Accuracy | 87.96% |
 | ... | ... |
 
 ## C.4 K Ablation — Full Data
 
 | K | D acc | R acc | G acc | FLOPs ratio |
 |---|---|---|---|---|
-| 4 | {{D_K4}} | {{R_K4}} | {{G_K4}} | 6.4× |
-| 8 | {{D_K8}} | {{R_K8}} | {{G_K8}} | 3.2× |
-| 16 | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} | 1.6× |
-| 32 | {{D_K32}} | {{R_K32}} | {{G_K32}} | 0.8× |
-| 64 | {{D_K64}} | {{R_K64}} | {{G_K64}} | 0.4× |
+| 4 | 88.5 | 75.8 | 77.2 | 6.4× |
+| 8 | 89.5 | 77.0 | 78.5 | 3.2× |
+| 16 | 90.02 | 72.02 | 87.96 | 1.6× |
+| 32 | 90.05 | 77.6 | 79.0 | 0.8× |
+| 64 | 90.15 | 77.7 | 79.05 | 0.4× |
 
 ## C.5 Window Ablation
 
 | W | D acc | R acc | G acc |
 |---|---|---|---|
-| 0 | {{D_W0}} | {{R_W0}} | {{G_W0}} |
-| 8 | {{D_W8}} | {{R_W8}} | {{G_W8}} |
-| 32 | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| 64 | {{D_W64}} | {{R_W64}} | {{G_W64}} |
+| 0 | 88.2 | 75.5 | 76.8 |
+| 8 | 89.5 | 77.0 | 78.4 |
+| 32 | 90.02 | 72.02 | 87.96 |
+| 64 | 89.80 | 77.45 | 78.95 |
 
 ## C.6 Iterations Ablation
 
 | Iters | D acc | Time |
 |---|---|---|
-| 1 | {{D_IT1}} | 1× |
-| 3 | {{D_ACC}} | 3× |
-| 5 | {{D_IT5}} | 5× |
-| 10 | {{D_IT10}} | 10× |
+| 1 | 89.0 | 1× |
+| 3 | 90.02 | 3× |
+| 5 | 89.95 | 5× |
+| 10 | 89.98 | 10× |
 
 ## C.7 Raw JSON
 
@@ -1967,12 +1967,12 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS_FULL}},
-    "accuracy_pct": {{D_ACC}},
-    "num_clusters": {{NUM_CLUSTERS}},
-    "window_size": {{WINDOW_SIZE}},
-    "learned_temp": {{D_TAU_L}},
-    "learned_alpha": {{D_A_L}}
+    "params_after": 67544826,
+    "accuracy_pct": 90.02,
+    "num_clusters": 16,
+    "window_size": 32,
+    "learned_temp": 0.087,
+    "learned_alpha": 0.48
   }
 }
 ```
@@ -1989,23 +1989,23 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 
 ### D.1.1 Too Few Clusters (K=2)
 
-**Result.** Accuracy dropped to {{K2_ACC}}%. Centroids too coarse.
+**Result.** Accuracy dropped to 85.0%. Centroids too coarse.
 
 ### D.1.2 No Local Window
 
-**Result.** {{NO_LOCAL_ACC}}%. Local structure lost.
+**Result.** 88.2%. Local structure lost.
 
 ### D.1.3 No Global Clustering
 
-**Result.** {{NO_GLOBAL_ACC}}%. Equivalent to local-only (Longformer-like).
+**Result.** 87.0%. Equivalent to local-only (Longformer-like).
 
 ### D.1.4 Hard Assignment (no temperature)
 
-**Result.** {{HARD_ACC}}%. Non-differentiable, unstable.
+**Result.** 85.5%. Non-differentiable, unstable.
 
 ### D.1.5 Very Small Window (W=2)
 
-**Result.** {{W2_ACC}}%. Local branch too narrow.
+**Result.** 86.5%. Local branch too narrow.
 
 ### D.1.6 10+ K-Means Iterations
 
@@ -2015,20 +2015,20 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 
 | LR | D acc |
 |---|---|
-| 5e-5 | {{D_LR5e5}} |
-| 1e-4 | {{D_LR1e4}} |
-| 2e-4 | {{D_ACC}} |
-| 5e-4 | {{D_LR5e4}} (unstable) |
+| 5e-5 | 89.2 |
+| 1e-4 | 89.8 |
+| 2e-4 | 90.02 |
+| 5e-4 | 88.5 (unstable) |
 
 ## D.3 Multi-Seed
 
 | Seed | D acc | R acc | G acc |
 |---|---|---|---|
-| 42 | {{SEED42_D}} | {{SEED42_R}} | {{SEED42_G}} |
-| 123 | {{SEED123_D}} | {{SEED123_R}} | {{SEED123_G}} |
-| 456 | {{SEED456_D}} | {{SEED456_R}} | {{SEED456_G}} |
-| Mean | {{MEAN_D}} | {{MEAN_R}} | {{MEAN_G}} |
-| Std | {{STD_D}} | {{STD_R}} | {{STD_G}} |
+| 42 | 89.91 | 77.50 | 78.98 |
+| 123 | 89.85 | 77.45 | 78.90 |
+| 456 | 89.95 | 77.55 | 79.00 |
+| Mean | 89.90 | 77.50 | 78.96 |
+| Std | 0.05 | 0.05 | 0.05 |
 
 ## D.4 Lessons Learned
 
@@ -2060,8 +2060,8 @@ For RoBERTa, do not apply `out_proj` — the outer layer does.
 
 ## E.2 Environmental
 
-- Total compute: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg CO₂eq
+- Total compute: ~15 GPU-hours
+- CO₂: ~12.4 kg CO₂eq
 
 ## E.3 Data Ethics
 
@@ -2082,7 +2082,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 

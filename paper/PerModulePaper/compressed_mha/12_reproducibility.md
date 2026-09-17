@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,19 +14,19 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running Compressed MHA
 
 ```bash
 python run_all_4_compressed_mha.py \
     --models distilbert,roberta,gpt2 \
-    --rank_qkv {{RANK_QKV}} \
-    --rank_out {{RANK_OUT}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank_qkv 64 \
+    --rank_out 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.4 Individual Model
@@ -35,9 +35,9 @@ python run_all_4_compressed_mha.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,compressed_mha \
-    --rank_qkv {{RANK_QKV}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank_qkv 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.5 Reproducing Tables
@@ -78,14 +78,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_RATIO}}× |
+| DistilBERT | 50.92% ± 1% | 1.38× |
+| RoBERTa | 50.92% ± 1% | 1.31× |
+| GPT-2 | 50.92% ± 1% | 1.31× |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-compressed_mha`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-compressed_mha`
 - **Metrics:** `results/unified_compressed_mha/*/summary.csv`
 
 ---

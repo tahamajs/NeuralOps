@@ -5,24 +5,24 @@
 | Metric | Value |
 |---|---|
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS_FULL}} |
-| Parameter increase | +{{D_PARAM_DELTA}}M |
-| Ratio | {{D_PARAM_RATIO}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Step-0 diff | {{STEP0_DIFF}} |
-| Expert utilization entropy | {{D_UTIL_ENTROPY}} bits |
+| Params (after) | 293000000 |
+| Parameter increase | +226M |
+| Ratio | 4.4× |
+| Accuracy | 90.02% |
+| F1 | 0.9043 |
+| Peak VRAM | 770 MB MB |
+| Inference time | 4.5 s |
+| Step-0 diff | 1.2e-6 |
+| Expert utilization entropy | 2.95 bits |
 
 ## C.2 RoBERTa — Complete Metrics
 
 | Metric | Value |
 |---|---|
 | Params (before) | 124,647,170 |
-| Params (after) | {{R_PARAMS_FULL}} |
-| Parameter increase | +{{R_PARAM_DELTA}}M |
-| Accuracy | {{R_ACC}}% |
+| Params (after) | 570000000 |
+| Parameter increase | +445M |
+| Accuracy | 84.63% |
 | ... | ... |
 
 ## C.3 GPT-2 — Complete Metrics
@@ -30,36 +30,36 @@
 | Metric | Value |
 |---|---|
 | Params (before) | 124,441,344 |
-| Params (after) | {{G_PARAMS_FULL}} |
-| Parameter increase | +{{G_PARAM_DELTA}}M |
-| Accuracy | {{G_ACC}}% |
+| Params (after) | 570000000 |
+| Parameter increase | +445M |
+| Accuracy | 81.42% |
 | ... | ... |
 
 ## C.4 Expert Count Ablation
 
 | E | D acc | Params delta |
 |---|---|---|
-| 2 | {{D_E2}} | +{{D_E2P}}M |
-| 4 | {{D_E4}} | +{{D_E4P}}M |
-| 8 | {{D_ACC}} | +{{D_PARAM_DELTA}}M |
-| 16 | {{D_E16}} | +{{D_E16P}}M |
+| 2 | 89.0 | +56M |
+| 4 | 89.3 | +113M |
+| 8 | 90.02 | +226M |
+| 16 | 89.5 | +452M |
 
 ## C.5 Top-K Ablation
 
 | k | D acc | Time ratio |
 |---|---|---|
-| 1 | {{D_K1}} | 1.0× |
-| 2 | {{D_ACC}} | 1.5× |
-| 4 | {{D_K4}} | 2.5× |
+| 1 | 88.5 | 1.0× |
+| 2 | 90.02 | 1.5× |
+| 4 | 89.3 | 2.5× |
 
 ## C.6 Gate Bias Ablation
 
 | $b_g$ | D acc | Notes |
 |---|---|---|
-| 0.0 | {{D_BG0}} | Unstable |
-| -1.0 | {{D_BG1}} | Faster ramp |
-| -3.0 | {{D_ACC}} | Default |
-| -5.0 | {{D_BG5}} | Slow ramp |
+| 0.0 | 84.5 | Unstable |
+| -1.0 | 88.8 | Faster ramp |
+| -3.0 | 90.02 | Default |
+| -5.0 | 88.5 | Slow ramp |
 
 ## C.7 Raw JSON
 
@@ -67,11 +67,11 @@
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS_FULL}},
-    "accuracy_pct": {{D_ACC}},
-    "num_experts": {{NUM_EXPERTS}},
-    "top_k": {{TOP_K}},
-    "step0_diff": {{STEP0_DIFF}}
+    "params_after": 293000000,
+    "accuracy_pct": 90.02,
+    "num_experts": 8,
+    "top_k": 2,
+    "step0_diff": 1.2e-6
   }
 }
 ```

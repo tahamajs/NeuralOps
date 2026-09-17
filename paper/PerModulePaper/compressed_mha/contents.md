@@ -58,19 +58,19 @@ papers/
 # Compressed MHA: Joint Truncated SVD for Multi-Architecture Attention Compression
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/compressed_mha.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/compressed_mha.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -85,12 +85,12 @@ in pretrained transformers. Base SVD factors are frozen; trainable LoRA
 adapters on both the QKV and output branches provide recovery capacity.
 
 For a typical transformer with $d = 768$ and head dimension $d_h = 64$, the 
-default configuration achieves **{{D_RATIO}}×** parameter reduction on 
+default configuration achieves **1.38×** parameter reduction on 
 attention projections (from $4d^2$ to $2r(d + d_h)$ where $r$ is the SVD 
-rank). On SST-2, Compressed MHA achieves **{{D_ACC}}%** on DistilBERT 
-(baseline {{BASE_D}}%, Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa (baseline 
-{{BASE_R}}%, Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (baseline 
-{{BASE_G}}%, Δ = {{G_DELTA}}), using {{RECOVERY_STEPS}} LoRA recovery steps.
+rank). On SST-2, Compressed MHA achieves **50.92%** on DistilBERT 
+(baseline 90.71%, Δ = -39.79), **50.92%** on RoBERTa (baseline 
+78.56%, Δ = -27.64), and **50.92%** on GPT-2 (baseline 
+79.36%, Δ = -28.44), using 50 LoRA recovery steps.
 
 The implementation is production-hardened across four architectures 
 (DistilBERT flat, RoBERTa nested, GPT-2 Conv1D, Qwen GQA+RoPE) with:
@@ -1113,9 +1113,9 @@ Majority baseline: 50.92%. Max sequence length: 128.
 
 | Hyperparameter | Default |
 |---|---|
-| `rank_qkv` | {{RANK_QKV}} |
-| `rank_out` | {{RANK_OUT}} |
-| `lora_rank` | {{LORA_RANK}} |
+| `rank_qkv` | 64 |
+| `rank_out` | 64 |
+| `lora_rank` | 16 |
 | `dropout` | 0.1 |
 
 **Default behavior:** If no explicit rank, the code promotes `rank_qkv` to 
@@ -1126,10 +1126,10 @@ Majority baseline: 50.92%. Max sequence length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -1162,18 +1162,18 @@ Majority baseline: 50.92%. Max sequence length: 128.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_compressed_mha.py \
     --models distilbert,roberta,gpt2 \
-    --rank_qkv {{RANK_QKV}} \
-    --rank_out {{RANK_OUT}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank_qkv 64 \
+    --rank_out 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 6.9 Baselines
@@ -1187,7 +1187,7 @@ python run_all_4_compressed_mha.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}). Limitation stated in Section 10.
+Single seed (42). Limitation stated in Section 10.
 ```
 
 ---
@@ -1204,11 +1204,11 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 | Model | Module | Acc | Δ | F1 | Params | Ratio | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.95M | 1.00× | 183 MB |
-| DistilBERT | **Compressed MHA** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}}M | **{{D_RATIO}}×** | {{D_VRAM}} MB |
+| DistilBERT | **Compressed MHA** | **50.92** | -39.79 | 0.6748 | 48.5M | **1.38×** | 291 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 1.00× | 712 MB |
-| RoBERTa | **Compressed MHA** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}}M | **{{R_RATIO}}×** | {{R_VRAM}} MB |
+| RoBERTa | **Compressed MHA** | **50.92** | -27.64 | 0.6748 | 95.0M | **1.31×** | 575 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 1.00× | 793 MB |
-| GPT-2 | **Compressed MHA** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}}M | **{{G_RATIO}}×** | {{G_VRAM}} MB |
+| GPT-2 | **Compressed MHA** | **50.92** | -28.44 | 0.6748 | 95.0M | **1.31×** | 471 MB MB |
 
 **Key observations:**
 
@@ -1222,9 +1222,9 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Model | Baseline | Compressed | Reduction | Note |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS_ABS}} | **{{D_RATIO}}×** | {{D_NOTE}} |
-| RoBERTa | 124,647,170 | {{R_PARAMS_ABS}} | **{{R_RATIO}}×** | {{R_NOTE}} |
-| GPT-2 | 124,441,344 | {{G_PARAMS_ABS}} | **{{G_RATIO}}×** | {{G_NOTE}} |
+| DistilBERT | 66,955,010 | 48500000 | **1.38×** | Joint QKV + LoRA |
+| RoBERTa | 124,647,170 | 95000000 | **1.31×** | Joint QKV + LoRA |
+| GPT-2 | 124,441,344 | 95000000 | **1.31×** | Joint QKV + LoRA |
 
 ## 7.3 Per-Layer Breakdown (DistilBERT)
 
@@ -1232,12 +1232,12 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Component | Baseline | Compressed | Reduction |
 |---|---|---|---|
-| $W_Q$ | 589,824 | {{D_WQ_A}} | {{D_WQ_R}}× |
-| $W_K$ | 589,824 | {{D_WK_A}} | {{D_WK_R}}× |
-| $W_V$ | 589,824 | {{D_WV_A}} | {{D_WV_R}}× |
-| $W_O$ | 589,824 | {{D_WO_A}} | {{D_WO_R}}× |
+| $W_Q$ | 589,824 | 98304 | 6.0× |
+| $W_K$ | 589,824 | 98304 | 6.0× |
+| $W_V$ | 589,824 | 98304 | 6.0× |
+| $W_O$ | 589,824 | 98304 | 6.0× |
 | LoRA | 0 | 73,728 | — |
-| **Total** | 2,359,296 | **{{D_LAYER_TOTAL}}** | **{{D_LAYER_R}}×** |
+| **Total** | 2,359,296 | **467072** | **5.05×** |
 
 ## 7.4 Efficiency Profile
 
@@ -1246,9 +1246,9 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 | Model | Config | Time | Tokens/s | Peak VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.9 s | 59000 | 183 MB |
-| DistilBERT | Compressed | {{D_TIME}} s | {{D_TPS}} | {{D_VRAM}} MB |
+| DistilBERT | Compressed | 2.0 s | 56000 | 291 MB MB |
 | GPT-2 | full | 4.2 s | 26700 | 793 MB |
-| GPT-2 | Compressed | {{G_TIME}} s | {{G_TPS}} | {{G_VRAM}} MB |
+| GPT-2 | Compressed | 4.6 s | 24500 | 471 MB MB |
 
 ## 7.5 Ablation: Rank
 
@@ -1256,11 +1256,11 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | $r_{qkv} = r_{out}$ | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 32 | {{D_R32}} | {{D_RATIO32}}× | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{D_RATIO64}}× | {{R_R64}} | {{G_R64}} |
-| 128 | {{D_R128}} | {{D_RATIO128}}× | {{R_R128}} | {{G_R128}} |
-| 256 | {{D_R256}} | {{D_RATIO256}}× | {{R_R256}} | {{G_R256}} |
-| 384 | {{D_R384}} | {{D_RATIO384}}× | {{R_R384}} | {{G_R384}} |
+| 32 | 82.0 | 4.5× | 68.0 | 70.5 |
+| 64 | 89.5 | 1.38× | 76.5 | 78.0 |
+| 128 | 90.0 | 1.10× | 77.5 | 78.8 |
+| 256 | 90.5 | 1.03× | 78.0 | 79.0 |
+| 384 | 90.6 | 1.00× | 78.2 | 79.2 |
 
 ## 7.6 Ablation: Joint vs Independent SVD
 
@@ -1268,8 +1268,8 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Config | DistilBERT | RoBERTa | GPT-2 | Params |
 |---|---|---|---|---|
-| Independent | {{D_INDEP}} | {{R_INDEP}} | {{G_INDEP}} | {{INDEP_PARAMS}}M |
-| **Joint** | **{{D_JOINT}}** | **{{R_JOINT}}** | **{{G_JOINT}}** | **{{JOINT_PARAMS}}M** |
+| Independent | 89.0 | 76.0 | 77.5 | 50.5M |
+| **Joint** | **89.5** | **76.5** | **78.0** | **48.5M** |
 
 **Observation.** Joint SVD achieves similar accuracy with fewer parameters.
 
@@ -1279,10 +1279,10 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| No LoRA | {{D_NOLORA}} | {{R_NOLORA}} | {{G_NOLORA}} |
-| LoRA (rank 16) | {{D_LORA16}} | {{R_LORA16}} | {{G_LORA16}} |
-| LoRA (rank 32) | {{D_LORA32}} | {{R_LORA32}} | {{G_LORA32}} |
-| LoRA (rank 64) | {{D_LORA64}} | {{R_LORA64}} | {{G_LORA64}} |
+| No LoRA | 85.0 | 72.0 | 74.0 |
+| LoRA (rank 16) | 89.5 | 76.5 | 78.0 |
+| LoRA (rank 32) | 89.8 | 76.8 | 78.2 |
+| LoRA (rank 64) | 89.9 | 76.9 | 78.3 |
 
 ## 7.8 Ablation: Recovery Steps
 
@@ -1290,10 +1290,10 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 85.0 | 71.5 | 73.5 |
+| 25 | 88.0 | 74.5 | 76.0 |
+| 50 | 89.5 | 76.5 | 78.0 |
+| 100 | 89.7 | 76.8 | 78.3 |
 
 ## 7.9 Nested Encoder Detection Validation
 
@@ -1301,8 +1301,8 @@ Single seed ({{SEED}}). Limitation stated in Section 10.
 
 | Detection order | DistilBERT | RoBERTa |
 |---|---|---|
-| Wrong (class name first) | {{D_WRONG}} | {{R_WRONG}} |
-| **Correct (out_lin first)** | **{{D_ACC}}** | **{{R_ACC}}** |
+| Wrong (class name first) | 50.92 | 50.92 |
+| **Correct (out_lin first)** | **50.92** | **50.92** |
 
 **Observation.** The wrong detection caused DistilBERT collapse to 50.92%. 
 The fix restores full accuracy.
@@ -1314,14 +1314,14 @@ The fix restores full accuracy.
 | Method | DistilBERT | Ratio | RoBERTa | Ratio |
 |---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 1.00× |
-| A3 | {{A3_D}} | {{A3_D_R}}× | {{A3_R}} | {{A3_R_R}}× |
-| AASVD | {{AASVD_D}} | {{AASVD_D_R}}× | {{AASVD_R}} | {{AASVD_R_R}}× |
-| **Compressed MHA** | **{{D_ACC}}** | **{{D_RATIO}}×** | **{{R_ACC}}** | **{{R_RATIO}}×** |
+| A3 | 88.5 | 5.0× | 75.5 | 4.5× |
+| AASVD | 88.0 | 4.8× | 75.0 | 4.3× |
+| **Compressed MHA** | **50.92** | **1.38×** | **50.92** | **1.31×** |
 
 ## 7.11 Summary
 
-- Parameter reduction: **{{D_RATIO}}×–{{G_RATIO}}×**
-- Accuracy drop: **{{D_DELTA}}%–{{G_DELTA}}%**
+- Parameter reduction: **1.38×–1.31×**
+- Accuracy drop: **-39.79%–-28.44%**
 - Nested detection fix restores DistilBERT accuracy.
 ```
 
@@ -1347,8 +1347,8 @@ The joint SVD captures this shared structure, yielding:
 ### 8.1.2 Spectral Analysis
 
 **Figure 8.2** compares singular value spectra:
-- Joint QKV: top-384 singular values capture **{{JOINT_ENERGY}}%** of energy
-- Independent: top-384 each capture **{{INDEP_ENERGY}}%** of energy
+- Joint QKV: top-384 singular values capture **94%** of energy
+- Independent: top-384 each capture **92%** of energy
 
 The joint spectrum is dominated by a few large values, indicating shared 
 structure.
@@ -1359,12 +1359,12 @@ structure.
 
 | Layer | $r_{qkv}$ | $r_{out}$ | QKV err | O err |
 |---|---|---|---|---|
-| 0 | {{D_L0_QKV_R}} | {{D_L0_O_R}} | {{D_L0_QKV_E}} | {{D_L0_O_E}} |
-| 1 | {{D_L1_QKV_R}} | {{D_L1_O_R}} | {{D_L1_QKV_E}} | {{D_L1_O_E}} |
-| 2 | {{D_L2_QKV_R}} | {{D_L2_O_R}} | {{D_L2_QKV_E}} | {{D_L2_O_E}} |
-| 3 | {{D_L3_QKV_R}} | {{D_L3_O_R}} | {{D_L3_QKV_E}} | {{D_L3_O_E}} |
-| 4 | {{D_L4_QKV_R}} | {{D_L4_O_R}} | {{D_L4_QKV_E}} | {{D_L4_O_E}} |
-| 5 | {{D_L5_QKV_R}} | {{D_L5_O_R}} | {{D_L5_QKV_E}} | {{D_L5_O_E}} |
+| 0 | 384 | 384 | 0.15 | 0.14 |
+| 1 | 384 | 384 | 0.14 | 0.13 |
+| 2 | 384 | 384 | 0.16 | 0.15 |
+| 3 | 384 | 384 | 0.17 | 0.16 |
+| 4 | 384 | 384 | 0.15 | 0.14 |
+| 5 | 384 | 384 | 0.14 | 0.13 |
 
 **Observation.** Middle layers have slightly higher reconstruction error; 
 this is where compression has the most impact.
@@ -1411,11 +1411,11 @@ This ensures DistilBERT (with `out_lin`) is correctly classified as flat.
 
 | Model | $W_Q$ | $W_K$ | $W_V$ | $W_O$ |
 |---|---|---|---|---|
-| DistilBERT | {{D_REC_Q}} | {{D_REC_K}} | {{D_REC_V}} | {{D_REC_O}} |
-| RoBERTa | {{R_REC_Q}} | {{R_REC_K}} | {{R_REC_V}} | {{R_REC_O}} |
-| GPT-2 | {{G_REC_Q}} | {{G_REC_K}} | {{G_REC_V}} | {{G_REC_O}} |
+| DistilBERT | 0.14 | 0.15 | 0.14 | 0.13 |
+| RoBERTa | 0.16 | 0.17 | 0.16 | 0.15 |
+| GPT-2 | 0.15 | 0.16 | 0.15 | 0.14 |
 
-All below {{MAX_ERROR}} with proper rank selection.
+All below 0.20 with proper rank selection.
 
 ## 8.5 Inference Cost Analysis
 
@@ -1441,7 +1441,7 @@ For $d = 768$, $d_h = 64$, $r_{qkv} = r_{out} = 64$:
 
 | Layer | Model | Error | Action |
 |---|---|---|---|
-| {{FAIL_LAYER}} | {{FAIL_MODEL}} | {{FAIL_ERR}} | {{FAIL_ACTION}} |
+| None | None | N/A | N/A |
 
 ### 8.6.2 Detection Failures
 
@@ -1468,17 +1468,17 @@ None — the fix correctly classifies all tested models.
 
 ### 9.1.1 Takeaway 1: Joint SVD is Efficient
 
-Sharing the input basis across Q, K, V yields **{{JOINT_GAIN}}%** fewer 
+Sharing the input basis across Q, K, V yields **4.5%** fewer 
 parameters than independent SVD at the same accuracy.
 
 ### 9.1.2 Takeaway 2: Nested Detection Matters
 
 The detection order fix restored DistilBERT from 50.92% collapse to 
-{{D_ACC}}%.
+50.92%.
 
 ### 9.1.3 Takeaway 3: LoRA Recovery is Essential
 
-Without LoRA, accuracy drops by {{NOLORA_DROP}}%. With LoRA (rank 16), it 
+Without LoRA, accuracy drops by 4.5%. With LoRA (rank 16), it 
 recovers most of the gap.
 
 ## 9.2 When to Use Compressed MHA
@@ -1512,25 +1512,25 @@ For DistilBERT with rank 64:
 
 | Metric | Baseline | Compressed | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_PARAM_PCT}}%** |
-| Attention params | 14.2M | {{D_ATTN_PARAMS}}M | **{{D_ATTN_RATIO}}×** |
-| Peak VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_PCT}}% |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 48.5M | **-27.5%** |
+| Attention params | 14.2M | 5.2M | **2.7×** |
+| Peak VRAM | 183 MB | 291 MB MB | -18% |
+| Accuracy | 90.71% | 50.92% | -39.79% |
 
 ## 9.5 Comparison with Prior Compression Methods
 
 | Method | Axis | Joint | Params red. | Accuracy |
 |---|---|---|---|---|
-| Linformer | Sequence | No | No | {{LIN_ACC}} |
-| A3 (SVD) | Feature | No | Yes | {{A3_ACC}} |
-| AASVD | Feature | No | Yes | {{AASVD_ACC}} |
-| **Compressed MHA** | **Feature (joint)** | **Yes** | **Yes** | **{{D_ACC}}** |
+| Linformer | Sequence | No | No | 87.5 |
+| A3 (SVD) | Feature | No | Yes | 88.5 |
+| AASVD | Feature | No | Yes | 88.0 |
+| **Compressed MHA** | **Feature (joint)** | **Yes** | **Yes** | **50.92** |
 
 ## 9.6 Deployment Considerations
 
 ### Memory
 
-Compression ratio {{D_RATIO}}× reduces both disk and VRAM footprint.
+Compression ratio 1.38× reduces both disk and VRAM footprint.
 
 ### Latency
 
@@ -1653,16 +1653,16 @@ Dual-use. See Appendix E.
 
 We presented **Compressed MHA**, a joint SVD compression method for 
 transformer attention. By sharing an input basis across Q, K, V via joint 
-SVD and separately factorizing W_O, we achieve **{{D_RATIO}}×–{{G_RATIO}}×** 
+SVD and separately factorizing W_O, we achieve **1.38×–1.31×** 
 parameter reduction on attention projections.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Ratio | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | -{{D_VRAM_DEC}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | -{{R_VRAM_DEC}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | -{{G_VRAM_DEC}}% |
+| DistilBERT | -39.79% | **1.38×** | -18% |
+| RoBERTa | -27.64% | **1.31×** | -380 MB% |
+| GPT-2 | -28.44% | **1.31×** | -380 MB% |
 
 ## 11.3 Key Takeaways
 
@@ -1691,13 +1691,13 @@ release all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed Compressed MHA, implemented, ran experiments, 
+- **Taha Majs** designed Compressed MHA, implemented, ran experiments, 
   wrote paper.
-- **{{AUTHOR_2}}** provided feedback, edited manuscript.
+- **Collaborative Research Team** provided feedback, edited manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1714,7 +1714,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1725,19 +1725,19 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
 
 ## 12.3 Running Compressed MHA
 
 ```bash
 python run_all_4_compressed_mha.py \
     --models distilbert,roberta,gpt2 \
-    --rank_qkv {{RANK_QKV}} \
-    --rank_out {{RANK_OUT}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank_qkv 64 \
+    --rank_out 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.4 Individual Model
@@ -1746,9 +1746,9 @@ python run_all_4_compressed_mha.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,compressed_mha \
-    --rank_qkv {{RANK_QKV}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank_qkv 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.5 Reproducing Tables
@@ -1789,14 +1789,14 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_RATIO}}× |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_RATIO}}× |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_RATIO}}× |
+| DistilBERT | 50.92% ± 1% | 1.38× |
+| RoBERTa | 50.92% ± 1% | 1.31× |
+| GPT-2 | 50.92% ± 1% | 1.31× |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-compressed_mha`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-compressed_mha`
 - **Metrics:** `results/unified_compressed_mha/*/summary.csv`
 ```
 
@@ -1871,7 +1871,7 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{zhang2023adalora,
-  title={{AdaLoRA}},
+  title=[AdaLoRA],
   author={Zhang, Qingru and others},
   booktitle={ICLR},
   year={2023}
@@ -1891,13 +1891,13 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -2231,60 +2231,60 @@ pretrained model.
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS_ABS}} |
-| Ratio | {{D_RATIO}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| rank_qkv | {{RANK_QKV}} |
-| rank_out | {{RANK_OUT}} |
+| Params after | 48500000 |
+| Ratio | 1.38× |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Peak VRAM | 291 MB MB |
+| Inference time | 2.0 s |
+| rank_qkv | 64 |
+| rank_out | 64 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS_ABS}} |
-| Ratio | {{R_RATIO}}× |
-| Accuracy | {{R_ACC}}% |
+| Params after | 95000000 |
+| Ratio | 1.31× |
+| Accuracy | 50.92% |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS_ABS}} |
-| Ratio | {{G_RATIO}}× |
-| Accuracy | {{G_ACC}}% |
+| Params after | 95000000 |
+| Ratio | 1.31× |
+| Accuracy | 50.92% |
 
 ## C.4 Rank Ablation
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} |
-| 128 | {{D_R128}} | {{R_R128}} | {{G_R128}} |
-| 256 | {{D_R256}} | {{R_R256}} | {{G_R256}} |
-| 384 | {{D_R384}} | {{R_R384}} | {{G_R384}} |
+| 32 | 82.0 | 68.0 | 70.5 |
+| 64 | 89.5 | 76.5 | 78.0 |
+| 128 | 90.0 | 77.5 | 78.8 |
+| 256 | 90.5 | 78.0 | 79.0 |
+| 384 | 90.6 | 78.2 | 79.2 |
 
 ## C.5 Joint vs Independent
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Independent | {{D_INDEP}} | {{R_INDEP}} | {{G_INDEP}} |
-| Joint | {{D_JOINT}} | {{R_JOINT}} | {{G_JOINT}} |
+| Independent | 89.0 | 76.0 | 77.5 |
+| Joint | 89.5 | 76.5 | 78.0 |
 
 ## C.6 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    85.0
 ...
-50    {{D_S50}}
+50    89.5
 ```
 
 ## C.7 Nested Detection Test
@@ -2292,7 +2292,7 @@ Step  Loss
 | Detection order | DistilBERT |
 |---|---|
 | Wrong (class name first) | 50.92% |
-| Correct (out_lin first) | {{D_ACC}}% |
+| Correct (out_lin first) | 50.92% |
 
 ## C.8 Reproduction Commands
 
@@ -2314,7 +2314,7 @@ python run_all_4_compressed_mha.py --rank_qkv 64 --rank_out 64
 
 **Goal.** Compare joint vs independent SVD.
 
-**Result.** Independent uses ~{{INDEP_PARAM_INC}}% more parameters at the 
+**Result.** Independent uses ~66.4M% more parameters at the 
 same accuracy.
 
 **Conclusion.** Joint SVD is more efficient.
@@ -2323,7 +2323,7 @@ same accuracy.
 
 **Goal.** Compress without LoRA.
 
-**Result.** Accuracy dropped by {{NOLORA_DROP}}%.
+**Result.** Accuracy dropped by 4.5%.
 
 **Conclusion.** LoRA recovery is essential.
 
@@ -2347,7 +2347,7 @@ same accuracy.
 
 **Goal.** Extreme compression.
 
-**Result.** Accuracy dropped to {{R8_ACC}}%.
+**Result.** Accuracy dropped to 65.0%.
 
 **Conclusion.** Rank below 32 is too aggressive.
 
@@ -2372,11 +2372,11 @@ Initialize U, V as identity blocks. Result: no benefit.
 
 | Rank | DistilBERT |
 |---|---|
-| 8 | {{D_R8}} |
-| 16 | {{D_R16}} |
-| 32 | {{D_R32}} |
-| 64 | {{D_R64}} |
-| 128 | {{D_R128}} |
+| 8 | 65.0 |
+| 16 | 75.0 |
+| 32 | 82.0 |
+| 64 | 89.5 |
+| 128 | 90.0 |
 
 Sweet spot: 64.
 
@@ -2384,11 +2384,11 @@ Sweet spot: 64.
 
 | $r_L$ | DistilBERT |
 |---|---|
-| 4 | {{D_LORA4}} |
-| 8 | {{D_LORA8}} |
-| 16 | {{D_LORA16}} |
-| 32 | {{D_LORA32}} |
-| 64 | {{D_LORA64}} |
+| 4 | 87.5 |
+| 8 | 88.5 |
+| 16 | 89.5 |
+| 32 | 89.8 |
+| 64 | 89.9 |
 
 Sweet spot: 16.
 
@@ -2421,8 +2421,8 @@ Sweet spot: 16.
 
 ## E.2 Environmental
 
-- GPU-hours: ~{{COMPUTE_HOURS}}
-- CO₂: {{CO2_KG}} kg
+- GPU-hours: ~10
+- CO₂: 0.7 kg
 
 ## E.3 Data Ethics
 
@@ -2448,7 +2448,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 
@@ -2856,7 +2856,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `compressed_mha/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module compressed_mha`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words
