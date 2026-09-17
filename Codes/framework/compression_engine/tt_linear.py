@@ -11,6 +11,7 @@ NOTE (DEPRECATED):
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, List, Optional, Tuple, Union
 
@@ -18,6 +19,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+logger = logging.getLogger(__name__)
 
 
 def factorize_dimension_pair(
