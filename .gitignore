@@ -204,6 +204,8 @@ archive_cleanup_*/
 **/test_results/
 runs/
 **/runs/
+!papers/**/runs/**
+!results/**/runs/**
 outputs/
 **/outputs/
 checkpoints/
