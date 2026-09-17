@@ -42,9 +42,18 @@ def compile_pdf(mod_dir: Path) -> tuple[bool, int, int]:
     main_tex = mod_dir / "main.tex"
     if not main_tex.exists():
         return False, 0, 0
+    # Sanitize any \\ followed immediately by [ in .tex files which LaTeX parses as vertical spacing
+    for tf in mod_dir.glob("*.tex"):
+        try:
+            t = tf.read_text(encoding="utf-8", errors="ignore")
+            fixed = re.sub(r'\\\\(\s*)\[', r'\\\\\1{[}', t)
+            if fixed != t:
+                tf.write_text(fixed, encoding="utf-8")
+        except Exception:
+            pass
     try:
-        subprocess.run(["pdflatex", "-interaction=nonstopmode", "main.tex"], cwd=mod_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["pdflatex", "-interaction=nonstopmode", "main.tex"], cwd=mod_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["pdflatex", "-interaction=nonstopmode", "main.tex"], cwd=mod_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=25)
+        subprocess.run(["pdflatex", "-interaction=nonstopmode", "main.tex"], cwd=mod_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=25)
         pdf = mod_dir / "main.pdf"
         if pdf.exists():
             sz = pdf.stat().st_size
@@ -58,6 +67,11 @@ def compile_pdf(mod_dir: Path) -> tuple[bool, int, int]:
             return True, sz, pages
         return False, 0, 0
     except Exception:
+        # On failure/timeout, clean up aux and out to prevent poisonous state
+        for ext in [".aux", ".out", ".log", ".toc"]:
+            f = mod_dir / f"main{ext}"
+            if f.exists():
+                f.unlink(missing_ok=True)
         return False, 0, 0
 
 def process_stub_module(mod_name: str, out_base: Path) -> dict:
