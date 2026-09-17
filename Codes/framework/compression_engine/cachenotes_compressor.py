@@ -15,6 +15,7 @@ Scientific Enhancement:
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import math
 from pathlib import Path
@@ -215,7 +216,10 @@ class CPTGenerator(nn.Module):
         words = str(text).lower().replace(",", " ").replace(".", " ").replace(":", " ").replace("-", " ").split()
         if not words:
             return torch.tensor([0], dtype=torch.long, device=device)
-        indices = [abs(hash(w)) % (self.vocab_size - 1) + 1 for w in words]
+        indices = []
+        for w in words:
+            h = int(hashlib.md5(w.encode("utf-8")).hexdigest(), 16)
+            indices.append(h % (self.vocab_size - 1) + 1)
         return torch.tensor(indices, dtype=torch.long, device=device)
 
     def forward(self, task: str, d: int, device: Optional[torch.device] = None) -> torch.Tensor:
