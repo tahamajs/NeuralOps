@@ -21,66 +21,6 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
-class CRLinear(nn.Module):
-    """
-    Interpolative Decomposition / Column-Row Factorized Linear Layer.
-    W ≈ C @ P where:
-    - C in R^{out_features x rank}: column skeleton from W
-    - P in R^{rank x in_features}: interpolative projection matrix
-
-    Forward pass:
-    y = ((x @ P^T) @ C^T) + bias
-    """
-
-    def __init__(
-        self,
-        in_features: int,
-        out_features: int,
-        rank: int = 64,
-        bias: bool = True,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
-    ) -> None:
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = max(1, min(rank, in_features, out_features))
-
-        self.C = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
-        self.P = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
-
-        bound = 1.0 / math.sqrt(max(1, in_features))
-        nn.init.uniform_(self.C, -bound, bound)
-        nn.init.uniform_(self.P, -bound, bound)
-
-        if bias:
-            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
-        else:
-            self.register_parameter("bias", None)
-
-    @property
-    def weight(self) -> torch.Tensor:
-        """Reconstructed effective weight matrix (out_features, in_features)."""
-        return torch.matmul(self.C, self.P)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Sub-quadratic forward execution:
-        y = ((x @ P^T) @ C^T) + bias
-        """
-        orig_shape = x.shape
-        x_flat = x.reshape(-1, self.in_features)
-
-        x_p = F.linear(x_flat, self.P)
-        out = F.linear(x_p, self.C, self.bias)
-
-        out = out 
-        return out.view(*orig_shape[:-1], self.out_features)
-
-    def get_weight(self) -> torch.Tensor:
-        """Materialize full reconstructed weight matrix."""
-        return torch.matmul(self.C, self.P)
-
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     """Safely extract configuration attribute from dict, object, or namespace."""
     if cfg is None:
@@ -150,6 +90,7 @@ class CRLinear(nn.Module):
         """Materialize full reconstructed weight matrix."""
         return torch.matmul(self.C, self.P)
 
+
     @classmethod
     def from_linear(cls, linear: Union[nn.Linear, Any], rank: int = 64) -> "CRLinear":
         """
@@ -190,8 +131,7 @@ class CRLinear(nn.Module):
             _, _, piv = scipy.linalg.qr(W_np, mode="economic", pivoting=True)
             col_idx = torch.tensor(piv[:r], dtype=torch.long, device=W.device)
         except Exception as e:
-                print(f'copy_weights failed: {e}')
-                logger.warning(f"copy_weights failed: {e}")
+            logger.debug("CRLinear pivoted QR failed; using greedy column selection: %s", e)
 
         if col_idx is None:
             # Pure PyTorch QRCP-equivalent greedy pivoted column selection
