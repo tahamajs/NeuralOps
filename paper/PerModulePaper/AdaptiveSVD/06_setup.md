@@ -33,10 +33,10 @@ Base weights loaded from `results/*_baseline/finetuned_model.pt`.
 
 | Hyperparameter | Value | Notes |
 |---|---|---|
-| `energy_threshold` $\tau$ | {{ENERGY_THRESHOLD}} | Cumulative energy cutoff |
-| `svd_rank` (cap) | {{SVD_RANK}} | Maximum rank (rarely hit) |
-| `residual_rank` $r_L$ | {{RESIDUAL_RANK}} | LoRA adapter rank |
-| `min_rank` | {{MIN_RANK}} | Minimum rank floor |
+| `energy_threshold` $\tau$ | 0.92 | Cumulative energy cutoff |
+| `svd_rank` (cap) | 288 | Maximum rank (rarely hit) |
+| `residual_rank` $r_L$ | 16 | LoRA adapter rank |
+| `min_rank` | 16 | Minimum rank floor |
 | `trainable_svd` | False | Base frozen |
 | `target_attention_only` | True | Only attention projections |
 
@@ -52,16 +52,16 @@ After compression, adapters are trained:
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
+| Learning rate | 2e-4 |
+| Weight decay | 1e-2 |
 | LR schedule | Constant |
 | Warmup | 0 steps |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Recovery steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 | Trainable params | Only $A_P, B_P$ |
 
-**Trainable tensor count:** {{TRAINABLE_TENSORS}} (2 per projection × 4 per 
+**Trainable tensor count:** 96 (2 per projection × 4 per 
 layer × $N_l$).
 
 ## 6.6 Evaluation Metrics
@@ -101,9 +101,9 @@ layer × $N_l$).
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
+| Transformers | 4.44.0 |
 | OS | Windows / Linux |
 
 ## 6.9 Reproduction
@@ -111,16 +111,16 @@ layer × $N_l$).
 ```bash
 python run_all_4_adaptive_svd.py \
     --models distilbert,roberta,gpt2 \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --energy_threshold 0.92 \
+    --residual_rank 16 \
+    --recovery_steps 50
 ```
 
-**Expected runtime:** ~{{RUNTIME}} minutes on RTX 4070.
+**Expected runtime:** ~15 minutes on RTX 4070.
 
 ## 6.10 Seeds
 
-All experiments use seed {{SEED}}. No multi-seed runs due to compute budget.
+All experiments use seed 42. No multi-seed runs due to compute budget.
 
 ## 6.11 Baselines
 

@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `halo_regla/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module halo_regla`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

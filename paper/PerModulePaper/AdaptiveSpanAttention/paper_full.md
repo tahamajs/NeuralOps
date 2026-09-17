@@ -19,7 +19,7 @@ TITLE NOTES:
 
 **Affiliations:**
 - ¹ University Name, Department of Computer Science
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ² 0.85, 0.85
 
 **Corresponding author:** Your Name
 **Preprint date:** 2026-09-15
@@ -1440,7 +1440,7 @@ To realize speedup, one can:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~12 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.
 
 
 ---
@@ -1569,12 +1569,12 @@ windows. We release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the implementation, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed the implementation, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 
@@ -1774,14 +1774,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2375,11 +2375,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 

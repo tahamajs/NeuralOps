@@ -19,9 +19,9 @@ peak memory.
 
 | Model | Acc Δ | Sparsity | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_SP}} | -{{MEM_REDUCTION}}× |
-| RoBERTa | {{R_DELTA}}% | {{R_SP}} | -{{MEM_REDUCTION}}× |
-| GPT-2 | {{G_DELTA}}% | {{G_SP}} | -{{MEM_REDUCTION}}× |
+| DistilBERT | -2.2% | 0.42 | -8× |
+| RoBERTa | -2.6% | 0.45 | -8× |
+| GPT-2 | -2.9% | 0.48 | -8× |
 
 ## 11.3 Key Takeaways
 
@@ -29,7 +29,7 @@ peak memory.
 2. **Soft top-$k$ is differentiable and effective.**
 3. **Chunking bounds memory** without hurting quality.
 4. **No parameter reduction** — compute-only optimization.
-5. **Attention is highly concentrated**: top 10% of keys captures {{MASS10}}%.
+5. **Attention is highly concentrated**: top 10% of keys captures 85%.
 
 ## 11.4 Future Work
 
@@ -51,12 +51,12 @@ attention. We release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed ASA, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed ASA, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

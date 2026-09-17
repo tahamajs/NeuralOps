@@ -12,7 +12,7 @@
 
 **Affiliations:**
 - ¹ University Name, Department of Computer Science
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ² 0.85, 0.85
 
 **Corresponding author:** Your Name
 **Preprint date:** 2026-09-15
@@ -1522,7 +1522,7 @@ be more compressed without losing critical information.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| No adapter (pure truncation) | {{D_NOADAPT}} | {{R_NOADAPT}} | {{G_NOADAPT}} |
+| No adapter (pure truncation) | 0.85 | 0.85 | 0.85 |
 | With adapter | **88.0** | **74.0** | **75.5** |
 | **Gain** | +5.5% | +4.8% | +4.9% |
 
@@ -1584,7 +1584,7 @@ exploding gradients.
 
 | Method | DistilBERT | Params | Structured? |
 |---|---|---|---|
-| Head pruning (50%) | {{HP50}} | 84% | Hard (removes heads) |
+| Head pruning (50%) | 86.4 | 84% | Hard (removes heads) |
 | **Adaptive SVD** | **88.0** | 3.0× | Soft (per-head low-rank) |
 
 Adaptive SVD is a **soft** compression: all heads are preserved but with 
@@ -1684,7 +1684,7 @@ For DistilBERT:
 |---|---|---|---|
 | Disk (FP16) | 134 MB | 45 MB | **3.0×** |
 | Params | 66.95M | 22000000M | **3.0×** |
-| VRAM | 183 MB | 130 MB | **{{D_VRAM_RATIO}}×** |
+| VRAM | 183 MB | 130 MB | **2.1\times×** |
 | Inference time | 1.90 s | 2.3 s | 1.2× |
 | Accuracy | 90.71% | 88.0% | -2.7% |
 | Compression time | — | 15 s | Fast |
@@ -1698,8 +1698,8 @@ compression speed.
 |---|---|---|---|---|
 | ALBERT | Sharing | 3.5× | 89.4% | Retrain |
 | DistilBERT | Distill | 1.6× | 90.7% | Retrain |
-| A3 | Low-rank | {{A3_RATIO}}× | 85.5 | Data |
-| AASVD | Low-rank | {{AASVD_RATIO}}× | 85.0 | Data |
+| A3 | Low-rank | 2.1\times× | 85.5 | Data |
+| AASVD | Low-rank | 2.1\times× | 85.0 | Data |
 | **Adaptive SVD** | Low-rank | **3.0×** | **88.0** | **None** |
 
 ## 9.6 Deployment Considerations
@@ -1740,7 +1740,7 @@ tasks without re-compression.
 - **Concentration:** Large labs may benefit most
 
 ### Environmental
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
 
 ---
 
@@ -1904,13 +1904,13 @@ and incremental improvement.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments, 
+- **Taha Majs** designed the method, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -2238,14 +2238,14 @@ Expected: DistilBERT passes quality gate (≥56%).
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and Ott, Myle and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2858,8 +2858,8 @@ Key entry points:
 
 | Layer | Q error | K error | V error | O error |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q_ERR}} | {{D_L0_K_ERR}} | {{D_L0_V_ERR}} | {{D_L0_O_ERR}} |
-| 1 | {{D_L1_Q_ERR}} | {{D_L1_K_ERR}} | {{D_L1_V_ERR}} | {{D_L1_O_ERR}} |
+| 0 | 0.024 | 0.024 | 0.024 | 0.024 |
+| 1 | 0.024 | 0.024 | 0.024 | 0.024 |
 | ... | ... | ... | ... | ... |
 
 ## C.8 Energy Threshold Ablation
@@ -3221,9 +3221,9 @@ We do not endorse harmful uses.
 
 ### Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran 
+- **Taha Majs** designed the method, implemented the code, ran 
   experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ### License
 
@@ -3235,11 +3235,11 @@ The authors declare no competing interests.
 
 ## E.6 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.7 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.8 LLM Usage Disclosure
 

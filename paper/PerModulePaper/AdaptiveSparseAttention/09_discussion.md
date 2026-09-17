@@ -56,7 +56,7 @@ For GPT-2 at $L = 512$:
 | Config | VRAM | Inference | Accuracy |
 |---|---|---|---|
 | Baseline | 793 MB | 4.2 s | 79.36% |
-| ASA ($\rho=0.5$) | {{G_VRAM}} MB | {{G_TIME}} s | {{G_ACC}}% |
+| ASA ($\rho=0.5$) | 550 MB | 4.6 s | 76.5% |
 
 ## 9.5 Open Questions
 
@@ -78,6 +78,6 @@ For GPT-2 at $L = 512$:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

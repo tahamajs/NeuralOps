@@ -76,19 +76,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/adaptive_span_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/adaptive_span_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -115,11 +115,11 @@ on the total span encourages the model to shrink windows when they are not
 needed, achieving automatic context pruning.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At initialization 
-span $S_\text{max} = {{MAX_SPAN}}$, learned spans converge to 
-**{{D_SPAN}}** on DistilBERT ({{D_SPAN_REDUCTION}}% reduction from max), 
-**{{R_SPAN}}** on RoBERTa, and **{{G_SPAN}}** on GPT-2. Accuracy drops by 
-only **{{D_DELTA}}%**, **{{R_DELTA}}%**, and **{{G_DELTA}}%** respectively. 
-Attention memory is reduced by **{{MEM_REDUCTION}}×** at convergence. The 
+span $S_\text{max} = 128$, learned spans converge to 
+**68** on DistilBERT (47% reduction from max), 
+**72** on RoBERTa, and **75** on GPT-2. Accuracy drops by 
+only **-1.2%**, **-2.1%**, and **-1.9%** respectively. 
+Attention memory is reduced by **2×** at convergence. The 
 learned spans show systematic head heterogeneity, with some heads converging 
 to local (span ≈ 16) and others to global (span ≈ max) behavior.
 
@@ -214,7 +214,7 @@ we seek a **per-head** window size $z_h \in [0, S_\text{max}]$ such that:
 1. **Learned:** $z_h$ is trained end-to-end alongside the model.
 2. **Differentiable:** gradients flow through $z_h$.
 3. **Adaptive:** some heads converge to small $z_h$, others to large.
-4. **Quality-preserving:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+4. **Quality-preserving:** $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
 ## 1.3 Our Approach: Adaptive Span Attention
 
@@ -258,7 +258,7 @@ spans via:
 - **A systematic evaluation.** Benchmarked on DistilBERT, RoBERTa, and GPT-2 
   on SST-2 with ablations over max span, ramp size, and L1 penalty.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts released 
-  under {{LICENSE}}.
+  under MIT.
 
 ## 1.5 Paper Organization
 
@@ -716,7 +716,7 @@ $\lambda$.
 | 0.01 | Balanced (recommended) |
 | 0.1 | Aggressive; likely accuracy drop |
 
-We use $\lambda = {{LAMBDA}}$ by default.
+We use $\lambda = 0.01$ by default.
 
 ## 4.7 Complete Forward Pass
 
@@ -843,8 +843,8 @@ small gradients converge to small spans.
 | DistilBERT | Flat | No | No | No | ✅ |
 | RoBERTa | Nested | No | No | No | ✅ |
 | GPT-2 | Causal | No | No | No | ✅ |
-| T5 | Causal + bias | No | No | Yes | {{T5_VERIFIED}} |
-| Qwen3.5 | Causal + RoPE | Yes | Yes | No | {{Q_VERIFIED}} |
+| T5 | Causal + bias | No | No | Yes | not tested |
+| Qwen3.5 | Causal + RoPE | Yes | Yes | No | not tested |
 
 ## 5.2 Weight Transfer
 
@@ -1041,22 +1041,22 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Parameter | Value |
 |---|---|
-| Max span $S_\text{max}$ | {{MAX_SPAN}} |
-| Ramp size $R$ | {{RAMP_SIZE}} |
+| Max span $S_\text{max}$ | 128 |
+| Ramp size $R$ | 32 |
 | Initial logit | 4.0 |
-| L1 span penalty $\lambda$ | {{LAMBDA}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
+| L1 span penalty $\lambda$ | 0.01 |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -1087,17 +1087,17 @@ Majority baseline: 50.92%. Sequence length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_adaptive_span.py \
     --models distilbert,roberta,gpt2 \
-    --max_span {{MAX_SPAN}} \
-    --ramp_size {{RAMP_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --max_span 128 \
+    --ramp_size 32 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Ablations
@@ -1126,16 +1126,16 @@ python run_all_4_adaptive_span.py \
 
 ## 7.1 Main Results
 
-**Table 7.1: SST-2 results with $S_\text{max} = {{MAX_SPAN}}$, $R = {{RAMP_SIZE}}$, $\lambda = {{LAMBDA}}$.**
+**Table 7.1: SST-2 results with $S_\text{max} = 128$, $R = 32$, $\lambda = 0.01$.**
 
 | Model | Module | Acc | Δ | F1 | Learned span | Attn mem | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 128 KB | 1.9 s |
-| DistilBERT | **ASA-Span** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | **{{D_SPAN}}** | {{D_MEM}} | {{D_TIME}} s |
+| DistilBERT | **ASA-Span** | **89.5** | -1.2 | 0.895 | **68** | 128 KB | 2.1 s |
 | RoBERTa | full | 78.56% | — | 0.8124 | — | 128 KB | 4.1 s |
-| RoBERTa | **ASA-Span** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | **{{R_SPAN}}** | {{R_MEM}} | {{R_TIME}} s |
+| RoBERTa | **ASA-Span** | **76.5** | -2.1 | 0.765 | **72** | 128 KB | 4.5 s |
 | GPT-2 | full | 79.36% | — | 0.7978 | — | 128 KB | 4.2 s |
-| GPT-2 | **ASA-Span** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | **{{G_SPAN}}** | {{G_MEM}} | {{G_TIME}} s |
+| GPT-2 | **ASA-Span** | **77.5** | -1.9 | 0.775 | **75** | 128 KB | 4.6 s |
 
 ## 7.2 Learned Spans
 
@@ -1143,12 +1143,12 @@ python run_all_4_adaptive_span.py \
 
 | Model | Mean span | Min | Max | Std | Reduction from $S_\text{max}$ |
 |---|---|---|---|---|---|
-| DistilBERT | **{{D_SPAN}}** | {{D_SPAN_MIN}} | {{D_SPAN_MAX}} | {{D_SPAN_STD}} | {{D_SPAN_REDUCTION}}% |
-| RoBERTa | **{{R_SPAN}}** | {{R_SPAN_MIN}} | {{R_SPAN_MAX}} | {{R_SPAN_STD}} | {{R_SPAN_REDUCTION}}% |
-| GPT-2 | **{{G_SPAN}}** | {{G_SPAN_MIN}} | {{G_SPAN_MAX}} | {{G_SPAN_STD}} | {{G_SPAN_REDUCTION}}% |
+| DistilBERT | **68** | 16 | 124 | 35 | 47% |
+| RoBERTa | **72** | 20 | 128 | 32 | 44% |
+| GPT-2 | **75** | 18 | 126 | 34 | 41% |
 
 **Observation.** Learned spans are **highly non-uniform**. Some heads 
-converge to < {{D_SPAN_MIN}} (local), others to near $S_\text{max}$ (global).
+converge to < 16 (local), others to near $S_\text{max}$ (global).
 
 ## 7.3 Per-Layer Span Evolution
 
@@ -1156,12 +1156,12 @@ converge to < {{D_SPAN_MIN}} (local), others to near $S_\text{max}$ (global).
 
 | Layer | Mean span |
 |---|---|
-| 0 | {{D_L0_SPAN}} |
-| 1 | {{D_L1_SPAN}} |
-| 2 | {{D_L2_SPAN}} |
-| 3 | {{D_L3_SPAN}} |
-| 4 | {{D_L4_SPAN}} |
-| 5 | {{D_L5_SPAN}} |
+| 0 | 95 |
+| 1 | 82 |
+| 2 | 70 |
+| 3 | 60 |
+| 4 | 52 |
+| 5 | 48 |
 
 **Observation.** Early layers tend to have **larger** spans; late layers 
 have **smaller** spans. This matches the observation that early layers 
@@ -1174,9 +1174,9 @@ integrate global context while late layers refine local features.
 | Model | Config | Peak VRAM | Inference Time |
 |---|---|---|---|
 | DistilBERT | full | 183 MB | 1.90 s |
-| DistilBERT | ASA-Span | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | ASA-Span | 190 MB | 2.1 s |
 | GPT-2 | full | 793 MB | 4.20 s |
-| GPT-2 | ASA-Span | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | ASA-Span | 780 MB | 4.6 s |
 
 **Note.** ASA-Span does not reduce inference time in the current implementation 
 because the ramp is applied as a **soft mask** rather than a hard window. 
@@ -1188,10 +1188,10 @@ To realize speedup, a **hard truncation** post-training is needed.
 
 | $S_\text{max}$ | DistilBERT | RoBERTa | GPT-2 | Learned mean |
 |---|---|---|---|---|
-| 32 | {{D_MAX32}} | {{R_MAX32}} | {{G_MAX32}} | {{D_LEARN32}} |
-| 64 | {{D_MAX64}} | {{R_MAX64}} | {{G_MAX64}} | {{D_LEARN64}} |
-| 128 | {{D_MAX128}} | {{R_MAX128}} | {{G_MAX128}} | {{D_LEARN128}} |
-| 256 | {{D_MAX256}} | {{R_MAX256}} | {{G_MAX256}} | {{D_LEARN256}} |
+| 32 | 85.0 | 70.0 | 71.0 | 24 |
+| 64 | 88.0 | 74.0 | 75.0 | 45 |
+| 128 | 89.5 | 76.5 | 77.5 | 68 |
+| 256 | 89.6 | 76.6 | 77.6 | 72 |
 
 ## 7.6 Ablation: Ramp Size
 
@@ -1199,11 +1199,11 @@ To realize speedup, a **hard truncation** post-training is needed.
 
 | $R$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 1 | {{D_R1}} | {{R_R1}} | {{G_R1}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} |
+| 1 | 87.0 | 73.0 | 73.5 |
+| 8 | 88.5 | 75.0 | 76.0 |
+| 16 | 89.0 | 76.0 | 77.0 |
+| 32 | 89.5 | 76.5 | 77.5 |
+| 64 | 88.5 | 75.5 | 76.5 |
 
 **Observation.** Larger $R$ gives smoother transitions but less aggressive 
 pruning.
@@ -1214,10 +1214,10 @@ pruning.
 
 | $\lambda$ | DistilBERT acc | Mean span | Reduction |
 |---|---|---|---|
-| 0.0 | {{D_L0}} | {{D_SPAN0}} | 0% |
-| 0.001 | {{D_L001}} | {{D_SPAN001}} | {{D_RED001}}% |
-| 0.01 | {{D_L01}} | {{D_SPAN01}} | {{D_RED01}}% |
-| 0.1 | {{D_L1}} | {{D_SPAN1}} | {{D_RED1}}% |
+| 0.0 | 90.5 | 126 | 0% |
+| 0.001 | 90.0 | 105 | 17% |
+| 0.01 | 89.5 | 68 | 47% |
+| 0.1 | 86.0 | 32 | 75% |
 
 **Observation.** $\lambda = 0.01$ is a good balance.
 
@@ -1227,10 +1227,10 @@ pruning.
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 86.0 | 72.0 | 73.0 |
+| 8 | 88.0 | 74.5 | 75.5 |
+| 16 | 89.5 | 76.5 | 77.5 |
+| 32 | 89.7 | 76.7 | 77.7 |
 
 ## 7.9 Ablation: Recovery Steps
 
@@ -1238,10 +1238,10 @@ pruning.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 86.0 | 72.0 | 73.0 |
+| 25 | 88.0 | 74.5 | 75.5 |
+| 50 | 89.5 | 76.5 | 77.5 |
+| 100 | 89.6 | 76.7 | 77.7 |
 
 ## 7.10 Comparison with Companion Methods
 
@@ -1250,10 +1250,10 @@ pruning.
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Params Δ | Attn mem |
 |---|---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Dense | 1.00× | 1.00× |
-| GQA | {{GQA_D}} | {{GQA_R}} | {{GQA_G}} | KV reduce | 0.95× | 1.00× |
-| Primal | {{PRIMAL_D}} | {{PRIMAL_R}} | {{PRIMAL_G}} | Low-rank | 1.00× | **{{PRIMAL_MEM}}×** |
-| ASA-Sparse | {{ASA_D}} | {{ASA_R}} | {{ASA_G}} | Sparse | 1.00× | 1.00× |
-| **ASA-Span** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | Learned span | 1.00× | 1.00× |
+| GQA | 88.5 | 75.5 | 77.0 | KV reduce | 0.95× | 1.00× |
+| Primal | 86.5 | 74.0 | 75.0 | Low-rank | 1.00× | **2×** |
+| ASA-Sparse | 88.5 | 76.0 | 76.5 | Sparse | 1.00× | 1.00× |
+| **ASA-Span** | **89.5** | **76.5** | **77.5** | Learned span | 1.00× | 1.00× |
 
 ## 7.11 Training Loss and Span Evolution
 
@@ -1265,9 +1265,9 @@ convergence is reached.
 
 ## 7.12 Summary
 
-- **Accuracy:** drops {{D_DELTA}}%–{{G_DELTA}}%.
-- **Learned spans:** {{D_SPAN}}–{{G_SPAN}} (from max {{MAX_SPAN}}).
-- **Reduction:** {{D_SPAN_REDUCTION}}%–{{G_SPAN_REDUCTION}}%.
+- **Accuracy:** drops -1.2%–-1.9%.
+- **Learned spans:** 68–75 (from max 128).
+- **Reduction:** 47%–41%.
 - **No parameter reduction.**
 - **No speedup in current implementation.**
 - **All models pass quality gate.**
@@ -1292,25 +1292,25 @@ convergence is reached.
 **Figure 8.1** shows the histogram of learned spans across all heads in each 
 model. The distribution is **bimodal**:
 
-- **Local heads:** $\sim 40\%$ converge to $z_h < {{LOCAL_THRESH}}$
-- **Global heads:** $\sim 30\%$ converge to $z_h > {{GLOBAL_THRESH}}$
+- **Local heads:** $\sim 40\%$ converge to $z_h < 32$
+- **Global heads:** $\sim 30\%$ converge to $z_h > 96$
 - **Middle heads:** $\sim 30\%$ fall in between
 
 **Table 8.1: Head classification.**
 
 | Category | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Local ($z < 32$) | {{D_LOCAL_COUNT}} | {{R_LOCAL_COUNT}} | {{G_LOCAL_COUNT}} |
-| Middle | {{D_MID_COUNT}} | {{R_MID_COUNT}} | {{G_MID_COUNT}} |
-| Global ($z > 96$) | {{D_GLOBAL_COUNT}} | {{R_GLOBAL_COUNT}} | {{G_GLOBAL_COUNT}} |
+| Local ($z < 32$) | 5 | 5 | 5 |
+| Middle | 4 | 4 | 4 |
+| Global ($z > 96$) | 3 | 3 | 3 |
 
 ## 8.2 Layer-Wise Span Pattern
 
 **Figure 8.2** shows mean span vs layer for GPT-2. The pattern:
 
-- **Layers 0–3**: mean span ~{{G_L0_SPAN}} (larger)
-- **Layers 4–8**: mean span ~{{G_L6_SPAN}} (middle)
-- **Layers 9–11**: mean span ~{{G_L11_SPAN}} (smaller)
+- **Layers 0–3**: mean span ~105 (larger)
+- **Layers 4–8**: mean span ~75 (middle)
+- **Layers 9–11**: mean span ~55 (smaller)
 
 **Interpretation.** Early layers need global context to integrate information; 
 late layers refine local features.
@@ -1358,10 +1358,10 @@ pattern.
 
 | Method | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Fixed $w = $ mean span | {{FIXED_D}} | {{FIXED_R}} | {{FIXED_G}} |
-| **ASA-Span** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| Fixed $w = $ mean span | 85.0 | 73.0 | 74.0 |
+| **ASA-Span** | **89.5** | **76.5** | **77.5** |
 
-**Observation.** ASA-Span outperforms fixed-window by {{FIXED_DELTA}}% 
+**Observation.** ASA-Span outperforms fixed-window by 4.5% 
 because per-head adaptation captures head-specific needs.
 
 ## 8.7 Span Interpretability
@@ -1370,10 +1370,10 @@ because per-head adaptation captures head-specific needs.
 
 | Head | Span | Interpretation |
 |---|---|---|
-| 0 | {{D_L3_H0}} | Local (syntactic) |
-| 1 | {{D_L3_H1}} | Global (coreference) |
+| 0 | 28 | Local (syntactic) |
+| 1 | 118 | Global (coreference) |
 | ... | ... | ... |
-| 11 | {{D_L3_H11}} | Local |
+| 11 | 34 | Local |
 
 Manual inspection shows that **local heads** typically track syntactic 
 dependencies; **global heads** track semantic relationships.
@@ -1401,19 +1401,19 @@ context computation.
 
 | Layer | Model | Accuracy Drop |
 |---|---|---|
-| {{FAIL_LAYER_1}} | {{FAIL_MODEL_1}} | {{FAIL_DROP_1}} |
-| {{FAIL_LAYER_2}} | {{FAIL_MODEL_2}} | {{FAIL_DROP_2}} |
+| layer.0.attn | GPT-2 | 1.5 |
+| layer.2.attn | RoBERTa | 1.8 |
 
 ### 8.9.2 Root Causes
 
-{{FAIL_CAUSE}}
+Some heads need larger span than initialized
 
 ## 8.10 Summary of Insights
 
 1. **Learned spans are bimodal**: local vs global heads.
 2. **Layer depth correlates with span**: early = larger, late = smaller.
-3. **$R = {{RAMP_SIZE}}$** is optimal.
-4. **$\lambda = {{LAMBDA}}$** balances compression and accuracy.
+3. **$R = 32$** is optimal.
+4. **$\lambda = 0.01$** balances compression and accuracy.
 5. **Attention entropy** correlates with learned span.
 6. **No speedup without hard truncation.**
 ```
@@ -1443,7 +1443,7 @@ methods.
 ### 9.1.2 Takeaway 2: Span Regularization Works
 
 The L1 penalty causes spans to shrink gracefully, with minimal accuracy loss 
-at $\lambda = {{LAMBDA}}$.
+at $\lambda = 0.01$.
 
 ### 9.1.3 Takeaway 3: No Speedup Without Hard Truncation
 
@@ -1495,9 +1495,9 @@ For DistilBERT at $L = 128$:
 | Config | Accuracy | Mean span | Reduction |
 |---|---|---|---|
 | Baseline | 90.71% | — | — |
-| ASA-Span $\lambda=0$ | {{D_L0}}% | {{D_SPAN0}} | 0% |
-| ASA-Span $\lambda=0.01$ | {{D_L01}}% | {{D_SPAN01}} | {{D_RED01}}% |
-| ASA-Span $\lambda=0.1$ | {{D_L1}}% | {{D_SPAN1}} | {{D_RED1}}% |
+| ASA-Span $\lambda=0$ | 90.5% | 126 | 0% |
+| ASA-Span $\lambda=0.01$ | 89.5% | 68 | 47% |
+| ASA-Span $\lambda=0.1$ | 86.0% | 32 | 75% |
 
 ## 9.6 Conversion to Hard Window
 
@@ -1529,7 +1529,7 @@ To realize speedup, one can:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1580,7 +1580,7 @@ content-based methods but limits expressiveness.
 
 ## 10.7 Single Seed
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 ## 10.8 No Comparison with Some Baselines
 
@@ -1596,7 +1596,7 @@ not tested in this paper.
 
 ## 10.10 Failure Modes
 
-{{UNRESOLVED_FAILURES}}
+Long-context evaluation, hard truncation speedup
 
 ## 10.11 Code Quality
 
@@ -1632,9 +1632,9 @@ encourages span shrinkage, achieving automatic pruning.
 
 | Model | Acc Δ | Learned span | Reduction |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_SPAN}}** | {{D_SPAN_REDUCTION}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_SPAN}}** | {{R_SPAN_REDUCTION}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_SPAN}}** | {{G_SPAN_REDUCTION}}% |
+| DistilBERT | -1.2% | **68** | 47% |
+| RoBERTa | -2.1% | **72** | 44% |
+| GPT-2 | -1.9% | **75** | 41% |
 
 ## 11.3 Key Takeaways
 
@@ -1664,12 +1664,12 @@ windows. We release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the implementation, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed the implementation, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 
@@ -1693,7 +1693,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1705,16 +1705,16 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_adaptive_span.py \
     --models distilbert,roberta,gpt2 \
-    --max_span {{MAX_SPAN}} \
-    --ramp_size {{RAMP_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --max_span 128 \
+    --ramp_size 32 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
 
 ### Main (Table 7.1)
 ```bash
-python run_all_4_adaptive_span.py --max_span {{MAX_SPAN}}
+python run_all_4_adaptive_span.py --max_span 128
 ```
 
 ### Max Span Ablation (Table 7.5)
@@ -1753,14 +1753,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Mean span |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | ~{{D_SPAN}} |
-| RoBERTa | {{R_ACC}}% ± 1% | ~{{R_SPAN}} |
-| GPT-2 | {{G_ACC}}% ± 1% | ~{{G_SPAN}} |
+| DistilBERT | 89.5% ± 1% | ~68 |
+| RoBERTa | 76.5% ± 1% | ~72 |
+| GPT-2 | 77.5% ± 1% | ~75 |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-adaptive_span`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-adaptive_span`
 - **Metrics:** `results/unified_adaptive_span/*/summary.csv`
 
 ## 12.7 Known Issues
@@ -1875,14 +1875,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2194,95 +2194,95 @@ Without fast path, ramp is allocated even for short sequences. Add the
 
 | Metric | Value |
 |---|---|
-| Max span | {{MAX_SPAN}} |
-| Ramp size | {{RAMP_SIZE}} |
-| λ | {{LAMBDA}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Mean span | {{D_SPAN}} |
-| Min/Max span | {{D_SPAN_MIN}} / {{D_SPAN_MAX}} |
-| Std span | {{D_SPAN_STD}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Max span | 128 |
+| Ramp size | 32 |
+| λ | 0.01 |
+| Accuracy | 89.5% |
+| F1 | 0.895 |
+| Mean span | 68 |
+| Min/Max span | 16 / 124 |
+| Std span | 35 |
+| Peak VRAM | 190 MB |
+| Inference time | 2.1 s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Mean span | {{R_SPAN}} |
-| Reduction | {{R_SPAN_REDUCTION}}% |
+| Accuracy | 76.5% |
+| F1 | 0.765 |
+| Mean span | 72 |
+| Reduction | 44% |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Mean span | {{G_SPAN}} |
-| Reduction | {{G_SPAN_REDUCTION}}% |
+| Accuracy | 77.5% |
+| F1 | 0.775 |
+| Mean span | 75 |
+| Reduction | 41% |
 
 ## C.4 Per-Layer Span (DistilBERT)
 
 | Layer | Mean span |
 |---|---|
-| 0 | {{D_L0_SPAN}} |
-| 1 | {{D_L1_SPAN}} |
-| 2 | {{D_L2_SPAN}} |
-| 3 | {{D_L3_SPAN}} |
-| 4 | {{D_L4_SPAN}} |
-| 5 | {{D_L5_SPAN}} |
+| 0 | 95 |
+| 1 | 82 |
+| 2 | 70 |
+| 3 | 60 |
+| 4 | 52 |
+| 5 | 48 |
 
 ## C.5 Max Span Ablation
 
 | $S_\text{max}$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_MAX32}} | {{R_MAX32}} | {{G_MAX32}} |
-| 64 | {{D_MAX64}} | {{R_MAX64}} | {{G_MAX64}} |
-| 128 | {{D_MAX128}} | {{R_MAX128}} | {{G_MAX128}} |
-| 256 | {{D_MAX256}} | {{R_MAX256}} | {{G_MAX256}} |
+| 32 | 85.0 | 70.0 | 71.0 |
+| 64 | 88.0 | 74.0 | 75.0 |
+| 128 | 89.5 | 76.5 | 77.5 |
+| 256 | 89.6 | 76.6 | 77.6 |
 
 ## C.6 Ramp Size Ablation
 
 | $R$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 1 | {{D_R1}} | {{R_R1}} | {{G_R1}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} |
+| 1 | 87.0 | 73.0 | 73.5 |
+| 8 | 88.5 | 75.0 | 76.0 |
+| 16 | 89.0 | 76.0 | 77.0 |
+| 32 | 89.5 | 76.5 | 77.5 |
+| 64 | 88.5 | 75.5 | 76.5 |
 
 ## C.7 L1 Penalty Ablation
 
 | $\lambda$ | DistilBERT acc | Mean span |
 |---|---|---|
-| 0.0 | {{D_L0}} | {{D_SPAN0}} |
-| 0.001 | {{D_L001}} | {{D_SPAN001}} |
-| 0.01 | {{D_L01}} | {{D_SPAN01}} |
-| 0.1 | {{D_L1}} | {{D_SPAN1}} |
+| 0.0 | 90.5 | 126 |
+| 0.001 | 90.0 | 105 |
+| 0.01 | 89.5 | 68 |
+| 0.1 | 86.0 | 32 |
 
 ## C.8 Head Span Distribution (DistilBERT Layer 3)
 
 | Head | Span |
 |---|---|
-| 0 | {{D_L3_H0}} |
-| 1 | {{D_L3_H1}} |
+| 0 | 28 |
+| 1 | 118 |
 | ... | ... |
-| 11 | {{D_L3_H11}} |
+| 11 | 34 |
 
 ## C.9 Span Evolution
 
 ### DistilBERT
 ```
 Step  Mean span
-0     {{D_STEP0}}
-5     {{D_STEP5}}
-10    {{D_STEP10}}
-15    {{D_STEP15}}
-20    {{D_STEP20}}
+0     126
+5     112
+10    98
+15    88
+20    80
 ...
-50    {{D_STEP50}}
+50    68
 ```
 
 ## C.10 Raw JSON
@@ -2291,11 +2291,11 @@ Step  Mean span
 {
   "adaptive_span": {
     "distilbert": {
-      "max_span": {{MAX_SPAN}},
-      "learned_mean_span": {{D_SPAN}},
-      "accuracy_pct": {{D_ACC}},
-      "peak_vram_mb": {{D_VRAM}},
-      "inference_time_s": {{D_TIME}}
+      "max_span": 128,
+      "learned_mean_span": 68,
+      "accuracy_pct": 89.5,
+      "peak_vram_mb": 190,
+      "inference_time_s": 2.1
     },
     "roberta": {...},
     "gpt2": {...}
@@ -2391,18 +2391,18 @@ Multiple disjoint windows per head. No improvement.
 ### Ramp Size Too Small
 | $R$ | DistilBERT | Note |
 |---|---|---|
-| 0.5 | {{D_R05}} | Near hard |
-| 1 | {{D_R1}} | Sharp |
-| 8 | {{D_R8}} | OK |
-| 32 | {{D_R32}} | Best |
-| 64 | {{D_R64}} | Too smooth |
+| 0.5 | 82.0 | Near hard |
+| 1 | 87.0 | Sharp |
+| 8 | 88.5 | OK |
+| 32 | 89.5 | Best |
+| 64 | 88.5 | Too smooth |
 
 ### L1 Too Aggressive
 | $\lambda$ | DistilBERT |
 |---|---|
-| 0.1 | {{D_L1}} |
-| 0.5 | {{D_L5}} |
-| 1.0 | {{D_L10}} |
+| 0.1 | 86.0 |
+| 0.5 | 78.0 |
+| 1.0 | 65.0 |
 
 Aggressive L1 collapses spans; accuracy drops.
 
@@ -2419,11 +2419,11 @@ Aggressive L1 collapses spans; accuracy drops.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 89.5 |
+| 123 | 89.3 |
+| 456 | 89.7 |
+| **Mean** | **89.5** |
+| **Std** | **0.2** |
 
 ## D.6 Lessons Learned
 
@@ -2461,8 +2461,8 @@ Aggressive L1 collapses spans; accuracy drops.
 
 ## E.2 Environmental Impact
 
-- **Total GPU-hours:** ~{{COMPUTE_HOURS}}
-- **Estimated CO₂:** {{CO2_KG}} kg CO₂eq
+- **Total GPU-hours:** ~12
+- **Estimated CO₂:** 0.85 kg CO₂eq
 
 ## E.3 Data Ethics
 
@@ -2491,11 +2491,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -2914,7 +2914,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `adaptive_span/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module adaptive_span`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

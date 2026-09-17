@@ -7,19 +7,19 @@
 # Galerkin Attention: Petrov-Galerkin Projection onto Orthonormal Bases for Transformer Self-Attention
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/galerkin.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1 (initial draft)
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/galerkin.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -47,8 +47,8 @@ to standard scaled dot-product attention to preserve causality.
 
 We evaluate on three pretrained models — DistilBERT, RoBERTa, and GPT-2 — 
 on SST-2 with LoRA recovery. Our results are **negative for encoders**: 
-DistilBERT drops from 90.71% to **{{D_ACC}}%** (Δ = {{D_DELTA}}) and RoBERTa 
-collapses from 78.56% to **{{R_ACC}}%** (Δ = {{R_DELTA}}), the latter at 
+DistilBERT drops from 90.71% to **50.92%** (Δ = -39.79) and RoBERTa 
+collapses from 78.56% to **50.92%** (Δ = -27.64), the latter at 
 chance level. GPT-2 shows no change (Δ = 0.00%) because the causal fallback 
 path leaves attention unmodified. We attribute encoder failures to the 
 **data-independent, fixed DCT basis**, which cannot capture the 

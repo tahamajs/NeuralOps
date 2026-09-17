@@ -41,7 +41,7 @@ content-based methods but limits expressiveness.
 
 ## 10.7 Single Seed
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 ## 10.8 No Comparison with Some Baselines
 
@@ -57,7 +57,7 @@ not tested in this paper.
 
 ## 10.10 Failure Modes
 
-{{UNRESOLVED_FAILURES}}
+Long-context evaluation, hard truncation speedup
 
 ## 10.11 Code Quality
 

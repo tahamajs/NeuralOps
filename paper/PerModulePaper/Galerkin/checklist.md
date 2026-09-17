@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `galerkin/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module galerkin`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## CRITICAL — Honest Reporting
 - [ ] Abstract states negative result for encoders

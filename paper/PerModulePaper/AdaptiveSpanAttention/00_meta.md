@@ -14,19 +14,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/adaptive_span_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/adaptive_span_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -53,11 +53,11 @@ on the total span encourages the model to shrink windows when they are not
 needed, achieving automatic context pruning.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At initialization 
-span $S_\text{max} = {{MAX_SPAN}}$, learned spans converge to 
-**{{D_SPAN}}** on DistilBERT ({{D_SPAN_REDUCTION}}% reduction from max), 
-**{{R_SPAN}}** on RoBERTa, and **{{G_SPAN}}** on GPT-2. Accuracy drops by 
-only **{{D_DELTA}}%**, **{{R_DELTA}}%**, and **{{G_DELTA}}%** respectively. 
-Attention memory is reduced by **{{MEM_REDUCTION}}×** at convergence. The 
+span $S_\text{max} = 128$, learned spans converge to 
+**68** on DistilBERT (47% reduction from max), 
+**72** on RoBERTa, and **75** on GPT-2. Accuracy drops by 
+only **-1.2%**, **-2.1%**, and **-1.9%** respectively. 
+Attention memory is reduced by **2×** at convergence. The 
 learned spans show systematic head heterogeneity, with some heads converging 
 to local (span ≈ 16) and others to global (span ≈ max) behavior.
 

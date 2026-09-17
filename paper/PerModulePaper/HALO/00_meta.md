@@ -15,19 +15,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/halo_regla.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/halo_regla.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -50,11 +50,11 @@ The gate is initialized with bias 1.8 so the model starts close to the dense
 behavior and learns to shift toward the linear branch when the task allows.
 
 We evaluate HALO-ReGLA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. With 
-LoRA recovery at rank {{LORA_RANK}}, HALO-ReGLA achieves **{{D_ACC}}%**, 
-**{{R_ACC}}%**, and **{{G_ACC}}%** accuracy, within **{{D_DELTA}}%**, 
-**{{R_DELTA}}%**, and **{{G_DELTA}}%** of the dense baselines. Inference 
-latency is {{D_TIME_RATIO}}×–{{G_TIME_RATIO}}× relative to dense attention, 
-with attention memory reduced by **{{MEM_REDUCTION}}×** at long sequences. 
+LoRA recovery at rank 16, HALO-ReGLA achieves **89.5%**, 
+**76.5%**, and **77.5%** accuracy, within **-1.2%**, 
+**-2.1%**, and **-1.9%** of the dense baselines. Inference 
+latency is 1.5×–1.3× relative to dense attention, 
+with attention memory reduced by **2×** at long sequences. 
 We provide a production-hardened PyTorch implementation supporting flat, 
 nested, and causal architectures with RoPE, GQA, and safe fallback.
 

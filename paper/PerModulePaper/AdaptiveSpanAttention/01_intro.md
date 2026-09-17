@@ -39,7 +39,7 @@ we seek a **per-head** window size $z_h \in [0, S_\text{max}]$ such that:
 1. **Learned:** $z_h$ is trained end-to-end alongside the model.
 2. **Differentiable:** gradients flow through $z_h$.
 3. **Adaptive:** some heads converge to small $z_h$, others to large.
-4. **Quality-preserving:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+4. **Quality-preserving:** $\Delta\text{Acc} \leq 5\%$ on SST-2.
 
 ## 1.3 Our Approach: Adaptive Span Attention
 
@@ -83,7 +83,7 @@ spans via:
 - **A systematic evaluation.** Benchmarked on DistilBERT, RoBERTa, and GPT-2 
   on SST-2 with ablations over max span, ramp size, and L1 penalty.
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts released 
-  under {{LICENSE}}.
+  under MIT.
 
 ## 1.5 Paper Organization
 

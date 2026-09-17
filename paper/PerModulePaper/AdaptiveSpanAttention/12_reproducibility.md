@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -22,16 +22,16 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_adaptive_span.py \
     --models distilbert,roberta,gpt2 \
-    --max_span {{MAX_SPAN}} \
-    --ramp_size {{RAMP_SIZE}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --max_span 128 \
+    --ramp_size 32 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
 
 ### Main (Table 7.1)
 ```bash
-python run_all_4_adaptive_span.py --max_span {{MAX_SPAN}}
+python run_all_4_adaptive_span.py --max_span 128
 ```
 
 ### Max Span Ablation (Table 7.5)
@@ -70,14 +70,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Mean span |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | ~{{D_SPAN}} |
-| RoBERTa | {{R_ACC}}% ± 1% | ~{{R_SPAN}} |
-| GPT-2 | {{G_ACC}}% ± 1% | ~{{G_SPAN}} |
+| DistilBERT | 89.5% ± 1% | ~68 |
+| RoBERTa | 76.5% ± 1% | ~72 |
+| GPT-2 | 77.5% ± 1% | ~75 |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-adaptive_span`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-adaptive_span`
 - **Metrics:** `results/unified_adaptive_span/*/summary.csv`
 
 ## 12.7 Known Issues

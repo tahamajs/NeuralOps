@@ -33,20 +33,20 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Parameter | Value |
 |---|---|
-| Hybrid ratio | {{HYBRID_RATIO}} |
-| Gate init bias | {{GATE_BIAS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
+| Hybrid ratio | 4 |
+| Gate init bias | 1.8 |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -78,16 +78,16 @@ Majority baseline: 50.92%. Sequence length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_halo_regla.py \
     --models distilbert,roberta,gpt2 \
-    --gate_init_bias {{GATE_BIAS}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --gate_init_bias 1.8 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Ablations

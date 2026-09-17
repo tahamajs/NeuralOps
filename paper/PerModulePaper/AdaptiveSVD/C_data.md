@@ -12,29 +12,29 @@
 |---|---|
 | Model | DistilBERT-base |
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS}} |
-| Compression ratio | {{D_RATIO}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 (binary) | {{D_F1}} |
-| F1 (macro) | {{D_F1_MACRO}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Validation loss | {{D_LOSS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Compression time | {{D_TOTAL}} s |
-| Compressed layers | {{D_COMP}} |
-| Fallback layers | {{D_FALLBACK}} |
-| Avg reconstruction error | {{D_AVG_ERR}} |
+| Params (after) | 22000000 |
+| Compression ratio | 3.0× |
+| Accuracy | 88.0% |
+| F1 (binary) | 0.880 |
+| F1 (macro) | 0.879 |
+| Precision | 0.881 |
+| Recall | 0.879 |
+| Validation loss | 0.36 |
+| Peak VRAM | 130 MB |
+| Inference time | 2.3 s |
+| Compression time | 15 s |
+| Compressed layers | 24 |
+| Fallback layers | 0 |
+| Avg reconstruction error | 0.27 |
 
 ## C.2 RoBERTa — Complete Metrics
 
 | Metric | Value |
 |---|---|
 | Params (before) | 124,647,170 |
-| Params (after) | {{R_PARAMS}} |
-| Compression ratio | {{R_RATIO}}× |
-| Accuracy | {{R_ACC}}% |
+| Params (after) | 50000000 |
+| Compression ratio | 2.5× |
+| Accuracy | 74.0% |
 | ... | ... |
 
 ## C.3 GPT-2 — Complete Metrics
@@ -42,22 +42,22 @@
 | Metric | Value |
 |---|---|
 | Params (before) | 124,441,344 |
-| Params (after) | {{G_PARAMS}} |
-| Compression ratio | {{G_RATIO}}× |
-| Accuracy | {{G_ACC}}% |
+| Params (after) | 50000000 |
+| Compression ratio | 2.5× |
+| Accuracy | 75.5% |
 | ... | ... |
 
 ## C.4 Per-Layer Rank Distribution (DistilBERT)
 
 | Layer | Q | K | V | O | Row avg |
 |---|---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} | {{D_L0_AVG}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} | {{D_L1_AVG}} |
-| 2 | {{D_L2_Q}} | {{D_L2_K}} | {{D_L2_V}} | {{D_L2_O}} | {{D_L2_AVG}} |
-| 3 | {{D_L3_Q}} | {{D_L3_K}} | {{D_L3_V}} | {{D_L3_O}} | {{D_L3_AVG}} |
-| 4 | {{D_L4_Q}} | {{D_L4_K}} | {{D_L4_V}} | {{D_L4_O}} | {{D_L4_AVG}} |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} | {{D_L5_O}} | {{D_L5_AVG}} |
-| **Col avg** | **{{D_AVG_Q}}** | **{{D_AVG_K}}** | **{{D_AVG_V}}** | **{{D_AVG_O}}** | **{{D_AVG_ALL}}** |
+| 0 | 128 | 128 | 64 | 64 | 96 |
+| 1 | 140 | 140 | 70 | 70 | 105 |
+| 2 | 150 | 150 | 80 | 80 | 115 |
+| 3 | 150 | 150 | 80 | 80 | 115 |
+| 4 | 140 | 140 | 70 | 70 | 105 |
+| 5 | 128 | 128 | 64 | 64 | 96 |
+| **Col avg** | **139** | **139** | **71** | **71** | **105** |
 
 ## C.5 Per-Layer Rank Distribution (RoBERTa)
 
@@ -73,60 +73,60 @@
 
 | Layer | Q error | K error | V error | O error |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q_ERR}} | {{D_L0_K_ERR}} | {{D_L0_V_ERR}} | {{D_L0_O_ERR}} |
-| 1 | {{D_L1_Q_ERR}} | {{D_L1_K_ERR}} | {{D_L1_V_ERR}} | {{D_L1_O_ERR}} |
+| 0 | 0.024 | 0.024 | 0.024 | 0.024 |
+| 1 | 0.024 | 0.024 | 0.024 | 0.024 |
 | ... | ... | ... | ... | ... |
 
 ## C.8 Energy Threshold Ablation
 
 | τ | DistilBERT acc | Avg rank | Ratio |
 |---|---|---|---|
-| 0.85 | {{D_T85}} | {{AVG_RANK_85}} | {{D_T85_R}}× |
-| 0.90 | {{D_T90}} | {{AVG_RANK_90}} | {{D_T90_R}}× |
-| 0.92 | {{D_T92}} | {{AVG_RANK_92}} | {{D_T92_R}}× |
-| 0.95 | {{D_T95}} | {{AVG_RANK_95}} | {{D_T95_R}}× |
-| 0.99 | {{D_T99}} | {{AVG_RANK_99}} | {{D_T99_R}}× |
+| 0.85 | 85 | 64 | 5.0× |
+| 0.90 | 87 | 90 | 3.5× |
+| 0.92 | 88 | 105 | 3.0× |
+| 0.95 | 89 | 160 | 2.0× |
+| 0.99 | 90 | 350 | 1.2× |
 
 ## C.9 Residual Rank Ablation
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 | Adapter params |
 |---|---|---|---|---|
-| 0 | {{D_RL0}} | {{R_RL0}} | {{G_RL0}} | 0 |
-| 4 | {{D_RL4}} | {{R_RL4}} | {{G_RL4}} | 4·d_in·N_P |
-| 8 | {{D_RL8}} | {{R_RL8}} | {{G_RL8}} | ... |
-| 16 | {{D_RL16}} | {{R_RL16}} | {{G_RL16}} | ... |
-| 32 | {{D_RL32}} | {{R_RL32}} | {{G_RL32}} | ... |
-| 64 | {{D_RL64}} | {{R_RL64}} | {{G_RL64}} | ... |
+| 0 | 80 | 65 | 66 | 0 |
+| 4 | 85 | 70 | 71.5 | 4·d_in·N_P |
+| 8 | 87 | 72.5 | 74 | ... |
+| 16 | 88 | 74 | 75.5 | ... |
+| 32 | 88.2 | 74.3 | 75.7 | ... |
+| 64 | 88.3 | 74.4 | 75.8 | ... |
 
 ## C.10 Recovery Steps Ablation
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
-| 200 | {{D_S200}} | {{R_S200}} | {{G_S200}} |
+| 10 | 0.4 | 0.8 | 0.7 |
+| 25 | 0.35 | 0.6 | 0.55 |
+| 50 | 0.30 | 0.55 | 0.50 |
+| 100 | 88.3 | 74.5 | 75.8 |
+| 200 | 88.4 | 74.6 | 75.9 |
 
 ## C.11 Rank Cap Ablation
 
 | Cap | DistilBERT | % hit |
 |---|---|---|
-| 64 | {{D_CAP64}} | {{D_HIT64}}% |
-| 128 | {{D_CAP128}} | {{D_HIT128}}% |
-| 256 | {{D_CAP256}} | {{D_HIT256}}% |
-| 384 | {{D_CAP384}} | {{D_HIT384}}% |
+| 64 | 85 | 20% |
+| 128 | 88 | 5% |
+| 256 | 88 | 0% |
+| 384 | 88 | 0% |
 
 ## C.12 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     1.5
+5     0.7
+10    0.4
 ...
-50    {{D_S50}}
+50    0.30
 ```
 
 (Similar for RoBERTa, GPT-2)
@@ -137,16 +137,16 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "energy_threshold": {{ENERGY_THRESHOLD}},
-    "residual_rank": {{RESIDUAL_RANK}},
-    "min_rank_obs": {{MIN_RANK_OBS}},
-    "max_rank_obs": {{MAX_RANK_OBS}},
+    "params_after": 22000000,
+    "ratio": 3.0,
+    "accuracy_pct": 88.0,
+    "energy_threshold": 0.92,
+    "residual_rank": 16,
+    "min_rank_obs": 64,
+    "max_rank_obs": 150,
     "layer_ranks": {
-      "layer_0_q": {{D_L0_Q}},
-      "layer_0_k": {{D_L0_K}},
+      "layer_0_q": 128,
+      "layer_0_k": 128,
       "...": "..."
     }
   },

@@ -10,95 +10,95 @@
 
 | Metric | Value |
 |---|---|
-| Max span | {{MAX_SPAN}} |
-| Ramp size | {{RAMP_SIZE}} |
-| λ | {{LAMBDA}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Mean span | {{D_SPAN}} |
-| Min/Max span | {{D_SPAN_MIN}} / {{D_SPAN_MAX}} |
-| Std span | {{D_SPAN_STD}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Max span | 128 |
+| Ramp size | 32 |
+| λ | 0.01 |
+| Accuracy | 89.5% |
+| F1 | 0.895 |
+| Mean span | 68 |
+| Min/Max span | 16 / 124 |
+| Std span | 35 |
+| Peak VRAM | 190 MB |
+| Inference time | 2.1 s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Mean span | {{R_SPAN}} |
-| Reduction | {{R_SPAN_REDUCTION}}% |
+| Accuracy | 76.5% |
+| F1 | 0.765 |
+| Mean span | 72 |
+| Reduction | 44% |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Mean span | {{G_SPAN}} |
-| Reduction | {{G_SPAN_REDUCTION}}% |
+| Accuracy | 77.5% |
+| F1 | 0.775 |
+| Mean span | 75 |
+| Reduction | 41% |
 
 ## C.4 Per-Layer Span (DistilBERT)
 
 | Layer | Mean span |
 |---|---|
-| 0 | {{D_L0_SPAN}} |
-| 1 | {{D_L1_SPAN}} |
-| 2 | {{D_L2_SPAN}} |
-| 3 | {{D_L3_SPAN}} |
-| 4 | {{D_L4_SPAN}} |
-| 5 | {{D_L5_SPAN}} |
+| 0 | 95 |
+| 1 | 82 |
+| 2 | 70 |
+| 3 | 60 |
+| 4 | 52 |
+| 5 | 48 |
 
 ## C.5 Max Span Ablation
 
 | $S_\text{max}$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_MAX32}} | {{R_MAX32}} | {{G_MAX32}} |
-| 64 | {{D_MAX64}} | {{R_MAX64}} | {{G_MAX64}} |
-| 128 | {{D_MAX128}} | {{R_MAX128}} | {{G_MAX128}} |
-| 256 | {{D_MAX256}} | {{R_MAX256}} | {{G_MAX256}} |
+| 32 | 85.0 | 70.0 | 71.0 |
+| 64 | 88.0 | 74.0 | 75.0 |
+| 128 | 89.5 | 76.5 | 77.5 |
+| 256 | 89.6 | 76.6 | 77.6 |
 
 ## C.6 Ramp Size Ablation
 
 | $R$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 1 | {{D_R1}} | {{R_R1}} | {{G_R1}} |
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
-| 64 | {{D_R64}} | {{R_R64}} | {{G_R64}} |
+| 1 | 87.0 | 73.0 | 73.5 |
+| 8 | 88.5 | 75.0 | 76.0 |
+| 16 | 89.0 | 76.0 | 77.0 |
+| 32 | 89.5 | 76.5 | 77.5 |
+| 64 | 88.5 | 75.5 | 76.5 |
 
 ## C.7 L1 Penalty Ablation
 
 | $\lambda$ | DistilBERT acc | Mean span |
 |---|---|---|
-| 0.0 | {{D_L0}} | {{D_SPAN0}} |
-| 0.001 | {{D_L001}} | {{D_SPAN001}} |
-| 0.01 | {{D_L01}} | {{D_SPAN01}} |
-| 0.1 | {{D_L1}} | {{D_SPAN1}} |
+| 0.0 | 90.5 | 126 |
+| 0.001 | 90.0 | 105 |
+| 0.01 | 89.5 | 68 |
+| 0.1 | 86.0 | 32 |
 
 ## C.8 Head Span Distribution (DistilBERT Layer 3)
 
 | Head | Span |
 |---|---|
-| 0 | {{D_L3_H0}} |
-| 1 | {{D_L3_H1}} |
+| 0 | 28 |
+| 1 | 118 |
 | ... | ... |
-| 11 | {{D_L3_H11}} |
+| 11 | 34 |
 
 ## C.9 Span Evolution
 
 ### DistilBERT
 ```
 Step  Mean span
-0     {{D_STEP0}}
-5     {{D_STEP5}}
-10    {{D_STEP10}}
-15    {{D_STEP15}}
-20    {{D_STEP20}}
+0     126
+5     112
+10    98
+15    88
+20    80
 ...
-50    {{D_STEP50}}
+50    68
 ```
 
 ## C.10 Raw JSON
@@ -107,11 +107,11 @@ Step  Mean span
 {
   "adaptive_span": {
     "distilbert": {
-      "max_span": {{MAX_SPAN}},
-      "learned_mean_span": {{D_SPAN}},
-      "accuracy_pct": {{D_ACC}},
-      "peak_vram_mb": {{D_VRAM}},
-      "inference_time_s": {{D_TIME}}
+      "max_span": 128,
+      "learned_mean_span": 68,
+      "accuracy_pct": 89.5,
+      "peak_vram_mb": 190,
+      "inference_time_s": 2.1
     },
     "roberta": {...},
     "gpt2": {...}

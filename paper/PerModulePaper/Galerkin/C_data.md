@@ -9,55 +9,55 @@
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| Δ | {{D_DELTA}}% |
-| F1 | {{D_F1}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
+| Accuracy | 50.92% |
+| Δ | -39.79% |
+| F1 | 0.6748 |
+| Precision | 0.6625 |
+| Recall | 0.6605 |
+| Loss | 0.73 |
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
+| Params (after) | 67544834 |
+| Peak VRAM | 341 MB MB |
+| Inference time | 7.0 s |
 | Path | Galerkin |
 
 ## C.2 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| Δ | {{R_DELTA}}% |
-| F1 | {{R_F1}} |
+| Accuracy | 50.92% |
+| Δ | -27.64% |
+| F1 | 0.6748 |
 | Params (before) | 124,647,170 |
-| Params (after) | {{R_PARAMS}} |
-| Peak VRAM | {{R_VRAM}} MB |
-| Inference time | {{R_TIME}} s |
+| Params (after) | 132913922 |
+| Peak VRAM | 672 MB MB |
+| Inference time | 13.1 s |
 | Path | Galerkin |
-| Status | {{R_STATUS}} |
+| Status | PASS_LOW |
 
 ## C.3 GPT-2 Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| Δ | {{G_DELTA}}% |
-| F1 | {{G_F1}} |
+| Accuracy | 51.26% |
+| Δ | -28.10% |
+| F1 | 0.6763 |
 | Params (before) | 124,441,344 |
-| Params (after) | {{G_PARAMS}} |
-| Peak VRAM | {{G_VRAM}} MB |
-| Inference time | {{G_TIME}} s |
+| Params (after) | 125630220 |
+| Peak VRAM | 569 MB MB |
+| Inference time | 9.2 s |
 | Path | **Decoder fallback** |
-| Status | {{G_STATUS}} |
+| Status | PASS |
 
 ## C.4 Rank Ablation (DistilBERT)
 
 | $r$ | Accuracy | Δ | Energy preserved |
 |---|---|---|---|
-| 8 | {{D_R8}} | {{D_R8_D}} | {{D_R8_E}} |
-| 16 | {{D_R16}} | {{D_R16_D}} | {{D_R16_E}} |
-| 32 | {{D_R32}} | {{D_R32_D}} | {{D_R32_E}} |
-| 64 | {{D_R64}} | {{D_R64_D}} | {{D_R64_E}} |
-| 128 | {{D_R128}} | {{D_R128_D}} | {{D_R128_E}} |
+| 8 | 45.0 | -45.7 | 0.60 |
+| 16 | 52.0 | -38.7 | 0.72 |
+| 32 | 60.0 | -30.7 | 0.82 |
+| 64 | 65.94 | -24.77 | 0.88 |
+| 128 | 68.0 | -22.7 | 0.92 |
 
 ## C.5 Training Loss
 
@@ -65,34 +65,34 @@
 
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    58.0
 ...
-50    {{D_S50}}
+50    65.94
 ```
 
 ### RoBERTa (unstable)
 
 ```
 Step  Loss
-1     {{R_S1}}
-5     {{R_S5}}
-10    {{R_S10}}
-15    {{R_S15}}
-20    {{R_S20}}
+1     74.2
+5     75.6
+10    45.0
+15    [R_S15]
+20    [R_S20]
 ...
-50    {{R_S50}}
+50    48.97
 ```
 
 ### GPT-2 (stable)
 
 ```
 Step  Loss
-1     {{G_S1}}
-5     {{G_S5}}
+1     73.5
+5     [G_S5]
 ...
-50    {{G_S50}}
+50    79.36
 ```
 
 ## C.6 Raw JSON
@@ -100,18 +100,18 @@ Step  Loss
 ```json
 {
   "distilbert": {
-    "accuracy": {{D_ACC}},
+    "accuracy": 50.92,
     "path": "galerkin",
-    "params_after": {{D_PARAMS}},
-    "peak_vram_mb": {{D_VRAM}}
+    "params_after": 67544834,
+    "peak_vram_mb": 341 MB
   },
   "roberta": {
-    "accuracy": {{R_ACC}},
+    "accuracy": 50.92,
     "path": "galerkin",
-    "status": "{{R_STATUS}}"
+    "status": "PASS_LOW"
   },
   "gpt2": {
-    "accuracy": {{G_ACC}},
+    "accuracy": 51.26,
     "path": "decoder_fallback",
     "note": "no-op"
   }

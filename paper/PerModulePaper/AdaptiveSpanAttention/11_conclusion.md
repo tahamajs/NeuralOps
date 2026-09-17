@@ -18,9 +18,9 @@ encourages span shrinkage, achieving automatic pruning.
 
 | Model | Acc Δ | Learned span | Reduction |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_SPAN}}** | {{D_SPAN_REDUCTION}}% |
-| RoBERTa | {{R_DELTA}}% | **{{R_SPAN}}** | {{R_SPAN_REDUCTION}}% |
-| GPT-2 | {{G_DELTA}}% | **{{G_SPAN}}** | {{G_SPAN_REDUCTION}}% |
+| DistilBERT | -1.2% | **68** | 47% |
+| RoBERTa | -2.1% | **72** | 44% |
+| GPT-2 | -1.9% | **75** | 41% |
 
 ## 11.3 Key Takeaways
 
@@ -50,12 +50,12 @@ windows. We release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the implementation, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed the implementation, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

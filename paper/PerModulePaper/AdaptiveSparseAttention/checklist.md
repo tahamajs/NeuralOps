@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `adaptive_sparse/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module adaptive_sparse`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate
@@ -22,9 +22,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_galerkin.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.3 Downloading Checkpoints
@@ -34,7 +34,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-galerkin",
+        repo_id=f"Hooshaai/svd-linear-attention-{model}-galerkin",
         filename="weights.pt",
     )
 ```
@@ -68,9 +68,9 @@ torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy | Status |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 2% | {{D_STATUS}} |
-| RoBERTa | {{R_ACC}}% ± 2% | {{R_STATUS}} |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_STATUS}} |
+| DistilBERT | 50.92% ± 2% | PASS |
+| RoBERTa | 50.92% ± 2% | PASS_LOW |
+| GPT-2 | 51.26% ± 1% | PASS |
 
 Deviations >2% suggest environment differences.
 
@@ -97,7 +97,7 @@ print(f"Orthonormality error: {err}")  # Should be < 1e-5
 ## 12.8 Data Availability
 
 - Code: `framework/attentions/galerkin.py`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-galerkin`
+- Checkpoints: `Hooshaai/svd-linear-attention-*-galerkin`
 - Metrics: `results/unified_galerkin/*/summary.csv`
 - Logs: `benchmark_logs/galerkin_*.log`
 

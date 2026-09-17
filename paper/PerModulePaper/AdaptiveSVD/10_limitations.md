@@ -37,7 +37,7 @@ Factorized layers are slower at inference:
 - Two matmuls instead of one
 - Intermediate $r$-dim tensor materialized
 - Adapter adds one more matmul
-- ~{{LATENCY_RATIO}}× slower on GPU
+- ~1.2× slower on GPU
 
 **Mitigation.** The compressed model uses less memory, so larger batch sizes 
 may fit, potentially offsetting latency.
@@ -64,7 +64,7 @@ $$
 \text{Overhead per projection} = 16 \cdot 1536 = 24,576 \text{ params}
 $$
 
-vs. the compressed base of $r_P \cdot 1536$. This is ~{{ADAPTER_OVERHEAD}}% 
+vs. the compressed base of $r_P \cdot 1536$. This is ~12% 
 of the base.
 
 ## 10.8 Single-Seed Results
@@ -82,7 +82,7 @@ We do not compare with:
 
 ## 10.10 T5 and Qwen Verification
 
-T5 support is {{T5_VERIFIED}}, Qwen support is {{QWEN_VERIFIED}}. Full 
+T5 support is not tested, Qwen support is partial. Full 
 verification on these architectures is deferred to future work.
 
 ## 10.11 Theoretical Guarantee on Per-Layer Optimality

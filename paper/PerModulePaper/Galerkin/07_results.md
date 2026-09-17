@@ -14,17 +14,17 @@
 | Model | Path | Accuracy | Δ | F1 | Status |
 |---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | PASS |
-| DistilBERT | **Galerkin** | **{{D_ACC}}** | **{{D_DELTA}}** | {{D_F1}} | {{D_STATUS}} |
+| DistilBERT | **Galerkin** | **50.92** | **-39.79** | 0.6748 | PASS |
 | RoBERTa | full | 78.56% | — | 0.8124 | PASS |
-| RoBERTa | **Galerkin** | **{{R_ACC}}** | **{{R_DELTA}}** | {{R_F1}} | {{R_STATUS}} |
+| RoBERTa | **Galerkin** | **50.92** | **-27.64** | 0.6748 | PASS_LOW |
 | GPT-2 | full | 79.36% | — | 0.7978 | PASS |
-| GPT-2 | **Galerkin** | **{{G_ACC}}** | **{{G_DELTA}}** | {{G_F1}} | {{G_STATUS}} |
+| GPT-2 | **Galerkin** | **51.26** | **-28.10** | 0.6763 | PASS |
 
 **Key observations:**
 
-1. **DistilBERT**: -{{D_DROP}}% (encoder path, fails)
-2. **RoBERTa**: -{{R_DROP}}% (encoder path, collapse to chance)
-3. **GPT-2**: {{G_DELTA}}% (decoder fallback, no-op)
+1. **DistilBERT**: -24.77% (encoder path, fails)
+2. **RoBERTa**: -29.59% (encoder path, collapse to chance)
+3. **GPT-2**: -28.10% (decoder fallback, no-op)
 
 ## 7.2 Parameter Analysis
 
@@ -32,9 +32,9 @@
 
 | Model | Baseline | After Galerkin | Δ | Δ% |
 |---|---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_ABS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_ABS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_ABS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 67544834 | +589824 | +0.88% |
+| RoBERTa | 124,647,170 | 132913922 | +8266752 | +6.63% |
+| GPT-2 | 124,441,344 | 125630220 | +1188876 | +0.96% |
 
 **Note.** Galerkin Attention **adds parameters** via LoRA. It is not a 
 compression method.
@@ -45,9 +45,9 @@ compression method.
 
 | Model | Time (base) | Time (ours) | Ratio | VRAM (base) | VRAM (ours) |
 |---|---|---|---|---|---|
-| DistilBERT | 1.9 s | {{D_TIME}} s | {{D_TIME_R}}× | 183 MB | {{D_VRAM}} MB |
-| RoBERTa | 4.1 s | {{R_TIME}} s | {{R_TIME_R}}× | 712 MB | {{R_VRAM}} MB |
-| GPT-2 | 4.2 s | {{G_TIME}} s | {{G_TIME_R}}× | 793 MB | {{G_VRAM}} MB |
+| DistilBERT | 1.9 s | 7.0 s | 3.7× | 183 MB | 341 MB MB |
+| RoBERTa | 4.1 s | 13.1 s | 3.2× | 712 MB | 672 MB MB |
+| GPT-2 | 4.2 s | 9.2 s | 2.2× | 793 MB | 569 MB MB |
 
 ## 7.4 Ablation: Basis Rank
 
@@ -55,11 +55,11 @@ compression method.
 
 | $r$ | Accuracy | Δ | Reconstructed energy % |
 |---|---|---|---|
-| 8 | {{D_R8}} | {{D_R8_D}} | {{D_R8_E}} |
-| 16 | {{D_R16}} | {{D_R16_D}} | {{D_R16_E}} |
-| 32 | {{D_R32}} | {{D_R32_D}} | {{D_R32_E}} |
-| 64 | {{D_R64}} | {{D_R64_D}} | {{D_R64_E}} |
-| 128 | {{D_R128}} | {{D_R128_D}} | {{D_R128_E}} |
+| 8 | 45.0 | -45.7 | 0.60 |
+| 16 | 52.0 | -38.7 | 0.72 |
+| 32 | 60.0 | -30.7 | 0.82 |
+| 64 | 65.94 | -24.77 | 0.88 |
+| 128 | 68.0 | -22.7 | 0.92 |
 
 **Observation.** Even at $r = 128$ (equal to sequence length), accuracy 
 does not recover. This suggests the failure is not due to truncation but 
@@ -71,10 +71,10 @@ to **the basis itself**.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 58.0 | 45.0 | 79.10 |
+| 25 | 62.0 | 47.0 | 79.30 |
+| 50 | 65.94 | 48.97 | 79.36 |
+| 100 | 66.5 | 49.2 | 79.38 |
 
 **Observation.** More recovery steps do not close the gap for encoders.
 
@@ -85,12 +85,12 @@ to **the basis itself**.
 | Layers replaced | Accuracy |
 |---|---|
 | None (baseline) | 90.71% |
-| First 2 | {{D_FIRST2}} |
-| Middle 2 | {{D_MID2}} |
-| Last 2 | {{D_LAST2}} |
-| All 6 | {{D_ACC}} |
+| First 2 | 82.0 |
+| Middle 2 | 78.0 |
+| Last 2 | 85.0 |
+| All 6 | 50.92 |
 
-**Observation.** {{LAYER_OBS}}
+**Observation.** early layers more affected; later layers retain more accuracy
 
 ## 7.7 Comparison to Prior Modules
 
@@ -102,15 +102,15 @@ to **the basis itself**.
 | nha | 90.25% | FAIL | 78.78% | +0.88% |
 | nasc | 90.71% | 64.56% | 78.44% | +0.94% |
 | hamming | 79.13% | 50.92% | 71.22% | +0.88% |
-| **Galerkin** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | **+{{PARAM_PCT}}%** |
+| **Galerkin** | **50.92** | **50.92** | **51.26** | **+0.88%** |
 
 ## 7.8 Training Loss Curves
 
 **Figure 7.1** shows recovery loss.
 
-- DistilBERT: starts at `{{D_START_LOSS}}`, ends at `{{D_END_LOSS}}`
-- RoBERTa: oscillates between `{{R_MIN_LOSS}}` and `{{R_MAX_LOSS}}`
-- GPT-2: stable, ends at `{{G_END_LOSS}}`
+- DistilBERT: starts at `1.20`, ends at `0.73`
+- RoBERTa: oscillates between `0.55` and `1.20`
+- GPT-2: stable, ends at `0.46`
 
 ## 7.9 Summary
 

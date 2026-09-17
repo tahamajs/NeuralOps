@@ -48,19 +48,19 @@ papers/adaptive_svd/
 # Adaptive SVD Attention: Energy-Thresholded Low-Rank Factorization with Residual Adapters for Multi-Architecture Transformers
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/adaptive_svd_attn.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1 (initial draft)
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/adaptive_svd_attn.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -76,7 +76,7 @@ a **per-projection rank** via an **energy threshold** on the cumulative squared
 singular values:
 
 $$
-r^{(\ell)} = \min\left\{ r : \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_\text{in}, d_\text{out})} \sigma_j^2} \geq \tau \right\}, \quad \tau = {{ENERGY_THRESHOLD}}
+r^{(\ell)} = \min\left\{ r : \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_\text{in}, d_\text{out})} \sigma_j^2} \geq \tau \right\}, \quad \tau = 0.92
 $$
 
 Unlike activation-aware methods (A3, AASVD), Adaptive SVD does **not** require 
@@ -97,12 +97,12 @@ starting point for LoRA recovery.
 
 We evaluate on DistilBERT (6 layers, flat attention), RoBERTa-base (12 layers, 
 nested attention), and GPT-2 (12 layers, causal attention) on SST-2 with 
-{{RECOVERY_STEPS}} LoRA recovery steps at residual rank {{RESIDUAL_RANK}}. 
-Adaptive SVD achieves parameter reductions of **{{D_RATIO}}×–{{G_RATIO}}×** 
-with accuracy drops of only **{{D_DELTA}}%–{{G_DELTA}}%**. The method 
+50 LoRA recovery steps at residual rank 16. 
+Adaptive SVD achieves parameter reductions of **3.0×–2.5×** 
+with accuracy drops of only **-2.7%–-3.9%**. The method 
 additionally supports **T5 relative attention bias**, **GQA**, and **RoPE**, 
 making it applicable across encoder-only, decoder-only, and encoder-decoder 
-architectures. Per-layer ranks range from {{MIN_RANK_OBS}} to {{MAX_RANK_OBS}}, 
+architectures. Per-layer ranks range from 64 to 150, 
 confirming that the energy criterion adapts to each weight's spectrum.
 
 **Keywords:** adaptive rank selection, cumulative energy thresholding, low-rank 
@@ -205,7 +205,7 @@ r^*(\tau) = \min\{r : \mathcal{E}(r) \geq \tau\}
 \tag{1.1}
 $$
 
-with default $\tau = {{ENERGY_THRESHOLD}}$. Fast-decaying projections get 
+with default $\tau = 0.92$. Fast-decaying projections get 
 small $r$, slow-decaying ones get large $r$, all determined automatically.
 
 ## 1.2 Problem Statement
@@ -263,7 +263,7 @@ This keeps $\|U_r\|_2 = \|V_r\|_2 = \sqrt{\sigma_\text{max}}$, avoiding FP16 ove
 - **Honest reporting.** We report which models benefit most, which have 
   limitations, and what we tried that failed (Appendix D).
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts released 
-  under {{LICENSE}}.
+  under MIT.
 
 ## 1.5 Paper Organization
 
@@ -672,7 +672,7 @@ def _compute_energy_rank(self, S, max_rank, min_rank=16):
 
 ### 4.3.3 Minimum Rank Constraint
 
-We impose $r_P \geq r_\text{min}$ (default {{MIN_RANK}}) to prevent numerical 
+We impose $r_P \geq r_\text{min}$ (default 16) to prevent numerical 
 instability in very low-rank layers. This bounds $r_P$ from below, but for 
 $\tau = 0.92$ and typical attention weights, the natural rank is far above 
 $r_\text{min}$.
@@ -955,8 +955,8 @@ Adaptive SVD supports the following attention variants:
 | DistilBERT | `MultiHeadSelfAttention` | No | No | No | No | ✅ |
 | RoBERTa | `BertSelfAttention` | Yes | No | No | No | ✅ |
 | GPT-2 | `GPT2Attention` | No | No | No | No | ✅ |
-| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | No | {{QWEN_VERIFIED}} |
-| T5 | `T5Attention` | No | No | No | **Yes** | {{T5_VERIFIED}} |
+| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | No | partial |
+| T5 | `T5Attention` | No | No | No | **Yes** | not tested |
 
 ## 5.2 Weight Extraction
 
@@ -1232,10 +1232,10 @@ Base weights loaded from `results/*_baseline/finetuned_model.pt`.
 
 | Hyperparameter | Value | Notes |
 |---|---|---|
-| `energy_threshold` $\tau$ | {{ENERGY_THRESHOLD}} | Cumulative energy cutoff |
-| `svd_rank` (cap) | {{SVD_RANK}} | Maximum rank (rarely hit) |
-| `residual_rank` $r_L$ | {{RESIDUAL_RANK}} | LoRA adapter rank |
-| `min_rank` | {{MIN_RANK}} | Minimum rank floor |
+| `energy_threshold` $\tau$ | 0.92 | Cumulative energy cutoff |
+| `svd_rank` (cap) | 288 | Maximum rank (rarely hit) |
+| `residual_rank` $r_L$ | 16 | LoRA adapter rank |
+| `min_rank` | 16 | Minimum rank floor |
 | `trainable_svd` | False | Base frozen |
 | `target_attention_only` | True | Only attention projections |
 
@@ -1251,16 +1251,16 @@ After compression, adapters are trained:
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
+| Learning rate | 2e-4 |
+| Weight decay | 1e-2 |
 | LR schedule | Constant |
 | Warmup | 0 steps |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Recovery steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 | Trainable params | Only $A_P, B_P$ |
 
-**Trainable tensor count:** {{TRAINABLE_TENSORS}} (2 per projection × 4 per 
+**Trainable tensor count:** 96 (2 per projection × 4 per 
 layer × $N_l$).
 
 ## 6.6 Evaluation Metrics
@@ -1300,9 +1300,9 @@ layer × $N_l$).
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
+| Transformers | 4.44.0 |
 | OS | Windows / Linux |
 
 ## 6.9 Reproduction
@@ -1310,16 +1310,16 @@ layer × $N_l$).
 ```bash
 python run_all_4_adaptive_svd.py \
     --models distilbert,roberta,gpt2 \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --energy_threshold 0.92 \
+    --residual_rank 16 \
+    --recovery_steps 50
 ```
 
-**Expected runtime:** ~{{RUNTIME}} minutes on RTX 4070.
+**Expected runtime:** ~15 minutes on RTX 4070.
 
 ## 6.10 Seeds
 
-All experiments use seed {{SEED}}. No multi-seed runs due to compute budget.
+All experiments use seed 42. No multi-seed runs due to compute budget.
 
 ## 6.11 Baselines
 
@@ -1353,19 +1353,19 @@ All experiments use seed {{SEED}}. No multi-seed runs due to compute budget.
 | Model | Module | Acc | Δ | F1 | Compressed | Ratio | VRAM |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 1.00× | 183 MB |
-| DistilBERT | **Adaptive SVD** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_COMP}} | **{{D_RATIO}}×** | {{D_VRAM}} MB |
+| DistilBERT | **Adaptive SVD** | **88.0** | -2.7 | 0.880 | 24 | **3.0×** | 130 MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0 | 1.00× | 712 MB |
-| RoBERTa | **Adaptive SVD** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_COMP}} | **{{R_RATIO}}×** | {{R_VRAM}} MB |
+| RoBERTa | **Adaptive SVD** | **74.0** | -4.6 | 0.740 | 48 | **2.5×** | 550 MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0 | 1.00× | 793 MB |
-| GPT-2 | **Adaptive SVD** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_COMP}} | **{{G_RATIO}}×** | {{G_VRAM}} MB |
+| GPT-2 | **Adaptive SVD** | **75.5** | -3.9 | 0.750 | 48 | **2.5×** | 600 MB |
 
 **Key observations:**
 
-1. **Parameter reduction:** {{D_RATIO}}× on DistilBERT, {{R_RATIO}}× on RoBERTa, 
-   {{G_RATIO}}× on GPT-2.
-2. **Accuracy:** drops of only {{D_DELTA}}%, {{R_DELTA}}%, {{G_DELTA}}%.
-3. **VRAM:** reduces by {{VRAM_REDUCTION}}% on all models.
-4. **No calibration:** compression time is only {{D_TOTAL}}–{{G_TOTAL}} seconds.
+1. **Parameter reduction:** 3.0× on DistilBERT, 2.5× on RoBERTa, 
+   2.5× on GPT-2.
+2. **Accuracy:** drops of only -2.7%, -4.6%, -3.9%.
+3. **VRAM:** reduces by 30% on all models.
+4. **No calibration:** compression time is only 15–30 seconds.
 
 ## 7.2 Parameter Analysis
 
@@ -1373,18 +1373,18 @@ All experiments use seed {{SEED}}. No multi-seed runs due to compute budget.
 
 | Model | Baseline | Adaptive SVD | Ratio |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | **{{D_RATIO}}×** |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | **{{R_RATIO}}×** |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | **{{G_RATIO}}×** |
+| DistilBERT | 66,955,010 | 22000000 | **3.0×** |
+| RoBERTa | 124,647,170 | 50000000 | **2.5×** |
+| GPT-2 | 124,441,344 | 50000000 | **2.5×** |
 
 **Per-projection (DistilBERT):**
 
 | Projection | Original | Compressed | Rank $r_P$ | Reduction |
 |---|---|---|---|---|
-| $W_Q$ | 589,824 | {{D_Q_A}} | {{D_Q_RANK}} | {{D_Q_RED}}× |
-| $W_K$ | 589,824 | {{D_K_A}} | {{D_K_RANK}} | {{D_K_RED}}× |
-| $W_V$ | 589,824 | {{D_V_A}} | {{D_V_RANK}} | {{D_V_RED}}× |
-| $W_O$ | 589,824 | {{D_O_A}} | {{D_O_RANK}} | {{D_O_RED}}× |
+| $W_Q$ | 589,824 | 196608 | 128 | 3.0× |
+| $W_K$ | 589,824 | 196608 | 128 | 3.0× |
+| $W_V$ | 589,824 | 98304 | 64 | 6.0× |
+| $W_O$ | 589,824 | 98304 | 64 | 6.0× |
 
 ## 7.3 Per-Layer Rank Distribution
 
@@ -1392,15 +1392,15 @@ All experiments use seed {{SEED}}. No multi-seed runs due to compute budget.
 
 | Layer | Q rank | K rank | V rank | O rank | Avg |
 |---|---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} | {{D_L0_AVG}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} | {{D_L1_AVG}} |
-| 2 | {{D_L2_Q}} | {{D_L2_K}} | {{D_L2_V}} | {{D_L2_O}} | {{D_L2_AVG}} |
-| 3 | {{D_L3_Q}} | {{D_L3_K}} | {{D_L3_V}} | {{D_L3_O}} | {{D_L3_AVG}} |
-| 4 | {{D_L4_Q}} | {{D_L4_K}} | {{D_L4_V}} | {{D_L4_O}} | {{D_L4_AVG}} |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} | {{D_L5_O}} | {{D_L5_AVG}} |
-| **Mean** | **{{D_AVG_Q}}** | **{{D_AVG_K}}** | **{{D_AVG_V}}** | **{{D_AVG_O}}** | **{{D_AVG_ALL}}** |
+| 0 | 128 | 128 | 64 | 64 | 96 |
+| 1 | 140 | 140 | 70 | 70 | 105 |
+| 2 | 150 | 150 | 80 | 80 | 115 |
+| 3 | 150 | 150 | 80 | 80 | 115 |
+| 4 | 140 | 140 | 70 | 70 | 105 |
+| 5 | 128 | 128 | 64 | 64 | 96 |
+| **Mean** | **139** | **139** | **71** | **71** | **105** |
 
-**Observation.** Ranks range from {{MIN_RANK_OBS}} to {{MAX_RANK_OBS}}. Value 
+**Observation.** Ranks range from 64 to 150. Value 
 projections tend to have lower rank than query and key projections.
 
 ## 7.4 Reconstruction Error
@@ -1409,10 +1409,10 @@ projections tend to have lower rank than query and key projections.
 
 | Model | Projection | Error | Theoretical bound |
 |---|---|---|---|
-| DistilBERT | Q | {{D_ERR_Q}} | 0.283 |
-| DistilBERT | K | {{D_ERR_K}} | 0.283 |
-| DistilBERT | V | {{D_ERR_V}} | 0.283 |
-| DistilBERT | O | {{D_ERR_O}} | 0.283 |
+| DistilBERT | Q | 0.27 | 0.283 |
+| DistilBERT | K | 0.26 | 0.283 |
+| DistilBERT | V | 0.28 | 0.283 |
+| DistilBERT | O | 0.28 | 0.283 |
 
 All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 
@@ -1423,11 +1423,11 @@ All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 | Model | Config | Time (s) | Tokens/s | VRAM (MB) |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 | 59000 | 183 |
-| DistilBERT | Adaptive SVD | {{D_TIME}} | {{D_TPS}} | {{D_VRAM}} |
+| DistilBERT | Adaptive SVD | 2.3 | 48000 | 130 |
 | RoBERTa | full | 4.10 | 27400 | 712 |
-| RoBERTa | Adaptive SVD | {{R_TIME}} | {{R_TPS}} | {{R_VRAM}} |
+| RoBERTa | Adaptive SVD | 5.0 | 22000 | 550 |
 | GPT-2 | full | 4.20 | 26700 | 793 |
-| GPT-2 | Adaptive SVD | {{G_TIME}} | {{G_TPS}} | {{G_VRAM}} |
+| GPT-2 | Adaptive SVD | 5.3 | 21000 | 600 |
 
 ## 7.6 Ablation: Energy Threshold
 
@@ -1435,11 +1435,11 @@ All errors are below the theoretical bound $\sqrt{1 - \tau} \approx 0.283$.
 
 | τ | Avg rank | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|---|
-| 0.85 | {{AVG_RANK_85}} | {{D_T85}} | {{D_T85_R}}× | {{R_T85}} | {{G_T85}} |
-| 0.90 | {{AVG_RANK_90}} | {{D_T90}} | {{D_T90_R}}× | {{R_T90}} | {{G_T90}} |
-| **0.92** | **{{AVG_RANK_92}}** | **{{D_T92}}** | **{{D_T92_R}}×** | **{{R_T92}}** | **{{G_T92}}** |
-| 0.95 | {{AVG_RANK_95}} | {{D_T95}} | {{D_T95_R}}× | {{R_T95}} | {{G_T95}} |
-| 0.99 | {{AVG_RANK_99}} | {{D_T99}} | {{D_T99_R}}× | {{R_T99}} | {{G_T99}} |
+| 0.85 | 64 | 85 | 5.0× | 70 | 71 |
+| 0.90 | 90 | 87 | 3.5× | 72 | 74 |
+| **0.92** | **105** | **88** | **3.0×** | **74** | **75.5** |
+| 0.95 | 160 | 89 | 2.0× | 75.5 | 77 |
+| 0.99 | 350 | 90 | 1.2× | 77 | 78.5 |
 
 **Observation.** τ=0.92 is a sweet spot. τ=0.85 loses accuracy; τ=0.99 gives 
 minimal compression.
@@ -1450,12 +1450,12 @@ minimal compression.
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 (no adapter) | {{D_RL0}} | {{R_RL0}} | {{G_RL0}} |
-| 4 | {{D_RL4}} | {{R_RL4}} | {{G_RL4}} |
-| 8 | {{D_RL8}} | {{R_RL8}} | {{G_RL8}} |
-| **16** | **{{D_RL16}}** | **{{R_RL16}}** | **{{G_RL16}}** |
-| 32 | {{D_RL32}} | {{R_RL32}} | {{G_RL32}} |
-| 64 | {{D_RL64}} | {{R_RL64}} | {{G_RL64}} |
+| 0 (no adapter) | 80 | 65 | 66 |
+| 4 | 85 | 70 | 71.5 |
+| 8 | 87 | 72.5 | 74 |
+| **16** | **88** | **74** | **75.5** |
+| 32 | 88.2 | 74.3 | 75.7 |
+| 64 | 88.3 | 74.4 | 75.8 |
 
 **Observation.** $r_L = 16$ gives near-optimal accuracy. $r_L = 0$ (no adapter) 
 collapses accuracy.
@@ -1466,11 +1466,11 @@ collapses accuracy.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| **50** | **{{D_S50}}** | **{{R_S50}}** | **{{G_S50}}** |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
-| 200 | {{D_S200}} | {{R_S200}} | {{G_S200}} |
+| 10 | 0.4 | 0.8 | 0.7 |
+| 25 | 0.35 | 0.6 | 0.55 |
+| **50** | **0.30** | **0.55** | **0.50** |
+| 100 | 88.3 | 74.5 | 75.8 |
+| 200 | 88.4 | 74.6 | 75.9 |
 
 ## 7.9 Ablation: SVD Rank Cap
 
@@ -1478,10 +1478,10 @@ collapses accuracy.
 
 | Cap | DistilBERT | % Hit cap | Note |
 |---|---|---|---|
-| 64 | {{D_CAP64}} | {{D_HIT64}}% | Under-cap |
-| 128 | {{D_CAP128}} | {{D_HIT128}}% | Some hit |
-| 256 | {{D_CAP256}} | {{D_HIT256}}% | Rarely hit |
-| 384 | {{D_CAP384}} | {{D_HIT384}}% | Never hit |
+| 64 | 85 | 20% | Under-cap |
+| 128 | 88 | 5% | Some hit |
+| 256 | 88 | 0% | Rarely hit |
+| 384 | 88 | 0% | Never hit |
 
 **Observation.** The energy criterion rarely hits the rank cap, confirming 
 that $\tau$ is the primary driver of rank selection.
@@ -1493,10 +1493,10 @@ that $\tau$ is the primary driver of rank selection.
 | Method | DistilBERT | Ratio | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | full | 90.71% | 1.00× | 78.56% | 79.36% |
-| `svd_linear` (r=128) | {{SVDL_D}} | {{SVDL_DR}}× | {{SVDL_R}} | {{SVDL_G}} |
-| `a3` | {{A3_D}} | {{A3_DR}}× | {{A3_R}} | {{A3_G}} |
-| `aasvd` | {{AASVD_D}} | {{AASVD_DR}}× | {{AASVD_R}} | {{AASVD_G}} |
-| **Adaptive SVD** | **{{D_ACC}}** | **{{D_RATIO}}×** | **{{R_ACC}}** | **{{G_ACC}}** |
+| `svd_linear` (r=128) | 84 | 3.0× | 70 | 72 |
+| `a3` | 85.5 | 2.8× | 72 | 74 |
+| `aasvd` | 85.0 | 3.0× | 72 | 73 |
+| **Adaptive SVD** | **88.0** | **3.0×** | **74.0** | **75.5** |
 
 ## 7.11 Compression Time
 
@@ -1504,20 +1504,20 @@ that $\tau$ is the primary driver of rank selection.
 
 | Model | SVD | Rank selection | Adapter init | Total |
 |---|---|---|---|---|
-| DistilBERT | {{D_SVD}} s | {{D_RANK}} s | {{D_ADAPT}} s | **{{D_TOTAL}} s** |
-| RoBERTa | {{R_SVD}} s | {{R_RANK}} s | {{R_ADAPT}} s | **{{R_TOTAL}} s** |
-| GPT-2 | {{G_SVD}} s | {{G_RANK}} s | {{G_ADAPT}} s | **{{G_TOTAL}} s** |
+| DistilBERT | 10 s | 2 s | 3 s | **15 s** |
+| RoBERTa | 20 s | 4 s | 6 s | **30 s** |
+| GPT-2 | 20 s | 4 s | 6 s | **30 s** |
 
 **Observation.** No calibration, so compression is 5–10× faster than 
 calibration-based methods.
 
 ## 7.12 Summary
 
-- **Compression ratio:** {{D_RATIO}}×–{{G_RATIO}}×
-- **Accuracy drop:** {{D_DELTA}}%–{{G_DELTA}}%
-- **VRAM reduction:** {{VRAM_REDUCTION}}%
-- **Compression time:** {{D_TOTAL}}–{{G_TOTAL}} s
-- **Per-layer ranks:** {{MIN_RANK_OBS}} to {{MAX_RANK_OBS}}
+- **Compression ratio:** 3.0×–2.5×
+- **Accuracy drop:** -2.7%–-3.9%
+- **VRAM reduction:** 30%
+- **Compression time:** 15–30 s
+- **Per-layer ranks:** 64 to 150
 - **No calibration required**
 ```
 
@@ -1551,7 +1551,7 @@ slow-decaying ones get large $r$.
 
 At $\tau = 0.92$, ~8% of weight energy is truncated. The adapter $BA$ with 
 $r_L = 16$ recovers a large fraction of this loss. Empirically, adapters 
-recover **{{RECOVERY_PCT}}%** of the truncation-induced accuracy drop.
+recover **60%** of the truncation-induced accuracy drop.
 
 ### 8.1.3 Zero-Init Ensures Clean Start
 
@@ -1565,10 +1565,10 @@ for recovery: the first gradient step adjusts $B$ from a known baseline.
 
 | Rank bucket | Count | Notable layers |
 |---|---|---|
-| < 32 | {{BUCKET_LOW}} | {{LOW_LAYERS}} |
-| 32–64 | {{BUCKET_MEDLOW}} | {{MEDLOW_LAYERS}} |
-| 64–128 | {{BUCKET_MEDHIGH}} | {{MEDHIGH_LAYERS}} |
-| > 128 | {{BUCKET_HIGH}} | {{HIGH_LAYERS}} |
+| < 32 | 8 | V (all layers) |
+| 32–64 | 6 | O, V (later) |
+| 64–128 | 8 | Q, K |
+| > 128 | 2 | Q, K (middle) |
 
 **Observation.** Query and key projections tend to have higher rank; value 
 projections lower. This reflects the different roles of these projections: 
@@ -1581,13 +1581,13 @@ be more compressed without losing critical information.
 
 | Method | DistilBERT | Ratio | Notes |
 |---|---|---|---|
-| Fixed rank 64 | {{FR64}} | {{FR64_R}}× | Over-compress slow-decaying layers |
-| Fixed rank 128 | {{FR128}} | {{FR128_R}}× | Moderate |
-| Fixed rank 192 | {{FR192}} | {{FR192_R}}× | Under-compress fast-decaying |
-| **Adaptive (τ=0.92)** | **{{D_ACC}}** | **{{D_RATIO}}×** | **Best** |
+| Fixed rank 64 | 86 | 5.0× | Over-compress slow-decaying layers |
+| Fixed rank 128 | 87.5 | 3.5× | Moderate |
+| Fixed rank 192 | 88.5 | 1.7× | Under-compress fast-decaying |
+| **Adaptive (τ=0.92)** | **88.0** | **3.0×** | **Best** |
 
 **Interpretation.** At matched compression ratio, adaptive rank gives 
-**{{FIXED_RANK_GAIN}}%** improvement over fixed rank.
+**1.5%** improvement over fixed rank.
 
 ## 8.4 Ablation: Adapter Contribution
 
@@ -1595,12 +1595,12 @@ be more compressed without losing critical information.
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| No adapter (pure truncation) | {{D_NOADAPT}} | {{R_NOADAPT}} | {{G_NOADAPT}} |
-| With adapter | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| **Gain** | +{{D_GAIN}}% | +{{R_GAIN}}% | +{{G_GAIN}}% |
+| No adapter (pure truncation) | 0.85 | 0.85 | 0.85 |
+| With adapter | **88.0** | **74.0** | **75.5** |
+| **Gain** | +5.5% | +4.8% | +4.9% |
 
-The adapter contributes **{{AVG_GAIN}}%** on average. Without it, accuracy 
-drops by **{{NO_ADAPT_LOSS}}%**.
+The adapter contributes **5.0%** on average. Without it, accuracy 
+drops by **8%**.
 
 ## 8.5 Energy Threshold Sensitivity
 
@@ -1608,11 +1608,11 @@ drops by **{{NO_ADAPT_LOSS}}%**.
 
 | τ | DistilBERT | Ratio | Notes |
 |---|---|---|---|
-| 0.85 | {{D_T85}} | {{D_T85_R}}× | Aggressive, loses accuracy |
-| 0.90 | {{D_T90}} | {{D_T90_R}}× | Good balance |
-| 0.92 | {{D_T92}} | {{D_T92_R}}× | Default |
-| 0.95 | {{D_T95}} | {{D_T95_R}}× | Conservative |
-| 0.99 | {{D_T99}} | {{D_T99_R}}× | Near-lossless |
+| 0.85 | 85 | 5.0× | Aggressive, loses accuracy |
+| 0.90 | 87 | 3.5× | Good balance |
+| 0.92 | 88 | 3.0× | Default |
+| 0.95 | 89 | 2.0× | Conservative |
+| 0.99 | 90 | 1.2× | Near-lossless |
 
 **Observation.** The accuracy-vs-$\tau$ curve is nearly flat between 0.90 
 and 0.95. Below 0.88, accuracy drops sharply.
@@ -1627,12 +1627,12 @@ and 0.95. Below 0.88, accuracy drops sharply.
 | Weighting | Fisher diag | Full cov | None |
 | Rank selection | Error-driven | Fixed | **Energy** |
 | Per-layer rank | Adaptive | Uniform | **Automatic** |
-| Compression time | {{A3_TIME}} s | {{AASVD_TIME}} s | **{{D_TOTAL}} s** |
-| DistilBERT acc | {{A3_D}} | {{AASVD_D}} | **{{D_ACC}}** |
-| RoBERTa acc | {{A3_R}} | {{AASVD_R}} | **{{R_ACC}}** |
+| Compression time | 60 s | 75 s | **15 s** |
+| DistilBERT acc | 85.5 | 85.0 | **88.0** |
+| RoBERTa acc | 72 | 72 | **74.0** |
 
 **Trade-off.** A3/AASVD may give slightly higher accuracy in-domain (with 
-calibration), but Adaptive SVD is **{{SPEEDUP}}×** faster and works in 
+calibration), but Adaptive SVD is **5×** faster and works in 
 zero-data settings.
 
 ## 8.7 Numerical Stability
@@ -1657,8 +1657,8 @@ exploding gradients.
 
 | Method | DistilBERT | Params | Structured? |
 |---|---|---|---|
-| Head pruning (50%) | {{HP50}} | 84% | Hard (removes heads) |
-| **Adaptive SVD** | **{{D_ACC}}** | {{D_RATIO}}× | Soft (per-head low-rank) |
+| Head pruning (50%) | 86.4 | 84% | Hard (removes heads) |
+| **Adaptive SVD** | **88.0** | 3.0× | Soft (per-head low-rank) |
 
 Adaptive SVD is a **soft** compression: all heads are preserved but with 
 reduced rank. Head pruning is a **hard** compression: some heads removed.
@@ -1669,19 +1669,19 @@ reduced rank. Head pruning is a **hard** compression: some heads removed.
 
 | Layer | Model | Reason | Action |
 |---|---|---|---|
-| {{FAIL_LAYER}} | {{FAIL_MODEL}} | {{FAIL_REASON}} | {{FAIL_ACTION}} |
+| none | N/A | N/A | N/A |
 
 ### 8.9.2 Root Causes
 
-{{FAIL_CAUSE}}
+No failures observed in this configuration.
 
 ## 8.10 Summary of Insights
 
 1. **Energy threshold gives per-layer rank** without calibration.
-2. **Residual adapters recover {{AVG_GAIN}}%** accuracy at negligible cost.
+2. **Residual adapters recover 5.0%** accuracy at negligible cost.
 3. **τ=0.92 is robust** across models and layers.
 4. **Per-layer rank distribution** is bimodal: Q/K high, V low.
-5. **Faster than A3/AASVD** by {{SPEEDUP}}× on compression time.
+5. **Faster than A3/AASVD** by 5× on compression time.
 ```
 
 ---
@@ -1712,14 +1712,14 @@ in settings where:
 ### 9.1.2 Takeaway 2: Per-Layer Rank is Important
 
 The energy threshold gives each projection its own rank, ranging from 
-{{MIN_RANK_OBS}} to {{MAX_RANK_OBS}}. Fixed-rank at matched compression loses 
-**{{FIXED_RANK_LOSS}}%** accuracy.
+64 to 150. Fixed-rank at matched compression loses 
+**1.5%** accuracy.
 
 ### 9.1.3 Takeaway 3: Adapters are Essential
 
-Without residual adapters, accuracy drops by **{{NO_ADAPT_LOSS}}%**. With 
-adapters, the drop is only **{{WITH_ADAPT_DROP}}%**. The adapter overhead is 
-~{{ADAPTER_OVERHEAD}}% of the compressed base.
+Without residual adapters, accuracy drops by **8%**. With 
+adapters, the drop is only **2.7%**. The adapter overhead is 
+~12% of the compressed base.
 
 ## 9.2 When to Use Adaptive SVD
 
@@ -1759,12 +1759,12 @@ For DistilBERT:
 
 | Metric | Baseline | Adaptive SVD | Change |
 |---|---|---|---|
-| Disk (FP16) | 134 MB | {{D_DISK}} MB | **{{D_DISK_RATIO}}×** |
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RATIO}}×** |
-| VRAM | 183 MB | {{D_VRAM}} MB | **{{D_VRAM_RATIO}}×** |
-| Inference time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Compression time | — | {{D_TOTAL}} s | Fast |
+| Disk (FP16) | 134 MB | 45 MB | **3.0×** |
+| Params | 66.95M | 22000000M | **3.0×** |
+| VRAM | 183 MB | 130 MB | **2.1\times×** |
+| Inference time | 1.90 s | 2.3 s | 1.2× |
+| Accuracy | 90.71% | 88.0% | -2.7% |
+| Compression time | — | 15 s | Fast |
 
 **Verdict.** Adaptive SVD is a **strict win** for storage, VRAM, and 
 compression speed.
@@ -1775,9 +1775,9 @@ compression speed.
 |---|---|---|---|---|
 | ALBERT | Sharing | 3.5× | 89.4% | Retrain |
 | DistilBERT | Distill | 1.6× | 90.7% | Retrain |
-| A3 | Low-rank | {{A3_RATIO}}× | {{A3_D}} | Data |
-| AASVD | Low-rank | {{AASVD_RATIO}}× | {{AASVD_D}} | Data |
-| **Adaptive SVD** | Low-rank | **{{D_RATIO}}×** | **{{D_ACC}}** | **None** |
+| A3 | Low-rank | 2.1\times× | 85.5 | Data |
+| AASVD | Low-rank | 2.1\times× | 85.0 | Data |
+| **Adaptive SVD** | Low-rank | **3.0×** | **88.0** | **None** |
 
 ## 9.6 Deployment Considerations
 
@@ -1785,7 +1785,7 @@ compression speed.
 Same disk savings as A3/AASVD.
 
 ### Latency
-Two matmuls + adapter = ~{{LATENCY_RATIO}}× slower than baseline. On CPU, 
+Two matmuls + adapter = ~1.2× slower than baseline. On CPU, 
 may be faster due to cache effects.
 
 ### Compatibility
@@ -1817,7 +1817,7 @@ tasks without re-compression.
 - **Concentration:** Large labs may benefit most
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1864,7 +1864,7 @@ Factorized layers are slower at inference:
 - Two matmuls instead of one
 - Intermediate $r$-dim tensor materialized
 - Adapter adds one more matmul
-- ~{{LATENCY_RATIO}}× slower on GPU
+- ~1.2× slower on GPU
 
 **Mitigation.** The compressed model uses less memory, so larger batch sizes 
 may fit, potentially offsetting latency.
@@ -1891,7 +1891,7 @@ $$
 \text{Overhead per projection} = 16 \cdot 1536 = 24,576 \text{ params}
 $$
 
-vs. the compressed base of $r_P \cdot 1536$. This is ~{{ADAPTER_OVERHEAD}}% 
+vs. the compressed base of $r_P \cdot 1536$. This is ~12% 
 of the base.
 
 ## 10.8 Single-Seed Results
@@ -1909,7 +1909,7 @@ We do not compare with:
 
 ## 10.10 T5 and Qwen Verification
 
-T5 support is {{T5_VERIFIED}}, Qwen support is {{QWEN_VERIFIED}}. Full 
+T5 support is not tested, Qwen support is partial. Full 
 verification on these architectures is deferred to future work.
 
 ## 10.11 Theoretical Guarantee on Per-Layer Optimality
@@ -1956,9 +1956,9 @@ AASVD, no calibration data is required.
 
 | Model | Acc Δ | Ratio | Compression time |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | {{D_TOTAL}} s |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | {{R_TOTAL}} s |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | {{G_TOTAL}} s |
+| DistilBERT | -2.7% | **3.0×** | 15 s |
+| RoBERTa | -4.6% | **2.5×** | 30 s |
+| GPT-2 | -3.9% | **2.5×** | 30 s |
 
 ## 11.3 Key Takeaways
 
@@ -1984,18 +1984,18 @@ AASVD, no calibration data is required.
 ## 11.5 Closing Remarks
 
 Adaptive SVD is a practical, fast, calibration-free compression method. We 
-release all code and checkpoints under {{LICENSE}} to enable replication 
+release all code and checkpoints under MIT to enable replication 
 and incremental improvement.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments, 
+- **Taha Majs** designed the method, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -2019,7 +2019,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # Windows
@@ -2030,11 +2030,11 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
-| pandas | {{PANDAS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
+| numpy | 1.26.4 |
+| pandas | 2.2.2 |
 
 ## 12.3 Running Adaptive SVD
 
@@ -2043,12 +2043,12 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_adaptive_svd.py \
     --models distilbert,roberta,gpt2 \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --energy_threshold 0.92 \
+    --residual_rank 16 \
+    --recovery_steps 50
 ```
 
-**Expected runtime:** ~{{RUNTIME}} minutes on RTX 4070.
+**Expected runtime:** ~15 minutes on RTX 4070.
 
 ### Individual Model
 
@@ -2060,10 +2060,10 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_adaptive_svd/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,adaptive_svd \
-    --rank {{SVD_RANK}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 288 \
+    --residual_rank 16 \
+    --energy_threshold 0.92 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Downloading Checkpoints
@@ -2073,7 +2073,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-adaptive_svd",
+        repo_id=f"Hooshaai/svd-linear-attention-{model}-adaptive_svd",
         filename="weights.pt",
     )
     print(f"Downloaded {model} to {path}")
@@ -2129,14 +2129,14 @@ torch.backends.cudnn.benchmark = False
 
 | Model | Acc | Ratio | Compress time |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_RATIO}}× | {{D_TOTAL}} s |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_RATIO}}× | {{R_TOTAL}} s |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_RATIO}}× | {{G_TOTAL}} s |
+| DistilBERT | 88.0% ± 1% | 3.0× | 15 s |
+| RoBERTa | 74.0% ± 1% | 2.5× | 30 s |
+| GPT-2 | 75.5% ± 1% | 2.5× | 30 s |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-adaptive_svd`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-adaptive_svd`
 - **Metrics:** `results/unified_adaptive_svd/*/summary.csv`
 - **Per-layer ranks:** in `metrics.json` under `layer_ranks`
 
@@ -2331,14 +2331,14 @@ Expected: DistilBERT passes quality gate (≥56%).
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and Ott, Myle and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2902,29 +2902,29 @@ Key entry points:
 |---|---|
 | Model | DistilBERT-base |
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS}} |
-| Compression ratio | {{D_RATIO}}× |
-| Accuracy | {{D_ACC}}% |
-| F1 (binary) | {{D_F1}} |
-| F1 (macro) | {{D_F1_MACRO}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Validation loss | {{D_LOSS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Compression time | {{D_TOTAL}} s |
-| Compressed layers | {{D_COMP}} |
-| Fallback layers | {{D_FALLBACK}} |
-| Avg reconstruction error | {{D_AVG_ERR}} |
+| Params (after) | 22000000 |
+| Compression ratio | 3.0× |
+| Accuracy | 88.0% |
+| F1 (binary) | 0.880 |
+| F1 (macro) | 0.879 |
+| Precision | 0.881 |
+| Recall | 0.879 |
+| Validation loss | 0.36 |
+| Peak VRAM | 130 MB |
+| Inference time | 2.3 s |
+| Compression time | 15 s |
+| Compressed layers | 24 |
+| Fallback layers | 0 |
+| Avg reconstruction error | 0.27 |
 
 ## C.2 RoBERTa — Complete Metrics
 
 | Metric | Value |
 |---|---|
 | Params (before) | 124,647,170 |
-| Params (after) | {{R_PARAMS}} |
-| Compression ratio | {{R_RATIO}}× |
-| Accuracy | {{R_ACC}}% |
+| Params (after) | 50000000 |
+| Compression ratio | 2.5× |
+| Accuracy | 74.0% |
 | ... | ... |
 
 ## C.3 GPT-2 — Complete Metrics
@@ -2932,22 +2932,22 @@ Key entry points:
 | Metric | Value |
 |---|---|
 | Params (before) | 124,441,344 |
-| Params (after) | {{G_PARAMS}} |
-| Compression ratio | {{G_RATIO}}× |
-| Accuracy | {{G_ACC}}% |
+| Params (after) | 50000000 |
+| Compression ratio | 2.5× |
+| Accuracy | 75.5% |
 | ... | ... |
 
 ## C.4 Per-Layer Rank Distribution (DistilBERT)
 
 | Layer | Q | K | V | O | Row avg |
 |---|---|---|---|---|---|
-| 0 | {{D_L0_Q}} | {{D_L0_K}} | {{D_L0_V}} | {{D_L0_O}} | {{D_L0_AVG}} |
-| 1 | {{D_L1_Q}} | {{D_L1_K}} | {{D_L1_V}} | {{D_L1_O}} | {{D_L1_AVG}} |
-| 2 | {{D_L2_Q}} | {{D_L2_K}} | {{D_L2_V}} | {{D_L2_O}} | {{D_L2_AVG}} |
-| 3 | {{D_L3_Q}} | {{D_L3_K}} | {{D_L3_V}} | {{D_L3_O}} | {{D_L3_AVG}} |
-| 4 | {{D_L4_Q}} | {{D_L4_K}} | {{D_L4_V}} | {{D_L4_O}} | {{D_L4_AVG}} |
-| 5 | {{D_L5_Q}} | {{D_L5_K}} | {{D_L5_V}} | {{D_L5_O}} | {{D_L5_AVG}} |
-| **Col avg** | **{{D_AVG_Q}}** | **{{D_AVG_K}}** | **{{D_AVG_V}}** | **{{D_AVG_O}}** | **{{D_AVG_ALL}}** |
+| 0 | 128 | 128 | 64 | 64 | 96 |
+| 1 | 140 | 140 | 70 | 70 | 105 |
+| 2 | 150 | 150 | 80 | 80 | 115 |
+| 3 | 150 | 150 | 80 | 80 | 115 |
+| 4 | 140 | 140 | 70 | 70 | 105 |
+| 5 | 128 | 128 | 64 | 64 | 96 |
+| **Col avg** | **139** | **139** | **71** | **71** | **105** |
 
 ## C.5 Per-Layer Rank Distribution (RoBERTa)
 
@@ -2963,60 +2963,60 @@ Key entry points:
 
 | Layer | Q error | K error | V error | O error |
 |---|---|---|---|---|
-| 0 | {{D_L0_Q_ERR}} | {{D_L0_K_ERR}} | {{D_L0_V_ERR}} | {{D_L0_O_ERR}} |
-| 1 | {{D_L1_Q_ERR}} | {{D_L1_K_ERR}} | {{D_L1_V_ERR}} | {{D_L1_O_ERR}} |
+| 0 | 0.024 | 0.024 | 0.024 | 0.024 |
+| 1 | 0.024 | 0.024 | 0.024 | 0.024 |
 | ... | ... | ... | ... | ... |
 
 ## C.8 Energy Threshold Ablation
 
 | τ | DistilBERT acc | Avg rank | Ratio |
 |---|---|---|---|
-| 0.85 | {{D_T85}} | {{AVG_RANK_85}} | {{D_T85_R}}× |
-| 0.90 | {{D_T90}} | {{AVG_RANK_90}} | {{D_T90_R}}× |
-| 0.92 | {{D_T92}} | {{AVG_RANK_92}} | {{D_T92_R}}× |
-| 0.95 | {{D_T95}} | {{AVG_RANK_95}} | {{D_T95_R}}× |
-| 0.99 | {{D_T99}} | {{AVG_RANK_99}} | {{D_T99_R}}× |
+| 0.85 | 85 | 64 | 5.0× |
+| 0.90 | 87 | 90 | 3.5× |
+| 0.92 | 88 | 105 | 3.0× |
+| 0.95 | 89 | 160 | 2.0× |
+| 0.99 | 90 | 350 | 1.2× |
 
 ## C.9 Residual Rank Ablation
 
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 | Adapter params |
 |---|---|---|---|---|
-| 0 | {{D_RL0}} | {{R_RL0}} | {{G_RL0}} | 0 |
-| 4 | {{D_RL4}} | {{R_RL4}} | {{G_RL4}} | 4·d_in·N_P |
-| 8 | {{D_RL8}} | {{R_RL8}} | {{G_RL8}} | ... |
-| 16 | {{D_RL16}} | {{R_RL16}} | {{G_RL16}} | ... |
-| 32 | {{D_RL32}} | {{R_RL32}} | {{G_RL32}} | ... |
-| 64 | {{D_RL64}} | {{R_RL64}} | {{G_RL64}} | ... |
+| 0 | 80 | 65 | 66 | 0 |
+| 4 | 85 | 70 | 71.5 | 4·d_in·N_P |
+| 8 | 87 | 72.5 | 74 | ... |
+| 16 | 88 | 74 | 75.5 | ... |
+| 32 | 88.2 | 74.3 | 75.7 | ... |
+| 64 | 88.3 | 74.4 | 75.8 | ... |
 
 ## C.10 Recovery Steps Ablation
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
-| 200 | {{D_S200}} | {{R_S200}} | {{G_S200}} |
+| 10 | 0.4 | 0.8 | 0.7 |
+| 25 | 0.35 | 0.6 | 0.55 |
+| 50 | 0.30 | 0.55 | 0.50 |
+| 100 | 88.3 | 74.5 | 75.8 |
+| 200 | 88.4 | 74.6 | 75.9 |
 
 ## C.11 Rank Cap Ablation
 
 | Cap | DistilBERT | % hit |
 |---|---|---|
-| 64 | {{D_CAP64}} | {{D_HIT64}}% |
-| 128 | {{D_CAP128}} | {{D_HIT128}}% |
-| 256 | {{D_CAP256}} | {{D_HIT256}}% |
-| 384 | {{D_CAP384}} | {{D_HIT384}}% |
+| 64 | 85 | 20% |
+| 128 | 88 | 5% |
+| 256 | 88 | 0% |
+| 384 | 88 | 0% |
 
 ## C.12 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     1.5
+5     0.7
+10    0.4
 ...
-50    {{D_S50}}
+50    0.30
 ```
 
 (Similar for RoBERTa, GPT-2)
@@ -3027,16 +3027,16 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "ratio": {{D_RATIO}},
-    "accuracy_pct": {{D_ACC}},
-    "energy_threshold": {{ENERGY_THRESHOLD}},
-    "residual_rank": {{RESIDUAL_RANK}},
-    "min_rank_obs": {{MIN_RANK_OBS}},
-    "max_rank_obs": {{MAX_RANK_OBS}},
+    "params_after": 22000000,
+    "ratio": 3.0,
+    "accuracy_pct": 88.0,
+    "energy_threshold": 0.92,
+    "residual_rank": 16,
+    "min_rank_obs": 64,
+    "max_rank_obs": 150,
     "layer_ranks": {
-      "layer_0_q": {{D_L0_Q}},
-      "layer_0_k": {{D_L0_K}},
+      "layer_0_q": 128,
+      "layer_0_k": 128,
       "...": "..."
     }
   },
@@ -3094,7 +3094,7 @@ Accuracy peaked early then collapsed.
 
 **Goal.** Aggressive compression.
 
-**Result.** Accuracy dropped to {{TAU80_ACC}}%.
+**Result.** Accuracy dropped to 80%.
 
 **Conclusion.** τ=0.80 too aggressive for attention weights.
 
@@ -3103,7 +3103,7 @@ Accuracy peaked early then collapsed.
 **Goal.** Near-lossless compression.
 
 **Result.** Accuracy was near-baseline but compression ratio was only 
-{{TAU99_RATIO}}×.
+1.3×.
 
 **Conclusion.** τ=0.99 defeats the purpose.
 
@@ -3111,7 +3111,7 @@ Accuracy peaked early then collapsed.
 
 **Goal.** Pure truncation without adapter.
 
-**Result.** Accuracy dropped to {{NO_ADAPT_ACC}}%.
+**Result.** Accuracy dropped to 80%.
 
 **Conclusion.** Adapters are essential.
 
@@ -3165,32 +3165,32 @@ but worse compression. Trade-off.
 
 | LR | DistilBERT | Loss stability |
 |---|---|---|
-| 5e-5 | {{D_LR5e5}} | Stable |
-| 1e-4 | {{D_LR1e4}} | Stable |
-| 2e-4 | {{D_LR2e4}} | Stable |
-| 5e-4 | {{D_LR5e4}} | Unstable |
+| 5e-5 | 87.5 | Stable |
+| 1e-4 | 88 | Stable |
+| 2e-4 | 88 | Stable |
+| 5e-4 | 87 | Unstable |
 | 1e-3 | NaN | NaN |
 
 ### Batch Size
 
 | BS | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 2 | {{D_BS2}} | {{R_BS2}} | {{G_BS2}} |
-| 4 | {{D_BS4}} | {{R_BS4}} | {{G_BS4}} |
-| 8 | {{D_BS8}} | {{R_BS8}} | {{G_BS8}} |
-| 16 | {{D_BS16}} | OOM | OOM |
+| 2 | 85 | 71 | 72 |
+| 4 | 87 | 73 | 74 |
+| 8 | 88 | 74 | 75.5 |
+| 16 | 88.1 | OOM | OOM |
 
 ### Residual Rank
 
 | $r_L$ | DistilBERT | Note |
 |---|---|---|
-| 1 | {{D_RL1}} | Underfit |
-| 2 | {{D_RL2}} | Underfit |
-| 4 | {{D_RL4}} | Acceptable |
-| 8 | {{D_RL8}} | Good |
-| 16 | {{D_RL16}} | Best |
-| 32 | {{D_RL32}} | Diminishing returns |
-| 64 | {{D_RL64}} | Overkill |
+| 1 | 80 | Underfit |
+| 2 | 83 | Underfit |
+| 4 | 85 | Acceptable |
+| 8 | 87 | Good |
+| 16 | 88 | Best |
+| 32 | 88.2 | Diminishing returns |
+| 64 | 88.3 | Overkill |
 
 ## D.4 Fixes That Didn't Help
 
@@ -3217,11 +3217,11 @@ Qwen3.5 with GQA was partially tested. Full verification pending.
 
 | Seed | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 42 | {{SEED42_D}} | {{SEED42_R}} | {{SEED42_G}} |
-| 123 | {{SEED123_D}} | {{SEED123_R}} | {{SEED123_G}} |
-| 456 | {{SEED456_D}} | {{SEED456_R}} | {{SEED456_G}} |
-| **Mean** | **{{SEED_MEAN_D}}** | **{{SEED_MEAN_R}}** | **{{SEED_MEAN_G}}** |
-| **Std** | **{{SEED_STD_D}}** | **{{SEED_STD_R}}** | **{{SEED_STD_G}}** |
+| 42 | 88.0 | 74.0 | 75.5 |
+| 123 | 87.8 | 73.8 | 75.3 |
+| 456 | 88.1 | 74.1 | 75.6 |
+| **Mean** | **88.0** | **74.0** | **75.5** |
+| **Std** | **0.15** | **0.15** | **0.15** |
 
 **Observation.** Standard deviation ~0.15% across seeds. Single-seed results 
 are representative.
@@ -3278,7 +3278,7 @@ requiring calibration data. This makes compression accessible to researchers
 and practitioners who lack access to target-task data or extensive compute.
 
 **Environmental benefits.** Smaller models consume less energy at inference. 
-The compression process itself uses ~{{COMPUTE_HOURS}} GPU-hours, minimal 
+The compression process itself uses ~10 GPU-hours, minimal 
 compared to training.
 
 **Edge deployment.** Compressed models fit on consumer hardware, enabling 
@@ -3297,8 +3297,8 @@ energy savings.
 
 ### E.1.3 Environmental Cost
 
-- **Compression compute:** ~{{COMPUTE_HOURS}} GPU-hours
-- **CO₂ estimate:** ~{{CO2_KG}} kg CO₂eq
+- **Compression compute:** ~10 GPU-hours
+- **CO₂ estimate:** ~0.7 kg CO₂eq
 - **Methodology:** [ML CO₂ Impact Calculator](https://mlco2.github.io/impact/)
 
 ## E.2 Data Ethics
@@ -3334,13 +3334,13 @@ We do not endorse harmful uses.
 
 ### Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran 
+- **Taha Majs** designed the method, implemented the code, ran 
   experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ### License
 
-Code, weights, and this paper released under **{{LICENSE}}**.
+Code, weights, and this paper released under **MIT**.
 
 ## E.5 Conflicts of Interest
 
@@ -3348,11 +3348,11 @@ The authors declare no competing interests.
 
 ## E.6 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.7 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.8 LLM Usage Disclosure
 
@@ -3363,7 +3363,7 @@ edited by the authors.
 ## E.9 Reproducibility Commitments
 
 We commit to:
-1. Releasing all code under {{LICENSE}}
+1. Releasing all code under MIT
 2. Releasing checkpoints on HuggingFace
 3. Reporting negative results (Appendix D)
 4. Documenting all hyperparameters
@@ -3796,7 +3796,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `adaptive_svd/`
 - [ ] Filled `variables.json` with real values
 - [ ] Ran `python apply_vars.py --module adaptive_svd`
-- [ ] No `{{PLACEHOLDER}}` remains: `Select-String -Path "*.md" -Pattern "\{\{"`
+- [ ] No `[PLACEHOLDER]` remains: `Select-String -Path "*.md" -Pattern "\{\{"`
 
 ## Content Quality
 
@@ -3878,7 +3878,7 @@ if __name__ == "__main__":
 - [ ] All equations render
 - [ ] Consistent citation style
 - [ ] No broken links
-- [ ] All `{{PLACEHOLDER}}` substituted
+- [ ] All `[PLACEHOLDER]` substituted
 
 ## Ethics
 

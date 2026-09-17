@@ -76,7 +76,7 @@ $$
 \tag{4.3}
 $$
 
-For encoders, $\rho_0 = {{SPARSITY_ENC}}$; for decoders, $\rho_0 = {{SPARSITY}}$.
+For encoders, $\rho_0 = 0.1$; for decoders, $\rho_0 = 0.5$.
 
 ### 4.2.3 Differentiability
 
@@ -113,7 +113,7 @@ m_j = \sigma\!\left(\frac{s_j - \tau}{T}\right)
 \tag{4.6}
 $$
 
-where $T = {{TEMPERATURE}}$ is a temperature. The masked score is:
+where $T = 0.1$ is a temperature. The masked score is:
 
 $$
 \tilde{s}_j = s_j + \log(m_j + \epsilon)
@@ -189,8 +189,8 @@ Output: context ∈ R^{B × H × L × d_h}
 | **Total memory** | $\mathcal{O}(B H L^2)$ | $\mathcal{O}(B H C L)$ |
 | **Total time** | $\mathcal{O}(B H L^2 d_h)$ | $\mathcal{O}(B H C L d_h)$ |
 
-For $C = {{CHUNK_SIZE}}$ and $L = 512$, memory is reduced by 
-**{{MEM_REDUCTION}}×**. Time is unchanged (we still compute all scores); 
+For $C = 64$ and $L = 512$, memory is reduced by 
+**8×**. Time is unchanged (we still compute all scores); 
 only memory is saved. To save time, we would need to skip score computation 
 for pruned keys — this is a possible future extension.
 

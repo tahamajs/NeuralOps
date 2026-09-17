@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -22,8 +22,8 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_halo_regla.py \
     --models distilbert,roberta,gpt2 \
-    --gate_init_bias {{GATE_BIAS}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --gate_init_bias 1.8 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
@@ -62,14 +62,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Mean gate |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | ~{{D_GATE}} |
-| RoBERTa | {{R_ACC}}% ± 1% | ~{{R_GATE}} |
-| GPT-2 | {{G_ACC}}% ± 1% | ~{{G_GATE}} |
+| DistilBERT | 89.5% ± 1% | ~0.72 |
+| RoBERTa | 76.5% ± 1% | ~0.68 |
+| GPT-2 | 77.5% ± 1% | ~0.65 |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-halo_regla`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-halo_regla`
 - **Metrics:** `results/unified_halo_regla/*/summary.csv`
 
 ## 12.7 Known Issues

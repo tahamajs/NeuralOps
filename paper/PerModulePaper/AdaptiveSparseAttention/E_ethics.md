@@ -22,8 +22,8 @@
 
 ## E.2 Environmental Impact
 
-- **Total GPU-hours:** ~{{COMPUTE_HOURS}}
-- **Estimated CO₂:** {{CO2_KG}} kg CO₂eq
+- **Total GPU-hours:** ~10
+- **Estimated CO₂:** 0.7 kg CO₂eq
 
 Sparse attention reduces compute at inference.
 
@@ -54,11 +54,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 

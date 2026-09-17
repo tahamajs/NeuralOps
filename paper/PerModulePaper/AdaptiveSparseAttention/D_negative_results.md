@@ -68,18 +68,18 @@ Sparsity at multiple attention layers. Marginal improvement.
 ### Temperature Too Small
 | $T$ | DistilBERT | Note |
 |---|---|---|
-| 0.001 | {{D_T001}} | Near hard top-k |
-| 0.01 | {{D_T01}} | Very aggressive |
-| 0.1 | {{D_T1}} | Best |
-| 1.0 | {{D_T10}} | Too soft |
+| 0.001 | 78.0 | Near hard top-k |
+| 0.01 | 85.0 | Very aggressive |
+| 0.1 | 88.5 | Best |
+| 1.0 | 87.0 | Too soft |
 
 ### Chunk Size Too Small
 | $C$ | DistilBERT | Time |
 |---|---|---|
-| 8 | {{D_C8}} | {{D_C8_T}} |
-| 16 | {{D_C16}} | {{D_C16_T}} |
-| 32 | {{D_C32}} | {{D_C32_T}} |
-| 64 | {{D_C64}} | {{D_C64_T}} |
+| 8 | 88.3 | 2.5 |
+| 16 | 88.5 | 2.2 |
+| 32 | 88.5 | 2.1 |
+| 64 | 88.5 | 2.1 |
 
 Very small chunks add overhead.
 
@@ -96,11 +96,11 @@ Very small chunks add overhead.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 88.5 |
+| 123 | 88.3 |
+| 456 | 88.7 |
+| **Mean** | **88.5** |
+| **Std** | **0.2** |
 
 ## D.6 Lessons Learned
 

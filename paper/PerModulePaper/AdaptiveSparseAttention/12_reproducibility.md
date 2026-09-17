@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -22,9 +22,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_adaptive_sparse.py \
     --models distilbert,roberta,gpt2 \
-    --sparsity_ratio {{SPARSITY}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --sparsity_ratio 0.5 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.3 Reproducing Tables
@@ -63,14 +63,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Sparsity |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | ~{{D_SP}} |
-| RoBERTa | {{R_ACC}}% ± 1% | ~{{R_SP}} |
-| GPT-2 | {{G_ACC}}% ± 1% | ~{{G_SP}} |
+| DistilBERT | 88.5% ± 1% | ~0.42 |
+| RoBERTa | 76.0% ± 1% | ~0.45 |
+| GPT-2 | 76.5% ± 1% | ~0.48 |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-adaptive_sparse`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-adaptive_sparse`
 - **Metrics:** `results/unified_adaptive_sparse/*/summary.csv`
 
 ## 12.7 Known Issues

@@ -57,7 +57,7 @@ We impose the following constraints:
 
 1. **Differentiability:** End-to-end trainable w.r.t. the sparsity budget.
 2. **Per-head adaptation:** Each head has its own sparsity budget.
-3. **Quality:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+3. **Quality:** $\Delta\text{Acc} \leq 5\%$ on SST-2.
 4. **Memory bounded:** Peak VRAM must not exceed baseline.
 5. **Compatibility:** Works with pretrained weights without retraining.
 

@@ -14,19 +14,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/adaptive_sparse_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/adaptive_sparse_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -49,10 +49,10 @@ after computing the top-$k$-th score $\tau_h$, we apply a soft mask
 $\sigma((s_i - \tau_h) / T)$ that concentrates mass on the retained entries.
 
 We evaluate ASA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At default 
-sparsity {{SPARSITY}} on decoders and {{SPARSITY_ENC}} on encoders, ASA 
-achieves **{{D_ACC}}%**, **{{R_ACC}}%**, and **{{G_ACC}}%** accuracy, within 
-**{{D_DELTA}}%**, **{{R_DELTA}}%**, and **{{G_DELTA}}%** of the respective 
-dense baselines. Attention FLOPs are reduced by up to **{{FLOP_REDUCTION}}×**. 
+sparsity 0.5 on decoders and 0.1 on encoders, ASA 
+achieves **88.5%**, **76.0%**, and **76.5%** accuracy, within 
+**-2.2%**, **-2.6%**, and **-2.9%** of the respective 
+dense baselines. Attention FLOPs are reduced by up to **2×**. 
 The learned per-head budgets show systematic structure: some heads converge 
 to near-dense (sparsity ≈ 0) and others to near-sparse (sparsity ≈ 0.9), 
 demonstrating head heterogeneity.

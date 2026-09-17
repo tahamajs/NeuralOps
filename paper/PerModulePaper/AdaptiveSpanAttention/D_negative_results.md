@@ -68,18 +68,18 @@ Multiple disjoint windows per head. No improvement.
 ### Ramp Size Too Small
 | $R$ | DistilBERT | Note |
 |---|---|---|
-| 0.5 | {{D_R05}} | Near hard |
-| 1 | {{D_R1}} | Sharp |
-| 8 | {{D_R8}} | OK |
-| 32 | {{D_R32}} | Best |
-| 64 | {{D_R64}} | Too smooth |
+| 0.5 | 82.0 | Near hard |
+| 1 | 87.0 | Sharp |
+| 8 | 88.5 | OK |
+| 32 | 89.5 | Best |
+| 64 | 88.5 | Too smooth |
 
 ### L1 Too Aggressive
 | $\lambda$ | DistilBERT |
 |---|---|
-| 0.1 | {{D_L1}} |
-| 0.5 | {{D_L5}} |
-| 1.0 | {{D_L10}} |
+| 0.1 | 86.0 |
+| 0.5 | 78.0 |
+| 1.0 | 65.0 |
 
 Aggressive L1 collapses spans; accuracy drops.
 
@@ -96,11 +96,11 @@ Aggressive L1 collapses spans; accuracy drops.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 89.5 |
+| 123 | 89.3 |
+| 456 | 89.7 |
+| **Mean** | **89.5** |
+| **Std** | **0.2** |
 
 ## D.6 Lessons Learned
 

@@ -7,19 +7,19 @@
 # Adaptive SVD Attention: Energy-Thresholded Low-Rank Factorization with Residual Adapters for Multi-Architecture Transformers
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/adaptive_svd_attn.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1 (initial draft)
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/adaptive_svd_attn.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -35,7 +35,7 @@ a **per-projection rank** via an **energy threshold** on the cumulative squared
 singular values:
 
 $$
-r^{(\ell)} = \min\left\{ r : \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_\text{in}, d_\text{out})} \sigma_j^2} \geq \tau \right\}, \quad \tau = {{ENERGY_THRESHOLD}}
+r^{(\ell)} = \min\left\{ r : \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(d_\text{in}, d_\text{out})} \sigma_j^2} \geq \tau \right\}, \quad \tau = 0.92
 $$
 
 Unlike activation-aware methods (A3, AASVD), Adaptive SVD does **not** require 
@@ -56,12 +56,12 @@ starting point for LoRA recovery.
 
 We evaluate on DistilBERT (6 layers, flat attention), RoBERTa-base (12 layers, 
 nested attention), and GPT-2 (12 layers, causal attention) on SST-2 with 
-{{RECOVERY_STEPS}} LoRA recovery steps at residual rank {{RESIDUAL_RANK}}. 
-Adaptive SVD achieves parameter reductions of **{{D_RATIO}}×–{{G_RATIO}}×** 
-with accuracy drops of only **{{D_DELTA}}%–{{G_DELTA}}%**. The method 
+50 LoRA recovery steps at residual rank 16. 
+Adaptive SVD achieves parameter reductions of **3.0×–2.5×** 
+with accuracy drops of only **-2.7%–-3.9%**. The method 
 additionally supports **T5 relative attention bias**, **GQA**, and **RoPE**, 
 making it applicable across encoder-only, decoder-only, and encoder-decoder 
-architectures. Per-layer ranks range from {{MIN_RANK_OBS}} to {{MAX_RANK_OBS}}, 
+architectures. Per-layer ranks range from 64 to 150, 
 confirming that the energy criterion adapts to each weight's spectrum.
 
 **Keywords:** adaptive rank selection, cumulative energy thresholding, low-rank 

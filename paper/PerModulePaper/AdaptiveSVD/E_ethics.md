@@ -16,7 +16,7 @@ requiring calibration data. This makes compression accessible to researchers
 and practitioners who lack access to target-task data or extensive compute.
 
 **Environmental benefits.** Smaller models consume less energy at inference. 
-The compression process itself uses ~{{COMPUTE_HOURS}} GPU-hours, minimal 
+The compression process itself uses ~10 GPU-hours, minimal 
 compared to training.
 
 **Edge deployment.** Compressed models fit on consumer hardware, enabling 
@@ -35,8 +35,8 @@ energy savings.
 
 ### E.1.3 Environmental Cost
 
-- **Compression compute:** ~{{COMPUTE_HOURS}} GPU-hours
-- **CO₂ estimate:** ~{{CO2_KG}} kg CO₂eq
+- **Compression compute:** ~10 GPU-hours
+- **CO₂ estimate:** ~0.7 kg CO₂eq
 - **Methodology:** [ML CO₂ Impact Calculator](https://mlco2.github.io/impact/)
 
 ## E.2 Data Ethics
@@ -72,13 +72,13 @@ We do not endorse harmful uses.
 
 ### Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran 
+- **Taha Majs** designed the method, implemented the code, ran 
   experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ### License
 
-Code, weights, and this paper released under **{{LICENSE}}**.
+Code, weights, and this paper released under **MIT**.
 
 ## E.5 Conflicts of Interest
 
@@ -86,11 +86,11 @@ The authors declare no competing interests.
 
 ## E.6 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.7 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.8 LLM Usage Disclosure
 
@@ -101,7 +101,7 @@ edited by the authors.
 ## E.9 Reproducibility Commitments
 
 We commit to:
-1. Releasing all code under {{LICENSE}}
+1. Releasing all code under MIT
 2. Releasing checkpoints on HuggingFace
 3. Reporting negative results (Appendix D)
 4. Documenting all hyperparameters

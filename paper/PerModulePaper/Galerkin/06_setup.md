@@ -30,7 +30,7 @@ Sequence length truncated to 128.
 
 | Hyperparameter | Value | Note |
 |---|---|---|
-| `rank` (basis dim $r$) | {{RANK}} | Default 64 |
+| `rank` (basis dim $r$) | 64 | Default 64 |
 | `basis_type` | `ortho_dct` | DCT-II |
 | `layer_id` | 0..N_l | For logging |
 | `dropout` | 0.1 | |
@@ -40,11 +40,11 @@ Sequence length truncated to 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 2e-4 |
+| Recovery steps | 50 |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -69,24 +69,24 @@ Sequence length truncated to 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_galerkin.py \
     --models distilbert,roberta,gpt2 \
-    --rank {{RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --rank 64 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
-Expected runtime: ~{{RUNTIME}} minutes.
+Expected runtime: ~12 minutes.
 
 ## 6.9 Seeds
 
-Single seed ({{SEED}}). No multi-seed runs.
+Single seed (42). No multi-seed runs.
 
 ## 6.10 Baselines
 

@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate  # Windows
@@ -21,11 +21,11 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| numpy | {{NUMPY_VERSION}} |
-| pandas | {{PANDAS_VERSION}} |
+| torch | 2.4.0 |
+| transformers | 4.44.0 |
+| datasets | 2.20.0 |
+| numpy | 1.26.4 |
+| pandas | 2.2.2 |
 
 ## 12.3 Running Adaptive SVD
 
@@ -34,12 +34,12 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_adaptive_svd.py \
     --models distilbert,roberta,gpt2 \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --energy_threshold 0.92 \
+    --residual_rank 16 \
+    --recovery_steps 50
 ```
 
-**Expected runtime:** ~{{RUNTIME}} minutes on RTX 4070.
+**Expected runtime:** ~15 minutes on RTX 4070.
 
 ### Individual Model
 
@@ -51,10 +51,10 @@ python Codes/framework/run_quality_sweep.py \
     --output_dir results/unified_adaptive_svd/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,adaptive_svd \
-    --rank {{SVD_RANK}} \
-    --residual_rank {{RESIDUAL_RANK}} \
-    --energy_threshold {{ENERGY_THRESHOLD}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --rank 288 \
+    --residual_rank 16 \
+    --energy_threshold 0.92 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Downloading Checkpoints
@@ -64,7 +64,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-adaptive_svd",
+        repo_id=f"Hooshaai/svd-linear-attention-{model}-adaptive_svd",
         filename="weights.pt",
     )
     print(f"Downloaded {model} to {path}")
@@ -120,14 +120,14 @@ torch.backends.cudnn.benchmark = False
 
 | Model | Acc | Ratio | Compress time |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | {{D_RATIO}}× | {{D_TOTAL}} s |
-| RoBERTa | {{R_ACC}}% ± 1% | {{R_RATIO}}× | {{R_TOTAL}} s |
-| GPT-2 | {{G_ACC}}% ± 1% | {{G_RATIO}}× | {{G_TOTAL}} s |
+| DistilBERT | 88.0% ± 1% | 3.0× | 15 s |
+| RoBERTa | 74.0% ± 1% | 2.5× | 30 s |
+| GPT-2 | 75.5% ± 1% | 2.5× | 30 s |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-adaptive_svd`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-adaptive_svd`
 - **Metrics:** `results/unified_adaptive_svd/*/summary.csv`
 - **Per-layer ranks:** in `metrics.json` under `layer_ranks`
 

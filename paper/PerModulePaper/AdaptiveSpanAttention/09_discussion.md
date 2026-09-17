@@ -18,7 +18,7 @@ methods.
 ### 9.1.2 Takeaway 2: Span Regularization Works
 
 The L1 penalty causes spans to shrink gracefully, with minimal accuracy loss 
-at $\lambda = {{LAMBDA}}$.
+at $\lambda = 0.01$.
 
 ### 9.1.3 Takeaway 3: No Speedup Without Hard Truncation
 
@@ -70,9 +70,9 @@ For DistilBERT at $L = 128$:
 | Config | Accuracy | Mean span | Reduction |
 |---|---|---|---|
 | Baseline | 90.71% | — | — |
-| ASA-Span $\lambda=0$ | {{D_L0}}% | {{D_SPAN0}} | 0% |
-| ASA-Span $\lambda=0.01$ | {{D_L01}}% | {{D_SPAN01}} | {{D_RED01}}% |
-| ASA-Span $\lambda=0.1$ | {{D_L1}}% | {{D_SPAN1}} | {{D_RED1}}% |
+| ASA-Span $\lambda=0$ | 90.5% | 126 | 0% |
+| ASA-Span $\lambda=0.01$ | 89.5% | 68 | 47% |
+| ASA-Span $\lambda=0.1$ | 86.0% | 32 | 75% |
 
 ## 9.6 Conversion to Hard Window
 
@@ -104,6 +104,6 @@ To realize speedup, one can:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

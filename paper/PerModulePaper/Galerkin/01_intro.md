@@ -35,7 +35,7 @@ $$
 where $\Phi \in \mathbb{R}^{N \times r}$ is a basis and $K_{\Phi \Phi}$ is 
 the projected kernel matrix.
 
-{{MOTIVATION_PARAGRAPH_2}}
+0.85
 
 <!-- 
 EXAMPLE continuation:

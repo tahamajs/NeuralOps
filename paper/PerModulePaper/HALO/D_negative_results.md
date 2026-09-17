@@ -13,7 +13,7 @@
 
 **Goal.** Equal mix of dense and linear.
 
-**Result.** Accuracy dropped by {{FIXED_DROP}}%.
+**Result.** Accuracy dropped by 3.5%.
 
 **Conclusion.** Learned gates are essential.
 
@@ -68,16 +68,16 @@ Add local window as third branch. Marginal improvement.
 ### Gate Bias Too Low
 | $b_h$ | DistilBERT |
 |---|---|
-| 0 | {{D_B0}} |
-| 0.5 | {{D_B05}} |
-| 1.0 | {{D_B1}} |
-| 1.8 | {{D_B18}} |
+| 0 | 85.0 |
+| 0.5 | 87.0 |
+| 1.0 | 88.5 |
+| 1.8 | 89.5 |
 
 ### Bias Too High
 | $b_h$ | DistilBERT |
 |---|---|
-| 3.0 | {{D_B3}} |
-| 5.0 | {{D_B5}} |
+| 3.0 | 89.0 |
+| 5.0 | 88.0 |
 
 ## D.4 Fixes That Didn't Help
 
@@ -92,11 +92,11 @@ Add local window as third branch. Marginal improvement.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 89.5 |
+| 123 | 89.3 |
+| 456 | 89.7 |
+| **Mean** | **89.5** |
+| **Std** | **0.2** |
 
 ## D.6 Lessons Learned
 

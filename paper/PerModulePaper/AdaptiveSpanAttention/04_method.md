@@ -188,7 +188,7 @@ $\lambda$.
 | 0.01 | Balanced (recommended) |
 | 0.1 | Aggressive; likely accuracy drop |
 
-We use $\lambda = {{LAMBDA}}$ by default.
+We use $\lambda = 0.01$ by default.
 
 ## 4.7 Complete Forward Pass
 

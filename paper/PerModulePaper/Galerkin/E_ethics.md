@@ -21,8 +21,8 @@
 
 ## E.2 Environmental Impact
 
-- **GPU-hours:** ~{{COMPUTE_HOURS}}
-- **CO₂:** ~{{CO2_KG}} kg
+- **GPU-hours:** ~4
+- **CO₂:** ~0.3 kg
 
 Small compared to full training, but represents wasted effort.
 

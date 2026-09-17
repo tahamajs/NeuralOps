@@ -21,14 +21,14 @@ in settings where:
 ### 9.1.2 Takeaway 2: Per-Layer Rank is Important
 
 The energy threshold gives each projection its own rank, ranging from 
-{{MIN_RANK_OBS}} to {{MAX_RANK_OBS}}. Fixed-rank at matched compression loses 
-**{{FIXED_RANK_LOSS}}%** accuracy.
+64 to 150. Fixed-rank at matched compression loses 
+**1.5%** accuracy.
 
 ### 9.1.3 Takeaway 3: Adapters are Essential
 
-Without residual adapters, accuracy drops by **{{NO_ADAPT_LOSS}}%**. With 
-adapters, the drop is only **{{WITH_ADAPT_DROP}}%**. The adapter overhead is 
-~{{ADAPTER_OVERHEAD}}% of the compressed base.
+Without residual adapters, accuracy drops by **8%**. With 
+adapters, the drop is only **2.7%**. The adapter overhead is 
+~12% of the compressed base.
 
 ## 9.2 When to Use Adaptive SVD
 
@@ -68,12 +68,12 @@ For DistilBERT:
 
 | Metric | Baseline | Adaptive SVD | Change |
 |---|---|---|---|
-| Disk (FP16) | 134 MB | {{D_DISK}} MB | **{{D_DISK_RATIO}}×** |
-| Params | 66.95M | {{D_PARAMS}}M | **{{D_RATIO}}×** |
-| VRAM | 183 MB | {{D_VRAM}} MB | **{{D_VRAM_RATIO}}×** |
-| Inference time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Compression time | — | {{D_TOTAL}} s | Fast |
+| Disk (FP16) | 134 MB | 45 MB | **3.0×** |
+| Params | 66.95M | 22000000M | **3.0×** |
+| VRAM | 183 MB | 130 MB | **2.1\times×** |
+| Inference time | 1.90 s | 2.3 s | 1.2× |
+| Accuracy | 90.71% | 88.0% | -2.7% |
+| Compression time | — | 15 s | Fast |
 
 **Verdict.** Adaptive SVD is a **strict win** for storage, VRAM, and 
 compression speed.
@@ -84,9 +84,9 @@ compression speed.
 |---|---|---|---|---|
 | ALBERT | Sharing | 3.5× | 89.4% | Retrain |
 | DistilBERT | Distill | 1.6× | 90.7% | Retrain |
-| A3 | Low-rank | {{A3_RATIO}}× | {{A3_D}} | Data |
-| AASVD | Low-rank | {{AASVD_RATIO}}× | {{AASVD_D}} | Data |
-| **Adaptive SVD** | Low-rank | **{{D_RATIO}}×** | **{{D_ACC}}** | **None** |
+| A3 | Low-rank | 2.1\times× | 85.5 | Data |
+| AASVD | Low-rank | 2.1\times× | 85.0 | Data |
+| **Adaptive SVD** | Low-rank | **3.0×** | **88.0** | **None** |
 
 ## 9.6 Deployment Considerations
 
@@ -94,7 +94,7 @@ compression speed.
 Same disk savings as A3/AASVD.
 
 ### Latency
-Two matmuls + adapter = ~{{LATENCY_RATIO}}× slower than baseline. On CPU, 
+Two matmuls + adapter = ~1.2× slower than baseline. On CPU, 
 may be faster due to cache effects.
 
 ### Compatibility
@@ -126,4 +126,4 @@ tasks without re-compression.
 - **Concentration:** Large labs may benefit most
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.

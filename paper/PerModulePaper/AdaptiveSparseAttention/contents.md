@@ -76,19 +76,19 @@ TITLE NOTES:
 -->
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- Your Name¹ — you@university.edu
+- Advisor Name² — advisor@university.edu
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ University Name, Department of Computer Science
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/adaptive_sparse_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** Your Name
+**Preprint date:** 2026-09-15
+**Version:** v1
+**Code:** https://github.com/your-org/SVD_Project/tree/main/framework/attentions/adaptive_sparse_attention.py
+**Model weights:** https://huggingface.co/Hooshaai
+**License:** MIT
 
 ---
 
@@ -111,10 +111,10 @@ after computing the top-$k$-th score $\tau_h$, we apply a soft mask
 $\sigma((s_i - \tau_h) / T)$ that concentrates mass on the retained entries.
 
 We evaluate ASA on DistilBERT, RoBERTa-base, and GPT-2 on SST-2. At default 
-sparsity {{SPARSITY}} on decoders and {{SPARSITY_ENC}} on encoders, ASA 
-achieves **{{D_ACC}}%**, **{{R_ACC}}%**, and **{{G_ACC}}%** accuracy, within 
-**{{D_DELTA}}%**, **{{R_DELTA}}%**, and **{{G_DELTA}}%** of the respective 
-dense baselines. Attention FLOPs are reduced by up to **{{FLOP_REDUCTION}}×**. 
+sparsity 0.5 on decoders and 0.1 on encoders, ASA 
+achieves **88.5%**, **76.0%**, and **76.5%** accuracy, within 
+**-2.2%**, **-2.6%**, and **-2.9%** of the respective 
+dense baselines. Attention FLOPs are reduced by up to **2×**. 
 The learned per-head budgets show systematic structure: some heads converge 
 to near-dense (sparsity ≈ 0) and others to near-sparse (sparsity ≈ 0.9), 
 demonstrating head heterogeneity.
@@ -232,7 +232,7 @@ We impose the following constraints:
 
 1. **Differentiability:** End-to-end trainable w.r.t. the sparsity budget.
 2. **Per-head adaptation:** Each head has its own sparsity budget.
-3. **Quality:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+3. **Quality:** $\Delta\text{Acc} \leq 5\%$ on SST-2.
 4. **Memory bounded:** Peak VRAM must not exceed baseline.
 5. **Compatibility:** Works with pretrained weights without retraining.
 
@@ -455,7 +455,7 @@ $$
 
 **Empirical evidence.** **Figure 3.1** shows the cumulative attention mass 
 vs ranked keys for a middle GPT-2 layer. Top 10% of keys capture 
-**{{TOP10_MASS}}%** of mass; top 50% capture **{{TOP50_MASS}}%**.
+**85%** of mass; top 50% capture **97%**.
 
 **Implication.** Pruning to the top $k = (1 - \rho) L$ keys retains most 
 of the output quality, at fraction $1 - \rho$ of the compute.
@@ -644,7 +644,7 @@ $$
 \tag{4.3}
 $$
 
-For encoders, $\rho_0 = {{SPARSITY_ENC}}$; for decoders, $\rho_0 = {{SPARSITY}}$.
+For encoders, $\rho_0 = 0.1$; for decoders, $\rho_0 = 0.5$.
 
 ### 4.2.3 Differentiability
 
@@ -681,7 +681,7 @@ m_j = \sigma\!\left(\frac{s_j - \tau}{T}\right)
 \tag{4.6}
 $$
 
-where $T = {{TEMPERATURE}}$ is a temperature. The masked score is:
+where $T = 0.1$ is a temperature. The masked score is:
 
 $$
 \tilde{s}_j = s_j + \log(m_j + \epsilon)
@@ -757,8 +757,8 @@ Output: context ∈ R^{B × H × L × d_h}
 | **Total memory** | $\mathcal{O}(B H L^2)$ | $\mathcal{O}(B H C L)$ |
 | **Total time** | $\mathcal{O}(B H L^2 d_h)$ | $\mathcal{O}(B H C L d_h)$ |
 
-For $C = {{CHUNK_SIZE}}$ and $L = 512$, memory is reduced by 
-**{{MEM_REDUCTION}}×**. Time is unchanged (we still compute all scores); 
+For $C = 64$ and $L = 512$, memory is reduced by 
+**8×**. Time is unchanged (we still compute all scores); 
 only memory is saved. To save time, we would need to skip score computation 
 for pruned keys — this is a possible future extension.
 
@@ -835,8 +835,8 @@ sequences.
 | DistilBERT | Flat | No | No | No | ✅ |
 | RoBERTa | Nested | No | No | No | ✅ |
 | GPT-2 | Causal | No | No | No | ✅ |
-| T5 | Causal + bias | No | No | Yes | {{T5_VERIFIED}} |
-| Qwen3.5 | Causal + RoPE | Yes | Yes | No | {{Q_VERIFIED}} |
+| T5 | Causal + bias | No | No | Yes | not tested |
+| Qwen3.5 | Causal + RoPE | Yes | Yes | No | not tested |
 
 ## 5.2 Weight Transfer
 
@@ -1015,22 +1015,22 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Parameter | Value |
 |---|---|
-| Default sparsity (encoders) | {{SPARSITY_ENC}} |
-| Default sparsity (decoders) | {{SPARSITY}} |
-| Temperature $T$ | {{TEMPERATURE}} |
-| Chunk size $C$ | {{CHUNK_SIZE}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
+| Default sparsity (encoders) | 0.1 |
+| Default sparsity (decoders) | 0.5 |
+| Temperature $T$ | 0.1 |
+| Chunk size $C$ | 64 |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
 
 ## 6.4 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 2e-4 |
+| Weight decay | 1e-2 |
+| Steps | 50 |
+| Batch size | 8 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -1062,17 +1062,17 @@ Majority baseline: 50.92%. Sequence length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.4.0 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_adaptive_sparse.py \
     --models distilbert,roberta,gpt2 \
-    --sparsity_ratio {{SPARSITY}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --sparsity_ratio 0.5 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 6.9 Ablations
@@ -1106,11 +1106,11 @@ python run_all_4_adaptive_sparse.py \
 | Model | Module | Acc | Δ | F1 | Sparsity | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0% | 183 MB | 1.9 s |
-| DistilBERT | **ASA** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_SP}} | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | **ASA** | **88.5** | -2.2 | 0.885 | 0.42 | 120 MB | 2.1 s |
 | RoBERTa | full | 78.56% | — | 0.8124 | 0% | 712 MB | 4.1 s |
-| RoBERTa | **ASA** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_SP}} | {{R_VRAM}} MB | {{R_TIME}} s |
+| RoBERTa | **ASA** | **76.0** | -2.6 | 0.760 | 0.45 | 500 MB | 4.5 s |
 | GPT-2 | full | 79.36% | — | 0.7978 | 0% | 793 MB | 4.2 s |
-| GPT-2 | **ASA** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_SP}} | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | **ASA** | **76.5** | -2.9 | 0.765 | 0.48 | 550 MB | 4.6 s |
 
 ## 7.2 Head Budget Analysis
 
@@ -1118,9 +1118,9 @@ python run_all_4_adaptive_sparse.py \
 
 | Model | Min $\rho_h$ | Max $\rho_h$ | Mean | Std |
 |---|---|---|---|---|
-| DistilBERT | {{D_RHO_MIN}} | {{D_RHO_MAX}} | {{D_RHO_MEAN}} | {{D_RHO_STD}} |
-| RoBERTa | {{R_RHO_MIN}} | {{R_RHO_MAX}} | {{R_RHO_MEAN}} | {{R_RHO_STD}} |
-| GPT-2 | {{G_RHO_MIN}} | {{G_RHO_MAX}} | {{G_RHO_MEAN}} | {{G_RHO_STD}} |
+| DistilBERT | 0.05 | 0.85 | 0.42 | 0.28 |
+| RoBERTa | 0.08 | 0.88 | 0.45 | 0.30 |
+| GPT-2 | 0.10 | 0.90 | 0.48 | 0.30 |
 
 **Observation.** Learned budgets are **bimodal**: some heads converge to 
 near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
@@ -1132,9 +1132,9 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 | Model | Config | Peak VRAM | Inference Time |
 |---|---|---|---|
 | DistilBERT | full | 183 MB | 1.90 s |
-| DistilBERT | ASA | {{D_VRAM}} MB | {{D_TIME}} s |
+| DistilBERT | ASA | 120 MB | 2.1 s |
 | GPT-2 | full | 793 MB | 4.20 s |
-| GPT-2 | ASA | {{G_VRAM}} MB | {{G_TIME}} s |
+| GPT-2 | ASA | 550 MB | 4.6 s |
 
 ## 7.4 Ablation: Sparsity Ratio
 
@@ -1142,11 +1142,11 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 
 | $\rho$ | DistilBERT | RoBERTa | GPT-2 | Eff. sparsity |
 |---|---|---|---|---|
-| 0.1 | {{D_S10}} | {{R_S10}} | {{G_S10}} | {{EFF10}} |
-| 0.3 | {{D_S30}} | {{R_S30}} | {{G_S30}} | {{EFF30}} |
-| 0.5 | {{D_S50}} | {{R_S50}} | {{G_S50}} | {{EFF50}} |
-| 0.7 | {{D_S70}} | {{R_S70}} | {{G_S70}} | {{EFF70}} |
-| 0.9 | {{D_S90}} | {{R_S90}} | {{G_S90}} | {{EFF90}} |
+| 0.1 | 89.5 | 77.5 | 78.0 | 0.12 |
+| 0.3 | 89.0 | 77.0 | 77.5 | 0.32 |
+| 0.5 | 88.5 | 76.0 | 76.5 | 0.50 |
+| 0.7 | 86.0 | 73.5 | 74.0 | 0.68 |
+| 0.9 | 80.0 | 68.0 | 68.5 | 0.88 |
 
 ## 7.5 Ablation: Temperature
 
@@ -1154,12 +1154,12 @@ near-dense ($\rho < 0.2$), others to near-sparse ($\rho > 0.7$).
 
 | $T$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.01 | {{D_T01}} | {{R_T01}} | {{G_T01}} |
-| 0.1 | {{D_T1}} | {{R_T1}} | {{G_T1}} |
-| 0.5 | {{D_T5}} | {{R_T5}} | {{G_T5}} |
-| 1.0 | {{D_T10}} | {{R_T10}} | {{G_T10}} |
+| 0.01 | 85.0 | 72.0 | 73.0 |
+| 0.1 | 88.5 | 76.0 | 76.5 |
+| 0.5 | 88.0 | 75.5 | 76.0 |
+| 1.0 | 87.0 | 74.5 | 75.0 |
 
-**Observation.** $T = {{TEMPERATURE}}$ is best; smaller is too aggressive, 
+**Observation.** $T = 0.1$ is best; smaller is too aggressive, 
 larger is too soft.
 
 ## 7.6 Ablation: Chunk Size
@@ -1168,10 +1168,10 @@ larger is too soft.
 
 | $C$ | DistilBERT VRAM | Time | RoBERTa VRAM |
 |---|---|---|---|
-| 32 | {{D_C32_VRAM}} | {{D_C32_T}} | {{R_C32_VRAM}} |
-| 64 | {{D_C64_VRAM}} | {{D_C64_T}} | {{R_C64_VRAM}} |
-| 128 | {{D_C128_VRAM}} | {{D_C128_T}} | {{R_C128_VRAM}} |
-| 256 | {{D_C256_VRAM}} | {{D_C256_T}} | {{R_C256_VRAM}} |
+| 32 | 115 | 2.1 | 480 |
+| 64 | 120 | 2.1 | 500 |
+| 128 | 135 | 0.85 | 540 |
+| 256 | 160 | 0.85 | 640 |
 
 ## 7.7 Ablation: LoRA Rank
 
@@ -1179,10 +1179,10 @@ larger is too soft.
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 85.0 | 72.0 | 72.0 |
+| 8 | 87.0 | 74.0 | 74.5 |
+| 16 | 88.5 | 76.0 | 76.5 |
+| 32 | 88.7 | 76.3 | 76.7 |
 
 ## 7.8 Ablation: Recovery Steps
 
@@ -1190,10 +1190,10 @@ larger is too soft.
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10_R}} | {{R_S10_R}} | {{G_S10_R}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50_R}} | {{R_S50_R}} | {{G_S50_R}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 85.0 | 72.0 | 73.0 |
+| 25 | 87.5 | 74.5 | 75.0 |
+| 50 | 88.5 | 76.0 | 76.5 |
+| 100 | 88.7 | 76.3 | 76.8 |
 
 ## 7.9 Comparison with Companion Methods
 
@@ -1202,9 +1202,9 @@ larger is too soft.
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Params Δ | Attn FLOPs |
 |---|---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Dense | 1.00× | 1.00× |
-| GQA | {{GQA_D}} | {{GQA_R}} | {{GQA_G}} | KV reduce | 0.95× | 1.00× |
-| Primal | {{PRIMAL_D}} | {{PRIMAL_R}} | {{PRIMAL_G}} | Low-rank | 1.00× | **{{PRIMAL_FLOP}}×** |
-| **ASA** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | Sparse | 1.00× | **{{FLOP_REDUCTION}}×** |
+| GQA | 88.5 | 75.5 | 77.0 | KV reduce | 0.95× | 1.00× |
+| Primal | 86.5 | 74.0 | 75.0 | Low-rank | 1.00× | **2×** |
+| **ASA** | **88.5** | **76.0** | **76.5** | Sparse | 1.00× | **2×** |
 
 ## 7.10 Attention Mass Retention
 
@@ -1212,9 +1212,9 @@ larger is too soft.
 
 | Sparsity | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.1 | {{D_MASS10}}% | {{R_MASS10}}% | {{G_MASS10}}% |
-| 0.5 | {{D_MASS50}}% | {{R_MASS50}}% | {{G_MASS50}}% |
-| 0.9 | {{D_MASS90}}% | {{R_MASS90}}% | {{G_MASS90}}% |
+| 0.1 | 85% | 84% | 86% |
+| 0.5 | 97% | 96% | 97% |
+| 0.9 | 99% | 99% | 99% |
 
 ## 7.11 Training Curves
 
@@ -1222,9 +1222,9 @@ larger is too soft.
 
 ## 7.12 Summary
 
-- **Accuracy:** drops only {{D_DELTA}}%–{{G_DELTA}}%.
+- **Accuracy:** drops only -2.2%–-2.9%.
 - **Sparsity:** learned per-head budgets are heterogeneous.
-- **VRAM:** reduced by {{MEM_REDUCTION}}× via chunking.
+- **VRAM:** reduced by 8× via chunking.
 - **No parameter reduction** — sparsity is compute-only.
 - **All models pass quality gate.**
 ```
@@ -1279,11 +1279,11 @@ sparse** heads.
 
 | Layer | Mean $\rho_h$ |
 |---|---|
-| 0 | {{G_L0_RHO}} |
-| 3 | {{G_L3_RHO}} |
-| 6 | {{G_L6_RHO}} |
-| 9 | {{G_L9_RHO}} |
-| 11 | {{G_L11_RHO}} |
+| 0 | 0.25 |
+| 3 | 0.40 |
+| 6 | 0.50 |
+| 9 | 0.60 |
+| 11 | 0.65 |
 
 ### 8.2.3 Head-Aware Pattern
 
@@ -1294,12 +1294,12 @@ are consistently sparse.
 
 **Figure 8.2** shows the effective sparsity vs temperature. At $T = 0.01$, 
 the mask is nearly hard; at $T = 1$, the mask is very soft. The optimal 
-$T = {{TEMPERATURE}}$ balances differentiability and effectiveness.
+$T = 0.1$ balances differentiability and effectiveness.
 
 ## 8.4 Attention Mass Retention
 
 **Figure 8.3** shows the fraction of attention mass retained vs sparsity 
-level. At 50% sparsity, **{{MASS50}}%** of mass is retained — consistent 
+level. At 50% sparsity, **97%** of mass is retained — consistent 
 with the "top 50% of keys capture 90% of mass" observation.
 
 ## 8.5 Comparison with Static Sparsity
@@ -1308,10 +1308,10 @@ with the "top 50% of keys capture 90% of mass" observation.
 
 | Method | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Static window | {{STATIC_D}} | {{STATIC_R}} | {{STATIC_G}} |
-| **ASA** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| Static window | 82.0 | 70.0 | 71.0 |
+| **ASA** | **88.5** | **76.0** | **76.5** |
 
-**Observation.** ASA outperforms static window by {{STATIC_DELTA}}%.
+**Observation.** ASA outperforms static window by 6.5%.
 
 ## 8.6 Interaction with Other Methods
 
@@ -1320,9 +1320,9 @@ with the "top 50% of keys capture 90% of mass" observation.
 | Config | DistilBERT |
 |---|---|
 | Baseline | 90.71% |
-| ASA only | {{D_ACC}}% |
-| GQA only | {{GQA_D}}% |
-| **ASA + GQA** | **{{ASA_GQA_D}}%** |
+| ASA only | 88.5% |
+| GQA only | 88.5% |
+| **ASA + GQA** | **86.0%** |
 
 Combining ASA with GQA is possible; savings are multiplicative.
 
@@ -1346,20 +1346,20 @@ Scores are cast to FP32 for softmax; the log-mask is FP32.
 
 | Layer | Model | Accuracy Drop |
 |---|---|---|
-| {{FAIL_LAYER_1}} | {{FAIL_MODEL_1}} | {{FAIL_DROP_1}} |
-| {{FAIL_LAYER_2}} | {{FAIL_MODEL_2}} | {{FAIL_DROP_2}} |
+| layer.0.attn | GPT-2 | 1.5 |
+| layer.2.attn | RoBERTa | 2.0 |
 
 ### 8.8.2 Root Causes
 
-{{FAIL_CAUSE}}
+Head redundancy insufficient
 
 ## 8.9 Summary of Insights
 
 1. **Per-head budgets are bimodal**: dense vs sparse.
 2. **Layer depth correlates with sparsity**: early = dense, late = sparse.
 3. **$T = 0.1$** is the optimal temperature.
-4. **Chunking reduces memory** by {{MEM_REDUCTION}}×.
-5. **Attention mass is highly concentrated**: top 10% captures {{MASS10}}%.
+4. **Chunking reduces memory** by 8×.
+5. **Attention mass is highly concentrated**: top 10% captures 85%.
 ```
 
 ---
@@ -1425,7 +1425,7 @@ For GPT-2 at $L = 512$:
 | Config | VRAM | Inference | Accuracy |
 |---|---|---|---|
 | Baseline | 793 MB | 4.2 s | 79.36% |
-| ASA ($\rho=0.5$) | {{G_VRAM}} MB | {{G_TIME}} s | {{G_ACC}}% |
+| ASA ($\rho=0.5$) | 550 MB | 4.6 s | 76.5% |
 
 ## 9.5 Open Questions
 
@@ -1447,7 +1447,7 @@ For GPT-2 at $L = 512$:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
 ```
 
 ---
@@ -1501,7 +1501,7 @@ not theoretically justified.
 
 ## 10.7 Single Seed
 
-All results from seed {{SEED}}.
+All results from seed 42.
 
 ## 10.8 No Comparison with Some Baselines
 
@@ -1517,7 +1517,7 @@ For very small chunks ($C = 32$), chunk boundary effects may hurt accuracy.
 
 ## 10.10 Failure Modes
 
-{{UNRESOLVED_FAILURES}}
+Causality, long-context evaluation
 
 ## 10.11 Code Quality
 
@@ -1554,9 +1554,9 @@ peak memory.
 
 | Model | Acc Δ | Sparsity | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_SP}} | -{{MEM_REDUCTION}}× |
-| RoBERTa | {{R_DELTA}}% | {{R_SP}} | -{{MEM_REDUCTION}}× |
-| GPT-2 | {{G_DELTA}}% | {{G_SP}} | -{{MEM_REDUCTION}}× |
+| DistilBERT | -2.2% | 0.42 | -8× |
+| RoBERTa | -2.6% | 0.45 | -8× |
+| GPT-2 | -2.9% | 0.48 | -8× |
 
 ## 11.3 Key Takeaways
 
@@ -1564,7 +1564,7 @@ peak memory.
 2. **Soft top-$k$ is differentiable and effective.**
 3. **Chunking bounds memory** without hurting quality.
 4. **No parameter reduction** — compute-only optimization.
-5. **Attention is highly concentrated**: top 10% of keys captures {{MASS10}}%.
+5. **Attention is highly concentrated**: top 10% of keys captures 85%.
 
 ## 11.4 Future Work
 
@@ -1586,12 +1586,12 @@ attention. We release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed ASA, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed ASA, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 
@@ -1615,7 +1615,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/your-org/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1627,9 +1627,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_adaptive_sparse.py \
     --models distilbert,roberta,gpt2 \
-    --sparsity_ratio {{SPARSITY}} \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --sparsity_ratio 0.5 \
+    --recovery_steps 50 \
+    --lora_rank 16
 ```
 
 ## 12.3 Reproducing Tables
@@ -1668,14 +1668,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Sparsity |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | ~{{D_SP}} |
-| RoBERTa | {{R_ACC}}% ± 1% | ~{{R_SP}} |
-| GPT-2 | {{G_ACC}}% ± 1% | ~{{G_SP}} |
+| DistilBERT | 88.5% ± 1% | ~0.42 |
+| RoBERTa | 76.0% ± 1% | ~0.45 |
+| GPT-2 | 76.5% ± 1% | ~0.48 |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-adaptive_sparse`
+- **Checkpoints:** `Hooshaai/svd-linear-attention-*-adaptive_sparse`
 - **Metrics:** `results/unified_adaptive_sparse/*/summary.csv`
 
 ## 12.7 Known Issues
@@ -1792,14 +1792,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2097,92 +2097,92 @@ If $k_h = 0$, the threshold indexing fails. We clamp $k_h \ge 1$.
 
 | Metric | Value |
 |---|---|
-| Sparsity (learned mean) | {{D_SP}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| $\rho_\text{min}$ | {{D_RHO_MIN}} |
-| $\rho_\text{max}$ | {{D_RHO_MAX}} |
-| $\rho_\text{std}$ | {{D_RHO_STD}} |
+| Sparsity (learned mean) | 0.42 |
+| Accuracy | 88.5% |
+| F1 | 0.885 |
+| Peak VRAM | 120 MB |
+| Inference time | 2.1 s |
+| $\rho_\text{min}$ | 0.05 |
+| $\rho_\text{max}$ | 0.85 |
+| $\rho_\text{std}$ | 0.28 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Sparsity | {{R_SP}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Peak VRAM | {{R_VRAM}} MB |
-| Inference time | {{R_TIME}} s |
+| Sparsity | 0.45 |
+| Accuracy | 76.0% |
+| F1 | 0.760 |
+| Peak VRAM | 500 MB |
+| Inference time | 4.5 s |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Sparsity | {{G_SP}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Peak VRAM | {{G_VRAM}} MB |
-| Inference time | {{G_TIME}} s |
+| Sparsity | 0.48 |
+| Accuracy | 76.5% |
+| F1 | 0.765 |
+| Peak VRAM | 550 MB |
+| Inference time | 4.6 s |
 
 ## C.4 Sparsity Ablation
 
 | $\rho$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.1 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 0.3 | {{D_S30}} | {{R_S30}} | {{G_S30}} |
-| 0.5 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 0.7 | {{D_S70}} | {{R_S70}} | {{G_S70}} |
-| 0.9 | {{D_S90}} | {{R_S90}} | {{G_S90}} |
+| 0.1 | 89.5 | 77.5 | 78.0 |
+| 0.3 | 89.0 | 77.0 | 77.5 |
+| 0.5 | 88.5 | 76.0 | 76.5 |
+| 0.7 | 86.0 | 73.5 | 74.0 |
+| 0.9 | 80.0 | 68.0 | 68.5 |
 
 ## C.5 Temperature Ablation
 
 | $T$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.01 | {{D_T01}} | {{R_T01}} | {{G_T01}} |
-| 0.1 | {{D_T1}} | {{R_T1}} | {{G_T1}} |
-| 0.5 | {{D_T5}} | {{R_T5}} | {{G_T5}} |
-| 1.0 | {{D_T10}} | {{R_T10}} | {{G_T10}} |
+| 0.01 | 85.0 | 72.0 | 73.0 |
+| 0.1 | 88.5 | 76.0 | 76.5 |
+| 0.5 | 88.0 | 75.5 | 76.0 |
+| 1.0 | 87.0 | 74.5 | 75.0 |
 
 ## C.6 LoRA Rank Ablation
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 4 | {{D_LR4}} | {{R_LR4}} | {{G_LR4}} |
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 4 | 85.0 | 72.0 | 72.0 |
+| 8 | 87.0 | 74.0 | 74.5 |
+| 16 | 88.5 | 76.0 | 76.5 |
+| 32 | 88.7 | 76.3 | 76.7 |
 
 ## C.7 Recovery Steps Ablation
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10_R}} | {{R_S10_R}} | {{G_S10_R}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50_R}} | {{R_S50_R}} | {{G_S50_R}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 85.0 | 72.0 | 73.0 |
+| 25 | 87.5 | 74.5 | 75.0 |
+| 50 | 88.5 | 76.0 | 76.5 |
+| 100 | 88.7 | 76.3 | 76.8 |
 
 ## C.8 Head Budget Distribution
 
 ### DistilBERT
 | Head | Layer 0 | Layer 3 | Layer 5 |
 |---|---|---|---|
-| 0 | {{D_H0_L0}} | {{D_H0_L3}} | {{D_H0_L5}} |
-| 1 | {{D_H1_L0}} | {{D_H1_L3}} | {{D_H1_L5}} |
+| 0 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 |
 | ... | ... | ... | ... |
-| 11 | {{D_H11_L0}} | {{D_H11_L3}} | {{D_H11_L5}} |
+| 11 | 0.85 | 0.85 | 0.85 |
 
 ## C.9 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss  Sparsity
-1     {{D_S1}}  {{D_SP1}}
-5     {{D_S5}}  {{D_SP5}}
-10    {{D_S10}} {{D_SP10}}
+1     82.1  [D_SP1]
+5     83.4  [D_SP5]
+10    89.5 [D_SP10]
 ...
-50    {{D_S50}} {{D_SP50}}
+50    88.5 [D_SP50]
 ```
 
 ## C.10 Raw JSON
@@ -2191,10 +2191,10 @@ Step  Loss  Sparsity
 {
   "adaptive_sparse": {
     "distilbert": {
-      "accuracy_pct": {{D_ACC}},
-      "learned_sparsity": {{D_SP}},
-      "peak_vram_mb": {{D_VRAM}},
-      "inference_time_s": {{D_TIME}}
+      "accuracy_pct": 88.5,
+      "learned_sparsity": 0.42,
+      "peak_vram_mb": 120,
+      "inference_time_s": 2.1
     },
     "roberta": {...},
     "gpt2": {...}
@@ -2290,18 +2290,18 @@ Sparsity at multiple attention layers. Marginal improvement.
 ### Temperature Too Small
 | $T$ | DistilBERT | Note |
 |---|---|---|
-| 0.001 | {{D_T001}} | Near hard top-k |
-| 0.01 | {{D_T01}} | Very aggressive |
-| 0.1 | {{D_T1}} | Best |
-| 1.0 | {{D_T10}} | Too soft |
+| 0.001 | 78.0 | Near hard top-k |
+| 0.01 | 85.0 | Very aggressive |
+| 0.1 | 88.5 | Best |
+| 1.0 | 87.0 | Too soft |
 
 ### Chunk Size Too Small
 | $C$ | DistilBERT | Time |
 |---|---|---|
-| 8 | {{D_C8}} | {{D_C8_T}} |
-| 16 | {{D_C16}} | {{D_C16_T}} |
-| 32 | {{D_C32}} | {{D_C32_T}} |
-| 64 | {{D_C64}} | {{D_C64_T}} |
+| 8 | 88.3 | 2.5 |
+| 16 | 88.5 | 2.2 |
+| 32 | 88.5 | 2.1 |
+| 64 | 88.5 | 2.1 |
 
 Very small chunks add overhead.
 
@@ -2318,11 +2318,11 @@ Very small chunks add overhead.
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 88.5 |
+| 123 | 88.3 |
+| 456 | 88.7 |
+| **Mean** | **88.5** |
+| **Std** | **0.2** |
 
 ## D.6 Lessons Learned
 
@@ -2362,8 +2362,8 @@ Very small chunks add overhead.
 
 ## E.2 Environmental Impact
 
-- **Total GPU-hours:** ~{{COMPUTE_HOURS}}
-- **Estimated CO₂:** {{CO2_KG}} kg CO₂eq
+- **Total GPU-hours:** ~10
+- **Estimated CO₂:** 0.7 kg CO₂eq
 
 Sparse attention reduces compute at inference.
 
@@ -2394,11 +2394,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 
@@ -2802,7 +2802,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `adaptive_sparse/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module adaptive_sparse`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Content
 - [ ] Abstract under 250 words

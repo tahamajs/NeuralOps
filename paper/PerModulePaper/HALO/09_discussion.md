@@ -26,7 +26,7 @@ HALO-ReGLA computes both streams. To realize speedup:
 2. Identify heads where $\bar{g}_h < \theta$.
 3. Convert to pure linear inference.
 
-Expected speedup: up to {{MAX_SPEEDUP}}× if all heads convert.
+Expected speedup: up to 3× if all heads convert.
 
 ## 9.2 When to Use HALO-ReGLA
 
@@ -58,7 +58,7 @@ For DistilBERT at $L = 128$:
 | Config | Acc | VRAM | Time | Mean gate |
 |---|---|---|---|---|
 | Baseline | 90.71% | 183 MB | 1.9 s | — |
-| HALO | {{D_ACC}}% | {{D_VRAM}} MB | {{D_TIME}} s | {{D_GATE}} |
+| HALO | 89.5% | 210 MB | 2.8 s | 0.72 |
 
 ## 9.5 Open Questions
 
@@ -79,6 +79,6 @@ For DistilBERT at $L = 128$:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~15 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

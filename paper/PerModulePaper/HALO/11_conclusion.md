@@ -18,9 +18,9 @@ toward linear during training.
 
 | Model | Acc Δ | Mean gate | VRAM Δ |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | {{D_GATE}} | -{{D_VRAM_DELTA}}% |
-| RoBERTa | {{R_DELTA}}% | {{R_GATE}} | -{{R_VRAM_DELTA}}% |
-| GPT-2 | {{G_DELTA}}% | {{G_GATE}} | -{{G_VRAM_DELTA}}% |
+| DistilBERT | -1.2% | 0.72 | --15% |
+| RoBERTa | -2.1% | 0.68 | --8% |
+| GPT-2 | -1.9% | 0.65 | --5% |
 
 ## 11.3 Key Takeaways
 
@@ -50,12 +50,12 @@ code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed HALO-ReGLA, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed HALO-ReGLA, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 

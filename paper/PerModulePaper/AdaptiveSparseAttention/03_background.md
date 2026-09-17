@@ -41,7 +41,7 @@ $$
 
 **Empirical evidence.** **Figure 3.1** shows the cumulative attention mass 
 vs ranked keys for a middle GPT-2 layer. Top 10% of keys capture 
-**{{TOP10_MASS}}%** of mass; top 50% capture **{{TOP50_MASS}}%**.
+**85%** of mass; top 50% capture **97%**.
 
 **Implication.** Pruning to the top $k = (1 - \rho) L$ keys retains most 
 of the output quality, at fraction $1 - \rho$ of the compute.

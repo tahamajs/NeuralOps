@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `adaptive_svd/`
 - [ ] Filled `variables.json` with real values
 - [ ] Ran `python apply_vars.py --module adaptive_svd`
-- [ ] No `{{PLACEHOLDER}}` remains: `Select-String -Path "*.md" -Pattern "\{\{"`
+- [ ] No `[PLACEHOLDER]` remains: `Select-String -Path "*.md" -Pattern "\{\{"`
 
 ## Content Quality
 
@@ -86,7 +86,7 @@
 - [ ] All equations render
 - [ ] Consistent citation style
 - [ ] No broken links
-- [ ] All `{{PLACEHOLDER}}` substituted
+- [ ] All `[PLACEHOLDER]` substituted
 
 ## Ethics
 

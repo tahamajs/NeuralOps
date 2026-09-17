@@ -16,8 +16,8 @@ Adaptive SVD supports the following attention variants:
 | DistilBERT | `MultiHeadSelfAttention` | No | No | No | No | ✅ |
 | RoBERTa | `BertSelfAttention` | Yes | No | No | No | ✅ |
 | GPT-2 | `GPT2Attention` | No | No | No | No | ✅ |
-| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | No | {{QWEN_VERIFIED}} |
-| T5 | `T5Attention` | No | No | No | **Yes** | {{T5_VERIFIED}} |
+| Qwen3.5 | `Qwen3Attention` | No | Yes | Yes | No | partial |
+| T5 | `T5Attention` | No | No | No | **Yes** | not tested |
 
 ## 5.2 Weight Extraction
 

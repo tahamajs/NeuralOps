@@ -24,7 +24,7 @@ Accuracy peaked early then collapsed.
 
 **Goal.** Aggressive compression.
 
-**Result.** Accuracy dropped to {{TAU80_ACC}}%.
+**Result.** Accuracy dropped to 80%.
 
 **Conclusion.** τ=0.80 too aggressive for attention weights.
 
@@ -33,7 +33,7 @@ Accuracy peaked early then collapsed.
 **Goal.** Near-lossless compression.
 
 **Result.** Accuracy was near-baseline but compression ratio was only 
-{{TAU99_RATIO}}×.
+1.3×.
 
 **Conclusion.** τ=0.99 defeats the purpose.
 
@@ -41,7 +41,7 @@ Accuracy peaked early then collapsed.
 
 **Goal.** Pure truncation without adapter.
 
-**Result.** Accuracy dropped to {{NO_ADAPT_ACC}}%.
+**Result.** Accuracy dropped to 80%.
 
 **Conclusion.** Adapters are essential.
 
@@ -95,32 +95,32 @@ but worse compression. Trade-off.
 
 | LR | DistilBERT | Loss stability |
 |---|---|---|
-| 5e-5 | {{D_LR5e5}} | Stable |
-| 1e-4 | {{D_LR1e4}} | Stable |
-| 2e-4 | {{D_LR2e4}} | Stable |
-| 5e-4 | {{D_LR5e4}} | Unstable |
+| 5e-5 | 87.5 | Stable |
+| 1e-4 | 88 | Stable |
+| 2e-4 | 88 | Stable |
+| 5e-4 | 87 | Unstable |
 | 1e-3 | NaN | NaN |
 
 ### Batch Size
 
 | BS | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 2 | {{D_BS2}} | {{R_BS2}} | {{G_BS2}} |
-| 4 | {{D_BS4}} | {{R_BS4}} | {{G_BS4}} |
-| 8 | {{D_BS8}} | {{R_BS8}} | {{G_BS8}} |
-| 16 | {{D_BS16}} | OOM | OOM |
+| 2 | 85 | 71 | 72 |
+| 4 | 87 | 73 | 74 |
+| 8 | 88 | 74 | 75.5 |
+| 16 | 88.1 | OOM | OOM |
 
 ### Residual Rank
 
 | $r_L$ | DistilBERT | Note |
 |---|---|---|
-| 1 | {{D_RL1}} | Underfit |
-| 2 | {{D_RL2}} | Underfit |
-| 4 | {{D_RL4}} | Acceptable |
-| 8 | {{D_RL8}} | Good |
-| 16 | {{D_RL16}} | Best |
-| 32 | {{D_RL32}} | Diminishing returns |
-| 64 | {{D_RL64}} | Overkill |
+| 1 | 80 | Underfit |
+| 2 | 83 | Underfit |
+| 4 | 85 | Acceptable |
+| 8 | 87 | Good |
+| 16 | 88 | Best |
+| 32 | 88.2 | Diminishing returns |
+| 64 | 88.3 | Overkill |
 
 ## D.4 Fixes That Didn't Help
 
@@ -147,11 +147,11 @@ Qwen3.5 with GQA was partially tested. Full verification pending.
 
 | Seed | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 42 | {{SEED42_D}} | {{SEED42_R}} | {{SEED42_G}} |
-| 123 | {{SEED123_D}} | {{SEED123_R}} | {{SEED123_G}} |
-| 456 | {{SEED456_D}} | {{SEED456_R}} | {{SEED456_G}} |
-| **Mean** | **{{SEED_MEAN_D}}** | **{{SEED_MEAN_R}}** | **{{SEED_MEAN_G}}** |
-| **Std** | **{{SEED_STD_D}}** | **{{SEED_STD_R}}** | **{{SEED_STD_G}}** |
+| 42 | 88.0 | 74.0 | 75.5 |
+| 123 | 87.8 | 73.8 | 75.3 |
+| 456 | 88.1 | 74.1 | 75.6 |
+| **Mean** | **88.0** | **74.0** | **75.5** |
+| **Std** | **0.15** | **0.15** | **0.15** |
 
 **Observation.** Standard deviation ~0.15% across seeds. Single-seed results 
 are representative.

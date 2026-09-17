@@ -14,8 +14,8 @@ documenting what failed.
 
 | Model | Baseline | Galerkin | Δ |
 |---|---|---|---|
-| DistilBERT | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| RoBERTa | 78.56% | {{R_ACC}}% | {{R_DELTA}}% |
+| DistilBERT | 90.71% | 50.92% | -39.79% |
+| RoBERTa | 78.56% | 50.92% | -27.64% |
 
 ## D.2 Decoder Path is No-Op
 
@@ -29,11 +29,11 @@ We tested $r \in \{8, 16, 32, 64, 128\}$:
 
 | $r$ | DistilBERT |
 |---|---|
-| 8 | {{D_R8}} |
-| 16 | {{D_R16}} |
-| 32 | {{D_R32}} |
-| 64 | {{D_R64}} |
-| 128 | {{D_R128}} |
+| 8 | 45.0 |
+| 16 | 52.0 |
+| 32 | 60.0 |
+| 64 | 65.94 |
+| 128 | 68.0 |
 
 **Result.** Even at $r = 128$ (equal to sequence length), accuracy does 
 not recover. **Truncation is not the problem; the basis is.**
@@ -54,8 +54,8 @@ Without $\sqrt{N/r}$ correction:
 
 | Config | DistilBERT |
 |---|---|
-| With correction | {{D_ACC}}% |
-| Without | {{D_WITHOUT_CORR}}% |
+| With correction | 50.92% |
+| Without | 62.0% |
 
 **Result.** Removing the correction makes it worse.
 
@@ -69,20 +69,20 @@ See D.3.1.
 
 | LR | DistilBERT |
 |---|---|
-| 1e-5 | {{LR_1e5}} |
-| 5e-5 | {{LR_5e5}} |
-| 1e-4 | {{LR_1e4}} |
-| 2e-4 | {{LR_2e4}} (default) |
-| 5e-4 | {{LR_5e4}} (NaN) |
+| 1e-5 | 55.0 |
+| 5e-5 | 62.0 |
+| 1e-4 | 65.0 |
+| 2e-4 | 65.94 (default) |
+| 5e-4 | 45.0 (NaN) |
 
 ### Recovery Steps
 
 | Steps | DistilBERT | RoBERTa |
 |---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} |
+| 10 | 58.0 | 45.0 |
+| 25 | 62.0 | 47.0 |
+| 50 | 65.94 | 48.97 |
+| 100 | 66.5 | 49.2 |
 
 **Result.** More steps do not help.
 

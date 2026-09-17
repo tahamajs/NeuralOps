@@ -94,7 +94,7 @@ def _compute_energy_rank(self, S, max_rank, min_rank=16):
 
 ### 4.3.3 Minimum Rank Constraint
 
-We impose $r_P \geq r_\text{min}$ (default {{MIN_RANK}}) to prevent numerical 
+We impose $r_P \geq r_\text{min}$ (default 16) to prevent numerical 
 instability in very low-rank layers. This bounds $r_P$ from below, but for 
 $\tau = 0.92$ and typical attention weights, the natural rank is far above 
 $r_\text{min}$.

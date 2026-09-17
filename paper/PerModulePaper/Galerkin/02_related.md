@@ -68,6 +68,6 @@ suggest this trade-off is not worth it for attention.
 | Linformer | Linear | Yes | Similar | ~88% |
 | FNet | Fourier | No | 66.9M | ~85% |
 | Random Synthesizer | Random | No | 66.9M | ~85% |
-| **Galerkin** | **DCT** | **No** | **+0.9%** | **{{D_ACC}}%** |
+| **Galerkin** | **DCT** | **No** | **+0.9%** | **50.92%** |
 
 ---

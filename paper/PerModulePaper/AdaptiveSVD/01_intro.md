@@ -48,7 +48,7 @@ r^*(\tau) = \min\{r : \mathcal{E}(r) \geq \tau\}
 \tag{1.1}
 $$
 
-with default $\tau = {{ENERGY_THRESHOLD}}$. Fast-decaying projections get 
+with default $\tau = 0.92$. Fast-decaying projections get 
 small $r$, slow-decaying ones get large $r$, all determined automatically.
 
 ## 1.2 Problem Statement
@@ -106,7 +106,7 @@ This keeps $\|U_r\|_2 = \|V_r\|_2 = \sqrt{\sigma_\text{max}}$, avoiding FP16 ove
 - **Honest reporting.** We report which models benefit most, which have 
   limitations, and what we tried that failed (Appendix D).
 - **Full reproducibility.** Code, checkpoints, and evaluation scripts released 
-  under {{LICENSE}}.
+  under MIT.
 
 ## 1.5 Paper Organization
 

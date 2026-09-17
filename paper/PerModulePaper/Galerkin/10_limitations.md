@@ -10,8 +10,8 @@
 ## 10.1 Encoder Path Fails
 
 Galerkin Attention **fails on encoders**:
-- DistilBERT: -{{D_DROP}}%
-- RoBERTa: -{{R_DROP}}% (chance level)
+- DistilBERT: -24.77%
+- RoBERTa: -29.59% (chance level)
 
 This is not a minor limitation; it is a fundamental failure of the method.
 

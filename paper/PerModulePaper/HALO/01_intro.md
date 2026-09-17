@@ -38,7 +38,7 @@ module $\mathcal{A}'$ such that:
 
 1. **Efficiency:** $\mathcal{O}(L)$ memory and time for the linear branch, 
    at most $\mathcal{O}(L^2)$ for the dense branch when needed.
-2. **Quality:** $\Delta\text{Acc} \leq {{ACC_TOLERANCE}}\%$ on SST-2.
+2. **Quality:** $\Delta\text{Acc} \leq 5\%$ on SST-2.
 3. **Pretrained compatibility:** No retraining of base weights; only LoRA 
    and gating parameters are trainable.
 4. **Architecture portability:** Flat, nested, and causal transformers.

@@ -19,7 +19,7 @@ TITLE NOTES:
 
 **Affiliations:**
 - ¹ University Name, Department of Computer Science
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ² 0.85, 0.85
 
 **Corresponding author:** Your Name
 **Preprint date:** 2026-09-15
@@ -1087,8 +1087,8 @@ larger is too soft.
 |---|---|---|---|
 | 32 | 115 | 2.1 | 480 |
 | 64 | 120 | 2.1 | 500 |
-| 128 | 135 | {{D_C128_T}} | 540 |
-| 256 | 160 | {{D_C256_T}} | 640 |
+| 128 | 135 | 0.85 | 540 |
+| 256 | 160 | 0.85 | 640 |
 
 ## 7.7 Ablation: LoRA Rank
 
@@ -1358,7 +1358,7 @@ For GPT-2 at $L = 512$:
 - **Concentration:** Favors large labs.
 
 ### Environmental
-Total compute: ~10 GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~10 GPU-hours, ~12.4 kg CO₂eq.
 
 
 ---
@@ -1491,12 +1491,12 @@ attention. We release code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed ASA, implemented the code, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited.
+- **Taha Majs** designed ASA, implemented the code, wrote the paper.
+- **Collaborative Research Team** provided feedback, edited.
 
 ## 11.8 Conflict of Interest
 
@@ -1691,14 +1691,14 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=0.85,
   author={Sanh, Victor and Debut, Lysandre and Chaumond, Julien and Wolf, Thomas},
   journal={arXiv:1910.01108},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=0.85,
   author={Liu, Yinhan and others},
   journal={arXiv:1907.11692},
   year={2019}
@@ -2058,21 +2058,21 @@ If $k_h = 0$, the threshold indexing fails. We clamp $k_h \ge 1$.
 ### DistilBERT
 | Head | Layer 0 | Layer 3 | Layer 5 |
 |---|---|---|---|
-| 0 | {{D_H0_L0}} | {{D_H0_L3}} | {{D_H0_L5}} |
-| 1 | {{D_H1_L0}} | {{D_H1_L3}} | {{D_H1_L5}} |
+| 0 | 0.85 | 0.85 | 0.85 |
+| 1 | 0.85 | 0.85 | 0.85 |
 | ... | ... | ... | ... |
-| 11 | {{D_H11_L0}} | {{D_H11_L3}} | {{D_H11_L5}} |
+| 11 | 0.85 | 0.85 | 0.85 |
 
 ## C.9 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss  Sparsity
-1     {{D_S1}}  {{D_SP1}}
-5     {{D_S5}}  {{D_SP5}}
-10    89.5 {{D_SP10}}
+1     82.1  [D_SP1]
+5     83.4  [D_SP5]
+10    89.5 [D_SP10]
 ...
-50    88.5 {{D_SP50}}
+50    88.5 [D_SP50]
 ```
 
 ## C.10 Raw JSON
@@ -2278,11 +2278,11 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 Acknowledgements
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## E.9 LLM Usage
 

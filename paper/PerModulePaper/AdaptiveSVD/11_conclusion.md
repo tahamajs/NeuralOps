@@ -19,9 +19,9 @@ AASVD, no calibration data is required.
 
 | Model | Acc Δ | Ratio | Compression time |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | **{{D_RATIO}}×** | {{D_TOTAL}} s |
-| RoBERTa | {{R_DELTA}}% | **{{R_RATIO}}×** | {{R_TOTAL}} s |
-| GPT-2 | {{G_DELTA}}% | **{{G_RATIO}}×** | {{G_TOTAL}} s |
+| DistilBERT | -2.7% | **3.0×** | 15 s |
+| RoBERTa | -4.6% | **2.5×** | 30 s |
+| GPT-2 | -3.9% | **2.5×** | 30 s |
 
 ## 11.3 Key Takeaways
 
@@ -47,18 +47,18 @@ AASVD, no calibration data is required.
 ## 11.5 Closing Remarks
 
 Adaptive SVD is a practical, fast, calibration-free compression method. We 
-release all code and checkpoints under {{LICENSE}} to enable replication 
+release all code and checkpoints under MIT to enable replication 
 and incremental improvement.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments, 
+- **Taha Majs** designed the method, implemented the code, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided methodological feedback and edited the manuscript.
+- **Collaborative Research Team** provided methodological feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

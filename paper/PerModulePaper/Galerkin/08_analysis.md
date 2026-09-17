@@ -24,9 +24,9 @@ $$
 
 for $r \in \{8, 16, 32, 64, 128\}$ on real DistilBERT activations.
 
-**Result.** At $r = 64$, $E \approx {{D_E_R64}}$. At $r = 128$, $E \approx {{D_E_R128}}$.
+**Result.** At $r = 64$, $E \approx 0.88$. At $r = 128$, $E \approx 0.92$.
 
-**Verdict.** {{H1_VERDICT}}
+**Verdict.** partially confirmed; even r=128 fails
 
 ### 8.1.2 H2: Fixed Basis Cannot Adapt
 
@@ -35,10 +35,10 @@ cannot capture them.
 
 **Test.** Measure attention entropy vs DCT energy distribution:
 
-- Attention entropy (baseline): {{BASE_ENTROPY}}
-- DCT low-frequency energy fraction: {{DCT_LOW_FREQ}}
+- Attention entropy (baseline): 5.2
+- DCT low-frequency energy fraction: 0.35
 
-**Result.** {{H2_RESULT}}
+**Result.** attention is high-entropy and sharp; DCT is low-pass
 
 **Verdict.** This is the **primary failure mode**.
 
@@ -50,12 +50,12 @@ cannot capture them.
 
 | Correction | DistilBERT |
 |---|---|
-| With $\sqrt{N/r}$ | {{D_WITH_CORR}} |
-| Without | {{D_WITHOUT_CORR}} |
+| With $\sqrt{N/r}$ | 65.94 |
+| Without | 62.0 |
 
-**Result.** {{H3_RESULT}}
+**Result.** removing correction makes results worse
 
-**Verdict.** {{H3_VERDICT}}
+**Verdict.** Rejected
 
 ## 8.2 Why Does GPT-2 Show No Change?
 
@@ -77,13 +77,13 @@ change, the output is indistinguishable from baseline.
 
 ## 8.3 Why Does RoBERTa Collapse?
 
-RoBERTa's accuracy ({{R_ACC}}%) is at chance level (majority class 50.92%). 
+RoBERTa's accuracy (50.92%) is at chance level (majority class 50.92%). 
 This indicates:
 
 1. **Forward pass broken:** Model output is nearly constant.
 2. **Cascading error:** 12 layers of Galerkin-projected attention compound 
    approximation error.
-3. **Loss oscillation:** `{{R_MIN_LOSS}}` to `{{R_MAX_LOSS}}` in recovery.
+3. **Loss oscillation:** `0.55` to `1.20` in recovery.
 
 **Hypothesis.** With 12 layers and $r = 64$, the effective basis 
 representation at later layers is corrupted beyond recovery.
@@ -107,11 +107,11 @@ $A_\Phi \in \mathbb{R}^{r \times r}$.
 
 | Metric | Baseline | Galerkin |
 |---|---|---|
-| Effective rank | {{BASE_EFF_RANK}} | {{GAL_EFF_RANK}} |
-| Top-1 energy | {{BASE_TOP1}} | {{GAL_TOP1}} |
-| Entropy | {{BASE_ENTROPY}} | {{GAL_ENTROPY}} |
+| Effective rank | 85.0 | 32.0 |
+| Top-1 energy | 0.15 | 0.05 |
+| Entropy | 5.2 | 4.1 |
 
-**Observation.** {{SV_OBS}}
+**Observation.** DCT reduces effective rank dramatically
 
 ## 8.6 Failure Mode Taxonomy
 
@@ -126,7 +126,7 @@ $A_\Phi \in \mathbb{R}^{r \times r}$.
 
 **FNet** (Lee-Thorp et al., 2021) replaces attention entirely with DCT 
 and achieves ~85% on SST-2. Our method **projects** attention through DCT, 
-preserving the softmax operation. Our result ({{D_ACC}}% on DistilBERT) is 
+preserving the softmax operation. Our result (50.92% on DistilBERT) is 
 worse than FNet's, suggesting that:
 
 1. Partial DCT filtering is **worse** than full DCT replacement.
