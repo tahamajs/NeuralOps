@@ -49,7 +49,11 @@ def test_one(module_name):
         result["no_injector"] = True
         return result
 
-    for model_name, model_path in MODEL_PATHS.items():
+    models_to_test = MODEL_PATHS
+    if "--gpt2-only" in sys.argv:
+        models_to_test = {"gpt2": MODEL_PATHS["gpt2"]}
+
+    for model_name, model_path in models_to_test.items():
         try:
             cfg = AutoConfig.from_pretrained(model_path, local_files_only=True)
             if getattr(cfg, "pad_token_id", None) is None:
@@ -101,7 +105,8 @@ if __name__ == "__main__":
         sys.exit(1)
     mod_name = sys.argv[1]
     res = test_one(mod_name)
-    os.makedirs("audit", exist_ok=True)
-    with open("audit/module_test_log.jsonl", "a", encoding="utf-8") as f:
-        f.write(json.dumps(res) + "\n")
+    if "--no-log" not in sys.argv:
+        os.makedirs("audit", exist_ok=True)
+        with open("audit/module_test_log.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps(res) + "\n")
     print(json.dumps(res, indent=2))
