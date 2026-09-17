@@ -1,0 +1,77 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\huggingface_hub\constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[2026-09-16 00:13:41] [HF-Sync] Running sweep across D:\SVD_Project\results...
+[2026-09-16 00:13:57] [HF-Sync] Updated master results JSON (977 records)
+No files have been modified since last commit. Skipping to prevent empty commit.
+[2026-09-16 00:14:00] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-aasvd [PASS]
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+[2026-09-16 00:14:03] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-aasvd [PASS]
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+[2026-09-16 00:14:06] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-roberta-aasvd [PASS]
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+[2026-09-16 00:14:08] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-adaptive-compressor [PASS]
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+[2026-09-16 00:14:11] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-adaptive-ranks [PASS]
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+[2026-09-16 00:14:13] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-adaptive-svd-attention [PASS]
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+[2026-09-16 00:14:15] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-adaptive-svd-attention [PASS]
+No files have been modified since last commit. Skipping to prevent empty commit.
+[2026-09-16 00:14:17] [HF-Sync] Uploading weights.pt (59.3 MB) -> Hooshaai/svd-linear-attention-gpt2-adaptive-svd-attention...
+[2026-09-16 00:14:29] [HF-Sync] SUCCESS: weights.pt -> Hooshaai/svd-linear-attention-gpt2-adaptive-svd-attention
+[2026-09-16 00:14:32] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-roberta-adaptive-svd-attention [PASS]
+[2026-09-16 00:14:35] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-adaptive-svd-attn [PASS]
+[2026-09-16 00:14:39] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-adaptive-svd-attn [PASS]
+[2026-09-16 00:14:40] [HF-Sync] Uploading weights.pt (59.3 MB) -> Hooshaai/svd-linear-attention-gpt2-adaptive-svd-attn...
+[2026-09-16 00:14:46] [HF-Sync] SUCCESS: weights.pt -> Hooshaai/svd-linear-attention-gpt2-adaptive-svd-attn
+[2026-09-16 00:14:48] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-roberta-adaptive-svd-attn [PASS]
+[2026-09-16 00:14:53] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-adasvd [PASS]
+[2026-09-16 00:15:27] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-adasvd [PASS]
+[2026-09-16 00:17:17] [HF-Sync] README upload failed for Hooshaai/svd-linear-attention-roberta-adasvd: Server error '503 Service Unavailable' for url 'https://huggingface.co/api/models/Hooshaai/svd-linear-attention-roberta-adasvd/commit/main' (Request ID: Root=1-6aa9aeda-279a25cc3f191959331205dc;2eab39d3-8061-4186-9397-12d0b3f6cd14)
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503
+
+Internal Error - We're working hard to fix this as soon as possible!
+[2026-09-16 00:19:03] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-admm [PASS]
+[2026-09-16 00:19:08] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-roberta-admm [PASS]
+[2026-09-16 00:19:14] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-aegis-hybrid [PASS]
+[2026-09-16 00:19:21] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-aegis-hybrid [PASS]
+[2026-09-16 00:19:22] [HF-Sync] Uploading weights.pt (4.8 MB) -> Hooshaai/svd-linear-attention-gpt2-aegis-hybrid...
+[2026-09-16 00:19:37] [HF-Sync] SUCCESS: weights.pt -> Hooshaai/svd-linear-attention-gpt2-aegis-hybrid
+[2026-09-16 00:19:40] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-aegis-spectron-fp8 [PASS]
+[2026-09-16 00:19:41] [HF-Sync] Uploading weights.pt (4.7 MB) -> Hooshaai/svd-linear-attention-distilbert-aegis-spectron-fp8...
+[2026-09-16 00:19:46] [HF-Sync] SUCCESS: weights.pt -> Hooshaai/svd-linear-attention-distilbert-aegis-spectron-fp8
+[2026-09-16 00:19:49] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-aegis-spectron-fp8 [PASS]
+[2026-09-16 00:19:50] [HF-Sync] Uploading weights.pt (4.8 MB) -> Hooshaai/svd-linear-attention-gpt2-aegis-spectron-fp8...
+[2026-09-16 00:19:56] [HF-Sync] SUCCESS: weights.pt -> Hooshaai/svd-linear-attention-gpt2-aegis-spectron-fp8
+[2026-09-16 00:19:58] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-aegis-v2 [PASS]
+[2026-09-16 00:20:08] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-roberta-aegis-v2 [PASS]
+[2026-09-16 00:20:09] [HF-Sync] Uploading weights.pt (7.1 MB) -> Hooshaai/svd-linear-attention-roberta-aegis-v2...
+[2026-09-16 00:20:18] [HF-Sync] SUCCESS: weights.pt -> Hooshaai/svd-linear-attention-roberta-aegis-v2
+[2026-09-16 00:20:21] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-aegis-v6 [PASS]
+[2026-09-16 00:20:22] [HF-Sync] Uploading weights.pt (4.9 MB) -> Hooshaai/svd-linear-attention-distilbert-aegis-v6...
+[2026-09-16 00:20:29] [HF-Sync] SUCCESS: weights.pt -> Hooshaai/svd-linear-attention-distilbert-aegis-v6
+[2026-09-16 00:21:00] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-roberta-aegis-v6 [PASS]
+[2026-09-16 00:21:01] [HF-Sync] Uploading weights.pt (7.3 MB) -> Hooshaai/svd-linear-attention-roberta-aegis-v6...
+[2026-09-16 00:21:06] [HF-Sync] SUCCESS: weights.pt -> Hooshaai/svd-linear-attention-roberta-aegis-v6
+[2026-09-16 00:22:20] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-astro [PASS]
+[2026-09-16 00:22:42] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-astro [PASS]
+[2026-09-16 00:24:07] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-roberta-astro [PASS]
+[2026-09-16 00:25:18] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-cachenotes [PASS]
+[2026-09-16 00:25:33] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-cachenotes [PASS]
+[2026-09-16 00:26:51] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-roberta-cachenotes [PASS]
+[2026-09-16 00:28:02] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-come [PASS]
+[2026-09-16 00:28:07] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-compressed-attention [PASS]
+[2026-09-16 00:28:09] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-compressed-attention-layer [PASS]
+[2026-09-16 00:28:13] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-cur-moe [PASS]
+[2026-09-16 00:28:16] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-direct-svd [PASS]
+[2026-09-16 00:28:20] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-direct-svd [PASS]
+[2026-09-16 00:28:23] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-roberta-direct-svd [PASS]
+[2026-09-16 00:28:26] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-distilbert-enlighten [PASS]
+[2026-09-16 00:28:29] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-enlighten [PASS]
+[2026-09-16 00:28:33] [HF-Sync] README.md -> Hooshaai/svd-linear-attention-gpt2-flap [PASS]

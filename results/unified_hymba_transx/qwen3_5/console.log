@@ -1,0 +1,34 @@
+The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]
+Loading weights:  98%|#########7| 313/320 [00:00<00:00, 3127.97it/s]
+Loading weights: 100%|##########| 320/320 [00:00<00:00, 3167.21it/s]
+[1mQwen3_5ForSequenceClassification LOAD REPORT[0m from: models\Qwen3.5-0.8B
+Key                                                | Status     | 
+---------------------------------------------------+------------+-
+model.visual.blocks.{0...11}.norm1.bias            | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.qkv.bias         | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc2.weight | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.qkv.weight       | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc1.weight | UNEXPECTED | 
+model.visual.merger.linear_fc2.weight              | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm1.weight          | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm2.weight          | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.proj.weight      | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm2.bias            | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc2.bias   | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc1.bias   | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.proj.bias        | UNEXPECTED | 
+model.visual.merger.linear_fc1.weight              | UNEXPECTED | 
+model.visual.merger.norm.bias                      | UNEXPECTED | 
+model.visual.merger.norm.weight                    | UNEXPECTED | 
+model.visual.merger.linear_fc1.bias                | UNEXPECTED | 
+model.visual.patch_embed.proj.weight               | UNEXPECTED | 
+model.visual.merger.linear_fc2.bias                | UNEXPECTED | 
+model.visual.patch_embed.proj.bias                 | UNEXPECTED | 
+model.visual.pos_embed.weight                      | UNEXPECTED | 
+score.weight                                       | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.

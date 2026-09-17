@@ -1,0 +1,49 @@
+The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+
+Loading weights:   0%|          | 0/320 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 320/320 [00:00<00:00, 3269.82it/s]
+[1mQwen3_5ForSequenceClassification LOAD REPORT[0m from: models\Qwen3.5-0.8B
+Key                                                | Status     | 
+---------------------------------------------------+------------+-
+model.visual.blocks.{0...11}.mlp.linear_fc2.bias   | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.qkv.bias         | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm1.weight          | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm1.bias            | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.proj.weight      | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc2.weight | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc1.bias   | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm2.weight          | UNEXPECTED | 
+model.visual.blocks.{0...11}.mlp.linear_fc1.weight | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.proj.bias        | UNEXPECTED | 
+model.visual.blocks.{0...11}.norm2.bias            | UNEXPECTED | 
+model.visual.patch_embed.proj.bias                 | UNEXPECTED | 
+model.visual.blocks.{0...11}.attn.qkv.weight       | UNEXPECTED | 
+model.visual.merger.linear_fc1.weight              | UNEXPECTED | 
+model.visual.patch_embed.proj.weight               | UNEXPECTED | 
+model.visual.merger.linear_fc1.bias                | UNEXPECTED | 
+model.visual.merger.norm.weight                    | UNEXPECTED | 
+model.visual.merger.norm.bias                      | UNEXPECTED | 
+model.visual.merger.linear_fc2.bias                | UNEXPECTED | 
+model.visual.merger.linear_fc2.weight              | UNEXPECTED | 
+model.visual.pos_embed.weight                      | UNEXPECTED | 
+score.weight                                       | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-14 05:58:58,178 [INFO] QwenQualitySweep: model=models\Qwen3.5-0.8B qwen_compat=True hidden=1024 heads=8 head_dim=256 layers=24
+2026-09-14 05:58:58,178 [INFO] QwenQualitySweep: detected model family=qwen3_5 adapter={'family': 'qwen3_5', 'hidden_size': 1024, 'num_heads': 8, 'num_key_value_heads': 2, 'q_proj_out': 2048, 'kv_proj_out': 512, 'kv_repeat': 4, 'head_dim': 256, 'num_hidden_layers': 24, 'causal': True, 'mask_rank': 4, 'position_embedding': 'rotary', 'supports_gqa': True, 'supports_delta_net': True, 'supports_moe': True}
+2026-09-14 05:58:58,178 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:58:58,178 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-14 05:58:58,179 [INFO] QwenQualitySweep:   model:             models\Qwen3.5-0.8B
+2026-09-14 05:58:58,179 [INFO] QwenQualitySweep:   family:            qwen3_5
+2026-09-14 05:58:58,179 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-14 05:58:58,179 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-14 05:58:58,179 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-14 05:58:58,180 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-14 05:58:58,180 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-14 05:58:58,180 [INFO] QwenQualitySweep: ================================================================================
+2026-09-14 05:58:58,360 [INFO] QwenQualitySweep: Injected 186 LoRALinear layers into qwen3_5 backbone
+2026-09-14 05:58:58,360 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection
+2026-09-14 05:59:29,772 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=0.4375
+2026-09-14 05:59:55,159 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.6075
