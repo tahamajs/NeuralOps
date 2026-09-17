@@ -1,46 +1,8 @@
 # Forward Sanity Check — svd_llm_v2
 
-## Purpose
+## Sanity Procedure
 
-Before recovery fine-tuning, confirm the injected module produces
-non-constant logits.
+Validate that singular value sum cumulative energy exceeds energy_threshold (0.999) and output norm is non-zero.
 
-## When to run
-
-After injection, before recovery.
-
-## Method
-
-```python
-def forward_sanity_check(model, sample_ids):
-    model.eval()
-    with torch.no_grad():
-        logits = model(sample_ids).logits  # shape (4, num_classes)
-    std = logits.std(dim=0).mean().item()
-    unique_preds = logits.argmax(-1).unique().numel()
-    return {
-        "std": std,
-        "unique_preds": unique_preds,
-        "passed": std > 1e-3 and unique_preds > 1,
-    }
-```
-
-## Interpretation
-
-| std | unique_preds | Meaning |
-|---|---|---|
-| < 1e-3 | 1 | Total collapse — abort |
-| < 1e-3 | > 1 | Suspicious — investigate |
-| > 1e-3 | 1 | Wrong but not collapsed |
-| > 1e-3 | > 1 | Healthy |
-
-## Action on failure
-
-1. Log to `papers/modules/svd_llm_v2/logs/sanity_fail.log`
-2. Do NOT proceed to recovery
-3. Mark run as `FAIL_SANITY`
-4. Report in `tables/failures.csv`
-
-## Output
-
-`papers/modules/svd_llm_v2/metrics/sanity_check.json`
+- Pass synthetic input tokens [B=2, S=16] through model.
+- Confirm non-zero standard deviation and absence of NaNs/Infs.

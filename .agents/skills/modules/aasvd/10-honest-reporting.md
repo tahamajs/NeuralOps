@@ -1,38 +1,7 @@
 # Honest Reporting — aasvd
 
-## Purpose
+## Integrity Constraints
 
-Decide how to report this module's results truthfully.
-
-## Decision matrix
-
-| Actual situation | How to report |
-|---|---|
-| Params decreased, accuracy improved | "compression" |
-| Params decreased, accuracy kept | "lossless compression" |
-| Params decreased, accuracy dropped | "compression with X% drop" |
-| Params unchanged, accuracy kept | "re-architecture" |
-| Params increased, accuracy kept | "re-architecture, higher capacity" |
-| Params increased, accuracy dropped | "negative result" |
-| OOM on some backbones | "memory-limited, works on N of 3" |
-| 0.00% on all backbones | "incompatible architecture — see failure signature" |
-
-## Required disclosures in abstract
-
-- If params increased: state the increase
-- If latency increased: state the factor
-- If accuracy dropped: state the delta
-- If some backbones failed: name them
-- If single-seed: say so
-
-## Anti-patterns to avoid
-
-- "significant improvement" without p-value
-- "state-of-the-art" without comparison
-- Hiding failed runs
-- Reporting only the best seed
-- Using "compression" when params increased
-
-## Output
-
-`papers/modules/aasvd/metrics/honest_reporting.json`
+1. Record exact empirical accuracies from `results/unified_aasvd/*/summary.csv`.
+2. Do NOT disguise the 50.92% majority class collapse as successful compression.
+3. Explicitly report parameter deltas (-2.42% on DistilBERT, -1.18% on RoBERTa, -9.95% on GPT-2).

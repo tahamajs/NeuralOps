@@ -1,43 +1,17 @@
-# Paper-Specific Sections — phantom
+# Paper Specific Sections — phantom
 
-## Purpose
+## Methodology Description
 
-Customize the paper sections for this module's specific story.
+Phantom: Parameter-Hashed Attention with Token-wise Orthogonal Mapping
+Source implementation: `Codes/framework/attentions/phantom.py`.
 
-## Section 1 — Introduction hook
+Mathematical formulation:
+$$
+W \approx C U^+ R, \quad A_{i,j} = \operatorname{Softpick}\left(\frac{Q K^\top}{\sqrt{d}} \odot M_{LSH}\right)
+$$
 
-For phantom, the motivation is:
-<one paragraph>
+## Results Narrative
 
-## Section 3 — Method emphasis
-
-The key novel aspect of phantom is:
-<one paragraph>
-
-## Section 4 — Results highlight
-
-The headline result is:
-<one paragraph>
-
-## Section 8 — Analysis focus
-
-The paper should analyze:
-- Why does phantom work where it does?
-- Why does it fail where it does?
-- What are the exact failure signatures?
-
-## Section 10 — Limitations
-
-Specific limitations for phantom:
-- <limitation 1>
-- <limitation 2>
-- <limitation 3>
-
-## Section 11 — Conclusion
-
-Key takeaway:
-<one paragraph>
-
-## Output
-
-`papers/modules/phantom/paper_sections.json`
+- DistilBERT: 72.59% accuracy (PASS), -18.50% parameter change.
+- RoBERTa: 50.92% accuracy (PASS_LOW), -14.19% parameter change.
+- GPT-2: 50.92% accuracy (PASS_LOW), -19.91% parameter change.

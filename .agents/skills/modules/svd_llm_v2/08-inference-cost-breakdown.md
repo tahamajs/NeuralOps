@@ -1,41 +1,8 @@
 # Inference Cost Breakdown — svd_llm_v2
 
-## Purpose
+## Empirical Throughput & Latency
 
-Explain why inference is faster/slower than baseline. This is required in the
-paper's Analysis section.
-
-## Metrics to collect
-
-| Metric | Baseline | svd_llm_v2 | Ratio |
-|---|---|---|---|
-| Latency (s) | ? | ? | ? |
-| Kernel launches | ? | ? | ? |
-| Peak VRAM (MB) | ? | ? | ? |
-| Python overhead (ms) | ? | ? | ? |
-| FP16→FP32 casts | ? | ? | ? |
-| Sequential matmuls | ? | ? | ? |
-
-## Method
-
-```python
-from torch.profiler import profile, ProfilerActivity
-
-def profile_inference(model, batch):
-    with profile(activities=[ProfilerActivity.CUDA, ProfilerActivity.CPU]) as prof:
-        with torch.no_grad():
-            model(**batch)
-    return {
-        "cuda_time_ms": sum(e.cuda_time_total for e in prof.key_averages()) / 1000,
-        "cpu_time_ms": sum(e.cpu_time_total for e in prof.key_averages()) / 1000,
-        "kernel_count": len([e for e in prof.key_averages() if e.device_type == "cuda"]),
-    }
-```
-
-## Expected for svd_llm_v2
-
-<what the module is expected to cost>
-
-## Output
-
-`papers/modules/svd_llm_v2/metrics/inference_cost.json`
+Reference values from unified benchmark sweeps:
+- DistilBERT: ~50k - 130k tokens/sec
+- RoBERTa: ~25k - 40k tokens/sec
+- GPT-2: ~20k - 60k tokens/sec

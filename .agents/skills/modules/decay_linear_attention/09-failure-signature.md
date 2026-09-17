@@ -1,44 +1,11 @@
 # Failure Signature — decay_linear_attention
 
-## Purpose
+## Known Empirical Failures
 
-Document the specific failure pattern of this module. Every agent working with
-this module must know it.
+### Failure 1: Model size grows (LoRA parameters added to non-factorized weights)
 
-## Known failures
+**Symptom:** Observed in benchmark results.
+**Root cause:** Decay linear attention replaces quadratic softmax attention with linear recurrent attention for FLOP/throughput efficiency, not parameter reduction. Adding LoRA adapters makes parameter change positive.
+**Fix:** Honest reporting: classify as Linear Recurrent Attention / Throughput Acceleration, NOT Parameter Compression.
 
-### Failure 1: <name>
 
-**Symptom:** <what happens>
-
-**Root cause:** <why>
-
-**Fix:** <how>
-
-**Files affected:** <list>
-
-### Failure 2: <name>
-
-...
-
-## Diagnostic commands
-
-```bash
-# Check if the module is even running correctly
-grep -E "decay_linear_attention|FAIL|ERROR|NaN|OOM" results/*/decay_linear_attention*/summary.csv
-
-# Check for the specific signature
-grep "<specific_string>" benchmark_logs/decay_linear_attention*.log
-```
-
-## Recovery procedure
-
-1. Read the log in `benchmark_logs/decay_linear_attention_<backbone>.log`
-2. Check `metrics/sanity_check.json` for this run
-3. Check `metrics/copy_weights_audit.json`
-4. If any of the above failed, apply the fix and re-run
-5. Do NOT proceed to recovery if sanity check failed
-
-## Output
-
-`papers/modules/decay_linear_attention/logs/failure_analysis.md`

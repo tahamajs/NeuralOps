@@ -1,38 +1,8 @@
-# Causal vs Bidirectional — phantom
+# Causal vs Bidirectional Check — phantom
 
-## Purpose
+## Masking & Recurrence Rules
 
-Some modules implement causal recurrence that is mathematically incompatible
-with bidirectional encoders. Applying them to BERT produces NaN or 0.00%.
+Causal mask enabled via is_causal parameter applying upper-triangular boolean mask. Softpick temperature scaled for causal recurrence.
 
-## Detection
-
-```python
-CAUSAL_ONLY_MODULES = {
-    "gated_delta_net", "gated_deltanet_block",
-    "hgrn2_gated_deltanet", "hgrn2_layer",
-    "jamba2", "jamba",
-    "decay_gated_linear_attention",
-    "svd_mamba", "mamba", "mamba2",
-}
-
-def is_compatible(model_family, module_name):
-    if module_name in CAUSAL_ONLY_MODULES and model_family in ("bert", "roberta"):
-        return False, "SKIP_NON_CAUSAL_BACKBONE"
-    return True, None
-```
-
-## Rule
-
-If `phantom` ∈ `CAUSAL_ONLY_MODULES` and model_family ∈ {bert, roberta}:
-- Mark status as `SKIP_NON_CAUSAL_BACKBONE`
-- Do NOT run recovery
-- Log in `papers/modules/phantom/tables/skip_reasons.csv`
-
-## Output
-
-```csv
-module,backbone,reason
-phantom,distilbert,SKIP_NON_CAUSAL_BACKBONE
-phantom,roberta,SKIP_NON_CAUSAL_BACKBONE
-```
+- Causal decoders (GPT-2, Qwen): Must maintain strict autoregressive triangular masking.
+- Bidirectional encoders (RoBERTa, DistilBERT): Must allow bidirectional attention context.

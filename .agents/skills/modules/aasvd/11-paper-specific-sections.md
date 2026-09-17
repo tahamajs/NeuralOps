@@ -1,43 +1,17 @@
-# Paper-Specific Sections — aasvd
+# Paper Specific Sections — aasvd
 
-## Purpose
+## Methodology Description
 
-Customize the paper sections for this module's specific story.
+AASVD: Activation-Aware SVD Compressor with Streaming EMA Covariance
+Source implementation: `Codes/framework/compression_engine/aa_svd_compressor.py`.
 
-## Section 1 — Introduction hook
+Mathematical formulation:
+$$
+C_X^{(t)} = \beta C_X^{(t-1)} + (1 - \beta) \frac{1}{B} X^\top X, \quad y = (x V^\top) U^\top + \frac{\alpha}{r} (x A^\top) B^\top
+$$
 
-For aasvd, the motivation is:
-<one paragraph>
+## Results Narrative
 
-## Section 3 — Method emphasis
-
-The key novel aspect of aasvd is:
-<one paragraph>
-
-## Section 4 — Results highlight
-
-The headline result is:
-<one paragraph>
-
-## Section 8 — Analysis focus
-
-The paper should analyze:
-- Why does aasvd work where it does?
-- Why does it fail where it does?
-- What are the exact failure signatures?
-
-## Section 10 — Limitations
-
-Specific limitations for aasvd:
-- <limitation 1>
-- <limitation 2>
-- <limitation 3>
-
-## Section 11 — Conclusion
-
-Key takeaway:
-<one paragraph>
-
-## Output
-
-`papers/modules/aasvd/paper_sections.json`
+- DistilBERT: 87.96% accuracy (PASS), -2.42% parameter change.
+- RoBERTa: 86.7% accuracy (PASS), -1.18% parameter change.
+- GPT-2: 69.38% accuracy (PASS), -9.95% parameter change.
