@@ -399,7 +399,6 @@ class ZeroKVNeoCompressor(BaseCompressor):
             "output.dense",
             "self.output",
             ".output",
-            "dense",
         ]
         if any(kw in name_lower for kw in output_proj_keywords):
             return False
