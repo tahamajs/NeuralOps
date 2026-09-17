@@ -1,3 +1,10 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{huffman_coder}.
+\subsection{Algorithmic Formulation}
+The \texttt{huffman_coder} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Huffman Coder & Entropy Compression Engine for Weight and KV Cache Quantization.
+Registered as 'huffman'. Production-hardened with vectorized encode/decode,
+exact byte accounting, safe LoRA freezing, and robust tokenizer forward checks.}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

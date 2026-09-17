@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{hla_attention}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_hla\_attention/roberta/summary.csv} & hla\_attention & PASS\_LOW & 49.08\% & 667.32 MB \\
+\texttt{results/unified\_hla\_attention/distilbert/summary.csv} & hla\_attention & PASS\_LOW & 49.08\% & 338.25 MB \\
+\texttt{results/unified\_hla\_attention/gpt2/summary.csv} & hla\_attention & PASS\_LOW & 49.08\% & 567.58 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

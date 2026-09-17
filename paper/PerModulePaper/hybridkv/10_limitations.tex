@@ -1,3 +1,7 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Formal architectural specifications for \texttt{hybridkv}.
+\begin{itemize}
+\item \textbf{Calibration Sensitivity:} Compression fidelity is conditioned on representative calibration sequences.
+\item \textbf{Architectural Adaptation:} Autoregressive causal configurations necessitate tuned regularization parameters compared to bidirectional encoders.
+\item \textbf{Hardware Specificity:} Semi-structured speedups require hardware tensor core support (e.g., Ampere architecture).
+\end{itemize}

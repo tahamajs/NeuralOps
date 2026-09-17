@@ -1,3 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{hybrid_svd_layer}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_hybrid\_svd\_layer/roberta/summary.csv} & hybrid\_svd\_layer & PASS\_LOW & 50.92\% & 630.13 MB \\
+\texttt{results/unified\_hybrid\_svd\_layer/distilbert/summary.csv} & hybrid\_svd\_layer & PASS & 77.18\% & 258.7 MB \\
+\texttt{results/unified\_hybrid\_svd\_layer/qwen3\_5/summary.csv} & hybrid\_svd\_layer & FAIL & 0.0\% & 1796.78 MB \\
+\texttt{results/unified\_hybrid\_svd\_layer/gpt2/summary.csv} & hybrid\_svd\_layer & PASS\_LOW & 51.15\% & 619.22 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

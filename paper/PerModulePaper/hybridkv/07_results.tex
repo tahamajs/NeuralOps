@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{hybridkv}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_hybridkv/roberta/summary.csv} & hybridkv & PASS & 77.18\% & 361.56 MB \\
+\texttt{results/unified\_hybridkv/distilbert/summary.csv} & hybridkv & PASS & 90.94\% & 337.6 MB \\
+\texttt{results/unified\_hybridkv/gpt2/summary.csv} & hybridkv & PASS & 62.04\% & 634.93 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 25.71 ms & 571.8 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 25.63 ms & 571.8 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 26.96 ms & 581.7 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 27.47 ms & 581.7 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 52.57 ms & 1107.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
