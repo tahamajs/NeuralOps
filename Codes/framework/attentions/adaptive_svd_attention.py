@@ -386,15 +386,46 @@ class AdaptiveSVDAttention(BaseAttention):
             if w is None:
                 # Manual fallback for GPT-2 Fused c_attn Conv1D
                 if hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
-                    fused_w = src.c_attn.weight.T  # [3 * D, D]
-                    fused_b = getattr(src.c_attn, "bias", None)
-                    split_size = fused_w.size(0) // 3
-                    idx = {"q": 0, "k": 1, "v": 2}[proj]
-                    w = fused_w[idx * split_size : (idx + 1) * split_size, :]
-                    b = fused_b[idx * split_size : (idx + 1) * split_size] if fused_b is not None else None
+                    mod_c = src.c_attn
+                    base_c = getattr(mod_c, "base_layer", mod_c)
+                    weight = getattr(base_c, "weight", getattr(mod_c, "weight", None))
+                    if weight is not None:
+                        weight = weight.data.clone()
+                        bias = getattr(base_c, "bias", getattr(mod_c, "bias", None))
+                        bias_data = bias.data.clone() if bias is not None else None
+                        hidden_dim = getattr(self, "hidden_size", 768)
+                        if (
+                            mod_c.__class__.__name__ == "Conv1D"
+                            or base_c.__class__.__name__ == "Conv1D"
+                            or hasattr(mod_c, "nf")
+                            or hasattr(base_c, "nf")
+                            or (weight.dim() == 2 and weight.shape[1] == 3 * hidden_dim)
+                            or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])
+                        ):
+                            weight = weight.t().contiguous()
+                        split_size = weight.shape[0] // 3
+                        idx = {"q": 0, "k": 1, "v": 2}[proj]
+                        w = weight[idx * split_size : (idx + 1) * split_size, :].contiguous()
+                        b = bias_data[idx * split_size : (idx + 1) * split_size].contiguous() if bias_data is not None else None
                 elif hasattr(src, "c_proj") and proj == "o":
-                    w = src.c_proj.weight.T
-                    b = getattr(src.c_proj, "bias", None)
+                    mod_o = src.c_proj
+                    base_o = getattr(mod_o, "base_layer", mod_o)
+                    w_o = getattr(base_o, "weight", getattr(mod_o, "weight", None))
+                    if w_o is not None:
+                        w_o = w_o.data.clone()
+                        hidden_dim = getattr(self, "hidden_size", 768)
+                        if (
+                            mod_o.__class__.__name__ == "Conv1D"
+                            or base_o.__class__.__name__ == "Conv1D"
+                            or hasattr(mod_o, "nf")
+                            or hasattr(base_o, "nf")
+                            or (w_o.dim() == 2 and w_o.shape[0] != hidden_dim and w_o.shape[1] == hidden_dim)
+                            or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
+                        ):
+                            w_o = w_o.t().contiguous()
+                        b_o = getattr(base_o, "bias", getattr(mod_o, "bias", None))
+                        w = w_o.contiguous()
+                        b = b_o.data.clone().contiguous() if b_o is not None else None
                 # Manual fallback for RoBERTa / BERT self-attention
                 elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
                     s = getattr(src, "self")
