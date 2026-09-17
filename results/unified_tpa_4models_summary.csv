@@ -1,0 +1,2 @@
+Model,Exit Code,Baseline Acc,TPAttention Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+gpt2,0,79.36%,49.08%,-30.28%,0.0000,PASS_LOW,0,1.08x,500.8 MB,114.3

@@ -1,0 +1,54 @@
+[
+  {
+    "Model": "distilbert",
+    "Exit Code": 1,
+    "Baseline Acc": "90.94%",
+    "TLinFormer Attention Acc": "90.83%",
+    "Delta Acc": "-0.11%",
+    "F1": "0.9119",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "0.99x",
+    "Peak VRAM": "336.0 MB",
+    "Time (s)": "0.1"
+  },
+  {
+    "Model": "roberta",
+    "Exit Code": 1,
+    "Baseline Acc": "75.46%",
+    "TLinFormer Attention Acc": "50.92%",
+    "Delta Acc": "-24.54%",
+    "F1": "0.6748",
+    "Status": "PASS_LOW",
+    "Compressed Layers": "0",
+    "Comp Rate": "0.93x",
+    "Peak VRAM": "664.6 MB",
+    "Time (s)": "0.1"
+  },
+  {
+    "Model": "gpt2",
+    "Exit Code": 1,
+    "Baseline Acc": "57.91%",
+    "TLinFormer Attention Acc": "51.03%",
+    "Delta Acc": "-6.88%",
+    "F1": "0.6753",
+    "Status": "PASS_LOW",
+    "Compressed Layers": "0",
+    "Comp Rate": "0.98x",
+    "Peak VRAM": "574.7 MB",
+    "Time (s)": "0.1"
+  },
+  {
+    "Model": "qwen3_5",
+    "Exit Code": 1,
+    "Baseline Acc": "N/A",
+    "TLinFormer Attention Acc": "N/A",
+    "Delta Acc": "N/A",
+    "F1": "N/A",
+    "Status": "EXIT_1",
+    "Compressed Layers": "N/A",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "N/A",
+    "Time (s)": "0.1"
+  }
+]

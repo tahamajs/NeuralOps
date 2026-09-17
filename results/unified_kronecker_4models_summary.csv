@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,Kronecker Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.48%,90.94%,+0.46%,0.9123,PASS,1,1.00x,315.1 MB,17.8
+roberta,0,75.11%,70.07%,-5.04%,0.7603,PASS,0,1.00x,301.7 MB,25.4
+gpt2,0,60.78%,60.32%,-0.46%,0.7038,PASS,2,1.00x,643.3 MB,25.4

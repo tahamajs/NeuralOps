@@ -1,0 +1,4 @@
+run_id,module_name,model_family,dataset,status,mean_accuracy,std_accuracy,ci_lower,ci_upper,p_value,f1_score,fidelity_score,fwd_ms,bwd_ms,peak_vram_mb,throughput_tokens_sec,flops_macs,timestamp
+run_quality_20260828_091245,full,DISTILBERT,SST2,TIMEOUT,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,1450000000.0,2026-08-28T09:17:45.435375
+run_quality_20260828_091245,a3  # aliases: a3_compressor,DISTILBERT,SST2,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,1450000000.0,2026-08-28T09:17:59.889245
+run_quality_20260828_091245,"aasvd  # aliases: aa_svd, aa_svd_compressor",DISTILBERT,SST2,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,1450000000.0,2026-08-28T09:18:14.211706

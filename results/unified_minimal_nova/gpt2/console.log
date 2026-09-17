@@ -1,0 +1,69 @@
+2026-09-15 21:53:34,512 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 3405.83it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 21:53:35,827 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 21:53:35,827 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 21:53:35,827 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 21:53:35,828 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 21:53:35,828 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 21:53:35,828 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 21:53:35,828 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 21:53:35,828 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 21:53:35,828 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 21:53:35,829 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 21:53:35,829 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 21:53:35,829 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 21:53:36,166 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 21:53:36,808 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 21:53:37,535 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 21:53:42,497 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 21:53:42,550 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 21:53:42,550 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 21:53:42,550 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 21:53:42,550 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 21:53:42,550 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 21:53:42,550 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 21:53:42,551 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 21:53:42,551 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 21:53:42,567 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 21:53:47,877 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_minimal_nova\gpt2\gpt2_full_full_metrics.json
+2026-09-15 21:53:47,885 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_minimal_nova\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 21:53:48,565 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 793.19 MB)
+2026-09-15 21:53:48,565 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_minimal_nova\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 21:53:48,812 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: minimal_nova (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 21:53:54,445 [INFO] QwenQualitySweep: module=minimal_nova path=adapted_gpt
+2026-09-15 21:53:54,447 [INFO] QwenQualitySweep: module=minimal_nova injection summary: 48 SVDLinear layers active
+2026-09-15 21:53:54,447 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for minimal_nova (lr=2.0e-04)
+2026-09-15 21:53:54,783 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-09-15 21:53:54,785 [INFO] framework.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-09-15 21:53:54,791 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 21:53:55,199 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.5575 (bs=8, micro_bs=8)
+2026-09-15 21:53:56,147 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6567 (bs=8, micro_bs=8)
+2026-09-15 21:53:57,361 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.5783 (bs=8, micro_bs=8)
+2026-09-15 21:53:58,570 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5056 (bs=8, micro_bs=8)
+2026-09-15 21:53:59,729 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6132 (bs=8, micro_bs=8)
+2026-09-15 21:54:01,221 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.4524 (bs=8, micro_bs=8)
+2026-09-15 21:54:02,540 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.5804 (bs=8, micro_bs=8)
+2026-09-15 21:54:03,699 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.7296 (bs=8, micro_bs=8)
+2026-09-15 21:54:04,872 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7041 (bs=8, micro_bs=8)
+2026-09-15 21:54:06,024 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.5068 (bs=8, micro_bs=8)
+2026-09-15 21:54:07,217 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.5933 (bs=8, micro_bs=8)
+2026-09-15 21:54:17,133 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_minimal_nova\gpt2\gpt2_minimal_nova_full_metrics.json
+2026-09-15 21:54:17,165 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_minimal_nova\gpt2\checkpoints\minimal_nova\weights.pt (module_params=0, lora_params=97)
+2026-09-15 21:54:17,926 [INFO] QwenQualitySweep: [2/2] minimal_nova -> PASS 58.83% (F1: 0.705, Peak VRAM: 494.09 MB)
+2026-09-15 21:54:17,926 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_minimal_nova\gpt2\checkpoints\minimal_nova. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 21:54:18,174 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 21:54:18,175 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 21:54:18,180 [INFO] QwenQualitySweep: 
+                       Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                         full   PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.10              4.71
+minimal_nova (efficient-attn)   PASS   58.83%      -20.53% 0.7050                  0            1.17x  494.1 MB               9.62             11.03
+2026-09-15 21:54:18,180 [INFO] QwenQualitySweep: ================================================================================

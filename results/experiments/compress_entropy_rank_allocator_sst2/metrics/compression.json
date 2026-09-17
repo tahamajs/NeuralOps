@@ -1,0 +1,8 @@
+{
+  "timestamp": "2026-08-23T03:57:12.552572",
+  "compressor": "entropy_rank_allocator",
+  "original_size_mb": 255.41,
+  "compressed_size_mb": 113.0,
+  "reduction_ratio": 2.26,
+  "compression_rank": 64
+}

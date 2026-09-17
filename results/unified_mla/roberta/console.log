@@ -1,0 +1,80 @@
+2026-09-15 22:03:36,939 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 197/197 [00:00<00:00, 3555.76it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.bias                    | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
+lm_head.layer_norm.bias         | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+classifier.out_proj.bias        | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+classifier.out_proj.weight      | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 22:03:38,272 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 22:03:38,272 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 22:03:38,272 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 22:03:38,272 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 22:03:38,272 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-15 22:03:38,272 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-15 22:03:38,272 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 22:03:38,272 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 22:03:38,272 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 22:03:38,273 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 22:03:38,273 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 22:03:38,273 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 22:03:38,622 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\roberta_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 22:03:39,282 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 22:03:40,008 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 22:03:44,766 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 78.56%
+2026-09-15 22:03:44,817 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 22:03:44,818 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 22:03:44,818 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 22:03:44,818 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 22:03:44,818 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 22:03:44,818 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 22:03:44,818 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 22:03:44,819 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 22:03:44,833 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 22:03:50,134 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_mla\roberta\roberta-base_full_full_metrics.json
+2026-09-15 22:03:50,145 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_mla\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-15 22:03:50,820 [INFO] QwenQualitySweep: [1/2] full -> PASS 78.56% (F1: 0.8124, Peak VRAM: 712.34 MB)
+2026-09-15 22:03:50,820 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_mla\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 22:03:51,066 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: mla (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 22:03:54,097 [INFO] framework.core.attention_utils: Successfully injected 'mla' into 12 transformer blocks.
+2026-09-15 22:03:54,113 [INFO] QwenQualitySweep: module=mla path=adapted_roberta
+2026-09-15 22:03:54,115 [INFO] QwenQualitySweep: module=mla injection summary: 0 SVDLinear layers active
+2026-09-15 22:03:54,116 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for mla (lr=2.0e-04)
+2026-09-15 22:03:54,370 [INFO] framework.utils.compat: Recovery fine-tuning selected 589836 trainable parameters across 60 tensors.
+2026-09-15 22:03:54,371 [INFO] framework.utils.compat: Discovered 60 trainable tensors (589836 params)
+2026-09-15 22:03:54,376 [INFO] QwenQualitySweep: LoRA fine-tuning: 589836 trainable parameters across 60 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 22:03:54,562 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=1.4232 (bs=8, micro_bs=8)
+2026-09-15 22:03:55,217 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=3.7330 (bs=8, micro_bs=8)
+2026-09-15 22:03:55,955 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=3.2902 (bs=8, micro_bs=8)
+2026-09-15 22:03:56,678 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=2.7978 (bs=8, micro_bs=8)
+2026-09-15 22:03:57,416 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=2.1854 (bs=8, micro_bs=8)
+2026-09-15 22:03:58,170 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=4.2680 (bs=8, micro_bs=8)
+2026-09-15 22:03:58,890 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=2.8613 (bs=8, micro_bs=8)
+2026-09-15 22:03:59,598 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=1.9974 (bs=8, micro_bs=8)
+2026-09-15 22:04:00,337 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=2.3358 (bs=8, micro_bs=8)
+2026-09-15 22:04:01,036 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=2.0445 (bs=8, micro_bs=8)
+2026-09-15 22:04:01,758 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=2.9775 (bs=8, micro_bs=8)
+2026-09-15 22:04:08,203 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_mla\roberta\roberta-base_mla_full_metrics.json
+2026-09-15 22:04:08,241 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_mla\roberta\checkpoints\mla\weights.pt (module_params=0, lora_params=52)
+2026-09-15 22:04:09,029 [INFO] QwenQualitySweep: [2/2] mla -> PASS_LOW 47.48% (F1: 0.1642, Peak VRAM: 597.25 MB)
+2026-09-15 22:04:09,030 [INFO] QwenQualitySweep: [Quality Guard] Module 'mla' did not pass quality criteria (status=PASS_LOW, acc=47.48%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 22:04:09,288 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 22:04:09,288 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-15 22:04:09,295 [INFO] QwenQualitySweep: 
+              Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                full     PASS   78.56% 0.00% (base) 0.8124                  0            1.00x  712.3 MB               4.05              4.64
+mla (efficient-attn) PASS_LOW   47.48%      -31.08% 0.1642                  0            1.05x  597.2 MB               6.25              7.17
+2026-09-15 22:04:09,295 [INFO] QwenQualitySweep: ================================================================================

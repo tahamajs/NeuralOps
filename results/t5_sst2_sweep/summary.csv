@@ -1,0 +1,23 @@
+module_name,status,accuracy_pct,elapsed_s,error,path,timestamp
+full,FAIL,0.0,0.68,"RuntimeError: mat1 and mat2 must have the same dtype, but got Half and Float",adapted,2026-09-02T00:18:47.172080
+a3,FAIL,0.0,8.04,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-02T00:18:55.573773
+aasvd,SKIP,0.0,98.43,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-02T00:20:34.566458
+adaptive_span,PASS,50.92,13.96,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:20:49.037779
+adaptive_sparse,PASS,50.92,27.66,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:21:17.534736
+adaptive_svd,PASS,50.92,58.71,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:22:16.600877
+adasplash,PASS,50.92,65.33,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:23:22.241148
+adasvd,PASS,49.43,28.44,"fp32 retry: expected mat1 and mat2 to have the same dtype, but got: struct c10::Half != float",legacy_bert,2026-09-02T00:23:51.471110
+admm,SKIP,0.0,3.72,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-02T00:23:55.704298
+admm_pruner,FAIL,0.0,2.63,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-02T00:23:59.062086
+aegis_hybrid,PASS,50.92,20.99,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:24:20.771201
+aegis_spectron_fp8,PASS,50.8,27.94,fp32 retry: expected scalar type Half but found Float,legacy_bert,2026-09-02T00:24:49.328212
+aegis_v1,PASS,50.92,325.95,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:30:16.308872
+aegis_v2,PASS,50.92,20.62,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:30:38.025326
+aegis_v3,PASS,50.92,316.95,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:35:55.658518
+aegis_v4,PASS,50.92,152.02,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:38:28.159038
+aegis_v5,PASS,50.92,109.07,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:40:17.436118
+aegis_v6,PASS,50.92,19.36,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:40:37.053834
+armor,FAIL,0.0,4.21,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-02T00:40:41.560960
+ast,FAIL,0.0,7.23,IndexError: index -1 is out of bounds for dimension 1 with size 0,adapted,2026-09-02T00:40:49.080495
+astro,SKIP,0.0,0.26,AttributeError: 'Embedding' object has no attribute 'new_zeros',adapted,2026-09-02T00:40:49.587945
+asvd,PASS,50.92,26.23,"fp32 retry: mat1 and mat2 must have the same dtype, but got Half and Float",legacy_bert,2026-09-02T00:41:16.017575

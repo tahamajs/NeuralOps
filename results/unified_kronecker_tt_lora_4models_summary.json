@@ -1,0 +1,41 @@
+[
+  {
+    "Model": "distilbert",
+    "Exit Code": 1,
+    "Baseline Acc": "90.71%",
+    "Kronecker TT-LoRA Acc": "90.48%",
+    "Delta Acc": "-0.23%",
+    "F1": "0.9091",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "0.98x",
+    "Peak VRAM": "211.5 MB",
+    "Time (s)": "0.1"
+  },
+  {
+    "Model": "roberta",
+    "Exit Code": 1,
+    "Baseline Acc": "78.56%",
+    "Kronecker TT-LoRA Acc": "0.00%",
+    "Delta Acc": "-78.56%",
+    "F1": "0.8124",
+    "Status": "FAIL",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "712.3 MB",
+    "Time (s)": "0.1"
+  },
+  {
+    "Model": "gpt2",
+    "Exit Code": 1,
+    "Baseline Acc": "79.36%",
+    "Kronecker TT-LoRA Acc": "76.95%",
+    "Delta Acc": "-2.41%",
+    "F1": "0.7996",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "0.98x",
+    "Peak VRAM": "803.7 MB",
+    "Time (s)": "0.1"
+  }
+]

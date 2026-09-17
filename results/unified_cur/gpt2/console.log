@@ -1,0 +1,106 @@
+2026-09-15 11:41:12,321 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 3797.65it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 11:41:13,617 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 11:41:13,617 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 11:41:13,617 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:41:13,617 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 11:41:13,617 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 11:41:13,618 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 11:41:13,618 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 11:41:13,618 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 11:41:13,618 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 11:41:13,618 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 11:41:13,619 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 11:41:13,619 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:41:13,968 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 11:41:14,594 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 11:41:15,327 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 11:41:20,341 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 11:41:20,389 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:41:20,390 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 11:41:20,390 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 11:41:20,390 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 11:41:20,390 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 11:41:20,390 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 11:41:20,390 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 11:41:20,391 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:41:20,417 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 11:41:25,604 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_cur\gpt2\gpt2_full_full_metrics.json
+2026-09-15 11:41:25,620 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_cur\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 11:41:26,296 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 793.19 MB)
+2026-09-15 11:41:26,296 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_cur\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 11:41:26,548 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: cur (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 11:41:28,237 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.attn.c_attn error 0.7389 exceeded max_error 0.2000
+2026-09-15 11:41:28,401 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.attn.c_proj error 0.4853 exceeded max_error 0.2000
+2026-09-15 11:41:28,634 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.mlp.c_fc error 0.8060 exceeded max_error 0.2000
+2026-09-15 11:41:28,863 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.0.mlp.c_proj error 0.7689 exceeded max_error 0.2000
+2026-09-15 11:41:29,101 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.1.attn.c_attn error 0.7249 exceeded max_error 0.2000
+2026-09-15 11:41:29,252 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.1.attn.c_proj error 0.7387 exceeded max_error 0.2000
+2026-09-15 11:41:29,485 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.1.mlp.c_fc error 0.8121 exceeded max_error 0.2000
+2026-09-15 11:41:29,715 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.1.mlp.c_proj error 0.7984 exceeded max_error 0.2000
+2026-09-15 11:41:29,940 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.2.attn.c_attn error 0.7545 exceeded max_error 0.2000
+2026-09-15 11:41:30,080 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.2.attn.c_proj error 0.7600 exceeded max_error 0.2000
+2026-09-15 11:41:30,310 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.2.mlp.c_fc error 0.8076 exceeded max_error 0.2000
+2026-09-15 11:41:30,540 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.2.mlp.c_proj error 0.7911 exceeded max_error 0.2000
+2026-09-15 11:41:30,766 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.3.attn.c_attn error 0.7924 exceeded max_error 0.2000
+2026-09-15 11:41:30,907 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.3.attn.c_proj error 0.7319 exceeded max_error 0.2000
+2026-09-15 11:41:31,147 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.3.mlp.c_fc error 0.8213 exceeded max_error 0.2000
+2026-09-15 11:41:31,393 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.3.mlp.c_proj error 0.7801 exceeded max_error 0.2000
+2026-09-15 11:41:31,618 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.4.attn.c_attn error 0.7588 exceeded max_error 0.2000
+2026-09-15 11:41:31,763 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.4.attn.c_proj error 0.7480 exceeded max_error 0.2000
+2026-09-15 11:41:31,993 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.4.mlp.c_fc error 0.8121 exceeded max_error 0.2000
+2026-09-15 11:41:32,236 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.4.mlp.c_proj error 0.7902 exceeded max_error 0.2000
+2026-09-15 11:41:32,473 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.5.attn.c_attn error 0.7539 exceeded max_error 0.2000
+2026-09-15 11:41:32,613 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.5.attn.c_proj error 0.7688 exceeded max_error 0.2000
+2026-09-15 11:41:32,850 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.5.mlp.c_fc error 0.8150 exceeded max_error 0.2000
+2026-09-15 11:41:33,077 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.5.mlp.c_proj error 0.7977 exceeded max_error 0.2000
+2026-09-15 11:41:33,309 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.6.attn.c_attn error 0.7937 exceeded max_error 0.2000
+2026-09-15 11:41:33,459 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.6.attn.c_proj error 0.7474 exceeded max_error 0.2000
+2026-09-15 11:41:33,685 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.6.mlp.c_fc error 0.8192 exceeded max_error 0.2000
+2026-09-15 11:41:33,907 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.6.mlp.c_proj error 0.8033 exceeded max_error 0.2000
+2026-09-15 11:41:34,126 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.7.attn.c_attn error 0.7908 exceeded max_error 0.2000
+2026-09-15 11:41:34,267 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.7.attn.c_proj error 0.7632 exceeded max_error 0.2000
+2026-09-15 11:41:34,497 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.7.mlp.c_fc error 0.8265 exceeded max_error 0.2000
+2026-09-15 11:41:34,725 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.7.mlp.c_proj error 0.8095 exceeded max_error 0.2000
+2026-09-15 11:41:34,951 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.8.attn.c_attn error 0.8157 exceeded max_error 0.2000
+2026-09-15 11:41:35,094 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.8.attn.c_proj error 0.7652 exceeded max_error 0.2000
+2026-09-15 11:41:35,340 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.8.mlp.c_fc error 0.8337 exceeded max_error 0.2000
+2026-09-15 11:41:35,579 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.8.mlp.c_proj error 0.8068 exceeded max_error 0.2000
+2026-09-15 11:41:35,818 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.9.attn.c_attn error 0.8557 exceeded max_error 0.2000
+2026-09-15 11:41:35,959 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.9.attn.c_proj error 0.8045 exceeded max_error 0.2000
+2026-09-15 11:41:36,182 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.9.mlp.c_fc error 0.8349 exceeded max_error 0.2000
+2026-09-15 11:41:36,413 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.9.mlp.c_proj error 0.8132 exceeded max_error 0.2000
+2026-09-15 11:41:36,635 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.10.attn.c_attn error 0.8442 exceeded max_error 0.2000
+2026-09-15 11:41:36,783 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.10.attn.c_proj error 0.8286 exceeded max_error 0.2000
+2026-09-15 11:41:37,044 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.10.mlp.c_fc error 0.8373 exceeded max_error 0.2000
+2026-09-15 11:41:37,319 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.10.mlp.c_proj error 0.8196 exceeded max_error 0.2000
+2026-09-15 11:41:37,579 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.11.attn.c_attn error 0.8139 exceeded max_error 0.2000
+2026-09-15 11:41:37,739 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.11.attn.c_proj error 0.7652 exceeded max_error 0.2000
+2026-09-15 11:41:38,002 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.11.mlp.c_fc error 0.8249 exceeded max_error 0.2000
+2026-09-15 11:41:38,256 [WARNING] framework.compression_engine.cur_compressor: CURCompressor: Layer transformer.h.11.mlp.c_proj error 0.8232 exceeded max_error 0.2000
+2026-09-15 11:41:38,268 [INFO] QwenQualitySweep: module=cur path=adapted_gpt
+2026-09-15 11:41:38,270 [INFO] QwenQualitySweep: module=cur injection summary: 0 SVDLinear layers active
+2026-09-15 11:41:38,271 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for cur (lr=2.0e-04)
+2026-09-15 11:41:38,389 [INFO] framework.utils.compat: Recovery fine-tuning selected 0 trainable parameters across 0 tensors.
+2026-09-15 11:41:38,390 [INFO] framework.utils.compat: Discovered 0 trainable tensors (0 params)
+2026-09-15 11:41:42,908 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_cur\gpt2\gpt2_cur_full_metrics.json
+2026-09-15 11:41:42,912 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_cur\gpt2\checkpoints\cur\weights.pt (module_params=0, lora_params=1)
+2026-09-15 11:41:43,572 [INFO] QwenQualitySweep: [2/2] cur -> PASS_NO_COMPRESSION 79.36% (F1: 0.7978, Peak VRAM: 627.28 MB)
+2026-09-15 11:41:43,572 [WARNING] QwenQualitySweep: Module 'cur' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 11:41:43,572 [INFO] QwenQualitySweep: [Quality Guard] Module 'cur' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=79.36%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 11:41:43,834 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 11:41:43,834 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 11:41:43,841 [INFO] QwenQualitySweep: 
+              Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                full                PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               3.97              4.55
+cur (efficient-attn) PASS_NO_COMPRESSION   79.36%       +0.00% 0.7978                  0            1.00x  627.3 MB               4.39              5.03
+2026-09-15 11:41:43,842 [INFO] QwenQualitySweep: ================================================================================

@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,OATS Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.71%,90.02%,-0.69%,0.9019,PASS,36,1.00x,226.5 MB,47.6
+roberta,0,78.56%,69.38%,-9.18%,0.7652,PASS,72,1.00x,864.6 MB,67.1
+gpt2,0,79.36%,76.03%,-3.33%,0.7538,PASS,48,1.00x,856.3 MB,58.9

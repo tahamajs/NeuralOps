@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,ROAST Hashed Linear Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.48%,90.14%,-0.34%,0.9067,PASS,0,1.00x,337.6 MB,24.3
+roberta,0,75.11%,87.39%,+12.28%,0.8724,PASS,0,1.00x,361.5 MB,29.0
+gpt2,0,60.78%,56.54%,-4.24%,0.6807,PASS,0,1.00x,634.9 MB,28.5

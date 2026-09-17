@@ -1,0 +1,4 @@
+run_id,module_name,model_family,dataset,status,mean_accuracy,std_accuracy,ci_lower,ci_upper,p_value,f1_score,fidelity_score,fwd_ms,bwd_ms,peak_vram_mb,throughput_tokens_sec,flops_macs,timestamp
+run_quality_20260828_050717,full,DISTILBERT,STSB,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,1450000000.0,2026-08-28T05:08:38.114505
+run_quality_20260828_050717,samba_m3,DISTILBERT,STSB,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,1450000000.0,2026-08-28T05:09:30.802307
+run_quality_20260828_050717,simple_ssm,DISTILBERT,STSB,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,1450000000.0,2026-08-28T05:10:23.613578

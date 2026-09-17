@@ -1,0 +1,86 @@
+Skipping attention module 'fused_svd_kernel' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'projection_factorized_attn' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping compression_engine module 'svd_linear' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_attention' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_decay' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+2026-09-15 05:03:03,189 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 3454.68it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 05:03:04,497 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 05:03:04,497 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 05:03:04,497 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 05:03:04,498 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 05:03:04,498 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 05:03:04,498 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 05:03:04,498 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 05:03:04,499 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 05:03:04,499 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 05:03:04,499 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 05:03:04,499 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 05:03:04,499 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 05:03:04,852 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 05:03:05,495 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 05:03:06,234 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 05:03:11,225 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 05:03:11,275 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 05:03:11,275 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 05:03:11,275 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 05:03:11,275 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 05:03:11,276 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 05:03:11,276 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 05:03:11,276 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 05:03:11,276 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 05:03:11,277 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 05:03:16,665 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nasc\gpt2\gpt2_full_full_metrics.json
+2026-09-15 05:03:16,682 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nasc\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 05:03:17,380 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 793.19 MB)
+2026-09-15 05:03:17,381 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_nasc\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 05:03:17,637 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: nasc (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 05:03:19,396 [INFO] QwenQualitySweep: module=nasc path=adapted_gpt
+2026-09-15 05:03:19,398 [INFO] QwenQualitySweep: module=nasc injection summary: 48 SVDLinear layers active
+2026-09-15 05:03:19,398 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for nasc (lr=2.0e-04)
+2026-09-15 05:03:19,615 [INFO] framework.utils.compat: Recovery fine-tuning selected 1207332 trainable parameters across 120 tensors.
+2026-09-15 05:03:19,616 [INFO] framework.utils.compat: Discovered 120 trainable tensors (1207332 params)
+2026-09-15 05:03:19,622 [INFO] QwenQualitySweep: LoRA fine-tuning: 1207332 trainable parameters across 120 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 05:03:19,649 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:19,688 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:19,698 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:19,707 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:19,717 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:19,729 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:19,739 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:19,748 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:19,755 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:19,766 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:19,779 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:19,792 [INFO] framework.attentions.nasc_attention: NASCAttention: L=128, L_kv=128, is_causal=True, head_dim=64, all_head_size=768, path=dense
+2026-09-15 05:03:20,829 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.4415 (bs=8, micro_bs=8)
+2026-09-15 05:03:21,718 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.5318 (bs=8, micro_bs=8)
+2026-09-15 05:03:22,841 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=0.4901 (bs=8, micro_bs=8)
+2026-09-15 05:03:23,967 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.5453 (bs=8, micro_bs=8)
+2026-09-15 05:03:25,069 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.5906 (bs=8, micro_bs=8)
+2026-09-15 05:03:26,162 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.4245 (bs=8, micro_bs=8)
+2026-09-15 05:03:27,297 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.6165 (bs=8, micro_bs=8)
+2026-09-15 05:03:28,414 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.4040 (bs=8, micro_bs=8)
+2026-09-15 05:03:29,524 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.3800 (bs=8, micro_bs=8)
+2026-09-15 05:03:30,620 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.3394 (bs=8, micro_bs=8)
+2026-09-15 05:03:31,733 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.4635 (bs=8, micro_bs=8)
+2026-09-15 05:03:41,410 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_nasc\gpt2\gpt2_nasc_full_metrics.json
+2026-09-15 05:03:41,461 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_nasc\gpt2\checkpoints\nasc\weights.pt (module_params=0, lora_params=97)
+2026-09-15 05:03:42,333 [INFO] QwenQualitySweep: [2/2] nasc -> PASS 78.44% (F1: 0.8178, Peak VRAM: 567.46 MB)
+2026-09-15 05:03:42,333 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_nasc\gpt2\checkpoints\nasc. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 05:03:42,655 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 05:03:42,656 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 05:03:42,665 [INFO] QwenQualitySweep: 
+Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+  full   PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.18              4.79
+  nasc   PASS   78.44%       -0.92% 0.8178                 48            0.99x  567.5 MB               9.39             10.76
+2026-09-15 05:03:42,665 [INFO] QwenQualitySweep: ================================================================================

@@ -1,0 +1,4 @@
+Model,Exit Code,Baseline Acc,SAMBA-M3 Acc,Delta Acc,F1,Status,Compressed Layers,Comp Rate,Peak VRAM,Time (s)
+distilbert,0,90.94%,89.45%,-1.49%,0.8991,PASS,0,0.81x,425.2 MB,25.6
+roberta,0,75.46%,50.92%,-24.54%,0.6748,PASS_LOW,0,0.77x,811.7 MB,37.4
+gpt2,0,57.91%,50.92%,-6.99%,0.6748,PASS_LOW,0,0.80x,694.4 MB,37.5

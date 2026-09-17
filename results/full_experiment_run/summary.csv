@@ -1,0 +1,4 @@
+run_id,module_name,model_family,dataset,status,mean_accuracy,std_accuracy,ci_lower,ci_upper,p_value,f1_score,fidelity_score,fwd_ms,bwd_ms,peak_vram_mb,throughput_tokens_sec,flops_macs,timestamp
+run_quality_20260831_143043,full,DISTILBERT,SST2,PASS,89.91,0.0,89.91,89.91,1.0,0.9035,1.0,34.98,99.43,1338.6,60950.0,1450000000.0,2026-08-31T14:34:08.918170
+run_quality_20260831_143043,a3,DISTILBERT,SST2,PASS,82.22,0.0,82.22,82.22,1.0,0.8268,0.7066,41.46,104.09,940.2,56280.9,1450000000.0,2026-08-31T14:37:36.556620
+run_quality_20260831_143043,aasvd,DISTILBERT,SST2,PASS,82.91,0.0,82.91,82.91,1.0,0.8328,0.7181,41.42,103.9,940.2,56371.1,1450000000.0,2026-08-31T14:41:02.845002

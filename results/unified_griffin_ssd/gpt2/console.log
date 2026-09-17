@@ -1,0 +1,70 @@
+2026-09-15 19:35:52,698 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 3640.87it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 19:35:54,012 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 19:35:54,013 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 19:35:54,013 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 19:35:54,013 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 19:35:54,013 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 19:35:54,013 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 19:35:54,014 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 19:35:54,014 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 19:35:54,014 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 19:35:54,014 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 19:35:54,014 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 19:35:54,014 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 19:35:54,340 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 19:35:54,950 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 19:35:55,723 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 19:36:00,537 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 19:36:00,586 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 19:36:00,586 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 19:36:00,586 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 19:36:00,586 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 19:36:00,586 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 19:36:00,587 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 19:36:00,587 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 19:36:00,587 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 19:36:00,602 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 19:36:06,995 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_griffin_ssd\gpt2\gpt2_full_full_metrics.json
+2026-09-15 19:36:07,007 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_griffin_ssd\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 19:36:07,656 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 793.19 MB)
+2026-09-15 19:36:07,656 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_griffin_ssd\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 19:36:07,911 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: griffin_ssd (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 19:36:09,748 [INFO] QwenQualitySweep: module=griffin_ssd path=adapted_gpt
+2026-09-15 19:36:09,750 [INFO] QwenQualitySweep: module=griffin_ssd injection summary: 0 SVDLinear layers active
+2026-09-15 19:36:09,750 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for griffin_ssd (lr=2.0e-04)
+2026-09-15 19:36:09,955 [INFO] framework.utils.compat: Recovery fine-tuning selected 1474704 trainable parameters across 132 tensors.
+2026-09-15 19:36:09,957 [INFO] framework.utils.compat: Discovered 132 trainable tensors (1474704 params)
+2026-09-15 19:36:09,962 [INFO] QwenQualitySweep: LoRA fine-tuning: 1474704 trainable parameters across 132 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 19:36:10,571 [INFO] QwenQualitySweep: LoRA fine-tune step 1/50 loss=0.5486 (bs=8, micro_bs=8)
+2026-09-15 19:36:12,078 [INFO] QwenQualitySweep: LoRA fine-tune step 5/50 loss=0.6817 (bs=8, micro_bs=8)
+2026-09-15 19:36:13,637 [INFO] QwenQualitySweep: LoRA fine-tune step 10/50 loss=1.0017 (bs=8, micro_bs=8)
+2026-09-15 19:36:15,205 [INFO] QwenQualitySweep: LoRA fine-tune step 15/50 loss=0.9188 (bs=8, micro_bs=8)
+2026-09-15 19:36:16,759 [INFO] QwenQualitySweep: LoRA fine-tune step 20/50 loss=0.6358 (bs=8, micro_bs=8)
+2026-09-15 19:36:18,322 [INFO] QwenQualitySweep: LoRA fine-tune step 25/50 loss=0.7336 (bs=8, micro_bs=8)
+2026-09-15 19:36:19,860 [INFO] QwenQualitySweep: LoRA fine-tune step 30/50 loss=0.4635 (bs=8, micro_bs=8)
+2026-09-15 19:36:21,417 [INFO] QwenQualitySweep: LoRA fine-tune step 35/50 loss=0.8091 (bs=8, micro_bs=8)
+2026-09-15 19:36:22,991 [INFO] QwenQualitySweep: LoRA fine-tune step 40/50 loss=0.7177 (bs=8, micro_bs=8)
+2026-09-15 19:36:24,534 [INFO] QwenQualitySweep: LoRA fine-tune step 45/50 loss=0.5459 (bs=8, micro_bs=8)
+2026-09-15 19:36:26,081 [INFO] QwenQualitySweep: LoRA fine-tune step 50/50 loss=0.7785 (bs=8, micro_bs=8)
+2026-09-15 19:36:38,262 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_griffin_ssd\gpt2\gpt2_griffin_ssd_full_metrics.json
+2026-09-15 19:36:38,354 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_griffin_ssd\gpt2\checkpoints\griffin_ssd\weights.pt (module_params=0, lora_params=121)
+2026-09-15 19:36:39,130 [INFO] QwenQualitySweep: [2/2] griffin_ssd -> PASS_NO_COMPRESSION 70.18% (F1: 0.7052, Peak VRAM: 597.32 MB)
+2026-09-15 19:36:39,130 [WARNING] QwenQualitySweep: Module 'griffin_ssd' PASSED on accuracy but compressed ZERO layers. Marking as PASS_NO_COMPRESSION.
+2026-09-15 19:36:39,131 [INFO] QwenQualitySweep: [Quality Guard] Module 'griffin_ssd' did not pass quality criteria (status=PASS_NO_COMPRESSION, acc=70.18%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 19:36:39,416 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 19:36:39,416 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 19:36:39,425 [INFO] QwenQualitySweep: 
+                      Module              Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                        full                PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               5.18              5.94
+griffin_ssd (efficient-attn) PASS_NO_COMPRESSION   70.18%       -9.18% 0.7052                  0            1.00x  597.3 MB              11.89             13.64
+2026-09-15 19:36:39,426 [INFO] QwenQualitySweep: ================================================================================

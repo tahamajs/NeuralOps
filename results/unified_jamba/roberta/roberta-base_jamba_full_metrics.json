@@ -1,0 +1,70 @@
+{
+    "model": "roberta-base_jamba",
+    "performance": {
+        "accuracy_pct": 50.92,
+        "f1_score": 0.6733,
+        "f1_macro": 0.3436,
+        "precision": 0.5046,
+        "recall": 0.5001,
+        "val_loss": 0.7048,
+        "status": "PASS_LOW",
+        "elapsed_s": 14.77
+    },
+    "efficiency": {
+        "total_params_before": 124647170,
+        "total_params_after": 318468926,
+        "trainable_recovery_params": 2214206,
+        "compression_rate": 0.3914,
+        "compression_ratio_pct": -155.5,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 12,
+        "lora_params": 2211840,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {
+            "roberta.encoder.layer.0.attention.self": 32,
+            "roberta.encoder.layer.0.attention.self.inner": 32,
+            "roberta.encoder.layer.1.attention.self": 32,
+            "roberta.encoder.layer.1.attention.self.inner": 32,
+            "roberta.encoder.layer.2.attention.self": 32,
+            "roberta.encoder.layer.2.attention.self.inner": 32,
+            "roberta.encoder.layer.3.attention.self": 32,
+            "roberta.encoder.layer.3.attention.self.inner": 32,
+            "roberta.encoder.layer.4.attention.self": 32,
+            "roberta.encoder.layer.4.attention.self.inner": 32,
+            "roberta.encoder.layer.5.attention.self": 32,
+            "roberta.encoder.layer.5.attention.self.inner": 32,
+            "roberta.encoder.layer.6.attention.self": 32,
+            "roberta.encoder.layer.6.attention.self.inner": 32,
+            "roberta.encoder.layer.7.attention.self": 32,
+            "roberta.encoder.layer.7.attention.self.inner": 32,
+            "roberta.encoder.layer.8.attention.self": 32,
+            "roberta.encoder.layer.8.attention.self.inner": 32,
+            "roberta.encoder.layer.9.attention.self": 32,
+            "roberta.encoder.layer.9.attention.self.inner": 32,
+            "roberta.encoder.layer.10.attention.self": 32,
+            "roberta.encoder.layer.10.attention.self.inner": 32,
+            "roberta.encoder.layer.11.attention.self": 32,
+            "roberta.encoder.layer.11.attention.self.inner": 32
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 1321.02,
+        "tokens_per_sec": 26521.15
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 1263.14,
+        "L_256_vram_mb": 1269.58,
+        "L_512_vram_mb": 1289.08,
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+    },
+    "timestamp": "2026-09-11T19:11:02.333428"
+}

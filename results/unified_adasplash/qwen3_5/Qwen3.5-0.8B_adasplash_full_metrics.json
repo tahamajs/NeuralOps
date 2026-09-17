@@ -1,0 +1,18 @@
+{
+    "model": "Qwen3.5-0.8B_adasplash",
+    "hardware": {
+        "peak_vram_mb": 1751.56,
+        "tokens_per_sec": 1047.98
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 1581.75,
+        "L_256_vram_mb": 1600.4,
+        "L_512_vram_mb": 1644.82,
+        "L_1024_vram_mb": 1813.17
+    }
+}

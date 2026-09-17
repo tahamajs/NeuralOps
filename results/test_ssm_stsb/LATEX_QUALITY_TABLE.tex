@@ -1,0 +1,15 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Empirical Quality and Statistical Significance of Attention Architectures.} Evaluated across GLUE benchmark splits on NVIDIA RTX 4070 GPU over 3 independent random seeds ($n=3$). Confidence intervals are 95\% two-sided intervals based on Student's $t$-distribution ($t_{\text{crit}}=4.303$). $p$-values are computed via paired two-tailed $t$-tests against standard \texttt{full} attention baseline, with Bonferroni multiple-comparison correction ($p_{\text{bonf}}$).}
+\label{tab:quality_benchmark_results}
+\begin{tabular}{l l l c c c c c c c}
+\toprule
+\textbf{Architecture} & \textbf{Model} & \textbf{Dataset} & \textbf{Accuracy (\%)} & \textbf{95\% CI} & \textbf{$p_{\text{raw}}$} & \textbf{$p_{\text{bonf}}$} & \textbf{F1 Score} & \textbf{Fidelity ($\rho$)} & \textbf{Fwd (ms)} \\
+\midrule
+\textbf{\texttt{full}} & DISTILBERT & STSB & 0.00 & [0.0, 0.0] & -- & -- & 0.0000 & 1.0000 & 0.00 \\
+\texttt{samba\_m3} & DISTILBERT & STSB & 0.00 & [0.0, 0.0] & 1.000 & 1.000 & 0.0000 & 1.0000 & 0.00 \\
+\texttt{simple\_ssm} & DISTILBERT & STSB & 0.00 & [0.0, 0.0] & 1.000 & 1.000 & 0.0000 & 1.0000 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table*}

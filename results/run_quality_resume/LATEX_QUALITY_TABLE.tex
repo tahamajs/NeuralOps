@@ -1,0 +1,122 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Empirical Quality and Statistical Significance of Attention Architectures.} Evaluated across GLUE benchmark splits on NVIDIA RTX 4070 GPU over 3 independent random seeds ($n=3$). Confidence intervals are 95\% two-sided intervals based on Student's $t$-distribution ($t_{\text{crit}}=4.303$). $p$-values are computed via paired two-tailed $t$-tests against standard \texttt{full} attention baseline, with Bonferroni multiple-comparison correction ($p_{\text{bonf}}$).}
+\label{tab:quality_benchmark_results}
+\begin{tabular}{l l l c c c c c c c}
+\toprule
+\textbf{Architecture} & \textbf{Model} & \textbf{Dataset} & \textbf{Accuracy (\%)} & \textbf{95\% CI} & \textbf{$p_{\text{raw}}$} & \textbf{$p_{\text{bonf}}$} & \textbf{F1 Score} & \textbf{Fidelity ($\rho$)} & \textbf{Fwd (ms)} \\
+\midrule
+\texttt{spectral\_mamba} & DISTILBERT & SST2 & 86.81 & [86.8, 86.8] & 1.000 & 1.000 & 0.8703 & -0.1236 & 128.33 \\
+\texttt{nli\_softmax} & DISTILBERT & SST2 & 86.70 & [86.7, 86.7] & 1.000 & 1.000 & 0.8714 & 0.1067 & 70.31 \\
+\texttt{mixattention\_moska} & DISTILBERT & SST2 & 86.47 & [86.5, 86.5] & 1.000 & 1.000 & 0.8671 & -0.1655 & 96.60 \\
+\texttt{nsa} & DISTILBERT & SST2 & 86.35 & [86.3, 86.3] & 1.000 & 1.000 & 0.8646 & -0.1731 & 144.86 \\
+\texttt{spectra\_v2} & DISTILBERT & SST2 & 86.35 & [86.3, 86.3] & 1.000 & 1.000 & 0.8643 & -0.0515 & 102.98 \\
+\texttt{squeezing\_heads\_distiller} & DISTILBERT & SST2 & 86.35 & [86.3, 86.3] & 1.000 & 1.000 & 0.8646 & -0.1733 & 100.48 \\
+\texttt{moba} & DISTILBERT & SST2 & 86.01 & [86.0, 86.0] & 1.000 & 1.000 & 0.8617 & -0.1803 & 111.70 \\
+\texttt{mlorq} & DISTILBERT & SST2 & 85.55 & [85.5, 85.5] & 1.000 & 1.000 & 0.8581 & 0.0924 & 69.55 \\
+\texttt{span\_expanded} & DISTILBERT & SST2 & 85.55 & [85.5, 85.5] & 1.000 & 1.000 & 0.8618 & -0.2783 & 110.88 \\
+\texttt{oha} & DISTILBERT & SST2 & 85.32 & [85.3, 85.3] & 1.000 & 1.000 & 0.8587 & 0.0421 & 125.46 \\
+\texttt{reap\_moe} & DISTILBERT & SST2 & 83.37 & [83.4, 83.4] & 1.000 & 1.000 & 0.8350 & -0.0610 & 191.33 \\
+\texttt{your\_attention\_name} & DISTILBERT & SST2 & 83.26 & [83.3, 83.3] & 1.000 & 1.000 & 0.8318 & 0.1418 & 104.21 \\
+\texttt{sparsegpt} & DISTILBERT & SST2 & 82.57 & [82.6, 82.6] & 1.000 & 1.000 & 0.8257 & -0.1203 & 70.67 \\
+\texttt{nha} & DISTILBERT & SST2 & 82.22 & [82.2, 82.2] & 1.000 & 1.000 & 0.8208 & 0.0001 & 158.96 \\
+\texttt{svd\_compressed} & DISTILBERT & SST2 & 81.08 & [81.1, 81.1] & 1.000 & 1.000 & 0.8075 & 0.1093 & 93.41 \\
+\texttt{xattention} & DISTILBERT & SST2 & 80.85 & [80.8, 80.8] & 1.000 & 1.000 & 0.8033 & -0.1947 & 109.22 \\
+\texttt{rpc} & DISTILBERT & SST2 & 80.50 & [80.5, 80.5] & 1.000 & 1.000 & 0.8059 & -0.0186 & 98.71 \\
+\texttt{nystrom} & DISTILBERT & SST2 & 80.39 & [80.4, 80.4] & 1.000 & 1.000 & 0.8023 & -0.1986 & 118.49 \\
+\texttt{slicegpt} & DISTILBERT & SST2 & 80.16 & [80.2, 80.2] & 1.000 & 1.000 & 0.8067 & -0.2272 & 70.36 \\
+\texttt{qcqa} & DISTILBERT & SST2 & 79.82 & [79.8, 79.8] & 1.000 & 1.000 & 0.7869 & -0.0079 & 100.04 \\
+\texttt{sdrm} & DISTILBERT & SST2 & 79.82 & [79.8, 79.8] & 1.000 & 1.000 & 0.7900 & 0.0355 & 70.19 \\
+\texttt{wgqa} & DISTILBERT & SST2 & 78.67 & [78.7, 78.7] & 1.000 & 1.000 & 0.7924 & 0.2769 & 105.59 \\
+\texttt{projection\_factorized\_attn} & DISTILBERT & SST2 & 78.33 & [78.3, 78.3] & 1.000 & 1.000 & 0.7720 & -0.0744 & 104.23 \\
+\texttt{svd\_linear\_decay} & DISTILBERT & SST2 & 78.33 & [78.3, 78.3] & 1.000 & 1.000 & 0.7720 & -0.0744 & 103.79 \\
+\texttt{proxsparse} & DISTILBERT & SST2 & 78.21 & [78.2, 78.2] & 1.000 & 1.000 & 0.7806 & 0.0955 & 69.82 \\
+\texttt{token\_compressed} & DISTILBERT & SST2 & 77.98 & [78.0, 78.0] & 1.000 & 1.000 & 0.7852 & 0.9800 & 108.59 \\
+\texttt{tpa} & DISTILBERT & SST2 & 77.75 & [77.8, 77.8] & 1.000 & 1.000 & 0.7800 & -0.1260 & 118.96 \\
+\texttt{slim} & DISTILBERT & SST2 & 77.64 & [77.6, 77.6] & 1.000 & 1.000 & 0.7792 & 0.0765 & 69.59 \\
+\texttt{zerokv\_neo} & DISTILBERT & SST2 & 77.64 & [77.6, 77.6] & 1.000 & 1.000 & 0.7725 & -0.0151 & 69.97 \\
+\texttt{svd\_llm\_v2} & DISTILBERT & SST2 & 76.61 & [76.6, 76.6] & 1.000 & 1.000 & 0.7475 & 0.0229 & 104.57 \\
+\texttt{minimal\_aurora} & DISTILBERT & SST2 & 76.38 & [76.4, 76.4] & 1.000 & 1.000 & 0.7386 & -0.0192 & 91.92 \\
+\texttt{minimal\_nova} & DISTILBERT & SST2 & 76.38 & [76.4, 76.4] & 1.000 & 1.000 & 0.7386 & -0.0192 & 93.34 \\
+\texttt{minimal\_prism} & DISTILBERT & SST2 & 76.38 & [76.4, 76.4] & 1.000 & 1.000 & 0.7386 & -0.0192 & 93.66 \\
+\texttt{minimal\_svd\_v2} & DISTILBERT & SST2 & 76.38 & [76.4, 76.4] & 1.000 & 1.000 & 0.7386 & -0.0192 & 93.64 \\
+\texttt{svd\_proj\_attn} & DISTILBERT & SST2 & 76.38 & [76.4, 76.4] & 1.000 & 1.000 & 0.7670 & -0.0668 & 90.41 \\
+\texttt{rala} & DISTILBERT & SST2 & 75.92 & [75.9, 75.9] & 1.000 & 1.000 & 0.7506 & 0.0522 & 91.08 \\
+\texttt{salt} & DISTILBERT & SST2 & 75.92 & [75.9, 75.9] & 1.000 & 1.000 & 0.7433 & -0.0479 & 111.72 \\
+\texttt{soa\_attn} & DISTILBERT & SST2 & 75.92 & [75.9, 75.9] & 1.000 & 1.000 & 0.7315 & -0.3037 & 98.20 \\
+\texttt{soa\_fused\_attn} & DISTILBERT & SST2 & 75.92 & [75.9, 75.9] & 1.000 & 1.000 & 0.7315 & -0.3037 & 95.23 \\
+\texttt{modegpt} & DISTILBERT & SST2 & 75.34 & [75.3, 75.3] & 1.000 & 1.000 & 0.7598 & 0.2058 & 70.00 \\
+\texttt{minimal\_svd} & DISTILBERT & SST2 & 75.23 & [75.2, 75.2] & 1.000 & 1.000 & 0.7286 & -0.1045 & 90.10 \\
+\texttt{regla} & DISTILBERT & SST2 & 74.31 & [74.3, 74.3] & 1.000 & 1.000 & 0.7200 & 0.0748 & 112.18 \\
+\texttt{your\_compressor\_name} & DISTILBERT & SST2 & 72.59 & [72.6, 72.6] & 1.000 & 1.000 & 0.7411 & 0.1039 & 87.41 \\
+\texttt{routing} & DISTILBERT & SST2 & 70.41 & [70.4, 70.4] & 1.000 & 1.000 & 0.7095 & -0.2959 & 173.31 \\
+\texttt{slicegpt\_pca} & DISTILBERT & SST2 & 68.35 & [68.3, 68.3] & 1.000 & 1.000 & 0.6776 & -0.1453 & 69.67 \\
+\texttt{moe\_deltakv\_paged} & DISTILBERT & SST2 & 66.74 & [66.7, 66.7] & 1.000 & 1.000 & 0.7100 & 0.3364 & 441.28 \\
+\texttt{nasc} & DISTILBERT & SST2 & 65.02 & [65.0, 65.0] & 1.000 & 1.000 & 0.7274 & 0.5269 & 234.75 \\
+\texttt{orion} & DISTILBERT & SST2 & 60.32 & [60.3, 60.3] & 1.000 & 1.000 & 0.6303 & -0.2688 & 183.20 \\
+\texttt{saes} & DISTILBERT & SST2 & 60.09 & [60.1, 60.1] & 1.000 & 1.000 & 0.6735 & 0.2948 & 84.62 \\
+\texttt{zeros} & DISTILBERT & SST2 & 54.70 & [54.7, 54.7] & 1.000 & 1.000 & 0.3951 & -0.0699 & 85.49 \\
+\texttt{progressive\_token\_pruning} & DISTILBERT & SST2 & 51.38 & [51.4, 51.4] & 1.000 & 1.000 & 0.6743 & -0.9272 & 92.21 \\
+\texttt{mgie} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.3339 & 85.54 \\
+\texttt{mgie\_budget} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.3339 & 84.65 \\
+\texttt{nexus} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & -0.9141 & 155.19 \\
+\texttt{phantom} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & -0.3491 & 422.70 \\
+\texttt{res\_svd} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & -0.5480 & 140.69 \\
+\texttt{salr} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.0029 & 46.99 \\
+\texttt{soka} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & -0.3009 & 86.20 \\
+\texttt{spectral\_residual\_lora} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & -0.5480 & 139.63 \\
+\texttt{spectron} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.8730 & 91.68 \\
+\texttt{subspace\_projection} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.1133 & 47.16 \\
+\texttt{svd\_linear} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.5228 & 84.37 \\
+\texttt{swift\_svd} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.3339 & 85.81 \\
+\texttt{swift\_svd\_act} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.9800 & 121.57 \\
+\texttt{tt} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.9268 & 207.18 \\
+\texttt{nmf} & DISTILBERT & SST2 & 49.08 & [49.1, 49.1] & 1.000 & 1.000 & 0.0000 & 1.0000 & 129.28 \\
+\texttt{optimal\_subspace\_projection} & DISTILBERT & SST2 & 49.08 & [49.1, 49.1] & 1.000 & 1.000 & 0.0000 & 1.0000 & 70.54 \\
+\texttt{performer} & DISTILBERT & SST2 & 49.08 & [49.1, 49.1] & 1.000 & 1.000 & 0.0000 & 1.0000 & 105.62 \\
+\texttt{mamba\_svd\_flash} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{mamba\_svd\_flash\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{minimal\_aurora\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{minimal\_nova\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{minimal\_prism\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{minimal\_svd\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{minimal\_svd\_v2\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{mla} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{moba\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{nasc\_injection} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{nsa\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{nystrom\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{oats} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{oha\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{orion\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{performer\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{phantom\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{primal} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{rala\_compressor} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{rotational\_slicegpt} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{routing\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{rpca} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{salt\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{samba\_m3} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{samba\_moe} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{simple\_ssm} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{simple\_ssm\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{span\_expanded\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{spectron\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{svd} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{svd-mamba} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{svd\_compressed\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{svd\_llm\_v2\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{svd\_mamba\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{svd\_proj\_attn\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{unified\_rope} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{uniql} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{upi\_stuffed\_mamba} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{upi\_stuffed\_mamba\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{vig} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{vspec} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{xattention\_inject} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table*}

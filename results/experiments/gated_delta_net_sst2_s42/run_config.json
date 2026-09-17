@@ -1,0 +1,1 @@
+{"batch_size": 16, "num_workers": 4, "learning_rate": 5e-05, "epochs": 1.0, "seed": 42, "attn": "gated_delta_net", "task": "sst2"}

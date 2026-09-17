@@ -1,0 +1,4 @@
+Model,Baseline Acc,ADMM Acc,Delta Acc,F1,Status,Compressed Layers,Actual Sparsity,Quant Bits,Recon Error,Peak VRAM
+distilbert,90.71%,90.37%,-0.34%,0.9050,PASS,11,54.5%,4,0.4087,183.1 MB
+roberta,78.56%,62.04%,-16.52%,0.6505,PASS,27,58.0%,4,0.4280,520.2 MB
+gpt2,79.36%,79.36%,+0.00%,0.7978,PASS_NO_COMPRESSION,0,0.0%,4,0.0000,628.4 MB

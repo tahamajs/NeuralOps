@@ -1,0 +1,177 @@
+module_name,family,accuracy,f1_score,fidelity_score,throughput_tokens_sec,peak_vram_mb,fwd_ms,bwd_ms
+full,Other / Hybrid,90.25,0.9044,1.0,61153.2,1338.6,34.81,99.15
+a3,Other / Hybrid,83.14,0.8339,0.712,55739.7,940.2,42.52,104.45
+aasvd,SVD & Spectral Factorization,82.34,0.8258,0.7105,56049.0,940.2,42.02,104.14
+adaptive_ranks,Other / Hybrid,85.89,0.8656,0.792,52832.4,1040.6,44.16,110.9
+adaptive_span,Efficient Attention & Kernelization,89.22,0.8962,0.8925,43420.6,1431.5,51.41,137.26
+adaptive_svd,SVD & Spectral Factorization,88.3,0.8884,0.86,38640.4,1283.2,58.4,153.61
+adasvd,SVD & Spectral Factorization,81.31,0.815,0.6588,55688.7,935.5,42.38,104.72
+admm,Quantization & Hash Compression,84.98,0.8546,0.7518,60984.9,1341.1,35.1,99.23
+adaptive_sparse,Pruning & Sparsity,89.68,0.8991,0.9157,25490.9,1433.5,92.07,229.3
+aegisattentionv1,Efficient Attention & Kernelization,49.08,0.0,1.0,31052.2,1335.7,81.57,182.25
+aegis_hybrid,Efficient Attention & Kernelization,49.08,0.0,1.0,31242.9,1442.3,75.38,186.83
+aegis_v1,Efficient Attention & Kernelization,49.08,0.0,1.0,31106.3,1335.7,81.51,181.84
+aegis_v2,Efficient Attention & Kernelization,82.11,0.8239,0.6669,30903.8,1442.5,76.69,188.39
+aegis_v3,Efficient Attention & Kernelization,83.94,0.8444,0.6932,26730.8,1448.0,86.21,220.25
+aegis_v4,Efficient Attention & Kernelization,49.08,0.0,1.0,26805.0,1448.0,85.42,220.2
+aegis_v5,Efficient Attention & Kernelization,82.68,0.8313,0.6958,31200.4,1382.6,79.32,183.24
+aegis_v6,Efficient Attention & Kernelization,49.08,0.0,1.0,16159.0,1829.4,131.29,375.67
+armor,Other / Hybrid,89.79,0.9017,0.9135,30370.2,1753.5,73.77,195.97
+ast,Other / Hybrid,89.45,0.898,0.8803,61048.2,1341.1,34.8,99.39
+astro,Efficient Attention & Kernelization,90.14,0.9047,0.9166,61047.8,1341.1,34.78,99.41
+asvd,SVD & Spectral Factorization,85.67,0.8588,0.7968,44866.6,1236.4,50.6,131.98
+block_transformer_hiba,Efficient Attention & Kernelization,91.17,0.9136,0.8977,44428.2,1419.3,50.5,133.88
+bonsai,Pruning & Sparsity,87.84,0.8804,0.8162,60928.9,1341.1,35.03,99.42
+cachenotes,KV Cache & Architectural Attention,89.79,0.9003,0.7392,60930.7,1341.1,34.98,99.47
+chela_slay,Other / Hybrid,89.11,0.8946,0.8979,17958.4,1838.5,111.74,344.42
+cluster,Efficient Attention & Kernelization,90.71,0.9103,0.9038,30174.9,1492.9,88.88,182.61
+come,Efficient Attention & Kernelization,88.88,0.8914,0.8522,82701.4,1193.8,26.86,72.2
+compot,Efficient Attention & Kernelization,81.42,0.8155,0.6575,62301.3,818.6,42.59,88.9
+compressed_attention,Efficient Attention & Kernelization,84.4,0.8468,0.7262,46667.9,1209.2,47.66,127.88
+compressed_attention_layer,Efficient Attention & Kernelization,84.29,0.8486,0.7271,46599.6,1209.2,47.94,127.86
+compressed_attention_layer_energy,Efficient Attention & Kernelization,84.86,0.8507,0.7321,46574.7,1209.2,47.98,127.91
+compressed_mha,Other / Hybrid,87.61,0.88,0.8223,40899.9,1228.2,48.24,152.05
+compression_unified_rope,KV Cache & Architectural Attention,90.71,0.9097,0.8845,42796.8,1434.0,51.87,139.55
+coopq,Quantization & Hash Compression,89.22,0.8958,0.8969,25773.3,1342.3,130.87,186.98
+cosformer,Efficient Attention & Kernelization,49.08,0.0,1.0,38313.9,1452.5,57.43,156.38
+cr,Other / Hybrid,81.88,0.8217,0.6581,63385.9,826.5,41.52,87.72
+cur,CUR Decompositions,49.08,0.0,1.0,50109.4,828.1,50.58,112.91
+cur_moe,Mixture-of-Experts (MoE),50.92,0.6748,0.0897,49250.2,820.2,51.6,114.74
+decay_gated_linear_attention,Efficient Attention & Kernelization,87.27,0.8749,0.8164,45344.0,1235.5,49.9,130.77
+delta_kv,KV Cache & Architectural Attention,89.68,0.9007,0.8823,60975.6,1341.1,34.97,99.38
+direct_svd,SVD & Spectral Factorization,83.26,0.8337,0.6941,55187.9,940.2,43.57,104.86
+direct_svd_encoder,SVD & Spectral Factorization,83.03,0.8287,0.6812,55682.2,931.9,42.23,104.89
+dobi,Efficient Attention & Kernelization,83.6,0.8358,0.6879,50590.2,826.6,50.47,111.46
+dobi_svd,SVD & Spectral Factorization,83.72,0.8364,0.7002,50667.3,826.6,50.65,111.04
+dynamic_entropy,Other / Hybrid,82.34,0.8277,0.6942,62678.0,826.5,41.6,89.1
+dynamic_entropy_svd,SVD & Spectral Factorization,82.57,0.83,0.6901,62203.4,826.5,41.95,89.75
+dynamic_rank,Other / Hybrid,83.6,0.8351,0.6967,62616.8,826.5,41.63,89.2
+eat,Efficient Attention & Kernelization,90.02,0.9032,0.8896,43132.3,1420.8,49.45,140.48
+enlighten,Efficient Attention & Kernelization,90.25,0.9052,0.8831,60914.7,1341.1,35.04,99.44
+entropy_budget,Other / Hybrid,82.91,0.8346,0.6912,54053.5,940.2,46.33,105.22
+entropy_budget_allocation,Other / Hybrid,83.6,0.8402,0.706,54260.3,940.2,45.98,105.0
+entropy_rank_allocator,Other / Hybrid,83.6,0.8384,0.6987,61712.1,826.5,42.17,90.58
+erc,Other / Hybrid,88.99,0.8933,0.8842,33819.7,1737.4,66.76,175.47
+erc_svd,SVD & Spectral Factorization,89.45,0.8971,0.8606,33880.2,1737.4,66.56,175.23
+expert_choice_moe,Mixture-of-Experts (MoE),90.02,0.9037,0.9028,18606.9,4747.2,132.46,307.8
+factorised_matrix_state,Other / Hybrid,49.08,0.0,1.0,27449.7,1427.6,69.56,228.88
+faq,Efficient Attention & Kernelization,90.02,0.9028,0.8961,60832.6,1339.3,35.15,99.52
+fasa,Efficient Attention & Kernelization,89.91,0.9029,0.9164,44879.1,1387.1,55.25,127.28
+flap,Pruning & Sparsity,88.88,0.8914,0.8595,60834.7,1339.3,35.11,99.55
+flash3,Efficient Attention & Kernelization,91.28,0.9146,0.8812,61710.1,1337.4,35.01,97.74
+flash3_fp8,Quantization & Hash Compression,89.91,0.9029,0.9047,61709.1,1337.4,35.01,97.74
+flash_attention3,Efficient Attention & Kernelization,90.25,0.9065,0.9085,61694.9,1337.4,35.01,97.77
+flash_attention3_fp8,Quantization & Hash Compression,89.79,0.9025,0.9063,61617.6,1337.4,35.08,97.87
+flat_llm,Other / Hybrid,87.61,0.8813,0.6222,60856.8,1339.3,35.23,99.38
+frandi,Other / Hybrid,83.03,0.8337,0.6941,63017.5,826.5,41.87,88.13
+fused_svd_kernel,SVD & Spectral Factorization,87.27,0.8768,0.8056,12600.6,1199.4,323.8,326.33
+fusion_attn,Efficient Attention & Kernelization,90.02,0.9037,0.8917,46835.6,1419.9,46.8,128.11
+galerkin,Efficient Attention & Kernelization,83.03,0.8341,0.7059,49096.8,1325.5,47.89,118.96
+gated_delta_net,Other / Hybrid,86.93,0.8728,0.8072,20051.8,1775.5,90.15,318.39
+gated_linear_attn,Efficient Attention & Kernelization,49.08,0.0,1.0,17472.0,1858.9,103.67,365.2
+gfws,Other / Hybrid,85.09,0.8546,0.74,60804.7,1339.3,35.31,99.41
+gfws_d,Other / Hybrid,84.29,0.8469,0.7246,60987.1,1339.3,35.01,99.32
+goldfinch_ahn,Other / Hybrid,90.37,0.9079,0.8888,37423.1,1523.6,56.74,162.16
+gqa,KV Cache & Architectural Attention,90.25,0.9057,0.9198,46652.8,1419.5,47.08,128.52
+grecodec,SVD & Spectral Factorization,82.8,0.8295,0.6817,61912.2,818.6,42.8,89.52
+griffin_ssd,Linear RNN & State Space Models (SSM),89.68,0.8991,0.883,25340.2,1563.6,74.54,248.75
+halo_regla,Efficient Attention & Kernelization,49.08,0.0,1.0,11153.7,1563.9,95.89,638.57
+hgrn2_outer,Linear RNN & State Space Models (SSM),49.08,0.0,1.0,17045.8,1803.1,100.91,379.68
+huffman,Other / Hybrid,90.83,0.9111,0.9032,60972.8,1336.7,34.93,99.42
+hybridkv,KV Cache & Architectural Attention,90.6,0.9099,0.908,61044.2,1336.7,34.83,99.37
+hybrid_svd,SVD & Spectral Factorization,82.8,0.8337,0.6867,56076.7,931.9,41.47,104.61
+infini,Efficient Attention & Kernelization,90.14,0.9034,0.9238,36296.3,1548.1,59.11,166.59
+kda,Other / Hybrid,49.08,0.0,1.0,25053.6,1576.2,73.01,253.96
+kmeans,Quantization & Hash Compression,90.48,0.9085,0.9651,53835.4,1109.3,36.83,115.34
+kmeans_quantize,Quantization & Hash Compression,90.37,0.9069,0.9619,53868.2,1109.3,36.78,115.29
+kronecker,Efficient Attention & Kernelization,81.08,0.8101,0.6248,44907.9,1023.3,52.44,129.98
+kronecker_tt_lora,Efficient Attention & Kernelization,90.37,0.9073,0.9735,24784.9,1165.6,101.38,229.14
+kvtc,KV Cache & Architectural Attention,50.92,0.6748,0.0877,61024.4,1336.7,34.97,99.28
+leka_v1,Efficient Attention & Kernelization,50.92,0.6748,0.0031,24706.3,1638.7,93.24,238.34
+leka_v2,Efficient Attention & Kernelization,90.48,0.9073,0.8552,24488.4,1748.5,94.58,239.95
+leka_v3,Efficient Attention & Kernelization,84.63,0.8488,0.7021,27732.1,1649.3,80.36,215.04
+liftr,Efficient Attention & Kernelization,50.92,0.6748,0.0202,76271.6,1194.0,28.94,78.46
+lillama,Efficient Attention & Kernelization,49.08,0.0,1.0,61170.1,1336.7,34.91,99.01
+linformer,Efficient Attention & Kernelization,82.34,0.8281,0.6568,46925.7,1391.4,46.67,127.9
+lora_attn,Efficient Attention & Kernelization,82.91,0.8313,0.6776,38459.8,1320.8,59.46,153.54
+lsc,Pruning & Sparsity,82.8,0.8299,0.6736,60980.5,1336.7,35.06,99.28
+lsh,Efficient Attention & Kernelization,86.01,0.8665,0.8044,17390.4,1827.4,138.6,332.47
+mamba,Linear RNN & State Space Models (SSM),50.92,0.6748,0.0577,69641.7,1250.0,30.88,86.75
+mamba_shedder,Linear RNN & State Space Models (SSM),90.37,0.9073,0.8755,61007.5,1336.7,34.8,99.47
+mgie,Other / Hybrid,83.72,0.8412,0.7123,56168.7,931.9,41.26,104.59
+mgie_budget,Other / Hybrid,83.14,0.8328,0.6888,56062.4,931.9,41.48,104.65
+minimal_aurora,Other / Hybrid,85.21,0.8549,0.7712,50171.2,1235.3,44.35,118.93
+minimal_nova,Other / Hybrid,85.21,0.8571,0.7712,50154.7,1235.3,44.4,118.93
+minimal_prism,Other / Hybrid,84.17,0.8428,0.7499,50277.2,1235.3,44.02,118.92
+minimal_svd,SVD & Spectral Factorization,86.01,0.8635,0.7999,51244.3,1235.3,43.63,116.23
+minimal_svd_v2,SVD & Spectral Factorization,86.01,0.8635,0.771,50194.0,1235.3,44.29,118.91
+mixattention_moska,Efficient Attention & Kernelization,90.37,0.9067,0.9152,45365.3,1389.4,54.31,126.26
+mlorq,Other / Hybrid,90.6,0.9077,0.911,61120.2,1336.7,34.73,99.3
+moba,Efficient Attention & Kernelization,90.37,0.9056,0.905,37621.0,1463.0,64.96,152.79
+modegpt,Efficient Attention & Kernelization,83.49,0.8382,0.7137,61066.4,1336.7,34.87,99.28
+moe_deltakv_paged,Mixture-of-Experts (MoE),88.3,0.8877,0.8182,15485.1,1476.6,195.39,333.64
+nasc,Other / Hybrid,83.03,0.833,0.6956,15440.2,1668.4,166.56,364.0
+nexus,Efficient Attention & Kernelization,50.92,0.6748,0.031,28499.0,1629.8,72.5,214.95
+nha,Other / Hybrid,90.48,0.9071,0.901,30654.3,1576.3,73.07,194.17
+nli_softmax,Efficient Attention & Kernelization,89.79,0.9006,0.9123,61028.2,1337.1,34.86,99.38
+nmf,Efficient Attention & Kernelization,49.08,0.0,1.0,37114.0,943.9,73.62,147.1
+nsa,Efficient Attention & Kernelization,89.33,0.8977,0.9117,37852.0,1431.4,65.27,151.15
+nystrom,Efficient Attention & Kernelization,87.96,0.8819,0.8349,30987.4,1401.9,81.42,182.95
+oats,Efficient Attention & Kernelization,87.73,0.8812,0.8214,59208.5,1337.1,38.12,100.24
+oha,Efficient Attention & Kernelization,90.37,0.9067,0.915,35353.5,1540.7,63.64,168.08
+optimal_subspace_projection,SVD & Spectral Factorization,49.08,0.0,1.0,61174.2,1337.1,34.98,98.93
+optimized_hybrid_attention,Efficient Attention & Kernelization,90.6,0.9087,0.9083,36184.6,1540.7,60.91,165.49
+orion,Efficient Attention & Kernelization,83.83,0.8439,0.7273,25266.2,1558.8,86.57,237.66
+performer,Efficient Attention & Kernelization,49.08,0.0,1.0,44616.3,1400.1,53.02,130.59
+phantom,Efficient Attention & Kernelization,49.08,0.0,1.0,10682.0,1978.6,206.89,560.0
+progressive_token_pruning,Pruning & Sparsity,86.35,0.8673,0.8101,47766.0,1421.7,46.07,125.43
+projection_factorized_attn,Efficient Attention & Kernelization,86.35,0.867,0.8154,45487.1,1235.2,49.58,130.52
+proxsparse,Pruning & Sparsity,84.86,0.8503,0.7209,61016.6,1337.1,35.04,99.22
+qcqa,Other / Hybrid,88.76,0.8911,0.8726,46666.5,1420.2,47.36,128.19
+rala,Efficient Attention & Kernelization,49.08,0.0,1.0,47942.8,1427.7,47.51,123.36
+reap_moe,Mixture-of-Experts (MoE),90.02,0.9051,0.8835,13419.8,4403.3,168.27,442.17
+regla,Efficient Attention & Kernelization,49.08,0.0,1.0,42521.9,1498.3,50.45,142.21
+res_svd,SVD & Spectral Factorization,86.7,0.8691,0.798,39295.4,1231.8,57.79,150.68
+rotational_slicegpt,Pruning & Sparsity,88.42,0.8861,0.823,61012.7,1337.1,35.03,99.23
+rotational_slicegpt_int4,Pruning & Sparsity,88.65,0.8906,0.8482,61036.0,1337.1,35.03,99.19
+routing,Other / Hybrid,83.72,0.8401,0.7003,34106.4,1429.1,77.31,162.88
+rpc,Efficient Attention & Kernelization,86.93,0.875,0.7983,47210.6,1408.0,46.76,126.76
+rpca,SVD & Spectral Factorization,83.37,0.8362,0.6921,56104.7,931.9,41.44,104.57
+saes,SVD & Spectral Factorization,83.03,0.833,0.6939,56147.7,931.9,41.33,104.57
+saes_svd_v2,SVD & Spectral Factorization,84.29,0.8409,0.7012,56168.3,931.9,41.33,104.52
+salr,Efficient Attention & Kernelization,81.08,0.8148,0.6333,58494.5,818.7,44.96,95.09
+salt,Efficient Attention & Kernelization,86.24,0.8639,0.7909,41322.0,1243.9,56.81,141.43
+sdrm,Efficient Attention & Kernelization,90.94,0.9113,0.8749,61132.5,1337.1,34.76,99.24
+slicegpt,Pruning & Sparsity,89.22,0.8951,0.8579,60990.7,1337.1,35.04,99.27
+slicegpt_pca,SVD & Spectral Factorization,83.37,0.8362,0.6747,61166.0,1337.1,34.71,99.22
+slim,Pruning & Sparsity,88.07,0.8824,0.8146,61103.1,1337.1,34.89,99.17
+soa_attn,Efficient Attention & Kernelization,84.29,0.8469,0.7195,45379.5,1293.4,47.21,133.31
+soa_fused_attn,Efficient Attention & Kernelization,82.8,0.8284,0.6834,45400.3,1293.4,47.2,133.24
+soafusedattention,Efficient Attention & Kernelization,83.83,0.8389,0.7072,45380.2,1293.4,47.22,133.3
+soka,Efficient Attention & Kernelization,81.88,0.8176,0.645,56728.3,923.1,40.97,103.44
+span_expanded,Efficient Attention & Kernelization,91.17,0.914,0.902,43164.6,1435.7,50.48,139.31
+sparsegpt,Pruning & Sparsity,88.3,0.8872,0.8919,60957.7,1337.1,35.02,99.37
+spectral_mamba,SVD & Spectral Factorization,91.06,0.9152,0.9248,33785.2,1701.2,61.83,180.65
+spectral_residual_lora,SVD & Spectral Factorization,83.49,0.8393,0.6927,36245.2,964.5,64.92,161.09
+spectral_residual_svd,SVD & Spectral Factorization,85.78,0.8619,0.79,39269.1,1231.8,57.99,150.62
+spectra_v2,Other / Hybrid,90.37,0.9081,0.888,43144.2,1421.1,49.47,140.41
+spectron,Efficient Attention & Kernelization,82.34,0.823,0.6677,50323.0,1259.2,44.37,118.42
+squeezing_heads_distiller,Efficient Attention & Kernelization,89.79,0.9003,0.9065,46868.2,1417.8,46.71,128.08
+subspace_projection,SVD & Spectral Factorization,84.4,0.8458,0.7138,63597.7,818.6,41.61,87.2
+svd_compressed,SVD & Spectral Factorization,88.99,0.8924,0.8582,50323.8,1259.2,44.37,118.42
+svd_linear,SVD & Spectral Factorization,87.16,0.8758,0.8086,45557.6,1235.2,49.31,130.5
+svd_linear_decay,SVD & Spectral Factorization,86.24,0.8661,0.7967,45440.0,1235.2,49.61,130.67
+svd_llm_v2,SVD & Spectral Factorization,86.93,0.8731,0.7995,44604.8,1236.0,50.24,133.41
+svd_proj_attn,SVD & Spectral Factorization,86.47,0.8662,0.7896,50949.7,1235.0,44.23,116.56
+svd_projection,SVD & Spectral Factorization,86.47,0.8671,0.7861,51096.1,1235.0,43.88,116.45
+swift_svd,SVD & Spectral Factorization,82.91,0.8309,0.6881,56065.4,931.9,41.34,104.77
+swift_svd_act,SVD & Spectral Factorization,82.91,0.8305,0.6873,55930.1,931.9,41.58,104.89
+token_compressed,Other / Hybrid,86.58,0.8699,0.7968,51512.7,1389.1,44.65,114.38
+tpa,KV Cache & Architectural Attention,79.59,0.7954,0.6127,36166.9,1470.9,57.58,168.92
+tt,Efficient Attention & Kernelization,82.45,0.8263,0.6717,53790.6,830.4,46.69,105.61
+unified_rope,KV Cache & Architectural Attention,90.02,0.9037,0.8917,42840.2,1431.4,51.81,139.41
+uniql,Efficient Attention & Kernelization,83.03,0.8326,0.6989,61097.3,1336.7,34.75,99.34
+wgqa,KV Cache & Architectural Attention,82.57,0.8265,0.6827,45375.7,1351.5,49.69,130.85
+xattention,Efficient Attention & Kernelization,89.22,0.8956,0.8641,34895.0,1432.2,78.72,156.04
+zerokv_neo,KV Cache & Architectural Attention,86.7,0.8691,0.7803,61073.7,1336.7,34.8,99.33
+zeros,Efficient Attention & Kernelization,49.08,0.0,1.0,53160.6,1388.1,40.68,113.42

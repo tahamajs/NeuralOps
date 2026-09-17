@@ -1,0 +1,260 @@
+{
+  "sst2_evaluated": 203,
+  "pass_count": 176,
+  "fail_count": 27,
+  "timeout_count_underlying": 15,
+  "crash_count_underlying": 12,
+  "strict_near_baseline_count": 28,
+  "strict_near_baseline_modules": [
+    [
+      "full",
+      90.25,
+      1.0,
+      0.0
+    ],
+    [
+      "adaptive_sparse",
+      89.68,
+      0.9157,
+      -0.5699999999999932
+    ],
+    [
+      "armor",
+      89.79,
+      0.9135,
+      -0.45999999999999375
+    ],
+    [
+      "astro",
+      90.14,
+      0.9166,
+      -0.10999999999999943
+    ],
+    [
+      "cluster",
+      90.71,
+      0.9038,
+      0.45999999999999375
+    ],
+    [
+      "expert_choice_moe",
+      90.02,
+      0.9028,
+      -0.23000000000000398
+    ],
+    [
+      "fasa",
+      89.91,
+      0.9164,
+      -0.3400000000000034
+    ],
+    [
+      "flash3_fp8",
+      89.91,
+      0.9047,
+      -0.3400000000000034
+    ],
+    [
+      "flash_attention3",
+      90.25,
+      0.9085,
+      0.0
+    ],
+    [
+      "flash_attention3_fp8",
+      89.79,
+      0.9063,
+      -0.45999999999999375
+    ],
+    [
+      "gqa",
+      90.25,
+      0.9198,
+      0.0
+    ],
+    [
+      "huffman",
+      90.83,
+      0.9032,
+      0.5799999999999983
+    ],
+    [
+      "hybridkv",
+      90.6,
+      0.908,
+      0.3499999999999943
+    ],
+    [
+      "infini",
+      90.14,
+      0.9238,
+      -0.10999999999999943
+    ],
+    [
+      "kmeans",
+      90.48,
+      0.9651,
+      0.23000000000000398
+    ],
+    [
+      "kmeans_quantize",
+      90.37,
+      0.9619,
+      0.12000000000000455
+    ],
+    [
+      "kronecker_tt_lora",
+      90.37,
+      0.9735,
+      0.12000000000000455
+    ],
+    [
+      "mixattention_moska",
+      90.37,
+      0.9152,
+      0.12000000000000455
+    ],
+    [
+      "mlorq",
+      90.6,
+      0.911,
+      0.3499999999999943
+    ],
+    [
+      "moba",
+      90.37,
+      0.905,
+      0.12000000000000455
+    ],
+    [
+      "nha",
+      90.48,
+      0.901,
+      0.23000000000000398
+    ],
+    [
+      "nli_softmax",
+      89.79,
+      0.9123,
+      -0.45999999999999375
+    ],
+    [
+      "nsa",
+      89.33,
+      0.9117,
+      -0.9200000000000017
+    ],
+    [
+      "oha",
+      90.37,
+      0.915,
+      0.12000000000000455
+    ],
+    [
+      "optimized_hybrid_attention",
+      90.6,
+      0.9083,
+      0.3499999999999943
+    ],
+    [
+      "span_expanded",
+      91.17,
+      0.902,
+      0.9200000000000017
+    ],
+    [
+      "spectral_mamba",
+      91.06,
+      0.9248,
+      0.8100000000000023
+    ],
+    [
+      "squeezing_heads_distiller",
+      89.79,
+      0.9065,
+      -0.45999999999999375
+    ]
+  ],
+  "revised_family_summary": [
+    {
+      "family": "Quantization, Pruning & Tensor Compression",
+      "count": 23,
+      "mean_acc": 86.81,
+      "mean_fid": 0.8084,
+      "mean_tp": 48935.3,
+      "mean_vram": 1251.4
+    },
+    {
+      "family": "Other / Hybrid",
+      "count": 34,
+      "mean_acc": 85.65,
+      "mean_fid": 0.7664,
+      "mean_tp": 48209.1,
+      "mean_vram": 1268.5
+    },
+    {
+      "family": "Sparse, Chunked & Efficient Attention",
+      "count": 33,
+      "mean_acc": 84.18,
+      "mean_fid": 0.8505,
+      "mean_tp": 47725.5,
+      "mean_vram": 1372.1
+    },
+    {
+      "family": "KV Cache & Multi-Query Attention",
+      "count": 10,
+      "mean_acc": 84.08,
+      "mean_fid": 0.7389,
+      "mean_tp": 51888.1,
+      "mean_vram": 1380.0
+    },
+    {
+      "family": "SVD, Spectral & Subspace Factorization",
+      "count": 34,
+      "mean_acc": 82.81,
+      "mean_fid": 0.7621,
+      "mean_tp": 50456.6,
+      "mean_vram": 1114.8
+    },
+    {
+      "family": "Structured Pruning & Baseline",
+      "count": 7,
+      "mean_acc": 82.44,
+      "mean_fid": 0.7264,
+      "mean_tp": 59282.5,
+      "mean_vram": 1340.7
+    },
+    {
+      "family": "Mixture-of-Experts (MoE)",
+      "count": 4,
+      "mean_acc": 79.81,
+      "mean_fid": 0.6735,
+      "mean_tp": 24190.5,
+      "mean_vram": 2861.8
+    },
+    {
+      "family": "Linear & Kernelized Attention",
+      "count": 20,
+      "mean_acc": 68.77,
+      "mean_fid": 0.8007,
+      "mean_tp": 34365.8,
+      "mean_vram": 1442.6
+    },
+    {
+      "family": "Linear RNN, SSM & State-Space Models",
+      "count": 10,
+      "mean_acc": 61.65,
+      "mean_fid": 0.8741,
+      "mean_tp": 35336.1,
+      "mean_vram": 1543.1
+    },
+    {
+      "family": "CUR Cross-Approximation",
+      "count": 1,
+      "mean_acc": 49.08,
+      "mean_fid": 1.0,
+      "mean_tp": 50109.4,
+      "mean_vram": 828.1
+    }
+  ]
+}

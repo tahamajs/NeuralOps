@@ -1,0 +1,41 @@
+[
+  {
+    "Model": "distilbert",
+    "Baseline Acc": "90.71%",
+    "ADMM Acc": "90.37%",
+    "Delta Acc": "-0.34%",
+    "F1": "0.9050",
+    "Status": "PASS",
+    "Compressed Layers": "11",
+    "Actual Sparsity": "54.5%",
+    "Quant Bits": 4,
+    "Recon Error": "0.4087",
+    "Peak VRAM": "183.1 MB"
+  },
+  {
+    "Model": "roberta",
+    "Baseline Acc": "78.56%",
+    "ADMM Acc": "62.04%",
+    "Delta Acc": "-16.52%",
+    "F1": "0.6505",
+    "Status": "PASS",
+    "Compressed Layers": "27",
+    "Actual Sparsity": "58.0%",
+    "Quant Bits": 4,
+    "Recon Error": "0.4280",
+    "Peak VRAM": "520.2 MB"
+  },
+  {
+    "Model": "gpt2",
+    "Baseline Acc": "79.36%",
+    "ADMM Acc": "79.36%",
+    "Delta Acc": "+0.00%",
+    "F1": "0.7978",
+    "Status": "PASS_NO_COMPRESSION",
+    "Compressed Layers": "0",
+    "Actual Sparsity": "0.0%",
+    "Quant Bits": 4,
+    "Recon Error": "0.0000",
+    "Peak VRAM": "628.4 MB"
+  }
+]

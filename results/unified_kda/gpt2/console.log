@@ -1,0 +1,110 @@
+Skipping attention module 'fused_svd_kernel' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'projection_factorized_attn' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping compression_engine module 'svd_linear' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_attention' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+Skipping attention module 'svd_linear_decay' due to: expected an indented block after 'if' statement on line 600 (fused_svd_kernel.py, line 601)
+2026-09-15 04:05:03,001 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 148/148 [00:00<00:00, 2625.62it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: models\gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 04:05:04,552 [INFO] QwenQualitySweep: model=models\gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 04:05:04,553 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 04:05:04,553 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:05:04,553 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 04:05:04,553 [INFO] QwenQualitySweep:   model:             models\gpt2
+2026-09-15 04:05:04,554 [INFO] QwenQualitySweep:   family:            gpt
+2026-09-15 04:05:04,554 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 04:05:04,554 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 04:05:04,554 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-09-15 04:05:04,554 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 04:05:04,554 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 04:05:04,555 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:05:04,970 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\gpt2_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 04:05:05,751 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 04:05:06,551 [INFO] QwenQualitySweep: Prepared 109 eval batches and 50 train batches directly on GPU.
+2026-09-15 04:05:11,746 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 79.36%
+2026-09-15 04:05:11,801 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:05:11,801 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 04:05:11,801 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 04:05:11,802 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 04:05:11,802 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 04:05:11,802 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 04:05:11,802 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 04:05:11,802 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:05:11,805 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 04:05:17,142 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_kda\gpt2\gpt2_full_full_metrics.json
+2026-09-15 04:05:17,157 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_kda\gpt2\checkpoints\full\weights.pt (module_params=0, lora_params=1)
+2026-09-15 04:05:17,897 [INFO] QwenQualitySweep: [1/2] full -> PASS 79.36% (F1: 0.7978, Peak VRAM: 793.19 MB)
+2026-09-15 04:05:17,897 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_kda\gpt2\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 04:05:18,174 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: kda (recovery_steps=50, batch_size=8, optimizer=adamw)
+2026-09-15 04:05:20,142 [INFO] QwenQualitySweep: module=kda path=adapted_gpt
+2026-09-15 04:05:20,144 [INFO] QwenQualitySweep: module=kda injection summary: 48 SVDLinear layers active
+2026-09-15 04:05:20,144 [INFO] QwenQualitySweep: Running 50 recovery fine-tuning steps for kda (lr=2.0e-04)
+2026-09-15 04:05:20,333 [INFO] framework.utils.compat: Recovery fine-tuning selected 1179804 trainable parameters across 120 tensors.
+2026-09-15 04:05:20,335 [INFO] framework.utils.compat: Discovered 120 trainable tensors (1179804 params)
+2026-09-15 04:05:20,340 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179804 trainable parameters across 120 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 04:05:21,242 [ERROR] QwenQualitySweep: Module kda execution failure:
+Traceback (most recent call last):
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2302, in main
+    pipe_res = future.result(timeout=effective_timeout)
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 2201, in _run_candidate_pipeline
+    had_nan = finetune_lora(
+        model, tokenizer, train, args.dataset, rec_steps, args.seq_len, effective_batch_size, device,
+    ...<2 lines>...
+        weight_decay=args.weight_decay, timeout=effective_timeout,
+    )
+  File "D:\svd_project\Codes\framework\run_quality_sweep.py", line 633, in finetune_lora
+    scaler.scale(loss_chunk).backward()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\_tensor.py", line 626, in backward
+    torch.autograd.backward(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        self, gradient, retain_graph, create_graph, inputs=inputs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\autograd\__init__.py", line 347, in backward
+    _engine_run_backward(
+    ~~~~~~~~~~~~~~~~~~~~^
+        tensors,
+        ^^^^^^^^
+    ...<5 lines>...
+        accumulate_grad=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\torch\autograd\graph.py", line 823, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        t_outputs, *args, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )  # Calls into the C++ engine to run the backward pass
+    ^
+RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+2026-09-15 04:05:21,306 [INFO] QwenQualitySweep: [2/2] kda -> FAIL 0.00% (F1: 0.7978, Peak VRAM: 793.19 MB)
+2026-09-15 04:05:21,307 [INFO] QwenQualitySweep: [Quality Guard] Module 'kda' did not pass quality criteria (status=FAIL, acc=0.00%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-15 04:05:21,582 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 04:05:21,582 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-09-15 04:05:21,590 [INFO] QwenQualitySweep: 
+Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+  full   PASS   79.36% 0.00% (base) 0.7978                  0            1.00x  793.2 MB               4.12              4.73
+   kda   FAIL    0.00%      -79.36% 0.7978                  0            1.00x  793.2 MB               4.12              4.73
+2026-09-15 04:05:21,590 [INFO] QwenQualitySweep: ================================================================================

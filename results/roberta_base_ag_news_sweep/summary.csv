@@ -1,0 +1,2 @@
+module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp
+full,PASS,76.9,0.7442,0.7442,0.796,0.747,0.719,5.38,319.97,43434.5,124648708,124648708,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-17T01:46:49.477885

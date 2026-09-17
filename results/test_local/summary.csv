@@ -1,0 +1,3 @@
+run_id,module_name,model_family,dataset,status,mean_accuracy,std_accuracy,ci_lower,ci_upper,p_value,f1_score,fidelity_score,fwd_ms,bwd_ms,peak_vram_mb,throughput_tokens_sec,flops_macs,timestamp
+run_quality_20260826_182415,full,BERT,SST2,PASS,52.34,0.0,52.34,52.34,1.0,0.6872,1.0,439.02,272.05,0.0,23041.3,1450000000.0,2026-08-26T18:25:47.047535
+run_quality_20260826_182415,mamba,BERT,SST2,FAIL,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,1450000000.0,2026-08-26T18:25:50.022659

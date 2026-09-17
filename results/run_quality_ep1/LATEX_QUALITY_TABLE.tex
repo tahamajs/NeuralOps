@@ -1,0 +1,32 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Empirical Quality and Statistical Significance of Attention Architectures.} Evaluated across GLUE benchmark splits on NVIDIA RTX 4070 GPU over 3 independent random seeds ($n=3$). Confidence intervals are 95\% two-sided intervals based on Student's $t$-distribution ($t_{\text{crit}}=4.303$). $p$-values are computed via paired two-tailed $t$-tests against standard \texttt{full} attention baseline, with Bonferroni multiple-comparison correction ($p_{\text{bonf}}$).}
+\label{tab:quality_benchmark_results}
+\begin{tabular}{l l l c c c c c c c}
+\toprule
+\textbf{Architecture} & \textbf{Model} & \textbf{Dataset} & \textbf{Accuracy (\%)} & \textbf{95\% CI} & \textbf{$p_{\text{raw}}$} & \textbf{$p_{\text{bonf}}$} & \textbf{F1 Score} & \textbf{Fidelity ($\rho$)} & \textbf{Fwd (ms)} \\
+\midrule
+\textbf{\texttt{full}} & DISTILBERT & SST2 & 90.25 & [90.2, 90.2] & -- & -- & 0.9059 & 1.0000 & 67.07 \\
+\texttt{nasc\_attention} & DISTILBERT & SST2 & 81.88 & [81.9, 81.9] & 1.000 & 1.000 & 0.8184 & 0.8140 & 232.26 \\
+\texttt{minimal\_svd} & DISTILBERT & SST2 & 79.13 & [79.1, 79.1] & 1.000 & 1.000 & 0.7807 & 0.7627 & 86.47 \\
+\texttt{leka\_v3} & DISTILBERT & SST2 & 78.33 & [78.3, 78.3] & 1.000 & 1.000 & 0.7800 & 0.7407 & 171.53 \\
+\texttt{svd\_linear\_attention} & DISTILBERT & SST2 & 75.11 & [75.1, 75.1] & 1.000 & 1.000 & 0.7264 & 0.6680 & 101.38 \\
+\texttt{aegis\_v6} & DISTILBERT & SST2 & 72.13 & [72.1, 72.1] & 1.000 & 1.000 & 0.6563 & 0.6265 & 277.48 \\
+\texttt{griffin\_ssd} & DISTILBERT & SST2 & 62.50 & [62.5, 62.5] & 1.000 & 1.000 & 0.7159 & -0.0070 & 50.77 \\
+\texttt{adaptive\_span} & DISTILBERT & SST2 & 58.26 & [58.3, 58.3] & 1.000 & 1.000 & 0.7055 & -0.0115 & 37.90 \\
+\texttt{block\_transformer\_hiba} & DISTILBERT & SST2 & 53.10 & [53.1, 53.1] & 1.000 & 1.000 & 0.6837 & 0.0609 & 33.06 \\
+\texttt{cosformer} & DISTILBERT & SST2 & 52.87 & [52.9, 52.9] & 1.000 & 1.000 & 0.6826 & -0.0244 & 46.94 \\
+\texttt{mamba} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.0458 & 22.59 \\
+\texttt{gated\_deltanet\_block} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.1300 & 48.92 \\
+\texttt{spectron} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.1366 & 34.86 \\
+\texttt{performer\_attention} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.1455 & 48.80 \\
+\texttt{linformer\_attention} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.1417 & 39.04 \\
+\texttt{galerkin\_attention} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.0923 & 45.37 \\
+\texttt{soa\_attn} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.1870 & 32.64 \\
+\texttt{svd\_mamba} & DISTILBERT & SST2 & 49.08 & [49.1, 49.1] & 1.000 & 1.000 & 0.0000 & 1.0000 & 355.58 \\
+\texttt{samba\_m3} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\texttt{jamba2} & DISTILBERT & SST2 & 0.00 & [0.0, 0.0] & p < 0.01^{**} & 0.019^* & 0.0000 & 1.0000 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table*}

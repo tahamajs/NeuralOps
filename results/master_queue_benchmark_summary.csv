@@ -1,0 +1,11 @@
+module,runner,exit_code,elapsed_s,status,error,timestamp
+nha,run_all_4_nha.py,0,270.69,PASS,,2026-09-15T05:33:58.281930
+nha_compressor,run_all_4_nha_compressor.py,0,296.33,PASS,,2026-09-15T05:38:56.122988
+nli_softmax,run_all_4_nli_softmax.py,0,150.38,PASS,,2026-09-15T05:41:26.502785
+nmf,run_all_4_nmf.py,0,1171.76,PASS,,2026-09-15T06:00:58.271091
+nsa,run_all_4_nsa.py,0,0.0,SKIPPED_EXISTING,,2026-09-15T06:00:58.309481
+nsa_attention,run_all_4_nsa_attention.py,0,176.44,PASS,,2026-09-15T06:03:54.774637
+nystrom,run_all_4_nystrom.py,0,160.46,PASS,,2026-09-15T06:06:35.245684
+oats,run_all_4_oats.py,0,209.78,PASS,,2026-09-15T06:10:05.067962
+oha,run_all_4_oha.py,0,190.44,PASS,,2026-09-15T06:13:15.520598
+optimal_subspace_projection,run_all_4_optimal_subspace_projection.py,0,194.88,PASS,,2026-09-15T06:16:30.432920

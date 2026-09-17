@@ -1,0 +1,41 @@
+[
+  {
+    "Model": "distilbert",
+    "Exit Code": 0,
+    "Baseline Acc": "90.48%",
+    "Rotational SliceGPT INT4 Acc": "88.99%",
+    "Delta Acc": "-1.49%",
+    "F1": "0.8987",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "339.8 MB",
+    "Time (s)": "40.5"
+  },
+  {
+    "Model": "roberta",
+    "Exit Code": 0,
+    "Baseline Acc": "75.11%",
+    "Rotational SliceGPT INT4 Acc": "87.50%",
+    "Delta Acc": "+12.39%",
+    "F1": "0.8771",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "360.8 MB",
+    "Time (s)": "64.1"
+  },
+  {
+    "Model": "gpt2",
+    "Exit Code": 0,
+    "Baseline Acc": "60.78%",
+    "Rotational SliceGPT INT4 Acc": "61.70%",
+    "Delta Acc": "+0.92%",
+    "F1": "0.6706",
+    "Status": "PASS",
+    "Compressed Layers": "0",
+    "Comp Rate": "1.00x",
+    "Peak VRAM": "636.0 MB",
+    "Time (s)": "57.4"
+  }
+]

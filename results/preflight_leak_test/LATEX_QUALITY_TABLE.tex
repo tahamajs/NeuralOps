@@ -1,0 +1,17 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Empirical Quality and Statistical Significance of Attention Architectures.} Evaluated across GLUE benchmark splits on NVIDIA RTX 4070 GPU over 3 independent random seeds ($n=3$). Confidence intervals are 95\% two-sided intervals based on Student's $t$-distribution ($t_{\text{crit}}=4.303$). $p$-values are computed via paired two-tailed $t$-tests against standard \texttt{full} attention baseline, with Bonferroni multiple-comparison correction ($p_{\text{bonf}}$).}
+\label{tab:quality_benchmark_results}
+\begin{tabular}{l l l c c c c c c c}
+\toprule
+\textbf{Architecture} & \textbf{Model} & \textbf{Dataset} & \textbf{Accuracy (\%)} & \textbf{95\% CI} & \textbf{$p_{\text{raw}}$} & \textbf{$p_{\text{bonf}}$} & \textbf{F1 Score} & \textbf{Fidelity ($\rho$)} & \textbf{Fwd (ms)} \\
+\midrule
+\textbf{\texttt{full}} & DISTILBERT & SST2 & 89.33 & [89.3, 89.3] & -- & -- & 0.8961 & 1.0000 & 33.74 \\
+\texttt{kmeans} & DISTILBERT & SST2 & 90.14 & [90.1, 90.1] & 1.000 & 1.000 & 0.9049 & 0.9147 & 36.02 \\
+\texttt{svd\_linear\_attention} & DISTILBERT & SST2 & 80.73 & [80.7, 80.7] & 1.000 & 1.000 & 0.8019 & 0.6199 & 63.42 \\
+\texttt{fused\_svd\_kernel} & DISTILBERT & SST2 & 80.73 & [80.7, 80.7] & 1.000 & 1.000 & 0.8019 & 0.6196 & 344.64 \\
+\texttt{spectron} & DISTILBERT & SST2 & 50.92 & [50.9, 50.9] & 1.000 & 1.000 & 0.6748 & 0.0671 & 47.25 \\
+\bottomrule
+\end{tabular}
+\end{table*}
