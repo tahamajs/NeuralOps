@@ -424,6 +424,8 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, dataset_name,
                     except Exception:
                         pass
 
+    COMPLETED_UPLOADS.add(repo_id)
+
 def sync_and_verify_hf():
     repo_dir = Path(os.environ.get("SVD_PROJECT_ROOT",
                                    "D:\\SVD_Project" if os.path.exists("D:\\SVD_Project") else "."))
