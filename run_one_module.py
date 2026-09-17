@@ -65,21 +65,33 @@ def test_one(module_name):
             attn = torch.ones_like(ids)
             with torch.no_grad():
                 before = model(input_ids=ids, attention_mask=attn).logits.clone()
+            modules_before = set(type(m).__name__ for m in model.modules())
             try:
                 inject_fn(model=model, model_config=cfg)
             except TypeError:
                 inject_fn(model=model)
+            modules_after = set(type(m).__name__ for m in model.modules())
+            actually_injected = (modules_before != modules_after)
+
             with torch.no_grad():
                 after = model(input_ids=ids, attention_mask=attn).logits
             diff = (before - after).abs().max().item()
+            status = "OK"
+            if diff >= 100:
+                status = "BAD"
+            elif not actually_injected:
+                status = "NO_OP_INJECTION"
+
             result["models"][model_name] = {
-                "status": "OK" if diff < 100 else "BAD",
+                "status": status,
                 "diff": float(diff),
+                "injected": actually_injected,
             }
         except Exception as e:
             result["models"][model_name] = {
                 "status": "FAIL",
                 "error": f"{type(e).__name__}: {str(e)[:200]}",
+                "traceback": traceback.format_exc(),
             }
     return result
 
