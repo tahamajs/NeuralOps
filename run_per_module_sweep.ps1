@@ -1,5 +1,10 @@
 Set-Location "D:\SVD_Project"
 
+$env:OMP_NUM_THREADS = '1'
+$env:MKL_NUM_THREADS = '1'
+$env:OPENBLAS_NUM_THREADS = '1'
+$env:NUMEXPR_NUM_THREADS = '1'
+$env:VECLIB_MAXIMUM_THREADS = '1'
 $env:HF_HUB_OFFLINE = "1"
 $env:TRANSFORMERS_OFFLINE = "1"
 $env:HF_DATASETS_OFFLINE = "1"
