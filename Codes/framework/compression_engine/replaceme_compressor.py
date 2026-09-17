@@ -223,8 +223,7 @@ class ReplaceMeCompressor(BaseCompressor):
                                 p.requires_grad = False
                             continue
                     except Exception as e:
-                        print(f'copy_weights failed: {e}')
-                        logger.warning(f"copy_weights failed: {e}")
+                        logger.error(f"ReplaceMe equivalence check failed for layer {i}: {e}")
 
                 layers[i] = new_block
                 layers_replaced += 1
