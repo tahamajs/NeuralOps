@@ -39,6 +39,9 @@ def load_hf_model(
     tokenizer = _safe_load(
         AutoTokenizer.from_pretrained, model_name, cache_dir=cache_dir
     )
+    if tokenizer is not None and tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
     model_kwargs = {
         k: v for k, v in kwargs.items()
         if k not in {"task", "attention_type", "attention_rank", "copy_weights", "rank", "loader_type"}
@@ -68,6 +71,9 @@ def load_compressed_model(
 
     AutoConfig.from_pretrained(model_name, num_labels=num_labels, cache_dir=cache_dir)
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
     model = CompressedBertModel(model_path=model_name, rank=rank, num_labels=num_labels)
     return model, tokenizer
 
@@ -91,6 +97,9 @@ def load_hybrid_svd_model(
     config.svd_rank = rank
     model = HybridBertForSequenceClassification(config)
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
     return model, tokenizer
 
 

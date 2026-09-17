@@ -509,6 +509,10 @@ class MultiModeBenchmarkRunner:
                 except Exception:
                     logger.warning(f"Could not load tokenizer for {self.model_name_or_path}.")
 
+            if tokenizer is not None and tokenizer.pad_token is None:
+                tokenizer.pad_token = tokenizer.eos_token
+                tokenizer.pad_token_id = tokenizer.eos_token_id
+
             try:
                 model = AutoModelForSequenceClassification.from_pretrained(
                     self.model_name_or_path,
