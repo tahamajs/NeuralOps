@@ -41,8 +41,6 @@ class MinimalMoEFallback(nn.Module):
 
     def __init__(self, d_model: int = 768, n_experts: int = 4):
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.d_model = d_model
         self.n_experts = n_experts
         self.router = nn.Linear(d_model, n_experts, bias=False)
@@ -70,7 +68,7 @@ class MinimalMoEFallback(nn.Module):
         if out.shape[-1] != x.shape[-1]:
             out = F.pad(out, (0, x.shape[-1] - out.shape[-1])) if out.shape[-1] < x.shape[-1] else out[..., :x.shape[-1]]
         self.aux_loss = torch.tensor(0.0, device=x.device)
-        return out * self.output_scale, weights
+        return out, weights
 
 
 @ATTENTION_REGISTRY.register("samba_moe", supports_causal=True, supports_gqa=True)
@@ -142,7 +140,6 @@ class SambaMoEBlock(BaseAttention):
 
         self.norm = nn.LayerNorm(self.d_model)
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
-        self.output_scale = nn.Parameter(torch.ones(1))
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)

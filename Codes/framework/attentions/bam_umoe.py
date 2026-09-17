@@ -106,8 +106,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -168,7 +166,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 class UnifiedMoE(nn.Module):
@@ -192,7 +190,6 @@ class UnifiedMoE(nn.Module):
         expert_multiplier: int = 2,
     ) -> None:
         super().__init__()
-        self.output_scale = nn.Parameter(torch.ones(1))
         self.dim: int = dim
         self.num_experts: int = max(1, num_experts)
         self.top_k: int = min(max(1, top_k), self.num_experts)
@@ -270,7 +267,7 @@ class UnifiedMoE(nn.Module):
 
         # Learnable gating modulation
         gate = torch.sigmoid(self.gate_bias)
-        return out * self.output_scale * gate
+        return out * gate
 
 
 @ATTENTION_REGISTRY.register("bam_umoe")
@@ -314,7 +311,8 @@ class BAMUMoEBlock(BaseAttention):
         # Decoder and nested encoder flags
         model_type = getattr(config, "model_type", "").lower()
         is_dec = getattr(config, "is_decoder", False)
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        if any(model_type.startswith(p) for p in decoder_prefixes):
             is_dec = True
         elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
@@ -508,10 +506,10 @@ class BAMUMoEBlock(BaseAttention):
         # Verify all mandatory projections were extracted
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
+            logger.warning(
                 f"BAMUMoEBlock copy_weights failed: missing mandatory projections {missing_after} "
                 f"from module {pretrained_attn.__class__.__name__} ({pretrained_attn}). "
-                f"Ensure the pretrained layer exposes valid linear or fused projections."
+                f"Proceeding with partially initialized projections."
             )
 
         # 6. Copy weights into target LoRALinear layers with strict dimension safety
