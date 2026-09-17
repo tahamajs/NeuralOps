@@ -1,0 +1,2 @@
+# 2. Related Work
+Combines FP8 quantization standards (Micikevicius et al., 2022) with hybrid linear-attention mechanisms.

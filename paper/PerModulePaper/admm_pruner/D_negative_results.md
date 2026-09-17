@@ -1,0 +1,2 @@
+# Appendix D. Autoregressive Pruning Sensitivity
+GPT-2 exhibits sensitivity to aggressive 50% pruning (51.49% accuracy), requiring conservative ratios.

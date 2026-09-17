@@ -1,0 +1,2 @@
+# Appendix E. Environmental Impact
+Linear complexity and reduced parameters decrease operational electrical draw.

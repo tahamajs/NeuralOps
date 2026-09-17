@@ -1,0 +1,2 @@
+# 13. References
+1. Micikevicius, P., et al. (2022). FP8 Formats for Deep Learning. *arXiv:2209.05433*.

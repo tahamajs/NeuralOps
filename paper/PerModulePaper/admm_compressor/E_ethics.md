@@ -1,0 +1,2 @@
+# Appendix E. Efficiency
+Quantization and pruning reduce accelerator memory and power footprints.

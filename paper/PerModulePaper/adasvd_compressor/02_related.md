@@ -1,0 +1,2 @@
+# 2. Related Work
+Standard matrix factorization methods (ASVD, SVD-LLM) employ static rank heuristics. AdaSVD incorporates nuclear-norm spectral allocation with ALS refinement and reconstruction error verification.

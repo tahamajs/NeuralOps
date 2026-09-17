@@ -1,0 +1,2 @@
+# Appendix E. Hardware Efficiency
+Reduced memory traffic lowers thermal dissipation during continuous inference.

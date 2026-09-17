@@ -1,0 +1,2 @@
+# 10. Limitations
+Simulated FP8 operates through software cast-dequantize roundtrips unless executed on native Blackwell/Hopper FP8 tensor cores.

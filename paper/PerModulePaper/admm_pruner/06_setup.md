@@ -1,0 +1,2 @@
+# 6. Experimental Setup
+Evaluated on SST-2 across DistilBERT, RoBERTa, GPT-2, and Qwen 3.5 with 50% target sparsity.

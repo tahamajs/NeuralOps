@@ -1,0 +1,2 @@
+# 2. Related Work
+Draws on hybrid local-global attention architectures (Longformer, BigBird) combined with structural low-rank parameter factorization.

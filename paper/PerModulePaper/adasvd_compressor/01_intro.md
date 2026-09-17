@@ -1,0 +1,2 @@
+# 1. Introduction
+Uniform rank truncation wastes capacity on parameter-sensitive projections while insufficiently compressing redundant layers. `adasvd_compressor` calculates the nuclear norm of each layer's singular spectrum, allocating higher ranks to projections with broad singular spectra and lower ranks to rapidly decaying matrices. Factors are initialized with symmetric square-root singular values and refined via Alternating Least Squares (ALS).

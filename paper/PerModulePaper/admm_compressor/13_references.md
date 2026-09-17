@@ -1,0 +1,2 @@
+# 13. References
+1. Zhang, T., et al. (2018). A Systematic DNN Weight Pruning Framework using ADMM. *ECCV 2018*.
