@@ -22,7 +22,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.attentions.compressed_attention import CompressedAttentionLayer
+try:
+    from framework.attentions.compressed_attention import CompressedAttentionLayer
+except ImportError:
+    CompressedAttentionLayer = None
+
 from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.compression_engine.pruning_utils import get_calibration_tensors
 from framework.core.base import BaseCompressor
@@ -125,7 +129,7 @@ class AdaptiveRanksCompressor(BaseCompressor):
         self.used_covariance: Dict[str, bool] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if isinstance(module, (SVDLinear, CompressedAttentionLayer)):
+        if isinstance(module, SVDLinear) or (CompressedAttentionLayer is not None and isinstance(module, CompressedAttentionLayer)):
             return False
         # Do not target inner submodules of LoRA or wrappers
         if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]):
@@ -474,6 +478,9 @@ class AdaptiveRanksCompressor(BaseCompressor):
                         W_out = target_mod.out_proj.weight.data.float()
                         _, s_out, _ = torch.linalg.svd(W_out, full_matrices=False)
                         r_out = self._compute_energy_rank(s_out, embed_dim, min_rank_floor=r_floor)
+
+                    if CompressedAttentionLayer is None:
+                        raise ImportError("CompressedAttentionLayer is not available")
 
                     compressed = CompressedAttentionLayer(
                         original_layer=target_mod,
