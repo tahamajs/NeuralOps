@@ -1,3 +1,10 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{hashed_linear}.
+\subsection{Algorithmic Formulation}
+The \texttt{hashed_linear} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{HashedNets: Vectorized Weight Sharing via Hash Tables with Sign Hashing and Optional LoRA Adapters.
+Reference: Chen et al., 'Compressing Neural Networks with the Hashing Trick' (ICML 2015).
+Production hardened for multi-architecture compatibility (nn.Linear, Conv1D, fused projections).}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

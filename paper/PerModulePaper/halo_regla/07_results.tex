@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{halo_regla}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_halo\_regla/roberta/summary.csv} & halo\_regla & PASS\_NO\_COMPRESSION & 81.31\% & 672.44 MB \\
+\texttt{results/unified\_halo\_regla/distilbert/summary.csv} & halo\_regla & PASS\_NO\_COMPRESSION & 90.37\% & 343.31 MB \\
+\texttt{results/unified\_halo\_regla/gpt2/summary.csv} & halo\_regla & PASS\_NO\_COMPRESSION & 79.59\% & 1134.78 MB \\
+\texttt{results/agnews\_unified\_halo\_regla/distilbert/summary.csv} & halo\_regla & PASS\_NO\_COMPRESSION & 76.5\% & 685.93 MB \\
+\texttt{results/mnli\_unified\_halo\_regla/distilbert/summary.csv} & halo\_regla & PASS\_NO\_COMPRESSION & 41.4\% & 390.01 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 61.05 ms & 1250.2 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 61.74 ms & 1250.2 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 64.6 ms & 1260.1 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

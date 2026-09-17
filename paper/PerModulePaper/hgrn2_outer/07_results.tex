@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{hgrn2_outer}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_hgrn2\_outer/roberta/summary.csv} & hgrn2\_outer & PASS\_LOW & 50.34\% & 685.64 MB \\
+\texttt{results/unified\_hgrn2\_outer/distilbert/summary.csv} & hgrn2\_outer & PASS & 68.46\% & 329.98 MB \\
+\texttt{results/unified\_hgrn2\_outer/gpt2/summary.csv} & hgrn2\_outer & PASS\_LOW & 48.62\% & 569.81 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 8683.27 ms & 4895.3 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 8748.24 ms & 4895.3 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 8833.76 ms & 4905.2 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 8761.72 ms & 4905.2 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 8791.15 ms & 4970.8 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
