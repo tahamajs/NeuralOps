@@ -209,8 +209,6 @@ class CURMoECompressor(BaseCompressor):
         self.total_comp_decomp_params += (best_r * (in_f + out_f + best_r))
         return True
 
-        return False
-
     def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
         """Compress expert linear layers in MoE architecture, or fallback to FFN layers."""
         if model is not None:
