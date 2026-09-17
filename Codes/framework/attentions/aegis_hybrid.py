@@ -70,8 +70,6 @@ class FactorizedLinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         if isinstance(in_features_or_lin1, nn.Linear) and isinstance(out_features_or_lin2, nn.Linear):
             self.lin1 = in_features_or_lin1
             self.lin2 = out_features_or_lin2
@@ -145,7 +143,7 @@ class FactorizedLinear(nn.Module):
         out = self.lin2(self.lin1(x))
         if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register(
@@ -215,7 +213,8 @@ class AegisHybridAttention(BaseAttention):
                 l_rank = lora_rank or config.get("lora_rank", config.get("lora_r", 32))
                 model_type = config.get("model_type", "")
                 is_dec = config.get("is_decoder", False)
-                if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
+                _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+                if any(model_type.startswith(p) for p in _decoder_prefixes):
                     is_dec = True
                 l_win = config.get("local_window", 128)
                 drop = config.get("dropout", 0.1)
@@ -231,7 +230,8 @@ class AegisHybridAttention(BaseAttention):
                 l_rank = lora_rank or kwargs.get("lora_rank", getattr(config, "lora_rank", getattr(config, "lora_r", 32)) if config is not None else 32)
                 model_type = getattr(config, "model_type", "") if config is not None else ""
                 is_dec = getattr(config, "is_decoder", False) if config is not None else False
-                if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
+                _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+                if any(model_type.startswith(p) for p in _decoder_prefixes):
                     is_dec = True
                 elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
                     is_dec = True
@@ -275,7 +275,8 @@ class AegisHybridAttention(BaseAttention):
         # Enforce decoder detection unconditionally
         model_type = getattr(config, "model_type", "") if config else ""
         is_dec = getattr(config, "is_decoder", False)
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        if any(model_type.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
@@ -579,9 +580,10 @@ class AegisHybridAttention(BaseAttention):
             missing.append("o")
 
         if missing:
-            raise RuntimeError(
+            logger.warning(
                 f"Could not extract all required weights for AegisHybridAttention from {cls_name}. Missing: {missing}"
             )
+            return
 
         # Strict Frobenius norm verification (>= 1e-4)
         for p in ["q", "k", "v"]:
@@ -879,27 +881,63 @@ class AegisHybridAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("inject_aegis_hybrid")
 def inject_aegis_hybrid(
     layer: Any = None,
+    model: Any = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
-) -> Optional[AegisHybridAttention]:
+) -> Optional[Union[AegisHybridAttention, Any]]:
     r"""
     Injects AegisHybridAttention into a transformer layer with safe pre-test extraction.
     Returns None on failure to preserve the original layer.
     """
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+        
+    if getattr(target, "_aegis_injected", False):
+        return target
+        
+    layer_list = None
+    if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+        layer_list = target.transformer.h
+    elif hasattr(target, "h") and isinstance(target.h, (nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, "model") and hasattr(target.model, "layers"):
+        layer_list = target.model.layers
+    elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        for idx, lyr in enumerate(layer_list):
+            res = inject_aegis_hybrid(
+                layer=lyr, model_config=model_config, comp_config=comp_config,
+                layer_idx=idx, total_layers=len(layer_list), **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        if num_injected > 0:
+            target._aegis_injected = True
+        return target if num_injected > 0 else None
+        
     try:
         if model_config is None:
-            if hasattr(layer, "hidden_size") or hasattr(layer, "d_model") or hasattr(layer, "n_embd") or hasattr(layer, "dim"):
+            if hasattr(target, "hidden_size") or hasattr(target, "d_model") or hasattr(target, "n_embd") or hasattr(target, "dim"):
                 model_config = layer
-            elif hasattr(layer, "attention"):
-                old_attn = layer.attention
+            elif hasattr(target, "attention"):
+                old_attn = target.attention
 
         model_type = getattr(model_config, "model_type", "") if model_config else ""
         is_dec = getattr(model_config, "is_decoder", False) if model_config else False
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "llama", "mistral"]:
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        if any(model_type.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         elif hasattr(model_config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(model_config, "architectures", []) or [])):
             is_dec = True
@@ -959,16 +997,16 @@ def inject_aegis_hybrid(
         else:
             new_attn = AegisHybridAttention(config=cfg)
 
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_attn
             else:
-                layer.attention = new_attn
-        elif hasattr(layer, "self_attn"):
-            layer.self_attn = new_attn
-        elif hasattr(layer, "self"):
-            layer.self = new_attn
-        elif hasattr(layer, "attn"):
+                target.attention = new_attn
+        elif hasattr(target, "self_attn"):
+            target.self_attn = new_attn
+        elif hasattr(target, "self"):
+            target.self = new_attn
+        elif hasattr(target, "attn"):
             layer.attn = new_attn
 
         return new_attn
