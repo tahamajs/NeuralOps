@@ -109,4 +109,4 @@ if __name__ == "__main__":
         os.makedirs("audit", exist_ok=True)
         with open("audit/module_test_log.jsonl", "a", encoding="utf-8") as f:
             f.write(json.dumps(res) + "\n")
-    print(json.dumps(res, indent=2))
+    print(json.dumps(res, indent=2), flush=True)
