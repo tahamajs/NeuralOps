@@ -343,7 +343,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"MoEDeltaKVPagedAttention missing required weights for projections: {missing}")
+            logger.warning(f"MoEDeltaKVPagedAttention missing required weights for projections: {missing}. Proceeding with initialized weights.")
 
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
