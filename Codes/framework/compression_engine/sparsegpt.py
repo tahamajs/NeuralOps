@@ -273,6 +273,7 @@ class SparseGPTCompressor(BaseCompressor):
                 name,
                 self.max_error,
             )
+            logger.warning("Fallback triggered for %s. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.", name)
             for p in module.parameters():
                 p.requires_grad = False
             return False
