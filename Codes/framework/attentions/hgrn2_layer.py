@@ -94,7 +94,7 @@ class HGRN2Layer(BaseAttention):
         self.freeze_base: bool = freeze_base
 
         _mt = str(_cfg_get(config, "model_type", "") or "").lower()
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon")
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
