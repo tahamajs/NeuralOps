@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{direct_svd}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_direct\_svd/roberta/summary.csv} & direct\_svd & PASS & 71.1\% & 567.52 MB \\
+\texttt{results/unified\_direct\_svd/distilbert/summary.csv} & direct\_svd & PASS & 88.99\% & 355.29 MB \\
+\texttt{results/unified\_direct\_svd/gpt2/summary.csv} & direct\_svd & PASS & 68.46\% & 646.14 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 34.82 ms & 717.9 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 34.71 ms & 717.9 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 36.24 ms & 727.9 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 35.76 ms & 727.9 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 50.16 ms & 1082.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

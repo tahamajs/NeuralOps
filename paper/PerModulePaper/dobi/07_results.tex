@@ -1,3 +1,10 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{dobi}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_dobi/roberta/summary.csv} & dobi\_svd & PASS\_NO\_COMPRESSION & 78.56\% & 520.18 MB \\
+\texttt{results/unified\_dobi/distilbert/summary.csv} & dobi\_svd & PASS\_NO\_COMPRESSION & 90.71\% & 300.68 MB \\
+\texttt{results/unified\_dobi/qwen3\_5/summary.csv} & dobi\_svd & PASS & 89.45\% & 1850.64 MB \\
+\texttt{results/unified\_dobi/gpt2/summary.csv} & dobi\_svd & PASS\_NO\_COMPRESSION & 79.36\% & 627.16 MB \\
+\texttt{results/agnews\_unified\_dobi/distilbert/summary.csv} & dobi & PASS\_NO\_COMPRESSION & 70.7\% & 449.77 MB \\
+\texttt{results/mnli\_unified\_dobi/distilbert/summary.csv} & dobi & PASS\_NO\_COMPRESSION & 41.1\% & 319.55 MB \\
+all\_121\_gpu\_matrix & dobi & PASS & 30.95x (0.794s) & 106.1 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

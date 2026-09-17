@@ -1,3 +1,14 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{dynamic_rank}.
+\subsection{Algorithmic Formulation}
+The \texttt{dynamic_rank} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Dynamic Entropy Singular Value Decomposition (Dynamic Entropy SVD) Compressor.
+
+Implements singular entropy computation over empirical layer activation covariances:
+$$H(\\\\Sigma\_l) = -\\\\sum\_{i=1}^{d} p\_i \\\\ln(p\_i), \\\\quad p\_i = \\\\frac{\\\\sigma\_i}{\\\\sum\_j \\\\sigma\_j}$$
+Dynamically budgets layer ranks $r\_l \\\\in [r\_{\\\\min}, r\_{\\\\max}]$ proportional to singular entropy,
+subject to global rank or parameter budgets, and replaces dense linear layers with low-rank
+factorized `DynamicSVDLinear` modules.}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

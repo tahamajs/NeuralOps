@@ -1,3 +1,10 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{dynamic_rank}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+benchmark\_summary\_v2 & bert-sst2 & PASS & 34.47 ms & 581.9 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 34.7 ms & 581.9 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 34.92 ms & 591.9 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 30.93 ms & 591.9 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 49.47 ms & 1082.2 MB \\
+benchmark\_summary\_v2 & t5-mrpc & PASS & 50.3 ms & 1082.2 MB \\
+all\_121\_gpu\_matrix & dynamic\_rank & PASS & 30.96x (1.007s) & 104.9 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

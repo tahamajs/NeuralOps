@@ -1,3 +1,10 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{direct_svd}.
+\subsection{Algorithmic Formulation}
+The \texttt{direct_svd} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Direct SVD Compressor: Truncated SVD low-rank factorized layer replacement.
+Registered as 'direct\_svd'. Production hardened for multi-architecture compatibility
+(DistilBERT, RoBERTa, GPT-2, Qwen3.5) with error validation, Conv1D support, rank bounds, and safe fallback.}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

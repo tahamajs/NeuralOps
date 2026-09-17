@@ -1,3 +1,8 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{dynamic_entropy}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_dynamic\_entropy/roberta/summary.csv} & dynamic\_entropy\_svd & PASS\_NO\_COMPRESSION & 78.56\% & 520.18 MB \\
+\texttt{results/unified\_dynamic\_entropy/distilbert/summary.csv} & dynamic\_entropy\_svd & PASS\_NO\_COMPRESSION & 90.71\% & 300.68 MB \\
+\texttt{results/unified\_dynamic\_entropy/qwen3\_5/summary.csv} & dynamic\_entropy\_svd & PASS & 89.22\% & 1850.64 MB \\
+\texttt{results/unified\_dynamic\_entropy/gpt2/summary.csv} & dynamic\_entropy\_svd & PASS\_NO\_COMPRESSION & 79.36\% & 627.16 MB \\
+all\_121\_gpu\_matrix & dynamic\_entropy & PASS & 30.96x (1.029s) & 104.9 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

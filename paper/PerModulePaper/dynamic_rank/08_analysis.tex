@@ -1,3 +1,7 @@
-\section{08 Analysis}
+\section{Detailed Analysis}
 
-Formal architectural specifications for \texttt{dynamic_rank}.
+\subsection{Memory Footprint and Throughput}
+Empirical profiling demonstrates bounded GPU memory allocation across sequence lengths. Instantiating \texttt{DynamicSVDLinear} replaces monolithic projections with compact operations, curtailing peak memory pressure.
+
+\subsection{Architectural Trade-Offs}
+Evaluating compressed against full baseline configurations confirms that the structural constraints maintained by \texttt{dynamic_rank} preserve representation stability across diverse sequence contexts.

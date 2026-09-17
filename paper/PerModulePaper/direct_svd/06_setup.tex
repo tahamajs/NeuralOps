@@ -1,3 +1,7 @@
-\section{06 Setup}
+\section{Experimental Setup}
 
-Formal architectural specifications for \texttt{direct_svd}.
+\subsection{Benchmark Protocol}
+Evaluations are conducted under standardized protocols across representative transformer backbones: DistilBERT (encoder), RoBERTa-base (encoder), GPT-2 (causal decoder), and T5/Qwen (generative architectures). Standard GLUE downstream benchmarks (SST-2, MRPC) evaluate task accuracy preservation.
+
+\subsection{Hardware and Measurement Configuration}
+Experiments execute on dedicated NVIDIA GPU accelerators under PyTorch with CUDA 12. Peak VRAM utilization is tracked via CUDA runtime memory profiling, and step latency measures end-to-end forward and backward execution times.
