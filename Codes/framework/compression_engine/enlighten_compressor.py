@@ -148,14 +148,14 @@ class ENLightenCompressor(BaseCompressor):
         if not should_compress_linear(self.model, name):
             return False
 
-        if self.target_modules is not None:
-            return any(t in name for t in self.target_modules)
-
         if self.target_attention_only:
             last_part = name.split(".")[-1]
             is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
             if not is_attn:
                 return False
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
 
         return True
 
