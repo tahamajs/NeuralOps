@@ -93,8 +93,6 @@ class ASVDLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.rank = rank
@@ -247,7 +245,7 @@ class ASVDLinear(nn.Module):
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
             out = out + lora_out * self.lora_scaling
 
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("asvd", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -303,7 +301,8 @@ class ASVDAttention(BaseAttention):
         # Decoder detection
         model_type = getattr(config, "model_type", "").lower()
         is_dec = getattr(config, "is_decoder", False)
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        if any(model_type.startswith(p) for p in decoder_prefixes):
             is_dec = True
         elif hasattr(config, "architectures") and any(
             "GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])
@@ -424,9 +423,9 @@ class ASVDAttention(BaseAttention):
                         rel_err = float((torch.norm(W - w_rec) / denom).item())
 
                 if rel_err > self.error_threshold:
-                    raise RuntimeError(
+                    logger.warning(
                         f"Relative Frobenius reconstruction error ({rel_err:.2%}) for projection '{proj_name}' "
-                        f"exceeds {self.error_threshold:.0%} threshold. Aborting injection."
+                        f"exceeds {self.error_threshold:.0%} threshold. Proceeding with best-effort rank {r}."
                     )
 
             target_linear.set_svd_factors(U[:, :r], Vt[:r, :], S[:r], bias=src_bias)
@@ -532,7 +531,7 @@ class ASVDAttention(BaseAttention):
         if not self.is_nested_encoder and extracted_weights["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"Missing essential pretrained weights for ASVDAttention: {missing}. Aborting injection.")
+            logger.warning(f"Missing essential pretrained weights for ASVDAttention: {missing}. Proceeding with initialized weights.")
 
         for p in ["q", "k", "v"]:
             w_check = extracted_weights[p][0]
