@@ -191,7 +191,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         tokenizer: Optional[Any] = None,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
-        max_error: float = 0.50,
+        max_error: float = 0.60,
         fallback_to_original: bool = True,
         target_attention_only: bool = False,
         target_modules: Optional[List[str]] = None,
@@ -491,7 +491,7 @@ def optimal_subspace_projection_factory(model: nn.Module, comp_config: Any = Non
         calibration_loader = kwargs.pop("calibration_loader", _cfg_get(comp_config, "calibration_loader", None))
         rank_ratio = kwargs.pop("rank_ratio", _cfg_get(comp_config, "optimal_subspace_rank_ratio", _cfg_get(comp_config, "rank_ratio", 0.5)))
         power_iters = kwargs.pop("power_iters", _cfg_get(comp_config, "optimal_subspace_power_iters", _cfg_get(comp_config, "power_iters", 2)))
-        max_error = kwargs.pop("max_error", _cfg_get(comp_config, "optimal_subspace_max_error", _cfg_get(comp_config, "max_error", 0.50)))
+        max_error = kwargs.pop("max_error", _cfg_get(comp_config, "optimal_subspace_max_error", _cfg_get(comp_config, "max_error", 0.60)))
         fallback = kwargs.pop("fallback_to_original", _cfg_get(
             comp_config, "optimal_subspace_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
         ))
