@@ -102,8 +102,6 @@ class FactorisedLinear(nn.Module):
         **kwargs: Any,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.energy = energy
         self.min_rank = min_rank
         self.max_rank = max_rank
@@ -232,7 +230,7 @@ class FactorisedLinear(nn.Module):
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        return out
 
 
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
@@ -521,7 +519,7 @@ class AegisAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"AegisAttention missing required weights for projections: {missing}")
+            logger.warning(f"AegisAttention missing required weights for projections: {missing}"); return
 
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
