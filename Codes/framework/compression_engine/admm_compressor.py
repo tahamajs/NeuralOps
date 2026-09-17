@@ -312,7 +312,13 @@ class ADMMCompressor(BaseCompressor):
             else:
                 res_w = W_final.to(dtype=dtype, device=device)
 
-            assert res_w.shape == orig_shape, f"Shape mismatch on {name}: {res_w.shape} vs {orig_shape}"
+            if res_w.shape != orig_shape:
+                logger.warning("Shape mismatch on %s: %s vs %s. Skipping.", name, res_w.shape, orig_shape)
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                continue
+
             target_mod.weight.data.copy_(res_w)
 
             # Record actual zero sparsity fraction
