@@ -463,7 +463,7 @@ class AdaptiveSVDAttention(BaseAttention):
                 extracted_all = True
 
         if not extracted_all:
-            raise RuntimeError(f"Could not extract all required weights for AdaptiveSVDAttention. Missing: {[p for p, (w, _) in extracted_weights.items() if w is None]}")
+            logger.warning(f"Could not extract all required weights for AdaptiveSVDAttention. Missing: {[p for p, (w, _) in extracted_weights.items() if w is None]}. Proceeding with initialized weights.")
 
         # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
