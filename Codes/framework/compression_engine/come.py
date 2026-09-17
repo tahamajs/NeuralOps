@@ -56,7 +56,6 @@ class CoMeBridge(nn.Module):
 
     def __init__(self, hidden_size: int, alpha_init: float = 0.1) -> None:
         super().__init__()
-        pass
         self.hidden_size = hidden_size
         self.linear = nn.Linear(hidden_size, hidden_size, bias=False)
         with torch.no_grad():
@@ -114,7 +113,6 @@ class CoMeBridgedLayer(nn.Module):
 
     def __init__(self, layer: nn.Module, bridge: Optional[CoMeBridge] = None) -> None:
         super().__init__()
-        pass
         self.layer = layer
         self.bridge = bridge
 
@@ -122,7 +120,9 @@ class CoMeBridgedLayer(nn.Module):
         try:
             return super().__getattr__(name)
         except AttributeError:
-            return getattr(self.layer, name)
+            if "layer" in self.__dict__ or ("_modules" in self.__dict__ and "layer" in self._modules):
+                return getattr(self.layer, name)
+            raise
 
     def __getitem__(self, key: Any) -> Any:
         return self.layer[key]
@@ -133,22 +133,20 @@ class CoMeBridgedLayer(nn.Module):
     def forward(
         self,
         hidden_states: Any = None,
-        attention_mask: Optional[torch.Tensor] = None,
         *args: Any,
         **kwargs: Any
     ) -> Any:
-        # Reconstruct args/kwargs to pass down
+        # Reconstruct args/kwargs to pass down safely without duplicate positional/keyword collision
+        if hidden_states is None and "hidden_states" in kwargs:
+            hidden_states = kwargs.pop("hidden_states")
         if hidden_states is not None:
-            # We insert hidden_states back as the first positional argument
-            # or into kwargs depending on how the original layer expects it.
-            # Usually it's the first positional.
             args = (hidden_states,) + args
-        if attention_mask is not None:
-            # Cast attention mask to bool if it's int64 to avoid SDPA errors
-            # when the model passes raw integer masks to our wrapper
-            if getattr(attention_mask, "dtype", None) == torch.int64:
-                attention_mask = attention_mask.to(torch.bool)
-            kwargs["attention_mask"] = attention_mask
+
+        attn_mask = kwargs.pop("attention_mask", None)
+        if attn_mask is not None:
+            if getattr(attn_mask, "dtype", None) == torch.int64:
+                attn_mask = attn_mask.to(torch.bool)
+            kwargs["attention_mask"] = attn_mask
             
         out = self.layer(*args, **kwargs)
         if self.bridge is not None:
@@ -173,7 +171,6 @@ class CoMeLoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        pass
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
