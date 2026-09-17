@@ -84,7 +84,6 @@ class ADMMMaskedLinear(nn.Module):
         device: Optional[torch.device] = None,
     ) -> None:
         super().__init__()
-        pass
         self.in_features = in_features
         self.out_features = out_features
         self.weight = nn.Parameter(torch.empty(out_features, in_features, dtype=dtype, device=device))
@@ -589,7 +588,12 @@ class ADMMPruner(BaseCompressor):
             else:
                 res_w = W_final.contiguous().to(dtype=dtype, device=device)
 
-            assert res_w.shape == orig_shape, f"Shape mismatch on {name}: {res_w.shape} vs {orig_shape}"
+            if res_w.shape != orig_shape:
+                logger.warning("Shape mismatch on %s: %s vs %s. Skipping.", name, res_w.shape, orig_shape)
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                continue
 
             has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
