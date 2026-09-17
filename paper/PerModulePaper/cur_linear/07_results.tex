@@ -1,11 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{cur_linear}.
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/chart_heatmap_accuracy.png}
-\caption{Empirical benchmark performance and resource utilization for cur_linear.}
-\label{fig:results_cur_linear}
-\end{figure}
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_cur\_linear/roberta/summary.csv} & cur\_linear & PASS\_NO\_COMPRESSION & 78.56\% & 520.18 MB \\
+\texttt{results/unified\_cur\_linear/distilbert/summary.csv} & cur\_linear & PASS\_NO\_COMPRESSION & 90.71\% & 300.68 MB \\
+\texttt{results/unified\_cur\_linear/qwen3\_5/summary.csv} & cur\_linear & FAIL & 0.0\% & 1796.78 MB \\
+\texttt{results/unified\_cur\_linear/gpt2/summary.csv} & cur\_linear & PASS\_NO\_COMPRESSION & 79.36\% & 627.28 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{delta_kv}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_delta\_kv/roberta/summary.csv} & delta\_kv & PASS\_NO\_COMPRESSION & 85.09\% & 333.32 MB \\
+\texttt{results/unified\_delta\_kv/distilbert/summary.csv} & delta\_kv & PASS\_NO\_COMPRESSION & 90.71\% & 300.68 MB \\
+\texttt{results/unified\_delta\_kv/gpt2/summary.csv} & delta\_kv & PASS\_NO\_COMPRESSION & 75.92\% & 627.91 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 21.9 ms & 571.8 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 22.55 ms & 571.8 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 26.83 ms & 581.7 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 27.17 ms & 581.7 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 52.67 ms & 1107.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

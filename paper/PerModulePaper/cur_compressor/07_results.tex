@@ -1,11 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{cur_compressor}.
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/chart_violin_accuracy.png}
-\caption{Empirical benchmark performance and resource utilization for cur_compressor.}
-\label{fig:results_cur_compressor}
-\end{figure}
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_cur/roberta/summary.csv} & cur & PASS\_NO\_COMPRESSION & 78.56\% & 519.68 MB \\
+\texttt{results/unified\_cur/distilbert/summary.csv} & cur & PASS\_NO\_COMPRESSION & 90.71\% & 300.68 MB \\
+\texttt{results/unified\_cur/gpt2/summary.csv} & cur & PASS\_NO\_COMPRESSION & 79.36\% & 627.28 MB \\
+all\_121\_gpu\_matrix & cur & PASS & 30.75x (1.041s) & 106.4 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

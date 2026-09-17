@@ -1,0 +1,3237 @@
+{
+  "aa_svd_compressor": {
+    "module_name": "aa_svd_compressor",
+    "source_file": "Codes/framework/compression_engine/aa_svd_compressor.py",
+    "source_lines_count": 656,
+    "architecture": {
+      "class_name": "SVDLinear",
+      "base_class": "nn.Module",
+      "init_args": "self, in_features: int, out_features: int, rank: int, bias: bool = True, use_fused_kernel: bool = False, dtype: torch.dtype = torch.float32, device: Optional[torch.device] = None, lora_rank: int = 0, lora_alpha: float = 1.0, lora_r: Optional[int] = None, freeze_base: bool = False, ) -> None: super().__init__() self.in_features = in_features self.out_features = out_features self.rank = max(1, min(rank, in_features, out_features)) self.use_fused_kernel = use_fused_kernel # Support both lora_rank and legacy lora_r argument names if lora_r is not None and lora_r > 0: self.lora_rank = int(lora_r) else: self.lora_rank = max(0, int(lora_rank)) self.lora_r = self.lora_rank self.lora_alpha = float(lora_alpha) self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0 self.scaling = self.lora_scaling # Factorized low-rank parameter tensors (frozen if LoRA enabled or freeze_base requested) requires_grad = not (self.lora_rank > 0 or freeze_base) factory_kwargs = {\"dtype\": dtype, \"device\": device} self.V = nn.Parameter(torch.empty(self.rank, in_features, **factory_kwargs), requires_grad=requires_grad) self.U = nn.Parameter(torch.empty(out_features, self.rank, **factory_kwargs), requires_grad=requires_grad) if bias: self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs), requires_grad=requires_grad) else: self.register_parameter(\"bias\", None) if self.lora_rank > 0: self.lora_A = nn.Parameter(torch.empty((self.lora_rank, in_features), **factory_kwargs)) self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_rank), **factory_kwargs)) nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5)) else: self.register_parameter(\"lora_A\", None) self.register_parameter(\"lora_B\", None) self.reset_parameters() @property def weight(self) -> torch.Tensor: \"\"\"Reconstructed effective weight matrix for compatibility.\"\"\" w = torch.matmul(self.U, self.V) if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None: w = w + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling return w def get_weight(self) -> torch.Tensor: \"\"\"Reconstructed effective weight matrix.\"\"\" w = torch.matmul(self.U, self.V) if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None: w = w + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling return w @property def use_lora(self) -> bool: \"\"\"Indicates whether trainable LoRA adapters are enabled.\"\"\" return bool(self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None) def freeze_base_weights(self) -> None: \"\"\"Freeze factorized base weights while leaving LoRA adapter parameters trainable.\"\"\" self.V.requires_grad = False self.U.requires_grad = False if self.bias is not None: self.bias.requires_grad = False if self.lora_A is not None: self.lora_A.requires_grad = True if self.lora_B is not None: self.lora_B.requires_grad = True def reset_parameters(self) -> None: with torch.no_grad(",
+      "registry_names": [
+        "aa_svd",
+        "aasvd",
+        "aa_svd_factory",
+        "aa_svd_compressor",
+        "aasvd_factory",
+        "aa_svd_compressor_factory"
+      ]
+    },
+    "params": [
+      {
+        "name": "V",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(self.rank, in_features, **factory_kwargs)"
+      },
+      {
+        "name": "U",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, self.rank, **factory_kwargs)"
+      },
+      {
+        "name": "bias",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, **factory_kwargs)"
+      },
+      {
+        "name": "lora_A",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty((self.lora_rank, in_features)"
+      },
+      {
+        "name": "lora_B",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.zeros((out_features, self.lora_rank)"
+      }
+    ],
+    "metrics": {
+      "results/matrix_test_summary.csv": "qwen3_5,qwen3_5,aa_svd_compressor,compressor,PASS,True,True,114.688,4777.1,\ngpt2,gpt2,aa_svd_compressor,compressor,PASS,True,True,0.216,1634.6,\nroberta,roberta,aa_svd_compressor,compressor,PASS,True,True,4.181,1328.0,\ndistilbert,distilbert,aa_svd_compressor,compressor,PASS,True,True,2.132,638.7,",
+      "results/all_121_compressors_gpu_matrix.csv": "aa_svd_compressor,cuda,PASS,True,True,30.96,106.1,0.809,"
+    },
+    "notes": []
+  },
+  "adaptive_compressor": {
+    "module_name": "adaptive_compressor",
+    "source_file": "Codes/framework/compression_engine/adaptive_compressor.py",
+    "source_lines_count": 58,
+    "architecture": {
+      "class_name": "AdaptiveTransformerCompressor",
+      "base_class": "AdaptiveRanksCompressor",
+      "init_args": null,
+      "registry_names": [
+        "adaptive_compressor"
+      ]
+    },
+    "params": [],
+    "metrics": {
+      "results/unified_adaptive_compressor/roberta/roberta-base_full_full_metrics.json": {
+        "model": "roberta-base_full",
+        "performance": {
+          "accuracy_pct": 78.56,
+          "f1_score": 0.8124,
+          "f1_macro": 0.7811,
+          "precision": 0.8051,
+          "recall": 0.7832,
+          "val_loss": 0.4381,
+          "status": "PASS",
+          "elapsed_s": 7.03
+        },
+        "efficiency": {
+          "total_params_before": 127325954,
+          "total_params_after": 127325954,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 2678784,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 299.92,
+          "tokens_per_sec": 25000.16
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 278.97,
+          "L_256_vram_mb": 281.55,
+          "L_512_vram_mb": 287.18,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T09:23:33.932247"
+      },
+      "results/unified_adaptive_compressor/roberta/roberta-base_adaptive_compressor_full_metrics.json": {
+        "model": "roberta-base_adaptive_compressor",
+        "performance": {
+          "accuracy_pct": 85.32,
+          "f1_score": 0.8447,
+          "f1_macro": 0.8528,
+          "precision": 0.8603,
+          "recall": 0.8545,
+          "val_loss": 0.3725,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 39.04
+        },
+        "efficiency": {
+          "total_params_before": 127325954,
+          "total_params_after": 127325954,
+          "trainable_recovery_params": 1474560,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 48,
+          "num_injected_attention_layers": 0,
+          "lora_params": 2678784,
+          "avg_reconstruction_error": 0.0,
+          "weighted_reconstruction_error": 0.3644,
+          "per_layer_reconstruction_errors": {
+            "roberta.encoder.layer.0.attention.self.query": 0.3703107387562295,
+            "roberta.encoder.layer.0.attention.self.key": 0.3394817023607664,
+            "roberta.encoder.layer.0.attention.self.value": 0.3563514659359639,
+            "roberta.encoder.layer.0.attention.output.dense": 0.3384400364748302,
+            "roberta.encoder.layer.1.attention.self.query": 0.36171755836811004,
+            "roberta.encoder.layer.1.attention.self.key": 0.35123381417844457,
+            "roberta.encoder.layer.1.attention.self.value": 0.33529264068267295,
+            "roberta.encoder.layer.1.attention.output.dense": 0.32870197078071106,
+            "roberta.encoder.layer.2.attention.self.query": 0.34546841597049116,
+            "roberta.encoder.layer.2.attention.self.key": 0.3480268563364002,
+            "roberta.encoder.layer.2.attention.self.value": 0.33624750177210216,
+            "roberta.encoder.layer.2.attention.output.dense": 0.3594448418595497,
+            "roberta.encoder.layer.3.attention.self.query": 0.3590904741997009,
+            "roberta.encoder.layer.3.attention.self.key": 0.37341207515193203,
+            "roberta.encoder.layer.3.attention.self.value": 0.33872203420851466,
+            "roberta.encoder.layer.3.attention.output.dense": 0.35038398713152374,
+            "roberta.encoder.layer.4.attention.self.query": 0.35064180386646643,
+            "roberta.encoder.layer.4.attention.self.key": 0.3568748794430075,
+            "roberta.encoder.layer.4.attention.self.value": 0.3239212238580438,
+            "roberta.encoder.layer.4.attention.output.dense": 0.34585865940733085,
+            "roberta.encoder.layer.5.attention.self.query": 0.3570346789786721,
+            "roberta.encoder.layer.5.attention.self.key": 0.3638017193477438,
+            "roberta.encoder.layer.5.attention.self.value": 0.3330388000108121,
+            "roberta.encoder.layer.5.attention.output.dense": 0.3292133646089158,
+            "roberta.encoder.layer.6.attention.self.query": 0.34146631261792515,
+            "roberta.encoder.layer.6.attention.self.key": 0.33123951666887913,
+            "roberta.encoder.layer.6.attention.self.value": 0.35261781029457534,
+            "roberta.encoder.layer.6.attention.output.dense": 0.38273852813424336,
+            "roberta.encoder.layer.7.attention.self.query": 0.3483886957573061,
+            "roberta.encoder.layer.7.attention.self.key": 0.3382258149456038,
+            "roberta.encoder.layer.7.attention.self.value": 0.3539141056185834,
+            "roberta.encoder.layer.7.attention.output.dense": 0.39183288214773787,
+            "roberta.encoder.layer.8.attention.self.query": 0.3324447322322515,
+            "roberta.encoder.layer.8.attention.self.key": 0.3274980965078941,
+            "roberta.encoder.layer.8.attention.self.value": 0.43100527994642474,
+            "roberta.encoder.layer.8.attention.output.dense": 0.4758618542852608,
+            "roberta.encoder.layer.9.attention.self.query": 0.31622239199084934,
+            "roberta.encoder.layer.9.attention.self.key": 0.3233658133675395,
+            "roberta.encoder.layer.9.attention.self.value": 0.4491982881624973,
+            "roberta.encoder.layer.9.attention.output.dense": 0.4844171842677162,
+            "roberta.encoder.layer.10.attention.self.query": 0.32379090177334036,
+            "roberta.encoder.layer.10.attention.self.key": 0.3213244137952926,
+            "roberta.encoder.layer.10.attention.self.value": 0.44072454960870894,
+            "roberta.encoder.layer.10.attention.output.dense": 0.49380943054786297,
+            "roberta.encoder.layer.11.attention.self.query": 0.3275519342993735,
+            "roberta.encoder.layer.11.attention.self.key": 0.35018315895660346,
+            "roberta.encoder.layer.11.attention.self.value": 0.43122867819710065,
+            "roberta.encoder.layer.11.attention.output.dense": 0.47087577181920104
+          },
+          "per_layer_ranks": {
+            "roberta.encoder.layer.0.attention.self.query": 288,
+            "roberta.encoder.layer.0.attention.self.key": 288,
+            "roberta.encoder.layer.0.attention.self.value": 288,
+            "roberta.encoder.layer.0.attention.output.dense": 288,
+            "roberta.encoder.layer.1.attention.self.query": 288,
+            "roberta.encoder.layer.1.attention.self.key": 288,
+            "roberta.encoder.layer.1.attention.self.value": 288,
+            "roberta.encoder.layer.1.attention.output.dense": 288,
+            "roberta.encoder.layer.2.attention.self.query": 288,
+            "roberta.encoder.layer.2.attention.self.key": 288,
+            "roberta.encoder.layer.2.attention.self.value": 288,
+            "roberta.encoder.layer.2.attention.output.dense": 288,
+            "roberta.encoder.layer.3.attention.self.query": 288,
+            "roberta.encoder.layer.3.attention.self.key": 288,
+            "roberta.encoder.layer.3.attention.self.value": 288,
+            "roberta.encoder.layer.3.attention.output.dense": 288,
+            "roberta.encoder.layer.4.attention.self.query": 288,
+            "roberta.encoder.layer.4.attention.self.key": 288,
+            "roberta.encoder.layer.4.attention.self.value": 288,
+            "roberta.encoder.layer.4.attention.output.dense": 288,
+            "roberta.encoder.layer.5.attention.self.query": 288,
+            "roberta.encoder.layer.5.attention.self.key": 288,
+            "roberta.encoder.layer.5.attention.self.value": 288,
+            "roberta.encoder.layer.5.attention.output.dense": 288,
+            "roberta.encoder.layer.6.attention.self.query": 288,
+            "roberta.encoder.layer.6.attention.self.key": 288,
+            "roberta.encoder.layer.6.attention.self.value": 288,
+            "roberta.encoder.layer.6.attention.output.dense": 288,
+            "roberta.encoder.layer.7.attention.self.query": 288,
+            "roberta.encoder.layer.7.attention.self.key": 288,
+            "roberta.encoder.layer.7.attention.self.value": 288,
+            "roberta.encoder.layer.7.attention.output.dense": 288,
+            "roberta.encoder.layer.8.attention.self.query": 288,
+            "roberta.encoder.layer.8.attention.self.key": 288,
+            "roberta.encoder.layer.8.attention.self.value": 288,
+            "roberta.encoder.layer.8.attention.output.dense": 288,
+            "roberta.encoder.layer.9.attention.self.query": 288,
+            "roberta.encoder.layer.9.attention.self.key": 288,
+            "roberta.encoder.layer.9.attention.self.value": 288,
+            "roberta.encoder.layer.9.attention.output.dense": 288,
+            "roberta.encoder.layer.10.attention.self.query": 288,
+            "roberta.encoder.layer.10.attention.self.key": 288,
+            "roberta.encoder.layer.10.attention.self.value": 288,
+            "roberta.encoder.layer.10.attention.output.dense": 288,
+            "roberta.encoder.layer.11.attention.self.query": 288,
+            "roberta.encoder.layer.11.attention.self.key": 288,
+            "roberta.encoder.layer.11.attention.self.value": 288,
+            "roberta.encoder.layer.11.attention.output.dense": 288
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 326.48,
+          "tokens_per_sec": 11130.61
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 296.14,
+          "L_256_vram_mb": 300.46,
+          "L_512_vram_mb": 308.6,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T09:24:13.235630"
+      },
+      "results/unified_adaptive_compressor/distilbert/distilbert_sst2_adaptive_compressor_full_metrics.json": {
+        "model": "distilbert_sst2_adaptive_compressor",
+        "performance": {
+          "accuracy_pct": 90.71,
+          "f1_score": 0.9099,
+          "f1_macro": 0.907,
+          "precision": 0.9075,
+          "recall": 0.9068,
+          "val_loss": 0.3028,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 9.06
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 66955010,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 24,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": 0.0,
+          "weighted_reconstruction_error": 0.3576,
+          "per_layer_reconstruction_errors": {
+            "distilbert.transformer.layer.0.attention.q_lin": 0.33294518805109763,
+            "distilbert.transformer.layer.0.attention.k_lin": 0.32652034503345684,
+            "distilbert.transformer.layer.0.attention.v_lin": 0.35596015064673403,
+            "distilbert.transformer.layer.0.attention.out_lin": 0.33526512484042226,
+            "distilbert.transformer.layer.1.attention.q_lin": 0.31197221167244155,
+            "distilbert.transformer.layer.1.attention.k_lin": 0.2890375024073164,
+            "distilbert.transformer.layer.1.attention.v_lin": 0.34896380859317017,
+            "distilbert.transformer.layer.1.attention.out_lin": 0.3479609905788623,
+            "distilbert.transformer.layer.2.attention.q_lin": 0.3488535159884333,
+            "distilbert.transformer.layer.2.attention.k_lin": 0.35383827521966804,
+            "distilbert.transformer.layer.2.attention.v_lin": 0.35176680007142785,
+            "distilbert.transformer.layer.2.attention.out_lin": 0.36874567461883445,
+            "distilbert.transformer.layer.3.attention.q_lin": 0.30816743928639606,
+            "distilbert.transformer.layer.3.attention.k_lin": 0.31029371110527176,
+            "distilbert.transformer.layer.3.attention.v_lin": 0.40359058756967764,
+            "distilbert.transformer.layer.3.attention.out_lin": 0.4109990380023638,
+            "distilbert.transformer.layer.4.attention.q_lin": 0.3503651711645765,
+            "distilbert.transformer.layer.4.attention.k_lin": 0.34860034863229883,
+            "distilbert.transformer.layer.4.attention.v_lin": 0.41083205161652897,
+            "distilbert.transformer.layer.4.attention.out_lin": 0.43395434417698153,
+            "distilbert.transformer.layer.5.attention.q_lin": 0.35652389933842643,
+            "distilbert.transformer.layer.5.attention.k_lin": 0.367216901445887,
+            "distilbert.transformer.layer.5.attention.v_lin": 0.3866446887647329,
+            "distilbert.transformer.layer.5.attention.out_lin": 0.42232546249209707
+          },
+          "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention.q_lin": 288,
+            "distilbert.transformer.layer.0.attention.k_lin": 288,
+            "distilbert.transformer.layer.0.attention.v_lin": 288,
+            "distilbert.transformer.layer.0.attention.out_lin": 288,
+            "distilbert.transformer.layer.1.attention.q_lin": 288,
+            "distilbert.transformer.layer.1.attention.k_lin": 288,
+            "distilbert.transformer.layer.1.attention.v_lin": 288,
+            "distilbert.transformer.layer.1.attention.out_lin": 288,
+            "distilbert.transformer.layer.2.attention.q_lin": 288,
+            "distilbert.transformer.layer.2.attention.k_lin": 288,
+            "distilbert.transformer.layer.2.attention.v_lin": 288,
+            "distilbert.transformer.layer.2.attention.out_lin": 288,
+            "distilbert.transformer.layer.3.attention.q_lin": 288,
+            "distilbert.transformer.layer.3.attention.k_lin": 288,
+            "distilbert.transformer.layer.3.attention.v_lin": 288,
+            "distilbert.transformer.layer.3.attention.out_lin": 288,
+            "distilbert.transformer.layer.4.attention.q_lin": 288,
+            "distilbert.transformer.layer.4.attention.k_lin": 288,
+            "distilbert.transformer.layer.4.attention.v_lin": 288,
+            "distilbert.transformer.layer.4.attention.out_lin": 288,
+            "distilbert.transformer.layer.5.attention.q_lin": 288,
+            "distilbert.transformer.layer.5.attention.k_lin": 288,
+            "distilbert.transformer.layer.5.attention.v_lin": 288,
+            "distilbert.transformer.layer.5.attention.out_lin": 288
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 183.07,
+          "tokens_per_sec": 49536.87
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 165.01,
+          "L_256_vram_mb": 167.2,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T09:22:44.197377"
+      },
+      "results/unified_adaptive_compressor/distilbert/distilbert_sst2_full_full_metrics.json": {
+        "model": "distilbert_sst2_full",
+        "performance": {
+          "accuracy_pct": 90.71,
+          "f1_score": 0.9099,
+          "f1_macro": 0.907,
+          "precision": 0.9075,
+          "recall": 0.9068,
+          "val_loss": 0.3028,
+          "status": "PASS",
+          "elapsed_s": 3.04
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 66955010,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 182.94,
+          "tokens_per_sec": 50739.73
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 164.38,
+          "L_256_vram_mb": 167.07,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T09:22:34.906481"
+      },
+      "results/unified_adaptive_compressor/gpt2/gpt2_adaptive_compressor_full_metrics.json": {
+        "model": "gpt2_adaptive_compressor",
+        "performance": {
+          "accuracy_pct": 76.95,
+          "f1_score": 0.8016,
+          "f1_macro": 0.7633,
+          "precision": 0.7941,
+          "recall": 0.7668,
+          "val_loss": 0.4773,
+          "status": "PASS",
+          "elapsed_s": 16.81
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 124177153,
+          "trainable_recovery_params": 326401,
+          "compression_rate": 1.0021,
+          "compression_ratio_pct": 0.21,
+          "flops_reduction_pct": 44.79,
+          "num_compressed_layers": 1,
+          "num_fallback_layers": 23,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": 0.1982078150637553,
+          "weighted_reconstruction_error": 0.3414,
+          "per_layer_reconstruction_errors": {
+            "transformer.h.0.attn.c_attn": 0.2843487300190838,
+            "transformer.h.0.attn.c_proj": 0.1982078150637553,
+            "transformer.h.1.attn.c_attn": 0.2804280740199041,
+            "transformer.h.1.attn.c_proj": 0.26518290770340747,
+            "transformer.h.2.attn.c_attn": 0.3168949599802963,
+            "transformer.h.2.attn.c_proj": 0.337749362027825,
+            "transformer.h.3.attn.c_attn": 0.35333285230246475,
+            "transformer.h.3.attn.c_proj": 0.35170269651428393,
+            "transformer.h.4.attn.c_attn": 0.3364296682588377,
+            "transformer.h.4.attn.c_proj": 0.33817276930938883,
+            "transformer.h.5.attn.c_attn": 0.30946914992175906,
+            "transformer.h.5.attn.c_proj": 0.373032599943282,
+            "transformer.h.6.attn.c_attn": 0.33095579867957103,
+            "transformer.h.6.attn.c_proj": 0.33396203276137054,
+            "transformer.h.7.attn.c_attn": 0.3417960072226643,
+            "transformer.h.7.attn.c_proj": 0.35901756212671,
+            "transformer.h.8.attn.c_attn": 0.3790725666448751,
+            "transformer.h.8.attn.c_proj": 0.3471477246591176,
+            "transformer.h.9.attn.c_attn": 0.3978874820279882,
+            "transformer.h.9.attn.c_proj": 0.4080779835075269,
+            "transformer.h.10.attn.c_attn": 0.3719847364258863,
+            "transformer.h.10.attn.c_proj": 0.4560525477285183,
+            "transformer.h.11.attn.c_attn": 0.3574995013409776,
+            "transformer.h.11.attn.c_proj": 0.37547696152560417
+          },
+          "per_layer_ranks": {
+            "transformer.h.0.attn.c_attn": 432,
+            "transformer.h.0.attn.c_proj": 212,
+            "transformer.h.1.attn.c_attn": 432,
+            "transformer.h.1.attn.c_proj": 288,
+            "transformer.h.2.attn.c_attn": 432,
+            "transformer.h.2.attn.c_proj": 288,
+            "transformer.h.3.attn.c_attn": 432,
+            "transformer.h.3.attn.c_proj": 288,
+            "transformer.h.4.attn.c_attn": 432,
+            "transformer.h.4.attn.c_proj": 288,
+            "transformer.h.5.attn.c_attn": 432,
+            "transformer.h.5.attn.c_proj": 288,
+            "transformer.h.6.attn.c_attn": 432,
+            "transformer.h.6.attn.c_proj": 288,
+            "transformer.h.7.attn.c_attn": 432,
+            "transformer.h.7.attn.c_proj": 288,
+            "transformer.h.8.attn.c_attn": 432,
+            "transformer.h.8.attn.c_proj": 288,
+            "transformer.h.9.attn.c_attn": 432,
+            "transformer.h.9.attn.c_proj": 288,
+            "transformer.h.10.attn.c_attn": 432,
+            "transformer.h.10.attn.c_proj": 288,
+            "transformer.h.11.attn.c_attn": 432,
+            "transformer.h.11.attn.c_proj": 288
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 638.52,
+          "tokens_per_sec": 22313.99
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 522.15,
+          "L_256_vram_mb": 535.65,
+          "L_512_vram_mb": 563.78,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T09:25:15.506611"
+      },
+      "results/unified_adaptive_compressor/gpt2/gpt2_full_full_metrics.json": {
+        "model": "gpt2_full",
+        "performance": {
+          "accuracy_pct": 79.36,
+          "f1_score": 0.7978,
+          "f1_macro": 0.7935,
+          "precision": 0.7935,
+          "recall": 0.7935,
+          "val_loss": 0.4875,
+          "status": "PASS",
+          "elapsed_s": 7.1
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 124441344,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 793.19,
+          "tokens_per_sec": 23311.22
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 681.07,
+          "L_256_vram_mb": 691.32,
+          "L_512_vram_mb": 721.95,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T09:24:58.578698"
+      },
+      "results/unified_adaptive_compressor/roberta/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,78.56,0.8124,0.7811,0.8051,0.7832,0.4381,7.03,299.92,25000.16,127325954,127325954,0,1.0,0.0,0.0,0,0,,,0,2678784,,adapted_roberta,2026-09-15T09:23:34.853578\nadaptive_compressor,PASS_NO_COMPRESSION,85.32,0.8447,0.8528,0.8603,0.8545,0.3725,39.05,326.48,11130.61,127325954,127325954,1474560,1.0,0.0,0.0,0,48,0.0,0.3644,0,2678784,\"note: zero compressed layers, model grew (LoRA only)\",adapted_roberta,2026-09-15T09:24:14.165511\n",
+      "results/unified_adaptive_compressor/distilbert/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,90.71,0.9099,0.907,0.9075,0.9068,0.3028,3.04,182.94,50739.73,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-15T09:22:35.111613\nadaptive_compressor,PASS_NO_COMPRESSION,90.71,0.9099,0.907,0.9075,0.9068,0.3028,9.06,183.07,49536.87,66955010,66955010,0,1.0,0.0,0.0,0,24,0.0,0.3576,0,0,\"note: zero compressed layers, model grew (LoRA only)\",legacy_bert,2026-09-15T09:22:44.424573\n",
+      "results/unified_adaptive_compressor/gpt2/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,79.36,0.7978,0.7935,0.7935,0.7935,0.4875,7.1,793.19,23311.22,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-15T09:24:59.350907\nadaptive_compressor,PASS,76.95,0.8016,0.7633,0.7941,0.7668,0.4773,16.81,638.52,22313.99,124441344,124177153,326401,1.0021,0.21,44.79,1,23,0.1982078150637553,0.3414,0,0,,adapted_gpt,2026-09-15T09:25:16.452518\n",
+      "results/master_aggregated_results.csv": "adaptive_compressor,0,PASS,90.37,72.13,52.75,86.1,2026-09-11T03:41:43.137296"
+    },
+    "notes": []
+  },
+  "adaptive_ranks": {
+    "module_name": "adaptive_ranks",
+    "source_file": "Codes/framework/compression_engine/adaptive_ranks.py",
+    "source_lines_count": 640,
+    "architecture": {
+      "class_name": "AdaptiveRanksCompressor",
+      "base_class": "BaseCompressor",
+      "init_args": "self, model: nn.Module, energy_threshold: float = 0.92, min_rank: int = 16, max_error: float = 0.20, fallback_to_original: bool = True, protect_critical: bool = True, target_attention_only: bool = False, target_modules: Optional[List[str]] = None, tokenizer: Optional[Any] = None, calibration_loader: Optional[Any] = None, calibration_texts: Optional[List[str]] = None, device: Optional[Union[str, torch.device]] = None, **kwargs: Any, ) -> None: super().__init__(model, name=\"adaptive_ranks\", **kwargs) cfg = kwargs.get(\"comp_config\", kwargs.get(\"cfg\", None)) if cfg is None and hasattr(model, \"config\") and model.config is not None: cfg = model.config if cfg is not None: energy_threshold = _cfg_get(cfg, \"energy_threshold\", _cfg_get(cfg, \"adaptive_ranks_energy_threshold\", _cfg_get(cfg, \"asvd_energy_threshold\", energy_threshold))) min_rank = _cfg_get(cfg, \"min_rank\", _cfg_get(cfg, \"rank\", min_rank)) max_error = _cfg_get(cfg, \"max_error\", _cfg_get(cfg, \"adaptive_ranks_max_error\", _cfg_get(cfg, \"aasvd_max_error\", max_error))) fallback_to_original = _cfg_get(cfg, \"fallback_to_original\", fallback_to_original) protect_critical = _cfg_get(cfg, \"protect_critical\", protect_critical) target_attention_only = _cfg_get(cfg, \"target_attention_only\", _cfg_get(cfg, \"adaptive_ranks_target_attention_only\", _cfg_get(cfg, \"aasvd_target_attention_only\", target_attention_only))) if \"rank\" in kwargs and kwargs[\"rank\"] is not None: min_rank = kwargs[\"rank\"] if \"target_attention_only\" in kwargs and kwargs[\"target_attention_only\"] is not None: target_attention_only = kwargs[\"target_attention_only\"] self.energy_threshold = max(0.01, min(float(energy_threshold), 1.0)) self.min_rank = max(1, int(min_rank)) self.max_error = float(max_error) self.fallback_to_original = bool(fallback_to_original) self.protect_critical = bool(protect_critical) self.target_attention_only = bool(target_attention_only) self.target_modules = target_modules self.tokenizer = tokenizer or getattr(model, \"tokenizer\", None) self.calibration_loader = calibration_loader self.calibration_texts = calibration_texts self.target_device = ( torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device ) self.compressed_layers: List[str] = [] self.fallback_layers: List[str] = [] self.layer_errors: Dict[str, float] = {} self.layer_ranks: Dict[str, int] = {} self.used_covariance: Dict[str, bool] = {} def _is_target_module(self, name: str, module: nn.Module) -> bool: if isinstance(module, SVDLinear) or (CompressedAttentionLayer is not None and isinstance(module, CompressedAttentionLayer)",
+      "registry_names": [
+        "adaptive_ranks_factory",
+        "adaptive_svd",
+        "adaptive_svd_factory",
+        "adaptive_compressor_factory",
+        "adaptive_compressor",
+        "adaptive_factory",
+        "adaptive_ranks",
+        "adaptive"
+      ]
+    },
+    "params": [],
+    "metrics": {
+      "results/unified_adaptive_ranks/roberta/roberta-base_adaptive_ranks_full_metrics.json": {
+        "model": "roberta-base_adaptive_ranks",
+        "performance": {
+          "accuracy_pct": 78.56,
+          "f1_score": 0.8124,
+          "f1_macro": 0.7811,
+          "precision": 0.8051,
+          "recall": 0.7832,
+          "val_loss": 0.4381,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 16.78
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 124647170,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 48,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": 0.0,
+          "weighted_reconstruction_error": 0.3644,
+          "per_layer_reconstruction_errors": {
+            "roberta.encoder.layer.0.attention.self.query": 0.3703107387562295,
+            "roberta.encoder.layer.0.attention.self.key": 0.3394817023607664,
+            "roberta.encoder.layer.0.attention.self.value": 0.3563514659359639,
+            "roberta.encoder.layer.0.attention.output.dense": 0.3384400364748302,
+            "roberta.encoder.layer.1.attention.self.query": 0.36171755836811004,
+            "roberta.encoder.layer.1.attention.self.key": 0.35123381417844457,
+            "roberta.encoder.layer.1.attention.self.value": 0.33529264068267295,
+            "roberta.encoder.layer.1.attention.output.dense": 0.32870197078071106,
+            "roberta.encoder.layer.2.attention.self.query": 0.34546841597049116,
+            "roberta.encoder.layer.2.attention.self.key": 0.3480268563364002,
+            "roberta.encoder.layer.2.attention.self.value": 0.33624750177210216,
+            "roberta.encoder.layer.2.attention.output.dense": 0.3594448418595497,
+            "roberta.encoder.layer.3.attention.self.query": 0.3590904741997009,
+            "roberta.encoder.layer.3.attention.self.key": 0.37341207515193203,
+            "roberta.encoder.layer.3.attention.self.value": 0.33872203420851466,
+            "roberta.encoder.layer.3.attention.output.dense": 0.35038398713152374,
+            "roberta.encoder.layer.4.attention.self.query": 0.35064180386646643,
+            "roberta.encoder.layer.4.attention.self.key": 0.3568748794430075,
+            "roberta.encoder.layer.4.attention.self.value": 0.3239212238580438,
+            "roberta.encoder.layer.4.attention.output.dense": 0.34585865940733085,
+            "roberta.encoder.layer.5.attention.self.query": 0.3570346789786721,
+            "roberta.encoder.layer.5.attention.self.key": 0.3638017193477438,
+            "roberta.encoder.layer.5.attention.self.value": 0.3330388000108121,
+            "roberta.encoder.layer.5.attention.output.dense": 0.3292133646089158,
+            "roberta.encoder.layer.6.attention.self.query": 0.34146631261792515,
+            "roberta.encoder.layer.6.attention.self.key": 0.33123951666887913,
+            "roberta.encoder.layer.6.attention.self.value": 0.35261781029457534,
+            "roberta.encoder.layer.6.attention.output.dense": 0.38273852813424336,
+            "roberta.encoder.layer.7.attention.self.query": 0.3483886957573061,
+            "roberta.encoder.layer.7.attention.self.key": 0.3382258149456038,
+            "roberta.encoder.layer.7.attention.self.value": 0.3539141056185834,
+            "roberta.encoder.layer.7.attention.output.dense": 0.39183288214773787,
+            "roberta.encoder.layer.8.attention.self.query": 0.3324447322322515,
+            "roberta.encoder.layer.8.attention.self.key": 0.3274980965078941,
+            "roberta.encoder.layer.8.attention.self.value": 0.43100527994642474,
+            "roberta.encoder.layer.8.attention.output.dense": 0.4758618542852608,
+            "roberta.encoder.layer.9.attention.self.query": 0.31622239199084934,
+            "roberta.encoder.layer.9.attention.self.key": 0.3233658133675395,
+            "roberta.encoder.layer.9.attention.self.value": 0.4491982881624973,
+            "roberta.encoder.layer.9.attention.output.dense": 0.4844171842677162,
+            "roberta.encoder.layer.10.attention.self.query": 0.32379090177334036,
+            "roberta.encoder.layer.10.attention.self.key": 0.3213244137952926,
+            "roberta.encoder.layer.10.attention.self.value": 0.44072454960870894,
+            "roberta.encoder.layer.10.attention.output.dense": 0.49380943054786297,
+            "roberta.encoder.layer.11.attention.self.query": 0.3275519342993735,
+            "roberta.encoder.layer.11.attention.self.key": 0.35018315895660346,
+            "roberta.encoder.layer.11.attention.self.value": 0.43122867819710065,
+            "roberta.encoder.layer.11.attention.output.dense": 0.47087577181920104
+          },
+          "per_layer_ranks": {
+            "roberta.encoder.layer.0.attention.self.query": 288,
+            "roberta.encoder.layer.0.attention.self.key": 288,
+            "roberta.encoder.layer.0.attention.self.value": 288,
+            "roberta.encoder.layer.0.attention.output.dense": 288,
+            "roberta.encoder.layer.1.attention.self.query": 288,
+            "roberta.encoder.layer.1.attention.self.key": 288,
+            "roberta.encoder.layer.1.attention.self.value": 288,
+            "roberta.encoder.layer.1.attention.output.dense": 288,
+            "roberta.encoder.layer.2.attention.self.query": 288,
+            "roberta.encoder.layer.2.attention.self.key": 288,
+            "roberta.encoder.layer.2.attention.self.value": 288,
+            "roberta.encoder.layer.2.attention.output.dense": 288,
+            "roberta.encoder.layer.3.attention.self.query": 288,
+            "roberta.encoder.layer.3.attention.self.key": 288,
+            "roberta.encoder.layer.3.attention.self.value": 288,
+            "roberta.encoder.layer.3.attention.output.dense": 288,
+            "roberta.encoder.layer.4.attention.self.query": 288,
+            "roberta.encoder.layer.4.attention.self.key": 288,
+            "roberta.encoder.layer.4.attention.self.value": 288,
+            "roberta.encoder.layer.4.attention.output.dense": 288,
+            "roberta.encoder.layer.5.attention.self.query": 288,
+            "roberta.encoder.layer.5.attention.self.key": 288,
+            "roberta.encoder.layer.5.attention.self.value": 288,
+            "roberta.encoder.layer.5.attention.output.dense": 288,
+            "roberta.encoder.layer.6.attention.self.query": 288,
+            "roberta.encoder.layer.6.attention.self.key": 288,
+            "roberta.encoder.layer.6.attention.self.value": 288,
+            "roberta.encoder.layer.6.attention.output.dense": 288,
+            "roberta.encoder.layer.7.attention.self.query": 288,
+            "roberta.encoder.layer.7.attention.self.key": 288,
+            "roberta.encoder.layer.7.attention.self.value": 288,
+            "roberta.encoder.layer.7.attention.output.dense": 288,
+            "roberta.encoder.layer.8.attention.self.query": 288,
+            "roberta.encoder.layer.8.attention.self.key": 288,
+            "roberta.encoder.layer.8.attention.self.value": 288,
+            "roberta.encoder.layer.8.attention.output.dense": 288,
+            "roberta.encoder.layer.9.attention.self.query": 288,
+            "roberta.encoder.layer.9.attention.self.key": 288,
+            "roberta.encoder.layer.9.attention.self.value": 288,
+            "roberta.encoder.layer.9.attention.output.dense": 288,
+            "roberta.encoder.layer.10.attention.self.query": 288,
+            "roberta.encoder.layer.10.attention.self.key": 288,
+            "roberta.encoder.layer.10.attention.self.value": 288,
+            "roberta.encoder.layer.10.attention.output.dense": 288,
+            "roberta.encoder.layer.11.attention.self.query": 288,
+            "roberta.encoder.layer.11.attention.self.key": 288,
+            "roberta.encoder.layer.11.attention.self.value": 288,
+            "roberta.encoder.layer.11.attention.output.dense": 288
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 520.18,
+          "tokens_per_sec": 23773.5
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 504.62,
+          "L_256_vram_mb": 507.18,
+          "L_512_vram_mb": 512.31,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T09:26:57.874332"
+      },
+      "results/unified_adaptive_ranks/distilbert/distilbert_sst2_adaptive_ranks_full_metrics.json": {
+        "model": "distilbert_sst2_adaptive_ranks",
+        "performance": {
+          "accuracy_pct": 90.94,
+          "f1_score": 0.9125,
+          "f1_macro": 0.9093,
+          "precision": 0.9101,
+          "recall": 0.9091,
+          "val_loss": 0.3596,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 10.48
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 66955010,
+          "trainable_recovery_params": 1538,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 24,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": 0.0,
+          "weighted_reconstruction_error": 0.3576,
+          "per_layer_reconstruction_errors": {
+            "distilbert.transformer.layer.0.attention.q_lin": 0.33294518805109763,
+            "distilbert.transformer.layer.0.attention.k_lin": 0.32652034503345684,
+            "distilbert.transformer.layer.0.attention.v_lin": 0.35596015064673403,
+            "distilbert.transformer.layer.0.attention.out_lin": 0.33526512484042226,
+            "distilbert.transformer.layer.1.attention.q_lin": 0.31197221167244155,
+            "distilbert.transformer.layer.1.attention.k_lin": 0.2890375024073164,
+            "distilbert.transformer.layer.1.attention.v_lin": 0.34896380859317017,
+            "distilbert.transformer.layer.1.attention.out_lin": 0.3479609905788623,
+            "distilbert.transformer.layer.2.attention.q_lin": 0.3488535159884333,
+            "distilbert.transformer.layer.2.attention.k_lin": 0.35383827521966804,
+            "distilbert.transformer.layer.2.attention.v_lin": 0.35176680007142785,
+            "distilbert.transformer.layer.2.attention.out_lin": 0.36874567461883445,
+            "distilbert.transformer.layer.3.attention.q_lin": 0.30816743928639606,
+            "distilbert.transformer.layer.3.attention.k_lin": 0.31029371110527176,
+            "distilbert.transformer.layer.3.attention.v_lin": 0.40359058756967764,
+            "distilbert.transformer.layer.3.attention.out_lin": 0.4109990380023638,
+            "distilbert.transformer.layer.4.attention.q_lin": 0.3503651711645765,
+            "distilbert.transformer.layer.4.attention.k_lin": 0.34860034863229883,
+            "distilbert.transformer.layer.4.attention.v_lin": 0.41083205161652897,
+            "distilbert.transformer.layer.4.attention.out_lin": 0.43395434417698153,
+            "distilbert.transformer.layer.5.attention.q_lin": 0.35652389933842643,
+            "distilbert.transformer.layer.5.attention.k_lin": 0.367216901445887,
+            "distilbert.transformer.layer.5.attention.v_lin": 0.3866446887647329,
+            "distilbert.transformer.layer.5.attention.out_lin": 0.42232546249209707
+          },
+          "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention.q_lin": 288,
+            "distilbert.transformer.layer.0.attention.k_lin": 288,
+            "distilbert.transformer.layer.0.attention.v_lin": 288,
+            "distilbert.transformer.layer.0.attention.out_lin": 288,
+            "distilbert.transformer.layer.1.attention.q_lin": 288,
+            "distilbert.transformer.layer.1.attention.k_lin": 288,
+            "distilbert.transformer.layer.1.attention.v_lin": 288,
+            "distilbert.transformer.layer.1.attention.out_lin": 288,
+            "distilbert.transformer.layer.2.attention.q_lin": 288,
+            "distilbert.transformer.layer.2.attention.k_lin": 288,
+            "distilbert.transformer.layer.2.attention.v_lin": 288,
+            "distilbert.transformer.layer.2.attention.out_lin": 288,
+            "distilbert.transformer.layer.3.attention.q_lin": 288,
+            "distilbert.transformer.layer.3.attention.k_lin": 288,
+            "distilbert.transformer.layer.3.attention.v_lin": 288,
+            "distilbert.transformer.layer.3.attention.out_lin": 288,
+            "distilbert.transformer.layer.4.attention.q_lin": 288,
+            "distilbert.transformer.layer.4.attention.k_lin": 288,
+            "distilbert.transformer.layer.4.attention.v_lin": 288,
+            "distilbert.transformer.layer.4.attention.out_lin": 288,
+            "distilbert.transformer.layer.5.attention.q_lin": 288,
+            "distilbert.transformer.layer.5.attention.k_lin": 288,
+            "distilbert.transformer.layer.5.attention.v_lin": 288,
+            "distilbert.transformer.layer.5.attention.out_lin": 288
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 182.45,
+          "tokens_per_sec": 50959.72
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 164.39,
+          "L_256_vram_mb": 167.08,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T09:26:06.467320"
+      },
+      "results/unified_adaptive_ranks/qwen3_5/Qwen3.5-0.8B_adaptive_ranks_full_metrics.json": {
+        "model": "Qwen3.5-0.8B_adaptive_ranks",
+        "performance": {
+          "accuracy_pct": 81.88,
+          "f1_score": 0.798,
+          "f1_macro": 0.8169,
+          "precision": 0.8379,
+          "recall": 0.821,
+          "val_loss": 0.6892,
+          "status": "PASS",
+          "elapsed_s": 189.94
+        },
+        "efficiency": {
+          "total_params_before": 763217728,
+          "total_params_after": 763217728,
+          "trainable_recovery_params": 10824704,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 10822656,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 1877.96,
+          "tokens_per_sec": 4497.54
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 1613.77,
+          "L_256_vram_mb": 1635.17,
+          "L_512_vram_mb": 1663.33,
+          "L_1024_vram_mb": 1754.47
+        },
+        "timestamp": "2026-09-10T03:39:20.521264"
+      },
+      "results/unified_adaptive_ranks/gpt2/gpt2_adaptive_ranks_full_metrics.json": {
+        "model": "gpt2_adaptive_ranks",
+        "performance": {
+          "accuracy_pct": 76.95,
+          "f1_score": 0.8016,
+          "f1_macro": 0.7633,
+          "precision": 0.7941,
+          "recall": 0.7668,
+          "val_loss": 0.4773,
+          "status": "PASS",
+          "elapsed_s": 16.09
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 124177153,
+          "trainable_recovery_params": 326401,
+          "compression_rate": 1.0021,
+          "compression_ratio_pct": 0.21,
+          "flops_reduction_pct": 44.79,
+          "num_compressed_layers": 1,
+          "num_fallback_layers": 23,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": 0.1982078150637553,
+          "weighted_reconstruction_error": 0.3414,
+          "per_layer_reconstruction_errors": {
+            "transformer.h.0.attn.c_attn": 0.2843487300190838,
+            "transformer.h.0.attn.c_proj": 0.1982078150637553,
+            "transformer.h.1.attn.c_attn": 0.2804280740199041,
+            "transformer.h.1.attn.c_proj": 0.26518290770340747,
+            "transformer.h.2.attn.c_attn": 0.3168949599802963,
+            "transformer.h.2.attn.c_proj": 0.337749362027825,
+            "transformer.h.3.attn.c_attn": 0.35333285230246475,
+            "transformer.h.3.attn.c_proj": 0.35170269651428393,
+            "transformer.h.4.attn.c_attn": 0.3364296682588377,
+            "transformer.h.4.attn.c_proj": 0.33817276930938883,
+            "transformer.h.5.attn.c_attn": 0.30946914992175906,
+            "transformer.h.5.attn.c_proj": 0.373032599943282,
+            "transformer.h.6.attn.c_attn": 0.33095579867957103,
+            "transformer.h.6.attn.c_proj": 0.33396203276137054,
+            "transformer.h.7.attn.c_attn": 0.3417960072226643,
+            "transformer.h.7.attn.c_proj": 0.35901756212671,
+            "transformer.h.8.attn.c_attn": 0.3790725666448751,
+            "transformer.h.8.attn.c_proj": 0.3471477246591176,
+            "transformer.h.9.attn.c_attn": 0.3978874820279882,
+            "transformer.h.9.attn.c_proj": 0.4080779835075269,
+            "transformer.h.10.attn.c_attn": 0.3719847364258863,
+            "transformer.h.10.attn.c_proj": 0.4560525477285183,
+            "transformer.h.11.attn.c_attn": 0.3574995013409776,
+            "transformer.h.11.attn.c_proj": 0.37547696152560417
+          },
+          "per_layer_ranks": {
+            "transformer.h.0.attn.c_attn": 432,
+            "transformer.h.0.attn.c_proj": 212,
+            "transformer.h.1.attn.c_attn": 432,
+            "transformer.h.1.attn.c_proj": 288,
+            "transformer.h.2.attn.c_attn": 432,
+            "transformer.h.2.attn.c_proj": 288,
+            "transformer.h.3.attn.c_attn": 432,
+            "transformer.h.3.attn.c_proj": 288,
+            "transformer.h.4.attn.c_attn": 432,
+            "transformer.h.4.attn.c_proj": 288,
+            "transformer.h.5.attn.c_attn": 432,
+            "transformer.h.5.attn.c_proj": 288,
+            "transformer.h.6.attn.c_attn": 432,
+            "transformer.h.6.attn.c_proj": 288,
+            "transformer.h.7.attn.c_attn": 432,
+            "transformer.h.7.attn.c_proj": 288,
+            "transformer.h.8.attn.c_attn": 432,
+            "transformer.h.8.attn.c_proj": 288,
+            "transformer.h.9.attn.c_attn": 432,
+            "transformer.h.9.attn.c_proj": 288,
+            "transformer.h.10.attn.c_attn": 432,
+            "transformer.h.10.attn.c_proj": 288,
+            "transformer.h.11.attn.c_attn": 432,
+            "transformer.h.11.attn.c_proj": 288
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 638.89,
+          "tokens_per_sec": 23688.0
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 521.15,
+          "L_256_vram_mb": 534.65,
+          "L_512_vram_mb": 562.78,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T09:27:51.998483"
+      },
+      "results/unified_adaptive_ranks/roberta/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nadaptive_ranks,PASS_NO_COMPRESSION,78.56,0.8124,0.7811,0.8051,0.7832,0.4381,16.78,520.18,23773.5,124647170,124647170,0,1.0,0.0,0.0,0,48,0.0,0.3644,0,0,\"note: zero compressed layers, model grew (LoRA only)\",adapted_roberta,2026-09-15T09:26:58.756532\n",
+      "results/unified_adaptive_ranks/distilbert/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nadaptive_ranks,PASS_NO_COMPRESSION,90.94,0.9125,0.9093,0.9101,0.9091,0.3596,10.48,182.45,50959.72,66955010,66955010,1538,1.0,0.0,0.0,0,24,0.0,0.3576,0,0,\"note: zero compressed layers, model grew (LoRA only)\",legacy_bert,2026-09-15T09:26:06.674288\n",
+      "results/unified_adaptive_ranks/qwen3_5/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nadaptive_ranks,PASS,81.88,0.798,0.8169,0.8379,0.821,0.6892,189.94,1877.96,4497.54,763217728,763217728,10824704,1.0,0.0,0.0,0,0,,,0,10822656,,adapted_qwen3_5,2026-09-10T03:39:21.610865\n",
+      "results/unified_adaptive_ranks/gpt2/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nadaptive_ranks,PASS,76.95,0.8016,0.7633,0.7941,0.7668,0.4773,16.09,638.89,23688.0,124441344,124177153,326401,1.0021,0.21,44.79,1,23,0.1982078150637553,0.3414,0,0,,adapted_gpt,2026-09-15T09:27:52.886892\n",
+      "results/matrix_test_summary.csv": "qwen3_5,qwen3_5,adaptive_ranks,compressor,PASS,True,True,190.845,3893.8,\ngpt2,gpt2,adaptive_ranks,compressor,PASS,True,True,0.219,1632.8,\nroberta,roberta,adaptive_ranks,compressor,PASS,True,True,7.8,1472.5,\ndistilbert,distilbert,adaptive_ranks,compressor,PASS,True,True,5.086,793.5,",
+      "results/benchmark_summary_v2.csv": "track1_svd,adaptive_ranks,compressor,bert,sst2,PASS,,11.76,18.0,29.76,0.0,1.0,4199430,4199430,1.044,740.6,0.0,0.6923,0.0,0.0,0.0,0.0458,\"{'loss': [0.6923, 0.6923, 0.6923, 0.6923, 0.6923], 'grad_norm': [0.0458, 0.0458, 0.0458, 0.0458, 0.0458], 'fwd_latency_ms': [11.0974, 11.5114, 12.1552, 11.9374, 12.0827], 'bwd_latency_ms': [17.7395, 18.0403, 17.9762, 18.3729, 17.879]}\",2026-08-26 02:32:14\ntrack1_svd,adaptive_ranks,compressor,bert,mrpc,PASS,,12.23,19.25,31.48,0.0,1.0,4195846,4195846,1.045,740.1,0.0,0.6837,0.0,0.0,0.0,0.7359,\"{'loss': [0.6837, 0.6837, 0.6837, 0.6837, 0.6837], 'grad_norm': [0.7359, 0.7359, 0.7359, 0.7359, 0.7359], 'fwd_latency_ms': [11.2087, 11.8398, 11.8168, 13.8924, 12.4154], 'bwd_latency_ms': [18.2476, 18.1838, 18.1675, 23.4866, 18.1683]}\",2026-08-26 02:32:15\ntrack1_svd,adaptive_ranks,compressor,roberta,sst2,PASS,,12.88,19.74,32.62,0.0,1.0,6727046,6727046,1.028,750.2,0.0,0.6935,0.0,0.0,0.0,0.1152,\"{'loss': [0.6935, 0.6935, 0.6935, 0.6935, 0.6935], 'grad_norm': [0.1152, 0.1152, 0.1152, 0.1152, 0.1152], 'fwd_latency_ms': [12.8256, 12.7601, 13.5109, 12.6469, 12.6581], 'bwd_latency_ms': [18.8493, 20.4127, 18.5319, 22.4323, 18.4604]}\",2026-08-26 02:32:16\ntrack1_svd,adaptive_ranks,compressor,roberta,mrpc,PASS,,12.41,18.82,31.23,0.0,1.0,6730246,6730246,1.027,752.0,0.0,0.6957,0.0,0.0,0.0,0.7938,\"{'loss': [0.6957, 0.6957, 0.6957, 0.6957, 0.6957], 'grad_norm': [0.7938, 0.7938, 0.7938, 0.7938, 0.7938], 'fwd_latency_ms': [13.7667, 11.4561, 12.258, 12.348, 12.232], 'bwd_latency_ms': [18.6564, 18.9592, 19.126, 18.6508, 18.685]}\",2026-08-26 02:32:17\ntrack1_svd,adaptive_ranks,compressor,t5,sst2,PASS,,18.18,32.58,50.76,0.0,1.0,4394112,4394112,1.026,1110.2,0.0,0.8077,0.0,0.0,0.0,4.44,\"{'loss': [0.8077, 0.8077, 0.8077, 0.8077, 0.8077], 'grad_norm': [4.44, 4.44, 4.44, 4.44, 4.44], 'fwd_latency_ms': [14.6985, 18.9702, 19.1481, 18.9271, 19.1655], 'bwd_latency_ms': [33.0886, 32.3619, 32.6638, 32.2641, 32.537]}\",2026-08-26 02:32:18\ntrack1_svd,adaptive_ranks,compressor,t5,mrpc,PASS,,18.16,32.57,50.73,0.0,1.0,4392192,4392192,1.026,1109.0,0.0,0.6028,0.0,0.0,0.0,1.0145,\"{'loss': [0.6028, 0.6028, 0.6028, 0.6028, 0.6028], 'grad_norm': [1.0145, 1.0145, 1.0145, 1.0145, 1.0145], 'fwd_latency_ms': [14.6627, 19.0953, 19.032, 19.103, 18.9041], 'bwd_latency_ms': [33.2954, 31.7456, 32.8898, 32.465, 32.476]}\",2026-08-26 02:32:19",
+      "results/all_121_compressors_gpu_matrix.csv": "adaptive_ranks,cuda,PASS,True,True,0.97,168.2,0.932,"
+    },
+    "notes": []
+  },
+  "adaptive_span_attention": {
+    "module_name": "adaptive_span_attention",
+    "source_file": "Codes/framework/attentions/adaptive_span_attention.py",
+    "source_lines_count": 821,
+    "architecture": {
+      "class_name": "LoRALinear",
+      "base_class": "nn.Module",
+      "init_args": "self, in_features: int, out_features: int, bias: bool = True, lora_rank: int = 16, lora_alpha: float = 32.0, freeze_base: bool = False, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().__init__() factory_kwargs = {\"device\": device, \"dtype\": dtype} self.in_features = in_features self.out_features = out_features self.lora_rank = lora_rank self.lora_alpha = lora_alpha self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0 self.freeze_base = freeze_base self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs)) if bias: self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs)) else: self.register_parameter(\"bias\", None) if self.lora_rank > 0: self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs)) self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs)) else: self.register_parameter(\"lora_A\", None) self.register_parameter(\"lora_B\", None) self.reset_parameters() if freeze_base: self.freeze_base_weights() def reset_parameters(self) -> None: nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5)) if self.bias is not None: fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight) bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0 nn.init.uniform_(self.bias, -bound, bound) if self.lora_rank > 0 and self.lora_A is not None: nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5)) self.lora_A.requires_grad = True if self.lora_rank > 0 and self.lora_B is not None: nn.init.zeros_(self.lora_B) self.lora_B.requires_grad = True def freeze_base_weights(self) -> None: self.weight.requires_grad = False if self.bias is not None: self.bias.requires_grad = False if self.lora_rank > 0: if self.lora_A is not None: self.lora_A.requires_grad = True if self.lora_B is not None: self.lora_B.requires_grad = True def forward(self, x: torch.Tensor) -> torch.Tensor: out = F.linear(x, self.weight, self.bias) if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None: out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling return out class IdentityOutProj(nn.Identity",
+      "registry_names": [
+        "adaptive_span",
+        "adaptive_span_attention",
+        "adaptive_span_inject"
+      ]
+    },
+    "params": [
+      {
+        "name": "weight",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty((out_features, in_features)"
+      },
+      {
+        "name": "bias",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, **factory_kwargs)"
+      },
+      {
+        "name": "lora_A",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty((lora_rank, in_features)"
+      },
+      {
+        "name": "lora_B",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty((out_features, lora_rank)"
+      },
+      {
+        "name": "span_logits",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.full((self.num_heads,)"
+      }
+    ],
+    "metrics": {
+      "results/unified_adaptive_span/roberta/roberta-base_full_full_metrics.json": {
+        "model": "roberta-base_full",
+        "performance": {
+          "accuracy_pct": 78.56,
+          "f1_score": 0.8124,
+          "f1_macro": 0.7811,
+          "precision": 0.8051,
+          "recall": 0.7832,
+          "val_loss": 0.4381,
+          "status": "PASS",
+          "elapsed_s": 6.14
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 124647170,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 712.34,
+          "tokens_per_sec": 27199.86
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 683.27,
+          "L_256_vram_mb": 685.84,
+          "L_512_vram_mb": 699.47,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T13:45:12.848504"
+      },
+      "results/unified_adaptive_span/roberta/roberta-base_adaptive_span_full_metrics.json": {
+        "model": "roberta-base_adaptive_span",
+        "performance": {
+          "accuracy_pct": 85.09,
+          "f1_score": 0.8584,
+          "f1_macro": 0.8505,
+          "precision": 0.8528,
+          "recall": 0.8502,
+          "val_loss": 0.3635,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 21.18
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 125532050,
+          "trainable_recovery_params": 884880,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 12,
+          "lora_params": 884736,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "roberta.encoder.layer.0.attention.self": 32,
+            "roberta.encoder.layer.1.attention.self": 32,
+            "roberta.encoder.layer.2.attention.self": 32,
+            "roberta.encoder.layer.3.attention.self": 32,
+            "roberta.encoder.layer.4.attention.self": 32,
+            "roberta.encoder.layer.5.attention.self": 32,
+            "roberta.encoder.layer.6.attention.self": 32,
+            "roberta.encoder.layer.7.attention.self": 32,
+            "roberta.encoder.layer.8.attention.self": 32,
+            "roberta.encoder.layer.9.attention.self": 32,
+            "roberta.encoder.layer.10.attention.self": 32,
+            "roberta.encoder.layer.11.attention.self": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 624.7,
+          "tokens_per_sec": 13743.09
+        },
+        "architecture": {
+          "span_distribution": {
+            "roberta.encoder.layer.0.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "roberta.encoder.layer.1.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "roberta.encoder.layer.2.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "roberta.encoder.layer.3.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "roberta.encoder.layer.4.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "roberta.encoder.layer.5.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "roberta.encoder.layer.6.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "roberta.encoder.layer.7.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "roberta.encoder.layer.8.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "roberta.encoder.layer.9.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "roberta.encoder.layer.10.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "roberta.encoder.layer.11.attention.self": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ]
+          },
+          "mean_span": 125.7,
+          "sparsity_ratio_percent": 1.8
+        },
+        "scalability": {
+          "L_128_vram_mb": 602.29,
+          "L_256_vram_mb": 607.49,
+          "L_512_vram_mb": 637.5,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T13:45:34.204448"
+      },
+      "results/unified_adaptive_span/distilbert/distilbert_sst2_adaptive_span_full_metrics.json": {
+        "model": "distilbert_sst2_adaptive_span",
+        "performance": {
+          "accuracy_pct": 90.48,
+          "f1_score": 0.9089,
+          "f1_macro": 0.9046,
+          "precision": 0.9062,
+          "recall": 0.9043,
+          "val_loss": 0.3255,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 11.42
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 67544906,
+          "trainable_recovery_params": 589896,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 6,
+          "lora_params": 589824,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 32,
+            "distilbert.transformer.layer.1.attention": 32,
+            "distilbert.transformer.layer.2.attention": 32,
+            "distilbert.transformer.layer.3.attention": 32,
+            "distilbert.transformer.layer.4.attention": 32,
+            "distilbert.transformer.layer.5.attention": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 323.38,
+          "tokens_per_sec": 25789.54
+        },
+        "architecture": {
+          "span_distribution": {
+            "distilbert.transformer.layer.0.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.1.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.2.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.3.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.4.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.5.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ]
+          },
+          "mean_span": 125.7,
+          "sparsity_ratio_percent": 1.8
+        },
+        "scalability": {
+          "L_128_vram_mb": 298.62,
+          "L_256_vram_mb": 303.78,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T13:44:41.426207"
+      },
+      "results/unified_adaptive_span/distilbert/distilbert_sst2_full_full_metrics.json": {
+        "model": "distilbert_sst2_full",
+        "performance": {
+          "accuracy_pct": 90.71,
+          "f1_score": 0.9099,
+          "f1_macro": 0.907,
+          "precision": 0.9075,
+          "recall": 0.9068,
+          "val_loss": 0.3027,
+          "status": "PASS",
+          "elapsed_s": 3.57
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 66955010,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 389.51,
+          "tokens_per_sec": 44867.91
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 371.82,
+          "L_256_vram_mb": 373.89,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T13:44:29.649062"
+      },
+      "results/unified_adaptive_span/qwen3_5/Qwen3.5-0.8B_adaptive_span_full_metrics.json": {
+        "model": "Qwen3.5-0.8B_adaptive_span",
+        "performance": {
+          "accuracy_pct": 53.1,
+          "f1_score": 0.2326,
+          "f1_macro": 0.4475,
+          "precision": 0.6044,
+          "recall": 0.5383,
+          "val_loss": 1.8932,
+          "status": "PASS_LOW",
+          "elapsed_s": 452.99
+        },
+        "efficiency": {
+          "total_params_before": 763217728,
+          "total_params_after": 750459760,
+          "trainable_recovery_params": 4727856,
+          "compression_rate": 1.017,
+          "compression_ratio_pct": 1.67,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 6,
+          "lora_params": 10626048,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "model.layers.3.self_attn": 32,
+            "model.layers.7.self_attn": 32,
+            "model.layers.11.self_attn": 32,
+            "model.layers.15.self_attn": 32,
+            "model.layers.19.self_attn": 32,
+            "model.layers.23.self_attn": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 1651.46,
+          "tokens_per_sec": 586.65
+        },
+        "architecture": {
+          "span_distribution": {
+            "model.layers.3.self_attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "model.layers.7.self_attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "model.layers.11.self_attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "model.layers.15.self_attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "model.layers.19.self_attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "model.layers.23.self_attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ]
+          },
+          "mean_span": 125.7,
+          "sparsity_ratio_percent": 1.8
+        },
+        "scalability": {
+          "L_128_vram_mb": 1537.07,
+          "L_256_vram_mb": 1555.72,
+          "L_512_vram_mb": 1587.13,
+          "L_1024_vram_mb": 1659.26
+        },
+        "timestamp": "2026-09-14T03:16:56.564092"
+      },
+      "results/unified_adaptive_span/qwen3_5/Qwen3.5-0.8B_full_full_metrics.json": {
+        "model": "Qwen3.5-0.8B_full",
+        "performance": {
+          "accuracy_pct": 77.52,
+          "f1_score": 0.761,
+          "f1_macro": 0.7744,
+          "precision": 0.7818,
+          "recall": 0.7766,
+          "val_loss": 0.5158,
+          "status": "PASS",
+          "elapsed_s": 193.82
+        },
+        "efficiency": {
+          "total_params_before": 763217728,
+          "total_params_after": 763217728,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 10822656,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 1653.34,
+          "tokens_per_sec": 656.41
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 1532.14,
+          "L_256_vram_mb": 1556.35,
+          "L_512_vram_mb": 1591.22,
+          "L_1024_vram_mb": 1672.2
+        },
+        "timestamp": "2026-09-14T03:09:22.901221"
+      },
+      "results/unified_adaptive_span/gpt2/gpt2_adaptive_span_full_metrics.json": {
+        "model": "gpt2_adaptive_span",
+        "performance": {
+          "accuracy_pct": 81.08,
+          "f1_score": 0.8328,
+          "f1_macro": 0.8074,
+          "precision": 0.8283,
+          "recall": 0.8086,
+          "val_loss": 0.4356,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 25.09
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 125621136,
+          "trainable_recovery_params": 1179792,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 12,
+          "lora_params": 1179648,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "transformer.h.0.attn": 32,
+            "transformer.h.1.attn": 32,
+            "transformer.h.2.attn": 32,
+            "transformer.h.3.attn": 32,
+            "transformer.h.4.attn": 32,
+            "transformer.h.5.attn": 32,
+            "transformer.h.6.attn": 32,
+            "transformer.h.7.attn": 32,
+            "transformer.h.8.attn": 32,
+            "transformer.h.9.attn": 32,
+            "transformer.h.10.attn": 32,
+            "transformer.h.11.attn": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 567.91,
+          "tokens_per_sec": 11187.59
+        },
+        "architecture": {
+          "span_distribution": {
+            "transformer.h.0.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "transformer.h.1.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "transformer.h.2.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "transformer.h.3.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "transformer.h.4.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "transformer.h.5.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "transformer.h.6.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "transformer.h.7.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "transformer.h.8.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "transformer.h.9.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "transformer.h.10.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "transformer.h.11.attn": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ]
+          },
+          "mean_span": 125.7,
+          "sparsity_ratio_percent": 1.8
+        },
+        "scalability": {
+          "L_128_vram_mb": 525.79,
+          "L_256_vram_mb": 530.45,
+          "L_512_vram_mb": 563.53,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T13:46:30.245823"
+      },
+      "results/unified_adaptive_span/gpt2/gpt2_full_full_metrics.json": {
+        "model": "gpt2_full",
+        "performance": {
+          "accuracy_pct": 79.36,
+          "f1_score": 0.7978,
+          "f1_macro": 0.7935,
+          "precision": 0.7935,
+          "recall": 0.7935,
+          "val_loss": 0.4875,
+          "status": "PASS",
+          "elapsed_s": 6.03
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 124441344,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 793.19,
+          "tokens_per_sec": 26789.41
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 681.07,
+          "L_256_vram_mb": 691.32,
+          "L_512_vram_mb": 721.95,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T13:46:05.041000"
+      },
+      "results/unified_adaptive_span/distilbert/hf_export/metrics.json": {
+        "model_name": "distilbert",
+        "module": "adaptive_span",
+        "status": "PASS",
+        "accuracy_pct": 90.48,
+        "f1": 0.0,
+        "precision": 0.9065,
+        "recall": 0.9043,
+        "eval_loss": 0.0,
+        "params_total": null,
+        "params_active": null,
+        "param_reduction_pct": null,
+        "peak_vram_mb": 375.96,
+        "tokens_per_sec": 28099.58,
+        "elapsed_seconds": null,
+        "full_metrics": {
+          "module_name": "adaptive_span",
+          "status": "PASS",
+          "accuracy_pct": 90.48,
+          "f1_score": 0.9091,
+          "f1_macro": 0.9046,
+          "precision": 0.9065,
+          "recall": 0.9043,
+          "val_loss": 0.6851,
+          "elapsed_s": 10.42,
+          "peak_vram_mb": 375.96,
+          "tokens_per_sec": 28099.58,
+          "total_params_before": 66955010,
+          "total_params_after": 81719114,
+          "trainable_recovery_params": 1182026,
+          "compression_rate": 0.8193,
+          "compression_ratio_pct": -22.05,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "avg_reconstruction_error": NaN,
+          "weighted_reconstruction_error": NaN,
+          "num_injected_attention_layers": 12,
+          "lora_params": 589824,
+          "error": NaN,
+          "path": "legacy_bert",
+          "timestamp": "2026-09-13T23:57:32.707834"
+        }
+      },
+      "results/unified_adaptive_span/roberta/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,78.56,0.8124,0.7811,0.8051,0.7832,0.4381,6.14,712.34,27199.86,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-15T13:45:13.594850\nadaptive_span,PASS_NO_COMPRESSION,85.09,0.8584,0.8505,0.8528,0.8502,0.3635,21.18,624.7,13743.09,124647170,125532050,884880,1.0,0.0,0.0,0,0,,,12,884736,\"note: zero compressed layers, model grew (LoRA only)\",adapted_roberta,2026-09-15T13:45:35.033316\n",
+      "results/unified_adaptive_span/distilbert/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,90.71,0.9099,0.907,0.9075,0.9068,0.3027,3.57,389.51,44867.91,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-15T13:44:30.086326\nadaptive_span,PASS_NO_COMPRESSION,90.48,0.9089,0.9046,0.9062,0.9043,0.3255,11.42,323.38,25789.54,66955010,67544906,589896,1.0,0.0,0.0,0,0,,,6,589824,\"note: zero compressed layers, model grew (LoRA only)\",legacy_bert,2026-09-15T13:44:41.777046\n",
+      "results/unified_adaptive_span/qwen3_5/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,77.52,0.761,0.7744,0.7818,0.7766,0.5158,193.82,1653.34,656.41,763217728,763217728,0,1.0,0.0,0.0,0,0,,,0,10822656,,adapted_qwen3_5,2026-09-14T03:09:26.209175\nadaptive_span,PASS_LOW,53.1,0.2326,0.4475,0.6044,0.5383,1.8932,453.0,1651.46,586.65,763217728,750459760,4727856,1.017,1.67,0.0,0,0,,,6,10626048,note: evaluated accuracy (53.10%) below chance threshold (56.00%),adapted_qwen3_5,2026-09-14T03:16:59.580740\n",
+      "results/unified_adaptive_span/gpt2/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,79.36,0.7978,0.7935,0.7935,0.7935,0.4875,6.03,793.19,26789.41,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-15T13:46:05.759547\nadaptive_span,PASS_NO_COMPRESSION,81.08,0.8328,0.8074,0.8283,0.8086,0.4356,25.09,567.91,11187.59,124441344,125621136,1179792,1.0,0.0,0.0,0,0,,,12,1179648,\"note: zero compressed layers, model grew (LoRA only)\",adapted_gpt,2026-09-15T13:46:31.104065\n",
+      "results/agnews_unified_adaptive_span/distilbert/distilbert_sst2_adaptive_span_full_metrics.json": {
+        "model": "distilbert_sst2_adaptive_span",
+        "performance": {
+          "accuracy_pct": 75.6,
+          "f1_score": 0.7492,
+          "f1_macro": 0.7492,
+          "precision": 0.7748,
+          "recall": 0.7457,
+          "val_loss": 0.7089,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 6.31
+        },
+        "efficiency": {
+          "total_params_before": 66956548,
+          "total_params_after": 67546444,
+          "trainable_recovery_params": 589896,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 6,
+          "lora_params": 589824,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 64,
+            "distilbert.transformer.layer.1.attention": 64,
+            "distilbert.transformer.layer.2.attention": 64,
+            "distilbert.transformer.layer.3.attention": 64,
+            "distilbert.transformer.layer.4.attention": 64,
+            "distilbert.transformer.layer.5.attention": 64
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 522.6,
+          "tokens_per_sec": 137063.5
+        },
+        "architecture": {
+          "span_distribution": {
+            "distilbert.transformer.layer.0.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.1.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.2.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.3.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.4.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.5.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ]
+          },
+          "mean_span": 125.7,
+          "sparsity_ratio_percent": 1.8
+        },
+        "scalability": {
+          "L_128_vram_mb": 301.21,
+          "L_256_vram_mb": 306.62,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-16T04:08:35.192293"
+      },
+      "results/agnews_unified_adaptive_span/distilbert/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nadaptive_span,PASS_NO_COMPRESSION,75.6,0.7492,0.7492,0.7748,0.7457,0.7089,6.31,522.6,137063.5,66956548,67546444,589896,1.0,0.0,0.0,0,0,,,6,589824,\"note: zero compressed layers, model grew (LoRA only)\",legacy_bert,2026-09-16T04:08:35.503748\n",
+      "results/mnli_unified_adaptive_span/distilbert/distilbert_sst2_adaptive_span_full_metrics.json": {
+        "model": "distilbert_sst2_adaptive_span",
+        "performance": {
+          "accuracy_pct": 42.2,
+          "f1_score": 0.3255,
+          "f1_macro": 0.3255,
+          "precision": 0.2836,
+          "recall": 0.4133,
+          "val_loss": 1.0717,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 5.34
+        },
+        "efficiency": {
+          "total_params_before": 66955779,
+          "total_params_after": 67545675,
+          "trainable_recovery_params": 589896,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 6,
+          "lora_params": 589824,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 64,
+            "distilbert.transformer.layer.1.attention": 64,
+            "distilbert.transformer.layer.2.attention": 64,
+            "distilbert.transformer.layer.3.attention": 64,
+            "distilbert.transformer.layer.4.attention": 64,
+            "distilbert.transformer.layer.5.attention": 64
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 348.94,
+          "tokens_per_sec": 52040.43
+        },
+        "architecture": {
+          "span_distribution": {
+            "distilbert.transformer.layer.0.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.1.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.2.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.3.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.4.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ],
+            "distilbert.transformer.layer.5.attention": [
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7,
+              125.7
+            ]
+          },
+          "mean_span": 125.7,
+          "sparsity_ratio_percent": 1.8
+        },
+        "scalability": {
+          "L_128_vram_mb": 298.87,
+          "L_256_vram_mb": 304.77,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-16T03:02:32.682038"
+      },
+      "results/mnli_unified_adaptive_span/distilbert/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nadaptive_span,PASS_NO_COMPRESSION,42.2,0.3255,0.3255,0.2836,0.4133,1.0717,5.34,348.94,52040.43,66955779,67545675,589896,1.0,0.0,0.0,0,0,,,6,589824,\"note: zero compressed layers, model grew (LoRA only)\",legacy_bert,2026-09-16T03:02:32.929518\n"
+    },
+    "notes": []
+  },
+  "adaptive_sparse_attention": {
+    "module_name": "adaptive_sparse_attention",
+    "source_file": "Codes/framework/attentions/adaptive_sparse_attention.py",
+    "source_lines_count": 836,
+    "architecture": {
+      "class_name": "LoRALinear",
+      "base_class": "nn.Module",
+      "init_args": "self, in_features: int, out_features: int, bias: bool = True, lora_rank: int = 16, lora_alpha: float = 32.0, freeze_base: bool = False, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().__init__() factory_kwargs = {\"device\": device, \"dtype\": dtype} self.in_features = in_features self.out_features = out_features self.lora_rank = lora_rank self.lora_alpha = lora_alpha self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0 self.freeze_base = freeze_base self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs)) if bias: self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs)) else: self.register_parameter(\"bias\", None) if self.lora_rank > 0: self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs)) self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs)) else: self.register_parameter(\"lora_A\", None) self.register_parameter(\"lora_B\", None) self.reset_parameters() if freeze_base: self.freeze_base_weights() def reset_parameters(self) -> None: nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5)) if self.bias is not None: fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight) bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0 nn.init.uniform_(self.bias, -bound, bound) if self.lora_rank > 0 and self.lora_A is not None: nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5)) self.lora_A.requires_grad = True if self.lora_rank > 0 and self.lora_B is not None: nn.init.zeros_(self.lora_B) self.lora_B.requires_grad = True def freeze_base_weights(self) -> None: self.weight.requires_grad = False if self.bias is not None: self.bias.requires_grad = False if self.lora_rank > 0: if self.lora_A is not None: self.lora_A.requires_grad = True if self.lora_B is not None: self.lora_B.requires_grad = True def unfreeze_base_weights(self) -> None: self.weight.requires_grad = True if self.bias is not None: self.bias.requires_grad = True def forward(self, x: torch.Tensor) -> torch.Tensor: out = F.linear(x, self.weight, self.bias) if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None: out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling return out @ATTENTION_REGISTRY.register(\"adaptive_sparse\", supports_causal=True, supports_bidirectional=True, supports_gqa=True) @ATTENTION_REGISTRY.register(\"adaptive_sparse_attention\", supports_causal=True, supports_bidirectional=True, supports_gqa=True) @ATTENTION_REGISTRY.register(\"adaptive_sparse_attn\", supports_causal=True, supports_bidirectional=True, supports_gqa=True) @ATTENTION_REGISTRY.register(\"adaptive_sparse_attention_attention\", supports_causal=True, supports_bidirectional=True, supports_gqa=True) class AdaptiveSparseAttention(BaseAttention",
+      "registry_names": [
+        "adaptive_sparse_attn",
+        "adaptive_sparse_attention",
+        "adaptive_sparse_inject",
+        "adaptive_sparse_attention_attention",
+        "adaptive_sparse_attn_inject",
+        "adaptive_sparse",
+        "adaptive_sparse_attention_inject",
+        "inject_adaptive_sparse_attention",
+        "inject_adaptive_sparse"
+      ]
+    },
+    "params": [
+      {
+        "name": "weight",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty((out_features, in_features)"
+      },
+      {
+        "name": "bias",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, **factory_kwargs)"
+      },
+      {
+        "name": "lora_A",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty((lora_rank, in_features)"
+      },
+      {
+        "name": "lora_B",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty((out_features, lora_rank)"
+      },
+      {
+        "name": "sparsity_logits",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.full((self.num_heads,)"
+      },
+      {
+        "name": "output_scale",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.ones(1)"
+      }
+    ],
+    "metrics": {
+      "results/unified_adaptive_sparse_attention/roberta/roberta-base_adaptive_sparse_attention_attention_full_metrics.json": {
+        "model": "roberta-base_adaptive_sparse_attention_attention",
+        "performance": {
+          "accuracy_pct": 64.79,
+          "f1_score": 0.5846,
+          "f1_macro": 0.6396,
+          "precision": 0.6685,
+          "recall": 0.651,
+          "val_loss": 0.7273,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 45.75
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 161262494,
+          "trainable_recovery_params": 1179804,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 12,
+          "lora_params": 1179648,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "roberta.encoder.layer.0.attention.self": 32,
+            "roberta.encoder.layer.1.attention.self": 32,
+            "roberta.encoder.layer.2.attention.self": 32,
+            "roberta.encoder.layer.3.attention.self": 32,
+            "roberta.encoder.layer.4.attention.self": 32,
+            "roberta.encoder.layer.5.attention.self": 32,
+            "roberta.encoder.layer.6.attention.self": 32,
+            "roberta.encoder.layer.7.attention.self": 32,
+            "roberta.encoder.layer.8.attention.self": 32,
+            "roberta.encoder.layer.9.attention.self": 32,
+            "roberta.encoder.layer.10.attention.self": 32,
+            "roberta.encoder.layer.11.attention.self": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 690.06,
+          "tokens_per_sec": 8465.86
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 659.99,
+          "L_256_vram_mb": 662.76,
+          "L_512_vram_mb": 671.79,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T22:46:35.382584"
+      },
+      "results/unified_adaptive_sparse_attention/roberta/roberta-base_full_full_metrics.json": {
+        "model": "roberta-base_full",
+        "performance": {
+          "accuracy_pct": 78.56,
+          "f1_score": 0.8124,
+          "f1_macro": 0.7811,
+          "precision": 0.8051,
+          "recall": 0.7832,
+          "val_loss": 0.4381,
+          "status": "PASS",
+          "elapsed_s": 6.32
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 124647170,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 712.34,
+          "tokens_per_sec": 26483.38
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 683.27,
+          "L_256_vram_mb": 685.84,
+          "L_512_vram_mb": 699.47,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T13:47:45.968017"
+      },
+      "results/unified_adaptive_sparse_attention/distilbert/distilbert_sst2_adaptive_sparse_attention_attention_full_metrics.json": {
+        "model": "distilbert_sst2_adaptive_sparse_attention_attention",
+        "performance": {
+          "accuracy_pct": 88.99,
+          "f1_score": 0.8865,
+          "f1_macro": 0.8898,
+          "precision": 0.893,
+          "recall": 0.8908,
+          "val_loss": 0.2882,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 14.65
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 81719120,
+          "trainable_recovery_params": 589902,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 6,
+          "lora_params": 589824,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 32,
+            "distilbert.transformer.layer.1.attention": 32,
+            "distilbert.transformer.layer.2.attention": 32,
+            "distilbert.transformer.layer.3.attention": 32,
+            "distilbert.transformer.layer.4.attention": 32,
+            "distilbert.transformer.layer.5.attention": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 383.02,
+          "tokens_per_sec": 18842.76
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 353.45,
+          "L_256_vram_mb": 356.22,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T13:47:15.541006"
+      },
+      "results/unified_adaptive_sparse_attention/distilbert/distilbert_sst2_full_full_metrics.json": {
+        "model": "distilbert_sst2_full",
+        "performance": {
+          "accuracy_pct": 90.71,
+          "f1_score": 0.9099,
+          "f1_macro": 0.907,
+          "precision": 0.9075,
+          "recall": 0.9068,
+          "val_loss": 0.3027,
+          "status": "PASS",
+          "elapsed_s": 2.96
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 66955010,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 389.51,
+          "tokens_per_sec": 51952.83
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 371.82,
+          "L_256_vram_mb": 373.89,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T13:47:00.838766"
+      },
+      "results/unified_adaptive_sparse_attention/qwen3_5/Qwen3.5-0.8B_adaptive_sparse_attention_attention_full_metrics.json": {
+        "model": "Qwen3.5-0.8B_adaptive_sparse_attention_attention",
+        "performance": {
+          "accuracy_pct": 56.65,
+          "f1_score": 0.6927,
+          "f1_macro": 0.4786,
+          "precision": 0.6663,
+          "recall": 0.5592,
+          "val_loss": 0.6785,
+          "status": "PASS",
+          "elapsed_s": 230.1
+        },
+        "efficiency": {
+          "total_params_before": 763217728,
+          "total_params_after": 795584368,
+          "trainable_recovery_params": 11709488,
+          "compression_rate": 0.9593,
+          "compression_ratio_pct": -4.24,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 6,
+          "lora_params": 11707392,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "model.layers.3.self_attn": 32,
+            "model.layers.3.self_attn.inner": 32,
+            "model.layers.7.self_attn": 32,
+            "model.layers.7.self_attn.inner": 32,
+            "model.layers.11.self_attn": 32,
+            "model.layers.11.self_attn.inner": 32,
+            "model.layers.15.self_attn": 32,
+            "model.layers.15.self_attn.inner": 32,
+            "model.layers.19.self_attn": 32,
+            "model.layers.19.self_attn.inner": 32,
+            "model.layers.23.self_attn": 32,
+            "model.layers.23.self_attn.inner": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 1918.44,
+          "tokens_per_sec": 4519.62
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 1675.88,
+          "L_256_vram_mb": 1694.53,
+          "L_512_vram_mb": 1721.76,
+          "L_1024_vram_mb": 1850.9
+        },
+        "timestamp": "2026-09-08T18:42:26.324241"
+      },
+      "results/unified_adaptive_sparse_attention/qwen3_5/Qwen3.5-0.8B_full_full_metrics.json": {
+        "model": "Qwen3.5-0.8B_full",
+        "performance": {
+          "accuracy_pct": 67.89,
+          "f1_score": 0.557,
+          "f1_macro": 0.6526,
+          "precision": 0.7722,
+          "recall": 0.6842,
+          "val_loss": 0.6349,
+          "status": "PASS",
+          "elapsed_s": 25.86
+        },
+        "efficiency": {
+          "total_params_before": 763217728,
+          "total_params_after": 763217728,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 10822656,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 1796.78,
+          "tokens_per_sec": 5803.55
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 1532.47,
+          "L_256_vram_mb": 1556.68,
+          "L_512_vram_mb": 1591.55,
+          "L_1024_vram_mb": 1672.53
+        },
+        "timestamp": "2026-09-08T18:38:36.578008"
+      },
+      "results/unified_adaptive_sparse_attention/gpt2/gpt2_adaptive_sparse_attention_attention_full_metrics.json": {
+        "model": "gpt2_adaptive_sparse_attention_attention",
+        "performance": {
+          "accuracy_pct": 79.36,
+          "f1_score": 0.7978,
+          "f1_macro": 0.7935,
+          "precision": 0.7935,
+          "recall": 0.7935,
+          "val_loss": 0.4875,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 50.44
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 175230876,
+          "trainable_recovery_params": 1179804,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 12,
+          "lora_params": 1179648,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "transformer.h.0.attn": 32,
+            "transformer.h.1.attn": 32,
+            "transformer.h.2.attn": 32,
+            "transformer.h.3.attn": 32,
+            "transformer.h.4.attn": 32,
+            "transformer.h.5.attn": 32,
+            "transformer.h.6.attn": 32,
+            "transformer.h.7.attn": 32,
+            "transformer.h.8.attn": 32,
+            "transformer.h.9.attn": 32,
+            "transformer.h.10.attn": 32,
+            "transformer.h.11.attn": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 757.73,
+          "tokens_per_sec": 8562.43
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 716.04,
+          "L_256_vram_mb": 720.73,
+          "L_512_vram_mb": 736.99,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T22:48:05.323737"
+      },
+      "results/unified_adaptive_sparse_attention/gpt2/gpt2_full_full_metrics.json": {
+        "model": "gpt2_full",
+        "performance": {
+          "accuracy_pct": 79.36,
+          "f1_score": 0.7978,
+          "f1_macro": 0.7935,
+          "precision": 0.7935,
+          "recall": 0.7935,
+          "val_loss": 0.4875,
+          "status": "PASS",
+          "elapsed_s": 6.52
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 124441344,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 793.99,
+          "tokens_per_sec": 25459.51
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 681.87,
+          "L_256_vram_mb": 692.13,
+          "L_512_vram_mb": 722.76,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T22:47:15.053069"
+      },
+      "results/unified_adaptive_sparse_attention/gpt2/hf_export/metrics.json": {
+        "model_name": "gpt2",
+        "module": "adaptive_sparse_attention_attention",
+        "status": "PASS",
+        "accuracy_pct": 79.36,
+        "f1": 0.0,
+        "precision": 0.7935,
+        "recall": 0.7935,
+        "eval_loss": 0.0,
+        "params_total": null,
+        "params_active": null,
+        "param_reduction_pct": null,
+        "peak_vram_mb": 756.8,
+        "tokens_per_sec": 7899.7,
+        "elapsed_seconds": null,
+        "full_metrics": {
+          "module_name": "adaptive_sparse_attention_attention",
+          "status": "PASS",
+          "accuracy_pct": 79.36,
+          "f1_score": 0.7978,
+          "f1_macro": 0.7935,
+          "precision": 0.7935,
+          "recall": 0.7935,
+          "val_loss": 0.4875,
+          "elapsed_s": 56.52,
+          "peak_vram_mb": 756.8,
+          "tokens_per_sec": 7899.7,
+          "total_params_before": 124441344,
+          "total_params_after": 175230876,
+          "trainable_recovery_params": 1179804,
+          "compression_rate": 0.7102,
+          "compression_ratio_pct": -40.81,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 48,
+          "num_fallback_layers": 0,
+          "avg_reconstruction_error": NaN,
+          "weighted_reconstruction_error": NaN,
+          "num_injected_attention_layers": 12,
+          "lora_params": 1179648,
+          "error": NaN,
+          "path": "adapted_gpt",
+          "timestamp": "2026-09-15T02:14:17.492710"
+        }
+      },
+      "results/unified_adaptive_sparse_attention/qwen3_5/hf_export/metrics.json": {
+        "model_name": "qwen3_5",
+        "module": "adaptive_sparse_attention_attention",
+        "status": "PASS",
+        "accuracy_pct": 56.65,
+        "f1": 0.0,
+        "precision": 0.6663,
+        "recall": 0.5592,
+        "eval_loss": 0.0,
+        "params_total": null,
+        "params_active": null,
+        "param_reduction_pct": null,
+        "peak_vram_mb": 1918.44,
+        "tokens_per_sec": 4519.62,
+        "elapsed_seconds": null,
+        "full_metrics": {
+          "module_name": "adaptive_sparse_attention_attention",
+          "status": "PASS",
+          "accuracy_pct": 56.65,
+          "f1_score": 0.6927,
+          "f1_macro": 0.4786,
+          "precision": 0.6663,
+          "recall": 0.5592,
+          "val_loss": 0.6785,
+          "elapsed_s": 230.1,
+          "peak_vram_mb": 1918.44,
+          "tokens_per_sec": 4519.62,
+          "total_params_before": 763217728,
+          "total_params_after": 795584368,
+          "trainable_recovery_params": 11709488,
+          "compression_rate": 0.9593,
+          "compression_ratio_pct": -4.24,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "avg_reconstruction_error": NaN,
+          "weighted_reconstruction_error": NaN,
+          "num_injected_attention_layers": 6,
+          "lora_params": 11707392,
+          "error": NaN,
+          "path": "adapted_qwen3_5",
+          "timestamp": "2026-09-08T18:42:27.982157"
+        }
+      },
+      "results/unified_adaptive_sparse_attention/distilbert/hf_export/metrics.json": {
+        "model_name": "distilbert",
+        "module": "adaptive_sparse_attention_attention",
+        "status": "PASS",
+        "accuracy_pct": 89.11,
+        "f1": 0.0,
+        "precision": 0.894,
+        "recall": 0.8919,
+        "eval_loss": 0.0,
+        "params_total": null,
+        "params_active": null,
+        "param_reduction_pct": null,
+        "peak_vram_mb": 230.5,
+        "tokens_per_sec": 18163.57,
+        "elapsed_seconds": null,
+        "full_metrics": {
+          "module_name": "adaptive_sparse_attention_attention",
+          "status": "PASS",
+          "accuracy_pct": 89.11,
+          "f1_score": 0.8878,
+          "f1_macro": 0.891,
+          "precision": 0.894,
+          "recall": 0.8919,
+          "val_loss": 0.2881,
+          "elapsed_s": 15.36,
+          "peak_vram_mb": 230.5,
+          "tokens_per_sec": 18163.57,
+          "total_params_before": 66955010,
+          "total_params_after": 81719120,
+          "trainable_recovery_params": 589902,
+          "compression_rate": 0.8193,
+          "compression_ratio_pct": -22.05,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 24,
+          "num_fallback_layers": 0,
+          "avg_reconstruction_error": NaN,
+          "weighted_reconstruction_error": NaN,
+          "num_injected_attention_layers": 6,
+          "lora_params": 589824,
+          "error": NaN,
+          "path": "legacy_bert",
+          "timestamp": "2026-09-15T02:11:26.067768"
+        }
+      },
+      "results/unified_adaptive_sparse_attention/roberta/hf_export/metrics.json": {
+        "model_name": "roberta",
+        "module": "adaptive_sparse_attention_attention",
+        "status": "PASS",
+        "accuracy_pct": 64.79,
+        "f1": 0.0,
+        "precision": 0.6685,
+        "recall": 0.651,
+        "eval_loss": 0.0,
+        "params_total": null,
+        "params_active": null,
+        "param_reduction_pct": null,
+        "peak_vram_mb": 689.25,
+        "tokens_per_sec": 8460.41,
+        "elapsed_seconds": null,
+        "full_metrics": {
+          "module_name": "adaptive_sparse_attention_attention",
+          "status": "PASS",
+          "accuracy_pct": 64.79,
+          "f1_score": 0.5846,
+          "f1_macro": 0.6396,
+          "precision": 0.6685,
+          "recall": 0.651,
+          "val_loss": 0.7273,
+          "elapsed_s": 36.64,
+          "peak_vram_mb": 689.25,
+          "tokens_per_sec": 8460.41,
+          "total_params_before": 124647170,
+          "total_params_after": 161262494,
+          "trainable_recovery_params": 1179804,
+          "compression_rate": 0.7729,
+          "compression_ratio_pct": -29.38,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 48,
+          "num_fallback_layers": 0,
+          "avg_reconstruction_error": NaN,
+          "weighted_reconstruction_error": NaN,
+          "num_injected_attention_layers": 12,
+          "lora_params": 1179648,
+          "error": NaN,
+          "path": "adapted_roberta",
+          "timestamp": "2026-09-15T02:12:36.263303"
+        }
+      },
+      "results/unified_adaptive_sparse_attention/roberta/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,78.56,0.8124,0.7811,0.8051,0.7832,0.4381,5.98,713.14,28934.64,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-15T22:45:50.534606\nadaptive_sparse_attention_attention,PASS_NO_COMPRESSION,64.79,0.5846,0.6396,0.6685,0.651,0.7273,45.75,690.06,8465.86,124647170,161262494,1179804,1.0,0.0,0.0,0,0,,,12,1179648,\"note: zero compressed layers, model grew (LoRA only)\",adapted_roberta,2026-09-15T22:46:36.515746\n",
+      "results/unified_adaptive_sparse_attention/distilbert/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,90.71,0.9099,0.907,0.9075,0.9068,0.3027,2.96,389.51,51952.83,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-15T13:47:01.050743\nadaptive_sparse_attention_attention,PASS_NO_COMPRESSION,88.99,0.8865,0.8898,0.893,0.8908,0.2882,14.65,383.02,18842.76,66955010,81719120,589902,1.0,0.0,0.0,0,0,,,6,589824,\"note: zero compressed layers, model grew (LoRA only)\",legacy_bert,2026-09-15T13:47:15.946169\n",
+      "results/unified_adaptive_sparse_attention/qwen3_5/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,67.89,0.557,0.6526,0.7722,0.6842,0.6349,25.86,1796.78,5803.55,763217728,763217728,0,1.0,0.0,0.0,0,0,,,0,10822656,,adapted_qwen3_5,2026-09-08T18:38:37.626456\nadaptive_sparse_attention_attention,PASS,56.65,0.6927,0.4786,0.6663,0.5592,0.6785,230.1,1918.44,4519.62,763217728,795584368,11709488,0.9593,-4.24,0.0,0,0,,,6,11707392,,adapted_qwen3_5,2026-09-08T18:42:27.982157\n",
+      "results/unified_adaptive_sparse_attention/gpt2/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,79.36,0.7978,0.7935,0.7935,0.7935,0.4875,6.52,793.99,25459.51,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-15T22:47:15.800731\nadaptive_sparse_attention_attention,PASS_NO_COMPRESSION,79.36,0.7978,0.7935,0.7935,0.7935,0.4875,50.44,757.73,8562.43,124441344,175230876,1179804,1.0,0.0,0.0,0,0,,,12,1179648,\"note: zero compressed layers, model grew (LoRA only)\",adapted_gpt,2026-09-15T22:48:06.493887\n",
+      "results/agnews_unified_adaptive_sparse_attention/distilbert/distilbert_sst2_adaptive_sparse_attention_full_metrics.json": {
+        "model": "distilbert_sst2_adaptive_sparse_attention",
+        "performance": {
+          "accuracy_pct": 64.7,
+          "f1_score": 0.6448,
+          "f1_macro": 0.6448,
+          "precision": 0.6803,
+          "recall": 0.6448,
+          "val_loss": 0.9806,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 7.3
+        },
+        "efficiency": {
+          "total_params_before": 66956548,
+          "total_params_after": 81720658,
+          "trainable_recovery_params": 589830,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 589824,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 64,
+            "distilbert.transformer.layer.1.attention": 64,
+            "distilbert.transformer.layer.2.attention": 64,
+            "distilbert.transformer.layer.3.attention": 64,
+            "distilbert.transformer.layer.4.attention": 64,
+            "distilbert.transformer.layer.5.attention": 64
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 613.69,
+          "tokens_per_sec": 111548.36
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 356.17,
+          "L_256_vram_mb": 359.56,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-16T04:08:10.296137"
+      },
+      "results/agnews_unified_adaptive_sparse_attention/distilbert/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nadaptive_sparse_attention,PASS_NO_COMPRESSION,64.7,0.6448,0.6448,0.6803,0.6448,0.9806,7.3,613.69,111548.36,66956548,81720658,589830,1.0,0.0,0.0,0,0,,,0,589824,\"note: zero compressed layers, model grew (LoRA only)\",legacy_bert,2026-09-16T04:08:10.622066\n",
+      "results/mnli_unified_adaptive_sparse_attention/distilbert/distilbert_sst2_adaptive_sparse_attention_full_metrics.json": {
+        "model": "distilbert_sst2_adaptive_sparse_attention",
+        "performance": {
+          "accuracy_pct": 35.0,
+          "f1_score": 0.2006,
+          "f1_macro": 0.2006,
+          "precision": 0.254,
+          "recall": 0.3431,
+          "val_loss": 1.0994,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 6.69
+        },
+        "efficiency": {
+          "total_params_before": 66955779,
+          "total_params_after": 81719889,
+          "trainable_recovery_params": 589830,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 589824,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 64,
+            "distilbert.transformer.layer.1.attention": 64,
+            "distilbert.transformer.layer.2.attention": 64,
+            "distilbert.transformer.layer.3.attention": 64,
+            "distilbert.transformer.layer.4.attention": 64,
+            "distilbert.transformer.layer.5.attention": 64
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 411.9,
+          "tokens_per_sec": 39685.32
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 352.7,
+          "L_256_vram_mb": 356.09,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-16T03:02:08.737173"
+      },
+      "results/mnli_unified_adaptive_sparse_attention/distilbert/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nadaptive_sparse_attention,PASS_NO_COMPRESSION,35.0,0.2006,0.2006,0.254,0.3431,1.0994,6.69,411.9,39685.32,66955779,81719889,589830,1.0,0.0,0.0,0,0,,,0,589824,\"note: zero compressed layers, model grew (LoRA only)\",legacy_bert,2026-09-16T03:02:09.015857\n",
+      "results/unified_adaptive_sparse/roberta/roberta-base_full_full_metrics.json": {
+        "model": "roberta-base_full",
+        "performance": {
+          "accuracy_pct": 78.56,
+          "f1_score": 0.8124,
+          "f1_macro": 0.7811,
+          "precision": 0.8051,
+          "recall": 0.7832,
+          "val_loss": 0.4381,
+          "status": "PASS",
+          "elapsed_s": 7.76
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 124647170,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 712.34,
+          "tokens_per_sec": 20223.17
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 683.27,
+          "L_256_vram_mb": 685.84,
+          "L_512_vram_mb": 699.47,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T09:32:15.977182"
+      },
+      "results/unified_adaptive_sparse/roberta/roberta-base_adaptive_sparse_full_metrics.json": {
+        "model": "roberta-base_adaptive_sparse",
+        "performance": {
+          "accuracy_pct": 66.51,
+          "f1_score": 0.6198,
+          "f1_macro": 0.6603,
+          "precision": 0.6793,
+          "recall": 0.6676,
+          "val_loss": 0.6724,
+          "status": "PASS_NO_COMPRESSION",
+          "elapsed_s": 33.94
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 154175390,
+          "trainable_recovery_params": 1179660,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 1179648,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "roberta.encoder.layer.0.attention.self": 32,
+            "roberta.encoder.layer.1.attention.self": 32,
+            "roberta.encoder.layer.2.attention.self": 32,
+            "roberta.encoder.layer.3.attention.self": 32,
+            "roberta.encoder.layer.4.attention.self": 32,
+            "roberta.encoder.layer.5.attention.self": 32,
+            "roberta.encoder.layer.6.attention.self": 32,
+            "roberta.encoder.layer.7.attention.self": 32,
+            "roberta.encoder.layer.8.attention.self": 32,
+            "roberta.encoder.layer.9.attention.self": 32,
+            "roberta.encoder.layer.10.attention.self": 32,
+            "roberta.encoder.layer.11.attention.self": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 687.46,
+          "tokens_per_sec": 8451.0
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 659.18,
+          "L_256_vram_mb": 661.75,
+          "L_512_vram_mb": 670.98,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T09:32:49.873003"
+      },
+      "results/unified_adaptive_sparse/distilbert/distilbert_sst2_full_full_metrics.json": {
+        "model": "distilbert_sst2_full",
+        "performance": {
+          "accuracy_pct": 90.48,
+          "f1_score": 0.9077,
+          "f1_macro": 0.9047,
+          "precision": 0.9052,
+          "recall": 0.9046,
+          "val_loss": 0.3091,
+          "status": "PASS",
+          "elapsed_s": 3.18
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 66955010,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 390.7,
+          "tokens_per_sec": 51010.48
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 373.02,
+          "L_256_vram_mb": 375.08,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-06T23:14:03.442924"
+      },
+      "results/unified_adaptive_sparse/qwen3_5/Qwen3.5-0.8B_full_full_metrics.json": {
+        "model": "Qwen3.5-0.8B_full",
+        "performance": {
+          "accuracy_pct": 67.55,
+          "f1_score": 0.5501,
+          "f1_macro": 0.6481,
+          "precision": 0.7703,
+          "recall": 0.6808,
+          "val_loss": 0.6364,
+          "status": "PASS",
+          "elapsed_s": 107.91
+        },
+        "efficiency": {
+          "total_params_before": 763217728,
+          "total_params_after": 763217728,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 10822656,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 1810.59,
+          "tokens_per_sec": 1318.97
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 1545.79,
+          "L_256_vram_mb": 1568.28,
+          "L_512_vram_mb": 1604.86,
+          "L_1024_vram_mb": 1685.72
+        },
+        "timestamp": "2026-09-06T23:20:02.878399"
+      },
+      "results/unified_adaptive_sparse/gpt2/gpt2_full_full_metrics.json": {
+        "model": "gpt2_full",
+        "performance": {
+          "accuracy_pct": 81.31,
+          "f1_score": 0.8372,
+          "f1_macro": 0.8089,
+          "precision": 0.8364,
+          "recall": 0.8106,
+          "val_loss": 0.5075,
+          "status": "PASS",
+          "elapsed_s": 6.11
+        },
+        "efficiency": {
+          "total_params_before": 126800640,
+          "total_params_after": 126800640,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 2359296,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 392.04,
+          "tokens_per_sec": 28563.05
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 285.05,
+          "L_256_vram_mb": 299.86,
+          "L_512_vram_mb": 324.99,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-06T23:15:49.542842"
+      },
+      "results/unified_adaptive_sparse/roberta/hf_export/metrics.json": {
+        "model_name": "roberta",
+        "module": "adaptive_sparse",
+        "status": "PASS",
+        "accuracy_pct": 66.51,
+        "f1": 0.0,
+        "precision": 0.6793,
+        "recall": 0.6676,
+        "eval_loss": 0.0,
+        "params_total": null,
+        "params_active": null,
+        "param_reduction_pct": null,
+        "peak_vram_mb": 687.46,
+        "tokens_per_sec": 9569.17,
+        "elapsed_seconds": null,
+        "full_metrics": {
+          "module_name": "adaptive_sparse",
+          "status": "PASS",
+          "accuracy_pct": 66.51,
+          "f1_score": 0.6198,
+          "f1_macro": 0.6603,
+          "precision": 0.6793,
+          "recall": 0.6676,
+          "val_loss": 0.6724,
+          "elapsed_s": 30.96,
+          "peak_vram_mb": 687.46,
+          "tokens_per_sec": 9569.17,
+          "total_params_before": 124647170,
+          "total_params_after": 154175390,
+          "trainable_recovery_params": 1179660,
+          "compression_rate": 0.8085,
+          "compression_ratio_pct": -23.69,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 60,
+          "num_fallback_layers": 0,
+          "avg_reconstruction_error": NaN,
+          "weighted_reconstruction_error": NaN,
+          "num_injected_attention_layers": 0,
+          "lora_params": 1179648,
+          "error": NaN,
+          "path": "adapted_roberta",
+          "timestamp": "2026-09-15T02:10:11.972749"
+        }
+      },
+      "results/unified_adaptive_sparse/roberta/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,78.56,0.8124,0.7811,0.8051,0.7832,0.4381,7.76,712.34,20223.17,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-15T09:32:16.770465\nadaptive_sparse,PASS_NO_COMPRESSION,66.51,0.6198,0.6603,0.6793,0.6676,0.6724,33.94,687.46,8451.0,124647170,154175390,1179660,1.0,0.0,0.0,0,0,,,0,1179648,\"note: zero compressed layers, model grew (LoRA only)\",adapted_roberta,2026-09-15T09:32:50.970496\n",
+      "results/unified_adaptive_sparse/qwen3_5/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,67.55,0.5501,0.6481,0.7703,0.6808,0.6364,107.91,1810.59,1318.97,763217728,763217728,0,1.0,0.0,0.0,0,0,,,0,10822656,,adapted_qwen3_5,2026-09-06T23:20:06.150552\nadaptive_sparse,SKIP_QWEN3_5_ARCHITECTURAL,0.0,0.5501,0.6481,0.7703,0.6808,0.6364,3.51,1810.59,1318.97,763217728,763217728,0,1.0,0.0,0.0,0,0,,,0,10822656,note: architecture unsupported by module (Could not instantiate attention class inject_adaptive_sparse),adapted_qwen3_5,2026-09-06T23:20:09.970887\n",
+      "results/benchmark_summary_v2.csv": "track5_pruning,adaptive_sparse_attention,attention,bert,sst2,PASS,,37.17,46.08,83.25,0.0,1.0,4517778,4517778,0.971,1235.7,0.0,0.6952,0.0,0.0,0.0,0.2594,\"{'loss': [0.6951, 0.6951, 0.6951, 0.695, 0.6957], 'grad_norm': [0.2587, 0.2569, 0.258, 0.2616, 0.2616], 'fwd_latency_ms': [38.4829, 36.4067, 36.4999, 37.8765, 36.5779], 'bwd_latency_ms': [46.2246, 46.0414, 45.6697, 46.0146, 46.4405]}\",2026-08-26 03:47:18\ntrack5_pruning,adaptive_sparse_attention,attention,bert,mrpc,PASS,,37.1,46.74,83.84,0.0,1.0,4517778,4517778,0.971,1235.7,0.0,0.6924,0.0,0.0,0.0,1.2774,\"{'loss': [0.6924, 0.6924, 0.6925, 0.6923, 0.6924], 'grad_norm': [1.2773, 1.2776, 1.2774, 1.2776, 1.2773], 'fwd_latency_ms': [36.3315, 37.6825, 37.0882, 37.4794, 36.9352], 'bwd_latency_ms': [45.7491, 47.9903, 47.1999, 47.1164, 45.6429]}\",2026-08-26 03:47:19\ntrack5_pruning,adaptive_sparse_attention,attention,roberta,sst2,PASS,,36.32,46.19,82.51,0.0,1.0,7044882,7044882,0.981,1245.6,0.0,0.6924,0.0,0.0,0.0,0.1581,\"{'loss': [0.6923, 0.6926, 0.6923, 0.6925, 0.6925], 'grad_norm': [0.1588, 0.1581, 0.158, 0.1565, 0.1592], 'fwd_latency_ms': [35.3085, 36.5458, 36.7948, 36.4534, 36.518], 'bwd_latency_ms': [46.0554, 45.903, 46.1143, 46.1651, 46.6931]}\",2026-08-26 03:47:20\ntrack5_pruning,adaptive_sparse_attention,attention,roberta,mrpc,PASS,,37.37,47.1,84.47,0.0,1.0,7044882,7044882,0.981,1245.6,0.0,0.7146,0.0,0.0,0.0,1.5549,\"{'loss': [0.7146, 0.7146, 0.7148, 0.7147, 0.7145], 'grad_norm': [1.5546, 1.5562, 1.5551, 1.5528, 1.5557], 'fwd_latency_ms': [36.6623, 36.8233, 37.2278, 38.336, 37.8001], 'bwd_latency_ms': [46.7151, 46.7509, 45.9066, 48.2059, 47.9261]}\",2026-08-26 03:47:21\ntrack5_pruning,adaptive_sparse_attention,attention,t5,sst2,PASS,,37.77,48.1,85.87,0.0,1.0,4639120,4639120,0.971,1195.9,0.0,1.2273,0.0,0.0,0.0,16.125,\"{'loss': [1.2276, 1.2276, 1.2274, 1.2274, 1.2267], 'grad_norm': [16.1276, 16.1278, 16.1241, 16.1252, 16.1202], 'fwd_latency_ms': [36.2291, 38.1663, 38.0424, 38.2262, 38.1733], 'bwd_latency_ms': [47.7893, 48.181, 48.0535, 48.0253, 48.4622]}\",2026-08-26 03:47:22\ntrack5_pruning,adaptive_sparse_attention,attention,t5,mrpc,PASS,,37.67,47.9,85.57,0.0,1.0,4639120,4639120,0.971,1195.9,0.0,0.8418,0.0,0.0,0.0,10.7126,\"{'loss': [0.8416, 0.8417, 0.8421, 0.842, 0.8417], 'grad_norm': [10.7179, 10.7096, 10.7083, 10.7145, 10.7128], 'fwd_latency_ms': [35.9045, 38.3184, 37.8953, 38.2954, 37.9368], 'bwd_latency_ms': [47.7794, 47.9208, 47.9892, 47.9106, 47.9014]}\",2026-08-26 03:47:23",
+      "results/master_aggregated_results.csv": "adaptive_sparse_attention,0,FAILED_LOW,0,0,0,261.3,2026-09-11T10:56:25.002509"
+    },
+    "notes": []
+  }
+}

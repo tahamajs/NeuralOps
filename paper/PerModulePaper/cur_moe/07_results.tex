@@ -1,11 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{cur_moe}.
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/chart_violin_accuracy.png}
-\caption{Empirical benchmark performance and resource utilization for cur_moe.}
-\label{fig:results_cur_moe}
-\end{figure}
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_cur\_moe/roberta/summary.csv} & cur\_moe & PASS\_LOW & 50.92\% & 615.57 MB \\
+\texttt{results/unified\_cur\_moe/distilbert/summary.csv} & cur\_moe & PASS & 74.43\% & 253.68 MB \\
+\texttt{results/unified\_cur\_moe/gpt2/summary.csv} & cur\_moe & PASS\_LOW & 50.92\% & 625.48 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 44.11 ms & 594.0 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 44.49 ms & 594.0 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 45.24 ms & 603.9 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 45.39 ms & 603.9 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 52.38 ms & 1091.2 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

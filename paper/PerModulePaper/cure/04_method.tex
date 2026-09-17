@@ -1,3 +1,11 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{cure}.
+\subsection{Algorithmic Formulation}
+The \texttt{cure} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{CURE: CUR-MoE Compressor alias and factory.
+Compresses Mixture of Experts (MoE) layers and dense FFN layers using
+proper factorized CURLinear (C @ U @ R parameter reduction).
+Registered in COMPRESSOR\_REGISTRY as 'cure' and 'cure\_compressor'.}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

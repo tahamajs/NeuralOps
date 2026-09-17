@@ -1,3 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{cure}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_cure/roberta/summary.csv} & cure & PASS\_NO\_COMPRESSION & 78.56\% & 520.18 MB \\
+\texttt{results/unified\_cure/distilbert/summary.csv} & cure & PASS\_NO\_COMPRESSION & 90.71\% & 300.68 MB \\
+\texttt{results/unified\_cure/qwen3\_5/summary.csv} & cure & FAIL & 0.0\% & 1796.78 MB \\
+\texttt{results/unified\_cure/gpt2/summary.csv} & cure & PASS\_NO\_COMPRESSION & 79.36\% & 627.28 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
