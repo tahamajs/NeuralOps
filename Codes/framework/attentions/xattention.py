@@ -679,7 +679,7 @@ class XAttention(BaseAttention):
         else:
             output = self.out_proj(context)
 
-        output = output * self.output_scale
+        output = output 
 
         if attention_mask is not None:
             valid_m = _extract_valid_token_mask(attention_mask, B, N_q, device)
