@@ -9,11 +9,10 @@
 | 5. family_deltanet | ✅ | 2 | `bcf36210f` | 2min | All 2 pass AST; prefix is_decoder standardized |
 | 6. family_compressed | ✅ | 2 | `98f3bc83f` | 2min | All 2 pass AST; output_scale eliminated; prefix is_decoder standardized |
 | 7. family_svd_split_A | ✅ | 16 | `88f4129fe` | 6min | All 16 pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
-| 8. family_svd_split_B | ✅ | 17 | `15d57f189` | 5min | All pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
-| 9. family_attn_general_1 | ✅ | 20 | `15d57f189` | 5min | All pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
-| 10. family_attn_general_2 | ✅ | 20 | `15d57f189` | 5min | All pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
-| 11. family_attn_general_3 | ✅ | 20 | `15d57f189` | 5min | All pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
-| 12. family_attn_general_4 | ✅ | 20 | `15d57f189` | 5min | All pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
-| 13. family_attn_general_5 | ✅ | 19 | `15d57f189` | 5min | All pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
-| 14. family_compression_engine | ✅ | 80 | `15d57f189` | 10min | All pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
-
+| 8. family_svd_split_B | ⏳ | 17 | — | — | Pending |
+| 9. family_attn_general_1 | ⏳ | 20 | — | — | Pending |
+| 10. family_attn_general_2 | ⏳ | 20 | — | — | Pending |
+| 11. family_attn_general_3 | ⏳ | 20 | — | — | Pending |
+| 12. family_attn_general_4 | ⏳ | 20 | — | — | Pending |
+| 13. family_attn_general_5 | ⏳ | 19 | — | — | Pending |
+| 14. family_compression_engine | ⏳ | 80 | — | — | Pending |
