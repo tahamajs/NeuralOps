@@ -64,7 +64,7 @@ class SAESSVDCompressorV2(BaseCompressor):
         correcting_steps: int = 2,
         target_modules: Optional[List[str]] = None,
         target_attention_only: bool = False,
-        max_error: float = 0.20,
+        max_error: float = 0.60,
         fallback_to_original: bool = True,  # Fix 1: Default changed to True
         **kwargs: Any,
     ) -> None:

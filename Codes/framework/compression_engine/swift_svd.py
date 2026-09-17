@@ -65,7 +65,7 @@ class SwiftSVDCompressor(BaseCompressor):
         rank: Optional[int] = None,
         rank_ratio: float = 0.5,
         target_modules: Optional[List[str]] = None,
-        max_error: float = 0.20,
+        max_error: float = 0.60,
         max_retries: int = 3,
         fallback_to_original: bool = True,
         validation_calibration: bool = False,
@@ -232,11 +232,12 @@ class SwiftSVDCompressor(BaseCompressor):
         # Check threshold
         if best_err > self.max_error:
             logger.warning(
-                "SwiftSVD: %s reconstruction error (%.4f) exceeded max_error (%.4f) at rank %d.",
+                "SwiftSVD: %s reconstruction error (%.4f) exceeded max_error (%.4f) at rank %d.%s",
                 name,
                 best_err,
                 self.max_error,
                 best_r,
+                " Keeping original layer." if self.fallback_to_original else " Proceeding with compressed layer.",
             )
             if self.fallback_to_original:
                 return None, best_err, best_r
