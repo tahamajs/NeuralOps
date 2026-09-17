@@ -471,11 +471,21 @@ class AegisHybridAttention(BaseAttention):
                     base_mod = getattr(mod, "base_layer", mod)
                     w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                     if w is not None:
-                        w = w.data
-                        if (mod.__class__.__name__ == "Conv1D") or (base_mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or hasattr(base_mod, "nf") or (w.shape[0] < w.shape[1]):
-                            w = w.t()
+                        w = w.data.clone()
+                        hidden_dim = getattr(self, "hidden_size", 768)
+                        if (
+                            mod.__class__.__name__ == "Conv1D"
+                            or base_mod.__class__.__name__ == "Conv1D"
+                            or hasattr(mod, "nf")
+                            or hasattr(base_mod, "nf")
+                            or (w.dim() == 2 and w.shape[0] != hidden_dim and w.shape[1] == hidden_dim)
+                            or (w.dim() == 2 and w.shape[0] < w.shape[1])
+                        ):
+                            w = w.t().contiguous()
+                        else:
+                            w = w.contiguous()
                     bias_holder = getattr(base_mod, "bias", getattr(mod, "bias", None))
-                    b = bias_holder.data if bias_holder is not None else None
+                    b = bias_holder.data.clone().contiguous() if bias_holder is not None else None
                 elif hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
                     mod = old_attn.output.dense
                     w = mod.weight.data
@@ -508,16 +518,24 @@ class AegisHybridAttention(BaseAttention):
                 base_mod = getattr(mod, "base_layer", mod)
                 c_w = getattr(base_mod, "weight", getattr(mod, "weight", None))
                 if c_w is not None:
-                    c_w = c_w.data
-                    if (mod.__class__.__name__ == "Conv1D") or (base_mod.__class__.__name__ == "Conv1D") or hasattr(mod, "nf") or hasattr(base_mod, "nf") or (c_w.shape[0] < c_w.shape[1]):
-                        c_w = c_w.t()
+                    c_w = c_w.data.clone()
+                    hidden_dim = getattr(self, "hidden_size", 768)
+                    if (
+                        mod.__class__.__name__ == "Conv1D"
+                        or base_mod.__class__.__name__ == "Conv1D"
+                        or hasattr(mod, "nf")
+                        or hasattr(base_mod, "nf")
+                        or (c_w.dim() == 2 and c_w.shape[1] == 3 * hidden_dim)
+                        or (c_w.dim() == 2 and c_w.shape[0] < c_w.shape[1])
+                    ):
+                        c_w = c_w.t().contiguous()
                     split_size = c_w.size(0) // 3
                     idx = {"q": 0, "k": 1, "v": 2}[proj]
-                    w = c_w[idx * split_size : (idx + 1) * split_size, :]
+                    w = c_w[idx * split_size : (idx + 1) * split_size, :].contiguous()
                     bias_holder = getattr(base_mod, "bias", getattr(mod, "bias", None))
                     if bias_holder is not None:
-                        c_b = bias_holder.data
-                        b = c_b[idx * split_size : (idx + 1) * split_size]
+                        c_b = bias_holder.data.clone()
+                        b = c_b[idx * split_size : (idx + 1) * split_size].contiguous()
 
             # 3. RoBERTa / BERT nested self-attention (old_attn.self)
             elif hasattr(old_attn, "self") and proj in ["q", "k", "v"]:
