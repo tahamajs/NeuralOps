@@ -14,6 +14,9 @@ Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA a
 - Parameter-efficient fine-tuning via LoRALinear adapters and frozen base weights
 - Numerically stable FP32 scores with nan_to_num protection
 - Safe injection factory returning None on extraction failures
+
+NOTE: This module is LoRA-only. The rank argument is accepted but not used for 
+SVD compression. Use lora_rank to control adapter size.
 """
 
 from __future__ import annotations
