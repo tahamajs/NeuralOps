@@ -36,7 +36,8 @@ import csv
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from huggingface_hub import HfApi
+from huggingface_hub import HfApi, create_repo
+from huggingface_hub.utils import HfHubHTTPError
 
 HF_ORG = "tahamajs"
 CHECK_INTERVAL_S = 180  # Check every 3 minutes
@@ -301,11 +302,36 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, dataset_name,
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Skipping bad/low result: {repo_id} (status={status}, acc={acc_float:.2f}% < thresh={thresh_float:.2f}%)")
         return
 
-    # 1. Ensure repo exists on tahamajs
+    # 1. Ensure repo exists on tahamajs safely
+    repo_ready = False
     try:
-        api.create_repo(repo_id=repo_id, exist_ok=True, private=True)
-    except Exception as e_cr:
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] create_repo warning for {repo_id}: {e_cr}")
+        api.repo_info(repo_id=repo_id, repo_type="model")
+        repo_ready = True
+    except HfHubHTTPError as e:
+        if getattr(e.response, "status_code", None) == 404:
+            try:
+                api.create_repo(repo_id=repo_id, private=True, exist_ok=True)
+                repo_ready = True
+            except HfHubHTTPError as e2:
+                status_code = getattr(e2.response, "status_code", None)
+                if status_code == 429:
+                    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] HF rate limit reached (429). Skipping upload for {repo_id}.")
+                    os.makedirs("logs", exist_ok=True)
+                    with open("logs/hf_uploads_skipped.log", "a", encoding="utf-8") as lf:
+                        lf.write(f"[{datetime.now().isoformat()}] RATE_LIMIT_429: {repo_id}\n")
+                    return
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] create_repo warning for {repo_id}: {e2}")
+        else:
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] repo_info check failed for {repo_id}: {e}")
+    except Exception as e_gen:
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Unexpected error inspecting {repo_id}: {e_gen}")
+
+    if not repo_ready:
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HF-Sync] Repo {repo_id} does not exist or cannot be created. Skipping upload.")
+        os.makedirs("logs", exist_ok=True)
+        with open("logs/hf_uploads_skipped.log", "a", encoding="utf-8") as lf:
+            lf.write(f"[{datetime.now().isoformat()}] REPO_NOT_READY: {repo_id}\n")
+        return
 
     # 2. Check remote files
     remote_files = []
