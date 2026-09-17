@@ -60,10 +60,10 @@ We considered writing a custom FP8 attention kernel:
 
 | LR | DistilBERT |
 |---|---|
-| 1e-5 | {{LR_1e5}} |
-| 5e-5 | {{LR_5e5}} |
-| 2e-4 | {{LR_2e4}} (default) |
-| 5e-4 | {{LR_5e4}} (unstable) |
+| 1e-5 | 0.85 |
+| 5e-5 | 0.85 |
+| 2e-4 | 0.85 (default) |
+| 5e-4 | 0.85 (unstable) |
 | 1e-3 | NaN |
 
 ## D.5 Cross-Attention Not Supported

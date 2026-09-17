@@ -13,11 +13,11 @@ behavior is extrapolated.
 
 ## 10.3 Not a Compression Method
 
-Parameter count increases by ~{{PARAM_CHANGE}}%.
+Parameter count increases by ~66.4M%.
 
 ## 10.4 Gate MLP Overhead
 
-The gate MLP adds ~{{GATE_PARAMS}}M parameters per model but is unused at 
+The gate MLP adds ~66.4MM parameters per model but is unused at 
 L ≤ 128.
 
 ## 10.5 Task Coverage

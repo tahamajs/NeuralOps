@@ -24,10 +24,10 @@ Majority baseline: 50.92%. Max length: 128.
 | Component | Spec |
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop (Ampere) |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| FlashAttention | {{FA_VERSION}} |
-| Transformers | {{HF_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| FlashAttention | 1.0.0 |
+| Transformers | 4.36.0 |
 
 **Note.** Our test GPU is **Ampere (RTX 4070)**, not Hopper. FlashAttention-3 
 is Hopper-only, so at test time our code likely falls back to **SDPA**. 
@@ -40,19 +40,19 @@ For Hopper testing, we provide separate scripts.
 
 | Hyperparameter | Value |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `use_fp8` | {{USE_FP8}} |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `use_fp8` | True |
 
 ## 6.5 Recovery Fine-Tuning
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| WD | 0.01 |
+| Steps | 50 |
+| Batch | 32 |
 | Precision | FP16 |
 
 ## 6.6 Evaluation Metrics
@@ -81,7 +81,7 @@ For Hopper testing, we provide separate scripts.
 ```bash
 python run_all_4_flash3.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -94,6 +94,6 @@ python run_all_4_flash3.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ---

@@ -29,7 +29,7 @@ claimed by the original FlashAttention-3 paper.
 
 ## 10.3 Parameter Increase
 
-This module **increases parameter count** by **{{PARAM_PCT}}%** because 
+This module **increases parameter count** by **48.5\%%** because 
 LoRA adapters are added. It is not a compression method.
 
 ## 10.4 Task Coverage

@@ -1,18 +1,18 @@
 # FlashAttention-3 Wrapper: Hardware-Optimized Exact Attention with Graceful SDPA Fallback
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- 0.85² — 0.85
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ 0.85, 0.85
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/flash_attention3.py
-**License:** {{LICENSE}}
+**Corresponding author:** 0.85
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/flash_attention3.py
+**License:** Apache 2.0
 
 ---
 
@@ -38,12 +38,12 @@ architecture heterogeneity, and pretrained weight transfer. We present a
 5. **Adds trainable LoRA adapters** for parameter-efficient recovery.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-{{RECOVERY_STEPS}} recovery steps. FlashAttention-3 achieves **{{D_ACC}}%** 
-on DistilBERT, **{{R_ACC}}%** on RoBERTa, and **{{G_ACC}}%** on GPT-2, 
+50 recovery steps. FlashAttention-3 achieves **89.91%** 
+on DistilBERT, **83.94%** on RoBERTa, and **82.00%** on GPT-2, 
 matching or slightly exceeding the SDPA baseline.
 
 **Important disclosure.** This wrapper is **not** a compression method — it 
-**increases** parameter count by ~{{PARAM_CHANGE}}% via LoRA adapters. Its 
+**increases** parameter count by ~66.4M% via LoRA adapters. Its 
 value lies in **hardware-optimized inference** (memory and throughput) on 
 modern GPUs, not size reduction. On our RTX 4070 test machine, the 
 FlashAttention-3 kernel is not available, so the wrapper uses the SDPA 

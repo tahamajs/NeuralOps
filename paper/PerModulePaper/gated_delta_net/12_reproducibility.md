@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate
@@ -23,8 +23,8 @@ pip install -r requirements.txt
 # Full run (may timeout on RoBERTa/GPT-2)
 python run_all_4_gated_delta_net.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 
 # DistilBERT only (fastest)
 python run_all_4_gated_delta_net.py --models distilbert
@@ -34,7 +34,7 @@ python run_all_4_gated_delta_net.py --models distilbert
 
 | Model | Expected runtime |
 |---|---|
-| DistilBERT | ~{{D_TOTAL_TIME}} min |
+| DistilBERT | ~2.3 s min |
 | RoBERTa | OOM or >60 min |
 | GPT-2 | OOM or >60 min |
 

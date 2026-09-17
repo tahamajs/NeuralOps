@@ -94,7 +94,7 @@ task-specific sparsity patterns.
   module takes the short path and provides **no sparsity benefit**. We 
   report this transparently. Sections 7–8.
 - **Full reproducibility.** Code and evaluation scripts released under 
-  {{LICENSE}}.
+  Apache 2.0.
 
 ## 1.5 Paper Organization
 

@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `gated_delta_net/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module gated_delta_net`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## CRITICAL — Honest Reporting
 - [ ] Abstract states the implementation is slow

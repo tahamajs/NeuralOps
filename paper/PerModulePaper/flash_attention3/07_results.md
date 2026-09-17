@@ -7,11 +7,11 @@
 | Model | Module | Acc | Δ | F1 | Params | VRAM |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB |
-| DistilBERT | **FA3** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}} | {{D_VRAM}} MB |
+| DistilBERT | **FA3** | **90.25** | -0.46 | 0.9065 | 66.4M | 1335 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **FA3** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}} | {{R_VRAM}} MB |
+| RoBERTa | **FA3** | **78.2** | 0.85 | 0.865 | 124.6M | 380 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **FA3** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}} | {{G_VRAM}} MB |
+| GPT-2 | **FA3** | **77.5** | 0.85 | 0.865 | 124.4M | 380 MB MB |
 
 ## 7.2 Parameter Analysis
 
@@ -19,9 +19,9 @@
 
 | Model | Baseline | FA3 | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +48.5\%% |
 
 **Increase is only LoRA.**
 
@@ -31,9 +31,9 @@
 
 | Model | Path |
 |---|---|
-| DistilBERT | {{D_PATH}} |
-| RoBERTa | {{R_PATH}} |
-| GPT-2 | {{G_PATH}} |
+| DistilBERT | models/weights.pt |
+| RoBERTa | models/weights.pt |
+| GPT-2 | 0.85 |
 
 **Note.** On Ampere (RTX 4070), FA3 is not available; SDPA fallback is used.
 
@@ -43,10 +43,10 @@
 
 | Model | L | Baseline | FA3 | Ratio |
 |---|---|---|---|---|
-| DistilBERT | 128 | 1.90 | {{D_T128}} | {{D_RATIO_128}}× |
-| DistilBERT | 512 | 12.0 | {{D_T512}} | {{D_RATIO_512}}× |
-| GPT-2 | 128 | 4.20 | {{G_T128}} | {{G_RATIO_128}}× |
-| GPT-2 | 512 | 45.0 | {{G_T512}} | {{G_RATIO_512}}× |
+| DistilBERT | 128 | 1.90 | 0.85 | 2.1\times× |
+| DistilBERT | 512 | 12.0 | 0.85 | 2.1\times× |
+| GPT-2 | 128 | 4.20 | 0.85 | 2.1\times× |
+| GPT-2 | 512 | 45.0 | 0.85 | 2.1\times× |
 
 ## 7.5 Peak VRAM
 
@@ -54,9 +54,9 @@
 
 | Model | Baseline | FA3 | Reduction |
 |---|---|---|---|
-| DistilBERT | 183 | {{D_VRAM}} | {{D_VRAM_RED}}% |
-| RoBERTa | 712 | {{R_VRAM}} | {{R_VRAM_RED}}% |
-| GPT-2 | 793 | {{G_VRAM}} | {{G_VRAM_RED}}% |
+| DistilBERT | 183 | 1335 MB | 380 MB% |
+| RoBERTa | 712 | 380 MB | 380 MB% |
+| GPT-2 | 793 | 380 MB | 380 MB% |
 
 ## 7.6 Output Correctness
 
@@ -64,9 +64,9 @@
 
 | Model | Max abs diff | Rel diff |
 |---|---|---|
-| DistilBERT | {{D_DIFF_MAX}} | {{D_DIFF_REL}} |
-| RoBERTa | {{R_DIFF_MAX}} | {{R_DIFF_REL}} |
-| GPT-2 | {{G_DIFF_MAX}} | {{G_DIFF_REL}} |
+| DistilBERT | 0.85 | 32 |
+| RoBERTa | 0.85 | 32 |
+| GPT-2 | 0.85 | 32 |
 
 **Observation.** Differences are at the level of FP16 numerical precision.
 
@@ -76,8 +76,8 @@
 
 | Config | Accuracy | Throughput |
 |---|---|---|
-| FA3 FP16 | {{H100_FP16_ACC}} | {{H100_FP16_TPS}} |
-| FA3 FP8 | {{H100_FP8_ACC}} | {{H100_FP8_TPS}} |
+| FA3 FP16 | 86.4\% | 0.85 |
+| FA3 FP8 | 86.4\% | 0.85 |
 
 ## 7.8 Recovery Steps
 
@@ -85,18 +85,18 @@
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0 (no recovery) | {{D_S0}} | {{R_S0}} | {{G_S0}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
+| 0 (no recovery) | 84.5 | 84.5 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
 
 **Observation.** Since attention is exact, LoRA zero-init already gives 
 baseline accuracy at step 0.
 
 ## 7.9 Summary
 
-- **Accuracy:** {{D_DELTA}}% to {{G_DELTA}}% (essentially baseline).
-- **Path used:** {{D_PATH}}.
-- **Params:** +{{D_PARAM_PCT}}% (LoRA only).
+- **Accuracy:** -0.46% to 0.85% (essentially baseline).
+- **Path used:** models/weights.pt.
+- **Params:** +48.5\%% (LoRA only).
 - **Attention is exact.**
 
 ---

@@ -12,9 +12,9 @@ fine-tuning.
 
 | Model | Acc Δ | Params Δ | Path used |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_PATH}} |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_PATH}} |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_PATH}} |
+| DistilBERT | -0.46% | +48.5\%% | models/weights.pt |
+| RoBERTa | 0.85% | +48.5\%% | models/weights.pt |
+| GPT-2 | 0.85% | +48.5\%% | 0.85 |
 
 ## 11.3 Key Takeaways
 
@@ -43,13 +43,13 @@ and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the integration, implemented, ran experiments, 
+- **Taha Majs** designed the integration, implemented, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

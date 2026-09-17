@@ -11,9 +11,9 @@ not exercise its sparsity machinery at that length.
 
 | Model | Acc Δ | Params Δ | Path at L=128 |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_DELTA}}M | Short |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_DELTA}}M | Short |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_DELTA}}M | Short |
+| DistilBERT | 0.85% | +-32MM | Short |
+| RoBERTa | 0.85% | +66.4MM | Short |
+| GPT-2 | 0.85% | +66.4MM | Short |
 
 ## 11.3 Key Takeaways
 
@@ -37,16 +37,16 @@ not exercise its sparsity machinery at that length.
 ## 11.5 Closing Remarks
 
 FUSIONATTN is a hybrid attention for long-context inference. We release 
-code under {{LICENSE}}.
+code under Apache 2.0.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented the code, ran experiments.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** designed the method, implemented the code, ran experiments.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 

@@ -9,7 +9,7 @@ falls back to SDPA. **No speedup is realized.**
 ## 10.2 No Parameter Reduction
 
 FlashAttention-3 is an **algorithm**, not a compression method. Parameter 
-count increases by ~{{D_PARAM_PCT}}% due to LoRA adapters. If your goal is 
+count increases by ~48.5\%% due to LoRA adapters. If your goal is 
 to reduce model size, this module is not the right choice.
 
 ## 10.3 FP8 Precision

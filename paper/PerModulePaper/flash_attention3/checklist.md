@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `flash_attention3/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module flash_attention3`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

@@ -191,7 +191,7 @@ The pipeline:
 1. Load base model.
 2. Replace attention with `FlashAttention3FP8` via injection.
 3. Freeze base weights, keep LoRA trainable.
-4. Run recovery fine-tuning for {{RECOVERY_STEPS}} steps.
+4. Run recovery fine-tuning for 50 steps.
 5. Evaluate.
 
 This is the same pipeline as other modules in our framework.

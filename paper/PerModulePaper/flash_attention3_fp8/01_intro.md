@@ -23,7 +23,7 @@ added **asynchronous hardware overlap** on Hopper GPUs and, crucially,
 **FP8 tensor core support**, which roughly doubles throughput on H100-class 
 hardware.
 
-{{MOTIVATION_PARAGRAPH_2}}
+0.85
 
 <!-- 
 EXAMPLE continuation:
@@ -71,8 +71,8 @@ We implement FlashAttention-3 with three design principles:
   taken. We identify the exact hardware needed to reproduce the FP8 
   speedups.
 - **An accuracy-preservation study** showing that when the fallback path is 
-  used, accuracy matches the baseline within **{{D_DELTA}}%** on DistilBERT, 
-  **{{R_DELTA}}%** on RoBERTa, and **{{G_DELTA}}%** on GPT-2.
+  used, accuracy matches the baseline within **-0.92%** on DistilBERT, 
+  **0.85%** on RoBERTa, and **0.85%** on GPT-2.
 - **Full reproducibility**, including hardware-detection logic and LoRA 
   configuration.
 

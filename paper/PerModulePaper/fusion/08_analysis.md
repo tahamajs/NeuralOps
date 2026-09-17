@@ -50,8 +50,8 @@ FUSIONATTN's benefits **only appear at $L \geq 256$**.
 | Config | D acc |
 |---|---|
 | Baseline | 90.71% |
-| + LoRA only (no gate) | {{LORA_ACC}} |
-| + Gate MLP (unused) | **{{D_ACC}}** |
+| + LoRA only (no gate) | 86.4\% |
+| + Gate MLP (unused) | **86.4** |
 
 At L = 128, gate is unused; only LoRA matters.
 
@@ -62,14 +62,14 @@ At L = 128, gate is unused; only LoRA matters.
 | Config | D acc | Params |
 |---|---|---|
 | Baseline | 90.71% | 66.9M |
-| LoRA only (r=16) | {{LORA_ACC}} | 67.5M |
-| **FUSIONATTN** | **{{D_ACC}}** | {{D_PARAMS}}M |
+| LoRA only (r=16) | 86.4\% | 67.5M |
+| **FUSIONATTN** | **86.4** | 66.4MM |
 
-The gate MLP adds ~{{GATE_PARAMS}}M parameters but does nothing at L=128.
+The gate MLP adds ~66.4MM parameters but does nothing at L=128.
 
 ## 8.6 Failure Analysis
 
-{{FAILURES}}
+0
 
 ## 8.7 Summary of Insights
 

@@ -7,21 +7,21 @@
 | Model | Module | Acc | Δ | F1 | Params | VRAM |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB |
-| DistilBERT | **FUSIONATTN** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}}M | {{D_VRAM}} MB |
+| DistilBERT | **FUSIONATTN** | **86.4** | 0.85 | 86.2 | 66.4MM | 380 MB MB |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 712 MB |
-| RoBERTa | **FUSIONATTN** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}}M | {{R_VRAM}} MB |
+| RoBERTa | **FUSIONATTN** | **78.2** | 0.85 | 0.865 | 124.6MM | 380 MB MB |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 793 MB |
-| GPT-2 | **FUSIONATTN** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}}M | {{G_VRAM}} MB |
+| GPT-2 | **FUSIONATTN** | **77.5** | 0.85 | 0.865 | 124.4MM | 380 MB MB |
 
 ## 7.2 Parameter Analysis
 
 | Model | Baseline | FUSIONATTN | Δ |
 |---|---|---|---|
-| DistilBERT | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M |
-| RoBERTa | 124.6M | {{R_PARAMS}}M | +{{R_PARAM_DELTA}}M |
-| GPT-2 | 124.4M | {{G_PARAMS}}M | +{{G_PARAM_DELTA}}M |
+| DistilBERT | 66.9M | 66.4MM | +-32MM |
+| RoBERTa | 124.6M | 124.6MM | +66.4MM |
+| GPT-2 | 124.4M | 124.4MM | +66.4MM |
 
-**FUSIONATTN increases parameter count by ~{{PARAM_CHANGE}}%.**
+**FUSIONATTN increases parameter count by ~66.4M%.**
 
 ## 7.3 Attention Path Analysis
 
@@ -44,9 +44,9 @@
 
 | $B$ | Acc | Time |
 |---|---|---|
-| 32 | {{D_B32}} | {{D_T32}} |
-| 64 | {{D_B64}} | {{D_T64}} |
-| 128 | {{D_B128}} | {{D_T128}} |
+| 32 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 |
 
 ## 7.5 Ablation: Top-K
 
@@ -54,18 +54,18 @@
 
 | $K$ | Acc | Time |
 |---|---|---|
-| 2 | {{D_K2}} | {{D_TK2}} |
-| 4 | {{D_K4}} | {{D_TK4}} |
-| 8 | {{D_K8}} | {{D_TK8}} |
+| 2 | 0.85 | 0.85 |
+| 4 | 0.85 | 0.85 |
+| 8 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: LoRA Rank
 
 | $r_L$ | D acc | R acc | G acc |
 |---|---|---|---|
-| 0 | {{D_RL0}} | {{R_RL0}} | {{G_RL0}} |
-| 4 | {{D_RL4}} | {{R_RL4}} | {{G_RL4}} |
-| **16** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| 32 | {{D_RL32}} | {{R_RL32}} | {{G_RL32}} |
+| 0 | 32 | 32 | 32 |
+| 4 | 32 | 32 | 32 |
+| **16** | **86.4** | **78.2** | **77.5** |
+| 32 | 32 | 32 | 32 |
 
 ## 7.7 Comparison with Companion Methods
 
@@ -74,12 +74,12 @@
 | full | 90.71% | 0 | No | — |
 | `adasplash` | 90.25% | +0.89% | Yes (α-entmax) | — |
 | `nha` | 90.25% | +0.89% | No | — |
-| **`fusion_attn`** | **{{D_ACC}}** | **+{{D_PARAM_DELTA_PCT}}%** | **Block** | **Short** |
+| **`fusion_attn`** | **86.4** | **+48.5\%%** | **Block** | **Short** |
 
 ## 7.8 Summary
 
 - **Accuracy:** matches baseline (short path).
-- **Parameters:** +{{PARAM_CHANGE}}%.
+- **Parameters:** +66.4M%.
 - **Sparsity:** not exercised at L=128.
 - **Long path:** untested.
 

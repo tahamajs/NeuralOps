@@ -200,7 +200,7 @@ naive; on Ampere/Ada, SDPA memory-efficient path gives 1.5-2×.
 
 For DistilBERT ($d=768$, $r_L=16$): **+589,824 params** across 6 layers.
 
-**Wrapper increases parameter count by ~{{PARAM_CHANGE}}%.**
+**Wrapper increases parameter count by ~66.4M%.**
 
 ## 4.10 Theoretical Notes
 

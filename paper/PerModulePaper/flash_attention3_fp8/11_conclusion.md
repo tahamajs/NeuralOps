@@ -12,16 +12,16 @@
 We presented a **hardened, hardware-aware** implementation of FlashAttention-3 
 FP8 that runs on any CUDA GPU by falling back to PyTorch SDPA when FP8 
 tensor cores are unavailable. The implementation handles four transformer 
-families and preserves accuracy within **{{D_DELTA}}%** (DistilBERT), 
-**{{R_DELTA}}%** (RoBERTa), and **{{G_DELTA}}%** (GPT-2) on SST-2.
+families and preserves accuracy within **-0.92%** (DistilBERT), 
+**0.85%** (RoBERTa), and **0.85%** (GPT-2) on SST-2.
 
 ## 11.2 Results Recap
 
 | Model | Accuracy | Δ | Params Δ | FP8 Path |
 |---|---|---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | No |
-| RoBERTa | {{R_ACC}}% | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | No |
-| GPT-2 | {{G_ACC}}% | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | No |
+| DistilBERT | 89.79% | -0.92% | +48.5\%% | No |
+| RoBERTa | 78.2% | 0.85% | +48.5\%% | No |
+| GPT-2 | 77.5% | 0.85% | +48.5\%% | No |
 
 ## 11.3 Key Takeaways
 
@@ -59,12 +59,12 @@ honestly where it does not.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}} for feedback.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support. for feedback.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** implemented the module, ran experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback and edited the manuscript.
+- **Taha Majs** implemented the module, ran experiments, wrote the paper.
+- **Collaborative Research Team** provided feedback and edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

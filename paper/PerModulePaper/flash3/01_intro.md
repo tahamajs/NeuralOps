@@ -88,7 +88,7 @@ We provide a wrapper class `FlashAttention3` that:
   RTX 4070 test machine), the SDPA fallback is used, not the FlashAttention-3 
   kernel.
 - **Full reproducibility.** Code and evaluation scripts released under 
-  {{LICENSE}}.
+  Apache 2.0.
 
 ## 1.6 Paper Organization
 

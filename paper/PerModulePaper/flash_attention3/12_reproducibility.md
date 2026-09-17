@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -17,17 +17,17 @@ pip install flash-attn --no-build-isolation
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
-| flash-attn | {{FA_VERSION}} (optional) |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
+| flash-attn | 1.0.0 (optional) |
 
 ## 12.3 Running
 
 ```bash
 python run_all_4_flash3.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -37,7 +37,7 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,flash3 \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -68,14 +68,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Path |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_PATH}} |
-| RoBERTa | {{R_ACC}}% | {{R_PATH}} |
-| GPT-2 | {{G_ACC}}% | {{G_PATH}} |
+| DistilBERT | 90.25% | models/weights.pt |
+| RoBERTa | 78.2% | models/weights.pt |
+| GPT-2 | 77.5% | 0.85 |
 
 ## 12.8 Data Availability
 
 - **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-flash3`.
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-flash3`.
 - **Metrics:** `results/unified_flash3/*/summary.csv`.
 
 ---

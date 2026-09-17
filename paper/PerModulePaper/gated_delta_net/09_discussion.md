@@ -81,10 +81,10 @@ For DistilBERT on RTX 4070:
 
 | Metric | Baseline | GatedDeltaNet | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Per-step time | 0.4 s | {{D_STEP_TIME}} s | **{{D_SLOWDOWN}}×** |
-| Peak VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_RATIO}}× |
-| Params | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
+| Accuracy | 90.71% | 50.92% | -39.79% |
+| Per-step time | 0.4 s | 14.2 ms s | **84.5×** |
+| Peak VRAM | 183 MB | 416 MB MB | 2.1\times× |
+| Params | 66.9M | 66.4MM | +48.5\%% |
 
 **Verdict.** Not worth it without a fused kernel.
 

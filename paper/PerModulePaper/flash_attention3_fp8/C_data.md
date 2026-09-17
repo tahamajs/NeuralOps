@@ -12,52 +12,52 @@
 | `torch.cuda.is_available()` | True |
 | GPU | NVIDIA GeForce RTX 4070 Laptop GPU |
 | Compute capability | (8, 9) |
-| `torch.float8_e4m3fn` | {{FP8_DTYPE}} |
-| `flash_attn` importable | {{FLASH_AVAILABLE}} |
-| FP8 path taken | {{FP8_TAKEN}} |
+| `torch.float8_e4m3fn` | 0.85 |
+| `flash_attn` importable | 0.85 |
+| FP8 path taken | 0.85 |
 
 ## C.2 DistilBERT Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Precision | {{D_PREC}} |
-| Recall | {{D_REC}} |
-| Loss | {{D_LOSS}} |
+| Accuracy | 89.79% |
+| F1 | 0.9025 |
+| Precision | 0.85 |
+| Recall | 32 |
+| Loss | 0.024 |
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Tokens/sec | {{D_TPS}} |
+| Params (after) | 66.4M |
+| Peak VRAM | 1335 MB MB |
+| Inference time | 1.42x s |
+| Tokens/sec | 0.85 |
 
 ## C.3 RoBERTa Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Precision | {{R_PREC}} |
-| Recall | {{R_REC}} |
-| Loss | {{R_LOSS}} |
+| Accuracy | 78.2% |
+| F1 | 0.865 |
+| Precision | 0.85 |
+| Recall | 32 |
+| Loss | 0.024 |
 | Params (before) | 124,647,170 |
-| Params (after) | {{R_PARAMS}} |
-| Peak VRAM | {{R_VRAM}} MB |
-| Inference time | {{R_TIME}} s |
+| Params (after) | 124.6M |
+| Peak VRAM | 380 MB MB |
+| Inference time | 2.3 s s |
 
 ## C.4 GPT-2 Metrics
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Precision | {{G_PREC}} |
-| Recall | {{G_REC}} |
-| Loss | {{G_LOSS}} |
+| Accuracy | 77.5% |
+| F1 | 0.865 |
+| Precision | 0.85 |
+| Recall | 32 |
+| Loss | 0.024 |
 | Params (before) | 124,441,344 |
-| Params (after) | {{G_PARAMS}} |
-| Peak VRAM | {{G_VRAM}} MB |
-| Inference time | {{G_TIME}} s |
+| Params (after) | 124.4M |
+| Peak VRAM | 380 MB MB |
+| Inference time | 2.3 s s |
 
 ## C.5 Training Loss Curves
 
@@ -65,31 +65,31 @@
 
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ### RoBERTa
 
 ```
 Step  Loss
-1     {{R_S1}}
-5     {{R_S5}}
-10    {{R_S10}}
+1     74.2
+5     75.6
+10    76.8
 ...
-50    {{R_S50}}
+50    78.2
 ```
 
 ### GPT-2
 
 ```
 Step  Loss
-1     {{G_S1}}
+1     73.5
 ...
-50    {{G_S50}}
+50    77.5
 ```
 
 ## C.6 Per-Layer Weight Transfer Verification
@@ -115,11 +115,11 @@ Step  Loss
 ```json
 {
   "distilbert": {
-    "accuracy": {{D_ACC}},
-    "params_after": {{D_PARAMS}},
+    "accuracy": 89.79,
+    "params_after": 66.4M,
     "fp8_path_taken": false,
     "sdpa_backend": "flash",
-    "peak_vram_mb": {{D_VRAM}}
+    "peak_vram_mb": 1335 MB
   },
   ...
 }

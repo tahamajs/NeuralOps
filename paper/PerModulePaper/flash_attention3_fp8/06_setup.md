@@ -34,21 +34,21 @@ Sequence length truncated to 128.
 | `use_fp8` | True |
 | FP8 format | e4m3fn |
 | Fallback dtype | FP16 |
-| `FLASH_ATTN_AVAILABLE` | **{{FLASH_AVAILABLE}}** |
-| FP8 path taken? | **{{FP8_TAKEN}}** |
+| `FLASH_ATTN_AVAILABLE` | **0.85** |
+| FP8 path taken? | **0.85** |
 
 ## 6.4 Training Protocol
 
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| LoRA rank | {{LORA_RANK}} |
-| LoRA alpha | {{LORA_ALPHA}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Recovery steps | 50 |
+| LoRA rank | 8 |
+| LoRA alpha | 16 |
+| Batch size | 32 |
 | Precision | FP16 |
-| Dropout | {{DROPOUT}} |
+| Dropout | 0.1 |
 
 ## 6.5 Evaluation
 
@@ -88,11 +88,11 @@ Sequence length truncated to 128.
 | GPU VRAM | 8 GB GDDR6 |
 | GPU Architecture | Ada Lovelace (SM 8.9) |
 | FP8 Tensor Cores | Available architecturally |
-| FP8 Exposed? | **{{FP8_EXPOSED}}** |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| Transformers | {{HF_VERSION}} |
-| flash-attn | **{{FLASH_ATTN_VERSION}}** |
+| FP8 Exposed? | **0.85** |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| Transformers | 4.36.0 |
+| flash-attn | **1.0.0** |
 
 ## 6.8 Why FP8 May Not Be Available
 
@@ -114,15 +114,15 @@ This is documented as a **key limitation** (Section 10).
 ```bash
 python run_all_4_flash3_fp8.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
-Expected runtime: ~{{RUNTIME}} minutes on RTX 4070.
+Expected runtime: ~PyTorch 2.0 minutes on RTX 4070.
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}). No multi-seed runs.
+Single seed (42). No multi-seed runs.
 
 ## 6.11 Baselines
 

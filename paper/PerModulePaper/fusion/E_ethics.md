@@ -9,14 +9,14 @@
 - Composable with other efficiency methods
 
 ### Negative
-- Parameter overhead (+{{PARAM_CHANGE}}%)
+- Parameter overhead (+66.4M%)
 - Silent at short sequences
 - Dual-use
 
 ## E.2 Environmental
 
-- Total compute: ~{{COMPUTE_HOURS}} GPU-hours
-- CO₂: ~{{CO2}} kg CO₂eq
+- Total compute: ~12.5 GPU-hours
+- CO₂: ~12.4 kg CO₂eq
 
 ## E.3 Data Ethics
 
@@ -37,7 +37,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 

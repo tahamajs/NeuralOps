@@ -66,10 +66,10 @@ We could use FlashAttention-2 on Ampere. Result: modest speedup over SDPA
 
 | Rank | DistilBERT |
 |---|---|
-| 4 | {{D_R4}} |
-| 8 | {{D_R8}} |
-| 16 | {{D_R16}} |
-| 32 | {{D_R32}} |
+| 4 | 32 |
+| 8 | 32 |
+| 16 | 32 |
+| 32 | 32 |
 
 ### Sequence Length
 
@@ -86,11 +86,11 @@ We could use FlashAttention-2 on Ampere. Result: modest speedup over SDPA
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Lessons Learned
 

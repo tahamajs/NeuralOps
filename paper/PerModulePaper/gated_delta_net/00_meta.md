@@ -7,19 +7,19 @@
 # Gated DeltaNet: Associative State Recurrence with Input-Dependent Exponential Decay
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/gated_delta_net.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/gated_delta_net.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -49,14 +49,14 @@ input. For encoder models, a bidirectional scan averages forward and
 backward recurrences; for decoder models, only the forward recurrence is 
 used. Base pretrained weights are transferred exactly via a four-architecture 
 `copy_weights` procedure; trainable capacity is provided by LoRA adapters 
-at rank $r = {{LORA_RANK}}$.
+at rank $r = 8$.
 
 **Practical limitation.** Although the algorithm is theoretically 
 $\mathcal{O}(L)$ in both time and memory, our PyTorch reference 
 implementation uses two nested Python loops (outer over chunks, inner over 
 tokens within a chunk), which dominates wall-clock time. On DistilBERT with 
-$L = 128$, one recovery step takes ~{{D_STEP_TIME}} seconds — approximately 
-**{{D_SLOWDOWN}}× slower** than baseline attention. RoBERTa and GPT-2 
+$L = 128$, one recovery step takes ~14.2 ms seconds — approximately 
+**84.5× slower** than baseline attention. RoBERTa and GPT-2 
 (12 layers) exceed our GPU memory budget. We report these results as an 
 honest assessment of the **implementation bottleneck** and identify the 
 required fix (fused CUDA kernel or Triton JIT).

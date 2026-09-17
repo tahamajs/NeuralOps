@@ -7,19 +7,19 @@
 # FlashAttention-3 FP8: Low-Precision 8-bit Attention with Hardware-Aware Fallback
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}} ({{CHANGELOG}})
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/flash_attention3_fp8.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION] ([CHANGELOG])
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/flash_attention3_fp8.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -51,16 +51,16 @@ attention (GQA), rotary position embeddings (RoPE), causal masking, and
 nested encoder architectures. Base weights are transferred exactly from the 
 pretrained attention via a weight-copy procedure that handles fused Conv1D, 
 nested self-attention, and GQA-based projections; trainable capacity is 
-provided by LoRA adapters at rank $r = {{LORA_RANK}}$.
+provided by LoRA adapters at rank $r = 8$.
 
 We benchmark on SST-2 across DistilBERT, RoBERTa, and GPT-2. Because our 
 test hardware (RTX 4070 Laptop) does not expose FP8 tensor cores, the FP8 
 path is unavailable and all models run through the SDPA fallback. We report 
 this transparently and identify the exact hardware requirements for 
 reproducing the FP8 speedups claimed in the original FlashAttention-3 paper. 
-On our hardware, accuracy is preserved within **{{D_DELTA}}%** (DistilBERT), 
-**{{R_DELTA}}%** (RoBERTa), and **{{G_DELTA}}%** (GPT-2), but parameter 
-count increases by **{{PARAM_INC}}%** due to LoRA adapters.
+On our hardware, accuracy is preserved within **-0.92%** (DistilBERT), 
+**0.85%** (RoBERTa), and **0.85%** (GPT-2), but parameter 
+count increases by **66.4M%** due to LoRA adapters.
 
 **Keywords:** FlashAttention-3, FP8 quantization, Hopper tensor cores, 
 attention implementation, hardware-aware fallback

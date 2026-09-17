@@ -53,8 +53,8 @@ For DistilBERT at $L = 512$:
 | Metric | Baseline | FUSIONATTN | Change |
 |---|---|---|---|
 | Attention FLOPs | 262K | 65K | **4× reduction** |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M |
+| Accuracy | 90.71% | 86.4% | 0.85% |
+| Params | 66.9M | 66.4MM | +-32MM |
 | Gate overhead | 0 | ~32K params | +0.05% |
 
 ## 9.5 Comparison with Published Methods
@@ -77,7 +77,7 @@ For DistilBERT at $L = 512$:
 - Long path: $O(K \cdot L \cdot B)$ instead of $O(L^2)$.
 
 ### Parameter Overhead
-- +{{PARAM_CHANGE}}% via LoRA + gate.
+- +66.4M% via LoRA + gate.
 
 ## 9.7 Open Questions
 
@@ -99,6 +99,6 @@ For DistilBERT at $L = 512$:
 - Dual-use
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

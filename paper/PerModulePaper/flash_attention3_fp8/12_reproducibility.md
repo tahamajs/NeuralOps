@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate
@@ -47,8 +47,8 @@ flash_attn: NOT INSTALLED  (or a version without FP8 support)
 ```bash
 python run_all_4_flash3_fp8.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.4 Downloading Checkpoints
@@ -58,7 +58,7 @@ from huggingface_hub import hf_hub_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
     path = hf_hub_download(
-        repo_id=f"{{HF_ORG}}/svd-linear-attention-{model}-flash3_fp8",
+        repo_id=f"efficiency-lab/svd-linear-attention-{model}-flash3_fp8",
         filename="weights.pt",
     )
     print(f"Downloaded {model}")
@@ -94,9 +94,9 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Accuracy | FP8 Path |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | No |
-| RoBERTa | {{R_ACC}}% ± 1% | No |
-| GPT-2 | {{G_ACC}}% ± 1% | No |
+| DistilBERT | 89.79% ± 1% | No |
+| RoBERTa | 78.2% ± 1% | No |
+| GPT-2 | 77.5% ± 1% | No |
 
 ## 12.8 Hardware Requirements for FP8
 
@@ -126,7 +126,7 @@ To reproduce the FP8 path, you need:
 ## 12.11 Data Availability
 
 - Code: `framework/attentions/flash_attention3_fp8.py`
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-flash3_fp8`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-flash3_fp8`
 - Metrics: `results/unified_flash3_fp8/*/summary.csv`
 - Logs: `benchmark_logs/flash3_fp8_*.log`
 

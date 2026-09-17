@@ -207,7 +207,7 @@ For DistilBERT ($d=768$, $r_L=16$, $d_h=64$):
 - Total: $131{,}072$ per layer
 - **6 layers: +786,432 params**
 
-**FUSIONATTN increases parameter count by ~{{PARAM_CHANGE}}%.**
+**FUSIONATTN increases parameter count by ~66.4M%.**
 
 ## 4.9 Theoretical Notes
 

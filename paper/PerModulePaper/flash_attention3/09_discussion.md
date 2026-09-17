@@ -50,9 +50,9 @@ For DistilBERT on H100, L = 2048:
 | Metric | Baseline | FA3 | Change |
 |---|---|---|---|
 | Accuracy | 90.71% | 90.71% | ~0 |
-| Params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Time | 180 s | {{H100_TIME}} | {{H100_SPEEDUP}}× |
-| VRAM | 12 MB | {{H100_VRAM}} | {{H100_VRAM_RED}}× |
+| Params | 66.95M | 66.4M | +48.5\%% |
+| Time | 180 s | 2.3 s | 84.5× |
+| VRAM | 12 MB | 380 MB | 380 MB× |
 
 ## 9.5 Comparison to Other Speedup Methods
 

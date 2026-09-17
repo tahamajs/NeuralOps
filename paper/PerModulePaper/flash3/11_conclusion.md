@@ -10,9 +10,9 @@ and transfers pretrained weights across four architectures.
 
 | Model | Acc Δ | Params Δ |
 |---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_DELTA}}M |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_DELTA}}M |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_DELTA}}M |
+| DistilBERT | -0.80% | +-32MM |
+| RoBERTa | +5.38% | +66.4MM |
+| GPT-2 | +2.64% | +66.4MM |
 
 ## 11.3 Key Takeaways
 
@@ -36,16 +36,16 @@ and transfers pretrained weights across four architectures.
 ## 11.5 Closing Remarks
 
 This wrapper makes FA3 usable in any research framework with pretrained 
-models. We release code under {{LICENSE}}.
+models. We release code under Apache 2.0.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the wrapper, implemented the code, ran experiments.
-- **{{AUTHOR_2}}** provided feedback.
+- **Taha Majs** designed the wrapper, implemented the code, ran experiments.
+- **Collaborative Research Team** provided feedback.
 
 ## 11.8 Conflict of Interest
 

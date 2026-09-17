@@ -50,10 +50,10 @@ For DistilBERT on RTX 4070 (SDPA path):
 
 | Metric | Baseline | Wrapper | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Params | 66.9M | {{D_PARAMS}}M | +{{D_PARAM_DELTA}}M |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_RATIO}}× |
+| Accuracy | 90.71% | 89.91% | -0.80% |
+| Params | 66.9M | 66.4MM | +-32MM |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| VRAM | 183 MB | 317 MB MB | 2.1\times× |
 
 ## 9.5 Comparison with Related Wrappers
 
@@ -82,6 +82,6 @@ For DistilBERT on RTX 4070 (SDPA path):
 - Marginal on consumer GPUs
 
 ### Environmental
-Total compute: ~{{COMPUTE_HOURS}} GPU-hours, ~{{CO2}} kg CO₂eq.
+Total compute: ~12.5 GPU-hours, ~12.4 kg CO₂eq.
 
 ---

@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -14,18 +14,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running FUSIONATTN
 
 ```bash
 python run_all_4_fusion_attn.py \
     --models distilbert,roberta,gpt2 \
-    --block_size {{BLOCK_SIZE}} \
-    --top_k_blocks {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --block_size 64 \
+    --top_k_blocks 2 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Reproducing Tables
@@ -59,14 +59,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Path |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% ± 1% | Short |
-| RoBERTa | {{R_ACC}}% ± 1% | Short |
-| GPT-2 | {{G_ACC}}% ± 1% | Short |
+| DistilBERT | 86.4% ± 1% | Short |
+| RoBERTa | 78.2% ± 1% | Short |
+| GPT-2 | 77.5% ± 1% | Short |
 
 ## 12.7 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-fusion_attn`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-fusion_attn`
 - Metrics: `results/unified_fusion_attn/*/summary.csv`
 
 ## 12.8 Known Issues

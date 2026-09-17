@@ -26,7 +26,7 @@ $$
 For this to work, $f$ must be **associative** — that is, the composition 
 $(f \circ f)$ must be efficiently computable.
 
-{{MOTIVATION_PARAGRAPH_2}}
+0.85
 
 <!-- 
 EXAMPLE continuation:

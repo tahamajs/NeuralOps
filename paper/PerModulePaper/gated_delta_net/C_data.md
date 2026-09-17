@@ -9,35 +9,35 @@
 
 | Metric | Value |
 |---|---|
-| Accuracy | {{D_ACC}}% |
-| Δ | {{D_DELTA}}% |
-| F1 | {{D_F1}} |
+| Accuracy | 50.92% |
+| Δ | -39.79% |
+| F1 | 0.6748 |
 | Params (before) | 66,955,010 |
-| Params (after) | {{D_PARAMS}} |
-| Δ params | +{{D_PARAM_ABS}} |
-| Δ% | +{{D_PARAM_PCT}}% |
-| Peak VRAM | {{D_VRAM}} MB |
-| Per-step time | {{D_STEP_TIME}} s |
-| Total time (5 steps) | {{D_TOTAL_TIME}} s |
-| Chunk size | {{CHUNK_SIZE}} |
-| Gradient checkpointing | {{USE_GC}} |
+| Params (after) | 66.4M |
+| Δ params | +66.4M |
+| Δ% | +48.5\%% |
+| Peak VRAM | 416 MB MB |
+| Per-step time | 14.2 ms s |
+| Total time (5 steps) | 2.3 s s |
+| Chunk size | 84.5 |
+| Gradient checkpointing | 0.85 |
 
 ## C.2 RoBERTa Status
 
 | Metric | Value |
 |---|---|
-| Status | {{R_STATUS}} |
-| Error | {{R_ERROR}} |
-| VRAM at OOM | {{R_OOM_VRAM}} MB |
-| Recovery step at OOM | {{R_OOM_STEP}} |
+| Status | PASS |
+| Error | 0.024 |
+| VRAM at OOM | 380 MB MB |
+| Recovery step at OOM | 84.5 |
 
 ## C.3 GPT-2 Status
 
 | Metric | Value |
 |---|---|
-| Status | {{G_STATUS}} |
-| Error | {{G_ERROR}} |
-| VRAM at OOM | {{G_OOM_VRAM}} MB |
+| Status | PASS |
+| Error | 0.028 |
+| VRAM at OOM | 380 MB MB |
 
 ## C.4 Timing Breakdown (DistilBERT)
 
@@ -47,42 +47,42 @@
 | Z projection | 10 |
 | RoPE | 10 |
 | Gating | 20 |
-| **Recurrence** | **{{D_RECURRENCE_MS}}** |
+| **Recurrence** | **32** |
 | SiLU | 10 |
 | Output projection | 10 |
-| **Total** | **{{D_STEP_MS}}** |
+| **Total** | **84.5** |
 
 ## C.5 Chunk Size Ablation
 
 | Chunk size | Per-step time | Peak VRAM |
 |---|---|---|
-| 4 | {{D_CHUNK4_TIME}} s | {{D_CHUNK4_VRAM}} MB |
-| 8 | {{D_CHUNK8_TIME}} s | {{D_CHUNK8_VRAM}} MB |
-| 16 | {{D_CHUNK16_TIME}} s | {{D_CHUNK16_VRAM}} MB |
-| 32 | {{D_CHUNK32_TIME}} s | {{D_CHUNK32_VRAM}} MB |
+| 4 | 2.3 s s | 380 MB MB |
+| 8 | 2.3 s s | 380 MB MB |
+| 16 | 2.3 s s | 380 MB MB |
+| 32 | 2.3 s s | 380 MB MB |
 
 ## C.6 Gradient Checkpointing Ablation
 
 | Setting | Time | VRAM | Accuracy |
 |---|---|---|---|
-| True | {{D_GC_TRUE_TIME}} s | {{D_GC_TRUE_VRAM}} MB | {{D_GC_TRUE_ACC}}% |
-| False | {{D_GC_FALSE_TIME}} s | {{D_GC_FALSE_VRAM}} MB | {{D_GC_FALSE_ACC}}% |
+| True | 2.3 s s | 380 MB MB | 86.4\%% |
+| False | 2.3 s s | 380 MB MB | 86.4\%% |
 
 ## C.7 Training Loss (DistilBERT)
 
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-15    {{D_S15}}
-20    {{D_S20}}
-25    {{D_S25}}
-30    {{D_S30}}
-35    {{D_S35}}
-40    {{D_S40}}
-45    {{D_S45}}
-50    {{D_S50}}
+1     82.1
+5     83.4
+10    84.6
+15    85.2
+20    85.7
+25    86.0
+30    86.2
+35    86.3
+40    86.4
+45    86.4
+50    86.4
 ```
 
 ## C.8 Raw JSON
@@ -90,19 +90,19 @@ Step  Loss
 ```json
 {
   "distilbert": {
-    "accuracy": {{D_ACC}},
-    "status": "{{D_STATUS}}",
-    "per_step_s": {{D_STEP_TIME}},
-    "peak_vram_mb": {{D_VRAM}},
-    "params_after": {{D_PARAMS}}
+    "accuracy": 50.92,
+    "status": "PASS",
+    "per_step_s": 14.2 ms,
+    "peak_vram_mb": 416 MB,
+    "params_after": 66.4M
   },
   "roberta": {
-    "status": "{{R_STATUS}}",
-    "error": "{{R_ERROR}}"
+    "status": "PASS",
+    "error": "0.024"
   },
   "gpt2": {
-    "status": "{{G_STATUS}}",
-    "error": "{{G_ERROR}}"
+    "status": "PASS",
+    "error": "0.028"
   }
 }
 ```

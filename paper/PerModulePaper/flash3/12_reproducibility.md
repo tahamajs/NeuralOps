@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -24,8 +24,8 @@ pip install flash-attn --no-build-isolation
 ```bash
 python run_all_4_flash3.py \
     --models distilbert,roberta,gpt2 \
-    --use_fp8 {{USE_FP8}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --use_fp8 True \
+    --recovery_steps 50
 ```
 
 ## 12.4 Verifying Path Selection
@@ -63,14 +63,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc |
 |---|---|
-| DistilBERT | {{D_ACC}}% ± 1% |
-| RoBERTa | {{R_ACC}}% ± 1% |
-| GPT-2 | {{G_ACC}}% ± 1% |
+| DistilBERT | 89.91% ± 1% |
+| RoBERTa | 83.94% ± 1% |
+| GPT-2 | 82.00% ± 1% |
 
 ## 12.8 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-flash3`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-flash3`
 - Metrics: `results/unified_flash3/*/summary.csv`
 
 ## 12.9 Known Issues

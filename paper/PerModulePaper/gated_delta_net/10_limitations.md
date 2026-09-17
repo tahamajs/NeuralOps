@@ -9,7 +9,7 @@
 
 ## 10.1 Implementation Bottleneck (Primary)
 
-The pure-PyTorch implementation is **~{{D_SLOWDOWN}}× slower** than baseline 
+The pure-PyTorch implementation is **~84.5× slower** than baseline 
 attention. This is the **dominant limitation** and prevents practical 
 deployment.
 

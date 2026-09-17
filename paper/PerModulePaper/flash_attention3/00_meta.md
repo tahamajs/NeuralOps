@@ -1,19 +1,19 @@
 # FlashAttention-3: Exact Attention with IO-Aware Memory Management
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/flash_attention3.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/flash_attention3.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -43,14 +43,14 @@ pretrained transformer attention. Our implementation:
 
 1. **No parameter reduction.** FlashAttention is an **algorithm**, not a 
    compression method. Parameter count changes only by the LoRA adapters 
-   (+{{D_PARAM_PCT}}%). We make no compressive claims.
+   (+48.5\%%). We make no compressive claims.
 2. **No speedup without the FA3 kernel.** When `flash_attn` is not installed 
    (e.g., on non-Hopper GPUs or with an incompatible CUDA version), our 
    implementation falls back to PyTorch SDPA. This fallback is functionally 
    identical but numerically slower.
 
 On SST-2, the module produces baseline-identical accuracy (since attention 
-is exact) with only LoRA-induced variance of **{{D_DELTA}}%**. The primary 
+is exact) with only LoRA-induced variance of **-0.46%**. The primary 
 contribution is a **drop-in integration** of FlashAttention-3 into existing 
 pretrained models with correct weight transfer.
 

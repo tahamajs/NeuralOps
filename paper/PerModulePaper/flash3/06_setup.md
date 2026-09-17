@@ -16,9 +16,9 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 
 | Hyperparameter | Value |
 |---|---|
-| `use_fp8` | {{USE_FP8}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `use_fp8` | True |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 | `dropout` | 0.1 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -26,10 +26,10 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Hardware
@@ -38,9 +38,9 @@ SST-2: 67,349 train / 872 val / 1,821 test. Majority baseline: 50.92%.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
-| FlashAttention | {{FA_STATUS}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
+| FlashAttention | 84.5 |
 
 **Critical.** On RTX 4070 (Ada Lovelace), FlashAttention-3 is not available 
 (requires Hopper). Our wrapper uses SDPA fallback for all experiments.
@@ -61,9 +61,9 @@ PASS ≥ 56%, PASS_LOW 50.92%–56%, FAIL < 50.92%.
 ```bash
 python run_all_4_flash3.py \
     --models distilbert,roberta,gpt2 \
-    --use_fp8 {{USE_FP8}} \
-    --lora_rank {{LORA_RANK}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --use_fp8 True \
+    --lora_rank 8 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines

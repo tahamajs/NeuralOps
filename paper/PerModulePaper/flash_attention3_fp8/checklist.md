@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `flash3_fp8/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module flash3_fp8`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## CRITICAL — Hardware Honesty
 - [ ] Abstract states FP8 path was NOT taken on RTX 4070

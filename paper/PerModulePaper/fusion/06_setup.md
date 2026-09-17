@@ -17,10 +17,10 @@ SST-2: 67,349 train / 872 val / 1,821 test. **Sequence length: 128**
 
 | Hyperparameter | Value |
 |---|---|
-| `block_size` | {{BLOCK_SIZE}} |
-| `top_k_blocks` | {{TOP_K}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `block_size` | 64 |
+| `top_k_blocks` | 2 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 | Dispatch threshold | 128 |
 
 ## 6.4 Recovery
@@ -28,10 +28,10 @@ SST-2: 67,349 train / 872 val / 1,821 test. **Sequence length: 128**
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Quality Gate
@@ -40,16 +40,16 @@ PASS ≥ 56%, PASS_LOW 50.92%–56%, FAIL < 50.92%.
 
 ## 6.6 Hardware
 
-RTX 4070 Laptop, CUDA {{CUDA_VERSION}}, PyTorch {{TORCH_VERSION}}.
+RTX 4070 Laptop, CUDA 12.1, PyTorch 2.1.2.
 
 ## 6.7 Reproduction
 
 ```bash
 python run_all_4_fusion_attn.py \
     --models distilbert,roberta,gpt2 \
-    --block_size {{BLOCK_SIZE}} \
-    --top_k_blocks {{TOP_K}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --block_size 64 \
+    --top_k_blocks 2 \
+    --recovery_steps 50
 ```
 
 ## 6.8 Baselines

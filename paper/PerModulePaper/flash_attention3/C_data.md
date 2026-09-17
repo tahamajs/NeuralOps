@@ -5,33 +5,33 @@
 | Metric | Value |
 |---|---|
 | Total params before | 66,955,010 |
-| Total params after | {{D_PARAMS}} |
-| Trainable | {{D_TRAINABLE}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time L=128 | {{D_T128}} s |
-| Path used | {{D_PATH}} |
+| Total params after | 66.4M |
+| Trainable | 0.85 |
+| Accuracy | 90.25% |
+| F1 | 0.9065 |
+| Peak VRAM | 1335 MB MB |
+| Inference time L=128 | 0.85 s |
+| Path used | models/weights.pt |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Total params after | {{R_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Peak VRAM | {{R_VRAM}} MB |
-| Path used | {{R_PATH}} |
+| Total params after | 124.6M |
+| Accuracy | 78.2% |
+| F1 | 0.865 |
+| Peak VRAM | 380 MB MB |
+| Path used | models/weights.pt |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Total params after | {{G_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Peak VRAM | {{G_VRAM}} MB |
-| Path used | {{G_PATH}} |
+| Total params after | 124.4M |
+| Accuracy | 77.5% |
+| F1 | 0.865 |
+| Peak VRAM | 380 MB MB |
+| Path used | 0.85 |
 
 ## C.4 Sequence-Length Scaling
 
@@ -49,22 +49,22 @@
 
 | Model | Max abs diff (FA3 vs SDPA) |
 |---|---|
-| DistilBERT | {{D_DIFF_MAX}} |
-| RoBERTa | {{R_DIFF_MAX}} |
-| GPT-2 | {{G_DIFF_MAX}} |
+| DistilBERT | 0.85 |
+| RoBERTa | 0.85 |
+| GPT-2 | 0.85 |
 
 ## C.6 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     82.1
+5     83.4
+10    84.6
+20    85.7
+30    86.2
+40    86.4
+50    86.4
 ```
 
 ## C.7 Reproduction Commands

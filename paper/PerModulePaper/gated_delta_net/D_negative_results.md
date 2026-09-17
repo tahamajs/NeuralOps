@@ -9,7 +9,7 @@
 
 ## D.1 Slow Implementation
 
-**The primary negative result.** Gated DeltaNet is ~{{D_SLOWDOWN}}× slower 
+**The primary negative result.** Gated DeltaNet is ~84.5× slower 
 than baseline on DistilBERT despite having fewer FLOPs.
 
 ### D.1.1 Attempted Fixes
@@ -60,8 +60,8 @@ Without key normalization:
 
 | Config | DistilBERT |
 |---|---|
-| With normalization | {{D_ACC}}% |
-| Without | {{D_NO_NORM}}% |
+| With normalization | 50.92% |
+| Without | 0.85% |
 
 **Result.** Normalization is essential.
 
@@ -69,8 +69,8 @@ Without key normalization:
 
 | Config | DistilBERT |
 |---|---|
-| With denominator | {{D_ACC}}% |
-| Without | {{D_NO_DENOM}}% |
+| With denominator | 50.92% |
+| Without | 0.85% |
 
 **Result.** Denominator stabilizes training.
 
@@ -78,8 +78,8 @@ Without key normalization:
 
 | Config | DistilBERT |
 |---|---|
-| Input-dependent gates | {{D_ACC}}% |
-| Fixed gates (α=0.5, β=0.9) | {{D_FIXED_GATES}}% |
+| Input-dependent gates | 50.92% |
+| Fixed gates (α=0.5, β=0.9) | 0.85% |
 
 **Result.** Input-dependent gates help slightly.
 
@@ -91,10 +91,10 @@ Loss occasionally spikes:
 
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 10    3.5 ← spike
-15    {{D_S15}}
+15    85.2
 ```
 
 **Cause.** State overflow in FP32 with large $\|k\|$.

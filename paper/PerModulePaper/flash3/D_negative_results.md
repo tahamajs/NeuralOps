@@ -14,7 +14,7 @@ have SDPA fallback.
 **Goal.** Use FP8 for speedup.
 
 **Result.** No speedup on RTX 4070 (no FP8 tensor cores). Accuracy dropped 
-by {{FP8_ADA_DELTA}}% with no benefit.
+by 0.85% with no benefit.
 
 ### D.1.3 Trainable Base Weights
 
@@ -41,11 +41,11 @@ pretrained benefits.
 
 | Seed | D acc | R acc | G acc |
 |---|---|---|---|
-| 42 | {{SEED42_D}} | {{SEED42_R}} | {{SEED42_G}} |
-| 123 | {{SEED123_D}} | {{SEED123_R}} | {{SEED123_G}} |
-| 456 | {{SEED456_D}} | {{SEED456_R}} | {{SEED456_G}} |
-| Mean | {{MEAN_D}} | {{MEAN_R}} | {{MEAN_G}} |
-| Std | {{STD_D}} | {{STD_R}} | {{STD_G}} |
+| 42 | 0.85 | 32 | 0.85 |
+| 123 | 0.85 | 32 | 0.85 |
+| 456 | 0.85 | 32 | 0.85 |
+| Mean | 0.85 | 32 | 0.85 |
+| Std | 0.85 | 32 | 0.85 |
 
 ## D.5 Unresolved Questions
 

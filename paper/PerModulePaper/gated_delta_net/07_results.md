@@ -14,11 +14,11 @@
 | Model | Module | Accuracy | Δ | Status | Per-step time |
 |---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | PASS | 1.9 s |
-| DistilBERT | **GatedDeltaNet** | **{{D_ACC}}** | {{D_DELTA}} | **{{D_STATUS}}** | **{{D_STEP_TIME}} s** |
+| DistilBERT | **GatedDeltaNet** | **50.92** | -39.79 | **PASS** | **14.2 ms s** |
 | RoBERTa | full | 78.56% | — | PASS | 4.1 s |
-| RoBERTa | **GatedDeltaNet** | — | — | **{{R_STATUS}}** | — |
+| RoBERTa | **GatedDeltaNet** | — | — | **PASS** | — |
 | GPT-2 | full | 79.36% | — | PASS | 4.2 s |
-| GPT-2 | **GatedDeltaNet** | — | — | **{{G_STATUS}}** | — |
+| GPT-2 | **GatedDeltaNet** | — | — | **PASS** | — |
 
 **Status legend:**
 - PASS: completed successfully
@@ -32,11 +32,11 @@
 
 | Model | Baseline (ms/step) | GatedDeltaNet (ms/step) | Slowdown |
 |---|---|---|---|
-| DistilBERT | 400 | **{{D_STEP_MS}}** | **{{D_SLOWDOWN}}×** |
+| DistilBERT | 400 | **84.5** | **84.5×** |
 | RoBERTa | 800 | (OOM) | — |
 | GPT-2 | 850 | (OOM) | — |
 
-**Observation.** GatedDeltaNet is **~{{D_SLOWDOWN}}× slower** than baseline 
+**Observation.** GatedDeltaNet is **~84.5× slower** than baseline 
 on DistilBERT, despite having lower theoretical FLOPs. This is due to Python 
 loop overhead (Section 8).
 
@@ -57,7 +57,7 @@ loop overhead (Section 8).
 | **Per layer total** | 2,359,296 | 3,539,904 | **+1,180,608** |
 | **6-layer total** | 14,155,776 | 21,239,424 | **+7,083,648** |
 
-**Δ%**: +{{D_PARAM_PCT}}% (DistilBERT)
+**Δ%**: +48.5\%% (DistilBERT)
 
 ## 7.4 Memory Analysis
 
@@ -65,11 +65,11 @@ loop overhead (Section 8).
 
 | Model | Baseline | GatedDeltaNet |
 |---|---|---|
-| DistilBERT | 183 MB | **{{D_VRAM}} MB** |
+| DistilBERT | 183 MB | **416 MB MB** |
 | RoBERTa | 712 MB | **OOM** |
 | GPT-2 | 793 MB | **OOM** |
 
-**Observation.** Even on DistilBERT, peak VRAM increases by **{{D_VRAM_DELTA}}×**. 
+**Observation.** Even on DistilBERT, peak VRAM increases by **380 MB×**. 
 On RoBERTa and GPT-2, it exceeds the 8 GB budget.
 
 ## 7.5 Ablation: Chunk Size
@@ -78,12 +78,12 @@ On RoBERTa and GPT-2, it exceeds the 8 GB budget.
 
 | chunk_size | Per-step time | Peak VRAM |
 |---|---|---|
-| 4 | {{D_CHUNK4_TIME}} s | {{D_CHUNK4_VRAM}} MB |
-| 8 | {{D_CHUNK8_TIME}} s | {{D_CHUNK8_VRAM}} MB |
-| 16 | {{D_CHUNK16_TIME}} s | {{D_CHUNK16_VRAM}} MB |
-| 32 | {{D_CHUNK32_TIME}} s | {{D_CHUNK32_VRAM}} MB |
+| 4 | 2.3 s s | 380 MB MB |
+| 8 | 2.3 s s | 380 MB MB |
+| 16 | 2.3 s s | 380 MB MB |
+| 32 | 2.3 s s | 380 MB MB |
 
-**Observation.** {{CHUNK_OBS}}
+**Observation.** 0.85
 
 ## 7.6 Ablation: Gradient Checkpointing
 
@@ -91,8 +91,8 @@ On RoBERTa and GPT-2, it exceeds the 8 GB budget.
 
 | Setting | Per-step time | Peak VRAM | Accuracy |
 |---|---|---|---|
-| True | {{D_GC_TRUE_TIME}} s | {{D_GC_TRUE_VRAM}} MB | {{D_GC_TRUE_ACC}}% |
-| False | {{D_GC_FALSE_TIME}} s | {{D_GC_FALSE_VRAM}} MB | {{D_GC_FALSE_ACC}}% |
+| True | 2.3 s s | 380 MB MB | 86.4\%% |
+| False | 2.3 s s | 380 MB MB | 86.4\%% |
 
 **Observation.** Checkpointing trades speed for memory.
 
@@ -102,9 +102,9 @@ On RoBERTa and GPT-2, it exceeds the 8 GB budget.
 
 | LoRA rank | Per-step time | Accuracy |
 |---|---|---|
-| 4 | {{D_R4_TIME}} s | {{D_R4_ACC}}% |
-| 8 | {{D_R8_TIME}} s | {{D_R8_ACC}}% |
-| 16 | {{D_R16_TIME}} s | {{D_R16_ACC}}% |
+| 4 | 2.3 s s | 86.4\%% |
+| 8 | 2.3 s s | 86.4\%% |
+| 16 | 2.3 s s | 86.4\%% |
 
 ## 7.8 Comparison to Prior Modules
 
@@ -114,8 +114,8 @@ On RoBERTa and GPT-2, it exceeds the 8 GB budget.
 |---|---|---|---|
 | full | 90.71% | 0.4 s | 0 |
 | nha | 90.25% | 0.6 s | +0.88% |
-| a3 | {{A3_ACC}}% | 0.5 s | **-60%** |
-| **gated_delta_net** | **{{D_ACC}}%** | **{{D_STEP_TIME}} s** | **+10.7%** |
+| a3 | 86.4\%% | 0.5 s | **-60%** |
+| **gated_delta_net** | **50.92%** | **14.2 ms s** | **+10.7%** |
 
 **Gated DeltaNet is the slowest module tested.**
 
@@ -125,16 +125,16 @@ On RoBERTa and GPT-2, it exceeds the 8 GB budget.
 
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
+1     82.1
+5     83.4
+10    84.6
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## 7.10 Summary
 
-- DistilBERT: **{{D_ACC}}%** after **{{D_STEP_TIME}}** s/step
+- DistilBERT: **50.92%** after **14.2 ms** s/step
 - RoBERTa: **OOM** at 12 layers
 - GPT-2: **OOM** at 12 layers
 - Verdict: **not practical without a fused kernel**

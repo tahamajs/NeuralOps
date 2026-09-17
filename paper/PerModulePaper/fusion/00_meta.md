@@ -1,18 +1,18 @@
 # FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention with Block Gating and Short-Sequence Fast Path
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- 0.85² — 0.85
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ 0.85, 0.85
+- ² 0.85, 0.85
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/fusion_attn.py
-**License:** {{LICENSE}}
+**Corresponding author:** 0.85
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/fusion_attn.py
+**License:** Apache 2.0
 
 ---
 
@@ -46,8 +46,8 @@ takes the **short path** and produces output identical to the pretrained
 model with no sparsity benefit.
 
 We evaluate on DistilBERT, RoBERTa-base, and GPT-2 on SST-2 with 
-{{RECOVERY_STEPS}} LoRA recovery steps. FUSIONATTN achieves 
-**{{D_ACC}}%** on DistilBERT, **{{R_ACC}}%** on RoBERTa, and **{{G_ACC}}%** 
+50 LoRA recovery steps. FUSIONATTN achieves 
+**86.4%** on DistilBERT, **78.2%** on RoBERTa, and **77.5%** 
 on GPT-2, matching the SDPA baseline within noise.
 
 **Keywords:** hybrid sparse attention, block gating, MoBA, short-sequence 
