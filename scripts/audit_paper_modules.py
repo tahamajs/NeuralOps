@@ -1,5 +1,6 @@
 """audit_paper_modules.py — Classify PerModulePaper modules."""
 import json
+import re
 from pathlib import Path
 
 PAPER_DIR = Path("paper/PerModulePaper")
@@ -31,14 +32,14 @@ def classify(module_dir: Path) -> str:
     if is_stub:
         return "stub"
     
-    # Check for template variables
+    # Check for template variables like {{MODULE_NAME}} or {{ACCURACY}}
     has_template_var = False
     for f in all_files:
         try:
             text = f.read_text(encoding="utf-8", errors="ignore")
         except Exception:
             continue
-        if "{{" in text and "}}" in text:
+        if re.search(r"\{\{[A-Z0-9_]+\}\}", text):
             has_template_var = True
             break
             
