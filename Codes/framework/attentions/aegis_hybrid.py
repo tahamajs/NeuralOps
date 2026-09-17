@@ -1007,7 +1007,7 @@ def inject_aegis_hybrid(
         elif hasattr(target, "self"):
             target.self = new_attn
         elif hasattr(target, "attn"):
-            layer.attn = new_attn
+            target.attn = new_attn
 
         return new_attn
     except Exception as e:
