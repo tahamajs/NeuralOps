@@ -779,6 +779,10 @@ def inject_attention(
         replaced += 1
 
     logger.info("Successfully injected '%s' into %d transformer blocks.", attention_type, replaced)
+    if not hasattr(model, "compression_stats"):
+        model.compression_stats = {}
+    model.compression_stats["num_compressed"] = replaced
+    model.compression_stats["total_params_after"] = sum(p.numel() for p in model.parameters())
     return model
 
 
