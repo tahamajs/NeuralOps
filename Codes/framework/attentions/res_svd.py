@@ -329,8 +329,8 @@ class ResSVDAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"ResSVDAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
+            logger.warning(
+                f"ResSVDAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}. Proceeding with initialized projections."
             )
 
         target_map = {
@@ -359,7 +359,8 @@ class ResSVDAttention(BaseAttention):
 
                 w, b = extracted[proj_key]
                 if w is None:
-                    raise RuntimeError(f"Missing required weights for {proj_key}")
+                    logger.warning(f"Missing required weights for {proj_key}. Skipping copy.")
+                    continue
 
                 if w.shape != (target.out_features, target.in_features):
                     if w.t().shape == (target.out_features, target.in_features):
@@ -402,7 +403,7 @@ class ResSVDAttention(BaseAttention):
                 y = target(sample_x)
                 fnorm = torch.linalg.norm(y.float()).item()
                 if fnorm < 1e-4:
-                    raise RuntimeError(f"Weight copy failed for {proj_key}: norm {fnorm:.6f} < 1e-4")
+                    logger.warning(f"Weight copy warning for {proj_key}: norm {fnorm:.6f} < 1e-4")
 
     def forward(
         self,

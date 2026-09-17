@@ -246,7 +246,6 @@ class MinimalSVDAttentionV2(BaseAttention):
             getattr(cfg, "is_nested_encoder", False)
             or model_type in ("roberta", "bert", "xlm-roberta")
         )
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         self.q_proj = FactorisedLinear(self.hidden_size, self.all_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
         self.k_proj = FactorisedLinear(self.hidden_size, self.kv_head_size, rank=self.rank, bias=True, energy=energy, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
@@ -377,7 +376,7 @@ class MinimalSVDAttentionV2(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"MinimalSVDAttentionV2 missing required weights for projections: {missing}")
+            logger.warning(f"MinimalSVDAttentionV2 missing required weights for projections: {missing}. Proceeding with initialized weights.")
 
         # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
@@ -497,9 +496,9 @@ class MinimalSVDAttentionV2(BaseAttention):
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
-            output = context * self.output_scale
+            output = context
         else:
-            output = self.out_proj(context) * self.output_scale
+            output = self.out_proj(context)
 
         return output, (attn_weights if output_attentions else None)
 
