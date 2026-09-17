@@ -68,9 +68,6 @@ class CacheNotesLoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
@@ -193,9 +190,6 @@ class CPTGenerator(nn.Module):
 
     def __init__(self, hidden_dim: int = 128, num_freqs: int = 8, vocab_size: int = 5000):
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.hidden_dim = hidden_dim
         self.num_freqs = num_freqs
         self.vocab_size = vocab_size
@@ -378,9 +372,6 @@ class CacheNotesCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="cachenotes", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
 
         task_type = str(_cfg_get(cfg, "cachenotes_task", _cfg_get(cfg, "task_type", task_type)))

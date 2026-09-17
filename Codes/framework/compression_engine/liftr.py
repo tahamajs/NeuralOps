@@ -52,9 +52,6 @@ class _LinearizedGELU(nn.Module):
 
     def __init__(self, alpha: float = 0.8) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.alpha = float(alpha)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -69,9 +66,6 @@ class _LinearizedAttentionWrapper(nn.Module):
 
     def __init__(self, original_attn: nn.Module, layer_name: str = "") -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.original_attn = original_attn
         self.layer_name = layer_name
 
@@ -182,9 +176,6 @@ class LIFTRCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="liftr", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
         self.cfg = cfg
 

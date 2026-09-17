@@ -64,9 +64,6 @@ class ASTPrunedLoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features  # Conv1D compatibility
@@ -177,9 +174,6 @@ class ASTPruner(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="ast_pruner", **kwargs)
-        if not hasattr(self, 'output_scale'):
-            import torch, torch.nn as nn
-            self.output_scale = nn.Parameter(torch.ones(1))
         conf = cfg or kwargs.get("comp_config", None)
         if conf is not None:
             block_size = getattr(conf, "ast_block_size", getattr(conf, "block_size", block_size))
