@@ -803,6 +803,11 @@ def inject_adaptive_svd(
                 test_module.is_nested_encoder = True
                 target.self = test_module
 
+        if old_attn is not None:
+            test_module.train(old_attn.training)
+        elif target is not None and hasattr(target, 'training'):
+            test_module.train(target.training)
+
         return test_module
     except Exception:
         return None
