@@ -23,17 +23,21 @@ sys.path.insert(0, "Codes")
 
 def diagnose(module_name):
     print(f"Starting diagnosis for {module_name}...", flush=True)
-    model_path = r"models\gpt2" if os.path.exists(r"models\gpt2") else "models/gpt2"
-
-    cfg = AutoConfig.from_pretrained(model_path, local_files_only=True)
-    if getattr(cfg, "pad_token_id", None) is None:
-        cfg.pad_token_id = getattr(cfg, "eos_token_id", 0) or 0
-
-    model = AutoModelForSequenceClassification.from_pretrained(
-        model_path, config=cfg, local_files_only=True
-    )
-    if getattr(model.config, "pad_token_id", None) is None:
-        model.config.pad_token_id = model.config.eos_token_id or 0
+    has_local_model = os.path.exists(r"models\gpt2") or os.path.exists("models/gpt2")
+    if has_local_model:
+        model_path = r"models\gpt2" if os.path.exists(r"models\gpt2") else "models/gpt2"
+        cfg = AutoConfig.from_pretrained(model_path, local_files_only=True)
+        if getattr(cfg, "pad_token_id", None) is None:
+            cfg.pad_token_id = getattr(cfg, "eos_token_id", 0) or 0
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_path, config=cfg, local_files_only=True
+        )
+        if getattr(model.config, "pad_token_id", None) is None:
+            model.config.pad_token_id = model.config.eos_token_id or 0
+    else:
+        from transformers import GPT2Config, GPT2ForSequenceClassification
+        cfg = GPT2Config(n_layer=12, n_head=12, n_embd=768, pad_token_id=0)
+        model = GPT2ForSequenceClassification(cfg)
     model.eval()
 
     # Input tensor
@@ -64,6 +68,8 @@ def diagnose(module_name):
         inject_fn(model=model, model_config=cfg)
     except TypeError:
         inject_fn(model=model)
+
+    model.eval()
 
     with torch.no_grad():
         injected_out = model(input_ids=ids, attention_mask=attn).logits
