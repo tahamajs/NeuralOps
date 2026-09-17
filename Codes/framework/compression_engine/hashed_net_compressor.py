@@ -310,10 +310,12 @@ class HashedNetCompressor(BaseCompressor):
                     module.base_layer = layer_compressed
                     if hasattr(module, "lora_A") and module.lora_A is not None:
                         for p in (module.lora_A.parameters() if hasattr(module.lora_A, "parameters") else [module.lora_A]):
-                            p.requires_grad = True
+                            if isinstance(p, (nn.Parameter, torch.Tensor)):
+                                p.requires_grad = True
                     if hasattr(module, "lora_B") and module.lora_B is not None:
                         for p in (module.lora_B.parameters() if hasattr(module.lora_B, "parameters") else [module.lora_B]):
-                            p.requires_grad = True
+                            if isinstance(p, (nn.Parameter, torch.Tensor)):
+                                p.requires_grad = True
                 else:
                     replace_module(self.model, name, layer_compressed)
             except Exception as e:
