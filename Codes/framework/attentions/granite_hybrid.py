@@ -116,8 +116,6 @@ class Mamba2(nn.Module):
         **kwargs: Any,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.d_model: int = d_model
         self.d_state: int = d_state
         self.expand: int = expand
@@ -206,7 +204,7 @@ class MixtureOfExperts(nn.Module):
                     * selected_weights
                     * self.experts[e](x * mask.unsqueeze(-1))
                 )
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("granite_hybrid")
@@ -282,7 +280,9 @@ class GraniteHybridBlock(BaseAttention):
         # Decoder detection
         model_type = str(_get("model_type", "")).lower()
         is_dec = _get("is_decoder", _get("is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
-        if model_type in ["gpt2", "gpt", "qwen", "qwen2", "qwen2.5", "qwen3.5", "llama", "mistral"]:
+        _mt = (model_type or '').lower()
+        _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
+        if any(_mt.startswith(p) for p in _decoder_prefixes):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
 

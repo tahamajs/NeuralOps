@@ -163,7 +163,7 @@ class KroneckerLinear(nn.Module):
                 F.linear(x.float(), self.lora_A), self.lora_B
             ).to(out.dtype)
 
-        return out * self.output_scale
+        return out
 
     @property
     def weight(self) -> torch.Tensor:

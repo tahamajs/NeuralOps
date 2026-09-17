@@ -115,7 +115,7 @@ class ROASTLinear(nn.Module):
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out.to(out.dtype)
-        return out * self.output_scale
+        return out
 
     @classmethod
     def from_linear(

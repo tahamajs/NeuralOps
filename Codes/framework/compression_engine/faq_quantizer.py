@@ -189,7 +189,7 @@ class FAQLinear(nn.Module):
                 nn.functional.linear(x.float(), self.lora_A), self.lora_B
             ).to(out.dtype)
 
-        return out * self.output_scale
+        return out
 
 
 class FAQQuantizer(BaseCompressor):
