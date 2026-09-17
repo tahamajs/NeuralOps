@@ -282,22 +282,44 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 pass
 
         if hasattr(pretrained_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            weight = pretrained_attn.c_attn.weight.data
-            bias = getattr(pretrained_attn.c_attn, "bias", None)
-            bias_data = bias.data if bias is not None else None
-            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
-                weight = weight.t()
-            split_size = weight.shape[0] // 3
-            extracted["q"] = (weight[:split_size, :], bias_data[:split_size] if bias_data is not None else None)
-            extracted["k"] = (weight[split_size : 2 * split_size, :], bias_data[split_size : 2 * split_size] if bias_data is not None else None)
-            extracted["v"] = (weight[2 * split_size :, :], bias_data[2 * split_size :] if bias_data is not None else None)
+            mod_c = pretrained_attn.c_attn
+            base_c = getattr(mod_c, "base_layer", mod_c)
+            weight = getattr(base_c, "weight", getattr(mod_c, "weight", None))
+            if weight is not None:
+                weight = weight.data.clone()
+                bias = getattr(base_c, "bias", getattr(mod_c, "bias", None))
+                bias_data = bias.data.clone() if bias is not None else None
+                if (
+                    mod_c.__class__.__name__ == "Conv1D"
+                    or base_c.__class__.__name__ == "Conv1D"
+                    or hasattr(mod_c, "nf")
+                    or hasattr(base_c, "nf")
+                    or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size)
+                    or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])
+                ):
+                    weight = weight.t().contiguous()
+                split_size = weight.shape[0] // 3
+                extracted["q"] = (weight[:split_size, :], bias_data[:split_size] if bias_data is not None else None)
+                extracted["k"] = (weight[split_size : 2 * split_size, :], bias_data[split_size : 2 * split_size] if bias_data is not None else None)
+                extracted["v"] = (weight[2 * split_size :, :], bias_data[2 * split_size :] if bias_data is not None else None)
 
         if hasattr(pretrained_attn, "c_proj") and extracted["o"][0] is None:
-            w_o = pretrained_attn.c_proj.weight.data
-            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
-                w_o = w_o.t()
-            b_o = getattr(pretrained_attn.c_proj, "bias", None)
-            extracted["o"] = (w_o, b_o.data if b_o is not None else None)
+            mod_o = pretrained_attn.c_proj
+            base_o = getattr(mod_o, "base_layer", mod_o)
+            w_o = getattr(base_o, "weight", getattr(mod_o, "weight", None))
+            if w_o is not None:
+                w_o = w_o.data.clone()
+                if (
+                    mod_o.__class__.__name__ == "Conv1D"
+                    or base_o.__class__.__name__ == "Conv1D"
+                    or hasattr(mod_o, "nf")
+                    or hasattr(base_o, "nf")
+                    or (w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size)
+                    or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
+                ):
+                    w_o = w_o.t().contiguous()
+                b_o = getattr(base_o, "bias", getattr(mod_o, "bias", None))
+                extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
         if hasattr(pretrained_attn, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
             s = getattr(pretrained_attn, "self")
