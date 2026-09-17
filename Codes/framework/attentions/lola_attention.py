@@ -405,7 +405,9 @@ class LoLAAttention(BaseAttention):
             w_o = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
             if w_o is not None:
                 w_o = w_o.data.clone()
-                if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]):
+                p_cls = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
+                b_cls = getattr(base_o, "__class__", type(base_o)).__name__
+                if ("Conv1D" in p_cls) or ("Conv1D" in b_cls) or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (w_o.dim() == 2 and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] == self.hidden_size and w_o.shape[1] == self.hidden_size))):
                     w_o = w_o.t()
                 b_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
@@ -673,8 +675,20 @@ def inject_lola_attention(
 
     layer = target
 
+    if old_attn is None and layer is not None:
+        for attr in ("attn", "attention", "self_attn", "self"):
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if cand is not None:
+                    old_attn = getattr(cand, "self", cand)
+                    break
+
+    if model_config is None and old_attn is not None:
+        model_config = getattr(old_attn, "config", None)
+
     try:
-        rank = getattr(comp_config, "rank", 32) if comp_config is not None else kwargs.pop("rank", 32)
+        h_size = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768)) if model_config else 768
+        rank = getattr(comp_config, "rank", kwargs.pop("rank", h_size)) if comp_config is not None else kwargs.pop("rank", h_size)
         kwargs.pop("rank", None)
         new_attn = LoLAAttention(
             config=model_config,

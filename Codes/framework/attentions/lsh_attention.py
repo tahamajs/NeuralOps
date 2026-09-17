@@ -244,7 +244,7 @@ class LSHAttention(BaseAttention):
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
             p_cls = getattr(src.c_proj, "__class__", type(src.c_proj)).__name__
-            if ("Conv1D" in p_cls) or hasattr(src.c_proj, "nf") or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]):
+            if ("Conv1D" in p_cls) or hasattr(src.c_proj, "nf") or (w_o.dim() == 2 and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] == self.hidden_size and w_o.shape[1] == self.hidden_size))):
                 w_o = w_o.t()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
@@ -524,8 +524,16 @@ def inject_lsh_attention(
 
     layer = target
 
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+    if old_attn is None and layer is not None:
+        for attr in ("attn", "attention", "self_attn", "self"):
+            if hasattr(layer, attr):
+                cand = getattr(layer, attr)
+                if cand is not None:
+                    old_attn = getattr(cand, "self", cand)
+                    break
+
+    if model_config is None and old_attn is not None:
+        model_config = getattr(old_attn, "config", None)
 
     try:
         new_attn = LSHAttention(

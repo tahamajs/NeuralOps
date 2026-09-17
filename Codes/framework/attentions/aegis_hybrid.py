@@ -119,13 +119,8 @@ class FactorizedLinear(nn.Module):
                 nn.init.uniform_(self.lin2.bias, -bound, bound)
 
             if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
-                if self.lora_B.dtype in (torch.float16, torch.bfloat16):
-                    b_fp32 = torch.empty_like(self.lora_B, dtype=torch.float32, device="cpu")
-                    nn.init.kaiming_uniform_(b_fp32, a=math.sqrt(5))
-                    self.lora_B.copy_(b_fp32.to(dtype=self.lora_B.dtype, device=self.lora_B.device))
-                else:
-                    nn.init.kaiming_uniform_(self.lora_B, a=math.sqrt(5))
-                nn.init.zeros_(self.lora_A)
+                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_B)
 
     @property
     def weight(self) -> torch.Tensor:
@@ -946,11 +941,19 @@ def inject_aegis_hybrid(
         return target if num_injected > 0 else None
         
     try:
+        if old_attn is None and target is not None:
+            for attr in ("attn", "attention", "self_attn", "self"):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if cand is not None:
+                        old_attn = getattr(cand, "self", cand)
+                        break
+
         if model_config is None:
             if hasattr(target, "hidden_size") or hasattr(target, "d_model") or hasattr(target, "n_embd") or hasattr(target, "dim"):
                 model_config = layer
-            elif hasattr(target, "attention"):
-                old_attn = target.attention
+            elif old_attn is not None:
+                model_config = getattr(old_attn, "config", None)
 
         model_type = getattr(model_config, "model_type", "") if model_config else ""
         is_dec = getattr(model_config, "is_decoder", False) if model_config else False
@@ -983,7 +986,7 @@ def inject_aegis_hybrid(
             n_kv_heads = 12
             l_rank = 32
 
-        target_rank = kwargs.get("rank", 384)
+        target_rank = kwargs.get("rank", h_size)
         if comp_config is not None:
             target_rank = getattr(comp_config, "lora_r", getattr(comp_config, "rank", target_rank))
         target_lora_rank = kwargs.get("lora_rank", l_rank)
