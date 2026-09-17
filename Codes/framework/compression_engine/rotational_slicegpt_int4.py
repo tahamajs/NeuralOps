@@ -31,6 +31,7 @@ import torch
 import torch.nn as nn
 
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.compression_engine.pruning_utils import get_calibration_tensors
 from framework.utils.compat import should_compress_linear
@@ -348,30 +349,26 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                         p.requires_grad = False
                     continue
 
-            # Reconstruct full coordinate representation in-place
-            W_recon = torch.matmul(W_quant, torch.matmul(P_r.T, Q.T))
-            final_w = W_recon.t() if is_conv1d else W_recon
-            base_mod.weight.data = final_w.to(dtype=dtype, device=device)
-            new_layer = base_layer if 'rotational_slicegpt_int4.py' in ['uniql_compressor.py', 'zerokv_neo_compressor.py'] else base_mod
-            compressed_layer = new_layer
-            # Preserve existing LoRA adapter weights if the source module has them
-            if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
-               module.lora_A is not None and module.lora_B is not None:
-                src_lA = getattr(module.lora_A, 'weight', module.lora_A)
-                src_lB = getattr(module.lora_B, 'weight', module.lora_B)
-                if hasattr(new_layer, 'lora_A') and new_layer.lora_A is not None:
-                    if hasattr(src_lA, 'data') and src_lA.shape == new_layer.lora_A.shape:
-                        new_layer.lora_A.data.copy_(src_lA.data)
-                if hasattr(new_layer, 'lora_B') and new_layer.lora_B is not None:
-                    if hasattr(src_lB, 'data') and src_lB.shape == new_layer.lora_B.shape:
-                        new_layer.lora_B.data.copy_(src_lB.data)
+            # Create the actual compressed module
+            W_quant = W_quant.to(device=device, dtype=dtype)
+            Q = Q.to(device=device, dtype=dtype)
+            P_r = P_r.to(device=device, dtype=dtype)
 
+            bias = base_mod.bias.detach() if hasattr(base_mod, 'bias') and base_mod.bias is not None else None
+            new_linear = RotationalSliceGPTINT4Linear(W_quant=W_quant, Q=Q, P_r=P_r, bias=bias)
+
+            # If original was wrapped in LoRALinear, preserve wrapper and replace base_layer
             if hasattr(module, 'base_layer'):
-                module.base_layer = compressed_layer  # put compressed layer inside wrapper
-                # module itself (LoRALinear wrapper) remains the replacement
-                new_module = module
+                if hasattr(module, 'lora_A') and module.lora_A is not None:
+                    if not hasattr(new_linear, 'lora_A'):
+                        new_linear.lora_A = module.lora_A
+                if hasattr(module, 'lora_B') and module.lora_B is not None:
+                    if not hasattr(new_linear, 'lora_B'):
+                        new_linear.lora_B = module.lora_B
+                module.base_layer = new_linear
             else:
-                new_module = compressed_layer
+                replace_module(self.model, name, new_linear)
+
             compressed_layers_count += 1
 
         # Forward sanity check
