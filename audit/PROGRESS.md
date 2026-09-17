@@ -11,7 +11,7 @@
 | 7. family_svd_split_A | ✅ | 16 | `88f4129fe` | 6min | All 16 pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
 | 8. family_svd_split_B | ✅ | 17 | `83cdf4986` | 4min | All 17 pass AST; output_scale eliminated |
 | 9. family_attn_general_1 | ✅ | 20 | `7d102240a` | 4min | All 20 pass AST; output_scale & RuntimeError & prefix is_decoder fixed |
-| 10. family_attn_general_2 | ⏳ | 20 | — | — | Pending |
+| 10. family_attn_general_2 | ✅ | 20 | `bc3f34f7f` | 4min | All 20 pass AST; output_scale & RuntimeError & prefix is_decoder fixed |
 | 11. family_attn_general_3 | ⏳ | 20 | — | — | Pending |
 | 12. family_attn_general_4 | ⏳ | 20 | — | — | Pending |
 | 13. family_attn_general_5 | ⏳ | 19 | — | — | Pending |
