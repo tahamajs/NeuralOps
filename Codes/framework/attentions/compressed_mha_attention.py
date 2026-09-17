@@ -104,7 +104,9 @@ class CompressedDistilBertAttention(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.is_decoder: bool = getattr(cfg, "is_decoder", False)
+        _mt = getattr(cfg, "model_type", "").lower() if cfg else ""
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        self.is_decoder: bool = bool(getattr(cfg, "is_decoder", False) or any(_mt.startswith(p) for p in _decoder_prefixes))
         self.is_nested_encoder: bool = False
 
         rank_val = rank or kwargs.get("rank_qkv", rank_qkv)
