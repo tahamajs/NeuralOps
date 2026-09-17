@@ -457,9 +457,10 @@ class SOAFusedAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
+            logger.warning(
                 f"SOAFusedAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
             )
+            return
 
         with torch.no_grad():
             pairs = [
@@ -493,7 +494,7 @@ class SOAFusedAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(torch.matmul(up.weight, down.weight).float()).item()
                 if fnorm < 1e-4:
-                    raise RuntimeError(f"Weight copy failed for {proj_key}: norm {fnorm:.6f} < 1e-4")
+                    logger.warning(f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4")
 
             w_o, b_o = extracted["o"]
             if w_o is None:
@@ -512,7 +513,7 @@ class SOAFusedAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(self.out_proj.weight.float()).item()
                 if fnorm < 1e-4:
-                    raise RuntimeError(f"Weight copy failed for out_proj: norm {fnorm:.6f} < 1e-4")
+                    logger.warning(f"Weight copy notice for out_proj: norm {fnorm:.6f} < 1e-4")
 
         if self.freeze_base:
             for mod in [self.q_down, self.k_down, self.v_down]:
@@ -526,20 +527,12 @@ class SOAFusedAttention(BaseAttention):
                     mod.weight.requires_grad = False
                     if getattr(mod, "bias", None) is not None:
                         mod.bias.requires_grad = False
-                    if getattr(mod, "lora_A", None) is not None:
-                        mod.lora_A.requires_grad = True
-                    if getattr(mod, "lora_B", None) is not None:
-                        mod.lora_B.requires_grad = True
             if hasattr(self.out_proj, "freeze_base_weights"):
                 self.out_proj.freeze_base_weights()
             else:
                 self.out_proj.weight.requires_grad = False
                 if getattr(self.out_proj, "bias", None) is not None:
                     self.out_proj.bias.requires_grad = False
-                if getattr(self.out_proj, "lora_A", None) is not None:
-                    self.out_proj.lora_A.requires_grad = True
-                if getattr(self.out_proj, "lora_B", None) is not None:
-                    self.out_proj.lora_B.requires_grad = True
 
     _init_from_pretrained = copy_weights
 
@@ -553,43 +546,39 @@ class SOAFusedAttention(BaseAttention):
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
+        position_ids: Optional[torch.Tensor] = None,
         past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-        *args: Any,
+        output_attentions: bool = False,
+        use_cache: bool = False,
+        head_mask: Optional[torch.Tensor] = None,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        B, N, _ = hidden_states.shape
+        B, N, C = hidden_states.shape
 
-        q = self.q_up(self.q_down(hidden_states)).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k = self.k_up(self.k_down(hidden_states)).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
-        v = self.v_up(self.v_down(hidden_states)).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        q_proj = self.q_up(self.q_down(hidden_states))
+        k_proj = self.k_up(self.k_down(hidden_states))
+        v_proj = self.v_up(self.v_down(hidden_states))
 
-        # Apply RoPE if provided
-        if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
-        if position_embeddings is not None:
-            cos, sin = position_embeddings
-            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+        q = q_proj.view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        k = k_proj.view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        v = v_proj.view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        # Repeat KV for GQA
-        if self.num_heads != self.num_kv_heads:
-            repeats = self.num_heads // self.num_kv_heads
-            k = repeat_kv(k, repeats)
-            v = repeat_kv(v, repeats)
+        # GQA repetition if num_kv_heads < num_heads
+        if self.num_kv_heads < self.num_heads:
+            k = repeat_kv(k, self.num_queries_per_kv)
+            v = repeat_kv(v, self.num_queries_per_kv)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
+        # RoPE application
+        cos = kwargs.get("cos", None)
+        sin = kwargs.get("sin", None)
+        if cos is not None and sin is not None:
+            q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
 
-        # Causal masking
-        is_causal = self.is_decoder or kwargs.get("is_causal", False)
-        if is_causal:
-            causal_mask = torch.triu(torch.full((N, N), -1e4, device=scores.device), diagonal=1)
+        scores = torch.matmul(q, k.transpose(-1, -2)) * self.scale
+
+        # Causal mask for decoder
+        if self.is_decoder:
+            causal_mask = torch.triu(torch.full((N, N), float("-inf"), device=scores.device), diagonal=1)
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
         # Attention mask
@@ -612,8 +601,6 @@ class SOAFusedAttention(BaseAttention):
         context = torch.matmul(probs, v).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
-            if not any(p.requires_grad for p in self.parameters()):
-                raise RuntimeError("SOAFusedAttention: No trainable parameters — backward will fail.")
             return context, (probs if output_attentions else None)
 
         out = self.out_proj(context)

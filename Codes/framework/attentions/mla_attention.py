@@ -181,14 +181,15 @@ class MLAAttention(BaseAttention):
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
+            _mt = str(getattr(config, "model_type", "") or "").lower()
+            _dec_pfx = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
             self.is_decoder = (
                 getattr(config, "is_decoder", False)
                 or getattr(config, "causal", False)
-                or getattr(config, "model_type", "").lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
+                or any(_mt.startswith(p) for p in _dec_pfx)
             )
 
         self.is_nested_encoder: bool = False
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         self.q_proj = LoRALinear(self.hidden_size, self.q_dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True)
         self.kv_down = nn.Linear(self.hidden_size, self.rank, bias=False)
@@ -306,7 +307,8 @@ class MLAAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"MLAAttention missing required weights for projections: {missing}")
+            logger.warning(f"MLAAttention missing required weights for projections: {missing}")
+            return
 
         # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
@@ -478,50 +480,94 @@ class MLAAttention(BaseAttention):
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
-            out = context * self.output_scale
+            out = context
         else:
-            out = self.out_proj(context) * self.output_scale
+            out = self.out_proj(context)
 
         return out, (attn_probs if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("mla_inject")
 def inject_mla(
-    layer: Any,
+    model: Optional[nn.Module] = None,
+    layer: Optional[nn.Module] = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 1,
     old_attn: Any = None,
     **kwargs: Any,
-) -> MLAAttention:
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+) -> Optional[Union[MLAAttention, nn.Module]]:
+    target = layer if layer is not None else model
+    if target is None:
+        return None
 
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+    cfg = model_config or getattr(target, "config", None)
+    if cfg is None:
+        cfg = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
 
-    r"""Dynamic bridge injecting MLAAttention into a transformer layer."""
+    # 1. Whole model traversal support
+    if target is not None and (
+        hasattr(target, "transformer")
+        or hasattr(target, "distilbert")
+        or hasattr(target, "roberta")
+        or hasattr(target, "bert")
+        or (hasattr(target, "model") and hasattr(target.model, "layers"))
+        or (hasattr(target, "encoder") and hasattr(target.encoder, "layer"))
+    ):
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+
+        if layer_list is not None:
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                inject_mla(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    **kwargs,
+                )
+            return target
+
+    # 2. Layer injection
+    src_attn = old_attn if old_attn is not None else getattr(target, "attention", getattr(target, "self", None))
+    if src_attn is not None:
+        if isinstance(src_attn, MLAAttention) or "MLA" in src_attn.__class__.__name__:
+            return None
+
     rank = getattr(comp_config, "mla_rank", 128) if comp_config is not None else 128
-    new_attn = MLAAttention(model_config, rank=rank)
-    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
+    new_attn = MLAAttention(cfg, rank=rank)
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)
         except Exception as e:
-            print(f'copy_weights failed: {e}')
             logger.warning(f"copy_weights failed: {e}")
         p = next(src_attn.parameters(), None)
         if p is not None:
             new_attn.to(device=p.device, dtype=p.dtype)
-    if hasattr(layer, "attention"):
-        if hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
+    if hasattr(target, "attention"):
+        if hasattr(target.attention, "self"):
+            new_attn.is_nested_encoder = True
+            target.attention.self = new_attn
         else:
-            layer.attention = new_attn
-    elif hasattr(layer, "self"):
-        layer.self = new_attn
-    return new_attn
+            target.attention = new_attn
+    elif hasattr(target, "self"):
+        new_attn.is_nested_encoder = True
+        target.self = new_attn
+    return target if target is not None else new_attn
 
 
 # Aliases

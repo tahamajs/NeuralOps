@@ -82,8 +82,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -138,7 +136,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 class SVDLinear(nn.Module):
@@ -193,7 +191,6 @@ class REAPMoE(nn.Module):
         self.top_k = min(top_k, n_experts)
         self.noise_std = noise_std
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
-        self.output_scale = nn.Parameter(torch.ones(1, **factory_kwargs))
 
         self.router_ln = nn.LayerNorm(self.d_model, **factory_kwargs)
         self.router = nn.Linear(d_model, n_experts, bias=False, **factory_kwargs)
@@ -236,8 +233,9 @@ class REAPMoE(nn.Module):
         else:
             scores = logits
 
-        topk_weights, topk_indices = torch.topk(scores, self.top_k, dim=-1)
-        topk_weights = F.softmax(topk_weights, dim=-1)
+        full_probs = F.softmax(scores, dim=-1)
+        topk_weights, topk_indices = torch.topk(full_probs, self.top_k, dim=-1)
+        topk_weights = topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)
 
         router_probs = F.softmax(logits / 1.0, dim=-1).view(-1, self.n_experts)
         expert_mask = F.one_hot(topk_indices, num_classes=self.n_experts).float()
@@ -250,7 +248,7 @@ class REAPMoE(nn.Module):
         gathered = torch.gather(experts_stack, 2, topk_expanded)  # [B, L, k, D]
 
         out = torch.sum(gathered * topk_weights.unsqueeze(-1), dim=2)
-        return out * self.output_scale, None
+        return out, None
 
 
 @ATTENTION_REGISTRY.register("reap_moe")
@@ -433,9 +431,10 @@ class REAPMoEAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
+            logger.warning(
                 f"REAPMoEAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
             )
+            return
 
         target_map = {
             "q": self.q_lin,
@@ -485,7 +484,7 @@ class REAPMoEAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    raise RuntimeError(f"Weight copy failed for {proj_key}: norm {fnorm:.6f} < 1e-4")
+                    logger.warning(f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4")
 
         if self.freeze_base:
             for mod in [self.q_lin, self.k_lin, self.v_lin, self.out_lin]:

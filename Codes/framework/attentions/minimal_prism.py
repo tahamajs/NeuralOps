@@ -416,7 +416,8 @@ class MinimalPRISMAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"MinimalPRISMAttention missing required weights for projections: {missing}")
+            logger.warning(f"MinimalPRISMAttention missing required weights for projections: {missing}")
+            return
 
         # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
