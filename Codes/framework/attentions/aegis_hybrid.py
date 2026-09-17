@@ -1030,6 +1030,11 @@ def inject_aegis_hybrid(
         elif hasattr(target, "attn"):
             target.attn = new_attn
 
+        if old_attn is not None:
+            new_attn.train(old_attn.training)
+        elif hasattr(target, 'training'):
+            new_attn.train(target.training)
+
         return new_attn
     except Exception as e:
         logger.error(f"Failed to inject AEGIS-Hybrid: {e}")
