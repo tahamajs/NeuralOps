@@ -86,7 +86,19 @@ class _LinearizedAttentionWrapper(nn.Module):
             if len(kwargs) > 0:
                 x = next(iter(kwargs.values()))
             else:
-                x = torch.zeros(1, 1, 768)
+                # Determine hidden size from the wrapped module
+                if hasattr(self.original_attn, 'q_proj'):
+                    q = getattr(self.original_attn, 'q_proj')
+                    hidden_size = getattr(q, 'in_features', 768)
+                elif hasattr(self.original_attn, 'q_lin'):
+                    hidden_size = getattr(self.original_attn.q_lin, 'in_features', 768)
+                elif hasattr(self.original_attn, 'query'):
+                    hidden_size = getattr(self.original_attn.query, 'in_features', 768)
+                elif hasattr(self.original_attn, 'c_attn') and hasattr(self.original_attn.c_attn, 'weight'):
+                    hidden_size = self.original_attn.c_attn.weight.shape[0]
+                else:
+                    hidden_size = 768
+                x = torch.zeros(1, 1, hidden_size)
 
         def _fmt(out: torch.Tensor) -> Union[torch.Tensor, Tuple[torch.Tensor, None]]:
             is_linear_attn = (
