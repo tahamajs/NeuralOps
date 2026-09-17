@@ -12,6 +12,10 @@ import time
 import traceback
 from pathlib import Path
 
+# Enforce Hugging Face offline mode to prevent network hangs
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import torch
 from transformers import AutoModel, AutoConfig
 
@@ -25,10 +29,23 @@ import framework.attentions
 import framework.compression_engine
 
 MODELS = {
-    "distilbert": "distilbert-base-uncased",
-    "roberta": "roberta-base",
-    "gpt2": "gpt2",
+    "distilbert": [
+        str(HERE / "models" / "distilbert_sst2"),
+        "models/distilbert_sst2",
+        "distilbert-base-uncased",
+    ],
+    "roberta": [
+        str(HERE / "models" / "roberta-base"),
+        "models/roberta-base",
+        "roberta-base",
+    ],
+    "gpt2": [
+        str(HERE / "models" / "gpt2"),
+        "models/gpt2",
+        "gpt2",
+    ],
 }
+
 
 def get_dummy_input(model_name: str, device: str):
     if "gpt2" in model_name:
@@ -56,13 +73,29 @@ def run_forward_verification():
 
     # Pre-cache models to save time
     base_models = {}
-    for mkey, mname in MODELS.items():
-        try:
-            print(f"Loading base model {mname}...")
-            cfg = AutoConfig.from_pretrained(mname)
-            base_models[mkey] = AutoModel.from_pretrained(mname, config=cfg).to(device).eval()
-        except Exception as e:
-            print(f"Error loading {mname}: {e}")
+    for mkey, candidates in MODELS.items():
+        loaded = False
+        for cpath in candidates:
+            try:
+                print(f"Attempting to load {mkey} from '{cpath}'...")
+                cfg = AutoConfig.from_pretrained(cpath, local_files_only=True)
+                base_models[mkey] = AutoModel.from_pretrained(cpath, config=cfg, local_files_only=True).to(device).eval()
+                print(f"Successfully loaded {mkey} from '{cpath}'")
+                loaded = True
+                break
+            except Exception as e:
+                # Try with standard from_pretrained without local_files_only flag if cache exists
+                try:
+                    cfg = AutoConfig.from_pretrained(cpath)
+                    base_models[mkey] = AutoModel.from_pretrained(cpath, config=cfg).to(device).eval()
+                    print(f"Successfully loaded {mkey} from '{cpath}' (cached)")
+                    loaded = True
+                    break
+                except Exception:
+                    pass
+        if not loaded:
+            print(f"Warning: Failed to load any candidate model for {mkey}")
+
 
     for idx, attn_name in enumerate(all_attentions, 1):
         if attn_name in ("gated_delta_net", "gated_deltanet_block", "hgrn2_gated_deltanet"):
