@@ -432,6 +432,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                     is_invalid = True
 
                 if is_invalid and self.fallback_to_original:
+                    logger.warning("Fallback triggered for %s. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.", name)
                     self.fallback_layers.append(name)
                     for p in module.parameters():
                         p.requires_grad = False
