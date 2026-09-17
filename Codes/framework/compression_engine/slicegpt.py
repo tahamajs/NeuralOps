@@ -255,6 +255,7 @@ class SliceGPTCompressor(BaseCompressor):
                         ". Skipping (fallback to original)." if self.fallback_to_original else ". Proceeding with sliced weight.",
                     )
                     if self.fallback_to_original:
+                        logger.warning("Fallback triggered for %s. Layer is kept original and NOT wrapped in LoRA. It will not be fine-tuned.", name)
                         for p in module.parameters():
                             p.requires_grad = False
                         continue
