@@ -389,9 +389,12 @@ class PADReAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"PADReAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
+            logger.warning(
+                "PADReAttention copy_weights failed: missing mandatory projections %s from %s.",
+                missing_after,
+                src.__class__.__name__,
             )
+            return None
 
         target_map = {
             "q": self.q_proj,
@@ -566,9 +569,9 @@ class PADReAttention(BaseAttention):
             if hm.dim() == 1:
                 hm = hm.view(1, -1, 1, 1)
             elif hm.dim() == 2:
-                hm = hm.view(hm.shape[0], 1, 1, 1)
+                hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
             elif hm.dim() == 3:
-                hm = hm.unsqueeze(1)
+                hm = hm.unsqueeze(-1)
             attn_weights = attn_weights * hm
 
         attn_weights = self.dropout(attn_weights)
