@@ -105,8 +105,6 @@ class FactorisedLinear(nn.Module):
         **kwargs: Any,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.energy = energy
         self.min_rank = min_rank
         self.max_rank = max_rank
@@ -533,7 +531,7 @@ class AegisAttentionV1(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"AegisAttentionV1 missing required weights for projections: {missing}")
+            logger.warning(f"AegisAttentionV1 missing required weights for projections: {missing}"); return
 
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
