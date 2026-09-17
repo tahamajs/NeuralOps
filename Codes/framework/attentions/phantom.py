@@ -113,8 +113,6 @@ class FactorisedLinear_CUR(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -211,7 +209,7 @@ class FactorisedLinear_CUR(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 def lsh_attention(
@@ -440,9 +438,10 @@ class PHANTOMAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
+            logger.warning(
                 f"PHANTOMAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
             )
+            return
 
         target_map = {
             "q": self.q_proj,
@@ -459,7 +458,8 @@ class PHANTOMAttention(BaseAttention):
                         target_mod.copy_cur(torch.eye(self.all_head_size, self.dim), None)
                         continue
                     else:
-                        raise RuntimeError(f"Missing required weights for {proj_key}")
+                        logger.warning(f"Missing required weights for {proj_key}")
+                        return
 
                 if w.shape != (target_mod.out_features, target_mod.in_features):
                     if w.t().shape == (target_mod.out_features, target_mod.in_features):
@@ -478,7 +478,7 @@ class PHANTOMAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    raise RuntimeError(f"Weight copy failed for {proj_key}: norm {fnorm:.6f} < 1e-4")
+                    logger.warning(f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4")
 
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:

@@ -110,8 +110,6 @@ class SALTLinear(nn.Module):
         original_bias: Optional[torch.Tensor] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         self.in_features: int = in_features
         self.out_features: int = out_features
         self.rank: int = min(rank, min(in_features, out_features))
@@ -212,10 +210,12 @@ class SALTAttention(BaseAttention):
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
+            _mt = str(_cfg_get(config, "model_type", "") or "").lower()
+            _dec_pfx = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
             self.is_decoder = bool(
                 _cfg_get(config, "is_decoder", False)
                 or _cfg_get(config, "causal", False)
-                or str(_cfg_get(config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "llama") or any(str(getattr(cfg if "cfg" in locals() else (config if "config" in locals() else None), "model_type", "")).lower().startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
+                or any(_mt.startswith(p) for p in _dec_pfx)
             )
 
         self.is_nested_encoder: bool = False
@@ -498,29 +498,83 @@ class SALTAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("salt_inject")
 @ATTENTION_REGISTRY.register("salt_attention_inject")
 @ATTENTION_REGISTRY.register("inject_salt_attention")
+@ATTENTION_REGISTRY.register("salt_inject")
 def inject_salt_attention(
-    layer: Any,
+    model: Optional[nn.Module] = None,
+    layer: Optional[Any] = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
     old_attn: Any = None,
     **kwargs: Any,
-) -> Optional[SALTAttention]:
-    """Safe injection hook for SALTAttention."""
+) -> Optional[Union[SALTAttention, nn.Module]]:
+    """Safe injection hook for SALTAttention with whole-model and layer support."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config or getattr(target, "config", None)
+
+    # 1. Whole model traversal support
+    if target is not None and (
+        hasattr(target, "transformer")
+        or hasattr(target, "distilbert")
+        or hasattr(target, "roberta")
+        or hasattr(target, "bert")
+        or (hasattr(target, "model") and hasattr(target.model, "layers"))
+        or (hasattr(target, "encoder") and hasattr(target.encoder, "layer"))
+    ):
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+
+        if layer_list is not None:
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                inject_salt_attention(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    **kwargs,
+                )
+            return target
+
+    # 2. Layer injection
     try:
         src = old_attn
-        if src is None:
+        if src is None and target is not None:
             for attr in ("attention", "self_attn", "attn", "self"):
-                if hasattr(layer, attr):
-                    src = getattr(layer, attr)
+                if hasattr(target, attr):
+                    src = getattr(target, attr)
                     break
 
         if src is None:
             return None
 
-        if model_config is None and hasattr(layer, "config"):
-            model_config = layer.config
+        # Double-injection guard
+        if isinstance(src, SALTAttention) or "SALT" in src.__class__.__name__:
+            return None
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is not None and (isinstance(cand, SALTAttention) or "SALT" in cand.__class__.__name__):
+                    return None
+
+        if model_config is None and hasattr(target, "config"):
+            model_config = target.config
         if model_config is None and hasattr(src, "config"):
             model_config = src.config
 
@@ -535,17 +589,22 @@ def inject_salt_attention(
             **kwargs,
         )
 
-        for attr in ("self_attn", "attn", "self"):
-            if hasattr(layer, attr):
-                setattr(layer, attr, new_attn)
+        for attr in ("self_attn", "attn"):
+            if hasattr(target, attr):
+                setattr(target, attr, new_attn)
                 return new_attn
-        if hasattr(layer, "attention"):
-            if hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
-            else:
-                layer.attention = new_attn
+        if hasattr(target, "self"):
+            target.self = new_attn
+            new_attn.is_nested_encoder = True
             return new_attn
-        layer.attention = new_attn
+        if hasattr(target, "attention"):
+            if hasattr(target.attention, "self"):
+                target.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                target.attention = new_attn
+            return new_attn
+        target.attention = new_attn
         return new_attn
     except Exception as e:
         logger.error("inject_salt_attention failed at layer %d: %s", layer_idx, e)

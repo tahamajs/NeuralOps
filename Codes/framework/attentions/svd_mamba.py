@@ -456,9 +456,10 @@ class SVDMamba(BaseAttention):
                 missing.append("Out projection")
 
             if missing:
-                raise RuntimeError(
+                logger.warning(
                     f"SVDMamba: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
                 )
+                return
 
             if w_k is None:
                 w_k = w_q

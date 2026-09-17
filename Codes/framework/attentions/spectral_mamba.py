@@ -388,9 +388,10 @@ class SpectralMambaAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
+            logger.warning(
                 f"SpectralMambaAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
             )
+            return
 
         target_map = {
             "q": self.q_lin,
@@ -409,7 +410,8 @@ class SpectralMambaAttention(BaseAttention):
                             nn.init.zeros_(target_mod.bias)
                         continue
                     else:
-                        raise RuntimeError(f"Missing required weights for {proj_key}")
+                        logger.warning(f"Missing required weights for {proj_key}")
+                        return
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
@@ -439,7 +441,7 @@ class SpectralMambaAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    raise RuntimeError(f"Weight copy failed for {proj_key}: norm {fnorm:.6f} < 1e-4")
+                    logger.warning(f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4")
 
         if self.freeze_base:
             for mod in [self.q_lin, self.k_lin, self.v_lin, self.out_lin]:

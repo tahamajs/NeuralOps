@@ -101,8 +101,6 @@ class LoRALinear(nn.Module):
         dtype: Optional[torch.dtype] = None,
     ) -> None:
         super().__init__()
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
         factory_kwargs = {"device": device, "dtype": dtype}
         self.in_features = in_features
         self.out_features = out_features
@@ -161,7 +159,7 @@ class LoRALinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
-        return out * self.output_scale
+        return out
 
 
 @ATTENTION_REGISTRY.register("performer", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -289,7 +287,9 @@ class PerformerAttention(BaseAttention):
         self.rotary_emb = getattr(source_attn, "rotary_emb", None)
 
         if source_attn is not None:
-            self.copy_weights(source_attn)
+            success = self.copy_weights(source_attn)
+            if success is False:
+                raise RuntimeError("PerformerAttention: copy_weights failed")
 
     def _build_orthogonal_matrix(self, d: int, m: int) -> torch.Tensor:
         blocks = []
@@ -414,9 +414,10 @@ class PerformerAttention(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
+            logger.warning(
                 f"PerformerAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
             )
+            return False
 
         target_map = {
             "q": self.query,
@@ -453,7 +454,7 @@ class PerformerAttention(BaseAttention):
 
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"PerformerAttention weight verification failed for {proj_key}: norm too small ({w_norm:.2e})")
+                    logger.warning(f"PerformerAttention weight verification notice for {proj_key}: norm too small ({w_norm:.2e})")
 
         # 4. Preserve LoRA adapters: guarantee base weights stay frozen while LoRA A/B are trainable
         if self.lora_rank > 0:

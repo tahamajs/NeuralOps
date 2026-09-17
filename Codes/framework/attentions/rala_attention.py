@@ -385,10 +385,10 @@ class RALALinearAttention(BaseAttention):
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
                 mod.freeze_base_weights()
-            self.U.requires_grad = False
-            self.V.requires_grad = False
+            self.U.requires_grad = True
+            self.V.requires_grad = True
             if hasattr(self, 'alpha') and isinstance(self.alpha, nn.Parameter):
-                self.alpha.requires_grad = False
+                self.alpha.requires_grad = True
 
     def forward(
         self,

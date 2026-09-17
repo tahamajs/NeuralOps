@@ -467,6 +467,7 @@ class RoutingAttention(BaseAttention):
 
 
 def inject_routing(
+    model: Optional[nn.Module] = None,
     layer: Optional[nn.Module] = None,
     model_config: Optional[Any] = None,
     comp_config: Optional[Any] = None,
@@ -475,44 +476,101 @@ def inject_routing(
     old_attn: Optional[nn.Module] = None,
     **kwargs: Any,
 ) -> Optional[nn.Module]:
-    """Safely replace attention in layer with RoutingAttention."""
+    """Safely replace attention with RoutingAttention with whole-model and layer support."""
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config or getattr(target, "config", None)
+
+    # 1. Whole model traversal support
+    if target is not None and (
+        hasattr(target, "transformer")
+        or hasattr(target, "distilbert")
+        or hasattr(target, "roberta")
+        or hasattr(target, "bert")
+        or (hasattr(target, "model") and hasattr(target.model, "layers"))
+        or (hasattr(target, "encoder") and hasattr(target.encoder, "layer"))
+    ):
+        layer_list = None
+        if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder"):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
+            layer_list = target.transformer.h
+        elif hasattr(target, "model") and hasattr(target.model, "layers"):
+            layer_list = target.model.layers
+        elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
+            layer_list = target.encoder.layer
+
+        if layer_list is not None:
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                inject_routing(
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    **kwargs,
+                )
+            return target
+
+    # 2. Layer injection
     try:
         src = old_attn
-        if src is None and layer is not None:
+        if src is None and target is not None:
             for attr in ("attention", "self_attn", "attn", "self"):
-                if hasattr(layer, attr):
-                    cand = getattr(layer, attr)
-                    if isinstance(cand, nn.Module) and cand is not layer:
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if isinstance(cand, nn.Module) and cand is not target:
                         src = cand
                         break
         if src is None:
-            src = layer
+            src = target
 
-        config = model_config or getattr(layer, "config", getattr(src, "config", None))
+        # Double-injection guard
+        if src is not None:
+            if isinstance(src, RoutingAttention) or "Routing" in src.__class__.__name__:
+                return None
+            if hasattr(src, "inner") and isinstance(getattr(src, "inner"), RoutingAttention):
+                return None
+
+        if target is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                cand = getattr(target, attr, None)
+                if cand is not None:
+                    if isinstance(cand, RoutingAttention) or "Routing" in cand.__class__.__name__:
+                        return None
+
+        config = model_config or getattr(target, "config", getattr(src, "config", None))
         new_attn = RoutingAttention(
             config=config,
-            pretrained_attn=src if src is not layer else None,
+            pretrained_attn=src if src is not target else None,
             **kwargs,
         )
 
-        if layer is not None:
-            if hasattr(layer, "attention"):
-                if hasattr(layer.attention, "self"):
+        if target is not None:
+            if hasattr(target, "attention"):
+                if hasattr(target.attention, "self"):
                     new_attn.is_nested_encoder = True
-                    layer.attention.self = new_attn
+                    target.attention.self = new_attn
                 else:
                     new_attn.is_nested_encoder = False
-                    layer.attention = new_attn
-            elif hasattr(layer, "self_attn"):
+                    target.attention = new_attn
+            elif hasattr(target, "self_attn"):
                 new_attn.is_nested_encoder = False
-                layer.self_attn = new_attn
-            elif hasattr(layer, "attn"):
+                target.self_attn = new_attn
+            elif hasattr(target, "attn"):
                 new_attn.is_nested_encoder = False
-                layer.attn = new_attn
-            elif hasattr(layer, "self"):
+                target.attn = new_attn
+            elif hasattr(target, "self"):
                 new_attn.is_nested_encoder = True
-                layer.self = new_attn
-            return layer
+                target.self = new_attn
+            return target
         return new_attn
     except Exception as e:
         logger.error("inject_routing failed: %s", e)
