@@ -5,7 +5,7 @@
 | 1. family_aegis_spectron | ✅ | 11 | `b5a643c6b` | 15min | All 11 pass AST; output_scale eliminated; prefix is_decoder standardized |
 | 2. family_moe | ✅ | 9 | `de3e7580f` | 5min | All 9 pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
 | 3. family_mamba | ✅ | 7 | `45de3d5b4` | 5min | All 7 pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
-| 4. family_hgrn | ⏳ | 3 | — | — | Pending |
+| 4. family_hgrn | ✅ | 3 | `a6dbf5b18` | 3min | All 3 pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
 | 5. family_deltanet | ⏳ | 2 | — | — | Pending |
 | 6. family_compressed | ⏳ | 2 | — | — | Pending |
 | 7. family_svd_split_A | ⏳ | 18 | — | — | Pending |
