@@ -153,27 +153,32 @@ class MGIECompressor(BaseCompressor):
         self.layer_errors = {}
         self.layer_ranks = {}
         seen_weights: Set[int] = set()
+        seen_param_ids: Set[int] = set()
 
         total_orig_params = sum(p.numel() for p in self.model.parameters())
         total_comp_params = 0
 
+        def _add_params(mod: nn.Module):
+            nonlocal total_comp_params
+            for p in mod.parameters(recurse=False):
+                if id(p) not in seen_param_ids:
+                    seen_param_ids.add(id(p))
+                    total_comp_params += p.numel()
+
         for name, module in list(self.model.named_modules()):
             if not self._is_target_module(name, module):
-                for p in module.parameters(recurse=False):
-                    total_comp_params += p.numel()
+                _add_params(module)
                 continue
 
             target_layer = getattr(module, "base_layer", module)
             if not hasattr(target_layer, "weight") or target_layer.weight is None:
-                for p in module.parameters(recurse=False):
-                    total_comp_params += p.numel()
+                _add_params(module)
                 continue
 
             w_id = id(target_layer.weight)
             if w_id in seen_weights:
                 self.skipped_layers.append(name)
-                for p in module.parameters(recurse=False):
-                    total_comp_params += p.numel()
+                _add_params(module)
                 continue
             seen_weights.add(w_id)
 
@@ -210,7 +215,7 @@ class MGIECompressor(BaseCompressor):
                         self.fallback_layers.append(name)
                         for p in module.parameters(recurse=False):
                             p.requires_grad = False
-                            total_comp_params += p.numel()
+                        _add_params(module)
                         continue
 
                 existing_lora_r = getattr(module, "r", getattr(module, "lora_r", 0))
@@ -247,15 +252,14 @@ class MGIECompressor(BaseCompressor):
 
                 replace_module(self.model, name, svd_layer)
                 self.compressed_layers.append(name)
-                for p in svd_layer.parameters(recurse=False):
-                    total_comp_params += p.numel()
+                _add_params(svd_layer)
             except Exception as e:
                 logger.warning("MGIE compression exception on %s: %s", name, e)
                 self.fallback_layers.append(name)
                 self.layer_errors[name] = 1.0
                 for p in module.parameters(recurse=False):
                     p.requires_grad = False
-                    total_comp_params += p.numel()
+                _add_params(module)
 
         # Post-compression forward sanity check
         forward_check_success = True
