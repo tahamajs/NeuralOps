@@ -1,3 +1,6 @@
-\section{10 Limitations}
+\section{Limitations}
 
-Formal architectural specifications for \texttt{aa_svd_compressor}.
+\begin{itemize}
+\item \textbf{Distributional Dependence:} Accuracy depends on calibration text representation. Out-of-domain activation shifts can degrade reconstructed weight fidelity.
+\item \textbf{Uniform Rank Constraint:} The basic compressor enforces a uniform bottleneck rank across all target layers, disregarding inter-layer variance in singular value decay rates.
+\end{itemize}

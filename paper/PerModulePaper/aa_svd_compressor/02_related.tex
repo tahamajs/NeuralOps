@@ -1,3 +1,7 @@
-\section{02 Related}
+\section{Related Work}
 
-Formal architectural specifications for \texttt{aa_svd_compressor}.
+\subsection{Low-Rank Decomposition of Transformers}
+Low-rank approximation methods decompose large projection matrices into compact factors. While effective in vision networks, direct truncated SVD on large language models causes severe degradation unless guided by input activations.
+
+\subsection{Activation-Guided Compression}
+Activation-aware methods, such as ASVD \cite{yuan2023asvd} and AWQ \cite{lin2023awq}, recognize that a small subset of salient channels accounts for the vast majority of representational capacity. By scaling weight matrices proportionally to input activation norms or covariances, factorization preserves salient subspaces. \texttt{aa\_svd\_compressor} extends this with streaming covariance tracking and multi-architecture calibration routines.

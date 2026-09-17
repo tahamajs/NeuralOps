@@ -1,3 +1,8 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{adaptive_sparse_attention}.
+\subsection{Top-$k$ Dynamic Masking}
+For active fraction $1-s$, the layer retains $k = \max(1, \lfloor (1 - s) L \rfloor)$ tokens per query. Values below the $k$-th threshold $\tau_i$ are set to $-\infty$:
+\[
+\tilde{S}_{ij} = \begin{cases} S_{ij}, & S_{ij} \ge \tau_i \\ -\infty, & S_{ij} < \tau_i \end{cases}
+\]
+Softmax is applied over the filtered logits, ensuring that zero probability is allocated to pruned positions.

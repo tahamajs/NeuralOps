@@ -1,3 +1,15 @@
-\section{03 Background}
+\section{Mathematical Background}
 
-Formal architectural specifications for \texttt{aa_svd_compressor}.
+\subsection{Singular Value Decomposition}
+For a linear layer with weights $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, the full SVD decomposes $W$ as:
+\[
+W = U \Sigma V^\top = \sum_{i=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i u_i v_i^\top
+\]
+Under rank-$r$ truncation, the reconstructed weight matrix is $\hat{W} = U_r \Sigma_r V_r^\top$.
+
+\subsection{Activation-Weighted Objective}
+For activation tokens $X \in \mathbb{R}^{N \times d_{\text{in}}}$, minimizing the output reconstruction discrepancy requires:
+\[
+\min_{\operatorname{rank}(\hat{W}) \le r} \| (W - \hat{W}) X^\top \|_F^2 = \min_{\operatorname{rank}(\hat{W}) \le r} \| (W - \hat{W}) C_X^{1/2} \|_F^2
+\]
+where $C_X = \frac{1}{N} X^\top X$ is the activation covariance matrix.

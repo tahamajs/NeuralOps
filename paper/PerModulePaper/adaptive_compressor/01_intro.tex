@@ -1,3 +1,11 @@
-\section{01 Intro}
+\section{Introduction}
 
-Formal architectural specifications for \texttt{adaptive_compressor}.
+\subsection{Motivation}
+Uniform-rank SVD compression fails to accommodate the non-uniform parameter sensitivity across transformer layers. Early attention layers capture fine-grained token representations requiring higher rank fidelity, whereas deeper layers display pronounced singular value decay.
+
+\subsection{Dynamic Spectral Thresholding}
+\texttt{adaptive\_compressor} delegates to the unified \texttt{AdaptiveRanksCompressor} engine, selecting layer-specific bottleneck ranks according to cumulative singular value energy:
+\[
+\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau = 0.92)
+\]
+This dynamic allocation achieves optimal trade-offs between parameter compression and task performance preservation.

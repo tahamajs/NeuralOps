@@ -1,3 +1,12 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{adaptive_span_attention}.
+\subsection{Continuous Soft-Ramp Function}
+For maximum span $S_{\max}$ and ramp width $R$, the effective span for head $h$ is:
+\[
+z_h = \sigma(\text{logit}_h) \cdot S_{\max}
+\]
+The soft masking factor for relative distance $d_{ij}$ is computed as:
+\[
+g_{z_h}(d_{ij}) = \operatorname{clamp}\left(\frac{R + z_h - d_{ij}}{R}, 0, 1\right)
+\]
+Attention probabilities are modulated via element-wise multiplication: $A_{ij}^{(h)} = \operatorname{softmax}(S_{ij}^{(h)}) \cdot g_{z_h}(d_{ij})$.

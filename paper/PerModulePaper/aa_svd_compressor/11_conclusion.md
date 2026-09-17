@@ -1,0 +1,2 @@
+# 11. Conclusion
+Activation-Aware SVD (`aa_svd_compressor`) delivers a mathematically rigorous, production-hardened solution for transformer weight factorization. By incorporating streaming activation covariances into singular value decomposition and replacing dense projections with physical `SVDLinear` layers, it achieves reliable parameter reduction and verified multi-architecture compatibility across encoder, decoder, and hybrid language models.

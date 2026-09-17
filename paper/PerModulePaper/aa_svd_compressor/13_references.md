@@ -1,0 +1,6 @@
+# 13. References
+
+1. Yuan, Z., et al. (2023). ASVD: Activation-aware Singular Value Decomposition for Compressing Large Language Models. *arXiv preprint arXiv:2312.05845*.
+2. Hu, E. J., et al. (2021). LoRA: Low-Rank Adaptation of Large Language Models. *ICLR 2022*.
+3. Lin, J., et al. (2023). AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration. *MLSys 2024*.
+4. Eckart, C., & Young, G. (1936). The approximation of one matrix by another of lower rank. *Psychometrika*, 1(3), 211-218.

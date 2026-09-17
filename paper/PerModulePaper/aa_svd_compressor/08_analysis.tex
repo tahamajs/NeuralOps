@@ -1,3 +1,7 @@
-\section{08 Analysis}
+\section{Detailed Analysis}
 
-Formal architectural specifications for \texttt{aa_svd_compressor}.
+\subsection{Subspace Preservation Under Anisotropic Activations}
+By weighting the objective function by the activation covariance matrix $C_X$, the singular decomposition prioritizes directions with large variance in the residual stream. This prevents the loss of crucial representational capacity that occurs in naive truncated SVD.
+
+\subsection{Convolutional Layer Compatibility}
+In autoregressive backbones such as GPT-2, linear projections are frequently implemented via \texttt{Conv1D} modules with transposed weight layouts. The compression engine explicitly handles weight tensor orientations, ensuring uniform factorization across diverse model repositories.

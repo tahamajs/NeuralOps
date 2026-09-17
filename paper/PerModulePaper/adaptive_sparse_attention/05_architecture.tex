@@ -1,11 +1,2 @@
-\section{05 Architecture}
-
-Formal architectural specifications for \texttt{adaptive_sparse_attention}.
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
-\caption{Architectural schematic of adaptive_sparse_attention.}
-\label{fig:arch_adaptive_sparse_attention}
-\end{figure}
+\section{Architecture and Implementation}
+Projections are wrapped in \texttt{LoRALinear} modules to enable recovery adaptation. Architecture adapters dynamically handle RoPE rotary embeddings and GQA repeating.

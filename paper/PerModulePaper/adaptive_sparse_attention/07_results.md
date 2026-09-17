@@ -1,0 +1,15 @@
+# 7. Empirical Results
+
+## 7.1 Unified SST-2 Benchmark Results
+From `results/unified_adaptive_sparse_attention/*/summary.csv`:
+
+| Model | Compression Status | Accuracy (%) | F1 Score | Params Before | Params After | Peak VRAM (MB) | Tokens/sec |
+|---|---|---|---|---|---|---|---|
+| DistilBERT | PASS_NO_COMPRESSION | 88.99% <!-- source: results/unified_adaptive_sparse_attention/distilbert/summary.csv line 3 --> | 0.8865 <!-- source: results/unified_adaptive_sparse_attention/distilbert/summary.csv line 3 --> | 66,955,010 <!-- source: results/unified_adaptive_sparse_attention/distilbert/summary.csv line 3 --> | 81,719,120 <!-- source: results/unified_adaptive_sparse_attention/distilbert/summary.csv line 3 --> | 383.02 <!-- source: results/unified_adaptive_sparse_attention/distilbert/summary.csv line 3 --> | 18,842.8 <!-- source: results/unified_adaptive_sparse_attention/distilbert/summary.csv line 3 --> |
+| RoBERTa | PASS_NO_COMPRESSION | 64.79% <!-- source: results/unified_adaptive_sparse_attention/roberta/summary.csv line 3 --> | 0.5846 <!-- source: results/unified_adaptive_sparse_attention/roberta/summary.csv line 3 --> | 124,647,170 <!-- source: results/unified_adaptive_sparse_attention/roberta/summary.csv line 3 --> | 161,262,494 <!-- source: results/unified_adaptive_sparse_attention/roberta/summary.csv line 3 --> | 690.06 <!-- source: results/unified_adaptive_sparse_attention/roberta/summary.csv line 3 --> | 8,465.9 <!-- source: results/unified_adaptive_sparse_attention/roberta/summary.csv line 3 --> |
+| GPT-2 | PASS_NO_COMPRESSION | 79.36% <!-- source: results/unified_adaptive_sparse_attention/gpt2/summary.csv line 3 --> | 0.7978 <!-- source: results/unified_adaptive_sparse_attention/gpt2/summary.csv line 3 --> | 124,441,344 <!-- source: results/unified_adaptive_sparse_attention/gpt2/summary.csv line 3 --> | 175,230,876 <!-- source: results/unified_adaptive_sparse_attention/gpt2/summary.csv line 3 --> | 757.73 <!-- source: results/unified_adaptive_sparse_attention/gpt2/summary.csv line 3 --> | 8,562.4 <!-- source: results/unified_adaptive_sparse_attention/gpt2/summary.csv line 3 --> |
+| Qwen 3.5 | PASS | 56.65% <!-- source: results/unified_adaptive_sparse_attention/qwen3_5/summary.csv line 3 --> | 0.6927 <!-- source: results/unified_adaptive_sparse_attention/qwen3_5/summary.csv line 3 --> | 763,217,728 <!-- source: results/unified_adaptive_sparse_attention/qwen3_5/summary.csv line 3 --> | 795,584,368 <!-- source: results/unified_adaptive_sparse_attention/qwen3_5/summary.csv line 3 --> | 1918.44 <!-- source: results/unified_adaptive_sparse_attention/qwen3_5/summary.csv line 3 --> | 4,519.6 <!-- source: results/unified_adaptive_sparse_attention/qwen3_5/summary.csv line 3 --> |
+
+## 7.2 Multi-Dataset Evaluation (DistilBERT)
+- AG News: Accuracy 64.7%, Peak VRAM 613.69 MB, Throughput 111,548 tokens/sec <!-- source: results/agnews_unified_adaptive_sparse_attention/distilbert/summary.csv line 2 -->
+- MNLI: Accuracy 35.0%, Peak VRAM 411.9 MB, Throughput 39,685 tokens/sec <!-- source: results/mnli_unified_adaptive_sparse_attention/distilbert/summary.csv line 2 -->

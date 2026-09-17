@@ -1,3 +1,2 @@
-\section{03 Background}
-
-Formal architectural specifications for \texttt{adaptive_sparse_attention}.
+\section{Mathematical Background}
+Given query and key matrices $Q, K \in \mathbb{R}^{L \times d_h}$, raw attention logits are $S = \frac{Q K^\top}{\sqrt{d_h}}$. Dense softmax distributes probability mass over the entire sequence.

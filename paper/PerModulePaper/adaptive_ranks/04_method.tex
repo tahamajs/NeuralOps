@@ -1,3 +1,7 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{adaptive_ranks}.
+\subsection{Dynamic Rank and Whitening}
+The algorithm performs singular value decomposition on whitened weights $M = W \operatorname{Cov}(X)^{1/2}$, finds the minimal rank satisfying $\tau = 0.92$, and distributes singular values symmetrically:
+\[
+U_r = U_{:, :r} \sqrt{\Sigma_r}, \quad V_r = (\sqrt{\Sigma_r} V_{:r, :}^\top) \operatorname{Cov}(X)^{-1/2}
+\]

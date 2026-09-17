@@ -1,3 +1,7 @@
-\section{12 Reproducibility}
-
-Formal architectural specifications for \texttt{adaptive_compressor}.
+\section{Reproducibility Guide}
+\begin{lstlisting}[language=bash]
+python -u Codes/framework/run_compressor.py \
+  --model distilbert-base-uncased \
+  --compressor adaptive_compressor \
+  --energy_threshold 0.92
+\end{lstlisting}

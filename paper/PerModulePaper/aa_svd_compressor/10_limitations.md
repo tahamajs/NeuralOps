@@ -1,0 +1,4 @@
+# 10. Limitations
+
+1. **Calibration Sensitivity**: Covariance estimation depends on the diversity of the calibration corpus. Extreme domain shifts between calibration and test distributions may degrade factor accuracy.
+2. **Fixed Rank Allocation**: In its default configuration, `aa_svd_compressor` applies a uniform rank $r$ across all factorized layers rather than dynamically adjusting ranks per layer based on individual singular value spectra.

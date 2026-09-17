@@ -1,3 +1,15 @@
-\section{12 Reproducibility}
+\section{Reproducibility Guide}
 
-Formal architectural specifications for \texttt{aa_svd_compressor}.
+\subsection{Compression Command}
+\begin{lstlisting}[language=bash]
+python -u Codes/framework/run_compressor.py \
+  --model distilbert-base-uncased \
+  --compressor aa_svd_compressor \
+  --rank 288 \
+  --ema_beta 0.9
+\end{lstlisting}
+
+\subsection{Unit Verification}
+\begin{lstlisting}[language=bash]
+pytest Codes/framework/tests/test_adaptive_svd_verification.py -v
+\end{lstlisting}

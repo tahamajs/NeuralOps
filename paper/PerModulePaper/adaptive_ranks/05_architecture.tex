@@ -1,11 +1,2 @@
-\section{05 Architecture}
-
-Formal architectural specifications for \texttt{adaptive_ranks}.
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/arch_adaptive_svd_attention.jpeg}
-\caption{Architectural schematic of adaptive_ranks.}
-\label{fig:arch_adaptive_ranks}
-\end{figure}
+\section{Architecture and Implementation}
+Dense projections are physically replaced with \texttt{SVDLinear} layers carrying custom ranks $r_l$, ensuring concrete parameter reduction on hardware.

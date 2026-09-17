@@ -1,11 +1,2 @@
-\section{05 Architecture}
-
-Formal architectural specifications for \texttt{adaptive_span_attention}.
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/arch_flash_attention3_fp8.jpeg}
-\caption{Architectural schematic of adaptive_span_attention.}
-\label{fig:arch_adaptive_span_attention}
-\end{figure}
+\section{Architecture and Implementation}
+The module encapsulates projection matrices within \texttt{LoRALinear} layers, augmented with a learnable vector $\mathbf{z} \in \mathbb{R}^H$ parameterizing per-head attention horizons.

@@ -1,3 +1,11 @@
-\section{01 Intro}
+\section{Introduction}
 
-Formal architectural specifications for \texttt{adaptive_ranks}.
+\subsection{Motivation}
+Uniform low-rank factorization ignores the spectral heterogeneity of transformer weight matrices. Sensitive early layers often require higher rank capacity to preserve syntactic information, whereas deeper layers can be aggressively compressed.
+
+\subsection{Energy-Guided Rank Allocation}
+\texttt{adaptive\_ranks} calculates layer-specific bottleneck ranks by inspecting empirical singular value energy profiles:
+\[
+\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \quad (\tau = 0.92)
+\]
+providing principled, parameter-efficient compression across diverse transformer architectures.

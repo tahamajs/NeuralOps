@@ -1,3 +1,11 @@
-\section{01 Intro}
+\section{Introduction}
 
-Formal architectural specifications for \texttt{adaptive_sparse_attention}.
+\subsection{Motivation}
+Dense attention computation incurs quadratic complexity $\mathcal{O}(L^2)$ in time and memory. In practice, attention score matrices exhibit extreme sparsity, with entropy concentrated on a small fraction of salient tokens.
+
+\subsection{Adaptive Threshold Sparsification}
+\texttt{adaptive\_sparse\_attention} prunes low-magnitude attention logits dynamically by selecting the top-$k$ keys per query:
+\[
+k = \max\left(1, \lfloor (1 - s) \cdot L \rfloor\right)
+\]
+Masking non-selected positions to $-\infty$ concentrates probability mass on informative tokens, eliminating spurious cross-attention noise.

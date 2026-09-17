@@ -1,3 +1,4 @@
-\section{09 Discussion}
+\section{Discussion}
 
-Formal architectural specifications for \texttt{aa_svd_compressor}.
+\subsection{Throughput versus Memory Latency}
+Factorization introduces an intermediate bottleneck representation of dimension $r$. On memory-bandwidth bound operations, reducing weight fetch volumes yields marked efficiency improvements. In compute-bound regimes, custom fused kernels are beneficial to avoid materializing the intermediate rank-$r$ tensor.

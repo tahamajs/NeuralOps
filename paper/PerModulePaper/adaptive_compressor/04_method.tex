@@ -1,3 +1,11 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{adaptive_compressor}.
+\subsection{Energy-Constrained Rank Selection}
+For each linear layer, the compressor computes singular values in FP32 precision and solves for the minimal rank $r$:
+\[
+r^* = \arg\min_r \left\{ \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^d \sigma_j^2} \ge \tau \right\}, \quad r = \max(r^*, r_{\min})
+\]
+where $r_{\min} = \max(16, \lfloor 0.15 \cdot \min(d_{\text{in}}, d_{\text{out}}) \rfloor)$.
+
+\subsection{Module Substitution}
+Layers satisfying parameter reduction criteria ($r(d_{\text{in}} + d_{\text{out}}) < d_{\text{in}} d_{\text{out}}$) and relative reconstruction tolerance ($\text{err} \le 0.20$) are replaced with \texttt{SVDLinear}.

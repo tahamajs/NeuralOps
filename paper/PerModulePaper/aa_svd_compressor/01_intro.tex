@@ -1,3 +1,13 @@
-\section{01 Intro}
+\section{Introduction}
 
-Formal architectural specifications for \texttt{aa_svd_compressor}.
+\subsection{Motivation}
+In standard transformer architectures, dense linear projections within multi-head attention ($W_Q, W_K, W_V, W_O$) and feed-forward networks dominate parameter storage and inference latency. Low-rank factorization approximates a weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ by a product of two lower-rank matrices $U \in \mathbb{R}^{d_{\text{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\text{in}}}$, reducing parameter footprint from $d_{\text{in}} d_{\text{out}}$ to $r(d_{\text{in}} + d_{\text{out}})$.
+
+While the classical Eckart--Young--Mirsky theorem establishes truncated SVD as the optimal rank-$r$ approximation in unweighted Frobenius norm, modern transformer representations exhibit significant activation anisotropy and outlier dimensions. Naive weight truncation discards low-magnitude singular vectors that align with high-variance activation channels, causing catastrophic degradation in perplexity and downstream accuracy.
+
+\subsection{Activation-Aware Decomposition}
+Activation-Aware SVD (\texttt{aa\_svd\_compressor}) preconditions each weight matrix by the empirical activation covariance accumulated over calibration sequences. By factorizing the preconditioned matrix and projecting back to parameter space, the decomposition directly minimizes the error observed at layer outputs:
+\[
+\min_{U, V} \mathbb{E}_{X \sim \mathcal{D}} \| W X - U V X \|_F^2
+\]
+The engine physically instantiates factorized \texttt{SVDLinear} layers, yielding immediate parameter and compute reduction on standard hardware accelerators.

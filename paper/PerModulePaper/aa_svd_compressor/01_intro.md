@@ -1,0 +1,9 @@
+# 1. Introduction
+
+## 1.1 Motivation
+In standard transformer architectures such as DistilBERT, RoBERTa, and GPT-2, linear projection layers ($W_Q, W_K, W_V, W_O$ in multi-head attention and intermediate/output layers in feed-forward networks) dominate total parameter storage and runtime computational budgets. For instance, in DistilBERT ($d=768$), each self-attention projection accounts for $768 \times 768 = 589,824$ parameters. Physical low-rank matrix factorization replaces $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ with factor matrices $U \in \mathbb{R}^{d_{\text{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\text{in}}}$, reducing parameter complexity from $d_{\text{in}} d_{\text{out}}$ down to $r(d_{\text{in}} + d_{\text{out}})$.
+
+However, naive truncated SVD minimizes unweighted Frobenius reconstruction error $\|W - \hat{W}\|_F^2$, implicitly assuming that all feature dimensions in the input space are independently and identically distributed. In practice, modern deep language models develop pronounced outlier channels with activation variances up to $100\times$ larger than typical channels. Truncating singular components without accounting for activation magnitude results in severe representation collapse.
+
+## 1.2 Our Approach
+To resolve this limitation, `aa_svd_compressor` computes empirical input activation covariances over multi-domain calibration text tokens. By preconditioning weights prior to singular value decomposition and unweighting singular vectors during layer construction, the factorization minimizes activation-weighted reconstruction error $\|(W - \hat{W}) X\|_F^2$. The compressed model replaces target dense layers with structural `SVDLinear` modules that execute two sequential lower-dimensional matrix multiplications, achieving true physical parameter reduction and FLOP savings without requiring custom sparse kernels.

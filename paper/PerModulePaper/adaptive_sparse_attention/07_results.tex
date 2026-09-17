@@ -1,3 +1,21 @@
-\section{07 Results}
+\section{Empirical Results}
 
-Formal architectural specifications for \texttt{adaptive_sparse_attention}.
+\subsection{SST-2 Classification Performance}
+Table~\ref{tab:adaptive_sparse_results} outlines classification metrics across backbones.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params} & \textbf{VRAM (MB)} \\
+\midrule
+DistilBERT & PASS\_NO\_COMP & 88.99 & 81.72M & 383.0 \\
+RoBERTa    & PASS\_NO\_COMP & 64.79 & 161.26M & 690.1 \\
+GPT-2      & PASS\_NO\_COMP & 79.36 & 175.23M & 757.7 \\
+Qwen 3.5   & PASS          & 56.65 & 795.58M & 1918.4 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical evaluation from \texttt{results/unified\_adaptive\_sparse\_attention/*/summary.csv}.}
+\label{tab:adaptive_sparse_results}
+\end{table}

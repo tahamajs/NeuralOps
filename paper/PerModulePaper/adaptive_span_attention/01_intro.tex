@@ -1,3 +1,7 @@
-\section{01 Intro}
+\section{Introduction}
 
-Formal architectural specifications for \texttt{adaptive_span_attention}.
+\subsection{Motivation}
+Transformer self-attention calculates pairwise interactions across all $L$ tokens for every attention head. However, diverse attention heads exhibit specialized receptive fields; many heads attend strictly to local syntactic structures within 10--30 tokens.
+
+\subsection{Continuous Soft-Ramp Context Pruning}
+\texttt{adaptive\_span\_attention} introduces a differentiable per-head masking function that dynamically curtails attention beyond a learned distance threshold $z_h$. By optimizing span logits during training or recovery fine-tuning, heads discard irrelevant context without discrete thresholding instabilities.

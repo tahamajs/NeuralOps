@@ -1,3 +1,4 @@
-\section{06 Setup}
+\section{Experimental Setup}
 
-Formal architectural specifications for \texttt{aa_svd_compressor}.
+\subsection{Backbone Models and Protocols}
+The module is evaluated across four representative architectures: DistilBERT, RoBERTa-base, GPT-2, and Qwen. The calibration dataset comprises multi-domain sequences spanning scientific discourse, conversational tokens, and source code. Factorization is performed with target rank $r=288$, EMA momentum $\beta=0.9$, and error ceiling $\delta_{\max}=0.50$.

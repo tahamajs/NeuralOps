@@ -1,3 +1,2 @@
-\section{03 Background}
-
-Formal architectural specifications for \texttt{adaptive_span_attention}.
+\section{Mathematical Background}
+For query $Q_i$ and key $K_j$ with head dimension $d_h$, raw attention logits are $S_{ij} = \frac{Q_i K_j^\top}{\sqrt{d_h}}$. The relative distance between positions $i$ and $j$ is $d_{ij} = |i - j|$ (or $i - j$ in causal attention).

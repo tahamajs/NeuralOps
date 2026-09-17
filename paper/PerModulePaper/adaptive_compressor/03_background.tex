@@ -1,3 +1,5 @@
-\section{03 Background}
-
-Formal architectural specifications for \texttt{adaptive_compressor}.
+\section{Mathematical Background}
+For a projection tensor $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, the spectral energy distribution is characterized by its singular values $\Sigma = \operatorname{diag}(\sigma_1, \dots, \sigma_{\min})$. The fractional energy captured by rank $r$ is defined as:
+\[
+\mathcal{E}(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_j^2}
+\]

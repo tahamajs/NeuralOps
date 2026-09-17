@@ -1,3 +1,7 @@
-\section{A Math}
-
-Formal architectural specifications for \texttt{aa_svd_compressor}.
+\section*{Appendix A. Mathematical Derivations}
+\addcontentsline{toc}{section}{Appendix A}
+Let $C_X = \frac{1}{N} X^\top X$ be the activation covariance matrix. The output discrepancy objective satisfies:
+\[
+\frac{1}{N} \| (W - \hat{W}) X^\top \|_F^2 = \operatorname{Tr}\left( (W - \hat{W}) C_X (W - \hat{W})^\top \right) = \| (W - \hat{W}) C_X^{1/2} \|_F^2
+\]
+Defining the whitened weight $\tilde{W} = W C_X^{1/2}$, standard Eckart--Young SVD yields the optimal rank-$r$ factor $\tilde{W}_r = \tilde{U}_r \tilde{\Sigma}_r \tilde{V}_r^\top$. Unwhitening via $V_r = \tilde{\Sigma}_r^{1/2} \tilde{V}_r^\top C_X^{-1/2}$ recovers the global minimum.

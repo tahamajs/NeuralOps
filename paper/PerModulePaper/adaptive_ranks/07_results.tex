@@ -1,3 +1,21 @@
-\section{07 Results}
+\section{Empirical Results}
 
-Formal architectural specifications for \texttt{adaptive_ranks}.
+\subsection{Cross-Model Performance Summary}
+Table~\ref{tab:adaptive_ranks_results} presents quantitative results across standard test models.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Model} & \textbf{Status} & \textbf{Acc (\%)} & \textbf{Params (Pre)} & \textbf{Params (Post)} & \textbf{Rate} & \textbf{VRAM (MB)} \\
+\midrule
+DistilBERT & PASS & 88.07 & 66.95M & 58.11M & 1.152$\times$ & 382.7 \\
+RoBERTa    & PASS & 77.87 & 124.65M & 106.95M & 1.165$\times$ & 679.5 \\
+GPT-2      & PASS & 77.52 & 124.44M & 106.75M & 1.166$\times$ & 754.8 \\
+Qwen 3.5   & PASS & 67.55 & 763.22M & 763.22M & 1.000$\times$ & 1810.6 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical evaluation from \texttt{results/unified\_adaptive\_ranks/*/summary.csv}.}
+\label{tab:adaptive_ranks_results}
+\end{table}
