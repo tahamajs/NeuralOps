@@ -1,0 +1,4574 @@
+[
+  {
+    "model": "distilbert",
+    "module": "SOAFusedAttention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "adaptive_span_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "adaptive_span_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "adaptive_sparse_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "adaptive_sparse_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "adaptive_svd_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "adasplash_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "adasplash_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "aegis_hybrid",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "aegis_hybrid_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "aegis_spectron_fp8",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "aegis_v1",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "aegis_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "aegis_v3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "aegis_v4",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "aegis_v5",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "aegis_v6",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "asvd_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "bam_umoe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "block_transformer_hiba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "chela_slay",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "cluster_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "cluster_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "compressed_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "compressed_mha",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "compressed_mha_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "cosformer",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "cosformer_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "decay_linear_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "eat",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "expert_choice_moe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "factorised_matrix_state",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "flash_attention3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "flash_attention3_fp8",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "full_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "fused_svd_kernel",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "fusion_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "galerkin",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "galerkin_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "galerkin_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "gated_delta_net",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "gated_deltanet_block",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "gated_linear_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "goldfinch_ahn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "gqa",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "gqa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "granite_hybrid",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "griffin_ssd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "halo_regla",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hamming_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hgrn2_gated_deltanet",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hgrn2_layer",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hgrn2_outer",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hla_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hla_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hymba_transx",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "infini_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "jamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "jamba_info",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "kda_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "kda_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "leka_v1",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "leka_v1_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "leka_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "leka_v2_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "leka_v3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "leka_v3_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "linformer_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "lola_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "lora_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "lsh_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "mamba_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "mamba_svd_flash",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "minimal_aurora",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "minimal_nova",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "minimal_prism",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "minimal_svd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "minimal_svd_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "mixattention_moska",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "mla_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "moba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "moba_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "moe_deltakv_paged",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "nasc_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "nexus",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "nha_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "nha_compressor",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "nsa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "nystrom_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "optimized_hybrid_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "orion",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "performer_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "phantom",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "primal_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "progressive_token_pruning",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "projection_factorized_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "qcqa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "rala_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "rala_compressor",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "reap_moe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "regla_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "replace",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "res_svd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "routing_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "rpc",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "rpc_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "run_quality_sweep",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "salt",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "salt_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "samba_m3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "samba_moe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "simple_ssm",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "smart_weighted_ensemble",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "soa_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "soa_fused_module",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "soa_module",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "span_expanded_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "spectra_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "spectra_v2_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "spectral_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "spectral_mamba_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "spectron",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "spectron_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "squeezing_heads",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "squeezing_heads_distill",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "squeezing_heads_distiller",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_compressed",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_compressed_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_linear_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_linear_decay",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_llm_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_llm_v2_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_proj_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_projection_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_sequence_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "template_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "token_compressed",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "token_compressed_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "tpa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "tt",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "unified_rope",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "upi_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "upi_stuffed_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "vig_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "vspec",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "weighted_ensemble",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "wgqa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "xattention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "zeros_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "a3_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "aa_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "aasvd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "adaptive_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "adaptive_ranks",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "adasvd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "admm_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "admm_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "armor_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "ast_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "astro_quantizer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "bonsai_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "cachenotes_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "come",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "compot_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "coopq_quantizer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "cr_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "cur_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "cur_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "cur_moe",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "cur_moe_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "cure",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "delta_kv",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "direct_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "dobi",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "dobi_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "dynamic_entropy",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "dynamic_rank",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "enlighten_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "entropy_budget_allocation",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "erc_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "faq_quantizer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "flap",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "flat_llm",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "frandi",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "frandi_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "gfws_d_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "grecodec",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "grecodec_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hashed_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hashed_net_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "huffman_coder",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hybrid_svd_layer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hybridkv",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "hybridkv_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "kmeans_quantize",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "kronecker_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "kronecker_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "kronecker_tt_lora",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "kvtc",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "kvtc_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "liftr",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "lillama_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "lsc_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "mamba_shedder",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "mgie_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "mgie_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "mlorq_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "modegpt",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "modegpt_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "nli_softmax",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "nmf_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "oats",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "oats_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "optimal_subspace_projection",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "padre_attention",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "proxsparse",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "proxsparse_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "pruning_utils",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "replaceme_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "res_svd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "roast_hashed_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "rotational_slicegpt_int4",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "rpca",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "rpca_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "saes_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "saes_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "saes_svd_v2",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "salr",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "sdrm",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "sdrm_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "slicegpt",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "slicegpt_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "slicegpt_pca",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "slim_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "soka",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "soka_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "sparsegpt",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "spectraformer_attention",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "subspace_projection",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "svd_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "swift_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "swift_svd_act",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "swift_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "tlinformer_attention",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "tomoe",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "tomoe_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "tt_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "tt_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "uniql_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "zerokv_neo",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "distilbert",
+    "module": "zerokv_neo_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "SOAFusedAttention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "adaptive_span_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "adaptive_span_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "adaptive_sparse_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "adaptive_sparse_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "adaptive_svd_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "adasplash_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "adasplash_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "aegis_hybrid",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "aegis_hybrid_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "aegis_spectron_fp8",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "aegis_v1",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "aegis_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "aegis_v3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "aegis_v4",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "aegis_v5",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "aegis_v6",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "asvd_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "bam_umoe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "block_transformer_hiba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "chela_slay",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "cluster_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "cluster_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "compressed_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "compressed_mha",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "compressed_mha_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "cosformer",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "cosformer_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "decay_linear_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "eat",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "expert_choice_moe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "factorised_matrix_state",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "flash_attention3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "flash_attention3_fp8",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "full_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "fused_svd_kernel",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "fusion_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "galerkin",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "galerkin_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "galerkin_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "gated_delta_net",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "gated_deltanet_block",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "gated_linear_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "goldfinch_ahn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "gqa",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "gqa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "granite_hybrid",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "griffin_ssd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "halo_regla",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hamming_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hgrn2_gated_deltanet",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hgrn2_layer",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hgrn2_outer",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hla_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hla_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hymba_transx",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "infini_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "jamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "jamba_info",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "kda_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "kda_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "leka_v1",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "leka_v1_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "leka_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "leka_v2_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "leka_v3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "leka_v3_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "linformer_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "lola_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "lora_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "lsh_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "mamba_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "mamba_svd_flash",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "minimal_aurora",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "minimal_nova",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "minimal_prism",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "minimal_svd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "minimal_svd_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "mixattention_moska",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "mla_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "moba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "moba_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "moe_deltakv_paged",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "nasc_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "nexus",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "nha_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "nha_compressor",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "nsa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "nystrom_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "optimized_hybrid_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "orion",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "performer_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "phantom",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "primal_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "progressive_token_pruning",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "projection_factorized_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "qcqa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "rala_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "rala_compressor",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "reap_moe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "regla_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "replace",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "res_svd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "routing_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "rpc",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "rpc_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "run_quality_sweep",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "salt",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "salt_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "samba_m3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "samba_moe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "simple_ssm",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "smart_weighted_ensemble",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "soa_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "soa_fused_module",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "soa_module",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "span_expanded_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "spectra_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "spectra_v2_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "spectral_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "spectral_mamba_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "spectron",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "spectron_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "squeezing_heads",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "squeezing_heads_distill",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "squeezing_heads_distiller",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_compressed",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_compressed_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_linear_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_linear_decay",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_llm_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_llm_v2_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_proj_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_projection_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_sequence_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "template_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "token_compressed",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "token_compressed_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "tpa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "tt",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "unified_rope",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "upi_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "upi_stuffed_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "vig_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "vspec",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "weighted_ensemble",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "wgqa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "xattention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "zeros_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "a3_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "aa_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "aasvd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "adaptive_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "adaptive_ranks",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "adasvd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "admm_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "admm_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "armor_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "ast_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "astro_quantizer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "bonsai_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "cachenotes_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "come",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "compot_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "coopq_quantizer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "cr_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "cur_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "cur_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "cur_moe",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "cur_moe_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "cure",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "delta_kv",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "direct_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "dobi",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "dobi_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "dynamic_entropy",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "dynamic_rank",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "enlighten_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "entropy_budget_allocation",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "erc_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "faq_quantizer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "flap",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "flat_llm",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "frandi",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "frandi_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "gfws_d_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "grecodec",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "grecodec_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hashed_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hashed_net_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "huffman_coder",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hybrid_svd_layer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hybridkv",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "hybridkv_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "kmeans_quantize",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "kronecker_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "kronecker_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "kronecker_tt_lora",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "kvtc",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "kvtc_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "liftr",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "lillama_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "lsc_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "mamba_shedder",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "mgie_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "mgie_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "mlorq_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "modegpt",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "modegpt_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "nli_softmax",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "nmf_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "oats",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "oats_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "optimal_subspace_projection",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "padre_attention",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "proxsparse",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "proxsparse_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "pruning_utils",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "replaceme_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "res_svd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "roast_hashed_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "rotational_slicegpt_int4",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "rpca",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "rpca_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "saes_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "saes_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "saes_svd_v2",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "salr",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "sdrm",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "sdrm_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "slicegpt",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "slicegpt_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "slicegpt_pca",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "slim_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "soka",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "soka_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "sparsegpt",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "spectraformer_attention",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "subspace_projection",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "svd_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "swift_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "swift_svd_act",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "swift_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "tlinformer_attention",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "tomoe",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "tomoe_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "tt_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "tt_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "uniql_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "zerokv_neo",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "roberta",
+    "module": "zerokv_neo_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "SOAFusedAttention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "adaptive_span_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "adaptive_span_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "adaptive_sparse_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "adaptive_sparse_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "adaptive_svd_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "adasplash_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "adasplash_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "aegis_hybrid",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "aegis_hybrid_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "aegis_spectron_fp8",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "aegis_v1",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "aegis_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "aegis_v3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "aegis_v4",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "aegis_v5",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "aegis_v6",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "asvd_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "bam_umoe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "block_transformer_hiba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "chela_slay",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "cluster_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "cluster_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "compressed_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "compressed_mha",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "compressed_mha_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "cosformer",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "cosformer_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "decay_linear_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "eat",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "expert_choice_moe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "factorised_matrix_state",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "flash_attention3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "flash_attention3_fp8",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "full_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "fused_svd_kernel",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "fusion_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "galerkin",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "galerkin_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "galerkin_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "gated_delta_net",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "gated_deltanet_block",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "gated_linear_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "goldfinch_ahn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "gqa",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "gqa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "granite_hybrid",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "griffin_ssd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "halo_regla",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hamming_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hgrn2_gated_deltanet",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hgrn2_layer",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hgrn2_outer",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hla_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hla_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hymba_transx",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "infini_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "jamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "jamba_info",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "kda_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "kda_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "leka_v1",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "leka_v1_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "leka_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "leka_v2_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "leka_v3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "leka_v3_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "linformer_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "lola_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "lora_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "lsh_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "mamba_inject",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "mamba_svd_flash",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "minimal_aurora",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "minimal_nova",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "minimal_prism",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "minimal_svd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "minimal_svd_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "mixattention_moska",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "mla_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "moba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "moba_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "moe_deltakv_paged",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "nasc_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "nexus",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "nha_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "nha_compressor",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "nsa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "nystrom_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "optimized_hybrid_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "orion",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "performer_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "phantom",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "primal_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "progressive_token_pruning",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "projection_factorized_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "qcqa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "rala_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "rala_compressor",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "reap_moe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "regla_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "replace",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "res_svd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "routing_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "rpc",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "rpc_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "run_quality_sweep",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "salt",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "salt_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "samba_m3",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "samba_moe",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "simple_ssm",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "smart_weighted_ensemble",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "soa_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "soa_fused_module",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "soa_module",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "span_expanded_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "spectra_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "spectra_v2_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "spectral_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "spectral_mamba_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "spectron",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "spectron_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "squeezing_heads",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "squeezing_heads_distill",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "squeezing_heads_distiller",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_compressed",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_compressed_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_linear_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_linear_decay",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_llm_v2",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_llm_v2_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_proj_attn",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_projection_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_sequence_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "template_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "token_compressed",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "token_compressed_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "tpa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "tt",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "unified_rope",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "upi_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "upi_stuffed_mamba",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "vig_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "vspec",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "weighted_ensemble",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "wgqa_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "xattention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "zeros_attention",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "a3_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "aa_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "aasvd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "adaptive_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "adaptive_ranks",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "adasvd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "admm_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "admm_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "armor_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "ast_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "astro_quantizer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "bonsai_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "cachenotes_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "come",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "compot_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "coopq_quantizer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "cr_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "cur_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "cur_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "cur_moe",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "cur_moe_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "cure",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "delta_kv",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "direct_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "dobi",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "dobi_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "dynamic_entropy",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "dynamic_rank",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "enlighten_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "entropy_budget_allocation",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "erc_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "faq_quantizer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "flap",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "flat_llm",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "frandi",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "frandi_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "gfws_d_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "grecodec",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "grecodec_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hashed_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hashed_net_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "huffman_coder",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hybrid_svd_layer",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hybridkv",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "hybridkv_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "kmeans_quantize",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "kronecker_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "kronecker_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "kronecker_tt_lora",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "kvtc",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "kvtc_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "liftr",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "lillama_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "lsc_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "mamba_shedder",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "mgie_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "mgie_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "mlorq_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "modegpt",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "modegpt_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "nli_softmax",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "nmf_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "oats",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "oats_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "optimal_subspace_projection",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "padre_attention",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "proxsparse",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "proxsparse_pruner",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "pruning_utils",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "replaceme_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "res_svd",
+    "package": "framework.attentions",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "roast_hashed_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "rotational_slicegpt_int4",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "rpca",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "rpca_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "saes_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "saes_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "saes_svd_v2",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "salr",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "sdrm",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "sdrm_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "slicegpt",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "slicegpt_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "slicegpt_pca",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "slim_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "soka",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "soka_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "sparsegpt",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "spectraformer_attention",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "subspace_projection",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "svd_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "swift_svd",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "swift_svd_act",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "swift_svd_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "tlinformer_attention",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "tomoe",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "tomoe_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "tt_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "tt_linear",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "uniql_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "zerokv_neo",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  },
+  {
+    "model": "gpt2",
+    "module": "zerokv_neo_compressor",
+    "package": "framework.compression_engine",
+    "status": "IMPORT_OK"
+  }
+]
