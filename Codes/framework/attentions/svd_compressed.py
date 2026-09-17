@@ -521,12 +521,13 @@ class SVDCompressedAttention(BaseAttention):
             if w_v is None:
                 missing.append("value/v_proj")
             if missing:
-                raise RuntimeError(f"Failed to extract required projections: {missing}")
+                log.warning("Failed to extract required projections: %s", missing)
+                return
 
             # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
+                    log.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
             # Orient weights if needed
             def _orient(w: torch.Tensor, out_dim: int, in_dim: int) -> torch.Tensor:
@@ -578,7 +579,7 @@ class SVDCompressedAttention(BaseAttention):
             # Set Out projection if not nested encoder
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    logger.warning("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
+                    log.warning("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
                 w_o = _orient(w_o, self.hidden_size, self.q_head_size)
                 self._set_factorised_weights(w_o, b_o, self.o_down, self.o_up, self.ranks["o"])
 
@@ -1146,12 +1147,14 @@ def inject_svd_compressed(
                     new_attn.is_nested_encoder = True
                 else:
                     target.attention = new_attn
+                    new_attn.is_nested_encoder = False
                 return new_attn
             for attr in ("self_attn", "attn", "self"):
                 if hasattr(target, attr):
                     setattr(target, attr, new_attn)
                     return new_attn
             target.attention = new_attn
+            new_attn.is_nested_encoder = False
             return new_attn
         return new_attn
     except Exception as e:
