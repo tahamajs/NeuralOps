@@ -71,7 +71,6 @@ class A3FactorizedLinear(nn.Module):
         freeze_base: bool = False,
     ) -> None:
         super().__init__()
-        pass
         self.in_features = in_features
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
