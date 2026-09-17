@@ -154,7 +154,7 @@ class LowRankCompressor(BaseCompressor):
             return max(1, min(self.rank, max_r))
         cum_energy = torch.cumsum(S ** 2, dim=0) / total_energy
         idx = torch.where(cum_energy >= self.energy_threshold)[0]
-        r = idx[0].item() + 1 if len(idx) > 0 else len(S)
+        r = idx[0].item() if len(idx) > 0 else len(S)
         return max(1, min(r, max_r))
 
     def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
