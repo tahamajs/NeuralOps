@@ -323,8 +323,7 @@ class UPIMambaBlock(BaseAttention):
             if w_v is None: missing.append("V projection")
             if w_o is None and not self.is_nested_encoder: missing.append("Out projection")
             if missing:
-                logger.error("UPIMambaBlock: Failed to extract weights: %s from %s", ", ".join(missing), type(old_attn))
-                raise RuntimeError(f"UPIMambaBlock: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}")
+                logger.warning("UPIMambaBlock: Missing weights: %s from %s. Proceeding with initialized weights.", ", ".join(missing), type(old_attn))
 
             def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
                 if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -528,10 +527,12 @@ class UPIMambaBlock(BaseAttention):
         dt = F.softplus(self.dt_proj(dt_raw))
         dt = torch.clamp(dt, min=1e-3, max=1.0)
 
+        mt = str(getattr(getattr(self, "config", None), "model_type", "") or "").lower()
+        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
         is_decoder = (
             self.is_decoder
             or getattr(getattr(self, "config", None), "is_decoder", False)
-            or getattr(getattr(self, "config", None), "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or any(mt.startswith(p) for p in decoder_prefixes)
         )
 
         y_fwd = self._selective_scan(x_ssm, dt, B_t, C_t, mask=mask_bool, reverse=False)

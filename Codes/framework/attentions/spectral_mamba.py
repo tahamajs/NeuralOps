@@ -251,6 +251,12 @@ class SpectralMambaAttention(BaseAttention):
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
 
         is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
+        model_type = str(_cfg_get(config, "model_type", "") or "").lower()
+        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        if any(model_type.startswith(p) for p in decoder_prefixes):
+            is_dec = True
+        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+            is_dec = True
         if kwargs.get("is_causal", False):
             is_dec = True
         self.is_decoder = bool(is_dec)
