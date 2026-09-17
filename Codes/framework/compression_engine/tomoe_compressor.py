@@ -438,8 +438,8 @@ class ToMoECompressor(BaseCompressor):
             return False
         if not should_compress_linear(self.model, name):
             return False
-        # Exclude fused QKV (c_attn) to prevent mixing semantic groups across heads in clustering
-        if "c_attn" in name.lower():
+        # Exclude fused QKV (c_attn, in_proj_qkv) to prevent mixing semantic groups across heads in clustering
+        if "c_attn" in name.lower() or "in_proj" in name.lower():
             return False
         if self.target_modules is not None:
             return any(t in name for t in self.target_modules)
