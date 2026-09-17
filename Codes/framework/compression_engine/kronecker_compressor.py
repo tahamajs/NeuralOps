@@ -232,7 +232,7 @@ class KroneckerCompressor(BaseCompressor):
                     self.fallback_layers.append(name)
                     for p in module.parameters():
                         p.requires_grad = False
-                    total_comp_params += orig_layer_params
+                    total_comp_params += sum(p.numel() for p in module.parameters())
                     continue
 
             # Compute compressed parameters for new layer
