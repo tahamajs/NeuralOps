@@ -310,7 +310,6 @@ class SliceGPTPCACompressor(BaseCompressor):
                 try:
                     h.remove()
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
                     logger.warning(f"copy_weights failed: {e}")
 
         aggregated: Dict[str, torch.Tensor] = {}

@@ -5,8 +5,15 @@ Runs across DistilBERT, RoBERTa, and GPT-2 configurations on the GPU server.
 Saves verification results to audit/final_verification.json.
 """
 
-import sys
 import os
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_DATASETS_OFFLINE"] = "1"
+os.environ["HF_HOME"] = r"D:\SVD_Project\.hf_cache"
+os.environ["TRANSFORMERS_CACHE"] = r"D:\SVD_Project\.hf_cache"
+os.environ["HF_DATASETS_CACHE"] = r"D:\SVD_Project\.hf_cache"
+
+import sys
 import json
 import importlib
 from pathlib import Path
@@ -26,15 +33,11 @@ with open(HERE / "audit" / "all_module_names.json", "r", encoding="utf-8") as f:
 
 print(f"Loaded {len(ALL_MODULES)} modules to verify.")
 
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-
 MODELS = [
     ("distilbert", r"models\distilbert_sst2"),
     ("roberta", r"models\roberta-base"),
     ("gpt2", r"models\gpt2"),
 ]
-
 
 results = []
 
@@ -42,12 +45,9 @@ for model_name, model_path in MODELS:
     print(f"\n--- Verifying under configuration: {model_name} ({model_path}) ---")
     try:
         cfg = AutoConfig.from_pretrained(model_path, local_files_only=True)
-    except Exception:
-        try:
-            cfg = AutoConfig.from_pretrained(model_path)
-        except Exception as e:
-            cfg = None
-            print(f"Warning: Could not load config for {model_path}: {e}")
+    except Exception as e:
+        cfg = None
+        print(f"Warning: Could not load config for {model_path}: {e}")
 
     for mod in ALL_MODULES:
         pkg = "framework.attentions" if os.path.exists(HERE / "Codes" / "framework" / "attentions" / f"{mod}.py") else "framework.compression_engine"
