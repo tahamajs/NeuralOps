@@ -12,7 +12,7 @@
 | 8. family_svd_split_B | ✅ | 17 | `83cdf4986` | 4min | All 17 pass AST; output_scale eliminated |
 | 9. family_attn_general_1 | ✅ | 20 | `7d102240a` | 4min | All 20 pass AST; output_scale & RuntimeError & prefix is_decoder fixed |
 | 10. family_attn_general_2 | ✅ | 20 | `bc3f34f7f` | 4min | All 20 pass AST; output_scale & RuntimeError & prefix is_decoder fixed |
-| 11. family_attn_general_3 | ⏳ | 20 | — | — | Pending |
-| 12. family_attn_general_4 | ⏳ | 20 | — | — | Pending |
-| 13. family_attn_general_5 | ⏳ | 19 | — | — | Pending |
-| 14. family_compression_engine | ⏳ | 80 | — | — | Pending |
+| 11. family_attn_general_3 | ✅ | 20 | `560402ec8` | 4min | All 20 pass AST; output_scale & RuntimeError & prefix is_decoder fixed |
+| 12. family_attn_general_4 | ✅ | 20 | `b6ce35e71` | 4min | All 20 pass AST; output_scale & RuntimeError & prefix is_decoder fixed |
+| 13. family_attn_general_5 | ✅ | 23 | `28162beb1` | 4min | All 23 pass AST; output_scale & RuntimeError & prefix is_decoder fixed |
+| 14. compression_engine | ⏳ | 80 | — | — | Pending |
