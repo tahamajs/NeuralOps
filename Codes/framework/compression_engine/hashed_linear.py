@@ -162,7 +162,7 @@ class HashedLinear(nn.Module):
             lora_contrib = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_contrib
 
-        return out * self.output_scale
+        return out
 
     @classmethod
     def from_linear(
