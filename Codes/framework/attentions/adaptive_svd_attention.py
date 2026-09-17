@@ -95,13 +95,8 @@ class AdaptiveSVDLinear(nn.Module):
                 nn.init.orthogonal_(self.V)
 
             if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
-                if self.lora_B.dtype in (torch.float16, torch.bfloat16):
-                    b_fp32 = torch.empty_like(self.lora_B, dtype=torch.float32, device="cpu")
-                    nn.init.kaiming_uniform_(b_fp32, a=math.sqrt(5))
-                    self.lora_B.copy_(b_fp32.to(dtype=self.lora_B.dtype, device=self.lora_B.device))
-                else:
-                    nn.init.kaiming_uniform_(self.lora_B, a=math.sqrt(5))
-                nn.init.zeros_(self.lora_A)
+                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_B)
 
             if self.bias is not None:
                 nn.init.zeros_(self.bias)
@@ -116,8 +111,8 @@ class AdaptiveSVDLinear(nn.Module):
             self.V.zero_()
             self.U[:out_dim, :r].copy_(U[:out_dim, :r])
             self.V[:r, :in_dim].copy_(V[:r, :in_dim])
-            if getattr(self, "lora_A", None) is not None:
-                nn.init.zeros_(self.lora_A)
+            if getattr(self, "lora_B", None) is not None:
+                nn.init.zeros_(self.lora_B)
 
     @property
     def A(self) -> Optional[nn.Parameter]:
@@ -768,11 +763,11 @@ def inject_adaptive_svd(
             getattr(
                 comp_config,
                 "rank",
-                getattr(model_config, "svd_rank", getattr(model_config, "rank", kwargs.get("rank", 32))),
+                getattr(model_config, "svd_rank", getattr(model_config, "rank", kwargs.get("rank", hidden_size))),
             ),
         )
         residual_rank = getattr(comp_config, "residual_rank", getattr(model_config, "residual_rank", kwargs.get("residual_rank", 16)))
-        energy_threshold = getattr(comp_config, "energy_threshold", getattr(model_config, "energy_threshold", kwargs.get("energy_threshold", 0.92)))
+        energy_threshold = getattr(comp_config, "energy_threshold", getattr(model_config, "energy_threshold", kwargs.get("energy_threshold", 0.9999)))
 
         try:
             test_module = AdaptiveSVDAttention(
