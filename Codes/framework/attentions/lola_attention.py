@@ -717,6 +717,10 @@ def inject_lola_attention(
         elif hasattr(layer, "attn"):
             new_attn.is_nested_encoder = False
             layer.attn = new_attn
+        if old_attn is not None:
+            new_attn.train(old_attn.training)
+        elif layer is not None and hasattr(layer, 'training'):
+            new_attn.train(layer.training)
         return new_attn
     except Exception as e:
         import logging
