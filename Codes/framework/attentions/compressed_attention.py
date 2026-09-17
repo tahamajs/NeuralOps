@@ -105,7 +105,6 @@ class CompressedAttentionLayer(BaseAttention):
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.is_decoder: bool = getattr(cfg, "is_decoder", False)
         self.is_nested_encoder: bool = False
-        self.output_scale = nn.Parameter(torch.ones(1))  # trainable output calibration
 
         rank_val = rank or kwargs.get("rank_qkv", rank_qkv)
         self.rank_qkv = min(rank_val, self.all_head_size + 2 * self.kv_head_size, self.hidden_size)
@@ -416,10 +415,12 @@ class CompressedAttentionLayer(BaseAttention):
                     scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
         # Explicit Causal Masking for decoders
+        mt = str(getattr(self.config, "model_type", "") or "").lower()
+        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
         is_decoder = (
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or any(mt.startswith(p) for p in decoder_prefixes)
         )
         if is_decoder and (mask is None or mask.dim() != 4):
             causal_tril = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
@@ -438,8 +439,6 @@ class CompressedAttentionLayer(BaseAttention):
             probs = probs * head_mask
 
         attn_out = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-        if not getattr(self, 'is_nested_encoder', False):
-            attn_out = attn_out * self.output_scale
 
         if self.is_nested_encoder:
             out = attn_out
