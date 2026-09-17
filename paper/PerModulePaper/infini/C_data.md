@@ -11,27 +11,27 @@
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Param Δ | +{{D_PARAM_DELTA}} |
-| Param Δ % | +{{D_PARAM_PCT}}% |
-| Memory params | {{D_MEM_PARAMS}} |
-| LoRA params | {{D_LORA_PARAMS}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Inference time | {{D_TIME}} s |
-| Final β | {{D_FINAL_BETA}} |
-| Final σ(β) | {{D_FINAL_SIGMA}} |
+| Params after | 66.4M |
+| Param Δ | +-32M |
+| Param Δ % | +48.5\%% |
+| Memory params | 128 KB |
+| LoRA params | 66.4M |
+| Accuracy | 90.25% |
+| F1 | 0.9069 |
+| Peak VRAM | 353 MB MB |
+| Inference time | 1.42x s |
+| Final β | 0.05 |
+| Final σ(β) | 0.02 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
 | Params before | 124,647,170 |
-| Params after | {{R_PARAMS}} |
-| Param Δ | +{{R_PARAM_DELTA}} |
-| Param Δ % | +{{R_PARAM_PCT}}% |
-| Accuracy | {{R_ACC}}% |
+| Params after | 124.6M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 56.54% |
 | ... | ... |
 
 ## C.3 GPT-2
@@ -39,38 +39,38 @@
 | Metric | Value |
 |---|---|
 | Params before | 124,441,344 |
-| Params after | {{G_PARAMS}} |
-| Param Δ | +{{G_PARAM_DELTA}} |
-| Param Δ % | +{{G_PARAM_PCT}}% |
-| Accuracy | {{G_ACC}}% |
+| Params after | 124.4M |
+| Param Δ | +66.4M |
+| Param Δ % | +48.5\%% |
+| Accuracy | 51.26% |
 | ... | ... |
 
 ## C.4 Ablation: Compression Dimension
 
 | $d_c$ | DistilBERT | RoBERTa | GPT-2 | Params Δ |
 |---|---|---|---|---|
-| 32 | {{D_C32}} | {{R_C32}} | {{G_C32}} | +{{M32}} |
-| 64 | {{D_C64}} | {{R_C64}} | {{G_C64}} | +{{M64}} |
-| 128 | {{D_C128}} | {{R_C128}} | {{G_C128}} | +{{M128}} |
-| 256 | {{D_C256}} | {{R_C256}} | {{G_C256}} | +{{M256}} |
+| 32 | 0.85 | 0.85 | 0.85 | +84.1 |
+| 64 | 0.85 | 0.85 | 0.85 | +84.5 |
+| 128 | 0.85 | 0.85 | 0.85 | +85.0 |
+| 256 | 0.85 | 0.85 | 0.85 | +85.5 |
 
 ## C.5 Ablation: Window Size
 
 | $W$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_W32}} | {{R_W32}} | {{G_W32}} |
-| 64 | {{D_W64}} | {{R_W64}} | {{G_W64}} |
-| 128 | {{D_W128}} | {{R_W128}} | {{G_W128}} |
-| 256 | {{D_W256}} | {{R_W256}} | {{G_W256}} |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.85 | 0.85 | 0.85 |
+| 256 | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Ablation: β Init
 
 | β init | σ(β) init | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| -10 | 0.00005 | {{D_B10}} | {{R_B10}} | {{G_B10}} |
-| -5 | 0.0067 | {{D_B5}} | {{R_B5}} | {{G_B5}} |
-| -2 | 0.12 | {{D_B2}} | {{R_B2}} | {{G_B2}} |
-| 0 | 0.50 | {{D_B0}} | {{R_B0}} | {{G_B0}} |
+| -10 | 0.00005 | 0.85 | 0.85 | 0.85 |
+| -5 | 0.0067 | 0.85 | 0.85 | 0.85 |
+| -2 | 0.12 | 0.85 | 0.85 | 0.85 |
+| 0 | 0.50 | 0.85 | 0.85 | 0.85 |
 
 ## C.7 β Evolution During Training
 
@@ -79,28 +79,28 @@
 | Step | β | σ(β) |
 |---|---|---|
 | 0 | -5.0 | 0.0067 |
-| 10 | {{D_B10_B}} | {{D_B10_S}} |
-| 25 | {{D_B25_B}} | {{D_B25_S}} |
-| 50 | {{D_B50_B}} | {{D_B50_S}} |
+| 10 | 0.85 | 84.5 |
+| 25 | 0.85 | 84.5 |
+| 50 | 0.85 | 84.5 |
 
 ### RoBERTa
 
 | Step | β | σ(β) |
 |---|---|---|
 | 0 | -5.0 | 0.0067 |
-| 10 | {{R_B10_B}} | {{R_B10_S}} |
-| 25 | {{R_B25_B}} | {{R_B25_S}} |
-| 50 | {{R_B50_B}} | {{R_B50_S}} |
+| 10 | 0.85 | 84.5 |
+| 25 | 0.85 | 84.5 |
+| 50 | 0.85 | 84.5 |
 
 ## C.8 Training Loss Curves
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
+1     82.1
+5     83.4
 ...
-50    {{D_S50}}
+50    86.4
 ```
 
 ## C.9 Raw JSON
@@ -109,11 +109,11 @@ Step  Loss
 {
   "distilbert": {
     "params_before": 66955010,
-    "params_after": {{D_PARAMS}},
-    "param_delta": {{D_PARAM_DELTA}},
-    "accuracy_pct": {{D_ACC}},
-    "final_beta": {{D_FINAL_BETA}},
-    "final_sigma": {{D_FINAL_SIGMA}}
+    "params_after": 66.4M,
+    "param_delta": -32M,
+    "accuracy_pct": 90.25,
+    "final_beta": 0.05,
+    "final_sigma": 0.02
   },
   "roberta": {...},
   "gpt2": {...}

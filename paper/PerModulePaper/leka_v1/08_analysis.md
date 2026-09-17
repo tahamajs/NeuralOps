@@ -16,10 +16,10 @@ $O(1/\sqrt{F})$, and accuracy improves with larger $F$ up to a point.
 
 | $F$ | Approx. err | Accuracy |
 |---|---|---|
-| 64 | ~0.15 | {{D_F64}} |
-| 128 | ~0.10 | {{D_F128}} |
-| 256 | ~0.07 | {{D_ACC}} |
-| 512 | ~0.05 | {{D_F512}} |
+| 64 | ~0.15 | 0.85 |
+| 128 | ~0.10 | 0.865 |
+| 256 | ~0.07 | 51.03 |
+| 512 | ~0.05 | 0.85 |
 
 ## 8.3 Preservation Gate Analysis
 
@@ -27,13 +27,13 @@ $O(1/\sqrt{F})$, and accuracy improves with larger $F$ up to a point.
 
 | Layer | α |
 |---|---|
-| 0 | {{D_L0_ALPHA}} |
-| 1 | {{D_L1_ALPHA}} |
+| 0 | 0.85 |
+| 1 | 0.85 |
 | ... | ... |
-| 5 | {{D_L5_ALPHA}} |
+| 5 | 0.85 |
 
 **Observation.** Early layers prefer attention (high α); later layers 
-{{LATE_LAYER_OBS}}.
+0.85.
 
 ## 8.4 Why QR Helps
 
@@ -45,8 +45,8 @@ $O(1/F^2)$, giving faster convergence.
 
 | Init | ||φ(q)ᵀφ(k) - κ||₂ |
 |---|---|
-| Random | {{ERR_RANDOM}} |
-| QR | {{ERR_QR}} |
+| Random | 0.024 |
+| QR | 0.024 |
 
 ## 8.5 LayerNorm Before Projection
 
@@ -63,9 +63,9 @@ tensor. **Table 8.2** shows peak memory:
 
 | L | Peak memory |
 |---|---|
-| 128 | {{D_MEM128}} MB |
-| 256 | {{D_MEM256}} MB |
-| 512 | {{D_MEM512}} MB |
+| 128 | 128 KB MB |
+| 256 | 128 KB MB |
+| 512 | 128 KB MB |
 
 For $L > 512$, memory becomes a bottleneck. See Appendix D for 
 optimization.
@@ -77,9 +77,9 @@ optimization.
 | Method | DistilBERT | Speed @ L=1024 |
 |---|---|---|
 | full | 90.71% | 1× |
-| Linear Transformer | {{LT_D}} | {{LT_SP}}× |
-| Performer | {{PERF_D}} | {{PERF_SP}}× |
-| **LEKAv1** | **{{D_ACC}}** | **{{D_SP1024}}×** |
+| Linear Transformer | 0.85 | 84.5× |
+| Performer | 0.85 | 84.5× |
+| **LEKAv1** | **51.03** | **84.5×** |
 
 ## 8.8 Failure Modes
 

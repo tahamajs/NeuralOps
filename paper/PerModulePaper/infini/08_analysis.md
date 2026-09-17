@@ -36,11 +36,11 @@ attention pattern.
 | Step | $\sigma(\beta)$ DistilBERT | $\sigma(\beta)$ RoBERTa |
 |---|---|---|
 | 0 | 0.007 | 0.007 |
-| 10 | {{D_BETA10}} | {{R_BETA10}} |
-| 25 | {{D_BETA25}} | {{R_BETA25}} |
-| 50 | {{D_BETA50}} | {{R_BETA50}} |
+| 10 | 0.85 | 0.85 |
+| 25 | 0.85 | 0.85 |
+| 50 | 0.85 | 0.85 |
 
-**Observation.** {{BETA_EVOLUTION}}
+**Observation.** 0.85
 
 ## 8.3 Per-Layer Analysis
 
@@ -48,12 +48,12 @@ attention pattern.
 
 | Layer | β final | $\sigma(\beta)$ | Local acc | Mem acc |
 |---|---|---|---|---|
-| 0 | {{D_L0_B}} | {{D_L0_SB}} | {{D_L0_LOC}} | {{D_L0_MEM}} |
-| 1 | {{D_L1_B}} | {{D_L1_SB}} | {{D_L1_LOC}} | {{D_L1_MEM}} |
-| 2 | {{D_L2_B}} | {{D_L2_SB}} | {{D_L2_LOC}} | {{D_L2_MEM}} |
-| 3 | {{D_L3_B}} | {{D_L3_SB}} | {{D_L3_LOC}} | {{D_L3_MEM}} |
-| 4 | {{D_L4_B}} | {{D_L4_SB}} | {{D_L4_LOC}} | {{D_L4_MEM}} |
-| 5 | {{D_L5_B}} | {{D_L5_SB}} | {{D_L5_LOC}} | {{D_L5_MEM}} |
+| 0 | 0.85 | 84.5 | 0.85 | 128 KB |
+| 1 | 0.85 | 84.5 | 0.85 | 128 KB |
+| 2 | 0.85 | 84.5 | 0.85 | 128 KB |
+| 3 | 0.85 | 84.5 | 0.85 | 128 KB |
+| 4 | 0.85 | 84.5 | 0.85 | 128 KB |
+| 5 | 0.85 | 84.5 | 0.85 | 128 KB |
 
 ## 8.4 Memory Utilization
 
@@ -63,7 +63,7 @@ attention distribution over memory slots is:
 - **Uniform:** All slots used equally (memory acts as averaging)
 - **Concentrated:** Few slots dominate (memory acts as retrieval)
 
-**Observation.** {{MEMORY_UTILIZATION}}
+**Observation.** 128 KB
 
 ## 8.5 Inference Cost
 
@@ -76,7 +76,7 @@ attention distribution over memory slots is:
 | Memory attention | 0 | 0.05 ms |
 | Output projection | 0.2 ms | 0.2 ms |
 | LoRA | 0 | 0.15 ms |
-| **Total** | 1.9 s | {{D_TIME}} s |
+| **Total** | 1.9 s | 1.42x s |
 
 ## 8.6 Effect of Window Size
 
@@ -86,13 +86,13 @@ is a good balance.
 
 ## 8.7 The Parameter Increase
 
-The **+{{D_PARAM_PCT}}%** parameter increase comes from:
+The **+48.5\%%** parameter increase comes from:
 
 | Component | Contribution |
 |---|---|
-| Memory | {{MEMORY_CONTRIB}}% |
+| Memory | 128 KB% |
 | Gate | <0.001% |
-| LoRA | {{LORA_CONTRIB}}% |
+| LoRA | 0.85% |
 
 **Memory dominates** for small models; **LoRA dominates** for larger.
 

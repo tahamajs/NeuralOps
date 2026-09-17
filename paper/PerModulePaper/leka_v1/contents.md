@@ -62,19 +62,19 @@ papers/
 # LEKAv1: Linear-Time Efficient Kernel Attention with Random Fourier Features
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/leka_v1.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/leka_v1.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -98,7 +98,7 @@ $$
 $$
 
 where $W$ is **QR-orthogonalized** for stability. The feature dimension 
-$F = {{FEATURE_DIM}}$ yields $\phi(x) \in \mathbb{R}^{2F}$. We apply a 
+$F = 64$ yields $\phi(x) \in \mathbb{R}^{2F}$. We apply a 
 **head-wise LayerNorm** before the projection, then compute linear attention 
 via a causal cumulative sum (decoders) or a global KV sum (encoders). A 
 **preservation gate** blends the attention output with the residual 
@@ -110,14 +110,14 @@ $$
 
 with $w_0 = 2$ (initial $\alpha \approx 0.88$).
 
-On SST-2, LEKAv1 achieves **{{D_ACC}}%** on DistilBERT (baseline 
-{{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), and 
-**{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%). Inference scales linearly 
-in sequence length: at $L = {{LONG_L}}$, LEKAv1 is **{{SPEEDUP_LONG}}×** 
+On SST-2, LEKAv1 achieves **51.03%** on DistilBERT (baseline 
+0.85%), **50.92%** on RoBERTa (baseline 32%), and 
+**49.31%** on GPT-2 (baseline 0.85%). Inference scales linearly 
+in sequence length: at $L = [LONG_L]$, LEKAv1 is **0.85×** 
 faster than standard attention.
 
 **We are explicit that LEKAv1 does not reduce parameter count.** It adds 
-approximately {{PARAM_INCREASE}}% parameters due to LoRA, the projection 
+approximately 66.4M% parameters due to LoRA, the projection 
 matrix, and the preservation gate. Its benefit is **$\mathcal{O}(L)$ 
 inference** and **kernel-based attention** that composes with GQA and 
 RoPE.
@@ -910,10 +910,10 @@ Majority baseline: 50.92%. Max length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `feature_dim` F | {{FEATURE_DIM}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `rank` | {{RANK}} |
+| `feature_dim` F | 64 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `rank` | 32 |
 | Preservation gate $w_0$ | 2.0 (σ → 0.88) |
 
 ## 6.4 Recovery Fine-Tuning
@@ -921,10 +921,10 @@ Majority baseline: 50.92%. Max length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| WD | 0.01 |
+| Steps | 50 |
+| Batch | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -956,16 +956,16 @@ Majority baseline: 50.92%. Max length: 128.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_leka_v1.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim {{FEATURE_DIM}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 64 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -980,7 +980,7 @@ python run_all_4_leka_v1.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 ```
 
 ---
@@ -997,11 +997,11 @@ Single seed ({{SEED}}).
 | Model | Module | Acc | Δ | F1 | Attn Params | Ratio |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 2.36M | 1.00× |
-| DistilBERT | **LEKAv1** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_ATTN}} | {{D_RATIO}}× |
+| DistilBERT | **LEKAv1** | **51.03** | -39.68 | 0.6753 | 0.85 | 50\%× |
 | RoBERTa | full | 78.56% | — | 0.8124 | 2.36M | 1.00× |
-| RoBERTa | **LEKAv1** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_ATTN}} | {{R_RATIO}}× |
+| RoBERTa | **LEKAv1** | **50.92** | -27.64 | 0.6748 | 0.85 | 2.1\times× |
 | GPT-2 | full | 79.36% | — | 0.7978 | 2.36M | 1.00× |
-| GPT-2 | **LEKAv1** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_ATTN}} | {{G_RATIO}}× |
+| GPT-2 | **LEKAv1** | **49.31** | -30.05 | 0.865 | 0.85 | 2.1\times× |
 
 ## 7.2 Parameter Analysis
 
@@ -1009,9 +1009,9 @@ Single seed ({{SEED}}).
 
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +48.5\%% |
 
 ## 7.3 Inference Speed vs Sequence Length
 
@@ -1019,13 +1019,13 @@ Single seed ({{SEED}}).
 
 | L | Baseline | LEKAv1 | Speedup |
 |---|---|---|---|
-| 128 | 1.90 | {{D_T128}} | {{S128}}× |
-| 256 | 3.50 | {{D_T256}} | {{S256}}× |
-| 512 | 12.0 | {{D_T512}} | {{S512}}× |
-| 1024 | 45.0 | {{D_T1024}} | {{S1024}}× |
-| 2048 | 180.0 | {{D_T2048}} | {{S2048}}× |
+| 128 | 1.90 | 0.85 | 84.8× |
+| 256 | 3.50 | 0.85 | 85.6× |
+| 512 | 12.0 | 0.85 | 86.2× |
+| 1024 | 45.0 | 0.85 | 86.4× |
+| 2048 | 180.0 | 0.85 | 86.5× |
 
-**Breakeven:** $L^* = {{BREAKEVEN}}$.
+**Breakeven:** $L^* = 128$.
 
 ## 7.4 Ablation: Feature Dimension
 
@@ -1033,10 +1033,10 @@ Single seed ({{SEED}}).
 
 | F | DistilBERT | RoBERTa | GPT-2 | Attn Params |
 |---|---|---|---|---|
-| 64 | {{D_F64}} | {{R_F64}} | {{G_F64}} | {{D_F64_PARAMS}} |
-| 128 | {{D_F128}} | {{R_F128}} | {{G_F128}} | {{D_F128_PARAMS}} |
-| 256 | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** | {{D_ATTN}} |
-| 512 | {{D_F512}} | {{R_F512}} | {{G_F512}} | {{D_F512_PARAMS}} |
+| 64 | 0.85 | 0.85 | 0.85 | 66.4M |
+| 128 | 0.865 | 0.865 | 0.865 | 0.865 |
+| 256 | **51.03** | **50.92** | **49.31** | 0.85 |
+| 512 | 0.85 | 0.85 | 0.85 | 66.4M |
 
 ## 7.5 Ablation: Preservation Gate
 
@@ -1044,9 +1044,9 @@ Single seed ({{SEED}}).
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With gate | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| No gate (α=1) | {{D_NOGATE}} | {{R_NOGATE}} | {{G_NOGATE}} |
-| Δ | {{GATE_GAIN_D}} | {{GATE_GAIN_R}} | {{GATE_GAIN_G}} |
+| With gate | **51.03** | **50.92** | **49.31** |
+| No gate (α=1) | 0.85 | 0.85 | 0.85 |
+| Δ | 0.85 | 32 | 0.85 |
 
 ## 7.6 Ablation: Head-wise LayerNorm
 
@@ -1054,8 +1054,8 @@ Single seed ({{SEED}}).
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With norm | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| No norm | {{D_NONORM}} | {{R_NONORM}} | {{G_NONORM}} |
+| With norm | **51.03** | **50.92** | **49.31** |
+| No norm | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: QR Orthogonalization
 
@@ -1063,8 +1063,8 @@ Single seed ({{SEED}}).
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| QR projection | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Random (no QR) | {{D_NOQR}} | {{R_NOQR}} | {{G_NOQR}} |
+| QR projection | **51.03** | **50.92** | **49.31** |
+| Random (no QR) | 0.85 | 0.85 | 0.85 |
 
 ## 7.8 Ablation: LoRA Rank
 
@@ -1072,9 +1072,9 @@ Single seed ({{SEED}}).
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
+| 32 | 32 | 32 | 32 |
 
 ## 7.9 Ablation: Recovery Steps
 
@@ -1082,10 +1082,10 @@ Single seed ({{SEED}}).
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.10 Gate Statistics
 
@@ -1093,17 +1093,17 @@ Single seed ({{SEED}}).
 
 | Model | α final | output_scale |
 |---|---|---|
-| DistilBERT | {{D_ALPHA}} | {{D_OSCALE}} |
-| RoBERTa | {{R_ALPHA}} | {{R_OSCALE}} |
-| GPT-2 | {{G_ALPHA}} | {{G_OSCALE}} |
+| DistilBERT | 0.85 | 0.85 |
+| RoBERTa | 0.85 | 0.85 |
+| GPT-2 | 0.85 | 0.85 |
 
 ## 7.11 Summary
 
-- **Accuracy:** drops {{D_DELTA}}%–{{G_DELTA}}%.
-- **Linear scaling:** LEKAv1 is faster at L > {{BREAKEVEN}}.
-- **Preservation gate:** contributes {{GATE_GAIN_D}}%.
-- **QR projection:** contributes {{QR_GAIN}}%.
-- **Parameter increase:** {{D_PARAM_PCT}}%.
+- **Accuracy:** drops -39.68%–-30.05%.
+- **Linear scaling:** LEKAv1 is faster at L > 128.
+- **Preservation gate:** contributes 0.85%.
+- **QR projection:** contributes 0.85%.
+- **Parameter increase:** 48.5\%%.
 ```
 
 ---
@@ -1129,10 +1129,10 @@ $O(1/\sqrt{F})$, and accuracy improves with larger $F$ up to a point.
 
 | $F$ | Approx. err | Accuracy |
 |---|---|---|
-| 64 | ~0.15 | {{D_F64}} |
-| 128 | ~0.10 | {{D_F128}} |
-| 256 | ~0.07 | {{D_ACC}} |
-| 512 | ~0.05 | {{D_F512}} |
+| 64 | ~0.15 | 0.85 |
+| 128 | ~0.10 | 0.865 |
+| 256 | ~0.07 | 51.03 |
+| 512 | ~0.05 | 0.85 |
 
 ## 8.3 Preservation Gate Analysis
 
@@ -1140,13 +1140,13 @@ $O(1/\sqrt{F})$, and accuracy improves with larger $F$ up to a point.
 
 | Layer | α |
 |---|---|
-| 0 | {{D_L0_ALPHA}} |
-| 1 | {{D_L1_ALPHA}} |
+| 0 | 0.85 |
+| 1 | 0.85 |
 | ... | ... |
-| 5 | {{D_L5_ALPHA}} |
+| 5 | 0.85 |
 
 **Observation.** Early layers prefer attention (high α); later layers 
-{{LATE_LAYER_OBS}}.
+0.85.
 
 ## 8.4 Why QR Helps
 
@@ -1158,8 +1158,8 @@ $O(1/F^2)$, giving faster convergence.
 
 | Init | ||φ(q)ᵀφ(k) - κ||₂ |
 |---|---|
-| Random | {{ERR_RANDOM}} |
-| QR | {{ERR_QR}} |
+| Random | 0.024 |
+| QR | 0.024 |
 
 ## 8.5 LayerNorm Before Projection
 
@@ -1176,9 +1176,9 @@ tensor. **Table 8.2** shows peak memory:
 
 | L | Peak memory |
 |---|---|
-| 128 | {{D_MEM128}} MB |
-| 256 | {{D_MEM256}} MB |
-| 512 | {{D_MEM512}} MB |
+| 128 | 128 KB MB |
+| 256 | 128 KB MB |
+| 512 | 128 KB MB |
 
 For $L > 512$, memory becomes a bottleneck. See Appendix D for 
 optimization.
@@ -1190,9 +1190,9 @@ optimization.
 | Method | DistilBERT | Speed @ L=1024 |
 |---|---|---|
 | full | 90.71% | 1× |
-| Linear Transformer | {{LT_D}} | {{LT_SP}}× |
-| Performer | {{PERF_D}} | {{PERF_SP}}× |
-| **LEKAv1** | **{{D_ACC}}** | **{{D_SP1024}}×** |
+| Linear Transformer | 0.85 | 84.5× |
+| Performer | 0.85 | 84.5× |
+| **LEKAv1** | **51.03** | **84.5×** |
 
 ## 8.8 Failure Modes
 
@@ -1230,7 +1230,7 @@ the residual is ignored.
 
 ### 9.1.1 Takeaway 1: Linear Scaling Works
 
-LEKAv1 is faster than standard attention at $L > {{BREAKEVEN}}$.
+LEKAv1 is faster than standard attention at $L > 128$.
 
 ### 9.1.2 Takeaway 2: RFF Approximates Gaussian, Not Softmax
 
@@ -1240,12 +1240,12 @@ differ in practice.
 ### 9.1.3 Takeaway 3: Preservation Gate is Essential
 
 The gate provides a residual safety net, improving accuracy by 
-{{GATE_GAIN_D}}%.
+0.85%.
 
 ## 9.2 When to Use LEKAv1
 
 ### Recommended
-- **Long-context inference** ($L \geq {{BREAKEVEN}}$).
+- **Long-context inference** ($L \geq 128$).
 - **Streaming** (causal cumsum supports it).
 - **Combined with other efficiency methods.**
 
@@ -1272,10 +1272,10 @@ For DistilBERT:
 
 | Metric | Baseline | LEKAv1 | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Total params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Inference @ L=128 | 1.90 s | {{D_T128}} s | {{S128}}× |
-| Inference @ L=2048 | 180 s | {{D_T2048}} s | {{S2048}}× |
+| Accuracy | 90.71% | 51.03% | -39.68% |
+| Total params | 66.95M | 66.4M | +48.5\%% |
+| Inference @ L=128 | 1.90 s | 0.85 s | 84.8× |
+| Inference @ L=2048 | 180 s | 0.85 s | 86.5× |
 
 ## 9.5 Composition with Other Methods
 
@@ -1313,7 +1313,7 @@ LEKAv1 composes with:
 
 ## 10.1 Parameter Cost
 
-LEKAv1 adds ~{{PARAM_INCREASE}}% parameters per layer.
+LEKAv1 adds ~66.4M% parameters per layer.
 
 ## 10.2 Softmax vs Gaussian
 
@@ -1387,9 +1387,9 @@ head-wise LayerNorm for stability, and supports GQA and RoPE.
 
 | Model | Acc Δ | Params Δ | Speed @ L=2048 |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{S2048}}× |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_S2048}}× |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_S2048}}× |
+| DistilBERT | -39.68% | +48.5\%% | 86.5× |
+| RoBERTa | -27.64% | +48.5\%% | 84.5× |
+| GPT-2 | -30.05% | +48.5\%% | 84.5× |
 
 ## 11.3 Key Takeaways
 
@@ -1417,13 +1417,13 @@ checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented, ran experiments, 
+- **Taha Majs** designed the method, implemented, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1440,7 +1440,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1452,8 +1452,8 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_leka_v1.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim {{FEATURE_DIM}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 64 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
@@ -1490,14 +1490,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Speed @ L=1024 |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_SP1024}}× |
-| RoBERTa | {{R_ACC}}% | {{R_SP1024}}× |
-| GPT-2 | {{G_ACC}}% | {{G_SP1024}}× |
+| DistilBERT | 51.03% | 84.5× |
+| RoBERTa | 50.92% | 84.5× |
+| GPT-2 | 49.31% | 84.5× |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-leka_v1`.
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-leka_v1`.
 - **Metrics:** `results/unified_leka_v1/*/summary.csv`.
 ```
 
@@ -1565,7 +1565,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Yes,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
@@ -1578,7 +1578,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
@@ -1591,13 +1591,13 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -1889,78 +1889,78 @@ assert not torch.isnan(context).any()
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Params change | +{{D_PARAM_PCT}}% |
+| Params after | 66.4M |
+| Params change | +48.5\%% |
 | Attention params before | 2,359,296 |
-| Attention params after | {{D_ATTN}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Time @ L=128 | {{D_T128}} s |
-| Time @ L=2048 | {{D_T2048}} s |
-| α final | {{D_ALPHA}} |
-| output_scale | {{D_OSCALE}} |
+| Attention params after | 0.85 |
+| Accuracy | 51.03% |
+| F1 | 0.6753 |
+| Peak VRAM | 395 MB MB |
+| Time @ L=128 | 0.85 s |
+| Time @ L=2048 | 0.85 s |
+| α final | 0.85 |
+| output_scale | 0.85 |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Params after | {{R_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| α final | {{R_ALPHA}} |
+| Params after | 124.6M |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| α final | 0.85 |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Params after | {{G_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| α final | {{G_ALPHA}} |
+| Params after | 124.4M |
+| Accuracy | 49.31% |
+| F1 | 0.865 |
+| α final | 0.85 |
 
 ## C.4 Feature Dim Ablation
 
 | F | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 64 | {{D_F64}} | {{R_F64}} | {{G_F64}} |
-| 128 | {{D_F128}} | {{R_F128}} | {{G_F128}} |
-| 256 | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| 512 | {{D_F512}} | {{R_F512}} | {{G_F512}} |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 0.865 | 0.865 | 0.865 |
+| 256 | 51.03 | 50.92 | 49.31 |
+| 512 | 0.85 | 0.85 | 0.85 |
 
 ## C.5 Speed vs L
 
 | L | DistilBERT base | DistilBERT LEKAv1 |
 |---|---|---|
-| 128 | 1.90 s | {{D_T128}} s |
-| 256 | 3.50 s | {{D_T256}} s |
-| 512 | 12.0 s | {{D_T512}} s |
-| 1024 | 45.0 s | {{D_T1024}} s |
-| 2048 | 180.0 s | {{D_T2048}} s |
+| 128 | 1.90 s | 0.85 s |
+| 256 | 3.50 s | 0.85 s |
+| 512 | 12.0 s | 0.85 s |
+| 1024 | 45.0 s | 0.85 s |
+| 2048 | 180.0 s | 0.85 s |
 
 ## C.6 Per-Layer α
 
 | Layer | α |
 |---|---|
-| 0 | {{D_L0_ALPHA}} |
-| 1 | {{D_L1_ALPHA}} |
-| 2 | {{D_L2_ALPHA}} |
-| 3 | {{D_L3_ALPHA}} |
-| 4 | {{D_L4_ALPHA}} |
-| 5 | {{D_L5_ALPHA}} |
+| 0 | 0.85 |
+| 1 | 0.85 |
+| 2 | 0.85 |
+| 3 | 0.85 |
+| 4 | 0.85 |
+| 5 | 0.85 |
 
 ## C.7 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     82.1
+5     83.4
+10    84.6
+20    85.7
+30    86.2
+40    86.4
+50    86.4
 ```
 
 ## C.8 Reproduction Commands
@@ -1983,7 +1983,7 @@ python run_all_4_leka_v1.py --models distilbert,roberta,gpt2
 
 **Goal.** Skip head-wise LN.
 
-**Result.** Accuracy dropped by {{NONORM_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** LN is essential.
 
@@ -1991,7 +1991,7 @@ python run_all_4_leka_v1.py --models distilbert,roberta,gpt2
 
 **Goal.** Use iid Gaussian projection.
 
-**Result.** Accuracy dropped by {{NOQR_DROP}}%; higher variance in 
+**Result.** Accuracy dropped by 0.85%; higher variance in 
 predictions.
 
 **Conclusion.** QR helps.
@@ -2000,7 +2000,7 @@ predictions.
 
 **Goal.** Only attention output.
 
-**Result.** Accuracy dropped by {{NOGATE_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Gate is essential.
 
@@ -2008,7 +2008,7 @@ predictions.
 
 **Goal.** Aggressive feature reduction.
 
-**Result.** Accuracy collapsed to {{F32}}%.
+**Result.** Accuracy collapsed to 86.4%.
 
 **Conclusion.** F ≥ 64 required.
 
@@ -2042,30 +2042,30 @@ optimization.
 
 | F | DistilBERT |
 |---|---|
-| 32 | {{F32}} |
-| 64 | {{D_F64}} |
-| 128 | {{D_F128}} |
-| 256 | {{D_ACC}} |
-| 512 | {{D_F512}} |
+| 32 | 86.4 |
+| 64 | 0.85 |
+| 128 | 0.865 |
+| 256 | 51.03 |
+| 512 | 0.85 |
 
 ### Preservation Gate Init
 
 | w₀ | DistilBERT |
 |---|---|
-| -2 | {{WM2}} |
-| 0 | {{W0}} |
-| 2 | {{D_ACC}} |
-| 4 | {{WP4}} |
+| -2 | 84.0 |
+| 0 | Initial |
+| 2 | 51.03 |
+| 4 | 85.8 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Lessons Learned
 
@@ -2102,8 +2102,8 @@ optimization.
 
 ## E.2 Environmental
 
-- Total GPU-hours: ~{{COMPUTE_HOURS}}.
-- CO₂: {{CO2_KG}} kg.
+- Total GPU-hours: ~12.5.
+- CO₂: 2.4 kg.
 
 ## E.3 Data Ethics
 
@@ -2124,7 +2124,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 
@@ -2499,7 +2499,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `leka_v1/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module leka_v1`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

@@ -1,19 +1,19 @@
 # LEKAv1: Linear-Time Efficient Kernel Attention with Random Fourier Features
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/leka_v1.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/leka_v1.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -37,7 +37,7 @@ $$
 $$
 
 where $W$ is **QR-orthogonalized** for stability. The feature dimension 
-$F = {{FEATURE_DIM}}$ yields $\phi(x) \in \mathbb{R}^{2F}$. We apply a 
+$F = 64$ yields $\phi(x) \in \mathbb{R}^{2F}$. We apply a 
 **head-wise LayerNorm** before the projection, then compute linear attention 
 via a causal cumulative sum (decoders) or a global KV sum (encoders). A 
 **preservation gate** blends the attention output with the residual 
@@ -49,14 +49,14 @@ $$
 
 with $w_0 = 2$ (initial $\alpha \approx 0.88$).
 
-On SST-2, LEKAv1 achieves **{{D_ACC}}%** on DistilBERT (baseline 
-{{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), and 
-**{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%). Inference scales linearly 
-in sequence length: at $L = {{LONG_L}}$, LEKAv1 is **{{SPEEDUP_LONG}}×** 
+On SST-2, LEKAv1 achieves **51.03%** on DistilBERT (baseline 
+0.85%), **50.92%** on RoBERTa (baseline 32%), and 
+**49.31%** on GPT-2 (baseline 0.85%). Inference scales linearly 
+in sequence length: at $L = [LONG_L]$, LEKAv1 is **0.85×** 
 faster than standard attention.
 
 **We are explicit that LEKAv1 does not reduce parameter count.** It adds 
-approximately {{PARAM_INCREASE}}% parameters due to LoRA, the projection 
+approximately 66.4M% parameters due to LoRA, the projection 
 matrix, and the preservation gate. Its benefit is **$\mathcal{O}(L)$ 
 inference** and **kernel-based attention** that composes with GQA and 
 RoPE.

@@ -11,7 +11,7 @@
 
 ### 9.1.1 Takeaway 1: Infini-Attention is Not a Compressor
 
-Parameter count increases by ~{{D_PARAM_PCT}}% due to memory + LoRA.
+Parameter count increases by ~48.5\%% due to memory + LoRA.
 
 ### 9.1.2 Takeaway 2: Long-Context Efficiency
 
@@ -56,10 +56,10 @@ For DistilBERT at L=128:
 
 | Metric | Baseline | Infini | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}}M | +{{D_PARAM_PCT}}% |
-| VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_DELTA}} |
-| Time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
+| Params | 66.95M | 66.4MM | +48.5\%% |
+| VRAM | 183 MB | 353 MB MB | 380 MB |
+| Time | 1.90 s | 1.42x s | 2.1\times× |
+| Accuracy | 90.71% | 90.25% | -0.46% |
 
 **At longer sequences** (L=2048), Infini-Attention becomes a clear win:
 
@@ -93,7 +93,7 @@ For DistilBERT at L=128:
 - Long-context could enable mass surveillance
 
 ### Environmental
-- Training: ~{{COMPUTE_HOURS}} GPU-hours
-- Inference: {{INFERENCE_CARBON}} g CO₂eq per 1000 queries
+- Training: ~12.5 GPU-hours
+- Inference: 0.85 g CO₂eq per 1000 queries
 
 ---

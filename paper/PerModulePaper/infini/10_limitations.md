@@ -9,7 +9,7 @@
 
 ## 10.1 Not a Compressor
 
-Infini-Attention **increases** parameter count by ~{{D_PARAM_PCT}}%. It is 
+Infini-Attention **increases** parameter count by ~48.5\%%. It is 
 designed for **inference efficiency at long sequences**, not for model 
 size reduction.
 
@@ -77,7 +77,7 @@ al., 2020) or Recurrent Memory Transformer (Bulatov et al., 2022).
 
 ## 10.12 Unresolved Failures
 
-{{UNRESOLVED_FAILURES}}
+0.85
 
 ## 10.13 Code Quality
 

@@ -7,7 +7,7 @@ At $\rho = 0.5$, this is still $O(L^2/2)$.
 
 ## 10.2 Parameter Increase
 
-LEKAv2 adds ~{{PARAM_INCREASE}}% parameters per layer.
+LEKAv2 adds ~66.4M% parameters per layer.
 
 ## 10.3 Fatal Error Handling
 

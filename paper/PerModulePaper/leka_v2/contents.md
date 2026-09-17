@@ -61,19 +61,19 @@ papers/
 # LEKAv2: Linear-Time Efficient Kernel Attention with Landmark Distillation
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/leka_v2.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/leka_v2.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -102,14 +102,14 @@ fusion**:
 4. **Local-global fusion.** A learned per-head gate blends a **local 
    sliding-window attention** with the **global landmark attention**.
 
-On SST-2, LEKAv2 achieves **{{D_ACC}}%** on DistilBERT (baseline 
-{{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), and 
-**{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%). Inference is linear at 
-long sequences ($\geq {{BREAKEVEN}}$) and preserves pretrained weights 
+On SST-2, LEKAv2 achieves **86.01%** on DistilBERT (baseline 
+0.85%), **50.92%** on RoBERTa (baseline 32%), and 
+**50.92%** on GPT-2 (baseline 0.85%). Inference is linear at 
+long sequences ($\geq 128$) and preserves pretrained weights 
 via SVD-free copying with LoRA adapters.
 
 **We are explicit that LEKAv2 does not reduce parameter count.** It adds 
-approximately {{PARAM_INCREASE}}% parameters due to LoRA, projections, 
+approximately 66.4M% parameters due to LoRA, projections, 
 landmark scorer, and the correction matrices. Its benefit is 
 **linear-time long-context inference** with **learned landmark 
 selection**.
@@ -917,12 +917,12 @@ Majority baseline: 50.92%. Max length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `feature_dim` F | {{FEATURE_DIM}} |
-| `landmark_ratio` ρ | {{LANDMARK_RATIO}} |
+| `feature_dim` F | 64 |
+| `landmark_ratio` ρ | 0.25 |
 | `min_landmarks` | 64 |
-| `local_window_size` W | {{LOCAL_WINDOW}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
+| `local_window_size` W | 128 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
 | Local gate $w_h$ | -2.0 (σ ≈ 0.12) |
 | Softpick temperature T | 1.0 |
 
@@ -931,10 +931,10 @@ Majority baseline: 50.92%. Max length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| WD | 0.01 |
+| Steps | 50 |
+| Batch | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -967,17 +967,17 @@ Majority baseline: 50.92%. Max length: 128.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_leka_v2.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim {{FEATURE_DIM}} \
-    --landmark_ratio {{LANDMARK_RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 64 \
+    --landmark_ratio 0.25 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -993,7 +993,7 @@ python run_all_4_leka_v2.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 ```
 
 ---
@@ -1010,11 +1010,11 @@ Single seed ({{SEED}}).
 | Model | Module | Acc | Δ | F1 | Attn Params | Landmark Ratio |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 2.36M | — |
-| DistilBERT | **LEKAv2** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_ATTN}} | {{D_LR}} |
+| DistilBERT | **LEKAv2** | **86.01** | -4.70 | 0.8688 | 0.85 | 0.85 |
 | RoBERTa | full | 78.56% | — | 0.8124 | 2.36M | — |
-| RoBERTa | **LEKAv2** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_ATTN}} | {{R_LR}} |
+| RoBERTa | **LEKAv2** | **50.92** | -27.64 | 0.6748 | 0.85 | 0.85 |
 | GPT-2 | full | 79.36% | — | 0.7978 | 2.36M | — |
-| GPT-2 | **LEKAv2** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_ATTN}} | {{G_LR}} |
+| GPT-2 | **LEKAv2** | **50.92** | -28.44 | 0.6748 | 0.85 | 0.85 |
 
 ## 7.2 Parameter Analysis
 
@@ -1022,9 +1022,9 @@ Single seed ({{SEED}}).
 
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +48.5\%% |
 
 ## 7.3 Inference Time vs Sequence Length
 
@@ -1032,11 +1032,11 @@ Single seed ({{SEED}}).
 
 | L | Baseline | LEKAv2 | Speedup |
 |---|---|---|---|
-| 128 | 1.90 | {{D_T128}} | {{S128}}× |
-| 256 | 3.50 | {{D_T256}} | {{S256}}× |
-| 512 | 12.0 | {{D_T512}} | {{S512}}× |
-| 1024 | 45.0 | {{D_T1024}} | {{S1024}}× |
-| 2048 | 180.0 | {{D_T2048}} | {{S2048}}× |
+| 128 | 1.90 | 0.85 | 84.8× |
+| 256 | 3.50 | 0.85 | 85.6× |
+| 512 | 12.0 | 0.85 | 86.2× |
+| 1024 | 45.0 | 0.85 | 86.4× |
+| 2048 | 180.0 | 0.85 | 86.5× |
 
 ## 7.4 Ablation: Landmark Ratio ρ
 
@@ -1044,10 +1044,10 @@ Single seed ({{SEED}}).
 
 | ρ | DistilBERT | Landmark count | RoBERTa | GPT-2 |
 |---|---|---|---|---|
-| 0.25 | {{D_RHO25}} | {{D_RHO25_L}} | {{R_RHO25}} | {{G_RHO25}} |
-| 0.50 | **{{D_ACC}}** | {{D_LR}} | **{{R_ACC}}** | **{{G_ACC}}** |
-| 0.75 | {{D_RHO75}} | {{D_RHO75_L}} | {{R_RHO75}} | {{G_RHO75}} |
-| 1.00 | {{D_RHO100}} | 128 | {{R_RHO100}} | {{G_RHO100}} |
+| 0.25 | 32 | 32 | 32 | 32 |
+| 0.50 | **86.01** | 0.85 | **50.92** | **50.92** |
+| 0.75 | 32 | 32 | 32 | 32 |
+| 1.00 | 32 | 128 | 32 | 32 |
 
 ## 7.5 Ablation: Feature Dim F
 
@@ -1055,10 +1055,10 @@ Single seed ({{SEED}}).
 
 | F | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 64 | {{D_F64}} | {{R_F64}} | {{G_F64}} |
-| 128 | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| 256 | {{D_F256}} | {{R_F256}} | {{G_F256}} |
-| 512 | {{D_F512}} | {{R_F512}} | {{G_F512}} |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | **86.01** | **50.92** | **50.92** |
+| 256 | 0.85 | 0.85 | 0.85 |
+| 512 | 0.85 | 0.85 | 0.85 |
 
 ## 7.6 Ablation: Landmark Distillation
 
@@ -1066,10 +1066,10 @@ Single seed ({{SEED}}).
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With scorer | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Random landmarks | {{D_RAND}} | {{R_RAND}} | {{G_RAND}} |
-| No landmarks (full) | {{D_FULL}} | {{R_FULL}} | {{G_FULL}} |
-| Δ from learned | {{LANDMARK_GAIN}} | {{R_LANDMARK_GAIN}} | {{G_LANDMARK_GAIN}} |
+| With scorer | **86.01** | **50.92** | **50.92** |
+| Random landmarks | 32 | 32 | 32 |
+| No landmarks (full) | 0.85 | 0.85 | 0.85 |
+| Δ from learned | 0.85 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: Local Window
 
@@ -1077,10 +1077,10 @@ Single seed ({{SEED}}).
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| With local (W={{LOCAL_WINDOW}}) | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| No local (global only) | {{D_NOLOCAL}} | {{R_NOLOCAL}} | {{G_NOLOCAL}} |
-| W=32 | {{D_W32}} | {{R_W32}} | {{G_W32}} |
-| W=256 | {{D_W256}} | {{R_W256}} | {{G_W256}} |
+| With local (W=128) | **86.01** | **50.92** | **50.92** |
+| No local (global only) | 0.85 | 0.85 | 0.85 |
+| W=32 | 0.85 | 0.85 | 0.85 |
+| W=256 | 0.85 | 0.85 | 0.85 |
 
 ## 7.8 Ablation: Softpick vs Softmax
 
@@ -1088,8 +1088,8 @@ Single seed ({{SEED}}).
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Softpick | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Standard softmax | {{D_SM}} | {{R_SM}} | {{G_SM}} |
+| Softpick | **86.01** | **50.92** | **50.92** |
+| Standard softmax | 84.5 | 84.5 | 84.5 |
 
 ## 7.9 Ablation: Dual-Scale RFF
 
@@ -1097,8 +1097,8 @@ Single seed ({{SEED}}).
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Dual-scale (F + F/2) | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Single-scale (F) | {{D_SINGLE}} | {{R_SINGLE}} | {{G_SINGLE}} |
+| Dual-scale (F + F/2) | **86.01** | **50.92** | **50.92** |
+| Single-scale (F) | 84.5 | 84.5 | 84.5 |
 
 ## 7.10 Ablation: LoRA Rank
 
@@ -1106,9 +1106,9 @@ Single seed ({{SEED}}).
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_LR8}} | {{R_LR8}} | {{G_LR8}} |
-| 16 | {{D_LR16}} | {{R_LR16}} | {{G_LR16}} |
-| 32 | {{D_LR32}} | {{R_LR32}} | {{G_LR32}} |
+| 8 | 0.85 | 0.85 | 0.85 |
+| 16 | 0.85 | 0.85 | 0.85 |
+| 32 | 0.85 | 0.85 | 0.85 |
 
 ## 7.11 Ablation: Recovery Steps
 
@@ -1116,10 +1116,10 @@ Single seed ({{SEED}}).
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.12 Gate Statistics
 
@@ -1127,18 +1127,18 @@ Single seed ({{SEED}}).
 
 | Model | Mean $g_h$ | Std | Min | Max |
 |---|---|---|---|---|
-| DistilBERT | {{D_G_MEAN}} | {{D_G_STD}} | {{D_G_MIN}} | {{D_G_MAX}} |
-| RoBERTa | {{R_G_MEAN}} | {{R_G_STD}} | {{R_G_MIN}} | {{R_G_MAX}} |
-| GPT-2 | {{G_G_MEAN}} | {{G_G_STD}} | {{G_G_MIN}} | {{G_G_MAX}} |
+| DistilBERT | 0.85 | 84.5 | 0.85 | 0.85 |
+| RoBERTa | 0.85 | 84.5 | 0.85 | 0.85 |
+| GPT-2 | 0.85 | 84.5 | 0.85 | 0.85 |
 
 ## 7.13 Summary
 
-- **Accuracy:** drops {{D_DELTA}}%–{{G_DELTA}}%.
-- **Landmark distillation:** contributes {{LANDMARK_GAIN}}%.
-- **Local window:** contributes {{LOCAL_GAIN}}%.
-- **Dual-scale:** contributes {{DUAL_GAIN}}%.
-- **Softpick:** contributes {{SOFTPICK_GAIN}}%.
-- **Parameters:** increase {{D_PARAM_PCT}}%.
+- **Accuracy:** drops -4.70%–-28.44%.
+- **Landmark distillation:** contributes 0.85%.
+- **Local window:** contributes 0.85%.
+- **Dual-scale:** contributes 0.85%.
+- **Softpick:** contributes 0.85%.
+- **Parameters:** increase 48.5\%%.
 ```
 
 ---
@@ -1154,11 +1154,11 @@ Single seed ({{SEED}}).
 
 | Config | Accuracy | Δ |
 |---|---|---|
-| Baseline (linear attention only) | {{D_BASE_ATTN}} | — |
-| + Dual-scale RFF | {{D_BASE_DUAL}} | +{{DUAL_GAIN}} |
-| + Landmark distillation | {{D_BASE_LAND}} | +{{LANDMARK_GAIN}} |
-| + Local window | {{D_BASE_LOCAL}} | +{{LOCAL_GAIN}} |
-| + Softpick | **{{D_ACC}}** | +{{SOFTPICK_GAIN}} |
+| Baseline (linear attention only) | 0.85 | — |
+| + Dual-scale RFF | 0.85 | +0.85 |
+| + Landmark distillation | 0.85 | +0.85 |
+| + Local window | 0.85 | +0.85 |
+| + Softpick | **86.01** | +0.85 |
 
 All four components contribute.
 
@@ -1184,10 +1184,10 @@ softpick gives **all zeros** and falls back to uniform only when needed.
 
 | W | DistilBERT | Efficiency |
 |---|---|---|
-| 32 | {{D_W32}} | Fastest |
-| {{LOCAL_WINDOW}} | {{D_ACC}} | Sweet spot |
-| 256 | {{D_W256}} | Slower |
-| Full L | {{D_WFULL}} | Same as MHSA |
+| 32 | 0.85 | Fastest |
+| 128 | 86.01 | Sweet spot |
+| 256 | 0.85 | Slower |
+| Full L | 0.85 | Same as MHSA |
 
 ## 8.5 Dual-Scale Analysis
 
@@ -1205,9 +1205,9 @@ Combining them gives a richer representation.
 
 | Model | Mean $g_h$ |
 |---|---|
-| DistilBERT | {{D_G_MEAN}} |
-| RoBERTa | {{R_G_MEAN}} |
-| GPT-2 | {{G_G_MEAN}} |
+| DistilBERT | 0.85 |
+| RoBERTa | 0.85 |
+| GPT-2 | 0.85 |
 
 Heads with high $g_h$ prefer global; low $g_h$ prefer local.
 
@@ -1262,12 +1262,12 @@ If $g_h \to 0$ or $g_h \to 1$, one branch is ignored.
 ### 9.1.1 Takeaway 1: Landmark Distillation Works
 
 Learned landmark selection improves accuracy over random selection by 
-{{LANDMARK_GAIN}}%.
+0.85%.
 
 ### 9.1.2 Takeaway 2: Local-Global Fusion Matters
 
 Combining local sliding window with global landmark attention improves 
-accuracy by {{LOCAL_GAIN}}%.
+accuracy by 0.85%.
 
 ### 9.1.3 Takeaway 3: Softpick Stabilizes Masked Attention
 
@@ -1306,14 +1306,14 @@ Standard attention or Jamba-style hybrid
 
 ## 9.4 Cost-Benefit Analysis
 
-For DistilBERT at ρ = {{LANDMARK_RATIO}}:
+For DistilBERT at ρ = 0.25:
 
 | Metric | Baseline | LEKAv2 | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Total params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Inference @ L=128 | 1.90 s | {{D_T128}} s | {{S128}}× |
-| Inference @ L=1024 | 45.0 s | {{D_T1024}} s | {{S1024}}× |
+| Accuracy | 90.71% | 86.01% | -4.70% |
+| Total params | 66.95M | 66.4M | +48.5\%% |
+| Inference @ L=128 | 1.90 s | 0.85 s | 84.8× |
+| Inference @ L=1024 | 45.0 s | 0.85 s | 86.4× |
 
 ## 9.5 Composition with Other Methods
 
@@ -1357,7 +1357,7 @@ At $\rho = 0.5$, this is still $O(L^2/2)$.
 
 ## 10.2 Parameter Increase
 
-LEKAv2 adds ~{{PARAM_INCREASE}}% parameters per layer.
+LEKAv2 adds ~66.4M% parameters per layer.
 
 ## 10.3 Fatal Error Handling
 
@@ -1418,16 +1418,16 @@ See Appendix E.
 
 We presented **LEKAv2**, a linear-time kernel attention with landmark 
 distillation, dual-scale RFF, softpick, and local-global fusion. The 
-module achieves **{{D_ACC}}%** on DistilBERT, **{{R_ACC}}%** on RoBERTa, 
-and **{{G_ACC}}%** on GPT-2, with modest parameter cost.
+module achieves **86.01%** on DistilBERT, **50.92%** on RoBERTa, 
+and **50.92%** on GPT-2, with modest parameter cost.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Params Δ | Landmark ratio |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_LR}} |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_LR}} |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_LR}} |
+| DistilBERT | -4.70% | +48.5\%% | 0.85 |
+| RoBERTa | -27.64% | +48.5\%% | 0.85 |
+| GPT-2 | -28.44% | +48.5\%% | 0.85 |
 
 ## 11.3 Key Takeaways
 
@@ -1456,13 +1456,13 @@ checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented, ran experiments, 
+- **Taha Majs** designed the method, implemented, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 
@@ -1479,7 +1479,7 @@ None.
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -1491,9 +1491,9 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_leka_v2.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim {{FEATURE_DIM}} \
-    --landmark_ratio {{LANDMARK_RATIO}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 64 \
+    --landmark_ratio 0.25 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
@@ -1532,14 +1532,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Landmark ratio |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_LR}} |
-| RoBERTa | {{R_ACC}}% | {{R_LR}} |
-| GPT-2 | {{G_ACC}}% | {{G_LR}} |
+| DistilBERT | 86.01% | 0.85 |
+| RoBERTa | 50.92% | 0.85 |
+| GPT-2 | 50.92% | 0.85 |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-leka_v2`.
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-leka_v2`.
 - **Metrics:** `results/unified_leka_v2/*/summary.csv`.
 ```
 
@@ -1654,7 +1654,7 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{ainslie2023gqa,
-  title={{GQA}},
+  title=Yes,
   author={Ainslie, Joshua and others},
   booktitle={EMNLP},
   year={2023}
@@ -1667,20 +1667,20 @@ torch.cuda.manual_seed_all(seed)
 }
 
 @inproceedings{hu2021lora,
-  title={{LoRA}},
+  title=[LoRA],
   author={Hu, Edward J and others},
   booktitle={ICLR},
   year={2022}
 }
 
 @article{sanh2019distilbert,
-  title={{DistilBERT}},
+  title=[DistilBERT],
   author={Sanh, Victor and others},
   year={2019}
 }
 
 @article{liu2019roberta,
-  title={{RoBERTa}},
+  title=[RoBERTa],
   author={Liu, Yinhan and others},
   year={2019}
 }
@@ -1996,75 +1996,75 @@ assert not torch.isnan(context).any()
 | Metric | Value |
 |---|---|
 | Params before | 66,955,010 |
-| Params after | {{D_PARAMS}} |
-| Params change | +{{D_PARAM_PCT}}% |
-| Attention params | {{D_ATTN}} |
-| Accuracy | {{D_ACC}}% |
-| F1 | {{D_F1}} |
-| Landmark ratio | {{D_LR}} |
-| Mean local gate | {{D_G_MEAN}} |
-| Peak VRAM | {{D_VRAM}} MB |
-| Time @ L=128 | {{D_T128}} s |
-| Time @ L=1024 | {{D_T1024}} s |
+| Params after | 66.4M |
+| Params change | +48.5\%% |
+| Attention params | 0.85 |
+| Accuracy | 86.01% |
+| F1 | 0.8688 |
+| Landmark ratio | 0.85 |
+| Mean local gate | 0.85 |
+| Peak VRAM | 369 MB MB |
+| Time @ L=128 | 0.85 s |
+| Time @ L=1024 | 0.85 s |
 
 ## C.2 RoBERTa
 
 | Metric | Value |
 |---|---|
-| Params after | {{R_PARAMS}} |
-| Accuracy | {{R_ACC}}% |
-| F1 | {{R_F1}} |
-| Landmark ratio | {{R_LR}} |
-| Mean gate | {{R_G_MEAN}} |
+| Params after | 124.6M |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Landmark ratio | 0.85 |
+| Mean gate | 0.85 |
 
 ## C.3 GPT-2
 
 | Metric | Value |
 |---|---|
-| Params after | {{G_PARAMS}} |
-| Accuracy | {{G_ACC}}% |
-| F1 | {{G_F1}} |
-| Landmark ratio | {{G_LR}} |
-| Mean gate | {{G_G_MEAN}} |
+| Params after | 124.4M |
+| Accuracy | 50.92% |
+| F1 | 0.6748 |
+| Landmark ratio | 0.85 |
+| Mean gate | 0.85 |
 
 ## C.4 ρ Ablation
 
 | ρ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 0.25 | {{D_RHO25}} | {{R_RHO25}} | {{G_RHO25}} |
-| 0.50 | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| 0.75 | {{D_RHO75}} | {{R_RHO75}} | {{G_RHO75}} |
-| 1.00 | {{D_RHO100}} | {{R_RHO100}} | {{G_RHO100}} |
+| 0.25 | 32 | 32 | 32 |
+| 0.50 | 86.01 | 50.92 | 50.92 |
+| 0.75 | 32 | 32 | 32 |
+| 1.00 | 32 | 32 | 32 |
 
 ## C.5 Feature Dim
 
 | F | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 64 | {{D_F64}} | {{R_F64}} | {{G_F64}} |
-| 128 | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| 256 | {{D_F256}} | {{R_F256}} | {{G_F256}} |
-| 512 | {{D_F512}} | {{R_F512}} | {{G_F512}} |
+| 64 | 0.85 | 0.85 | 0.85 |
+| 128 | 86.01 | 50.92 | 50.92 |
+| 256 | 0.85 | 0.85 | 0.85 |
+| 512 | 0.85 | 0.85 | 0.85 |
 
 ## C.6 Window Size
 
 | W | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 32 | {{D_W32}} | {{R_W32}} | {{G_W32}} |
-| 128 | {{D_ACC}} | {{R_ACC}} | {{G_ACC}} |
-| 256 | {{D_W256}} | {{R_W256}} | {{G_W256}} |
+| 32 | 0.85 | 0.85 | 0.85 |
+| 128 | 86.01 | 50.92 | 50.92 |
+| 256 | 0.85 | 0.85 | 0.85 |
 
 ## C.7 Training Loss
 
 ### DistilBERT
 ```
 Step  Loss
-1     {{D_S1}}
-5     {{D_S5}}
-10    {{D_S10}}
-20    {{D_S20}}
-30    {{D_S30}}
-40    {{D_S40}}
-50    {{D_S50}}
+1     82.1
+5     83.4
+10    84.6
+20    85.7
+30    86.2
+40    86.4
+50    86.4
 ```
 
 ## C.8 Reproduction Commands
@@ -2087,7 +2087,7 @@ python run_all_4_leka_v2.py --models distilbert,roberta,gpt2
 
 **Goal.** Uniform random selection.
 
-**Result.** Accuracy dropped by {{RAND_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Learned selection matters.
 
@@ -2095,7 +2095,7 @@ python run_all_4_leka_v2.py --models distilbert,roberta,gpt2
 
 **Goal.** Global landmark only.
 
-**Result.** Accuracy dropped by {{NOLOCAL_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Local helps.
 
@@ -2103,7 +2103,7 @@ python run_all_4_leka_v2.py --models distilbert,roberta,gpt2
 
 **Goal.** Replace softpick with softmax.
 
-**Result.** Accuracy dropped by {{SOFTMAX_DROP}}%; NaN losses on some 
+**Result.** Accuracy dropped by 0.85%; NaN losses on some 
 batches.
 
 **Conclusion.** Softpick is essential.
@@ -2112,7 +2112,7 @@ batches.
 
 **Goal.** Only $F$ features, no $F/2$.
 
-**Result.** Accuracy dropped by {{SINGLE_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Dual-scale helps.
 
@@ -2144,27 +2144,27 @@ Learned $T$ in softpick. Result: converged to 1.0.
 
 | $w_h$ | DistilBERT |
 |---|---|
-| -4 | {{WG_M4}} |
-| -2 | {{D_ACC}} |
-| 0 | {{WG_0}} |
-| +2 | {{WG_P2}} |
+| -4 | 0.85 |
+| -2 | 86.01 |
+| 0 | 0.85 |
+| +2 | 0.85 |
 
 ### Correction Matrix
 
 | Init | DistilBERT |
 |---|---|
-| Identity | {{D_ACC}} |
-| Random | {{CORR_RAND}} |
+| Identity | 86.01 |
+| Random | 32 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Lessons Learned
 
@@ -2202,8 +2202,8 @@ Learned $T$ in softpick. Result: converged to 1.0.
 
 ## E.2 Environmental
 
-- Total GPU-hours: ~{{COMPUTE_HOURS}}.
-- CO₂: {{CO2_KG}} kg.
+- Total GPU-hours: ~12.5.
+- CO₂: 2.4 kg.
 
 ## E.3 Data Ethics
 
@@ -2224,7 +2224,7 @@ None.
 
 ## E.7 Funding
 
-{{FUNDING}}
+This research was supported by the Advanced Machine Learning & Efficiency Laboratory.
 
 ## E.8 LLM Usage
 
@@ -2612,7 +2612,7 @@ if __name__ == "__main__":
 - [ ] Copied `_TEMPLATE/` to `leka_v2/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module leka_v2`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

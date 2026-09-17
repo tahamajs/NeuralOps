@@ -4,16 +4,16 @@
 
 We presented **LEKAv2**, a linear-time kernel attention with landmark 
 distillation, dual-scale RFF, softpick, and local-global fusion. The 
-module achieves **{{D_ACC}}%** on DistilBERT, **{{R_ACC}}%** on RoBERTa, 
-and **{{G_ACC}}%** on GPT-2, with modest parameter cost.
+module achieves **86.01%** on DistilBERT, **50.92%** on RoBERTa, 
+and **50.92%** on GPT-2, with modest parameter cost.
 
 ## 11.2 Results Recap
 
 | Model | Acc Δ | Params Δ | Landmark ratio |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_LR}} |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_LR}} |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_LR}} |
+| DistilBERT | -4.70% | +48.5\%% | 0.85 |
+| RoBERTa | -27.64% | +48.5\%% | 0.85 |
+| GPT-2 | -28.44% | +48.5\%% | 0.85 |
 
 ## 11.3 Key Takeaways
 
@@ -42,13 +42,13 @@ checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented, ran experiments, 
+- **Taha Majs** designed the method, implemented, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

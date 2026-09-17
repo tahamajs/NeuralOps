@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -15,8 +15,8 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_leka_v1.py \
     --models distilbert,roberta,gpt2 \
-    --feature_dim {{FEATURE_DIM}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --feature_dim 64 \
+    --recovery_steps 50
 ```
 
 ## 12.3 Reproducing Tables
@@ -53,14 +53,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Speed @ L=1024 |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | {{D_SP1024}}× |
-| RoBERTa | {{R_ACC}}% | {{R_SP1024}}× |
-| GPT-2 | {{G_ACC}}% | {{G_SP1024}}× |
+| DistilBERT | 51.03% | 84.5× |
+| RoBERTa | 50.92% | 84.5× |
+| GPT-2 | 49.31% | 84.5× |
 
 ## 12.6 Data Availability
 
 - **Dataset:** SST-2.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-leka_v1`.
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-leka_v1`.
 - **Metrics:** `results/unified_leka_v1/*/summary.csv`.
 
 ---

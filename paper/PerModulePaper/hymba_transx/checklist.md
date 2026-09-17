@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `hymba_transx/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module hymba_transx`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

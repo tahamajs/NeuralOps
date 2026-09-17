@@ -11,9 +11,9 @@ head-wise LayerNorm for stability, and supports GQA and RoPE.
 
 | Model | Acc Δ | Params Δ | Speed @ L=2048 |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{S2048}}× |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_S2048}}× |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_S2048}}× |
+| DistilBERT | -39.68% | +48.5\%% | 86.5× |
+| RoBERTa | -27.64% | +48.5\%% | 84.5× |
+| GPT-2 | -30.05% | +48.5\%% | 84.5× |
 
 ## 11.3 Key Takeaways
 
@@ -41,13 +41,13 @@ checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the method, implemented, ran experiments, 
+- **Taha Majs** designed the method, implemented, ran experiments, 
   wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

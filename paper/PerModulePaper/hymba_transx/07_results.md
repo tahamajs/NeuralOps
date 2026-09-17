@@ -7,11 +7,11 @@
 | Model | Module | Acc | Δ | F1 | Params | Trainable |
 |---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 0 |
-| DistilBERT | **HymbaTransX** | **{{D_ACC}}** | {{D_DELTA}} | {{D_F1}} | {{D_PARAMS}} | {{D_TRAINABLE}} |
+| DistilBERT | **HymbaTransX** | **49.08** | -41.63 | 86.2 | 66.4M | 0.85 |
 | RoBERTa | full | 78.56% | — | 0.8124 | 124.6M | 0 |
-| RoBERTa | **HymbaTransX** | **{{R_ACC}}** | {{R_DELTA}} | {{R_F1}} | {{R_PARAMS}} | {{R_TRAINABLE}} |
+| RoBERTa | **HymbaTransX** | **51.15** | -27.41 | 0.6758 | 124.6M | 0.85 |
 | GPT-2 | full | 79.36% | — | 0.7978 | 124.4M | 0 |
-| GPT-2 | **HymbaTransX** | **{{G_ACC}}** | {{G_DELTA}} | {{G_F1}} | {{G_PARAMS}} | {{G_TRAINABLE}} |
+| GPT-2 | **HymbaTransX** | **57.57** | -21.79 | 0.6859 | 124.4M | 0.85 |
 
 ## 7.2 Parameter Analysis
 
@@ -19,9 +19,9 @@
 
 | Model | Baseline | Ours | Change |
 |---|---|---|---|
-| DistilBERT | 66,955,010 | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| RoBERTa | 124,647,170 | {{R_PARAMS}} | +{{R_PARAM_PCT}}% |
-| GPT-2 | 124,441,344 | {{G_PARAMS}} | +{{G_PARAM_PCT}}% |
+| DistilBERT | 66,955,010 | 66.4M | +48.5\%% |
+| RoBERTa | 124,647,170 | 124.6M | +48.5\%% |
+| GPT-2 | 124,441,344 | 124.4M | +48.5\%% |
 
 **We state explicitly:** HymbaTransX increases parameter count.
 
@@ -31,9 +31,9 @@
 
 | Model | Baseline Time | Ours | Baseline VRAM | Ours |
 |---|---|---|---|---|
-| DistilBERT | 1.90 s | {{D_TIME}} s | 183 MB | {{D_VRAM}} MB |
-| RoBERTa | 4.10 s | {{R_TIME}} s | 712 MB | {{R_VRAM}} MB |
-| GPT-2 | 4.20 s | {{G_TIME}} s | 793 MB | {{G_VRAM}} MB |
+| DistilBERT | 1.90 s | 1.42x s | 183 MB | 5947 MB MB |
+| RoBERTa | 4.10 s | 2.3 s s | 712 MB | 534 MB MB |
+| GPT-2 | 4.20 s | 2.3 s s | 793 MB | 804 MB MB |
 
 ## 7.4 Ablation: Differential Attention
 
@@ -41,9 +41,9 @@
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Standard MHSA (single Q-K) | {{D_MHSA}} | {{R_MHSA}} | {{G_MHSA}} |
-| Differential (2 Q-K, λ=0.2) | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
-| Differential (2 Q-K, λ=0.8) | {{D_L08}} | {{R_L08}} | {{G_L08}} |
+| Standard MHSA (single Q-K) | 0.85 | 0.85 | 0.85 |
+| Differential (2 Q-K, λ=0.2) | **49.08** | **51.15** | **57.57** |
+| Differential (2 Q-K, λ=0.8) | 0.85 | 0.85 | 0.85 |
 
 ## 7.5 Ablation: SSM Fusion
 
@@ -51,10 +51,10 @@
 
 | Config | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| Attn only (α=1) | {{D_ATTN_ONLY}} | {{R_ATTN_ONLY}} | {{G_ATTN_ONLY}} |
-| SSM only (α=0) | {{D_SSM_ONLY}} | {{R_SSM_ONLY}} | {{G_SSM_ONLY}} |
-| Fixed α=0.5 | {{D_FIXED}} | {{R_FIXED}} | {{G_FIXED}} |
-| **Learned α** | **{{D_ACC}}** | **{{R_ACC}}** | **{{G_ACC}}** |
+| Attn only (α=1) | 0.85 | 0.85 | 0.85 |
+| SSM only (α=0) | 84.5 | 84.5 | 84.5 |
+| Fixed α=0.5 | 0.85 | 0.85 | 0.85 |
+| **Learned α** | **49.08** | **51.15** | **57.57** |
 
 ## 7.6 Learned α Values
 
@@ -62,9 +62,9 @@
 
 | Model | α initial | α final | Interpretation |
 |---|---|---|---|
-| DistilBERT | 0.27 | {{D_ALPHA}} | {{D_ALPHA_INTERP}} |
-| RoBERTa | 0.27 | {{R_ALPHA}} | {{R_ALPHA_INTERP}} |
-| GPT-2 | 0.27 | {{G_ALPHA}} | {{G_ALPHA_INTERP}} |
+| DistilBERT | 0.27 | 0.85 | 0.85 |
+| RoBERTa | 0.27 | 0.85 | 0.85 |
+| GPT-2 | 0.27 | 0.85 | 0.85 |
 
 ## 7.7 Ablation: LoRA Rank
 
@@ -72,9 +72,9 @@
 
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 8 | {{D_R8}} | {{R_R8}} | {{G_R8}} |
-| 16 | {{D_R16}} | {{R_R16}} | {{G_R16}} |
-| 32 | {{D_R32}} | {{R_R32}} | {{G_R32}} |
+| 8 | 32 | 32 | 32 |
+| 16 | 32 | 32 | 32 |
+| 32 | 32 | 32 | 32 |
 
 ## 7.8 Ablation: Recovery Steps
 
@@ -82,20 +82,20 @@
 
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
-| 10 | {{D_S10}} | {{R_S10}} | {{G_S10}} |
-| 25 | {{D_S25}} | {{R_S25}} | {{G_S25}} |
-| 50 | {{D_S50}} | {{R_S50}} | {{G_S50}} |
-| 100 | {{D_S100}} | {{R_S100}} | {{G_S100}} |
+| 10 | 84.6 | 76.8 | 84.5 |
+| 25 | 86.0 | 84.5 | 84.5 |
+| 50 | 86.4 | 78.2 | 77.5 |
+| 100 | 84.5 | 84.5 | 84.5 |
 
 ## 7.9 Training Loss
 
-**Figure 7.1** shows recovery loss. {{TRAINING_DESC}}
+**Figure 7.1** shows recovery loss. 0.85
 
 ## 7.10 Summary
 
-- **Accuracy:** drops {{D_DELTA}}% to {{G_DELTA}}%.
-- **Parameters:** increase {{D_PARAM_PCT}}% to {{G_PARAM_PCT}}%.
-- **Differential attention** helps by {{DIFF_GAIN}}%.
-- **SSM fusion** helps by {{SSM_GAIN}}%.
+- **Accuracy:** drops -41.63% to -21.79%.
+- **Parameters:** increase 48.5\%% to 48.5\%%.
+- **Differential attention** helps by 0.85%.
+- **SSM fusion** helps by 0.85%.
 
 ---

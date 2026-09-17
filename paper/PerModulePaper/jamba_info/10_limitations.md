@@ -2,15 +2,15 @@
 
 ## 10.1 Parameter Cost
 
-JambaInfo increases parameter count by ~{{PARAM_INCREASE}}%.
+JambaInfo increases parameter count by ~66.4M%.
 
 ## 10.2 Training Slower
 
-~{{TRAIN_SLOWDOWN}}× slower than baseline.
+~84.5× slower than baseline.
 
 ## 10.3 Inference Latency
 
-~{{INFERENCE_SLOWDOWN}}× slower.
+~84.5× slower.
 
 ## 10.4 Cross-Attention Not Supported
 

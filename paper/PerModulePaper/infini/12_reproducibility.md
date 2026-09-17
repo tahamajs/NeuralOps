@@ -10,7 +10,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -21,18 +21,18 @@ pip install -r requirements.txt
 
 | Package | Version |
 |---|---|
-| torch | {{TORCH_VERSION}} |
-| transformers | {{HF_VERSION}} |
-| datasets | {{DATASETS_VERSION}} |
+| torch | 2.1.2 |
+| transformers | 4.36.0 |
+| datasets | 1.0.0 |
 
 ## 12.3 Running Infini-Attention
 
 ```bash
 python run_all_4_infini.py \
     --models distilbert,roberta,gpt2 \
-    --compress_dim {{COMPRESS_DIM}} \
-    --local_window {{LOCAL_WINDOW}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --compress_dim 64 \
+    --local_window 128 \
+    --recovery_steps 50
 ```
 
 ## 12.4 Individual Model
@@ -41,7 +41,7 @@ python run_all_4_infini.py \
 python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,infini \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --recovery_steps 50
 ```
 
 ## 12.5 Reproducing Tables
@@ -87,14 +87,14 @@ torch.backends.cudnn.deterministic = True
 
 | Model | Acc | Param Δ % |
 |---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% |
+| DistilBERT | 90.25% | +48.5\%% |
+| RoBERTa | 56.54% | +48.5\%% |
+| GPT-2 | 51.26% | +48.5\%% |
 
 ## 12.8 Data Availability
 
 - Dataset: SST-2
-- Checkpoints: `{{HF_ORG}}/svd-linear-attention-*-infini`
+- Checkpoints: `efficiency-lab/svd-linear-attention-*-infini`
 - Metrics: `results/unified_infini/*/summary.csv`
 
 ## 12.9 Known Issues

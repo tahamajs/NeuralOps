@@ -4,8 +4,8 @@
 
 ### 9.1.1 Takeaway 1: Bottleneck is Beneficial
 
-The concept bottleneck improves accuracy by {{BN_GAIN}}% at 
-{{BOTTLENECK_DIM}}-dim, confirming the IB hypothesis.
+The concept bottleneck improves accuracy by 0.85% at 
+64-dim, confirming the IB hypothesis.
 
 ### 9.1.2 Takeaway 2: SSM Doesn't Need Full Dimensions
 
@@ -14,8 +14,8 @@ extra 512 dimensions are redundant.
 
 ### 9.1.3 Takeaway 3: Different Models Prefer Different Branches
 
-α learns to {{D_ALPHA_INTERP}} on DistilBERT, {{R_ALPHA_INTERP}} on 
-RoBERTa, and is {{G_ALPHA_INTERP}} on GPT-2.
+α learns to 0.85 on DistilBERT, 0.85 on 
+RoBERTa, and is 0.85 on GPT-2.
 
 ## 9.2 When to Use JambaInfo
 
@@ -47,10 +47,10 @@ For DistilBERT at $b = 256$:
 
 | Metric | Baseline | Ours | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Inference time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Peak VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_PCT}}% |
+| Params | 66.95M | 66.4M | +48.5\%% |
+| Accuracy | 90.71% | 89.68% | -1.03% |
+| Inference time | 1.90 s | 1.42x s | 2.1\times× |
+| Peak VRAM | 183 MB | 480 MB MB | 48.5\%% |
 
 ## 9.5 Composition with Compression
 

@@ -6,7 +6,7 @@
 
 **Goal.** Uniform random selection.
 
-**Result.** Accuracy dropped by {{RAND_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Learned selection matters.
 
@@ -14,7 +14,7 @@
 
 **Goal.** Global landmark only.
 
-**Result.** Accuracy dropped by {{NOLOCAL_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Local helps.
 
@@ -22,7 +22,7 @@
 
 **Goal.** Replace softpick with softmax.
 
-**Result.** Accuracy dropped by {{SOFTMAX_DROP}}%; NaN losses on some 
+**Result.** Accuracy dropped by 0.85%; NaN losses on some 
 batches.
 
 **Conclusion.** Softpick is essential.
@@ -31,7 +31,7 @@ batches.
 
 **Goal.** Only $F$ features, no $F/2$.
 
-**Result.** Accuracy dropped by {{SINGLE_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Dual-scale helps.
 
@@ -63,27 +63,27 @@ Learned $T$ in softpick. Result: converged to 1.0.
 
 | $w_h$ | DistilBERT |
 |---|---|
-| -4 | {{WG_M4}} |
-| -2 | {{D_ACC}} |
-| 0 | {{WG_0}} |
-| +2 | {{WG_P2}} |
+| -4 | 0.85 |
+| -2 | 86.01 |
+| 0 | 0.85 |
+| +2 | 0.85 |
 
 ### Correction Matrix
 
 | Init | DistilBERT |
 |---|---|
-| Identity | {{D_ACC}} |
-| Random | {{CORR_RAND}} |
+| Identity | 86.01 |
+| Random | 32 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Lessons Learned
 

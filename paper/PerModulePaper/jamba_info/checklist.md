@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `jamba_info/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module jamba_info`
-- [ ] No `{{PLACEHOLDER}}` remains
+- [ ] No `[PLACEHOLDER]` remains
 
 ## Abstract
 - [ ] Under 250 words

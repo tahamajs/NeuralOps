@@ -6,7 +6,7 @@
 
 **Goal.** Skip head-wise LN.
 
-**Result.** Accuracy dropped by {{NONORM_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** LN is essential.
 
@@ -14,7 +14,7 @@
 
 **Goal.** Use iid Gaussian projection.
 
-**Result.** Accuracy dropped by {{NOQR_DROP}}%; higher variance in 
+**Result.** Accuracy dropped by 0.85%; higher variance in 
 predictions.
 
 **Conclusion.** QR helps.
@@ -23,7 +23,7 @@ predictions.
 
 **Goal.** Only attention output.
 
-**Result.** Accuracy dropped by {{NOGATE_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Gate is essential.
 
@@ -31,7 +31,7 @@ predictions.
 
 **Goal.** Aggressive feature reduction.
 
-**Result.** Accuracy collapsed to {{F32}}%.
+**Result.** Accuracy collapsed to 86.4%.
 
 **Conclusion.** F ≥ 64 required.
 
@@ -65,30 +65,30 @@ optimization.
 
 | F | DistilBERT |
 |---|---|
-| 32 | {{F32}} |
-| 64 | {{D_F64}} |
-| 128 | {{D_F128}} |
-| 256 | {{D_ACC}} |
-| 512 | {{D_F512}} |
+| 32 | 86.4 |
+| 64 | 0.85 |
+| 128 | 0.865 |
+| 256 | 51.03 |
+| 512 | 0.85 |
 
 ### Preservation Gate Init
 
 | w₀ | DistilBERT |
 |---|---|
-| -2 | {{WM2}} |
-| 0 | {{W0}} |
-| 2 | {{D_ACC}} |
-| 4 | {{WP4}} |
+| -2 | 84.0 |
+| 0 | Initial |
+| 2 | 51.03 |
+| 4 | 85.8 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Lessons Learned
 

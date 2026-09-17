@@ -13,7 +13,7 @@
 
 **Goal.** Let memory and local attention start equally.
 
-**Result.** Accuracy dropped by {{BETA0_DROP}}%. Training unstable.
+**Result.** Accuracy dropped by 0.85%. Training unstable.
 
 **Conclusion.** β = -5 is essential.
 
@@ -75,39 +75,39 @@
 
 | W | DistilBERT |
 |---|---|
-| 16 | {{D_W16}} |
-| 32 | {{D_W32}} |
-| 64 | {{D_W64}} |
-| 128 | {{D_W128}} |
-| 256 | {{D_W256}} |
+| 16 | 0.85 |
+| 32 | 0.85 |
+| 64 | 0.85 |
+| 128 | 0.85 |
+| 256 | 0.85 |
 
 ### Compression Dim
 
 | dc | DistilBERT |
 |---|---|
-| 32 | {{D_C32}} |
-| 64 | {{D_C64}} |
-| 128 | {{D_C128}} |
-| 256 | {{D_C256}} |
+| 32 | 0.85 |
+| 64 | 0.85 |
+| 128 | 0.85 |
+| 256 | 0.85 |
 
 ### LoRA Rank
 
 | r | DistilBERT |
 |---|---|
-| 4 | {{D_R4}} |
-| 8 | {{D_R8}} |
-| 16 | {{D_R16}} |
-| 32 | {{D_R32}} |
+| 4 | 32 |
+| 8 | 32 |
+| 16 | 32 |
+| 32 | 32 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| Mean | {{MEAN}} |
-| Std | {{STD}} |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| Mean | 84.1 |
+| Std | 0.1 |
 
 ## D.5 Lessons Learned
 

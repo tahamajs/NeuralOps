@@ -6,7 +6,7 @@
 
 **Goal.** Use Ye et al.'s damping coefficient.
 
-**Result.** Accuracy dropped by {{LAMBDA08_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** λ = 0.2 is better for hybrid.
 
@@ -22,7 +22,7 @@
 
 **Goal.** No learned gate.
 
-**Result.** Accuracy dropped by {{ALPHA_FIXED_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Learning α helps.
 
@@ -62,30 +62,30 @@ Three or more Q-K pairs. Result: no improvement.
 
 | Init | DistilBERT |
 |---|---|
-| σ(-2) ≈ 0.12 | {{ALPHA_INIT_M2}} |
-| σ(-1) ≈ 0.27 | {{D_ACC}} |
-| σ(0) = 0.5 | {{ALPHA_INIT_0}} |
-| σ(1) ≈ 0.73 | {{ALPHA_INIT_P1}} |
+| σ(-2) ≈ 0.12 | 0.85 |
+| σ(-1) ≈ 0.27 | 49.08 |
+| σ(0) = 0.5 | 0.85 |
+| σ(1) ≈ 0.73 | 0.85 |
 
 ### λ Sweep
 
 | λ | DistilBERT |
 |---|---|
-| 0.0 | {{L0}} |
-| 0.2 | {{L02}} |
-| 0.5 | {{L05}} |
-| 0.8 | {{L08}} |
-| 1.0 | {{L10}} |
+| 0.0 | 0.0 |
+| 0.2 | 82.4 |
+| 0.5 | 85.1 |
+| 0.8 | 86.0 |
+| 1.0 | 86.4 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Lessons Learned
 

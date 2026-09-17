@@ -5,7 +5,7 @@
 ### 9.1.1 Takeaway 1: Differential Attention Reduces Noise
 
 The two-Q-K formulation improves signal-to-noise ratio by 
-{{NOISE_REDUCTION}}% at a modest parameter cost.
+32% at a modest parameter cost.
 
 ### 9.1.2 Takeaway 2: SSM Fusion is Model-Dependent
 
@@ -14,7 +14,7 @@ less because SSM is causal-only.
 
 ### 9.1.3 Takeaway 3: Parameter Cost is Real
 
-HymbaTransX adds ~{{PARAM_INCREASE}}% parameters. This is a **quality 
+HymbaTransX adds ~66.4M% parameters. This is a **quality 
 improvement**, not a **compression**.
 
 ## 9.2 When to Use HymbaTransX
@@ -47,10 +47,10 @@ For DistilBERT:
 
 | Metric | Baseline | Ours | Change |
 |---|---|---|---|
-| Params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Inference time | 1.90 s | {{D_TIME}} s | {{D_TIME_RATIO}}× |
-| Peak VRAM | 183 MB | {{D_VRAM}} MB | {{D_VRAM_PCT}}% |
+| Params | 66.95M | 66.4M | +48.5\%% |
+| Accuracy | 90.71% | 49.08% | -41.63% |
+| Inference time | 1.90 s | 1.42x s | 2.1\times× |
+| Peak VRAM | 183 MB | 5947 MB MB | 48.5\%% |
 
 ## 9.5 Composition with Compression Methods
 

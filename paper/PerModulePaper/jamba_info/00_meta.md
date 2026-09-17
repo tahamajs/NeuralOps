@@ -1,19 +1,19 @@
 # JambaInfo: Information-Bottlenecked Jamba Architecture with Concept-Compressed SSM
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/jamba_info.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/jamba_info.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -35,7 +35,7 @@ z_t = W_\text{up} \cdot \text{GELU}(W_\text{down} x_t),
 \quad W_\text{down} \in \mathbb{R}^{b \times d}, \quad b \ll d
 $$
 
-where $b = {{BOTTLENECK_DIM}}$. The bottleneck acts as an explicit 
+where $b = 64$. The bottleneck acts as an explicit 
 information constraint: the SSM processes only the essential concepts, 
 reducing noise and parameters. Concurrently, a **differential attention** 
 branch (two Q-K pairs with ReLU-damped subtraction) computes precise 
@@ -49,12 +49,12 @@ $$
 We initialize $\alpha \approx 0.12$, biasing toward attention initially 
 and letting the model learn how much to rely on the SSM.
 
-On SST-2, JambaInfo achieves **{{D_ACC}}%** on DistilBERT (baseline 
-{{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), and 
-**{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%).
+On SST-2, JambaInfo achieves **89.68%** on DistilBERT (baseline 
+0.85%), **52.98%** on RoBERTa (baseline 32%), and 
+**50.80%** on GPT-2 (baseline 0.85%).
 
 **We are explicit that JambaInfo does not reduce parameter count.** It 
-**adds** approximately {{PARAM_INCREASE}}% more parameters per layer. Its 
+**adds** approximately 66.4M% more parameters per layer. Its 
 benefit is **concept-driven SSM compression** and **reduced attention noise** 
 at a modest parameter cost. The concept bottleneck itself can be viewed as 
 a lightweight information bottleneck that improves SSM efficiency.

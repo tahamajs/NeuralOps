@@ -23,9 +23,9 @@ Majority baseline: 50.92%. Max length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `bottleneck_dim` | {{BOTTLENECK_DIM}} |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `bottleneck_dim` | 64 |
 | `mode` | "retrieval" |
 | `sparsity` | 0.5 |
 | λ (differential) | 0.2 |
@@ -36,10 +36,10 @@ Majority baseline: 50.92%. Max length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| LR | {{LR}} |
-| WD | {{WD}} |
-| Steps | {{RECOVERY_STEPS}} |
-| Batch | {{BATCH_SIZE}} |
+| LR | 1e-4 |
+| WD | 0.01 |
+| Steps | 50 |
+| Batch | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation Metrics
@@ -71,16 +71,16 @@ Majority baseline: 50.92%. Max length: 128.
 |---|---|
 | GPU | RTX 4070 Laptop |
 | VRAM | 8 GB |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_jamba_info.py \
     --models distilbert,roberta,gpt2 \
-    --bottleneck_dim {{BOTTLENECK_DIM}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --bottleneck_dim 64 \
+    --recovery_steps 50
 ```
 
 ## 6.9 Baselines
@@ -95,6 +95,6 @@ python run_all_4_jamba_info.py \
 
 ## 6.10 Seeds
 
-Single seed ({{SEED}}).
+Single seed (42).
 
 ---

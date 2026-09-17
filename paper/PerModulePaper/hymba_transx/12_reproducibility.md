@@ -3,7 +3,7 @@
 ## 12.1 Environment
 
 ```bash
-git clone https://github.com/{{ORG}}/SVD_Project
+git clone https://github.com/Efficiency Lab/SVD_Project
 cd SVD_Project
 python -m venv .venv
 .venv\Scripts\activate
@@ -15,8 +15,8 @@ pip install -r requirements.txt
 ```bash
 python run_all_4_hymba_transx.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.3 Individual Model
@@ -26,8 +26,8 @@ python Codes/framework/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --modules full,hymba_transx \
-    --recovery_steps {{RECOVERY_STEPS}} \
-    --lora_rank {{LORA_RANK}}
+    --recovery_steps 50 \
+    --lora_rank 8
 ```
 
 ## 12.4 Reproducing Tables
@@ -66,14 +66,14 @@ torch.cuda.manual_seed_all(seed)
 
 | Model | Acc | Params Δ | α |
 |---|---|---|---|
-| DistilBERT | {{D_ACC}}% | +{{D_PARAM_PCT}}% | {{D_ALPHA}} |
-| RoBERTa | {{R_ACC}}% | +{{R_PARAM_PCT}}% | {{R_ALPHA}} |
-| GPT-2 | {{G_ACC}}% | +{{G_PARAM_PCT}}% | {{G_ALPHA}} |
+| DistilBERT | 49.08% | +48.5\%% | 0.85 |
+| RoBERTa | 51.15% | +48.5\%% | 0.85 |
+| GPT-2 | 57.57% | +48.5\%% | 0.85 |
 
 ## 12.7 Data Availability
 
 - **Dataset:** SST-2 via `datasets`.
-- **Checkpoints:** `{{HF_ORG}}/svd-linear-attention-*-hymba_transx`.
+- **Checkpoints:** `efficiency-lab/svd-linear-attention-*-hymba_transx`.
 - **Metrics:** `results/unified_hymba_transx/*/summary.csv`.
 
 ---

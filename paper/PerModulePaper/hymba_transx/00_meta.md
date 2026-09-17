@@ -1,19 +1,19 @@
 # HymbaTransX: A Hybrid Differential Attention and State Space Model Block
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/hymba_transx.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/hymba_transx.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -44,12 +44,12 @@ $O(L)$ long-range mixing. Both branches share input projections.
 HymbaTransX supports GQA, causal masking for decoders, bidirectional 
 recurrence for encoders, and both external RoPE (from the parent model) 
 and internal `HeadRoPE` fallback. We evaluate on DistilBERT, RoBERTa, and 
-GPT-2 on SST-2, achieving **{{D_ACC}}%** (DistilBERT, baseline {{BASE_D}}%), 
-**{{R_ACC}}%** (RoBERTa, baseline {{BASE_R}}%), and **{{G_ACC}}%** 
-(GPT-2, baseline {{BASE_G}}%).
+GPT-2 on SST-2, achieving **49.08%** (DistilBERT, baseline 0.85%), 
+**51.15%** (RoBERTa, baseline 32%), and **57.57%** 
+(GPT-2, baseline 0.85%).
 
 **We are explicit that HymbaTransX does not reduce parameter count.** In 
-fact, the module **adds** approximately {{PARAM_INCREASE}}% more parameters 
+fact, the module **adds** approximately 66.4M% more parameters 
 per layer. Its benefit is **attention-noise reduction** and **SSM-augmented 
 long-range context**, at a small training and inference overhead.
 

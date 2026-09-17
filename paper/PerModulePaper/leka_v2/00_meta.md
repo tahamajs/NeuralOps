@@ -1,19 +1,19 @@
 # LEKAv2: Linear-Time Efficient Kernel Attention with Landmark Distillation
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/leka_v2.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/leka_v2.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -42,14 +42,14 @@ fusion**:
 4. **Local-global fusion.** A learned per-head gate blends a **local 
    sliding-window attention** with the **global landmark attention**.
 
-On SST-2, LEKAv2 achieves **{{D_ACC}}%** on DistilBERT (baseline 
-{{BASE_D}}%), **{{R_ACC}}%** on RoBERTa (baseline {{BASE_R}}%), and 
-**{{G_ACC}}%** on GPT-2 (baseline {{BASE_G}}%). Inference is linear at 
-long sequences ($\geq {{BREAKEVEN}}$) and preserves pretrained weights 
+On SST-2, LEKAv2 achieves **86.01%** on DistilBERT (baseline 
+0.85%), **50.92%** on RoBERTa (baseline 32%), and 
+**50.92%** on GPT-2 (baseline 0.85%). Inference is linear at 
+long sequences ($\geq 128$) and preserves pretrained weights 
 via SVD-free copying with LoRA adapters.
 
 **We are explicit that LEKAv2 does not reduce parameter count.** It adds 
-approximately {{PARAM_INCREASE}}% parameters due to LoRA, projections, 
+approximately 66.4M% parameters due to LoRA, projections, 
 landmark scorer, and the correction matrices. Its benefit is 
 **linear-time long-context inference** with **learned landmark 
 selection**.

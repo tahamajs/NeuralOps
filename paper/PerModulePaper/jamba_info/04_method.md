@@ -223,6 +223,6 @@ Trainable:
 Frozen:
 - Base Q/K/V/O weights.
 
-**Trainable count:** ~{{TRAINABLE}} per layer.
+**Trainable count:** ~0.8M per layer.
 
 ---

@@ -2,7 +2,7 @@
 
 ## 10.1 Parameter Cost
 
-LEKAv1 adds ~{{PARAM_INCREASE}}% parameters per layer.
+LEKAv1 adds ~66.4M% parameters per layer.
 
 ## 10.2 Softmax vs Gaussian
 

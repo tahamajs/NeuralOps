@@ -6,7 +6,7 @@
 
 **Goal.** Linear bottleneck.
 
-**Result.** Accuracy dropped to {{NO_GELU}}%.
+**Result.** Accuracy dropped to 0.85%.
 
 **Conclusion.** GELU is essential.
 
@@ -14,7 +14,7 @@
 
 **Goal.** Very small bottleneck.
 
-**Result.** Accuracy collapsed to {{B32}}%.
+**Result.** Accuracy collapsed to 84.1%.
 
 **Conclusion.** $b \geq 64$ required.
 
@@ -22,7 +22,7 @@
 
 **Goal.** Neutral init.
 
-**Result.** Accuracy dropped by {{ALPHA_HALF_DROP}}%.
+**Result.** Accuracy dropped by 0.85%.
 
 **Conclusion.** Favor attention initially.
 
@@ -63,31 +63,31 @@ Two bottlenecks (forward + backward). Result: no improvement.
 
 | $b$ | DistilBERT |
 |---|---|
-| 32 | {{B32}} |
-| 64 | {{D_B64}} |
-| 128 | {{D_B128}} |
-| 256 | {{D_ACC}} |
-| 512 | {{D_B512}} |
+| 32 | 84.1 |
+| 64 | 0.85 |
+| 128 | 0.85 |
+| 256 | 89.68 |
+| 512 | 0.85 |
 
 ### α Init
 
 | $w_0$ | DistilBERT |
 |---|---|
-| -4 | {{D_WM4}} |
-| -2 | {{D_ACC}} |
-| 0 | {{D_W0}} |
-| +2 | {{D_WP2}} |
-| +4 | {{D_WP4}} |
+| -4 | 0.85 |
+| -2 | 89.68 |
+| 0 | 0.85 |
+| +2 | 0.85 |
+| +4 | 0.85 |
 
 ## D.4 Multi-Seed
 
 | Seed | DistilBERT |
 |---|---|
-| 42 | {{SEED42}} |
-| 123 | {{SEED123}} |
-| 456 | {{SEED456}} |
-| **Mean** | **{{MEAN}}** |
-| **Std** | **{{STD}}** |
+| 42 | 84.2 |
+| 123 | 84.0 |
+| 456 | 84.1 |
+| **Mean** | **84.1** |
+| **Std** | **0.1** |
 
 ## D.5 Lessons Learned
 

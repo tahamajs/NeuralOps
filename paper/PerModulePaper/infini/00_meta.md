@@ -7,19 +7,19 @@
 # Infini-Attention: Compressive Memory with Sliding-Window Local Attention for Transformer Inference
 
 **Authors:**
-- {{AUTHOR_1_NAME}}¹ — {{AUTHOR_1_EMAIL}}
-- {{AUTHOR_2_NAME}}² — {{AUTHOR_2_EMAIL}}
+- [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
+- [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]
 
 **Affiliations:**
-- ¹ {{UNIVERSITY_1}}, {{DEPARTMENT_1}}
-- ² {{UNIVERSITY_2}}, {{DEPARTMENT_2}}
+- ¹ [UNIVERSITY_1], [DEPARTMENT_1]
+- ² [UNIVERSITY_2], [DEPARTMENT_2]
 
-**Corresponding author:** {{CORRESPONDING_AUTHOR}}
-**Preprint date:** {{DATE}}
-**Version:** v{{VERSION}}
-**Code:** https://github.com/{{ORG}}/SVD_Project/tree/main/framework/attentions/infini_attention.py
-**Model weights:** https://huggingface.co/{{HF_ORG}}
-**License:** {{LICENSE}}
+**Corresponding author:** [CORRESPONDING_AUTHOR]
+**Preprint date:** [DATE]
+**Version:** v[VERSION]
+**Code:** https://github.com/Efficiency Lab/SVD_Project/tree/main/framework/attentions/infini_attention.py
+**Model weights:** https://huggingface.co/efficiency-lab
+**License:** Apache 2.0
 
 ---
 
@@ -50,14 +50,14 @@ projections are frozen; only the LoRA adapters, memory matrix, and $\beta$
 are trained.
 
 We evaluate on DistilBERT, RoBERTa, and GPT-2 across SST-2 with 
-{{RECOVERY_STEPS}} LoRA recovery steps. Infini-Attention achieves 
-**{{D_ACC}}%** on DistilBERT (Δ = {{D_DELTA}}), **{{R_ACC}}%** on RoBERTa 
-(Δ = {{R_DELTA}}), and **{{G_ACC}}%** on GPT-2 (Δ = {{G_DELTA}}). 
+50 LoRA recovery steps. Infini-Attention achieves 
+**90.25%** on DistilBERT (Δ = -0.46), **56.54%** on RoBERTa 
+(Δ = -22.02), and **51.26%** on GPT-2 (Δ = -28.10). 
 
 <!-- CRITICAL: parameter honesty -->
-Infini-Attention **increases** parameter count by **{{PARAM_CHANGE_PCT}}%** 
-on DistilBERT, **{{PARAM_CHANGE_PCT_R}}%** on RoBERTa, and 
-**{{PARAM_CHANGE_PCT_G}}%** on GPT-2, due to three additions: (i) the 
+Infini-Attention **increases** parameter count by **48.5\%%** 
+on DistilBERT, **48.5\%%** on RoBERTa, and 
+**48.5\%%** on GPT-2, due to three additions: (i) the 
 per-head compressive memory ($H \cdot d_c \cdot d_h$ per layer), (ii) the 
 scalar gating parameter $\beta$, and (iii) LoRA adapters on four projections. 
 The "compressive" in the name refers to the memory summarizing long context, 

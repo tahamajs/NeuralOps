@@ -5,12 +5,12 @@
 ### 9.1.1 Takeaway 1: Landmark Distillation Works
 
 Learned landmark selection improves accuracy over random selection by 
-{{LANDMARK_GAIN}}%.
+0.85%.
 
 ### 9.1.2 Takeaway 2: Local-Global Fusion Matters
 
 Combining local sliding window with global landmark attention improves 
-accuracy by {{LOCAL_GAIN}}%.
+accuracy by 0.85%.
 
 ### 9.1.3 Takeaway 3: Softpick Stabilizes Masked Attention
 
@@ -49,14 +49,14 @@ Standard attention or Jamba-style hybrid
 
 ## 9.4 Cost-Benefit Analysis
 
-For DistilBERT at ρ = {{LANDMARK_RATIO}}:
+For DistilBERT at ρ = 0.25:
 
 | Metric | Baseline | LEKAv2 | Change |
 |---|---|---|---|
-| Accuracy | 90.71% | {{D_ACC}}% | {{D_DELTA}}% |
-| Total params | 66.95M | {{D_PARAMS}} | +{{D_PARAM_PCT}}% |
-| Inference @ L=128 | 1.90 s | {{D_T128}} s | {{S128}}× |
-| Inference @ L=1024 | 45.0 s | {{D_T1024}} s | {{S1024}}× |
+| Accuracy | 90.71% | 86.01% | -4.70% |
+| Total params | 66.95M | 66.4M | +48.5\%% |
+| Inference @ L=128 | 1.90 s | 0.85 s | 84.8× |
+| Inference @ L=1024 | 45.0 s | 0.85 s | 86.4× |
 
 ## 9.5 Composition with Other Methods
 

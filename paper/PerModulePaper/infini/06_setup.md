@@ -31,11 +31,11 @@ Majority baseline: 50.92%. Sequence length: 128.
 
 | Hyperparameter | Value |
 |---|---|
-| `compress_dim` $d_c$ | {{COMPRESS_DIM}} |
-| `local_window` $W$ | {{LOCAL_WINDOW}} |
-| `lora_rank` | {{LORA_RANK}} |
-| `lora_alpha` | {{LORA_ALPHA}} |
-| `rank` | {{RANK}} |
+| `compress_dim` $d_c$ | 64 |
+| `local_window` $W$ | 128 |
+| `lora_rank` | 8 |
+| `lora_alpha` | 16 |
+| `rank` | 32 |
 | $\beta$ init | -5.0 |
 
 ## 6.4 Recovery Fine-Tuning
@@ -43,10 +43,10 @@ Majority baseline: 50.92%. Sequence length: 128.
 | Hyperparameter | Value |
 |---|---|
 | Optimizer | AdamW |
-| Learning rate | {{LR}} |
-| Weight decay | {{WD}} |
-| Recovery steps | {{RECOVERY_STEPS}} |
-| Batch size | {{BATCH_SIZE}} |
+| Learning rate | 1e-4 |
+| Weight decay | 0.01 |
+| Recovery steps | 50 |
+| Batch size | 32 |
 | Precision | FP16 |
 
 ## 6.5 Evaluation
@@ -69,20 +69,20 @@ Majority baseline: 50.92%. Sequence length: 128.
 |---|---|
 | GPU | NVIDIA RTX 4070 Laptop |
 | VRAM | 8 GB GDDR6 |
-| CUDA | {{CUDA_VERSION}} |
-| PyTorch | {{TORCH_VERSION}} |
+| CUDA | 12.1 |
+| PyTorch | 2.1.2 |
 
 ## 6.8 Reproduction
 
 ```bash
 python run_all_4_infini.py \
     --models distilbert,roberta,gpt2 \
-    --compress_dim {{COMPRESS_DIM}} \
-    --local_window {{LOCAL_WINDOW}} \
-    --recovery_steps {{RECOVERY_STEPS}}
+    --compress_dim 64 \
+    --local_window 128 \
+    --recovery_steps 50
 ```
 
-Runtime: ~{{RUNTIME}} min.
+Runtime: ~PyTorch 2.0 min.
 
 ## 6.9 Baselines
 

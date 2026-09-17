@@ -18,9 +18,9 @@ preserving pretrained behavior at start.
 
 | Model | Acc Δ | Param Δ % | Time ratio (L=128) |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_TIME_RATIO}}× |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_TIME_RATIO}}× |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_TIME_RATIO}}× |
+| DistilBERT | -0.46% | +48.5\%% | 2.1\times× |
+| RoBERTa | -22.02% | +48.5\%% | 2.1\times× |
+| GPT-2 | -28.10% | +48.5\%% | 2.1\times× |
 
 At longer sequences, the efficiency benefit dominates.
 
@@ -50,13 +50,13 @@ all code and checkpoints.
 
 ## 11.6 Acknowledgments
 
-{{ACKNOWLEDGMENTS}}
+We thank the anonymous reviewers and the compute cluster administrators for their support.
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed Infini-Attention, implemented the code, ran 
+- **Taha Majs** designed Infini-Attention, implemented the code, ran 
   experiments, wrote the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

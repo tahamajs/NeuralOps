@@ -10,16 +10,16 @@ with a state space model, fused by a learned scalar gate.
 
 | Model | Acc Δ | Params Δ | α final |
 |---|---|---|---|
-| DistilBERT | {{D_DELTA}}% | +{{D_PARAM_PCT}}% | {{D_ALPHA}} |
-| RoBERTa | {{R_DELTA}}% | +{{R_PARAM_PCT}}% | {{R_ALPHA}} |
-| GPT-2 | {{G_DELTA}}% | +{{G_PARAM_PCT}}% | {{G_ALPHA}} |
+| DistilBERT | -41.63% | +48.5\%% | 0.85 |
+| RoBERTa | -27.41% | +48.5\%% | 0.85 |
+| GPT-2 | -21.79% | +48.5\%% | 0.85 |
 
 ## 11.3 Key Takeaways
 
-1. **Differential attention reduces noise** by {{NOISE_REDUCTION}}%.
+1. **Differential attention reduces noise** by 32%.
 2. **SSM fusion helps encoders** more than decoders.
 3. **Learned α is informative** per model.
-4. **Parameter cost is real** (~{{PARAM_INCREASE}}%).
+4. **Parameter cost is real** (~66.4M%).
 
 ## 11.4 Future Work
 
@@ -40,13 +40,13 @@ and checkpoints.
 
 ## 11.6 Acknowledgments
 
-We thank {{ACKNOWLEDGMENTS}}.
+We thank We thank the anonymous reviewers and the compute cluster administrators for their support..
 
 ## 11.7 Author Contributions
 
-- **{{AUTHOR_1}}** designed the block, implemented, ran experiments, wrote 
+- **Taha Majs** designed the block, implemented, ran experiments, wrote 
   the paper.
-- **{{AUTHOR_2}}** provided feedback, edited the manuscript.
+- **Collaborative Research Team** provided feedback, edited the manuscript.
 
 ## 11.8 Conflict of Interest
 

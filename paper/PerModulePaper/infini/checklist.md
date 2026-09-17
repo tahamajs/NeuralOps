@@ -4,7 +4,7 @@
 - [ ] Copied `_TEMPLATE/` to `infini/`
 - [ ] Filled `variables.json`
 - [ ] Ran `python apply_vars.py --module infini`
-- [ ] Verified no `{{PLACEHOLDER}}` remains
+- [ ] Verified no `[PLACEHOLDER]` remains
 
 ## Content
 
