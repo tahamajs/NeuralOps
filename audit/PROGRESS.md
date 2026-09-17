@@ -8,7 +8,7 @@
 | 4. family_hgrn | ✅ | 3 | `a6dbf5b18` | 3min | All 3 pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
 | 5. family_deltanet | ✅ | 2 | `bcf36210f` | 2min | All 2 pass AST; prefix is_decoder standardized |
 | 6. family_compressed | ✅ | 2 | `98f3bc83f` | 2min | All 2 pass AST; output_scale eliminated; prefix is_decoder standardized |
-| 7. family_svd_split_A | ⏳ | 18 | — | — | Pending |
+| 7. family_svd_split_A | ✅ | 16 | `88f4129fe` | 6min | All 16 pass AST; output_scale eliminated; prefix is_decoder & RuntimeError fixed |
 | 8. family_svd_split_B | ⏳ | 17 | — | — | Pending |
 | 9. family_attn_general_1 | ⏳ | 20 | — | — | Pending |
 | 10. family_attn_general_2 | ⏳ | 20 | — | — | Pending |
