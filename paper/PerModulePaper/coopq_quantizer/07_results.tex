@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{coopq_quantizer}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+benchmark\_summary\_v2 & bert-sst2 & PASS & 153.06 ms & 574.9 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 147.68 ms & 574.9 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 146.68 ms & 584.8 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 147.03 ms & 584.8 MB \\
+benchmark\_summary\_v2 & t5-sst2 & PASS & 81.05 ms & 1109.1 MB \\
+benchmark\_summary\_v2 & t5-mrpc & PASS & 78.05 ms & 1109.1 MB \\
+all\_121\_gpu\_matrix & coopq & PASS & 1.0x (0.381s) & 146.8 MB \\
+all\_121\_gpu\_matrix & coopq\_quantizer & PASS & 1.0x (0.359s) & 146.8 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

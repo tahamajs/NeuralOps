@@ -1,3 +1,11 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{come}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_come/roberta/summary.csv} & come & FAIL & 0.0\% & 712.34 MB \\
+\texttt{results/unified\_come/distilbert/summary.csv} & come & PASS & 84.29\% & 259.48 MB \\
+\texttt{results/unified\_come/qwen3\_5/summary.csv} & come & FAIL & 0.0\% & 1796.78 MB \\
+\texttt{results/unified\_come/gpt2/summary.csv} & come & FAIL & 0.0\% & 793.19 MB \\
+benchmark\_summary\_v2 & bert-sst2 & PASS & 16.58 ms & 377.7 MB \\
+benchmark\_summary\_v2 & bert-mrpc & PASS & 17.18 ms & 377.7 MB \\
+benchmark\_summary\_v2 & roberta-sst2 & PASS & 18.51 ms & 387.6 MB \\
+benchmark\_summary\_v2 & roberta-mrpc & PASS & 18.26 ms & 387.6 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

@@ -1,3 +1,6 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{compressed_attention}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_compressed\_attention/roberta/summary.csv} & compressed\_attention & PASS\_LOW & 50.92\% & 567.8 MB \\
+\texttt{results/unified\_compressed\_attention/distilbert/summary.csv} & compressed\_attention & PASS & 74.54\% & 283.86 MB \\
+\texttt{results/unified\_compressed\_attention/gpt2/summary.csv} & compressed\_attention & PASS\_LOW & 50.92\% & 470.52 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

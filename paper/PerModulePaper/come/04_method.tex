@@ -1,3 +1,15 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{come}.
+\subsection{Algorithmic Formulation}
+The \texttt{come} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{CoMe: Compress LLMs through Layer Concatenation and Shedding with Learnable Inter-Layer Interpolation Adapters.
+Registered in COMPRESSOR\_REGISTRY as 'come' and 'come\_compressor'.
+
+Mathematical Formulation:
+1. Layer Shedding & Uniform Strided Selection:
+   $$\\\\mathcal{I}\_{\\\\text{keep}} = \\\\{i\_0, i\_1, \\\\dots, i\_{K-1}\\\\}, \\\\quad i\_k = \\\\left\\\\lfloor k \\\\cdot \\\\frac{L-1}{K-1} \\\\right\\\\rceil$$
+2. Learnable Linear Interpolation Bridge between Non-Consecutive Layers:
+   $$\\\\forall k \\\\text{ s.t. } i\_{k+1} > i\_k + 1: \\\\quad h\_{k}^{\\\\text{bridged}} = h\_k + \\\}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

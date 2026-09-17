@@ -1,0 +1,908 @@
+{
+  "come": {
+    "module_name": "come",
+    "source_file": "Codes/framework/compression_engine/come.py",
+    "source_lines_count": 716,
+    "architecture": {
+      "class_name": "CoMeBridge",
+      "base_class": "nn.Module",
+      "init_args": "self, hidden_size: int, alpha_init: float = 0.1) -> None: super().__init__() self.hidden_size = hidden_size self.linear = nn.Linear(hidden_size, hidden_size, bias=False) with torch.no_grad(",
+      "registry_names": [
+        "come_factory",
+        "come_compressor_factory",
+        "come_compressor",
+        "come"
+      ]
+    },
+    "params": [
+      {
+        "name": "linear",
+        "type": "nn.Linear",
+        "declaration": "nn.Linear(hidden_size, hidden_size, bias=False)"
+      },
+      {
+        "name": "alpha",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.tensor(float(alpha_init)"
+      }
+    ],
+    "metrics": {
+      "results/unified_come/roberta/roberta-base_full_full_metrics.json": {
+        "model": "roberta-base_full",
+        "performance": {
+          "accuracy_pct": 78.56,
+          "f1_score": 0.8124,
+          "f1_macro": 0.7811,
+          "precision": 0.8051,
+          "recall": 0.7832,
+          "val_loss": 0.4381,
+          "status": "PASS",
+          "elapsed_s": 6.4
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 124647170,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 712.34,
+          "tokens_per_sec": 25968.34
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 683.27,
+          "L_256_vram_mb": 685.84,
+          "L_512_vram_mb": 699.47,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T11:27:13.365876"
+      },
+      "results/unified_come/roberta/roberta-base_come_full_metrics.json": {
+        "model": "roberta-base_come",
+        "performance": {
+          "accuracy_pct": 78.33,
+          "f1_score": 0.8177,
+          "f1_macro": 0.7752,
+          "precision": 0.8217,
+          "recall": 0.78,
+          "val_loss": 0.5,
+          "status": "FAIL",
+          "elapsed_s": 1.96
+        },
+        "efficiency": {
+          "total_params_before": 127325954,
+          "total_params_after": 100449030,
+          "trainable_recovery_params": 2386178,
+          "compression_rate": 1.2676,
+          "compression_ratio_pct": 21.11,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 1,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 1794048,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 276.45,
+          "tokens_per_sec": 18269.81
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 246.52,
+          "L_256_vram_mb": 251.18,
+          "L_512_vram_mb": 259.81,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-08T05:17:25.195367"
+      },
+      "results/unified_come/distilbert/distilbert_sst2_come_full_metrics.json": {
+        "model": "distilbert_sst2_come",
+        "performance": {
+          "accuracy_pct": 84.29,
+          "f1_score": 0.8355,
+          "f1_macro": 0.8426,
+          "precision": 0.8479,
+          "recall": 0.844,
+          "val_loss": 0.3579,
+          "status": "PASS",
+          "elapsed_s": 5.12
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 53958916,
+          "trainable_recovery_params": 2,
+          "compression_rate": 1.2409,
+          "compression_ratio_pct": 19.41,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 1,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 259.48,
+          "tokens_per_sec": 58463.31
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 244.17,
+          "L_256_vram_mb": 246.74,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T11:26:30.241101"
+      },
+      "results/unified_come/distilbert/distilbert_sst2_full_full_metrics.json": {
+        "model": "distilbert_sst2_full",
+        "performance": {
+          "accuracy_pct": 90.71,
+          "f1_score": 0.9099,
+          "f1_macro": 0.907,
+          "precision": 0.9075,
+          "recall": 0.9068,
+          "val_loss": 0.3027,
+          "status": "PASS",
+          "elapsed_s": 3.39
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 66955010,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 389.51,
+          "tokens_per_sec": 45077.54
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 371.82,
+          "L_256_vram_mb": 373.89,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T11:26:24.894863"
+      },
+      "results/unified_come/qwen3_5/Qwen3.5-0.8B_full_full_metrics.json": {
+        "model": "Qwen3.5-0.8B_full",
+        "performance": {
+          "accuracy_pct": 67.89,
+          "f1_score": 0.557,
+          "f1_macro": 0.6526,
+          "precision": 0.7722,
+          "recall": 0.6842,
+          "val_loss": 0.6349,
+          "status": "PASS",
+          "elapsed_s": 108.96
+        },
+        "efficiency": {
+          "total_params_before": 763217728,
+          "total_params_after": 763217728,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 10822656,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 1796.78,
+          "tokens_per_sec": 1289.77
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 1532.47,
+          "L_256_vram_mb": 1556.68,
+          "L_512_vram_mb": 1591.55,
+          "L_1024_vram_mb": 1672.53
+        },
+        "timestamp": "2026-09-08T05:25:28.166281"
+      },
+      "results/unified_come/gpt2/gpt2_full_full_metrics.json": {
+        "model": "gpt2_full",
+        "performance": {
+          "accuracy_pct": 79.36,
+          "f1_score": 0.7978,
+          "f1_macro": 0.7935,
+          "precision": 0.7935,
+          "recall": 0.7935,
+          "val_loss": 0.4875,
+          "status": "PASS",
+          "elapsed_s": 6.71
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 124441344,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 793.19,
+          "tokens_per_sec": 25258.69
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 681.07,
+          "L_256_vram_mb": 691.32,
+          "L_512_vram_mb": 721.95,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T11:28:03.036861"
+      },
+      "results/unified_come/gpt2/gpt2_come_full_metrics.json": {
+        "model": "gpt2_come",
+        "performance": {
+          "accuracy_pct": 73.17,
+          "f1_score": 0.7776,
+          "f1_macro": 0.7197,
+          "precision": 0.7701,
+          "recall": 0.7281,
+          "val_loss": 0.6211,
+          "status": "FAIL",
+          "elapsed_s": 1.35
+        },
+        "efficiency": {
+          "total_params_before": 126800640,
+          "total_params_after": 100022020,
+          "trainable_recovery_params": 1574400,
+          "compression_rate": 1.2677,
+          "compression_ratio_pct": 21.12,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 1,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 1572864,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 332.05,
+          "tokens_per_sec": 21796.34
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 245.55,
+          "L_256_vram_mb": 259.25,
+          "L_512_vram_mb": 279.5,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-08T05:18:10.351108"
+      },
+      "results/unified_come/roberta/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,78.56,0.8124,0.7811,0.8051,0.7832,0.4381,6.4,712.34,25968.34,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-15T11:27:14.095997\ncome,FAIL,0.0,0.8124,0.7811,0.8051,0.7832,0.4381,1.96,712.34,25968.34,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,TypeError: RobertaLayer.forward() got multiple values for argument 'attention_mask',adapted_roberta,2026-09-15T11:27:16.315711\n",
+      "results/unified_come/distilbert/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,90.71,0.9099,0.907,0.9075,0.9068,0.3027,3.39,389.51,45077.54,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-15T11:26:25.141789\ncome,PASS,84.29,0.8355,0.8426,0.8479,0.844,0.3579,5.13,259.48,58463.31,66955010,53958916,2,1.2409,19.41,0.0,1,0,,,0,0,,legacy_bert,2026-09-15T11:26:30.533415\n",
+      "results/unified_come/qwen3_5/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,67.89,0.557,0.6526,0.7722,0.6842,0.6349,108.96,1796.78,1289.77,763217728,763217728,0,1.0,0.0,0.0,0,0,,,0,10822656,,adapted_qwen3_5,2026-09-08T05:25:30.985772\ncome,FAIL,0.0,0.557,0.6526,0.7722,0.6842,0.6349,14.99,1796.78,1289.77,763217728,763217728,0,1.0,0.0,0.0,0,0,,,0,10822656,\"RuntimeError: Expected attn_mask dtype to be bool or float or to match query dtype, but got attn_mask.dtype: __int64 and  query.dtype: struct c10::Half instead.\",adapted_qwen3_5,2026-09-08T05:25:46.366831\n",
+      "results/unified_come/gpt2/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,79.36,0.7978,0.7935,0.7935,0.7935,0.4875,6.71,793.19,25258.69,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-15T11:28:03.868485\ncome,FAIL,0.0,0.7978,0.7935,0.7935,0.7935,0.4875,1.35,793.19,25258.69,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,TypeError: GPT2Block.forward() got multiple values for argument 'attention_mask',adapted_gpt,2026-09-15T11:28:05.477262\n",
+      "results/benchmark_summary_v2.csv": "track5_pruning,come,compressor,bert,sst2,PASS,,7.04,9.54,16.58,0.0,1.0,4187906,4187906,1.047,377.7,0.0,0.6922,0.0,0.0,0.0,0.0558,\"{'loss': [0.6922, 0.6922, 0.6922, 0.6922, 0.6922], 'grad_norm': [0.0558, 0.0558, 0.0558, 0.0558, 0.0558], 'fwd_latency_ms': [6.7481, 6.8856, 7.2976, 7.2413, 7.0341], 'bwd_latency_ms': [9.4688, 9.4581, 9.5696, 9.8438, 9.3844]}\",2026-08-26 03:48:24\ntrack5_pruning,come,compressor,bert,mrpc,PASS,,7.33,9.85,17.18,0.0,1.0,4187906,4187906,1.047,377.7,0.0,0.682,0.0,0.0,0.0,1.1315,\"{'loss': [0.682, 0.682, 0.682, 0.682, 0.682], 'grad_norm': [1.1315, 1.1315, 1.1315, 1.1315, 1.1315], 'fwd_latency_ms': [7.1117, 7.0596, 7.8626, 7.3946, 7.2082], 'bwd_latency_ms': [9.6547, 10.1106, 10.32, 9.5659, 9.5748]}\",2026-08-26 03:48:24\ntrack5_pruning,come,compressor,roberta,sst2,PASS,,7.89,10.62,18.51,0.0,1.0,6715010,6715010,1.03,387.6,0.0,0.6942,0.0,0.0,0.0,0.2028,\"{'loss': [0.6942, 0.6942, 0.6942, 0.6942, 0.6942], 'grad_norm': [0.2028, 0.2028, 0.2028, 0.2028, 0.2028], 'fwd_latency_ms': [7.4547, 8.0801, 7.911, 8.0755, 7.9464], 'bwd_latency_ms': [10.9994, 11.0139, 9.8973, 10.2285, 10.9836]}\",2026-08-26 03:48:25\ntrack5_pruning,come,compressor,roberta,mrpc,PASS,,7.6,10.66,18.26,0.0,1.0,6715010,6715010,1.03,387.6,0.0,0.7009,0.0,0.0,0.0,1.3121,\"{'loss': [0.7009, 0.7009, 0.7009, 0.7009, 0.7009], 'grad_norm': [1.3121, 1.3121, 1.3121, 1.3121, 1.3121], 'fwd_latency_ms': [7.4365, 7.4204, 7.477, 7.9648, 7.6791], 'bwd_latency_ms': [10.8688, 10.3429, 10.711, 10.9203, 10.4628]}\",2026-08-26 03:48:25\ntrack5_pruning,come,compressor,t5,sst2,PASS,,11.76,18.67,30.43,0.0,1.0,4309504,4309504,1.046,721.9,0.0,0.7134,0.0,0.0,0.0,1.2472,\"{'loss': [0.7134, 0.7134, 0.7134, 0.7134, 0.7134], 'grad_norm': [1.2472, 1.2472, 1.2472, 1.2472, 1.2472], 'fwd_latency_ms': [8.7726, 12.4254, 12.2189, 12.3126, 13.0475], 'bwd_latency_ms': [21.6972, 17.8941, 17.9696, 17.9809, 17.8263]}\",2026-08-26 03:48:26\ntrack5_pruning,come,compressor,t5,mrpc,PASS,,11.65,17.75,29.4,0.0,1.0,4309504,4309504,1.046,721.9,0.0,0.6575,0.0,0.0,0.0,2.4745,\"{'loss': [0.6575, 0.6575, 0.6575, 0.6575, 0.6575], 'grad_norm': [2.4745, 2.4745, 2.4745, 2.4745, 2.4745], 'fwd_latency_ms': [9.4689, 12.0173, 12.2048, 12.3781, 12.1729], 'bwd_latency_ms': [19.4895, 17.3669, 17.3217, 17.3313, 17.249]}\",2026-08-26 03:48:26",
+      "results/unified_come_4models_summary.csv": "distilbert,distilbert,0.9070999999999999,0.8429000000000001,-0.06419999999999981,0.8355,PASS,True,6,4,2,0.3333333333333333,33.3%,2,0.0,259.48,results\\unified_come\\distilbert,https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-come\nroberta,roberta,0.7856000000000001,0.0,-0.7856000000000001,0.8124,FAIL,False,12,8,4,0.3333333333333333,33.3%,4,0.0,712.34,results\\unified_come\\roberta,N/A (Failed Gate)\ngpt2,gpt2,0.7936,0.0,-0.7936,0.7978,FAIL,False,12,8,4,0.3333333333333333,33.3%,4,0.0,793.19,results\\unified_come\\gpt2,N/A (Failed Gate)",
+      "results/all_121_compressors_gpu_matrix.csv": "come,cuda,PASS,True,True,2.0,72.9,0.161,",
+      "results/run_quality_all_screening_summary.csv": "run_quality_20260827_052444,come,DISTILBERT,SST2,PASS,80.5,0.0,80.5,80.5,1.0,0.8059,0.9233,55.28,138.04,1746.1,84747.6,1450000000.0,2026-08-27T06:26:36.109246"
+    },
+    "notes": []
+  },
+  "compot_compressor": {
+    "module_name": "compot_compressor",
+    "source_file": "Codes/framework/compression_engine/compot_compressor.py",
+    "source_lines_count": 453,
+    "architecture": {
+      "class_name": "COMPOTLinear",
+      "base_class": "nn.Module",
+      "init_args": "self, in_features: int, out_features: int, rank: int = 64, bias: bool = True, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None, ) -> None: super().__init__() self.in_features = in_features self.out_features = out_features self.rank = max(1, min(rank, in_features, out_features)) self.A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device)) self.B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device)) with torch.no_grad(",
+      "registry_names": [
+        "compot_compressor",
+        "compot",
+        "compot_factory",
+        "compot_compressor_class",
+        "compot_compressor_factory"
+      ]
+    },
+    "params": [
+      {
+        "name": "A",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device)"
+      },
+      {
+        "name": "B",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device)"
+      },
+      {
+        "name": "bias",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device)"
+      }
+    ],
+    "metrics": {},
+    "notes": [
+      "No metrics found in results directories"
+    ]
+  },
+  "compressed_attention": {
+    "module_name": "compressed_attention",
+    "source_file": "Codes/framework/attentions/compressed_attention.py",
+    "source_lines_count": 568,
+    "architecture": {
+      "class_name": "CompressedAttentionLayer",
+      "base_class": "BaseAttention",
+      "init_args": "self, config: Optional[Any] = None, rank: Optional[int] = None, rank_qkv: int = 384, rank_out: int = 384, lora_rank: int = 16, original_layer: Any = None, pretrained_attn: Optional[nn.Module] = None, **kwargs: Any, ) -> None: cfg = config if config is not None else original_layer super().__init__(cfg, rank) self.adapter = ModelAdapter(cfg) self.hidden_size: int = self.adapter.hidden_size or kwargs.get(\"hidden_size\", kwargs.get(\"d_model\", 768)) self.num_heads: int = self.adapter.num_heads or kwargs.get(\"num_heads\", kwargs.get(\"num_attention_heads\", 12)) self.num_kv_heads: int = self.adapter.num_key_value_heads or kwargs.get(\"num_kv_heads\", kwargs.get(\"num_key_value_heads\", self.num_heads)) self.head_dim: int = self.adapter.head_dim or (self.hidden_size // max(1, self.num_heads)) self.all_head_size: int = self.num_heads * self.head_dim self.kv_head_size: int = self.num_kv_heads * self.head_dim self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads)) _mt = getattr(cfg, \"model_type\", \"\").lower() if cfg else \"\" _decoder_prefixes = (\"gpt\", \"qwen\", \"llama\", \"mistral\", \"gemma\", \"phi\", \"opt\", \"bloom\", \"falcon\", \"olmo\", \"mpt\", \"stablelm\") self.is_decoder: bool = bool(getattr(cfg, \"is_decoder\", False) or any(_mt.startswith(p) for p in _decoder_prefixes)) self.is_nested_encoder: bool = False rank_val = rank or kwargs.get(\"rank_qkv\", rank_qkv) self.rank_qkv = min(rank_val, self.all_head_size + 2 * self.kv_head_size, self.hidden_size) self.rank_out = min(rank or kwargs.get(\"rank_out\", rank_out), self.all_head_size, self.hidden_size) self.lora_rank = getattr(cfg, \"lora_rank\", lora_rank) self.lora_scaling = (32.0 / self.lora_rank) if self.lora_rank > 0 else 1.0 qkv_out_dim = self.all_head_size + 2 * self.kv_head_size # Frozen base SVD parameters self.Vh_qkv = nn.Parameter(torch.randn(self.rank_qkv, self.hidden_size) * 0.02, requires_grad=False) self.S_qkv_sqrt = nn.Parameter(torch.ones(self.rank_qkv), requires_grad=False) self.U_qkv = nn.Parameter(torch.randn(qkv_out_dim, self.rank_qkv) * 0.02, requires_grad=False) self.bias_qkv = nn.Parameter(torch.zeros(qkv_out_dim), requires_grad=False) self.Vh_out = nn.Parameter(torch.randn(self.rank_out, self.all_head_size) * 0.02, requires_grad=False) self.S_out_sqrt = nn.Parameter(torch.ones(self.rank_out), requires_grad=False) self.U_out = nn.Parameter(torch.randn(self.hidden_size, self.rank_out) * 0.02, requires_grad=False) self.bias_out = nn.Parameter(torch.zeros(self.hidden_size), requires_grad=False) # Trainable LoRA residual adapters if self.lora_rank > 0: self.lora_A_qkv = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size)) self.lora_B_qkv = nn.Parameter(torch.empty(qkv_out_dim, self.lora_rank)) self.lora_A_out = nn.Parameter(torch.empty(self.lora_rank, self.all_head_size)) self.lora_B_out = nn.Parameter(torch.empty(self.hidden_size, self.lora_rank)) self.reset_lora_parameters() else: self.register_parameter(\"lora_A_qkv\", None) self.register_parameter(\"lora_B_qkv\", None) self.register_parameter(\"lora_A_out\", None) self.register_parameter(\"lora_B_out\", None) dropout_p = getattr(cfg, \"dropout\", getattr(cfg, \"attention_probs_dropout_prob\", 0.1)) if cfg else 0.1 self.dropout = nn.Dropout(dropout_p) self.rotary_emb = getattr(pretrained_attn, \"rotary_emb\", None) src = pretrained_attn or (original_layer if hasattr(original_layer, 'q_lin') or hasattr(original_layer, 'query') or hasattr(original_layer, 'c_attn') else None) if src is not None: self.copy_weights(src) @property def qkv_weight(self) -> torch.Tensor: \"\"\"Reconstruct the effective base QKV weight from SVD factors.\"\"\" return (self.U_qkv * self.S_qkv_sqrt.view(1, -1)) @ (self.Vh_qkv * self.S_qkv_sqrt.view(-1, 1)) @property def out_weight(self) -> torch.Tensor: \"\"\"Reconstruct the effective base Out weight from SVD factors.\"\"\" return (self.U_out * self.S_out_sqrt.view(1, -1)) @ (self.Vh_out * self.S_out_sqrt.view(-1, 1)) def reset_lora_parameters(self) -> None: if self.lora_rank > 0: nn.init.kaiming_uniform_(self.lora_A_qkv, a=math.sqrt(5)) nn.init.zeros_(self.lora_B_qkv) nn.init.kaiming_uniform_(self.lora_A_out, a=math.sqrt(5)) nn.init.zeros_(self.lora_B_out) self.lora_A_qkv.requires_grad = True self.lora_B_qkv.requires_grad = True self.lora_A_out.requires_grad = True self.lora_B_out.requires_grad = True def copy_weights(self, src: Any) -> None: from framework.core.adapters import UniversalAdapter extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = { \"q\": (None, None), \"k\": (None, None), \"v\": (None, None), \"o\": (None, None), } # 1. HuggingFace / standard UniversalAdapter extraction for proj in [\"q\", \"k\", \"v\", \"o\"]: try: w, b = UniversalAdapter.get_weight_bias(src, proj) if w is not None: extracted[proj] = (w, b) except Exception as e: logger.debug(f\"UniversalAdapter failed for {proj}: {e}\") # continue to fallback paths # 2. GPT-2 Fused c_attn Conv1D handling if hasattr(src, \"c_attn\") and (extracted[\"q\"][0] is None or extracted[\"k\"][0] is None or extracted[\"v\"][0] is None",
+      "registry_names": [
+        "compressed_attention_layer_inject",
+        "compressed_attention_layer",
+        "compressed_attention_layer_energy",
+        "compressed_attention_layer_fn",
+        "compressed_attention_inject",
+        "compressed_attention",
+        "compressed_attention_fn"
+      ]
+    },
+    "params": [
+      {
+        "name": "Vh_qkv",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.randn(self.rank_qkv, self.hidden_size)"
+      },
+      {
+        "name": "S_qkv_sqrt",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.ones(self.rank_qkv)"
+      },
+      {
+        "name": "U_qkv",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.randn(qkv_out_dim, self.rank_qkv)"
+      },
+      {
+        "name": "bias_qkv",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.zeros(qkv_out_dim)"
+      },
+      {
+        "name": "Vh_out",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.randn(self.rank_out, self.all_head_size)"
+      },
+      {
+        "name": "S_out_sqrt",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.ones(self.rank_out)"
+      },
+      {
+        "name": "U_out",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.randn(self.hidden_size, self.rank_out)"
+      },
+      {
+        "name": "bias_out",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.zeros(self.hidden_size)"
+      },
+      {
+        "name": "lora_A_qkv",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(self.lora_rank, self.hidden_size)"
+      },
+      {
+        "name": "lora_B_qkv",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(qkv_out_dim, self.lora_rank)"
+      },
+      {
+        "name": "lora_A_out",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(self.lora_rank, self.all_head_size)"
+      },
+      {
+        "name": "lora_B_out",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(self.hidden_size, self.lora_rank)"
+      }
+    ],
+    "metrics": {
+      "results/unified_compressed_attention/roberta/roberta-base_full_full_metrics.json": {
+        "model": "roberta-base_full",
+        "performance": {
+          "accuracy_pct": 78.56,
+          "f1_score": 0.8124,
+          "f1_macro": 0.7811,
+          "precision": 0.8051,
+          "recall": 0.7832,
+          "val_loss": 0.4381,
+          "status": "PASS",
+          "elapsed_s": 5.91
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 124647170,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 712.34,
+          "tokens_per_sec": 27359.13
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 683.27,
+          "L_256_vram_mb": 685.84,
+          "L_512_vram_mb": 699.47,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T11:29:29.337130"
+      },
+      "results/unified_compressed_attention/roberta/roberta-base_compressed_attention_full_metrics.json": {
+        "model": "roberta-base_compressed_attention",
+        "performance": {
+          "accuracy_pct": 50.92,
+          "f1_score": 0.6743,
+          "f1_macro": 0.3395,
+          "precision": 0.5046,
+          "recall": 0.5,
+          "val_loss": 0.7022,
+          "status": "PASS_LOW",
+          "elapsed_s": 23.27
+        },
+        "efficiency": {
+          "total_params_before": 124647170,
+          "total_params_after": 106077710,
+          "trainable_recovery_params": 2691852,
+          "compression_rate": 1.1751,
+          "compression_ratio_pct": 14.9,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 12,
+          "lora_params": 884736,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "roberta.encoder.layer.0.attention.self": 32,
+            "roberta.encoder.layer.1.attention.self": 32,
+            "roberta.encoder.layer.2.attention.self": 32,
+            "roberta.encoder.layer.3.attention.self": 32,
+            "roberta.encoder.layer.4.attention.self": 32,
+            "roberta.encoder.layer.5.attention.self": 32,
+            "roberta.encoder.layer.6.attention.self": 32,
+            "roberta.encoder.layer.7.attention.self": 32,
+            "roberta.encoder.layer.8.attention.self": 32,
+            "roberta.encoder.layer.9.attention.self": 32,
+            "roberta.encoder.layer.10.attention.self": 32,
+            "roberta.encoder.layer.11.attention.self": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 567.8,
+          "tokens_per_sec": 14513.82
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 535.0,
+          "L_256_vram_mb": 541.16,
+          "L_512_vram_mb": 568.2,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 514)"
+        },
+        "timestamp": "2026-09-15T11:29:52.692733"
+      },
+      "results/unified_compressed_attention/distilbert/distilbert_sst2_full_full_metrics.json": {
+        "model": "distilbert_sst2_full",
+        "performance": {
+          "accuracy_pct": 90.71,
+          "f1_score": 0.9099,
+          "f1_macro": 0.907,
+          "precision": 0.9075,
+          "recall": 0.9068,
+          "val_loss": 0.3027,
+          "status": "PASS",
+          "elapsed_s": 3.02
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 66955010,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 389.51,
+          "tokens_per_sec": 50722.03
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 371.82,
+          "L_256_vram_mb": 373.89,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T11:28:48.164489"
+      },
+      "results/unified_compressed_attention/distilbert/distilbert_sst2_compressed_attention_full_metrics.json": {
+        "model": "distilbert_sst2_compressed_attention",
+        "performance": {
+          "accuracy_pct": 74.54,
+          "f1_score": 0.7711,
+          "f1_macro": 0.7422,
+          "precision": 0.7544,
+          "recall": 0.7436,
+          "val_loss": 0.5396,
+          "status": "PASS",
+          "elapsed_s": 11.55
+        },
+        "efficiency": {
+          "total_params_before": 66955010,
+          "total_params_after": 54126728,
+          "trainable_recovery_params": 1345926,
+          "compression_rate": 1.237,
+          "compression_ratio_pct": 19.16,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 6,
+          "lora_params": 442368,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 32,
+            "distilbert.transformer.layer.1.attention": 32,
+            "distilbert.transformer.layer.2.attention": 32,
+            "distilbert.transformer.layer.3.attention": 32,
+            "distilbert.transformer.layer.4.attention": 32,
+            "distilbert.transformer.layer.5.attention": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 283.86,
+          "tokens_per_sec": 30316.81
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 250.05,
+          "L_256_vram_mb": 256.97,
+          "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+        },
+        "timestamp": "2026-09-15T11:28:59.921322"
+      },
+      "results/unified_compressed_attention/gpt2/gpt2_full_full_metrics.json": {
+        "model": "gpt2_full",
+        "performance": {
+          "accuracy_pct": 79.36,
+          "f1_score": 0.7978,
+          "f1_macro": 0.7935,
+          "precision": 0.7935,
+          "recall": 0.7935,
+          "val_loss": 0.4875,
+          "status": "PASS",
+          "elapsed_s": 5.97
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 124441344,
+          "trainable_recovery_params": 0,
+          "compression_rate": 1.0,
+          "compression_ratio_pct": 0.0,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 0,
+          "lora_params": 0,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {}
+        },
+        "hardware": {
+          "peak_vram_mb": 793.19,
+          "tokens_per_sec": 27133.65
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 681.07,
+          "L_256_vram_mb": 691.32,
+          "L_512_vram_mb": 721.95,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T11:30:23.513160"
+      },
+      "results/unified_compressed_attention/gpt2/gpt2_compressed_attention_full_metrics.json": {
+        "model": "gpt2_compressed_attention",
+        "performance": {
+          "accuracy_pct": 50.92,
+          "f1_score": 0.6748,
+          "f1_macro": 0.3374,
+          "precision": 0.2546,
+          "recall": 0.5,
+          "val_loss": 0.7486,
+          "status": "PASS_LOW",
+          "elapsed_s": 24.41
+        },
+        "efficiency": {
+          "total_params_before": 124441344,
+          "total_params_after": 98784780,
+          "trainable_recovery_params": 2691852,
+          "compression_rate": 1.2597,
+          "compression_ratio_pct": 20.62,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "num_injected_attention_layers": 12,
+          "lora_params": 884736,
+          "avg_reconstruction_error": null,
+          "weighted_reconstruction_error": null,
+          "per_layer_reconstruction_errors": {},
+          "per_layer_ranks": {
+            "transformer.h.0.attn": 32,
+            "transformer.h.1.attn": 32,
+            "transformer.h.2.attn": 32,
+            "transformer.h.3.attn": 32,
+            "transformer.h.4.attn": 32,
+            "transformer.h.5.attn": 32,
+            "transformer.h.6.attn": 32,
+            "transformer.h.7.attn": 32,
+            "transformer.h.8.attn": 32,
+            "transformer.h.9.attn": 32,
+            "transformer.h.10.attn": 32,
+            "transformer.h.11.attn": 32
+          }
+        },
+        "hardware": {
+          "peak_vram_mb": 470.52,
+          "tokens_per_sec": 14495.59
+        },
+        "architecture": {
+          "span_distribution": {},
+          "mean_span": 128.0,
+          "sparsity_ratio_percent": 0.0
+        },
+        "scalability": {
+          "L_128_vram_mb": 428.84,
+          "L_256_vram_mb": 433.9,
+          "L_512_vram_mb": 463.17,
+          "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+        },
+        "timestamp": "2026-09-15T11:30:48.087793"
+      },
+      "results/unified_compressed_attention/distilbert/hf_export/metrics.json": {
+        "model_name": "distilbert",
+        "module": "compressed_attention",
+        "status": "PASS",
+        "accuracy_pct": 74.54,
+        "f1": 0.0,
+        "precision": 0.7544,
+        "recall": 0.7436,
+        "eval_loss": 0.0,
+        "params_total": null,
+        "params_active": null,
+        "param_reduction_pct": null,
+        "peak_vram_mb": 283.86,
+        "tokens_per_sec": 30316.81,
+        "elapsed_seconds": null,
+        "full_metrics": {
+          "module_name": "compressed_attention",
+          "status": "PASS",
+          "accuracy_pct": 74.54,
+          "f1_score": 0.7711,
+          "f1_macro": 0.7422,
+          "precision": 0.7544,
+          "recall": 0.7436,
+          "val_loss": 0.5396,
+          "elapsed_s": 11.55,
+          "peak_vram_mb": 283.86,
+          "tokens_per_sec": 30316.81,
+          "total_params_before": 66955010,
+          "total_params_after": 54126728,
+          "trainable_recovery_params": 1345926,
+          "compression_rate": 1.237,
+          "compression_ratio_pct": 19.16,
+          "flops_reduction_pct": 0.0,
+          "num_compressed_layers": 0,
+          "num_fallback_layers": 0,
+          "avg_reconstruction_error": NaN,
+          "weighted_reconstruction_error": NaN,
+          "num_injected_attention_layers": 6,
+          "lora_params": 442368,
+          "error": NaN,
+          "path": "legacy_bert",
+          "timestamp": "2026-09-15T11:29:00.155802"
+        }
+      },
+      "results/unified_compressed_attention/roberta/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,78.56,0.8124,0.7811,0.8051,0.7832,0.4381,5.91,712.34,27359.13,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-15T11:29:29.971394\ncompressed_attention,PASS_LOW,50.92,0.6743,0.3395,0.5046,0.5,0.7022,23.27,567.8,14513.82,124647170,106077710,2691852,1.1751,14.9,0.0,0,0,,,12,884736,note: evaluated accuracy (50.92%) below chance threshold (56.00%),adapted_roberta,2026-09-15T11:29:53.450591\n",
+      "results/unified_compressed_attention/distilbert/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,90.71,0.9099,0.907,0.9075,0.9068,0.3027,3.02,389.51,50722.03,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-15T11:28:48.388170\ncompressed_attention,PASS,74.54,0.7711,0.7422,0.7544,0.7436,0.5396,11.55,283.86,30316.81,66955010,54126728,1345926,1.237,19.16,0.0,0,0,,,6,442368,,legacy_bert,2026-09-15T11:29:00.155802\n",
+      "results/unified_compressed_attention/gpt2/summary.csv": "module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp\nfull,PASS,79.36,0.7978,0.7935,0.7935,0.7935,0.4875,5.97,793.19,27133.65,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-15T11:30:24.177755\ncompressed_attention,PASS_LOW,50.92,0.6748,0.3374,0.2546,0.5,0.7486,24.41,470.52,14495.59,124441344,98784780,2691852,1.2597,20.62,0.0,0,0,,,12,884736,note: evaluated accuracy (50.92%) below chance threshold (56.00%),adapted_gpt,2026-09-15T11:30:48.843872\n",
+      "results/master_aggregated_results.csv": "compressed_attention,0,PASS,77.18,50.92,50.92,81.0,2026-09-11T04:13:56.794837\ncompressed_attention_layer,0,PASS,77.18,50.92,50.92,90.4,2026-09-11T04:15:27.151678",
+      "results/run_quality_all_screening_summary.csv": "run_quality_20260827_052444,compressed_attention,DISTILBERT,SST2,PASS,50.92,0.0,50.92,50.92,1.0,0.6748,0.1965,104.9,273.49,1846.1,43299.4,1450000000.0,2026-08-27T06:29:19.302512\nrun_quality_20260827_052444,compressed_attention_layer_energy,DISTILBERT,SST2,PASS,50.92,0.0,50.92,50.92,1.0,0.6748,0.1965,102.77,272.42,1846.1,43669.2,1450000000.0,2026-08-27T06:30:32.774612"
+    },
+    "notes": []
+  },
+  "coopq_quantizer": {
+    "module_name": "coopq_quantizer",
+    "source_file": "Codes/framework/compression_engine/coopq_quantizer.py",
+    "source_lines_count": 609,
+    "architecture": {
+      "class_name": "CoopQLinear",
+      "base_class": "nn.Module",
+      "init_args": "self, in_features: int, out_features: int, bias: bool = True, bits: int = 4, symmetric: bool = False, per_channel: bool = True, lora_r: int = 0, lora_alpha: float = 1.0, ) -> None: super().__init__() self.in_features = in_features self.out_features = out_features self.nf = out_features # Conv1D compatibility self.bits = max(4, int(bits)) self.symmetric = symmetric self.per_channel = per_channel self.lora_r = int(lora_r) self.lora_alpha = float(lora_alpha) self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0 self.weight = nn.Parameter(torch.empty(out_features, in_features)) if bias: self.bias = nn.Parameter(torch.empty(out_features)) else: self.register_parameter(\"bias\", None) if self.lora_r > 0: self.lora_A = nn.Parameter(torch.empty(self.lora_r, in_features)) self.lora_B = nn.Parameter(torch.zeros(out_features, self.lora_r)) nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5)) nn.init.zeros_(self.lora_B) else: self.register_parameter(\"lora_A\", None) self.register_parameter(\"lora_B\", None) nn.init.kaiming_uniform_(self.weight, a=5**0.5) if self.bias is not None: nn.init.zeros_(self.bias) @classmethod def from_linear( cls, linear: nn.Module, bits: int = 4, symmetric: bool = False, per_channel: bool = True, lora_r: int = 0, lora_alpha: float = 1.0, ) -> CoopQLinear: cls_name = linear.__class__.__name__.lower() is_conv1d = \"conv1d\" in cls_name or hasattr(linear, \"nf\") raw_w = linear.weight.data if is_conv1d: in_f = raw_w.shape[0] out_f = raw_w.shape[1] w_data = raw_w.t().contiguous() else: out_f = raw_w.shape[0] in_f = raw_w.shape[1] w_data = raw_w.contiguous() layer = cls( in_features=in_f, out_features=out_f, bias=getattr(linear, \"bias\", None) is not None and linear.bias is not None, bits=bits, symmetric=symmetric, per_channel=per_channel, lora_r=lora_r, lora_alpha=lora_alpha, ) layer.weight.data.copy_(w_data) if getattr(linear, \"bias\", None) is not None and linear.bias is not None: layer.bias.data.copy_(linear.bias.data) return layer def forward(self, x: torch.Tensor) -> torch.Tensor: w_q = quantize_dequantize_coopq( self.weight, bits=self.bits, symmetric=self.symmetric, per_channel=self.per_channel, use_ste=self.training, ) b_q = None if self.bias is not None: b_q = quantize_dequantize_coopq( self.bias, bits=self.bits, symmetric=self.symmetric, per_channel=False, use_ste=self.training, ) out = F.linear( x, w_q.to(dtype=x.dtype, device=x.device), b_q.to(dtype=x.dtype, device=x.device) if b_q is not None else None, ) if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None: lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) out = out + (self.scaling * lora_out).to(out.dtype) return out class CoopQQuantizer(BaseCompressor",
+      "registry_names": [
+        "coopq_quantizer",
+        "coopq"
+      ]
+    },
+    "params": [
+      {
+        "name": "weight",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, in_features)"
+      },
+      {
+        "name": "bias",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features)"
+      },
+      {
+        "name": "lora_A",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(self.lora_r, in_features)"
+      },
+      {
+        "name": "lora_B",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.zeros(out_features, self.lora_r)"
+      }
+    ],
+    "metrics": {
+      "results/benchmark_summary_v2.csv": "track4_kernel_quant,coopq_quantizer,compressor,bert,sst2,PASS,,43.35,109.71,153.06,0.0,1.0,4386178,4386178,1.0,574.9,0.0,0.6922,0.0,0.0,0.0,0.0277,\"{'loss': [0.6922, 0.6922, 0.6922, 0.6922, 0.6922], 'grad_norm': [0.0277, 0.0277, 0.0277, 0.0277, 0.0277], 'fwd_latency_ms': [41.9695, 42.5343, 42.2271, 42.4184, 47.61], 'bwd_latency_ms': [107.0768, 108.0773, 110.2654, 111.9598, 111.1694]}\",2026-08-26 03:46:43\ntrack4_kernel_quant,coopq_quantizer,compressor,bert,mrpc,PASS,,42.53,105.15,147.68,0.0,1.0,4386178,4386178,1.0,574.9,0.0,0.6806,0.0,0.0,0.0,0.6857,\"{'loss': [0.6806, 0.6806, 0.6806, 0.6806, 0.6806], 'grad_norm': [0.6857, 0.6857, 0.6857, 0.6857, 0.6857], 'fwd_latency_ms': [44.9812, 42.119, 42.6776, 41.816, 41.0668], 'bwd_latency_ms': [107.0771, 103.8617, 107.0191, 104.2919, 103.4771]}\",2026-08-26 03:46:45\ntrack4_kernel_quant,coopq_quantizer,compressor,roberta,sst2,PASS,,43.11,103.57,146.68,0.0,1.0,6913282,6913282,1.0,584.8,0.0,0.694,0.0,0.0,0.0,0.1205,\"{'loss': [0.694, 0.694, 0.694, 0.694, 0.694], 'grad_norm': [0.1205, 0.1205, 0.1205, 0.1205, 0.1205], 'fwd_latency_ms': [43.5343, 44.3147, 41.5468, 41.542, 44.6201], 'bwd_latency_ms': [105.4672, 103.466, 103.3212, 101.5849, 104.0206]}\",2026-08-26 03:46:46\ntrack4_kernel_quant,coopq_quantizer,compressor,roberta,mrpc,PASS,,43.23,103.8,147.03,0.0,1.0,6913282,6913282,1.0,584.8,0.0,0.6996,0.0,0.0,0.0,0.8078,\"{'loss': [0.6996, 0.6996, 0.6996, 0.6996, 0.6996], 'grad_norm': [0.8078, 0.8078, 0.8078, 0.8078, 0.8078], 'fwd_latency_ms': [42.8933, 43.4732, 45.4402, 42.0731, 42.2628], 'bwd_latency_ms': [106.2961, 104.4704, 101.7273, 103.7128, 102.7707]}\",2026-08-26 03:46:48\ntrack4_kernel_quant,coopq_quantizer,compressor,t5,sst2,PASS,,27.01,54.04,81.05,0.0,1.0,4506368,4506368,1.0,1109.1,0.0,0.8482,0.0,0.0,0.0,1.6298,\"{'loss': [0.8482, 0.8482, 0.8482, 0.8482, 0.8482], 'grad_norm': [1.6298, 1.6298, 1.6298, 1.6298, 1.6298], 'fwd_latency_ms': [25.6604, 26.3723, 26.6567, 27.3572, 29.0202], 'bwd_latency_ms': [57.1922, 54.9122, 52.3114, 53.4627, 52.326]}\",2026-08-26 03:46:49\ntrack4_kernel_quant,coopq_quantizer,compressor,t5,mrpc,PASS,,25.96,52.09,78.05,0.0,1.0,4506368,4506368,1.0,1109.1,0.0,0.6217,0.0,0.0,0.0,0.4609,\"{'loss': [0.6217, 0.6217, 0.6217, 0.6217, 0.6217], 'grad_norm': [0.4609, 0.4609, 0.4609, 0.4609, 0.4609], 'fwd_latency_ms': [25.8284, 25.9294, 26.5382, 25.6741, 25.8349], 'bwd_latency_ms': [50.742, 53.3538, 52.5366, 51.5132, 52.2873]}\",2026-08-26 03:46:50",
+      "results/all_121_compressors_gpu_matrix.csv": "coopq_quantizer,cuda,PASS,True,True,1.0,146.8,0.359,"
+    },
+    "notes": []
+  },
+  "cr_compressor": {
+    "module_name": "cr_compressor",
+    "source_file": "Codes/framework/compression_engine/cr_compressor.py",
+    "source_lines_count": 459,
+    "architecture": {
+      "class_name": "CRLinear",
+      "base_class": "nn.Module",
+      "init_args": "self, in_features: int, out_features: int, rank: int = 64, bias: bool = True, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None, ) -> None: super().__init__() self.in_features = in_features self.out_features = out_features self.nf = out_features # Conv1D compatibility self.rank = max(1, min(rank, in_features, out_features)) self.C = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device)) self.P = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device)) bound = 1.0 / math.sqrt(max(1, in_features)) nn.init.uniform_(self.C, -bound, bound) nn.init.uniform_(self.P, -bound, bound) if bias: self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device)) else: self.register_parameter(\"bias\", None) @property def weight(self) -> torch.Tensor: \"\"\"Reconstructed effective weight matrix (out_features, in_features).\"\"\" return torch.matmul(self.C, self.P) def forward(self, x: torch.Tensor) -> torch.Tensor: \"\"\" Sub-quadratic forward execution: y = ((x @ P^T) @ C^T) + bias \"\"\" orig_shape = x.shape x_flat = x.reshape(-1, self.in_features) x_p = F.linear(x_flat, self.P) out = F.linear(x_p, self.C, self.bias) return out.view(*orig_shape[:-1], self.out_features) def get_weight(self) -> torch.Tensor: \"\"\"Materialize full reconstructed weight matrix.\"\"\" return torch.matmul(self.C, self.P) @classmethod def from_linear(cls, linear: Union[nn.Linear, Any], rank: int = 64) -> \"CRLinear\": \"\"\" Perform Column Interpolative Decomposition on linear or Conv1D layer weight matrix. \"\"\" target_mod = getattr(linear, \"base_layer\", getattr(linear, \"linear\", linear)) raw_w = target_mod.weight.data bias = target_mod.bias.data if getattr(target_mod, \"bias\", None) is not None else None cls_name = target_mod.__class__.__name__.lower() wrapper_name = linear.__class__.__name__.lower() is_conv1d = \"conv1d\" in cls_name or \"conv1d\" in wrapper_name or hasattr(target_mod, \"nf\") or hasattr(linear, \"nf\") if is_conv1d: # Conv1D weights are [in_features, out_features] -> transpose to [out_features, in_features] W = raw_w.t().contiguous() else: W = raw_w.contiguous() out_f, in_f = W.shape r = max(1, min(rank, out_f, in_f)) cr_layer = cls( in_features=in_f, out_features=out_f, rank=r, bias=bias is not None, dtype=W.dtype, device=W.device, ) W_float = W.float() # Step 1: Select skeleton columns via SciPy QRCP or robust PyTorch pivoted selection col_idx = None try: import scipy.linalg W_np = W_float.cpu().numpy() _, _, piv = scipy.linalg.qr(W_np, mode=\"economic\", pivoting=True) col_idx = torch.tensor(piv[:r], dtype=torch.long, device=W.device) except Exception as e: logger.debug(\"CRLinear pivoted QR failed; using greedy column selection: %s\", e) if col_idx is None: # Pure PyTorch QRCP-equivalent greedy pivoted column selection remaining_cols = list(range(in_f)) selected_cols = [] norms = torch.sum(W_float ** 2, dim=0) for _ in range(r",
+      "registry_names": [
+        "cr_factory",
+        "cr_compressor_factory",
+        "cr_compressor",
+        "cr"
+      ]
+    },
+    "params": [
+      {
+        "name": "C",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device)"
+      },
+      {
+        "name": "P",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device)"
+      },
+      {
+        "name": "bias",
+        "type": "nn.Parameter",
+        "declaration": "nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device)"
+      }
+    ],
+    "metrics": {},
+    "notes": [
+      "No metrics found in results directories"
+    ]
+  }
+}

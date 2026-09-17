@@ -1,3 +1,15 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{coopq_quantizer}.
+\subsection{Algorithmic Formulation}
+The \texttt{coopq_quantizer} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{CoopQ: Cooperative Game-Theoretic Bit Allocation Quantizer with STE and Per-Channel Asymmetric Calibration.
+Registered in COMPRESSOR\_REGISTRY as 'coopq'.
+
+Mathematical Formulation:
+1. Min Bit-Width Floor Enforcement:
+   $$b\_l \\\\ge b\_{\\\\min} = 4, \\\\quad \\\\forall l \\\\in \\\\{1, \\\\dots, L\\\\}$$
+2. Per-Channel Asymmetric Scale & Zero-Point Calibration:
+   $$\\\\text{scale}\_i = \\\\max\\\\left( \\\\frac{\\\\max\_j W\_{ij} - \\\\min\_j W\_{ij}}{2^b - 1}, 10^{-8} \\\\right), \\\\quad z\_i = \\\\operatorname{clamp}\\\\left( \\\\left\\\\lfloor -\\\\frac{\\\\min\_j W\_{ij}}{\\\\text{sca}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.
