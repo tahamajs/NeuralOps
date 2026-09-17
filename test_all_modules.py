@@ -26,11 +26,15 @@ with open(HERE / "audit" / "all_module_names.json", "r", encoding="utf-8") as f:
 
 print(f"Loaded {len(ALL_MODULES)} modules to verify.")
 
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 MODELS = [
-    ("distilbert", "distilbert-base-uncased"),
-    ("roberta", "roberta-base"),
-    ("gpt2", "gpt2"),
+    ("distilbert", r"models\distilbert_sst2"),
+    ("roberta", r"models\roberta-base"),
+    ("gpt2", r"models\gpt2"),
 ]
+
 
 results = []
 
