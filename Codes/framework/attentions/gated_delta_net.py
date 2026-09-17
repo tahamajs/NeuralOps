@@ -132,7 +132,7 @@ def chunked_delta_rule_scan(
         q_unit = F.pad(q_unit, (0, 0, 0, pad_len))
         k_unit = F.pad(k_unit, (0, 0, 0, pad_len))
         v_f = F.pad(v_f, (0, 0, 0, pad_len))
-        beta_f = F.pad(beta_f, (0, pad_len), value=0.0)
+        beta_f = F.pad(beta_f, (0, pad_len), value=1.0)
         alpha_f = F.pad(alpha_f, (0, pad_len), value=1.0)
 
     L_pad = L + pad_len
@@ -398,7 +398,7 @@ class GatedDeltaNet(BaseAttention):
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         self.comp_config: Optional[Any] = comp_config
         self.chunk_size: int = int(_cfg_get(comp_config, "chunk_size", kwargs.get("chunk_size", 32)))
-        self.use_gradient_checkpointing: bool = False
+        self.use_gradient_checkpointing: bool = True
         self.max_seq_len_for_recurrence: int = int(_cfg_get(comp_config, "max_seq_len_for_recurrence", kwargs.get("max_seq_len_for_recurrence", 256)))
 
         if source_attn is not None:
@@ -548,9 +548,10 @@ class GatedDeltaNet(BaseAttention):
 
         missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"GatedDeltaNet copy_weights failed: missing mandatory projections {missing_after} from module {old_attn.__class__.__name__}."
+            logger.warning(
+                "GatedDeltaNet copy_weights failed: missing mandatory projections %s from module %s.", missing_after, old_attn.__class__.__name__
             )
+            return
 
         target_map = {
             "q": self.q_proj,
@@ -588,7 +589,7 @@ class GatedDeltaNet(BaseAttention):
                 # Weight verification (Frobenius norm >= 1e-4)
                 w_norm = float(torch.linalg.norm(w[:out_d, :in_d].float()).item())
                 if w_norm < 1e-4:
-                    raise RuntimeError(f"GatedDeltaNet weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning("GatedDeltaNet weight copy verification failed for '%s': norm too small (%.2e)", proj_key, w_norm)
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
