@@ -1,14 +1,52 @@
-\section{Mathematical Background}
+\section{Mathematical Background and Formal Notation}
 
-\subsection{Linear Projection Formulation}
-Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ represent the parameter tensor of a linear projection. For an input activation matrix $X \in \mathbb{R}^{N \times d_{\text{in}}}$, the standard projection computes:
+\subsection{Notation and Projection Spaces}
+Let $\mathcal{B}$ denote batch size, $N$ sequence length, and $d_{\text{in}}, d_{\text{out}}$ layer projection dimensions. For multi-head attention blocks, $H$ denotes head count, $d = d_{\text{in}} / H$ denotes head dimension, and $H_{\text{kv}}$ denotes key/value heads in Grouped-Query Attention (GQA).
+Standard dense forward linear projection computes:
 \[
-y = X W^\top + b
+Y = X W^\top + b
+\]
+where $X \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{in}}}$, $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, $b \in \mathbb{R}^{d_{\text{out}}}$, and $Y \in \mathbb{R}^{\mathcal{B} \times N \times d_{\text{out}}}$.
+
+\subsection{Spectral Decomposition and Truncated SVD}
+For any projection matrix $W \in \mathbb{R}^{m \times n}$ with rank $\rho = \min(m, n)$, Singular Value Decomposition (SVD) gives:
+\[
+W = U \Sigma V^\top = \sum_{i=1}^{\rho} \sigma_i u_i v_i^\top
+\]
+where $U \in \mathbb{R}^{m \times m}$ and $V \in \mathbb{R}^{n \times n}$ are unitary matrices, and $\Sigma = \operatorname{diag}(\sigma_1, \dots, \sigma_\rho)$ contains singular values ordered $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_\rho \ge 0$.
+
+By the Eckart-Young-Mirsky theorem, the optimal rank-$r$ surrogate ($r < \rho$) in Frobenius norm satisfies:
+\[
+W_r = U_{:, :r} \Sigma_{:r, :r} V_{:, :r}^\top = \sum_{i=1}^{r} \sigma_i u_i v_i^\top
+\]
+with residual truncation error:
+\[
+\|W - W_r\|_F^2 = \sum_{i=r+1}^{\rho} \sigma_i^2
+\]
+\[
+\|W - W_r\|_2 = \sigma_{r+1}
 \]
 
-\subsection{Constrained Optimization}
-Model compression optimizes reconstructed parameters under structural constraints $\Omega$:
+\subsection{Symmetric Square-Root Splitting}
+To preserve numerical dynamic range under 16-bit floating point representations (FP16/BF16), \texttt{proxsparse\_pruner} implements symmetric singular value distribution:
 \[
-\min_{\hat{W} \in \Omega} \mathbb{E}_{X \sim \mathcal{D}} \| X W^\top - X \hat{W}^\top \|_F^2
+U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad V_r = \Sigma_{:r, :r}^{1/2} V_{:, :r}^\top
 \]
-where $\Omega$ enforces the structural sparsity, quantization codebook, or low-rank subspace bounds required by hardware accelerators.
+guaranteeing balanced Frobenius bounds:
+\[
+\|U_r\|_F = \|V_r\|_F = \left( \sum_{i=1}^{r} \sigma_i \right)^{1/2}
+\]
+
+\subsection{Proximal Regularization and Hessian Formulation}
+In structured compression settings, the optimization minimizes reconstruction error under constraint manifold $\Omega$:
+\[
+\min_{W} \frac{1}{2} \|W - W_0\|_F^2 + \lambda \|W\|_1 + \mathcal{I}_{\Omega}(W)
+\]
+where $\mathcal{I}_{\Omega}(W)$ enforces hard structural sparsity or rank bounds. Empirical curvature is modeled via the activation Hessian:
+\[
+H = \frac{2}{N} X^\top X + \gamma I
+\]
+with saliency weights determined by:
+\[
+S_{ij} = \frac{W_{ij}^2}{[H^{-1}]_{jj}}
+\]

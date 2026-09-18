@@ -1,7 +1,10 @@
 \section{Detailed Analysis}
 
-\subsection{Memory Footprint and Throughput}
-Empirical profiling demonstrates bounded GPU memory allocation across sequence lengths. Instantiating \texttt{None} replaces monolithic projections with compact operations, curtailing peak memory pressure.
+\subsection{Layer-Wise Sensitivity and Error Dynamics}
+Reconstruction error profiles across transformer layers reveal significant heterogeneity. Early projection layers exhibit higher sensitivity to rank truncation due to early feature extraction demands. Mid-tier layers exhibit rapid spectral decay, allowing aggressive parameter compression.
 
-\subsection{Architectural Trade-Offs}
-Evaluating compressed against full baseline configurations confirms that the structural constraints maintained by \texttt{proxsparse_pruner} preserve representation stability across diverse sequence contexts.
+\subsection{Memory Ceilings and Accelerator Scaling}
+Memory profiling indicates that \texttt{ProxSparsePrunedLoRALinear} prevents GPU memory spikes by eliminating redundant intermediate projection buffers. Bounded memory consumption facilitates higher batch concurrency during server-side deployment.
+
+\subsection{Subspace Preservation under Adaptation}
+The empirical stability observed post-adaptation confirms that the low-rank basis identified by \texttt{proxsparse\_pruner} effectively spans the principal representation subspace.

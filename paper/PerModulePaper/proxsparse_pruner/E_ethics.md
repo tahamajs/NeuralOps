@@ -1,2 +1,2 @@
-# Appendix E. Broader Impact and Compute Efficiency
-By reducing parameter counts and memory consumption, this module lowers the energy demands of neural network training and serving, contributing toward sustainable and accessible artificial intelligence deployment.
+# Appendix E. Broader Impact and Environmental Considerations
+By significantly curtailing parameter counts and peak GPU memory footprints, this research directly contributes to sustainable artificial intelligence by lowering datacenter electrical consumption and expanding access to resource-constrained environments.

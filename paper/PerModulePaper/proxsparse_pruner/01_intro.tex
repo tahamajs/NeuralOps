@@ -1,7 +1,14 @@
 \section{Introduction}
 
-\subsection{Motivation}
-Modern large transformer architectures incur substantial compute and memory overhead during training and deployment. Monolithic projection operations in multi-head attention and feed-forward networks dominate parameter storage. The \texttt{proxsparse_pruner} module addresses these computational bottlenecks through specialized pruning, factorized projection, and quantization mechanisms.
+\subsection{Motivation and Computational Bottlenecks}
+Modern foundation architectures stacked with multi-head attention and dense feed-forward blocks incur severe computational overhead during deployment. Dense linear projection matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ dominate memory footprints and parameter storage. In autoregressive token generation, decoding is fundamentally bounded by memory bandwidth rather than peak tensor core FLOPS. Furthermore, full quadratic attention incurs $\mathcal{O}(N^2)$ asymptotic complexity over sequence length $N$.
 
-\subsection{Architectural Positioning}
-Integrated into the unified research framework, \texttt{proxsparse_pruner} encapsulates dense projection weights into high-efficiency submodules while preserving representational fidelity and numerical stability across varied backbone families.
+The \texttt{proxsparse\_pruner} module addresses these bottlenecks through mathematically rigorous parameter compression and operator restructuring. By substituting monolithic linear operators with structured, factorized, or regularized primitives, \texttt{proxsparse\_pruner} substantially curtails memory bandwidth consumption while maintaining classification and generative capabilities.
+
+\subsection{Framework Integration and Objectives}
+Integrated within the unified framework, \texttt{proxsparse\_pruner} conforms to strict architectural contracts:
+\begin{itemize}
+\item \textbf{Universal Backbone Compatibility:} Seamless instantiation across bidirectional encoders (DistilBERT, RoBERTa), causal autoregressive decoders (GPT-2), and modern grouped-query attention models (Qwen, LLaMA).
+\item \textbf{Rigorous Parameter Verification:} Strict post-transformation Frobenius norm bounds ($\ge 10^{-4}$) and numerical stability checks against floating-point underflow or divergence.
+\item \textbf{Zero-Downtime Deployment:} Compatible with downstream parameter-efficient fine-tuning (PEFT) and residual low-rank adaptation.
+\end{itemize}

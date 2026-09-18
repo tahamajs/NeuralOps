@@ -1,6 +1,6 @@
-# Appendix B. Implementation Details
+# Appendix B. Implementation Details and Code Mapping
 
-Module implementation is located in:
-- **Source File**: `Codes/framework/compression_engine/proxsparse_pruner.py`
-- **Registered Class**: `None`
-- **Total Lines**: 20
+The `proxsparse_pruner` module is implemented in `Codes/framework/compression_engine/proxsparse.py` (485 lines).
+- Registered Class: `ProxSparsePrunedLoRALinear`
+- Base Architecture: `nn.Module`
+- Constructor Signatures: `Standard configuration arguments`

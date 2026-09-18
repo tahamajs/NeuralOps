@@ -1,8 +1,12 @@
 \section{Reproducibility Guide}
-Evaluation commands can be reproduced directly using the unified framework runner:
+Evaluations are completely reproducible via the unified framework:
 \begin{lstlisting}[language=bash]
+# Run compression evaluation
 python -u Codes/framework/run_compressor.py \
     --model distilbert-base-uncased \
-    --compressor proxsparse_pruner \
-    --output_dir results/unified_proxsparse_pruner
+    --compressor proxsparse\_pruner \
+    --dataset sst2 \
+    --batch_size 64 \
+    --recovery_steps 50 \
+    --output_dir results/unified_proxsparse\_pruner
 \end{lstlisting}

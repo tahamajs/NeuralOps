@@ -1,3 +1,5 @@
 # Appendix C. Datasets and Evaluation Protocols
-- **SST-2 (Stanford Sentiment Treebank)**: 67,349 training, 872 validation examples.
-- **MRPC (Microsoft Research Paraphrase Corpus)**: 3,668 training, 408 validation sentence pairs.
+All evaluations adhere to GLUE benchmark standards:
+- **SST-2**: Binary sentiment classification with 67,349 training and 872 validation examples.
+- **MRPC**: Paraphrase sentence equivalence with 3,668 training and 408 validation pairs.
+- **Evaluation Metric**: Accuracy percentage and macro-averaged F1 scores.

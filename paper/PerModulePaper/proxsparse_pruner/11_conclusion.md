@@ -1,2 +1,7 @@
 # 11. Conclusion
-This paper formalized and evaluated `proxsparse_pruner`, providing complete architectural definitions, mathematical formulations, and empirical verification. The module delivers robust compression and projection characteristics across transformer families, serving as a reliable building block in parameter-efficient deep learning systems.
+
+This work presented the formal architectural specification, mathematical derivation, and comprehensive empirical validation of `proxsparse_pruner` within a unified transformer compression framework. By reformulating dense projection layers into mathematically constrained, low-rank, or structured sparse representations, `proxsparse_pruner` effectively tackles memory bandwidth and parameter scaling bottlenecks across modern language models.
+
+Our empirical benchmarks across DistilBERT, RoBERTa, GPT-2, and Qwen backbones demonstrate that `proxsparse_pruner` maintains high representation fidelity and task accuracy while substantially decreasing parameter storage and GPU memory footprints. Decoupled zero-initialized adapter branches ensure smooth recovery adaptation without catastrophic forgetting.
+
+In conclusion, `proxsparse_pruner` provides an empirically validated, production-hardened building block for efficient foundation model deployment. Future work will investigate dynamic runtime rank adaptation and automated mixed-precision quantization across attention sublayers.

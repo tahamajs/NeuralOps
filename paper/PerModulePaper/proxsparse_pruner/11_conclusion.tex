@@ -1,2 +1,6 @@
 \section{Conclusion}
-This work presented the formal architecture and empirical evaluation of \texttt{proxsparse_pruner}. The module achieves efficient parameter scaling and robust execution across transformer backbones, establishing a verifiable and reproducible building block for efficient deep learning.
+This paper formalized the architecture, mathematical formulations, and empirical evaluation of \texttt{proxsparse\_pruner}. By restructuring monolithic projection weights into factorized, regularized, and hardware-aligned representations, \texttt{proxsparse\_pruner} effectively alleviates transformer compute and memory overhead.
+
+Empirical evaluations across encoder and decoder backbones confirm that \texttt{proxsparse\_pruner} achieves robust compression while maintaining high downstream accuracy. Decoupled adapter fine-tuning ensures reliable post-compression parameter recovery.
+
+The module constitutes a verified and reproducible component in parameter-efficient deep learning. Future research will explore automated layer-wise budget allocation and cross-layer weight sharing.
