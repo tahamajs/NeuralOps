@@ -238,14 +238,6 @@ def collect_master_results(results_base: Path) -> list:
 
 def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, dataset_name, docs_base, status_override=None, metrics_override=None):
     repo_id = get_repo_id(model_name, mod_name, dataset_name)
-
-    # Determine status
-    status = status_override
-    if not status and wf and wf.exists():
-        status = "PASS"
-    if not status:
-        status = "UNKNOWN"
-
     # Gather metrics
     metrics = metrics_override or {}
     if not metrics:
@@ -259,6 +251,13 @@ def _upload_module_result(api, wf, ckpt_dir, model_name, mod_name, dataset_name,
                             break
             except Exception:
                 pass
+
+    # Determine status
+    status = status_override or metrics.get("status")
+    if not status and wf and wf.exists():
+        status = "PASS"
+    if not status:
+        status = "UNKNOWN"
 
     # Also check for metrics.json inside hf_export
     metrics_json = ckpt_dir / "hf_export" / "metrics.json"
