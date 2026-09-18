@@ -183,6 +183,7 @@ class SAMBAM3Block(nn.Module):
     r"""SAMBA-M3: Combination of Local Attention and Spectral Mamba."""
 
     supports_gqa: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -515,9 +516,9 @@ class SAMBAM3Block(nn.Module):
 
         B, L, D = hidden_states.shape
 
-        q = self.q_lin(hidden_states).view(B, L, self.n_heads, self.head_dim).transpose(1, 2)
-        k = self.k_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        v = self.v_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        q = self.q_lin(hidden_states).view(B, L, self.n_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         pos_emb = kwargs.get("position_embeddings", None)
         if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:

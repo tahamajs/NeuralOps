@@ -547,7 +547,7 @@ class AegisAttention(BaseAttention):
                     w_oriented = _orient(w, in_dim)
                     target.decompose_from_weight(w_oriented, b, self.cfg.svd_energy)
                 elif proj_key == "o" and self.is_nested_encoder:
-                    eye_w = torch.eye(self.hidden_size, self.all_head_size, device=self.out_proj.up.weight.device, dtype=self.out_proj.up.weight.dtype)
+                    eye_w = torch.eye(self.all_head_size, self.all_head_size, device=self.out_proj.up.weight.device, dtype=self.out_proj.up.weight.dtype)
                     target.decompose_from_weight(eye_w, None, self.cfg.svd_energy)
 
         if hasattr(old_attn, "is_decoder"):

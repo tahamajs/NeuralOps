@@ -173,6 +173,7 @@ class ZeroSAttention(BaseAttention):
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -405,9 +406,9 @@ class ZeroSAttention(BaseAttention):
         H, Dh = self.num_heads, self.head_dim
         device = hidden_states.device
 
-        Q = self.W_q(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-        K = self.W_k(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2)
-        V = self.W_v(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2)
+        Q = self.W_q(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
+        K = self.W_k(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        V = self.W_v(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         # Apply RoPE: Priority 1 = position_embeddings, Priority 2 = rotary_emb fallback
         position_embeddings = kwargs.get("position_embeddings", None)

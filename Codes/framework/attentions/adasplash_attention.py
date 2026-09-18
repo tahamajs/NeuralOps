@@ -221,6 +221,7 @@ class AdaSplashAttention(BaseAttention):
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -527,9 +528,9 @@ class AdaSplashAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        q = self.q_proj(hidden_states).view(B, L_q, H, Dh).transpose(1, 2)
-        k = self.k_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2)
-        v = self.v_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2)
+        q = self.q_proj(hidden_states).view(B, L_q, H, Dh).transpose(1, 2).contiguous()
+        k = self.k_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, L_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         # Apply RoPE (Direct kwargs support for Qwen3.5/Mistral/LLaMA)
         position_embeddings = kwargs.get("position_embeddings", None)

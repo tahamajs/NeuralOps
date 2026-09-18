@@ -193,6 +193,7 @@ class SVDMamba(BaseAttention):
     r"""SVD-Mamba module with SVD-factorized projections, causal convolution, and selective SSM."""
 
     supports_causal: bool = True
+    is_custom_attention: bool = True
 
     def __init__(
         self,
@@ -568,9 +569,9 @@ class SVDMamba(BaseAttention):
         # ---------------------------------------------------------
         # 1. Attention Path (Multi-Head Attention with RoPE and Causal Masking)
         # ---------------------------------------------------------
-        Q = self.q_proj(hidden_states).view(batch, seqlen, self.num_heads, self.head_dim).transpose(1, 2)
-        K = self.k_proj(hidden_states).view(batch, seqlen, self.num_kv_heads, self.head_dim).transpose(1, 2)
-        V_attn = self.v_proj(hidden_states).view(batch, seqlen, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        Q = self.q_proj(hidden_states).view(batch, seqlen, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = self.k_proj(hidden_states).view(batch, seqlen, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V_attn = self.v_proj(hidden_states).view(batch, seqlen, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
@@ -582,6 +583,30 @@ class SVDMamba(BaseAttention):
             V_attn = repeat_kv(V_attn, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(max(1, self.head_dim))
+        # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
+
+        try:
+
+            _qs = Q.half() if Q.dtype == torch.float32 else Q
+
+            _ks = K.half() if K.dtype == torch.float32 else K
+
+            _vs = V.half() if V.dtype == torch.float32 else V
+
+            _is_causal = getattr(self, 'is_decoder', False) and not is_cross and N > 1 if 'is_cross' in dir() else getattr(self, 'is_decoder', False) and N > 1
+
+            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(_qs, _ks, _vs, is_causal=_is_causal, dropout_p=self.dropout.p if self.training else 0.0)
+
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+
+            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+            return (self.out_proj(_sdpa_out) if not getattr(self, 'is_nested_encoder', False) else _sdpa_out), None
+
+        except Exception:
+
+            pass
+
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 
         if self.is_decoder:

@@ -149,6 +149,7 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register("kda", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("kda_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class KDAAttention(BaseAttention):
+    is_custom_attention: bool = True
     def __init__(
         self,
         config: Optional[Any] = None,
@@ -536,9 +537,9 @@ class KDAAttention(BaseAttention):
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        q_raw = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
-        k_raw = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2)
+        q_raw = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
+        k_raw = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings

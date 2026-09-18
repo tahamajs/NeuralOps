@@ -435,9 +435,9 @@ class MoEDeltaKVPagedAttention(nn.Module):
         H, d = self.num_heads, self.head_dim
         H_kv = self.num_kv_heads
 
-        q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
-        k = self.key(hidden_states).view(B, N, H_kv, d).transpose(1, 2)
-        v = self.value(hidden_states).view(B, N, H_kv, d).transpose(1, 2)
+        q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
+        k = self.key(hidden_states).view(B, N, H_kv, d).transpose(1, 2).contiguous()
+        v = self.value(hidden_states).view(B, N, H_kv, d).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings", None)
