@@ -756,14 +756,16 @@ def gather_all_attention_weights(model: Any) -> Tuple[List[np.ndarray], List[str
 
 
 def inject_all_layers(
-    model: Any,
-    rank_dict: Dict[str, int],
-    dropout: float,
-    add_sparse: bool,
-    sparsity: float,
-    config: Any,
-    **kwargs) -> None:
+    model: Any = None,
+    rank_dict: Optional[Dict[str, int]] = None,
+    dropout: float = 0.1,
+    add_sparse: bool = False,
+    sparsity: float = 0.0,
+    config: Any = None,
+    **kwargs) -> Any:
     r"""Inject SVDCompressedAttention into all transformer layers of model."""
+    if rank_dict is None:
+        return inject_svd_compressed(model=model, model_config=config, **kwargs)
     for layer_idx in range(len(model.distilbert.transformer.layer)):
         distil_layer = model.distilbert.transformer.layer[layer_idx]
         old_attn = distil_layer.attention
