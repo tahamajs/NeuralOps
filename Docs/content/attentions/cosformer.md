@@ -146,6 +146,13 @@ python Codes/framework/launch_gpu_server.py \
 
 ## 5. Empirical Benchmark Results
 
+### Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **distilbert-sst2** | sst2 | `PASS` | 90.60% | **77.98%** | -12.62% | 0.7862 | 1.00x | 6 | [svd-linear-attention-distilbert-sst2-cosformer-attention](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-cosformer-attention) | 2026-09-18 |
+
+
 Evaluated on NVIDIA Tensor Core GPUs across standard GLUE benchmark suites:
 
 | Model Family | Dataset | Status | Forward (ms) | Backward (ms) | Step Latency (ms) | Speedup vs Baseline | Accuracy (%) | Grad Norm |
@@ -406,4 +413,3 @@ The `CosformerAttention` architecture incorporates telemetry hooks for tracking 
 | Status | Accuracy | Val Loss | Peak VRAM | Inference Latency |
 |--------|----------|----------|-----------|-------------------|
 | Pending| Pending  | Pending  | Pending   | Pending           |
-
