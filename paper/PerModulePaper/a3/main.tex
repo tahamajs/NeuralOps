@@ -2,7 +2,7 @@
 
 % --- Typography \& Geometry ---
 \usepackage[utf8]{inputenc}
-\usepackage{microtype}
+\usepackage[protrusion=true,expansion=false]{microtype}
 \usepackage[margin=0.75in,top=0.85in,bottom=0.85in]{geometry}
 
 % --- Math \& Symbols ---
@@ -78,22 +78,17 @@ energy estimate before factorization, (iii) adaptively increasing rank when
 reconstruction error exceeds a threshold, and (iv) recalibrating LayerNorm 
 affine parameters after factorization to absorb distributional shift.
 
-A3 achieves \textbf{5.0\%} parameter reduction on DistilBERT, 
-\textbf{4.5\%} on RoBERTa, and \textbf{4.5\%} on GPT-2 
-at rank $r = 64$. On SST-2, accuracy drops by only 
-\textbf{-2.2\%}, \textbf{-2.8\%}, and \textbf{-2.9\%} respectively, 
-after 50 LoRA recovery steps. Peak VRAM decreases by 
-\textbf{40\%}. We provide a fully reproducible implementation with 
-strict Frobenius-norm validation, safe fallback to original layers, and 
-streaming O($d^2$) memory calibration.
+A3 achieves guaranteed parameter reduction without expansion (+1.25M parameters saved on DistilBERT, 
++0.59M on RoBERTa, +0.53M on GPT-2) under an enforced rank ceiling $r_{\mathrm{ceiling}} \le 256$. 
+On SST-2, A3 preserves 90.02\% validation accuracy on DistilBERT ($\Delta -0.69\%$, F1: 0.9043) and 
+achieves 83.26\% on RoBERTa ($\Delta +4.70\%$, F1: 0.8460), passing quality gates on DistilBERT and RoBERTa, 
+while GPT-2 shows significant degradation (-16.17\%, 63.19\% accuracy, F1: 0.7216) that requires further investigation. 
+We additionally evaluate on MNLI and AG News, finding that A3 requires task-specific base checkpoints to achieve meaningful accuracy on multi-class tasks. 
+We provide an open-source, fully reproducible implementation with strict Frobenius-norm validation, 
+zero-overhead CPU FP32 SVD factorization, and automated Hugging Face hub integration.
 
 \textbf{Keywords:} low-rank factorization, activation-aware compression, Fisher 
 information, LayerNorm recalibration, transformer efficiency
-
-
-
-\vspace{0.5em}
-\noindent\textbf{Keywords:} low-rank factorization, activation-aware compression, Fisher
 \end{abstract}
 
 \vspace{1em}

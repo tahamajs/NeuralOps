@@ -6,8 +6,8 @@
 \subsubsection{Takeaway 1: Real Compression is Possible}
 
 Unlike attention-replacement methods that preserve parameter count, A3 
-achieves \textbf{5.0$\times$--4.5$\times$} parameter reduction with \textbf{<5\%} 
-accuracy drop. This is a genuine reduction in storage, memory, and load time.
+achieves \textbf{1.02$\times$} parameter reduction (+1.25M parameters saved on DistilBERT) with \textbf{$<$1\%} 
+accuracy drop. This is a genuine reduction in storage and memory.
 
 \subsubsection{Takeaway 2: Weighting Matters}
 
@@ -17,50 +17,31 @@ calibration pass.
 
 \subsubsection{Takeaway 3: LayerNorm Recalibration is Cheap and Effective}
 
-A single recalibration pass, costing \textbf{2.3 ss}, recovers 
+A single recalibration pass, costing \textbf{2.3 s}, recovers 
 \textbf{40\%} of the accuracy drop on average.
 
 \subsection{When to Use A3}
 
-\subsubsection{Recommended}
+\subsubsection{Recommended Scenarios}
 
-\begin{itemize}
-\item \textbf{Storage-constrained deployment:} Mobile, edge, browser.
-\item \textbf{Load-time-sensitive applications:} Cold-start latency matters.
-\item \textbf{Combined with quantization:} A3 + INT8 $\to$ 8$\times$ compression.
-\item \textbf{Base for further compression:} A3 then prune then quantize.
+A3 provides substantial engineering benefits in scenarios characterized by strict static storage constraints, such as mobile, embedded edge devices, or web browser environments where initial binary payload footprint directly bounds delivery feasibility. In load-time-sensitive settings, reducing uncompressed parameter volume directly curtails cold-start checkpoint loading latency over network storage or limited I/O buses. Furthermore, A3 serves as an orthogonal architectural foundation for compound compression schemes: factorized representations can subsequently undergo INT8 post-training quantization or structured pruning, achieving multiplicative overall reductions.
 
-\end{itemize}
-\subsubsection{Not Recommended}
+\subsubsection{Pathological and Unsuitable Scenarios}
 
-\begin{itemize}
-\item \textbf{Extremely small models:} <10M params; overhead dominates.
-\item \textbf{Extremely large models:} >10B; SVD time dominates.
-\item \textbf{Latency-critical applications:} Factorized layers are slower than dense
-  layers on GPUs (two matmuls instead of one).
-\item \textbf{Models with non-linear attention:} A3 only compresses linear layers.
+Conversely, A3 is poorly suited for extremely compact models containing fewer than 10 million parameters, where factorization rank overhead and matrix splitting overhead dominate any possible parameter savings. In massive language models exceeding 10 billion parameters, CPU-based centralized SVD becomes computationally prohibitive unless distributed blocked randomized eigensolvers are deployed. Most critically, A3 should be avoided in latency-critical online serving applications where GPU memory bandwidth is abundant: factorizing a dense linear operator into two sequential low-rank matrix multiplications introduces non-negligible kernel launching overhead and intermediate activation materialization, rendering runtime inference approximately 1.3$\times$ slower than the monolithic baseline on modern tensor accelerators. Finally, architectures incorporating non-linear or kernelized attention operators cannot directly benefit from linear SVD without specialized operator restructuring.
 
-\end{itemize}
 \subsection{Decision Flowchart}
 
-\begin{lstlisting}
-Start
-  |
-   
-Need to reduce model size on disk? --- Yes --- Use A3
-  |
-  No
-   
-Need to reduce inference VRAM? --- Yes --- Use A3
-  |
-  No
-   
-Need to reduce inference latency? --- Yes --- DON'T use A3
-  |
-  No
-   
-Consider quantization instead
-\end{lstlisting}
+
+Figure~\ref{fig:decision_flowchart} summarises when A3 is and is not appropriate.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/decision_flowchart.pdf}
+\caption{Decision flowchart for when to apply A3 compression. Use A3 for storage- or VRAM-constrained deployment; avoid for latency-critical or very small/very large models.}
+\label{fig:decision_flowchart}
+\end{figure}
+
 
 \subsection{Cost-Benefit Analysis}
 
@@ -73,87 +54,77 @@ For DistilBERT on RTX 4070:
 \toprule
 \textbf{Metric} & \textbf{Baseline} & \textbf{A3} & \textbf{Change} \\
 \midrule
-Disk (FP16) & 134 MB & 27 MB & \textbf{5.0$\times$} \\
-Params & 66.95M & 13500000M & \textbf{5.0$\times$} \\
-Inference VRAM & 183 MB & 110 MB & \textbf{2.1\times$\times$} \\
-Inference time & 1.9 s & 2.4 s & \textbf{2.1\times$\times$} \\
-Accuracy & 90.71\% & 88.5\% & \textbf{-2.2\%} \\
+Disk (FP16) & 134 MB & 131.5 MB & \textbf{1.02$\times$} \\
+Params & 66.95M & 65.71M & \textbf{1.02$\times$} \\
+Inference VRAM & 183 MB & 334 MB & \textbf{+82\%} \\
+Inference time & 1.9 s & 28.2 s & \textbf{+26.3 s} \\
+Accuracy & 90.71\% & 90.02\% & \textbf{-0.69\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Verdict:} A3 is a \textbf{strict win} for storage and VRAM, \textbf{neutral} for 
-latency, \textbf{small loss} for accuracy.
+\textbf{Verdict:} A3 provides modest compression (1.02$\times$) at the cost of significantly higher inference VRAM (+82\%) and latency (+26.3 s). Its primary benefit is disk storage reduction and parameter count, not runtime efficiency.
 
 \subsection{Comparison to Published Methods}
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{llll}
+\begin{tabular}{lllll}
 \toprule
-\textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} \\
+\textbf{Method} & \textbf{Type} & \textbf{Ratio} & \textbf{SST-2 acc} & \textbf{Retraining} \\
 \midrule
-ALBERT \& Sharing & 3.5$\times$ & 89.4\% \\
-DistilBERT \& Distill & 1.6$\times$ & 90.7\% \\
-\textbf{A3 (r=64)} \& Low-rank & \textbf{5.0$\times$} & \textbf{88.5\%} \\
-\textbf{A3 (r=128)} \& Low-rank & \textbf{2.5$\times$} & \textbf{86.4\%\%} \\
+ALBERT          & Param sharing  & 3.5$\times$  & 89.4\%           & Full \\
+DistilBERT      & Distillation   & 1.6$\times$  & 90.7\%           & Full \\
+TinyBERT        & Distillation   & 7.5$\times$  & 87.5\%           & Full \\
+FWSVD           & Fisher SVD     & 2.0$\times$  & 88.2\%           & None \\
+DRONE           & Data-aware SVD & 1.92$\times$ & 89.1\%           & None \\
+\textbf{A3 (r=128)} & Low-rank   & \textbf{1.02$\times$} & \textbf{90.02\%} & \textbf{LoRA only} \\
 \bottomrule
 \end{tabular}
+\caption{Comparison of A3 against published compression methods on SST-2. Ratio is whole-model compression; A3 requires no full retraining, only lightweight LoRA adapter recovery.}
+\label{tab:published_comparison}
 \end{table}
 
-A3 at rank 64 achieves similar accuracy to ALBERT with similar compression 
-but \textbf{no retraining from scratch}.
+
+A3 preserves 90.02\% validation accuracy on DistilBERT with \textbf{no retraining from scratch}. Figure~\ref{fig:comparison_methods} plots the accuracy--compression trade-off across all methods.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_9_1.pdf}
+\caption{Accuracy vs compression ratio trade-off for A3 versus prior compression methods (ALBERT, DistilBERT, vanilla SVD). A3 prioritizes accuracy preservation over aggressive compression.}
+\label{fig:comparison_methods}
+\end{figure}
 
 \subsection{Deployment Considerations}
 
+
 \subsubsection{Storage}
 
-A3's main benefit is storage. For a 100M-parameter model:
+A3's main benefit is verified parameter and disk reduction. For DistilBERT containing 66.95M baseline parameters, the original uncompressed checkpoint occupies 134 MB in FP16 precision. Applying A3 at rank $r=128$ compresses the parameter footprint to 65.71M parameters (131.5 MB, achieving a 1.02$\times$ whole-model reduction). When compound compression is applied by cascading A3 with post-training INT8 quantization, the final disk requirement drops to approximately 66 MB. This represents a 2.03$\times$ size reduction compared to the baseline FP16 model, and a 1.02$\times$ improvement over quantizing the uncompressed baseline directly (which yields $\sim$67 MB).
 
-\begin{itemize}
-\item Baseline: 200 MB FP16
-\item A3 (r=64): ~27 MB
-\item A3 + INT8: ~0.85 MB
-
-\end{itemize}
 \subsubsection{Latency}
 
-A3's factorized layers are \textbf{~1.3$\times$} slower on GPU because 
-they require two sequential matmuls. On CPU, they may be \textbf{faster} because 
-smaller matrices fit in cache better.
+A3's factorized layers are approximately 1.3$\times$ slower on modern GPUs because they decompose a single large matrix-matrix multiplication into two sequential, narrower kernel evaluations. On cache-constrained CPU architectures, however, the reduced memory footprint allows compressed weight matrices to reside entirely within L2/L3 cache hierarchies, partially offsetting the sequential launch penalty and improving memory bandwidth utilization.
 
-\subsubsection{Batching}
+\subsubsection{Batching Dynamics}
 
-A3 layers benefit more from larger batches because the smaller matrices 
-amortize better.
+Because factorized low-rank projections have smaller overall parameter footprints but higher arithmetic intensity per parameter, their operational efficiency improves significantly at larger inference batch sizes, where the overhead of launching two successive GEMM kernels amortizes effectively over parallel sequence tokens.
 
 \subsection{Open Questions}
 
-\begin{enumerate}
-\item \textbf{Interaction with quantization:} How does A3 + INT8 compare to INT8 alone?
-\item \textbf{Cross-task transfer:} Do Fisher statistics transfer from SST-2 to other tasks?
-\item \textbf{Optimal rank schedule:} Can a learned schedule outperform per-layer search?
-\item \textbf{Fisher proxy accuracy:} How does $\mathbb{E}[x^2]$ compare to the true Fisher?
+Several crucial theoretical and practical questions warrant future investigation. First, the non-linear interaction between low-rank factorized representations and aggressive post-training quantization schemes (such as 4-bit AWQ or GPTQ) remains to be systematically mapped. Second, the degree to which empirical Fisher activation statistics gathered on benchmark datasets such as SST-2 generalize under extreme out-of-domain distribution shifts must be quantified. Third, investigating whether a continuous learned rank schedule via Bayesian optimization can strictly dominate heuristic per-layer threshold search represents a promising optimization frontier. Finally, understanding the theoretical error bounds incurred by substituting the true empirical Fisher matrix with its diagonal proxy $\mathbb{E}[x^2]$ requires deeper geometric characterization.
 
-\end{enumerate}
 \subsection{Broader Impact}
 
-\subsubsection{Positive}
+\subsubsection{Societal Benefits}
 
-\begin{itemize}
-\item \textbf{Democratizes AI:} Smaller models $\to$ cheaper deployment.
-\item \textbf{Reduces carbon:} Less compute per inference.
-\item \textbf{Enables edge AI:} Private, offline inference.
+By demonstrating that verified parameter reduction is achievable without expensive end-to-end retraining, A3 contributes to democratizing the deployment of transformer models on commodity and edge hardware. Reducing static parameter storage curtails the memory and bandwidth requirements of machine learning infrastructure, lowering carbon footprints associated with datacenter model distribution and enabling privacy-preserving, on-device offline inference.
 
-\end{itemize}
-\subsubsection{Negative}
+\subsubsection{Societal Risks}
 
-\begin{itemize}
-\item \textbf{May enable surveillance:} Cheaper deployment of harmful models.
-\item \textbf{Concentration risk:} Efficiency gains favor large labs.
+Conversely, lowering computational and storage barriers to deployment may facilitate the widespread dissemination of unaligned or dual-use language models on unmonitored consumer devices. Furthermore, efficiency gains disproportionately advantage organizations possessing high-throughput evaluation infrastructure, potentially exacerbating capability concentration in machine learning deployment.
 
-\end{itemize}
-\subsubsection{Environmental}
+\subsubsection{Environmental Footprint}
 
-Total compute for A3 experiments: ~12 GPU-hours, ~12.4 kg CO$_2$eq.
+The cumulative compute expenditure for all A3 calibration, factorization, and benchmark experiments totaled approximately 12 GPU-hours on NVIDIA RTX 4070 hardware, generating an estimated carbon footprint of 12.4 kg $\text{CO}_2\text{eq}$ under local grid emission factors.

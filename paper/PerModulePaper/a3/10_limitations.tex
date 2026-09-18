@@ -1,24 +1,36 @@
 
 \section{Limitations}
 
-\subsection{Task Coverage}
+\subsection{Primary Empirical Limitations}
 
-Only SST-2 is evaluated. A3 may behave differently on:
+Our rigorous experimental evaluation revealed five fundamental constraints of the current A3 framework:
 
+\begin{enumerate}
+\item \textbf{Modest Whole-Model Compression Ratio:} Under strict rank ceilings ($r_{\mathrm{ceiling}} \le 256$), A3 achieves modest whole-model parameter reduction (1.02$\times$ on DistilBERT, 1.005$\times$ on RoBERTa and GPT-2), saving between 0.53M and 1.25M parameters. Because embeddings and feed-forward networks account for the majority of parameters in compact transformers, compressing attention projections alone inherently caps overall compression ratio.
+\item \textbf{Degradation on Autoregressive Decoders (GPT-2):} While encoder architectures (DistilBERT and RoBERTa) demonstrate resilient representations, GPT-2 suffers severe accuracy degradation (-16.17\%, dropping from 79.36\% to 63.19\%). Causal masking, non-symmetric activation dynamics, and transposed Conv1D parameter structures make autoregressive decoders substantially less receptive to activation-weighted low-rank factorization.
+\item \textbf{Lack of Generalization to Multi-Class Tasks (MNLI, AG News):} Multi-class classification benchmarks without pre-converged task-specific heads yield near-random accuracies (25.3\% on 4-class AG News and 36--44\% on 3-class MNLI). A3 does not generalize across downstream tasks unless the underlying base checkpoints have been fully fine-tuned for the target classification head before compression.
+\item \textbf{High Fallback Rates:} To guarantee that compressed layers satisfy the strict reconstruction error threshold ($\tau = 0.40$), 75.0\% of layers in DistilBERT and 91.7\% of layers in RoBERTa and GPT-2 fall back to original dense weights. This conservative threshold preserves accuracy but limits the fraction of factorized layers to 8.3\%--25.0\%.
+\item \textbf{RoBERTa Empirical Anomaly (+4.70\%):} On RoBERTa, A3 post-recovery accuracy (83.26\%) exceeds the baseline (78.56\%) by +4.70\%. While the 50-step LoRA recovery phase introduces gradient adaptation on the classification head, a low-rank compressed model outperforming its dense uncompressed baseline represents an unexpected empirical anomaly. We report this delta transparently as requiring further investigation into head initialization and recovery dynamics.
+\end{enumerate}
+
+\subsection{Task and Architecture Coverage}
+
+A3 has been validated primarily on binary classification (SST-2). It has not been benchmarked on:
 \begin{itemize}
-\item Generation tasks (summarization, translation)
-\item Multi-class classification (MNLI, AG News)
-\item Token-level tasks (NER, POS)
-\item Long-context tasks (>512 tokens)
-
+\item Generation tasks (summarization, translation, code)
+\item Question answering (SQuAD, HotpotQA)
+\item Long-context reasoning (L-Eval, InfiniteBench)
+\item Pre-training from scratch with factorized layers
+\item Instruction following (AlpacaEval, MT-Bench)
 \end{itemize}
+
 \subsection{Model Coverage}
 
 We test on models with $\le$124M parameters. Not tested:
 
 \begin{itemize}
-\item Large models (>1B): SVD time grows quadratically
-\item Very deep models (>24 layers): compounding effect
+\item Large models ($>1$B): SVD time grows quadratically
+\item Very deep models ($>24$ layers): compounding effect
 \item Mixture-of-Experts: not tested
 \item Vision transformers: not tested
 \item Multimodal: not tested
@@ -77,7 +89,7 @@ greedy and may not be optimal. A learned or Bayesian approach could be better.
 
 \subsection{LayerNorm Recalibration Heuristic}
 
-Our $\gamma \leftarrow \gamma \cdot \sigma_\text{target} / \sigma_\text{current}$ 
+Our $\gamma \leftarrow \gamma \cdot \sigma_\text{current} / \sigma_\text{target}$ 
 is a heuristic. It does not account for:
 
 \begin{itemize}
@@ -100,11 +112,9 @@ This limits the paper's external validity.
 
 \subsection{Failure Modes Not Fully Diagnosed}
 
-0.85
+While Section~\ref{sec:analysis} identifies that value and output projections frequently fall back due to slower singular value decay under full channel mixing, certain edge cases warrant deeper investigation. Specifically, when layers exhibit bimodal activation spectra or extreme outlier tokens (such as delimiter tokens in deeper layers), diagonal Fisher weighting may underestimate the rank necessary to capture cross-channel correlations. In such regimes, full matrix Fisher approximations or block-diagonal factorizations may be required to prevent excessive fallbacks without exceeding the parameter break-even ceiling.
 
 \subsection{Code Quality}
-
-Our implementation is research-grade:
 
 \begin{itemize}
 \item No unit tests for edge cases

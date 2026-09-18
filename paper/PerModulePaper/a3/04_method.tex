@@ -3,41 +3,14 @@
 
 \subsection{Overview}
 
-A3 compresses a pretrained transformer in \textbf{five phases}:
+A3 compresses a pretrained transformer in five sequential phases. The first phase, streaming calibration (\S\ref{sec:streaming_calibration}), collects activation statistics via forward hooks that accumulate covariance and Fisher sensitivity in $\mathcal{O}(d^2)$ memory. In the second phase, we perform Fisher-weighted SVD (\S\ref{sec:fisher_weighted_svd}), factorizing each weight matrix in a whitened space that prioritizes high-variance channels. The third phase validates each factorization by computing the relative Frobenius reconstruction error (\S\ref{sec:frobenius_validation}). If the error exceeds the threshold $\tau$, the fourth phase performs adaptive rank escalation, retrying the factorization at progressively higher ranks until the constraint is satisfied or a deterministic safety fallback is triggered. Finally, the fifth phase recalibrates the LayerNorm affine parameters in closed form (\S\ref{sec:layernorm_recalibration}), absorbing the distributional shift induced by low-rank projection. Figure~\ref{fig:pipeline} illustrates the end-to-end pipeline execution flow: Phase 1 runs once globally across the model, Phases 2--4 iterate on a per-layer basis, and Phase 5 completes as a single post-processing adjustment.
 
-\begin{enumerate}
-\item \textbf{Calibration} ( 4.2): collect activation statistics via streaming hooks.
-\item \textbf{Weighted SVD} ( 4.3): factorize each weight matrix in weighted space.
-\item \textbf{Validation} ( 4.4): compute Frobenius reconstruction error.
-\item \textbf{Adaptive escalation} ( 4.4.2): increase rank if error exceeds $\tau$.
-\item \textbf{LayerNorm recalibration} ( 4.5): absorb distributional shift.
-
-\end{enumerate}
-\textbf{Figure 4.1} shows the pipeline. Phase 1 runs once on the whole model; 
-phases 2--4 run per layer; phase 5 runs once at the end.
-
-\begin{lstlisting}
-    +--------------------------------------------------+
-    |  Phase 1: Calibration (streaming)                |
-    |  Input: unlabeled text                           |
-    |  Output: {F^( ), C_X^( )} per layer              |
-    +----------------------+---------------------------+
-                           |
-                            
-    +--------------------------------------------------+
-    |  For each layer  :                               |
-    |    Phase 2: Weighted SVD at rank r               |
-    |    Phase 3: Frobenius validation                 |
-    |    Phase 4: If err > $\tau$: escalate rank, retry     |
-    |    If err > $\tau$ after max retries: fallback        |
-    +----------------------+---------------------------+
-                           |
-                            
-    +--------------------------------------------------+
-    |  Phase 5: LayerNorm recalibration (global)       |
-    |  Rescale $\gamma$ to match target $\sigma$                     |
-    +--------------------------------------------------+
-\end{lstlisting}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_4_1.pdf}
+\caption{A3 five-phase compression pipeline: (1) streaming calibration, (2) Fisher-weighted SVD, (3) Frobenius validation, (4) adaptive rank escalation with fallback, (5) LayerNorm recalibration.}
+\label{fig:pipeline}
+\end{figure}
 
 \subsection{Phase 1: Streaming Calibration}
 
@@ -129,15 +102,15 @@ where $\epsilon = 10^{-6}$ prevents division by zero.
 \begin{enumerate}
 \item Compute $W_\text{weighted}$ using (4.5).
 \item Compute the truncated SVD:
-  $$
-  W\_\text{weighted} \approx U\_r \Sigma\_r V\_r^\top
+  \[
+  W_\text{weighted} \approx U_r \Sigma_r V_r^\top
   \tag{4.6}
-  $$
+  \]
 \item Unweight the right factor to recover the original space:
-  $$
-  V\_r^\text{unweighted} = V\_r^\top \cdot \mathrm{diag}\!\left(\frac{1}{\sqrt{F + \epsilon}}\right)
+  \[
+  V_r^\text{unweighted} = V_r^\top \cdot \mathrm{diag}\!\left(\frac{1}{\sqrt{F + \epsilon}}\right)
   \tag{4.7}
-  $$
+  \]
 \item Set $U = U_r \Sigma_r^{1/2}$ and $V = \Sigma_r^{1/2} V_r^\text{unweighted}$.
 
 \end{enumerate}
@@ -227,12 +200,12 @@ the output scaled by $\gamma / \sigma_\text{new}$ instead of $\gamma / \sigma_\t
 We can compensate by adjusting $\gamma$:
 
 \[
-\gamma \leftarrow \gamma \cdot \frac{\sigma_\text{target}}{\sigma_\text{current}}
+\gamma_\text{new} = \gamma \cdot \frac{\sigma_\text{current}}{\sigma_\text{target}}
 \tag{4.13}
 \]
 
-where $\sigma_\text{target}$ is the pre-compression standard deviation and 
-$\sigma_\text{current}$ is the post-compression one.
+where $\sigma_\text{target}$ is the pre-compression standard deviation ($\sigma_\text{pre}$) and 
+$\sigma_\text{current}$ is the post-compression standard deviation ($\sigma_\text{post}$).
 
 \subsubsection{Procedure}
 
@@ -275,7 +248,7 @@ Output: compressed model M', statistics
 20: if recalibrate_ln:
 21:     $\sigma$_current $\leftarrow$ record_layernorm_scales(M', D)
 22:     for ln in layernorms(M') do
-23:         ln.$\gamma$ $\leftarrow$ ln.$\gamma$   $\sigma$_target[ln] / $\sigma$_current[ln]
+23:         ln.$\gamma$ $\leftarrow$ ln.$\gamma$ $\cdot$ $\sigma$_current[ln] / $\sigma$_target[ln]
 24:     end for
 25: end if
 26: return M'
@@ -362,7 +335,8 @@ For any $W$, $U_r$, $V_r$ from weighted SVD:
 \tag{4.14}
 \]
 
-where $W^*_r$ is the unweighted optimal rank-$r$ approximation. In practice, 
-the weighted SVD often achieves lower $\|W - U_r V_r\|_F$ than unweighted 
-because the weighting suppresses reconstruction error in low-variance 
-directions.
+where $W^*_r$ is the unweighted optimal rank-$r$ approximation. Combined with the weighted SVD bound from Appendix A.3:
+\[
+\|W - U_r V_r\|_F \leq \frac{\sqrt{\sum_{i > r} \sigma_i^2(W_\text{weighted})}}{\sqrt{\min_j F_j}}
+\]
+This makes the bound non-trivial: the reconstruction error is explicitly controlled by the tail singular values of the weighted matrix scaled by the minimal Fisher sensitivity. In practice, the weighted SVD achieves lower task degradation because the weighting suppresses reconstruction error in directions with small Fisher entries.

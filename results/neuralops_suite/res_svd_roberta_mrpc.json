@@ -1,0 +1,56 @@
+{
+  "track": "track1_svd",
+  "module_name": "res_svd",
+  "module_type": "attention",
+  "model_family": "roberta",
+  "dataset": "mrpc",
+  "status": "PASS",
+  "error_message": null,
+  "forward_latency_ms": 7.44,
+  "backward_latency_ms": 9.65,
+  "total_step_latency_ms": 17.09,
+  "throughput_samples_per_sec": 234.11,
+  "speedup_vs_baseline": 1.0,
+  "param_count": 0,
+  "trainable_param_count": 0,
+  "compression_ratio": 1.0083264855107659,
+  "peak_memory_mb": 0.0,
+  "memory_savings_pct": 0.0,
+  "loss": 0.6926,
+  "accuracy_pct": 31.62,
+  "f1_score": 0.0,
+  "perplexity": 0.0,
+  "grad_norm": 0.9924,
+  "mcc": 0.0,
+  "pearson": 0.0,
+  "spearman": 0.0,
+  "fidelity_score": 0.9997,
+  "flops_macs": 184979328,
+  "throughput_tokens_sec": 14983.29,
+  "latency_variance_ms": 8.3086,
+  "ci_lower": null,
+  "ci_upper": null,
+  "p_value_vs_baseline": null,
+  "mean_seed_acc": null,
+  "std_seed_acc": null,
+  "trajectories": {
+    "loss": [
+      0.6977,
+      0.6875
+    ],
+    "grad_norm": [
+      0.929,
+      1.0557
+    ],
+    "fwd_latency_ms": [
+      6.8271,
+      8.0446
+    ],
+    "bwd_latency_ms": [
+      6.8324,
+      12.4673
+    ]
+  },
+  "timestamp": "2026-09-18 14:33:48",
+  "quality_gate_56pct": "FAIL (<56%)"
+}
