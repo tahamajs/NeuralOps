@@ -80,8 +80,22 @@ export function renderTokenLifecycle(moduleMeta, modelKey = 'distilbert') {
             <span class="step-num">${s.num}</span>
             <div class="step-content">
                 <strong>${s.title}</strong>
-                <p>${s.sub}</p>
+                <p class="lifecycle-step-sub">${s.sub}</p>
             </div>
         </div>
     `).join('');
+
+    if (window.katex) {
+        listEl.querySelectorAll('.lifecycle-step-sub').forEach(el => {
+            const html = el.innerHTML;
+            const replaced = html.replace(/\$([^\$]+)\$/g, (match, formula) => {
+                try {
+                    return window.katex.renderToString(formula, { throwOnError: false, displayMode: false });
+                } catch (e) {
+                    return match;
+                }
+            });
+            el.innerHTML = replaced;
+        });
+    }
 }
