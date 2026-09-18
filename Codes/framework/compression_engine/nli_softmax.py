@@ -192,6 +192,12 @@ class NLISoftmaxAttention(BaseAttention):
         self.is_nested_encoder = bool(is_nested_encoder)
         self.dropout = nn.Dropout(_cfg_get(cfg, "attention_probs_dropout_prob", 0.1))
 
+        is_dec = kwargs.get("is_decoder", _cfg_get(cfg, "is_decoder", _cfg_get(cfg, "is_causal", False)))
+        m_type = str(_cfg_get(cfg, "model_type", "")).lower()
+        if any(m_type.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+            is_dec = True
+        self.is_decoder: bool = bool(is_dec)
+
         lora_r = int(kwargs.get("lora_rank", _cfg_get(cfg, "lora_rank", 16)))
         lora_a = float(kwargs.get("lora_alpha", _cfg_get(cfg, "lora_alpha", 32.0)))
         self.lora_rank = lora_r
@@ -204,6 +210,8 @@ class NLISoftmaxAttention(BaseAttention):
 
         old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
         if old_attn is not None:
+            if hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
+                self.is_decoder = True
             self.copy_weights(old_attn)
 
     def freeze_base_weights(self) -> None:
@@ -351,12 +359,22 @@ class NLISoftmaxAttention(BaseAttention):
         v = self.v_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
 
         scores = torch.matmul(q, k.transpose(-1, -2)) / math.sqrt(self.head_dim)
+        if self.is_decoder and N > 1:
+            causal_mask = torch.triu(
+                torch.full((N, N), -10000.0, device=scores.device, dtype=scores.dtype),
+                diagonal=1,
+            ).unsqueeze(0).unsqueeze(0)
+            scores = scores + causal_mask
+
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                scores = scores + attention_mask.unsqueeze(1).unsqueeze(2)
+                scores = scores + (attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+            elif attention_mask.dim() == 3:
+                scores = scores + (attention_mask.unsqueeze(1).float() - 1.0) * 10000.0
             elif attention_mask.dim() == 4:
-                scores = scores + attention_mask
+                scores = scores + attention_mask.to(scores.dtype)
 
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
         attn_probs = nli_softmax(scores, dim=-1)
         attn_probs = self.dropout(attn_probs)
 
