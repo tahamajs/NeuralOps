@@ -1,3 +1,7 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{optimal_subspace_projection}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_optimal\_subspace\_projection/roberta/summary.csv} & optimal\_subspace\_projection & PASS & 82.34\% & 556.31 MB \\
+\texttt{results/unified\_optimal\_subspace\_projection/distilbert/summary.csv} & optimal\_subspace\_projection & PASS\_NO\_COMPRESSION & 90.71\% & 183.07 MB \\
+\texttt{results/unified\_optimal\_subspace\_projection/gpt2/summary.csv} & optimal\_subspace\_projection & PASS & 78.1\% & 644.16 MB \\
+all\_121\_gpu\_matrix & optimal\_subspace\_projection & PASS & 1.0x (0.44s) & 204.4 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

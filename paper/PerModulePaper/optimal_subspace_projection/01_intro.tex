@@ -1,3 +1,7 @@
-\section{01 Intro}
+\section{Introduction}
 
-Formal architectural specifications for \texttt{optimal_subspace_projection}.
+\subsection{Motivation}
+Modern large transformer architectures incur substantial compute and memory overhead during training and deployment. Monolithic projection operations in multi-head attention and feed-forward networks dominate parameter storage. The \texttt{optimal_subspace_projection} module addresses these computational bottlenecks through specialized pruning, factorized projection, and quantization mechanisms.
+
+\subsection{Architectural Positioning}
+Integrated into the unified research framework, \texttt{optimal_subspace_projection} encapsulates dense projection weights into high-efficiency submodules while preserving representational fidelity and numerical stability across varied backbone families.

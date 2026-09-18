@@ -1,3 +1,8 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{oats}.
+\subsection{Algorithmic Formulation}
+The \texttt{oats} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{OATS: Outlier-Aware Training Sparsification. Registered as 'oats'.}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

@@ -1,3 +1,8 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{progressive_token_pruning}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_progressive\_token\_pruning/roberta/summary.csv} & progressive\_token\_pruning & PASS\_NO\_COMPRESSION & 80.5\% & 663.42 MB \\
+\texttt{results/unified\_progressive\_token\_pruning/distilbert/summary.csv} & progressive\_token\_pruning & PASS\_NO\_COMPRESSION & 90.83\% & 329.09 MB \\
+\texttt{results/unified\_progressive\_token\_pruning/gpt2/summary.csv} & progressive\_token\_pruning & PASS\_NO\_COMPRESSION & 78.78\% & 571.22 MB \\
+\texttt{results/agnews\_unified\_progressive\_token\_pruning/distilbert/summary.csv} & progressive\_token\_pruning & PASS\_NO\_COMPRESSION & 71.4\% & 575.12 MB \\
+\texttt{results/mnli\_unified\_progressive\_token\_pruning/distilbert/summary.csv} & progressive\_token\_pruning & PASS\_NO\_COMPRESSION & 41.1\% & 362.42 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}

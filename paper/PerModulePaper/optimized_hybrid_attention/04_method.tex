@@ -1,3 +1,21 @@
-\section{04 Method}
+\section{Methodology}
 
-Formal architectural specifications for \texttt{optimized_hybrid_attention}.
+\subsection{Algorithmic Formulation}
+The \texttt{optimized_hybrid_attention} engine executes structured parameter optimization and adaptive layer replacement:
+\begin{quote}\small\texttt{Optimized Hybrid Attention (OHA) – Production-Hardened.
+
+Fuses localized sliding-window self-attention with sequence-compressed low-rank global attention
+via dynamic head-wise gated modulation and exact pretrained weight transfer.
+
+Supports:
+- Multi-architecture copy\_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
+- Trainable LoRA adapters with frozen base weights
+- GQA with repeat\_kv
+- RoPE position embeddings
+- Causal masking for decoders
+- Nested encoder bypass
+- Frobenius norm verification (>= 1e-4)
+- Safe injection returning None on failure}\end{quote}
+
+\subsection{Numerical Stability and Fallback Protection}
+Before committing module replacements, the framework validates reconstruction error norms and parameter scaling factors. Should numerical instability arise or error ceilings be breached, safety guardrails maintain uncompressed execution or trigger localized LoRA adaptation.

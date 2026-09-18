@@ -1,3 +1,9 @@
-\section{07 Results}
-
-Formal architectural specifications for \texttt{optimized_hybrid_attention}.
+\section{Empirical Results}
+\begin{table}[H]\centering\small\begin{tabular}{lcccc}\toprule\textbf{Source} & \textbf{Target} & \textbf{Status} & \textbf{Performance} & \textbf{Peak VRAM} \\\midrule
+\texttt{results/unified\_optimized\_hybrid\_attention/roberta/summary.csv} & optimized\_hybrid\_attention & PASS\_NO\_COMPRESSION & 81.88\% & 669.6 MB \\
+\texttt{results/unified\_optimized\_hybrid\_attention/distilbert/summary.csv} & optimized\_hybrid\_attention & PASS\_NO\_COMPRESSION & 90.48\% & 337.15 MB \\
+\texttt{results/unified\_optimized\_hybrid\_attention/qwen3\_5/summary.csv} & optimized\_hybrid\_attention & SKIP\_QWEN3\_5\_TIMEOUT & 0.0\% & 1796.78 MB \\
+\texttt{results/unified\_optimized\_hybrid\_attention/gpt2/summary.csv} & optimized\_hybrid\_attention & PASS\_NO\_COMPRESSION & 79.36\% & 571.65 MB \\
+\texttt{results/agnews\_unified\_optimized\_hybrid\_attention/distilbert/summary.csv} & optimized\_hybrid\_attention & PASS\_NO\_COMPRESSION & 75.2\% & 641.67 MB \\
+\texttt{results/mnli\_unified\_optimized\_hybrid\_attention/distilbert/summary.csv} & optimized\_hybrid\_attention & PASS\_NO\_COMPRESSION & 41.1\% & 381.8 MB \\
+\bottomrule\end{tabular}\caption{Empirical evaluation across backbones.}\end{table}
