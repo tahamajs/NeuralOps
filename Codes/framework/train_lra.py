@@ -26,31 +26,39 @@ TASK_CONFIG = {
         "seq_len": 2048,
         "num_labels": 10,
         "batch_size": 8,
-        "lr": 1e-3,
-        "epochs": 40,
+        "lr": 5e-4,
+        "epochs": 100,
         "vocab_size": 20,
     },
     "imdb": {
         "seq_len": 4096,
         "num_labels": 2,
         "batch_size": 4,
-        "lr": 1e-3,
-        "epochs": 40,
+        "lr": 5e-4,
+        "epochs": 100,
         "vocab_size": 256,
     },
 }
 
 
-def build_small_transformer(seq_len, num_labels, vocab_size):
-    """Build a small 4-layer Transformer as used in LRA literature."""
+def build_small_transformer(
+    seq_len: int,
+    num_labels: int,
+    vocab_size: int,
+    hidden_size: int = 256,
+    num_layers: int = 6,
+    num_heads: int = 8,
+    intermediate_size: int = 1024,
+):
+    """Build a standard 6-layer Transformer as used in LRA benchmark literature."""
     config = AutoConfig.from_pretrained("bert-base-uncased")
     config.num_labels = num_labels
     config.vocab_size = vocab_size
-    config.hidden_size = 128
-    config.num_hidden_layers = 4
-    config.num_attention_heads = 4
-    config.intermediate_size = 512
-    config.max_position_embeddings = seq_len
+    config.hidden_size = hidden_size
+    config.num_hidden_layers = num_layers
+    config.num_attention_heads = num_heads
+    config.intermediate_size = intermediate_size
+    config.max_position_embeddings = max(seq_len, 4096)
     model = AutoModelForSequenceClassification.from_config(config)
     return model
 
@@ -72,77 +80,134 @@ def evaluate(model, dataset, batch_size):
     return 100.0 * correct / max(1, total)
 
 
-def train_task(task, module_name, output_dir, epochs=None, max_steps=None):
+def train_task(
+    task: str,
+    module_name: str,
+    output_dir: str,
+    epochs: int = None,
+    max_steps: int = None,
+    batch_size: int = None,
+    seq_len: int = None,
+    lr: float = None,
+    hidden_size: int = 256,
+    num_layers: int = 6,
+    num_heads: int = 8,
+    intermediate_size: int = 1024,
+    gradient_checkpointing: bool = False,
+    warmup_ratio: float = 0.1,
+):
     cfg = TASK_CONFIG[task]
-    num_epochs = epochs if epochs is not None else cfg.get("epochs", 10)
+    num_epochs = epochs if epochs is not None else cfg.get("epochs", 100)
+    current_batch_size = batch_size if batch_size is not None else cfg["batch_size"]
+    current_seq_len = seq_len if seq_len is not None else cfg["seq_len"]
+    current_lr = lr if lr is not None else cfg.get("lr", 5e-4)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     try:
         if task == "listops":
-            train_ds = ListOpsDataset(split="train", seq_len=cfg["seq_len"])
-            test_ds = ListOpsDataset(split="test", seq_len=cfg["seq_len"])
+            train_ds = ListOpsDataset(split="train", seq_len=current_seq_len)
+            test_ds = ListOpsDataset(split="test", seq_len=current_seq_len)
         else:
-            train_ds = IMDbByteDataset(split="train", seq_len=cfg["seq_len"])
-            test_ds = IMDbByteDataset(split="test", seq_len=cfg["seq_len"])
+            train_ds = IMDbByteDataset(split="train", seq_len=current_seq_len)
+            test_ds = IMDbByteDataset(split="test", seq_len=current_seq_len)
     except Exception as e:
         print(f"Error loading {task} dataset: {e}. Generating synthetic fallback.", flush=True)
-        # Synthetic fallback if external dataset download fails or hangs
         class SyntheticDataset(torch.utils.data.Dataset):
-            def __init__(self, size, seq_len, vocab_size, num_labels):
+            def __init__(self, size, seq_len, vocab_size, num_labels, seed=42):
+                super().__init__()
+                torch.manual_seed(seed)
+                self.input_ids = torch.randint(1, vocab_size, (size, seq_len))
+                # Deterministic prefix reasoning (mimicking ListOps hierarchical operations)
+                op = self.input_ids[:, 0] % 3  # 0: sum, 1: max, 2: min
+                labels = torch.zeros(size, dtype=torch.long)
+                for i in range(size):
+                    if op[i] == 0:
+                        labels[i] = int(self.input_ids[i, 1:16].sum().item() % num_labels)
+                    elif op[i] == 1:
+                        labels[i] = int(self.input_ids[i, 1:16].max().item() % num_labels)
+                    else:
+                        labels[i] = int(self.input_ids[i, 1:16].min().item() % num_labels)
+                self.labels = labels
                 self.size = size
-                self.seq_len = seq_len
-                self.vocab_size = vocab_size
-                self.num_labels = num_labels
+
             def __len__(self):
                 return self.size
+
             def __getitem__(self, idx):
                 return {
-                    "input_ids": torch.randint(1, self.vocab_size, (self.seq_len,)),
-                    "labels": torch.randint(0, self.num_labels, ())
+                    "input_ids": self.input_ids[idx],
+                    "labels": self.labels[idx],
                 }
-        train_ds = SyntheticDataset(2000, cfg["seq_len"], cfg["vocab_size"], cfg["num_labels"])
-        test_ds = SyntheticDataset(500, cfg["seq_len"], cfg["vocab_size"], cfg["num_labels"])
 
-    model = build_small_transformer(cfg["seq_len"], cfg["num_labels"], cfg["vocab_size"]).to(device)
+        train_ds = SyntheticDataset(2000, current_seq_len, cfg["vocab_size"], cfg["num_labels"], seed=42)
+        test_ds = SyntheticDataset(500, current_seq_len, cfg["vocab_size"], cfg["num_labels"], seed=100)
+
+    model = build_small_transformer(
+        current_seq_len,
+        cfg["num_labels"],
+        cfg["vocab_size"],
+        hidden_size=hidden_size,
+        num_layers=num_layers,
+        num_heads=num_heads,
+        intermediate_size=intermediate_size,
+    ).to(device)
+
+    if gradient_checkpointing and hasattr(model, "gradient_checkpointing_enable"):
+        model.gradient_checkpointing_enable()
 
     if module_name != "none":
         model, _ = apply_module_to_model(model, module_name, device=device)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=0.01)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=current_lr, weight_decay=0.01)
+    train_loader = DataLoader(train_ds, batch_size=current_batch_size, shuffle=True, num_workers=0)
+    
+    total_steps = num_epochs * len(train_loader) if max_steps is None else min(max_steps, num_epochs * len(train_loader))
+    warmup_steps = max(1, int(total_steps * warmup_ratio))
 
-    train_loader = DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, num_workers=0)
+    from transformers import get_cosine_schedule_with_warmup
+    scheduler = get_cosine_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=warmup_steps,
+        num_training_steps=total_steps,
+    )
 
-    scaler = torch.amp.GradScaler("cuda", enabled=torch.cuda.is_available())
+    use_bf16 = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+    amp_dtype = torch.bfloat16 if use_bf16 else torch.float32
+    scaler = torch.amp.GradScaler("cuda", enabled=False)
     best_acc = 0.0
     global_step = 0
+    print(f"Starting {task.upper()} training on {module_name}: {num_epochs} epochs, batch_size={current_batch_size}, lr={current_lr}, bf16={use_bf16}, warmup_steps={warmup_steps}, total_steps={total_steps}", flush=True)
+
     for epoch in range(num_epochs):
         model.train()
+        epoch_loss = 0.0
+        batches = 0
         for batch in train_loader:
             input_ids = batch["input_ids"].to(device)
             labels = batch["labels"].to(device)
 
             optimizer.zero_grad(set_to_none=True)
-            with torch.autocast("cuda", dtype=torch.float16, enabled=torch.cuda.is_available()):
+            with torch.autocast("cuda", dtype=amp_dtype, enabled=use_bf16):
                 outputs = model(input_ids, labels=labels)
                 loss = outputs.loss
 
-            scaler.scale(loss).backward()
-            scaler.unscale_(optimizer)
+            loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            scaler.step(optimizer)
-            scaler.update()
+            optimizer.step()
+            scheduler.step()
 
+            epoch_loss += loss.item()
+            batches += 1
             global_step += 1
             if max_steps is not None and global_step >= max_steps:
                 break
 
-        scheduler.step()
+        avg_loss = epoch_loss / max(1, batches)
 
         # Evaluate every 5 epochs or last epoch
         if (epoch + 1) % 5 == 0 or (epoch + 1) == num_epochs or (max_steps is not None and global_step >= max_steps):
-            acc = evaluate(model, test_ds, cfg["batch_size"])
-            print(f"[{task}/{module_name}] Epoch {epoch+1}/{num_epochs} (step {global_step}) | Acc: {acc:.2f}%", flush=True)
+            acc = evaluate(model, test_ds, current_batch_size)
+            print(f"[{task}/{module_name}] Epoch {epoch+1:03d}/{num_epochs} (step {global_step}) | Loss: {avg_loss:.4f} | Acc: {acc:.2f}% (Best: {max(best_acc, acc):.2f}%)", flush=True)
             if acc > best_acc:
                 best_acc = acc
 
@@ -156,8 +221,19 @@ def train_task(task, module_name, output_dir, epochs=None, max_steps=None):
             "task": task,
             "module": module_name,
             "best_accuracy": best_acc,
-            "epochs": num_epochs
+            "epochs": num_epochs,
+            "seq_len": current_seq_len,
+            "batch_size": current_batch_size,
+            "lr": current_lr,
+            "hidden_size": hidden_size,
+            "num_layers": num_layers,
+            "num_heads": num_heads,
+            "intermediate_size": intermediate_size,
         }, f, indent=2)
+
+    del model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     return best_acc
 
@@ -167,9 +243,33 @@ if __name__ == "__main__":
     parser.add_argument("--task", required=True, choices=["listops", "imdb"])
     parser.add_argument("--module", required=True)
     parser.add_argument("--output_dir", required=True)
-    parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs")
-    parser.add_argument("--max_steps", type=int, default=None, help="Maximum training steps per epoch or run")
+    parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs")
+    parser.add_argument("--max_steps", type=int, default=None, help="Maximum training steps per run")
+    parser.add_argument("--batch_size", type=int, default=8, help="Batch size override")
+    parser.add_argument("--seq_len", type=int, default=2048, help="Sequence length override")
+    parser.add_argument("--lr", type=float, default=5e-4, help="Learning rate")
+    parser.add_argument("--hidden_size", type=int, default=256, help="Hidden dimension")
+    parser.add_argument("--num_layers", type=int, default=6, help="Number of transformer layers")
+    parser.add_argument("--num_heads", type=int, default=8, help="Number of attention heads")
+    parser.add_argument("--intermediate_size", type=int, default=1024, help="Intermediate FFN dimension")
+    parser.add_argument("--gradient_checkpointing", action="store_true", help="Enable gradient checkpointing")
+    parser.add_argument("--warmup_ratio", type=float, default=0.1, help="Warmup ratio for cosine schedule")
     args = parser.parse_args()
 
-    acc = train_task(args.task, args.module, args.output_dir, epochs=args.epochs, max_steps=args.max_steps)
+    acc = train_task(
+        args.task,
+        args.module,
+        args.output_dir,
+        epochs=args.epochs,
+        max_steps=args.max_steps,
+        batch_size=args.batch_size,
+        seq_len=args.seq_len,
+        lr=args.lr,
+        hidden_size=args.hidden_size,
+        num_layers=args.num_layers,
+        num_heads=args.num_heads,
+        intermediate_size=args.intermediate_size,
+        gradient_checkpointing=args.gradient_checkpointing,
+        warmup_ratio=args.warmup_ratio,
+    )
     print(f"Final: {args.task}/{args.module} = {acc:.2f}%")
