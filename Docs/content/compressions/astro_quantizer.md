@@ -543,6 +543,7 @@ print('Compressed output logits:', outputs.logits.shape)
 | **distilbert-sst2** | ag_news | `PASS` | 51.00% | **62.90%** | +11.90% | 0.6281 | 1.00x | 33 | N/A | 2026-09-18 |
 | **roberta-base** | ag_news | `PASS` | 74.50% | **83.30%** | +8.80% | 0.8212 | 1.00x | 72 | N/A | 2026-09-18 |
 | **distilbert-sst2** | sst2 | `PASS` | 91.06% | **90.60%** | -0.46% | 0.9095 | 1.00x | 33 | [svd-linear-attention-distilbert-sst2-astro](https://huggingface.co/Hooshaai/svd-linear-attention-distilbert-sst2-astro) | 2026-09-19 |
+| **roberta-base** | sst2 | `PASS` | 50.92% | **57.57%** | +6.65% | 0.7045 | 1.00x | 0 | [svd-linear-attention-roberta-base-ast](https://huggingface.co/Hooshaai/svd-linear-attention-roberta-base-ast) | 2026-09-19 |
 
 
 Evaluations across sequence lengths and model scales:
