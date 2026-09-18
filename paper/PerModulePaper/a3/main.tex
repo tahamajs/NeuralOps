@@ -105,14 +105,30 @@ information, LayerNorm recalibration, transformer efficiency
 \input{09_discussion.tex}
 \input{10_limitations.tex}
 \input{11_conclusion.tex}
-\input{12_reproducibility.tex}
 \input{13_references.tex}
 
 % --- Appendices ---
 \clearpage
 \appendix
-\section*{Appendices}
-\addcontentsline{toc}{section}{Appendices}
+\onecolumn
+\begin{center}
+{\Large\bfseries Supplementary Material: Appendix for A3}
+\end{center}
+\vspace{1em}
+
+\noindent This supplementary appendix provides comprehensive mathematical proofs, algorithmic listings, extended empirical data across multiple benchmark tasks, negative results, and ethical considerations:
+\begin{itemize}
+    \item \textbf{Appendix A (Mathematical Proofs and Bounds):} Full proofs of Eckart-Young optimality under Fisher weighting, streaming convergence, asymptotic complexity, and break-even parameter bounds.
+    \item \textbf{Appendix B (Implementation and Systems Details):} Complete pseudocode (Algorithm 1), module structures, wrapper implementations, exception handling, and reproduction scripts.
+    \item \textbf{Appendix C (Full Experimental Benchmarks):} Exhaustive per-layer parameter tallies, hardware profiling, rank ablations ($r=32$--$256$), weighting ablations, and compound INT8 quantization.
+    \item \textbf{Appendix D (Negative Results and Failure Modes):} Diagnostic breakdown of all 18 fallback layers in DistilBERT, failed algorithmic variants, and hyperparameter sensitivity in failed regimes.
+    \item \textbf{Appendix E (Ethical Considerations):} Broader societal impacts, carbon emissions analysis, compute resources, and data usage ethics.
+\end{itemize}
+\vspace{1.5em}
+\hrule
+\vspace{1.5em}
+
+\twocolumn
 
 \input{A_math.tex}
 \input{B_implementation.tex}

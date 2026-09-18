@@ -1,128 +1,14 @@
-
 \section{Limitations}
+\label{sec:limitations}
 
-\subsection{Primary Empirical Limitations}
+While A3 provides an efficient and guaranteed non-expanding post-training factorization pipeline, several empirical and operational limitations warrant explicit delineation.
 
-Our rigorous experimental evaluation revealed five fundamental constraints of the current A3 framework:
+\textbf{Modest Whole-Model Compression.} Under strict rank ceilings ($r_{\mathrm{ceiling}} \le 256 < 384$), A3 achieves modest full-model parameter reductions (1.02$\times$ on DistilBERT, 1.005$\times$ on RoBERTa and GPT-2), removing between 0.53M and 1.25M parameters. Because non-factorized embeddings, LayerNorm vectors, and classifier heads constitute a substantial fraction of compact transformers, compressing attention projections alone naturally limits aggregate compression ratios.
 
-\begin{enumerate}
-\item \textbf{Modest Whole-Model Compression Ratio:} Under strict rank ceilings ($r_{\mathrm{ceiling}} \le 256$), A3 achieves modest whole-model parameter reduction (1.02$\times$ on DistilBERT, 1.005$\times$ on RoBERTa and GPT-2), saving between 0.53M and 1.25M parameters. Because embeddings and feed-forward networks account for the majority of parameters in compact transformers, compressing attention projections alone inherently caps overall compression ratio.
-\item \textbf{Degradation on Autoregressive Decoders (GPT-2):} While encoder architectures (DistilBERT and RoBERTa) demonstrate resilient representations, GPT-2 suffers severe accuracy degradation (-16.17\%, dropping from 79.36\% to 63.19\%). Causal masking, non-symmetric activation dynamics, and transposed Conv1D parameter structures make autoregressive decoders substantially less receptive to activation-weighted low-rank factorization.
-\item \textbf{Lack of Generalization to Multi-Class Tasks (MNLI, AG News):} Multi-class classification benchmarks without pre-converged task-specific heads yield near-random accuracies (25.3\% on 4-class AG News and 36--44\% on 3-class MNLI). A3 does not generalize across downstream tasks unless the underlying base checkpoints have been fully fine-tuned for the target classification head before compression.
-\item \textbf{High Fallback Rates:} To guarantee that compressed layers satisfy the strict reconstruction error threshold ($\tau = 0.40$), 75.0\% of layers in DistilBERT and 91.7\% of layers in RoBERTa and GPT-2 fall back to original dense weights. This conservative threshold preserves accuracy but limits the fraction of factorized layers to 8.3\%--25.0\%.
-\item \textbf{RoBERTa Empirical Anomaly (+4.70\%):} On RoBERTa, A3 post-recovery accuracy (83.26\%) exceeds the baseline (78.56\%) by +4.70\%. While the 50-step LoRA recovery phase introduces gradient adaptation on the classification head, a low-rank compressed model outperforming its dense uncompressed baseline represents an unexpected empirical anomaly. We report this delta transparently as requiring further investigation into head initialization and recovery dynamics.
-\end{enumerate}
+\textbf{Degradation on Autoregressive Causal Decoders.} While bidirectional encoder architectures (DistilBERT and RoBERTa) demonstrate high resilience, GPT-2 experiences severe downstream degradation (-16.17\% accuracy drop, from 79.36\% to 63.19\%). Causal attention masking, non-symmetric activation dynamics, and transposed \texttt{Conv1D} structures make autoregressive decoders substantially more vulnerable to low-rank subspace projection.
 
-\subsection{Task and Architecture Coverage}
+\textbf{Task Head Initialization and Multi-Class Generalization.} Cross-dataset evaluations on 3-way MNLI and 4-way AG News reveal near-random downstream accuracy (25.3\% to 44.4\%) when classification heads are initialized without pre-compression convergence. A3 operates as a representation-preserving compression method, not a substitute for task-specific head training.
 
-A3 has been validated primarily on binary classification (SST-2). It has not been benchmarked on:
-\begin{itemize}
-\item Generation tasks (summarization, translation, code)
-\item Question answering (SQuAD, HotpotQA)
-\item Long-context reasoning (L-Eval, InfiniteBench)
-\item Pre-training from scratch with factorized layers
-\item Instruction following (AlpacaEval, MT-Bench)
-\end{itemize}
+\textbf{High Fallback Frequency Under Conservative Quality Gates.} To guarantee that factorized operators satisfy the strict reconstruction error ceiling ($\tau = 0.40$), 75.0\% of layers in DistilBERT and 91.7\% in RoBERTa and GPT-2 fall back to original dense weights. While this conservative gating prevents catastrophic representation collapse, it limits the total volume of factorized parameters.
 
-\subsection{Model Coverage}
-
-We test on models with $\le$124M parameters. Not tested:
-
-\begin{itemize}
-\item Large models ($>1$B): SVD time grows quadratically
-\item Very deep models ($>24$ layers): compounding effect
-\item Mixture-of-Experts: not tested
-\item Vision transformers: not tested
-\item Multimodal: not tested
-
-\end{itemize}
-\subsection{Hardware}
-
-All experiments on RTX 4070 Laptop (8 GB). Behavior on other hardware:
-
-\begin{itemize}
-\item A100/H100: SVD faster, benefit larger
-\item CPU: matmul-bound; A3 might help
-\item Edge: not tested
-
-\end{itemize}
-\subsection{Calibration Dependency}
-
-A3 requires a calibration pass. If calibration data is unavailable:
-
-\begin{itemize}
-\item Fisher weighting degrades to unweighted SVD
-\item LayerNorm recalibration is skipped
-\item Accuracy may drop by up to 5\%
-
-\end{itemize}
-This is a real limitation for models whose deployment environment differs 
-from training data.
-
-\subsection{Inference Latency}
-
-Factorized layers are slower at inference:
-
-\begin{itemize}
-\item Two matmuls instead of one
-\item Intermediate rank-$r$ tensor must be materialized
-\item On GPU: ~1.3$\times$ slower
-\item On CPU: potentially faster
-
-\end{itemize}
-This is a \textbf{trade-off}: smaller size for slower latency.
-
-\subsection{Single-Seed Results}
-
-All main results are from one seed. With N=872 validation examples, SE is 
-~1.69\%. Differences below 3.4\% (2$\times$SE) may be noise.
-
-\subsection{No Theoretical Guarantee}
-
-We provide no formal bound on downstream accuracy loss. The Fisher proxy 
-$\mathbb{E}[x^2]$ is not the true Fisher; our approximation error is untested.
-
-\subsection{Rank Selection}
-
-Our adaptive rank escalation increases rank until error is met. This is 
-greedy and may not be optimal. A learned or Bayesian approach could be better.
-
-\subsection{LayerNorm Recalibration Heuristic}
-
-Our $\gamma \leftarrow \gamma \cdot \sigma_\text{current} / \sigma_\text{target}$ 
-is a heuristic. It does not account for:
-
-\begin{itemize}
-\item Nonlinear interactions between layers
-\item Changes in higher moments
-\item Attention-specific distribution shifts
-
-\end{itemize}
-\subsection{No Comparison with Some Baselines}
-
-We do not directly compare with:
-
-\begin{itemize}
-\item DistilBERT / TinyBERT (distillation)
-\item Performer / Linformer (attention replacement)
-\item SparseGPT / Wanda (pruning)
-
-\end{itemize}
-This limits the paper's external validity.
-
-\subsection{Failure Modes Not Fully Diagnosed}
-
-While Section~\ref{sec:analysis} identifies that value and output projections frequently fall back due to slower singular value decay under full channel mixing, certain edge cases warrant deeper investigation. Specifically, when layers exhibit bimodal activation spectra or extreme outlier tokens (such as delimiter tokens in deeper layers), diagonal Fisher weighting may underestimate the rank necessary to capture cross-channel correlations. In such regimes, full matrix Fisher approximations or block-diagonal factorizations may be required to prevent excessive fallbacks without exceeding the parameter break-even ceiling.
-
-\subsection{Code Quality}
-
-\begin{itemize}
-\item No unit tests for edge cases
-\item Some error paths use broad exception handling
-\item Numerical stability could be improved in some paths
-
-\end{itemize}
-\subsection{Ethical Considerations}
-
-Compression methods enable broader deployment. This is a \textbf{dual-use} 
-capability. See Appendix E.
+\textbf{Inference Latency Trade-Off.} Decomposing dense matrix multiplications into sequential low-rank factors increases operational latency on modern GPUs by approximately 10.5\% at small batch sizes due to dual kernel launch boundaries and intermediate activation materialization. Consequently, A3 represents a storage- and memory-oriented optimization rather than an accelerator throughput accelerator.

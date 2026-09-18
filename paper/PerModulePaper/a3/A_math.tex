@@ -132,3 +132,95 @@ Dividing by $N_\text{total} = \sum_k N^{(k)}$:
 \]
 
 which converges to $\mathbb{E}[x x^\top]$ by the law of large numbers. $\square$
+
+\subsection{A.6 Complexity and Memory Footprint Analysis}
+\label{sec:app_complexity}
+
+Table~\ref{tab:complexity_analysis} provides an asymptotic breakdown of computational runtime complexity and auxiliary working memory across the five stages of A3.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Pipeline Phase} & \textbf{Computational Time Complexity} & \textbf{Auxiliary Memory Complexity} \\
+\midrule
+Phase 1: Streaming Calibration & $\mathcal{O}(N \sum_\ell d_\ell^2)$ & $\mathcal{O}(N_l d_\text{max}^2)$ \\
+Phase 2: Fisher-Weighted SVD & $\mathcal{O}(\sum_\ell d_\text{out}^{(\ell)} d_\text{in}^{(\ell)} \min(d_\text{out}^{(\ell)}, d_\text{in}^{(\ell)}))$ & $\mathcal{O}(d_\text{max}^2)$ \\
+Phase 3: Frobenius Validation & $\mathcal{O}(\sum_\ell r_\ell d_\text{out}^{(\ell)} d_\text{in}^{(\ell)})$ & $\mathcal{O}(d_\text{out} d_\text{in})$ \\
+Phase 4: Adaptive Rank Escalation & $\mathcal{O}(K \sum_{\ell \in \text{retry}} d_\text{out}^{(\ell)} d_\text{in}^{(\ell)} r_{\ell,\text{new}})$ & $\mathcal{O}(d_\text{max}^2)$ \\
+Phase 5: LayerNorm Recalibration & $\mathcal{O}(N \sum_\ell d_\ell)$ & $\mathcal{O}(N_l d_\text{max})$ \\
+\bottomrule
+\end{tabular}
+\caption{Asymptotic time and space complexity across A3 compression stages for $N$ calibration tokens, $N_l$ transformer layers, and maximum hidden dimension $d_\text{max}$.}
+\label{tab:complexity_analysis}
+\end{table}
+
+On DistilBERT (66.95M parameters, $d=768$), total calibration and factorization consumes under 45 seconds of CPU/GPU wall-clock time on an NVIDIA RTX 4070 Laptop GPU, with maximum auxiliary host memory remaining below 17 MB.
+
+\subsection{A.7 Exact Parameter Counting and Dimensional Break-Even Bounds}
+\label{sec:app_parameter_counting}
+
+For a linear projection matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$, the uncompressed parameter count is $P_\text{orig} = d_\text{out} \cdot d_\text{in}$. Factoring $W$ into $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d_\text{in}}$ yields $P_\text{A3} = r(d_\text{out} + d_\text{in})$.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Configuration} & \textbf{Parameter Formula} & \textbf{DistilBERT ($d=768, r=64$)} & \textbf{RoBERTa ($d=768, r=128$)} & \textbf{GPT-2 ($d=768, r=128$)} \\
+\midrule
+Original Dense Projection & $d_\text{out} d_\text{in}$ & 589,824 & 589,824 & 589,824 \\
+A3 Low-Rank Factorization & $r(d_\text{out} + d_\text{in})$ & 98,304 & 196,608 & 196,608 \\
+A3 + LoRA Adapter ($r_L=16$) & $(r + r_L)(d_\text{out} + d_\text{in})$ & 122,880 & 221,184 & 221,184 \\
+Single-Layer Reduction Factor & $\frac{d_\text{out} d_\text{in}}{r(d_\text{out} + d_\text{in})}$ & \textbf{6.00$\times$} (4.80$\times$ w/ LoRA) & \textbf{3.00$\times$} (2.67$\times$ w/ LoRA) & \textbf{3.00$\times$} (2.67$\times$ w/ LoRA) \\
+\bottomrule
+\end{tabular}
+\caption{Parameter counting formulation and representative numerical values across benchmark transformer dimensions.}
+\label{tab:parameter_counting_formulation}
+\end{table}
+
+\textbf{Dimensional Break-Even Condition.} Factorization achieves genuine parameter reduction ($P_\text{A3} < P_\text{orig}$) if and only if:
+\begin{equation}
+r < r_\text{break-even} = \frac{d_\text{out} d_\text{in}}{d_\text{out} + d_\text{in}}
+\tag{A.16}
+\end{equation}
+For square projections where $d_\text{in} = d_\text{out} = d$, the break-even rank is exactly $r_\text{break-even} = d/2 = 384$. By enforcing a strict rank ceiling $r_{\mathrm{ceiling}} \le 256 < 384$, A3 mathematically guarantees that factorized layers never expand parameter counts.
+
+\subsection{A.8 Mathematical Notation and Dimensionality Reference}
+\label{sec:app_notation}
+
+Table~\ref{tab:app_notation_summary} catalogs all mathematical symbols, tensor shapes, and operational variables deployed throughout the methodological formulation and empirical evaluation of A3.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{Dimension / Type} \\
+\midrule
+$W$ & Weight parameter matrix & $d_\text{out} \times d_\text{in}$ \\
+$U$ & Left factor low-rank matrix & $d_\text{out} \times r$ \\
+$V$ & Right factor low-rank matrix & $r \times d_\text{in}$ \\
+$\Sigma$ & Singular value diagonal matrix & $r \times r$ \\
+$r$ & Low-rank compression target & scalar integer \\
+$r_{\mathrm{ceiling}}$ & Enforced parameter rank ceiling & scalar integer ($\le 256$) \\
+$\tau$ & Frobenius error acceptance threshold & scalar float ($0.40$) \\
+$F$ & Empirical Fisher diagonal vector & $d_\text{in}$ \\
+$C_X$ & Outer-product activation covariance & $d_\text{in} \times d_\text{in}$ \\
+$x$ & Layer input activation vector & $d_\text{in}$ \\
+$y$ & Layer output activation vector & $d_\text{out}$ \\
+$\sigma_i$ & $i$-th singular value & scalar float \\
+$\epsilon$ & Numerical stability floor & scalar ($10^{-6}$) \\
+$\gamma$ & LayerNorm affine scale vector & $d_\text{model}$ \\
+$\beta$ & LayerNorm affine bias vector & $d_\text{model}$ \\
+$\sigma_\text{target}$ & Pre-compression token standard deviation & scalar float \\
+$\sigma_\text{current}$ & Post-compression token standard deviation & scalar float \\
+$N$ & Number of calibration sequences & scalar integer ($1000$) \\
+$L$ & Maximum token sequence length & scalar integer ($128$) \\
+$B$ & Forward evaluation batch size & scalar integer \\
+\bottomrule
+\end{tabular}
+\caption{Consolidated reference catalog of mathematical notations, symbols, and tensor dimensions.}
+\label{tab:app_notation_summary}
+\end{table}

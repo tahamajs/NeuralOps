@@ -57,22 +57,7 @@ We impose four core constraints on the compression pipeline to ensure production
 To satisfy these objectives, we propose \textbf{A3} (\textbf{A}ctivation-\textbf{A}ware \textbf{A}daptive factorization), a framework that departs from conventional truncated SVD across four foundational dimensions. First, A3 utilizes empirical Fisher-diagonal weighting by estimating the sensitivity vector $F_i = \mathbb{E}_x[x_i^2]$ from calibration tokens and reweighting the input space via $W_\text{weighted} = W \cdot \mathrm{diag}(\sqrt{F + \epsilon})$ to protect high-impact feature coordinates. Second, online streaming covariance accumulation gathers both the diagonal Fisher vector $F$ and the outer-product matrix $C_X$ in constant $\mathcal{O}(d^2)$ working memory regardless of calibration sequence count. Third, adaptive rank escalation dynamically adjusts the allocated low-rank budget: when initial factorization exceeds the error threshold $\tau$, the algorithm progressively increments the candidate rank up to $\min(d_\text{in}, d_\text{out})$, re-evaluating the factorization until convergence or deterministic fallback occurs. Fourth, post-factorization LayerNorm recalibration rescales the affine parameter $\gamma$ according to the ratio of observed to target standard deviations ($\sigma_\text{current} / \sigma_\text{target}$), effectively compensating for activation variance shrinkage induced by truncation.
 \subsection{Contributions}
 
-We make the following contributions:
-
-\begin{itemize}
-\item \textbf{A streaming activation-aware compression algorithm.} We propose A3,
-  which combines Fisher weighting, streaming covariance accumulation, adaptive
-  rank escalation, and LayerNorm recalibration into a single pipeline.
-\item \textbf{A production-hardened implementation.} Our PyTorch implementation
-  handles flat, nested, and causal architectures with safe fallback, strict
-  Frobenius validation, and CoO(nstant) memory overhead.
-\item \textbf{A comprehensive evaluation.} We benchmark on DistilBERT, RoBERTa, and
-  GPT-2 on SST-2 with ablations over rank, weighting strategy, and LayerNorm
-  recalibration.
-\item \textbf{Full reproducibility.} Code, checkpoints, and evaluation scripts are
-  released under MIT.
-
-\end{itemize}
+In summary, this work makes four primary contributions. First, we propose A3, a streaming activation-aware low-rank compression framework that synergistically integrates empirical Fisher diagonal weighting, constant $\mathcal{O}(d^2)$ streaming covariance accumulation, adaptive rank escalation, and closed-form LayerNorm affine recalibration. Second, we deliver a production-hardened PyTorch implementation supporting flat, nested, and causal transformer architectures with deterministic fallback and zero-transient-memory CPU FP32 SVD factorization. Third, we establish comprehensive empirical benchmarks across DistilBERT, RoBERTa, and GPT-2 on SST-2 alongside multi-class stress tests on MNLI and AG News, rigorously dissecting the impact of rank ceilings, subspace weighting, and normalization dynamics. Finally, we provide full open-source reproducibility, releasing all factorization code, fine-tuning recipes, and model checkpoints under an open MIT license.
 \subsection{Paper Organization}
 
 Section 2 reviews related work in low-rank compression, activation-aware 

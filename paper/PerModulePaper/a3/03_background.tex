@@ -47,7 +47,7 @@ For a probabilistic model $p_\theta(y | x)$, the Fisher information is:
 For a linear layer $y = Wx + b$, the Fisher with respect to $x$ is:
 
 \[
-\mathcal{F}_x = \mathbb{E}_{x}\!\left[\frac{\partial \mathcal{L}}{\partial x} \frac{\partial \mathcal{L}}{\partial x}^\top\right]
+\mathcal{F}_x = \mathbb{E}_{x}\!\left[\left(\frac{\partial \mathcal{L}}{\partial x}\right) \left(\frac{\partial \mathcal{L}}{\partial x}\right)^\top\right]
 \tag{3.5}
 \]
 
@@ -129,33 +129,37 @@ where $s = \alpha / r$ is the scaling factor. The frozen $U, V$ provide the
 bulk of the computation; LoRA provides the recovery signal.
 
 \subsection{Notation Summary}
+\label{sec:notation_summary}
+
+Table~\ref{tab:notation_summary} compiles the mathematical notations, symbols, and tensor dimensions used throughout this paper.
 
 \begin{table}[H]
 \centering
 \small
 \begin{tabular}{lll}
 \toprule
-\textbf{Symbol} & \textbf{Meaning} & \textbf{Dimension} \\
+\textbf{Symbol} & \textbf{Meaning} & \textbf{Dimension / Type} \\
 \midrule
-$W$ & Weight matrix & $d_\text{out} \times d_\text{in}$ \\
-$U$ & Left factor & $d_\text{out} \times r$ \\
-$V$ & Right factor & $r \times d_\text{in}$ \\
-$\Sigma$ & Singular value diagonal & $r \times r$ \\
-$r$ & Compression rank & scalar \\
-$\tau$ & Error threshold & scalar \\
-$F$ & Empirical Fisher diagonal & $d_\text{in}$ \\
-$C_X$ & Activation covariance & $d_\text{in} \times d_\text{in}$ \\
-$x$ & Input activation & $d_\text{in}$ \\
-$y$ & Output activation & $d_\text{out}$ \\
-$\sigma_i$ & $i$-th singular value & scalar \\
-$\epsilon$ & Numerical stability & scalar ($10^{-6}$) \\
-$\gamma$ & LayerNorm scale & $d_\text{model}$ \\
-$\beta$ & LayerNorm shift & $d_\text{model}$ \\
-$\sigma_\text{target}$ & Pre-compression std & scalar \\
-$\sigma_\text{current}$ & Post-compression std & scalar \\
-$N$ & Calibration samples & scalar \\
-$L$ & Sequence length & scalar \\
-$B$ & Batch size & scalar \\
+$W$ & Weight parameter matrix & $d_\text{out} \times d_\text{in}$ \\
+$U$ & Left factor low-rank matrix & $d_\text{out} \times r$ \\
+$V$ & Right factor low-rank matrix & $r \times d_\text{in}$ \\
+$\Sigma$ & Singular value diagonal matrix & $r \times r$ \\
+$r$ & Low-rank compression target & scalar integer \\
+$r_{\mathrm{ceiling}}$ & Enforced parameter rank ceiling & scalar integer ($\le 256$) \\
+$\tau$ & Frobenius error acceptance threshold & scalar float ($0.40$) \\
+$F$ & Empirical Fisher diagonal vector & $d_\text{in}$ \\
+$C_X$ & Outer-product activation covariance & $d_\text{in} \times d_\text{in}$ \\
+$x$ & Layer input activation vector & $d_\text{in}$ \\
+$y$ & Layer output activation vector & $d_\text{out}$ \\
+$\sigma_i$ & $i$-th singular value & scalar float \\
+$\epsilon$ & Numerical stability floor & scalar ($10^{-6}$) \\
+$\gamma$ & LayerNorm affine scale vector & $d_\text{model}$ \\
+$\beta$ & LayerNorm affine bias vector & $d_\text{model}$ \\
+$\sigma_\text{target}$ & Pre-compression token standard deviation & scalar float \\
+$\sigma_\text{current}$ & Post-compression token standard deviation & scalar float \\
+$N$ & Number of calibration sequences & scalar integer ($1000$) \\
+$L$ & Maximum token sequence length & scalar integer ($128$) \\
+$B$ & Forward evaluation batch size & scalar integer \\
 \bottomrule
 \end{tabular}
 \caption{Mathematical symbols, operations, and tensor dimensions used throughout this paper.}

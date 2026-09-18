@@ -13,6 +13,7 @@ A3 compresses a pretrained transformer in five sequential phases. The first phas
 \end{figure}
 
 \subsection{Phase 1: Streaming Calibration}
+\label{sec:streaming_calibration}
 
 \subsubsection{Problem}
 
@@ -48,9 +49,10 @@ C_X^{(\ell)} = \frac{\sum_k C^{(k)}}{\sum_k N^{(k)}}
 
 \subsubsection{Calibration Data Sources}
 
-A3 ingests calibration inputs through three hierarchical modalities. First, an explicit \texttt{calibration\_loader} provides pre-batched domain-specific tensors. Alternatively, raw string sequences passed via \texttt{calibration\_texts} are tokenized dynamically with streaming batching. When no domain-specific text is available, default synthetic sequences provide weakly calibrated feature scales. If all calibration sources are omitted, A3 deterministically falls back to unweighted truncated SVD (\S\ref{sec:unweighted_svd_fallback}).
+A3 ingests calibration inputs through three hierarchical modalities. First, an explicit \texttt{calibration\_loader} provides pre-batched domain-specific tensors. Alternatively, raw string sequences passed via \texttt{calibration\_texts} are tokenized dynamically with streaming batching. When no domain-specific text is available, default synthetic sequences provide weakly calibrated feature scales. If all calibration sources are omitted, A3 deterministically falls back to unweighted truncated SVD (Appendix~\ref{sec:app_defensive_handling}).
 
 \subsection{Phase 2: Weighted SVD}
+\label{sec:fisher_weighted_svd}
 
 \subsubsection{The Weighting Idea}
 
@@ -111,6 +113,7 @@ where dividing by the RMS energy prevents artificial condition number inflation.
 If factorization fails validation at the rank ceiling, the layer safely retains its original dense parameters $W$.
 
 \subsection{Phase 3 \& 4: Validation and Adaptive Escalation}
+\label{sec:frobenius_validation}
 
 \subsubsection{Frobenius Error Formulation}
 
@@ -121,13 +124,15 @@ Validation computes the relative reconstruction error:
 \end{equation}
 A factorized layer is accepted if $\mathrm{Err} \le \tau = 0.40$.
 
-\subsubsection{Adaptive Rank Escalation}
-
-If the error exceeds $\tau$, the target rank is incrementally escalated up to $r_{\mathrm{ceiling}} = 256$, recomputing the SVD until convergence or fallback.
-
-Selecting compression ranks a priori enforces an unfavorable compromise: setting rank too aggressively incurs excessive reconstruction error, whereas conservative ranks sacrifice meaningful parameter reduction. By deferring rank determination to empirical per-layer Frobenius validation, A3 dynamically accommodates intrinsic representation variance across architectural coordinates.
+If the error exceeds $\tau$, the target rank is incrementally escalated up to $r_{\mathrm{ceiling}} = 256$, recomputing the SVD until convergence or fallback:
+\begin{equation}
+r_{k+1} = \min\!\left(r_{\mathrm{ceiling}},\, r_k + \max\!\left(8,\, \left\lfloor\frac{\min(d_{\mathrm{in}}, d_{\mathrm{out}}) - r_k}{K - k}\right\rfloor\right)\right)
+\tag{4.11}
+\end{equation}
+where $K$ denotes the maximum retry count. Selecting compression ranks a priori enforces an unfavorable compromise: setting rank too aggressively incurs excessive reconstruction error, whereas conservative ranks sacrifice meaningful parameter reduction. By deferring rank determination to empirical per-layer Frobenius validation, A3 dynamically accommodates intrinsic representation variance across architectural coordinates.
 
 \subsection{Phase 5: LayerNorm Recalibration}
+\label{sec:layernorm_recalibration}
 
 \subsubsection{Motivation}
 
@@ -151,96 +156,13 @@ where $\sigma_\text{target}$ is the pre-compression standard deviation and $\sig
 This is applied only if \texttt{recalibrate\_ln = True} and calibration sources are 
 available.
 
-\subsection{Combined Algorithm}
+\subsection{Algorithm and Complexity Summary}
 
-\textbf{Algorithm 1:} A3 compression
-\begin{lstlisting}
-Input:  model M, rank r , threshold $\tau$, calibration data D
-Output: compressed model M', statistics
+The end-to-end execution flow of A3 is summarized in Algorithm 1 (detailed full pseudocode provided in Appendix~\ref{sec:app_algorithm1}). The computational cost is dominated by the streaming covariance accumulation in Phase 1 ($\mathcal{O}(N \sum_\ell d_\ell^2)$ time, requiring only $\mathcal{O}(N_l d_\text{max}^2)$ auxiliary memory) and the CPU-offloaded SVD in Phase 2 ($\mathcal{O}(\sum_\ell d_\text{out}^{(\ell)} d_\text{in}^{(\ell)} \min(d_\text{out}^{(\ell)}, d_\text{in}^{(\ell)}))$ time). Phases 3--5 incur negligible runtime overhead. On DistilBERT (66.9M parameters), total calibration and factorization completes in approximately 28 seconds on an NVIDIA RTX 4070 Laptop GPU. An exhaustive asymptotic complexity and memory footprint derivation is provided in Appendix~\ref{sec:app_complexity} (Table~\ref{tab:complexity_analysis}).
 
- 1: for   in linear_layers(M) do
- 2:     F^( ), C_X^( ) $\leftarrow$ running_accumulate( , D)
- 3: end for
- 4: $\sigma$_target $\leftarrow$ record_layernorm_scales(M, D)
- 5:
- 6: for   in linear_layers(M) do
- 7:     W $\leftarrow$ weight( )
- 8:     r $\leftarrow$ r 
- 9:     for attempt in 0..K do
-10:         W_weighted $\leftarrow$ W   diag($\sqrt{}$(F^( ) + $\epsilon$))
-11:         U_r,  _r, V_r $\leftarrow$ svd(W_weighted, r)
-12:         V_r $\leftarrow$ unweight(V_r, F^( ))
-13:         err $\leftarrow$  W - U_r V_r _F /  W _F
-14:         if err $\le$ $\tau$: break
-15:         r $\leftarrow$ escalate(r, K, attempt)
-16:     end for
-17:     if err > $\tau$: fallback( ) else: replace( , U_r, V_r)
-18: end for
-19:
-20: if recalibrate_ln:
-21:     $\sigma$_current $\leftarrow$ record_layernorm_scales(M', D)
-22:     for ln in layernorms(M') do
-23:         ln.$\gamma$ $\leftarrow$ ln.$\gamma$ $\cdot$ $\sigma$_current[ln] / $\sigma$_target[ln]
-24:     end for
-25: end if
-26: return M'
-\end{lstlisting}
+\subsection{Parameter Reduction and Break-Even Bounds}
 
-\subsection{Complexity Analysis}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{Phase} & \textbf{Time} & \textbf{Memory} \\
-\midrule
-Calibration & $\mathcal{O}(N \sum_\ell d_\ell^2)$ & $\mathcal{O}(N_l d^2)$ \\
-Weighted SVD & $\mathcal{O}(\sum_\ell d_\text{out}^{(\ell)} d_\text{in}^{(\ell)} \min(d_\text{out}, d_\text{in}))$ & $\mathcal{O}(d_\text{max}^2)$ \\
-Validation & $\mathcal{O}(\sum_\ell r d_\text{out} d_\text{in})$ & $\mathcal{O}(d_\text{out} d_\text{in})$ \\
-LN recalibration & $\mathcal{O}(N)$ & $\mathcal{O}(N_l d)$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Full compression time} on DistilBERT (66.9M params): ~45 
-seconds on RTX 4070.
-
-\subsection{Parameter Analysis}
-
-For a layer with weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Configuration} & \textbf{Parameters} \\
-\midrule
-Original & $d_\text{out} \cdot d_\text{in}$ \\
-A3 at rank $r$ & $r(d_\text{out} + d_\text{in})$ \\
-A3 at rank $r$ + LoRA($r_L$) & $r(d_\text{out} + d_\text{in}) + r_L(d_\text{out} + d_\text{in})$ \\
-Reduction factor & $\frac{d_\text{out} d_\text{in}}{r(d_\text{out} + d_\text{in})}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Example.} For $d = 768$ and $r = 64$:
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Configuration} & \textbf{Params} \\
-\midrule
-Original & 589,824 \\
-A3 rank 64 & 98,304 \\
-A3 rank 64 + LoRA rank 16 & 122,880 \\
-Reduction & \textbf{4.8$\times$} \\
-\bottomrule
-\end{tabular}
-\end{table}
+For a linear projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$ with dense parameter count $d_\text{out} d_\text{in}$, low-rank factorization into $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d_\text{in}}$ requires $r(d_\text{out} + d_\text{in})$ parameters. Parameter reduction is achieved if and only if $r < r_\text{break-even} = \frac{d_\text{out} d_\text{in}}{d_\text{out} + d_\text{in}}$. For standard transformer projections ($d_\text{in} = d_\text{out} = 768$), the break-even rank is 384; our enforced ceiling $r_{\mathrm{ceiling}} \le 256$ strictly guarantees non-negative parameter savings across all compressed projections. An exact formulation of parameter counts and break-even dimensional bounds across evaluated architectures is presented in Appendix~\ref{sec:app_parameter_counting} (Table~\ref{tab:parameter_counting_formulation}).
 
 \subsection{Theoretical Notes}
 

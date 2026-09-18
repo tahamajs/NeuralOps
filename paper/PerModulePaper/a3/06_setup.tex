@@ -1,9 +1,10 @@
 
 \section{Experimental Setup}
+\label{sec:setup}
 
-\subsection{Models}
+\subsection{Architectures and Datasets}
 
-We evaluate on three pretrained backbones:
+We evaluate A3 across three established transformer backbones spanning distinct operational modalities: DistilBERT-base (6 layers, 66.9M parameters, flat linear projections), RoBERTa-base (12 layers, 124.6M parameters, nested \texttt{BertAttention}), and GPT-2 Small (12 layers, 124.4M parameters, causal \texttt{Conv1D} projections). Checkpoints are initialized from pre-fine-tuned task heads. The primary empirical evaluation is conducted on the Stanford Sentiment Treebank (SST-2; 67,349 training, 872 validation, and 1,821 test examples; majority baseline 50.92\%). To evaluate generalization limits, we further evaluate across 3-way Multi-Genre Natural Language Inference (MNLI) and 4-way topic categorization (AG News). Input sequences are truncated to a maximum length of 128 tokens.
 
 \begin{table}[H]
 \centering
@@ -14,53 +15,16 @@ We evaluate on three pretrained backbones:
 \midrule
 DistilBERT-base & 6  & 768 & 66.9M  & Flat Linear Projections \\
 RoBERTa-base    & 12 & 768 & 124.6M & Nested BertSelfAttention \\
-GPT-2           & 12 & 768 & 124.4M & Causal Conv1D Projections \\
+GPT-2 Small     & 12 & 768 & 124.4M & Causal Conv1D Projections \\
 \bottomrule
 \end{tabular}
 \caption{Model backbones evaluated across compression and fine-tuning stages.}
 \label{tab:setup_models}
 \end{table}
 
-Base weights loaded from \texttt{results/*\_baseline/finetuned\_model.pt}.
+\subsection{Calibration Protocol and Hyperparameters}
 
-\subsection{Dataset}
-
-\textbf{SST-2} (Socher et al., 2013):
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llll}
-\toprule
-\textbf{Split} & \textbf{Size} & \textbf{Positives} & \textbf{Negatives} \\
-\midrule
-Train & 67,349 & 33,807 (50.2\%) & 33,542 \\
-Validation & 872 & 444 (50.9\%) & 428 \\
-Test & 1,821 & -- & -- \\
-\bottomrule
-\end{tabular}
-\caption{Dataset statistics for the primary benchmark evaluation on SST-2.}
-\label{tab:sst2_split}
-\end{table}
-
-Majority baseline: \textbf{50.92\%}.
-
-Sequence length truncated to 128 tokens.
-
-\subsection{Calibration Data}
-
-For A3's activation statistics, we use the \textbf{training set} as calibration 
-source. This is legitimate because:
-
-\begin{itemize}
-\item The calibration pass is a forward-only pass (no gradient)
-\item It uses unlabeled inputs (labels not required)
-\item It is not a form of test set leakage
-\end{itemize}
-We use \textbf{1000 examples} (a subsample of the training set) for 
-calibration to keep memory bounded.
-
-\subsection{Compression Hyperparameters}
+For streaming calibration, we sample $N = 1000$ unlabeled training sequences, processing batches through forward hooks without gradient materialization or test-set contamination. The compression engine defaults to initial target rank $r = 128$ subject to a strict rank ceiling $r_{\mathrm{ceiling}} = \min(\lfloor 0.5 \min(d_\text{in}, d_\text{out})\rfloor, 256)$ to guarantee non-negative parameter savings. The Frobenius error acceptance gate is set to $\tau = 0.40$ with up to 3 adaptive rank escalation retries before deterministic fallback. Scale normalization clamps the Fisher vector $\mathbf{s} \in [10^{-3}, 10^{3}]$, and closed-form LayerNorm affine recalibration is enabled globally.
 
 \begin{table}[H]
 \centering
@@ -69,94 +33,19 @@ calibration to keep memory bounded.
 \toprule
 \textbf{Hyperparameter} & \textbf{Value} & \textbf{Operational Function} \\
 \midrule
-Rank $r$ & 128 & Initial target low-rank dimension \\
-Rank ceiling $r_{\mathrm{ceiling}}$ & $\min(\lfloor 0.5 \min(d_{\mathrm{in}}, d_{\mathrm{out}})\rfloor, 256)$ & Prevents negative parameter reduction \\
-\texttt{use\_fisher} & True & Activation-aware input space weighting \\
-\texttt{recalibrate\_ln} & True & Closed-form LayerNorm affine rescaling \\
-\texttt{max\_error} $\tau$ & 0.40 & Relative Frobenius error quality gate \\
-\texttt{max\_retries} & 3 & Adaptive rank escalation step count \\
-\texttt{fallback\_to\_original} & True & Safe fallback to dense weights if $\mathrm{err} > \tau$ \\
-\texttt{normalize\_scale} & True & Numerical stability clamping of $\sqrt{F}$ \\
-\texttt{target\_attention\_only} & True & Target self-attention projection weights \\
+Target Rank $r$ & 128 & Initial low-rank dimension \\
+Rank Ceiling $r_{\mathrm{ceiling}}$ & 256 & Prevents parameter expansion ($< 384$) \\
+Error Threshold $\tau$ & 0.40 & Relative Frobenius norm quality gate \\
+Fisher Weighting & True & Activation-aware input space scaling \\
+Scale Clamping & $[10^{-3}, 10^{3}]$ & Condition number stabilization \\
+LN Recalibration & True & Closed-form affine scale correction \\
+Fallback Gate & True & Retain dense weights if $\mathrm{err} > \tau$ \\
 \bottomrule
 \end{tabular}
 \caption{Production hyperparameters governing A3 factorization and fallback enforcement.}
 \label{tab:a3_hyperparameters}
 \end{table}
 
-\subsection{Recovery Fine-Tuning}
+\subsection{Recovery Adaptation and Execution Environment}
 
-After A3 compression, we train LoRA adapters:
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Hyperparameter} & \textbf{Value} \\
-\midrule
-Optimizer & AdamW \\
-Learning rate & $2\times 10^{-4}$ \\
-Weight decay & 0.01 \\
-Recovery steps & 50 \\
-LoRA rank & 8 (RoBERTa, GPT-2) / 16 (DistilBERT) \\
-LoRA alpha & 16 \\
-Batch size & 4 (RoBERTa, GPT-2) / 8 (DistilBERT) \\
-Precision & FP16 \\
-\bottomrule
-\end{tabular}
-\caption{Hyperparameters for parameter-efficient recovery fine-tuning.}
-\label{tab:recovery_params}
-\end{table}
-
-\subsection{Hardware}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Component} & \textbf{Specification} \\
-\midrule
-GPU & NVIDIA GeForce RTX 4070 Laptop GPU \\
-VRAM & 8,188 MB GDDR6 \\
-CUDA & 12.7 (Driver Version 566.07) \\
-PyTorch & 2.4.0 (FP32 CPU SVD factorization) \\
-Transformers & 4.44.0 \\
-OS & Windows 11 / Linux \\
-\bottomrule
-\end{tabular}
-\caption{Hardware and compute environment for experimental profiling.}
-\label{tab:hardware_specs}
-\end{table}
-
-\subsection{Reproduction}
-
-\begin{lstlisting}
-python run_all_4_a3.py \
-    --models distilbert,roberta,gpt2 \
-    --rank 64 \
-    --recovery_steps 50 \
-    --lora_rank 16
-\end{lstlisting}
-
-Expected runtime: ~15 minutes.
-
-\subsection{Seeds}
-
-All experiments use seed 42. No multi-seed runs due to compute budget.
-
-\subsection{Baselines}
-
-We compare against:
-
-\begin{enumerate}
-\item \textbf{\texttt{full}:} Uncompressed pretrained model.
-\item \textbf{\texttt{a3}:} Our method.
-\item \textbf{\texttt{a3\_no\_fisher}:} A3 without Fisher weighting (ablations).
-\item \textbf{\texttt{a3\_no\_ln}:} A3 without LayerNorm recalibration (ablations).
-\item \textbf{Prior modules} (from our benchmark suite):
-\end{enumerate}
-\begin{itemize}
-\item \texttt{sdrm}, \texttt{svd\_linear}, \texttt{nha}, etc.
-\end{itemize}
+Post-factorization recovery fine-tuning attaches parameter-efficient LoRA adapters ($r_\text{LoRA} = 16$ for DistilBERT; $r_\text{LoRA} = 8$ for RoBERTa and GPT-2; $\alpha = 16$) to factorized linear projections, training exclusively adapter parameters for 50 steps using AdamW ($\mathrm{lr} = 2\times 10^{-4}$, weight decay 0.01, FP16 precision, batch size 8 for DistilBERT and 4 for RoBERTa/GPT-2). All experiments are executed in PyTorch 2.4.0 with Transformers 4.44.0 on an NVIDIA RTX 4070 Laptop GPU (8,188 MB VRAM, CUDA 12.7) with CPU FP32 SVD offloading. Full execution scripts and replication commands are cataloged in Appendix~\ref{sec:app_reproduction}.

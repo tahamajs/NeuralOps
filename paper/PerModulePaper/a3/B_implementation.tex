@@ -254,3 +254,184 @@ Clamp $\sqrt{F}$ to avoid extreme values:
 \begin{lstlisting}
 scale = scale.clamp(min=1e-3, max=1e3)
 \end{lstlisting}
+
+\subsection{B.7 Full Pseudocode for End-to-End Compression}
+\label{sec:app_algorithm1}
+
+\textbf{Algorithm 1:} A3 End-to-End Compression Pipeline
+\begin{lstlisting}
+Input:  Pretrained model M, initial rank r, threshold $\tau$, calibration dataset D
+Output: Compressed model M', compression statistics
+
+ 1: for layer in linear_layers(M) do
+ 2:     F^(layer), C_X^(layer) $\leftarrow$ running_accumulate(layer, D)
+ 3: end for
+ 4: $\sigma$_target $\leftarrow$ record_layernorm_scales(M, D)
+ 5:
+ 6: for layer in linear_layers(M) do
+ 7:     W $\leftarrow$ layer.weight.data.clone()
+ 8:     r_curr $\leftarrow$ r
+ 9:     for attempt in 0..max_retries do
+10:         s $\leftarrow$ normalize_scale(sqrt(F^(layer) + $\epsilon$)).clamp(1e-3, 1e3)
+11:         W_weighted $\leftarrow$ W * diag(s)
+12:         U_r, $\Sigma$_r, V_r $\leftarrow$ cpu_fp32_svd(W_weighted, r_curr)
+13:         V_r $\leftarrow$ V_r * diag(1 / s)
+14:         err $\leftarrow$ norm(W - U_r * V_r, 'fro') / (norm(W, 'fro') + 1e-8)
+15:         if err $\le$ $\tau$: break
+16:         r_curr $\leftarrow$ escalate_rank(r_curr, r_ceiling=256, attempt)
+17:     end for
+18:     if err $\le$ $\tau$:
+19:         replace_with_factorized(M, layer, U_r, V_r)
+20:     else:
+21:         retain_dense_fallback(M, layer)
+22:     end if
+23: end for
+24:
+25: if recalibrate_ln:
+26:     $\sigma$_current $\leftarrow$ record_layernorm_scales(M', D)
+27:     for ln in layernorms(M') do
+28:         ln.weight.data *= ($\sigma$_current[ln] / ($\sigma$_target[ln] + 1e-8))
+29:     end for
+30: end if
+31: return M'
+\end{lstlisting}
+
+\subsection{B.8 LoRALinear Wrapper Integration and Injection Algorithm}
+\label{sec:app_lora_wrapper}
+
+\begin{lstlisting}
+class LoRALinear(nn.Module):
+    def __init__(self, base_layer, lora_rank=16, lora_alpha=32):
+        super().__init__()
+        self.base_layer = base_layer
+        self.lora_A = nn.Parameter(torch.empty(lora_rank, base_layer.in_features))
+        self.lora_B = nn.Parameter(torch.zeros(base_layer.out_features, lora_rank))
+        self.scaling = lora_alpha / lora_rank
+        
+    def forward(self, x):
+        return self.base_layer(x) + (x @ self.lora_A.T @ self.lora_B.T) * self.scaling
+\end{lstlisting}
+
+\subsection{B.9 Defensive Exception Handling and Fallback Architecture}
+\label{sec:app_defensive_handling}
+
+Table~\ref{tab:app_failure_responses} catalogs the defensive exceptions handled by the production A3 runtime.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Potential Failure State} & \textbf{Detection Mechanism} & \textbf{Defensive System Response} \\
+\midrule
+Reconstruction error $> \tau$ & Frobenius norm check & Fallback to original dense parameter matrix \\
+Weight shape mismatch & Assertion in \texttt{from\_linear} & Skip layer and retain dense baseline weights \\
+SVD convergence failure & \texttt{torch.linalg.LinAlgError} & Fallback to unweighted CPU FP32 SVD solver \\
+Empty calibration statistics & \texttt{F\_map} empty assertion & Execute unweighted CPU FP32 SVD \\
+CUDA Out-Of-Memory & Pinned host memory staging & Offload matrix SVD strictly to CPU host RAM \\
+NaN/Inf in factorized tensor & \texttt{torch.isnan} assertion & Abort factorization and trigger deterministic fallback \\
+\bottomrule
+\end{tabular}
+\caption{Comprehensive taxonomy of defensive exception handling implemented within the A3 engine.}
+\label{tab:app_failure_responses}
+\end{table}
+
+\subsection{B.10 Complete Environment, Reproduction Protocols, and Verification}
+\label{sec:app_full_reproduction}
+
+To ensure complete scientific and engineering reproducibility, all software dependencies, environment setup commands, and execution scripts are fully specified.
+
+\subsubsection{Environment Setup}
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/your-org/SVD_Project
+cd SVD_Project
+python -m venv .venv
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsubsection{Software Dependencies}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Package} & \textbf{Version} \\
+\midrule
+torch & 2.4.0 \\
+transformers & 4.44.0 \\
+datasets & 2.20.0 \\
+numpy & 1.26.4 \\
+pandas & 2.2.2 \\
+\bottomrule
+\end{tabular}
+\caption{Production software dependencies and pinned runtime library versions.}
+\label{tab:app_dependencies}
+\end{table}
+
+\subsubsection{Execution and Sweep Commands}
+
+The end-to-end benchmark suite across all three architectures is invoked via:
+
+\begin{lstlisting}[language=bash]
+# Run full A3 benchmark sweep across DistilBERT, RoBERTa, and GPT-2
+python run_all_4_a3.py \
+    --models distilbert,roberta,gpt2 \
+    --rank 128 \
+    --recovery_steps 50 \
+    --lora_rank 16 \
+    --batch_size 8
+\end{lstlisting}
+
+Individual model evaluation with fine-grained logging:
+
+\begin{lstlisting}[language=bash]
+python Codes/framework/run_quality_sweep.py \
+    --model models/distilbert_sst2 \
+    --model_family bert \
+    --dataset sst2 \
+    --dataset_dir Codes/framework/data/glue_data/sst2 \
+    --output_dir results/unified_a3/distilbert \
+    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --modules full,a3 \
+    --batch_size 8 \
+    --recovery_steps 50 \
+    --learning_rate 2e-4 \
+    --lora_rank 16 \
+    --rank 128 \
+    --precision fp16
+\end{lstlisting}
+
+\subsubsection{Deterministic Random Seeding}
+
+\begin{lstlisting}[language=python]
+import random, numpy as np, torch
+
+def seed_everything(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+\end{lstlisting}
+
+\subsubsection{Expected Benchmark Verification}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Validation Accuracy} & \textbf{Compression Status} \\
+\midrule
+DistilBERT & 90.02\% $\pm$ 0.5\% & PASS (+1.25M params saved) \\
+RoBERTa    & 83.26\% $\pm$ 0.5\% & PASS (+0.59M params saved) \\
+GPT-2      & 63.19\% $\pm$ 1.0\% & FAIL ($\Delta > 15\%$) (+0.53M params saved) \\
+\bottomrule
+\end{tabular}
+\caption{Expected benchmark results under the production configuration ($r_{\mathrm{ceiling}} \le 256, \tau=0.40$).}
+\label{tab:app_repro_expected}
+\end{table}

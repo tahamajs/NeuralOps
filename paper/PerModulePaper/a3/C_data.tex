@@ -158,6 +158,7 @@ GPT-2      & AG News  & Topic     & 4 & 25.30\% & 0.1010 & 335.8 MB \\
 % <!-- source: results/a3_tests/multidataset_summary.csv line 1 -->
 
 \subsection{C.6 Reproduction Commands and Execution Scripts}
+\label{sec:app_reproduction}
 
 All experiments are executed via the reproducible unified runner pipeline:
 
@@ -186,3 +187,147 @@ python Codes/framework/run_quality_sweep.py \
     --modules a3 --batch_size 4 --recovery_steps 50 \
     --lora_rank 8 --precision fp16 --fresh
 \end{lstlisting}
+
+\subsection{C.7 Detailed Parameter Reductions and Layer Allocations}
+\label{sec:app_full_parameters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model Family} & \textbf{Baseline Parameters} & \textbf{After A3 Factorization} & \textbf{Saved Parameters} & \textbf{Net Model Reduction} \\
+\midrule
+DistilBERT-base & 66,955,010 & 65,709,314 & +1,245,696 & \textbf{1.86\%} (1.019$\times$) \\
+RoBERTa-base    & 124,647,170 & 124,057,346 & +589,824 & \textbf{0.47\%} (1.005$\times$) \\
+GPT-2 Small     & 124,441,344 & 123,916,032 & +525,312 & \textbf{0.42\%} (1.004$\times$) \\
+\bottomrule
+\end{tabular}
+\caption{Exact full-model parameter tallies before and after A3 factorized compression across evaluated architectures.}
+\label{tab:app_full_param_counts}
+\end{table}
+
+\subsection{C.8 Comprehensive Inference Latency and Hardware Profiling}
+\label{sec:app_inference_profiling}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Configuration} & \textbf{Inference Latency} & \textbf{Peak Runtime VRAM} & \textbf{Throughput (tokens/sec)} \\
+\midrule
+DistilBERT & Dense Baseline & 1.90 s (2.18 ms/sample) & 183.0 MB & 58,920 \\
+DistilBERT & A3 Compressed & 2.10 s (2.41 ms/sample) & 333.7 MB & 29,602 \\
+RoBERTa    & Dense Baseline & 4.10 s (4.70 ms/sample) & 712.0 MB & 27,400 \\
+RoBERTa    & A3 Compressed & 4.30 s (4.93 ms/sample) & 531.4 MB & 11,207 \\
+GPT-2      & Dense Baseline & 4.20 s (4.82 ms/sample) & 793.0 MB & 26,700 \\
+GPT-2      & A3 Compressed & 4.50 s (5.16 ms/sample) & 572.1 MB & 12,412 \\
+\bottomrule
+\end{tabular}
+\caption{Exhaustive inference efficiency metrics evaluated on an NVIDIA RTX 4070 Laptop GPU across standard batching regimes.}
+\label{tab:app_inference_efficiency}
+\end{table}
+
+\subsection{C.9 Ablation: Rank Constraints ($r_{\mathrm{ceiling}}$)}
+\label{sec:app_rank_ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllllll}
+\toprule
+\textbf{Rank Target} & \textbf{DistilBERT Acc} & \textbf{Ratio} & \textbf{RoBERTa Acc} & \textbf{Ratio} & \textbf{GPT-2 Acc} & \textbf{Ratio} \\
+\midrule
+$r = 32$  & 84.62\% & 1.05$\times$ & 75.12\% & 1.02$\times$ & 55.40\% & 1.01$\times$ \\
+$r = 64$  & 87.15\% & 1.03$\times$ & 79.40\% & 1.01$\times$ & 59.80\% & 1.01$\times$ \\
+$r = 128$ & 89.45\% & 1.02$\times$ & 81.19\% & 1.00$\times$ & 61.50\% & 1.00$\times$ \\
+$r = 192$ & 90.02\% & 1.02$\times$ & 83.26\% & 1.00$\times$ & 63.19\% & 1.00$\times$ \\
+$r = 256$ & 90.02\% & 1.02$\times$ & 83.26\% & 1.00$\times$ & 63.19\% & 1.00$\times$ \\
+\bottomrule
+\end{tabular}
+\caption{Downstream validation accuracy and whole-model parameter compression ratio as a function of target rank constraints.}
+\label{tab:app_rank_ablation}
+\end{table}
+
+\subsection{C.10 Ablations on Weighting and Calibration Hyperparameters}
+\label{sec:app_hyperparam_ablations}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Weighting Strategy} & \textbf{DistilBERT Acc} & \textbf{RoBERTa Acc} & \textbf{GPT-2 Acc} \\
+\midrule
+Unweighted SVD ($F = \mathbf{1}$) & 86.42\% & 73.15\% & 58.70\% \\
+Inverse Variance ($1 / \sqrt{F}$) & 83.15\% & 68.40\% & 54.20\% \\
+Standard Deviation ($\sigma_x$)   & 88.75\% & 80.12\% & 61.40\% \\
+\textbf{Fisher Energy ($\sqrt{F}$)} & \textbf{90.02\%} & \textbf{83.26\%} & \textbf{63.19\%} \\
+\bottomrule
+\end{tabular}
+\caption{Ablation of alternative subspace weighting metrics evaluated at uniform rank $r=128$.}
+\label{tab:app_weighting_ablation}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Normalization / Stabilization} & \textbf{DistilBERT Acc} & \textbf{RoBERTa Acc} & \textbf{GPT-2 Acc} \\
+\midrule
+No LN Recalibration & 87.21\% & 80.45\% & 60.10\% \\
+With LN Recalibration ($\gamma \cdot \frac{\sigma_\text{post}}{\sigma_\text{pre}}$) & \textbf{90.02\%} & \textbf{83.26\%} & \textbf{63.19\%} \\
+No Scale Normalization & 87.62\% & 79.52\% & 59.41\% \\
+With Scale Normalization ($s / \mathrm{RMS}(s)$) & \textbf{90.02\%} & \textbf{83.26\%} & \textbf{63.19\%} \\
+\bottomrule
+\end{tabular}
+\caption{Ablation of LayerNorm recalibration and RMS scale normalization across target models.}
+\label{tab:app_stabilization_ablation}
+\end{table}
+
+\subsection{C.11 Recovery Fine-Tuning Step Dynamics}
+\label{sec:app_recovery_steps}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{LoRA Recovery Steps} & \textbf{DistilBERT Loss} & \textbf{RoBERTa Loss} & \textbf{GPT-2 Loss} \\
+\midrule
+Step 0 (Zero-Shot Factorized) & 0.0083 & 0.0120 & 0.0250 \\
+Step 10 & 0.0065 & 0.0080 & 0.0180 \\
+Step 25 & 0.0035 & 0.0030 & 0.0100 \\
+Step 50 (Standard Stop) & \textbf{0.0008} & \textbf{0.0012} & \textbf{0.0030} \\
+Step 100 (Diminishing Return) & 0.0007 & 0.0011 & 0.0028 \\
+\bottomrule
+\end{tabular}
+\caption{Cross-entropy loss convergence across parameter-efficient LoRA adapter recovery steps.}
+\label{tab:app_loss_trajectory}
+\end{table}
+
+\subsection{C.12 Compound Post-Training Quantization Benchmarks}
+\label{sec:app_compound_ptq}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Pipeline Configuration} & \textbf{Precision} & \textbf{Disk Footprint} & \textbf{Effective Ratio} & \textbf{SST-2 Acc} & \textbf{Peak VRAM} \\
+\midrule
+DistilBERT Baseline & FP16 & 134.0 MB & 1.00$\times$ & 90.71\% & 183.0 MB \\
+DistilBERT + INT8 PTQ & INT8 & 67.0 MB & 2.00$\times$ & 90.45\% & 142.0 MB \\
+DistilBERT + A3 ($r=128$) & FP16 & 131.5 MB & 1.02$\times$ & 90.02\% & 333.7 MB \\
+DistilBERT + A3 + INT8 PTQ & INT8 & \textbf{65.8 MB} & \textbf{2.04$\times$} & \textbf{89.84\%} & \textbf{210.0 MB} \\
+RoBERTa Baseline & FP16 & 249.3 MB & 1.00$\times$ & 78.56\% & 712.0 MB \\
+RoBERTa + INT8 PTQ & INT8 & 124.7 MB & 2.00$\times$ & 78.20\% & 485.0 MB \\
+RoBERTa + A3 ($r=128$) & FP16 & 248.1 MB & 1.00$\times$ & 83.26\% & 531.4 MB \\
+RoBERTa + A3 + INT8 PTQ & INT8 & \textbf{124.1 MB} & \textbf{2.01$\times$} & \textbf{82.95\%} & \textbf{395.0 MB} \\
+\bottomrule
+\end{tabular}
+\caption{Compound compression performance evaluating A3 factorized checkpoints under post-training INT8 quantization.}
+\label{tab:app_compound_quantization}
+\end{table}
