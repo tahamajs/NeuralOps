@@ -110,11 +110,14 @@ class SDRMCompressor(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
         # 1. Protection for critical / classification / head / pooler / embedding layers
-        if any(k in name_l for k in [
-            'classifier', 'score', 'lm_head', 'pooler', 'embedding',
-            'cls_head', 'head', 'logits_processor',
-            'out_lin', 'out_proj', 'o_proj', 'c_proj', 'output.dense',
-        ]):
+        PROTECTED_ALWAYS = ['classifier', 'score', 'lm_head', 'pooler', 'embedding', 'cls_head', 'head', 'logits_processor']
+        ATTENTION_OUTPUT = ['out_lin', 'out_proj', 'o_proj', 'c_proj', 'output.dense']
+        
+        if any(k in name_l for k in PROTECTED_ALWAYS):
+            self.protected_layers.append(name)
+            return False
+            
+        if self.protect_output_proj and any(k in name_l for k in ATTENTION_OUTPUT):
             self.protected_layers.append(name)
             return False
 
@@ -181,7 +184,14 @@ class SDRMCompressor(BaseCompressor):
 
         max_r = min(out_f, in_f)
         param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
-        r = max(self.min_rank, min(rank, max_r - 1, param_cap))
+        
+        if self.min_rank > max_r - 1:
+            logger.warning("SDRM: min_rank=%d exceeds max_r=%d for %s; skipping", self.min_rank, max_r - 1, name)
+            return None
+            
+        min_rank_effective = min(self.min_rank, max_r - 1, param_cap)
+        r = max(min_rank_effective, min(rank, max_r - 1, param_cap))
+        
         if r >= max_r:
             logger.debug('SDRM: rank %d >= max_r %d; skipping layer for no parameter reduction', r, max_r)
             return None
