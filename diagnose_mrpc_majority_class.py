@@ -38,7 +38,7 @@ def load_data(tokenizer, max_eval: int = 500, max_train: int = 1000, seq_len: in
     train_enc = tokenizer(s1_train, s2_train, padding="max_length", truncation=True, max_length=seq_len, return_tensors="pt")
     
     tensor_ds = torch.utils.data.TensorDataset(train_enc["input_ids"], train_enc["attention_mask"], torch.tensor(labels_train, dtype=torch.long))
-    train_loader = DataLoader(tensor_ds, batch_size=16, shuffle=True)
+    train_loader = DataLoader(tensor_ds, batch_size=8, shuffle=True)
     
     return eval_enc, torch.tensor(labels_eval, dtype=torch.long), train_loader
 
@@ -50,9 +50,9 @@ def evaluate(model, eval_enc, eval_labels, device="cuda"):
     all_preds = []
     
     with torch.no_grad():
-        for i in range(0, num_samples, 32):
-            b_ids = input_ids[i:i+32].to(device)
-            b_mask = attention_mask[i:i+32].to(device)
+        for i in range(0, num_samples, 16):
+            b_ids = input_ids[i:i+16].to(device)
+            b_mask = attention_mask[i:i+16].to(device)
             out = model(input_ids=b_ids, attention_mask=b_mask)
             preds = torch.argmax(out.logits, dim=-1).cpu().tolist()
             all_preds.extend(preds)
